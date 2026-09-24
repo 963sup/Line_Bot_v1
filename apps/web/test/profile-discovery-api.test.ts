@@ -5,6 +5,7 @@ import { repositoryStars } from "../src/app/api/_composition/repository-stars.se
 import { GET as followsGet, POST as followsPost } from "../src/app/api/follows/route";
 import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/route";
 import { GET as exploreGet, POST as explorePost } from "../src/app/api/repositories/explore/route";
+import { GET as starredGet } from "../src/app/api/repositories/starred/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
 
 test("profile, follow and Repository discovery HTTP surfaces verify LINE and call owner use cases", async () => {
@@ -39,6 +40,15 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     },
   ]);
   const star = mock.method(repositoryStars, "star", async () => {});
+  const starred = mock.method(repositoryStars, "starred", async () => [
+    {
+      id: "repository-a",
+      name: "Repository A",
+      visibility: "private",
+      starredAt: 10,
+      starCount: 1,
+    },
+  ]);
   const fetch = mock.method(globalThis, "fetch", async (input: unknown) => {
     const url = String(input);
     if (url.startsWith("https://api.line.me/oauth2/v2.1/verify?")) {
@@ -111,6 +121,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     );
 
     assert.equal((await exploreGet(request("/api/repositories/explore"))).status, 200);
+    assert.equal((await starredGet(request("/api/repositories/starred"))).status, 200);
     assert.equal(
       (
         await explorePost(
@@ -129,6 +140,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(following.mock.callCount(), 1);
     assert.equal(follow.mock.callCount(), 1);
     assert.equal(explore.mock.callCount(), 1);
+    assert.equal(starred.mock.callCount(), 1);
     assert.equal(star.mock.callCount(), 1);
   } finally {
     fetch.mock.restore();
@@ -138,6 +150,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     following.mock.restore();
     follow.mock.restore();
     explore.mock.restore();
+    starred.mock.restore();
     star.mock.restore();
     if (previousOrigin === undefined) delete process.env.APP_ORIGIN;
     else process.env.APP_ORIGIN = previousOrigin;

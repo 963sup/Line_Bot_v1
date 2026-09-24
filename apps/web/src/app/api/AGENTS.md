@@ -23,6 +23,7 @@
 | `/api/repository-labels` | Repository Label authorized GET；必須提供 `owner` + `name` |
 | `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | Repository Milestone authorized GET；必須提供 `owner` + `name` |
 | `/api/repositories/explore` | Repository discovery/Star transport |
+| `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |
 | `/api/notifications` | recipient-scoped Notifications |
 | `/api/attendance`、`/api/attendance/clock-in`、`/api/attendance/clock-out`、`/api/workplaces` | Attendance 現行 subject 與工作場所契約 |
 | `/api/expenses/{id}`、`/api/partners` | Expense／Partners |
