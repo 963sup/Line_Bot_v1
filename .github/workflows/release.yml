@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - ".github/workflows/release.yml"
       - "supabase/schemas/**/*.sql"
       - "assets/line/rich-menu/**"
       - "apps/web/src/modules/assistant/rich-menu/definition.ts"
@@ -45,7 +46,7 @@ jobs:
           fi
           schema_changed=false
           rich_menu_changed=false
-          if grep -Eq '^supabase/schemas/.*\.sql$' changed-files.txt; then
+          if grep -Eq '^(supabase/schemas/.*\.sql|\.github/workflows/release\.yml)$' changed-files.txt; then
             schema_changed=true
           fi
           if grep -Eq '^(assets/line/rich-menu/|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)' changed-files.txt; then

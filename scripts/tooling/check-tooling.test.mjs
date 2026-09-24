@@ -111,7 +111,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/release.yml",
-    "on:\n  push:\n    branches: [main]\n    paths: [supabase/schemas/**/*.sql, assets/line/rich-menu/**]\npermissions:\n  contents: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    steps:\n      - run: echo 'supabase/schemas/ assets/line/rich-menu/ GITHUB_OUTPUT'\n      - run: echo 'check-runs .name == \"validate\"'\n  supabase:\n    needs: gate\n    if: needs.gate.outputs.schema_changed == 'true'\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    steps:\n      - run: echo 'commits/$SHA/status select(.context == \"Vercel\") https://vercel.com/96sup/mini-app-line/'\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
+    "on:\n  push:\n    branches: [main]\n    paths: [.github/workflows/release.yml, supabase/schemas/**/*.sql, assets/line/rich-menu/**]\npermissions:\n  contents: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    steps:\n      - run: echo 'supabase/schemas/ .github/workflows/release.yml assets/line/rich-menu/ GITHUB_OUTPUT'\n      - run: echo 'check-runs .name == \"validate\"'\n  supabase:\n    needs: gate\n    if: needs.gate.outputs.schema_changed == 'true'\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    steps:\n      - run: echo 'commits/$SHA/status select(.context == \"Vercel\") https://vercel.com/96sup/mini-app-line/'\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
   );
   write(
     ".github/workflows/supabase-replace.yml",
@@ -425,9 +425,18 @@ test("validate workflow remains read-only, secret-free, and credential-free", (t
   rejects(root, "must not consume repository secrets");
 });
 
-test("Release routes only schema-state changes through one reconciliation pass before publication", (t) => {
+test("Release routes schema and workflow changes through one reconciliation pass before publication", (t) => {
   const { root, write } = fixture(t);
   const workflow = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
+
+  write(".github/workflows/release.yml", workflow.replace(".github/workflows/release.yml, ", ""));
+  rejects(root, "affected-main-only");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace(" .github/workflows/release.yml assets/", " assets/"),
+  );
+  rejects(root, "detect affected source");
 
   write(
     ".github/workflows/release.yml",

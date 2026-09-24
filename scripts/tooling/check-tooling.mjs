@@ -430,11 +430,12 @@ export function validate(root) {
       !releaseBranches.includes("main") ||
       !Array.isArray(releasePaths) ||
       !releasePaths.includes("supabase/schemas/**/*.sql") ||
+      !releasePaths.includes(".github/workflows/release.yml") ||
       releasePaths.includes("scripts/supabase/remote.mjs") ||
       !releasePaths.includes("assets/line/rich-menu/**")
     )
       errors.push(
-        "CI: Release must be affected-main-only for Supabase schema state and Rich Menu desired state; reconciler-only edits must not spend remote-release minutes",
+        "CI: Release must be affected-main-only for Supabase schema state, release workflow and Rich Menu desired state; reconciler-only edits must not spend remote-release minutes",
       );
     const releasePermissions = releaseWorkflow.permissions;
     if (
@@ -461,6 +462,7 @@ export function validate(root) {
       (step) =>
         typeof step.run === "string" &&
         step.run.includes("supabase/schemas/") &&
+        step.run.includes("workflows/release") &&
         !step.run.includes("scripts/supabase/remote") &&
         step.run.includes("assets/line/rich-menu/") &&
         step.run.includes("GITHUB_OUTPUT"),
