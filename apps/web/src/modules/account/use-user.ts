@@ -5,13 +5,34 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import { authHeaders } from "../../shared/browser/supabase-session";
 
-type CoinView = Awaited<ReturnType<DailyCheckIn["coinView"]>>;
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
+export type CoinView = Awaited<ReturnType<DailyCheckIn["coinView"]>>;
+export type DailyCheckInClaim = NonNullable<Awaited<ReturnType<DailyCheckIn["readClaim"]>>>;
 type View = AccountView & { coins: CoinView };
 type MembershipWireResponse = { member: View | null };
+type CheckInWireOutcome = Awaited<ReturnType<DailyCheckIn["checkIn"]>>["checkIn"];
+export type CheckInOutcome = Omit<CheckInWireOutcome, "coins" | "claim"> & {
+  claim: DailyCheckInClaim | null;
+  coins?: CoinView;
+  day?: string;
+  message?: string;
+  recovered?: boolean;
+  state?: "claimed" | "pending" | "rejected";
+};
+class MembershipRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "MembershipRequestError";
+  }
+}
 /** Shared lifecycle for the existing membership API; each screen owns its presentation. */
 export function useUser(liffId: string) {
   const request = useRef<AbortController | null>(null);
+  const identity = useRef<string | null>(null);
+  const unresolvedCheckInDay = useRef<string | null>(null);
   const mounted = useRef(true);
   const [pending, setPending] = useState<{
     id: string;
@@ -26,6 +47,7 @@ export function useUser(liffId: string) {
   const [error, setError] = useState("");
   const [pauseConfirmation, setPauseConfirmation] = useState(false);
   const [notice, setNotice] = useState("");
+  const [unresolvedCheckIn, setUnresolvedCheckIn] = useState<string | null>(null);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -52,7 +74,17 @@ export function useUser(liffId: string) {
     signal.throwIfAborted();
     if (!result.ok) throw new Error(data.error);
     const account = data.member;
+    const nextIdentity = account?.id ?? null;
+    if (identity.current !== nextIdentity) {
+      unresolvedCheckInDay.current = null;
+      setUnresolvedCheckIn(null);
+    }
+    identity.current = nextIdentity;
     setUser(account);
+    if (!account) {
+      unresolvedCheckInDay.current = null;
+      setUnresolvedCheckIn(null);
+    }
     if (account?.status === "active") {
       const response = await fetch("/api/membership/google-link", {
         headers,
@@ -84,6 +116,9 @@ export function useUser(liffId: string) {
       if (!access) return;
       setInClient(liffClient.inClient());
       setToken(access);
+      identity.current = null;
+      unresolvedCheckInDay.current = null;
+      setUnresolvedCheckIn(null);
       // Profile is presentation only; membership must not wait for its scope or response.
       void liffClient.profile().then(
         (profile) => {
@@ -115,6 +150,73 @@ export function useUser(liffId: string) {
       setError(e instanceof Error ? e.message : "請重新開啟會員頁。");
     } finally {
       if (!signal.aborted) setBusy(false);
+    }
+  }
+
+  async function recoverCheckIn(
+    access: string,
+    day: string,
+    signal: AbortSignal,
+  ): Promise<DailyCheckInClaim | null> {
+    const headers = await authHeaders(access);
+    signal.throwIfAborted();
+    const result = await fetch(`/api/membership?${new URLSearchParams({ checkInDay: day })}`, {
+      headers,
+      cache: "no-store",
+      signal,
+    });
+    const data = (await result.json()) as { claim?: DailyCheckInClaim | null; error?: string };
+    signal.throwIfAborted();
+    if (!result.ok)
+      throw new MembershipRequestError(data.error ?? "簽到結果讀取失敗。", result.status);
+    await load(access, signal);
+    return data.claim ?? null;
+  }
+
+  async function readPendingCheckIn(day: string, signal: AbortSignal): Promise<CheckInOutcome> {
+    try {
+      const claim = await recoverCheckIn(token, day, signal);
+      if (claim) {
+        unresolvedCheckInDay.current = null;
+        setUnresolvedCheckIn(null);
+        setError("");
+        setNotice("已讀回今日簽到結果，未重新抽獎。");
+        return {
+          claim,
+          credited: 0,
+          day,
+          replayed: true,
+          recovered: true,
+          state: "claimed",
+        };
+      }
+      setError("");
+      setNotice(`${day} 的簽到還沒有確認結果；未重新送出簽到。`);
+      return {
+        claim: null,
+        credited: 0,
+        day,
+        message: `${day} 尚無已完成的簽到。可再讀取，或明確重新送出原日簽到；不會重複發獎。`,
+        replayed: true,
+        recovered: true,
+        state: "pending",
+      };
+    } catch (e) {
+      if (e instanceof MembershipRequestError && [400, 403, 409].includes(e.status)) {
+        unresolvedCheckInDay.current = null;
+        setUnresolvedCheckIn(null);
+        setError(e.message);
+        return {
+          claim: null,
+          credited: 0,
+          day,
+          message: e.message,
+          replayed: true,
+          recovered: true,
+          state: "rejected",
+        };
+      }
+      throw e;
     }
   }
   const onResume = useEffectEvent(() => {
@@ -159,10 +261,26 @@ export function useUser(liffId: string) {
   }
   async function action(
     action: "register" | "restore" | "checkIn" | "deactivate",
-    input?: { login?: string },
-  ) {
+    input?: { login?: string; retryOriginal?: boolean },
+  ): Promise<CheckInOutcome | null> {
     const signal = begin();
     setNotice("");
+    const pendingCheckInDay = action === "checkIn" ? unresolvedCheckInDay.current : null;
+    if (pendingCheckInDay && !input?.retryOriginal) {
+      try {
+        return await readPendingCheckIn(pendingCheckInDay, signal);
+      } catch (e) {
+        if (!signal.aborted) setError(e instanceof Error ? e.message : "簽到結果讀取失敗。");
+        return null;
+      } finally {
+        if (!signal.aborted) setBusy(false);
+      }
+    }
+    const checkInDay = action === "checkIn" ? (pendingCheckInDay ?? user?.coins.day) : null;
+    if (action === "checkIn") {
+      unresolvedCheckInDay.current = checkInDay ?? null;
+      setUnresolvedCheckIn(checkInDay ?? null);
+    }
     try {
       const headers = await authHeaders(token);
       signal.throwIfAborted();
@@ -177,20 +295,31 @@ export function useUser(liffId: string) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(
-          action === "register" ? { login: input?.login } : action === "restore" ? {} : { action },
+          action === "register"
+            ? { login: input?.login }
+            : action === "restore"
+              ? {}
+              : action === "checkIn"
+                ? { action, expectedDay: checkInDay }
+                : { action },
         ),
         signal,
       });
       const data = await result.json();
       signal.throwIfAborted();
-      if (!result.ok) throw new Error(data.error);
+      if (!result.ok)
+        throw new MembershipRequestError(data.error ?? "操作失敗，請重試。", result.status);
       if (data.checkIn) {
+        const checkIn = data.checkIn as CheckInOutcome;
         setUser((data as MembershipWireResponse).member);
+        unresolvedCheckInDay.current = null;
+        setUnresolvedCheckIn(null);
         setNotice(
-          data.checkIn.credited
-            ? `簽到成功，已領取 ${data.checkIn.credited} Coin。`
+          checkIn.credited
+            ? `簽到成功，已領取 ${checkIn.credited} Coin。`
             : "今天已領取，明天再來！",
         );
+        return { ...checkIn, state: "claimed" };
       } else {
         if (action === "register" || action === "restore")
           setNotice("會員已開通，可以直接使用簽到與記帳。");
@@ -198,16 +327,41 @@ export function useUser(liffId: string) {
         setPauseConfirmation(false);
       }
     } catch (e) {
-      if (signal.aborted) return;
+      if (signal.aborted) return null;
       setError(e instanceof Error ? e.message : "操作失敗，請重試。");
-      try {
-        await load(token, signal);
-      } catch {
-        /* Keep the original error; refresh remains available. */
+      if (
+        action === "checkIn" &&
+        e instanceof MembershipRequestError &&
+        [400, 403, 409].includes(e.status)
+      ) {
+        unresolvedCheckInDay.current = null;
+        setUnresolvedCheckIn(null);
+        return {
+          claim: null,
+          credited: 0,
+          day: checkInDay ?? undefined,
+          message: e.message,
+          replayed: false,
+          state: "rejected",
+        };
+      }
+      if (action === "checkIn" && checkInDay) {
+        try {
+          return await readPendingCheckIn(checkInDay, signal);
+        } catch {
+          /* Keep the original error; refresh remains available. */
+        }
+      } else {
+        try {
+          await load(token, signal);
+        } catch {
+          /* Keep the original error; refresh remains available. */
+        }
       }
     } finally {
       if (!signal.aborted) setBusy(false);
     }
+    return null;
   }
   return {
     user,
@@ -218,6 +372,7 @@ export function useUser(liffId: string) {
     error,
     pauseConfirmation,
     notice,
+    unresolvedCheckIn,
     initialize,
     refresh,
     action,

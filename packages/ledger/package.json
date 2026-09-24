@@ -8,10 +8,6 @@
       "types": "./dist/adapters/postgres.d.ts",
       "default": "./dist/adapters/postgres.js"
     },
-    "./application/ports/ledger-repository": {
-      "types": "./dist/application/ports/ledger-repository.d.ts",
-      "default": "./dist/application/ports/ledger-repository.js"
-    },
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"

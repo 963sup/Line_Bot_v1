@@ -23,6 +23,38 @@ const base = url.origin;
 const output = process.env.NAVIGATION_ARTIFACT_DIR;
 if (output) mkdirSync(output, { recursive: true });
 const storageKey = "sb-local-auth-auth-token";
+const checkInPolicy = {
+  version: "wheel-v1",
+  totalWeight: 100,
+  prizes: [
+    { code: "coin-half", amount: 0.5, weight: 60 },
+    { code: "coin-one", amount: 1, weight: 30 },
+    { code: "coin-four", amount: 4, weight: 10 },
+  ],
+};
+const claimFixtures = {
+  "coin-half": {
+    day: "2026-09-10",
+    prizeCode: "coin-half",
+    reward: 0.5,
+    policyVersion: "wheel-v1",
+    decidedAt: "2026-09-10T01:00:00.000Z",
+  },
+  "coin-one": {
+    day: "2026-09-10",
+    prizeCode: "coin-one",
+    reward: 1,
+    policyVersion: "wheel-v1",
+    decidedAt: "2026-09-10T01:01:00.000Z",
+  },
+  "coin-four": {
+    day: "2026-09-10",
+    prizeCode: "coin-four",
+    reward: 4,
+    policyVersion: "wheel-v1",
+    decidedAt: "2026-09-10T01:02:00.000Z",
+  },
+};
 const session = (name) => ({
   access_token: `${Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url")}.${Buffer.from(JSON.stringify({ sub: name, exp: 4102444800 })).toString("base64url")}.synthetic`,
   refresh_token: `synthetic-${name}`,
@@ -38,9 +70,10 @@ const browser = await chromium.launch({
 const results = [];
 let context;
 let page;
-async function fixture(status = "active", signedIn = false, profileMode = "ready") {
+async function fixture(status = "active", signedIn = false, profileMode = "ready", options = {}) {
   context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: options.viewport ?? { width: 390, height: 844 },
+    reducedMotion: options.reducedMotion ?? "no-preference",
     serviceWorkers: "block",
   });
   if (output) await context.tracing.start({ screenshots: true, snapshots: true });
@@ -49,6 +82,8 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     documents: 0,
     errors: [],
     posts: [],
+    checkInPosts: [],
+    recoveryReads: [],
     reads: [],
     status,
     linked: null,
@@ -57,7 +92,52 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     pending: null,
     stages: [],
     liffRequests: 0,
+    day: options.day ?? "2026-09-10",
+    balance: options.balance ?? 10,
+    claims: new Map(
+      options.claim
+        ? [[options.claim.day, { ...options.claim }]]
+        : options.claimedToday
+          ? [["2026-09-10", { ...claimFixtures["coin-one"] }]]
+          : [],
+    ),
+    nextClaims: (options.nextClaims ?? [{ ...claimFixtures["coin-one"] }]).map((claim) => ({
+      ...claim,
+    })),
+    failCheckInBeforeCommit: options.failCheckInBeforeCommit ?? false,
+    dropCheckInBeforeCommit: options.dropCheckInBeforeCommit ?? false,
+    failCheckInAfterCommit: options.failCheckInAfterCommit ?? false,
+    recoveryFailuresRemaining: options.recoveryFailures ?? 0,
+    dayAfterCommit: options.dayAfterCommit ?? null,
   };
+  const coins = (day = state.day) => {
+    const claim = state.claims.get(day) ?? null;
+    return {
+      balance: state.balance,
+      day: state.day,
+      claimedToday: Boolean(state.claims.get(state.day)),
+      claim: state.claims.get(state.day) ?? null,
+      policy: checkInPolicy,
+    };
+  };
+  const member = () =>
+    state.status
+      ? {
+          id: "synthetic-line",
+          status: state.status,
+          googleEmail: state.linked,
+          coins: coins(),
+        }
+      : null;
+  const checkInResponse = (claim, credited, replayed) => ({
+    member: member(),
+    checkIn: {
+      claim,
+      credited,
+      replayed,
+      coins: coins(),
+    },
+  });
   page.on("pageerror", (error) => state.errors.push(error.message));
   page.on("request", (request) => {
     if (request.resourceType() === "document") state.documents++;
@@ -110,14 +190,53 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     }
     if (target.pathname === "/api/membership") {
       const google = target.searchParams.get("google") === "link";
+      const checkInDay = target.searchParams.get("checkInDay");
       const candidate =
         request.headers().authorization === `Bearer ${session("second").access_token}`
           ? "second@example.test"
           : "first@example.test";
       if (request.method() === "POST") {
-        state.posts.push(request.postDataJSON());
+        const body = request.postDataJSON();
+        state.posts.push(body);
+        if (body.action === "checkIn") {
+          state.checkInPosts.push(body);
+          if (state.dropCheckInBeforeCommit) {
+            state.dropCheckInBeforeCommit = false;
+            return route.fulfill({ status: 502, json: { error: "連線中斷，請確認結果。" } });
+          }
+          if (state.failCheckInBeforeCommit) {
+            return route.fulfill({ status: 403, json: { error: "今日簽到尚未提交。" } });
+          }
+          if (!body.expectedDay || body.expectedDay !== state.day) {
+            return route.fulfill({ status: 409, json: { error: "簽到日期已更新，請重新整理。" } });
+          }
+          const replayed = state.claims.has(body.expectedDay);
+          const claim = state.claims.get(body.expectedDay) ?? {
+            ...(state.nextClaims.shift() ?? claimFixtures["coin-one"]),
+            day: body.expectedDay,
+          };
+          if (!replayed) {
+            state.claims.set(body.expectedDay, claim);
+            state.balance += claim.reward;
+          }
+          if (state.failCheckInAfterCommit) {
+            if (state.dayAfterCommit) state.day = state.dayAfterCommit;
+            return route.fulfill({ status: 502, json: { error: "回應遺失，請讀回結果。" } });
+          }
+          return route.fulfill({
+            json: checkInResponse(claim, replayed ? 0 : claim.reward, replayed),
+          });
+        }
         state.linked = candidate;
       } else state.reads.push({ google, authorization: request.headers().authorization });
+      if (checkInDay) {
+        state.recoveryReads.push(checkInDay);
+        if (state.recoveryFailuresRemaining > 0) {
+          state.recoveryFailuresRemaining -= 1;
+          return route.fulfill({ status: 502, json: { error: "讀回結果暫時失敗。" } });
+        }
+        return route.fulfill({ json: { claim: state.claims.get(checkInDay) ?? null } });
+      }
       if (state.hold) {
         state.hold = false;
         await new Promise((resolve) => {
@@ -126,14 +245,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
       }
       return route.fulfill({
         json: {
-          member: state.status
-            ? {
-                id: "synthetic-line",
-                status: state.status,
-                googleEmail: state.linked,
-                coins: { balance: 10, dailyReward: 5, claimedToday: false, day: "2026-09-10" },
-              }
-            : null,
+          member: member(),
           googleEmail: google ? candidate : null,
         },
       });
@@ -159,6 +271,38 @@ async function finish(name, state) {
 }
 const button = (name) => page.getByRole("button", { name, exact: true });
 const link = (name) => page.getByRole("link", { name, exact: true });
+const dialog = () => page.getByRole("dialog", { name: "每日簽到轉盤" });
+const resultLookupButton = () =>
+  dialog().getByRole("button", { name: "讀取原簽到結果", exact: true });
+const main = () => page.getByRole("main");
+async function closeDialogWithKeyboard() {
+  await expect(dialog()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog()).toHaveCount(0);
+}
+async function assertNoHorizontalOverflow() {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    )
+    .toBeLessThanOrEqual(1);
+}
+async function openCheckInResult() {
+  await expect(dialog()).toBeVisible();
+  await expect(dialog()).toContainText(/抽中|已領取|尚未回來/);
+}
+async function assertWheelMarker(claim) {
+  const amount = claim.reward.toLocaleString("zh-TW", { maximumFractionDigits: 1 });
+  await expect(
+    dialog().getByRole("img", { name: `轉盤結果 ${amount} Coin`, exact: true }),
+  ).toBeVisible();
+  await expect(dialog().locator("[data-prize-code]")).toHaveAttribute(
+    "data-prize-code",
+    claim.prizeCode,
+  );
+}
 try {
   for (const profileMode of ["hold", "fail"]) {
     const state = await fixture("active", false, profileMode);
@@ -270,6 +414,147 @@ try {
     assert.equal(state.liffRequests, 0);
     assert.equal(state.posts.length, 0);
     await finish("Missing handoff fails without LINE login", state);
+  }
+  for (const prizeCode of ["coin-half", "coin-one", "coin-four"]) {
+    const claim = { ...claimFixtures[prizeCode] };
+    const state = await fixture("active", false, "ready", {
+      nextClaims: [claim],
+      reducedMotion: "no-preference",
+    });
+    await page.goto(base + "/settings");
+    await expect(main()).toContainText("每日簽到轉盤");
+    await expect(main()).toContainText("0.5 Coin");
+    await expect(main()).toContainText("60%");
+    await expect(main()).toContainText("1 Coin");
+    await expect(main()).toContainText("30%");
+    await expect(main()).toContainText("4 Coin");
+    await expect(main()).toContainText("10%");
+    await button("簽到並轉動轉盤").click();
+    await openCheckInResult();
+    await expect(dialog()).toContainText(
+      `2026-09-10 抽中 ${claim.reward.toLocaleString("zh-TW", { maximumFractionDigits: 1 })} Coin`,
+    );
+    await assertWheelMarker(claim);
+    await expect(dialog().getByRole("status").locator("strong")).toContainText(
+      `${claim.reward.toLocaleString("zh-TW", { maximumFractionDigits: 1 })} Coin`,
+    );
+    assert.deepEqual(state.checkInPosts, [{ action: "checkIn", expectedDay: "2026-09-10" }]);
+    assert.equal(state.recoveryReads.length, 0);
+    if (prizeCode === "coin-four" && output)
+      await dialog().screenshot({
+        path: path.join(output, "membership-wheel-coin-four.png"),
+      });
+    await button("關閉").click();
+    await expect(button("查看今日簽到結果")).toBeEnabled();
+    await finish(`Daily wheel awards ${prizeCode}`, state);
+  }
+  {
+    const claim = { ...claimFixtures["coin-four"] };
+    const state = await fixture("active", false, "ready", {
+      claim,
+      claimedToday: true,
+      reducedMotion: "reduce",
+    });
+    await page.goto(base + "/settings");
+    await expect(button("查看今日簽到結果")).toBeEnabled();
+    await page.reload();
+    await expect(button("查看今日簽到結果")).toBeEnabled();
+    await button("查看今日簽到結果").click();
+    await expect(dialog()).toContainText("2026-09-10 抽中 4 Coin");
+    await assertWheelMarker(claim);
+    assert.equal(state.checkInPosts.length, 0);
+    await closeDialogWithKeyboard();
+    await expect(button("查看今日簽到結果")).toBeFocused();
+    await finish("Claimed check-in reopens without a second POST", state);
+  }
+  {
+    const state = await fixture("active", false, "ready", {
+      nextClaims: [{ ...claimFixtures["coin-one"] }],
+      dropCheckInBeforeCommit: true,
+      reducedMotion: "reduce",
+    });
+    await page.goto(base + "/settings");
+    await button("簽到並轉動轉盤").click();
+    await expect(dialog()).toContainText("尚無已完成的簽到");
+    assert.equal(state.checkInPosts.length, 1);
+    assert.deepEqual(state.recoveryReads, ["2026-09-10"]);
+    await button("重新送出原日簽到").click();
+    await expect(dialog()).toContainText("2026-09-10 抽中 1 Coin");
+    await assertWheelMarker(claimFixtures["coin-one"]);
+    assert.deepEqual(state.checkInPosts, [
+      { action: "checkIn", expectedDay: "2026-09-10" },
+      { action: "checkIn", expectedDay: "2026-09-10" },
+    ]);
+    await finish("Uncommitted request can explicitly retry original day", state);
+  }
+  {
+    const state = await fixture("active", false, "ready", {
+      nextClaims: [{ ...claimFixtures["coin-half"] }],
+      failCheckInAfterCommit: true,
+      dayAfterCommit: "2026-09-11",
+      reducedMotion: "reduce",
+    });
+    await page.goto(base + "/settings");
+    await button("簽到並轉動轉盤").click();
+    await openCheckInResult();
+    await expect(dialog()).toContainText("2026-09-10 抽中 0.5 Coin");
+    await assertWheelMarker(claimFixtures["coin-half"]);
+    await expect(main()).toContainText("已讀回今日簽到結果，未重新抽獎。");
+    assert.deepEqual(state.checkInPosts, [{ action: "checkIn", expectedDay: "2026-09-10" }]);
+    assert.deepEqual(state.recoveryReads, ["2026-09-10"]);
+    await finish("Committed check-in loss recovers original day across midnight", state);
+  }
+  {
+    const state = await fixture("active", false, "ready", {
+      failCheckInBeforeCommit: true,
+      reducedMotion: "reduce",
+    });
+    await page.goto(base + "/settings");
+    assert.equal(state.checkInPosts.length, 0, "Check-in must not auto POST on load");
+    await button("簽到並轉動轉盤").click();
+    await expect(dialog()).toContainText("今日簽到尚未提交。");
+    await expect(main()).toContainText("今日簽到尚未提交。");
+    await expect(dialog()).not.toContainText("今日簽到結果尚未回來");
+    await expect(dialog()).not.toContainText("抽中");
+    await expect(dialog().getByRole("status").locator("strong")).toHaveCount(0);
+    assert.deepEqual(state.checkInPosts, [{ action: "checkIn", expectedDay: "2026-09-10" }]);
+    assert.equal(state.recoveryReads.length, 0);
+    await finish("Rejected check-in shows rejection without awarding", state);
+  }
+  {
+    const state = await fixture("active", false, "ready", {
+      nextClaims: [{ ...claimFixtures["coin-half"] }],
+      failCheckInAfterCommit: true,
+      recoveryFailures: 1,
+      dayAfterCommit: "2026-09-11",
+      reducedMotion: "reduce",
+    });
+    await page.goto(base + "/settings");
+    await button("簽到並轉動轉盤").click();
+    await expect(dialog()).toContainText("簽到請求未確認；目前沒有可顯示的入帳結果。");
+    await expect(resultLookupButton()).toBeEnabled();
+    assert.deepEqual(state.checkInPosts, [{ action: "checkIn", expectedDay: "2026-09-10" }]);
+    assert.deepEqual(state.recoveryReads, ["2026-09-10"]);
+    await resultLookupButton().click();
+    await expect(dialog()).toContainText("2026-09-10 抽中 0.5 Coin");
+    await assertWheelMarker(claimFixtures["coin-half"]);
+    assert.deepEqual(state.checkInPosts, [{ action: "checkIn", expectedDay: "2026-09-10" }]);
+    assert.deepEqual(state.recoveryReads, ["2026-09-10", "2026-09-10"]);
+    await finish("Unknown check-in retry reads original day without second POST", state);
+  }
+  for (const width of [320, 390]) {
+    const state = await fixture("active", false, "ready", {
+      nextClaims: [{ ...claimFixtures["coin-one"] }],
+      reducedMotion: "reduce",
+      viewport: { width, height: 844 },
+    });
+    await page.goto(base + "/settings");
+    await assertNoHorizontalOverflow();
+    await button("簽到並轉動轉盤").click();
+    await openCheckInResult();
+    await assertNoHorizontalOverflow();
+    await button("關閉").click();
+    await finish(`Reduced-motion wheel fits ${width}px viewport`, state);
   }
   console.log(JSON.stringify(results, null, 2));
   if (output)

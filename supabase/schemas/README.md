@@ -73,6 +73,7 @@ packages/<owner>
 704_project_repository_references.sql
 
 800_asset_definitions.sql
+805_daily_check_in_claims.sql
 810_ledger_entries.sql
 
 820_expenses.sql
@@ -136,7 +137,7 @@ Activating any reserved file requires removing the reserved marker and updating 
 - Identity/Access owns typed RoleAssignment, feature permission grants/administration and governance evidence.
 - Repository owns Repository identity/access/star, Label, Repository Milestone, Issue/IssueLabel and Discussion objects.
 - Project owns Project, ProjectItem references, WBS, Project Milestone and explicit Project→Repository reference. Referenced Issue remains Repository authority.
-- Asset owns denomination definition; Ledger owns append-only value facts; Wallet remains derived and has no writable balance table.
+- Asset owns denomination definition; DailyCheckIn owns durable reward outcomes; Ledger owns append-only value facts; Wallet remains derived and has no writable balance table.
 - Attendance owns attendance/workplace facts and outbox; Notifications and Partner Directory own their own durable relations.
 - Workforce, Payroll and Audit `870–891` are reserved target namespaces until their activation gates are met; they do not yet own current persisted relations in this directory.
 

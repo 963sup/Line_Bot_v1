@@ -182,3 +182,36 @@ revoke all on function app_private.protect_last_permission_administrator()
 create trigger last_permission_administrator
 before delete or update on app_private.permission_administrators
 for each row execute function app_private.protect_last_permission_administrator();
+
+
+-- DailyCheckIn owns reward outcome; Ledger owns value fact. They must commit together.
+create function app_private.enforce_daily_check_in_claim_ledger_parity()
+returns trigger
+language plpgsql
+security invoker
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+begin
+  if not exists (
+    select 1
+    from app_private.asset_ledger_entries l
+    where l.member_id = new.user_id
+      and l.asset_code = new.reward_asset_code
+      and l.source_context = 'membership'
+      and l.source_type = 'daily_checkin'
+      and l.source_ref = new.business_day
+      and l.business_day = new.business_day
+      and l.amount_units = new.reward_amount_units
+  ) then
+    raise exception 'daily_check_in_claim_ledger_mismatch' using errcode = '23514';
+  end if;
+  return new;
+end
+$function$;
+revoke all on function app_private.enforce_daily_check_in_claim_ledger_parity()
+  from public, anon, authenticated, line_app;
+grant execute on function app_private.enforce_daily_check_in_claim_ledger_parity() to line_app;
+create constraint trigger daily_check_in_claim_requires_ledger
+after insert on app_private.daily_check_in_claims
+deferrable initially deferred for each row
+execute function app_private.enforce_daily_check_in_claim_ledger_parity();

@@ -1,5 +1,23 @@
-/** DailyCheckIn owns the reward amount and Taipei business-day policy. */
-export const DAILY_CHECK_IN_COIN_REWARD = 1;
+/** DailyCheckIn owns the reward policy and Taipei business-day policy. */
+export const DAILY_CHECK_IN_POLICY = {
+  version: "wheel-v1",
+  totalWeight: 100,
+  prizes: [
+    { code: "coin-half", amount: 0.5, weight: 60 },
+    { code: "coin-one", amount: 1, weight: 30 },
+    { code: "coin-four", amount: 4, weight: 10 },
+  ],
+} as const;
+
+export type DailyCheckInPrizeCode = (typeof DAILY_CHECK_IN_POLICY.prizes)[number]["code"];
+
+export type DailyCheckInClaim = Readonly<{
+  day: string;
+  prizeCode: DailyCheckInPrizeCode;
+  reward: number;
+  policyVersion: typeof DAILY_CHECK_IN_POLICY.version;
+  decidedAt: number;
+}>;
 
 /**
  * Published origin identity for the existing Ledger V1 protocol.
@@ -19,9 +37,11 @@ const calendar = new Intl.DateTimeFormat("en-CA", {
 });
 
 export class DailyCheckInError extends Error {
-  readonly status = 400;
-  constructor() {
-    super("會員簽到時間不正確。");
+  constructor(
+    readonly status = 400,
+    message = "會員簽到時間不正確。",
+  ) {
+    super(message);
     this.name = "DailyCheckInError";
   }
 }
@@ -34,4 +54,28 @@ export function dailyCheckInDay(now: number): string {
   return ["year", "month", "day"]
     .map((type) => parts.find((part) => part.type === type)!.value)
     .join("-");
+}
+
+export function parseDailyCheckInDay(value: unknown): string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new DailyCheckInError();
+  }
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const verified = new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10);
+  if (verified !== value) throw new DailyCheckInError();
+  return value;
+}
+
+export function selectDailyCheckInPrize(ticket: number) {
+  if (!Number.isSafeInteger(ticket) || ticket < 0 || ticket >= DAILY_CHECK_IN_POLICY.totalWeight) {
+    throw new DailyCheckInError(500, "簽到獎勵設定不正確。");
+  }
+  let cursor = ticket;
+  for (const prize of DAILY_CHECK_IN_POLICY.prizes) {
+    if (cursor < prize.weight) return prize;
+    cursor -= prize.weight;
+  }
+  throw new DailyCheckInError(500, "簽到獎勵設定不正確。");
 }

@@ -8,6 +8,7 @@ type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type UserRequests = {
   activeLineUser: UserUseCases["activeLineUser"];
   checkIn: DailyCheckIn["checkIn"];
+  readClaim: DailyCheckIn["readClaim"];
   pauseUser: UserUseCases["pauseUser"];
   updateLogin: UserUseCases["updateLogin"];
   getUser(subject: string): Promise<(AccountView & { coins: unknown }) | null>;
@@ -24,6 +25,12 @@ export function createUserRequest(dependencies: UserRequests) {
 async function get(request: Request, dependencies: UserRequests) {
   try {
     const subject = await dependencies.requestIdentity(request);
+    const query = new URL(request.url).searchParams;
+    if (query.has("checkInDay")) {
+      return jsonResponse({
+        claim: await dependencies.readClaim(subject, query.get("checkInDay")),
+      });
+    }
     const account = await dependencies.getUser(subject);
     // Published membership routes retain the historical wire field.
     return jsonResponse({
@@ -42,7 +49,7 @@ async function post(request: Request, dependencies: UserRequests) {
       return jsonResponse({ member: await dependencies.pauseUser(subject) });
     }
     if (body.action === "checkIn") {
-      return jsonResponse(await dependencies.checkIn(subject));
+      return jsonResponse(await dependencies.checkIn(subject, body.expectedDay));
     }
     if (body.action === "updateLogin") {
       return jsonResponse({ member: await dependencies.updateLogin(subject, body.login) });

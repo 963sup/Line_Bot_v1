@@ -195,7 +195,6 @@
         "@line-work/enterprise",
         "@line-work/expense",
         "@line-work/identity-access",
-        "@line-work/ledger",
         "@line-work/line-channel",
         "@line-work/organization",
         "@line-work/partners",

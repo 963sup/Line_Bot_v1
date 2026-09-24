@@ -1,6 +1,7 @@
 "use client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { miniAppEntryUrl } from "../../shared/presentation/entry-route";
+import { DailyCheckInWheel } from "./daily-check-in-wheel";
 import { GoogleConfirmation, GoogleConnection } from "./google-connection";
 import { useUser } from "./use-user";
 
@@ -20,6 +21,7 @@ export default function MemberPanel({
     error,
     pauseConfirmation,
     notice,
+    unresolvedCheckIn,
     initialize,
     refresh,
     action,
@@ -56,29 +58,14 @@ export default function MemberPanel({
       )}
       {notice && <p role="status">{notice}</p>}
       {user && (
-        <section className="membership-coins" aria-labelledby="coin-title">
-          <h2 id="coin-title">Coin 餘額</h2>
-          <p className="coin-balance">
-            <strong>{user.coins.balance.toLocaleString("zh-TW")}</strong> Coin
-          </p>
-          <p className="expense-hint">
-            每日簽到領 {user.coins.dailyReward} Coin · 台灣時間 00:00 換日
-          </p>
-          {user.status === "active" ? (
-            <button disabled={busy || user.coins.claimedToday} onClick={() => action("checkIn")}>
-              {user.coins.claimedToday ? "今日已領取 ✓" : `簽到領取 ${user.coins.dailyReward} Coin`}
-            </button>
-          ) : (
-            <p>
-              {user.status === "paused"
-                ? "恢復會員功能後，即可每日領取。"
-                : "會員停權期間無法領取，現有 Coin 保留。"}
-            </p>
-          )}
-          {user.coins.claimedToday && (
-            <p className="expense-hint">{user.coins.day} 已領取；隔日可重新整理狀態後簽到。</p>
-          )}
-        </section>
+        <DailyCheckInWheel
+          active={user.status === "active"}
+          busy={busy}
+          coins={user.coins}
+          identityKey={user.id}
+          unresolvedDay={unresolvedCheckIn}
+          onCheckIn={(retryOriginal) => action("checkIn", { retryOriginal })}
+        />
       )}
       {token && !user && !busy && !error && (
         <section>
