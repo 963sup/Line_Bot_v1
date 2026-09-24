@@ -4,7 +4,7 @@
 
 ## FPT 語意與 GitHub Mobile 布局目標
 
-狀態：以下是使用者指定的後續實作目標；既有 Current URL 與能力標記仍描述現在。先完成本樹 29 份 AGENTS，再按 slice 實作；本文件更新本身不代表 UI 已改版。
+狀態：四個主目的地 Home / Inbox / Explore / Profile 已作為 current app-shell 契約落地；其餘 GitHub Mobile pattern 仍只在本地 owner/contract 真實存在時逐 slice 採用。文件或 benchmark 出現一個上游 UI 項目，不代表本產品已具備該 capability。
 
 兩條對照線分開：FPT 提供 resource/owner/relationship、query/mutation、identity/locator 與版本證據；GitHub Mobile 提供手機導覽與資訊層級。不能從 GraphQL schema 推導視覺布局，也不能從畫面推導授權或資料契約。
 
