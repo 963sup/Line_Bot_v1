@@ -15,10 +15,7 @@ const json = (body, status = 200) =>
 
 test("production deploy requires explicit live authorization and exact SHA", () => {
   assert.throws(() => parseProductionDeployArgs(["--sha", SHA]), /--live/);
-  assert.throws(
-    () => parseProductionDeployArgs(["--live", "--sha", "main"]),
-    /exact commit SHA/,
-  );
+  assert.throws(() => parseProductionDeployArgs(["--live", "--sha", "main"]), /exact commit SHA/);
   assert.deepEqual(parseProductionDeployArgs(["--live", "--sha", SHA]), { sha: SHA });
 });
 

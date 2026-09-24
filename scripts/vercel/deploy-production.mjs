@@ -28,7 +28,8 @@ export function parseProductionDeployArgs(argv) {
     throw new Error(`Unknown argument: ${arg}`);
   }
   if (!live) throw new Error("Production deployment requires explicit --live authorization.");
-  if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("Production deployment requires an exact commit SHA.");
+  if (!/^[0-9a-f]{40}$/.test(sha))
+    throw new Error("Production deployment requires an exact commit SHA.");
   return { sha };
 }
 
@@ -70,7 +71,8 @@ export async function deployProduction({
   pollMilliseconds = 5_000,
 }) {
   if (!token) throw new Error("VERCEL_TOKEN is required for production deployment.");
-  if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("Production deployment requires an exact commit SHA.");
+  if (!/^[0-9a-f]{40}$/.test(sha))
+    throw new Error("Production deployment requires an exact commit SHA.");
 
   const target = VERCEL_PRODUCTION_TARGET;
   const teamQuery = `?teamId=${encodeURIComponent(target.teamId)}`;
