@@ -15,42 +15,36 @@ export default function Page() {
           icon="●"
           tone="green"
           title="Repositories & Issues"
-          description="Repository 工作台、Issue 指派與狀態"
         />
         <ActionRow
           href="/organizations"
           icon="▦"
           tone="orange"
           title="Organizations"
-          description="Organization 與成員治理"
         />
         <ActionRow
           href="/team"
           icon="◫"
           tone="purple"
           title="Teams"
-          description="Organization-scoped Team 協作"
         />
         <ActionRow
           href="/attendance"
           icon="◷"
           tone="blue"
           title="Attendance"
-          description="打卡、出勤狀態與工作場所"
         />
         <ActionRow
           href="/expenses"
           icon="$"
           tone="yellow"
           title="Expenses"
-          description="費用紀錄與既有操作"
         />
         <ActionRow
           href="/enterprises"
           icon="◇"
           tone="pink"
           title="Enterprise"
-          description="Enterprise 與跨 Organization 治理"
         />
       </div>
 

@@ -1996,11 +1996,28 @@ summary:focus-visible {
 }
 
 .app-shell .nav-icon {
+  display: grid;
+  width: 52px;
+  height: 32px;
+  place-items: center;
+  border-radius: 999px;
   font-size: 21px;
 }
 
 .app-shell .nav-label {
   font-size: 12px;
+}
+
+.app-shell .work-navigation a[aria-current="page"] {
+  background: transparent;
+}
+
+.app-shell .work-navigation a[aria-current="page"] .nav-icon {
+  background: #1f6feb3d;
+}
+
+.app-shell .home-resource-list .action-chevron {
+  display: none;
 }
 
 @media (hover: hover) {
@@ -2014,14 +2031,11 @@ summary:focus-visible {
 
 @media (max-width: 600px) {
   .app-shell .app-shell-brand {
-    padding-block: 10px;
-  }
-
-  .app-shell .shell-wordmark {
-    font-size: 13px;
+    display: none;
   }
 
   .app-shell .app-content {
+    padding-top: 30px;
     padding-bottom: 34px;
   }
 }
