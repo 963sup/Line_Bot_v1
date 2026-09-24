@@ -1687,3 +1687,374 @@ summary:focus-visible {
     width: 100%;
   }
 }
+
+/* Authenticated mobile shell: GitHub-Mobile-inspired hierarchy using local product semantics. */
+.app-shell {
+  --ink: #f0f6fc;
+  --muted: #8b949e;
+  --green: #58a6ff;
+  --green-strong: #79c0ff;
+  --green-soft: #1f6feb2e;
+  --line: #30363d;
+  --surface: #161b22;
+  --surface-muted: #21262d;
+  --canvas: #0d1117;
+  --danger: #f85149;
+  color-scheme: dark;
+  color: var(--ink);
+  background: var(--canvas);
+}
+
+.app-shell .app-shell-brand {
+  border-color: var(--line);
+  background: #0d1117f2;
+}
+
+.app-shell .shell-wordmark {
+  color: var(--ink);
+}
+
+.app-shell .shell-wordmark span {
+  background: #21262d;
+  color: var(--green-strong);
+}
+
+.app-shell .shell-avatar {
+  color: var(--green-strong);
+  background: #21262d;
+}
+
+.app-shell .app-content {
+  padding-top: 22px;
+}
+
+.app-shell .app-content section,
+.app-shell .app-content form,
+.app-shell .attendance-current,
+.app-shell .quick-actions > *,
+.app-shell .crud-toolbar,
+.app-shell .scope-management-nav,
+.app-shell .diary-entry {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-shell .quick-actions .unavailable-action,
+.app-shell .crud-toolbar,
+.app-shell .scope-management-nav {
+  background: var(--surface-muted);
+}
+
+.app-shell .attendance-hero {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.app-shell .attendance-hero p,
+.app-shell .attendance-hero small,
+.app-shell .quick-actions span:last-child,
+.app-shell .crud-toolbar p {
+  color: var(--muted);
+}
+
+.app-shell .page-heading {
+  min-height: 56px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.app-shell .page-heading h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.app-shell .page-heading p,
+.app-shell .section-heading p {
+  color: var(--muted);
+}
+
+.app-shell .section-heading {
+  margin: 26px 0 12px;
+}
+
+.app-shell .section-heading h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.app-shell .menu-group {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.app-shell .menu-group .action-row,
+.app-shell .action-row {
+  min-height: 72px;
+  padding: 13px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.app-shell .menu-group .action-row + .action-row {
+  border-top: 0;
+}
+
+.app-shell .action-row {
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.app-shell .action-row-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.app-shell .action-row strong {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 550;
+}
+
+.app-shell .action-row small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.app-shell .action-row-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 7px;
+  background: #30363d;
+  color: #f0f6fc;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.app-shell .action-row-icon-green {
+  background: #238636;
+}
+
+.app-shell .action-row-icon-blue {
+  background: #1f6feb;
+}
+
+.app-shell .action-row-icon-purple {
+  background: #8957e5;
+}
+
+.app-shell .action-row-icon-orange {
+  background: #d29922;
+}
+
+.app-shell .action-row-icon-yellow {
+  background: #9e6a03;
+}
+
+.app-shell .action-row-icon-pink {
+  background: #bf4b8a;
+}
+
+.app-shell .action-chevron {
+  color: #6e7681;
+}
+
+.app-shell .empty-copy,
+.app-shell .discovery-boundary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.app-shell .discovery-list {
+  display: grid;
+  gap: 12px;
+}
+
+.app-shell .discovery-item,
+.app-shell .detail-card,
+.app-shell .notification-detail,
+.app-shell .page-state {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.app-shell .discovery-copy p,
+.app-shell .discovery-meta,
+.app-shell .notification-item small {
+  color: var(--muted);
+}
+
+.app-shell .secondary-link,
+.app-shell .app-content button.secondary {
+  border: 1px solid var(--line);
+  background: #21262d;
+  color: var(--ink);
+}
+
+.app-shell .app-content button {
+  background: #238636;
+  color: #fff;
+}
+
+.app-shell .notification-filters {
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.app-shell .notification-filters a {
+  min-height: 44px;
+  border-color: var(--line);
+  background: #21262d;
+  color: var(--ink);
+}
+
+.app-shell .notification-filters a[aria-current="page"] {
+  border-color: #6e7681;
+  background: #30363d;
+  color: #fff;
+}
+
+.app-shell .notification-item,
+.app-shell .issue-list-item {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-shell .notification-state {
+  background: #21262d;
+  color: var(--muted);
+}
+
+.app-shell .notification-state.is-unread {
+  background: #1f6feb33;
+  color: var(--green-strong);
+}
+
+.app-shell .membership-panel {
+  border-color: var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.app-shell .membership-emblem {
+  border-color: var(--line);
+  background: #21262d;
+  color: var(--green-strong);
+  box-shadow: none;
+}
+
+.app-shell .membership-hero > p:last-child,
+.app-shell .membership-panel p {
+  color: var(--muted);
+}
+
+.app-shell .app-content .membership-panel section,
+.app-shell .app-content .membership-panel .membership-coins {
+  border-color: var(--line);
+  background: #0d1117;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.app-shell .app-content input,
+.app-shell .app-content select,
+.app-shell .app-content textarea {
+  border-color: var(--line);
+  background: #0d1117;
+  color: var(--ink);
+}
+
+.app-shell .work-navigation {
+  border-color: var(--line);
+  background: #161b22f5;
+  box-shadow: 0 -8px 26px #0008;
+}
+
+.app-shell .work-navigation a {
+  color: #8b949e;
+}
+
+.app-shell .work-navigation a[aria-current="page"] {
+  background: #1f6feb2e;
+  color: #79c0ff;
+}
+
+.app-shell .nav-icon {
+  display: grid;
+  width: 52px;
+  height: 32px;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 21px;
+}
+
+.app-shell .nav-label {
+  font-size: 12px;
+}
+
+.app-shell .work-navigation a[aria-current="page"] {
+  background: transparent;
+}
+
+.app-shell .work-navigation a[aria-current="page"] .nav-icon {
+  background: #1f6feb3d;
+}
+
+.app-shell .home-resource-list .action-chevron {
+  display: none;
+}
+
+.app-shell .crud-detail > article {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-shell .crud-lifecycle-note {
+  border-color: #6e7681;
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.app-shell .app-content .segmented-control button[aria-pressed="true"] {
+  border: 1px solid #58a6ff;
+  background: #30363d;
+  color: #fff;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .app-shell .action-row:hover,
+  .app-shell .issue-list-item:hover,
+  .app-shell .notification-item:hover,
+  .app-shell .work-navigation a:hover {
+    background: #21262d;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-shell .app-shell-brand {
+    display: none;
+  }
+
+  .app-shell .app-content {
+    padding-top: 30px;
+    padding-bottom: 34px;
+  }
+}

@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   return (
     <AppShell>
-      <PageHeading title="探索" description="全域探索入口；目前只呈現已完成的儲存庫探索能力。" />
+      <PageHeading title="Explore" />
       <SectionHeading
-        title="儲存庫"
-        description="瀏覽目前可存取的儲存庫，並用 Star 保存自己的關注。"
+        title="Discover"
+        description="瀏覽目前有權存取的 Repository；Star 只保存個人關注，不增加權限。"
       />
       <DiscoveryPanel liffId={lineMiniApp().liffId} />
     </AppShell>
