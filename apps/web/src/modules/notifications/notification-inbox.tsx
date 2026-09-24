@@ -12,9 +12,11 @@ type NotificationPage = { items: Notification[] };
 export default function NotificationInbox({
   liffId,
   notificationId,
+  view = "all",
 }: {
   liffId: string;
   notificationId?: string;
+  view?: "all" | "unread";
 }) {
   const [page, setPage] = useState<NotificationPage | null>(null);
   const [busy, setBusy] = useState(false);
@@ -30,6 +32,7 @@ export default function NotificationInbox({
       if (!token || ticket !== generation.current) return;
       const query = new URLSearchParams();
       if (notificationId) query.set("id", notificationId);
+      if (!notificationId && view === "unread") query.set("unread", "1");
       const response = await fetch(`/api/notifications${query.size ? `?${query}` : ""}`, {
         headers: { "x-line-token": token },
         cache: "no-store",
@@ -97,10 +100,25 @@ export default function NotificationInbox({
     <>
       <PageHeading title="通知" description="查看與你相關的 Issue、Discussion 與系統通知。" />
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={() => setBusy(false)} />
-      {notificationId && (
-        <Link className="back-link" href="/notifications">
+      {notificationId ? (
+        <Link
+          className="back-link"
+          href={view === "unread" ? "/notifications?notificationView=unread" : "/notifications"}
+        >
           ← 返回通知列表
         </Link>
+      ) : (
+        <nav className="notification-filters" aria-label="通知檢視">
+          <Link href="/notifications" aria-current={view === "all" ? "page" : undefined}>
+            全部
+          </Link>
+          <Link
+            href="/notifications?notificationView=unread"
+            aria-current={view === "unread" ? "page" : undefined}
+          >
+            未讀
+          </Link>
+        </nav>
       )}
       {busy && <p role="status">正在更新通知…</p>}
       {error && (
@@ -141,7 +159,9 @@ export default function NotificationInbox({
             <li key={item.id}>
               <Link
                 className="notification-item"
-                href={`/notifications/${encodeURIComponent(item.id)}`}
+                href={`/notifications/${encodeURIComponent(item.id)}${
+                  view === "unread" ? "?notificationView=unread" : ""
+                }`}
               >
                 <span>
                   <strong>{item.title}</strong>
