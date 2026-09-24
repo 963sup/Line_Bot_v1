@@ -83,16 +83,25 @@ export function ActionRow({
   href,
   title,
   description,
+  icon,
+  tone = "neutral",
 }: {
   href: string;
   title: string;
-  description: string;
+  description?: string;
+  icon?: string;
+  tone?: "neutral" | "green" | "blue" | "purple" | "orange" | "yellow" | "pink";
 }) {
   return (
     <Link className="action-row" href={href}>
-      <span>
+      {icon && (
+        <span className={`action-row-icon action-row-icon-${tone}`} aria-hidden="true">
+          {icon}
+        </span>
+      )}
+      <span className="action-row-copy">
         <strong>{title}</strong>
-        <small>{description}</small>
+        {description && <small>{description}</small>}
       </span>
       <span className="action-chevron" aria-hidden="true">
         ›
