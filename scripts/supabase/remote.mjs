@@ -15,6 +15,14 @@ const accountLoginSchemaSql = readFileSync(
   new URL("supabase/schemas/101_account_logins.sql", root),
   "utf8",
 );
+const dailyCheckInClaimSchemaSql = readFileSync(
+  new URL("supabase/schemas/805_daily_check_in_claims.sql", root),
+  "utf8",
+);
+const crossOwnerConstraintSchemaSql = readFileSync(
+  new URL("supabase/schemas/910_cross_owner_constraints.sql", root),
+  "utf8",
+);
 const permissionDefinitionSchemaSql = readFileSync(
   new URL("supabase/schemas/510_permission_definitions.sql", root),
   "utf8",
@@ -75,6 +83,44 @@ select
   ) as line_app_execute
 from pg_class c
 where c.oid='app_private.account_logins'::regclass;
+`;
+const dailyCheckInCompatibilityStateSql = `
+select
+  to_regclass('app_private.daily_check_in_claims') is not null as table_exists,
+  to_regprocedure('app_private.enforce_daily_check_in_claim_ledger_parity()') is not null as function_exists,
+  exists(
+    select 1 from pg_trigger
+    where tgname='daily_check_in_claim_requires_ledger'
+      and not tgisinternal
+  ) as trigger_exists;
+`;
+const dailyCheckInCompatibilityAcceptanceSql = `
+select
+  c.relrowsecurity as rls_enabled,
+  has_table_privilege('line_app','app_private.daily_check_in_claims','SELECT') as line_app_select,
+  has_table_privilege('line_app','app_private.daily_check_in_claims','INSERT') as line_app_insert,
+  has_table_privilege('anon','app_private.daily_check_in_claims','SELECT') as anon_select,
+  has_table_privilege('authenticated','app_private.daily_check_in_claims','SELECT') as authenticated_select,
+  has_function_privilege(
+    'line_app',
+    'app_private.enforce_daily_check_in_claim_ledger_parity()',
+    'EXECUTE'
+  ) as line_app_execute,
+  exists(
+    select 1 from pg_trigger
+    where tgname='daily_check_in_claim_requires_ledger'
+      and tgrelid='app_private.daily_check_in_claims'::regclass
+      and not tgisinternal
+      and tgenabled <> 'D'
+  ) as parity_trigger_enabled,
+  exists(
+    select 1 from pg_constraint
+    where conname='daily_check_in_claims_user_id_fkey'
+      and conrelid='app_private.daily_check_in_claims'::regclass
+      and confrelid='app_private.users'::regclass
+  ) as user_fk_exists
+from pg_class c
+where c.oid='app_private.daily_check_in_claims'::regclass;
 `;
 const acceptanceSql = `
 select
@@ -221,6 +267,12 @@ export function classifyAccountLoginCompatibility({ tableExists, functionExists 
   return "partial";
 }
 
+export function classifyDailyCheckInCompatibility({ tableExists, functionExists, triggerExists }) {
+  if (tableExists && functionExists && triggerExists) return "ready";
+  if (!tableExists && !functionExists && !triggerExists) return "missing";
+  return "partial";
+}
+
 export function parseEnterpriseMetadataBackfill(raw = "") {
   if (!raw.trim()) return [];
   let value;
@@ -270,6 +322,17 @@ export function parseEnterpriseMetadataBackfill(raw = "") {
     slugs.add(slug);
     return { accountId, name, slug };
   });
+}
+
+export function dailyCheckInCompatibilitySql(
+  claimSource = dailyCheckInClaimSchemaSql,
+  constraintSource = crossOwnerConstraintSchemaSql,
+) {
+  const marker =
+    "-- DailyCheckIn owns reward outcome; Ledger owns value fact. They must commit together.";
+  const start = constraintSource.indexOf(marker);
+  if (start < 0) throw new Error("Could not locate canonical DailyCheckIn parity constraint block.");
+  return `${claimSource.trim()}\n\n${constraintSource.slice(start).trim()}`;
 }
 
 function extractFunctionDefinition(source, name) {
@@ -548,6 +611,66 @@ async function ensureAccountLoginCompatibility() {
   );
   await verifyAccountLoginCompatibility();
   return true;
+}
+
+async function dailyCheckInCompatibilityState() {
+  const [state] = await queryRemote(dailyCheckInCompatibilityStateSql);
+  if (
+    !state ||
+    typeof state.table_exists !== "boolean" ||
+    typeof state.function_exists !== "boolean" ||
+    typeof state.trigger_exists !== "boolean"
+  ) {
+    throw new Error("Could not read remote DailyCheckIn compatibility state.");
+  }
+  return {
+    tableExists: state.table_exists,
+    functionExists: state.function_exists,
+    triggerExists: state.trigger_exists,
+  };
+}
+
+async function verifyDailyCheckInCompatibility() {
+  const state = classifyDailyCheckInCompatibility(await dailyCheckInCompatibilityState());
+  if (state !== "ready") throw new Error("Remote DailyCheckIn compatibility is missing.");
+  const [acceptance] = await queryRemote(dailyCheckInCompatibilityAcceptanceSql);
+  if (
+    !acceptance?.rls_enabled ||
+    !acceptance.line_app_select ||
+    !acceptance.line_app_insert ||
+    acceptance.anon_select ||
+    acceptance.authenticated_select ||
+    !acceptance.line_app_execute ||
+    !acceptance.parity_trigger_enabled ||
+    !acceptance.user_fk_exists
+  ) {
+    throw new Error("Remote DailyCheckIn compatibility privileges or invariants are invalid.");
+  }
+}
+
+async function ensureDailyCheckInCompatibility() {
+  const state = classifyDailyCheckInCompatibility(await dailyCheckInCompatibilityState());
+  if (state === "ready") {
+    await verifyDailyCheckInCompatibility();
+    return false;
+  }
+  if (state === "partial") {
+    throw new Error(
+      "Remote DailyCheckIn compatibility is partial; refusing to guess a mixed authority state.",
+    );
+  }
+  await applyRemoteSql(
+    `BEGIN;\n${dailyCheckInCompatibilitySql()}\nCOMMIT;\n`,
+    "daily-check-in-compat.sql",
+  );
+  await verifyDailyCheckInCompatibility();
+  return true;
+}
+
+async function repairRuntimeCompatibility() {
+  const accountLoginChanged = await ensureAccountLoginCompatibility();
+  const dailyCheckInChanged = await ensureDailyCheckInCompatibility();
+  return accountLoginChanged || dailyCheckInChanged;
 }
 
 async function prepareGeneralManagementExpansion() {
@@ -905,15 +1028,15 @@ async function verifyRemoteAcceptance() {
 
 export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
-  if (!["prepare", "plan", "sync", "verify"].includes(command)) {
+  if (!["repair", "prepare", "plan", "sync", "verify"].includes(command)) {
     throw new Error(
-      "Usage: schema:remote [prepare|plan|sync|verify] [--allow-destructive] [--api]",
+      "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-destructive] [--api]",
     );
   }
   for (const flag of flags) {
     if (!["--allow-destructive", "--api"].includes(flag)) {
       throw new Error(
-        "Usage: schema:remote [prepare|plan|sync|verify] [--allow-destructive] [--api]",
+        "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-destructive] [--api]",
       );
     }
   }
@@ -947,12 +1070,24 @@ export async function main(argv = process.argv.slice(2)) {
       }
     }
   }
-  if (command === "prepare") {
+  if (command === "repair" || command === "prepare") {
     if (foundationState !== "existing") {
-      throw new Error("Remote preserve-data preparation requires an existing app foundation.");
+      throw new Error("Remote compatibility repair requires an existing app foundation.");
     }
-    await ensureAccountLoginCompatibility();
-    const changed = await prepareGeneralManagementExpansion();
+    const runtimeChanged = await repairRuntimeCompatibility();
+    if (command === "repair") {
+      const after = await migrationHistory();
+      writeFileSync(new URL("migration-history.after.txt", artifacts), `${after}\n`);
+      assertMigrationHistoryUnchanged(before, after);
+      console.log(
+        `Remote repair PASS for ${projectRef}: runtime compatibility = ${
+          runtimeChanged ? "repaired" : "already current"
+        }; destructive contract not executed; migration history drift = 0.`,
+      );
+      return;
+    }
+    const generalManagementChanged = await prepareGeneralManagementExpansion();
+    const changed = runtimeChanged || generalManagementChanged;
     const after = await migrationHistory();
     writeFileSync(new URL("migration-history.after.txt", artifacts), `${after}\n`);
     assertMigrationHistoryUnchanged(before, after);
