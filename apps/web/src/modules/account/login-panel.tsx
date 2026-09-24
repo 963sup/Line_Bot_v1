@@ -1,7 +1,7 @@
 "use client";
 
 import type { UserUseCases } from "@line-work/account/application/user";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
@@ -83,8 +83,13 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     }
   }
 
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+
   useEffect(() => {
-    const visibility = () => (document.visibilityState === "hidden" ? clear() : void load());
+    const visibility = () => onVisibilityChange();
     document.addEventListener("visibilitychange", visibility);
     return () => {
       generation.current++;

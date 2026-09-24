@@ -5,7 +5,7 @@ import {
   type PermissionCommand,
   permissions,
 } from "@line-work/identity-access/domain/permission";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { ActionRow, PageHeading } from "../../shared/ui/page-layout";
@@ -58,10 +58,13 @@ export default function PermissionsPanel({
   reload.current = () => {
     void load(selected.current);
   };
+  const onVisibilityChange = useEffectEvent(() => {
+    clear();
+    if (document.visibilityState === "visible") reload.current();
+  });
   useEffect(() => {
     const changed = () => {
-      clear();
-      if (document.visibilityState === "visible") reload.current();
+      onVisibilityChange();
     };
     document.addEventListener("visibilitychange", changed);
     return () => {

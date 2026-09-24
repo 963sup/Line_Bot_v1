@@ -69,6 +69,11 @@ test("architecture checks source exports, types, ports, browser reachability and
           },
         }),
       );
+      write(
+        root,
+        `packages/${name}/tsconfig.json`,
+        JSON.stringify({ extends: "../../tsconfig.base.json" }),
+      );
       write(root, `packages/${name}/src/index.ts`, "export type Value = string;");
       write(
         root,
@@ -81,6 +86,11 @@ test("architecture checks source exports, types, ports, browser reachability and
         root,
         `apps/${name}/package.json`,
         JSON.stringify({ name: `@line-work/${name}`, private: true }),
+      );
+      write(
+        root,
+        `apps/${name}/tsconfig.json`,
+        JSON.stringify({ extends: "../../tsconfig.base.json" }),
       );
       write(root, `apps/${name}/src/index.ts`, "export const value = 1;");
     }
@@ -102,6 +112,25 @@ test("architecture checks source exports, types, ports, browser reachability and
     );
     write(root, "packages/config/AGENTS.md", "# Rules alone are not a workspace");
     await assert.rejects(checkArchitecture(root), /source workspace requires package.json/);
+    rmSync(resolve(root, "packages/config"), { recursive: true });
+    write(
+      root,
+      "packages/config/package.json",
+      JSON.stringify({ name: "@line-work/config", private: true }),
+    );
+    await assert.rejects(checkArchitecture(root), /source workspace requires tsconfig.json/);
+    rmSync(resolve(root, "packages/config"), { recursive: true });
+    write(
+      root,
+      "packages/config/package.json",
+      JSON.stringify({ name: "@line-work/config", private: true }),
+    );
+    write(
+      root,
+      "packages/config/tsconfig.json",
+      JSON.stringify({ extends: "../../tsconfig.base.json", files: [], references: [] }),
+    );
+    assert.deepEqual((await checkArchitecture(root)).errors, []);
     rmSync(resolve(root, "packages/config"), { recursive: true });
     write(root, "packages/platform/src/testing/postgres.ts", "export const fixture = 1;");
     write(root, "packages/attendance/src/adapters/private.ts", "export const adapter = 1;");

@@ -1,6 +1,6 @@
-export type PartnerStatus = "published" | "unlisted";
+type PartnerStatus = "published" | "unlisted";
 export type ContactMethod = "phone" | "email" | "line";
-export type ReferralStatus = "pending" | "successful" | "rejected" | "withdrawn";
+type ReferralStatus = "pending" | "successful" | "rejected" | "withdrawn";
 
 export type PartnerContact = {
   id: string;

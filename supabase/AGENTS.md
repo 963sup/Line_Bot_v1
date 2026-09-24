@@ -2,7 +2,7 @@
 
 資料模型見 [Core business data](../docs/040-data/010-data-boundary-model.md)；schema object tree 見 [schemas/README](schemas/README.md)。
 
-- `supabase/schemas/` 是 application-owned PostgreSQL current state 的唯一結構 Source of Truth；`architecture/data-topology.json` 只擁有 persisted relation → semantic owner / role / physical file 的 mapping，不重複 SQL definition。
+- `supabase/schemas/` 的可執行 SQL 是 application-owned PostgreSQL current state 的唯一結構 Source of Truth；`870–891` reserved target files 只可放純 `--` comment 來保留未來命名，不是 current persistence。`architecture/data-topology.json` 只擁有 persisted relation → semantic owner / role / physical file 的 mapping，不重複 SQL definition。
 - Schema 的 authority unit 是 **Object / Relationship relation**，不是檔案。Authoritative relation 恰好一個 semantic owner；同一 authoritative SQL file 不得混合不同 owner。File 只作 lexical dependency order 與 navigation。
 - `000–863` 只放 owner-authoritative definitions；`900–930` 只放 derived projection、cross-owner invariant、transaction coordinator、access enforcement，永遠不得成為 business truth owner。
 - Current authoritative semantic concept 若宣告 `persistenceExpectation = relation`，必須能解析到至少一個 authoritative persisted relation；反向每個 persisted `app_private` table/view 也必須恰好一個 data-topology mapping。

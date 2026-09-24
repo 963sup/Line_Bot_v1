@@ -4,7 +4,7 @@ import type {
   UserProfile,
   UserProfileVisibility,
 } from "@line-work/account/application/ports/profile";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
@@ -121,8 +121,13 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
     }
   }
 
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+
   useEffect(() => {
-    const visibility = () => (document.visibilityState === "hidden" ? clear() : void load());
+    const visibility = () => onVisibilityChange();
     document.addEventListener("visibilitychange", visibility);
     return () => {
       generation.current++;

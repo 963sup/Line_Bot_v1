@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: payroll
+-- scope: PayrollInputVersion pins Workforce, AttendancePeriod, and payroll rule versions used by a result.
+-- canonical target: docs/010-domain-owners/060-payroll.md
+-- migration gate: docs/090-governance/040-gaps/090-payroll.md
+-- activation: remove reserved status only after required upstream version sources, missing/conflict semantics, source trace, data-topology relations, tests, and validation evidence are current.

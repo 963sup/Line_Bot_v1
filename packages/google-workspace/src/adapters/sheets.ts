@@ -1,12 +1,14 @@
 import { type GoogleRequestOptions, requestJson, resourceId } from "./request.js";
 
 const base = "https://sheets.googleapis.com/v4/spreadsheets";
+/** @public Public Sheets adapter listed in packages/google-workspace/README.md. */
 export function getSpreadsheet(
   options: GoogleRequestOptions & { spreadsheetId: string },
   request: typeof fetch = fetch,
 ) {
   return requestJson(new URL(`${base}/${resourceId(options.spreadsheetId)}`), options, request);
 }
+/** @public Public Sheets adapter listed in packages/google-workspace/README.md. */
 export function createSpreadsheet(
   options: GoogleRequestOptions & { title: string },
   request: typeof fetch = fetch,
@@ -15,6 +17,7 @@ export function createSpreadsheet(
     properties: { title: options.title },
   });
 }
+/** @public Public Sheets adapter listed in packages/google-workspace/README.md. */
 export function readSheetValues(
   options: GoogleRequestOptions & { spreadsheetId: string; range: string },
   request: typeof fetch = fetch,

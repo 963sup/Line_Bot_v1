@@ -3,12 +3,13 @@ import { DatabaseSync } from "node:sqlite";
 import type { Sql } from "./database.js";
 
 type Row = Record<string, unknown>;
+/** @public Transition facade retained by packages/platform/AGENTS.md. */
 export type MigrationPlan = {
   tables: Record<string, Row[]>;
   counts: Record<string, number>;
   fingerprint: string;
 };
-/** Read-only legacy adapter. Business IDs are retained; old raw LINE expense owners are resolved uniquely. */
+/** @public Transition facade retained by packages/platform/AGENTS.md; resolves legacy LINE owners. */
 export function planLegacyImport(
   memberPath: string,
   expensePath: string,
@@ -158,7 +159,7 @@ export function planLegacyImport(
   }
 }
 
-/** Caller must provide the privileged Sql handle of one explicit migration transaction. */
+/** @public Transition facade retained by packages/platform/AGENTS.md; caller provides one transaction. */
 export async function importLegacyPlanInTransaction(sql: Sql, plan: MigrationPlan) {
   const allowed = [
     "users",

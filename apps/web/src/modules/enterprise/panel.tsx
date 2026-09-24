@@ -8,7 +8,7 @@ import type {
 import type { ScopedRoleCommand } from "@line-work/identity-access/domain/role-assignment";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
@@ -164,8 +164,13 @@ export default function EnterprisePanel({
     }
   }
 
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+
   useEffect(() => {
-    const visibility = () => (document.visibilityState === "hidden" ? clear() : void load());
+    const visibility = () => onVisibilityChange();
     document.addEventListener("visibilitychange", visibility);
     return () => document.removeEventListener("visibilitychange", visibility);
   }, []);

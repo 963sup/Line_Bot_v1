@@ -74,7 +74,7 @@ test("native menu states retain geometry and return each submenu to its source s
       assert.equal(membership.uri, "https://miniapp.line.me/123-test?membership=1");
       assert.equal(entryDestination(membership.uri), "/settings");
     }
-    const repositories = menu.areas.find((a) => a.action.label === "Repository")!.action;
+    const repositories = menu.areas.find((a) => a.action.label === "儲存庫")!.action;
     assert.equal(repositories.type, "uri");
     if (repositories.type === "uri") {
       assert.equal(repositories.uri, "https://miniapp.line.me/123-test?repositories=1");
@@ -82,7 +82,7 @@ test("native menu states retain geometry and return each submenu to its source s
     }
     assert.deepEqual(
       menu.areas.slice(1).map((a) => a.action.label),
-      ["Repository", "異常通報", "表單作業", "團隊協作", "設定", "通知中心"],
+      ["儲存庫", "異常通報", "表單作業", "團隊協作", "設定", "通知中心"],
     );
   }
   for (const page of ["team", "forms", "notifications", "incident"] as const) {

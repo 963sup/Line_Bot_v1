@@ -88,10 +88,7 @@ test("Supabase project URL yields the exact project ref", () => {
 
 test("explicit project confirmation is mandatory and must match the URL-derived target", () => {
   assert.doesNotThrow(() => assertConfirmedProject("nmssogphayjymjpbnrxv", "nmssogphayjymjpbnrxv"));
-  assert.throws(
-    () => assertConfirmedProject("nmssogphayjymjpbnrxv", undefined),
-    /exactly match/,
-  );
+  assert.throws(() => assertConfirmedProject("nmssogphayjymjpbnrxv", undefined), /exactly match/);
   assert.throws(
     () => assertConfirmedProject("nmssogphayjymjpbnrxv", "aaaaaaaaaaaaaaaaaaaa"),
     /exactly match/,

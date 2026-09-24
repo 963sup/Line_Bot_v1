@@ -10,6 +10,7 @@ export function listFiles(
   if (options.query) url.searchParams.set("q", options.query);
   return readPages(url, "files", options, request);
 }
+/** @public Public Drive adapter listed in packages/google-workspace/README.md. */
 export function getFile(
   options: GoogleRequestOptions & { fileId: string },
   request: typeof fetch = fetch,

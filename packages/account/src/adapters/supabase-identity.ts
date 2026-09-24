@@ -1,12 +1,8 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
-import type {
-  IdentityProvider,
-  VerifiedGoogleIdentity,
-} from "../application/ports/identity-provider.js";
+import type { IdentityProvider } from "../application/ports/identity-provider.js";
 import { UserError } from "../domain/user.js";
 
-export type GoogleUser = VerifiedGoogleIdentity;
-export function googleUser(user: User): GoogleUser {
+function googleUser(user: User) {
   const identity = user.identities?.find((i) => i.provider === "google");
   if (!identity?.id || !user.email_confirmed_at || !user.email || user.is_anonymous) {
     throw new UserError(403, "請使用已驗證的 Google 帳號登入。");
@@ -14,7 +10,7 @@ export function googleUser(user: User): GoogleUser {
   return { id: user.id, sub: identity.id, email: user.email };
 }
 
-export class SupabaseIdentity implements IdentityProvider {
+class SupabaseIdentity implements IdentityProvider {
   private publicClient?: SupabaseClient;
   private client() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

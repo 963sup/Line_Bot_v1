@@ -1,7 +1,3 @@
-export type {
-  AccountAdministrationGuard,
-  UserManagementAuthorization,
-} from "./postgres/authority.js";
 export { PostgresFollowStore } from "./postgres/follows.js";
 export { PostgresGoogleLinkStore } from "./postgres/google-link.js";
 export {
@@ -10,7 +6,6 @@ export {
   resolveAccountLogin,
 } from "./postgres/login-directory.js";
 export { PostgresUserProfileStore } from "./postgres/profile.js";
-export type { UserQualification } from "./postgres/qualification.js";
 export {
   hasUserIdentity,
   qualifyActiveUser,

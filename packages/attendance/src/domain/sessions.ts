@@ -10,7 +10,7 @@ export type AttendanceSession = {
   ruleVersion: typeof ATTENDANCE_RULE_VERSION;
 };
 export type MenuState = "ready" | "working";
-export type AttendanceDay = {
+type AttendanceDay = {
   day: string;
   beforeMs: number;
   scheduledMs: number;

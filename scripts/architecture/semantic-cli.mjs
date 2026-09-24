@@ -11,6 +11,7 @@ import { querySemanticArchitecture } from "./semantic-query.mjs";
 const queryVerbs = new Set([
   "owner",
   "concept",
+  "capability",
   "benchmark",
   "resolve",
   "neighbors",
@@ -23,11 +24,13 @@ const queryVerbs = new Set([
   "boundaries",
   "evidence",
   "truth",
+  "locators",
+  "benchmark-coverage",
   "explain",
 ]);
 
 const usage =
-  "Usage: pnpm semantic <check|owner|concept|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|explain|plan|context|diff|drift|feedback|view> ...";
+  "Usage: pnpm semantic <check|owner|concept|capability|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|benchmark-coverage|explain|plan|context|diff|drift|feedback|view> ...";
 
 async function readJson(path) {
   return JSON.parse(await readFile(resolve(path), "utf8"));

@@ -48,7 +48,6 @@ export function classifyChangedFiles(files) {
     file.startsWith(".codex/") ||
     file.startsWith(".agents/") ||
     file.startsWith(".vscode/") ||
-    file === "knip.jsonc" ||
     file === "skills-lock.json";
   const toolingAffected = changed.some(
     (file) =>
@@ -108,7 +107,8 @@ export function shouldRunFast(task, scope) {
   if (task === "docs:check") return scope.docsAffected;
   if (task === "schema:check" || task === "schema:remote:test") return scope.schemaAffected;
   if (task === "architecture:test") return scope.toolingAffected && scope.codeAffected;
-  if (task === "architecture") return scope.toolingAffected || scope.schemaAffected;
+  if (task === "architecture")
+    return scope.codeAffected || scope.toolingAffected || scope.schemaAffected;
   if (task === "deadcode") return scope.codeAffected || scope.toolingAffected;
   if (task === "typecheck+test") return scope.codeAffected || scope.schemaAffected;
   return scope.codeAffected;

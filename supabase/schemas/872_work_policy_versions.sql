@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: workforce
+-- scope: published WorkPolicyVersion facts and correction/version source for work policy applicability.
+-- canonical target: docs/010-domain-owners/040-workforce.md
+-- migration gate: docs/090-governance/040-gaps/060-workforce.md
+-- activation: remove reserved status only when policy authority, effective period, authorization, correction, and consumer contracts are current and tested.

@@ -203,9 +203,7 @@ export default function IssueBoard({
       <PageHeading
         title={detailMode ? "Issue" : "儲存庫"}
         description="儲存庫擁有 Issue；Project 只引用工作，不改寫 Issue truth。"
-        actions={
-          !detailMode ? <PrimaryLink href="/explore">探索儲存庫</PrimaryLink> : undefined
-        }
+        actions={!detailMode ? <PrimaryLink href="/explore">探索儲存庫</PrimaryLink> : undefined}
       />
       <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={() => setBusy(false)} />
       {detailMode && (

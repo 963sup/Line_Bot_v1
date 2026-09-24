@@ -56,6 +56,16 @@ function markdownTable(headers, rows) {
   return [header, separator, ...rows.map((row) => "| " + row.join(" | ") + " |")].join("\n");
 }
 
+export function routeFileToUrl(path) {
+  if (!path.startsWith("apps/web/src/app/") || !path.endsWith("/page.tsx")) return null;
+  const segments = path
+    .slice("apps/web/src/app/".length, -"/page.tsx".length)
+    .split("/")
+    .filter((segment) => segment && !/^\(.+\)$/.test(segment))
+    .map((segment) => segment.replace(/^\[(.+)\]$/, "{$1}"));
+  return "/" + segments.join("/");
+}
+
 function glossary(compiled) {
   return [
     "# Semantic Glossary",
@@ -124,14 +134,96 @@ function capabilities(compiled) {
     "> Generated projection of semantic capabilities.",
     "",
     markdownTable(
-      ["Capability", "Owner", "Runtime expectation", "Preserves", "Validation", "Intent"],
+      [
+        "Capability",
+        "Owner",
+        "Kind",
+        "Implementation",
+        "Runtime expectation",
+        "Members",
+        "Preserves",
+        "Validation",
+        "Intent",
+      ],
       [...compiled.capabilities.values()].map((capability) => [
         capability.id,
         capability.owner,
+        capability.kind,
+        capability.implementation?.status ?? "",
         capability.runtimeExpectation,
+        (capability.members ?? []).join(", "),
         (capability.preserves ?? []).join(", "),
         (capability.validationProfiles ?? []).join(", "),
         capability.intent.replaceAll("|", "\\|"),
+      ]),
+    ),
+  ].join("\n");
+}
+
+function locators(compiled) {
+  return [
+    "# Resource Locators",
+    "",
+    "> Generated projection of semantic locators. Route files are implementation evidence, not identity authority.",
+    "",
+    markdownTable(
+      [
+        "Locator",
+        "Concept",
+        "Status",
+        "Scope",
+        "Fields",
+        "Route files",
+        "Derived URL",
+        "Benchmark",
+      ],
+      [...compiled.locators.values()].map((locator) => [
+        locator.id,
+        locator.concept,
+        locator.status,
+        locator.scope,
+        locator.fields.join(", "),
+        (locator.routeFiles ?? []).join(", "),
+        (locator.routeFiles ?? []).map(routeFileToUrl).filter(Boolean).join(", "),
+        locator.benchmark
+          ? [locator.benchmark.file, locator.benchmark.symbol, locator.benchmark.field]
+              .filter(Boolean)
+              .join("#")
+          : "",
+      ]),
+    ),
+  ].join("\n");
+}
+
+function benchmarkCoverage(compiled) {
+  const mappedNodes = [...compiled.concepts.values()]
+    .filter((concept) => concept.benchmark?.node)
+    .map((concept) => [concept.benchmark.node, "node", "mapped", concept.id]);
+  const decisions = (compiled.model.benchmarkDecisions ?? []).map((decision) => [
+    decision.id,
+    decision.kind,
+    decision.status,
+    decision.reason.replaceAll("|", "\\|"),
+  ]);
+  return [
+    "# Benchmark Coverage",
+    "",
+    "> Generated projection. Benchmark coverage is concept mapping plus explicit product decisions.",
+    "",
+    "## Product items",
+    "",
+    markdownTable(["External ID", "Kind", "Disposition", "Basis"], [...mappedNodes, ...decisions]),
+    "",
+    "## Source inventory",
+    "",
+    markdownTable(
+      ["File", "Role", "Category", "Disposition", "Reason"],
+      (compiled.benchmark.sourceInventory ?? []).map((source) => [
+        source.file,
+        source.role,
+        source.category ?? "",
+        source.disposition ?? "",
+        source.reason.replaceAll("|", "\\|"),
       ]),
     ),
   ].join("\n");
@@ -189,6 +281,10 @@ function docs(compiled) {
     "",
     capabilities(compiled),
     "",
+    locators(compiled),
+    "",
+    benchmarkCoverage(compiled),
+    "",
     evidence(compiled),
     "",
     "## Context map",
@@ -217,9 +313,11 @@ export function renderSemanticView(compiled, view = "ownership") {
   if (view === "contracts") return contracts(compiled);
   if (view === "invariants") return invariants(compiled);
   if (view === "capabilities") return capabilities(compiled);
+  if (view === "locators") return locators(compiled);
+  if (view === "benchmark-coverage") return benchmarkCoverage(compiled);
   if (view === "evidence") return evidence(compiled);
   if (view === "docs") return docs(compiled);
   throw new Error(
-    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, evidence, or docs.",
+    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, locators, benchmark-coverage, evidence, or docs.",
   );
 }

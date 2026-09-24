@@ -1,5 +1,6 @@
 import type { Workplace, WorkplaceCommand } from "../../domain.js";
-export type WorkplacePage = {
+
+type WorkplacePage = {
   canCreate: boolean;
   sites: Workplace[];
   next: string | null;

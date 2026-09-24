@@ -1,6 +1,6 @@
 "use client";
 import type { Workplace, WorkplaceCommand } from "@line-work/attendance/domain";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading } from "../../shared/ui/page-layout";
@@ -34,11 +34,12 @@ export default function WorkplacesPanel({ liffId }: { liffId: string }) {
     setNotice("");
     setBusy(false);
   }
+  const onVisibilityChange = useEffectEvent(() => {
+    clear();
+    if (document.visibilityState === "visible") refresh.current();
+  });
   useEffect(() => {
-    const changed = () => {
-      clear();
-      if (document.visibilityState === "visible") refresh.current();
-    };
+    const changed = () => onVisibilityChange();
     document.addEventListener("visibilitychange", changed);
     return () => {
       generation.current++;

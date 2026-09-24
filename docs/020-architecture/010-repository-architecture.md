@@ -21,6 +21,7 @@ packages/
 ├─ notifications/
 ├─ asset/
 ├─ assistant/
+├─ audit/
 ├─ attendance/
 ├─ daily-check-in/
 ├─ enterprise/
@@ -82,16 +83,21 @@ packages/<owner>/
 
 `architecture/semantic-model.json` 是 structured product semantic authority；`architecture/implementation-topology.json` 擁有 module topology；`architecture/data-topology.json` 擁有 SQL surface ownership / Data Boundary mapping；`supabase/schemas/` 擁有實際 database structure。以下 CLI 只 compile／query／derive，不保存第二份 business truth：
 
+四份模型的責任與查核入口見 [Architecture routing](../../architecture/README.md)。能力按可觀察的操作細分為 leaf；只有需要表達整體能力時才使用 aggregate。Aggregate 的存在不表示每個成員已實作。`runtimeExpectation` 是產品期望，implementation source／public export／entrypoint／test path 是靜態追溯資料；測試檔存在不等於測試已通過。
+
+Locator 貼在原 concept 上，不形成新的 owner。已存在的 route file 是 URL 結構的來源；stable identity、可變的 login／slug／number 與目前 authorization 分開。尚未啟用的 Project 等能力不能因有 module 或 schema，就宣稱有 active route。
+
 | Command | Responsibility |
 | --- | --- |
 | `pnpm semantic check` | 驗 semantic type、ownership、contract、boundary mapping、evidence profile 與 implementation mapping |
 | `pnpm semantic <query> ...` | 查 owner／concept／contracts／consumers／dependencies／invariants／boundaries／evidence／path／impact |
+| `pnpm semantic capability <id>` | 查單一 leaf 或 aggregate 的 runtime expectation、成員與 implementation evidence |
 | `pnpm semantic plan "<intent>"` | 將 Change Intent 編譯成 owner、impact、contracts、module/data boundaries、candidate code/SQL surfaces 與 required validation |
 | `pnpm semantic context "<intent>"` | 從 change plan 蒸餾與 task / owner / boundary 直接相關的 authoritative context |
 | `pnpm semantic diff <before> <after>` | 將 semantic change 分類為 ownership／authority／boundary／contract／invariant／policy／evidence 等 change |
-| `pnpm semantic drift <before-benchmark> <after-benchmark>` | 比較 pinned external benchmark revision，只把已採用 semantic 的 drift 升為 review item |
+| `pnpm semantic drift <before-benchmark> <after-benchmark>` | 比較 pinned external benchmark 的來源、契約與 graph；區分已採用語意的影響與需重新評估的外部變化，不自動採用 |
 | `pnpm semantic feedback <bundle.json>` | 將具時間、來源與 evidence channel 的 capability observation 與 runtime expectation 比較，輸出 aligned／drift／review／inconclusive 與 derived revision proposal |
-| `pnpm semantic view <view>` | 從同一 model 產生 ownership／glossary／contracts／invariants／capabilities／evidence／Mermaid／docs read model |
+| `pnpm semantic view <view>` | 從同一 model 產生 ownership／glossary／contracts／invariants／capabilities／locators／benchmark-coverage／evidence／Mermaid／docs read model |
 
 任何 projection、plan、context、diff、drift 或 feedback comparison output 都是 derived read model；不得反向成為 Source of Truth。Observation bundle 屬 external evidence，不是 semantic authority；revision proposal 必須經 owner review 後才可顯式修改 canonical model。
 
@@ -123,6 +129,7 @@ apps/web/src/
 | Package 類型 | Owner responsibility |
 | --- | --- |
 | `account / attendance / expense / repository / ...` | 已啟用 runtime capability 的 owner；只建立真實需要的 Domain/Application/Port/Adapter responsibility |
+| `audit` | 已保留的 Audit module owner；目前只有 workspace foundation，正式 Audit runtime、public export 與 persistence boundary 尚未啟用 |
 | `project / workforce` | 已註冊 module owner；Project runtime 與 Employment runtime 尚未啟用，狀態以 semantic model 為準 |
 | `notifications` | Notification read/delivery projection；不擁有 issue 或 discussion source |
 | `line-channel` | LINE protocol、identity proof、Messaging API 與 MINI App integration |

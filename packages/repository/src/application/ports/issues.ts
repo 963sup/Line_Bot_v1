@@ -11,7 +11,7 @@ export type IssueCommand = { requestId: string; repositoryId: string } & (
   | { action: IssueAction; issueId: string; expectedVersion: number; note: string }
 );
 
-export type IssueEvent = {
+type IssueEvent = {
   actor: string;
   action: string;
   note: string;

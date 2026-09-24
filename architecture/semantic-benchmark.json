@@ -9,37 +9,6 @@
   },
   "scope": {
     "purpose": "Provide pinned external semantic evidence for general-management concepts and relationships. It is never Line_Bot_v1 product authority; product adoption requires an explicit mapping in architecture/semantic-model.json.",
-    "includedCategories": [
-      "users",
-      "enterprise-admin",
-      "orgs",
-      "teams",
-      "repos",
-      "projects",
-      "issues",
-      "discussions",
-      "reactions"
-    ],
-    "excludedCategories": [
-      "actions",
-      "branches",
-      "checks",
-      "code-scanning",
-      "code-security",
-      "codespaces",
-      "commits",
-      "dependabot",
-      "dependency-graph",
-      "deploy-keys",
-      "deployments",
-      "git",
-      "packages",
-      "pages",
-      "pulls",
-      "releases",
-      "secret-scanning",
-      "security-advisories"
-    ],
     "exclusions": [
       "Git and SCM object semantics",
       "source-code hosting semantics",
@@ -49,6 +18,440 @@
       "Line_Bot_v1-specific business concepts such as Attendance, ClockIn, Payroll, Expense, Task, and Announcement"
     ]
   },
+  "sourceInventoryMetadata": {
+    "gitTreeSha": "83872fe8c0968af641608b139bb0dedde1fab308",
+    "source": "github/docs src/graphql/data/fpt Git tree at pinned authority.revision"
+  },
+  "sourceInventory": [
+    {
+      "file": "category-map.json",
+      "gitBlobSha": "dcbdb8f3c09717ab1549683fb95f8d8c5de0afd4",
+      "role": "category-index",
+      "reason": "Category index output used to verify the pinned FPT category partition."
+    },
+    {
+      "file": "changelog.json",
+      "gitBlobSha": "79d9cdf3ee61ddae89fbd1dddd5e4ab1e718dd56",
+      "role": "history",
+      "reason": "Upstream history/change record retained for review and drift evidence only."
+    },
+    {
+      "file": "graphql_upcoming_changes.public.yml",
+      "gitBlobSha": "f6347e0e72b798d58e988cad96be2c9510fc4003",
+      "role": "future-change",
+      "reason": "Future-change output can trigger review only and must not automatically enable capability."
+    },
+    {
+      "file": "previews.json",
+      "gitBlobSha": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc",
+      "role": "preview",
+      "reason": "Preview activation output retained as upstream pipeline evidence; empty output still anchors the family."
+    },
+    {
+      "file": "schema-actions.json",
+      "gitBlobSha": "2a7e17586ad3cb77c040203ff6aebfb6eed40fce",
+      "role": "schema-fragment",
+      "category": "actions",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-activity.json",
+      "gitBlobSha": "c7b414b880a0044ce0746940167e655bec34979e",
+      "role": "schema-fragment",
+      "category": "activity",
+      "disposition": "included",
+      "reason": "General star and subscription activity contracts are in benchmark scope as interaction/reference evidence."
+    },
+    {
+      "file": "schema-apps.json",
+      "gitBlobSha": "e49ccb185f13681b5f510e87c3979fa0b99f9372",
+      "role": "schema-fragment",
+      "category": "apps",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-audit-log.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "audit-log",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-billing.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "billing",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-branches.json",
+      "gitBlobSha": "fe997c5e64b977ebf80d6c498fdcfb77143553b9",
+      "role": "schema-fragment",
+      "category": "branches",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-checks.json",
+      "gitBlobSha": "4abec62bfea38fe24969c9aea0d3b7d59ac25978",
+      "role": "schema-fragment",
+      "category": "checks",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-code-scanning.json",
+      "gitBlobSha": "e1502a01422c8d451b215bb8ff2e2d4c623b906b",
+      "role": "schema-fragment",
+      "category": "code-scanning",
+      "disposition": "excluded",
+      "reason": "Software security and dependency analysis semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-code-security.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "code-security",
+      "disposition": "excluded",
+      "reason": "Software security and dependency analysis semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-codespaces.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "codespaces",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-collaborators.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "collaborators",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-commits.json",
+      "gitBlobSha": "c517be6cb3bcbf590a27021289e30f4e33f827db",
+      "role": "schema-fragment",
+      "category": "commits",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-copilot.json",
+      "gitBlobSha": "a7ca98c81be69e0e8c42012c2dd5e47c24c94dfe",
+      "role": "schema-fragment",
+      "category": "copilot",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-dependabot.json",
+      "gitBlobSha": "39cf78054649457d693acce4ddafb9887d8dd88b",
+      "role": "schema-fragment",
+      "category": "dependabot",
+      "disposition": "excluded",
+      "reason": "Software security and dependency analysis semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-dependency-graph.json",
+      "gitBlobSha": "2549abe2c52f7c1743abc0dcb1b8a4e7bde4fc2a",
+      "role": "schema-fragment",
+      "category": "dependency-graph",
+      "disposition": "excluded",
+      "reason": "Software security and dependency analysis semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-deploy-keys.json",
+      "gitBlobSha": "6be1d5474a6dba1fe49bb21e84b66dfa2fd97fe6",
+      "role": "schema-fragment",
+      "category": "deploy-keys",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-deployments.json",
+      "gitBlobSha": "c6a8836db4adcc95e0e409c60eab2b7f086d60aa",
+      "role": "schema-fragment",
+      "category": "deployments",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-discussions.json",
+      "gitBlobSha": "008909b2d427f3de84fce86055d46732b181fc61",
+      "role": "schema-fragment",
+      "category": "discussions",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-enterprise-admin.json",
+      "gitBlobSha": "2df44d085839e67aa988a81cb17ca34c164eddc7",
+      "role": "schema-fragment",
+      "category": "enterprise-admin",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-gists.json",
+      "gitBlobSha": "0814a9d7a0b0f0afe2b657243978f58e2da7d402",
+      "role": "schema-fragment",
+      "category": "gists",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-git.json",
+      "gitBlobSha": "546a3f92b287c1cbc1b22dedbffb28eb93c28154",
+      "role": "schema-fragment",
+      "category": "git",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-interactions.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "interactions",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-issues.json",
+      "gitBlobSha": "9a9b69cef8ce4a11d94fd0fe5699389d4c8674cb",
+      "role": "schema-fragment",
+      "category": "issues",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-licenses.json",
+      "gitBlobSha": "3e18b17fde98f3d0c606c774e2b3c5d201af42a3",
+      "role": "schema-fragment",
+      "category": "licenses",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-meta.json",
+      "gitBlobSha": "10fc92eadf89452079c0a96d26b7a516eeb275b3",
+      "role": "schema-fragment",
+      "category": "meta",
+      "disposition": "reference-only",
+      "reason": "Reference fragment may support stable identity, locator, scalar, pagination, or search contracts without becoming a domain node source."
+    },
+    {
+      "file": "schema-migrations.json",
+      "gitBlobSha": "3a408ef68c41e067108dfeaf96e50a96c13e11e2",
+      "role": "schema-fragment",
+      "category": "migrations",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-orgs.json",
+      "gitBlobSha": "2b3f7fca351b4c1aed96eeb09245b758b6403576",
+      "role": "schema-fragment",
+      "category": "orgs",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-other.json",
+      "gitBlobSha": "d369c78d2a1266487a96d67e31a5578b92c139f7",
+      "role": "schema-fragment",
+      "category": "other",
+      "disposition": "reference-only",
+      "reason": "Reference fragment may support stable identity, locator, scalar, pagination, or search contracts without becoming a domain node source."
+    },
+    {
+      "file": "schema-packages.json",
+      "gitBlobSha": "05d1f325eb1becd69ee5dbd09a1e0a164e18bb9d",
+      "role": "schema-fragment",
+      "category": "packages",
+      "disposition": "excluded",
+      "reason": "Software delivery and publishing semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-pages.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "pages",
+      "disposition": "excluded",
+      "reason": "Software delivery and publishing semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-projects-classic.json",
+      "gitBlobSha": "d5fed054db23da6a4058924b76c2e2c48aef063b",
+      "role": "schema-fragment",
+      "category": "projects-classic",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-projects.json",
+      "gitBlobSha": "2bffcb251b28e49d8c3f6040d2dedf92971b8164",
+      "role": "schema-fragment",
+      "category": "projects",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-pulls.json",
+      "gitBlobSha": "f158839baaa959bb481b390bbd04ad5ab8f0cfe4",
+      "role": "schema-fragment",
+      "category": "pulls",
+      "disposition": "excluded",
+      "reason": "SCM, code review, CI, deployment, or source-code hosting semantics remain outside the general-management benchmark."
+    },
+    {
+      "file": "schema-reactions.json",
+      "gitBlobSha": "4fafa1e329e73366eaa3232321bac3977f8178a3",
+      "role": "schema-fragment",
+      "category": "reactions",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-releases.json",
+      "gitBlobSha": "3a0de419f17fe901c46c618ff97e098138e29483",
+      "role": "schema-fragment",
+      "category": "releases",
+      "disposition": "excluded",
+      "reason": "Software delivery and publishing semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-repos.json",
+      "gitBlobSha": "8b445a6b2b5c67f9d129eba1129f788f5bbe1688",
+      "role": "schema-fragment",
+      "category": "repos",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-scim.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "scim",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-search.json",
+      "gitBlobSha": "8ff84a0f982ad4b9c04f6581fafaf02890188122",
+      "role": "schema-fragment",
+      "category": "search",
+      "disposition": "reference-only",
+      "reason": "Reference fragment may support stable identity, locator, scalar, pagination, or search contracts without becoming a domain node source."
+    },
+    {
+      "file": "schema-secret-scanning.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
+      "role": "schema-fragment",
+      "category": "secret-scanning",
+      "disposition": "excluded",
+      "reason": "Software security and dependency analysis semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-security-advisories.json",
+      "gitBlobSha": "73adc4fed1ef15483dcff089f46856cc3c0978d9",
+      "role": "schema-fragment",
+      "category": "security-advisories",
+      "disposition": "excluded",
+      "reason": "Software security and dependency analysis semantics are outside the general-management benchmark."
+    },
+    {
+      "file": "schema-sponsors.json",
+      "gitBlobSha": "ea8a37a9e980b4f9f346eb9761c03f0e470c8e62",
+      "role": "schema-fragment",
+      "category": "sponsors",
+      "disposition": "excluded",
+      "reason": "No current general-management benchmark consumer; retained only as part of the pinned complete FPT snapshot."
+    },
+    {
+      "file": "schema-teams.json",
+      "gitBlobSha": "7cbd92ae338f7a39c9785baf04c1b6a446d95c41",
+      "role": "schema-fragment",
+      "category": "teams",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema-users.json",
+      "gitBlobSha": "20b7c5244865ecd3abe5ff63de181d7b054def98",
+      "role": "schema-fragment",
+      "category": "users",
+      "disposition": "included",
+      "reason": "General-management owner/category fragment used by semantic nodes, edges, projections, or interaction evidence."
+    },
+    {
+      "file": "schema.docs.graphql",
+      "gitBlobSha": "4ef569cc41927f90cfff61251927daf81d0fec02",
+      "role": "rendered-schema",
+      "reason": "Rendered GraphQL schema output retained for upstream reference parity, not product authority."
+    },
+    {
+      "file": "upcoming-changes.json",
+      "gitBlobSha": "8968e57a98ff68780d40afbbcebfb3827ddf9ef2",
+      "role": "future-change",
+      "reason": "Future-change output can trigger review only and must not automatically enable capability."
+    }
+  ],
+  "sourcePipeline": [
+    {
+      "id": "sync-source",
+      "meaning": "Pinned upstream sync stage fetches preview, upcoming-change, and schema inputs, then writes generated static data for each GraphQL version.",
+      "source": {
+        "repository": "github/docs",
+        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "path": "src/graphql/scripts/sync.ts"
+      },
+      "outputFamilies": [
+        "preview",
+        "future-change",
+        "rendered-schema",
+        "schema-fragment",
+        "history"
+      ]
+    },
+    {
+      "id": "category-partition",
+      "meaning": "Pinned upstream sync stage buckets processed schema data by category and writes per-category schema fragments consumed by reference pages.",
+      "source": {
+        "repository": "github/docs",
+        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "path": "src/graphql/scripts/sync.ts"
+      },
+      "outputFamilies": ["schema-fragment", "category-index"]
+    },
+    {
+      "id": "version-category-loader",
+      "meaning": "Pinned upstream loader reads schema fragments by GraphQL version and category; this benchmark preserves that version/category provenance instead of flattening it into product authority.",
+      "source": {
+        "repository": "github/docs",
+        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "path": "src/graphql/lib/index.ts"
+      },
+      "outputFamilies": ["schema-fragment", "history", "future-change", "preview"]
+    },
+    {
+      "id": "schema-shape-validation",
+      "meaning": "Pinned upstream validator defines the generated schema member shape for queries, mutations, objects, interfaces, enums, unions, input objects, and scalars.",
+      "source": {
+        "repository": "github/docs",
+        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "path": "src/graphql/lib/validator.ts"
+      },
+      "outputFamilies": ["schema-fragment", "preview", "future-change"]
+    }
+  ],
   "nodes": [
     {
       "id": "user",
@@ -210,9 +613,7 @@
         "category": "users",
         "symbol": "CreatedRepositoryContribution"
       },
-      "implements": [
-        "contribution"
-      ]
+      "implements": ["contribution"]
     },
     {
       "id": "joined-user-contribution",
@@ -224,9 +625,7 @@
         "category": "users",
         "symbol": "JoinedGitHubContribution"
       },
-      "implements": [
-        "contribution"
-      ]
+      "implements": ["contribution"]
     },
     {
       "id": "contribution",
@@ -243,9 +642,7 @@
       "kind": "event-fact",
       "meaning": "An observable fact that a user created a repository-scoped work item; this is a neutral projection of CreatedIssueContribution.",
       "temporalField": "occurredAt",
-      "implements": [
-        "contribution"
-      ],
+      "implements": ["contribution"],
       "source": {
         "file": "schema-users.json",
         "category": "users",
@@ -1286,6 +1683,128 @@
           "category": "projects",
           "symbol": "ProjectV2View",
           "field": "project"
+        }
+      ]
+    }
+  ],
+  "referenceContracts": [
+    {
+      "id": "star-signal",
+      "meaning": "FPT models starring as an activity contract over Starrable resources; this is reference evidence for an interaction signal, not product adoption.",
+      "sources": [
+        {
+          "file": "schema-activity.json",
+          "category": "activity",
+          "symbol": "Starrable",
+          "field": "stargazers"
+        },
+        {
+          "file": "schema-activity.json",
+          "category": "activity",
+          "symbol": "Starrable",
+          "field": "viewerHasStarred"
+        },
+        {
+          "file": "schema-activity.json",
+          "category": "activity",
+          "symbol": "addStar",
+          "field": "starrable"
+        }
+      ]
+    },
+    {
+      "id": "subscription-signal",
+      "meaning": "FPT models watch/notification subscription as an activity contract over Subscribable resources; this is reference evidence for notification-interest semantics only.",
+      "sources": [
+        {
+          "file": "schema-activity.json",
+          "category": "activity",
+          "symbol": "Subscribable",
+          "field": "viewerCanSubscribe"
+        },
+        {
+          "file": "schema-activity.json",
+          "category": "activity",
+          "symbol": "Subscribable",
+          "field": "viewerSubscription"
+        },
+        {
+          "file": "schema-activity.json",
+          "category": "activity",
+          "symbol": "updateSubscription",
+          "field": "subscribable"
+        }
+      ]
+    },
+    {
+      "id": "node-identity",
+      "meaning": "FPT Node identity supplies a stable opaque ID contract for cross-resource references.",
+      "sources": [
+        {
+          "file": "schema-meta.json",
+          "category": "meta",
+          "symbol": "Node",
+          "field": "id"
+        }
+      ]
+    },
+    {
+      "id": "resource-locator",
+      "meaning": "FPT UniformResourceLocatable separates URL/resourcePath locator evidence from owner identity and product routing decisions.",
+      "sources": [
+        {
+          "file": "schema-meta.json",
+          "category": "meta",
+          "symbol": "UniformResourceLocatable",
+          "field": "url"
+        },
+        {
+          "file": "schema-meta.json",
+          "category": "meta",
+          "symbol": "UniformResourceLocatable",
+          "field": "resourcePath"
+        }
+      ]
+    },
+    {
+      "id": "search-projection",
+      "meaning": "FPT search is a cross-resource, authorization-filtered projection with its own result connection, not a resource owner.",
+      "sources": [
+        {
+          "file": "schema-search.json",
+          "category": "search",
+          "symbol": "SearchResultItemConnection",
+          "field": "nodes"
+        },
+        {
+          "file": "schema-search.json",
+          "category": "search",
+          "symbol": "SearchResultItemConnection",
+          "field": "repositoryCount"
+        },
+        {
+          "file": "schema-search.json",
+          "category": "search",
+          "symbol": "SearchResultItemConnection",
+          "field": "userCount"
+        }
+      ]
+    },
+    {
+      "id": "pagination-connection",
+      "meaning": "FPT connection-style pagination evidence is referenced as result traversal behavior, not domain ownership.",
+      "sources": [
+        {
+          "file": "schema-search.json",
+          "category": "search",
+          "symbol": "SearchResultItemConnection",
+          "field": "edges"
+        },
+        {
+          "file": "schema-search.json",
+          "category": "search",
+          "symbol": "SearchResultItemConnection",
+          "field": "pageInfo"
         }
       ]
     }

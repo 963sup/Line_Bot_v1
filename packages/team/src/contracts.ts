@@ -16,7 +16,7 @@ export type TeamSummary = {
   isMaintainer: boolean;
 };
 
-export type TeamOrganizationSummary = {
+type TeamOrganizationSummary = {
   organizationAccountId: string;
   login: string;
 };

@@ -6,7 +6,7 @@ import type {
 } from "@line-work/account/contracts/user-management";
 import type { UserStatusCommand } from "@line-work/account/domain/user";
 import { parseUserStatusCommand } from "@line-work/account/domain/user";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState } from "../../shared/ui/page-layout";
@@ -151,17 +151,22 @@ export default function UserManagement({ liffId }: { liffId: string }) {
       if (ticket === sequence.current) setBusy(false);
     }
   }
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+  const onPageHide = useEffectEvent(() => {
+    clear();
+  });
   useEffect(() => {
-    const visibility = () => {
-      if (document.visibilityState === "hidden") clear();
-      else void load();
-    };
+    const visibility = () => onVisibilityChange();
+    const pagehide = () => onPageHide();
     document.addEventListener("visibilitychange", visibility);
-    window.addEventListener("pagehide", clear);
+    window.addEventListener("pagehide", pagehide);
     return () => {
       sequence.current++;
       document.removeEventListener("visibilitychange", visibility);
-      window.removeEventListener("pagehide", clear);
+      window.removeEventListener("pagehide", pagehide);
     };
   }, []);
   const detail = data?.detail;

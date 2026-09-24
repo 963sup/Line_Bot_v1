@@ -13,30 +13,30 @@
       "path": "packages/account",
       "moduleKind": "domain-module",
       "semanticOwner": "account",
-      "allowedWorkspaceDependencies": [
-        "@line-work/platform"
-      ]
+      "allowedWorkspaceDependencies": ["@line-work/platform"]
     },
     "@line-work/notifications": {
       "path": "packages/notifications",
       "moduleKind": "domain-module",
       "semanticOwner": "notifications",
-      "allowedWorkspaceDependencies": [
-        "@line-work/platform"
-      ]
+      "allowedWorkspaceDependencies": ["@line-work/platform"]
     },
     "@line-work/asset": {
       "path": "packages/asset",
       "moduleKind": "domain-module",
       "semanticOwner": "asset",
-      "allowedWorkspaceDependencies": [
-        "@line-work/platform"
-      ]
+      "allowedWorkspaceDependencies": ["@line-work/platform"]
     },
     "@line-work/assistant": {
       "path": "packages/assistant",
       "moduleKind": "application-module",
       "semanticOwner": "assistant",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/audit": {
+      "path": "packages/audit",
+      "moduleKind": "domain-module",
+      "semanticOwner": "audit",
       "allowedWorkspaceDependencies": []
     },
     "@line-work/attendance": {
@@ -77,10 +77,7 @@
       "path": "packages/expense",
       "moduleKind": "domain-module",
       "semanticOwner": "expense",
-      "allowedWorkspaceDependencies": [
-        "@line-work/account",
-        "@line-work/platform"
-      ]
+      "allowedWorkspaceDependencies": ["@line-work/account", "@line-work/platform"]
     },
     "@line-work/google-workspace": {
       "path": "packages/google-workspace",
@@ -92,10 +89,7 @@
       "path": "packages/identity-access",
       "moduleKind": "domain-module",
       "semanticOwner": "identity-access",
-      "allowedWorkspaceDependencies": [
-        "@line-work/account",
-        "@line-work/platform"
-      ]
+      "allowedWorkspaceDependencies": ["@line-work/account", "@line-work/platform"]
     },
     "@line-work/ledger": {
       "path": "packages/ledger",
@@ -127,10 +121,7 @@
       "path": "packages/partners",
       "moduleKind": "domain-module",
       "semanticOwner": "partner-directory",
-      "allowedWorkspaceDependencies": [
-        "@line-work/account",
-        "@line-work/platform"
-      ]
+      "allowedWorkspaceDependencies": ["@line-work/account", "@line-work/platform"]
     },
     "@line-work/payroll": {
       "path": "packages/payroll",

@@ -7,6 +7,8 @@
       "packages/**",
       "scripts/**/*.{mjs,ts}",
       "*.json",
+      "knip.jsonc",
+      "architecture/**/*.json",
       ".dependency-cruiser.mjs",
       "!**/next-env.d.ts"
     ]
@@ -19,7 +21,9 @@
       "correctness": {
         "noUnreachable": "error",
         "noInvalidUseBeforeDeclaration": "error",
-        "noUnusedImports": "error"
+        "noUnusedImports": "error",
+        "useHookAtTopLevel": "error",
+        "useExhaustiveDependencies": "error"
       },
       "suspicious": {
         "noDuplicateCase": "error",

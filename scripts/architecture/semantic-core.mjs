@@ -1,6 +1,7 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, stat } from "node:fs/promises";
+import { posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateSemanticBenchmark } from "./check-semantic-benchmark.mjs";
 import { compileDataTopology, loadDataTopologySources } from "./data-topology-core.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -27,6 +28,29 @@ function requireCollection(model, key, errors) {
 function commandScript(command) {
   if (typeof command !== "string") return null;
   return /^pnpm\s+([A-Za-z0-9:_-]+)(?:\s|$)/.exec(command.trim())?.[1] ?? null;
+}
+
+function unique(values) {
+  return new Set(values).size === values.length;
+}
+
+function benchmarkItems(benchmark) {
+  return [
+    ...(benchmark?.nodes ?? []).map((item) => ({ kind: "node", id: item.id })),
+    ...(benchmark?.projections ?? []).map((item) => ({ kind: "projection", id: item.id })),
+    ...(benchmark?.derivedResults ?? []).map((item) => ({
+      kind: "derived-result",
+      id: item.id,
+    })),
+    ...(benchmark?.referenceContracts ?? []).map((item) => ({
+      kind: "reference-contract",
+      id: item.id,
+    })),
+  ];
+}
+
+function implementationStatus(capability) {
+  return capability.implementation?.status ?? "missing";
 }
 
 export function validateSemanticArchitecture(model, benchmark, topology, commandManifest = null) {
@@ -59,6 +83,7 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     "integrationModes",
     "concepts",
     "relationships",
+    "capabilities",
     "invariants",
     "truthRegistry",
     "policies",
@@ -74,6 +99,7 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
   const concepts = indexById(model?.concepts, "Concept", errors);
   const relationships = indexById(model?.relationships, "Relationship", errors);
   const capabilities = indexById(model?.capabilities, "Capability", errors);
+  const locators = indexById(model?.locators, "Locator", errors);
   const invariants = indexById(model?.invariants, "Invariant", errors);
   indexById(model?.truthRegistry, "Truth registry", errors);
   indexById(model?.policies, "Policy", errors);
@@ -91,6 +117,18 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     if (!boundaryTypes.has(type)) errors.push("Boundary type missing: " + type);
   }
 
+  const lifecycles = new Set([
+    "current",
+    "current-foundation",
+    "current-data-only",
+    "selected-target",
+  ]);
+  for (const owner of owners.values()) {
+    if (!lifecycles.has(owner.lifecycle)) {
+      errors.push("Semantic owner " + owner.id + ": unsupported lifecycle " + owner.lifecycle);
+    }
+  }
+
   for (const context of contexts.values()) {
     const contextOwners = context.owners ?? (context.owner ? [context.owner] : []);
     if (!contextOwners.length) errors.push("Bounded context " + context.id + ": owner is required");
@@ -102,9 +140,15 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
   }
 
   const benchmarkNodes = new Set((benchmark?.nodes ?? []).map((node) => node.id));
+  const benchmarkInventory = new Map(
+    (benchmark?.sourceInventory ?? []).map((source) => [source.file, source]),
+  );
   for (const concept of concepts.values()) {
     if (!owners.has(concept.owner)) {
       errors.push("Concept " + concept.id + ": unknown owner " + concept.owner);
+    }
+    if (!lifecycles.has(concept.lifecycle)) {
+      errors.push("Concept " + concept.id + ": unsupported lifecycle " + concept.lifecycle);
     }
     const conceptType = conceptTypes.get(concept.kind);
     if (!conceptType) {
@@ -179,6 +223,12 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     if (!owners.has(capability.owner)) {
       errors.push("Capability " + capability.id + ": unknown owner " + capability.owner);
     }
+    if (!["leaf", "aggregate"].includes(capability.kind)) {
+      errors.push("Capability " + capability.id + ": kind must be leaf or aggregate");
+    }
+    if (typeof capability.intent !== "string" || !capability.intent.trim()) {
+      errors.push("Capability " + capability.id + ": intent is required");
+    }
     for (const invariantId of capability.preserves ?? []) {
       if (!invariants.has(invariantId)) {
         errors.push("Capability " + capability.id + ": unknown invariant " + invariantId);
@@ -251,6 +301,193 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
         errors.push("Capability " + capability.id + ": unknown validation profile " + profileId);
       }
     }
+  }
+
+  const implementationStatuses = new Set([
+    "implemented",
+    "data-only",
+    "foundation",
+    "not-implemented",
+  ]);
+  for (const capability of capabilities.values()) {
+    if (capability.kind === "leaf") {
+      if (capability.members !== undefined) {
+        errors.push("Capability " + capability.id + ": leaf must not declare aggregate members");
+      }
+      const implementation = capability.implementation;
+      if (!implementation || typeof implementation !== "object") {
+        errors.push("Capability " + capability.id + ": leaf requires implementation evidence");
+        continue;
+      }
+      if (!implementationStatuses.has(implementation.status)) {
+        errors.push(
+          "Capability " +
+            capability.id +
+            ": implementation.status must be implemented, data-only, foundation, or not-implemented",
+        );
+      }
+      for (const key of ["sourcePaths", "publicExports", "entrypoints", "testPaths"]) {
+        if (!Array.isArray(implementation[key])) {
+          errors.push(
+            "Capability " + capability.id + ": implementation." + key + " must be an array",
+          );
+        }
+      }
+      if (typeof implementation.scope !== "string" || !implementation.scope.trim()) {
+        errors.push("Capability " + capability.id + ": implementation.scope is required");
+      }
+      if (typeof implementation.note !== "string" || !implementation.note.trim()) {
+        errors.push("Capability " + capability.id + ": implementation.note is required");
+      }
+      if (
+        capability.runtimeExpectation === "required" &&
+        (implementation.status !== "implemented" ||
+          !(implementation.sourcePaths ?? []).length ||
+          !(implementation.publicExports ?? []).length)
+      ) {
+        errors.push(
+          "Capability " +
+            capability.id +
+            ": required runtime expectation needs implemented sourcePaths and publicExports evidence",
+        );
+      }
+    } else if (capability.kind === "aggregate") {
+      if (capability.implementation !== undefined) {
+        errors.push(
+          "Capability " + capability.id + ": aggregate must not declare leaf implementation",
+        );
+      }
+      if (!Array.isArray(capability.members) || capability.members.length === 0) {
+        errors.push("Capability " + capability.id + ": aggregate requires members");
+        continue;
+      }
+      if (!unique(capability.members)) {
+        errors.push("Capability " + capability.id + ": aggregate members must be unique");
+      }
+      let hasNotRequiredMember = false;
+      for (const memberId of capability.members) {
+        const member = capabilities.get(memberId);
+        if (!member) {
+          errors.push("Capability " + capability.id + ": unknown member " + memberId);
+          continue;
+        }
+        if (member.kind !== "leaf") {
+          errors.push("Capability " + capability.id + ": member " + memberId + " must be leaf");
+        }
+        if (member.owner !== capability.owner) {
+          errors.push(
+            "Capability " + capability.id + ": member " + memberId + " has different owner",
+          );
+        }
+        if (member.runtimeExpectation !== "required") hasNotRequiredMember = true;
+      }
+      if (capability.runtimeExpectation === "required" && hasNotRequiredMember) {
+        errors.push("Capability " + capability.id + ": partial aggregate must not be required");
+      }
+    }
+  }
+
+  for (const locator of locators.values()) {
+    const concept = concepts.get(locator.concept);
+    if (!concept) {
+      errors.push("Locator " + locator.id + ": unknown concept " + locator.concept);
+    }
+    if (!Array.isArray(locator.fields) || locator.fields.length === 0) {
+      errors.push("Locator " + locator.id + ": fields must be non-empty");
+    } else if (!unique(locator.fields)) {
+      errors.push("Locator " + locator.id + ": fields must be unique");
+    }
+    if (typeof locator.scope !== "string" || !locator.scope.trim()) {
+      errors.push("Locator " + locator.id + ": scope is required");
+    }
+    if (!["active", "reference-only"].includes(locator.status)) {
+      errors.push("Locator " + locator.id + ": status must be active or reference-only");
+    }
+    if (locator.status === "active" && !(locator.routeFiles ?? []).length) {
+      errors.push("Locator " + locator.id + ": active locator requires routeFiles");
+    }
+    if (
+      locator.status === "active" &&
+      ["current-data-only", "selected-target"].includes(concept?.lifecycle)
+    ) {
+      errors.push(
+        "Locator " + locator.id + ": inactive concept lifecycle cannot claim active locator",
+      );
+    }
+    const source = locator.benchmark;
+    if (source) {
+      const inventory = benchmarkInventory.get(source.file);
+      if (!inventory) {
+        errors.push("Locator " + locator.id + ": unknown benchmark source " + source.file);
+      } else if (!["included", "reference-only"].includes(inventory.disposition)) {
+        errors.push(
+          "Locator " + locator.id + ": benchmark source must be included or reference-only",
+        );
+      }
+    }
+  }
+
+  const mappedNodes = new Set(
+    [...concepts.values()].map((concept) => concept.benchmark?.node).filter(Boolean),
+  );
+  const externalItems = benchmarkItems(benchmark);
+  const externalItemKeys = new Set(externalItems.map((item) => item.kind + ":" + item.id));
+  const decisionKeys = new Set();
+  for (const decision of model?.benchmarkDecisions ?? []) {
+    const key = decision.kind + ":" + decision.id;
+    if (decisionKeys.has(key)) errors.push("Benchmark decision: duplicate " + key);
+    decisionKeys.add(key);
+    if (!externalItemKeys.has(key)) {
+      errors.push("Benchmark decision " + key + ": unknown external item");
+    }
+    if (decision.kind === "node" && mappedNodes.has(decision.id)) {
+      errors.push("Benchmark decision " + key + ": mapped benchmark nodes must not be duplicated");
+    }
+    if (!["adopted", "deferred", "not-applicable"].includes(decision.status)) {
+      errors.push("Benchmark decision " + key + ": unsupported status " + decision.status);
+    }
+    if (typeof decision.reason !== "string" || !decision.reason.trim()) {
+      errors.push("Benchmark decision " + key + ": reason is required");
+    }
+    for (const conceptId of decision.concepts ?? []) {
+      if (!concepts.has(conceptId))
+        errors.push("Benchmark decision " + key + ": unknown concept " + conceptId);
+    }
+    for (const capabilityId of decision.capabilities ?? []) {
+      if (!capabilities.has(capabilityId)) {
+        errors.push("Benchmark decision " + key + ": unknown capability " + capabilityId);
+      }
+    }
+    for (const locatorId of decision.locators ?? []) {
+      if (!locators.has(locatorId))
+        errors.push("Benchmark decision " + key + ": unknown locator " + locatorId);
+    }
+    if (
+      decision.status !== "adopted" &&
+      ((decision.concepts ?? []).length ||
+        (decision.capabilities ?? []).length ||
+        (decision.locators ?? []).length)
+    ) {
+      errors.push("Benchmark decision " + key + ": only adopted decisions may carry product basis");
+    }
+    if (
+      decision.status === "adopted" &&
+      !(
+        (decision.concepts ?? []).length ||
+        (decision.capabilities ?? []).length ||
+        (decision.locators ?? []).length
+      )
+    ) {
+      errors.push(
+        "Benchmark decision " + key + ": adopted requires concept, capability, or locator basis",
+      );
+    }
+  }
+  for (const item of externalItems) {
+    if (item.kind === "node" && mappedNodes.has(item.id)) continue;
+    const key = item.kind + ":" + item.id;
+    if (!decisionKeys.has(key))
+      errors.push("Benchmark decision missing explicit disposition for " + key);
   }
 
   const modules = topology?.modules ?? {};
@@ -367,6 +604,103 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
   return errors;
 }
 
+async function exists(path) {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function safeRelativeFilePath(path) {
+  if (typeof path !== "string" || !path) return false;
+  if (path.includes("\\") || path.startsWith("/") || /^[A-Za-z]:/.test(path)) return false;
+  if (path.split("/").includes("..")) return false;
+  return posix.normalize(path) === path;
+}
+
+export async function validateSemanticFilesystem(compiled, root) {
+  const errors = [];
+  const moduleByOwner = new Map();
+  const exportsByModule = new Map();
+  for (const [moduleName, entry] of Object.entries(compiled.topology.modules ?? {})) {
+    moduleByOwner.set(entry.semanticOwner, { moduleName, ...entry });
+    const packagePath = resolve(root, entry.path, "package.json");
+    if (await exists(packagePath)) {
+      const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
+      exportsByModule.set(moduleName, new Set(Object.keys(packageJson.exports ?? {})));
+    } else {
+      exportsByModule.set(moduleName, new Set());
+    }
+  }
+
+  for (const capability of compiled.capabilities.values()) {
+    if (capability.kind !== "leaf") continue;
+    const implementation = capability.implementation;
+    if (!implementation) continue;
+    const module = moduleByOwner.get(capability.owner);
+    for (const path of implementation.sourcePaths ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push(
+          "Capability " + capability.id + ": sourcePath must be a normalized relative path",
+        );
+        continue;
+      }
+      if (!module || !path.startsWith(module.path + "/src/")) {
+        errors.push("Capability " + capability.id + ": sourcePath must belong to owner module");
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Capability " + capability.id + ": missing sourcePath " + path);
+      }
+    }
+    for (const path of implementation.testPaths ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push(
+          "Capability " + capability.id + ": testPath must be a normalized relative path",
+        );
+        continue;
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Capability " + capability.id + ": missing testPath " + path);
+      }
+    }
+    for (const path of implementation.entrypoints ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push(
+          "Capability " + capability.id + ": entrypoint must be a normalized relative path",
+        );
+        continue;
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Capability " + capability.id + ": missing entrypoint " + path);
+      }
+    }
+    const publicExports = exportsByModule.get(module?.moduleName) ?? new Set();
+    for (const key of implementation.publicExports ?? []) {
+      if (!publicExports.has(key)) {
+        errors.push("Capability " + capability.id + ": unknown public export " + key);
+      }
+    }
+  }
+
+  for (const locator of compiled.locators.values()) {
+    for (const path of locator.routeFiles ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push("Locator " + locator.id + ": routeFile must be a normalized relative path");
+        continue;
+      }
+      if (!path.startsWith("apps/web/src/app/") || !path.endsWith("/page.tsx")) {
+        errors.push("Locator " + locator.id + ": routeFile must be an app page.tsx");
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Locator " + locator.id + ": missing routeFile " + path);
+      }
+    }
+  }
+
+  return errors;
+}
+
 export function compileSemanticArchitecture(
   model,
   benchmark,
@@ -385,6 +719,7 @@ export function compileSemanticArchitecture(
   const concepts = new Map((model.concepts ?? []).map((item) => [item.id, item]));
   const relationships = new Map((model.relationships ?? []).map((item) => [item.id, item]));
   const capabilities = new Map((model.capabilities ?? []).map((item) => [item.id, item]));
+  const locators = new Map((model.locators ?? []).map((item) => [item.id, item]));
   const invariants = new Map((model.invariants ?? []).map((item) => [item.id, item]));
   const mappings = new Map(
     (model.implementationMappings ?? []).map((item) => [item.semanticOwner, item]),
@@ -411,6 +746,7 @@ export function compileSemanticArchitecture(
     concepts,
     relationships,
     capabilities,
+    locators,
     invariants,
     mappings,
     benchmarkNodes,
@@ -432,7 +768,7 @@ export async function loadSemanticArchitecture(root = repositoryRoot) {
     readJson("package.json"),
     loadDataTopologySources(root),
   ]);
-  return compileSemanticArchitecture(
+  const compiled = compileSemanticArchitecture(
     model,
     benchmark,
     topology,
@@ -441,4 +777,7 @@ export async function loadSemanticArchitecture(root = repositoryRoot) {
     dataSources.schemaFiles,
     dataSources.relationsByFile,
   );
+  compiled.errors.push(...validateSemanticBenchmark(benchmark));
+  compiled.errors.push(...(await validateSemanticFilesystem(compiled, root)));
+  return compiled;
 }

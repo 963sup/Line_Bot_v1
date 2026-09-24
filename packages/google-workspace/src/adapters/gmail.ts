@@ -7,6 +7,7 @@ import {
 } from "./request.js";
 
 const base = "https://gmail.googleapis.com/gmail/v1/users/me/messages";
+/** @public Public Gmail adapter listed in packages/google-workspace/README.md. */
 export function listMessages(
   options: GoogleRequestOptions & { query?: string },
   request: typeof fetch = fetch,

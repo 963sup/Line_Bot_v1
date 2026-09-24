@@ -25,6 +25,7 @@ export function createTask(
     { title: options.title, notes: options.notes },
   );
 }
+/** @public Public Tasks adapter listed in packages/google-workspace/README.md. */
 export function setTaskStatus(
   options: GoogleRequestOptions & {
     taskListId: string;

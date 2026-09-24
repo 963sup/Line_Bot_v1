@@ -6,6 +6,8 @@ TypeScript／pnpm monorepo，使用 Next.js、LINE MINI App 與 Supabase，提�
 
 本專案採 Context-first Modular Monolith。DDD 用來界定 business language、ownership 與 Bounded Context；Hexagonal Ports/Adapters 用來維持 owner 內部的 dependency direction 與 external technology boundary。現有 ownership 與 implementation topology 見 [Repository structure](docs/020-architecture/010-repository-architecture.md)。
 
+模型責任、FPT 對照與查核命令從 [Architecture 入口](architecture/README.md) 開始；能力狀態與資源 URL 可分別用 `pnpm semantic view capabilities`、`pnpm semantic view locators` 查看。
+
 - `apps/web` 只依賴 owner module 的公開 surface；Module Boundary 不等於 Bounded Context。
 - `packages/<owner>` 依真實責任組織 `domain / application / contracts / adapters / agents`；沒有真實用途的 layer 不建立。
 - [`architecture/semantic-model.json`](architecture/semantic-model.json) 是 cross-context structured semantics、ownership、relationship、invariant 與 implementation mapping 的 machine-readable source of truth。

@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
-import { compileSemanticArchitecture, validateSemanticArchitecture } from "./semantic-core.mjs";
+import {
+  compileSemanticArchitecture,
+  validateSemanticArchitecture,
+  validateSemanticFilesystem,
+} from "./semantic-core.mjs";
 import { diffSemanticModels } from "./semantic-diff.mjs";
 import { diffSemanticBenchmark } from "./semantic-drift.mjs";
 import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
+import { renderSemanticView, routeFileToUrl } from "./semantic-projection.mjs";
 import { querySemanticArchitecture } from "./semantic-query.mjs";
 
 function fixture() {
@@ -85,7 +93,16 @@ function fixture() {
         kind: "authoritative",
         authorityMode: "authoritative",
         owner: "repository",
+        lifecycle: "current",
         benchmark: { node: "repository" },
+      },
+      {
+        id: "project",
+        canonicalName: "Project",
+        kind: "authoritative",
+        authorityMode: "authoritative",
+        owner: "project",
+        lifecycle: "current-data-only",
       },
     ],
     relationships: [
@@ -103,16 +120,38 @@ function fixture() {
       {
         id: "manage-repository",
         owner: "repository",
+        kind: "leaf",
         runtimeExpectation: "required",
+        intent: "Manage repository.",
         preserves: ["K1"],
         validationProfiles: ["semantic-architecture"],
+        implementation: {
+          status: "implemented",
+          scope: "fixture",
+          sourcePaths: ["packages/repository/src/application/issues.ts"],
+          publicExports: ["./application/issues"],
+          entrypoints: [],
+          testPaths: [],
+          note: "fixture",
+        },
       },
       {
         id: "manage-project-planning",
         owner: "project",
+        kind: "leaf",
         runtimeExpectation: "not-asserted",
+        intent: "Plan project.",
         preserves: ["K1"],
         validationProfiles: ["semantic-architecture"],
+        implementation: {
+          status: "data-only",
+          scope: "fixture",
+          sourcePaths: [],
+          publicExports: [],
+          entrypoints: [],
+          testPaths: [],
+          note: "fixture",
+        },
       },
     ],
     invariants: [{ id: "K1", tags: ["architecture"] }],
@@ -188,6 +227,146 @@ test("accepts separated semantic, implementation and benchmark authority", () =>
   assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
 });
 
+test("rejects required runtime capability without implemented source and export evidence", () => {
+  const { model, benchmark, topology } = fixture();
+  model.capabilities[0].implementation.sourcePaths = [];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /required runtime expectation needs implemented sourcePaths and publicExports evidence/,
+  );
+});
+
+test("rejects aggregate capabilities with cross-owner or non-leaf members", () => {
+  const { model, benchmark, topology } = fixture();
+  model.capabilities.push({
+    id: "repository-family",
+    owner: "repository",
+    kind: "aggregate",
+    runtimeExpectation: "required",
+    intent: "fixture aggregate",
+    preserves: ["K1"],
+    validationProfiles: ["semantic-architecture"],
+    members: ["manage-repository", "manage-project-planning"],
+  });
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /has different owner/,
+  );
+});
+
+test("rejects benchmark items without explicit concept mapping or product decision", () => {
+  const { model, benchmark, topology } = fixture();
+  benchmark.nodes.push({ id: "discussion" });
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /Benchmark decision missing explicit disposition for node:discussion/,
+  );
+  model.benchmarkDecisions = [
+    { id: "repository", kind: "node", status: "adopted", concepts: ["repository"], reason: "x" },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /mapped benchmark nodes must not be duplicated/,
+  );
+});
+
+test("rejects active locators for data-only or target concepts", () => {
+  const { model, benchmark, topology } = fixture();
+  model.locators = [
+    {
+      id: "project-url",
+      concept: "project",
+      status: "active",
+      fields: ["number"],
+      scope: "fixture",
+      routeFiles: ["apps/web/src/app/(app)/projects/[number]/page.tsx"],
+      benchmark: { file: "schema-projects.json", category: "projects", symbol: "ProjectV2" },
+    },
+  ];
+  benchmark.sourceInventory = [
+    { file: "schema-projects.json", category: "projects", disposition: "included" },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /inactive concept lifecycle cannot claim active locator/,
+  );
+});
+
+test("rejects active current locators without route evidence", () => {
+  const { model, benchmark, topology } = fixture();
+  model.locators = [
+    {
+      id: "repository-url",
+      concept: "repository",
+      status: "active",
+      fields: ["owner", "name"],
+      scope: "fixture",
+      routeFiles: [],
+    },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /active locator requires routeFiles/,
+  );
+});
+
+test("rejects lifecycle typos before lifecycle-dependent guards run", () => {
+  const { model, benchmark, topology } = fixture();
+  model.semanticOwners[0].lifecycle = "selected-targte";
+  model.concepts[0].lifecycle = "current-dtaa-only";
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /unsupported lifecycle/,
+  );
+});
+
+test("rejects deferred benchmark decisions that still carry product basis", () => {
+  const { model, benchmark, topology } = fixture();
+  benchmark.nodes.push({ id: "discussion" });
+  model.benchmarkDecisions = [
+    {
+      id: "discussion",
+      kind: "node",
+      status: "deferred",
+      concepts: ["repository"],
+      reason: "fixture",
+    },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /only adopted decisions may carry product basis/,
+  );
+});
+
+test("rejects and repairs mixed leaf and aggregate evidence shapes", () => {
+  const { model, benchmark, topology } = fixture();
+  const leaf = model.capabilities[0];
+  leaf.members = [model.capabilities[1].id];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /leaf must not declare aggregate members/,
+  );
+  delete leaf.members;
+  const aggregate = {
+    id: "family",
+    owner: leaf.owner,
+    kind: "aggregate",
+    intent: "Group the current owner capability.",
+    runtimeExpectation: "not-asserted",
+    preserves: leaf.preserves,
+    validationProfiles: leaf.validationProfiles,
+    members: [leaf.id],
+    implementation: leaf.implementation,
+  };
+  model.capabilities.push(aggregate);
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /aggregate must not declare leaf implementation/,
+  );
+  delete aggregate.implementation;
+  assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
+});
+
 test("rejects a module pretending to be a bounded context", () => {
   const { model, benchmark, topology } = fixture();
   topology.modules["@line-work/repository"].moduleKind = "bounded-context";
@@ -247,6 +426,82 @@ test("semantic diff classifies ownership changes as breaking", () => {
   );
 });
 
+test("semantic diff treats locator route changes as breaking", () => {
+  const { model } = fixture();
+  model.locators = [
+    {
+      id: "repository-url",
+      concept: "repository",
+      status: "active",
+      fields: ["owner", "name"],
+      scope: "fixture",
+      routeFiles: ["apps/web/src/app/(resource)/[owner]/[name]/page.tsx"],
+    },
+  ];
+  const changed = structuredClone(model);
+  changed.locators[0].routeFiles = ["apps/web/src/app/(resource)/[owner]/[repo]/page.tsx"];
+  assert.deepEqual(
+    diffSemanticModels(model, changed).find(
+      (entry) => entry.collection === "locators" && entry.id === "repository-url",
+    ),
+    {
+      type: "changed",
+      collection: "locators",
+      id: "repository-url",
+      breaking: true,
+      classification: "locator-change",
+      properties: ["routeFiles"],
+    },
+  );
+});
+
+test("semantic diff preserves benchmark decision identity across item kinds", () => {
+  const before = {
+    benchmarkDecisions: [
+      { kind: "node", id: "shared", status: "deferred", reason: "Pending owner decision." },
+      { kind: "projection", id: "shared", status: "deferred", reason: "Pending consumer." },
+    ],
+  };
+  const after = structuredClone(before);
+  after.benchmarkDecisions[0].status = "not-applicable";
+  after.benchmarkDecisions.pop();
+  const changes = diffSemanticModels(before, after);
+  assert.deepEqual(
+    changes.map(({ id, type }) => ({ id, type })),
+    [
+      { id: "node:shared", type: "changed" },
+      { id: "projection:shared", type: "removed" },
+    ],
+  );
+  assert.deepEqual(diffSemanticModels(before, structuredClone(before)), []);
+});
+
+test("semantic diff flags aggregate and adopted mapping changes as breaking", () => {
+  const before = {
+    capabilities: [
+      {
+        id: "repository-family",
+        kind: "aggregate",
+        members: ["read", "write"],
+        preserves: ["K1", "K2"],
+        validationProfiles: ["tests", "architecture"],
+      },
+    ],
+    benchmarkDecisions: [{ kind: "node", id: "work", status: "adopted", capabilities: ["write"] }],
+  };
+  for (const property of ["members", "preserves", "validationProfiles"]) {
+    const after = structuredClone(before);
+    after.capabilities[0][property].pop();
+    const changes = diffSemanticModels(before, after);
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0].breaking, true, property);
+  }
+  const remapped = structuredClone(before);
+  remapped.benchmarkDecisions[0].capabilities = ["read"];
+  assert.equal(diffSemanticModels(before, remapped)[0].breaking, true);
+  assert.deepEqual(diffSemanticModels(before, structuredClone(before)), []);
+});
+
 test("validation profiles resolve the canonical package command surface", () => {
   const { model, benchmark, topology } = fixture();
   assert.deepEqual(
@@ -269,6 +524,50 @@ test("semantic planner resolves intent into owners, contracts and bounded change
   assert.equal(plan.contracts[0].id, "project-repository");
   assert.equal(
     plan.candidateChangeSurfaces.some((surface) => surface.owner === "repository"),
+    true,
+  );
+});
+
+test("semantic planner keeps owner capability coverage after leaf split", () => {
+  const { model, benchmark, topology } = fixture();
+  model.evidenceModel.validationProfiles.push({
+    id: "tests",
+    command: "pnpm test",
+    evidenceClass: "runtime",
+    proves: ["fixture test evidence"],
+  });
+  model.capabilities.push({
+    id: "manage-repository-stars",
+    owner: "repository",
+    kind: "leaf",
+    runtimeExpectation: "required",
+    intent: "Manage Repository stars.",
+    preserves: ["K1"],
+    validationProfiles: ["tests"],
+    implementation: {
+      status: "implemented",
+      scope: "fixture",
+      sourcePaths: ["packages/repository/src/application/stars.ts"],
+      publicExports: ["./application/stars"],
+      entrypoints: [],
+      testPaths: [],
+      note: "fixture",
+    },
+  });
+  const plan = planSemanticChange(
+    compileSemanticArchitecture(model, benchmark, topology),
+    "Repository stars",
+  );
+  assert.equal(
+    plan.capabilities.some((capability) => capability.id === "manage-repository"),
+    true,
+  );
+  assert.equal(
+    plan.capabilities.some((capability) => capability.id === "manage-repository-stars"),
+    true,
+  );
+  assert.equal(
+    plan.requiredValidation.some((profile) => profile.id === "tests"),
     true,
   );
 });
@@ -309,6 +608,73 @@ test("query surface exposes contracts and boundaries from canonical semantic dat
     Array.isArray(querySemanticArchitecture(compiled, "boundaries", ["repository"]).module),
     true,
   );
+});
+
+test("filesystem guard rejects fake source, public export and route evidence", async () => {
+  const root = await mkdtemp(join(tmpdir(), "semantic-fs-"));
+  const { model, benchmark, topology } = fixture();
+  model.locators = [
+    {
+      id: "repository-route",
+      concept: "repository",
+      status: "active",
+      fields: ["owner", "name"],
+      scope: "fixture",
+      routeFiles: ["apps/web/src/not-app/[owner]/[name]/page.tsx"],
+    },
+  ];
+  model.capabilities[0].implementation.sourcePaths = ["packages/repository/src/application"];
+  model.capabilities[0].implementation.publicExports = ["./application/missing"];
+
+  await mkdir(join(root, "packages/repository/src/application"), { recursive: true });
+  await writeFile(
+    join(root, "packages/repository/package.json"),
+    JSON.stringify({ exports: { "./application/issues": "./dist/application/issues.js" } }),
+  );
+  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const errors = await validateSemanticFilesystem(compiled, root);
+  assert.match(errors.join("\n"), /missing sourcePath packages\/repository\/src\/application/);
+  assert.match(errors.join("\n"), /unknown public export \.\/application\/missing/);
+  assert.match(errors.join("\n"), /routeFile must be an app page\.tsx/);
+
+  model.capabilities[0].implementation.sourcePaths = [
+    "packages/repository/src/application/issues.ts",
+  ];
+  model.capabilities[0].implementation.publicExports = ["./application/issues"];
+  model.locators[0].routeFiles = ["apps/web/src/app/(resource)/[owner]/[name]/page.tsx"];
+  await writeFile(join(root, "packages/repository/src/application/issues.ts"), "export {};\n");
+  await mkdir(join(root, "apps/web/src/app/(resource)/[owner]/[name]"), { recursive: true });
+  await writeFile(
+    join(root, "apps/web/src/app/(resource)/[owner]/[name]/page.tsx"),
+    "export {};\n",
+  );
+  assert.deepEqual(
+    await validateSemanticFilesystem(compileSemanticArchitecture(model, benchmark, topology), root),
+    [],
+  );
+});
+
+test("locator view derives URLs from route files without storing a second pattern", () => {
+  assert.equal(
+    routeFileToUrl("apps/web/src/app/(resource)/[login]/[repository]/page.tsx"),
+    "/{login}/{repository}",
+  );
+  const { model, benchmark, topology } = fixture();
+  model.locators = [
+    {
+      id: "repository-route",
+      concept: "repository",
+      status: "active",
+      fields: ["owner", "name"],
+      scope: "fixture",
+      routeFiles: ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
+    },
+  ];
+  const view = renderSemanticView(
+    compileSemanticArchitecture(model, benchmark, topology),
+    "locators",
+  );
+  assert.match(view, /\/\{login\}\/\{repository\}/);
 });
 
 test("runtime feedback detects drift without mutating semantic authority", () => {

@@ -60,5 +60,3 @@ export function createUserProfiles(deps: {
         .save((await deps.activeUser(subject)).id, parseUserProfileUpdate(input), deps.now()),
   };
 }
-
-export type UserProfiles = ReturnType<typeof createUserProfiles>;

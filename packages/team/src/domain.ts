@@ -1,6 +1,6 @@
 import type { UserStatus } from "@line-work/account/domain/user";
 
-export type TeamMembershipStatus = "pending" | "active" | "removed";
+type TeamMembershipStatus = "pending" | "active" | "removed";
 
 type TeamCommandContext = Readonly<{
   requestId: string;

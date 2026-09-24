@@ -39,5 +39,3 @@ export function createFollows(deps: {
     following: async (subject: string) => deps.store().following(await actor(subject)),
   };
 }
-
-export type FollowUseCases = ReturnType<typeof createFollows>;

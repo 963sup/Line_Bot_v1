@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { googleLogin, sessionToken } from "../../shared/browser/supabase-session";
 import { miniAppEntryUrl } from "../../shared/presentation/entry-route";
 
@@ -10,6 +10,9 @@ export default function GoogleLinkPage({ miniAppUrl }: { miniAppUrl: string }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const onComplete = useEffectEvent(() => {
+    void submit();
+  });
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -23,7 +26,7 @@ export default function GoogleLinkPage({ miniAppUrl }: { miniAppUrl: string }) {
       return;
     }
     setReady(true);
-    if (new URLSearchParams(location.search).get("complete") === "1") void submit();
+    if (new URLSearchParams(location.search).get("complete") === "1") onComplete();
   }, []);
 
   async function submit() {

@@ -1,7 +1,7 @@
 "use client";
 import type { UserUseCases } from "@line-work/account/application/user";
 import type { DailyCheckIn } from "@line-work/daily-check-in/application";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import { authHeaders } from "../../shared/browser/supabase-session";
 
@@ -117,11 +117,12 @@ export function useUser(liffId: string) {
       if (!signal.aborted) setBusy(false);
     }
   }
+  const onResume = useEffectEvent(() => {
+    if (document.visibilityState === "visible") void refresh();
+  });
   useEffect(() => {
     if (!token || !inClient || busy) return;
-    const resume = () => {
-      if (document.visibilityState === "visible") void refresh();
-    };
+    const resume = () => onResume();
     document.addEventListener("visibilitychange", resume);
     return () => document.removeEventListener("visibilitychange", resume);
   }, [token, inClient, busy]);
