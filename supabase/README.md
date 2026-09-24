@@ -79,12 +79,13 @@ Remote target 由 `SUPABASE_URL` 與 `POSTGRES_URL_NON_POOLING` 交叉驗證，�
 
 ### Automatic Release
 
-每次 successful same-repository `main` `Validate` 都會觸發 `Release`。Release 的 `gate` 以先前 **completed Release 中成功的固定 `gate` job** 作 affected-source cursor；整體 Release conclusion 只代表 downstream external-effect evidence，不是 routing authority。沒有合格 cursor 時才以 empty tree 做 bootstrap。
+每次 successful same-repository `main` `Validate` 都會觸發 `Release`。Release 的 `gate` 以先前 **completed Release 中成功的固定 `gate` job** 作 affected-source cursor；整體 Release conclusion 只代表 downstream external-effect evidence，不是 routing authority。沒有合格 cursor 時才以 empty tree 做 bootstrap。Supabase job 先執行 metadata-free additive `repair`，讓 current Production runtime 所需、且可從 declarative source 完整重建的 compatibility surface 在 unrelated destructive drift 存在時仍可安全復原；它不代表 full schema convergence。
 
 Declarative schema 相對 cursor 有變更時：
 
 ```text
 current validated main
+→ repair additive runtime compatibility
 → prepare preserve-data expansion / preflight
 → plain sync (plan → apply → second diff → acceptance)
 → preserve plan / verification / history evidence
@@ -94,6 +95,7 @@ Declarative schema沒有變更時仍執行：
 
 ```text
 current validated main
+→ repair additive runtime compatibility
 → verify remote desired/current parity
 → preserve verification evidence
 ```
