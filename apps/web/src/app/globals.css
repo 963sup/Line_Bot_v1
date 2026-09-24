@@ -2058,3 +2058,147 @@ summary:focus-visible {
     padding-bottom: 34px;
   }
 }
+
+
+/* App-shell target slices visible without inventing unavailable business capabilities. */
+.app-shell .status-row {
+  cursor: default;
+}
+
+.app-shell .row-status {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-muted);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.app-shell .home-section-anchor {
+  scroll-margin-top: 76px;
+  border: 0;
+  background: transparent;
+}
+
+.app-shell .notification-filter-disabled {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px dashed #484f58;
+  border-radius: 999px;
+  color: #6e7681;
+  background: #161b22;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.app-shell .assistant-workspace {
+  display: grid;
+  gap: 18px;
+  border: 0;
+  background: transparent;
+}
+
+.app-shell .assistant-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.app-shell .assistant-tabs button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.app-shell .assistant-tabs button[aria-selected="true"] {
+  border-color: #58a6ff;
+  background: #1f6feb33;
+  color: var(--ink);
+}
+
+.app-shell .assistant-mode-copy h2,
+.app-shell .assistant-result h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.app-shell .assistant-mode-copy p,
+.app-shell .assistant-boundary {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.app-shell .assistant-form {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.app-shell .assistant-form label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.app-shell .assistant-form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.app-shell .assistant-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-shell .assistant-form-footer > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.app-shell .assistant-result {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.app-shell .assistant-result p {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.app-shell .assistant-error {
+  margin: 0;
+  color: #ff7b72;
+}
+
+@media (max-width: 600px) {
+  .app-shell .app-shell-brand {
+    display: flex;
+    min-height: 64px;
+    padding: 10px 16px;
+  }
+
+  .app-shell .shell-wordmark {
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .app-shell .app-content {
+    padding-top: 22px;
+  }
+}
