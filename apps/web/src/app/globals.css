@@ -1728,6 +1728,38 @@ summary:focus-visible {
   padding-top: 22px;
 }
 
+.app-shell .app-content section,
+.app-shell .app-content form,
+.app-shell .attendance-current,
+.app-shell .quick-actions > *,
+.app-shell .crud-toolbar,
+.app-shell .scope-management-nav,
+.app-shell .diary-entry {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-shell .quick-actions .unavailable-action,
+.app-shell .crud-toolbar,
+.app-shell .scope-management-nav {
+  background: var(--surface-muted);
+}
+
+.app-shell .attendance-hero {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.app-shell .attendance-hero p,
+.app-shell .attendance-hero small,
+.app-shell .quick-actions span:last-child,
+.app-shell .crud-toolbar p {
+  color: var(--muted);
+}
+
 .app-shell .page-heading {
   min-height: 56px;
   align-items: center;
@@ -1885,7 +1917,7 @@ summary:focus-visible {
 }
 
 .app-shell .notification-filters a {
-  min-height: 38px;
+  min-height: 44px;
   border-color: var(--line);
   background: #21262d;
   color: var(--ink);
