@@ -473,10 +473,7 @@ test("Release routes schema and workflow changes through one reconciliation pass
   write(".github/workflows/release.yml", workflow.replace("status=completed ", ""));
   rejects(root, "detect affected source");
 
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace("status=completed", "status=success"),
-  );
+  write(".github/workflows/release.yml", workflow.replace("status=completed", "status=success"));
   rejects(root, "completed Release with successful gate");
 
   write(".github/workflows/release.yml", workflow.replace("display_title ", ""));
