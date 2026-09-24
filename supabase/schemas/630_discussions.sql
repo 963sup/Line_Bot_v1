@@ -22,5 +22,7 @@ create table app_private."discussions" (
 create index discussions_repository_created on app_private.discussions (repository_id, created_at, id);
 alter table app_private."discussions" enable row level security;
 revoke all on app_private."discussions" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.discussions to line_app;
-create policy "backend" on app_private.discussions as permissive for all to line_app using (true) with check (true);
+-- Discussion write management is data-only; current runtime is authorized read only.
+grant select on app_private.discussions to line_app;
+create policy "backend_read" on app_private.discussions
+  for select to line_app using (true);

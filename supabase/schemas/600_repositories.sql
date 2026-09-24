@@ -24,8 +24,12 @@ create table app_private."repositories" (
 create unique index repositories_owner_name on app_private.repositories (owner_account_id, lower(name));
 alter table app_private."repositories" enable row level security;
 revoke all on app_private."repositories" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.repositories to line_app;
-create policy "backend" on app_private.repositories as permissive for all to line_app using (true) with check (true);
+grant select on app_private.repositories to line_app;
+grant update (next_issue_number) on app_private.repositories to line_app;
+create policy "backend_read" on app_private.repositories
+  for select to line_app using (true);
+create policy "backend_issue_number" on app_private.repositories
+  for update to line_app using (true) with check (true);
 
 -- Direct User grant. Team-derived access is stored separately and combined only by the
 -- read-only effective-access projection after current qualification is rechecked.

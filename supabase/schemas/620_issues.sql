@@ -29,5 +29,13 @@ create index issues_repository on app_private.issues (repository_id, created_at,
 create index issues_publisher on app_private.issues (repository_id, publisher);
 alter table app_private."issues" enable row level security;
 revoke all on app_private."issues" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.issues to line_app;
-create policy "backend" on app_private.issues as permissive for all to line_app using (true) with check (true);
+grant select on app_private.issues to line_app;
+grant insert (id, repository_id, number, publisher, assignee, title, criteria, status, version, created_at, updated_at)
+  on app_private.issues to line_app;
+grant update (status, version, updated_at) on app_private.issues to line_app;
+create policy "backend_read" on app_private.issues
+  for select to line_app using (true);
+create policy "backend_insert" on app_private.issues
+  for insert to line_app with check (true);
+create policy "backend_transition" on app_private.issues
+  for update to line_app using (true) with check (true);

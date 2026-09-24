@@ -385,6 +385,37 @@ test("rejects unknown benchmark adoption", () => {
   );
 });
 
+test("cross-owner workspace dependencies require an explicit semantic relationship contract", () => {
+  const { model, benchmark, topology } = fixture();
+  topology.modules["@line-work/project"] = {
+    path: "packages/project",
+    moduleKind: "domain-module",
+    semanticOwner: "project",
+    allowedWorkspaceDependencies: [],
+  };
+  topology.modules["@line-work/repository"].allowedWorkspaceDependencies = ["@line-work/project"];
+  model.implementationMappings.find((mapping) => mapping.semanticOwner === "project").module =
+    "@line-work/project";
+
+  assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
+
+  model.relationships = [
+    {
+      id: "repository-self",
+      provider: "repository",
+      consumer: "repository",
+      authority: "repository",
+      meaning: "Unrelated fixture relationship.",
+      integrationMode: "reference",
+      consistency: "current-identity",
+    },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /cross-owner dependency @line-work\/project .* lacks explicit semantic relationship contract/,
+  );
+});
+
 test("rejects topology semantic owners that do not resolve", () => {
   const { model, benchmark, topology } = fixture();
   topology.modules["@line-work/repository"].semanticOwner = "missing";

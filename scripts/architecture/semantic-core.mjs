@@ -520,6 +520,34 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     }
   }
 
+  const ownerKinds = new Map([...owners.values()].map((owner) => [owner.id, owner.kind]));
+  const ownerPair = (left, right) => [left, right].sort().join("\u0000");
+  const relationshipPairs = new Set(
+    [...relationships.values()].map((relationship) =>
+      ownerPair(relationship.provider, relationship.consumer),
+    ),
+  );
+  for (const [name, entry] of Object.entries(modules)) {
+    for (const dependency of entry.allowedWorkspaceDependencies ?? []) {
+      const provider = modules[dependency];
+      if (!provider || provider.semanticOwner === entry.semanticOwner) continue;
+      if (ownerKinds.get(provider.semanticOwner) === "support-owner") continue;
+      if (!relationshipPairs.has(ownerPair(provider.semanticOwner, entry.semanticOwner))) {
+        errors.push(
+          "Implementation topology module " +
+            name +
+            ": cross-owner dependency " +
+            dependency +
+            " (" +
+            provider.semanticOwner +
+            " <-> " +
+            entry.semanticOwner +
+            ") lacks explicit semantic relationship contract",
+        );
+      }
+    }
+  }
+
   const mappedOwners = new Set();
   const mappingByOwner = new Map();
   for (const mapping of model?.implementationMappings ?? []) {

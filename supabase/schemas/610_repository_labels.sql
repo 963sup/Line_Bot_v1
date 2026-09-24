@@ -17,5 +17,7 @@ create table app_private.repository_labels (
 create index repository_labels_repository on app_private.repository_labels(repository_id, name, id);
 alter table app_private.repository_labels enable row level security;
 revoke all on app_private.repository_labels from public, anon, authenticated, line_app;
-grant insert, select, update, delete on app_private.repository_labels to line_app;
-create policy backend on app_private.repository_labels for all to line_app using (true) with check (true);
+-- Label write management is data-only until a real runtime command is activated.
+grant select on app_private.repository_labels to line_app;
+create policy backend_read on app_private.repository_labels
+  for select to line_app using (true);

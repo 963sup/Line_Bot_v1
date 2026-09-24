@@ -175,6 +175,95 @@ test("current-data-only Project relations expose no line_app runtime DML", async
   );
 });
 
+test("Repository runtime privileges match only activated write capabilities", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  const readOnly = [
+    "discussion_comments",
+    "discussions",
+    "repository_access",
+    "repository_labels",
+    "repository_milestones",
+    "repository_team_access",
+  ];
+  const tablePrivileges = await pg.query(
+    `select c.relname,
+      has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
+      has_table_privilege('line_app', c.oid, 'INSERT') as can_insert,
+      has_table_privilege('line_app', c.oid, 'UPDATE') as can_update,
+      has_table_privilege('line_app', c.oid, 'DELETE') as can_delete
+     from pg_class c
+     join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private' and c.relname=any($1::text[])
+     order by c.relname`,
+    [readOnly],
+  );
+  assert.deepEqual(
+    tablePrivileges.rows,
+    readOnly.map((relname) => ({
+      relname,
+      can_select: true,
+      can_insert: false,
+      can_update: false,
+      can_delete: false,
+    })),
+  );
+
+  const inactiveIssueLabels = await pg.query(
+    `select
+      has_table_privilege('line_app','app_private.issue_labels','SELECT') as can_select,
+      has_table_privilege('line_app','app_private.issue_labels','INSERT') as can_insert,
+      has_table_privilege('line_app','app_private.issue_labels','UPDATE') as can_update,
+      has_table_privilege('line_app','app_private.issue_labels','DELETE') as can_delete`,
+  );
+  assert.deepEqual(inactiveIssueLabels.rows, [
+    { can_select: false, can_insert: false, can_update: false, can_delete: false },
+  ]);
+
+  const repositoryColumns = await pg.query(
+    `select
+      has_table_privilege('line_app','app_private.repositories','SELECT') as can_select,
+      has_table_privilege('line_app','app_private.repositories','INSERT') as can_insert,
+      has_column_privilege('line_app','app_private.repositories','next_issue_number','UPDATE') as can_allocate_issue_number,
+      has_column_privilege('line_app','app_private.repositories','name','UPDATE') as can_update_name,
+      has_column_privilege('line_app','app_private.repositories','visibility','UPDATE') as can_update_visibility`,
+  );
+  assert.deepEqual(repositoryColumns.rows, [
+    {
+      can_select: true,
+      can_insert: false,
+      can_allocate_issue_number: true,
+      can_update_name: false,
+      can_update_visibility: false,
+    },
+  ]);
+
+  const issueColumns = await pg.query(
+    `select
+      has_table_privilege('line_app','app_private.issues','SELECT') as can_select,
+      has_column_privilege('line_app','app_private.issues','id','INSERT') as can_insert_id,
+      has_column_privilege('line_app','app_private.issues','milestone_id','INSERT') as can_insert_milestone,
+      has_column_privilege('line_app','app_private.issues','status','UPDATE') as can_update_status,
+      has_column_privilege('line_app','app_private.issues','version','UPDATE') as can_update_version,
+      has_column_privilege('line_app','app_private.issues','updated_at','UPDATE') as can_update_timestamp,
+      has_column_privilege('line_app','app_private.issues','title','UPDATE') as can_update_title,
+      has_table_privilege('line_app','app_private.issues','DELETE') as can_delete`,
+  );
+  assert.deepEqual(issueColumns.rows, [
+    {
+      can_select: true,
+      can_insert_id: true,
+      can_insert_milestone: false,
+      can_update_status: true,
+      can_update_version: true,
+      can_update_timestamp: true,
+      can_update_title: false,
+      can_delete: false,
+    },
+  ]);
+});
+
 test("repository effective access combines direct and active same-organization Team grants", async (t) => {
   const { pg } = await postgresFixture();
   t.after(() => pg.close());

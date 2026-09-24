@@ -15,5 +15,4 @@ create table app_private.issue_labels (
 create index issue_labels_label on app_private.issue_labels(label_id, issue_id);
 alter table app_private.issue_labels enable row level security;
 revoke all on app_private.issue_labels from public, anon, authenticated, line_app;
-grant insert, select, delete on app_private.issue_labels to line_app;
-create policy backend on app_private.issue_labels for all to line_app using (true) with check (true);
+-- IssueLabel management has current persisted truth but no active runtime consumer.

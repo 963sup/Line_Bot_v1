@@ -20,8 +20,10 @@ create index repository_team_access_team_lookup
   on app_private.repository_team_access(team_id, repository_id);
 alter table app_private."repository_team_access" enable row level security;
 revoke all on app_private."repository_team_access" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.repository_team_access to line_app;
-create policy "backend" on app_private.repository_team_access as permissive for all to line_app using (true) with check (true);
+-- Access facts are current data authority; grant-management runtime is not active.
+grant select on app_private.repository_team_access to line_app;
+create policy "backend_read" on app_private.repository_team_access
+  for select to line_app using (true);
 
 
 -- User interest in a Repository. The relationship remains Repository-owned; Account

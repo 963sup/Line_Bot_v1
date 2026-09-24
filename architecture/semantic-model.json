@@ -680,15 +680,6 @@
       "consistency": "derived"
     },
     {
-      "id": "identity-access-business-authorization",
-      "provider": "identity-access",
-      "consumer": "repository",
-      "meaning": "Scoped feature authorization decision composed with owning business policy.",
-      "integrationMode": "query",
-      "authority": "identity-access",
-      "consistency": "current-state"
-    },
-    {
       "id": "project-repository-reference",
       "provider": "repository",
       "consumer": "project",
@@ -723,6 +714,141 @@
       "integrationMode": "projection",
       "authority": "enterprise",
       "consistency": "atomic-where-required"
+    },
+    {
+      "id": "asset-attendance-reward-identity",
+      "provider": "asset",
+      "consumer": "attendance",
+      "meaning": "Attendance references the Asset-owned reward identity when posting attendance rewards.",
+      "integrationMode": "stable-identity",
+      "authority": "asset",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "identity-access-attendance-workplace-authorization",
+      "provider": "identity-access",
+      "consumer": "attendance",
+      "meaning": "Attendance consumes the current workplaces.manage permission decision for Workplace management.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "asset-daily-check-in-reward-denomination",
+      "provider": "asset",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn consumes Asset-owned reward identity and denomination when deciding and reconstructing rewards.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-enterprise-identity",
+      "provider": "account",
+      "consumer": "enterprise",
+      "meaning": "Enterprise affiliations and Team membership reference Account-owned stable User and Account identities.",
+      "integrationMode": "stable-identity",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "identity-access-enterprise-authorization",
+      "provider": "identity-access",
+      "consumer": "enterprise",
+      "meaning": "Enterprise governance consumes current EnterpriseOwner authorization and verified governance actor decisions.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-expense-qualification",
+      "provider": "account",
+      "consumer": "expense",
+      "meaning": "Expense consumes current User identity and qualification, including transaction-time mutation rechecks.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-identity-access-qualification",
+      "provider": "account",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current User identity, qualification and status version when evaluating permissions and RoleAssignments.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-ledger-holder-identity",
+      "provider": "account",
+      "consumer": "ledger",
+      "meaning": "Ledger value facts reference the Account-owned stable holder identity without taking Account lifecycle authority.",
+      "integrationMode": "reference",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "account-organization-identity",
+      "provider": "account",
+      "consumer": "organization",
+      "meaning": "Organization participation and public locator behavior reference Account-owned User and Account identity contracts.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "identity-access-organization-authorization",
+      "provider": "identity-access",
+      "consumer": "organization",
+      "meaning": "Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-partner-qualification",
+      "provider": "account",
+      "consumer": "partner-directory",
+      "meaning": "PartnerDirectory management consumes current User identity and qualification before protected operations.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-repository-owner-principal",
+      "provider": "account",
+      "consumer": "repository",
+      "meaning": "Repository owner locators and User principals reference Account-owned identity and current User qualification.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "organization-repository-owner-scope",
+      "provider": "organization",
+      "consumer": "repository",
+      "meaning": "Organization-owned Repositories consume current Organization scope and effective participation when resolving access.",
+      "integrationMode": "stable-identity+query",
+      "authority": "organization",
+      "consistency": "current-state"
+    },
+    {
+      "id": "identity-access-team-authorization",
+      "provider": "identity-access",
+      "consumer": "team",
+      "meaning": "Team collaboration consumes current TeamMaintainer RoleAssignment authorization.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-wallet-holder-qualification",
+      "provider": "account",
+      "consumer": "wallet",
+      "meaning": "Wallet balance projection consumes current User holder qualification and stable Account identity.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
     }
   ],
   "capabilities": [
@@ -976,6 +1102,7 @@
       "runtimeExpectation": "not-asserted",
       "members": [
         "read-repository",
+        "manage-repository-access",
         "manage-repository-stars",
         "manage-issues",
         "manage-discussions",
@@ -1014,6 +1141,29 @@
         ],
         "testPaths": ["packages/repository/test/stars.test.ts"],
         "note": "Public Repository lookup resolves owner login plus repository name; URL does not become authorization."
+      }
+    },
+    {
+      "id": "manage-repository-access",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Preserve Repository-owned direct and Team access facts without asserting runtime grant-management commands.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "implementation": {
+        "status": "data-only",
+        "scope": "Repository-owned direct User and Organization Team access relations consumed by current effective-access reads.",
+        "sourcePaths": [],
+        "publicExports": [],
+        "entrypoints": [],
+        "testPaths": [],
+        "note": "Access facts are current data authority, but Repository access grant mutation has no current application/Web consumer and remains runtime-inactive."
       }
     },
     {
@@ -1741,8 +1891,8 @@
       "id": "SEM-009",
       "kind": "consumer-contract",
       "severity": "error",
-      "rationale": "Consumer need does not transfer provider authority.",
-      "remediation": "Represent cross-owner use as an explicit contract relationship owned by the provider truth and consumer need."
+      "rationale": "Cross-owner module dependencies and business effects require an explicit relationship contract; implementation dependency alone is not semantic authority.",
+      "remediation": "Declare the real provider/consumer relationship or remove the stale cross-owner dependency; do not add a dependency merely to satisfy a stale semantic edge."
     },
     {
       "id": "SEM-010",
