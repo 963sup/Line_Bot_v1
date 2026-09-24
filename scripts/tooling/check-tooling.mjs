@@ -69,7 +69,9 @@ export function validate(root) {
       errors.push("package.json: semantic:* aliases are forbidden; use pnpm semantic <verb>");
     if (manifest.scripts?.["patch:apply"] !== "node scripts/changes/patch-apply.mjs")
       errors.push("package.json: patch:apply must own deterministic repository patch execution");
-    if (manifest.scripts?.["vercel:deploy:production"] !== "node scripts/vercel/deploy-production.mjs")
+    if (
+      manifest.scripts?.["vercel:deploy:production"] !== "node scripts/vercel/deploy-production.mjs"
+    )
       errors.push(
         "package.json: vercel:deploy:production must own controlled production deployment",
       );
