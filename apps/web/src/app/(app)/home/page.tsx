@@ -10,42 +10,12 @@ export default function Page() {
 
       <SectionHeading title="My Work" />
       <div className="menu-group home-resource-list">
-        <ActionRow
-          href="/repositories"
-          icon="●"
-          tone="green"
-          title="Repositories & Issues"
-        />
-        <ActionRow
-          href="/organizations"
-          icon="▦"
-          tone="orange"
-          title="Organizations"
-        />
-        <ActionRow
-          href="/team"
-          icon="◫"
-          tone="purple"
-          title="Teams"
-        />
-        <ActionRow
-          href="/attendance"
-          icon="◷"
-          tone="blue"
-          title="Attendance"
-        />
-        <ActionRow
-          href="/expenses"
-          icon="$"
-          tone="yellow"
-          title="Expenses"
-        />
-        <ActionRow
-          href="/enterprises"
-          icon="◇"
-          tone="pink"
-          title="Enterprise"
-        />
+        <ActionRow href="/repositories" icon="●" tone="green" title="Repositories & Issues" />
+        <ActionRow href="/organizations" icon="▦" tone="orange" title="Organizations" />
+        <ActionRow href="/team" icon="◫" tone="purple" title="Teams" />
+        <ActionRow href="/attendance" icon="◷" tone="blue" title="Attendance" />
+        <ActionRow href="/expenses" icon="$" tone="yellow" title="Expenses" />
+        <ActionRow href="/enterprises" icon="◇" tone="pink" title="Enterprise" />
       </div>
 
       <SectionHeading title="Favorites" description="你已 Star 且目前仍可存取的 Repository。" />
