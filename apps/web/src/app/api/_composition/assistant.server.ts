@@ -2,11 +2,7 @@ import type { AssistantSurfaceMode } from "../../../modules/assistant/web-surfac
 import { runAssistantSurface } from "../../../modules/assistant/web-surface.server";
 import { activeLineUser } from "./account.server";
 
-export async function assistantSurface(
-  subject: string,
-  mode: AssistantSurfaceMode,
-  input: string,
-) {
+export async function assistantSurface(subject: string, mode: AssistantSurfaceMode, input: string) {
   await activeLineUser(subject);
   return runAssistantSurface(mode, input);
 }
