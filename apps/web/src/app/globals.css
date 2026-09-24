@@ -2020,6 +2020,25 @@ summary:focus-visible {
   display: none;
 }
 
+.app-shell .crud-detail > article {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-shell .crud-lifecycle-note {
+  border-color: #6e7681;
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.app-shell .app-content .segmented-control button[aria-pressed="true"] {
+  border: 1px solid #58a6ff;
+  background: #30363d;
+  color: #fff;
+  box-shadow: none;
+}
+
 @media (hover: hover) {
   .app-shell .action-row:hover,
   .app-shell .issue-list-item:hover,
