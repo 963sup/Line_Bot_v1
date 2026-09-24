@@ -80,7 +80,13 @@ export function validate(root) {
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
       );
     const validationSource = read(resolve(root, "scripts/tooling/validate.mjs"));
-    for (const mutableCommand of ["schema:local", "schema:remote", "line:rich-menu", "format"]) {
+    for (const mutableCommand of [
+      "schema:local",
+      "schema:remote",
+      "line:rich-menu",
+      "vercel:deploy:production",
+      "format",
+    ]) {
       const hasQuotedCommand =
         validationSource.includes(`"${mutableCommand}"`) ||
         validationSource.includes(`'${mutableCommand}'`);
@@ -504,8 +510,8 @@ export function validate(root) {
     const detectChanges = gateSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
-        step.run.includes("supabase/schemas/") &&
-        step.run.includes("workflows/release") &&
+        step.run.includes("^supabase/schemas/.*\\.sql$") &&
+        !step.run.includes("supabase/schemas/.*\\.sql|\\.github/workflows/release\\.yml") &&
         !step.run.includes("scripts/supabase/remote") &&
         step.run.includes("assets/line/rich-menu/") &&
         step.run.includes("actions/workflows/release.yml/runs") &&
@@ -540,23 +546,39 @@ export function validate(root) {
 
     if (
       typeof releaseSupabase?.if !== "string" ||
-      !releaseSupabase.if.includes("schema_changed") ||
+      !releaseSupabase.if.includes("needs.gate.result == 'success'") ||
+      releaseSupabase.if.includes("schema_changed") ||
       releaseSupabase.if.includes("schema_compat_changed") ||
       JSON.stringify(releaseSupabase?.env ?? {}).includes("secrets.")
     ) {
       errors.push(
-        "CI: Supabase release must run only for schema-state changes with step-scoped secrets",
+        "CI: Supabase release must verify every validated main revision with step-scoped secrets",
       );
+    }
+    if (releaseWorkflowSource.includes("schema:remote sync --allow-destructive")) {
+      errors.push("CI: automatic Release must never authorize destructive Supabase reconciliation");
     }
     const supabaseSteps = releaseSupabase?.steps ?? [];
     const supabaseMain = supabaseSteps.findIndex(
       (step) => typeof step.run === "string" && step.run.includes("branches/main"),
     );
     const supabasePrepare = supabaseSteps.findIndex(
-      (step) => step.run === "pnpm schema:remote prepare" && step.if === undefined,
+      (step) =>
+        step.run === "pnpm schema:remote prepare" &&
+        typeof step.if === "string" &&
+        step.if.includes("schema_changed == 'true'"),
     );
     const supabaseSync = supabaseSteps.findIndex(
-      (step) => step.run === "pnpm schema:remote sync --allow-destructive" && step.if === undefined,
+      (step) =>
+        step.run === "pnpm schema:remote sync" &&
+        typeof step.if === "string" &&
+        step.if.includes("schema_changed == 'true'"),
+    );
+    const supabaseVerify = supabaseSteps.findIndex(
+      (step) =>
+        step.run === "pnpm schema:remote verify" &&
+        typeof step.if === "string" &&
+        step.if.includes("schema_changed != 'true'"),
     );
     const supabaseEvidence = supabaseSteps.findIndex(
       (step) =>
@@ -566,21 +588,15 @@ export function validate(root) {
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
     );
-    const redundantRemoteSteps = supabaseSteps.filter(
-      (step) =>
-        step.run === "pnpm schema:remote compat" ||
-        step.run === "pnpm schema:remote plan" ||
-        step.run === "pnpm schema:remote verify",
-    );
     if (
       supabaseMain < 0 ||
       supabasePrepare <= supabaseMain ||
       supabaseSync <= supabasePrepare ||
-      supabaseEvidence <= supabaseSync ||
-      redundantRemoteSteps.length
+      supabaseVerify <= supabaseSync ||
+      supabaseEvidence <= supabaseVerify
     ) {
       errors.push(
-        "CI: automatic Supabase release must be current-main/prepare/sync/evidence with one local schema rebuild",
+        "CI: automatic Supabase release must be current-main then changed-safe-sync or unchanged-verify before evidence",
       );
     }
     if (
@@ -614,7 +630,7 @@ export function validate(root) {
       typeof releaseDeployment?.if !== "string" ||
       releaseDeployment.if.includes("rich_menu_changed") ||
       !releaseDeployment.if.includes("needs.supabase.result == 'success'") ||
-      !releaseDeployment.if.includes("needs.supabase.result == 'skipped'") ||
+      releaseDeployment.if.includes("needs.supabase.result == 'skipped'") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("gate") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
       JSON.stringify(releaseDeployment?.env ?? {}).includes("secrets.") ||

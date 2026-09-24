@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 const API_ORIGIN = "https://api.vercel.com";
+const ACTIVE_DEPLOYMENT_STATES = new Set(["QUEUED", "BUILDING", "INITIALIZING"]);
 
 export const VERCEL_PRODUCTION_TARGET = Object.freeze({
   teamId: "team_X20QRhf0INK1oNiIT8q0MWXx",
@@ -33,7 +34,7 @@ export function parseProductionDeployArgs(argv) {
   return { sha };
 }
 
-async function requestJson(fetchImpl, path, token, label, init = {}) {
+async function requestJson(fetchImpl, path, token, label, init = {}, mutation = false) {
   let response;
   try {
     response = await fetchImpl(`${API_ORIGIN}${path}`, {
@@ -46,7 +47,11 @@ async function requestJson(fetchImpl, path, token, label, init = {}) {
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new Error(`${label}: request outcome unknown; do not retry a mutation blindly.`);
+    throw new Error(
+      mutation
+        ? `${label}: request outcome unknown; reconcile provider state before retrying.`
+        : `${label}: provider read failed.`,
+    );
   }
 
   const text = await response.text();
@@ -60,6 +65,143 @@ async function requestJson(fetchImpl, path, token, label, init = {}) {
   }
   if (!response.ok) throw new Error(`${label}: provider request failed (${response.status}).`);
   return body;
+}
+
+const deploymentId = (deployment) => deployment?.id ?? deployment?.uid ?? "";
+const deploymentState = (deployment) =>
+  deployment?.readyState ?? deployment?.state ?? deployment?.status ?? "";
+
+function assertDeploymentIdentity(deployment, sha) {
+  if (deployment.target !== "production") {
+    throw new Error("Vercel readback is not a production deployment.");
+  }
+  if (deployment.meta?.githubCommitSha !== sha) {
+    throw new Error("Vercel readback commit does not match the validated SHA.");
+  }
+}
+
+function readyResult(deployment, sha) {
+  const id = deploymentId(deployment);
+  if (!id.startsWith("dpl_")) throw new Error("Vercel readback did not return a deployment ID.");
+  assertDeploymentIdentity(deployment, sha);
+  if (!(deployment.alias ?? []).includes(VERCEL_PRODUCTION_TARGET.productionAlias)) return null;
+  return {
+    deploymentId: id,
+    url: deployment.url,
+    sha,
+    target: "production",
+  };
+}
+
+async function pollProductionDeployment({
+  deploymentId: id,
+  token,
+  sha,
+  fetchImpl,
+  sleep,
+  maxPolls,
+  pollMilliseconds,
+}) {
+  const target = VERCEL_PRODUCTION_TARGET;
+  const teamQuery = `?teamId=${encodeURIComponent(target.teamId)}`;
+  for (let attempt = 0; attempt < maxPolls; attempt += 1) {
+    const current = await requestJson(
+      fetchImpl,
+      `/v13/deployments/${id}${teamQuery}`,
+      token,
+      "Vercel production readback",
+    );
+    const state = deploymentState(current);
+    if (state === "ERROR" || state === "CANCELED") {
+      throw new Error(`Vercel production deployment ended in ${state}.`);
+    }
+    if (state === "READY") {
+      const result = readyResult(current, sha);
+      if (result) return result;
+    }
+    await sleep(pollMilliseconds);
+  }
+  throw new Error(
+    `Vercel deployment ${id} result is unknown after readback timeout; inspect before retrying.`,
+  );
+}
+
+async function recoverExistingProduction({
+  token,
+  sha,
+  fetchImpl,
+  sleep,
+  maxPolls,
+  pollMilliseconds,
+}) {
+  const target = VERCEL_PRODUCTION_TARGET;
+  const query = new URLSearchParams({
+    projectId: target.projectId,
+    target: "production",
+    sha,
+    limit: "20",
+    teamId: target.teamId,
+  });
+  const listed = await requestJson(
+    fetchImpl,
+    `/v7/deployments?${query}`,
+    token,
+    "Vercel production recovery lookup",
+  );
+  if (!Array.isArray(listed.deployments)) {
+    throw new Error("Vercel production recovery lookup returned an invalid deployment list.");
+  }
+
+  for (const candidate of listed.deployments) {
+    const id = deploymentId(candidate);
+    if (
+      !id.startsWith("dpl_") ||
+      candidate.target !== "production" ||
+      candidate.meta?.githubCommitSha !== sha
+    ) {
+      continue;
+    }
+
+    const state = deploymentState(candidate);
+    if (state === "READY") {
+      const current = await requestJson(
+        fetchImpl,
+        `/v13/deployments/${id}?teamId=${encodeURIComponent(target.teamId)}`,
+        token,
+        "Vercel production recovery readback",
+      );
+      if (deploymentState(current) !== "READY") {
+        if (ACTIVE_DEPLOYMENT_STATES.has(deploymentState(current))) {
+          return pollProductionDeployment({
+            deploymentId: id,
+            token,
+            sha,
+            fetchImpl,
+            sleep,
+            maxPolls,
+            pollMilliseconds,
+          });
+        }
+        continue;
+      }
+      const result = readyResult(current, sha);
+      if (result) return result;
+      continue;
+    }
+
+    if (ACTIVE_DEPLOYMENT_STATES.has(state)) {
+      return pollProductionDeployment({
+        deploymentId: id,
+        token,
+        sha,
+        fetchImpl,
+        sleep,
+        maxPolls,
+        pollMilliseconds,
+      });
+    }
+  }
+  return null;
 }
 
 export async function deployProduction({
@@ -86,6 +228,16 @@ export async function deployProduction({
     throw new Error("Vercel project preflight resolved a different production target.");
   }
 
+  const recovered = await recoverExistingProduction({
+    token,
+    sha,
+    fetchImpl,
+    sleep,
+    maxPolls,
+    pollMilliseconds,
+  });
+  if (recovered) return recovered;
+
   const deployment = await requestJson(
     fetchImpl,
     `/v13/deployments${teamQuery}`,
@@ -111,44 +263,22 @@ export async function deployProduction({
         },
       }),
     },
+    true,
   );
-  if (typeof deployment.id !== "string" || !deployment.id.startsWith("dpl_")) {
+  const id = deploymentId(deployment);
+  if (!id.startsWith("dpl_")) {
     throw new Error("Vercel production deployment did not return a deployment ID.");
   }
 
-  for (let attempt = 0; attempt < maxPolls; attempt += 1) {
-    const current = await requestJson(
-      fetchImpl,
-      `/v13/deployments/${deployment.id}${teamQuery}`,
-      token,
-      "Vercel production readback",
-    );
-    const state = current.readyState ?? current.state ?? current.status;
-    if (state === "ERROR" || state === "CANCELED") {
-      throw new Error(`Vercel production deployment ended in ${state}.`);
-    }
-    if (state === "READY") {
-      if (current.target !== "production") {
-        throw new Error("Vercel readback is not a production deployment.");
-      }
-      if (current.meta?.githubCommitSha !== sha) {
-        throw new Error("Vercel readback commit does not match the validated SHA.");
-      }
-      if ((current.alias ?? []).includes(target.productionAlias)) {
-        return {
-          deploymentId: deployment.id,
-          url: current.url,
-          sha,
-          target: "production",
-        };
-      }
-    }
-    await sleep(pollMilliseconds);
-  }
-
-  throw new Error(
-    `Vercel deployment ${deployment.id} result is unknown after readback timeout; inspect before retrying.`,
-  );
+  return pollProductionDeployment({
+    deploymentId: id,
+    token,
+    sha,
+    fetchImpl,
+    sleep,
+    maxPolls,
+    pollMilliseconds,
+  });
 }
 
 async function main() {

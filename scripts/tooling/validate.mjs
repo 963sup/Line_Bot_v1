@@ -54,6 +54,7 @@ export function classifyChangedFiles(files) {
       isToolingMetadata(file) ||
       file.startsWith("scripts/tooling/") ||
       file.startsWith("scripts/architecture/") ||
+      file.startsWith("scripts/vercel/") ||
       file.startsWith("architecture/") ||
       file === ".dependency-cruiser.mjs" ||
       [
