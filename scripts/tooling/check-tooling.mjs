@@ -563,6 +563,9 @@ export function validate(root) {
     const supabaseMain = supabaseSteps.findIndex(
       (step) => typeof step.run === "string" && step.run.includes("branches/main"),
     );
+    const supabaseRepair = supabaseSteps.findIndex(
+      (step) => step.run === "pnpm schema:remote repair" && step.if === undefined,
+    );
     const supabasePrepare = supabaseSteps.findIndex(
       (step) =>
         step.run === "pnpm schema:remote prepare" &&
@@ -584,6 +587,9 @@ export function validate(root) {
     const supabaseEvidence = supabaseSteps.findIndex(
       (step) =>
         step.uses === "actions/upload-artifact@v4" &&
+        JSON.stringify(step.with ?? {}).includes(
+          ".artifacts/supabase-remote/daily-check-in-compat.sql",
+        ) &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
@@ -591,13 +597,14 @@ export function validate(root) {
     );
     if (
       supabaseMain < 0 ||
-      supabasePrepare <= supabaseMain ||
+      supabaseRepair <= supabaseMain ||
+      supabasePrepare <= supabaseRepair ||
       supabaseSync <= supabasePrepare ||
       supabaseVerify <= supabaseSync ||
       supabaseEvidence <= supabaseVerify
     ) {
       errors.push(
-        "CI: automatic Supabase release must be current-main then changed-safe-sync or unchanged-verify before evidence",
+        "CI: automatic Supabase release must repair additive runtime compatibility, then changed-safe-sync or unchanged-verify before evidence",
       );
     }
     if (

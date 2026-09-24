@@ -131,6 +131,13 @@ jobs:
             exit 1
           }
 
+      - name: Repair additive runtime compatibility
+        run: pnpm schema:remote repair
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+
       - name: Prepare preserve-data compatibility expansion
         if: needs.gate.outputs.schema_changed == 'true'
         run: pnpm schema:remote prepare
@@ -162,6 +169,8 @@ jobs:
         with:
           name: supabase-reconciliation-${{ needs.gate.outputs.head_sha }}
           path: |
+            .artifacts/supabase-remote/account-login-compat.sql
+            .artifacts/supabase-remote/daily-check-in-compat.sql
             .artifacts/supabase-remote/plan.sql
             .artifacts/supabase-remote/verification.sql
             .artifacts/supabase-remote/migration-history.before.txt
