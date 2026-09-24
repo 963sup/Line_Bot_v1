@@ -32,6 +32,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
   const explore = mock.method(repositoryStars, "explore", async () => [
     {
       id: "repository-a",
+      ownerLogin: "acme",
       name: "Repository A",
       visibility: "private",
       capability: "read" as const,
@@ -43,6 +44,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
   const starred = mock.method(repositoryStars, "starred", async () => [
     {
       id: "repository-a",
+      ownerLogin: "acme",
       name: "Repository A",
       visibility: "private",
       starredAt: 10,

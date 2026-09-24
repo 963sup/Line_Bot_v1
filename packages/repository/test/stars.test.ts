@@ -53,6 +53,7 @@ test("explore is a read model over accessible repositories rather than a new tru
     explore: async () => [
       {
         id: "repository-a",
+        ownerLogin: "organization-a",
         name: "Repository A",
         visibility: "private",
         capability: "read",
@@ -65,6 +66,7 @@ test("explore is a read model over accessible repositories rather than a new tru
   assert.deepEqual(await stars.explore("line-subject"), [
     {
       id: "repository-a",
+      ownerLogin: "organization-a",
       name: "Repository A",
       visibility: "private",
       capability: "read",
@@ -108,6 +110,7 @@ test("Postgres stars require current Repository access and Explore stays a read 
   assert.deepEqual(await store.starred("repository-owner"), [
     {
       id: "repository-a",
+      ownerLogin: "organization-a",
       name: "Repository A",
       visibility: "private",
       starredAt: 10,
@@ -117,6 +120,7 @@ test("Postgres stars require current Repository access and Explore stays a read 
   assert.deepEqual(await store.explore("repository-owner"), [
     {
       id: "repository-a",
+      ownerLogin: "organization-a",
       name: "Repository A",
       visibility: "private",
       capability: "read",

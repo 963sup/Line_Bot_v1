@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { repositoryPath } from "./resource-navigation";
 
 export default function DiscoveryPanel({ liffId }: { liffId: string }) {
   const [items, setItems] = useState<ExploreRepository[] | null>(null);
@@ -117,7 +118,9 @@ export default function DiscoveryPanel({ liffId }: { liffId: string }) {
           {items.map((item) => (
             <article className="discovery-item" key={item.id}>
               <div className="discovery-copy">
-                <h2>{item.name}</h2>
+                <h2>
+                  {item.ownerLogin}/{item.name}
+                </h2>
                 <p>{item.id}</p>
                 <div className="discovery-meta">
                   <span>{item.capability}</span>
@@ -134,10 +137,7 @@ export default function DiscoveryPanel({ liffId }: { liffId: string }) {
                 >
                   {item.starred ? "取消 Star" : "Star"}
                 </button>
-                <Link
-                  className="secondary-link"
-                  href={`/repositories?repository=${encodeURIComponent(item.id)}`}
-                >
+                <Link className="secondary-link" href={repositoryPath(item.ownerLogin, item.name)}>
                   開啟儲存庫
                 </Link>
               </div>
