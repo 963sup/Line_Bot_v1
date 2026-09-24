@@ -14,7 +14,7 @@ export default async function Page({
   return (
     <AppShell>
       <NotificationInbox
-        key={notificationId.toLowerCase()}
+        key={`${notificationId.toLowerCase()}:${view}`}
         liffId={lineMiniApp().liffId}
         notificationId={notificationId.toLowerCase()}
         view={view}

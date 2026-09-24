@@ -13,7 +13,7 @@ export default async function Page({
   const view = notificationView === "unread" ? "unread" : "all";
   return (
     <AppShell>
-      <NotificationInbox liffId={lineMiniApp().liffId} view={view} />
+      <NotificationInbox key={view} liffId={lineMiniApp().liffId} view={view} />
     </AppShell>
   );
 }
