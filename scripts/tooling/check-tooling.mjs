@@ -515,7 +515,8 @@ export function validate(root) {
         !step.run.includes("scripts/supabase/remote") &&
         step.run.includes("assets/line/rich-menu/") &&
         step.run.includes("actions/workflows/release.yml/runs") &&
-        step.run.includes("status=success") &&
+        step.run.includes("status=completed") &&
+        !step.run.includes("status=success") &&
         step.run.includes("display_title") &&
         step.run.includes("^Release\\ [0-9a-f]{40}$") &&
         step.run.includes("actions/runs/$run_id/jobs") &&
@@ -537,7 +538,7 @@ export function validate(root) {
     );
     if (currentMain < 0 || releaseCheckout <= currentMain || detectChanges <= releaseCheckout) {
       errors.push(
-        "CI: Release gate must validate current main, checkout exact validated SHA and detect affected source from previous successful Release",
+        "CI: Release gate must validate current main, checkout exact validated SHA and detect affected source from a previous completed Release with successful gate",
       );
     }
     if (waitsForValidate) {
