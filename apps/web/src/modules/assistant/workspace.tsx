@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import {
@@ -35,7 +35,7 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
     setError("");
   }
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = input.trim();
     if (!value || busy) return;
@@ -78,7 +78,7 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
   );
 
   return (
-    <section className="assistant-workspace" aria-labelledby="assistant-mode-title">
+    <div className="assistant-workspace" aria-labelledby="assistant-mode-title">
       <MiniAppRuntime
         liffId={liffId}
         onReady={() => setReady(true)}
@@ -144,6 +144,6 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
           <p>{result}</p>
         </article>
       )}
-    </section>
+    </div>
   );
 }
