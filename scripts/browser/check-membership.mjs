@@ -188,19 +188,31 @@ try {
     await finish(`Profile ${profileMode} does not block membership`, state);
   }
 
-  for (const [from, label, to, status] of [
-    ["/membership/register", "恢復會員功能", "/membership/restore", "pending"],
-    ["/membership/restore", "註冊會員", "/membership/register", null],
-    ["/expenses?expense=33333333-3333-4333-8333-333333333333", "前往帳號設定", "/settings", null],
-    ["/auth/callback?error=access_denied", "返回帳號設定", "/settings", null],
+  for (const [from, label, to, status, action] of [
+    ["/membership/register", "恢復會員功能", "/membership/restore", "paused", "restore"],
+    ["/membership/restore", "註冊會員", "/membership/register", null, "register"],
+    [
+      "/expenses?expense=33333333-3333-4333-8333-333333333333",
+      "前往帳號設定",
+      "/settings",
+      null,
+      "refresh",
+    ],
+    ["/auth/callback?error=access_denied", "返回帳號設定", "/settings", null, "refresh"],
   ]) {
     const state = await fixture(status);
     await page.goto(base + from);
     await link(label).click();
     await expect(page).toHaveURL(base + to);
-    await expect(
-      button("重新整理狀態").or(button("確認恢復")).or(button("確認註冊")),
-    ).toBeEnabled();
+    if (action === "register") {
+      await expect(button("確認註冊")).toBeDisabled();
+      await page.getByLabel("Login", { exact: true }).fill("synthetic-member");
+      await expect(button("確認註冊")).toBeEnabled();
+    } else if (action === "restore") {
+      await expect(button("確認恢復")).toBeEnabled();
+    } else {
+      await expect(button("重新整理狀態")).toBeEnabled();
+    }
     assert.equal(state.documents, 1, label);
     assert.equal(await page.evaluate(() => window.liffInitCount), 1);
     await expect(button("選擇 Google 帳號")).toHaveCount(0);

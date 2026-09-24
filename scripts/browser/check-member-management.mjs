@@ -35,10 +35,10 @@ page.on("pageerror", (e) => errors.push(e.message));
 let deny = false,
   fail = false,
   canSuspend = true,
-  memberId = "admin",
+  actorId = "admin",
   lose = false,
   conflict = false;
-const member = {
+const user = {
   id: "target",
   status: "active",
   createdAt: 0,
@@ -67,12 +67,12 @@ await context.route("**/*", async (route) => {
         });
       let receipt = receipts.get(command.requestId);
       if (!receipt) {
-        member.status = command.action === "suspend" ? "suspended" : "active";
-        member.version++;
+        user.status = command.action === "suspend" ? "suspended" : "active";
+        user.version++;
         receipt = {
-          id: member.id,
-          status: member.status,
-          version: member.version,
+          id: user.id,
+          status: user.status,
+          version: user.version,
           requestId: command.requestId,
           at: 1000,
         };
@@ -87,20 +87,18 @@ await context.route("**/*", async (route) => {
     const id = url.searchParams.get("id"),
       after = url.searchParams.get("after"),
       status = url.searchParams.get("status");
-    if (id && id !== member.id)
+    if (id && id !== user.id)
       return route.fulfill({ status: 404, json: { error: "會員不存在。" } });
     return route.fulfill({
       json: {
-        memberId,
+        actorId,
         canSuspend,
-        members:
-          status && status !== member.status
-            ? []
-            : [after ? { ...member, id: "target-two" } : member],
+        users:
+          status && status !== user.status ? [] : [after ? { ...user, id: "target-two" } : user],
         next: id || after || status ? null : "target",
         detail: id
           ? {
-              member,
+              user,
               events: [],
               moreEvents: false,
               operations: [],
@@ -136,10 +134,10 @@ try {
   await expect(page.getByRole("heading", { name: "會員列表" })).toBeVisible();
   await page.getByRole("button", { name: "下一頁", exact: true }).click();
   await expect(page.getByRole("heading", { name: "target-two", exact: true })).toBeVisible();
-  await page.getByRole("combobox").selectOption("pending");
+  await page.getByRole("combobox").selectOption("paused");
   await page.getByRole("button", { name: "查詢", exact: true }).click();
   await expect(page.getByText("沒有符合條件的會員。")).toBeVisible();
-  await expect(page.getByRole("combobox")).toHaveValue("pending");
+  await expect(page.getByRole("combobox")).toHaveValue("paused");
   await page.getByLabel("會員編號", { exact: true }).fill("target");
   await page.getByRole("button", { name: "查詢", exact: true }).click();
   await expect(page.getByText("attendance-example", { exact: true })).toBeVisible();
@@ -162,7 +160,7 @@ try {
   assert.equal(receipts.size, 1);
   await confirm("確認解除停權");
   await expect(page.getByText(/已完成：使用中/)).toBeVisible();
-  assert.equal(member.status, "active");
+  assert.equal(user.status, "active");
   conflict = true;
   await confirm("確認停權");
   await expect(page.getByText("會員狀態已更新，請重新讀取後確認。", { exact: true })).toBeVisible();
@@ -170,14 +168,14 @@ try {
   conflict = false;
   await page.getByRole("button", { name: "重新讀取", exact: true }).click();
   await expect(page.getByRole("heading", { name: "會員明細" })).toBeVisible();
-  memberId = "other";
+  actorId = "other";
   const count = posts.length;
   await confirm("確認停權");
   await expect(
     page.getByText("LINE 身分已變更，請重新讀取後確認。", { exact: true }),
   ).toBeVisible();
   assert.equal(posts.length, count);
-  memberId = "admin";
+  actorId = "admin";
   canSuspend = false;
   await page.getByRole("button", { name: "重新讀取", exact: true }).click();
   await expect(page.getByText("目前只有會員查詢權限。")).toBeVisible();
