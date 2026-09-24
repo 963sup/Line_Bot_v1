@@ -3,9 +3,9 @@ import { captureHandledServerError } from "../../shared/observability/server-err
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 import {
+  type AssistantSurfaceMode,
   assistantSurfaceConfig,
   isAssistantSurfaceMode,
-  type AssistantSurfaceMode,
 } from "./web-surface";
 
 class AssistantRequestError extends Error {
