@@ -53,10 +53,10 @@ export default function Page() {
         />
       </div>
 
-      <section id="favorites" className="home-section-anchor">
+      <div id="favorites" className="home-section-anchor">
         <SectionHeading title="Favorites" description="你已 Star 且目前仍可存取的 Repository。" />
         <StarredRepositories liffId={lineMiniApp().liffId} />
-      </section>
+      </div>
 
       <SectionHeading
         title="Shortcuts"
