@@ -11,16 +11,34 @@ Repository 是 User 或 Organization 擁有的獨立工作容器，並擁有容�
 
 Project 只參照 Repository work，不取得 Issue/Discussion authority；Notifications 只投遞來源 reference，不取得 source truth。
 
+Current runtime 已接線的 Repository resource read 包含：
+
+- Repository owner/name read 與 accessible Repository discovery。
+- Issue list/detail read 與 Issue command runtime。
+- Discussion list/detail/comment read。
+- Repository Label collection read。
+- Repository Milestone list/detail read。
+
+Discussion、Label 與 Repository Milestone 的 create/update/delete/close/comment 管理仍未宣稱 runtime 完成；這些 write semantics 只保留資料與 owner 契約，不由 read API 冒充。
+
 ## Locator
 
 Stable identity 是 `RepositoryId`。Repository owner 僅為 `User | Organization`，共用 Account-owned `login` namespace。
 
 ```text
 /{ownerLogin}/{repositoryName}
+/{ownerLogin}/{repositoryName}/issues
 /{ownerLogin}/{repositoryName}/issues/{issueNumber}
+/{ownerLogin}/{repositoryName}/discussions
+/{ownerLogin}/{repositoryName}/discussions/{discussionId}
+/{ownerLogin}/{repositoryName}/labels
+/{ownerLogin}/{repositoryName}/milestones
+/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}
 ```
 
-Locator 只定位；protected read/write 仍重新驗證 current User 與 Repository access。`Issue.number` 是 Repository-local locator，`IssueId` 仍是 stable identity。
+Locator 只定位；protected read/write 仍重新驗證 current User 與 Repository access。`Issue.number` 與 `RepositoryMilestone.number` 是 Repository-local locator，`IssueId` 與 `RepositoryMilestoneId` 仍是 stable identity。Discussion URL 使用本產品 opaque `DiscussionId`，不採用 GitHub Discussion number。Label collection 以 Repository scope 讀取，沒有獨立 label URL locator。
+
+HTTP transport 目前由 `/api/issues`、`/api/issues/{issueNumber}`、`/api/discussions`、`/api/discussions/{discussionId}`、`/api/repository-labels`、`/api/repository-milestones` 與 `/api/repository-milestones/{milestoneNumber}` 承接。Issue 保留既有 workbench/default repository、repository id 與 owner/name selector 行為；新增 Discussion、Label、Milestone read API 要求 `owner` + `name` selector 並重新解析 current effective access。
 
 ## Invariants
 

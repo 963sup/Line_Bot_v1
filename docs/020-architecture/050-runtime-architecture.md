@@ -91,7 +91,13 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
 | `/repositories`, `/explore` | Repository collection/workbench、accessible Repository discovery + Star surface |
 | `/{ownerLogin}/{repositoryName}` | Repository canonical locator；owner 是 User 或 Organization login；public 直接讀 public projection，private/internal 重新驗目前 User access |
+| `/{ownerLogin}/{repositoryName}/issues` | Repository-scoped Issue collection；owner/name 只定位 Repository，read API 重新驗 current User access |
 | `/{ownerLogin}/{repositoryName}/issues/{issueNumber}` | Repository-scoped Issue detail；`issueNumber` 是 Repository-local locator，stable IssueId 仍只作 internal identity/command reference；重新解析 owner/name 並驗目前 access |
+| `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；只讀 authorized conversations，不宣稱 Discussion write management |
+| `/{ownerLogin}/{repositoryName}/discussions/{discussionId}` | Repository-scoped Discussion detail；`discussionId` 是本產品 opaque id，不採用 GitHub Discussion number；comments 隨 detail authorized read 載入 |
+| `/{ownerLogin}/{repositoryName}/labels` | Repository Label collection；Label 是 Repository-owned classification metadata，沒有獨立 label URL identity |
+| `/{ownerLogin}/{repositoryName}/milestones` | Repository Milestone collection；Milestone 是 Repository goal/checkpoint，不等於 Project Milestone |
+| `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
 | `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
 | `/history` | 工作紀錄入口 |
 | `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
@@ -110,6 +116,17 @@ Stable ID 只定位 entity，不授權。Detail route 直接開啟、刷新與 l
 `/api/**` 是 transport boundary。每一 request 重新驗 identity、qualification、authorization 與 input；頁面已顯示、query parameter 或先前成功操作都不能代替 API authorization。
 
 Route handler 不複製 application use case，concrete adapters 在最外層 composition 注入。
+
+Current Repository resource read API：
+
+| Route | Responsibility |
+| --- | --- |
+| `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and Issue command transport；保留既有 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
+| `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
+| `/api/repository-labels` | Repository Label collection read |
+| `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
+
+新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability；Project 仍是 data-only owner，未知 access/command contract 前不開 Project 空頁或 API。
 
 ## Same-page view state
 

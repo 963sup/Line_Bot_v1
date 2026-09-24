@@ -116,6 +116,11 @@ try {
   }
   if (!ready) throw new Error("Local Web did not become ready.");
   await command([path.join(root, "scripts/browser/check-navigation.mjs")], root, "browser.log");
+  await command(
+    [path.join(root, "scripts/browser/check-repository-resources.mjs")],
+    root,
+    "repository-resources.log",
+  );
   await command([path.join(root, "scripts/browser/check-membership.mjs")], root, "membership.log");
   await command([path.join(root, "scripts/browser/check-auto-clock.mjs")], root, "auto-clock.log");
   await command([path.join(root, "scripts/browser/check-workplaces.mjs")], root, "workplaces.log");

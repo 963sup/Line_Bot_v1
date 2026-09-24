@@ -1,34 +1,31 @@
 import { normalizeAccountLogin } from "@line-work/account/domain/login";
 import { notFound } from "next/navigation";
-import IssueBoard from "../../../../../../modules/repository/issue-board";
-import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
-import AppShell from "../../../../_shell/app-shell";
+import IssueBoard from "../../../../../modules/repository/issue-board";
+import { lineMiniApp } from "../../../../../shared/server/line-mini-app";
+import AppShell from "../../../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ login: string; repository: string; issueNumber: string }>;
+  params: Promise<{ login: string; repository: string }>;
 }) {
-  const { login, repository, issueNumber } = await params;
+  const { login, repository } = await params;
   let ownerLogin: string;
   try {
     ownerLogin = normalizeAccountLogin(login);
   } catch {
     notFound();
   }
-  const number = Number(issueNumber);
-  if (!Number.isSafeInteger(number) || number < 1) notFound();
 
   return (
     <AppShell active="repositories">
       <IssueBoard
-        key={`${ownerLogin}/${repository}/${number}`}
+        key={`${ownerLogin}/${repository}`}
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
         repositoryName={repository}
-        issueNumber={number}
       />
     </AppShell>
   );

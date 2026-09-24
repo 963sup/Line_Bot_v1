@@ -1,10 +1,9 @@
 import type { Issue, IssueAction, RepositorySummary } from "../../domain.js";
+import type { RepositorySelector } from "./selectors.js";
 
 export type IssueIdentity = { userId: string };
 
-export type RepositorySelector =
-  | { repositoryId: string }
-  | { ownerLogin: string; repositoryName: string };
+export type { RepositorySelector } from "./selectors.js";
 
 export type IssueCommand = { requestId: string; repositoryId: string } & (
   | { action: "create"; title: string; criteria: string; assignee: string }

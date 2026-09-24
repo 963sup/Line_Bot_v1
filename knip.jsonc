@@ -13,6 +13,7 @@
         "scripts/browser/check-navigation.mjs",
         "scripts/browser/check-partner-management.mjs",
         "scripts/browser/check-permissions.mjs",
+        "scripts/browser/check-repository-resources.mjs",
         "scripts/browser/check-workplaces.mjs",
         "scripts/browser/measure-loading.mjs",
         "scripts/line/rich-menu/sync.ts",

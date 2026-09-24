@@ -3,10 +3,24 @@
 import type { IssueCommand, IssueSnapshot } from "@line-work/repository/application/ports/issues";
 import type { IssueAction, IssueStatus } from "@line-work/repository/domain";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PrimaryLink } from "../../shared/ui/page-layout";
+import {
+  clearPendingIssueCommand,
+  type PendingIssueCommand,
+  restorePendingIssueCommand,
+  savePendingIssueCommand,
+} from "./issue-pending-storage";
+import {
+  repositoryDiscussionsPath,
+  repositoryIssuePath,
+  repositoryIssuesPath,
+  repositoryLabelsPath,
+  repositoryMilestonesPath,
+} from "./resource-navigation";
+import styles from "./resource-navigation.module.css";
 
 const statusLabel: Record<IssueStatus, string> = {
   pending: "待承接",
@@ -22,8 +36,7 @@ const actionLabel: Record<IssueAction, string> = {
   approve: "驗收通過",
 };
 
-type PendingCommand = { owner: string; command: IssueCommand };
-const pendingKey = "repository-issue-pending-command";
+type IssueView = "all" | "mine" | "created";
 
 export default function IssueBoard({
   liffId,
@@ -40,24 +53,52 @@ export default function IssueBoard({
 }) {
   const detailMode = issueNumber !== undefined;
   const canonicalRepository = Boolean(ownerLogin && repositoryName);
+  const canonicalIssuesHref =
+    ownerLogin && repositoryName
+      ? repositoryIssuesPath(ownerLogin, repositoryName)
+      : "/repositories";
   const [data, setData] = useState<IssueSnapshot | null>(null);
   const [selectedRepository, setSelectedRepository] = useState(repositoryId ?? "");
-  const [view, setView] = useState<"all" | "mine" | "created">("all");
+  const [view, setView] = useState<IssueView>("all");
   const [creating, setCreating] = useState(false);
   const [note, setNote] = useState("");
-  const [pending, setPending] = useState<PendingCommand | null>(null);
+  const [pending, setPending] = useState<PendingIssueCommand | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const generation = useRef(0);
+  const routeKey = `${repositoryId ?? ""}:${ownerLogin ?? ""}:${repositoryName ?? ""}:${
+    issueNumber ?? ""
+  }`;
+  const observedRouteKey = useRef(routeKey);
 
-  function savePending(value: PendingCommand | null) {
-    if (value) sessionStorage.setItem(pendingKey, JSON.stringify(value));
-    else sessionStorage.removeItem(pendingKey);
+  function rememberPending(value: PendingIssueCommand) {
+    savePendingIssueCommand(sessionStorage, value);
     setPending(value);
   }
 
-  async function requestSnapshot(token: string, nextRepository = selectedRepository) {
+  function forgetPending(value: PendingIssueCommand) {
+    const cleared = clearPendingIssueCommand(sessionStorage, value);
+    if (!cleared) return;
+    setPending((current) =>
+      current?.command.requestId === value.command.requestId ? null : current,
+    );
+  }
+
+  const clearAuthorizedState = useCallback(() => {
+    setData(null);
+    setPending(null);
+    setCreating(false);
+    setNote("");
+    setNotice("");
+    setBusy(false);
+  }, []);
+
+  async function requestSnapshot(
+    token: string,
+    nextRepository = selectedRepository,
+    nextView = view,
+  ) {
     if (issueNumber !== undefined) {
       const detailQuery = new URLSearchParams();
       if (ownerLogin && repositoryName) {
@@ -77,11 +118,12 @@ export default function IssueBoard({
       }
       return snapshot;
     }
-    const query = new URLSearchParams({ issueView: view });
-    if (nextRepository) query.set("repository", nextRepository);
-    else if (ownerLogin && repositoryName) {
+    const query = new URLSearchParams({ issueView: nextView });
+    if (ownerLogin && repositoryName) {
       query.set("owner", ownerLogin);
       query.set("name", repositoryName);
+    } else if (nextRepository) {
+      query.set("repository", nextRepository);
     }
     const response = await fetch(`/api/issues?${query}`, {
       headers: { "x-line-token": token },
@@ -92,14 +134,14 @@ export default function IssueBoard({
     return value as IssueSnapshot;
   }
 
-  async function load(nextRepository = selectedRepository) {
+  async function load(nextRepository = selectedRepository, nextView = view) {
     const ticket = ++generation.current;
     setBusy(true);
     setError("");
     try {
       const token = await liffClient.session(liffId);
       if (!token || ticket !== generation.current) return;
-      const snapshot = await requestSnapshot(token, nextRepository);
+      const snapshot = await requestSnapshot(token, nextRepository, nextView);
       if (ticket !== generation.current) return;
       const routedRepository = snapshot.repositories.find(
         (item) =>
@@ -109,21 +151,14 @@ export default function IssueBoard({
           item.name.toLowerCase() === repositoryName.toLowerCase(),
       );
       const nextId =
-        nextRepository ||
         routedRepository?.id ||
+        nextRepository ||
         snapshot.issues[0]?.repositoryId ||
         snapshot.repositories[0]?.id ||
         "";
       setSelectedRepository(nextId);
       setData(snapshot);
-      const stored = sessionStorage.getItem(pendingKey);
-      try {
-        const candidate = stored ? (JSON.parse(stored) as PendingCommand) : null;
-        if (candidate?.owner === snapshot.userId) setPending(candidate);
-        else savePending(null);
-      } catch {
-        savePending(null);
-      }
+      setPending(restorePendingIssueCommand(sessionStorage, snapshot.userId, nextId));
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
@@ -140,7 +175,8 @@ export default function IssueBoard({
     setBusy(true);
     setError("");
     setNotice("");
-    savePending({ owner: data.userId, command });
+    const pendingCommand = { owner: data.userId, command };
+    rememberPending(pendingCommand);
     try {
       const token = await liffClient.session(liffId);
       if (!token) throw new Error("請重新登入 LINE。");
@@ -154,17 +190,17 @@ export default function IssueBoard({
       });
       const value = await response.json();
       if (!response.ok) {
-        if (response.status < 500 && response.status !== 429) savePending(null);
+        if (response.status < 500 && response.status !== 429) forgetPending(pendingCommand);
         throw new Error(value.error || "結果尚未確認，請重試原操作。");
       }
+      forgetPending(pendingCommand);
       if (ticket !== generation.current) return;
-      savePending(null);
       setCreating(false);
       setNote("");
       setNotice("Issue 已更新。");
       const tokenAfter = await liffClient.session(liffId);
       if (!tokenAfter || ticket !== generation.current) return;
-      setData(await requestSnapshot(tokenAfter, command.repositoryId));
+      setData(await requestSnapshot(tokenAfter, command.repositoryId, view));
     } catch (cause) {
       if (ticket === generation.current) {
         setError(cause instanceof Error ? cause.message : "結果尚未確認，請重試原操作。");
@@ -181,10 +217,23 @@ export default function IssueBoard({
     [],
   );
 
+  useEffect(() => {
+    if (observedRouteKey.current === routeKey) return;
+    observedRouteKey.current = routeKey;
+    generation.current++;
+    clearAuthorizedState();
+    setError("");
+    setView("all");
+    setSelectedRepository(repositoryId ?? "");
+  }, [clearAuthorizedState, routeKey, repositoryId]);
+
   const current = detailMode ? data?.issues[0] : undefined;
   const currentRepository = data?.repositories.find((item) => item.id === selectedRepository);
   const canWrite =
     currentRepository?.capability === "write" || currentRepository?.capability === "admin";
+  const headingActions = !detailMode ? (
+    <PrimaryLink href="/explore">探索儲存庫</PrimaryLink>
+  ) : undefined;
 
   function operate(action: IssueAction) {
     if (!current) return;
@@ -201,14 +250,48 @@ export default function IssueBoard({
   return (
     <>
       <PageHeading
-        title={detailMode ? "Issue" : "儲存庫"}
+        title={detailMode ? "Issue" : canonicalRepository ? "Issues" : "儲存庫"}
         description="儲存庫擁有 Issue；Project 只引用工作，不改寫 Issue truth。"
-        actions={!detailMode ? <PrimaryLink href="/explore">探索儲存庫</PrimaryLink> : undefined}
+        actions={headingActions}
       />
-      <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={() => setBusy(false)} />
+      {canonicalRepository && ownerLogin && repositoryName && (
+        <nav className={styles.resourceNav} aria-label="Repository resources">
+          <Link
+            className={styles.resourceLink}
+            href={repositoryIssuesPath(ownerLogin, repositoryName)}
+            aria-current="page"
+          >
+            Issues
+          </Link>
+          <Link
+            className={styles.resourceLink}
+            href={repositoryDiscussionsPath(ownerLogin, repositoryName)}
+          >
+            Discussions
+          </Link>
+          <Link
+            className={styles.resourceLink}
+            href={repositoryLabelsPath(ownerLogin, repositoryName)}
+          >
+            Labels
+          </Link>
+          <Link
+            className={styles.resourceLink}
+            href={repositoryMilestonesPath(ownerLogin, repositoryName)}
+          >
+            Milestones
+          </Link>
+        </nav>
+      )}
+      <MiniAppRuntime
+        key={routeKey}
+        liffId={liffId}
+        onReady={() => load()}
+        onWait={clearAuthorizedState}
+      />
       {detailMode && (
-        <Link className="back-link" href="/repositories">
-          ← 返回儲存庫
+        <Link className="back-link" href={canonicalIssuesHref}>
+          ← 返回 Issues
         </Link>
       )}
       {busy && <p role="status">處理中…</p>}
@@ -265,7 +348,7 @@ export default function IssueBoard({
                     aria-pressed={view === candidate}
                     onClick={() => {
                       setView(candidate);
-                      queueMicrotask(() => void load(selectedRepository));
+                      void load(selectedRepository, candidate);
                     }}
                   >
                     {candidate === "all"
@@ -328,19 +411,27 @@ export default function IssueBoard({
               )}
               {!data.issues.length && <p className="empty-copy">目前沒有符合條件的 Issue。</p>}
               <ul className="issue-list">
-                {data.issues.map((issue) => (
-                  <li key={issue.id}>
-                    <Link
-                      className="issue-list-item"
-                      href={`/${encodeURIComponent(currentRepository!.ownerLogin)}/${encodeURIComponent(
-                        currentRepository!.name,
-                      )}/issues/${issue.number}`}
-                    >
-                      <strong>{issue.title}</strong>
-                      <span className="status-badge">{statusLabel[issue.status]}</span>
-                    </Link>
-                  </li>
-                ))}
+                {data.issues.map((issue) => {
+                  const issueRepository =
+                    data.repositories.find((item) => item.id === issue.repositoryId) ??
+                    currentRepository;
+                  if (!issueRepository) return null;
+                  return (
+                    <li key={issue.id}>
+                      <Link
+                        className="issue-list-item"
+                        href={repositoryIssuePath(
+                          issueRepository.ownerLogin,
+                          issueRepository.name,
+                          issue.number,
+                        )}
+                      >
+                        <strong>{issue.title}</strong>
+                        <span className="status-badge">{statusLabel[issue.status]}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </>
           )}

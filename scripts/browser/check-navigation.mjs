@@ -135,13 +135,19 @@ async function run() {
 
   try {
     await page.goto(`${base}/repositories`);
-    await page.getByRole("heading", { name: "Repository", exact: true }).waitFor();
-    await page.getByRole("link", { name: issue.title, exact: true }).click();
+    await page.getByRole("heading", { name: "儲存庫", exact: true }).waitFor();
+    const issueLink = page.getByRole("link", {
+      name: new RegExp(`^${issue.title}\\s+待承接$`),
+    });
+    await expect(issueLink).toHaveAttribute("href", `/acme/Operations/issues/${issueNumber}`);
+    await issueLink.click();
     await expect(page).toHaveURL(`${base}/acme/Operations/issues/${issueNumber}`);
     await page.getByRole("heading", { name: "Issue", exact: true }).waitFor();
     await page.getByRole("heading", { name: issue.title, exact: true }).waitFor();
-    await page.getByRole("link", { name: "返回 Repository", exact: true }).click();
-    await expect(page).toHaveURL(`${base}/repositories`);
+    const issueBackLink = page.getByRole("link", { name: "← 返回 Issues", exact: true });
+    await expect(issueBackLink).toHaveAttribute("href", "/acme/Operations/issues");
+    await issueBackLink.click();
+    await expect(page).toHaveURL(`${base}/acme/Operations/issues`);
 
     await page.goto(`${base}/notifications`);
     await page.getByRole("heading", { name: "通知", exact: true }).waitFor();
