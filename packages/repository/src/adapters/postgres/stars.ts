@@ -1,4 +1,4 @@
-import { readAccountLogin } from "@line-work/account/adapters/postgres";
+import { readAccountLogins } from "@line-work/account/adapters/postgres";
 import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
 import type {
   ExploreRepository,
@@ -62,20 +62,23 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
         created_at: number | string;
         star_count: number | string;
       }>;
-      const result: StarredRepository[] = [];
-      for (const row of rows) {
-        const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
-        if (!owner) throw new IssueError(409, "Repository owner locator 不可用。");
-        result.push({
+      const owners = await readAccountLogins(
+        sql,
+        rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
+      );
+      const ownerLogins = new Map(owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]));
+      return rows.map((row) => {
+        const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
+        if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
+        return {
           id: row.id,
-          ownerLogin: owner.login,
+          ownerLogin,
           name: row.name,
           visibility: row.visibility,
           starredAt: Number(row.created_at),
           starCount: Number(row.star_count),
-        });
-      }
-      return result;
+        };
+      });
     });
   }
 
@@ -105,21 +108,24 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
         star_count: number | string;
         starred: boolean;
       }>;
-      const result: ExploreRepository[] = [];
-      for (const row of rows) {
-        const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
-        if (!owner) throw new IssueError(409, "Repository owner locator 不可用。");
-        result.push({
+      const owners = await readAccountLogins(
+        sql,
+        rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
+      );
+      const ownerLogins = new Map(owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]));
+      return rows.map((row) => {
+        const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
+        if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
+        return {
           id: row.id,
-          ownerLogin: owner.login,
+          ownerLogin,
           name: row.name,
           visibility: row.visibility,
           capability: row.capability,
           starCount: Number(row.star_count),
           starred: Boolean(row.starred),
-        });
-      }
-      return result;
+        };
+      });
     });
   }
 }

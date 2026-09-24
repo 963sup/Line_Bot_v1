@@ -13,6 +13,29 @@ export async function resolveAccountLogin(sql: Sql, login: string): Promise<Logi
   return row ?? null;
 }
 
+export async function readAccountLogins(
+  sql: Sql,
+  owners: ReadonlyArray<{ id: string; kind: "USER" | "ORGANIZATION" }>,
+): Promise<LoginOwner[]> {
+  if (!owners.length) return [];
+  const unique = new Map<string, { id: string; kind: "USER" | "ORGANIZATION" }>();
+  for (const owner of owners) unique.set(`${owner.id}:\0:${owner.kind}`, owner);
+  const requested = [...unique.values()];
+  return (
+    await sql.query(
+      `SELECT l.account_id AS id,l.account_kind AS kind,l.login
+       FROM account_logins l
+       JOIN unnest($1::text[], $2::text[]) AS requested(account_id, account_kind)
+         ON requested.account_id=l.account_id AND requested.account_kind=l.account_kind
+       ORDER BY l.account_id,l.account_kind`,
+      [
+        requested.map((owner) => owner.id),
+        requested.map((owner) => owner.kind),
+      ],
+    )
+  ).rows as LoginOwner[];
+}
+
 export async function readAccountLogin(
   sql: Sql,
   accountId: string,
