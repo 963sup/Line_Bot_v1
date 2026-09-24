@@ -4,7 +4,7 @@
 
 ## FPT 語意與 GitHub Mobile 布局目標
 
-狀態：四個主目的地 Home / Inbox / Explore / Profile 已作為 current app-shell 契約落地；其餘 GitHub Mobile pattern 仍只在本地 owner/contract 真實存在時逐 slice 採用。文件或 benchmark 出現一個上游 UI 項目，不代表本產品已具備該 capability。
+狀態：四個主目的地 Home / Inbox / Explore / AI 已作為 current app-shell 契約落地；Profile 是 app-shell avatar 可達的 secondary account surface，不佔 Bottom Navigation。其餘 GitHub Mobile pattern 仍只在本地 owner/contract 真實存在時逐 slice 採用。文件或 benchmark 出現一個上游 UI 項目，不代表本產品已具備該 capability。
 
 兩條對照線分開：FPT 提供 resource/owner/relationship、query/mutation、identity/locator 與版本證據；GitHub Mobile 提供手機導覽與資訊層級。不能從 GraphQL schema 推導視覺布局，也不能從畫面推導授權或資料契約。
 
@@ -13,7 +13,7 @@
 - [GitHub Mobile](https://github.com/mobile) 與 [Mobile 使用說明](https://docs.github.com/en/get-started/using-github/github-mobile)：手機協作、通知及帳號入口。
 - [Android navigation，2026-03-20](https://github.blog/changelog/2026-03-20-a-smoother-navigation-experience-in-github-mobile-for-android/)：一致的底部導覽與分頁位置保留。
 - [Home shortcuts，2021-08-31](https://github.blog/changelog/2021-08-31-customize-your-mobile-home-tab-shortcuts/)：My Work/Favorites 分區的歷史設計參考，不據此宣稱目前每個平台完全相同。
-- [Copilot tab，2026-04-01](https://github.blog/changelog/2026-04-01-github-mobile-stay-in-flow-with-a-refreshed-copilot-tab-and-native-session-logs/)：上游導覽已演進；本產品沒有同等能力時，不複製 Copilot 入口。
+- [Copilot tab，2026-04-01](https://github.blog/changelog/2026-04-01-github-mobile-stay-in-flow-with-a-refreshed-copilot-tab-and-native-session-logs/)：只借鏡 AI 作為主目的地的資訊架構；本產品映射到既有 Assistant one-shot Ask / Issue draft / Review，不宣稱具備 Copilot session 或 autonomous coding semantics。
 
 採用原則：資源導向、內容優先、緊湊列表、明確上下層、穩定主導覽；保留本產品名稱、LINE 身分流程及實際可用能力。不是 GitHub 品牌、原生系統特效或完整功能的像素複製。
 
