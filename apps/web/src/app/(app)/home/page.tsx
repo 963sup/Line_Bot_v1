@@ -63,6 +63,11 @@ export default function Page() {
         description="固定入口只組裝既有能力；目前不建立第二套可儲存 Shortcut truth。"
       />
       <div className="menu-group">
+        <ActionRow href="/attendance" icon="◷" tone="blue" title="Attendance" />
+        <ActionRow href="/expenses" icon="$" tone="yellow" title="Expenses" />
+        <ActionRow href="/organizations" icon="▦" tone="orange" title="Organizations" />
+        <ActionRow href="/team" icon="◫" tone="purple" title="Teams" />
+        <ActionRow href="/enterprises" icon="◇" tone="pink" title="Enterprise" />
         <ActionRow href="/history" icon="↺" title="History" description="工作與出勤紀錄" />
         <ActionRow href="/feedback" icon="!" title="Feedback" description="即時回饋入口" />
         <ActionRow href="/settings" icon="◎" title="Profile" description="個人資料與設定" />
