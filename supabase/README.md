@@ -52,6 +52,7 @@ pnpm schema:remote prepare
 pnpm schema:remote plan
 pnpm schema:remote sync
 pnpm schema:remote verify
+pnpm schema:remote verify --api
 ```
 
 `prepare` 只供 **preserve-data destructive cutover 前置**。它不 drop table/column/function、不改
@@ -63,10 +64,13 @@ surface，並 read back。若既有資料需要不可推導的新 business metad
 任何 non-empty legacy owner data沒有明確 migration rule時都 fail closed。
 
 `plan` 從 declarative schemas 重建 clean local target，再比較 exact remote
-`app_private`。Normal `sync` 會在同一程序完成 initial plan、non-destructive apply、second diff
+`app_private`。Normal `sync` 會在同一程序完成 initial plan、apply、second diff
 與 acceptance readback；partial application-owned drift 交由 canonical diff 收斂，缺少 runtime
-foundation role 時先以 idempotent foundation repair 修復。若 drift 需要不可推導的 business data
-或 destructive DDL，仍 fail closed。Standalone `verify` 保留給人工診斷。Release/Replace
+foundation role 時先以 idempotent foundation repair 修復。沒有 `--allow-destructive` 時，
+destructive/data-sensitive DDL 仍 fail closed；帶 `--allow-destructive` 時仍不得改寫 migration
+history，且要完成 second diff 與 acceptance readback。Standalone `verify` 保留給人工診斷；
+`verify --api` 另用 publishable key 讀回 public Data API denial 與 Auth settings（Google provider
+狀態只作診斷，不是 acceptance gate）。Release/Replace
 保存 initial `plan.sql`、post-sync `verification.sql` 與 migration-history before/after evidence。
 
 Remote target 由 `SUPABASE_URL` 與 `POSTGRES_URL_NON_POOLING` 交叉驗證，並要求
@@ -79,13 +83,14 @@ Validated `main` 只有 declarative schema state 改變時才啟動 Supabase rem
 
 ```text
 current main
-→ sync (plan → apply → second diff → acceptance)
+→ sync --allow-destructive (plan → apply → second diff → acceptance)
 → preserve plan / verification / history evidence
 ```
 
 單純修改 reconciler 不會觸發 remote runner；它由 repository validation 驗證，等下一次真正
-schema change 再使用，避免重複消耗 GitHub Actions 分鐘。Automatic Release 永遠不帶
-`--allow-destructive`。
+schema change 再使用，避免重複消耗 GitHub Actions 分鐘。Automatic Release 的 destructive
+authorization 只來自 validated current `main` 的 schema/source change、exact project target、
+current-main precondition 與 post-write readback；需要不可推導 business data 時仍 fail closed。
 
 ### Explicit Supabase Replace
 

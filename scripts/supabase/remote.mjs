@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { loadRootEnv } from "../runtime/load-env.mjs";
 import { executeSql, queryRows, withPostgres } from "./postgres.mjs";
+import { localDatabaseCommands } from "./schema-local.mjs";
 import { declaredSchemaSql, schemaFileNames } from "./schema-source.mjs";
 
 const root = new URL("../../", import.meta.url);
@@ -129,6 +130,17 @@ from unnest(array[
 ]) as expected(relation_name)
 where to_regclass(format('app_private.%I', relation_name)) is null;
 `;
+const apiReadbackTimeoutMs = 10_000;
+
+export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnabled }) {
+  if (![401, 403, 404].includes(usersStatus)) {
+    throw new Error("Remote acceptance: public Data API can read app_private users.");
+  }
+  if (authStatus !== 200) {
+    throw new Error("Remote acceptance: Supabase Auth settings endpoint is unavailable.");
+  }
+  return { publicDataApiDenied: true, googleEnabled: googleEnabled === true };
+}
 
 export function classifyPlan(sql) {
   const destructive =
@@ -455,8 +467,8 @@ function localDatabaseUrl() {
 }
 
 async function rebuildDesiredLocal() {
-  run(["start"]);
-  run(["db", "reset", "--local", "--no-seed"]);
+  run(localDatabaseCommands.start);
+  run(localDatabaseCommands.reset);
   const desired = `BEGIN;\nDROP SCHEMA IF EXISTS app_private CASCADE;\n${declaredSchemaSql()}\nCOMMIT;\n`;
   writeFileSync(new URL("desired.sql", artifacts), desired);
   await executeSql(localDatabaseUrl(), desired, { remote: false });
@@ -806,6 +818,58 @@ async function verifyRuntimeAuthBoundary() {
   });
 }
 
+export function supabaseApiReadbackConfig(env = process.env) {
+  const supabaseUrl = env.SUPABASE_URL;
+  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!supabaseUrl) throw new Error("SUPABASE_URL is required for --api readback.");
+  if (!publishableKey) {
+    throw new Error(
+      "SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required for --api readback.",
+    );
+  }
+  projectRefFromSupabaseUrl(supabaseUrl);
+  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), publishableKey };
+}
+
+async function fetchApiReadback(fetchImpl, url, publishableKey) {
+  if (typeof fetchImpl !== "function") {
+    throw new Error("Supabase API readback requires a fetch implementation.");
+  }
+  return fetchImpl(url, {
+    headers: { apikey: publishableKey },
+    signal: AbortSignal.timeout(apiReadbackTimeoutMs),
+  });
+}
+
+export async function verifySupabaseApiReadback(
+  config = supabaseApiReadbackConfig(),
+  fetchImpl = globalThis.fetch,
+) {
+  const usersApi = await fetchApiReadback(
+    fetchImpl,
+    `${config.supabaseUrl}/rest/v1/users?select=id&limit=1`,
+    config.publishableKey,
+  );
+  const auth = await fetchApiReadback(
+    fetchImpl,
+    `${config.supabaseUrl}/auth/v1/settings`,
+    config.publishableKey,
+  );
+  let settings = {};
+  if (auth.ok) {
+    try {
+      settings = await auth.json();
+    } catch {
+      throw new Error("Remote acceptance: Supabase Auth settings endpoint did not return JSON.");
+    }
+  }
+  return assertSupabaseRestReadback({
+    usersStatus: usersApi.status,
+    authStatus: auth.status,
+    googleEnabled: settings.external?.google === true,
+  });
+}
+
 async function verifyRemoteAcceptance() {
   const [state] = await queryRemote(acceptanceSql);
   if (!state?.line_app_safe)
@@ -842,15 +906,28 @@ async function verifyRemoteAcceptance() {
 export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
   if (!["prepare", "plan", "sync", "verify"].includes(command)) {
-    throw new Error("Usage: schema:remote [prepare|plan|sync|verify] [--allow-destructive]");
+    throw new Error(
+      "Usage: schema:remote [prepare|plan|sync|verify] [--allow-destructive] [--api]",
+    );
   }
-  return { command, allowDestructive: flags.includes("--allow-destructive") };
+  for (const flag of flags) {
+    if (!["--allow-destructive", "--api"].includes(flag)) {
+      throw new Error(
+        "Usage: schema:remote [prepare|plan|sync|verify] [--allow-destructive] [--api]",
+      );
+    }
+  }
+  const api = flags.includes("--api");
+  if (api && command !== "verify") {
+    throw new Error("schema:remote --api is only valid with verify.");
+  }
+  return { command, allowDestructive: flags.includes("--allow-destructive"), api };
 }
 
 export async function main(argv = process.argv.slice(2)) {
   loadRootEnv();
   const { projectRef } = requireRemoteConfig();
-  const { command, allowDestructive } = parseArgs(argv);
+  const { command, allowDestructive, api } = parseArgs(argv);
   mkdirSync(artifacts, { recursive: true });
 
   await assertPlatformPrerequisites();
@@ -913,10 +990,15 @@ export async function main(argv = process.argv.slice(2)) {
     if (command === "verify") {
       if (!classification.empty) throw new Error(`Remote schema drift detected; see ${plan.path}`);
       await verifyRemoteAcceptance();
+      const apiReadback = api ? await verifySupabaseApiReadback() : undefined;
       const after = await migrationHistory();
       assertMigrationHistoryUnchanged(before, after);
       console.log(
-        `Remote verify PASS for ${projectRef}: schema drift = 0; ownership/security readback = PASS; migration history drift = 0.`,
+        `Remote verify PASS for ${projectRef}: schema drift = 0; ownership/security readback = PASS${
+          apiReadback
+            ? `; API readback = PASS (public Data API denied, Google enabled = ${apiReadback.googleEnabled})`
+            : ""
+        }; migration history drift = 0.`,
       );
       return;
     }

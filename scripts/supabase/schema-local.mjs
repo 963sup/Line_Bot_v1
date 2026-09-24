@@ -8,8 +8,14 @@ import { declaredSchemaSql } from "./schema-source.mjs";
 const root = new URL("../../", import.meta.url);
 const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
 
+export const localDatabaseCommands = {
+  start: ["db", "start"],
+  reset: ["db", "reset", "--local", "--no-seed"],
+  status: ["status", "--output", "json"],
+};
+
 export function localSchemaCommands() {
-  return [["start"], ["db", "reset", "--local", "--no-seed"], ["status", "--output", "json"]];
+  return Object.values(localDatabaseCommands);
 }
 
 function run(args, { capture = false } = {}) {
@@ -27,7 +33,7 @@ function run(args, { capture = false } = {}) {
 }
 
 function localDatabaseUrl() {
-  const status = JSON.parse(run(["status", "--output", "json"], { capture: true }));
+  const status = JSON.parse(run(localDatabaseCommands.status, { capture: true }));
   if (typeof status.DB_URL !== "string") throw new Error("Supabase local DB_URL is unavailable.");
   return status.DB_URL;
 }
@@ -47,8 +53,8 @@ async function main() {
   console.log(
     "Rebuilding the LOCAL development database from supabase/schemas; local data is removed.",
   );
-  run(["start"]);
-  run(["db", "reset", "--local", "--no-seed"]);
+  run(localDatabaseCommands.start);
+  run(localDatabaseCommands.reset);
   await executeSql(localDatabaseUrl(), readFileSync(sqlPath, "utf8"), { remote: false });
 }
 

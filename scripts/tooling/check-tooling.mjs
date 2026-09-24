@@ -419,28 +419,31 @@ export function validate(root) {
     const releaseWorkflowFile = resolve(root, ".github/workflows/release.yml");
     const releaseWorkflowSource = read(releaseWorkflowFile);
     const releaseWorkflow = YAML.parse(releaseWorkflowSource);
+    if (releaseWorkflow["run-name"] !== "Release ${{ github.event.workflow_run.head_sha }}")
+      errors.push("CI: Release run-name must preserve the validated SHA for routing baseline");
     const releaseTriggers = releaseWorkflow.on;
-    const releasePush = releaseTriggers?.push;
-    const releaseBranches = releasePush?.branches;
-    const releasePaths = releasePush?.paths;
+    const releaseWorkflowRun = releaseTriggers?.workflow_run;
+    const releaseWorkflows = releaseWorkflowRun?.workflows;
+    const releaseTypes = releaseWorkflowRun?.types;
+    const releaseBranches = releaseWorkflowRun?.branches;
     if (
       !table(releaseTriggers) ||
-      !table(releasePush) ||
+      !table(releaseWorkflowRun) ||
+      !Array.isArray(releaseWorkflows) ||
+      !releaseWorkflows.includes("Validate") ||
+      !Array.isArray(releaseTypes) ||
+      !releaseTypes.includes("completed") ||
       !Array.isArray(releaseBranches) ||
-      !releaseBranches.includes("main") ||
-      !Array.isArray(releasePaths) ||
-      !releasePaths.includes("supabase/schemas/**/*.sql") ||
-      !releasePaths.includes(".github/workflows/release.yml") ||
-      releasePaths.includes("scripts/supabase/remote.mjs") ||
-      !releasePaths.includes("assets/line/rich-menu/**")
+      !releaseBranches.includes("main")
     )
       errors.push(
-        "CI: Release must be affected-main-only for Supabase schema state, release workflow and Rich Menu desired state; reconciler-only edits must not spend remote-release minutes",
+        "CI: Release must run after completed main Validate, not as a parallel push runner",
       );
     const releasePermissions = releaseWorkflow.permissions;
     if (
       !table(releasePermissions) ||
       releasePermissions.contents !== "read" ||
+      releasePermissions.actions !== "read" ||
       releasePermissions.checks !== "read" ||
       releasePermissions.statuses !== "read" ||
       Object.values(releasePermissions).some((value) => value === "write")
@@ -458,6 +461,31 @@ export function validate(root) {
     }
 
     const gateSteps = releaseGate?.steps ?? [];
+    if (
+      typeof releaseGate?.if !== "string" ||
+      !releaseGate.if.includes("workflow_run.event == 'push'") ||
+      !releaseGate.if.includes("workflow_run.conclusion == 'success'") ||
+      !releaseGate.if.includes("workflow_run.head_branch == 'main'") ||
+      !releaseGate.if.includes("workflow_run.head_repository.full_name == github.repository")
+    ) {
+      errors.push(
+        "CI: Release gate must only accept successful same-repository main push Validate runs",
+      );
+    }
+    const currentMain = gateSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("branches/main") &&
+        step.run.includes("VALIDATED_SHA") &&
+        step.run.includes("superseded before release routing"),
+    );
+    const releaseCheckout = gateSteps.findIndex(
+      (step) =>
+        step.uses?.startsWith("actions/checkout@") &&
+        step.with?.ref === "${{ github.event.workflow_run.head_sha }}" &&
+        step.with?.["fetch-depth"] === 0 &&
+        step.with?.["persist-credentials"] === false,
+    );
     const detectChanges = gateSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
@@ -465,16 +493,34 @@ export function validate(root) {
         step.run.includes("workflows/release") &&
         !step.run.includes("scripts/supabase/remote") &&
         step.run.includes("assets/line/rich-menu/") &&
+        step.run.includes("actions/workflows/release.yml/runs") &&
+        step.run.includes("status=success") &&
+        step.run.includes("display_title") &&
+        step.run.includes("^Release\\ [0-9a-f]{40}$") &&
+        step.run.includes("actions/runs/$run_id/jobs") &&
+        step.run.includes("filter=latest") &&
+        step.run.includes("job_name") &&
+        step.run.includes("gate") &&
+        step.run.includes("job_conclusion") &&
+        step.run.includes("success") &&
+        step.run.includes("merge-base --is-ancestor") &&
+        step.run.includes("empty_tree") &&
+        step.run.includes("VALIDATED_SHA") &&
         step.run.includes("GITHUB_OUTPUT"),
     );
-    const waitValidate = gateSteps.findIndex(
+    const waitsForValidate = gateSteps.some(
       (step) =>
         typeof step.run === "string" &&
         step.run.includes("check-runs") &&
         step.run.includes('.name == "validate"'),
     );
-    if (detectChanges < 0 || waitValidate <= detectChanges) {
-      errors.push("CI: Release gate must detect affected source before requiring validate");
+    if (currentMain < 0 || releaseCheckout <= currentMain || detectChanges <= releaseCheckout) {
+      errors.push(
+        "CI: Release gate must validate current main, checkout exact validated SHA and detect affected source from previous successful Release",
+      );
+    }
+    if (waitsForValidate) {
+      errors.push("CI: Release must not spend runner minutes polling for Validate");
     }
 
     if (
@@ -547,6 +593,12 @@ export function validate(root) {
       errors.push("CI: Rich Menu release must be affected-only after deployment evidence");
     }
     const richSteps = releaseRichMenu?.steps ?? [];
+    const richPnpmSetup = richSteps.findIndex(
+      (step) =>
+        step.uses?.startsWith("pnpm/action-setup@") &&
+        step.with?.cache === true &&
+        step.with?.["cache_dependency_path"] === "pnpm-lock.yaml",
+    );
     const richBuild = richSteps.findIndex(
       (step) => typeof step.run === "string" && step.run.includes("@line-work/web^..."),
     );
@@ -560,6 +612,7 @@ export function validate(root) {
       (step) => step.run === "pnpm line:rich-menu publish all",
     );
     if (
+      richPnpmSetup < 0 ||
       richBuild < 0 ||
       richPreview <= richBuild ||
       richMain <= richPreview ||

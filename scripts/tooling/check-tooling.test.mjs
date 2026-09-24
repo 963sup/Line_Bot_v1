@@ -111,7 +111,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/release.yml",
-    "on:\n  push:\n    branches: [main]\n    paths: [.github/workflows/release.yml, supabase/schemas/**/*.sql, assets/line/rich-menu/**]\npermissions:\n  contents: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    steps:\n      - run: echo 'supabase/schemas/ .github/workflows/release.yml assets/line/rich-menu/ GITHUB_OUTPUT'\n      - run: echo 'check-runs .name == \"validate\"'\n  supabase:\n    needs: gate\n    if: needs.gate.outputs.schema_changed == 'true'\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    steps:\n      - run: echo 'commits/$SHA/status select(.context == \"Vercel\") https://vercel.com/96sup/mini-app-line/'\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
+    "run-name: Release ${{ github.event.workflow_run.head_sha }}\non:\n  workflow_run:\n    workflows: [Validate]\n    types: [completed]\n    branches: [main]\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository\n    steps:\n      - run: echo 'branches/main VALIDATED_SHA superseded before release routing'\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.workflow_run.head_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - run: echo 'actions/workflows/release.yml/runs status=success display_title ^Release\\ [0-9a-f]{40}$ actions/runs/$run_id/jobs filter=latest job_name gate job_conclusion success merge-base --is-ancestor empty_tree VALIDATED_SHA supabase/schemas/ .github/workflows/release.yml assets/line/rich-menu/ GITHUB_OUTPUT'\n  supabase:\n    needs: gate\n    if: needs.gate.outputs.schema_changed == 'true'\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    steps:\n      - run: echo 'commits/$SHA/status select(.context == \"Vercel\") https://vercel.com/96sup/mini-app-line/'\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n          cache: true\n          cache_dependency_path: pnpm-lock.yaml\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
   );
   write(
     ".github/workflows/supabase-replace.yml",
@@ -429,23 +429,53 @@ test("Release routes schema and workflow changes through one reconciliation pass
   const { root, write } = fixture(t);
   const workflow = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
 
-  write(".github/workflows/release.yml", workflow.replace(".github/workflows/release.yml, ", ""));
-  rejects(root, "affected-main-only");
+  write(".github/workflows/release.yml", workflow.replace("run-name: Release", "run-name: Run"));
+  rejects(root, "run-name must preserve");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace(" .github/workflows/release.yml assets/", " assets/"),
+    workflow.replace("workflows: [Validate]", "workflows: [Other]"),
   );
+  rejects(root, "completed main Validate");
+
+  write(".github/workflows/release.yml", workflow.replace("actions: read", "actions: write"));
+  rejects(root, "read-only GitHub permissions");
+
+  write(".github/workflows/release.yml", workflow.replace("conclusion == 'success' && ", ""));
+  rejects(root, "successful same-repository main push Validate");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace("head_repository.full_name", "repository.full_name"),
+  );
+  rejects(root, "successful same-repository main push Validate");
+
+  write(".github/workflows/release.yml", workflow.replace("status=success ", ""));
+  rejects(root, "detect affected source");
+
+  write(".github/workflows/release.yml", workflow.replace("display_title ", ""));
+  rejects(root, "detect affected source");
+
+  write(".github/workflows/release.yml", workflow.replace("actions/runs/$run_id/jobs ", ""));
+  rejects(root, "detect affected source");
+
+  write(".github/workflows/release.yml", workflow.replace("filter=latest ", ""));
+  rejects(root, "detect affected source");
+
+  write(".github/workflows/release.yml", workflow.replace("merge-base --is-ancestor ", ""));
+  rejects(root, "detect affected source");
+
+  write(".github/workflows/release.yml", workflow.replace("empty_tree ", ""));
   rejects(root, "detect affected source");
 
   write(
     ".github/workflows/release.yml",
     workflow.replace(
-      "supabase/schemas/**/*.sql, assets/line/rich-menu/**",
-      "supabase/schemas/**/*.sql, scripts/supabase/remote.mjs, assets/line/rich-menu/**",
+      "- run: echo 'actions/workflows/release.yml/runs",
+      '- run: echo \'check-runs .name == "validate" actions/workflows/release.yml/runs',
     ),
   );
-  rejects(root, "affected-main-only");
+  rejects(root, "must not spend runner minutes polling for Validate");
 
   write(
     ".github/workflows/release.yml",
@@ -463,6 +493,9 @@ test("Release routes schema and workflow changes through one reconciliation pass
     ".github/workflows/release.yml",
     workflow.replace("pnpm line:rich-menu publish all", "echo skip"),
   );
+  rejects(root, "build/preview/current-main/publish");
+
+  write(".github/workflows/release.yml", workflow.replace("cache: true", "cache: false"));
   rejects(root, "build/preview/current-main/publish");
   write(".github/workflows/release.yml", workflow);
   assert.deepEqual(validate(root), []);
@@ -603,7 +636,14 @@ for (const content of [
     assert.deepEqual(validate(root), []);
   });
 }
-for (const [script, args, message] of [["scripts/probes/check-receipt.mjs", [], "--live"]]) {
+for (const [script, args, message] of [
+  ["scripts/probes/check-agent.mjs", [], "--live"],
+  ["scripts/probes/check-expense-card.mjs", [], "--live"],
+  ["scripts/probes/check-gemini.mjs", [], "--live"],
+  ["scripts/probes/check-line.mjs", [], "--live"],
+  ["scripts/probes/check-receipt.mjs", [], "--live"],
+  ["scripts/probes/check-redis.mjs", [], "--live"],
+]) {
   test(`offline guard: ${script}`, (t) => {
     const { root } = fixture(t);
     const result = spawnSync(process.execPath, [resolve(repo, script), ...args], {

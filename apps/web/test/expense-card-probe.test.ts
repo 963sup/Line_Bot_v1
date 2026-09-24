@@ -11,6 +11,7 @@ test("expense card CLI loads the Web presenter and validates without sending mes
       "-e",
       `
     import assert from 'node:assert/strict';
+    process.argv = [process.execPath, 'scripts/probes/check-expense-card.mjs', '--live'];
     let calls = 0;
     globalThis.fetch = async (input, options) => {
       calls++;

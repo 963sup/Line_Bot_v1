@@ -1,22 +1,14 @@
-/**
- * ============================================================================
- * 第一性原理分析：任務進件代理離線驗收腳本 (Agent Intake Verification Script)
- * ============================================================================
- *
- * 1. 根本問題 (Root Problem):
- *    在不向生產資料庫寫入垃圾資料、不觸發實際通訊軟體推送的前提下，
- *    如何對兩階段任務進件代理 (Intake Agent) 進行確定的鏈路驗收與工具調用檢驗？
- *
- * 2. 核心公理與驗收約束 (Core Axioms & Verification Discipline):
- *    - 【無副作用公理 (Zero-Side-Effect Verification)】：
- *      使用固定自然語言測試句，驗證代理之工具調用鏈（時間錨定 -> 任務草稿），
- *      失敗時明確回報狀態，且絕不造成任何資料持久化。
- *    - 【錯誤脫敏原則】：
- *      捕捉異常時僅輸出標準化 JSON 結構與 HTTP 狀態碼（若有），不反射包含金鑰或內部堆疊的原始錯誤物件。
- * ============================================================================
- */
+// Live Gemini intake probe with fixed synthetic input. No task is persisted.
 
 import { createRequire } from "node:module";
+
+if (process.argv.slice(2).join(" ") !== "--live") {
+  console.error(
+    "Usage: node scripts/probes/check-agent.mjs --live (one live Gemini intake call; no task persistence).",
+  );
+  process.exitCode = 1;
+  process.exit();
+}
 
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { runIntakeAgent } = await import(require.resolve("@line-work/assistant/agents/intake"));

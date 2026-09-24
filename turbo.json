@@ -55,7 +55,8 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/supabase/schemas/*.sql",
         "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/runtime/load-env.test.mjs"
+        "$TURBO_ROOT$/scripts/runtime/load-env.test.mjs",
+        "$TURBO_ROOT$/scripts/probes/*.mjs"
       ]
     },
     "@line-work/platform#schema:check": {

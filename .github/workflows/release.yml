@@ -1,17 +1,15 @@
 name: Release
+run-name: Release ${{ github.event.workflow_run.head_sha }}
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Validate"]
+    types: [completed]
     branches: [main]
-    paths:
-      - ".github/workflows/release.yml"
-      - "supabase/schemas/**/*.sql"
-      - "assets/line/rich-menu/**"
-      - "apps/web/src/modules/assistant/rich-menu/definition.ts"
-      - "apps/web/src/modules/assistant/rich-menu/desired-state.server.ts"
 
 permissions:
   contents: read
+  actions: read
   checks: read
   statuses: read
 
@@ -21,14 +19,34 @@ concurrency:
 
 jobs:
   gate:
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
+      head_sha: ${{ steps.changed.outputs.head_sha }}
       schema_changed: ${{ steps.changed.outputs.schema_changed }}
       rich_menu_changed: ${{ steps.changed.outputs.rich_menu_changed }}
     steps:
+      - name: Require validated current main before release routing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
+          test "$VALIDATED_SHA" = "$main_sha" || {
+            echo "Validated commit was superseded before release routing."
+            exit 1
+          }
+
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -36,13 +54,37 @@ jobs:
         id: changed
         shell: bash
         env:
-          BEFORE: ${{ github.event.before }}
-          SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          if git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            git diff --name-only "$BEFORE" "$SHA" > changed-files.txt
+          baseline_sha=""
+          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=success&per_page=100" \
+            --jq '.workflow_runs[] | [.id, .display_title] | @tsv' > release-runs.tsv
+          while IFS=$'\t' read -r run_id display_title; do
+            [[ "$display_title" =~ ^Release\ [0-9a-f]{40}$ ]] || continue
+            candidate_sha="${display_title#Release }"
+            git cat-file -e "$candidate_sha^{commit}" 2>/dev/null || continue
+            git merge-base --is-ancestor "$candidate_sha" "$VALIDATED_SHA" || continue
+            gh api "repos/$REPOSITORY/actions/runs/$run_id/jobs?filter=latest&per_page=100" \
+              --jq '.jobs[] | [.name, .conclusion] | @tsv' > release-run-jobs.tsv
+            gate_succeeded=false
+            while IFS=$'\t' read -r job_name job_conclusion; do
+              if [ "$job_name" = "gate" ] && [ "$job_conclusion" = "success" ]; then
+                gate_succeeded=true
+                break
+              fi
+            done < release-run-jobs.tsv
+            if [ "$gate_succeeded" = "true" ]; then
+              baseline_sha="$candidate_sha"
+              break
+            fi
+          done < release-runs.tsv
+          if [ -n "$baseline_sha" ] && git cat-file -e "$baseline_sha^{commit}" 2>/dev/null; then
+            git diff --name-only "$baseline_sha" "$VALIDATED_SHA" > changed-files.txt
           else
-            git diff-tree --no-commit-id --name-only -r "$SHA" > changed-files.txt
+            empty_tree="$(git hash-object -t tree /dev/null)"
+            git diff --name-only "$empty_tree" "$VALIDATED_SHA" > changed-files.txt
           fi
           schema_changed=false
           rich_menu_changed=false
@@ -52,31 +94,9 @@ jobs:
           if grep -Eq '^(assets/line/rich-menu/|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)' changed-files.txt; then
             rich_menu_changed=true
           fi
+          echo "head_sha=$VALIDATED_SHA" >> "$GITHUB_OUTPUT"
           echo "schema_changed=$schema_changed" >> "$GITHUB_OUTPUT"
           echo "rich_menu_changed=$rich_menu_changed" >> "$GITHUB_OUTPUT"
-
-      - name: Require repository validation for this commit
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          for attempt in $(seq 1 120); do
-            result="$(gh api "repos/$REPOSITORY/commits/$SHA/check-runs" --jq '[.check_runs[] | select(.name == "validate" and .app.slug == "github-actions")][0] | "\(.status // "")|\(.conclusion // "")"')"
-            status="${result%%|*}"
-            conclusion="${result#*|}"
-            if [ "$status" = "completed" ]; then
-              test "$conclusion" = "success" || {
-                echo "Repository validation did not succeed for $SHA: $conclusion"
-                exit 1
-              }
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Timed out waiting for repository validation for $SHA."
-          exit 1
 
   supabase:
     needs: gate
@@ -86,7 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ needs.gate.outputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -103,7 +123,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ needs.gate.outputs.head_sha }}
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
@@ -122,7 +142,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: supabase-reconciliation-${{ github.sha }}
+          name: supabase-reconciliation-${{ needs.gate.outputs.head_sha }}
           path: |
             .artifacts/supabase-remote/plan.sql
             .artifacts/supabase-remote/verification.sql
@@ -146,7 +166,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ needs.gate.outputs.head_sha }}
         run: |
           for attempt in $(seq 1 120); do
             result="$(gh api "repos/$REPOSITORY/commits/$SHA/status" --jq '[.statuses[] | select(.context == "Vercel")][0] | "\(.state // "")|\(.target_url // "")"')"
@@ -179,7 +199,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ needs.gate.outputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -187,6 +207,8 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec turbo run build --filter='@line-work/web^...'
       - run: pnpm line:rich-menu preview all
@@ -196,7 +218,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ needs.gate.outputs.head_sha }}
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
