@@ -6,11 +6,15 @@ import { liffClient } from "../../shared/browser/liff-client";
 import { authHeaders } from "../../shared/browser/supabase-session";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
-export type CoinView = Awaited<ReturnType<DailyCheckIn["coinView"]>>;
+type DailyCheckInView = Awaited<ReturnType<DailyCheckIn["currentView"]>>;
+export type CoinView = DailyCheckInView & { balance: number };
+type CoinProjection = CoinView | { unavailable: true };
 export type DailyCheckInClaim = NonNullable<Awaited<ReturnType<DailyCheckIn["readClaim"]>>>;
-type View = AccountView & { coins: CoinView };
+type View = AccountView & { coins: CoinProjection };
 type MembershipWireResponse = { member: View | null };
-type CheckInWireOutcome = Awaited<ReturnType<DailyCheckIn["checkIn"]>>["checkIn"];
+type CheckInWireOutcome = Awaited<ReturnType<DailyCheckIn["checkIn"]>> & {
+  coins: CoinProjection;
+};
 export type CheckInOutcome = Omit<CheckInWireOutcome, "coins" | "claim"> & {
   claim: DailyCheckInClaim | null;
   coins?: CoinView;
@@ -19,6 +23,10 @@ export type CheckInOutcome = Omit<CheckInWireOutcome, "coins" | "claim"> & {
   recovered?: boolean;
   state?: "claimed" | "pending" | "rejected";
 };
+function isCoinView(value: CoinProjection): value is CoinView {
+  return !("unavailable" in value);
+}
+
 class MembershipRequestError extends Error {
   constructor(
     message: string,
@@ -276,7 +284,8 @@ export function useUser(liffId: string) {
         if (!signal.aborted) setBusy(false);
       }
     }
-    const checkInDay = action === "checkIn" ? (pendingCheckInDay ?? user?.coins.day) : null;
+    const currentCoins = user && isCoinView(user.coins) ? user.coins : null;
+    const checkInDay = action === "checkIn" ? (pendingCheckInDay ?? currentCoins?.day) : null;
     if (action === "checkIn") {
       unresolvedCheckInDay.current = checkInDay ?? null;
       setUnresolvedCheckIn(checkInDay ?? null);
@@ -310,7 +319,7 @@ export function useUser(liffId: string) {
       if (!result.ok)
         throw new MembershipRequestError(data.error ?? "操作失敗，請重試。", result.status);
       if (data.checkIn) {
-        const checkIn = data.checkIn as CheckInOutcome;
+        const checkIn = data.checkIn as CheckInWireOutcome;
         setUser((data as MembershipWireResponse).member);
         unresolvedCheckInDay.current = null;
         setUnresolvedCheckIn(null);
@@ -319,7 +328,11 @@ export function useUser(liffId: string) {
             ? `簽到成功，已領取 ${checkIn.credited} Coin。`
             : "今天已領取，明天再來！",
         );
-        return { ...checkIn, state: "claimed" };
+        return {
+          ...checkIn,
+          coins: isCoinView(checkIn.coins) ? checkIn.coins : undefined,
+          state: "claimed",
+        };
       } else {
         if (action === "register" || action === "restore")
           setNotice("會員已開通，可以直接使用簽到與記帳。");

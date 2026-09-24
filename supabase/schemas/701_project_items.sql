@@ -16,6 +16,6 @@ create table app_private.project_items (
 );
 create index project_items_project_position on app_private.project_items(project_id, position, id);
 alter table app_private.project_items enable row level security;
+-- Project is current-data-only. Runtime DML stays disabled until a real consumer
+-- defines Project authorization, version/replay semantics and a public contract.
 revoke all on app_private.project_items from public, anon, authenticated, line_app;
-grant insert, select, update, delete on app_private.project_items to line_app;
-create policy backend on app_private.project_items for all to line_app using (true) with check (true);

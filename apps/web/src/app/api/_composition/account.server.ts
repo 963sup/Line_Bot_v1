@@ -50,9 +50,7 @@ function loginDirectoryStore() {
 const dailyCheckIn = createDailyCheckIn({
   activeUser: async (subject) =>
     requireActiveUser(await userStore().find(LINE_PROVIDER_NAMESPACE, subject)),
-  member: (userId) => userStore().view(userId),
   repository: dailyCheckInStore,
-  coinBalance: async (userId) => (await walletStore().balance(userId, COIN_ASSET_CODE)).balance,
   now: () => Date.now(),
 });
 const user = createUser({
@@ -86,11 +84,16 @@ export const profiles = createUserProfiles({
   now: () => Date.now(),
 });
 
-export async function getUser(subject: string) {
-  const account = await user.getUser(subject);
-  return account
-    ? { ...account, coins: await dailyCheckIn.coinView(account.id, Date.now()) }
-    : null;
+export function getUser(subject: string) {
+  return user.getUser(subject);
+}
+
+export async function getCoinView(userId: string) {
+  const [wallet, checkIn] = await Promise.all([
+    walletStore().balance(userId, COIN_ASSET_CODE),
+    dailyCheckIn.currentView(userId),
+  ]);
+  return { ...checkIn, balance: wallet.balance };
 }
 
 export const checkIn = dailyCheckIn.checkIn;

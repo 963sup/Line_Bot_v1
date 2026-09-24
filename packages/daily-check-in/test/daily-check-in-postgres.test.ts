@@ -160,11 +160,7 @@ test("DailyCheckIn qualification is rechecked in the transaction and claims are 
       );
       return { id: memberId };
     },
-    member: async () => {
-      throw new Error("unexpected member projection");
-    },
     repository: () => store,
-    coinBalance: async () => 0,
     now: () => Date.parse("2026-09-24T15:59:59Z"),
   });
   await assert.rejects(

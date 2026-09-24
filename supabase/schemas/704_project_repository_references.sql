@@ -11,6 +11,6 @@ create table app_private.project_repository_references (
 );
 create index project_repository_references_repository on app_private.project_repository_references(repository_id, project_id);
 alter table app_private.project_repository_references enable row level security;
+-- Project is current-data-only. Runtime DML stays disabled until a real consumer
+-- defines Project authorization, version/replay semantics and a public contract.
 revoke all on app_private.project_repository_references from public, anon, authenticated, line_app;
-grant insert, select, update, delete on app_private.project_repository_references to line_app;
-create policy backend on app_private.project_repository_references for all to line_app using (true) with check (true);

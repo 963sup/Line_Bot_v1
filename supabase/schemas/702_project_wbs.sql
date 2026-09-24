@@ -13,6 +13,6 @@ create table app_private."project_wbs" (
   constraint "project_wbs_parent_fkey" foreign key (project_id, parent_id) references app_private.project_wbs(project_id, id)
 );
 alter table app_private."project_wbs" enable row level security;
+-- Project is current-data-only. Runtime DML stays disabled until a real consumer
+-- defines Project authorization, version/replay semantics and a public contract.
 revoke all on app_private."project_wbs" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.project_wbs to line_app;
-create policy "backend" on app_private.project_wbs as permissive for all to line_app using (true) with check (true);
