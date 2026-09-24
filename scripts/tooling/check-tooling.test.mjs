@@ -501,13 +501,13 @@ test("Release routes schema and workflow changes through one reconciliation pass
     ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote prepare", "echo skip-prepare"),
   );
-  rejects(root, "current-main/prepare/sync/evidence");
+  rejects(root, "changed-safe-sync or unchanged-verify");
 
   write(
     ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote sync", "echo skip-sync"),
   );
-  rejects(root, "current-main/prepare/sync/evidence");
+  rejects(root, "changed-safe-sync or unchanged-verify");
 
   write(
     ".github/workflows/release.yml",
