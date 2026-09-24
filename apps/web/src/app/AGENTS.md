@@ -7,11 +7,11 @@
 | 目標 tab | 保留 URL | 資訊責任 |
 | --- | --- | --- |
 | 首頁 Home | `/home` | 我的工作、可用資源入口與已授權收藏投影 |
-| 通知 Inbox | `/notifications` | recipient-scoped 待處理通知；不混入一般公告或活動 feed |
+| Inbox | `/notifications` | Notifications owner 的 recipient-scoped read projection；不建立 Inbox Domain，也不混入一般公告或活動 feed |
 | 探索 Explore | `/explore` | 現有 Repository discovery/Star；不假裝已有跨 owner 全域搜尋 |
 | 我的 Profile | `/settings` | 當前 viewer 的帳號入口、公開個人頁連結、組織與管理入口；不是 public `/{login}` 替代品 |
 
-Current shell 固定四個主目的地；`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。資料夾、API、LIFF intent 與發布選單不能因 tab 排序順便改名。
+Current shell 固定四個主目的地；`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。Inbox 是 presentation vocabulary，`/notifications` 與 `/api/notifications` 是 current published transport；兩者不要求同名，也不能因 tab 命名順便建立 `packages/inbox`、平行 schema 或新的 source root。
 
 導航層級：主 tab → owner/collection → resource detail → 明確操作。一般內頁使用 back、title、最多一個主要快捷操作及適當 overflow；不能把每個 resource 提升為主 tab。切 tab 可保留同一 viewer 的安全瀏覽位置，但私有資料與命令恢復仍依 owner/session 規則。
 

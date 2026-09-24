@@ -1,4 +1,4 @@
-import NotificationInbox from "../../../../modules/notifications/notification-inbox";
+import Inbox from "../../../../modules/notifications/inbox";
 import { lineMiniApp } from "../../../../shared/server/line-mini-app";
 import AppShell from "../../_shell/app-shell";
 
@@ -13,7 +13,7 @@ export default async function Page({
   const view = notificationView === "unread" ? "unread" : "all";
   return (
     <AppShell>
-      <NotificationInbox
+      <Inbox
         key={`${notificationId.toLowerCase()}:${view}`}
         liffId={lineMiniApp().liffId}
         notificationId={notificationId.toLowerCase()}
