@@ -22,3 +22,5 @@
 - version 是能力與資料的邊界，不是顯示欄位；不同 version／部署形態不可互相回填，跨 owner reference 必須可驗證，缺少分片不得默認成空資料。
 - 呈現方式依問題選擇：Glossary/表格用於 canonical vocabulary 與 ownership；ASCII/Mermaid 用於 boundary/dependency；ERD 只描述 Data Boundary；sequence diagram 描述 interaction/order；state diagram 描述 lifecycle；decision table 描述 policy；invariant list 描述不可破壞條件。圖不能成為第二套 truth，必須與 canonical text / machine source 同 owner。
 - 修改後執行 `pnpm docs:check`；它只證明 Markdown 結構與本地 link，不等於 runtime/deployment/API/device verification。
+- 更新 agent 指引時，以「何時適用 → 要採取的動作 → 可核對的依據」表達；先找父層與 canonical owner，僅補 local decision gap，不靠增加篇幅或逐檔套相同模板宣稱完整。
+- 文件中的命令、路徑與 current claim 須核對當前 script、exports 或測試；`docs:check` 不驗指令可執行性、遠端連結與內容正確性。缺少實證的內容明列待驗證，不推測為已實作。

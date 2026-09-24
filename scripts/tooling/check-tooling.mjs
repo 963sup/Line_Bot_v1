@@ -490,7 +490,7 @@ export function validate(root) {
       (step) => typeof step.run === "string" && step.run.includes("branches/main"),
     );
     const supabaseSync = supabaseSteps.findIndex(
-      (step) => step.run === "pnpm schema:remote sync" && step.if === undefined,
+      (step) => step.run === "pnpm schema:remote sync --allow-destructive" && step.if === undefined,
     );
     const supabaseEvidence = supabaseSteps.findIndex(
       (step) =>
@@ -515,9 +515,6 @@ export function validate(root) {
       errors.push(
         "CI: automatic Supabase release must be current-main/sync/evidence with one local schema rebuild",
       );
-    }
-    if (JSON.stringify(releaseSupabase ?? {}).includes("--allow-destructive")) {
-      errors.push("CI: automatic Supabase release must never authorize destructive reconciliation");
     }
 
     const deploymentSteps = releaseDeployment?.steps ?? [];

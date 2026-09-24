@@ -16,3 +16,12 @@
 程式結構見 [Monorepo](docs/020-architecture/010-repository-architecture.md)，依賴規則見 [Dependencies](docs/020-architecture/040-dependency-rules.md)。Biome 是 JS／TS／JSON 檔案內 canonical syntax、safe fix 與 import ordering 的唯一 owner；修改完成後先用 mutable `pnpm format`，不手工維護第二套格式規則。Knip 是 repository reachability、dead file、unused export／dependency 的 executable owner；finding 優先 Delete／收斂 public surface／修正真實 entry，禁止用 broad ignore 掩蓋。兩者都必須通過 read-only `pnpm check`；合併／發布用 `pnpm validate`，文件用 `pnpm docs:check`；驗證範圍見 [Validation](docs/060-engineering/040-validation.md)。
 
 模型分工與子代理調度的唯一 human-readable owner 是 [模型分工](.codex/agents/AGENTS.md)；本檔只負責 routing，不複製模型責任。
+
+## 開發決策與完成條件
+
+- 開工先看 Git working tree，區分本次 ownership 與既有／其他交談修改；無法歸屬的變更先保留。共用檔案或產物會衝突時先協調，不以 reset、清理或全域 formatter 覆蓋他人進度。
+- 先以可觀察行為說明成功條件，再由 [Change routing](docs/000-core/040-change-routing.md) 定位 owner。跨 owner 或語意變更可用 `pnpm semantic plan "<intent>"`、`pnpm semantic context "<intent>"` 縮小閱讀範圍；產生的計畫是導覽，仍須核對實際 consumer、code 與 tests。
+- 「高手思維」須落到可引用的既有解法、測試或量測：說明適用條件與本次差異。外部 benchmark 只在相關決策需要時讀取，不把每次小修擴成全庫研究，也不因外部設計較完整就照搬。
+- 修 bug 先找到可重現輸入與失敗邊界；以能區分修正前後的證據驗證根因。涉及權限、狀態轉移或外部副作用時，連同拒絕、重送、部分失敗等受影響路徑檢查，不只驗 happy path。
+- 可由現有契約決定的可逆實作選擇直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才提出具體問題，同時推進不受影響部分。
+- 收尾核對 diff 僅含本次必要修改，依 [Validation](docs/060-engineering/040-validation.md) 執行適用入口；純 AGENTS 變更仍需 `pnpm check` 驗 tooling 與文件。回報實跑命令、結果及阻塞，不將環境錯誤寫成產品失敗或跳過檢查後宣稱通過。

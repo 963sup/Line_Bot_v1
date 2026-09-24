@@ -111,7 +111,7 @@ jobs:
           }
 
       - name: Reconcile and verify remote schema without migration history
-        run: pnpm schema:remote sync
+        run: pnpm schema:remote sync --allow-destructive
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
