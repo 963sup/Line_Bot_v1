@@ -137,10 +137,7 @@ export default function DiscoveryPanel({ liffId }: { liffId: string }) {
                 >
                   {item.starred ? "取消 Star" : "Star"}
                 </button>
-                <Link
-                  className="secondary-link"
-                  href={repositoryPath(item.ownerLogin, item.name)}
-                >
+                <Link className="secondary-link" href={repositoryPath(item.ownerLogin, item.name)}>
                   開啟儲存庫
                 </Link>
               </div>
