@@ -33,12 +33,12 @@ Preview、local、test 與 production 不共用假定的帳號、資料或秘密
 
 ## Database and writer safety
 
-Web runtime 不執行 DDL。Schema 變更使用 forward migration，migration credential 與 runtime credential 分離。
+Web runtime 不執行 DDL。Schema 變更使用 forward reconciliation，operator credential 與 runtime credential 分離。若新 runtime 依賴新的 relation/constraint/function，該 database contract 的 apply + post-write readback 必須先成功，Production promotion 才可開始；不能以 Vercel Git main auto-deploy 讓 runtime 越過 database gate。
 
 需要切換資料來源時，先指定唯一 writer、停止舊 writer、處理未完成操作並取得備份，再做隔離 migration / reconciliation。不得用雙寫或自動 fallback 掩蓋切換不確定性。
 
 ## Release boundary
 
-Web deployment、database migration、scheduler/worker、LINE Rich Menu、LINE webhook、Google/Supabase console 設定都是不同外部變更。它們必須分別有版本、結果與恢復方式；其中一項成功不能代表其他項已完成。
+Web deployment、database reconciliation、scheduler/worker、LINE Rich Menu、LINE webhook、Google/Supabase console 設定都是不同外部變更。它們必須分別有版本、結果與恢復方式；其中一項成功不能代表其他項已完成。當 runtime 與 database contract 有明確 dependency 時，Release ordering 仍必須先 database convergence、後 exact revision Production deployment。
 
 正式放行流程見 `../../020-release/010-release-process.md`；資料恢復見 `../../030-recovery/010-backup-and-recovery.md`；外部平台操作見 `../../050-external-operations/010-external-change-control.md`。
