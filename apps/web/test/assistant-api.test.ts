@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { assistantRequest } from "../src/modules/assistant/api.server";
-import { assistantSurfaceConfig, isAssistantSurfaceMode } from "../src/modules/assistant/web-surface";
+import {
+  assistantSurfaceConfig,
+  isAssistantSurfaceMode,
+} from "../src/modules/assistant/web-surface";
 
 function withOrigin(value: string | undefined, run: () => Promise<void>) {
   const previous = process.env.APP_ORIGIN;
