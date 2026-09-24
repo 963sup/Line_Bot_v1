@@ -19,8 +19,7 @@ export default function WorkNavigation() {
           key={href}
           href={href}
           aria-current={
-            pathname === href ||
-            (href !== "/home" && pathname.startsWith(`${href}/`))
+            pathname === href || (href !== "/home" && pathname.startsWith(`${href}/`))
               ? "page"
               : undefined
           }
