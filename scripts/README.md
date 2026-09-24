@@ -17,6 +17,7 @@
 | `docs/` | 文件與連結檢查 |
 | `probes/` | 外部服務與功能探測 |
 | `supabase/` | Supabase schema/local/remote reconciliation 與 verification；資料結構 owner 見 [root supabase](../supabase/README.md) |
+| `vercel/` | Vercel production deployment adapter；exact target/SHA、mutation、poll/readback 與 unknown-result handling |
 | [browser/](browser/README.md) | 僅對本機 Web 的可重跑瀏覽器探測 |
 | [`line/rich-menu/`](line/rich-menu) | LINE Rich Menu execution adapter（env／argv／輸出）；definition、desired state 與 publication transaction 由 Web Rich Menu module 擁有；契約見 [Rich Menu integration](../docs/030-platform/README.md) |
 | [attendance/](attendance/README.md) | Attendance maintenance worker 與排程操作 |

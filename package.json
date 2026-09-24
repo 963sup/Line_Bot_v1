@@ -14,6 +14,7 @@
     "test": "turbo run test",
     "test:browser": "node scripts/browser/run-local.mjs",
     "line:rich-menu": "pnpm --filter @line-work/web exec tsx ../../scripts/line/rich-menu/sync.ts",
+    "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
     "check": "node scripts/tooling/validate.mjs --fast",
     "validate": "node scripts/tooling/validate.mjs",
     "lint": "biome check .",
