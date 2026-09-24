@@ -1,0 +1,35 @@
+{
+  "name": "@line-work/ledger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/ports/ledger-repository": {
+      "types": "./dist/application/ports/ledger-repository.d.ts",
+      "default": "./dist/application/ports/ledger-repository.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/asset": "workspace:*",
+    "@line-work/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

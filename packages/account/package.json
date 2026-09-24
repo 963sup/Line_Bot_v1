@@ -1,0 +1,97 @@
+{
+  "name": "@line-work/account",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./adapters/supabase-identity": {
+      "types": "./dist/adapters/supabase-identity.d.ts",
+      "default": "./dist/adapters/supabase-identity.js"
+    },
+    "./application/manage-users": {
+      "types": "./dist/application/manage-users.d.ts",
+      "default": "./dist/application/manage-users.js"
+    },
+    "./application/ports/identity-provider": {
+      "types": "./dist/application/ports/identity-provider.d.ts",
+      "default": "./dist/application/ports/identity-provider.js"
+    },
+    "./application/ports/user-management": {
+      "types": "./dist/application/ports/user-management.d.ts",
+      "default": "./dist/application/ports/user-management.js"
+    },
+    "./application/ports/user-repository": {
+      "types": "./dist/application/ports/user-repository.d.ts",
+      "default": "./dist/application/ports/user-repository.js"
+    },
+    "./application/user": {
+      "types": "./dist/application/user.d.ts",
+      "default": "./dist/application/user.js"
+    },
+    "./contracts/user-management": {
+      "types": "./dist/contracts/user-management.d.ts",
+      "default": "./dist/contracts/user-management.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./domain/user": {
+      "types": "./dist/domain/user.d.ts",
+      "default": "./dist/domain/user.js"
+    },
+    "./application/follows": {
+      "types": "./dist/application/follows.d.ts",
+      "default": "./dist/application/follows.js"
+    },
+    "./application/ports/follows": {
+      "types": "./dist/application/ports/follows.d.ts",
+      "default": "./dist/application/ports/follows.js"
+    },
+    "./application/profile": {
+      "types": "./dist/application/profile.d.ts",
+      "default": "./dist/application/profile.js"
+    },
+    "./application/ports/profile": {
+      "types": "./dist/application/ports/profile.d.ts",
+      "default": "./dist/application/ports/profile.js"
+    },
+    "./domain/login": {
+      "types": "./dist/domain/login.d.ts",
+      "default": "./dist/domain/login.js"
+    },
+    "./application/login-directory": {
+      "types": "./dist/application/login-directory.d.ts",
+      "default": "./dist/application/login-directory.js"
+    },
+    "./application/ports/login-directory": {
+      "types": "./dist/application/ports/login-directory.d.ts",
+      "default": "./dist/application/ports/login-directory.js"
+    },
+    "./adapters/postgres/login-directory": {
+      "types": "./dist/adapters/postgres/login-directory.d.ts",
+      "default": "./dist/adapters/postgres/login-directory.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line-work/platform": "workspace:*",
+    "@supabase/supabase-js": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

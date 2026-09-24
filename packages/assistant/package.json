@@ -1,0 +1,36 @@
+{
+  "name": "@line-work/assistant",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/gemini": {
+      "types": "./dist/adapters/gemini.d.ts",
+      "default": "./dist/adapters/gemini.js"
+    },
+    "./agents/intake": {
+      "types": "./dist/agents/intake.d.ts",
+      "default": "./dist/agents/intake.js"
+    },
+    "./application/answer-question": {
+      "types": "./dist/application/answer-question.d.ts",
+      "default": "./dist/application/answer-question.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@google/genai": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

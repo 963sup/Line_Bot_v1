@@ -1,0 +1,61 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "workspaces": {
+    ".": {
+      // Analyze every repository-owned script. Exact opaque entries below are limited to
+      // scripts whose external/manual execution cannot be inferred reliably by Knip.
+      "project": ["scripts/**/*.{mjs,ts}"],
+      "entry": [
+        "scripts/attendance/worker.mjs",
+        "scripts/browser/check-auto-clock.mjs",
+        "scripts/browser/check-member-management.mjs",
+        "scripts/browser/check-membership.mjs",
+        "scripts/browser/check-navigation.mjs",
+        "scripts/browser/check-partner-management.mjs",
+        "scripts/browser/check-permissions.mjs",
+        "scripts/browser/check-workplaces.mjs",
+        "scripts/browser/measure-loading.mjs",
+        "scripts/line/rich-menu/sync.ts",
+        "scripts/probes/check-agent.mjs",
+        "scripts/probes/check-expense-card.mjs",
+        "scripts/probes/check-gemini.mjs",
+        "scripts/probes/check-line.mjs",
+        "scripts/probes/check-receipt.mjs",
+        "scripts/probes/check-redis.mjs",
+        "scripts/supabase/verify-supabase.mjs"
+      ],
+      // Root operator scripts intentionally resolve these from their owning workspace:
+      // Next/tsx from Web and the repository-owned Supabase CLI.
+      "ignoreDependencies": ["next", "supabase", "tsx"]
+    },
+    "apps/web": {
+      "entry": [
+        "test/**/*.test.ts",
+        "src/modules/assistant/rich-menu/operator.server.ts",
+        "src/app/api/_composition/attendance-worker.server.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.ts"]
+    },
+    // Production entries still come from package exports; package-specific test entries
+    // are declared only where tests exist and are not already reachable from exports.
+    "packages/*": {
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/assistant": {
+      "entry": ["test/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/attendance": {
+      "entry": ["test/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/expense": {
+      "entry": ["test/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/payroll": {
+      "entry": ["test/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
+    }
+  }
+}

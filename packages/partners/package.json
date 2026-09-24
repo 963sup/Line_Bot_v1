@@ -1,0 +1,43 @@
+{
+  "name": "@line-work/partners",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/partners": {
+      "types": "./dist/application/partners.d.ts",
+      "default": "./dist/application/partners.js"
+    },
+    "./application/ports/partners": {
+      "types": "./dist/application/ports/partners.d.ts",
+      "default": "./dist/application/ports/partners.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@line-work/platform": "workspace:*",
+    "@line-work/account": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "version": 2,
+  "role": "implementation-topology",
+  "architecture": "context-first-modular-monolith",
+  "semanticModel": "architecture/semantic-model.json",
+  "invariants": {
+    "boundedContextIsNotModuleBoundary": true,
+    "moduleBoundaryIsNotDataBoundary": true,
+    "dependenciesUsePublicContracts": true
+  },
+  "modules": {
+    "@line-work/account": {
+      "path": "packages/account",
+      "moduleKind": "domain-module",
+      "semanticOwner": "account",
+      "allowedWorkspaceDependencies": [
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/notifications": {
+      "path": "packages/notifications",
+      "moduleKind": "domain-module",
+      "semanticOwner": "notifications",
+      "allowedWorkspaceDependencies": [
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/asset": {
+      "path": "packages/asset",
+      "moduleKind": "domain-module",
+      "semanticOwner": "asset",
+      "allowedWorkspaceDependencies": [
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/assistant": {
+      "path": "packages/assistant",
+      "moduleKind": "application-module",
+      "semanticOwner": "assistant",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/attendance": {
+      "path": "packages/attendance",
+      "moduleKind": "domain-module",
+      "semanticOwner": "attendance",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/asset",
+        "@line-work/identity-access",
+        "@line-work/ledger",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/daily-check-in": {
+      "path": "packages/daily-check-in",
+      "moduleKind": "domain-module",
+      "semanticOwner": "daily-check-in",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/asset",
+        "@line-work/ledger",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/enterprise": {
+      "path": "packages/enterprise",
+      "moduleKind": "domain-module",
+      "semanticOwner": "enterprise",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/identity-access",
+        "@line-work/organization",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/expense": {
+      "path": "packages/expense",
+      "moduleKind": "domain-module",
+      "semanticOwner": "expense",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/google-workspace": {
+      "path": "packages/google-workspace",
+      "moduleKind": "integration-adapter",
+      "semanticOwner": "google-workspace",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/identity-access": {
+      "path": "packages/identity-access",
+      "moduleKind": "domain-module",
+      "semanticOwner": "identity-access",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/ledger": {
+      "path": "packages/ledger",
+      "moduleKind": "domain-module",
+      "semanticOwner": "ledger",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/asset",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/line-channel": {
+      "path": "packages/line-channel",
+      "moduleKind": "integration-adapter",
+      "semanticOwner": "line-integration",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/organization": {
+      "path": "packages/organization",
+      "moduleKind": "domain-module",
+      "semanticOwner": "organization",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/identity-access",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/partners": {
+      "path": "packages/partners",
+      "moduleKind": "domain-module",
+      "semanticOwner": "partner-directory",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/payroll": {
+      "path": "packages/payroll",
+      "moduleKind": "domain-module",
+      "semanticOwner": "payroll",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/platform": {
+      "path": "packages/platform",
+      "moduleKind": "support-module",
+      "semanticOwner": "platform",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/repository": {
+      "path": "packages/repository",
+      "moduleKind": "domain-module",
+      "semanticOwner": "repository",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/organization",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/team": {
+      "path": "packages/team",
+      "moduleKind": "domain-module",
+      "semanticOwner": "team",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/identity-access",
+        "@line-work/organization",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/wallet": {
+      "path": "packages/wallet",
+      "moduleKind": "domain-module",
+      "semanticOwner": "wallet",
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/asset",
+        "@line-work/ledger",
+        "@line-work/platform"
+      ]
+    },
+    "@line-work/project": {
+      "path": "packages/project",
+      "moduleKind": "domain-module",
+      "semanticOwner": "project",
+      "allowedWorkspaceDependencies": []
+    },
+    "@line-work/workforce": {
+      "path": "packages/workforce",
+      "moduleKind": "domain-module",
+      "semanticOwner": "workforce",
+      "allowedWorkspaceDependencies": []
+    }
+  },
+  "applications": {
+    "@line-work/web": {
+      "path": "apps/web",
+      "moduleKind": "application-host",
+      "semanticOwner": null,
+      "allowedWorkspaceDependencies": [
+        "@line-work/account",
+        "@line-work/notifications",
+        "@line-work/asset",
+        "@line-work/assistant",
+        "@line-work/attendance",
+        "@line-work/daily-check-in",
+        "@line-work/enterprise",
+        "@line-work/expense",
+        "@line-work/identity-access",
+        "@line-work/ledger",
+        "@line-work/line-channel",
+        "@line-work/organization",
+        "@line-work/partners",
+        "@line-work/platform",
+        "@line-work/repository",
+        "@line-work/team",
+        "@line-work/wallet"
+      ]
+    }
+  }
+}

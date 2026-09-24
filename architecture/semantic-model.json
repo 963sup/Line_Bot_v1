@@ -1,0 +1,1593 @@
+{
+  "version": 1,
+  "role": "canonical-product-semantic-architecture",
+  "system": {
+    "id": "line-work-assistant",
+    "domain": "enterprise-workforce-operations-management",
+    "objective": "Minimize understanding, decision, change, verification, coordination, and drift-recovery cost while preserving correctness, security, authorization, data integrity, business invariants, consistency, recoverability, and traceability.",
+    "changeFlow": [
+      "meaning",
+      "owner",
+      "source-of-truth",
+      "boundary",
+      "dependency",
+      "impact",
+      "change-surface",
+      "validation",
+      "evidence"
+    ]
+  },
+  "sources": {
+    "externalBenchmark": "architecture/semantic-benchmark.json",
+    "implementationTopology": "architecture/implementation-topology.json",
+    "businessOwnerDocs": "docs/010-domain-owners/",
+    "runtimeBehavior": "source-code-and-tests",
+    "persistenceCurrentState": "supabase/schemas/",
+    "historicalChange": "docs/090-governance/",
+    "dataTopology": "architecture/data-topology.json"
+  },
+  "semanticOwners": [
+    {
+      "id": "account",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/010-account.md"
+    },
+    {
+      "id": "enterprise",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/020-enterprise.md"
+    },
+    {
+      "id": "organization",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/030-organization.md"
+    },
+    {
+      "id": "workforce",
+      "kind": "business-owner",
+      "lifecycle": "current-foundation",
+      "doc": "docs/010-domain-owners/040-workforce.md"
+    },
+    {
+      "id": "attendance",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/050-attendance.md"
+    },
+    {
+      "id": "payroll",
+      "kind": "business-owner",
+      "lifecycle": "current-foundation",
+      "doc": "docs/010-domain-owners/060-payroll.md"
+    },
+    {
+      "id": "team",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/070-team.md"
+    },
+    {
+      "id": "repository",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/080-repository.md"
+    },
+    {
+      "id": "notifications",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/090-notifications.md"
+    },
+    {
+      "id": "expense",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/100-expense.md"
+    },
+    {
+      "id": "partner-directory",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/110-partners.md"
+    },
+    {
+      "id": "assistant",
+      "kind": "application-capability-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/120-assistant.md"
+    },
+    {
+      "id": "asset",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/130-asset.md"
+    },
+    {
+      "id": "wallet",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/140-wallet.md"
+    },
+    {
+      "id": "ledger",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/150-ledger.md"
+    },
+    {
+      "id": "daily-check-in",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/160-daily-check-in.md"
+    },
+    {
+      "id": "project",
+      "kind": "business-owner",
+      "lifecycle": "current-data-only",
+      "doc": "docs/010-domain-owners/180-project.md"
+    },
+    {
+      "id": "identity-access",
+      "kind": "policy-owner",
+      "lifecycle": "current",
+      "doc": "docs/050-security/030-authorization.md"
+    },
+    {
+      "id": "line-integration",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/030-platform/README.md"
+    },
+    {
+      "id": "google-workspace",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/030-platform/README.md"
+    },
+    {
+      "id": "platform",
+      "kind": "support-owner",
+      "lifecycle": "current",
+      "doc": "docs/020-architecture/README.md"
+    }
+  ],
+  "boundedContexts": [
+    {
+      "id": "daily-check-in",
+      "owner": "daily-check-in",
+      "status": "selected"
+    },
+    {
+      "id": "asset",
+      "owner": "asset",
+      "status": "selected"
+    },
+    {
+      "id": "wallet",
+      "owner": "wallet",
+      "status": "selected"
+    },
+    {
+      "id": "ledger",
+      "owner": "ledger",
+      "status": "selected"
+    },
+    {
+      "id": "account",
+      "owner": "account",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "attendance",
+      "owner": "attendance",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "expense",
+      "owner": "expense",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "partner-directory",
+      "owner": "partner-directory",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "notifications",
+      "owner": "notifications",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "work-collaboration",
+      "owners": [
+        "team",
+        "repository"
+      ],
+      "status": "candidate",
+      "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners."
+    }
+  ],
+  "concepts": [
+    {
+      "id": "user",
+      "canonicalName": "User",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "definition": "Provider-independent human product identity and lifecycle.",
+      "benchmark": {
+        "node": "user",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise",
+      "canonicalName": "Enterprise",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Cross-Organization governance scope.",
+      "benchmark": {
+        "node": "enterprise",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "organization",
+      "canonicalName": "Organization",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "definition": "Business/data scope and participation authority.",
+      "benchmark": {
+        "node": "organization",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "team",
+      "canonicalName": "Team",
+      "kind": "authoritative",
+      "owner": "team",
+      "lifecycle": "current",
+      "definition": "Organization-scoped collaboration responsibility.",
+      "benchmark": {
+        "node": "organization-team",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository",
+      "canonicalName": "Repository",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Independently owned work container with content, access, state, and lifecycle.",
+      "benchmark": {
+        "node": "repository",
+        "adoption": "container-semantics-only"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "issue",
+      "canonicalName": "Issue",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-scoped work item with its own lifecycle and responsibility chain.",
+      "benchmark": {
+        "node": "work-item",
+        "adoption": "neutral-work-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "discussion",
+      "canonicalName": "Discussion",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-scoped conversation distinct from Issue and Notification.",
+      "benchmark": {
+        "node": "discussion",
+        "adoption": "conversation-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-label",
+      "canonicalName": "Label",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-owned classification metadata.",
+      "benchmark": {
+        "node": "label",
+        "adoption": "classification-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-milestone",
+      "canonicalName": "Milestone",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-scoped goal or checkpoint for work.",
+      "benchmark": {
+        "node": "milestone",
+        "adoption": "goal-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project",
+      "canonicalName": "Project",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Planning boundary that references work across one or more Repositories without taking work authority.",
+      "benchmark": {
+        "node": "project",
+        "adoption": "planning-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project-item",
+      "canonicalName": "Project Item",
+      "kind": "reference",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Project-local planning reference to underlying work.",
+      "benchmark": {
+        "node": "project-item",
+        "adoption": "reference-semantics"
+      },
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs",
+      "canonicalName": "WBS",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Project-owned work breakdown structure. Project is not WBS.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project-milestone",
+      "canonicalName": "Milestone",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Project-scoped goal or checkpoint, distinct from WBS structure and Repository milestone.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "employment",
+      "canonicalName": "Employment",
+      "kind": "authoritative",
+      "owner": "workforce",
+      "lifecycle": "selected-target",
+      "definition": "Time-bounded working relationship between User and Organization.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "attendance",
+      "canonicalName": "Attendance",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "Actual attendance lifecycle, workplace eligibility, and attendance facts.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "workplace",
+      "canonicalName": "Workplace",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "Attendance-owned place and eligibility context.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "payroll-readiness",
+      "canonicalName": "Payroll Readiness",
+      "kind": "authoritative",
+      "owner": "payroll",
+      "lifecycle": "current-foundation",
+      "definition": "Current foundation for determining whether payroll inputs are ready; not formal payroll finalization.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "daily-check-in",
+      "canonicalName": "DailyCheckIn",
+      "kind": "authoritative",
+      "owner": "daily-check-in",
+      "lifecycle": "current",
+      "definition": "Business-day check-in and reward decision.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "asset",
+      "canonicalName": "Asset",
+      "kind": "authoritative",
+      "owner": "asset",
+      "lifecycle": "current",
+      "definition": "System-recognized value definition and denomination.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "ledger-entry",
+      "canonicalName": "Ledger Entry",
+      "kind": "authoritative",
+      "owner": "ledger",
+      "lifecycle": "current",
+      "definition": "Append-only value fact with stable posting identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wallet-holding",
+      "canonicalName": "Wallet Holding",
+      "kind": "authoritative",
+      "owner": "wallet",
+      "lifecycle": "current",
+      "definition": "Holder and Asset holding identity.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "wallet-balance",
+      "canonicalName": "Wallet Balance",
+      "kind": "derived-projection",
+      "owner": "wallet",
+      "lifecycle": "current",
+      "definition": "Derived balance projection over authoritative value facts.",
+      "derivedFrom": [
+        "ledger-entry"
+      ],
+      "authorityMode": "derived",
+      "persistenceExpectation": "derived"
+    },
+    {
+      "id": "expense",
+      "canonicalName": "Expense",
+      "kind": "authoritative",
+      "owner": "expense",
+      "lifecycle": "current",
+      "definition": "Expense intake lifecycle through draft, confirm, or cancel; confirmation is not approval/payment/accounting.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "notification",
+      "canonicalName": "Notification",
+      "kind": "authoritative",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Recipient-scoped inbox/read-state fact and delivery projection reference.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "partner",
+      "canonicalName": "Partner",
+      "kind": "authoritative",
+      "owner": "partner-directory",
+      "lifecycle": "current",
+      "definition": "Partner/contact directory identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "permission",
+      "canonicalName": "Permission",
+      "kind": "policy-decision",
+      "owner": "identity-access",
+      "lifecycle": "current",
+      "definition": "Explicit sensitive capability authorization decision; not provider role or membership.",
+      "authorityMode": "policy-decision",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "line-identity-proof",
+      "canonicalName": "LINE Identity Proof",
+      "kind": "external-proof",
+      "owner": "line-integration",
+      "lifecycle": "current",
+      "definition": "Verified external provider identity proof; never business authorization.",
+      "authorityMode": "external-evidence-only"
+    },
+    {
+      "id": "user-follow",
+      "canonicalName": "User Follow",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "definition": "Directional User-to-User follow fact. Followers and Following are inbound and outbound projections of the same relationship.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise-team",
+      "canonicalName": "Enterprise Team",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Enterprise-owned collaboration group distinct from Organization Team.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise-team-membership",
+      "canonicalName": "Enterprise Team Membership",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "User participation state inside an Enterprise Team.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise-team-organization-assignment",
+      "canonicalName": "Enterprise Team Organization Assignment",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Enterprise-owned assignment from an Enterprise Team to an attached Organization.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "account-team-qualification",
+      "provider": "account",
+      "consumer": "team",
+      "meaning": "Current User qualification and participation identity.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-attendance-qualification",
+      "provider": "account",
+      "consumer": "attendance",
+      "meaning": "Qualified User/current subject.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-daily-check-in-qualification",
+      "provider": "account",
+      "consumer": "daily-check-in",
+      "meaning": "User identity and transaction-time qualification.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "organization-team-scope",
+      "provider": "organization",
+      "consumer": "team",
+      "meaning": "Organization scope and participation.",
+      "integrationMode": "stable-identity+query",
+      "authority": "organization",
+      "consistency": "current-state"
+    },
+    {
+      "id": "daily-check-in-ledger-posting",
+      "provider": "daily-check-in",
+      "consumer": "ledger",
+      "meaning": "Authorized reward decision committed with required transaction semantics.",
+      "integrationMode": "command",
+      "authority": "daily-check-in",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "attendance-ledger-posting",
+      "provider": "attendance",
+      "consumer": "ledger",
+      "meaning": "Authorized attendance reward decision.",
+      "integrationMode": "command",
+      "authority": "attendance",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "asset-wallet-denomination",
+      "provider": "asset",
+      "consumer": "wallet",
+      "meaning": "AssetCode and denomination.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "asset-ledger-denomination",
+      "provider": "asset",
+      "consumer": "ledger",
+      "meaning": "AssetCode and denomination.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "ledger-wallet-projection",
+      "provider": "ledger",
+      "consumer": "wallet",
+      "meaning": "Immutable value facts projected into wallet balance.",
+      "integrationMode": "projection",
+      "authority": "ledger",
+      "consistency": "derived"
+    },
+    {
+      "id": "identity-access-business-authorization",
+      "provider": "identity-access",
+      "consumer": "repository",
+      "meaning": "Scoped feature authorization decision composed with owning business policy.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "project-repository-reference",
+      "provider": "repository",
+      "consumer": "project",
+      "meaning": "Project references Repository without acquiring Repository authority.",
+      "integrationMode": "reference",
+      "authority": "repository",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "project-issue-reference",
+      "provider": "repository",
+      "consumer": "project",
+      "meaning": "Project Item references Repository-owned Issue; Project metadata cannot rewrite Issue state.",
+      "integrationMode": "reference",
+      "authority": "repository",
+      "consistency": "current-access-and-identity"
+    },
+    {
+      "id": "line-account-proof",
+      "provider": "line-integration",
+      "consumer": "account",
+      "meaning": "Verified LINE identity proof consumed for account mapping/qualification.",
+      "integrationMode": "external-proof",
+      "authority": "line-integration",
+      "consistency": "verified-request"
+    },
+    {
+      "id": "enterprise-organization-membership-source",
+      "provider": "enterprise",
+      "consumer": "organization",
+      "meaning": "Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority.",
+      "integrationMode": "projection",
+      "authority": "enterprise",
+      "consistency": "atomic-where-required"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "qualify-user",
+      "owner": "account",
+      "intent": "Determine current User qualification for a consumer operation.",
+      "preserves": [
+        "K2",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required"
+    },
+    {
+      "id": "manage-repository",
+      "owner": "repository",
+      "intent": "Manage Repository identity, access, Issue, Discussion, Label, and Repository-local goals.",
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required"
+    },
+    {
+      "id": "manage-project-planning",
+      "owner": "project",
+      "intent": "Manage Project planning, WBS, Project-local milestones, and references without taking underlying work authority.",
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted"
+    },
+    {
+      "id": "record-attendance",
+      "owner": "attendance",
+      "intent": "Record valid attendance while preserving eligibility, replay, version, and isolation semantics.",
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required"
+    },
+    {
+      "id": "claim-daily-check-in",
+      "owner": "daily-check-in",
+      "intent": "Create at most one authorized business-day check-in effect.",
+      "preserves": [
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required"
+    },
+    {
+      "id": "post-value-fact",
+      "owner": "ledger",
+      "intent": "Append an immutable value fact with stable identity.",
+      "preserves": [
+        "K1",
+        "K3",
+        "K4"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required"
+    },
+    {
+      "id": "authorize-feature",
+      "owner": "identity-access",
+      "intent": "Decide current scoped feature permission without treating identity or membership as authorization.",
+      "preserves": [
+        "K2",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "K1",
+      "scope": "system",
+      "statement": "Each durable business fact has exactly one authoritative owner; cache/projection loss cannot change correctness.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "ownership",
+        "data-authority"
+      ]
+    },
+    {
+      "id": "K2",
+      "scope": "system",
+      "statement": "Identity proof is not business authorization; protected transitions re-evaluate actor, scope, and owning policy.",
+      "severity": "error",
+      "enforcement": [
+        "application",
+        "authorization-tests",
+        "schema-policy"
+      ],
+      "tags": [
+        "security",
+        "authorization",
+        "trust"
+      ]
+    },
+    {
+      "id": "K3",
+      "scope": "system",
+      "statement": "Mutable conditional state does not silently use last-write-wins; replay-sensitive effects use stable request identity.",
+      "severity": "error",
+      "enforcement": [
+        "application",
+        "database",
+        "tests"
+      ],
+      "tags": [
+        "concurrency",
+        "replay"
+      ]
+    },
+    {
+      "id": "K4",
+      "scope": "system",
+      "statement": "Effects that jointly maintain an invariant commit atomically or use durable idempotent recovery.",
+      "severity": "error",
+      "enforcement": [
+        "transaction",
+        "outbox-or-recovery",
+        "tests"
+      ],
+      "tags": [
+        "transaction",
+        "recovery"
+      ]
+    },
+    {
+      "id": "K5",
+      "scope": "system",
+      "statement": "Each responsibility has one owner and consumers use explicit public contracts with directional dependencies.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy",
+        "manifest",
+        "package-exports",
+        "architecture-check"
+      ],
+      "tags": [
+        "architecture",
+        "dependency",
+        "contract"
+      ]
+    },
+    {
+      "id": "K6",
+      "scope": "system",
+      "statement": "Static, test, build, schema, deployment, API, and device evidence only prove their actual scopes.",
+      "severity": "error",
+      "enforcement": [
+        "validation-pipeline",
+        "acceptance-evidence"
+      ],
+      "tags": [
+        "evidence",
+        "validation"
+      ]
+    },
+    {
+      "id": "SA1",
+      "scope": "semantic-architecture",
+      "statement": "Bounded Context, Module Boundary, Data Boundary, Consistency Boundary, Trust Boundary, and Runtime Boundary are distinct dimensions.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy",
+        "manifest"
+      ],
+      "tags": [
+        "architecture",
+        "boundary"
+      ]
+    },
+    {
+      "id": "SA2",
+      "scope": "semantic-architecture",
+      "statement": "External benchmark evidence never becomes product authority without an explicit product concept mapping.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy",
+        "benchmark-check"
+      ],
+      "tags": [
+        "benchmark",
+        "authority"
+      ]
+    },
+    {
+      "id": "SA3",
+      "scope": "semantic-architecture",
+      "statement": "Derived projections and references cannot become writable authoritative truth.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy"
+      ],
+      "tags": [
+        "projection",
+        "authority"
+      ]
+    },
+    {
+      "id": "SA4",
+      "scope": "semantic-architecture",
+      "statement": "Selected-target semantics cannot be reported as current runtime capability solely because they exist in the semantic model.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy",
+        "governance"
+      ],
+      "tags": [
+        "lifecycle",
+        "evidence"
+      ]
+    },
+    {
+      "id": "SA5",
+      "scope": "semantic-architecture",
+      "statement": "Runtime, provider, deployment, device, and human observations are evidence only; they may produce a revision proposal but never auto-modify canonical semantic authority.",
+      "severity": "error",
+      "enforcement": [
+        "semantic-policy",
+        "runtime-feedback"
+      ]
+    },
+    {
+      "id": "SA6",
+      "scope": "semantic-architecture",
+      "statement": "Every persisted app_private relation has exactly one relation-level data authority; relation ownership must agree with semantic concept ownership, and every concept that requires relation persistence must resolve to at least one authoritative relation.",
+      "severity": "error",
+      "enforcement": [
+        "data-topology",
+        "architecture-check"
+      ],
+      "tags": [
+        "data",
+        "ownership",
+        "boundary"
+      ]
+    }
+  ],
+  "truthRegistry": [
+    {
+      "id": "business-definition",
+      "authority": "architecture/semantic-model.json",
+      "scope": "cross-context structured semantics"
+    },
+    {
+      "id": "owner-local-business-rules",
+      "authority": "docs/010-domain-owners/* + source + tests",
+      "scope": "owner-local current semantics"
+    },
+    {
+      "id": "external-semantic-benchmark",
+      "authority": "architecture/semantic-benchmark.json",
+      "scope": "pinned external evidence only"
+    },
+    {
+      "id": "module-topology",
+      "authority": "architecture/implementation-topology.json",
+      "scope": "workspace paths and allowed workspace dependencies"
+    },
+    {
+      "id": "public-contract",
+      "authority": "package.json#exports",
+      "scope": "cross-module source contract"
+    },
+    {
+      "id": "runtime-behavior",
+      "authority": "source-code + tests",
+      "scope": "implemented behavior"
+    },
+    {
+      "id": "persistence-current-state",
+      "authority": "supabase/schemas/",
+      "scope": "database current structure"
+    },
+    {
+      "id": "repository-command-surface",
+      "authority": "package.json#scripts",
+      "scope": "canonical repository commands"
+    },
+    {
+      "id": "historical-change",
+      "authority": "docs/090-governance/",
+      "scope": "proposal/migration/history/acceptance evidence"
+    },
+    {
+      "id": "external-current-state",
+      "authority": "provider/API/device readback",
+      "scope": "dated remote/runtime truth"
+    },
+    {
+      "id": "data-topology",
+      "authority": "architecture/data-topology.json",
+      "scope": "schema surface ownership, role and cross-owner participation"
+    }
+  ],
+  "implementationMappings": [
+    {
+      "semanticOwner": "account",
+      "module": "@line-work/account"
+    },
+    {
+      "semanticOwner": "enterprise",
+      "module": "@line-work/enterprise"
+    },
+    {
+      "semanticOwner": "organization",
+      "module": "@line-work/organization"
+    },
+    {
+      "semanticOwner": "team",
+      "module": "@line-work/team"
+    },
+    {
+      "semanticOwner": "repository",
+      "module": "@line-work/repository"
+    },
+    {
+      "semanticOwner": "project",
+      "module": "@line-work/project",
+      "note": "Project workspace/module ownership is registered; runtime Project capability remains inactive."
+    },
+    {
+      "semanticOwner": "notifications",
+      "module": "@line-work/notifications"
+    },
+    {
+      "semanticOwner": "attendance",
+      "module": "@line-work/attendance"
+    },
+    {
+      "semanticOwner": "daily-check-in",
+      "module": "@line-work/daily-check-in"
+    },
+    {
+      "semanticOwner": "expense",
+      "module": "@line-work/expense"
+    },
+    {
+      "semanticOwner": "partner-directory",
+      "module": "@line-work/partners"
+    },
+    {
+      "semanticOwner": "asset",
+      "module": "@line-work/asset"
+    },
+    {
+      "semanticOwner": "wallet",
+      "module": "@line-work/wallet"
+    },
+    {
+      "semanticOwner": "ledger",
+      "module": "@line-work/ledger"
+    },
+    {
+      "semanticOwner": "payroll",
+      "module": "@line-work/payroll"
+    },
+    {
+      "semanticOwner": "workforce",
+      "module": "@line-work/workforce",
+      "note": "Workforce workspace/module ownership is registered; target business capability remains unimplemented."
+    },
+    {
+      "semanticOwner": "identity-access",
+      "module": "@line-work/identity-access"
+    },
+    {
+      "semanticOwner": "assistant",
+      "module": "@line-work/assistant"
+    },
+    {
+      "semanticOwner": "line-integration",
+      "module": "@line-work/line-channel"
+    },
+    {
+      "semanticOwner": "google-workspace",
+      "module": "@line-work/google-workspace"
+    },
+    {
+      "semanticOwner": "platform",
+      "module": "@line-work/platform"
+    }
+  ],
+  "policies": [
+    {
+      "id": "SEM-001",
+      "kind": "single-concept-owner",
+      "severity": "error",
+      "rationale": "Authoritative business truth needs one decision owner.",
+      "remediation": "Choose one semantic owner; make other representations references, snapshots or projections."
+    },
+    {
+      "id": "SEM-002",
+      "kind": "relationship-endpoints-exist",
+      "severity": "error",
+      "rationale": "Cross-owner contracts cannot target invented responsibilities.",
+      "remediation": "Declare the real owner or remove the relationship."
+    },
+    {
+      "id": "SEM-003",
+      "kind": "benchmark-mapping-must-exist",
+      "severity": "error",
+      "rationale": "External benchmark evidence cannot silently become product semantics.",
+      "remediation": "Map to a pinned benchmark node explicitly or remove the benchmark claim."
+    },
+    {
+      "id": "SEM-004",
+      "kind": "derived-concept-cannot-be-authoritative",
+      "severity": "error",
+      "rationale": "Derived state is rebuildable and cannot replace its source authority.",
+      "remediation": "Point the projection to authoritative sources and keep writes with the source owner."
+    },
+    {
+      "id": "SEM-005",
+      "kind": "implementation-mapping-must-resolve",
+      "severity": "error",
+      "rationale": "Semantic responsibility must map explicitly to implementation when implementation exists.",
+      "remediation": "Fix the mapping or explicitly keep the owner data-only/target-only."
+    },
+    {
+      "id": "SEM-006",
+      "kind": "module-owner-must-resolve",
+      "severity": "error",
+      "rationale": "A module cannot exist without a semantic responsibility owner.",
+      "remediation": "Assign the real semantic owner or remove the module."
+    },
+    {
+      "id": "SEM-007",
+      "kind": "selected-target-module-not-required",
+      "severity": "error",
+      "rationale": "Target semantics must not imply runtime implementation.",
+      "remediation": "Keep target-only owners unmapped until an implementation boundary actually exists."
+    },
+    {
+      "id": "SEM-008",
+      "kind": "workspace-dependency-must-resolve",
+      "severity": "error",
+      "rationale": "Declared dependencies must be directional and point to real public modules.",
+      "remediation": "Fix or remove the stale dependency."
+    },
+    {
+      "id": "SEM-009",
+      "kind": "consumer-contract",
+      "severity": "error",
+      "rationale": "Consumer need does not transfer provider authority.",
+      "remediation": "Represent cross-owner use as an explicit contract relationship owned by the provider truth and consumer need."
+    },
+    {
+      "id": "SEM-010",
+      "kind": "evidence-scope-integrity",
+      "severity": "error",
+      "rationale": "Validation evidence cannot prove a stronger scope than it executed.",
+      "remediation": "Use the validation profile whose evidence class matches the claim."
+    },
+    {
+      "id": "SEM-011",
+      "kind": "runtime-feedback-derived-proposal",
+      "severity": "error",
+      "rationale": "Observed reality is evidence and must not silently rewrite design authority.",
+      "remediation": "Produce a derived revision proposal, review the affected owner and evidence, then change canonical semantics explicitly if justified."
+    },
+    {
+      "id": "SEM-012",
+      "kind": "data-topology-integrity",
+      "severity": "error",
+      "rationale": "Persistence authority belongs to database objects/relationships, not schema filenames; file grouping must never hide mixed semantic ownership.",
+      "remediation": "Assign every persisted relation exactly one semantic owner, group only same-owner authoritative relations in object-shaped schema files, and keep cross-owner projections/enforcement/coordinators non-authoritative."
+    }
+  ],
+  "language": {
+    "canonicalNamePolicy": "One business concept has one canonical name inside its semantic boundary.",
+    "ambiguityPolicy": "The same display name may exist in different semantic boundaries only when the concept ids and owners remain explicit.",
+    "aliasPolicy": "Aliases are lookup metadata only; aliases never create a second concept or owner.",
+    "globalVocabularyProjection": "Derived from concepts; human glossaries are projections or owner-local detail."
+  },
+  "conceptTypes": [
+    {
+      "id": "authoritative",
+      "authorityMode": "authoritative",
+      "meaning": "Owner-controlled business truth."
+    },
+    {
+      "id": "reference",
+      "authorityMode": "reference-only",
+      "meaning": "Pointer to truth owned elsewhere; cannot rewrite provider truth."
+    },
+    {
+      "id": "derived-projection",
+      "authorityMode": "derived",
+      "meaning": "Rebuildable view derived from authoritative sources."
+    },
+    {
+      "id": "policy-decision",
+      "authorityMode": "policy-decision",
+      "meaning": "Decision produced by the explicit policy owner."
+    },
+    {
+      "id": "external-proof",
+      "authorityMode": "external-evidence-only",
+      "meaning": "Verified external evidence that never implies business authorization."
+    }
+  ],
+  "boundaryTypes": [
+    {
+      "id": "semantic",
+      "meaning": "Where a domain model and Ubiquitous Language are coherent.",
+      "source": "boundedContexts"
+    },
+    {
+      "id": "module",
+      "meaning": "Source-code responsibility and public surface.",
+      "source": "architecture/implementation-topology.json#modules"
+    },
+    {
+      "id": "data",
+      "meaning": "Persisted facts, access and isolation ownership.",
+      "source": "implementationMappings.data + supabase/schemas"
+    },
+    {
+      "id": "consistency",
+      "meaning": "Facts and invariants that must be kept mutually valid.",
+      "source": "invariants + capabilities"
+    },
+    {
+      "id": "transaction",
+      "meaning": "Effects that must commit atomically or use durable recovery.",
+      "source": "relationships.consistency + invariants"
+    },
+    {
+      "id": "trust",
+      "meaning": "Where untrusted/external input becomes verified evidence.",
+      "source": "external-proof concepts + integration relationships"
+    },
+    {
+      "id": "runtime",
+      "meaning": "Execution environment that owns lifecycle.",
+      "source": "architecture/implementation-topology.json#applications"
+    }
+  ],
+  "integrationModes": [
+    {
+      "id": "stable-identity",
+      "authorityTransfer": false
+    },
+    {
+      "id": "query",
+      "authorityTransfer": false
+    },
+    {
+      "id": "command",
+      "authorityTransfer": false
+    },
+    {
+      "id": "event",
+      "authorityTransfer": false
+    },
+    {
+      "id": "projection",
+      "authorityTransfer": false
+    },
+    {
+      "id": "snapshot",
+      "authorityTransfer": false
+    },
+    {
+      "id": "reference",
+      "authorityTransfer": false
+    },
+    {
+      "id": "external-proof",
+      "authorityTransfer": false
+    },
+    {
+      "id": "stable-identity+query",
+      "authorityTransfer": false
+    }
+  ],
+  "contractModel": {
+    "authority": "relationships",
+    "requiredRelationshipFields": [
+      "id",
+      "provider",
+      "consumer",
+      "meaning",
+      "integrationMode",
+      "authority",
+      "consistency"
+    ],
+    "rule": "A cross-owner dependency exists only through an explicit relationship contract. Consumer need does not transfer provider authority."
+  },
+  "evidenceModel": {
+    "scopeRule": "Evidence proves only the scope actually exercised; stronger claims require stronger evidence.",
+    "classes": [
+      {
+        "id": "static",
+        "meaning": "Static source/configuration analysis."
+      },
+      {
+        "id": "type",
+        "meaning": "Type-system verification."
+      },
+      {
+        "id": "unit-test",
+        "meaning": "Isolated behavior verification."
+      },
+      {
+        "id": "integration-test",
+        "meaning": "Cross-component behavior verification."
+      },
+      {
+        "id": "architecture",
+        "meaning": "Architecture/model invariant verification."
+      },
+      {
+        "id": "database",
+        "meaning": "Database/schema/constraint verification."
+      },
+      {
+        "id": "security",
+        "meaning": "Authorization, isolation and trust-boundary verification."
+      },
+      {
+        "id": "build",
+        "meaning": "Artifact build verification."
+      },
+      {
+        "id": "deployment",
+        "meaning": "Deployment state verification."
+      },
+      {
+        "id": "provider-readback",
+        "meaning": "External provider current-state readback."
+      },
+      {
+        "id": "runtime",
+        "meaning": "Observed runtime behavior."
+      },
+      {
+        "id": "device",
+        "meaning": "Real device/WebView behavior."
+      },
+      {
+        "id": "human-acceptance",
+        "meaning": "Explicit human acceptance evidence."
+      }
+    ],
+    "validationProfiles": [
+      {
+        "id": "semantic-architecture",
+        "evidenceClass": "architecture",
+        "proves": [
+          "semantic ownership, type, contract and mapping consistency"
+        ],
+        "doesNotProve": [
+          "runtime behavior",
+          "deployment",
+          "device behavior"
+        ],
+        "command": "pnpm semantic check"
+      },
+      {
+        "id": "architecture",
+        "evidenceClass": "architecture",
+        "proves": [
+          "semantic + implementation topology and dependency invariants"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "provider current state"
+        ],
+        "command": "pnpm architecture"
+      },
+      {
+        "id": "architecture-tests",
+        "evidenceClass": "integration-test",
+        "proves": [
+          "legal, violating and repaired architecture cases"
+        ],
+        "doesNotProve": [
+          "production behavior"
+        ],
+        "command": "pnpm architecture:test"
+      },
+      {
+        "id": "docs",
+        "evidenceClass": "static",
+        "proves": [
+          "documentation structure and local-link integrity"
+        ],
+        "doesNotProve": [
+          "business behavior"
+        ],
+        "command": "pnpm docs:check"
+      },
+      {
+        "id": "schema",
+        "evidenceClass": "database",
+        "proves": [
+          "declarative database contract and security constraints exercised by schema tests"
+        ],
+        "doesNotProve": [
+          "remote database equality"
+        ],
+        "command": "pnpm schema:check"
+      },
+      {
+        "id": "typecheck",
+        "evidenceClass": "type",
+        "proves": [
+          "TypeScript type correctness"
+        ],
+        "doesNotProve": [
+          "tests",
+          "build",
+          "deployment"
+        ],
+        "command": "pnpm typecheck"
+      },
+      {
+        "id": "tests",
+        "evidenceClass": "integration-test",
+        "proves": [
+          "repository test behavior in executed scope"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "device behavior"
+        ],
+        "command": "pnpm test"
+      },
+      {
+        "id": "build",
+        "evidenceClass": "build",
+        "proves": [
+          "repository build succeeds"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "runtime correctness"
+        ],
+        "command": "pnpm build"
+      },
+      {
+        "id": "fast-repository",
+        "evidenceClass": "static",
+        "proves": [
+          "affected fast repository validation selected by canonical planner"
+        ],
+        "doesNotProve": [
+          "full merge validation",
+          "deployment"
+        ],
+        "command": "pnpm check"
+      },
+      {
+        "id": "full-repository",
+        "evidenceClass": "integration-test",
+        "proves": [
+          "full repository validation pipeline"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "provider readback",
+          "device verification"
+        ],
+        "command": "pnpm validate"
+      }
+    ],
+    "feedback": {
+      "observationsEmbeddedInSemanticModel": false,
+      "observationAuthority": "external-current-state",
+      "channels": [
+        {
+          "id": "deployment",
+          "evidenceClass": "deployment",
+          "mayRevise": [
+            "implementation mapping",
+            "runtime assumptions"
+          ]
+        },
+        {
+          "id": "provider-readback",
+          "evidenceClass": "provider-readback",
+          "mayRevise": [
+            "external integration assumptions",
+            "drift status"
+          ]
+        },
+        {
+          "id": "runtime",
+          "evidenceClass": "runtime",
+          "mayRevise": [
+            "capability assumptions",
+            "failure semantics",
+            "quality attributes"
+          ]
+        },
+        {
+          "id": "device",
+          "evidenceClass": "device",
+          "mayRevise": [
+            "browser/WebView assumptions"
+          ]
+        },
+        {
+          "id": "human-acceptance",
+          "evidenceClass": "human-acceptance",
+          "mayRevise": [
+            "business semantics",
+            "acceptance criteria"
+          ]
+        }
+      ],
+      "bundleVersion": 1,
+      "claimSubject": "capability",
+      "statuses": [
+        "pass",
+        "fail",
+        "unknown"
+      ],
+      "comparisonPrecedence": [
+        "drift",
+        "review",
+        "inconclusive",
+        "aligned"
+      ],
+      "revisionProposal": {
+        "derived": true,
+        "autoApply": false,
+        "rule": "Observed reality may propose semantic revision but never mutates canonical semantics automatically."
+      }
+    }
+  }
+}

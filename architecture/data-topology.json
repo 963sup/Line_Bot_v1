@@ -1,0 +1,989 @@
+{
+  "version": 2,
+  "role": "relation-data-topology",
+  "semanticModel": "architecture/semantic-model.json",
+  "schemaRoot": "supabase/schemas",
+  "databaseSchema": "app_private",
+  "rules": {
+    "everySchemaFileDeclared": true,
+    "everyPersistedRelationMappedOnce": true,
+    "authoritativeRelationHasSingleSemanticOwner": true,
+    "relationOwnerMustMatchConceptOwner": true,
+    "relationRequiredConceptMustPersist": true,
+    "crossOwnerMechanismCannotOwnBusinessTruth": true
+  },
+  "files": [
+    {
+      "path": "supabase/schemas/000_foundation.sql",
+      "role": "foundation",
+      "mechanismOwner": "platform"
+    },
+    {
+      "path": "supabase/schemas/100_accounts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/101_account_logins.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/110_users.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/111_user_external_identities.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/112_user_provisioning.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/113_user_profiles.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/114_user_achievements.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/115_user_follows.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/200_enterprises.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/201_enterprise_affiliations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/202_enterprise_organizations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/210_enterprise_teams.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/211_enterprise_team_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/212_enterprise_team_organization_assignments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/220_enterprise_invitations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/300_organizations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/301_organization_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/302_organization_invitations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/400_teams.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/401_team_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/402_team_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/500_enterprise_role_assignments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/501_organization_role_assignments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/502_team_role_assignments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/510_permission_definitions.sql",
+      "role": "authoritative-definition",
+      "mechanismOwner": "identity-access"
+    },
+    {
+      "path": "supabase/schemas/511_permission_grants.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/512_permission_administration.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/520_governance_evidence.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/600_repositories.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/601_repository_user_access.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/602_repository_team_access.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/603_repository_stars.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/610_repository_labels.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/611_repository_milestones.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/620_issues.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/621_issue_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/622_issue_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/623_issue_labels.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/630_discussions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/631_discussion_comments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/700_projects.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/701_project_items.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/702_project_wbs.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/703_project_milestones.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/704_project_repository_references.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/800_asset_definitions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/810_ledger_entries.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/820_expenses.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/821_expense_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/822_receipt_intents.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/830_attendance.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/831_attendance_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/832_attendance_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/833_attendance_outbox.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/840_workplaces.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/841_workplace_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/842_workplace_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/843_workplace_chat.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/850_notifications.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/851_notification_deliveries.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/860_partners.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/861_partner_contacts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/862_partner_referrals.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/863_partner_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "role": "derived-projection"
+    },
+    {
+      "path": "supabase/schemas/910_cross_owner_constraints.sql",
+      "role": "invariant-enforcement"
+    },
+    {
+      "path": "supabase/schemas/920_transaction_coordinators.sql",
+      "role": "transaction-coordinator"
+    },
+    {
+      "path": "supabase/schemas/930_access_enforcement.sql",
+      "role": "access-enforcement"
+    }
+  ],
+  "relations": [
+    {
+      "name": "accounts",
+      "kind": "table",
+      "path": "supabase/schemas/100_accounts.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "account_logins",
+      "kind": "table",
+      "path": "supabase/schemas/101_account_logins.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "users",
+      "kind": "table",
+      "path": "supabase/schemas/110_users.sql",
+      "authority": true,
+      "semanticOwner": "account",
+      "concept": "user"
+    },
+    {
+      "name": "user_events",
+      "kind": "table",
+      "path": "supabase/schemas/110_users.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_management_commands",
+      "kind": "table",
+      "path": "supabase/schemas/110_users.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_identities",
+      "kind": "table",
+      "path": "supabase/schemas/111_user_external_identities.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "google_link_requests",
+      "kind": "table",
+      "path": "supabase/schemas/112_user_provisioning.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_profiles",
+      "kind": "table",
+      "path": "supabase/schemas/113_user_profiles.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "achievement_definitions",
+      "kind": "table",
+      "path": "supabase/schemas/114_user_achievements.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_achievements",
+      "kind": "table",
+      "path": "supabase/schemas/114_user_achievements.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_contribution_days",
+      "kind": "table",
+      "path": "supabase/schemas/114_user_achievements.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_follows",
+      "kind": "table",
+      "path": "supabase/schemas/115_user_follows.sql",
+      "authority": true,
+      "semanticOwner": "account",
+      "concept": "user-follow"
+    },
+    {
+      "name": "enterprises",
+      "kind": "table",
+      "path": "supabase/schemas/200_enterprises.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise"
+    },
+    {
+      "name": "enterprise_direct_affiliations",
+      "kind": "table",
+      "path": "supabase/schemas/201_enterprise_affiliations.sql",
+      "authority": true,
+      "semanticOwner": "enterprise"
+    },
+    {
+      "name": "enterprise_organizations",
+      "kind": "table",
+      "path": "supabase/schemas/202_enterprise_organizations.sql",
+      "authority": true,
+      "semanticOwner": "enterprise"
+    },
+    {
+      "name": "enterprise_teams",
+      "kind": "table",
+      "path": "supabase/schemas/210_enterprise_teams.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-team"
+    },
+    {
+      "name": "enterprise_team_memberships",
+      "kind": "table",
+      "path": "supabase/schemas/211_enterprise_team_memberships.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-team-membership"
+    },
+    {
+      "name": "enterprise_team_organizations",
+      "kind": "table",
+      "path": "supabase/schemas/212_enterprise_team_organization_assignments.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-team-organization-assignment"
+    },
+    {
+      "name": "enterprise_invitations",
+      "kind": "table",
+      "path": "supabase/schemas/220_enterprise_invitations.sql",
+      "authority": true,
+      "semanticOwner": "enterprise"
+    },
+    {
+      "name": "organizations",
+      "kind": "table",
+      "path": "supabase/schemas/300_organizations.sql",
+      "authority": true,
+      "semanticOwner": "organization",
+      "concept": "organization"
+    },
+    {
+      "name": "organization_memberships",
+      "kind": "table",
+      "path": "supabase/schemas/301_organization_memberships.sql",
+      "authority": true,
+      "semanticOwner": "organization"
+    },
+    {
+      "name": "organization_direct_memberships",
+      "kind": "table",
+      "path": "supabase/schemas/301_organization_memberships.sql",
+      "authority": true,
+      "semanticOwner": "organization"
+    },
+    {
+      "name": "organization_invitations",
+      "kind": "table",
+      "path": "supabase/schemas/302_organization_invitations.sql",
+      "authority": true,
+      "semanticOwner": "organization"
+    },
+    {
+      "name": "teams",
+      "kind": "table",
+      "path": "supabase/schemas/400_teams.sql",
+      "authority": true,
+      "semanticOwner": "team",
+      "concept": "team"
+    },
+    {
+      "name": "team_memberships",
+      "kind": "table",
+      "path": "supabase/schemas/401_team_memberships.sql",
+      "authority": true,
+      "semanticOwner": "team"
+    },
+    {
+      "name": "team_commands",
+      "kind": "table",
+      "path": "supabase/schemas/402_team_commands.sql",
+      "authority": true,
+      "semanticOwner": "team"
+    },
+    {
+      "name": "enterprise_role_assignments",
+      "kind": "table",
+      "path": "supabase/schemas/500_enterprise_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "organization_role_assignments",
+      "kind": "table",
+      "path": "supabase/schemas/501_organization_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "team_role_assignments",
+      "kind": "table",
+      "path": "supabase/schemas/502_team_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "permission_grants",
+      "kind": "table",
+      "path": "supabase/schemas/511_permission_grants.sql",
+      "authority": true,
+      "semanticOwner": "identity-access",
+      "concept": "permission"
+    },
+    {
+      "name": "permission_subject_versions",
+      "kind": "table",
+      "path": "supabase/schemas/512_permission_administration.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "permission_administrators",
+      "kind": "table",
+      "path": "supabase/schemas/512_permission_administration.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "permission_commands",
+      "kind": "table",
+      "path": "supabase/schemas/512_permission_administration.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "governance_bootstrap_receipts",
+      "kind": "table",
+      "path": "supabase/schemas/520_governance_evidence.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "governance_command_receipts",
+      "kind": "table",
+      "path": "supabase/schemas/520_governance_evidence.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "governance_audit_events",
+      "kind": "table",
+      "path": "supabase/schemas/520_governance_evidence.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "repositories",
+      "kind": "table",
+      "path": "supabase/schemas/600_repositories.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository"
+    },
+    {
+      "name": "repository_access",
+      "kind": "table",
+      "path": "supabase/schemas/601_repository_user_access.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_team_access",
+      "kind": "table",
+      "path": "supabase/schemas/602_repository_team_access.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_stars",
+      "kind": "table",
+      "path": "supabase/schemas/603_repository_stars.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_labels",
+      "kind": "table",
+      "path": "supabase/schemas/610_repository_labels.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-label"
+    },
+    {
+      "name": "repository_milestones",
+      "kind": "table",
+      "path": "supabase/schemas/611_repository_milestones.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-milestone"
+    },
+    {
+      "name": "issues",
+      "kind": "table",
+      "path": "supabase/schemas/620_issues.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "issue"
+    },
+    {
+      "name": "issue_commands",
+      "kind": "table",
+      "path": "supabase/schemas/621_issue_commands.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "issue_events",
+      "kind": "table",
+      "path": "supabase/schemas/622_issue_events.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "issue_labels",
+      "kind": "table",
+      "path": "supabase/schemas/623_issue_labels.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "discussions",
+      "kind": "table",
+      "path": "supabase/schemas/630_discussions.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "discussion"
+    },
+    {
+      "name": "discussion_comments",
+      "kind": "table",
+      "path": "supabase/schemas/631_discussion_comments.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "projects",
+      "kind": "table",
+      "path": "supabase/schemas/700_projects.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project"
+    },
+    {
+      "name": "project_items",
+      "kind": "table",
+      "path": "supabase/schemas/701_project_items.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-item"
+    },
+    {
+      "name": "project_wbs",
+      "kind": "table",
+      "path": "supabase/schemas/702_project_wbs.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "wbs"
+    },
+    {
+      "name": "project_milestones",
+      "kind": "table",
+      "path": "supabase/schemas/703_project_milestones.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-milestone"
+    },
+    {
+      "name": "project_repository_references",
+      "kind": "table",
+      "path": "supabase/schemas/704_project_repository_references.sql",
+      "authority": true,
+      "semanticOwner": "project"
+    },
+    {
+      "name": "asset_definitions",
+      "kind": "view",
+      "path": "supabase/schemas/800_asset_definitions.sql",
+      "authority": true,
+      "semanticOwner": "asset",
+      "concept": "asset"
+    },
+    {
+      "name": "asset_ledger_entries",
+      "kind": "table",
+      "path": "supabase/schemas/810_ledger_entries.sql",
+      "authority": true,
+      "semanticOwner": "ledger",
+      "concept": "ledger-entry"
+    },
+    {
+      "name": "expenses",
+      "kind": "table",
+      "path": "supabase/schemas/820_expenses.sql",
+      "authority": true,
+      "semanticOwner": "expense",
+      "concept": "expense"
+    },
+    {
+      "name": "expense_events",
+      "kind": "table",
+      "path": "supabase/schemas/821_expense_events.sql",
+      "authority": true,
+      "semanticOwner": "expense"
+    },
+    {
+      "name": "receipt_intents",
+      "kind": "table",
+      "path": "supabase/schemas/822_receipt_intents.sql",
+      "authority": true,
+      "semanticOwner": "expense"
+    },
+    {
+      "name": "member_attendance",
+      "kind": "table",
+      "path": "supabase/schemas/830_attendance.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_state",
+      "kind": "table",
+      "path": "supabase/schemas/830_attendance.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_sessions",
+      "kind": "table",
+      "path": "supabase/schemas/830_attendance.sql",
+      "authority": true,
+      "semanticOwner": "attendance",
+      "concept": "attendance"
+    },
+    {
+      "name": "attendance_commands",
+      "kind": "table",
+      "path": "supabase/schemas/831_attendance_commands.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_events",
+      "kind": "table",
+      "path": "supabase/schemas/832_attendance_events.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_menu_outbox",
+      "kind": "table",
+      "path": "supabase/schemas/833_attendance_outbox.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_notification_outbox",
+      "kind": "table",
+      "path": "supabase/schemas/833_attendance_outbox.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplaces",
+      "kind": "table",
+      "path": "supabase/schemas/840_workplaces.sql",
+      "authority": true,
+      "semanticOwner": "attendance",
+      "concept": "workplace"
+    },
+    {
+      "name": "workplace_members",
+      "kind": "table",
+      "path": "supabase/schemas/841_workplace_memberships.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplace_commands",
+      "kind": "table",
+      "path": "supabase/schemas/842_workplace_commands.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplace_chat_drafts",
+      "kind": "table",
+      "path": "supabase/schemas/843_workplace_chat.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplace_chat_events",
+      "kind": "table",
+      "path": "supabase/schemas/843_workplace_chat.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "notifications",
+      "kind": "table",
+      "path": "supabase/schemas/850_notifications.sql",
+      "authority": true,
+      "semanticOwner": "notifications",
+      "concept": "notification"
+    },
+    {
+      "name": "notification_deliveries",
+      "kind": "table",
+      "path": "supabase/schemas/851_notification_deliveries.sql",
+      "authority": true,
+      "semanticOwner": "notifications"
+    },
+    {
+      "name": "partners",
+      "kind": "table",
+      "path": "supabase/schemas/860_partners.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory",
+      "concept": "partner"
+    },
+    {
+      "name": "partner_contacts",
+      "kind": "table",
+      "path": "supabase/schemas/861_partner_contacts.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "partner_referrals",
+      "kind": "table",
+      "path": "supabase/schemas/862_partner_referrals.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "partner_referral_commands",
+      "kind": "table",
+      "path": "supabase/schemas/863_partner_commands.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "partner_management_commands",
+      "kind": "table",
+      "path": "supabase/schemas/863_partner_commands.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "organization_membership_sources",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "enterprise",
+        "organization"
+      ]
+    },
+    {
+      "name": "enterprise_user_affiliations",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "enterprise",
+        "organization"
+      ]
+    },
+    {
+      "name": "repository_effective_access",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "account",
+        "organization",
+        "team",
+        "repository"
+      ]
+    },
+    {
+      "name": "attendance_identity_bindings",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "account",
+        "attendance"
+      ]
+    },
+    {
+      "name": "permission_workplace_targets",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "attendance",
+        "identity-access"
+      ]
+    },
+    {
+      "name": "user_management_activity",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "account",
+        "attendance",
+        "repository"
+      ]
+    },
+    {
+      "name": "identity_access_enterprise_scopes",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "enterprise",
+        "identity-access"
+      ]
+    },
+    {
+      "name": "identity_access_enterprise_subjects",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "account",
+        "enterprise",
+        "identity-access"
+      ]
+    },
+    {
+      "name": "identity_access_organization_scopes",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "organization",
+        "identity-access"
+      ]
+    },
+    {
+      "name": "identity_access_organization_subjects",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "account",
+        "organization",
+        "identity-access"
+      ]
+    },
+    {
+      "name": "identity_access_team_subjects",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": [
+        "account",
+        "organization",
+        "team",
+        "identity-access"
+      ]
+    }
+  ]
+}

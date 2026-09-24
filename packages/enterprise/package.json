@@ -1,0 +1,47 @@
+{
+  "name": "@line-work/enterprise",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/enterprise-governance": {
+      "types": "./dist/application/enterprise-governance.d.ts",
+      "default": "./dist/application/enterprise-governance.js"
+    },
+    "./application/ports/enterprise-governance": {
+      "types": "./dist/application/ports/enterprise-governance.d.ts",
+      "default": "./dist/application/ports/enterprise-governance.js"
+    },
+    "./contracts/enterprise-governance": {
+      "types": "./dist/contracts/enterprise-governance.d.ts",
+      "default": "./dist/contracts/enterprise-governance.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/identity-access": "workspace:*",
+    "@line-work/organization": "workspace:*",
+    "@line-work/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

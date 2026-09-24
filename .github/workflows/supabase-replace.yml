@@ -1,0 +1,121 @@
+name: Supabase Replace
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_project:
+        description: Type the target Supabase project ref
+        required: true
+        type: string
+      confirm_replace:
+        description: Type "replace nmssogphayjymjpbnrxv" to authorize destructive reconciliation
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: supabase-replace
+  cancel-in-progress: false
+
+jobs:
+  replace:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm_project == 'nmssogphayjymjpbnrxv' &&
+      inputs.confirm_replace == 'replace nmssogphayjymjpbnrxv'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Require exact main revision
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
+          test "$SHA" = "$main_sha" || {
+            echo "Schema replacement must run against the current main revision."
+            exit 1
+          }
+
+      - name: Require repository validation for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          result="$(gh api "repos/$REPOSITORY/commits/$SHA/check-runs" --jq '[.check_runs[] | select(.name == "validate" and .app.slug == "github-actions")][0] | "\(.status // "")|\(.conclusion // "")"')"
+          status="${result%%|*}"
+          conclusion="${result#*|}"
+          test "$status" = "completed" && test "$conclusion" = "success" || {
+            echo "Repository validation is not successful for $SHA: $status/$conclusion"
+            exit 1
+          }
+
+      - name: Require deployed Web consumer for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          result="$(gh api "repos/$REPOSITORY/commits/$SHA/status" --jq '[.statuses[] | select(.context == "Vercel")][0] | "\(.state // "")|\(.target_url // "")"')"
+          state="${result%%|*}"
+          target_url="${result#*|}"
+          test "$state" = "success" || {
+            echo "Vercel deployment is not successful for $SHA: $state"
+            exit 1
+          }
+          [[ "$target_url" == https://vercel.com/96sup/mini-app-line/* ]] || {
+            echo "Vercel status does not belong to the expected mini-app-line project."
+            exit 1
+          }
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prepare preserve-data compatibility expansion
+        run: pnpm schema:remote prepare
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+          SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}
+
+      - name: Replace and verify remote schema without migration history
+        run: pnpm schema:remote sync --allow-destructive
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+
+      - name: Preserve destructive reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-replace-${{ github.sha }}
+          path: |
+            .artifacts/supabase-remote/plan.sql
+            .artifacts/supabase-remote/verification.sql
+            .artifacts/supabase-remote/migration-history.before.txt
+            .artifacts/supabase-remote/migration-history.after.txt
+            .artifacts/supabase-remote/general-management-prepare.json
+          if-no-files-found: ignore
+          retention-days: 7

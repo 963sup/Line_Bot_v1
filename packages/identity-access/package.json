@@ -1,0 +1,59 @@
+{
+  "name": "@line-work/identity-access",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/manage-role-assignments": {
+      "types": "./dist/application/manage-role-assignments.d.ts",
+      "default": "./dist/application/manage-role-assignments.js"
+    },
+    "./application/permissions": {
+      "types": "./dist/application/permissions.d.ts",
+      "default": "./dist/application/permissions.js"
+    },
+    "./application/permissions/ports": {
+      "types": "./dist/application/permissions/ports.d.ts",
+      "default": "./dist/application/permissions/ports.js"
+    },
+    "./application/ports/role-assignments": {
+      "types": "./dist/application/ports/role-assignments.d.ts",
+      "default": "./dist/application/ports/role-assignments.js"
+    },
+    "./contracts/governance": {
+      "types": "./dist/contracts/governance.d.ts",
+      "default": "./dist/contracts/governance.js"
+    },
+    "./contracts/permissions": {
+      "types": "./dist/contracts/permissions.d.ts",
+      "default": "./dist/contracts/permissions.js"
+    },
+    "./domain/permission": {
+      "types": "./dist/domain/permission.d.ts",
+      "default": "./dist/domain/permission.js"
+    },
+    "./domain/role-assignment": {
+      "types": "./dist/domain/role-assignment.d.ts",
+      "default": "./dist/domain/role-assignment.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

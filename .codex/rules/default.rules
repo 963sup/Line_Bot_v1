@@ -1,0 +1,98 @@
+git_commands = ["git", "git.exe", "C:\\Users\\963su\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\git\\cmd\\git.exe"]
+destructive_push_options = ["--force", "-f", "--force-with-lease", "--mirror", "--delete", "-d"]
+
+prefix_rule(
+    pattern = [git_commands, "push", destructive_push_options],
+    decision = "forbidden",
+    justification = "Do not rewrite or delete remote history during ordinary development. Use a normal push or prepare a separately reviewed recovery operation.",
+    match = ["git push --force origin main", "git.exe push --mirror origin", "git push --delete origin main"],
+    not_match = ["git push origin main", "git fetch origin", "git pull --ff-only"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "push", "origin", destructive_push_options],
+    decision = "forbidden",
+    justification = "Remote-first force and deletion options are destructive too. Use a normal push.",
+    match = ["git push origin --force main", "git push origin -d main"],
+    not_match = ["git push origin main", "git push origin HEAD:refs/heads/main"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "push", "origin", ["main", "HEAD:refs/heads/main"], destructive_push_options],
+    decision = "forbidden",
+    justification = "Do not append force or deletion options to the normal main push.",
+    match = ["git push origin main --force", "git push origin HEAD:refs/heads/main --force-with-lease"],
+    not_match = ["git push origin main"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "rebase", "--autostash", "origin/main"],
+    decision = "allow",
+    justification = "Allow the narrow non-fast-forward recovery path that preserves worktree edits while replaying local main on origin/main.",
+    match = ["git rebase --autostash origin/main", "git.exe rebase --autostash origin/main"],
+    not_match = ["git rebase --abort", "git rebase --interactive origin/main", "git push --force origin main"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "rebase", "--continue"],
+    decision = "allow",
+    justification = "Allow continuing a reviewed rebase after conflicts are resolved without granting destructive history rewrites.",
+    match = ["git rebase --continue", "git.exe rebase --continue"],
+    not_match = ["git rebase --abort", "git reset --hard HEAD", "git push --force origin main"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Hard reset can discard existing work. Inspect the diff and preserve changes before preparing targeted recovery.",
+    match = ["git reset --hard HEAD", "git.exe reset --hard"],
+    not_match = ["git reset --soft HEAD~1", "git status"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "clean", ["-f", "-fd", "-df", "-fx", "-xf", "-fdx", "-xdf", "-dxf", "-ffdx", "--force"]],
+    decision = "forbidden",
+    justification = "Do not bulk-delete untracked work. Use git clean -n to inspect and review exact paths first.",
+    match = ["git clean -fdx", "git clean -f -d", "git.exe clean --force"],
+    not_match = ["git clean -nd", "git clean --dry-run"],
+)
+
+prefix_rule(
+    pattern = [["supabase", "supabase.exe"], "db", "reset"],
+    decision = "forbidden",
+    justification = "Database reset deletes data. Inspect migrations and prepare a separately reviewed recovery plan.",
+    match = ["supabase db reset", "supabase.exe db reset --linked"],
+    not_match = ["supabase db diff", "supabase migration list"],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "iam", "service-accounts", "keys", "create"],
+    decision = "forbidden",
+    justification = "Do not create long-lived service-account keys. If GCP is explicitly needed, use restricted ADC per AGENTS.md.",
+    match = ["gcloud iam service-accounts keys create example.json --iam-account=example", "gcloud.cmd iam service-accounts keys create example.json"],
+    not_match = ["gcloud iam service-accounts list"],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "run", "deploy"],
+    decision = "prompt",
+    justification = "Confirm the exact project, service, image digest and existing deployment authorization.",
+    match = ["gcloud run deploy line-work-web --project=example", "gcloud.cmd run deploy line-work-web"],
+    not_match = ["gcloud run services describe line-work-web"],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "sql", "instances", "delete"],
+    decision = "prompt",
+    justification = "Database deletion requires an exact target and explicit destructive-action authorization.",
+    match = ["gcloud sql instances delete line-work-db", "gcloud.cmd sql instances delete line-work-db"],
+    not_match = ["gcloud sql instances describe line-work-db"],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "secrets", "versions", "destroy"],
+    decision = "prompt",
+    justification = "Confirm the secret, version and authorization before destroying a secret version.",
+    match = ["gcloud secrets versions destroy 1 --secret=example", "gcloud.cmd secrets versions destroy 1 --secret=example"],
+    not_match = ["gcloud secrets versions list example"],
+)

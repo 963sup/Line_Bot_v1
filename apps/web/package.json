@@ -1,0 +1,47 @@
+{
+  "name": "@line-work/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ../../scripts/runtime/load-env.test.mjs && tsx --test test/*.test.ts",
+    "dev": "node ../../scripts/runtime/next.mjs dev --hostname 127.0.0.1",
+    "build": "node ../../scripts/runtime/next.mjs build",
+    "typecheck": "node ../../scripts/runtime/next.mjs typegen && tsc --noEmit",
+    "start": "node ../../scripts/runtime/next.mjs start --hostname 127.0.0.1"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/notifications": "workspace:*",
+    "@line-work/asset": "workspace:*",
+    "@line-work/assistant": "workspace:*",
+    "@line-work/attendance": "workspace:*",
+    "@line-work/daily-check-in": "workspace:*",
+    "@line-work/enterprise": "workspace:*",
+    "@line-work/expense": "workspace:*",
+    "@line-work/identity-access": "workspace:*",
+    "@line-work/ledger": "workspace:*",
+    "@line-work/line-channel": "workspace:*",
+    "@line-work/organization": "workspace:*",
+    "@line-work/partners": "workspace:*",
+    "@line-work/platform": "workspace:*",
+    "@line-work/repository": "workspace:*",
+    "@line-work/team": "workspace:*",
+    "@line-work/wallet": "workspace:*",
+    "@sentry/nextjs": "10.75.0",
+    "@supabase/supabase-js": "catalog:",
+    "@vercel/analytics": "2.0.1",
+    "@vercel/speed-insights": "2.0.0",
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@line/liff-mock": "1.0.4",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

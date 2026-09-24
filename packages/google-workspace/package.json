@@ -1,0 +1,57 @@
+{
+  "name": "@line-work/google-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/calendar": {
+      "types": "./dist/adapters/calendar.d.ts",
+      "default": "./dist/adapters/calendar.js"
+    },
+    "./adapters/docs": {
+      "types": "./dist/adapters/docs.d.ts",
+      "default": "./dist/adapters/docs.js"
+    },
+    "./adapters/drive": {
+      "types": "./dist/adapters/drive.d.ts",
+      "default": "./dist/adapters/drive.js"
+    },
+    "./adapters/forms": {
+      "types": "./dist/adapters/forms.d.ts",
+      "default": "./dist/adapters/forms.js"
+    },
+    "./adapters/gmail": {
+      "types": "./dist/adapters/gmail.d.ts",
+      "default": "./dist/adapters/gmail.js"
+    },
+    "./adapters/keep": {
+      "types": "./dist/adapters/keep.d.ts",
+      "default": "./dist/adapters/keep.js"
+    },
+    "./adapters/maps": {
+      "types": "./dist/adapters/maps.d.ts",
+      "default": "./dist/adapters/maps.js"
+    },
+    "./adapters/sheets": {
+      "types": "./dist/adapters/sheets.d.ts",
+      "default": "./dist/adapters/sheets.js"
+    },
+    "./adapters/tasks": {
+      "types": "./dist/adapters/tasks.d.ts",
+      "default": "./dist/adapters/tasks.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

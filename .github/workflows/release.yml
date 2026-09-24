@@ -1,0 +1,209 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/schemas/**/*.sql"
+      - "assets/line/rich-menu/**"
+      - "apps/web/src/modules/assistant/rich-menu/definition.ts"
+      - "apps/web/src/modules/assistant/rich-menu/desired-state.server.ts"
+
+permissions:
+  contents: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      schema_changed: ${{ steps.changed.outputs.schema_changed }}
+      rich_menu_changed: ${{ steps.changed.outputs.rich_menu_changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect release-owned source changes
+        id: changed
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          if git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            git diff --name-only "$BEFORE" "$SHA" > changed-files.txt
+          else
+            git diff-tree --no-commit-id --name-only -r "$SHA" > changed-files.txt
+          fi
+          schema_changed=false
+          rich_menu_changed=false
+          if grep -Eq '^supabase/schemas/.*\.sql$' changed-files.txt; then
+            schema_changed=true
+          fi
+          if grep -Eq '^(assets/line/rich-menu/|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)' changed-files.txt; then
+            rich_menu_changed=true
+          fi
+          echo "schema_changed=$schema_changed" >> "$GITHUB_OUTPUT"
+          echo "rich_menu_changed=$rich_menu_changed" >> "$GITHUB_OUTPUT"
+
+      - name: Require repository validation for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 120); do
+            result="$(gh api "repos/$REPOSITORY/commits/$SHA/check-runs" --jq '[.check_runs[] | select(.name == "validate" and .app.slug == "github-actions")][0] | "\(.status // "")|\(.conclusion // "")"')"
+            status="${result%%|*}"
+            conclusion="${result#*|}"
+            if [ "$status" = "completed" ]; then
+              test "$conclusion" = "success" || {
+                echo "Repository validation did not succeed for $SHA: $conclusion"
+                exit 1
+              }
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Timed out waiting for repository validation for $SHA."
+          exit 1
+
+  supabase:
+    needs: gate
+    if: needs.gate.outputs.schema_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+
+      - name: Require current main before remote mutation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
+          test "$SHA" = "$main_sha" || {
+            echo "Release was superseded before Supabase mutation."
+            exit 1
+          }
+
+      - name: Reconcile and verify remote schema without migration history
+        run: pnpm schema:remote sync
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+
+      - name: Preserve reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-reconciliation-${{ github.sha }}
+          path: |
+            .artifacts/supabase-remote/plan.sql
+            .artifacts/supabase-remote/verification.sql
+            .artifacts/supabase-remote/migration-history.before.txt
+            .artifacts/supabase-remote/migration-history.after.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deployment:
+    needs: [gate, supabase]
+    if: >-
+      always() &&
+      needs.gate.result == 'success' &&
+      (needs.supabase.result == 'success' || needs.supabase.result == 'skipped') &&
+      needs.gate.outputs.rich_menu_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require deployed Web consumer for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 120); do
+            result="$(gh api "repos/$REPOSITORY/commits/$SHA/status" --jq '[.statuses[] | select(.context == "Vercel")][0] | "\(.state // "")|\(.target_url // "")"')"
+            state="${result%%|*}"
+            target_url="${result#*|}"
+            if [ "$state" = "success" ]; then
+              [[ "$target_url" == https://vercel.com/96sup/mini-app-line/* ]] || {
+                echo "Vercel status does not belong to the expected mini-app-line project."
+                exit 1
+              }
+              exit 0
+            fi
+            if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+              echo "Vercel deployment did not succeed for $SHA: $state"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Timed out waiting for the Vercel deployment for $SHA."
+          exit 1
+
+  rich_menu:
+    needs: [gate, deployment]
+    if: needs.gate.outputs.rich_menu_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo run build --filter='@line-work/web^...'
+      - run: pnpm line:rich-menu preview all
+
+      - name: Require current main before LINE mutation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
+          test "$SHA" = "$main_sha" || {
+            echo "Release was superseded before Rich Menu publication."
+            exit 1
+          }
+
+      - name: Publish Rich Menu desired state
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        run: pnpm line:rich-menu publish all

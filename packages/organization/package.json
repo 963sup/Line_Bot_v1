@@ -1,0 +1,55 @@
+{
+  "name": "@line-work/organization",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/organization-governance": {
+      "types": "./dist/application/organization-governance.d.ts",
+      "default": "./dist/application/organization-governance.js"
+    },
+    "./application/ports/organization-governance": {
+      "types": "./dist/application/ports/organization-governance.d.ts",
+      "default": "./dist/application/ports/organization-governance.js"
+    },
+    "./contracts/organization-governance": {
+      "types": "./dist/contracts/organization-governance.d.ts",
+      "default": "./dist/contracts/organization-governance.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./application/public": {
+      "types": "./dist/application/public.d.ts",
+      "default": "./dist/application/public.js"
+    },
+    "./application/ports/public": {
+      "types": "./dist/application/ports/public.d.ts",
+      "default": "./dist/application/ports/public.js"
+    },
+    "./adapters/postgres/public": {
+      "types": "./dist/adapters/postgres/public.d.ts",
+      "default": "./dist/adapters/postgres/public.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/identity-access": "workspace:*",
+    "@line-work/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

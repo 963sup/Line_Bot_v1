@@ -1,0 +1,47 @@
+{
+  "name": "@line-work/team",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/collaboration": {
+      "types": "./dist/application/collaboration.d.ts",
+      "default": "./dist/application/collaboration.js"
+    },
+    "./application/ports": {
+      "types": "./dist/application/ports.d.ts",
+      "default": "./dist/application/ports.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/identity-access": "workspace:*",
+    "@line-work/organization": "workspace:*",
+    "@line-work/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

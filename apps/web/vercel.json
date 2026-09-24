@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["hkg1"],
+  "buildCommand": "cd ../.. && pnpm exec turbo run build --filter=@line-work/web",
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "main": true,
+      "preview": true,
+      "preview/**": true,
+      "ops/bootstrap-supabase-nmssogphayjymjpbnrxv-20260920": true
+    }
+  }
+}

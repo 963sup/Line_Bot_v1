@@ -1,0 +1,64 @@
+{
+  "name": "@line-work/attendance",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/clock": {
+      "types": "./dist/application/clock.d.ts",
+      "default": "./dist/application/clock.js"
+    },
+    "./application/maintenance": {
+      "types": "./dist/application/maintenance.d.ts",
+      "default": "./dist/application/maintenance.js"
+    },
+    "./application/ports/clock": {
+      "types": "./dist/application/ports/clock.d.ts",
+      "default": "./dist/application/ports/clock.js"
+    },
+    "./application/ports/workplace-chat": {
+      "types": "./dist/application/ports/workplace-chat.d.ts",
+      "default": "./dist/application/ports/workplace-chat.js"
+    },
+    "./application/ports/workplaces": {
+      "types": "./dist/application/ports/workplaces.d.ts",
+      "default": "./dist/application/ports/workplaces.js"
+    },
+    "./application/workplace-chat": {
+      "types": "./dist/application/workplace-chat.d.ts",
+      "default": "./dist/application/workplace-chat.js"
+    },
+    "./application/workplaces": {
+      "types": "./dist/application/workplaces.d.ts",
+      "default": "./dist/application/workplaces.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line-work/asset": "workspace:*",
+    "@line-work/identity-access": "workspace:*",
+    "@line-work/ledger": "workspace:*",
+    "@line-work/platform": "workspace:*",
+    "@line-work/account": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

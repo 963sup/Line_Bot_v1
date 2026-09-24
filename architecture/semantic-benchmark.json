@@ -1,0 +1,1365 @@
+{
+  "version": 2,
+  "role": "derived-general-management-semantic-benchmark",
+  "authority": {
+    "repository": "github/docs",
+    "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+    "path": "src/graphql/data/fpt",
+    "role": "pinned-external-machine-readable-authority"
+  },
+  "scope": {
+    "purpose": "Provide pinned external semantic evidence for general-management concepts and relationships. It is never Line_Bot_v1 product authority; product adoption requires an explicit mapping in architecture/semantic-model.json.",
+    "includedCategories": [
+      "users",
+      "enterprise-admin",
+      "orgs",
+      "teams",
+      "repos",
+      "projects",
+      "issues",
+      "discussions",
+      "reactions"
+    ],
+    "excludedCategories": [
+      "actions",
+      "branches",
+      "checks",
+      "code-scanning",
+      "code-security",
+      "codespaces",
+      "commits",
+      "dependabot",
+      "dependency-graph",
+      "deploy-keys",
+      "deployments",
+      "git",
+      "packages",
+      "pages",
+      "pulls",
+      "releases",
+      "secret-scanning",
+      "security-advisories"
+    ],
+    "exclusions": [
+      "Git and SCM object semantics",
+      "source-code hosting semantics",
+      "pull-request and code-review semantics",
+      "CI/check/deployment semantics",
+      "package-registry and software-security semantics",
+      "Line_Bot_v1-specific business concepts such as Attendance, ClockIn, Payroll, Expense, Task, and Announcement"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "user",
+      "kind": "actor",
+      "meaning": "A human account/actor surface used as a participant, member, assignee, owner, or project owner.",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User"
+      }
+    },
+    {
+      "id": "enterprise",
+      "kind": "governance-scope",
+      "meaning": "A top-level governance scope that relates organizations, members, and enterprise teams.",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "Enterprise"
+      }
+    },
+    {
+      "id": "enterprise-team",
+      "kind": "group",
+      "meaning": "A team owned by an enterprise scope and assignable to organizations.",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseTeam"
+      }
+    },
+    {
+      "id": "organization",
+      "kind": "governance-scope",
+      "meaning": "A governance and membership scope that owns teams and repositories and can own projects.",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization"
+      }
+    },
+    {
+      "id": "organization-team",
+      "kind": "group",
+      "meaning": "An organization-scoped team with members, hierarchy, repositories, and linked projects.",
+      "source": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team"
+      }
+    },
+    {
+      "id": "repository",
+      "kind": "container",
+      "meaning": "A resource container with an owner, lifecycle, access relationships, work items, labels, milestones, discussions, and linked projects; Git/SCM fields are excluded from this projection.",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository"
+      }
+    },
+    {
+      "id": "project",
+      "kind": "planning",
+      "meaning": "A planning and management entity that can link repositories and teams and own project items, field configurations, status updates, and read views. FPT workflows and iterations remain deferred until a real general-management consumer requires them.",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2"
+      }
+    },
+    {
+      "id": "project-item",
+      "kind": "planning-item",
+      "meaning": "An item participating in a project planning surface; its content remains a referenced resource rather than a second authority.",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2Item"
+      }
+    },
+    {
+      "id": "work-item",
+      "kind": "work",
+      "meaning": "A repository-scoped work/collaboration item with assignment, labels, milestone, hierarchy, dependency, state, and project relationships; this is a neutral projection of Issue semantics.",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue"
+      }
+    },
+    {
+      "id": "label",
+      "kind": "classification",
+      "meaning": "A reusable classification resource for repository-scoped work and discussions.",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Label"
+      }
+    },
+    {
+      "id": "milestone",
+      "kind": "goal",
+      "meaning": "A repository-scoped goal/target that groups work items.",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Milestone"
+      }
+    },
+    {
+      "id": "discussion",
+      "kind": "collaboration",
+      "meaning": "A repository-scoped conversation with category, comments, answer semantics, labels, and lifecycle.",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "Discussion"
+      }
+    },
+    {
+      "id": "discussion-category",
+      "kind": "classification",
+      "meaning": "A repository-scoped classification for discussions.",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "DiscussionCategory"
+      }
+    },
+    {
+      "id": "discussion-comment",
+      "kind": "collaboration-item",
+      "meaning": "A comment belonging to a discussion and optionally serving as its accepted answer.",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "DiscussionComment"
+      }
+    },
+    {
+      "id": "contributions-collection",
+      "kind": "fact-collection",
+      "meaning": "A user-scoped collection of observable contribution facts over a time range; it aggregates facts without owning the underlying resources.",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "ContributionsCollection"
+      }
+    },
+    {
+      "id": "repository-contribution",
+      "kind": "event-fact",
+      "meaning": "An observable fact that a user created a repository, carrying actor, repository context, and occurrence time.",
+      "temporalField": "occurredAt",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "CreatedRepositoryContribution"
+      },
+      "implements": [
+        "contribution"
+      ]
+    },
+    {
+      "id": "joined-user-contribution",
+      "kind": "event-fact",
+      "meaning": "An observable fact that a user joined the platform, carrying actor and occurrence time.",
+      "temporalField": "occurredAt",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "JoinedGitHubContribution"
+      },
+      "implements": [
+        "contribution"
+      ]
+    },
+    {
+      "id": "contribution",
+      "kind": "fact-contract",
+      "meaning": "The FPT Contribution interface: an observable contribution made by a user with restriction state, occurrence time, locator, and actor; concrete contribution facts provide real variation.",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "Contribution"
+      }
+    },
+    {
+      "id": "work-item-contribution",
+      "kind": "event-fact",
+      "meaning": "An observable fact that a user created a repository-scoped work item; this is a neutral projection of CreatedIssueContribution.",
+      "temporalField": "occurredAt",
+      "implements": [
+        "contribution"
+      ],
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "CreatedIssueContribution"
+      }
+    },
+    {
+      "id": "enterprise-member-invitation",
+      "kind": "relationship-intent",
+      "meaning": "A pending intent for a user to become an enterprise member; pending intent is not active membership.",
+      "temporalField": "createdAt",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseMemberInvitation"
+      }
+    },
+    {
+      "id": "organization-invitation",
+      "kind": "relationship-intent",
+      "meaning": "A pending intent for a user to join an organization, including the pending organization role.",
+      "temporalField": "createdAt",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "OrganizationInvitation"
+      }
+    },
+    {
+      "id": "repository-invitation",
+      "kind": "relationship-intent",
+      "meaning": "A pending intent for a user to gain repository access, including the permission proposed by the invitation.",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "RepositoryInvitation"
+      }
+    },
+    {
+      "id": "reaction",
+      "kind": "interaction-fact",
+      "meaning": "A timestamped user interaction applied to reactable collaboration content; it is an interaction signal, not approval or authorization.",
+      "temporalField": "createdAt",
+      "source": {
+        "file": "schema-reactions.json",
+        "category": "reactions",
+        "symbol": "Reaction"
+      }
+    },
+    {
+      "id": "work-item-comment",
+      "kind": "collaboration-item",
+      "meaning": "A comment belonging to a repository-scoped work item; this is the neutral projection of IssueComment.",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "IssueComment"
+      }
+    },
+    {
+      "id": "work-item-type",
+      "kind": "classification-definition",
+      "meaning": "An organization-defined work-item type with its own identity and lifecycle metadata; it is distinct from labels, status, and milestones.",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "IssueType"
+      }
+    },
+    {
+      "id": "project-field",
+      "kind": "planning-metadata",
+      "meaning": "A Project-owned field configuration used for planning metadata without becoming a second authority for underlying work truth.",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2FieldConfiguration"
+      }
+    },
+    {
+      "id": "project-status-update",
+      "kind": "status-record",
+      "meaning": "A Project-owned status update record with its own status and planning dates.",
+      "temporalField": "createdAt",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2StatusUpdate"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "enterprise",
+      "type": "contains",
+      "to": "organization",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "Enterprise",
+        "field": "organizations"
+      }
+    },
+    {
+      "from": "enterprise",
+      "type": "contains",
+      "to": "enterprise-team",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "Enterprise",
+        "field": "enterpriseTeams"
+      }
+    },
+    {
+      "from": "enterprise",
+      "type": "has-member",
+      "to": "user",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "Enterprise",
+        "field": "members"
+      }
+    },
+    {
+      "from": "enterprise-team",
+      "type": "assigned-to",
+      "to": "organization",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseTeam",
+        "field": "assignedOrganizations"
+      }
+    },
+    {
+      "from": "organization",
+      "type": "contains",
+      "to": "organization-team",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization",
+        "field": "teams"
+      }
+    },
+    {
+      "from": "organization",
+      "type": "has-member",
+      "to": "user",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization",
+        "field": "membersWithRole"
+      },
+      "attributes": [
+        {
+          "name": "role",
+          "meaning": "The organization role belongs to the membership relationship; membership existence does not by itself imply a particular role or authorization.",
+          "source": {
+            "file": "schema-users.json",
+            "category": "users",
+            "symbol": "OrganizationMemberEdge",
+            "field": "role"
+          }
+        }
+      ]
+    },
+    {
+      "from": "organization",
+      "type": "contains",
+      "to": "repository",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization",
+        "field": "repositories"
+      }
+    },
+    {
+      "from": "organization",
+      "type": "has-project",
+      "to": "project",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization",
+        "field": "projectsV2"
+      }
+    },
+    {
+      "from": "organization-team",
+      "type": "belongs-to",
+      "to": "organization",
+      "source": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team",
+        "field": "organization"
+      }
+    },
+    {
+      "from": "organization-team",
+      "type": "has-member",
+      "to": "user",
+      "source": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team",
+        "field": "members"
+      },
+      "attributes": [
+        {
+          "name": "role",
+          "meaning": "The team role belongs to the membership relationship rather than to User identity.",
+          "source": {
+            "file": "schema-users.json",
+            "category": "users",
+            "symbol": "TeamMemberEdge",
+            "field": "role"
+          }
+        }
+      ]
+    },
+    {
+      "from": "organization-team",
+      "type": "parent-of",
+      "to": "organization-team",
+      "source": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team",
+        "field": "childTeams"
+      }
+    },
+    {
+      "from": "organization-team",
+      "type": "accesses",
+      "to": "repository",
+      "source": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team",
+        "field": "repositories"
+      }
+    },
+    {
+      "from": "organization-team",
+      "type": "linked-to",
+      "to": "project",
+      "source": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team",
+        "field": "projectsV2"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "owned-by",
+      "to": "user",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "owner",
+        "note": "RepositoryOwner includes User or Organization."
+      }
+    },
+    {
+      "from": "repository",
+      "type": "owned-by",
+      "to": "organization",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "owner",
+        "note": "RepositoryOwner includes User or Organization."
+      }
+    },
+    {
+      "from": "repository",
+      "type": "contains",
+      "to": "work-item",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "issues"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "contains",
+      "to": "label",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "labels"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "contains",
+      "to": "milestone",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "milestones"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "contains",
+      "to": "discussion",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "discussions"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "contains",
+      "to": "discussion-category",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "discussionCategories"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "linked-to",
+      "to": "project",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "projectsV2"
+      }
+    },
+    {
+      "from": "project",
+      "type": "owned-by",
+      "to": "user",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "owner",
+        "note": "ProjectV2Owner includes User or Organization."
+      }
+    },
+    {
+      "from": "project",
+      "type": "owned-by",
+      "to": "organization",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "owner",
+        "note": "ProjectV2Owner includes User or Organization."
+      }
+    },
+    {
+      "from": "project",
+      "type": "contains",
+      "to": "project-item",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "items"
+      }
+    },
+    {
+      "from": "project",
+      "type": "linked-to",
+      "to": "repository",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "repositories"
+      }
+    },
+    {
+      "from": "project",
+      "type": "linked-to",
+      "to": "organization-team",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "teams"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "belongs-to",
+      "to": "repository",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "repository"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "assigned-to",
+      "to": "user",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "assignees"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "classified-by",
+      "to": "label",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "labels"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "scheduled-in",
+      "to": "milestone",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "milestone"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "parent-of",
+      "to": "work-item",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "subIssues"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "blocked-by",
+      "to": "work-item",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "blockedBy"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "appears-in",
+      "to": "project",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "projectsV2"
+      }
+    },
+    {
+      "from": "discussion",
+      "type": "belongs-to",
+      "to": "repository",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "Discussion",
+        "field": "repository"
+      }
+    },
+    {
+      "from": "discussion",
+      "type": "classified-by",
+      "to": "discussion-category",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "Discussion",
+        "field": "category"
+      }
+    },
+    {
+      "from": "discussion",
+      "type": "classified-by",
+      "to": "label",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "Discussion",
+        "field": "labels"
+      }
+    },
+    {
+      "from": "discussion",
+      "type": "contains",
+      "to": "discussion-comment",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "Discussion",
+        "field": "comments"
+      }
+    },
+    {
+      "from": "discussion",
+      "type": "answered-by",
+      "to": "discussion-comment",
+      "source": {
+        "file": "schema-discussions.json",
+        "category": "discussions",
+        "symbol": "Discussion",
+        "field": "answer"
+      }
+    },
+    {
+      "from": "user",
+      "type": "follows",
+      "to": "user",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "following",
+        "inverseField": "followers",
+        "note": "User.following is the outbound view; User.followers is the inverse inbound view of the same directed User-to-User relationship."
+      }
+    },
+    {
+      "from": "user",
+      "type": "has-contributions",
+      "to": "contributions-collection",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "contributionsCollection"
+      }
+    },
+    {
+      "from": "contributions-collection",
+      "type": "includes",
+      "to": "repository-contribution",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "ContributionsCollection",
+        "field": "repositoryContributions"
+      }
+    },
+    {
+      "from": "contributions-collection",
+      "type": "includes",
+      "to": "joined-user-contribution",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "ContributionsCollection",
+        "field": "joinedGitHubContribution"
+      }
+    },
+    {
+      "from": "repository-contribution",
+      "type": "made-by",
+      "to": "user",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "CreatedRepositoryContribution",
+        "field": "user"
+      }
+    },
+    {
+      "from": "repository-contribution",
+      "type": "context",
+      "to": "repository",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "CreatedRepositoryContribution",
+        "field": "repository"
+      }
+    },
+    {
+      "from": "joined-user-contribution",
+      "type": "made-by",
+      "to": "user",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "JoinedGitHubContribution",
+        "field": "user"
+      }
+    },
+    {
+      "from": "repository",
+      "type": "collaborates-with",
+      "to": "user",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "collaborators"
+      },
+      "attributes": [
+        {
+          "name": "permission",
+          "meaning": "Repository access permission is an attribute of the collaboration relationship and must not be inferred from identity or membership alone.",
+          "source": {
+            "file": "schema-users.json",
+            "category": "users",
+            "symbol": "RepositoryCollaboratorEdge",
+            "field": "permission"
+          }
+        }
+      ]
+    },
+    {
+      "from": "contributions-collection",
+      "type": "includes",
+      "to": "work-item-contribution",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "ContributionsCollection",
+        "field": "issueContributions"
+      }
+    },
+    {
+      "from": "work-item-contribution",
+      "type": "made-by",
+      "to": "user",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "CreatedIssueContribution",
+        "field": "user"
+      }
+    },
+    {
+      "from": "work-item-contribution",
+      "type": "targets",
+      "to": "work-item",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "CreatedIssueContribution",
+        "field": "issue"
+      }
+    },
+    {
+      "from": "enterprise-member-invitation",
+      "type": "invites",
+      "to": "user",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseMemberInvitation",
+        "field": "invitee",
+        "note": "EnterpriseMemberInvitation.invitee is nullable; email-addressed invitations may not resolve to a User."
+      }
+    },
+    {
+      "from": "enterprise-member-invitation",
+      "type": "initiated-by",
+      "to": "user",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseMemberInvitation",
+        "field": "inviter",
+        "note": "EnterpriseMemberInvitation.inviter is nullable in FPT."
+      }
+    },
+    {
+      "from": "enterprise-member-invitation",
+      "type": "targets",
+      "to": "enterprise",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseMemberInvitation",
+        "field": "enterprise"
+      }
+    },
+    {
+      "from": "organization-invitation",
+      "type": "invites",
+      "to": "user",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "OrganizationInvitation",
+        "field": "invitee",
+        "note": "OrganizationInvitation.invitee is nullable; the invitation may be addressed by email."
+      }
+    },
+    {
+      "from": "organization-invitation",
+      "type": "initiated-by",
+      "to": "user",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "OrganizationInvitation",
+        "field": "inviter"
+      }
+    },
+    {
+      "from": "organization-invitation",
+      "type": "targets",
+      "to": "organization",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "OrganizationInvitation",
+        "field": "organization"
+      },
+      "attributes": [
+        {
+          "name": "pending-role",
+          "meaning": "The proposed organization role is part of the pending invitation and does not become active membership authority until the relationship is established.",
+          "source": {
+            "file": "schema-orgs.json",
+            "category": "orgs",
+            "symbol": "OrganizationInvitation",
+            "field": "role"
+          }
+        }
+      ]
+    },
+    {
+      "from": "repository-invitation",
+      "type": "invites",
+      "to": "user",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "RepositoryInvitation",
+        "field": "invitee",
+        "note": "RepositoryInvitation.invitee is nullable; the invitation may not resolve to a User."
+      }
+    },
+    {
+      "from": "repository-invitation",
+      "type": "initiated-by",
+      "to": "user",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "RepositoryInvitation",
+        "field": "inviter"
+      }
+    },
+    {
+      "from": "repository-invitation",
+      "type": "targets",
+      "to": "repository",
+      "source": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "RepositoryInvitation",
+        "field": "repository",
+        "note": "RepositoryInvitation.repository is nullable and exposed as RepositoryInfo; Repository implements RepositoryInfo in the pinned FPT revision."
+      },
+      "attributes": [
+        {
+          "name": "pending-permission",
+          "meaning": "The proposed repository permission is part of the pending invitation and is distinct from active collaboration permission.",
+          "source": {
+            "file": "schema-repos.json",
+            "category": "repos",
+            "symbol": "RepositoryInvitation",
+            "field": "permission"
+          }
+        }
+      ]
+    },
+    {
+      "from": "work-item",
+      "type": "contains",
+      "to": "work-item-comment",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "comments"
+      }
+    },
+    {
+      "from": "work-item-comment",
+      "type": "belongs-to",
+      "to": "work-item",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "IssueComment",
+        "field": "issue"
+      }
+    },
+    {
+      "from": "work-item-comment",
+      "type": "context",
+      "to": "repository",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "IssueComment",
+        "field": "repository"
+      }
+    },
+    {
+      "from": "organization",
+      "type": "defines",
+      "to": "work-item-type",
+      "source": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization",
+        "field": "issueTypes"
+      }
+    },
+    {
+      "from": "work-item",
+      "type": "typed-as",
+      "to": "work-item-type",
+      "source": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "issueType"
+      }
+    },
+    {
+      "from": "reaction",
+      "type": "made-by",
+      "to": "user",
+      "source": {
+        "file": "schema-reactions.json",
+        "category": "reactions",
+        "symbol": "Reaction",
+        "field": "user",
+        "note": "Reaction.user is nullable in FPT; this edge exists when the reaction is attributed to a User."
+      }
+    },
+    {
+      "from": "reaction",
+      "type": "targets",
+      "to": "work-item",
+      "source": {
+        "file": "schema-reactions.json",
+        "category": "reactions",
+        "symbol": "Reaction",
+        "field": "reactable",
+        "note": "Issue implements Reactable in the pinned FPT revision."
+      }
+    },
+    {
+      "from": "reaction",
+      "type": "targets",
+      "to": "work-item-comment",
+      "source": {
+        "file": "schema-reactions.json",
+        "category": "reactions",
+        "symbol": "Reaction",
+        "field": "reactable",
+        "note": "IssueComment implements Reactable in the pinned FPT revision."
+      }
+    },
+    {
+      "from": "reaction",
+      "type": "targets",
+      "to": "discussion",
+      "source": {
+        "file": "schema-reactions.json",
+        "category": "reactions",
+        "symbol": "Reaction",
+        "field": "reactable",
+        "note": "Discussion implements Reactable in the pinned FPT revision."
+      }
+    },
+    {
+      "from": "reaction",
+      "type": "targets",
+      "to": "discussion-comment",
+      "source": {
+        "file": "schema-reactions.json",
+        "category": "reactions",
+        "symbol": "Reaction",
+        "field": "reactable",
+        "note": "DiscussionComment implements Reactable in the pinned FPT revision."
+      }
+    },
+    {
+      "from": "project",
+      "type": "defines",
+      "to": "project-field",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "fields"
+      }
+    },
+    {
+      "from": "project",
+      "type": "records",
+      "to": "project-status-update",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2",
+        "field": "statusUpdates"
+      }
+    },
+    {
+      "from": "project-status-update",
+      "type": "belongs-to",
+      "to": "project",
+      "source": {
+        "file": "schema-projects.json",
+        "category": "projects",
+        "symbol": "ProjectV2StatusUpdate",
+        "field": "project"
+      }
+    }
+  ],
+  "projections": [
+    {
+      "id": "user-profile",
+      "kind": "read-projection",
+      "ownerNode": "user",
+      "meaning": "Profile is a presentation/read surface over User semantics rather than a separate lifecycle owner.",
+      "sources": [
+        {
+          "file": "schema-users.json",
+          "category": "users",
+          "symbol": "ProfileOwner",
+          "note": "Interface representing entities with a profile page."
+        },
+        {
+          "file": "schema-users.json",
+          "category": "users",
+          "symbol": "ProfileItemShowcase",
+          "note": "Curated/popular repository showcase displayed on a profile."
+        },
+        {
+          "file": "schema-users.json",
+          "category": "users",
+          "symbol": "User",
+          "field": "itemShowcase"
+        },
+        {
+          "file": "schema-users.json",
+          "category": "users",
+          "symbol": "User",
+          "field": "pinnedItems"
+        }
+      ]
+    },
+    {
+      "id": "user-following",
+      "kind": "relationship-view",
+      "ownerNode": "user",
+      "relationship": "user|follows|user",
+      "direction": "outbound",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "following"
+      }
+    },
+    {
+      "id": "user-followers",
+      "kind": "relationship-view",
+      "ownerNode": "user",
+      "relationship": "user|follows|user",
+      "direction": "inbound",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "followers"
+      }
+    },
+    {
+      "id": "user-repositories",
+      "kind": "relationship-view",
+      "ownerNode": "user",
+      "relationship": "repository|owned-by|user",
+      "direction": "inverse",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "repositories",
+        "note": "A list of repositories that the user owns."
+      }
+    },
+    {
+      "id": "project-view",
+      "kind": "read-projection",
+      "ownerNode": "project",
+      "meaning": "A Project-owned read/view configuration over Project data; it does not own underlying work truth.",
+      "sources": [
+        {
+          "file": "schema-projects.json",
+          "category": "projects",
+          "symbol": "ProjectV2",
+          "field": "views"
+        },
+        {
+          "file": "schema-projects.json",
+          "category": "projects",
+          "symbol": "ProjectV2View",
+          "field": "project"
+        }
+      ]
+    }
+  ],
+  "derivedResults": [
+    {
+      "id": "achievement",
+      "kind": "derived-recognition",
+      "subjectNode": "user",
+      "projection": "user-profile",
+      "meaning": "A profile recognition derived from qualifying events/actions. Public FPT exposes observable contribution/activity facts but does not expose AchievementDefinition, qualification rules, grant state, or progress as GraphQL types.",
+      "source": {
+        "kind": "canonical-docs",
+        "repository": "github/docs",
+        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "path": "content/account-and-profile/reference/profile-reference.md",
+        "section": "Earning Achievements"
+      },
+      "observableModel": {
+        "factCollection": "contributions-collection",
+        "eventFacts": [
+          "repository-contribution",
+          "work-item-contribution",
+          "joined-user-contribution"
+        ],
+        "timeFields": [
+          "repository-contribution.occurredAt",
+          "work-item-contribution.occurredAt",
+          "joined-user-contribution.occurredAt"
+        ],
+        "note": "The FPT Contribution contract and listed concrete facts demonstrate observable fact/actor/context/time primitives. RepositoryContribution has direct Repository context; WorkItemContribution targets WorkItem, whose Repository context remains owned by WorkItem. Public sources do not state that every listed fact qualifies for an Achievement.",
+        "factContract": "contribution",
+        "actorRelationships": [
+          "repository-contribution|made-by|user",
+          "work-item-contribution|made-by|user",
+          "joined-user-contribution|made-by|user"
+        ],
+        "contextRelationships": [
+          "repository-contribution|context|repository",
+          "work-item-contribution|targets|work-item",
+          "work-item|belongs-to|repository"
+        ]
+      },
+      "unexposedSemantics": [
+        "AchievementDefinition",
+        "QualificationRule",
+        "AchievementGrant",
+        "AchievementProgress"
+      ]
+    }
+  ],
+  "evidencePolicy": {
+    "graphqlFpt": "Nodes, edges, projections, observable fact collections, event facts, actor/context relationships, and temporal fields must be traceable to the pinned src/graphql/data/fpt revision.",
+    "canonicalDocsSupplement": "A derived result may cite pinned canonical github/docs content when GitHub documents the product semantic but FPT does not expose the result as a GraphQL type.",
+    "boundary": "Canonical-doc supplementation may explain a derived result such as Achievement; it must not invent unexposed definition, qualification, grant, progress, storage, or runtime semantics.",
+    "graphSemantics": "FPT interfaces may appear as fact contracts only when current FPT exposes real implementing types. Edge attributes preserve relationship-specific role/permission semantics without creating duplicate Role or Permission owners.",
+    "relationshipIntent": "Invitation nodes represent pending relationship intent only; pending role/permission must not be treated as active membership or authorization.",
+    "cardinality": "Graph edges express a supported semantic relationship, not GraphQL non-nullability or cardinality. The pinned source field remains authoritative for optionality and multiplicity."
+  },
+  "supplementalEvidence": [
+    {
+      "kind": "canonical-docs",
+      "repository": "github/docs",
+      "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+      "path": "content/account-and-profile/reference/profile-reference.md",
+      "purpose": "Documented derived profile recognition semantics that are not exposed as Achievement GraphQL result types in FPT."
+    }
+  ],
+  "contract": {
+    "authorityMode": "external-benchmark-only",
+    "productAuthority": false,
+    "productAdoption": "explicit-mapping-required",
+    "relationshipCardinality": "read-from-pinned-upstream-source",
+    "derivedStructures": "must-remain-derived",
+    "currentState": "pinned-revision"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "line-work-assistant",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": "24.19.0",
+    "pnpm": "11.19.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@line-work/web",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:browser": "node scripts/browser/run-local.mjs",
+    "line:rich-menu": "pnpm --filter @line-work/web exec tsx ../../scripts/line/rich-menu/sync.ts",
+    "check": "node scripts/tooling/validate.mjs --fast",
+    "validate": "node scripts/tooling/validate.mjs",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "architecture": "node scripts/architecture/check-all.mjs",
+    "architecture:test": "node --test scripts/architecture/check-architecture.test.mjs scripts/architecture/check-convergence-guardrails.test.mjs scripts/architecture/check-semantic-benchmark.test.mjs scripts/architecture/check-semantic-architecture.test.mjs scripts/architecture/check-data-topology.test.mjs scripts/architecture/check-data-access.test.mjs",
+    "deadcode": "knip",
+    "docs:check": "node scripts/docs/check-docs.mjs",
+    "schema:check": "turbo run schema:check",
+    "schema:local": "node scripts/supabase/schema-local.mjs",
+    "tooling:check": "node scripts/tooling/check-tooling.mjs",
+    "tooling:rules": "node scripts/tooling/check-rules.mjs",
+    "start": "pnpm --filter @line-work/web start",
+    "boundaries": "node scripts/architecture/check-implementation-topology.mjs",
+    "schema:remote": "node scripts/supabase/remote.mjs",
+    "schema:remote:test": "node --test scripts/supabase/postgres.test.mjs scripts/supabase/remote.test.mjs",
+    "semantic": "node scripts/architecture/semantic-cli.mjs",
+    "patch:apply": "node scripts/changes/patch-apply.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "dependency-cruiser": "18.2.0",
+    "knip": "6.34.0",
+    "smol-toml": "1.8.0",
+    "supabase": "2.116.0",
+    "turbo": "2.10.12",
+    "typescript": "catalog:",
+    "yaml": "2.9.0",
+    "pg": "catalog:"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "@line-work/line-channel",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters": {
+      "types": "./dist/adapters.d.ts",
+      "default": "./dist/adapters.js"
+    },
+    "./adapters/identity": {
+      "types": "./dist/adapters/identity.d.ts",
+      "default": "./dist/adapters/identity.js"
+    },
+    "./adapters/messaging": {
+      "types": "./dist/adapters/messaging.d.ts",
+      "default": "./dist/adapters/messaging.js"
+    },
+    "./adapters/mini-app/browser": {
+      "types": "./dist/adapters/mini-app/browser.d.ts",
+      "default": "./dist/adapters/mini-app/browser.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line/bot-sdk": "11.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

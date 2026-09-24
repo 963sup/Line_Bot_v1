@@ -1,0 +1,71 @@
+Captured: 2026-09-14 Asia/Taipei
+Original log SHA256: 617027ea365bb8c2d30665a4a3f744d0acc94957e469633700b6de7155d25620
+Command: scripts/pnpm.ps1 validate
+Result: all stages passed; Turbo cached results included.
+
+Validating: tooling:check
+ℹ tests 34
+ℹ pass 34
+ℹ fail 0
+Validated tooling:check in 3.199s
+Validating: docs:check
+Docs OK: 483 Markdown files, 1147 local links.
+Validated docs:check in 0.297s
+Validating: lint
+Validated lint in 0.439s
+Validating: architecture:test
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+Validated architecture:test in 3.320s
+Validating: change:plan:test
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+Validated change:plan:test in 0.180s
+Validating: schema:check
+@line-work/infrastructure:schema:check: ℹ tests 3
+@line-work/infrastructure:schema:check: ℹ pass 3
+@line-work/infrastructure:schema:check: ℹ fail 0
+@line-work/infrastructure:schema:check: ℹ tests 3
+@line-work/infrastructure:schema:check: ℹ pass 3
+@line-work/infrastructure:schema:check: ℹ fail 0
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    6.019s
+Validated schema:check in 6.112s
+Validating: architecture
+Architecture: 363 modules, 0 violations.
+Validated architecture in 3.132s
+Validating: deadcode
+Validated deadcode in 1.351s
+Validating: typecheck
+ Tasks:    11 successful, 11 total
+Cached:    10 cached, 11 total
+  Time:    4.151s
+Validated typecheck in 4.255s
+Validating: test
+@line-work/agents:test: ℹ tests 4
+@line-work/agents:test: ℹ pass 4
+@line-work/agents:test: ℹ fail 0
+@line-work/application:test: ℹ tests 40
+@line-work/application:test: ℹ pass 40
+@line-work/application:test: ℹ fail 0
+@line-work/infrastructure:test: ℹ tests 91
+@line-work/infrastructure:test: ℹ pass 91
+@line-work/infrastructure:test: ℹ fail 0
+@line-work/web:test: ℹ tests 3
+@line-work/web:test: ℹ pass 3
+@line-work/web:test: ℹ fail 0
+@line-work/web:test: ℹ tests 65
+@line-work/web:test: ℹ pass 65
+@line-work/web:test: ℹ fail 0
+ Tasks:    9 successful, 9 total
+Cached:    8 cached, 9 total
+  Time:    16.136s
+Validated test in 16.242s
+Validating: build
+ Tasks:    6 successful, 6 total
+Cached:    5 cached, 6 total
+  Time:    54.862s
+Validated build in 55.664s

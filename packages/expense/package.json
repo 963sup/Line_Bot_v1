@@ -1,0 +1,70 @@
+{
+  "name": "@line-work/expense",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./agents/receipt": {
+      "types": "./dist/agents/receipt.d.ts",
+      "default": "./dist/agents/receipt.js"
+    },
+    "./application/command-expense": {
+      "types": "./dist/application/command-expense.d.ts",
+      "default": "./dist/application/command-expense.js"
+    },
+    "./application/get-expense": {
+      "types": "./dist/application/get-expense.d.ts",
+      "default": "./dist/application/get-expense.js"
+    },
+    "./application/ports/expense-repository": {
+      "types": "./dist/application/ports/expense-repository.d.ts",
+      "default": "./dist/application/ports/expense-repository.js"
+    },
+    "./application/ports/receipt-intake": {
+      "types": "./dist/application/ports/receipt-intake.d.ts",
+      "default": "./dist/application/ports/receipt-intake.js"
+    },
+    "./application/ports/receipt-recognizer": {
+      "types": "./dist/application/ports/receipt-recognizer.d.ts",
+      "default": "./dist/application/ports/receipt-recognizer.js"
+    },
+    "./application/receipt-intake": {
+      "types": "./dist/application/receipt-intake.d.ts",
+      "default": "./dist/application/receipt-intake.js"
+    },
+    "./application/recognize-receipt": {
+      "types": "./dist/application/recognize-receipt.d.ts",
+      "default": "./dist/application/recognize-receipt.js"
+    },
+    "./contracts/receipt-reading": {
+      "types": "./dist/contracts/receipt-reading.d.ts",
+      "default": "./dist/contracts/receipt-reading.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@google/genai": "catalog:",
+    "@line-work/account": "workspace:*",
+    "@line-work/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

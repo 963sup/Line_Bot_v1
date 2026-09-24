@@ -1,0 +1,36 @@
+{
+  "name": "@line-work/wallet",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/ports/wallet-repository": {
+      "types": "./dist/application/ports/wallet-repository.d.ts",
+      "default": "./dist/application/ports/wallet-repository.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@line-work/account": "workspace:*",
+    "@line-work/asset": "workspace:*",
+    "@line-work/platform": "workspace:*",
+    "@line-work/ledger": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

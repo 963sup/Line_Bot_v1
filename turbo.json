@@ -1,0 +1,72 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "futureFlags": {
+    "githubActionsRemoteBaseRefFallback": true
+  },
+  "globalPassThroughEnv": ["npm_config_store_dir"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
+    },
+    "schema:check": {
+      "cache": false,
+      "outputs": []
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@line-work/web#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/.env.local",
+        "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
+        "$TURBO_ROOT$/scripts/runtime/next.mjs"
+      ]
+    },
+    "@line-work/web#typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
+        "$TURBO_ROOT$/scripts/runtime/next.mjs"
+      ]
+    },
+    "@line-work/web#test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/supabase/schemas/*.sql",
+        "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
+        "$TURBO_ROOT$/scripts/runtime/load-env.test.mjs"
+      ]
+    },
+    "@line-work/platform#schema:check": {
+      "cache": false,
+      "outputs": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/supabase/config.toml",
+        "$TURBO_ROOT$/supabase/schemas/*.sql",
+        "$TURBO_ROOT$/scripts/supabase/*.mjs"
+      ]
+    }
+  }
+}

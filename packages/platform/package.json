@@ -1,0 +1,43 @@
+{
+  "name": "@line-work/platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/migration": {
+      "types": "./dist/adapters/migration.d.ts",
+      "default": "./dist/adapters/migration.js"
+    },
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./adapters/redis": {
+      "types": "./dist/adapters/redis.d.ts",
+      "default": "./dist/adapters/redis.js"
+    },
+    "./testing/postgres": {
+      "types": "./dist/testing/postgres.d.ts",
+      "default": "./dist/testing/postgres.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts",
+    "schema:check": "node --test ../../scripts/supabase/schema-source.test.mjs && tsx --test test/schema-contract.schema.ts"
+  },
+  "dependencies": {
+    "pg": "catalog:"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

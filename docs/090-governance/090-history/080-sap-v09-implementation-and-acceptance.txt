@@ -1,0 +1,152 @@
+# SAP 實作狀態與驗收
+
+判定基準日：2026-09-12。此文件只記錄可驗證的交付狀態與完成門檻；設計文字本身不能當作實作證據。
+
+## 1. 第一段雛形實作狀態
+
+2026-09-12 第一段已交付 `projects`／`budgets`／`contracts` 的垂直流程；`estimates`／`payments`／`reversals` 與完整 reporting 尚未交付。
+
+| 位置 | 已實作 |
+| --- | --- |
+| `apps/web/src/app/(app)/sap` | `/sap` 選案、`/sap/projects` 列表、Project Workspace、WBS／預算、合約、核准操作；Estimate／Payment 是未開放入口。 |
+| `apps/web/src/app/api/sap` | Project list、WBS／Budget／Contract GET／POST、requestId result readback；每個入口核驗 LINE identity。 |
+| `apps/web/src/app/api/_composition/sap` | projects／budgets／contracts 分別注入 active Member 與 owner store，不互相 import composition。 |
+| `apps/web/src/modules/sap` | owner panels 與 request lifecycle；沒有通用 CRUD engine。 |
+| `apps/web/src/shared/server` | 中立 JSON body／Origin／size parsing 與既有 LIFF/HTTP utilities；沒有 SAP business rule。 |
+| `packages/domain/application/contracts` | 第一段 owner model、固定精度量價、typed commands、use cases／ports／DTO。 |
+| `packages/infrastructure` | owner PostgreSQL stores、明確 records collaboration、同 transaction idempotency + audit。 |
+| `supabase/migrations` | 第一段 private tables、same-project FK、unique baseline、minimal grants、role/project locking functions。 |
+
+已知限制：
+
+- Project／role runtime 只有必要 read 權限；seed 不自動給真實使用者角色。
+- 第一段 document list 先取最新 100 筆，尚未完成 cursor pagination 與完整 event query。
+- Pending Approval 仍由既有 Budget／Contract UI 組裝，尚未交付完整 reporting work queue。
+- `/sap` 與 `/sap/projects` 目前都重用 ProjectsPanel；這是 v0.9 Web Container migration 的已知 drift，不是假裝已完成。
+- 尚未交付完整 2.11 fixture、Estimate calculation、Payment、Reversal、owner direction full reporting。
+- 遠端 migration、真 PostgreSQL 雙連線競爭、LINE 手機、業務簽核仍未完成。
+
+本機瀏覽器與執行證據由 [Acceptance evidence](../../090-governance/060-acceptance/010-acceptance-evidence.md) 導覽；舊完整基線保留於其 `090-history/`。
+
+## 2. 判定方式
+
+| 狀態 | 使用條件 |
+| --- | --- |
+| 通過 | 全部驗收條件符合，且有版本、環境、日期與可重現證據；需要業務簽核者已簽核。 |
+| 待驗證 | 規格或產物已有，但證據不足。 |
+| 未交付 | 尚未提供該產物／實作。 |
+| 未通過 | 已驗證且不符合；需連結 issue／修正與複驗。 |
+| 不適用 | 只用於條件式項目，需記錄理由與決策者。 |
+
+文件、算術、程式測試、環境運行與業務簽核分開判定。
+
+## 3. 規格與開發準備
+
+| ID | 項目 | 通過條件 | 目前狀態 |
+| --- | --- | --- | --- |
+| D01 | 雛形範圍 | 明列獨立雛形、fixture 限制、納入／暫緩、模擬交易邊界 | 通過 |
+| D02 | 資料模型 | 必要物件、關聯、唯一性、精度有定義 | 通過 |
+| D03 | 操作規格 | 角色、狀態、計算、失敗處理有契約 | 通過 |
+| D04 | 驗收數字 | 主流程、reversal、rounding fixture 可重現 | 通過（文件算術，不是應用驗收） |
+| D05 | 業務範圍認可 | 工程／財務代表認可 qty/price/deduction/retention/approval/correction | 待驗證 |
+| D06 | 開發位置與技術契約 | owner 與 monorepo mapping、route、ports、transaction 已定位 | 待驗證（第一段已接線，完整流程未完成） |
+| D07 | 試用環境與帳號 | 可重建環境、三角色測試帳號、實際驗收人 | 未交付 |
+| D08 | 規則可追溯 | I01–I10 對應操作與驗收 ID | 通過 |
+| D09 | 操作邊界 | typed inputs、role/state/failure、transaction/query semantics 明確 | 通過 |
+| D10 | 最小實作約束 | 禁止無收益抽象、停止擴充標準與執行順序明確 | 通過 |
+
+## 4. 功能與資料正確性
+
+| ID | 項目 | 通過條件 | 目前狀態 |
+| --- | --- | --- | --- |
+| F01 | Project／WBS | seed project 可讀；WBS create；code unique、無循環、引用後結構凍結 | 待驗證 |
+| F02 | Budget | leaf amount approved 後唯一 baseline；draft 不占有效額度 | 待驗證 |
+| F03 | Contract | qty/price/terms/direction 可核准；approved 凍結；跨案 WBS 被拒絕 | 待驗證 |
+| F04 | Budget commitment | S-001 後可承約 20,000；再核准 20,000.01 拒絕；Payment 不釋放 commitment | 待驗證 |
+| F05 | Estimate create | 只引用 approved Contract；同 Contract 一張未結；period effective unique | 未交付 |
+| F06 | Estimate approve | approved qty 不超 requested/remaining；差異有原因；未 approved 不進累計 | 未交付 |
+| F07 | Advance | A>0 時第一期 submit 前須全額 confirmed；Advance 不計入 G | 未交付 |
+| F08 | Calculation | cumulative-difference、Retention、Deduction、final advance、1.26/1.25 fixture 正確 | 未交付 |
+| F09 | Partial Payment | 可分次；reference unique；0/negative/excess 拒絕；direction 由 Contract | 未交付 |
+| F10 | Owner flow | subcontract／owner qty 獨立；Owner first period G=45,000、R=4,500、N=40,500 | 未交付 |
+| F11 | Return／Cancel | 合法角色可退回／取消；reason/version/history 保留；draft 不影響累計 | 待驗證 |
+| F12 | Reversal | 最新有效 Estimate 逆序；Payment 先 reversed；替代單可追原單 | 未交付 |
+| F13 | Overview | 指標可追 source、direction 分開、net cash -49,500；不冒稱正式成本／毛利 | 未交付 |
+| F14 | 六類工作面 | 指定操作可完成，具有 loading/empty/unauthorized/error/conflict UI | 待驗證 |
+| F15 | Persistence | refresh/re-login/service restart 後 approved data 與 balance 一致 | 待驗證 |
+
+## 5. 授權、競爭與復原
+
+| ID | 項目 | 通過條件 | 目前狀態 |
+| --- | --- | --- | --- |
+| C01 | Backend authorization | 三角色生效；cross-project／self-approval 拒絕 | 待驗證 |
+| C02 | State protection | 非法轉移、approved edit、越序 reversal 拒絕 | 待驗證 |
+| C03 | Version conflict | 同 expectedVersion 衝突只有一筆成功 | 待驗證 |
+| C04 | Concurrent amount limits | 並行 Contract 不共同超 Budget；並行 Payment 不共同超 outstanding | 待驗證 |
+| C05 | Idempotency | 同 request 回原結果、異內容拒絕，不增加第二筆效果 | 待驗證 |
+| C06 | Atomicity | injected failure 不留下半個 document/event/result | 待驗證 |
+| C07 | Response interruption | 已成功但 response lost 可 readback；retry 不重建 | 待驗證 |
+| C08 | Audit／snapshot | history 不改寫；approve/return/reversal 有 actor/time/reason/version | 待驗證 |
+| C09 | Prototype recovery | fixture 可重建；試用資料可 backup/restore 對帳 | 未交付 |
+
+## 6. 交付與業務驗收
+
+| ID | 項目 | 通過條件 | 目前狀態 |
+| --- | --- | --- | --- |
+| A01 | 可重現交付 | 指定 commit 可啟動、load fixture、登入三角色 | 未交付 |
+| A02 | 技術檢查 | 適用 lint/type/architecture/test/build 通過，失敗明列 | 未交付 |
+| A03 | 完整流程 | 同一 Project 完整跑完代表 fixture steps 1–9 | 未交付 |
+| A04 | 例外驗收 | F/C 必要反例全部通過，修正後複驗 | 未交付 |
+| A05 | 可理解性 | 使用者能自行填報／核准／Payment 並理解示範資料與餘額 | 未交付 |
+| A06 | 完成紀錄 | 所有必要證據完整、無 blocking defect、限制／後續明列 | 未交付 |
+
+## 7. 正式 SAP 導入追加門檻
+
+| ID | 項目 | 通過條件 | 目前狀態 |
+| --- | --- | --- | --- |
+| P01 | 選版與能力 | SAP product/version/deployment/license 與流程適配確認 | 未交付 |
+| P02 | 財務與合約 | 稅務、收入、資本化、估驗、Retention/Deduction 由實際政策決定 | 未交付 |
+| P03 | 延後功能 | 材料、變更、月結等正式 scope 完成或有核准排除理由 | 未交付 |
+| P04 | SAP／外部整合 | 若啟用，create/readback/reversal/authorization 在實際環境通過 | 待驗證（條件式） |
+| P05 | 效能與持續營運 | 容量、延遲、backup/restore、monitoring、retention 實測通過 | 未交付 |
+| P06 | 資料移轉 | 若 migration，來源截止與 opening/in-flight 對帳完成 | 待驗證（條件式） |
+| P07 | Cutover | 上線、舊流程停用、rollback 與責任演練通過 | 未交付 |
+| P08 | 實際使用驗收 | 指定使用者在正式裝置／環境完成代表場景 | 未交付 |
+
+## 8. Web Container v0.9 追加驗收
+
+這些是 Web 架構演進條件，未併入既有 48 個 D/F/C/A/P ID，避免把目標 presentation 誤算成第一段已完成。
+
+- W01：`/sap` 與 `/sap/projects` 不再是相同頁面語意。
+- W02：`/sap/layout.tsx` 提供 SapContainer，project routes 不再逐頁重建相同 SAP navigation。
+- W03：`/sap/projects/[projectId]/layout.tsx` 保留 project context，deep link 可正確恢復。
+- W04：至少 20 project fixture 下，Projects searchable；sidebar 不永久列舉全部 projects。
+- W05：mobile 不出現 SAP persistent sidebar 與 global fixed navigation 疊加；desktop 可由同 nav model render sidebar。
+- W06：Project Switcher 切案後不殘留前一 Project 私有資料；後端 authorization 仍為 authority。
+- W07：`/sap/work` 若交付，write action 回到 document owner，不新增 generic approvals engine。
+- W08：若採 Parallel Routes，每個 slot 的 hard reload/default fallback/back-forward/deep-link 有證據。
+
+## 9. 代表 fixture 與必測反例
+
+代表 fixture 數值由 [雛形業務規則](030-prototype-business-rules.md) 擁有。至少要覆蓋：
+
+- Budget 120,000、Subcontract 100,000 後剩餘 20,000；額外 20,000.01 Contract approval 拒絕；
+- Estimate periods 40/50/10 的 G/R/D/N；
+- Partial Payment 10,000 + 18,000；
+- request 61 超 Contract remaining 被拒絕；
+- excess Payment 0.01 被拒絕；
+- concurrent same version only one success；
+- cross-project direct API access 拒絕；
+- third-period Payment + Estimate reversal 回復 83,000 / 9,000 / 2,000 / 10,000；
+- 0.125 × 10.04 得 1.26，再一個 0.125 的累計差額是 1.25，總額 2.51；
+- success response lost 後以同 requestId readback/retry 不重複效果。
+
+## 10. 整體結論
+
+- 規格契約：已建立並結構化；
+- 第一段技術雛形：部分存在，仍是「待驗證」而非完整通過；
+- Estimate／Payment／Reversal／完整 reporting：未交付；
+- SAP Container v0.9：目標架構已定義，尚未實作；
+- 正式 SAP：未接通、未完成選版、財務政策與正式業務驗收。
+
+不得用平均完成率抵銷必要項未完成；證據版本變更時，只保留能證明未受影響的既有證據。

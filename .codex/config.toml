@@ -1,0 +1,15 @@
+# Project defaults; trusted projects only. Live session overrides take precedence.
+# Preserve the user's permissions, approval policy and MCP settings.
+model = "gpt-6-astra"
+developer_instructions = """
+Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
+Model routing and subagent roles are owned by .codex/agents/AGENTS.md.
+"""
+
+[agents]
+enabled = true
+default_subagent_model = "gpt-5.5"
+default_subagent_reasoning_effort = "medium"
+# Excludes the primary agent: 1 primary + up to 8 subagents.
+# Ceiling, not target team size; only parallelize independent, bounded work.
+max_concurrent_threads_per_session = 8
