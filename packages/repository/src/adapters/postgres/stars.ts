@@ -1,3 +1,4 @@
+import { readAccountLogin } from "@line-work/account/adapters/postgres";
 import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
 import type {
   ExploreRepository,
@@ -43,7 +44,7 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
     return this.db.transaction(async (sql) => {
       const rows = (
         await sql.query(
-          `SELECT r.id,r.name,r.visibility,s.created_at,
+          `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,s.created_at,
                   (SELECT count(*)::int FROM repository_stars all_stars WHERE all_stars.repository_id=r.id) AS star_count
            FROM repository_stars s
            JOIN repositories r ON r.id=s.repository_id
@@ -54,18 +55,27 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
         )
       ).rows as Array<{
         id: string;
+        owner_account_id: string;
+        owner_account_kind: "USER" | "ORGANIZATION";
         name: string;
         visibility: string;
         created_at: number | string;
         star_count: number | string;
       }>;
-      return rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        visibility: row.visibility,
-        starredAt: Number(row.created_at),
-        starCount: Number(row.star_count),
-      }));
+      const result: StarredRepository[] = [];
+      for (const row of rows) {
+        const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
+        if (!owner) throw new IssueError(409, "Repository owner locator 不可用。");
+        result.push({
+          id: row.id,
+          ownerLogin: owner.login,
+          name: row.name,
+          visibility: row.visibility,
+          starredAt: Number(row.created_at),
+          starCount: Number(row.star_count),
+        });
+      }
+      return result;
     });
   }
 
@@ -73,34 +83,43 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
     return this.db.transaction(async (sql) => {
       const rows = (
         await sql.query(
-          `SELECT r.id,r.name,r.visibility,a.capability,
+          `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.capability,
                   count(s.user_id)::int AS star_count,
                   bool_or(s.user_id=$1) AS starred
            FROM repository_effective_access a
            JOIN repositories r ON r.id=a.repository_id
            LEFT JOIN repository_stars s ON s.repository_id=r.id
            WHERE a.user_id=$1
-           GROUP BY r.id,r.name,r.visibility,a.capability
+           GROUP BY r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.capability
            ORDER BY count(s.user_id) DESC,lower(r.name),r.id
            LIMIT 50`,
           [userId],
         )
       ).rows as Array<{
         id: string;
+        owner_account_id: string;
+        owner_account_kind: "USER" | "ORGANIZATION";
         name: string;
         visibility: string;
         capability: RepositoryCapability;
         star_count: number | string;
         starred: boolean;
       }>;
-      return rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        visibility: row.visibility,
-        capability: row.capability,
-        starCount: Number(row.star_count),
-        starred: Boolean(row.starred),
-      }));
+      const result: ExploreRepository[] = [];
+      for (const row of rows) {
+        const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
+        if (!owner) throw new IssueError(409, "Repository owner locator 不可用。");
+        result.push({
+          id: row.id,
+          ownerLogin: owner.login,
+          name: row.name,
+          visibility: row.visibility,
+          capability: row.capability,
+          starCount: Number(row.star_count),
+          starred: Boolean(row.starred),
+        });
+      }
+      return result;
     });
   }
 }
