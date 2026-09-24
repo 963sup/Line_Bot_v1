@@ -19,7 +19,7 @@ export default async function Page({
     notFound();
   }
   return (
-    <AppShell active="repositories">
+    <AppShell>
       <RepositoryResourcesPanel
         key={`${ownerLogin}/${repository}/milestones`}
         liffId={lineMiniApp().liffId}

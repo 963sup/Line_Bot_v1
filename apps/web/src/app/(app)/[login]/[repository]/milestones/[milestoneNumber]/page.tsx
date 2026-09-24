@@ -22,7 +22,7 @@ export default async function Page({
   const number = Number(milestoneNumber);
   if (!Number.isSafeInteger(number)) notFound();
   return (
-    <AppShell active="repositories">
+    <AppShell>
       <RepositoryResourcesPanel
         key={`${ownerLogin}/${repository}/milestone/${number}`}
         liffId={lineMiniApp().liffId}

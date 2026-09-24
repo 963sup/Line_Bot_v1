@@ -10,7 +10,7 @@ const items = [
   { href: "/settings", label: "我的", icon: "◎" },
 ] as const;
 
-export default function WorkNavigation({ active }: { active?: "repositories" }) {
+export default function WorkNavigation() {
   const pathname = usePathname();
   return (
     <nav className="work-navigation" aria-label="全域導覽">
@@ -19,7 +19,6 @@ export default function WorkNavigation({ active }: { active?: "repositories" }) 
           key={href}
           href={href}
           aria-current={
-            (active === "repositories" && href === "/repositories") ||
             pathname === href ||
             (href !== "/home" && pathname.startsWith(`${href}/`))
               ? "page"

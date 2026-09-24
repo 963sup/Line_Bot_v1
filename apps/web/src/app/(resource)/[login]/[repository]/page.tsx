@@ -65,7 +65,7 @@ export default async function Page({
   }
 
   return (
-    <AppShell active="repositories">
+    <AppShell>
       <IssueBoard
         key={`${ownerLogin}/${repository}`}
         liffId={lineMiniApp().liffId}
