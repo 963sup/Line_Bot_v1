@@ -28,10 +28,7 @@ export async function readAccountLogins(
        JOIN unnest($1::text[], $2::text[]) AS requested(account_id, account_kind)
          ON requested.account_id=l.account_id AND requested.account_kind=l.account_kind
        ORDER BY l.account_id,l.account_kind`,
-      [
-        requested.map((owner) => owner.id),
-        requested.map((owner) => owner.kind),
-      ],
+      [requested.map((owner) => owner.id), requested.map((owner) => owner.kind)],
     )
   ).rows as LoginOwner[];
 }

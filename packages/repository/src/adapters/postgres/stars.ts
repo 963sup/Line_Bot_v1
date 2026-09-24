@@ -66,7 +66,9 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
         sql,
         rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
       );
-      const ownerLogins = new Map(owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]));
+      const ownerLogins = new Map(
+        owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]),
+      );
       return rows.map((row) => {
         const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
         if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
@@ -112,7 +114,9 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
         sql,
         rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
       );
-      const ownerLogins = new Map(owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]));
+      const ownerLogins = new Map(
+        owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]),
+      );
       return rows.map((row) => {
         const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
         if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
