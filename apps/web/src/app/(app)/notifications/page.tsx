@@ -4,10 +4,16 @@ import AppShell from "../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
-export default function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ notificationView?: string | string[] }>;
+}) {
+  const { notificationView } = await searchParams;
+  const view = notificationView === "unread" ? "unread" : "all";
   return (
     <AppShell>
-      <NotificationInbox liffId={lineMiniApp().liffId} />
+      <NotificationInbox key={view} liffId={lineMiniApp().liffId} view={view} />
     </AppShell>
   );
 }
