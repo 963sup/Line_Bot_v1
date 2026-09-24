@@ -587,7 +587,9 @@ export function validate(root) {
     const supabaseEvidence = supabaseSteps.findIndex(
       (step) =>
         step.uses === "actions/upload-artifact@v4" &&
-        JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/daily-check-in-compat.sql") &&
+        JSON.stringify(step.with ?? {}).includes(
+          ".artifacts/supabase-remote/daily-check-in-compat.sql",
+        ) &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&

@@ -331,7 +331,8 @@ export function dailyCheckInCompatibilitySql(
   const marker =
     "-- DailyCheckIn owns reward outcome; Ledger owns value fact. They must commit together.";
   const start = constraintSource.indexOf(marker);
-  if (start < 0) throw new Error("Could not locate canonical DailyCheckIn parity constraint block.");
+  if (start < 0)
+    throw new Error("Could not locate canonical DailyCheckIn parity constraint block.");
   return `${claimSource.trim()}\n\n${constraintSource.slice(start).trim()}`;
 }
 
