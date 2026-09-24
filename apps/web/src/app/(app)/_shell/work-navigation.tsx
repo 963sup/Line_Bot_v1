@@ -4,10 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/home", label: "工作台", icon: "⌂" },
+  { href: "/home", label: "首頁", icon: "⌂" },
+  { href: "/notifications", label: "收件匣", icon: "●" },
   { href: "/explore", label: "探索", icon: "◇" },
-  { href: "/repositories", label: "儲存庫", icon: "▤" },
-  { href: "/notifications", label: "通知", icon: "●" },
   { href: "/settings", label: "我的", icon: "◎" },
 ] as const;
 
