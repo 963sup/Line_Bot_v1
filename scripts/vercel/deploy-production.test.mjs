@@ -96,7 +96,10 @@ test("production deploy reuses an exact READY production deployment before mutat
 
   assert.equal(result.deploymentId, "dpl_recovered");
   assert.equal(calls.length, 3);
-  assert.equal(calls.some((call) => call.init.method === "POST"), false);
+  assert.equal(
+    calls.some((call) => call.init.method === "POST"),
+    false,
+  );
 });
 
 test("production deploy resumes an exact in-flight deployment instead of duplicating it", async () => {
@@ -134,7 +137,10 @@ test("production deploy resumes an exact in-flight deployment instead of duplica
   });
 
   assert.equal(result.deploymentId, "dpl_inflight");
-  assert.equal(calls.some((call) => call.init.method === "POST"), false);
+  assert.equal(
+    calls.some((call) => call.init.method === "POST"),
+    false,
+  );
 });
 
 test("production deploy never retries an unknown mutation result inside one invocation", async () => {
