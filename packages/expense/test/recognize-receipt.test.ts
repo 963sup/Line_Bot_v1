@@ -21,7 +21,6 @@ const pending = (overrides: Partial<Expense> = {}): Expense => ({
   currency: "",
   date: "",
   invoiceNumber: "",
-  project: "",
   payment: "",
   ...overrides,
 });
