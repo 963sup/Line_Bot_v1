@@ -69,6 +69,13 @@ export function validate(root) {
       errors.push("package.json: semantic:* aliases are forbidden; use pnpm semantic <verb>");
     if (manifest.scripts?.["patch:apply"] !== "node scripts/changes/patch-apply.mjs")
       errors.push("package.json: patch:apply must own deterministic repository patch execution");
+    if (
+      manifest.scripts?.["vercel:deploy:production"] !==
+      "node scripts/vercel/deploy-production.mjs"
+    )
+      errors.push(
+        "package.json: vercel:deploy:production must own controlled production deployment",
+      );
     if (Object.hasOwn(manifest.scripts ?? {}, "change:plan"))
       errors.push(
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
@@ -176,6 +183,15 @@ export function validate(root) {
       if (!new RegExp(`^\\s*${name}\\s*=`, "m").test(envExampleSource))
         errors.push(`.env.example: missing current environment variable: ${name}`);
     }
+
+    const vercelConfig = JSON.parse(read(resolve(root, "apps/web/vercel.json")));
+    const deploymentEnabled = vercelConfig.git?.deploymentEnabled ?? {};
+    if (deploymentEnabled.main !== false)
+      errors.push(
+        "apps/web/vercel.json: main Git integration must not bypass the controlled production release",
+      );
+    if (deploymentEnabled.preview !== true || deploymentEnabled["preview/**"] !== true)
+      errors.push("apps/web/vercel.json: preview Git deployments must remain available");
 
     const remoteMigrationCommand =
       /\bsupabase(?:\.exe)?\s+(?:db\s+push|db\s+reset\b[^\n]*--linked|migration\s+(?:up|repair))\b/i;
@@ -537,6 +553,9 @@ export function validate(root) {
     const supabaseMain = supabaseSteps.findIndex(
       (step) => typeof step.run === "string" && step.run.includes("branches/main"),
     );
+    const supabasePrepare = supabaseSteps.findIndex(
+      (step) => step.run === "pnpm schema:remote prepare" && step.if === undefined,
+    );
     const supabaseSync = supabaseSteps.findIndex(
       (step) => step.run === "pnpm schema:remote sync --allow-destructive" && step.if === undefined,
     );
@@ -556,31 +575,56 @@ export function validate(root) {
     );
     if (
       supabaseMain < 0 ||
-      supabaseSync <= supabaseMain ||
+      supabasePrepare <= supabaseMain ||
+      supabaseSync <= supabasePrepare ||
       supabaseEvidence <= supabaseSync ||
       redundantRemoteSteps.length
     ) {
       errors.push(
-        "CI: automatic Supabase release must be current-main/sync/evidence with one local schema rebuild",
+        "CI: automatic Supabase release must be current-main/prepare/sync/evidence with one local schema rebuild",
       );
     }
+    if (
+      !JSON.stringify(supabaseSteps[supabasePrepare]?.env ?? {}).includes(
+        "SUPABASE_ENTERPRISE_METADATA_BACKFILL",
+      )
+    )
+      errors.push(
+        "CI: automatic Supabase release must scope Enterprise metadata backfill to prepare",
+      );
 
     const deploymentSteps = releaseDeployment?.steps ?? [];
-    const waitVercel = deploymentSteps.findIndex(
+    const deploymentCheckout = deploymentSteps.findIndex(
+      (step) =>
+        step.uses?.startsWith("actions/checkout@") &&
+        step.with?.ref === "${{ needs.gate.outputs.head_sha }}" &&
+        step.with?.["persist-credentials"] === false,
+    );
+    const deploymentMain = deploymentSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
-        step.run.includes("commits/$SHA/status") &&
-        step.run.includes('select(.context == "Vercel")') &&
-        step.run.includes("https://vercel.com/96sup/mini-app-line/"),
+        step.run.includes("branches/main") &&
+        step.run.includes("superseded before Vercel production deployment"),
+    );
+    const productionDeploy = deploymentSteps.findIndex(
+      (step) =>
+        step.run === 'pnpm vercel:deploy:production -- --live --sha "$SHA"' &&
+        JSON.stringify(step.env ?? {}).includes("VERCEL_TOKEN"),
     );
     if (
       typeof releaseDeployment?.if !== "string" ||
-      !releaseDeployment.if.includes("rich_menu_changed") ||
+      releaseDeployment.if.includes("rich_menu_changed") ||
+      !releaseDeployment.if.includes("needs.supabase.result == 'success'") ||
+      !releaseDeployment.if.includes("needs.supabase.result == 'skipped'") ||
+      !JSON.stringify(releaseDeployment?.needs ?? []).includes("gate") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
-      waitVercel < 0
+      JSON.stringify(releaseDeployment?.env ?? {}).includes("secrets.") ||
+      deploymentCheckout < 0 ||
+      deploymentMain <= deploymentCheckout ||
+      productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: deployment evidence must follow Supabase release and gate Rich Menu publication",
+        "CI: production deployment must follow Supabase convergence and deploy the exact validated SHA",
       );
     }
 
@@ -658,12 +702,6 @@ export function validate(root) {
         step.run.includes("check-runs") &&
         step.run.includes('.name == "validate"'),
     );
-    const replaceVercel = replaceSteps.findIndex(
-      (step) =>
-        typeof step.run === "string" &&
-        step.run.includes("commits/$SHA/status") &&
-        step.run.includes("https://vercel.com/96sup/mini-app-line/"),
-    );
     const replacePrepare = replaceSteps.findIndex(
       (step) => step.run === "pnpm schema:remote prepare",
     );
@@ -683,14 +721,15 @@ export function validate(root) {
     );
     if (
       replaceValidate < 0 ||
-      replaceVercel <= replaceValidate ||
-      replacePrepare <= replaceVercel ||
+      replacePrepare <= replaceValidate ||
       replaceSync <= replacePrepare ||
       replaceEvidence <= replaceSync ||
-      redundantReplaceSteps.length
+      redundantReplaceSteps.length ||
+      JSON.stringify(replaceSteps).includes("VERCEL_TOKEN") ||
+      JSON.stringify(replaceSteps).includes("commits/$SHA/status")
     )
       errors.push(
-        "CI: destructive Supabase replacement order must be validate/deployed-Web/prepare/replace/evidence with one local schema rebuild",
+        "CI: destructive Supabase replacement order must be validate/prepare/replace/evidence and must not own Web deployment",
       );
     if (
       !JSON.stringify(replaceSteps[replacePrepare]?.env ?? {}).includes(
@@ -814,7 +853,12 @@ if (import.meta.main) {
     ...globSync("scripts/**/*.mjs", { cwd: repositoryRoot })
       .sort()
       .map((file) => ["--check", file]),
-    ["--test", "scripts/tooling/check-tooling.test.mjs", "scripts/tooling/validate.test.mjs"],
+    [
+      "--test",
+      "scripts/tooling/check-tooling.test.mjs",
+      "scripts/tooling/validate.test.mjs",
+      "scripts/vercel/deploy-production.test.mjs",
+    ],
   ]) {
     const result = spawnSync(process.execPath, args, { cwd: repositoryRoot, stdio: "inherit" });
     if (result.error) console.error(`Node could not start: ${result.error.message}`);

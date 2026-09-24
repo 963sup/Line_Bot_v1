@@ -83,6 +83,7 @@ Validated `main` 只有 declarative schema state 改變時才啟動 Supabase rem
 
 ```text
 current main
+→ prepare preserve-data expansion / preflight
 → sync --allow-destructive (plan → apply → second diff → acceptance)
 → preserve plan / verification / history evidence
 ```
@@ -91,12 +92,14 @@ current main
 schema change 再使用，避免重複消耗 GitHub Actions 分鐘。Automatic Release 的 destructive
 authorization 只來自 validated current `main` 的 schema/source change、exact project target、
 current-main precondition 與 post-write readback；需要不可推導 business data 時仍 fail closed。
+Supabase convergence 成功後才允許 Release 進入 Vercel Production deployment；database failure
+不得留下已先接流量的新 runtime。
 
 ### Explicit Supabase Replace
 
 Destructive/data-sensitive plan 只由 `Supabase Replace` workflow 授權。它固定 target
-`nmssogphayjymjpbnrxv`、要求 exact current `main`、repository validation、同 SHA Vercel
-consumer evidence與人工 confirmation，然後執行：
+`nmssogphayjymjpbnrxv`、要求 exact current `main`、repository validation與人工 confirmation，
+然後執行：
 
 ```text
 prepare preserve-data expansion
@@ -105,7 +108,9 @@ prepare preserve-data expansion
 ```
 
 `prepare` 成功不代表 destructive contract 已完成；`sync --allow-destructive` 成功也不代表
-deployment/device/business acceptance。兩條 path 都由
+deployment/device/business acceptance。Supabase Replace 只修 database contract，不取得 Web
+deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
+兩條 path 都由
 `scripts/supabase/remote.mjs` 擁有 reconciliation semantics，不新增 migration file，也不改寫
 `supabase_migrations.schema_migrations`。
 
