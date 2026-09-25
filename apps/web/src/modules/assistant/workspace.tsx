@@ -79,7 +79,13 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
 
   return (
     <div className="assistant-workspace" aria-labelledby="assistant-mode-title">
-      <MiniAppRuntime liffId={liffId} onReady={() => setReady(true)} onWait={clearPrivateState} />
+      <MiniAppRuntime
+        liffId={liffId}
+        onReady={async () => {
+          setReady(true);
+        }}
+        onWait={clearPrivateState}
+      />
       <div className="assistant-tabs" role="tablist" aria-label="AI 模式">
         {assistantSurfaceModes.map((item) => (
           <button
