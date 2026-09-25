@@ -53,6 +53,14 @@ test("frontmatter regex is not a link; prose links and incomplete metadata still
     );
     await rm(invalidName);
 
+    const historyDir = path.join(root, "docs/090-governance/090-history");
+    await mkdir(historyDir, { recursive: true });
+    await writeFile(path.join(historyDir, "010-old.txt"), "old output\n");
+    const historyResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(historyResult.status, 1);
+    assert.match(historyResult.stderr, /raw governance history must live in Git history/);
+    await rm(path.join(root, "docs/090-governance"), { recursive: true, force: true });
+
     const moduleReadme = path.join(root, "packages/domain/README.md");
     await writeFile(moduleReadme, "[broken](missing.md)\n");
     const result = spawnSync(process.execPath, [script], { encoding: "utf8" });
