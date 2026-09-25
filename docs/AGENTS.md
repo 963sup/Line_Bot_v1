@@ -9,7 +9,8 @@
 - 先確認 current truth、Root Cause 與 canonical owner；之後刪除、合併、縮短重複內容。已有 owner 能承接時不得新增第二份文件。
 - 一般內容文件使用 `010-`、`020-`…三位數間隔；README/AGENTS 例外。
 - relocation 必須同 changeset 同步 repository 引用；不保留 redirect shell、空殼或只為相容舊 path 的文件。
-- Future/target 不得冒充 current；完成 migration 後，把仍成立的 truth 蒸餾回 canonical owner，歷史只保留追溯或 recovery 價值。
+- Future/target 不得冒充 current；完成 migration 後，把仍成立的 truth 蒸餾回 canonical owner。
+- Raw historical logs、退役 current baseline、已完成且無 recovery value 的 migration、無真實 consumer 的 speculative proposal 不留在 current tree；需要追溯時使用 Git history。不得建立 `090-history/` 作第二套知識面。
 - 驗收紀錄標明日期、版本/commit、環境、範圍、結果與未驗證項。
 - Retired provider resource ID 不保留在 current docs、acceptance 或 history index；dated evidence 以 retired environment + 日期/commit/範圍描述，current operational target 只 reference canonical operations owner。不得為舊 ID 建 alias、附錄或對照表。
 - 操作文件交代 target、precondition、順序、failure/recovery；不得保存秘密或杜撰正式證據。
