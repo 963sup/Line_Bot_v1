@@ -1,37 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
+import { lineMiniAppClientId } from "../../shared/browser/runtime-config";
+
+type AccountProjection = {
+  member?: {
+    login?: string | null;
+  } | null;
+};
 
 export default function MemberAvatar() {
-  const pathname = usePathname();
   const [picture, setPicture] = useState<string>();
+  const [login, setLogin] = useState<string>();
+
   useEffect(() => {
     let active = true;
+
     async function load() {
+      const [profileResult, tokenResult] = await Promise.allSettled([
+        liffClient.profile(),
+        liffClient.session(lineMiniAppClientId()),
+      ]);
+
+      if (!active) return;
+
+      if (
+        profileResult.status === "fulfilled" &&
+        profileResult.value.pictureUrl?.startsWith("https://")
+      ) {
+        setPicture(profileResult.value.pictureUrl);
+      }
+
+      const token = tokenResult.status === "fulfilled" ? tokenResult.value : null;
+      if (!token) return;
+
       try {
-        const profile = await liffClient.profile();
-        if (active && profile.pictureUrl?.startsWith("https://")) setPicture(profile.pictureUrl);
+        const response = await fetch("/api/membership", {
+          headers: { "x-line-token": token },
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const value = (await response.json()) as AccountProjection;
+        const accountLogin = value.member?.login;
+        if (active && typeof accountLogin === "string" && accountLogin) {
+          setLogin(accountLogin);
+        }
       } catch {
-        // Missing profile permission or photo keeps the accessible fallback.
+        // The avatar still works as a safe settings fallback while identity projection is unavailable.
       }
     }
+
     void load();
     return () => {
       active = false;
     };
   }, []);
+
   return (
     <Link
-      href="/settings"
+      href={login ? `/${encodeURIComponent(login)}` : "/settings"}
       className="shell-avatar"
-      aria-label="設定"
-      title="設定"
-      aria-current={
-        pathname === "/settings" || pathname.startsWith("/settings/") ? "page" : undefined
-      }
+      aria-label={login ? "個人檔案" : "設定"}
+      title={login ? "個人檔案" : "設定"}
     >
       {picture ? (
         // LINE hosts the profile photo; avoid proxying private profile images through Next.

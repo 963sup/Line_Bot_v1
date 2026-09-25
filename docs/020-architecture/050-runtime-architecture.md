@@ -101,6 +101,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
 | `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
 | `/history` | 工作紀錄入口 |
+| `/{login}` | canonical User / Organization locator；authenticated shell avatar 只有在 Account-owned current login 已解析時才導向此 locator |
 | `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
 | `/feedback`, `/planned` | 只有明確定義的功能或「未開放」結果；不得產生假資料 |
 

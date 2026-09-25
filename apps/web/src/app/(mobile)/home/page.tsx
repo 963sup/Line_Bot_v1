@@ -70,7 +70,7 @@ export default function Page() {
         <ActionRow href="/enterprises" icon="◇" tone="pink" title="Enterprise" />
         <ActionRow href="/history" icon="↺" title="History" description="工作與出勤紀錄" />
         <ActionRow href="/feedback" icon="!" title="Feedback" description="即時回饋入口" />
-        <ActionRow href="/settings" icon="◎" title="Profile" description="個人資料與設定" />
+        <ActionRow href="/settings" icon="◎" title="Settings" description="個人資料、連線與權限設定" />
       </div>
 
       <SectionHeading title="Recent" />
