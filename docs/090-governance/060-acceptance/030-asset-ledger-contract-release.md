@@ -12,7 +12,7 @@
 
 ## Production migration
 
-Supabase project：`clbpdzaprfcqtfwtaasg` (`line-bot-963sup`)。
+本次 Production migration 使用 retired Supabase production environment；provider project identifier 已移除。
 
 套用前立即 readback：
 
