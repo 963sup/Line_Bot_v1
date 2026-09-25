@@ -544,7 +544,7 @@ EnterpriseDirectAffiliation、EnterpriseTeamMembership、OrganizationDirectMembe
 
 ## Adjacent ownership and design-only map
 
-Policy 的長期 owner 按語意分流：EnterprisePolicy 由 Enterprise、OrganizationPolicy 由 Organization、WorkPolicy 由 Workforce；授權 evaluation 由 Identity/Access 擁有，Security/Application 負責執行；Audit evidence 由 [target audit](../../050-security/README.md) 擁有。Billing / Charging 的 target contract 由 [Billing / Charging target](020-enterprise-billing.md) 擁有；Accounting、Payment、Settlement 分別保持獨立責任，不由 Account、Membership 或 RoleAssignment 取代。
+Policy 的長期 owner 按語意分流：EnterprisePolicy 由 Enterprise、OrganizationPolicy 由 Organization、WorkPolicy 由 Workforce；授權 evaluation 由 Identity/Access 擁有，Security/Application 負責執行；Audit evidence 由 [target audit](../../050-security/README.md) 擁有。Accounting、Billing / Charging、Payment、Settlement 的 canonical responsibility boundary 只由 [Glossary](../../000-core/050-glossary.md) 保存；尚無真實 commercial charging consumer 時不維護獨立 Billing proposal、package 或 schema。
 
 若未來 source 需要落地，只沿既有 owner package/layer 分配責任，不因設計 map 預建空 module/package：
 
