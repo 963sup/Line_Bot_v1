@@ -158,7 +158,7 @@ Disable/removal/end 不 cascade 刪 Account、participation、Employment、Atten
 
 ## Target schema foundation
 
-狀態：`accounts/users`、Enterprise/Organization governance、Organization Team、Enterprise Team 與 USER holder 已有 current declarative schema slice；BotAccount、Workforce/Employment、Payroll 等仍是 non-deployable target until their slice gates pass。Current database truth 以 `supabase/schemas/` 與實際 deployed catalog 分層判定；指定 Supabase project `clbpdzaprfcqtfwtaasg` 的 2026-09-18 readback 證據見 [Atomic schema remote convergence](../060-acceptance/080-atomic-schema-remote-convergence.md)，不推廣到其他環境。
+狀態：`accounts/users`、Enterprise/Organization governance、Organization Team、Enterprise Team 與 USER holder 已有 current declarative schema slice；BotAccount、Workforce/Employment、Payroll 等仍是 non-deployable target until their slice gates pass。Current database truth 以 `supabase/schemas/` 與實際 deployed catalog 分層判定；2026-09-18 的 retired Supabase environment readback 證據見 [Atomic schema remote convergence](../060-acceptance/080-atomic-schema-remote-convergence.md)，不推廣到其他環境，也不得用來推導 current operational target。
 
 ## Representation
 
