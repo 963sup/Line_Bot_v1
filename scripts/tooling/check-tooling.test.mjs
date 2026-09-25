@@ -8,6 +8,7 @@ import { validate } from "./check-tooling.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 const manifest = JSON.parse(readFileSync(resolve(repo, "package.json"), "utf8"));
+const exactNodeVersion = readFileSync(resolve(repo, ".node-version"), "utf8").trim();
 // Generated fixture imports must not be mistaken for this test's actual imports.
 const importing = (specifier) => `import ${JSON.stringify(specifier)};`;
 function fixture(t) {
@@ -35,6 +36,7 @@ function fixture(t) {
     write(path, "# Scope\\n");
   write("packages/demo/AGENTS.md", "# @line-work/demo\\n");
   write("packages/demo/README.md", "# @line-work/demo\\n");
+  write(".node-version", `${exactNodeVersion}\n`);
   write(
     "package.json",
     JSON.stringify({
@@ -121,7 +123,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/validate.yml",
-    "on:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n  push:\n    branches: [main]\npermissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n      - run: pnpm check\n  validate:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n      - run: pnpm validate\n",
+    "on:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n  push:\n    branches: [main]\npermissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm check\n  validate:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm validate\n",
   );
   write(
     ".github/workflows/release.yml",
@@ -423,7 +425,7 @@ test("validation workflow keeps PR affected and main full gates separate", (t) =
   const { root, write } = fixture(t);
   write(
     ".github/workflows/validate.yml",
-    "permissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n      - run: pnpm validate\n  validate:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n      - run: pnpm check\n",
+    "permissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm validate\n  validate:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm check\n",
   );
   rejects(root, "full Git history");
   rejects(root, "pull requests must run affected pnpm check");
@@ -434,13 +436,13 @@ test("validate workflow remains read-only, secret-free, and credential-free", (t
   const { root, write } = fixture(t);
   write(
     ".github/workflows/validate.yml",
-    "permissions:\n  contents: write\njobs:\n  validate:\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: true\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n",
+    "permissions:\n  contents: write\njobs:\n  validate:\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: true\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n",
   );
   rejects(root, "read-only token permissions");
   rejects(root, "must not persist credentials");
   write(
     ".github/workflows/validate.yml",
-    "permissions:\n  contents: read\nenv:\n  TOKEN: ${{ secrets.PRODUCTION_TOKEN }}\njobs:\n  validate:\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n",
+    "permissions:\n  contents: read\nenv:\n  TOKEN: ${{ secrets.PRODUCTION_TOKEN }}\njobs:\n  validate:\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n",
   );
   rejects(root, "must not consume repository secrets");
 });
@@ -622,13 +624,21 @@ test("platform owns an executable schema:check task", (t) => {
   rejects(root, "schema:check task owner");
 });
 
-test("runtime baseline must be exact and match package manager", (t) => {
+test("runtime compatibility range must match the exact repository Node major and package manager", (t) => {
   const { root, write } = fixture(t);
   const data = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
   data.engines = { node: ">=22", pnpm: "0.0.0" };
   write("package.json", JSON.stringify(data));
   rejects(root, "engines.node");
   rejects(root, "packageManager");
+
+  data.engines = manifest.engines;
+  write("package.json", JSON.stringify(data));
+  write(".node-version", "25.0.0\n");
+  rejects(root, "engines.node");
+
+  write(".node-version", "24.x\n");
+  rejects(root, ".node-version");
 });
 test("skill frontmatter rejects wrong folder", (t) => {
   const { root, write } = fixture(t);
@@ -720,9 +730,7 @@ test("wrong Node stops before metadata checks", (t) => {
     "scripts/tooling/check-tooling.mjs",
     readFileSync(resolve(repo, "scripts/tooling/check-tooling.mjs"), "utf8"),
   );
-  const data = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
-  data.engines.node = "0.0.0";
-  write("package.json", JSON.stringify(data));
+  write(".node-version", "0.0.0\n");
   write(".codex/config.toml", "[invalid");
   const result = spawnSync(process.execPath, [resolve(root, "scripts/tooling/check-tooling.mjs")], {
     cwd: root,

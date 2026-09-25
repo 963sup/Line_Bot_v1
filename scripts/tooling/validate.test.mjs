@@ -60,7 +60,7 @@ test("tooling metadata stays separate while root build metadata expands conserva
       schemaAffected: false,
       toolingAffected: true,
     });
-  for (const file of [".github/workflows/validate.yml", ".vscode/settings.json"])
+  for (const file of [".github/workflows/validate.yml", ".vscode/settings.json", ".node-version"])
     assert.deepEqual(classifyChangedFiles([file]), {
       codeAffected: false,
       docsAffected: false,

@@ -2,9 +2,9 @@
 
 ## Runtime source
 
-Node / pnpm 版本與共用依賴基準以 `package.json`、`pnpm-workspace.yaml` 與 lockfile 為準；文件不複製固定版本作第二份 source of truth。Repository 不保存綁定單一開發機器、使用者目錄或 package store 的 pnpm wrapper。
+Node 的責任分成兩個 contract：`.node-version` 是本地與 CI 可重現執行的 exact Node pin；`package.json#engines.node` 是 Vercel 等 managed runtime 的 Node major compatibility range，兩者 major 必須一致。pnpm exact version 與 package-manager contract 由 `package.json` 擁有；共用依賴基準由 `pnpm-workspace.yaml` 與 lockfile 擁有。文件不複製固定版本作第二份 source of truth。Repository 不保存綁定單一開發機器、使用者目錄或 package store 的 pnpm wrapper。
 
-從 repository 根目錄使用符合 manifest 版本的 Node／pnpm：
+從 repository 根目錄使用符合 `.node-version` 與 manifest 的 Node／pnpm：
 
 ```sh
 pnpm install --frozen-lockfile

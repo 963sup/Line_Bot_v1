@@ -11,9 +11,9 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const web = path.join(root, "apps/web");
 const require = createRequire(path.join(web, "package.json"));
 const next = require.resolve("next/dist/bin/next");
-const manifest = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
-if (process.versions.node !== manifest.engines.node) {
-  throw new Error(`Expected Node ${manifest.engines.node}; got ${process.versions.node}.`);
+const exactNodeVersion = readFileSync(path.join(root, ".node-version"), "utf8").trim();
+if (process.versions.node !== exactNodeVersion) {
+  throw new Error(`Expected Node ${exactNodeVersion}; got ${process.versions.node}.`);
 }
 // Next reads env files from its working directory. Never load repository secrets.
 if (readdirSync(web).some((name) => name === ".env" || name.startsWith(".env."))) {

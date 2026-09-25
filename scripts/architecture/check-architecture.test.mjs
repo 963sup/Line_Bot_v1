@@ -19,7 +19,15 @@ test("app root rejects unexpected folders, new root files and wrong entry kinds"
   const root = mkdtempSync(resolve(artifacts, "app-root-"));
   const app = resolve(root, "apps/web/src/app");
   try {
-    for (const folder of ["(admin)", "(mobile)", "(onboarding)", "(public)", "(resource)", "(system)", "api"])
+    for (const folder of [
+      "(admin)",
+      "(mobile)",
+      "(onboarding)",
+      "(public)",
+      "(resource)",
+      "(system)",
+      "api",
+    ])
       mkdirSync(resolve(app, folder), { recursive: true });
     for (const file of ["layout.tsx", "global-error.tsx", "globals.css", "AGENTS.md"])
       write(root, `apps/web/src/app/${file}`, "");
@@ -136,7 +144,11 @@ test("architecture checks source exports, types, ports, browser reachability and
     write(root, "packages/attendance/src/adapters/private.ts", "export const adapter = 1;");
 
     write(root, "apps/web/src/app/(mobile)/home/page.tsx", "export default function Page() {}");
-    write(root, "apps/web/src/app/(mobile)/_shell/app-shell.tsx", "export default function Shell() {}");
+    write(
+      root,
+      "apps/web/src/app/(mobile)/_shell/app-shell.tsx",
+      "export default function Shell() {}",
+    );
     write(
       root,
       "apps/web/src/app/(onboarding)/membership/register/page.tsx",
@@ -278,7 +290,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       ],
       [
         "apps/web/src/app/(system)/old/page.tsx",
-        importing("../../(app)/home/page"),
+        importing("../../(mobile)/home/page"),
         "pages-do-not-import-pages",
       ],
       ["apps/other/src/index.ts", importing("../../web/src/index"), "apps-are-independent"],

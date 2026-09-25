@@ -86,8 +86,8 @@ export function entryRoute(href: string): EntryRoute {
   return "home";
 }
 
-/** Never copy credential-bearing SDK parameters or arbitrary redirect targets into login URLs. */
-export function loginReturnUrl(href: string) {
+/** Never copy credential-bearing SDK parameters or arbitrary redirect targets into local entry URLs. */
+export function entryReturnUrl(href: string) {
   const current = new URL(href);
   const target = new URL(current.pathname, current.origin);
   const feature = current.searchParams.get("feature");
@@ -142,7 +142,12 @@ export function loginReturnUrl(href: string) {
     const value = current.searchParams.get(key);
     if (value !== null) target.searchParams.set(key, value);
   }
-  return target.href;
+  return target;
+}
+
+/** LINE login reuses the same sanitized local continuation policy. */
+export function loginReturnUrl(href: string) {
+  return entryReturnUrl(href).href;
 }
 
 /** The Web product owns the operation names shared by menus, messages and entry continuation. */

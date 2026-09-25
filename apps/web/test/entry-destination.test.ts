@@ -96,6 +96,25 @@ test("view selection survives continuation only for its owning destination", () 
   }
 });
 
+// LIFF can update browser history before Next renders the target route; explicitly converge the two states.
+test("post-LIFF history replacement re-enters App Router with a sanitized local URL", () => {
+  assert.deepEqual(
+    entryNavigation(
+      "https://example.com/settings?google=link&code=secret&state=secret",
+      "home",
+      "/",
+    ),
+    { state: "redirect", target: "/settings?google=link" },
+  );
+  assert.deepEqual(
+    entryNavigation("https://example.com/?liff.state=%3Fmembership%3D1", "home", "/"),
+    { state: "pending" },
+  );
+  assert.deepEqual(entryNavigation("https://example.com/settings", "home", "/settings"), {
+    state: "ready",
+  });
+});
+
 test("entry navigation resolves continuation once and normalizes stale intent parameters", () => {
   assert.deepEqual(entryNavigation("https://example.com/repositories?issueView=mine"), {
     state: "ready",
