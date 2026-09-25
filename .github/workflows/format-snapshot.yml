@@ -5,16 +5,17 @@ on:
     branches: [fix/vercel-node-runtime-contract]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
-          persist-credentials: false
+          persist-credentials: true
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
@@ -25,13 +26,11 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm format
-      - uses: actions/upload-artifact@v4
-        with:
-          name: formatted-snapshot
-          path: |
-            apps/web/src/app/(mobile)/home/page.tsx
-            apps/web/src/shared/presentation/entry-navigation.ts
-            architecture/semantic-model.json
-            scripts/architecture/check-architecture.mjs
-            scripts/architecture/check-architecture.test.mjs
-          if-no-files-found: error
+      - name: Commit canonical formatter output and retire helper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git rm --ignore-unmatch .github/workflows/format-snapshot.yml
+          git commit -m 'style: apply canonical formatter'
+          git push origin HEAD:fix/vercel-node-runtime-contract
