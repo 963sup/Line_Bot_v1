@@ -48,7 +48,8 @@ export function classifyChangedFiles(files) {
     file.startsWith(".codex/") ||
     file.startsWith(".agents/") ||
     file.startsWith(".vscode/") ||
-    file === "skills-lock.json";
+    file === "skills-lock.json" ||
+    file === ".node-version";
   const toolingAffected = changed.some(
     (file) =>
       isToolingMetadata(file) ||
