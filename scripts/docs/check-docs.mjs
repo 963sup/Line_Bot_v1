@@ -20,6 +20,10 @@ let links = 0;
 async function collect(directory) {
   for (const entry of await readdir(path.join(root, directory), { withFileTypes: true })) {
     const relative = path.join(directory, entry.name);
+    const normalized = relative.split(path.sep).join("/");
+    if (entry.isFile() && normalized.startsWith("docs/090-governance/090-history/")) {
+      errors.push(`${normalized}: raw governance history must live in Git history, not the current tree`);
+    }
     if (entry.isDirectory() && !generated.has(entry.name)) await collect(relative);
     else if (entry.isFile() && entry.name.endsWith(".md")) files.push(relative);
   }
