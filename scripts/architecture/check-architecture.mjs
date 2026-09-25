@@ -67,7 +67,7 @@ export function checkAppRoot(root = repository) {
   if (!existsSync(directory)) return [];
   const folders = new Set([
     "(admin)",
-    "(app)",
+    "(mobile)",
     "(onboarding)",
     "(public)",
     "(resource)",
