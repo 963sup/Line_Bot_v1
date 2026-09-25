@@ -45,7 +45,7 @@ export default function Page() {
           description="工作內容與權限的獨立容器"
         />
         <ActionRow
-          href="#favorites"
+          href="#starred"
           icon="★"
           tone="yellow"
           title="Starred"
@@ -53,8 +53,8 @@ export default function Page() {
         />
       </div>
 
-      <div id="favorites" className="home-section-anchor">
-        <SectionHeading title="Favorites" description="你已 Star 且目前仍可存取的 Repository。" />
+      <div id="starred" className="home-section-anchor">
+        <SectionHeading title="Starred" description="你已 Star 且目前仍可存取的 Repository。" />
         <StarredRepositories liffId={lineMiniApp().liffId} />
       </div>
 

@@ -2188,8 +2188,10 @@ summary:focus-visible {
 @media (max-width: 600px) {
   .app-shell .app-shell-brand {
     display: flex;
-    min-height: 64px;
-    padding: 10px 16px;
+    min-height: 60px;
+    padding: 8px 16px;
+    border-bottom-color: #21262d;
+    background: #0d1117f7;
   }
 
   .app-shell .shell-wordmark {
@@ -2197,7 +2199,40 @@ summary:focus-visible {
     font-size: 14px;
   }
 
-  .app-shell .app-content {
-    padding-top: 22px;
+  .app-shell .shell-wordmark-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+
+  .app-shell .app-content {
+    padding: 14px 16px 34px;
+  }
+
+  .app-shell .page-heading {
+    min-height: 48px;
+    margin-bottom: 14px;
+  }
+
+  .app-shell .page-heading h1 {
+    font-size: 28px;
+  }
+
+  .app-shell .section-heading {
+    margin-top: 22px;
+  }
+
+  .app-shell .menu-group .action-row,
+  .app-shell .action-row {
+    min-height: 64px;
+    padding: 10px 0;
+  }
+
+  .app-shell .work-navigation {
+    padding-top: 5px;
+  }
+}
+
+.app-shell .nav-icon svg {
+  display: block;
 }

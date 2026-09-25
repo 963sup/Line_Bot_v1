@@ -1,12 +1,12 @@
 # Mobile Route Responsibility Map
 
-Status: Target proposal  
+Status: Implementation in progress  
 Observed branch: `fix/vercel-node-runtime-contract`  
 Observed head: `9f0b5f0acc9b926de8556e7eeea0dbff392d6f00`
 
 ## 1. Purpose
 
-這份文件先定義 `apps/web/src/app/(mobile)` 的 Route Responsibility Map，不先搬移現有 route。
+這份文件定義 `apps/web/src/app/(mobile)` 的 Route Responsibility Map。第一階段已將一般 authenticated mobile surfaces 與主 shell 移至 `(mobile)`；Repository canonical subresources 的 `(app) → (resource)` 收斂仍待完成。
 
 目標不是把 `(app)` 改名，而是用一致判準重新審視目前 App Router placement，找出真正的 delivery responsibility、canonical locator 與 ownership 錯位，再決定後續 relocation。
 

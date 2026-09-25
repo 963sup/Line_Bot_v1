@@ -9,7 +9,7 @@
 | 首頁 Home | `/home` | 我的工作、可用資源入口與已授權收藏投影 |
 | Inbox | `/notifications` | Notifications owner 的 recipient-scoped read projection；不建立 Inbox Domain，也不混入一般公告或活動 feed |
 | 探索 Explore | `/explore` | 現有 Repository discovery/Star；不假裝已有跨 owner 全域搜尋、Trending 或 Activity feed |
-| AI | `/home/assistant` | 既有 Assistant one-shot Ask / Issue-draft Generate / text Review；不建立 durable chat session 或 autonomous writer |
+| AI | `/assistant` | 既有 Assistant one-shot Ask / Issue-draft Generate / text Review；不建立 durable chat session 或 autonomous writer |
 
 Current shell 固定四個主目的地；Profile 維持 app-shell avatar → `/settings` 的 secondary account surface，手機不可因移出 Bottom Navigation 而失去可達性。`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。Inbox 是 presentation vocabulary，`/notifications` 與 `/api/notifications` 是 current published transport；兩者不要求同名，也不能因 tab 命名順便建立 `packages/inbox`、平行 schema 或新的 source root。
 
@@ -25,7 +25,8 @@ Current shell 固定四個主目的地；Profile 維持 app-shell avatar → `/s
 | --- | --- |
 | [(public)](%28public%29/AGENTS.md) | 公開入口與 `/{login}` User/Organization locator |
 | [(resource)](%28resource%29/AGENTS.md) | `/{login}/{repository}` public/private projection 分流 |
-| [(app)](%28app%29/AGENTS.md) | 工作台、治理與 Repository 子資源 |
+| [(mobile)](%28mobile%29/AGENTS.md) | Mobile / LINE MINI App 工作台、主要導覽與 authenticated work surfaces |
+| [(app)](%28app%29/AGENTS.md) | Migration-only Repository 子資源；待收斂至 `(resource)` 後移除 |
 | [(onboarding)](%28onboarding%29/AGENTS.md) | 註冊、恢復、完成結果 |
 | [(admin)](%28admin%29/AGENTS.md) | 現有管理入口與未開放頁面 |
 | [(system)](%28system%29/AGENTS.md) | callback、Google 交接、不可用結果 |

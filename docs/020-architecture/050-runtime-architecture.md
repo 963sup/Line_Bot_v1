@@ -2,7 +2,7 @@
 
 ## App Router partitions
 
-`apps/web/src/app` 目前使用 `(public)/`、`(resource)/`、`(onboarding)/`、`(app)/`、`(admin)/`、`(system)/` 與 `api/`。Route Group 只分 runtime/layout responsibility，不改正式 URL，也不產生新的 authorization；相同正式 URL 只有一個 route owner。
+`apps/web/src/app` 目前使用 `(public)/`、`(resource)/`、`(onboarding)/`、`(mobile)/`、`(app)/`、`(admin)/`、`(system)/` 與 `api/`。`(mobile)` 已成為 Mobile / LINE MINI App delivery owner；`(app)` 只暫存尚未收斂至 `(resource)` 的 Repository 子資源與舊 shell，不能新增一般工作 route。Route Group 只分 runtime/layout responsibility，不改正式 URL，也不產生新的 authorization；相同正式 URL 只有一個 route owner。
 
 ## Next.js module-graph boundary
 
@@ -15,7 +15,8 @@ App Router 的 Server / Client boundary 是 source module graph 邊界。Server 
 | `public` | 公開內容與登入入口；不讀 private business data |
 | `resource` | Canonical resource URL；同一 Repository locator 可解析 public projection，或在可信 identity 後解析 authorized private/internal projection；URL 本身不授權 |
 | `onboarding` | 可信外部身分後執行註冊／恢復等設定流程 |
-| `app` | 一般工作 surface；各功能自行核驗 current User／business scope；Attendance current stream 另保留自己的 subject contract |
+| `mobile` | Mobile / LINE MINI App application delivery；shell/navigation/composition 不取得 business authority，各功能仍自行核驗 current User／business scope |
+| `app` | Migration-only Repository subresources / old shell；不再接受新的 mobile application route |
 | `admin` | 管理 UI shell；私有讀寫仍依 feature permission / module contract 驗證 |
 | `system` | OAuth callback、一次性接續、特殊結果；不常駐 business state |
 | `api` | HTTP transport；每個 request 自行驗證 identity、qualification、input 與 authorization |
@@ -76,12 +77,12 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | `/membership/register`, `/membership/restore`, `/complete` | 註冊／恢復與一次性結果；完成後重新讀後端資格 |
 | `/auth/callback`, `/unavailable` | OAuth／LINE 接續與特殊結果；不常駐 business state |
 
-## App routes
+## Mobile application routes
 
 | Route | Owner responsibility |
 | --- | --- |
 | `/home` | 工作台組裝；不擁有各 module 規則 |
-| `/home/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write |
+| `/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write；`/home/assistant` 為 compatibility redirect |
 | `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
 | `/expenses` | 指定 Expense 操作／結果 |
