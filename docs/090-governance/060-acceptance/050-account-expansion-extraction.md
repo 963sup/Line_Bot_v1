@@ -22,7 +22,7 @@
 
 ## Remote synchronization and reconciliation
 
-Project metadata 與 privileged connection 均核對到 `clbpdzaprfcqtfwtaasg`，所屬 organization `nmximyzhtezzekjjvjyh`。沿用受控 PostgreSQL connection 與 CA/hostname 驗證，未輸出 credentials、未修改 Auth/Storage、未執行 migration repair。
+Project metadata 與 privileged connection 當時核對到同一 retired Supabase production environment；provider project／organization identifiers 已移除。沿用受控 PostgreSQL connection 與 CA/hostname 驗證，未輸出 credentials、未修改 Auth/Storage、未執行 migration repair。
 
 於 `2026-09-13T15:39:59.670Z` 提交增量 transaction；暫時 DDL SHA256 為 `94a56c84ba2a3ce07a5b4daff54fad6ce7369b9451f5b5085690a908a9735a54`。DDL 由 desired Account schema、USER facet guards 與明確的 ALTER/backfill 組成，不作第二份 current migration history。
 
