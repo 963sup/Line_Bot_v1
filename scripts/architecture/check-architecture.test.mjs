@@ -290,7 +290,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       ],
       [
         "apps/web/src/app/(system)/old/page.tsx",
-        importing("../../(app)/home/page"),
+        importing("../../(mobile)/home/page"),
         "pages-do-not-import-pages",
       ],
       ["apps/other/src/index.ts", importing("../../web/src/index"), "apps-are-independent"],
