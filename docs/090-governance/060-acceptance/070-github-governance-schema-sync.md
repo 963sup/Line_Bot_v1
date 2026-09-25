@@ -33,7 +33,7 @@ Development database structure 仍以 `supabase/schemas/` 為唯一 current desi
 
 ## Pre-sync remote evidence
 
-Remote Supabase project：`clbpdzaprfcqtfwtaasg` (`line-bot-963sup`, ap-southeast-1)。同步前 readback 顯示 governance / Team runtime 相關 relation 均為 0 rows，包括 Enterprise、Organization、role assignments、memberships、teams、commands、receipts/audit 與舊 `organization_team_role_assignments`。
+Retired Supabase production environment 的 provider project identifier 已移除。同步前 readback 顯示 governance / Team runtime 相關 relation 均為 0 rows，包括 Enterprise、Organization、role assignments、memberships、teams、commands、receipts/audit 與舊 `organization_team_role_assignments`。
 
 因此本次可直接替換錯誤的 governance people schema，不需要 legacy data backfill 或 compatibility table。同步範圍只碰 governance／Team owner relations/functions/constraints，不重建整個 `app_private`，也不碰其他 domain data。
 
