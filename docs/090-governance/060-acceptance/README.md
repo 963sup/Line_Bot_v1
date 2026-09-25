@@ -1,11 +1,11 @@
 # Acceptance
 
-具日期、版本、環境、範圍、結果與限制的驗收基線與證據。設計文件不能代替此層的完成判定。
+本目錄只保留仍有 recovery、regression 或 release 判斷價值的具日期證據。它們不是 current product / architecture / remote state 的第二份 truth。
 
-- [Acceptance evidence](010-acceptance-evidence.md)：現行證據使用規則與 validation 類型邊界。
-- [Four-model cutover validation — 2026-09-14](060-four-model-cutover-validation.md)：已通過階段、Web 失敗清單、修正經驗與接續條件。
-- [GitHub governance semantic / Supabase schema sync — 2026-09-17](070-github-governance-schema-sync.md)：Organization Team／legacy permission semantic cutover 與指定 Supabase project 的 governance/team schema forward sync/readback；EnterpriseTeam 等 explicit gaps 仍分開標示。
-- [Atomic declarative schema / remote convergence — 2026-09-18](080-atomic-schema-remote-convergence.md)：owner-based schema source 重排、Permission remote drift data-preserving cutover、catalog/readback 與 validation boundary。
-- [Enterprise / Workforce foundation validation evidence — 2026-09-12](020-enterprise-workforce-foundation-static-evidence.md)：Payroll readiness foundation 在指定 revision 的 repository `pnpm validate` 證據；不代表正式 Payroll calculation / deployment / business acceptance。
-- [Enterprise / Organization Domain foundation validation evidence — 2026-09-12](030-enterprise-organization-domain-foundation-evidence.md)：Enterprise / Organization / OrganizationMembership 純 Domain lifecycle foundation 的 repository validation；不代表 admin authority、persistence、schema migration 或 deployment 已完成。
-- [History](../090-history/)：舊驗收基線與已退役功能的原始歷史輸出；保留當時語境，不作目前 navigation。
+- [Acceptance evidence](010-acceptance-evidence.md)：證據使用規則與 validation 類型邊界。
+- [Schema history extraction — 2026-09-13](040-schema-history-extraction.md)：為何歷史 migration SQL 可退出 current tree，以及可由哪個 Git revision 回復。
+- [Account expansion extraction — 2026-09-13](050-account-expansion-extraction.md)：Account/User expansion 的來源、data-preserving cutover 與限制。
+- [Four-model cutover validation — 2026-09-14](060-four-model-cutover-validation.md)：User/Organization/Enterprise/Team cutover 的主要 failure、修正與最終 repository validation。
+- [Atomic declarative schema / remote convergence — 2026-09-18](080-atomic-schema-remote-convergence.md)：owner-based schema source 與 permission contract convergence 的 dated evidence；remote environment 已退役，不代表 current target。
+
+已被後續 source、schema、acceptance 完整取代的舊 release snapshot、原始 console log、SAP prototype checklist 與 static foundation evidence 已從 working tree 移除；需要稽核時使用 Git history。
