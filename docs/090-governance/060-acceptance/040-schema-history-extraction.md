@@ -1,6 +1,6 @@
 # Schema history extraction — 2026-09-13
 
-基準 commit：`30f241afaae425ecdc68f73d2296651adb557dd2`。目標 Supabase organization `nmximyzhtezzekjjvjyh`，project `clbpdzaprfcqtfwtaasg`（`line-bot-963sup`）；本次由 project metadata 重新核對。本紀錄限 Account expansion 前的歷史提取階段；後續同步結果見 [Account expansion evidence](050-account-expansion-extraction.md)。
+基準 commit：`30f241afaae425ecdc68f73d2296651adb557dd2`。本次由當時的 Supabase project metadata 重新核對 environment；retired provider project／organization identifiers 已移除。本紀錄限 Account expansion 前的歷史提取階段；後續同步結果見 [Account expansion evidence](050-account-expansion-extraction.md)。
 
 ## Extraction and recovery
 
