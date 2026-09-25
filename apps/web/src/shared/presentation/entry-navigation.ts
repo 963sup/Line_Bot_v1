@@ -1,5 +1,5 @@
 import { entryDestination, hasEntryContinuation } from "./entry-destination";
-import { entryReturnUrl, type EntryRoute } from "./entry-route";
+import { type EntryRoute, entryReturnUrl } from "./entry-route";
 
 type Destination = Exclude<EntryRoute, "pending" | "invalid">;
 export type EntryNavigation =
