@@ -1,0 +1,37 @@
+name: Format Snapshot
+
+on:
+  push:
+    branches: [fix/vercel-node-runtime-contract]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatted-snapshot
+          path: |
+            apps/web/src/app/(mobile)/home/page.tsx
+            apps/web/src/shared/presentation/entry-navigation.ts
+            architecture/semantic-model.json
+            scripts/architecture/check-architecture.mjs
+            scripts/architecture/check-architecture.test.mjs
+          if-no-files-found: error
