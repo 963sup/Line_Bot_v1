@@ -11,6 +11,7 @@
 - relocation 必須同 changeset 同步 repository 引用；不保留 redirect shell、空殼或只為相容舊 path 的文件。
 - Future/target 不得冒充 current；完成 migration 後，把仍成立的 truth 蒸餾回 canonical owner，歷史只保留追溯或 recovery 價值。
 - 驗收紀錄標明日期、版本/commit、環境、範圍、結果與未驗證項。
+- Retired provider resource ID 不保留在 current docs、acceptance 或 history index；dated evidence 以 retired environment + 日期/commit/範圍描述，current operational target 只 reference canonical operations owner。不得為舊 ID 建 alias、附錄或對照表。
 - 操作文件交代 target、precondition、順序、failure/recovery；不得保存秘密或杜撰正式證據。
 - 純文件重排不得放寬 authorization、transaction、replay、version、isolation、recovery 或 evidence semantics。
 - GitHub-like owner platform 參考：[GitHub GraphQL FPT benchmark](000-core/080-github-graphql-fpt-benchmark.md)；該索引逐檔對應 upstream [GitHub GraphQL data/fpt](https://github.com/github/docs/tree/main/src/graphql/data/fpt) 49 個檔案與 [GraphQL source README](https://github.com/github/docs/blob/main/src/graphql/README.md)。任何 GitHub-like naming、owner、locator、viewer/current actor、Repository、Project、Issue、Discussion、Team、Organization、Enterprise 判斷，先由 benchmark index 定位 relevant upstream fragment，再讀 upstream current content；不得只靠 GitHub Web UI 記憶或一般 best practice。提取的是 owner/category、versioned contract、generated index、change history 與可重建 pipeline；不是複製 GraphQL 檔案格式。
