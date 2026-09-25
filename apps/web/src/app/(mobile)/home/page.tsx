@@ -45,7 +45,7 @@ export default function Page() {
           description="工作內容與權限的獨立容器"
         />
         <ActionRow
-          href="#favorites"
+          href="#starred"
           icon="★"
           tone="yellow"
           title="Starred"
@@ -53,8 +53,8 @@ export default function Page() {
         />
       </div>
 
-      <div id="favorites" className="home-section-anchor">
-        <SectionHeading title="Favorites" description="你已 Star 且目前仍可存取的 Repository。" />
+      <div id="starred" className="home-section-anchor">
+        <SectionHeading title="Starred" description="你已 Star 且目前仍可存取的 Repository。" />
         <StarredRepositories liffId={lineMiniApp().liffId} />
       </div>
 
@@ -70,7 +70,7 @@ export default function Page() {
         <ActionRow href="/enterprises" icon="◇" tone="pink" title="Enterprise" />
         <ActionRow href="/history" icon="↺" title="History" description="工作與出勤紀錄" />
         <ActionRow href="/feedback" icon="!" title="Feedback" description="即時回饋入口" />
-        <ActionRow href="/settings" icon="◎" title="Profile" description="個人資料與設定" />
+        <ActionRow href="/settings" icon="◎" title="Settings" description="個人資料、連線與權限設定" />
       </div>
 
       <SectionHeading title="Recent" />

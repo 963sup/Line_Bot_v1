@@ -19,7 +19,7 @@ test("app root rejects unexpected folders, new root files and wrong entry kinds"
   const root = mkdtempSync(resolve(artifacts, "app-root-"));
   const app = resolve(root, "apps/web/src/app");
   try {
-    for (const folder of ["(admin)", "(app)", "(onboarding)", "(public)", "(system)", "api"])
+    for (const folder of ["(admin)", "(mobile)", "(onboarding)", "(public)", "(resource)", "(system)", "api"])
       mkdirSync(resolve(app, folder), { recursive: true });
     for (const file of ["layout.tsx", "global-error.tsx", "globals.css", "AGENTS.md"])
       write(root, `apps/web/src/app/${file}`, "");
@@ -135,7 +135,24 @@ test("architecture checks source exports, types, ports, browser reachability and
     write(root, "packages/platform/src/testing/postgres.ts", "export const fixture = 1;");
     write(root, "packages/attendance/src/adapters/private.ts", "export const adapter = 1;");
 
-    write(root, "apps/web/src/app/(app)/home/page.tsx", "export default function Page() {}");
+    write(root, "apps/web/src/app/(mobile)/home/page.tsx", "export default function Page() {}");
+    write(root, "apps/web/src/app/(mobile)/_shell/app-shell.tsx", "export default function Shell() {}");
+    write(
+      root,
+      "apps/web/src/app/(onboarding)/membership/register/page.tsx",
+      importing("../../../(mobile)/_shell/app-shell"),
+    );
+    assert.ok(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("route-group-does-not-borrow-mobile-shell:"),
+      ),
+      "onboarding/public/system/admin must not borrow the authenticated mobile shell",
+    );
+    write(
+      root,
+      "apps/web/src/app/(onboarding)/membership/register/page.tsx",
+      "export default function Page() {}",
+    );
     write(root, "apps/web/src/modules/diary/form.ts", "export const url = 'https://example.test';");
     write(root, "apps/web/src/modules/diary/private.ts", "export const privateValue = 1;");
     write(root, "apps/web/src/shared/browser/session.ts", "export const session = 1;");
