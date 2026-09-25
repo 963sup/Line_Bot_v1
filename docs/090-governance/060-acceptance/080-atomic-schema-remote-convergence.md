@@ -14,7 +14,7 @@ PR #51 revision `30eaa741048799b62a2704da163334e2f5297ef8` 的 GitHub Actions Va
 
 ## Remote project and preflight
 
-Supabase project：`clbpdzaprfcqtfwtaasg` (`line-bot-963sup`, ap-southeast-1)。
+本次證據使用 retired Supabase production environment；provider project identifier 已移除，且不得用作 current operational target。
 
 原子化重排本身不要求 remote drop/rebuild；remote 已有 UserAccount、Ledger、Attendance、Permission、Workplace 等非零資料，因此禁止以 reset/recreate 取得表面一致。
 
