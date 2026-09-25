@@ -13,7 +13,7 @@
 
 ## Database / runtime evidence
 
-Supabase production project `clbpdzaprfcqtfwtaasg` 已套用 expand migration `20260913021500_asset_ledger_expand`。Contract 尚未套用。
+該次 retired Supabase production environment 已套用 expand migration `20260913021500_asset_ledger_expand`。Contract 尚未套用。
 
 部署後 production 已出現真實 Attendance write：
 
