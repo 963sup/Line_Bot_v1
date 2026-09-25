@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
-import { lineMiniAppClientId } from "../../shared/browser/runtime-config";
 
 type AccountProjection = {
   member?: {
@@ -11,7 +10,7 @@ type AccountProjection = {
   } | null;
 };
 
-export default function MemberAvatar() {
+export default function MemberAvatar({ liffId }: { liffId: string }) {
   const [picture, setPicture] = useState<string>();
   const [login, setLogin] = useState<string>();
 
@@ -21,7 +20,7 @@ export default function MemberAvatar() {
     async function load() {
       const [profileResult, tokenResult] = await Promise.allSettled([
         liffClient.profile(),
-        liffClient.session(lineMiniAppClientId()),
+        liffClient.session(liffId),
       ]);
 
       if (!active) return;
@@ -48,7 +47,7 @@ export default function MemberAvatar() {
           setLogin(accountLogin);
         }
       } catch {
-        // The avatar still works as a safe settings fallback while identity projection is unavailable.
+        // Keep the safe settings fallback while the current Account locator is unavailable.
       }
     }
 
@@ -56,7 +55,7 @@ export default function MemberAvatar() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [liffId]);
 
   return (
     <Link

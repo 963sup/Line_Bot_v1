@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import MemberAvatar from "../../../modules/account/member-avatar";
+import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import WorkNavigation from "./work-navigation";
 
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -14,7 +15,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <span aria-hidden="true">L</span>
           <span className="shell-wordmark-label">LINE Work</span>
         </Link>
-        <MemberAvatar />
+        <MemberAvatar liffId={lineMiniApp().liffId} />
       </header>
       <main id="main-content" className="app-content">
         {children}
