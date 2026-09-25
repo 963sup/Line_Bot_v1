@@ -25,6 +25,7 @@
 | `/api/repositories/explore` | Repository discovery/Star transport |
 | `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |
 | `/api/notifications` | recipient-scoped Notifications |
+| `/api/assistant` | Assistant Ask / Issue-draft Generate / text Review transport；current User qualification required，output 不形成 formal write |
 | `/api/attendance`、`/api/attendance/clock-in`、`/api/attendance/clock-out`、`/api/workplaces` | Attendance 現行 subject 與工作場所契約 |
 | `/api/expenses/{id}`、`/api/partners` | Expense／Partners |
 | `/api/line/webhook` | LINE 驗簽、Bot qualification 與 event delivery，再交各 owner |

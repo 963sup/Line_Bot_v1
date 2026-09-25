@@ -109,14 +109,20 @@ export default function Inbox({
         </Link>
       ) : (
         <nav className="notification-filters" aria-label="通知檢視">
-          <Link href="/notifications" aria-current={view === "all" ? "page" : undefined}>
-            全部
-          </Link>
+          <span className="notification-filter-disabled" aria-disabled="true">
+            Focused
+          </span>
           <Link
             href="/notifications?notificationView=unread"
             aria-current={view === "unread" ? "page" : undefined}
           >
-            未讀
+            Unread
+          </Link>
+          <span className="notification-filter-disabled" aria-disabled="true">
+            Repository
+          </span>
+          <Link href="/notifications" aria-current={view === "all" ? "page" : undefined}>
+            All
           </Link>
         </nav>
       )}
