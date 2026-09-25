@@ -66,7 +66,7 @@ Supabase 瀏覽器 SDK 改為需要 Google 登入時才動態載入；仍使用�
 
 使用者授權發布後，程式提交 `372381a3ecf2772e8bd390aefde77c6c445a0659` 已推送至 GitHub `963sup/line-work-assistant` 的 `codex/release-20260909` 分支。Vercel 正式專案 `line-bot-963sup` 部署 `dpl_3dHWjy5G4aVyW5DH61Hy9AHPb1yu` 為 READY，正式網域 `https://line-bot-963sup.vercel.app` 已讀回相同 deployment ID；本次未合併 main。
 
-先確認新版 `/team` 與三個 `/planned?feature=...` 頁面回覆 200、包含新標題且沒有舊三項文案，再由既有 CLI 遷移流程套用 Supabase `clbpdzaprfcqtfwtaasg` 唯一待執行的 `20260909123932`。migration history 已讀回相同版本；`team_handovers`、`team_meetings`、`team_meeting_participants` 均不存在，`announcements_global_only` 與 `team_membership_commands_only` 均 validated。操作前舊內容全部為 0 筆；操作後會員維持 1 人，共用團隊、成員關係、任務、任務事件與一般公告維持 0 筆。
+先確認新版 `/team` 與三個 `/planned?feature=...` 頁面回覆 200、包含新標題且沒有舊三項文案，再由既有 CLI 遷移流程在當時的 Supabase production environment 套用唯一待執行的 `20260909123932`。migration history 已讀回相同版本；`team_handovers`、`team_meetings`、`team_meeting_participants` 均不存在，`announcements_global_only` 與 `team_membership_commands_only` 均 validated。操作前舊內容全部為 0 筆；操作後會員維持 1 人，共用團隊、成員關係、任務、任務事件與一般公告維持 0 筆。
 
 遷移後 `/api/health`、`/team` 回覆 200；未登入的 `/api/team`、`/api/tasks`、`/api/announcements` 回覆 401。Vercel 連接器曾回覆 403，改以既有已登入 CLI 部署；完整正式環境變數下載被自動審核拒絕，未下載，亦未以其他方式讀取其秘密。本次未發布 LINE 實體圖文選單，未做真實會員寫入或手機驗收。
 
@@ -199,7 +199,7 @@ Supabase 瀏覽器 SDK 改為需要 Google 登入時才動態載入；仍使用�
 
 - 完整 `scripts/pnpm.ps1 validate` exit 0：tooling、文件、lint、架構、Knip、型別、測試與 production build 通過。套件／Web runtime 測試為 agents 4、application 14、infrastructure 32、Web 31 與 env 3；未修改套件可使用 Turbo 快取。
 - 本地 production server 加隔離 LIFF／API／定位替身，Edge headless 390 × 844 的 5 個情境、24 項檢查通過：上／下班跨日、回應不完整使用同 UUID 重送、過時操作意圖、定位拒絕、登入身分切換清除資料。無 pageerror 或水平溢出。這不是真實 LINE 手機驗收。
-- 遠端確認 project `clbpdzaprfcqtfwtaasg`，舊出勤表為空，已套用 `20260907175144_attendance_sessions.sql`；出勤 7 表啟用 RLS、舊 segments 已移除，會員與 Coin 未清空。第一次套用因 LOCK 缺交易遭拒，核對未部分生效後加上明確交易再套用成功，未修改已套用檔案。
+- 遠端確認為當時的 Supabase production environment，舊出勤表為空，已套用 `20260907175144_attendance_sessions.sql`；出勤 7 表啟用 RLS、舊 segments 已移除，會員與 Coin 未清空。第一次套用因 LOCK 缺交易遭拒，核對未部分生效後加上明確交易再套用成功，未修改已套用檔案。
 - 正式執行角色測出 Auth schema 42501。`20260907183500` 的 USAGE grant 雖 CLI 成功，遠端權限回讀仍 false：託管 schema 的 postgres 沒有轉授權限。以 `20260907183724_attendance_account_status.sql` 建立僅 boolean 的受限函式修正；保留前次 migration history，不以 CLI exit 0 代替權限驗收。
 - 使用真實 runtime 連線及 line_app 角色，在單一交易內驗證上班／下班／UUID 重送、通知同交易、兩種 outbox 領取、原始起訖不可改寫、事件 UPDATE 拒絕；合成會員及出勤全部 rollback 並回讀確認未殘留，未向 LINE 發送測試訊息。
 - Supabase pg_cron／pg_net 已啟用，Vault 保存 worker endpoint 與 secret；固定 `attendance-maintenance` job 每分鐘執行。cron.job_run_details 已回讀 succeeded；無待辦時 0 rows，不產生 HTTP。排程定義位於 scripts/attendance/schedule.sql，不由 Web 啟動執行 DDL。
@@ -285,7 +285,7 @@ Supabase 瀏覽器 SDK 改為需要 Google 登入時才動態載入；仍使用�
 
 以下由整理前主題文件轉入，未於本輪重新驗證：
 
-- Supabase：2026-09-06 記載專案 clbpdzaprfcqtfwtaasg（line-bot-963sup，新加坡）、8 張業務表與 Google Provider；後來出勤向前 migration 20260906160213 的本地 13 表驗證不等於遠端套用。
+- Supabase：2026-09-06 記載當時的 production environment 有 8 張業務表與 Google Provider；後來出勤向前 migration 20260906160213 的本地 13 表驗證不等於遠端套用。
 - 清除前 SQLite 快照：1 會員、2 身分、3 會員事件、1 Coin ledger、0 打卡、1 支出、3 支出事件；不是目前資料筆數或再次清除授權。
 - Redis：2026-09-06 測試 database 14600993／subscription 3406404，line-bot-cache、asia-east1；當次控制台記載 30 MB、30 connections、100 ops/sec、5 GB、US$0，無 HA／持久化，非 TLS 測試例外。原 10 次 PING 中位數 22.4 ms／最大 26.7 ms，去重後樣本 20.1／25.3 ms，不是 SLA 或現價。
 - LINE 責任重整：2026-09-07 文件記載 validate 通過，Web 26、infrastructure 34、application 14、agents 4；181 modules／0 違規。1,038 組合成輸入離線前後比對相同，外部全為替身；未部署或真機驗收。
@@ -334,7 +334,7 @@ Supabase 瀏覽器 SDK 改為需要 Google 登入時才動態載入；仍使用�
 
 ## 2026-09-06 RLS grants 與索引遠端驗證
 
-2026-09-06 09:21 UTC：Supabase Plugin 在專案 `clbpdzaprfcqtfwtaasg` 套用 [migration 20260906092105](../../supabase/migrations/20260912023739_consolidated_baseline.sql)，回傳 success。CLI 先產生本地檔案；Plugin 套用時產生遠端版本，本地檔名依實查 history 對齊。重新查詢確認 anon／authenticated 對 `public.rls_auto_enable()` 的 EXECUTE 均為 false，`receipt_intents_owner_idx` 存在。security advisors 為空；performance 不再回報缺少外鍵索引，僅剩兩個 unused-index INFO。這次僅變更函式 grants 與新增索引，未操作業務資料，未驗證手機流程。
+2026-09-06 09:21 UTC：Supabase Plugin 在當時的 production environment 套用 [migration 20260906092105](../../supabase/migrations/20260912023739_consolidated_baseline.sql)，回傳 success。CLI 先產生本地檔案；Plugin 套用時產生遠端版本，本地檔名依實查 history 對齊。重新查詢確認 anon／authenticated 對 `public.rls_auto_enable()` 的 EXECUTE 均為 false，`receipt_intents_owner_idx` 存在。security advisors 為空；performance 不再回報缺少外鍵索引，僅剩兩個 unused-index INFO。這次僅變更函式 grants 與新增索引，未操作業務資料，未驗證手機流程。
 
 ## 結果記錄
 
@@ -442,7 +442,7 @@ Supabase 瀏覽器 SDK 改為需要 Google 登入時才動態載入；仍使用�
 
 ### 2026-09-09 正式 migration 與 Web 發布
 
-發布來源為 `72c6a1fb2beaa5b52f659597bdef2100b934289f`，已推送 GitHub main。使用者明確授權後，以 Supabase CLI db push 套用 clbpdzaprfcqtfwtaasg 的四筆 migration：20260908164610、20260908164718、20260908165129、20260908170000。遠端 history 回讀一致，再次 dry-run 顯示 upToDate、無待套用項目；未執行 seed、roles 匯入或 Vault 更新。
+發布來源為 `72c6a1fb2beaa5b52f659597bdef2100b934289f`，已推送 GitHub main。使用者明確授權後，以 Supabase CLI db push 對當時的 production environment 套用四筆 migration：20260908164610、20260908164718、20260908165129、20260908170000。遠端 history 回讀一致，再次 dry-run 顯示 upToDate、無待套用項目；未執行 seed、roles 匯入或 Vault 更新。
 
 - 遠端 catalog 確認 12 張新表存在且啟用 RLS，anon／authenticated 無直接讀寫權限；line_app 的讀寫限制符合 migration。使用本地配置的受限 runtime 連線，切換 line_app 後對 12 張表執行 LIMIT 0 成功，未讀寫業務列。此查核不代替真實會員跨團隊業務驗收。
 - GitHub [Validate](https://github.com/963sup/line-work-assistant/actions/runs/34260649485) completed／success。
@@ -562,7 +562,7 @@ Supabase 瀏覽器 SDK 改為需要 Google 登入時才動態載入；仍使用�
 
 ### 2026-09-11 會員與合作夥伴管理修正及遠端遷移
 
-來源為 `c21f77f` 上的 42 檔工作樹，Supabase 目標為 `clbpdzaprfcqtfwtaasg`。
+來源為 `c21f77f` 上的 42 檔工作樹，Supabase 目標為當時的 production environment。
 
 - 修正 UUID 大小寫繞過窗口重複檢查、既有非標準聯繫值無法原樣保存或下架、
   查無會員後無法清除查詢，以及管理回應多送 `canReview`。
