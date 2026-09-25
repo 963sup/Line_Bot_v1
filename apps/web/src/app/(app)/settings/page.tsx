@@ -37,7 +37,7 @@ export default function SettingsPage() {
       </div>
       <MemberPanel liffId={miniApp.liffId} miniAppUrl={miniApp.url} />
 
-      <SectionHeading title="Settings" />
+      <SectionHeading title="Scopes" />
       <div className="menu-group">
         <ActionRow
           href="/enterprises"
@@ -60,6 +60,10 @@ export default function SettingsPage() {
           title="Teams"
           description="Organization-scoped Team"
         />
+      </div>
+
+      <SectionHeading title="Utilities" />
+      <div className="menu-group">
         <ActionRow href="/diary" icon="□" title="Work Diary" description="既有外部工作日誌" />
         <ActionRow href="/expenses" icon="$" title="Expenses" description="費用紀錄與既有操作" />
         <ActionRow href="/partners" icon="◇" title="Partners" description="合作夥伴、消息與推薦" />
