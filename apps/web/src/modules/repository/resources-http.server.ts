@@ -1,5 +1,5 @@
 import type { createRepositoryResources } from "@line-work/repository/application/resources";
-import { IssueError } from "@line-work/repository/domain";
+import { IssueError, normalizeRepositoryMilestoneNumber } from "@line-work/repository/domain";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
 
@@ -21,15 +21,6 @@ function selector(params: URLSearchParams) {
 
 function listCursor(params: URLSearchParams, name = "after") {
   return single(params, name);
-}
-
-function parseMilestoneNumber(value: string) {
-  if (!/^[1-9]\d*$/.test(value)) throw new IssueError(400, "Milestone number 不正確。");
-  const number = Number(value);
-  if (!Number.isSafeInteger(number) || number < 1) {
-    throw new IssueError(400, "Milestone number 不正確。");
-  }
-  return number;
 }
 
 export async function repositoryDiscussionsRequest(
@@ -115,12 +106,10 @@ export async function repositoryMilestoneRequest(
 ) {
   try {
     const params = new URL(request.url).searchParams;
+    const number = normalizeRepositoryMilestoneNumber(milestoneNumber);
+    if (number === null) throw new IssueError(400, "Milestone number 不正確。");
     return jsonResponse(
-      await resources.milestone(
-        await requestIdentity(request),
-        selector(params),
-        parseMilestoneNumber(milestoneNumber),
-      ),
+      await resources.milestone(await requestIdentity(request), selector(params), number),
     );
   } catch (error) {
     return repositoryFailure(error);

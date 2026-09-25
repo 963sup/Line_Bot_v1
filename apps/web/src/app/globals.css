@@ -225,6 +225,150 @@ body {
   color: var(--ink);
   font-family: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", sans-serif;
 }
+.public-gateway {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 32px;
+  padding: calc(32px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+  color: #f0f6fc;
+  background: #0d1117;
+  color-scheme: dark;
+}
+
+.public-gateway-brand {
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 420px);
+  padding-top: 8vh;
+  text-align: center;
+}
+
+.public-gateway-mark {
+  display: grid;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 24px;
+  place-items: center;
+  border: 1px solid #30363d;
+  border-radius: 50%;
+  background: #f0f6fc;
+  color: #0d1117;
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.public-gateway h1 {
+  margin: 0;
+  font-size: clamp(28px, 7vw, 36px);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.public-gateway-brand p {
+  margin: 12px 0 0;
+  color: #8b949e;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.public-gateway-actions {
+  width: min(100%, 620px);
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.public-gateway-primary,
+.public-gateway [role="alert"] button {
+  min-height: 54px;
+  display: grid;
+  width: 100%;
+  place-items: center;
+  padding: 0 20px;
+  border: 1px solid #3fb950;
+  border-radius: 10px;
+  background: #238636;
+  color: #fff;
+  text-decoration: none;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.public-gateway-primary:hover,
+.public-gateway [role="alert"] button:hover {
+  background: #2ea043;
+}
+
+.public-gateway-primary:focus-visible,
+.public-gateway [role="alert"] button:focus-visible,
+.public-gateway a:focus-visible {
+  outline: 3px solid #58a6ff;
+  outline-offset: 3px;
+}
+
+.public-gateway-secondary,
+.public-gateway [role="status"],
+.public-gateway [role="alert"] {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.public-gateway-secondary,
+.public-gateway [role="status"] {
+  color: #8b949e;
+}
+
+.public-gateway [role="alert"] {
+  color: #ff7b72;
+}
+
+.public-gateway [role="alert"] button {
+  margin-top: 12px;
+}
+
+.public-gateway-secondary a,
+.public-gateway-legal a {
+  color: #79c0ff;
+  text-underline-offset: 3px;
+}
+
+.public-gateway-secondary a {
+  margin-left: 4px;
+}
+
+.public-gateway-legal {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+  color: #6e7681;
+  font-size: 13px;
+}
+
+@media (max-width: 430px) {
+  .public-gateway {
+    gap: 24px;
+    padding-inline: 18px;
+  }
+
+  .public-gateway-brand {
+    padding-top: 4vh;
+  }
+
+  .public-gateway-mark {
+    width: 92px;
+    height: 92px;
+    font-size: 38px;
+  }
+}
+
 .workspace {
   max-width: 1120px;
   margin: 0 auto;
@@ -383,55 +527,7 @@ footer {
   background: var(--canvas);
 }
 
-.app-shell-brand {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid #d8e3dbb8;
-  background: #f4f7f4f2;
-  backdrop-filter: blur(14px);
-}
-
-.shell-wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  color: var(--ink);
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 750;
-  letter-spacing: -0.01em;
-}
-
-.shell-wordmark span {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--green);
-  color: white;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.shell-member {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.shell-avatar {
+.member-avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -445,11 +541,11 @@ footer {
   border: 2px solid transparent;
 }
 
-.shell-avatar[aria-current="page"] {
+.member-avatar[aria-current="page"] {
   border-color: currentColor;
 }
 
-.shell-avatar img {
+.member-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1719,7 +1815,7 @@ summary:focus-visible {
   color: var(--green-strong);
 }
 
-.app-shell .shell-avatar {
+.app-shell .member-avatar {
   color: var(--green-strong);
   background: #21262d;
 }

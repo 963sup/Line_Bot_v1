@@ -1,4 +1,4 @@
-import { IssueError, issueText, normalizeRepositoryName } from "../domain.js";
+import { IssueError, issueText, normalizeIssueNumber, normalizeRepositoryName } from "../domain.js";
 import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
 
 function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
@@ -97,12 +97,11 @@ export function createIssues(deps: {
       return deps.store().snapshot(actor, selected, list, view, { after: cursor, status });
     },
     detail: async (subject: string, issueNumber: number, repository: RepositorySelector) => {
-      if (!Number.isSafeInteger(issueNumber) || issueNumber < 1) {
-        throw new IssueError(400, "Issue number 不正確。");
-      }
+      const selectedIssueNumber = normalizeIssueNumber(issueNumber);
+      if (selectedIssueNumber === null) throw new IssueError(400, "Issue number 不正確。");
       const selected = selector(repository);
       if (!selected) throw new IssueError(400, "Repository 路徑不正確。");
-      return deps.store().detail(await identity(subject), issueNumber, selected);
+      return deps.store().detail(await identity(subject), selectedIssueNumber, selected);
     },
     command: async (subject: string, input: Record<string, unknown>) =>
       deps.store().execute(await identity(subject), parseIssueCommand(input), deps.now()),

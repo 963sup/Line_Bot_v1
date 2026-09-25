@@ -1,4 +1,5 @@
 import { normalizeAccountLogin } from "@line-work/account/domain/login";
+import { normalizeIssueNumber } from "@line-work/repository/domain";
 import { notFound } from "next/navigation";
 import IssueBoard from "../../../../../../modules/repository/issue-board";
 import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
@@ -18,8 +19,8 @@ export default async function Page({
   } catch {
     notFound();
   }
-  const number = Number(issueNumber);
-  if (!Number.isSafeInteger(number) || number < 1) notFound();
+  const number = normalizeIssueNumber(issueNumber);
+  if (number === null) notFound();
 
   return (
     <AppShell>

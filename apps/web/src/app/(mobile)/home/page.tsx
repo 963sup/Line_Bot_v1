@@ -1,3 +1,4 @@
+import MemberAvatar from "../../../modules/account/member-avatar";
 import StarredRepositories from "../../../modules/repository/starred-repositories";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import {
@@ -10,9 +11,11 @@ import {
 import AppShell from "../_shell/app-shell";
 
 export default function Page() {
+  const liffId = lineMiniApp().liffId;
+
   return (
     <AppShell>
-      <PageHeading title="Home" />
+      <PageHeading title="Home" actions={<MemberAvatar liffId={liffId} />} />
 
       <SectionHeading title="My Work" />
       <div className="menu-group home-resource-list">
@@ -55,7 +58,7 @@ export default function Page() {
 
       <div id="starred" className="home-section-anchor">
         <SectionHeading title="Starred" description="你已 Star 且目前仍可存取的 Repository。" />
-        <StarredRepositories liffId={lineMiniApp().liffId} />
+        <StarredRepositories liffId={liffId} />
       </div>
 
       <SectionHeading

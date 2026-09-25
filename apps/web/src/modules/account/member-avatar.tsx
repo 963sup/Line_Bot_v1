@@ -60,7 +60,7 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
   return (
     <Link
       href={login ? `/${encodeURIComponent(login)}` : "/settings"}
-      className="shell-avatar"
+      className="member-avatar"
       aria-label={login ? "個人檔案" : "設定"}
       title={login ? "個人檔案" : "設定"}
     >

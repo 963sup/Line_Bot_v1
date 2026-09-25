@@ -134,13 +134,30 @@ async function run() {
   });
 
   try {
+    await page.goto(`${base}/`);
+    await page.getByRole("heading", { name: "LINE 工作助手", exact: true }).waitFor();
+    await expect(page.getByRole("link", { name: "使用 LINE 進入", exact: true })).toHaveAttribute(
+      "href",
+      "/home",
+    );
+    await expect(page.getByRole("link", { name: "建立會員資格", exact: true })).toHaveAttribute(
+      "href",
+      "/membership/register",
+    );
+    await expect(page.getByRole("heading", { name: "讓每天的工作，更有條理。" })).toHaveCount(0);
+
     await page.goto(`${base}/?liff.state=%3Fmembership%3D1`);
     await expect(page).toHaveURL(`${base}/settings?google=link`);
     await page.getByRole("heading", { name: "Profile", exact: true }).waitFor();
     await expect(page.getByRole("heading", { name: "讓每天的工作，更有條理。" })).toHaveCount(0);
 
+    await page.goto(`${base}/home`);
+    await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
+    await expect(page.locator(".member-avatar")).toHaveCount(1);
+
     await page.goto(`${base}/repositories`);
     await page.getByRole("heading", { name: "儲存庫", exact: true }).waitFor();
+    await expect(page.locator(".member-avatar")).toHaveCount(0);
     const issueLink = page.getByRole("link", {
       name: new RegExp(`^${issue.title}\\s+待承接$`),
     });
@@ -156,6 +173,7 @@ async function run() {
 
     await page.goto(`${base}/notifications`);
     await page.getByRole("heading", { name: "通知", exact: true }).waitFor();
+    await expect(page.locator(".member-avatar")).toHaveCount(0);
     await page.getByRole("link", { name: /Issue 已更新/ }).click();
     await expect(page).toHaveURL(`${base}/notifications/${notificationId}`);
     await page.getByRole("heading", { name: notification.title, exact: true }).waitFor();

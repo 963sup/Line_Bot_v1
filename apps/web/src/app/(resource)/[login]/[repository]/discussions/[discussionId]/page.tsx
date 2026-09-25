@@ -1,4 +1,5 @@
 import { normalizeAccountLogin } from "@line-work/account/domain/login";
+import { normalizeDiscussionId } from "@line-work/repository/domain";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";
 import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
@@ -18,16 +19,17 @@ export default async function Page({
   } catch {
     notFound();
   }
-  if (!discussionId || discussionId.length > 120) notFound();
+  const canonicalDiscussionId = normalizeDiscussionId(discussionId);
+  if (canonicalDiscussionId === null) notFound();
   return (
     <AppShell>
       <RepositoryResourcesPanel
-        key={`${ownerLogin}/${repository}/discussion/${discussionId}`}
+        key={`${ownerLogin}/${repository}/discussion/${canonicalDiscussionId}`}
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
         repositoryName={repository}
         kind="discussion"
-        discussionId={discussionId}
+        discussionId={canonicalDiscussionId}
       />
     </AppShell>
   );

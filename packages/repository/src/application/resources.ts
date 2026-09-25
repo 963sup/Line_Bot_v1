@@ -1,4 +1,9 @@
-import { IssueError, normalizeRepositoryName } from "../domain.js";
+import {
+  IssueError,
+  normalizeDiscussionId,
+  normalizeRepositoryMilestoneNumber,
+  normalizeRepositoryName,
+} from "../domain.js";
 import type {
   RepositoryLabelCursor,
   RepositoryMilestoneCursor,
@@ -73,18 +78,6 @@ function milestoneCursor(after: string | undefined): RepositoryMilestoneCursor |
   return { number: Number(value.number), id: value.id };
 }
 
-function discussionId(value: string) {
-  if (!value || value.length > 120) throw new IssueError(400, "Discussion 識別碼不正確。");
-  return value;
-}
-
-function milestoneNumber(value: number) {
-  if (!Number.isSafeInteger(value) || value < 1) {
-    throw new IssueError(400, "Milestone number 不正確。");
-  }
-  return value;
-}
-
 function milestoneStatus(value?: string): RepositoryMilestoneStatus | undefined {
   if (value === undefined) return undefined;
   if (value !== "open" && value !== "closed") {
@@ -114,7 +107,10 @@ export function createRepositoryResources(deps: {
       commentsAfter?: string,
     ) => {
       const selected = repositorySelector(selector);
-      const selectedDiscussionId = discussionId(id);
+      const selectedDiscussionId = normalizeDiscussionId(id);
+      if (selectedDiscussionId === null) {
+        throw new IssueError(400, "Discussion 識別碼不正確。");
+      }
       const cursor = resourceCursor(commentsAfter);
       const actor = await identity(subject);
       return deps.store().discussion(actor, selected, selectedDiscussionId, cursor);
@@ -139,7 +135,8 @@ export function createRepositoryResources(deps: {
     },
     milestone: async (subject: string, selector: RepositorySelector, number: number) => {
       const selected = repositorySelector(selector);
-      const selectedNumber = milestoneNumber(number);
+      const selectedNumber = normalizeRepositoryMilestoneNumber(number);
+      if (selectedNumber === null) throw new IssueError(400, "Milestone number 不正確。");
       const actor = await identity(subject);
       return deps.store().milestone(actor, selected, selectedNumber);
     },
