@@ -1,6 +1,6 @@
 # Management permission cutover
 
-狀態：User permission current contract 已收斂；指定 Supabase project `clbpdzaprfcqtfwtaasg` 的 data-preserving remote cutover 已於 2026-09-18 完成並 readback，證據見 [Atomic schema remote convergence](../060-acceptance/080-atomic-schema-remote-convergence.md)。本文只保存仍有操作價值的 migration/cutover 條件；完成結果歸 acceptance，不建立第二份 current contract。
+狀態：User permission current contract 已收斂；2026-09-18 的 data-preserving remote cutover 已完成並 readback，證據見 [Atomic schema remote convergence](../060-acceptance/080-atomic-schema-remote-convergence.md)。該證據屬 retired Supabase environment；current operational target 由 [Supabase 開發入口](../../../supabase/README.md) 與 release workflow 擁有。本文只保存仍有操作價值的 migration/cutover 條件；完成結果歸 acceptance，不建立第二份 current contract。
 
 ## Permission migration
 
