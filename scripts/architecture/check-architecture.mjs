@@ -172,8 +172,17 @@ export async function checkArchitecture(root = repository) {
     );
     errors.push(...checkAppRoot(root));
     const modules = new Map(graph.modules.map((module) => [normalize(module.source), module]));
+    const isolatedFromMobileShell = /^apps\/web\/src\/app\/\((?:admin|onboarding|public|system)\)\//;
     for (const source of modules.keys()) {
       errors.push(...checkCrossWorkspaceRelativeImports(root, source));
+      if (isolatedFromMobileShell.test(source)) {
+        for (const dependency of modules.get(source).dependencies ?? []) {
+          const target = normalize(dependency.resolved);
+          if (target.startsWith("apps/web/src/app/(mobile)/_shell/")) {
+            errors.push(`route-group-does-not-borrow-mobile-shell: ${source} -> ${target}`);
+          }
+        }
+      }
       const owner = source.match(/^apps\/([^/]+)\/src\/modules\/([^/]+)\//);
       if (owner) {
         const prefix = `apps/${owner[1]}/src/modules/`;
