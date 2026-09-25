@@ -1354,8 +1354,8 @@
         "entrypoints": [
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/issues/page.tsx",
-          "apps/web/src/app/(app)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/issues.test.ts",
@@ -1400,8 +1400,8 @@
         "entrypoints": [
           "apps/web/src/app/api/discussions/route.ts",
           "apps/web/src/app/api/discussions/[discussionId]/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/discussions/page.tsx",
-          "apps/web/src/app/(app)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/resources.test.ts",
@@ -1444,7 +1444,7 @@
         ],
         "entrypoints": [
           "apps/web/src/app/api/repository-labels/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/labels/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/labels/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/resources.test.ts",
@@ -1488,8 +1488,8 @@
         "entrypoints": [
           "apps/web/src/app/api/repository-milestones/route.ts",
           "apps/web/src/app/api/repository-milestones/[milestoneNumber]/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/milestones/page.tsx",
-          "apps/web/src/app/(app)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/resources.test.ts",
@@ -2639,7 +2639,7 @@
       ],
       "scope": "repository-scoped-issue-number",
       "routeFiles": [
-        "apps/web/src/app/(app)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+        "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
       ],
       "note": "Issue number is scoped to Repository and is not a global stable identifier.",
       "benchmark": {
@@ -2660,7 +2660,7 @@
       ],
       "scope": "repository-scoped-local-discussion-id",
       "routeFiles": [
-        "apps/web/src/app/(app)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+        "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
       ],
       "note": "Discussion detail URL uses the local opaque DiscussionId. GitHub Discussion.number exists in FPT, but this product does not adopt it as the local Discussion locator."
     },
@@ -2675,7 +2675,7 @@
       ],
       "scope": "repository-scoped-milestone-number",
       "routeFiles": [
-        "apps/web/src/app/(app)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+        "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
       ],
       "note": "Repository Milestone number is scoped to Repository and remains separate from Project Milestone identity.",
       "benchmark": {

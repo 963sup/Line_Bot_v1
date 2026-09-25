@@ -6,7 +6,7 @@ Observed head: `9f0b5f0acc9b926de8556e7eeea0dbff392d6f00`
 
 ## 1. Purpose
 
-這份文件定義 `apps/web/src/app/(mobile)` 的 Route Responsibility Map。第一階段已將一般 authenticated mobile surfaces 與主 shell 移至 `(mobile)`；Repository canonical subresources 的 `(app) → (resource)` 收斂仍待完成。
+這份文件定義 `apps/web/src/app/(mobile)` 的 Route Responsibility Map。第一階段已將一般 authenticated mobile surfaces 與主 shell 移至 `(mobile)`；Repository canonical root 與 Issue / Discussion / Label / Milestone subresources 也已收斂至 `(resource)`，舊 `(app)` partition 已移除。
 
 目標不是把 `(app)` 改名，而是用一致判準重新審視目前 App Router placement，找出真正的 delivery responsibility、canonical locator 與 ownership 錯位，再決定後續 relocation。
 
@@ -307,7 +307,7 @@ Target `(mobile)` shell owns only presentation/runtime concerns:
 
 因此名稱 `app` 幾乎無法預測 runtime/layout responsibility。
 
-### Finding B — Repository hierarchy partition split
+### Finding B — Repository hierarchy partition split（已修正）
 
 Repository root 在 `(resource)`，Repository subresources 在 `(app)`。這需要沿 layout、resource header、direct entry、authorization 與 back-navigation 查根因，不應只因目錄對稱搬移。
 

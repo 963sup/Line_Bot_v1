@@ -26,7 +26,6 @@ Current shell 固定四個主目的地；Profile 維持 app-shell avatar → `/s
 | [(public)](%28public%29/AGENTS.md) | 公開入口與 `/{login}` User/Organization locator |
 | [(resource)](%28resource%29/AGENTS.md) | `/{login}/{repository}` public/private projection 分流 |
 | [(mobile)](%28mobile%29/AGENTS.md) | Mobile / LINE MINI App 工作台、主要導覽與 authenticated work surfaces |
-| [(app)](%28app%29/AGENTS.md) | Migration-only Repository 子資源；待收斂至 `(resource)` 後移除 |
 | [(onboarding)](%28onboarding%29/AGENTS.md) | 註冊、恢復、完成結果 |
 | [(admin)](%28admin%29/AGENTS.md) | 現有管理入口與未開放頁面 |
 | [(system)](%28system%29/AGENTS.md) | callback、Google 交接、不可用結果 |
@@ -34,7 +33,7 @@ Current shell 固定四個主目的地；Profile 維持 app-shell avatar → `/s
 
 FPT 對照與來源優先序繼承 [apps](../../../AGENTS.md)。`{login}` 可屬 User 或 Organization；`{repository}` 是該 owner 下的 name。number、slug、opaque id 各依本地契約，不用 GitHub 網頁網址推導本產品 locator。
 
-URL 修改前沿 `page/route → module → _composition → package public export` 查實際 consumer；同時查返回、直接開啟、刷新、登入接續與舊入口。現有 partition 是 runtime 分工，不為目錄對稱搬移；layout 不建立授權。`_composition` 是 app-owned 接線，不得反向被 module/shared import。
+URL 修改前沿 `page/route → module → _composition → package public export` 查實際 consumer；同時查返回、直接開啟、刷新、登入接續與舊入口。現有 partition 是 runtime 分工；layout 不建立授權。`_composition` 是 app-owned 接線，不得反向被 module/shared import。
 
 本層列現行入口；未實作能力只留在 target/semantic evidence，不能用空 page/route 宣稱完成。新增 framework 特殊檔案前同步 architecture root whitelist，不能以放寬 guard 代替範圍評估。
 

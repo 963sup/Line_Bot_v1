@@ -2,7 +2,7 @@
 
 ## App Router partitions
 
-`apps/web/src/app` 目前使用 `(public)/`、`(resource)/`、`(onboarding)/`、`(mobile)/`、`(app)/`、`(admin)/`、`(system)/` 與 `api/`。`(mobile)` 已成為 Mobile / LINE MINI App delivery owner；`(app)` 只暫存尚未收斂至 `(resource)` 的 Repository 子資源與舊 shell，不能新增一般工作 route。Route Group 只分 runtime/layout responsibility，不改正式 URL，也不產生新的 authorization；相同正式 URL 只有一個 route owner。
+`apps/web/src/app` 目前使用 `(public)/`、`(resource)/`、`(onboarding)/`、`(mobile)/`、`(admin)/`、`(system)/` 與 `api/`。`(mobile)` 擁有 Mobile / LINE MINI App delivery；Repository canonical identity 與 Repository-scoped subresources 統一由 `(resource)` 擁有。Route Group 只分 runtime/layout responsibility，不改正式 URL，也不產生新的 authorization；相同正式 URL 只有一個 route owner。
 
 ## Next.js module-graph boundary
 
@@ -16,7 +16,6 @@ App Router 的 Server / Client boundary 是 source module graph 邊界。Server 
 | `resource` | Canonical resource URL；同一 Repository locator 可解析 public projection，或在可信 identity 後解析 authorized private/internal projection；URL 本身不授權 |
 | `onboarding` | 可信外部身分後執行註冊／恢復等設定流程 |
 | `mobile` | Mobile / LINE MINI App application delivery；shell/navigation/composition 不取得 business authority，各功能仍自行核驗 current User／business scope |
-| `app` | Migration-only Repository subresources / old shell；不再接受新的 mobile application route |
 | `admin` | 管理 UI shell；私有讀寫仍依 feature permission / module contract 驗證 |
 | `system` | OAuth callback、一次性接續、特殊結果；不常駐 business state |
 | `api` | HTTP transport；每個 request 自行驗證 identity、qualification、input 與 authorization |

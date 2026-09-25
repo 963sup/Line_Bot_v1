@@ -9,7 +9,7 @@ import {
   repositoryMilestonesPath,
 } from "../../../../modules/repository/resource-navigation";
 import { lineMiniApp } from "../../../../shared/server/line-mini-app";
-import AppShell from "../../../(app)/_shell/app-shell";
+import AppShell from "../../../(mobile)/_shell/app-shell";
 import { publicRepositories } from "../../_composition/repository.server";
 
 export const dynamic = "force-dynamic";
