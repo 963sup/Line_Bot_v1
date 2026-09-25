@@ -133,7 +133,7 @@ Workforce 與 Project 已有明確 workspace/module boundary，但 module existe
 | Repeatable operation implementation | `scripts/` |
 | GitHub integration | `.github/` |
 | Scoped agent constraints | root + nearest `AGENTS.md` |
-| Historical migration / proposal / evidence | `docs/090-governance/` |
+| Decision / active proposal / active migration / gap / risk / retained dated evidence | `docs/090-governance/` |
 | Remote / deployment / device truth | provider/API/device readback with dated evidence |
 
 當 docs 與 code 衝突，先判斷文件過期或 implementation 違反 canonical contract；不要直接假設其中一方正確。
