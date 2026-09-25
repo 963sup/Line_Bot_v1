@@ -96,7 +96,7 @@ test("view selection survives continuation only for its owning destination", () 
   }
 });
 
-test("post-LIFF history replacement re-enters App Router with a sanitized local URL", () => {
+// LIFF can update browser history before Next renders the target route; explicitly converge the two states.\ntest("post-LIFF history replacement re-enters App Router with a sanitized local URL", () => {
   assert.deepEqual(
     entryNavigation(
       "https://example.com/settings?google=link&code=secret&state=secret",
