@@ -33,7 +33,8 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
     const token = await liffClient.session(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
     const profile = await liffClient.profile();
-    if (!profile.userId) throw Object.assign(new Error("LINE 身分不可用，請重新登入。"), { status: 401 });
+    if (!profile.userId)
+      throw Object.assign(new Error("LINE 身分不可用，請重新登入。"), { status: 401 });
     return { token, subject: profile.userId };
   }
 
