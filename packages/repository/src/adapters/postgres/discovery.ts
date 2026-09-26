@@ -6,9 +6,9 @@ import { businessDatabase, type Database } from "@line-work/platform/adapters/po
 import type {
   RepositoryActivityItem,
   RepositoryDiscoveryOptions,
-  RepositoryStarListDiscovery,
   RepositoryDiscoverySnapshot,
   RepositoryDiscoveryStore,
+  RepositoryStarListDiscovery,
   TrendingRepository,
 } from "../../application/ports/discovery.js";
 import { IssueError, type RepositoryCapability } from "../../domain.js";
