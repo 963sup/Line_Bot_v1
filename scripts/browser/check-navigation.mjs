@@ -45,6 +45,7 @@ async function run() {
   const issueId = "11111111-1111-4111-8111-111111111111";
   const issueNumber = 1;
   const notificationId = "22222222-2222-4222-8222-222222222222";
+  const starListId = "33333333-3333-4333-8333-333333333333";
   const issue = {
     id: issueId,
     repositoryId,
@@ -57,6 +58,17 @@ async function run() {
     version: 1,
     createdAt: Date.now(),
     updatedAt: Date.now(),
+  };
+  const starList = {
+    id: starListId,
+    ownerLogin: "viewer",
+    name: "Operations Toolkit",
+    description: "Curated operations repositories",
+    visibility: "public",
+    version: 3,
+    visibleRepositoryCount: 1,
+    createdAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
+    updatedAt: Date.now() - 24 * 60 * 60 * 1000,
   };
   const notification = {
     id: notificationId,
@@ -91,6 +103,60 @@ async function run() {
 
     if (url.pathname === "/api/membership") {
       return route.fulfill({ json: { member: { login: membershipLogin || null } } });
+    }
+    if (url.pathname === "/api/repositories/starred") {
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: repositoryId,
+              ownerLogin: "acme",
+              name: "Operations",
+              visibility: "private",
+              starredAt: Date.now(),
+              starCount: 3,
+            },
+          ],
+        },
+      });
+    }
+    if (url.pathname === "/api/repositories/lists/discover") {
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: starListId,
+              ownerLogin: "viewer",
+              name: starList.name,
+              description: starList.description,
+              visibleRepositoryCount: 1,
+              updatedAt: starList.updatedAt,
+              repositories: [{ id: repositoryId, ownerLogin: "acme", name: "Operations" }],
+            },
+          ],
+        },
+      });
+    }
+    if (url.pathname === "/api/repositories/lists") {
+      return route.fulfill({ json: { items: [starList] } });
+    }
+    if (url.pathname === `/api/repositories/lists/${starListId}`) {
+      return route.fulfill({
+        json: {
+          item: {
+            ...starList,
+            editable: true,
+            repositories: [
+              {
+                id: repositoryId,
+                ownerLogin: "acme",
+                name: "Operations",
+                visibility: "private",
+              },
+            ],
+          },
+        },
+      });
     }
     if (url.pathname === "/api/repositories") {
       return route.fulfill({
@@ -262,9 +328,9 @@ async function run() {
       "href",
       "#trending",
     );
-    await expect(page.getByRole("link", { name: /Search Repositories/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /Awesome Lists/ })).toHaveAttribute(
       "href",
-      "/search",
+      "/repositories/lists/discover",
     );
     await expect(
       page.getByRole("heading", { name: "Trending Repositories", exact: true }),
@@ -286,6 +352,47 @@ async function run() {
         fullPage: true,
       });
     }
+
+    await page.goto(`${base}/repositories/lists/discover`);
+    await page.getByRole("heading", { name: "Awesome Lists", exact: true }).waitFor();
+    const discoveredList = page.getByRole("link", { name: starList.name, exact: true });
+    await expect(discoveredList).toHaveAttribute("href", `/repositories/lists/${starListId}`);
+    await expect(page.getByRole("link", { name: "acme/Operations", exact: true })).toHaveAttribute(
+      "href",
+      "/acme/Operations",
+    );
+    if (artifactDir) {
+      await page.screenshot({
+        path: path.join(artifactDir, "awesome-lists.png"),
+        fullPage: true,
+      });
+    }
+
+    await page.goto(`${base}/repositories/lists`);
+    await page.getByRole("heading", { name: "Lists", exact: true }).waitFor();
+    await expect(page.getByRole("heading", { name: "My Lists", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Operations Toolkit/ })).toHaveAttribute(
+      "href",
+      `/repositories/lists/${starListId}`,
+    );
+    await expect(page.getByRole("link", { name: "New List", exact: true })).toHaveAttribute(
+      "href",
+      "/repositories/lists/new",
+    );
+
+    await page.goto(`${base}/repositories/lists/${starListId}`);
+    await page.getByRole("heading", { name: "List", exact: true }).waitFor();
+    await page.getByRole("heading", { name: starList.name, exact: true }).waitFor();
+    await expect(page.getByRole("button", { name: "設為 Private", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations",
+    );
+
+    await page.goto(`${base}/repositories/lists/new`);
+    await page.getByRole("heading", { name: "New List", exact: true }).waitFor();
+    await expect(page.getByLabel("List name", { exact: true })).toBeVisible();
+    await expect(page.getByText(/private 建立/)).toBeVisible();
 
     await page.goto(`${base}/repositories?intent=create-issue`);
     await page.getByRole("heading", { name: "Choose Repository", exact: true }).waitFor();
@@ -349,7 +456,7 @@ async function run() {
       });
     }
     console.log(
-      "PASS: Home IA, Explore discovery/activity, scoped Repository resource gateways, Repository/Issue and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
+      "PASS: Home IA, Explore Trending/Awesome Lists/Activity, Star List management, scoped Repository resources and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
     );
   } finally {
     if (artifactDir) await context.tracing.stop({ path: path.join(artifactDir, "trace.zip") });
