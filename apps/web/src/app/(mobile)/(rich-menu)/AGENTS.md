@@ -50,7 +50,7 @@ Center entry
 
 | Label | Responsibility |
 | --- | --- |
-| 工時紀錄（Time Tracking） | Time Tracking capability entry. The Rich Menu navigates to the canonical Time Tracking surface; clock-in and clock-out remain Time Tracking-owned commands inside that surface. |
+| 工時紀錄（Time Tracking） | Time Tracking capability entry. The Rich Menu navigates to the canonical Time Tracking surface; `開始工作（Start）` and `結束工作（Stop）` are the presentation commands for starting and ending a tracked work interval. The current underlying business owner remains Attendance until a separately validated semantic migration changes that authority. |
 
 ## Invariants
 
@@ -58,7 +58,7 @@ Center entry
 - Every Rich Menu destination must resolve to one canonical URL owner.
 - Navigation labels are presentation vocabulary; they do not imply a new package, schema, bounded context, or source of truth.
 - Existing owner contracts must be reused before adding a route or adapter.
-- `工時紀錄（Time Tracking）` is the Rich Menu navigation label for the Time Tracking capability. Clock-in and clock-out remain distinct Time Tracking commands and must not bypass its application contracts or weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
+- `工時紀錄（Time Tracking）` is the Rich Menu navigation label. Its command vocabulary is `開始工作（Start）` and `結束工作（Stop）`; do not expose `上班打卡` / `下班打卡` or `Clock-in` / `Clock-out` as Rich Menu terminology. These presentation commands must still reuse the current Attendance application contracts and must not weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
 - Notifications remain authoritative for recipient-scoped message state even when the UI label is `訊息中心`.
 - Data insight and anomaly surfaces must remain read projections unless a real command responsibility is explicitly owned elsewhere.
 - Direct entry from LINE, refresh, back, and authenticated continuation must converge on the same authoritative application semantics.
