@@ -35,9 +35,36 @@ test("LIFF callers share initialization, wait for SDK redirect and retry failure
   assert.equal(calls, 2);
   assert.equal(await client.session("id"), null);
   assert.equal(login, 0);
+
   href = "https://example.com/?membership=1";
+  assert.equal(await client.existingSession("id"), null);
+  assert.equal(login, 0);
+
   await client.session("id");
   assert.equal(login, 1);
   assert.equal(calls, 2);
   await assert.rejects(client.initialize("other"), /不一致/);
+});
+
+test("existing LIFF session reads the access token without initiating login", async () => {
+  let login = 0;
+  const client = createLiffClient(
+    () => ({
+      init: async () => {},
+      isLoggedIn: () => true,
+      login: () => {
+        login++;
+      },
+      getAccessToken: () => "token",
+      getProfile: async () => ({ userId: "test", displayName: "test" }),
+      isInClient: () => true,
+      closeWindow: () => {},
+      openWindow: () => {},
+    }),
+    () => "https://example.com/profile",
+    () => "https://example.com/",
+  );
+
+  assert.equal(await client.existingSession("id"), "token");
+  assert.equal(login, 0);
 });
