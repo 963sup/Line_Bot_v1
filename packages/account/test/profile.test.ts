@@ -111,7 +111,7 @@ test("public profile visibility does not control User identity existence", async
     userId: "user-a",
     displayName: "Alice",
     bio: null,
-    avatarRef: null,
+    avatarRef: "profile-avatar-a",
     visibility: "public",
     version: 1,
     createdAt: 10,
