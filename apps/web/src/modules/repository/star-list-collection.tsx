@@ -80,7 +80,8 @@ export default function RepositoryStarListCollection({ liffId }: { liffId: strin
               <span className="action-row-copy">
                 <strong>{item.name}</strong>
                 <small>
-                  @{item.ownerLogin} · {item.visibility} · {item.visibleRepositoryCount} repositories
+                  @{item.ownerLogin} · {item.visibility} · {item.visibleRepositoryCount}{" "}
+                  repositories
                 </small>
               </span>
               <span className="action-chevron" aria-hidden="true">
