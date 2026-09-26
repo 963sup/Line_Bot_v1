@@ -140,7 +140,7 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
 });
 
 
-test("Repository Star List pending storage preserves exact retry identity", () => {
+test("Repository Star List pending storage scopes retries and clears only acknowledged requests", () => {
   const data = new Map<string, string>();
   const storage = {
     getItem: (key: string) => data.get(key) ?? null,
@@ -153,18 +153,54 @@ test("Repository Star List pending storage preserves exact retry identity", () =
     name: "Operations",
     description: "Curated",
   };
-  writePendingRepositoryStarListCreate(storage, create);
-  assert.deepEqual(readPendingRepositoryStarListCreate(storage), create);
-  clearPendingRepositoryStarListCreate(storage);
-  assert.equal(readPendingRepositoryStarListCreate(storage), null);
+  const newerCreate = {
+    ...create,
+    requestId: "33333333-3333-4333-8333-333333333333",
+  };
+  writePendingRepositoryStarListCreate(storage, "subject-a", create);
+  assert.deepEqual(readPendingRepositoryStarListCreate(storage, "subject-a"), create);
+  assert.equal(readPendingRepositoryStarListCreate(storage, "subject-b"), null);
+
+  writePendingRepositoryStarListCreate(storage, "subject-a", newerCreate);
+  assert.equal(
+    clearPendingRepositoryStarListCreate(storage, "subject-a", create.requestId),
+    false,
+  );
+  assert.deepEqual(readPendingRepositoryStarListCreate(storage, "subject-a"), newerCreate);
+  assert.equal(
+    clearPendingRepositoryStarListCreate(storage, "subject-a", newerCreate.requestId),
+    true,
+  );
+  assert.equal(readPendingRepositoryStarListCreate(storage, "subject-a"), null);
 
   const command = {
     requestId: "22222222-2222-4222-8222-222222222222",
     action: "publish" as const,
     expectedVersion: 3,
   };
-  writePendingRepositoryStarListCommand(storage, "list-a", command);
-  assert.deepEqual(readPendingRepositoryStarListCommand(storage, "list-a"), command);
-  clearPendingRepositoryStarListCommand(storage, "list-a");
-  assert.equal(readPendingRepositoryStarListCommand(storage, "list-a"), null);
+  writePendingRepositoryStarListCommand(storage, "subject-a", "list-a", command);
+  assert.deepEqual(
+    readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"),
+    command,
+  );
+  assert.equal(readPendingRepositoryStarListCommand(storage, "subject-b", "list-a"), null);
+  assert.equal(readPendingRepositoryStarListCommand(storage, "subject-a", "list-b"), null);
+  assert.equal(
+    clearPendingRepositoryStarListCommand(
+      storage,
+      "subject-a",
+      "list-a",
+      "44444444-4444-4444-8444-444444444444",
+    ),
+    false,
+  );
+  assert.deepEqual(
+    readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"),
+    command,
+  );
+  assert.equal(
+    clearPendingRepositoryStarListCommand(storage, "subject-a", "list-a", command.requestId),
+    true,
+  );
+  assert.equal(readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"), null);
 });
