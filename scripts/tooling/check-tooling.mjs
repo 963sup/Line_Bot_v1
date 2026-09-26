@@ -657,6 +657,7 @@ export function validate(root) {
     const productionDeploy = deploymentSteps.findIndex(
       (step) =>
         step.run === 'pnpm vercel:deploy:production -- --live --sha "$SHA"' &&
+        JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
         JSON.stringify(step.env ?? {}).includes("VERCEL_TOKEN"),
     );
     if (
