@@ -70,7 +70,7 @@ GitHub FPT 的 category ownership 採保守 derivation：explicit metadata 優�
 | # | File | Current FPT information | 開發時代表的語意／用途 |
 | --- | --- | --- | --- |
 | 1 | `category-map.json` | 全 schema 的 generated category/index map；目前列出 queries、mutations、objects、interfaces、enums、unions、inputObjects、scalars 的名稱→category 對照。 | 先用它找「某個 GraphQL symbol 屬於哪個 capability/category」，不要靠檔名猜 owner。它是導航/index，不是 product schema owner。 |
-| 2 | `changelog.json` | 目前此 FPT snapshot 為空內容。 | 預留／generated 的 GraphQL change-history surface；current snapshot 沒有可引用的 change record，不得從空檔推導歷史。 |
+| 2 | `changelog.json` | Generated GraphQL change history；current pinned snapshot 是 620 筆按日期排列的 change records，包含 `schemaChanges`、`previewChanges`、`upcomingChanges` 與 `date`。 | Historical/evolution evidence；用來理解 schema 如何變化，不得取代 current FPT schema truth。 |
 | 3 | `graphql_upcoming_changes.public.yml` | 公開 upcoming GraphQL changes；每筆含 `location`、`description`、`reason`、`date`、`criticality`、`owner`。 | 看 breaking/deprecation/future contract，以及「變更由誰負責、何時生效」。它是 future-change signal，不是 current schema truth。 |
 | 4 | `previews.json` | 目前為空 object。 | Preview/capability-gate metadata 的 generated surface；current FPT 沒有 active preview payload，不得因檔名假設 preview feature 存在。 |
 | 5 | `schema-actions.json` | Actions/Workflow 類型：`Workflow`、`WorkflowRun`、workflow file/reference、state/order 等。 | GitHub Actions workflow/run contract；本專案只在真的分析 CI/workflow semantic 時參考，不映射成 product domain。 |
