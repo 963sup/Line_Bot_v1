@@ -43,7 +43,6 @@ test("production release authorization accepts only a current Release after Supa
     runId: "123",
     sha: SHA,
     repository: "963sup/Line_Bot_v1",
-    actionSha: SHA,
     fetchImpl: async () => responses.shift(),
   });
 });
@@ -59,8 +58,7 @@ test("production release authorization fails closed before Supabase success", as
       runId: "123",
       sha: SHA,
       repository: "963sup/Line_Bot_v1",
-      actionSha: SHA,
-      fetchImpl: async () => responses.shift(),
+        fetchImpl: async () => responses.shift(),
     }),
     /successful gate and Supabase convergence/,
   );
