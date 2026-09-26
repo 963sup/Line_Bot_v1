@@ -63,9 +63,7 @@ function validCommand(value: unknown): value is RepositoryStarListCommandBody {
     return typeof command.repositoryId === "string";
   }
   return (
-    command.action === "publish" ||
-    command.action === "unpublish" ||
-    command.action === "delete"
+    command.action === "publish" || command.action === "unpublish" || command.action === "delete"
   );
 }
 
