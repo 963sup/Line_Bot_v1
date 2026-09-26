@@ -28,6 +28,7 @@ export const ROOT_NAMESPACE_RESERVED_KEYS = [
   "partners",
   "planned",
   "privacy",
+  "profile",
   "projects",
   "repositories",
   "search",
