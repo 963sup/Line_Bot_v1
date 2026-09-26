@@ -1541,7 +1541,10 @@ async function ensureRepositoryRuntimeCompatibility() {
         await client.query(repositoryCommandSchemaSql);
         changed = true;
       }
-      if (!afterStructure.repositoryStarListsTable && !afterStructure.repositoryStarListItemsTable) {
+      if (
+        !afterStructure.repositoryStarListsTable &&
+        !afterStructure.repositoryStarListItemsTable
+      ) {
         await client.query(repositoryStarListSchemaSql);
         changed = true;
       }
