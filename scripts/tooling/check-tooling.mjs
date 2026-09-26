@@ -614,6 +614,12 @@ export function validate(root) {
         JSON.stringify(step.with ?? {}).includes(
           ".artifacts/supabase-remote/daily-check-in-compat.sql",
         ) &&
+        JSON.stringify(step.with ?? {}).includes(
+          ".artifacts/supabase-remote/permission-subject-version-compat.json",
+        ) &&
+        JSON.stringify(step.with ?? {}).includes(
+          ".artifacts/supabase-remote/repository-runtime-compat.json",
+        ) &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sha256") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&

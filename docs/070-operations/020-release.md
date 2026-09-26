@@ -18,9 +18,10 @@ Release 只負責決定「哪個外部 owner 需要被呼叫」與「先後順�
 
 1. 確認 validated current-main revision 與 target environment。
 2. 收斂 Supabase database contract。
+   - 每次先執行 `schema:remote repair`，只恢復 current-source-determined、metadata-free 的 runtime compatibility；zero-row legacy shape recovery 的 precondition／row-count／RLS／grant evidence 由 Supabase owner 驗證。
    - affected source 包含 `supabase/schemas/*.sql`：呼叫 plain `schema:remote sync`。
    - 沒有 schema change：呼叫 `schema:remote verify`。
-   - Supabase 內部的 target check、diff、transaction、second diff、security readback、locking 與 migration-history invariant 由 [Supabase](../030-platform/020-supabase.md) 擁有。
+   - Supabase 內部的 target check、repair precondition、diff、transaction、second diff、security readback、locking 與 migration-history invariant 由 [Supabase](../030-platform/020-supabase.md) 擁有。
 3. 只有 Supabase convergence 成功，才允許 canonical Vercel production adapter 發布 exact validated SHA。Adapter 在 provider mutation 前必須先由 GitHub readback 證明自己位於同 SHA 的 active Release，且 `gate`／`supabase` jobs 已成功；Vercel provider reconciliation 由 [Vercel](../030-platform/040-vercel.md) 擁有。
 4. Rich Menu 只在其 desired state 受影響時發布，且依賴上述 Production deployment 成功。
 5. 其他 LINE／scheduler／external platform change 依各 owner contract 逐項 mutation 與 readback。

@@ -154,6 +154,8 @@ jobs:
           path: |
             .artifacts/supabase-remote/account-login-compat.sql
             .artifacts/supabase-remote/daily-check-in-compat.sql
+            .artifacts/supabase-remote/permission-subject-version-compat.json
+            .artifacts/supabase-remote/repository-runtime-compat.json
             .artifacts/supabase-remote/plan.sql
             .artifacts/supabase-remote/plan.sha256
             .artifacts/supabase-remote/verification.sql
