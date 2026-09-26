@@ -6,7 +6,7 @@
 
 It owns only Rich Menu-facing navigation semantics, route composition, direct-entry continuity, and presentation mapping from Rich Menu actions to canonical application surfaces.
 
-It does not own business truth, authorization, persistence, Attendance rules, Notifications, collaboration data, analytics facts, or LINE Rich Menu publication/configuration.
+It does not own business truth, authorization, persistence, Time Tracking rules, Notifications, collaboration data, analytics facts, or LINE Rich Menu publication/configuration.
 
 ## Boundary
 
@@ -33,7 +33,7 @@ Top row
 數據洞察｜異常事件｜工作台｜協作空間｜訊息中心
 
 Center entry
-出勤
+工時紀錄（Time Tracking）
 ```
 
 ### Top row
@@ -50,7 +50,7 @@ Center entry
 
 | Label | Responsibility |
 | --- | --- |
-| 出勤 | Attendance capability entry. The Rich Menu navigates to the canonical Attendance surface; clock-in and clock-out remain Attendance-owned commands inside that surface. |
+| 工時紀錄（Time Tracking） | Time Tracking capability entry. The Rich Menu navigates to the canonical Time Tracking surface; clock-in and clock-out remain Time Tracking-owned commands inside that surface. |
 
 ## Invariants
 
@@ -58,7 +58,7 @@ Center entry
 - Every Rich Menu destination must resolve to one canonical URL owner.
 - Navigation labels are presentation vocabulary; they do not imply a new package, schema, bounded context, or source of truth.
 - Existing owner contracts must be reused before adding a route or adapter.
-- `出勤` is a navigation label, not a new Domain concept. Clock-in and clock-out remain distinct Attendance commands and must not bypass Attendance application contracts or weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
+- `工時紀錄（Time Tracking）` is the Rich Menu navigation label for the Time Tracking capability. Clock-in and clock-out remain distinct Time Tracking commands and must not bypass its application contracts or weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
 - Notifications remain authoritative for recipient-scoped message state even when the UI label is `訊息中心`.
 - Data insight and anomaly surfaces must remain read projections unless a real command responsibility is explicitly owned elsewhere.
 - Direct entry from LINE, refresh, back, and authenticated continuation must converge on the same authoritative application semantics.
