@@ -15,7 +15,7 @@
 | URL | Owner / scope |
 | --- | --- |
 | `/api/membership`、`/api/membership/register`、`/api/membership/restore`、`/api/membership/manage`、`/api/membership/google-link` | Account 與明確組裝的既有 membership wire contract；GET `view=account` 是 Account-only projection，default/readback/checkIn 仍保留既有 DailyCheckIn composition；Google protocol 由 integration 擁有 |
-| `/api/profile`、`/api/follows` | Account Profile/Follow |
+| `/api/profile`、`/api/profile/activity`、`/api/follows` | Account Profile/Follow；`profile/activity` 只讀 Account-owned Achievement 與 contribution-day facts，不建立 award writer |
 | `/api/permissions` | Identity/Access；不能因 Web presenter 在 account 目錄就歸為 Account domain |
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
 | `/api/issues`、`/api/issues/{issueNumber}` | Repository Issue；保留 workbench/default、repository ID、owner/name 現行 selector 契約 |
@@ -25,7 +25,7 @@
 | `/api/repositories` | GET：Current User 的 authorized Repository collection；POST：Repository owner contract 的 replay-safe private Repository create |
 | `/api/repositories/owners` | Repository create owner options：current User 本人 + current effective OrganizationOwner scopes |
 | `/api/repositories/explore` | GET：Repository Trending + current-access-filtered Issue Activity projection；POST：Repository Star/unstar transport |
-| `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |\n| `/api/repositories/lists`、`/api/repositories/lists/{listId}` | Repository Star List owner lifecycle；create預設 private，mutation使用 stable requestId + expectedVersion，item add 仍由 Repository owner重驗 Star/access |\n| `/api/repositories/lists/discover` | Published Repository Star List discovery projection；只計算並預覽 viewer 當下可見的 Repository items |
+| `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |\n| `/api/repositories/public` | Repository public owner projection；目前提供 owner 的 public Popular repositories/count，不暴露 private access |\n| `/api/repositories/lists`、`/api/repositories/lists/{listId}` | Repository Star List owner lifecycle；create預設 private，mutation使用 stable requestId + expectedVersion，item add 仍由 Repository owner重驗 Star/access |\n| `/api/repositories/lists/discover` | Published Repository Star List discovery projection；只計算並預覽 viewer 當下可見的 Repository items |
 | `/api/notifications` | recipient-scoped Notifications |
 | `/api/assistant` | Assistant Ask / Issue-draft Generate / text Review transport；current User qualification required，output 不形成 formal write |
 | `/api/attendance`、`/api/attendance/clock-in`、`/api/attendance/clock-out`、`/api/workplaces` | Attendance 現行 subject 與工作場所契約 |
