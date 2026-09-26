@@ -32,6 +32,18 @@ const permissionAdministrationSchemaSql = readFileSync(
   new URL("supabase/schemas/512_permission_administration.sql", root),
   "utf8",
 );
+const repositoryTeamAccessSchemaSql = readFileSync(
+  new URL("supabase/schemas/602_repository_team_access.sql", root),
+  "utf8",
+);
+const repositoryStarsSchemaSql = readFileSync(
+  new URL("supabase/schemas/603_repository_stars.sql", root),
+  "utf8",
+);
+const crossOwnerProjectionSchemaSql = readFileSync(
+  new URL("supabase/schemas/900_cross_owner_projections.sql", root),
+  "utf8",
+);
 const transactionCoordinatorSchemaSql = readFileSync(
   new URL("supabase/schemas/920_transaction_coordinators.sql", root),
   "utf8",
@@ -606,6 +618,60 @@ export function permissionSubjectVersionExpansionSql(source = permissionAdminist
   return source.slice(start, end + endMarker.length);
 }
 
+export function repositoryEffectiveAccessExpansionSql(
+  source = crossOwnerProjectionSchemaSql,
+) {
+  const start = source.indexOf("create view app_private.repository_effective_access");
+  const endMarker = "group by repository_id, user_id;";
+  const end = source.indexOf(endMarker, start);
+  if (start < 0 || end < 0) {
+    throw new Error("Could not locate canonical repository_effective_access projection.");
+  }
+  return source.slice(start, end + endMarker.length);
+}
+
+export function repositoryProvisionCompatibilitySql(source = transactionCoordinatorSchemaSql) {
+  return extractFunctionDefinition(source, "provision_repository");
+}
+
+export function repositoryProvisionCompatibilityAccessSql(source = accessEnforcementSchemaSql) {
+  const signature = "provision_repository(text,text,text,text,text)";
+  return source
+    .split(/;\s*\n/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.includes(signature))
+    .map((statement) => `${statement};`)
+    .join("\n");
+}
+
+export function classifyRepositoryRuntimeCompatibility(state) {
+  const structuralCurrent =
+    state.ownerAccountIdColumn &&
+    state.ownerAccountKindColumn &&
+    state.nextIssueNumberColumn &&
+    !state.legacyOrganizationIdColumn;
+  const supportCurrent =
+    state.repositoryAccessTable &&
+    state.repositoryTeamAccessTable &&
+    state.repositoryStarsTable &&
+    state.repositoryEffectiveAccessView &&
+    state.provisionRepositoryFunction &&
+    state.permissionSubjectVersionsTable;
+
+  if (structuralCurrent && supportCurrent) return "ready";
+  if (structuralCurrent && state.repositoryAccessTable) return "repairable";
+  if (
+    state.repositoryRows === 0 &&
+    state.repositoryAccessTable &&
+    state.legacyOrganizationIdColumn &&
+    !state.ownerAccountIdColumn &&
+    !state.ownerAccountKindColumn
+  ) {
+    return "repairable";
+  }
+  return "partial";
+}
+
 export function permissionNamesFromSource(source = permissionDefinitionSchemaSql) {
   const match = source.match(
     /create\s+type\s+app_private\.permission_name\s+as\s+enum\s*\(([^;]+)\)\s*;/i,
@@ -924,6 +990,278 @@ async function ensureDailyCheckInCompatibility() {
   );
   await verifyDailyCheckInCompatibility();
   return true;
+}
+
+async function repositoryRuntimeCompatibilityState(client) {
+  const row = (
+    await client.query(`
+      select
+        (select count(*)::int from app_private.repositories) as repository_rows,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='owner_account_id'
+        ) as owner_account_id_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='owner_account_kind'
+        ) as owner_account_kind_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='next_issue_number'
+        ) as next_issue_number_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='organization_id'
+        ) as legacy_organization_id_column,
+        to_regclass('app_private.repository_access') is not null as repository_access_table,
+        to_regclass('app_private.repository_team_access') is not null as repository_team_access_table,
+        to_regclass('app_private.repository_stars') is not null as repository_stars_table,
+        to_regclass('app_private.repository_effective_access') is not null
+          as repository_effective_access_view,
+        to_regprocedure('app_private.provision_repository(text,text,text,text,text)') is not null
+          as provision_repository_function,
+        to_regclass('app_private.permission_subject_versions') is not null
+          as permission_subject_versions_table
+    `)
+  ).rows[0];
+  return {
+    repositoryRows: Number(row.repository_rows),
+    ownerAccountIdColumn: row.owner_account_id_column,
+    ownerAccountKindColumn: row.owner_account_kind_column,
+    nextIssueNumberColumn: row.next_issue_number_column,
+    legacyOrganizationIdColumn: row.legacy_organization_id_column,
+    repositoryAccessTable: row.repository_access_table,
+    repositoryTeamAccessTable: row.repository_team_access_table,
+    repositoryStarsTable: row.repository_stars_table,
+    repositoryEffectiveAccessView: row.repository_effective_access_view,
+    provisionRepositoryFunction: row.provision_repository_function,
+    permissionSubjectVersionsTable: row.permission_subject_versions_table,
+  };
+}
+
+async function verifyRepositoryRuntimeCompatibility(client) {
+  const state = await repositoryRuntimeCompatibilityState(client);
+  if (classifyRepositoryRuntimeCompatibility(state) !== "ready") {
+    throw new Error("Remote Repository runtime compatibility is incomplete.");
+  }
+  const [acceptance] = (
+    await client.query(`
+      select
+        has_table_privilege('line_app','app_private.repositories','SELECT') as repository_select,
+        not has_table_privilege('line_app','app_private.repositories','INSERT') as repository_no_insert,
+        has_column_privilege(
+          'line_app','app_private.repositories','next_issue_number','UPDATE'
+        ) as repository_issue_number_update,
+        has_table_privilege('line_app','app_private.repository_access','SELECT') as access_select,
+        not has_table_privilege('line_app','app_private.repository_access','INSERT') as access_no_insert,
+        has_table_privilege('line_app','app_private.repository_stars','SELECT') as stars_select,
+        has_table_privilege('line_app','app_private.repository_stars','INSERT') as stars_insert,
+        has_table_privilege('line_app','app_private.repository_stars','DELETE') as stars_delete,
+        has_function_privilege(
+          'line_app',
+          'app_private.provision_repository(text,text,text,text,text)',
+          'EXECUTE'
+        ) as provision_execute,
+        not has_function_privilege(
+          'anon',
+          'app_private.provision_repository(text,text,text,text,text)',
+          'EXECUTE'
+        ) as anon_no_provision,
+        not has_schema_privilege('anon','app_private','USAGE') as anon_no_private_usage
+    `)
+  ).rows;
+  if (
+    !acceptance?.repository_select ||
+    !acceptance.repository_no_insert ||
+    !acceptance.repository_issue_number_update ||
+    !acceptance.access_select ||
+    !acceptance.access_no_insert ||
+    !acceptance.stars_select ||
+    !acceptance.stars_insert ||
+    !acceptance.stars_delete ||
+    !acceptance.provision_execute ||
+    !acceptance.anon_no_provision ||
+    !acceptance.anon_no_private_usage
+  ) {
+    throw new Error("Remote Repository runtime privileges or authorization boundary are invalid.");
+  }
+}
+
+async function ensureRepositoryRuntimeCompatibility() {
+  return withRemoteClient(async (client) => {
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        "LOCK TABLE app_private.repositories, app_private.repository_access IN ACCESS EXCLUSIVE MODE",
+      );
+      const before = await repositoryRuntimeCompatibilityState(client);
+      const classification = classifyRepositoryRuntimeCompatibility(before);
+      if (classification === "ready") {
+        await verifyRepositoryRuntimeCompatibility(client);
+        await client.query("COMMIT");
+        return false;
+      }
+      if (classification !== "repairable") {
+        throw new Error(
+          "Remote Repository runtime compatibility is partial or contains retained rows; refusing an unsafe automatic cutover.",
+        );
+      }
+
+      let changed = false;
+      if (!before.ownerAccountIdColumn || !before.ownerAccountKindColumn) {
+        if (before.repositoryRows !== 0 || !before.legacyOrganizationIdColumn) {
+          throw new Error(
+            "Repository owner migration requires zero legacy Repository rows for automatic recovery.",
+          );
+        }
+        await client.query(
+          "alter table app_private.repositories add column owner_account_id text not null",
+        );
+        await client.query(
+          "alter table app_private.repositories add column owner_account_kind text not null",
+        );
+        changed = true;
+      }
+      if (!before.nextIssueNumberColumn) {
+        await client.query(
+          "alter table app_private.repositories add column next_issue_number bigint not null default 1",
+        );
+        changed = true;
+      }
+      if (before.legacyOrganizationIdColumn) {
+        if (before.repositoryRows !== 0) {
+          throw new Error(
+            "Legacy repositories.organization_id cannot be removed while Repository rows exist.",
+          );
+        }
+        await client.query("alter table app_private.repositories drop column organization_id");
+        changed = true;
+      }
+
+      const constraints = new Set(
+        (
+          await client.query(
+            "select conname from pg_constraint where conrelid='app_private.repositories'::regclass",
+          )
+        ).rows.map((row) => row.conname),
+      );
+      if (!constraints.has("repositories_id_owner_account_id_key")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_id_owner_account_id_key unique (id,owner_account_id)",
+        );
+        changed = true;
+      }
+      if (!constraints.has("repositories_owner_kind_check")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_owner_kind_check check (owner_account_kind in ('USER','ORGANIZATION'))",
+        );
+        changed = true;
+      }
+      if (!constraints.has("repositories_next_issue_number_check")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_next_issue_number_check check (next_issue_number > 0)",
+        );
+        changed = true;
+      }
+      if (!constraints.has("repositories_owner_account_fkey")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_owner_account_fkey foreign key (owner_account_id,owner_account_kind) references app_private.accounts(id,kind)",
+        );
+        changed = true;
+      }
+
+      await client.query(
+        "create unique index if not exists repositories_owner_name on app_private.repositories(owner_account_id,lower(name))",
+      );
+      await client.query(
+        "revoke all on app_private.repositories from public, anon, authenticated, line_app",
+      );
+      await client.query("grant select on app_private.repositories to line_app");
+      await client.query(
+        "grant update (next_issue_number) on app_private.repositories to line_app",
+      );
+      await client.query("drop policy if exists backend on app_private.repositories");
+      await client.query("drop policy if exists backend_read on app_private.repositories");
+      await client.query("drop policy if exists backend_issue_number on app_private.repositories");
+      await client.query(
+        "create policy backend_read on app_private.repositories for select to line_app using (true)",
+      );
+      await client.query(
+        "create policy backend_issue_number on app_private.repositories for update to line_app using (true) with check (true)",
+      );
+
+      await client.query(
+        "revoke all on app_private.repository_access from public, anon, authenticated, line_app",
+      );
+      await client.query("grant select on app_private.repository_access to line_app");
+      await client.query("drop policy if exists backend on app_private.repository_access");
+      await client.query("drop policy if exists backend_read on app_private.repository_access");
+      await client.query(
+        "create policy backend_read on app_private.repository_access for select to line_app using (true)",
+      );
+
+      const afterStructure = await repositoryRuntimeCompatibilityState(client);
+      if (!afterStructure.repositoryTeamAccessTable) {
+        await client.query(repositoryTeamAccessSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryStarsTable) {
+        await client.query(repositoryStarsSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryEffectiveAccessView) {
+        await client.query(repositoryEffectiveAccessExpansionSql());
+        changed = true;
+      }
+
+      await client.query(repositoryProvisionCompatibilitySql());
+      await client.query(repositoryProvisionCompatibilityAccessSql());
+
+      if (!afterStructure.permissionSubjectVersionsTable) {
+        await client.query(permissionSubjectVersionExpansionSql());
+        await client.query(`
+          insert into app_private.permission_subject_versions(user_id,version)
+          select id,permissions_version from app_private.users
+          on conflict(user_id) do nothing
+        `);
+        changed = true;
+      }
+
+      const mismatch = Number(
+        (
+          await client.query(`
+            select count(*)::int as count
+            from app_private.users u
+            join app_private.permission_subject_versions v on v.user_id=u.id
+            where v.version<>u.permissions_version
+          `)
+        ).rows[0]?.count ?? 0,
+      );
+      if (mismatch) {
+        throw new Error(
+          "Legacy users.permissions_version disagrees with permission_subject_versions; refusing ambiguous authority.",
+        );
+      }
+
+      await verifyRepositoryRuntimeCompatibility(client);
+      const afterRows = Number(
+        (await client.query("select count(*)::int as count from app_private.repositories")).rows[0]
+          ?.count ?? 0,
+      );
+      if (afterRows !== before.repositoryRows) {
+        throw new Error("Repository runtime compatibility repair changed Repository business rows.");
+      }
+      await client.query("COMMIT");
+      return changed;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    }
+  });
 }
 
 async function repairRuntimeCompatibility() {
