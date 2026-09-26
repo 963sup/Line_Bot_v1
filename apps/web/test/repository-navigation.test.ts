@@ -31,13 +31,9 @@ test("repository resource navigation encodes path segments independently", () =>
   );
 });
 
-
 test("Repository Star List navigation stays under the existing repositories root", () => {
   assert.equal(repositoryStarListsPath(), "/repositories/lists");
   assert.equal(repositoryStarListCreatePath(), "/repositories/lists/new");
   assert.equal(repositoryStarListDiscoverPath(), "/repositories/lists/discover");
-  assert.equal(
-    repositoryStarListPath("list / 1"),
-    "/repositories/lists/list%20%2F%201",
-  );
+  assert.equal(repositoryStarListPath("list / 1"), "/repositories/lists/list%20%2F%201");
 });
