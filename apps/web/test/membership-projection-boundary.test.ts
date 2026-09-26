@@ -80,7 +80,6 @@ test("successful check-in is not converted to unknown result by projection failu
   });
 });
 
-
 test("Settings Account projection does not invoke DailyCheckIn or Wallet projection", async () => {
   let coinViewCalls = 0;
   const deps = dependencies();

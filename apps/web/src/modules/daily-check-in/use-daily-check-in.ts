@@ -131,10 +131,11 @@ export function useDailyCheckIn(liffId: string) {
   ): Promise<DailyCheckInClaim | null> {
     const headers = await authHeaders(access);
     signal.throwIfAborted();
-    const response = await fetch(
-      `/api/membership?${new URLSearchParams({ checkInDay: day })}`,
-      { headers, cache: "no-store", signal },
-    );
+    const response = await fetch(`/api/membership?${new URLSearchParams({ checkInDay: day })}`, {
+      headers,
+      cache: "no-store",
+      signal,
+    });
     const data = (await response.json()) as { claim?: DailyCheckInClaim | null; error?: string };
     signal.throwIfAborted();
     if (!response.ok)

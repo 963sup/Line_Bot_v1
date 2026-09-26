@@ -159,10 +159,7 @@ export function useUser(liffId: string) {
     }
   }
 
-  async function action(
-    action: "register" | "restore" | "deactivate",
-    input?: { login?: string },
-  ) {
+  async function action(action: "register" | "restore" | "deactivate", input?: { login?: string }) {
     const signal = begin();
     setNotice("");
     try {

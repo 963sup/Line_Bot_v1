@@ -5,8 +5,8 @@ import { repositoryCollection } from "../src/app/api/_composition/repository-col
 import { repositoryStars } from "../src/app/api/_composition/repository-stars.server";
 import { GET as followsGet, POST as followsPost } from "../src/app/api/follows/route";
 import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/route";
-import { GET as repositoriesGet } from "../src/app/api/repositories/route";
 import { GET as exploreGet, POST as explorePost } from "../src/app/api/repositories/explore/route";
+import { GET as repositoriesGet } from "../src/app/api/repositories/route";
 import { GET as starredGet } from "../src/app/api/repositories/starred/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
 

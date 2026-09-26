@@ -429,9 +429,7 @@
         "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/scripts/utils/process-schemas.ts"
       },
-      "outputFamilies": [
-        "schema-fragment"
-      ]
+      "outputFamilies": ["schema-fragment"]
     },
     {
       "id": "category-partition",
@@ -441,10 +439,7 @@
         "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/scripts/utils/bucket-by-category.ts"
       },
-      "outputFamilies": [
-        "schema-fragment",
-        "category-index"
-      ]
+      "outputFamilies": ["schema-fragment", "category-index"]
     },
     {
       "id": "version-category-loader",
@@ -454,12 +449,7 @@
         "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/lib/index.ts"
       },
-      "outputFamilies": [
-        "schema-fragment",
-        "history",
-        "future-change",
-        "preview"
-      ]
+      "outputFamilies": ["schema-fragment", "history", "future-change", "preview"]
     },
     {
       "id": "schema-shape-validation",
@@ -469,11 +459,7 @@
         "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/lib/validator.ts"
       },
-      "outputFamilies": [
-        "schema-fragment",
-        "preview",
-        "future-change"
-      ]
+      "outputFamilies": ["schema-fragment", "preview", "future-change"]
     }
   ],
   "nodes": [
@@ -637,9 +623,7 @@
         "category": "users",
         "symbol": "CreatedRepositoryContribution"
       },
-      "implements": [
-        "contribution"
-      ]
+      "implements": ["contribution"]
     },
     {
       "id": "joined-user-contribution",
@@ -651,9 +635,7 @@
         "category": "users",
         "symbol": "JoinedGitHubContribution"
       },
-      "implements": [
-        "contribution"
-      ]
+      "implements": ["contribution"]
     },
     {
       "id": "contribution",
@@ -670,9 +652,7 @@
       "kind": "event-fact",
       "meaning": "An observable fact that a user created a repository-scoped work item; this is a neutral projection of CreatedIssueContribution.",
       "temporalField": "occurredAt",
-      "implements": [
-        "contribution"
-      ],
+      "implements": ["contribution"],
       "source": {
         "file": "schema-users.json",
         "category": "users",

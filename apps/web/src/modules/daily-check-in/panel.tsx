@@ -7,17 +7,8 @@ import { DailyCheckInWheel } from "./daily-check-in-wheel";
 import { isCoinView, useDailyCheckIn } from "./use-daily-check-in";
 
 export default function DailyCheckInPanel({ liffId }: { liffId: string }) {
-  const {
-    user,
-    busy,
-    error,
-    notice,
-    unresolvedDay,
-    initialize,
-    refresh,
-    checkIn,
-    setBusy,
-  } = useDailyCheckIn(liffId);
+  const { user, busy, error, notice, unresolvedDay, initialize, refresh, checkIn, setBusy } =
+    useDailyCheckIn(liffId);
 
   return (
     <div className="daily-check-in-panel">
@@ -42,7 +33,12 @@ export default function DailyCheckInPanel({ liffId }: { liffId: string }) {
           tone="error"
           title="每日簽到暫不可用"
           action={
-            <button type="button" className="secondary" disabled={busy} onClick={() => void refresh()}>
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => void refresh()}
+            >
               重新讀取
             </button>
           }

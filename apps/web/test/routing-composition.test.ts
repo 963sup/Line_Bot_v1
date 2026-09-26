@@ -9,13 +9,9 @@ test("canonical route compositions do not initialize Postgres during module impo
 
   try {
     const directory = await import("../src/app/(public)/_composition/directory.server");
-    const profileRepositories = await import(
-      "../src/app/(public)/_composition/repository.server"
-    );
+    const profileRepositories = await import("../src/app/(public)/_composition/repository.server");
     const repository = await import("../src/app/(resource)/_composition/repository.server");
-    const collection = await import(
-      "../src/app/api/_composition/repository-collection.server"
-    );
+    const collection = await import("../src/app/api/_composition/repository-collection.server");
 
     assert.equal(typeof directory.publicOrganizations, "function");
     assert.equal(typeof profileRepositories.publicRepositories, "function");
