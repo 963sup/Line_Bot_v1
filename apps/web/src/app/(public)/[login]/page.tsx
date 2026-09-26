@@ -96,34 +96,6 @@ function PopularRepositories({
   );
 }
 
-function RepositorySummary({ totalCount }: { totalCount: number }) {
-  return (
-    <section className={styles.section} aria-label="Profile resources">
-      <div className={styles.resourceList}>
-        <a className={styles.resourceRow} href="#popular-repositories">
-          <span className={styles.resourceIcon} aria-hidden="true">
-            <svg
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 4.5h12a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2V4.5Z" />
-              <path d="M7 16h12M9 8h6" />
-            </svg>
-          </span>
-          <span className={styles.resourceLabel}>Repositories</span>
-          <span className={styles.resourceCount}>{totalCount}</span>
-        </a>
-      </div>
-    </section>
-  );
-}
-
 function ProfileContent({
   login,
   title,
@@ -139,7 +111,6 @@ function ProfileContent({
     <div className={styles.profile}>
       <ProfileIdentity login={login} title={title} bio={bio} />
       <PopularRepositories repositories={repositories} />
-      <RepositorySummary totalCount={repositories.totalCount} />
     </div>
   );
 }
@@ -156,7 +127,11 @@ export default async function Page({ params }: { params: Promise<{ login: string
     if (!organization) notFound();
     const repositories = await popularRepositoryProjection(owner.login);
     return (
-      <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
+      <ProfileViewerShell
+        liffId={liffId}
+        profileLogin={owner.login}
+        repositoryCount={repositories.totalCount}
+      >
         <ProfileContent login={owner.login} title={organization.name} repositories={repositories} />
       </ProfileViewerShell>
     );
@@ -169,7 +144,11 @@ export default async function Page({ params }: { params: Promise<{ login: string
     popularRepositoryProjection(owner.login),
   ]);
   return (
-    <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
+    <ProfileViewerShell
+      liffId={liffId}
+      profileLogin={owner.login}
+      repositoryCount={repositories.totalCount}
+    >
       <ProfileContent
         login={owner.login}
         title={profile?.displayName ?? user.login}
