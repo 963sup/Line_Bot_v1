@@ -175,7 +175,7 @@ Repository 的責任分開如下：
 
 ## 現行結構
 
-主選單中央提供出勤操作，外圈提供任務、異常通報、表單作業、團隊協作、設定、公告通知等入口。既有 `membership` intent 只作相容 protocol 名稱，解析後進入 `/settings`；它不表示 Membership 是 current Domain owner，也不建立 `Me`／Personal Center resource。
+主選單中央提供出勤操作，外圈提供 Repository、異常通報、表單作業、團隊協作、個人、公告通知等入口。新個人入口使用 `profile` intent 並進入 `/profile` authenticated viewer hub。既有 `membership` intent 只作相容 protocol 名稱：一般個人入口同樣收斂到 `/profile`；只有既有 `google=link` continuation 明確回 `/settings?google=link`。它不表示 Membership 是 current Domain owner，也不建立第二個 User identity locator。
 
 原生子選單、外部表單與 Rich Menu switch 只負責 navigation。Rich Menu 的產品入口以 `uri` action 直接指向 source-owned current-stage `miniapp.line.me` permanent URL，加上白名單 intent；不經額外產品 redirect。表單開啟不代表提交成功，也不建立本系統的審批、案件或出勤結果。
 
