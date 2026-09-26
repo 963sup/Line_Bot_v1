@@ -52,6 +52,10 @@ const repositoryCommandSchemaSql = readFileSync(
   new URL("supabase/schemas/604_repository_commands.sql", root),
   "utf8",
 );
+const repositoryStarListSchemaSql = readFileSync(
+  new URL("supabase/schemas/605_repository_star_lists.sql", root),
+  "utf8",
+);
 const crossOwnerProjectionSchemaSql = readFileSync(
   new URL("supabase/schemas/900_cross_owner_projections.sql", root),
   "utf8",
@@ -655,6 +659,9 @@ export function repositoryProvisionCompatibilityAccessSql(source = accessEnforce
 }
 
 export function classifyRepositoryRuntimeCompatibility(state) {
+  if (Boolean(state.repositoryStarListsTable) !== Boolean(state.repositoryStarListItemsTable)) {
+    return "partial";
+  }
   const structuralCurrent =
     state.ownerAccountIdColumn &&
     state.ownerAccountKindColumn &&
@@ -665,6 +672,8 @@ export function classifyRepositoryRuntimeCompatibility(state) {
     state.repositoryTeamAccessTable &&
     state.repositoryStarsTable &&
     state.repositoryCommandsTable &&
+    state.repositoryStarListsTable &&
+    state.repositoryStarListItemsTable &&
     state.repositoryLabelsTable &&
     state.repositoryMilestonesTable &&
     state.issueNumberColumn &&
@@ -1157,6 +1166,9 @@ async function repositoryRuntimeCompatibilityState(client) {
         to_regclass('app_private.repository_team_access') is not null as repository_team_access_table,
         to_regclass('app_private.repository_stars') is not null as repository_stars_table,
         to_regclass('app_private.repository_commands') is not null as repository_commands_table,
+        to_regclass('app_private.repository_star_lists') is not null as repository_star_lists_table,
+        to_regclass('app_private.repository_star_list_items') is not null
+          as repository_star_list_items_table,
         to_regclass('app_private.repository_labels') is not null as repository_labels_table,
         to_regclass('app_private.repository_milestones') is not null as repository_milestones_table,
         exists(
@@ -1186,6 +1198,8 @@ async function repositoryRuntimeCompatibilityState(client) {
     repositoryTeamAccessTable: row.repository_team_access_table,
     repositoryStarsTable: row.repository_stars_table,
     repositoryCommandsTable: row.repository_commands_table,
+    repositoryStarListsTable: row.repository_star_lists_table,
+    repositoryStarListItemsTable: row.repository_star_list_items_table,
     repositoryLabelsTable: row.repository_labels_table,
     repositoryMilestonesTable: row.repository_milestones_table,
     issueNumberColumn: row.issue_number_column,
@@ -1219,6 +1233,43 @@ async function verifyRepositoryRuntimeCompatibility(client) {
         has_table_privilege(
           'line_app','app_private.repository_commands','INSERT'
         ) as commands_insert,
+        has_table_privilege(
+          'line_app','app_private.repository_star_lists','SELECT'
+        ) as star_lists_select,
+        has_table_privilege(
+          'line_app','app_private.repository_star_lists','INSERT'
+        ) as star_lists_insert,
+        has_table_privilege(
+          'line_app','app_private.repository_star_lists','UPDATE'
+        ) as star_lists_update,
+        has_table_privilege(
+          'line_app','app_private.repository_star_lists','DELETE'
+        ) as star_lists_delete,
+        has_table_privilege(
+          'line_app','app_private.repository_star_list_items','SELECT'
+        ) as star_list_items_select,
+        has_table_privilege(
+          'line_app','app_private.repository_star_list_items','INSERT'
+        ) as star_list_items_insert,
+        has_table_privilege(
+          'line_app','app_private.repository_star_list_items','DELETE'
+        ) as star_list_items_delete,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_star_lists'::regclass
+        ) as star_lists_rls,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_star_list_items'::regclass
+        ) as star_list_items_rls,
+        not has_table_privilege(
+          'anon','app_private.repository_star_lists','SELECT'
+        ) as anon_no_star_lists,
+        not has_table_privilege(
+          'anon','app_private.repository_star_list_items','SELECT'
+        ) as anon_no_star_list_items,
         (
           select c.relrowsecurity
           from pg_class c
@@ -1305,6 +1356,17 @@ async function verifyRepositoryRuntimeCompatibility(client) {
     !acceptance.stars_delete ||
     !acceptance.commands_select ||
     !acceptance.commands_insert ||
+    !acceptance.star_lists_select ||
+    !acceptance.star_lists_insert ||
+    !acceptance.star_lists_update ||
+    !acceptance.star_lists_delete ||
+    !acceptance.star_list_items_select ||
+    !acceptance.star_list_items_insert ||
+    !acceptance.star_list_items_delete ||
+    !acceptance.star_lists_rls ||
+    !acceptance.star_list_items_rls ||
+    !acceptance.anon_no_star_lists ||
+    !acceptance.anon_no_star_list_items ||
     !acceptance.commands_rls ||
     !acceptance.anon_no_commands ||
     !acceptance.labels_select ||
@@ -1477,6 +1539,13 @@ async function ensureRepositoryRuntimeCompatibility() {
       }
       if (!afterStructure.repositoryCommandsTable) {
         await client.query(repositoryCommandSchemaSql);
+        changed = true;
+      }
+      if (
+        !afterStructure.repositoryStarListsTable &&
+        !afterStructure.repositoryStarListItemsTable
+      ) {
+        await client.query(repositoryStarListSchemaSql);
         changed = true;
       }
       if (!afterStructure.repositoryLabelsTable) {

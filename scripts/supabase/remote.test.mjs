@@ -581,6 +581,8 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
     repositoryTeamAccessTable: true,
     repositoryStarsTable: true,
     repositoryCommandsTable: true,
+    repositoryStarListsTable: true,
+    repositoryStarListItemsTable: true,
     repositoryLabelsTable: true,
     repositoryMilestonesTable: true,
     issueNumberColumn: true,
@@ -600,6 +602,8 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
       repositoryTeamAccessTable: false,
       repositoryStarsTable: false,
       repositoryCommandsTable: false,
+      repositoryStarListsTable: false,
+      repositoryStarListItemsTable: false,
       repositoryLabelsTable: false,
       repositoryMilestonesTable: false,
       issueNumberColumn: false,
@@ -608,6 +612,14 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
       provisionRepositoryFunction: false,
     }),
     "repairable",
+  );
+
+  assert.equal(
+    classifyRepositoryRuntimeCompatibility({
+      ...ready,
+      repositoryStarListItemsTable: false,
+    }),
+    "partial",
   );
 
   assert.equal(

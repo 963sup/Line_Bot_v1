@@ -2644,3 +2644,42 @@ summary:focus-visible {
     margin-left: 0;
   }
 }
+
+.star-list-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.star-list-preview a {
+  color: var(--green-strong);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.star-list-preview a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.star-list-actions {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.app-content .star-list-actions button {
+  width: auto;
+  margin: 0;
+}
+
+.app-content .danger-action {
+  width: auto;
+  margin: 0;
+  background: #da3633;
+  color: #fff;
+}
+
+.star-list-card {
+  grid-template-columns: minmax(0, 1fr);
+}

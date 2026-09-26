@@ -8,6 +8,10 @@ import {
   repositoryLabelsPath,
   repositoryMilestonesPath,
   repositoryPath,
+  repositoryStarListCreatePath,
+  repositoryStarListDiscoverPath,
+  repositoryStarListPath,
+  repositoryStarListsPath,
 } from "../src/modules/repository/resource-navigation";
 
 test("repository resource navigation builds canonical owner/name URLs", () => {
@@ -25,4 +29,11 @@ test("repository resource navigation encodes path segments independently", () =>
     repositoryIssuesPath("Acme Team", "Line/Bot v1"),
     "/Acme%20Team/Line%2FBot%20v1/issues",
   );
+});
+
+test("Repository Star List navigation stays under the existing repositories root", () => {
+  assert.equal(repositoryStarListsPath(), "/repositories/lists");
+  assert.equal(repositoryStarListCreatePath(), "/repositories/lists/new");
+  assert.equal(repositoryStarListDiscoverPath(), "/repositories/lists/discover");
+  assert.equal(repositoryStarListPath("list / 1"), "/repositories/lists/list%20%2F%201");
 });

@@ -3,6 +3,7 @@ import type { RepositoryDiscoveryStore } from "./ports/discovery.js";
 const TRENDING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const TRENDING_LIMIT = 20;
 const ACTIVITY_LIMIT = 20;
+const PUBLISHED_STAR_LIST_LIMIT = 20;
 
 export function createRepositoryDiscovery(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
@@ -19,5 +20,9 @@ export function createRepositoryDiscovery(deps: {
         activityLimit: ACTIVITY_LIMIT,
       });
     },
+    publishedStarLists: async (subject: string) =>
+      deps
+        .store()
+        .publishedStarLists((await deps.activeUser(subject)).id, PUBLISHED_STAR_LIST_LIMIT),
   };
 }
