@@ -35,8 +35,20 @@ test("production deploy requires explicit live authorization and exact SHA", () 
 
 test("production release authorization accepts only a current Release after Supabase success", async () => {
   const responses = [
-    json({ id: 123, path: ".github/workflows/release.yml", event: "workflow_run", head_branch: "main", head_sha: SHA, status: "in_progress" }),
-    json({ jobs: [{ name: "gate", conclusion: "success" }, { name: "supabase", conclusion: "success" }] }),
+    json({
+      id: 123,
+      path: ".github/workflows/release.yml",
+      event: "workflow_run",
+      head_branch: "main",
+      head_sha: SHA,
+      status: "in_progress",
+    }),
+    json({
+      jobs: [
+        { name: "gate", conclusion: "success" },
+        { name: "supabase", conclusion: "success" },
+      ],
+    }),
   ];
   await verifyProductionReleaseAuthorization({
     token: "test-token",
@@ -49,8 +61,20 @@ test("production release authorization accepts only a current Release after Supa
 
 test("production release authorization fails closed before Supabase success", async () => {
   const responses = [
-    json({ id: 123, path: ".github/workflows/release.yml", event: "workflow_run", head_branch: "main", head_sha: SHA, status: "in_progress" }),
-    json({ jobs: [{ name: "gate", conclusion: "success" }, { name: "supabase", conclusion: "failure" }] }),
+    json({
+      id: 123,
+      path: ".github/workflows/release.yml",
+      event: "workflow_run",
+      head_branch: "main",
+      head_sha: SHA,
+      status: "in_progress",
+    }),
+    json({
+      jobs: [
+        { name: "gate", conclusion: "success" },
+        { name: "supabase", conclusion: "failure" },
+      ],
+    }),
   ];
   await assert.rejects(
     verifyProductionReleaseAuthorization({
@@ -58,7 +82,7 @@ test("production release authorization fails closed before Supabase success", as
       runId: "123",
       sha: SHA,
       repository: "963sup/Line_Bot_v1",
-        fetchImpl: async () => responses.shift(),
+      fetchImpl: async () => responses.shift(),
     }),
     /successful gate and Supabase convergence/,
   );
