@@ -967,10 +967,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "enterprise",
-        "organization"
-      ]
+      "participants": ["enterprise", "organization"]
     },
     {
       "name": "enterprise_user_affiliations",
@@ -978,10 +975,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "enterprise",
-        "organization"
-      ]
+      "participants": ["enterprise", "organization"]
     },
     {
       "name": "repository_effective_access",
@@ -989,12 +983,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "account",
-        "organization",
-        "team",
-        "repository"
-      ]
+      "participants": ["account", "organization", "team", "repository"]
     },
     {
       "name": "attendance_identity_bindings",
@@ -1002,10 +991,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "account",
-        "attendance"
-      ]
+      "participants": ["account", "attendance"]
     },
     {
       "name": "permission_workplace_targets",
@@ -1013,10 +999,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "attendance",
-        "identity-access"
-      ]
+      "participants": ["attendance", "identity-access"]
     },
     {
       "name": "user_management_activity",
@@ -1024,11 +1007,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "account",
-        "attendance",
-        "repository"
-      ]
+      "participants": ["account", "attendance", "repository"]
     },
     {
       "name": "identity_access_enterprise_scopes",
@@ -1036,10 +1015,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "enterprise",
-        "identity-access"
-      ]
+      "participants": ["enterprise", "identity-access"]
     },
     {
       "name": "identity_access_enterprise_subjects",
@@ -1047,11 +1023,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "account",
-        "enterprise",
-        "identity-access"
-      ]
+      "participants": ["account", "enterprise", "identity-access"]
     },
     {
       "name": "identity_access_organization_scopes",
@@ -1059,10 +1031,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "organization",
-        "identity-access"
-      ]
+      "participants": ["organization", "identity-access"]
     },
     {
       "name": "identity_access_organization_subjects",
@@ -1070,11 +1039,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "account",
-        "organization",
-        "identity-access"
-      ]
+      "participants": ["account", "organization", "identity-access"]
     },
     {
       "name": "identity_access_team_subjects",
@@ -1082,12 +1047,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": [
-        "account",
-        "organization",
-        "team",
-        "identity-access"
-      ]
+      "participants": ["account", "organization", "team", "identity-access"]
     }
   ]
 }
