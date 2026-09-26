@@ -690,30 +690,41 @@ async function withRemoteClient(work) {
   return withPostgres(postgresUrl, { remote: true }, work);
 }
 
+export async function runWithRemoteReconciliationLock(client, work) {
+  const [lock] = (
+    await client.query("select pg_try_advisory_lock(hashtextextended($1, 0)) as locked", [
+      reconciliationLockName,
+    ])
+  ).rows;
+  if (!lock?.locked) {
+    throw new Error("Another production Supabase reconciliation already owns the database lock.");
+  }
+
+  activeRemoteClient = client;
+  let workError;
+  try {
+    return await work();
+  } catch (error) {
+    workError = error;
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    activeRemoteClient = undefined;
+    try {
+      await client.query("select pg_advisory_unlock(hashtextextended($1, 0))", [
+        reconciliationLockName,
+      ]);
+    } catch (unlockError) {
+      if (!workError) throw unlockError;
+    }
+  }
+}
+
 async function withRemoteReconciliationLock(work) {
   if (activeRemoteClient) {
     throw new Error("Remote reconciliation lock is already active in this process.");
   }
-  return withRemoteClient(async (client) => {
-    const [lock] = (
-      await client.query("select pg_try_advisory_lock(hashtextextended($1, 0)) as locked", [
-        reconciliationLockName,
-      ])
-    ).rows;
-    if (!lock?.locked) {
-      throw new Error("Another production Supabase reconciliation already owns the database lock.");
-    }
-
-    activeRemoteClient = client;
-    try {
-      return await work();
-    } finally {
-      activeRemoteClient = undefined;
-      await client.query("select pg_advisory_unlock(hashtextextended($1, 0))", [
-        reconciliationLockName,
-      ]);
-    }
-  });
+  return withRemoteClient((client) => runWithRemoteReconciliationLock(client, work));
 }
 
 async function queryRemote(sql) {
