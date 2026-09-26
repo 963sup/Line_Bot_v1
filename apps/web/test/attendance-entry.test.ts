@@ -68,11 +68,11 @@ test("native menu states retain geometry and return each submenu to its source s
       ({ bounds: b }) => b.x <= 768 && b.x + b.width > 768 && b.y <= 512 && b.y + b.height > 512,
     )!;
     assert.equal(center.action.type, "uri");
-    const membership = menu.areas.find((a) => a.action.label === "設定")!.action;
-    assert.equal(membership.type, "uri");
-    if (membership.type === "uri") {
-      assert.equal(membership.uri, "https://miniapp.line.me/123-test?membership=1");
-      assert.equal(entryDestination(membership.uri), "/settings");
+    const profile = menu.areas.find((a) => a.action.label === "個人")!.action;
+    assert.equal(profile.type, "uri");
+    if (profile.type === "uri") {
+      assert.equal(profile.uri, "https://miniapp.line.me/123-test?profile=1");
+      assert.equal(entryDestination(profile.uri), "/profile");
     }
     const repositories = menu.areas.find((a) => a.action.label === "儲存庫")!.action;
     assert.equal(repositories.type, "uri");
@@ -82,7 +82,7 @@ test("native menu states retain geometry and return each submenu to its source s
     }
     assert.deepEqual(
       menu.areas.slice(1).map((a) => a.action.label),
-      ["儲存庫", "異常通報", "表單作業", "團隊協作", "設定", "通知中心"],
+      ["儲存庫", "異常通報", "表單作業", "團隊協作", "個人", "通知中心"],
     );
   }
   for (const page of ["team", "forms", "notifications", "incident"] as const) {
