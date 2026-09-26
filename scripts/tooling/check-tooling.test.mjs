@@ -131,7 +131,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/supabase-replace.yml",
-    "on:\n  workflow_dispatch:\n    inputs:\n      operation:\n        type: choice\n        options: [prepare-plan, apply]\n      legacy_enterprise_name:\n        type: string\n      legacy_enterprise_slug:\n        type: string\n      reviewed_plan_run_id:\n        type: string\n      reviewed_plan_sha256:\n        type: string\n      recovery_evidence_reference:\n        type: string\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  reconcile:\n    if: github.ref == \'refs/heads/main\' && inputs.confirm_project == \'nmssogphayjymjpbnrxv\' && inputs.confirm_recovery == \'recovery verified nmssogphayjymjpbnrxv\' && inputs.confirm_apply == \'apply reviewed plan nmssogphayjymjpbnrxv\'\n    concurrency:\n      group: supabase-production-nmssogphayjymjpbnrxv\n      cancel-in-progress: false\n    env: {}\n    steps:\n      - run: echo \'check-runs .name == \"validate\"\'\n      - if: inputs.operation == \'apply\'\n        run: echo \'REVIEWED_PLAN_RUN_ID REVIEWED_PLAN_SHA256 RECOVERY_EVIDENCE_REFERENCE actions/runs/$REVIEWED_PLAN_RUN_ID supabase-manual-prepare-plan-$SHA plan-provenance.json [0-9a-f]{64}\'\n      - if: inputs.operation == \'apply\'\n        run: echo \'manual-authorization.json recoveryEvidenceReference reviewedPlanRunId\'\n      - run: pnpm schema:remote prepare\n        env:\n          SUPABASE_LEGACY_ENTERPRISE_NAME: ${{ inputs.legacy_enterprise_name }}\n          SUPABASE_LEGACY_ENTERPRISE_SLUG: ${{ inputs.legacy_enterprise_slug }}\n      - if: inputs.operation == \'prepare-plan\'\n        run: pnpm schema:remote plan\n      - if: inputs.operation == \'prepare-plan\'\n        run: echo \'plan-provenance.json workflowRunId planSha256\'\n      - if: inputs.operation == \'apply\'\n        run: pnpm schema:remote sync --allow-manual\n        env:\n          SUPABASE_REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/plan.sha256\n            .artifacts/supabase-remote/plan-provenance.json\n            .artifacts/supabase-remote/manual-authorization.json\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n",
+    "on:\n  workflow_dispatch:\n    inputs:\n      operation:\n        type: choice\n        options: [prepare-plan, apply]\n      enterprise_owner_confirmed_name:\n        type: string\n      enterprise_owner_confirmed_slug:\n        type: string\n      confirm_enterprise_identity:\n        type: string\n      reviewed_plan_run_id:\n        type: string\n      reviewed_plan_sha256:\n        type: string\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  reconcile:\n    if: github.ref == \'refs/heads/main\' && inputs.confirm_project == \'nmssogphayjymjpbnrxv\' && inputs.confirm_enterprise_identity == \'enterprise owner confirmed identity nmssogphayjymjpbnrxv\' && inputs.confirm_recovery == \'recovery verified nmssogphayjymjpbnrxv\' && inputs.confirm_apply == \'apply reviewed plan nmssogphayjymjpbnrxv\'\n    concurrency:\n      group: supabase-production-nmssogphayjymjpbnrxv\n      cancel-in-progress: false\n    env: {}\n    steps:\n      - run: echo \'check-runs .name == \"validate\"\'\n      - if: inputs.operation == \'apply\'\n        run: pnpm schema:remote recovery\n        env:\n          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv\n      - if: inputs.operation == \'apply\'\n        run: echo \'REVIEWED_PLAN_RUN_ID REVIEWED_PLAN_SHA256 ENTERPRISE_NAME ENTERPRISE_SLUG enterprise_identity_sha256 enterpriseIdentitySha256 actions/runs/$REVIEWED_PLAN_RUN_ID supabase-manual-prepare-plan-$SHA plan-provenance.json [0-9a-f]{64}\'\n      - if: inputs.operation == \'apply\'\n        run: echo \'manual-authorization.json recoveryEvidenceSha256 enterpriseIdentitySha256 reviewedPlanRunId\'\n      - run: pnpm schema:remote prepare\n        env:\n          SUPABASE_LEGACY_ENTERPRISE_NAME: ${{ inputs.enterprise_owner_confirmed_name }}\n          SUPABASE_LEGACY_ENTERPRISE_SLUG: ${{ inputs.enterprise_owner_confirmed_slug }}\n      - if: inputs.operation == \'prepare-plan\'\n        run: pnpm schema:remote plan\n      - if: inputs.operation == \'prepare-plan\'\n        run: echo \'plan-provenance.json workflowRunId planSha256 enterpriseIdentitySha256\'\n      - if: inputs.operation == \'apply\'\n        run: pnpm schema:remote sync --allow-manual\n        env:\n          SUPABASE_REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/plan.sha256\n            .artifacts/supabase-remote/plan-provenance.json\n            .artifacts/supabase-remote/manual-authorization.json\n            .artifacts/supabase-remote/recovery-readback.json\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n",
   );
   return { root, write };
 }
@@ -584,19 +584,19 @@ test("manual Supabase reconciliation binds apply to reviewed plan and shared res
     ".github/workflows/supabase-replace.yml",
     workflow.replace("pnpm schema:remote sync --allow-manual", "pnpm schema:remote sync"),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(
     ".github/workflows/supabase-replace.yml",
     workflow.replace("pnpm schema:remote plan", "echo skip-plan"),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(
     ".github/workflows/supabase-replace.yml",
     workflow.replace(
-      "legacy_enterprise_slug:\n        type: string",
-      "legacy_enterprise_slug:\n        type: boolean",
+      "enterprise_owner_confirmed_slug:\n        type: string",
+      "enterprise_owner_confirmed_slug:\n        type: boolean",
     ),
   );
   rejects(root, "must use workflow_dispatch");
@@ -605,7 +605,7 @@ test("manual Supabase reconciliation binds apply to reviewed plan and shared res
     ".github/workflows/supabase-replace.yml",
     workflow.replace("SUPABASE_LEGACY_ENTERPRISE_SLUG", "SUPABASE_OTHER_INPUT"),
   );
-  rejects(root, "explicit legacy Enterprise name/slug");
+  rejects(root, "owner-confirmed legacy Enterprise name/slug");
 
   write(
     ".github/workflows/supabase-replace.yml",
@@ -624,33 +624,42 @@ test("manual Supabase reconciliation binds apply to reviewed plan and shared res
 
   write(
     ".github/workflows/supabase-replace.yml",
+    workflow.replace("pnpm schema:remote recovery", "echo skip-recovery"),
+  );
+  rejects(root, "verify provider recovery");
+
+  write(
+    ".github/workflows/supabase-replace.yml",
     workflow.replace("actions/runs/$REVIEWED_PLAN_RUN_ID", "actions/runs/other"),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(
     ".github/workflows/supabase-replace.yml",
-    workflow.replace("recoveryEvidenceReference", "missingRecoveryEvidenceReference"),
+    workflow.replace("recoveryEvidenceSha256", "missingRecoveryEvidenceSha256"),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(
     ".github/workflows/supabase-replace.yml",
-    workflow.replace("workflowRunId planSha256", "workflowRunId missingPlanSha"),
+    workflow.replace(
+      "workflowRunId planSha256 enterpriseIdentitySha256",
+      "workflowRunId missingPlanSha enterpriseIdentitySha256",
+    ),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(
     ".github/workflows/supabase-replace.yml",
     workflow.replace("manual-authorization.json", "missing-auth.json"),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(
     ".github/workflows/supabase-replace.yml",
     workflow.replace("pnpm schema:remote prepare", "echo skip-prepare"),
   );
-  rejects(root, "successful same-source prepare-plan artifact");
+  rejects(root, "verify provider recovery");
 
   write(".github/workflows/supabase-replace.yml", workflow);
   write(".github/workflows/rich-menu.yml", "name: duplicate\n");

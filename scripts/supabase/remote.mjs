@@ -178,6 +178,7 @@ from unnest(array[
 where to_regclass(format('app_private.%I', relation_name)) is null;
 `;
 const apiReadbackTimeoutMs = 10_000;
+const managementApiBaseUrl = "https://api.supabase.com/v1";
 const reconciliationLockName = "line-bot-v1:supabase-schema-reconciliation";
 
 export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnabled }) {
@@ -1181,6 +1182,88 @@ async function verifyRuntimeAuthBoundary() {
   });
 }
 
+export function supabaseManagementRecoveryConfig(env = process.env) {
+  const supabaseUrl = env.SUPABASE_URL;
+  const accessToken = env.SUPABASE_ACCESS_TOKEN;
+  if (!supabaseUrl) throw new Error("SUPABASE_URL is required for recovery readback.");
+  if (!accessToken) throw new Error("SUPABASE_ACCESS_TOKEN is required for recovery readback.");
+  const projectRef = projectRefFromSupabaseUrl(supabaseUrl);
+  assertConfirmedProject(projectRef, env.SUPABASE_CONFIRM_PROJECT);
+  return { projectRef, accessToken };
+}
+
+export function assertSupabaseRecoveryReadback(payload) {
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    Array.isArray(payload) ||
+    typeof payload.pitr_enabled !== "boolean" ||
+    typeof payload.walg_enabled !== "boolean" ||
+    !Array.isArray(payload.backups)
+  ) {
+    throw new Error("Supabase recovery readback returned an unexpected response.");
+  }
+
+  const completed = payload.backups
+    .filter(
+      (backup) =>
+        backup &&
+        typeof backup === "object" &&
+        backup.status === "COMPLETED" &&
+        typeof backup.inserted_at === "string" &&
+        Number.isFinite(Date.parse(backup.inserted_at)),
+    )
+    .map((backup) => ({
+      insertedAt: backup.inserted_at,
+      physical: backup.is_physical_backup === true,
+    }))
+    .sort((a, b) => Date.parse(b.insertedAt) - Date.parse(a.insertedAt));
+
+  const pitrReady = payload.pitr_enabled === true && payload.walg_enabled === true;
+  if (!pitrReady && completed.length === 0) {
+    throw new Error(
+      "Supabase provider recovery is unavailable: no PITR/WALG capability and no completed managed backup. Refusing destructive manual reconciliation.",
+    );
+  }
+
+  return {
+    provider: "supabase",
+    pitrEnabled: payload.pitr_enabled,
+    walgEnabled: payload.walg_enabled,
+    completedBackupCount: completed.length,
+    latestCompletedBackupAt: completed[0]?.insertedAt ?? null,
+    latestCompletedBackupPhysical: completed[0]?.physical ?? null,
+  };
+}
+
+export async function verifySupabaseRecoveryReadback(
+  config = supabaseManagementRecoveryConfig(),
+  fetchImpl = globalThis.fetch,
+) {
+  if (typeof fetchImpl !== "function") {
+    throw new Error("Supabase recovery readback requires a fetch implementation.");
+  }
+  const response = await fetchImpl(
+    `${managementApiBaseUrl}/projects/${config.projectRef}/database/backups`,
+    {
+      headers: { Authorization: `Bearer ${config.accessToken}` },
+      signal: AbortSignal.timeout(apiReadbackTimeoutMs),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Supabase recovery readback failed with HTTP ${response.status}; refusing destructive manual reconciliation.`,
+    );
+  }
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error("Supabase recovery readback did not return JSON.");
+  }
+  return { projectRef: config.projectRef, ...assertSupabaseRecoveryReadback(payload) };
+}
+
 export function supabaseApiReadbackConfig(env = process.env) {
   const supabaseUrl = env.SUPABASE_URL;
   const publishableKey = env.SUPABASE_PUBLISHABLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -1268,15 +1351,15 @@ async function verifyRemoteAcceptance() {
 
 export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
-  if (!["repair", "prepare", "plan", "sync", "verify"].includes(command)) {
+  if (!["repair", "prepare", "plan", "recovery", "sync", "verify"].includes(command)) {
     throw new Error(
-      "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-manual] [--api]",
+      "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--allow-manual] [--api]",
     );
   }
   for (const flag of flags) {
     if (!["--allow-manual", "--api"].includes(flag)) {
       throw new Error(
-        "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-manual] [--api]",
+        "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--allow-manual] [--api]",
       );
     }
   }
@@ -1415,8 +1498,22 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
 
 export async function main(argv = process.argv.slice(2)) {
   loadRootEnv();
-  const { projectRef } = requireRemoteConfig();
   const { command, allowManual, api } = parseArgs(argv);
+
+  if (command === "recovery") {
+    mkdirSync(artifacts, { recursive: true });
+    const evidence = await verifySupabaseRecoveryReadback();
+    writeFileSync(
+      new URL("recovery-readback.json", artifacts),
+      `${JSON.stringify(evidence, null, 2)}\n`,
+    );
+    console.log(
+      `Supabase recovery PASS for ${evidence.projectRef}: PITR = ${evidence.pitrEnabled}; WALG = ${evidence.walgEnabled}; completed managed backups = ${evidence.completedBackupCount}.`,
+    );
+    return;
+  }
+
+  const { projectRef } = requireRemoteConfig();
   const execute = () => runRemoteCommand({ projectRef, command, allowManual, api });
 
   if (["repair", "prepare", "sync"].includes(command)) {
