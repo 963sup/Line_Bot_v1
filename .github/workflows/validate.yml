@@ -47,6 +47,40 @@ jobs:
         run: pnpm install --frozen-lockfile
       - run: pnpm check
 
+  full-validate:
+    if: github.event_name == 'pull_request' && github.event.action == 'ready_for_review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - name: Restore validation build cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            .turbo
+            apps/web/.next/cache
+          key: validation-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'turbo.json') }}-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            validation-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'turbo.json') }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - run: pnpm validate
+
   validate:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
