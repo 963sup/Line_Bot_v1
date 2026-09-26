@@ -113,7 +113,7 @@ Stable ID 只定位 entity，不授權。Detail route 直接開啟、刷新與 l
 
 `/admin` 與子頁由 admin partition 組裝。Static navigation 可以存在，但 private read/write 仍由各 feature permission / module contract 驗證。
 
-已接線能力與未開放能力的產品狀態見 [Product experience](../000-core/060-product-experience.md)；permission contract 見 [Authorization](../050-security/030-authorization.md)。
+Current / target capability status 回 [Domain map](../000-core/020-domain-map.md) 與 [Governance](../090-governance/README.md)；permission contract 見 [Authorization](../050-security/030-authorization.md)。
 
 ## API
 

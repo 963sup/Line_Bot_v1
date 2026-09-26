@@ -231,7 +231,7 @@ Publication 不建立 `.artifacts/rich-menu*.json`，Rich Menu ID 只在單次 p
 ## 相鄰責任
 
 - MINI App entry：[MINI App runtime](010-line.md)
-- 產品行動體驗：[Product experience](../000-core/060-product-experience.md)
+- 系統級 product / interaction invariant：[System](../000-core/010-system.md)
 - Operator script：[`scripts/line/rich-menu/sync.ts`](../../scripts/line/rich-menu/sync.ts)
 - 正式素材：[`assets/line/rich-menu/`](../../assets/line/rich-menu)
 - 出勤、Repository、Project、Notifications、Partners 等業務規則：[Domain owners](../010-domain-owners/README.md)
