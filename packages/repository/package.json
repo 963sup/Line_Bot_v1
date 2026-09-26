@@ -55,6 +55,18 @@
     "./adapters/postgres/resources": {
       "types": "./dist/adapters/postgres/resources.d.ts",
       "default": "./dist/adapters/postgres/resources.js"
+    },
+    "./application/collection": {
+      "types": "./dist/application/collection.d.ts",
+      "default": "./dist/application/collection.js"
+    },
+    "./application/ports/collection": {
+      "types": "./dist/application/ports/collection.d.ts",
+      "default": "./dist/application/ports/collection.js"
+    },
+    "./adapters/postgres/collection": {
+      "types": "./dist/adapters/postgres/collection.d.ts",
+      "default": "./dist/adapters/postgres/collection.js"
     }
   },
   "files": [

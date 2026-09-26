@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <AppShell>
       <PageHeading
-        title="個人資料"
+        title="編輯個人資料"
         description="編輯產品內的顯示名稱與介紹；LINE Profile 仍只是外部 presentation data。"
         back="/settings"
       />

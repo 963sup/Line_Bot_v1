@@ -18,10 +18,12 @@ export default function MiniAppRuntime({
   liffId,
   onReady,
   onWait,
+  silent = false,
 }: {
   liffId: string;
   onReady: () => Promise<void>;
   onWait: () => void;
+  silent?: boolean;
 }) {
   const [error, setError] = useState("");
   async function initialize() {
@@ -51,7 +53,7 @@ export default function MiniAppRuntime({
           onWait();
         }}
       />
-      {error && (
+      {error && !silent && (
         <div role="alert">
           <p>{error}</p>
           <button onClick={() => void initialize()}>重試 LINE 登入</button>

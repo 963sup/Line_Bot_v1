@@ -34,7 +34,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // OAuth 回調包含一次性授權碼；開發與執行期間嚴禁記錄傳入請求的完整 URL
   logging: { incomingRequests: false },
-  serverExternalPackages: ["@line-work/infrastructure"],
   async redirects() {
     return [
       {
@@ -83,5 +82,14 @@ export default sentryBuildEnabled
       project: process.env.SENTRY_PROJECT,
       authToken: process.env.SENTRY_AUTH_TOKEN,
       silent: true,
+      // Error evidence is the only current Sentry consumer. Keep source-map symbolication,
+      // but do not ship tracing/debug/route-manifest code with the application.
+      routeManifestInjection: false,
+      webpack: {
+        treeshake: {
+          removeDebugLogging: true,
+          removeTracing: true,
+        },
+      },
     })
   : nextConfig;

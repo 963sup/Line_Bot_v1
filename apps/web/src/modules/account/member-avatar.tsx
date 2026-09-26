@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
+import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
 type AccountProjection = {
   member?: {
@@ -13,82 +14,97 @@ type AccountProjection = {
 export default function MemberAvatar({ liffId }: { liffId: string }) {
   const [picture, setPicture] = useState<string>();
   const [login, setLogin] = useState<string>();
+  const generation = useRef(0);
 
-  useEffect(() => {
-    let active = true;
+  const clear = useCallback(() => {
+    generation.current++;
+    setPicture(undefined);
+    setLogin(undefined);
+  }, []);
 
-    async function load() {
-      const [profileResult, tokenResult] = await Promise.allSettled([
-        liffClient.profile(),
-        liffClient.session(liffId),
-      ]);
+  const load = useCallback(async () => {
+    const ticket = ++generation.current;
+    const token = await liffClient.session(liffId);
+    if (!token || ticket !== generation.current) return;
 
-      if (!active) return;
+    const [profileResult, membershipResult] = await Promise.allSettled([
+      liffClient.profile(),
+      fetch("/api/membership", {
+        headers: { "x-line-token": token },
+        cache: "no-store",
+      }),
+    ]);
+    if (ticket !== generation.current) return;
 
-      if (
-        profileResult.status === "fulfilled" &&
-        profileResult.value.pictureUrl?.startsWith("https://")
-      ) {
-        setPicture(profileResult.value.pictureUrl);
-      }
-
-      const token = tokenResult.status === "fulfilled" ? tokenResult.value : null;
-      if (!token) return;
-
-      try {
-        const response = await fetch("/api/membership", {
-          headers: { "x-line-token": token },
-          cache: "no-store",
-        });
-        if (!response.ok) return;
-        const value = (await response.json()) as AccountProjection;
-        const accountLogin = value.member?.login;
-        if (active && typeof accountLogin === "string" && accountLogin) {
-          setLogin(accountLogin);
-        }
-      } catch {
-        // Keep the safe settings fallback while the current Account locator is unavailable.
-      }
+    if (
+      profileResult.status === "fulfilled" &&
+      profileResult.value.pictureUrl?.startsWith("https://")
+    ) {
+      setPicture(profileResult.value.pictureUrl);
+    } else {
+      setPicture(undefined);
     }
 
-    void load();
-    return () => {
-      active = false;
-    };
+    if (membershipResult.status !== "fulfilled" || !membershipResult.value.ok) {
+      setLogin(undefined);
+      return;
+    }
+    const value = (await membershipResult.value.json()) as AccountProjection;
+    if (ticket !== generation.current) return;
+    const accountLogin = value.member?.login;
+    setLogin(typeof accountLogin === "string" && accountLogin ? accountLogin : undefined);
   }, [liffId]);
 
-  return (
-    <Link
-      href={login ? `/${encodeURIComponent(login)}` : "/settings"}
-      className="member-avatar"
-      aria-label={login ? "個人檔案" : "設定"}
-      title={login ? "個人檔案" : "設定"}
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    [],
+  );
+
+  const avatar = picture ? (
+    // LINE hosts the profile photo; avoid proxying private profile images through Next.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={picture}
+      alt=""
+      width={44}
+      height={44}
+      referrerPolicy="no-referrer"
+      onError={() => setPicture(undefined)}
+    />
+  ) : (
+    <svg
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
     >
-      {picture ? (
-        // LINE hosts the profile photo; avoid proxying private profile images through Next.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={picture}
-          alt=""
-          width={44}
-          height={44}
-          referrerPolicy="no-referrer"
-          onError={() => setPicture(undefined)}
-        />
-      ) : (
-        <svg
-          viewBox="0 0 24 24"
-          width="28"
-          height="28"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          aria-hidden="true"
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 22v-2a8 8 0 0 1 16 0v2" />
+    </svg>
+  );
+
+  return (
+    <>
+      <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
+      {login ? (
+        <Link
+          href={`/${encodeURIComponent(login)}`}
+          className="member-avatar"
+          aria-label="個人檔案"
+          title="個人檔案"
         >
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 22v-2a8 8 0 0 1 16 0v2" />
-        </svg>
+          {avatar}
+        </Link>
+      ) : (
+        <span className="member-avatar" aria-label="個人檔案載入中" aria-disabled="true">
+          {avatar}
+        </span>
       )}
-    </Link>
+    </>
   );
 }

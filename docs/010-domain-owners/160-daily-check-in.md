@@ -4,7 +4,7 @@
 
 ## Current implementation / target distinction
 
-Current human qualification 由 [Account/User](010-account.md) 擁有。DailyCheckIn 用例解析可信 LINE subject 對應的 User；claim adapter 在同一 SQL transaction 內鎖定並重查 User qualification，再提交每日獎勵結果、Ledger credit 與 audit。前端轉盤只呈現已提交的結果，動畫完成、關閉或跳過都不決定是否入帳。
+Current human qualification 由 [Account/User](010-account.md) 擁有。DailyCheckIn 用例解析可信 LINE subject 對應的 User；claim adapter 在同一 SQL transaction 內鎖定並重查 User qualification，再提交每日獎勵結果、Ledger credit 與 audit。Current Web surface 是 `/daily-check-in`，由 `apps/web/src/modules/daily-check-in` 承接 claim/recovery/presentation lifecycle。前端轉盤只呈現已提交的結果，動畫完成、關閉或跳過都不決定是否入帳；Account `/settings` 使用 Account-only read projection，不載入 DailyCheckIn/Wallet。
 
 DailyCheckIn 接受合格 User 的明確 intent。它不擁有 Account lifecycle、Asset denomination、Wallet balance、Ledger history 或 Attendance clock reward；不新增泛用 Reward Context、點數引擎或活動平台。
 

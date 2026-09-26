@@ -52,6 +52,16 @@ async function get(request: Request, dependencies: UserRequests) {
   try {
     const subject = await dependencies.requestIdentity(request);
     const query = new URL(request.url).searchParams;
+    if (query.has("view")) {
+      if (
+        query.getAll("view").length !== 1 ||
+        query.get("view") !== "account" ||
+        [...query.keys()].some((key) => key !== "view")
+      ) {
+        throw new UserError(400, "會員檢視條件不正確。");
+      }
+      return jsonResponse({ member: await dependencies.getUser(subject) });
+    }
     if (query.has("checkInDay")) {
       return jsonResponse({
         claim: await dependencies.readClaim(subject, query.get("checkInDay")),
