@@ -121,9 +121,7 @@ async function visibleRepositories(
     sql,
     rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
   );
-  const ownerLogins = new Map(
-    owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]),
-  );
+  const ownerLogins = new Map(owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]));
   return rows.map((row) => {
     const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
     if (!ownerLogin) throw new RepositoryError(409, "Repository owner locator 不可用。");
@@ -313,10 +311,10 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
         }
       } else if (command.action === "add") {
         const star = (
-          await sql.query(
-            "SELECT 1 FROM repository_stars WHERE repository_id=$1 AND user_id=$2",
-            [command.repositoryId, userId],
-          )
+          await sql.query("SELECT 1 FROM repository_stars WHERE repository_id=$1 AND user_id=$2", [
+            command.repositoryId,
+            userId,
+          ])
         ).rows[0];
         if (!star) throw new RepositoryError(409, "請先 Star 此 Repository 再加入 List。");
         const access = (
