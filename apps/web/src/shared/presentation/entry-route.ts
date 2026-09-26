@@ -14,6 +14,7 @@ export type EntryRoute =
   | "feedback"
   | "home"
   | "membership"
+  | "profile"
   | "clockIn"
   | "clockOut"
   | "attendance"
@@ -46,6 +47,7 @@ export function entryRoute(href: string): EntryRoute {
     "clockIn",
     "clockOut",
     "membership",
+    "profile",
     "attendance",
     "expense",
     "records",
@@ -65,6 +67,8 @@ export function entryRoute(href: string): EntryRoute {
     return url.searchParams.get("attendance") === "1" ? "attendance" : "invalid";
   if (url.searchParams.has("membership"))
     return url.searchParams.get("membership") === "1" ? "membership" : "invalid";
+  if (url.searchParams.has("profile"))
+    return url.searchParams.get("profile") === "1" ? "profile" : "invalid";
   for (const page of [
     "workplaces",
     "planned",
@@ -122,6 +126,7 @@ export function entryReturnUrl(href: string) {
     "partners",
     "feedback",
     "membership",
+    "profile",
     "attendance",
     "clockIn",
     "clockOut",
