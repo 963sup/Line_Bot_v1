@@ -1,4 +1,5 @@
 import { IssueError, issueText, normalizeIssueNumber, normalizeRepositoryName } from "../domain.js";
+import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
 
 function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
@@ -47,11 +48,12 @@ function selector(value?: RepositorySelector): RepositorySelector | undefined {
     }
     return value;
   }
+  const ownerLogin = accountLoginForRepositoryLocator(value.ownerLogin);
   const repositoryName = normalizeRepositoryName(value.repositoryName);
-  if (!value.ownerLogin || !repositoryName) {
+  if (!ownerLogin || !repositoryName) {
     throw new IssueError(400, "Repository 路徑不正確。");
   }
-  return { ownerLogin: value.ownerLogin, repositoryName };
+  return { ownerLogin, repositoryName };
 }
 
 export function createIssues(deps: {

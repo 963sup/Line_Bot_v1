@@ -1,4 +1,5 @@
 import { IssueError, normalizeRepositoryName } from "../domain.js";
+import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type { PublicRepositoryStore } from "./ports/public.js";
 
 function publicListLimit(value: number): number {
@@ -11,11 +12,15 @@ function publicListLimit(value: number): number {
 export function createPublicRepositories(store: PublicRepositoryStore) {
   return {
     byOwnerAndName(ownerLogin: string, repository: string) {
+      const login = accountLoginForRepositoryLocator(ownerLogin);
       const name = normalizeRepositoryName(repository);
-      return name ? store.byOwnerAndName(ownerLogin, name) : Promise.resolve(null);
+      return login && name ? store.byOwnerAndName(login, name) : Promise.resolve(null);
     },
     listByOwner(ownerLogin: string, limit = 6) {
-      return store.listByOwner(ownerLogin, publicListLimit(limit));
+      const login = accountLoginForRepositoryLocator(ownerLogin);
+      return login
+        ? store.listByOwner(login, publicListLimit(limit))
+        : Promise.resolve({ items: [], totalCount: 0 });
     },
   };
 }

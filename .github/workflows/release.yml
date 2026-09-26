@@ -103,6 +103,9 @@ jobs:
     if: needs.gate.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: supabase-production-nmssogphayjymjpbnrxv
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
         with:
@@ -172,6 +175,7 @@ jobs:
             .artifacts/supabase-remote/account-login-compat.sql
             .artifacts/supabase-remote/daily-check-in-compat.sql
             .artifacts/supabase-remote/plan.sql
+            .artifacts/supabase-remote/plan.sha256
             .artifacts/supabase-remote/verification.sql
             .artifacts/supabase-remote/migration-history.before.txt
             .artifacts/supabase-remote/migration-history.after.txt

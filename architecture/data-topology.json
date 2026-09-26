@@ -148,6 +148,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/604_repository_commands.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/610_repository_labels.sql",
       "role": "authoritative"
     },
@@ -644,6 +648,13 @@
       "name": "repository_stars",
       "kind": "table",
       "path": "supabase/schemas/603_repository_stars.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_commands",
+      "kind": "table",
+      "path": "supabase/schemas/604_repository_commands.sql",
       "authority": true,
       "semanticOwner": "repository"
     },

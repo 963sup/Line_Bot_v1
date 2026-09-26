@@ -1,36 +1,6 @@
-class AccountLoginError extends Error {}
+import { isReservedRootNamespaceKey } from "@line-work/namespace/root";
 
-const reservedLogins = new Set([
-  "admin",
-  "assistant",
-  "api",
-  "attendance",
-  "auth",
-  "complete",
-  "diary",
-  "enterprises",
-  "expenses",
-  "explore",
-  "feedback",
-  "google-link",
-  "history",
-  "home",
-  "login",
-  "membership",
-  "notifications",
-  "organizations",
-  "orgs",
-  "partners",
-  "planned",
-  "privacy",
-  "projects",
-  "repositories",
-  "search",
-  "settings",
-  "team",
-  "terms",
-  "unavailable",
-]);
+class AccountLoginError extends Error {}
 
 export function normalizeAccountLogin(value: string): string {
   const login = value.trim().toLowerCase();
@@ -38,7 +8,7 @@ export function normalizeAccountLogin(value: string): string {
     login.length < 1 ||
     login.length > 39 ||
     !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(login) ||
-    reservedLogins.has(login)
+    isReservedRootNamespaceKey(login)
   ) {
     throw new AccountLoginError("Account login is invalid or reserved.");
   }

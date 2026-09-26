@@ -13,13 +13,19 @@
       "path": "packages/account",
       "moduleKind": "domain-module",
       "semanticOwner": "account",
-      "allowedWorkspaceDependencies": ["@line-work/platform"]
+      "allowedWorkspaceDependencies": ["@line-work/namespace", "@line-work/platform"]
     },
     "@line-work/notifications": {
       "path": "packages/notifications",
       "moduleKind": "domain-module",
       "semanticOwner": "notifications",
       "allowedWorkspaceDependencies": ["@line-work/platform"]
+    },
+    "@line-work/namespace": {
+      "path": "packages/namespace",
+      "moduleKind": "domain-module",
+      "semanticOwner": "namespace",
+      "allowedWorkspaceDependencies": []
     },
     "@line-work/asset": {
       "path": "packages/asset",
@@ -141,6 +147,7 @@
       "semanticOwner": "repository",
       "allowedWorkspaceDependencies": [
         "@line-work/account",
+        "@line-work/identity-access",
         "@line-work/organization",
         "@line-work/platform"
       ]

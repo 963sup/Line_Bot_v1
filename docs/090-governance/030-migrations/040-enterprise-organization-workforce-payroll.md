@@ -62,7 +62,7 @@ validated desired schema
 → runtime negative/positive smoke
 ```
 
-Destructive/data-sensitive diff 只走 explicit Supabase Replace authorization。Auth/Storage/provider-owned state 不在 app schema rebuild boundary。External write 結果未知時先 readback，不盲目重跑。
+Unknown、destructive、data-sensitive 或敏感 privilege transition 只走 manual reconciliation：先 `prepare-plan` 產生 exact plan + SHA-256，review 後以相同 fingerprint、recovery-readiness attestation 與 explicit apply authorization 執行。Auth/Storage/provider-owned state 不在 app schema rebuild boundary。External write 結果未知時先 readback，不盲目重跑。
 
 ## Acceptance matrix
 

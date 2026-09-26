@@ -580,8 +580,17 @@ export function validate(root) {
         "CI: Supabase release must verify every validated main revision with step-scoped secrets",
       );
     }
-    if (releaseWorkflowSource.includes("schema:remote sync --allow-destructive")) {
-      errors.push("CI: automatic Release must never authorize destructive Supabase reconciliation");
+    if (
+      releaseWorkflowSource.includes("schema:remote sync --allow-destructive") ||
+      releaseWorkflowSource.includes("schema:remote sync --allow-manual")
+    ) {
+      errors.push("CI: automatic Release must never authorize manual Supabase reconciliation");
+    }
+    if (
+      releaseSupabase?.concurrency?.group !== "supabase-production-nmssogphayjymjpbnrxv" ||
+      releaseSupabase?.concurrency?.["cancel-in-progress"] !== false
+    ) {
+      errors.push("CI: automatic Supabase release must serialize the production database resource");
     }
     const supabaseSteps = releaseSupabase?.steps ?? [];
     const supabaseMain = supabaseSteps.findIndex(
@@ -615,6 +624,7 @@ export function validate(root) {
           ".artifacts/supabase-remote/daily-check-in-compat.sql",
         ) &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
+        JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sha256") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
@@ -724,24 +734,40 @@ export function validate(root) {
     const replaceWorkflowSource = read(replaceWorkflowFile);
     const replaceWorkflow = YAML.parse(replaceWorkflowSource);
     const replaceTriggers = replaceWorkflow.on;
+    const replaceDispatch = replaceTriggers?.workflow_dispatch;
+    const replaceInputs = replaceDispatch?.inputs;
     if (
       !table(replaceTriggers) ||
-      !Object.hasOwn(replaceTriggers, "workflow_dispatch") ||
-      Object.hasOwn(replaceTriggers, "push")
-    )
-      errors.push("CI: destructive Supabase replacement must require workflow_dispatch");
-    const replaceJob = replaceWorkflow.jobs?.replace;
+      !table(replaceDispatch) ||
+      Object.hasOwn(replaceTriggers, "push") ||
+      !table(replaceInputs) ||
+      replaceInputs.operation?.type !== "choice" ||
+      !Array.isArray(replaceInputs.operation?.options) ||
+      !replaceInputs.operation.options.includes("prepare-plan") ||
+      !replaceInputs.operation.options.includes("apply")
+    ) {
+      errors.push(
+        "CI: manual Supabase reconciliation must use workflow_dispatch with prepare-plan/apply modes",
+      );
+    }
+
+    const replaceJob = replaceWorkflow.jobs?.reconcile;
     if (
       !replaceJob ||
       typeof replaceJob.if !== "string" ||
       !replaceJob.if.includes("refs/heads/main") ||
       !replaceJob.if.includes("nmssogphayjymjpbnrxv") ||
-      !replaceJob.if.includes("confirm_replace") ||
+      !replaceJob.if.includes("confirm_recovery") ||
+      !replaceJob.if.includes("confirm_apply") ||
+      replaceJob?.concurrency?.group !== "supabase-production-nmssogphayjymjpbnrxv" ||
+      replaceJob?.concurrency?.["cancel-in-progress"] !== false ||
       JSON.stringify(replaceJob?.env ?? {}).includes("secrets.")
-    )
+    ) {
       errors.push(
-        "CI: destructive Supabase replacement must require exact main/target confirmation",
+        "CI: manual Supabase reconciliation must require exact main/target authorization and share the production database lock",
       );
+    }
+
     const replaceSteps = replaceJob?.steps ?? [];
     const replaceValidate = replaceSteps.findIndex(
       (step) =>
@@ -749,43 +775,63 @@ export function validate(root) {
         step.run.includes("check-runs") &&
         step.run.includes('.name == "validate"'),
     );
+    const replaceFingerprint = replaceSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("REVIEWED_PLAN_SHA256") &&
+        step.run.includes("[0-9a-f]{64}") &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'apply'"),
+    );
     const replacePrepare = replaceSteps.findIndex(
       (step) => step.run === "pnpm schema:remote prepare",
     );
+    const replacePlan = replaceSteps.findIndex(
+      (step) =>
+        step.run === "pnpm schema:remote plan" &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'prepare-plan'"),
+    );
     const replaceSync = replaceSteps.findIndex(
-      (step) => step.run === "pnpm schema:remote sync --allow-destructive",
+      (step) =>
+        step.run === "pnpm schema:remote sync --allow-manual" &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'apply'") &&
+        JSON.stringify(step.env ?? {}).includes("SUPABASE_REVIEWED_PLAN_SHA256"),
     );
     const replaceEvidence = replaceSteps.findIndex(
       (step) =>
         step.uses === "actions/upload-artifact@v4" &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
+        JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sha256") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
     );
-    const redundantReplaceSteps = replaceSteps.filter(
-      (step) => step.run === "pnpm schema:remote plan" || step.run === "pnpm schema:remote verify",
-    );
     if (
       replaceValidate < 0 ||
-      replacePrepare <= replaceValidate ||
-      replaceSync <= replacePrepare ||
+      replaceFingerprint <= replaceValidate ||
+      replacePrepare <= replaceFingerprint ||
+      replacePlan <= replacePrepare ||
+      replaceSync <= replacePlan ||
       replaceEvidence <= replaceSync ||
-      redundantReplaceSteps.length ||
+      JSON.stringify(replaceSteps).includes("--allow-destructive") ||
       JSON.stringify(replaceSteps).includes("VERCEL_TOKEN") ||
       JSON.stringify(replaceSteps).includes("commits/$SHA/status")
-    )
+    ) {
       errors.push(
-        "CI: destructive Supabase replacement order must be validate/prepare/replace/evidence and must not own Web deployment",
+        "CI: manual Supabase reconciliation must validate, attest, prepare, plan/apply exact reviewed SQL, then preserve evidence without owning Web deployment",
       );
+    }
     if (
       !JSON.stringify(replaceSteps[replacePrepare]?.env ?? {}).includes(
         "SUPABASE_ENTERPRISE_METADATA_BACKFILL",
       )
-    )
+    ) {
       errors.push(
-        "CI: destructive Supabase replacement must scope Enterprise metadata backfill to the prepare step",
+        "CI: manual Supabase reconciliation must scope Enterprise metadata backfill to prepare",
       );
+    }
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }

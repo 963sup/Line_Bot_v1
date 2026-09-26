@@ -154,6 +154,12 @@
       "doc": "docs/030-platform/README.md"
     },
     {
+      "id": "namespace",
+      "kind": "policy-owner",
+      "lifecycle": "current",
+      "doc": "docs/010-domain-owners/190-namespace.md"
+    },
+    {
       "id": "platform",
       "kind": "support-owner",
       "lifecycle": "current",
@@ -610,6 +616,15 @@
   ],
   "relationships": [
     {
+      "id": "namespace-account-root-reservation",
+      "provider": "namespace",
+      "consumer": "account",
+      "meaning": "Account consumes the shared global-root reservation policy before accepting a User or Organization login locator.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-policy"
+    },
+    {
       "id": "account-team-qualification",
       "provider": "account",
       "consumer": "team",
@@ -844,6 +859,15 @@
       "consistency": "current-state"
     },
     {
+      "id": "identity-access-repository-owner-authorization",
+      "provider": "identity-access",
+      "consumer": "repository",
+      "meaning": "Repository creation under an Organization consumes current effective OrganizationOwner authorization.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
       "id": "identity-access-team-authorization",
       "provider": "identity-access",
       "consumer": "team",
@@ -863,6 +887,29 @@
     }
   ],
   "capabilities": [
+    {
+      "id": "govern-root-namespace",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Define and evaluate shared global-root reservations so product root routes cannot be claimed as Account login locators.",
+      "preserves": ["K1", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current shared global-root reservation policy consumed by Account login validation",
+        "sourcePaths": ["packages/namespace/src/root.ts"],
+        "publicExports": ["./root"],
+        "entrypoints": ["packages/account/src/domain/login.ts"],
+        "testPaths": ["packages/namespace/test/root.test.ts", "packages/account/test/user.test.ts"],
+        "note": "Namespace owns reservation/collision policy only; Account retains login normalization, lifecycle and persistence, while SQL and route inventory are enforcement/evidence."
+      }
+    },
     {
       "id": "qualify-user",
       "owner": "account",
@@ -1113,6 +1160,7 @@
       "runtimeExpectation": "not-asserted",
       "members": [
         "read-repository",
+        "create-repository",
         "manage-repository-access",
         "manage-repository-stars",
         "manage-issues",
@@ -1123,6 +1171,45 @@
         "read-repository-labels",
         "read-repository-milestones"
       ]
+    },
+    {
+      "id": "create-repository",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Create a private User- or Organization-owned Repository with replay-safe owner authorization and immediate creator access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current private Repository creation for self User owner or current effective OrganizationOwner",
+        "sourcePaths": [
+          "packages/repository/src/application/creation.ts",
+          "packages/repository/src/application/ports/creation.ts",
+          "packages/repository/src/adapters/postgres/creation.ts"
+        ],
+        "publicExports": [
+          "./application/creation",
+          "./application/ports/creation",
+          "./adapters/postgres/creation"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/route.ts",
+          "apps/web/src/app/api/repositories/owners/route.ts",
+          "apps/web/src/app/(mobile)/repositories/new/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/creation.test.ts",
+          "apps/web/test/repository-creation-http.test.ts"
+        ],
+        "note": "Create is private-only. User owner is self; Organization owner requires effective OrganizationOwner. Exact replay rechecks current authority before returning the receipt."
+      }
     },
     {
       "id": "read-repository",
@@ -1837,6 +1924,11 @@
       "module": "@line-work/google-workspace"
     },
     {
+      "semanticOwner": "namespace",
+      "module": "@line-work/namespace",
+      "note": "Namespace exposes the current global-root reservation policy through @line-work/namespace/root; broader claim/resolve capabilities remain unimplemented until a real shared consistency boundary exists."
+    },
+    {
       "semanticOwner": "platform",
       "module": "@line-work/platform"
     }
@@ -2226,6 +2318,7 @@
       "status": "active",
       "fields": ["login"],
       "scope": "shared-account-login-namespace",
+      "scopeAuthority": "account",
       "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
       "note": "User and Organization share the login namespace. URL/resourcePath is locator evidence, not authorization or stable database identity.",
       "benchmark": {
@@ -2241,6 +2334,7 @@
       "status": "active",
       "fields": ["login"],
       "scope": "shared-account-login-namespace",
+      "scopeAuthority": "account",
       "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
       "note": "Organization login shares the account login namespace and is resolved by the public owner page. Rename/display concerns stay separate from stable account identity.",
       "benchmark": {
@@ -2256,6 +2350,7 @@
       "status": "active",
       "fields": ["slug"],
       "scope": "enterprise-slug-namespace",
+      "scopeAuthority": "enterprise",
       "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"],
       "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
       "benchmark": {
@@ -2271,6 +2366,7 @@
       "status": "active",
       "fields": ["ownerLogin", "name"],
       "scope": "repository-owner-login-and-name",
+      "scopeAuthority": "repository",
       "routeFiles": ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
       "note": "Repository URL derives from owner login plus Repository name; access still comes from authorization checks.",
       "benchmark": {
@@ -2286,6 +2382,7 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "number"],
       "scope": "repository-scoped-issue-number",
+      "scopeAuthority": "repository",
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
       ],
@@ -2303,6 +2400,7 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "discussionId"],
       "scope": "repository-scoped-local-discussion-id",
+      "scopeAuthority": "repository",
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
       ],
@@ -2314,6 +2412,7 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
       "scope": "repository-scoped-milestone-number",
+      "scopeAuthority": "repository",
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
       ],
@@ -2331,6 +2430,7 @@
       "status": "active",
       "fields": ["organizationLogin", "teamSlug"],
       "scope": "organization-scoped-team-slug",
+      "scopeAuthority": "team",
       "routeFiles": ["apps/web/src/app/(mobile)/organizations/[login]/teams/[teamSlug]/page.tsx"],
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "benchmark": {
@@ -2346,6 +2446,7 @@
       "status": "active",
       "fields": ["enterpriseSlug", "teamSlug"],
       "scope": "enterprise-scoped-team-slug",
+      "scopeAuthority": "enterprise",
       "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
       "note": "Enterprise Team slug is scoped to Enterprise and is independent from Organization Team slug.",
       "benchmark": {

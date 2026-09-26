@@ -33,6 +33,7 @@ Validation
 - [Repository](080-repository.md)
 - [Notifications](090-notifications.md)
 - [Project](180-project.md)
+- [Namespace](190-namespace.md)
 - [Expense](100-expense.md)
 - [Partners](110-partners.md)
 - [Assistant](120-assistant.md)

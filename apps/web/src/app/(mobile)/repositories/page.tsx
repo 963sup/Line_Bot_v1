@@ -22,7 +22,16 @@ export default async function Page({
             ? "選擇具 write 或 admin capability 的 Repository，再建立該 Repository 擁有的 Issue。"
             : "目前登入者可存取的工作容器；進入後再查看該 Repository 的 Issues、Discussions、Labels 與 Milestones。"
         }
-        actions={createIssue ? undefined : <PrimaryLink href="/explore">Explore</PrimaryLink>}
+        actions={
+          createIssue ? undefined : (
+            <div className="inline-actions">
+              <PrimaryLink href="/repositories/new">New Repository</PrimaryLink>
+              <PrimaryLink href="/explore" tone="secondary">
+                Explore
+              </PrimaryLink>
+            </div>
+          )
+        }
         back={createIssue ? "/home" : undefined}
       />
       <RepositoryList

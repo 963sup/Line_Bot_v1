@@ -387,6 +387,7 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     }
   }
 
+  const authorityByLocatorScope = new Map();
   for (const locator of locators.values()) {
     const concept = concepts.get(locator.concept);
     if (!concept) {
@@ -399,6 +400,25 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     }
     if (typeof locator.scope !== "string" || !locator.scope.trim()) {
       errors.push("Locator " + locator.id + ": scope is required");
+    }
+    if (typeof locator.scopeAuthority !== "string" || !locator.scopeAuthority.trim()) {
+      errors.push("Locator " + locator.id + ": scopeAuthority is required");
+    } else if (!owners.has(locator.scopeAuthority)) {
+      errors.push("Locator " + locator.id + ": unknown scopeAuthority " + locator.scopeAuthority);
+    } else if (typeof locator.scope === "string" && locator.scope.trim()) {
+      const existingAuthority = authorityByLocatorScope.get(locator.scope);
+      if (existingAuthority && existingAuthority !== locator.scopeAuthority) {
+        errors.push(
+          "Locator scope " +
+            locator.scope +
+            ": conflicting authorities " +
+            existingAuthority +
+            " and " +
+            locator.scopeAuthority,
+        );
+      } else {
+        authorityByLocatorScope.set(locator.scope, locator.scopeAuthority);
+      }
     }
     if (!["active", "reference-only"].includes(locator.status)) {
       errors.push("Locator " + locator.id + ": status must be active or reference-only");
