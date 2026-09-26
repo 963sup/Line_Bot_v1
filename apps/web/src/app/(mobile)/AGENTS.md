@@ -34,3 +34,5 @@ It does not own business truth, authorization, persistence, package boundaries, 
 
 - Home Search routes to `/search`; the current surface filters the authorized Repository collection only and must not claim People/Organization/Issue search coverage.
 - Home Refresh performs a full document reload so client-owned viewer projections such as Account avatar and Starred Repositories reinitialize together; `router.refresh()` alone is insufficient for these client states.
+
+- Home Create currently exposes Issue creation only. It routes through `/repositories?intent=create-issue` to choose a writable Repository and then canonical `/{login}/{repository}/issues?create=1`. Do not add New Repository until Repository owner exposes a create contract.

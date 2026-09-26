@@ -163,6 +163,33 @@ async function run() {
     await page.goto(`${base}/home`);
     await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
     await expect(page.locator(".member-avatar")).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Search repositories", exact: true })).toHaveAttribute(
+      "href",
+      "/search",
+    );
+    await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page.getByRole("link", { name: /Create Issue/ })).toHaveAttribute(
+      "href",
+      "/repositories?intent=create-issue",
+    );
+
+    await page.getByRole("link", { name: "Search repositories", exact: true }).click();
+    await expect(page).toHaveURL(`${base}/search`);
+    await page.getByRole("searchbox", { name: "Search repositories", exact: true }).fill("Operations");
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations",
+    );
+
+    await page.goto(`${base}/repositories?intent=create-issue`);
+    await page.getByRole("heading", { name: "Choose Repository", exact: true }).waitFor();
+    const createRepositoryLink = page.getByRole("link", { name: /acme\/Operations/ });
+    await expect(createRepositoryLink).toHaveAttribute("href", "/acme/Operations/issues?create=1");
+    await createRepositoryLink.click();
+    await expect(page).toHaveURL(`${base}/acme/Operations/issues?create=1`);
+    await expect(page.getByRole("button", { name: "收起建立表單", exact: true })).toBeVisible();
+    await expect(page.getByLabel("標題", { exact: true })).toBeVisible();
 
     await page.goto(`${base}/repositories`);
     await page.getByRole("heading", { name: "Repositories", exact: true }).waitFor();

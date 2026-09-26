@@ -43,6 +43,26 @@ export default function HomeActions({ liffId }: { liffId: string }) {
         </svg>
       </button>
 
+      <details className="home-create-menu">
+        <summary className="home-heading-action" aria-label="Create" title="Create">
+          <svg {...iconProps}>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v8M8 12h8" />
+          </svg>
+        </summary>
+        <div className="home-create-popover">
+          <Link href="/repositories?intent=create-issue">
+            <span className="home-create-icon" aria-hidden="true">
+              ◎
+            </span>
+            <span>
+              <strong>Create Issue</strong>
+              <small>先選擇有 write 權限的 Repository</small>
+            </span>
+          </Link>
+        </div>
+      </details>
+
       <MemberAvatar liffId={liffId} />
     </div>
   );

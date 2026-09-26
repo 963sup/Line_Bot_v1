@@ -24,3 +24,5 @@ FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承
 - Project planning references Issues through Project contracts; this module never turns Project metadata into Issue truth.
 
 - `/search` reuses the authorized Repository collection as a presentation filter; it does not create a generic Search owner or a second Repository truth.
+
+- Home create intent must select a Repository with `write | admin` before entering canonical Issues with `create=1`. The query controls presentation only; the Issue command still revalidates Repository access and replay in the Repository owner.

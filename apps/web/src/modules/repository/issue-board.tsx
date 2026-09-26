@@ -44,12 +44,14 @@ export default function IssueBoard({
   ownerLogin,
   repositoryName,
   issueNumber,
+  initialCreating = false,
 }: {
   liffId: string;
   repositoryId?: string;
   ownerLogin?: string;
   repositoryName?: string;
   issueNumber?: number;
+  initialCreating?: boolean;
 }) {
   const detailMode = issueNumber !== undefined;
   const canonicalRepository = Boolean(ownerLogin && repositoryName);
@@ -60,7 +62,7 @@ export default function IssueBoard({
   const [data, setData] = useState<IssueSnapshot | null>(null);
   const [selectedRepository, setSelectedRepository] = useState(repositoryId ?? "");
   const [view, setView] = useState<IssueView>("all");
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(initialCreating);
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<PendingIssueCommand | null>(null);
   const [busy, setBusy] = useState(false);
@@ -69,7 +71,7 @@ export default function IssueBoard({
   const generation = useRef(0);
   const routeKey = `${repositoryId ?? ""}:${ownerLogin ?? ""}:${repositoryName ?? ""}:${
     issueNumber ?? ""
-  }`;
+  }:${initialCreating ? "create" : "view"}`;
   const observedRouteKey = useRef(routeKey);
 
   function rememberPending(value: PendingIssueCommand) {
@@ -224,8 +226,9 @@ export default function IssueBoard({
     clearAuthorizedState();
     setError("");
     setView("all");
+    setCreating(initialCreating);
     setSelectedRepository(repositoryId ?? "");
-  }, [clearAuthorizedState, routeKey, repositoryId]);
+  }, [clearAuthorizedState, initialCreating, routeKey, repositoryId]);
 
   const current = detailMode ? data?.issues[0] : undefined;
   const currentRepository = data?.repositories.find((item) => item.id === selectedRepository);
@@ -368,7 +371,12 @@ export default function IssueBoard({
                   {creating ? "收起建立表單" : "建立 Issue"}
                 </button>
               )}
-              {creating && (
+              {initialCreating && currentRepository && !canWrite && (
+                <p className="empty-copy">
+                  你目前只有 {currentRepository.capability} capability，不能在此 Repository 建立 Issue。
+                </p>
+              )}
+              {creating && canWrite && (
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
