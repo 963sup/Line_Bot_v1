@@ -35,22 +35,30 @@ async function loadSelfResources(token: string): Promise<SelfResources> {
 
   let organizations: string | null = null;
   if (organizationsResult.status === "fulfilled" && organizationsResult.value.ok) {
-    const value = (await organizationsResult.value.json()) as {
-      items?: OrganizationSummary[];
-      next?: string | null;
-    };
-    if (Array.isArray(value.items)) {
-      const count = value.items.filter(
-        (item) => item.actorMembershipStatus === "active" || item.actorIsOwner === true,
-      ).length;
-      organizations = value.next ? `${count}+` : String(count);
+    try {
+      const value = (await organizationsResult.value.json()) as {
+        items?: OrganizationSummary[];
+        next?: string | null;
+      };
+      if (Array.isArray(value.items)) {
+        const count = value.items.filter(
+          (item) => item.actorMembershipStatus === "active" || item.actorIsOwner === true,
+        ).length;
+        organizations = value.next ? `${count}+` : String(count);
+      }
+    } catch {
+      // Optional resource projection failure must not invalidate the already-verified viewer.
     }
   }
 
   let starred: string | null = null;
   if (starredResult.status === "fulfilled" && starredResult.value.ok) {
-    const value = (await starredResult.value.json()) as { items?: unknown[] };
-    if (Array.isArray(value.items)) starred = String(value.items.length);
+    try {
+      const value = (await starredResult.value.json()) as { items?: unknown[] };
+      if (Array.isArray(value.items)) starred = String(value.items.length);
+    } catch {
+      // Optional resource projection failure leaves only this count unavailable.
+    }
   }
 
   return { organizations, starred };
@@ -108,7 +116,6 @@ function ProfileResources({
     <section className={styles.resources} aria-label="Profile resources">
       <div className={styles.resourceList}>
         <ResourceRow
-          href={ownProfile ? "/repositories" : "#popular-repositories"}
           icon="▣"
           tone="neutral"
           label="Repositories"
