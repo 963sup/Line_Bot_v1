@@ -1,15 +1,15 @@
-import MemberAvatar from "../../../modules/account/member-avatar";
 import StarredRepositories from "../../../modules/repository/starred-repositories";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { ActionRow, PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
+import HomeActions from "./home-actions";
 
 export default function Page() {
   const liffId = lineMiniApp().liffId;
 
   return (
     <AppShell>
-      <PageHeading title="Home" actions={<MemberAvatar liffId={liffId} />} />
+      <PageHeading title="Home" actions={<HomeActions liffId={liffId} />} />
 
       <SectionHeading title="My Work" />
       <div className="menu-group home-resource-list">

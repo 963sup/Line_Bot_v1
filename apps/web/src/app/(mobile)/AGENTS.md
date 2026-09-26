@@ -31,3 +31,6 @@ It does not own business truth, authorization, persistence, package boundaries, 
 - Home alone renders the Account/Profile avatar in its header. It resolves the current Account-owned login through the trusted membership projection and links to canonical `/{login}`; Inbox, Explore, AI, resource/work pages do not repeat it. `/settings` remains viewer configuration, not User identity.
 
 - `/daily-check-in` is the authenticated DailyCheckIn presentation surface. It is secondary navigation from Home, not a global tab and not part of Settings.
+
+- Home Search routes to `/search`; the current surface filters the authorized Repository collection only and must not claim People/Organization/Issue search coverage.
+- Home Refresh performs a full document reload so client-owned viewer projections such as Account avatar and Starred Repositories reinitialize together; `router.refresh()` alone is insufficient for these client states.
