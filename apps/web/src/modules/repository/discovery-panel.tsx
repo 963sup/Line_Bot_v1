@@ -160,92 +160,98 @@ export default function DiscoveryPanel({
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
 
-      {sections !== "activity" && <div id="trending" className="explore-section">
-        <SectionHeading
-          title="Trending Repositories"
-          description="最近 7 天仍有效的 Star 優先；沒有近期訊號時再以總 Star 數排序。"
-        />
-        {items?.length === 0 && (
-          <p className="empty-copy">目前沒有可探索的 Repository。取得存取權後會出現在這裡。</p>
-        )}
-        {items && items.length > 0 && (
-          <div className="discovery-list">
-            {items.map((item) => (
-              <article className="discovery-item" key={item.id}>
-                <div className="discovery-copy">
-                  <Link
-                    className="discovery-repository-link"
-                    href={repositoryPath(item.ownerLogin, item.name)}
-                  >
-                    {item.ownerLogin}/{item.name}
-                  </Link>
-                  <div className="discovery-meta">
-                    <span>{item.visibility}</span>
-                    <span>{item.recentStarCount} recent Stars</span>
-                    <span>{item.starCount} Stars</span>
+      {sections !== "activity" && (
+        <div id="trending" className="explore-section">
+          <SectionHeading
+            title="Trending Repositories"
+            description="最近 7 天仍有效的 Star 優先；沒有近期訊號時再以總 Star 數排序。"
+          />
+          {items?.length === 0 && (
+            <p className="empty-copy">
+              目前沒有可探索的 Repository。取得存取權後會出現在這裡。
+            </p>
+          )}
+          {items && items.length > 0 && (
+            <div className="discovery-list">
+              {items.map((item) => (
+                <article className="discovery-item" key={item.id}>
+                  <div className="discovery-copy">
+                    <Link
+                      className="discovery-repository-link"
+                      href={repositoryPath(item.ownerLogin, item.name)}
+                    >
+                      {item.ownerLogin}/{item.name}
+                    </Link>
+                    <div className="discovery-meta">
+                      <span>{item.visibility}</span>
+                      <span>{item.recentStarCount} recent Stars</span>
+                      <span>{item.starCount} Stars</span>
+                    </div>
                   </div>
-                </div>
-                <div className="discovery-actions">
-                  <button
-                    type="button"
-                    className={item.starred ? "secondary" : undefined}
-                    disabled={busy}
-                    onClick={() => void toggle(item)}
-                  >
-                    {item.starred ? "Starred" : "Star"}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>}
+                  <div className="discovery-actions">
+                    <button
+                      type="button"
+                      className={item.starred ? "secondary" : undefined}
+                      disabled={busy}
+                      onClick={() => void toggle(item)}
+                    >
+                      {item.starred ? "Starred" : "Star"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      {sections !== "trending" && <div className="explore-section">
-        <SectionHeading
-          title="Activity"
-          description="目前只投影仍可存取 Repository 的 durable Issue lifecycle evidence。"
-        />
-        {activity?.length === 0 && (
-          <p className="empty-copy">目前沒有可顯示的 Repository activity。</p>
-        )}
-        {activity && activity.length > 0 && (
-          <div className="explore-activity-list">
-            {activity.map((item) => (
-              <Link
-                className="explore-activity-item"
-                key={item.id}
-                href={repositoryIssuePath(
-                  item.repository.ownerLogin,
-                  item.repository.name,
-                  item.issue.number,
-                )}
-              >
-                <div className="explore-activity-header">
-                  <span className="explore-activity-avatar" aria-hidden="true">
-                    {item.actorLogin.slice(0, 1).toUpperCase()}
-                  </span>
-                  <span className="explore-activity-copy">
-                    <strong>{item.actorLogin}</strong> {activityVerb(item.action)}
-                  </span>
-                  <time
-                    className="explore-activity-time"
-                    dateTime={new Date(item.occurredAt).toISOString()}
-                  >
-                    {relativeAge(item.occurredAt)}
-                  </time>
-                </div>
-                <div className="explore-activity-preview">
-                  <small>
-                    {item.repository.ownerLogin}/{item.repository.name} · Issue #{item.issue.number}
-                  </small>
-                  <strong>{item.issue.title}</strong>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>}
+      {sections !== "trending" && (
+        <div className="explore-section">
+          <SectionHeading
+            title="Activity"
+            description="目前只投影仍可存取 Repository 的 durable Issue lifecycle evidence。"
+          />
+          {activity?.length === 0 && (
+            <p className="empty-copy">目前沒有可顯示的 Repository activity。</p>
+          )}
+          {activity && activity.length > 0 && (
+            <div className="explore-activity-list">
+              {activity.map((item) => (
+                <Link
+                  className="explore-activity-item"
+                  key={item.id}
+                  href={repositoryIssuePath(
+                    item.repository.ownerLogin,
+                    item.repository.name,
+                    item.issue.number,
+                  )}
+                >
+                  <div className="explore-activity-header">
+                    <span className="explore-activity-avatar" aria-hidden="true">
+                      {item.actorLogin.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="explore-activity-copy">
+                      <strong>{item.actorLogin}</strong> {activityVerb(item.action)}
+                    </span>
+                    <time
+                      className="explore-activity-time"
+                      dateTime={new Date(item.occurredAt).toISOString()}
+                    >
+                      {relativeAge(item.occurredAt)}
+                    </time>
+                  </div>
+                  <div className="explore-activity-preview">
+                    <small>
+                      {item.repository.ownerLogin}/{item.repository.name} · Issue #{item.issue.number}
+                    </small>
+                    <strong>{item.issue.title}</strong>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
