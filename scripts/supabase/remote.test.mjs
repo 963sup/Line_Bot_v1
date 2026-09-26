@@ -57,7 +57,10 @@ test("remote reconciliation lock preserves the root failure after an aborted tra
     }),
     (error) => error === rootError,
   );
-  assert.equal(queries.some((sql) => sql === "ROLLBACK"), true);
+  assert.equal(
+    queries.some((sql) => sql === "ROLLBACK"),
+    true,
+  );
   assert.equal(queries.at(-1).includes("pg_advisory_unlock"), true);
 });
 
