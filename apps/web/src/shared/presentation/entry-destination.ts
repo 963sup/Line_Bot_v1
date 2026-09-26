@@ -12,7 +12,8 @@ const paths: Record<Destination, string> = {
   repositories: "/repositories",
   partners: "/partners",
   feedback: "/feedback",
-  membership: "/settings",
+  membership: "/profile",
+  profile: "/profile",
   records: "/history",
   register: "/membership/register",
   restore: "/membership/restore",
@@ -68,8 +69,10 @@ export function entryDestination(href: string, fallback: Destination = "home") {
   }
   if (selected === "expense" && source.searchParams.has("expense"))
     target.searchParams.set("expense", source.searchParams.get("expense")!);
-  if (selected === "membership" && source.searchParams.get("google") === "link")
+  if (selected === "membership" && source.searchParams.get("google") === "link") {
+    target.pathname = "/settings";
     target.searchParams.set("google", "link");
+  }
   return target.pathname + target.search;
 }
 
