@@ -109,32 +109,3 @@ export function ActionRow({
     </Link>
   );
 }
-
-export function StatusRow({
-  title,
-  description,
-  status,
-  icon,
-  tone = "neutral",
-}: {
-  title: string;
-  description?: string;
-  status: string;
-  icon?: string;
-  tone?: "neutral" | "green" | "blue" | "purple" | "orange" | "yellow" | "pink";
-}) {
-  return (
-    <div className="action-row status-row" role="note">
-      {icon && (
-        <span className={`action-row-icon action-row-icon-${tone}`} aria-hidden="true">
-          {icon}
-        </span>
-      )}
-      <span className="action-row-copy">
-        <strong>{title}</strong>
-        {description && <small>{description}</small>}
-      </span>
-      <span className="row-status">{status}</span>
-    </div>
-  );
-}
