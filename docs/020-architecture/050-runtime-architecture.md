@@ -57,7 +57,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 
 ## Adjacent owners
 
-- Product experience：[Product experience](../000-core/060-product-experience.md)
+- System interaction invariants：[System](../000-core/010-system.md)
 - LINE entry：[LINE](../030-platform/010-line.md)
 - Authentication / authorization：[Security](../050-security/README.md)
 - Monorepo / layering：[Repository architecture](010-repository-architecture.md) · [Hexagonal architecture](020-hexagonal-architecture.md)

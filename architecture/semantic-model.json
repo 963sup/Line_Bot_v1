@@ -91,7 +91,7 @@
       "id": "audit",
       "kind": "business-owner",
       "lifecycle": "current-foundation",
-      "doc": "docs/090-governance/020-proposals/040-security-target.md"
+      "doc": "docs/050-security/060-audit.md"
     },
     {
       "id": "partner-directory",
@@ -145,13 +145,13 @@
       "id": "line-integration",
       "kind": "integration-owner",
       "lifecycle": "current",
-      "doc": "docs/030-platform/README.md"
+      "doc": "docs/030-platform/010-line.md"
     },
     {
       "id": "google-workspace",
       "kind": "integration-owner",
       "lifecycle": "current",
-      "doc": "docs/030-platform/README.md"
+      "doc": "docs/030-platform/050-google-workspace.md"
     },
     {
       "id": "namespace",
@@ -163,7 +163,7 @@
       "id": "platform",
       "kind": "support-owner",
       "lifecycle": "current",
-      "doc": "docs/020-architecture/README.md"
+      "doc": "docs/020-architecture/050-runtime-architecture.md"
     }
   ],
   "boundedContexts": [

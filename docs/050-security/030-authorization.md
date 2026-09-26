@@ -43,9 +43,9 @@
 
 ## 相鄰責任
 
-- 產品管理體驗：[Product experience](../000-core/060-product-experience.md)
+- 系統級 interaction / authority invariant：[System](../000-core/010-system.md)
 - 各 module business role：[Domain owners](../010-domain-owners/README.md)
-- Data boundary：`../../040-data-boundaries/`
+- Data boundary：[Data](../040-data/README.md)
 - Permission persistence / schema：[Data](../040-data/README.md)
 
 
