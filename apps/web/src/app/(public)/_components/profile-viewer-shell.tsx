@@ -16,29 +16,153 @@ type AccountProjection = {
   } | null;
 };
 
+type OrganizationSummary = {
+  actorMembershipStatus?: "active" | "removed" | null;
+  actorIsOwner?: boolean;
+};
+
+type SelfResources = {
+  organizations: string | null;
+  starred: string | null;
+};
+
+async function loadSelfResources(token: string): Promise<SelfResources> {
+  const headers = { "x-line-token": token };
+  const [organizationsResult, starredResult] = await Promise.allSettled([
+    fetch("/api/organization", { headers, cache: "no-store" }),
+    fetch("/api/repositories/starred", { headers, cache: "no-store" }),
+  ]);
+
+  let organizations: string | null = null;
+  if (organizationsResult.status === "fulfilled" && organizationsResult.value.ok) {
+    const value = (await organizationsResult.value.json()) as {
+      items?: OrganizationSummary[];
+      next?: string | null;
+    };
+    if (Array.isArray(value.items)) {
+      const count = value.items.filter(
+        (item) => item.actorMembershipStatus === "active" || item.actorIsOwner === true,
+      ).length;
+      organizations = value.next ? `${count}+` : String(count);
+    }
+  }
+
+  let starred: string | null = null;
+  if (starredResult.status === "fulfilled" && starredResult.value.ok) {
+    const value = (await starredResult.value.json()) as { items?: unknown[] };
+    if (Array.isArray(value.items)) starred = String(value.items.length);
+  }
+
+  return { organizations, starred };
+}
+
+function ResourceRow({
+  href,
+  icon,
+  tone,
+  label,
+  meta,
+  disabled = false,
+}: {
+  href?: string;
+  icon: string;
+  tone: "neutral" | "orange" | "yellow";
+  label: string;
+  meta?: string | null;
+  disabled?: boolean;
+}) {
+  const body = (
+    <>
+      <span className={`${styles.resourceIcon} ${styles[`resourceIcon${tone[0]!.toUpperCase()}${tone.slice(1)}`]}`} aria-hidden="true">
+        {icon}
+      </span>
+      <span className={styles.resourceLabel}>{label}</span>
+      <span className={styles.resourceMeta}>{disabled ? "未開放" : meta ?? ""}</span>
+    </>
+  );
+
+  return href && !disabled ? (
+    <Link className={styles.resourceRow} href={href}>
+      {body}
+    </Link>
+  ) : (
+    <div className={`${styles.resourceRow} ${styles.resourceRowDisabled}`} aria-disabled="true">
+      {body}
+    </div>
+  );
+}
+
+function ProfileResources({
+  ownProfile,
+  repositoryCount,
+  selfResources,
+}: {
+  ownProfile: boolean;
+  repositoryCount: number;
+  selfResources: SelfResources | null;
+}) {
+  return (
+    <section className={styles.resources} aria-label="Profile resources">
+      <div className={styles.resourceList}>
+        <ResourceRow
+          href={ownProfile ? "/repositories" : "#popular-repositories"}
+          icon="▣"
+          tone="neutral"
+          label="Repositories"
+          meta={String(repositoryCount)}
+        />
+        {ownProfile && (
+          <>
+            <ResourceRow
+              href="/organizations"
+              icon="▦"
+              tone="orange"
+              label="Organizations"
+              meta={selfResources?.organizations}
+            />
+            <ResourceRow
+              href="/home#favorites"
+              icon="★"
+              tone="yellow"
+              label="Starred"
+              meta={selfResources?.starred}
+            />
+            <ResourceRow icon="◇" tone="neutral" label="Projects" disabled />
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function ProfileViewerShell({
   children,
   liffId,
   profileLogin,
+  repositoryCount,
 }: {
   children: ReactNode;
   liffId: string;
   profileLogin: string;
+  repositoryCount: number;
 }) {
   const [ownProfile, setOwnProfile] = useState(false);
+  const [selfResources, setSelfResources] = useState<SelfResources | null>(null);
   const generation = useRef(0);
 
   const clear = useCallback(() => {
     generation.current++;
     setOwnProfile(false);
+    setSelfResources(null);
   }, []);
 
   const load = useCallback(async () => {
     const ticket = ++generation.current;
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.existingSession(liffId);
       if (!token || ticket !== generation.current) {
         setOwnProfile(false);
+        setSelfResources(null);
         return;
       }
       const response = await fetch("/api/membership?view=account", {
@@ -47,12 +171,25 @@ export default function ProfileViewerShell({
       });
       if (ticket !== generation.current || !response.ok) {
         setOwnProfile(false);
+        setSelfResources(null);
         return;
       }
       const value = (await response.json()) as AccountProjection;
-      setOwnProfile(isOwnProfileLogin(value.member?.login, profileLogin));
+      const isOwnProfile = isOwnProfileLogin(value.member?.login, profileLogin);
+      if (ticket !== generation.current) return;
+      setOwnProfile(isOwnProfile);
+      if (!isOwnProfile) {
+        setSelfResources(null);
+        return;
+      }
+
+      const resources = await loadSelfResources(token);
+      if (ticket === generation.current) setSelfResources(resources);
     } catch {
-      if (ticket === generation.current) setOwnProfile(false);
+      if (ticket === generation.current) {
+        setOwnProfile(false);
+        setSelfResources(null);
+      }
     }
   }, [liffId, profileLogin]);
 
@@ -63,8 +200,12 @@ export default function ProfileViewerShell({
     [],
   );
 
+  const shellClassName = ownProfile
+    ? `app-shell app-shell-tabs ${styles.shell}`
+    : styles.shell;
+
   return (
-    <div className={`app-shell app-shell-tabs ${styles.shell}`}>
+    <div className={shellClassName}>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
       <a className="skip-link" href="#main-content">
         跳至主要內容
@@ -123,6 +264,11 @@ export default function ProfileViewerShell({
           </div>
         </header>
         {children}
+        <ProfileResources
+          ownProfile={ownProfile}
+          repositoryCount={repositoryCount}
+          selfResources={selfResources}
+        />
       </main>
       {ownProfile && <WorkNavigation activeHref="/home" />}
     </div>
