@@ -10,7 +10,7 @@ LINE、Supabase、Google、Redis、Vercel 等外部平台的實際狀態不由 r
 
 - LINE webhook / endpoint
 - LINE Rich Menu / alias / default / user binding
-- Supabase migration / database role / provider settings
+- Supabase schema/data reconciliation / database role / provider settings
 - Vercel deployment / environment configuration
 - Google OAuth / Workspace resource configuration
 - Redis database / namespace / connection settings
@@ -35,6 +35,6 @@ Timeout、connection failure 或 client crash 可能發生在 provider 已接受
 
 ## Repository boundary
 
-Adapter、script、menu definition 或 migration 只描述預期操作，不證明遠端已執行。External operation script 即使名稱含 `check` 也可能建立測試 key、改 webhook 或發布資源；是否唯讀以實際行為判斷。
+Adapter、script、menu definition 或 reconciliation SQL 只描述預期操作，不證明遠端已執行。External operation script 即使名稱含 `check` 也可能建立測試 key、改 webhook 或發布資源；是否唯讀以實際行為判斷。
 
-平台專屬契約由 `030-platform/` 擁有；發布順序由 `../020-release/010-release-process.md` 擁有；具日期結果放 `090-governance/060-acceptance/`。
+平台專屬契約由 [Platform](../030-platform/README.md) 擁有；發布順序由 [Release](020-release.md) 擁有；具日期結果放 [Acceptance](../090-governance/060-acceptance/README.md)。
