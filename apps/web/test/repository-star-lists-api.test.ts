@@ -178,10 +178,7 @@ test("Repository Star List pending storage scopes retries and clears only acknow
     ),
     false,
   );
-  assert.deepEqual(
-    readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"),
-    command,
-  );
+  assert.deepEqual(readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"), command);
   assert.equal(
     clearPendingRepositoryStarListCommand(storage, "subject-a", "list-a", command.requestId),
     true,
