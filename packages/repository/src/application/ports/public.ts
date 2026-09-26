@@ -4,18 +4,13 @@ export type PublicRepository = Readonly<{
   name: string;
 }>;
 
-export type PopularPublicRepository = PublicRepository &
-  Readonly<{
-    starCount: number;
-  }>;
-
 export type PublicRepositoryList = Readonly<{
   items: PublicRepository[];
   totalCount: number;
 }>;
 
 export type PopularPublicRepositoryList = Readonly<{
-  items: PopularPublicRepository[];
+  items: Array<PublicRepository & { readonly starCount: number }>;
   totalCount: number;
 }>;
 
