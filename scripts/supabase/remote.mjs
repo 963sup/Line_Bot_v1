@@ -1025,7 +1025,12 @@ async function repositoryRuntimeCompatibilityState(client) {
         to_regprocedure('app_private.provision_repository(text,text,text,text,text)') is not null
           as provision_repository_function,
         to_regclass('app_private.permission_subject_versions') is not null
-          as permission_subject_versions_table
+          as permission_subject_versions_table,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='users'
+            and column_name='permissions_version'
+        ) as legacy_user_permissions_version_column
     `)
   ).rows[0];
   return {
@@ -1040,6 +1045,7 @@ async function repositoryRuntimeCompatibilityState(client) {
     repositoryEffectiveAccessView: row.repository_effective_access_view,
     provisionRepositoryFunction: row.provision_repository_function,
     permissionSubjectVersionsTable: row.permission_subject_versions_table,
+    legacyUserPermissionsVersionColumn: row.legacy_user_permissions_version_column,
   };
 }
 
@@ -1061,6 +1067,17 @@ async function verifyRepositoryRuntimeCompatibility(client) {
         has_table_privilege('line_app','app_private.repository_stars','SELECT') as stars_select,
         has_table_privilege('line_app','app_private.repository_stars','INSERT') as stars_insert,
         has_table_privilege('line_app','app_private.repository_stars','DELETE') as stars_delete,
+        not has_table_privilege('anon','app_private.repository_stars','SELECT') as anon_no_stars,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_stars'::regclass
+        ) as stars_rls,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_team_access'::regclass
+        ) as team_access_rls,
         has_function_privilege(
           'line_app',
           'app_private.provision_repository(text,text,text,text,text)',
@@ -1083,6 +1100,9 @@ async function verifyRepositoryRuntimeCompatibility(client) {
     !acceptance.stars_select ||
     !acceptance.stars_insert ||
     !acceptance.stars_delete ||
+    !acceptance.anon_no_stars ||
+    !acceptance.stars_rls ||
+    !acceptance.team_access_rls ||
     !acceptance.provision_execute ||
     !acceptance.anon_no_provision ||
     !acceptance.anon_no_private_usage
@@ -1103,6 +1123,26 @@ async function ensureRepositoryRuntimeCompatibility() {
       if (classification === "ready") {
         await verifyRepositoryRuntimeCompatibility(client);
         await client.query("COMMIT");
+        writeFileSync(
+          new URL("repository-runtime-compat.json", artifacts),
+          `${JSON.stringify(
+            {
+              before: {
+                classification,
+                repositoryRows: before.repositoryRows,
+                legacyOrganizationIdColumn: before.legacyOrganizationIdColumn,
+              },
+              after: {
+                classification,
+                repositoryRows: before.repositoryRows,
+                legacyOrganizationIdColumn: before.legacyOrganizationIdColumn,
+              },
+              changed: false,
+            },
+            null,
+            2,
+          )}\n`,
+        );
         return false;
       }
       if (classification !== "repairable") {
@@ -1223,39 +1263,60 @@ async function ensureRepositoryRuntimeCompatibility() {
 
       if (!afterStructure.permissionSubjectVersionsTable) {
         await client.query(permissionSubjectVersionExpansionSql());
-        await client.query(`
-          insert into app_private.permission_subject_versions(user_id,version)
-          select id,permissions_version from app_private.users
-          on conflict(user_id) do nothing
-        `);
+        if (afterStructure.legacyUserPermissionsVersionColumn) {
+          await client.query(`
+            insert into app_private.permission_subject_versions(user_id,version)
+            select id,permissions_version from app_private.users
+            on conflict(user_id) do nothing
+          `);
+        }
         changed = true;
       }
 
-      const mismatch = Number(
-        (
-          await client.query(`
-            select count(*)::int as count
-            from app_private.users u
-            join app_private.permission_subject_versions v on v.user_id=u.id
-            where v.version<>u.permissions_version
-          `)
-        ).rows[0]?.count ?? 0,
-      );
-      if (mismatch) {
-        throw new Error(
-          "Legacy users.permissions_version disagrees with permission_subject_versions; refusing ambiguous authority.",
+      if (afterStructure.legacyUserPermissionsVersionColumn) {
+        const mismatch = Number(
+          (
+            await client.query(`
+              select count(*)::int as count
+              from app_private.users u
+              join app_private.permission_subject_versions v on v.user_id=u.id
+              where v.version<>u.permissions_version
+            `)
+          ).rows[0]?.count ?? 0,
         );
+        if (mismatch) {
+          throw new Error(
+            "Legacy users.permissions_version disagrees with permission_subject_versions; refusing ambiguous authority.",
+          );
+        }
       }
 
       await verifyRepositoryRuntimeCompatibility(client);
-      const afterRows = Number(
-        (await client.query("select count(*)::int as count from app_private.repositories")).rows[0]
-          ?.count ?? 0,
-      );
-      if (afterRows !== before.repositoryRows) {
+      const after = await repositoryRuntimeCompatibilityState(client);
+      if (after.repositoryRows !== before.repositoryRows) {
         throw new Error("Repository runtime compatibility repair changed Repository business rows.");
       }
       await client.query("COMMIT");
+      writeFileSync(
+        new URL("repository-runtime-compat.json", artifacts),
+        `${JSON.stringify(
+          {
+            before: {
+              classification,
+              repositoryRows: before.repositoryRows,
+              legacyOrganizationIdColumn: before.legacyOrganizationIdColumn,
+            },
+            after: {
+              classification: classifyRepositoryRuntimeCompatibility(after),
+              repositoryRows: after.repositoryRows,
+              legacyOrganizationIdColumn: after.legacyOrganizationIdColumn,
+            },
+            changed,
+          },
+          null,
+          2,
+        )}\n`,
+      );
       return changed;
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
