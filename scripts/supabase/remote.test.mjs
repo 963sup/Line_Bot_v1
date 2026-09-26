@@ -24,11 +24,57 @@ import {
   planFingerprint,
   projectRefFromSupabaseUrl,
   resolveLegacyEnterpriseMetadata,
+  runWithRemoteReconciliationLock,
   supabaseApiReadbackConfig,
   supabaseManagementRecoveryConfig,
   verifySupabaseApiReadback,
   verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
+
+test("remote reconciliation lock preserves the root failure after an aborted transaction", async () => {
+  const queries = [];
+  let recovered = false;
+  const client = {
+    async query(sql) {
+      queries.push(sql);
+      if (sql.includes("pg_try_advisory_lock")) return { rows: [{ locked: true }] };
+      if (sql === "ROLLBACK") {
+        recovered = true;
+        return { rows: [] };
+      }
+      if (sql.includes("pg_advisory_unlock")) {
+        if (!recovered) throw Object.assign(new Error("transaction aborted"), { code: "25P02" });
+        return { rows: [{ pg_advisory_unlock: true }] };
+      }
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+  const rootError = new Error("original schema failure");
+
+  await assert.rejects(
+    runWithRemoteReconciliationLock(client, async () => {
+      throw rootError;
+    }),
+    (error) => error === rootError,
+  );
+  assert.equal(queries.some((sql) => sql === "ROLLBACK"), true);
+  assert.equal(queries.at(-1).includes("pg_advisory_unlock"), true);
+});
+
+test("remote reconciliation lock surfaces cleanup failure when work succeeded", async () => {
+  const client = {
+    async query(sql) {
+      if (sql.includes("pg_try_advisory_lock")) return { rows: [{ locked: true }] };
+      if (sql.includes("pg_advisory_unlock")) throw new Error("unlock failed");
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+
+  await assert.rejects(
+    runWithRemoteReconciliationLock(client, async () => "ok"),
+    /unlock failed/,
+  );
+});
 
 test("classifyPlan marks routine DDL for diagnostics", () => {
   for (const sql of [
