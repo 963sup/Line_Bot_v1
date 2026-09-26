@@ -66,7 +66,7 @@ GitHub FPT 的高價值部分只作 benchmark，不是本產品 authority。從 
 - Work Item Type、Label、Milestone、state 是獨立維度；Work Item Comment 與 Reaction 是 collaboration/interaction facts，不得被偷換成 Work lifecycle、approval 或 permission。
 - Project-owned Field configuration、Status Update 與 View 只擁有 planning metadata／projection；加入 Project 不轉移 underlying Work authority。Workflow／Iteration 等 capability 只有真實 consumer 出現時才進一步建模。
 - Profile 是 User semantic 的 read projection；Following／Followers 是同一條 User→User follow relationship 的 outbound／inbound view；`User.repositories` 是 Repository ownership 的 inverse collection view。不得因 UI 或 collection 名稱建立重複 owner。
-- Contribution benchmark 保存 observable fact、actor、context、time；Achievement 是由 qualifying events/actions 形成、投影到 Profile 的 derived recognition。GitHub public sources 未公開完整 Achievement definition／qualification／grant／progress contract，因此不得把它們當成已證實的 product model。
+- Contribution benchmark 保存 observable fact、actor、context、time；Achievement 是由 qualifying events/actions 形成、投影到 Profile 的 derived recognition。Current product 已有 Account-owned Achievement definition／award persisted facts 與 authenticated read projection，但 qualification／grant／progress writer runtime 仍未啟用；GitHub public sources 未公開完整 contract，不能拿 benchmark 補造本地 award policy。
 - Work 的 type、classification、milestone、dependency、assignee、state 與 project-local field 是可獨立演化的維度；不得為了方便塞成單一 overloaded status。
 - Discussion／Comment／Poll／Reaction 是 interaction/conversation semantics；不得直接等同 Notification、business command、approval 或 authorization。
 - 財務語意不以模糊的 `Billing` 當總稱；Accounting、Billing/Charging、Payment、Settlement 依責任分開。
