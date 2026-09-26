@@ -1,13 +1,21 @@
-import { readAccountLogins } from "@line-work/account/adapters/postgres";
+import {
+  readAccountLogins,
+  readActiveUserQualification,
+} from "@line-work/account/adapters/postgres";
 import { businessDatabase, type Database } from "@line-work/platform/adapters/postgres";
 import type {
   RepositoryActivityItem,
   RepositoryDiscoveryOptions,
+  RepositoryStarListDiscovery,
   RepositoryDiscoverySnapshot,
   RepositoryDiscoveryStore,
   TrendingRepository,
 } from "../../application/ports/discovery.js";
 import { IssueError, type RepositoryCapability } from "../../domain.js";
+import {
+  readVisibleStarListRepositoryRows,
+  type VisibleStarListRepositoryRow,
+} from "./star-list-reads.js";
 
 type TrendingRow = {
   id: string;
@@ -19,6 +27,14 @@ type TrendingRow = {
   recent_star_count: number | string;
   star_count: number | string;
   starred: boolean;
+};
+
+type PublishedListRow = {
+  id: string;
+  owner_user_id: string;
+  name: string;
+  description: string;
+  updated_at: number | string;
 };
 
 type ActivityRow = {
@@ -39,6 +55,99 @@ const accountKey = (id: string, kind: "USER" | "ORGANIZATION") => `${id}:\0:${ki
 
 export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStore {
   constructor(private db: Database = businessDatabase()) {}
+
+  publishedStarLists(userId: string, limit: number): Promise<RepositoryStarListDiscovery[]> {
+    return this.db.transaction(async (sql) => {
+      if (limit < 1) return [];
+      const selected: PublishedListRow[] = [];
+      const visibleByList = new Map<string, VisibleStarListRepositoryRow[]>();
+      let cursorAt: number | null = null;
+      let cursorId = "";
+      const pageSize = Math.max(1, limit);
+
+      while (selected.length < limit) {
+        const rows = (
+          await sql.query(
+            `SELECT id,owner_user_id,name,description,updated_at
+             FROM repository_star_lists
+             WHERE visibility='public'
+               AND (
+                 $1::bigint IS NULL
+                 OR updated_at<$1
+                 OR (updated_at=$1 AND id>$2)
+               )
+             ORDER BY updated_at DESC,id
+             LIMIT $3`,
+            [cursorAt, cursorId, pageSize],
+          )
+        ).rows as PublishedListRow[];
+        if (!rows.length) break;
+
+        const visibleRows = await readVisibleStarListRepositoryRows(
+          sql,
+          userId,
+          rows.map((row) => row.id),
+        );
+        for (const repository of visibleRows) {
+          const items = visibleByList.get(repository.list_id) ?? [];
+          items.push(repository);
+          visibleByList.set(repository.list_id, items);
+        }
+
+        for (const row of rows) {
+          if (!visibleByList.get(row.id)?.length) continue;
+          if (!(await readActiveUserQualification(sql, row.owner_user_id))) continue;
+          selected.push(row);
+          if (selected.length === limit) break;
+        }
+
+        const last = rows.at(-1);
+        if (!last || rows.length < pageSize) break;
+        cursorAt = Number(last.updated_at);
+        cursorId = last.id;
+      }
+
+      const accounts = await readAccountLogins(sql, [
+        ...selected.map((row) => ({ id: row.owner_user_id, kind: "USER" as const })),
+        ...selected.flatMap((row) =>
+          (visibleByList.get(row.id) ?? []).map((repository) => ({
+            id: repository.owner_account_id,
+            kind: repository.owner_account_kind,
+          })),
+        ),
+      ]);
+      const loginByAccount = new Map(
+        accounts.map((account) => [accountKey(account.id, account.kind), account.login]),
+      );
+
+      return selected.map((row) => {
+        const ownerLogin = loginByAccount.get(accountKey(row.owner_user_id, "USER"));
+        if (!ownerLogin) throw new IssueError(409, "List owner locator 不可用。");
+        const repositories = visibleByList.get(row.id) ?? [];
+        return {
+          id: row.id,
+          ownerLogin,
+          name: row.name,
+          description: row.description,
+          visibleRepositoryCount: repositories.length,
+          updatedAt: Number(row.updated_at),
+          repositories: repositories.slice(0, 3).map((repository) => {
+            const repositoryOwnerLogin = loginByAccount.get(
+              accountKey(repository.owner_account_id, repository.owner_account_kind),
+            );
+            if (!repositoryOwnerLogin) {
+              throw new IssueError(409, "Repository owner locator 不可用。");
+            }
+            return {
+              id: repository.repository_id,
+              ownerLogin: repositoryOwnerLogin,
+              name: repository.repository_name,
+            };
+          }),
+        };
+      });
+    });
+  }
 
   snapshot(
     userId: string,

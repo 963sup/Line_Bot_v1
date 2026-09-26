@@ -20,6 +20,11 @@ test("Repository discovery resolves the active User and applies one bounded tren
       received = { userId, options };
       return { trending: [], activity: [] };
     },
+    publishedStarLists: async (userId, limit) => {
+      assert.equal(userId, "user-a");
+      assert.equal(limit, 20);
+      return [];
+    },
   };
   const week = 7 * 24 * 60 * 60 * 1000;
   const discovery = createRepositoryDiscovery({
@@ -37,6 +42,7 @@ test("Repository discovery resolves the active User and applies one bounded tren
       activityLimit: 20,
     },
   });
+  assert.deepEqual(await discovery.publishedStarLists("line-subject"), []);
 });
 
 test("Repository discovery ranks current Stars and rechecks access for recent Issue activity", async (t) => {
@@ -81,6 +87,25 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
     ["issue-a", "owner"],
   );
 
+  await pg.query(
+    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
+    ["repository-b", "owner", "Hidden"],
+  );
+  await pg.query(
+    "insert into app_private.repository_stars(repository_id,user_id,created_at) values($1,$2,$3)",
+    ["repository-b", "owner", 91],
+  );
+  await pg.query(
+    `insert into app_private.repository_star_lists(
+       id,owner_user_id,name,description,visibility,version,created_at,updated_at
+     ) values('list-a','owner','Operations List','Curated operations','public',1,90,97)`,
+  );
+  await pg.query(
+    `insert into app_private.repository_star_list_items(
+       list_id,owner_user_id,repository_id,added_at
+     ) values('list-a','owner','repository-a',94),('list-a','owner','repository-b',95)`,
+  );
+
   const store = new PostgresRepositoryDiscoveryStore(db);
   assert.deepEqual(
     await store.snapshot("viewer", {
@@ -121,6 +146,24 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
     },
   );
 
+  assert.deepEqual(await store.publishedStarLists("viewer", 20), [
+    {
+      id: "list-a",
+      ownerLogin: "acme",
+      name: "Operations List",
+      description: "Curated operations",
+      visibleRepositoryCount: 1,
+      updatedAt: 97,
+      repositories: [
+        {
+          id: "repository-a",
+          ownerLogin: "acme",
+          name: "Operations",
+        },
+      ],
+    },
+  ]);
+
   await pg.query(
     "delete from app_private.repository_access where repository_id=$1 and principal_id=$2",
     ["repository-a", "viewer"],
@@ -133,4 +176,5 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
     }),
     { trending: [], activity: [] },
   );
+  assert.deepEqual(await store.publishedStarLists("viewer", 20), []);
 });

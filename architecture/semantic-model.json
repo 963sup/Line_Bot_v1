@@ -1499,7 +1499,7 @@
       "id": "read-repository-discovery",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Read authorized Repository Trending and recent Issue activity projections without creating a new Explore authority.",
+      "intent": "Read authorized Repository Trending, recent Issue activity and published Repository Star List projections without creating a new Explore authority.",
       "preserves": [
         "K1",
         "K2",
@@ -1515,7 +1515,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository-owned discovery read model over current access, active Star timing/counts and immutable Issue event evidence",
+        "scope": "Repository-owned discovery read model over current access, active Star timing/counts, immutable Issue event evidence and published Star Lists",
         "sourcePaths": [
           "packages/repository/src/application/discovery.ts",
           "packages/repository/src/application/ports/discovery.ts"
@@ -1527,13 +1527,15 @@
         ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
-          "apps/web/src/app/(mobile)/explore/page.tsx"
+          "apps/web/src/app/(mobile)/explore/page.tsx",
+          "apps/web/src/app/api/repositories/lists/discover/route.ts"
         ],
         "testPaths": [
           "packages/repository/test/discovery.test.ts",
-          "apps/web/test/profile-discovery-api.test.ts"
+          "apps/web/test/profile-discovery-api.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts"
         ],
-        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity currently projects Issue events only and rechecks current effective Repository access before exposure."
+        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity projects Issue events only. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only."
       }
     },
     {

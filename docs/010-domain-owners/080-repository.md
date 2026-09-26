@@ -14,7 +14,7 @@ Project 只參照 Repository work，不取得 Issue/Discussion authority；Notif
 Current runtime 已接線的 Repository resource read 包含：
 
 - Repository owner/name read 與 accessible Repository discovery。\n- Repository Star List：User 對自己 current Stars 的 curated grouping；List create 預設 private、publish 顯式切為 public，item add 要求 current Star + current Repository access，List membership 不授予 Repository access。
-- Explore discovery read：Trending 以目前仍有效且最近 7 天建立的 Star 數優先，再以總 Star/name/id 穩定排序；Activity 第一版只投影 immutable Issue lifecycle events，且每次 read 重新核驗 current effective Repository access。
+- Explore discovery read：Trending 以目前仍有效且最近 7 天建立的 Star 數優先，再以總 Star/name/id 穩定排序；Activity 第一版只投影 immutable Issue lifecycle events；published Repository Star List discovery 只收 active owner 的 public Lists，且至少有一個 viewer 當下可見 Repository。所有 projection 都在 read 時重新核驗 current visibility/access。
 - Issue list/detail read 與 Issue command runtime。
 - Discussion list/detail/comment read。
 - Repository Label collection read。

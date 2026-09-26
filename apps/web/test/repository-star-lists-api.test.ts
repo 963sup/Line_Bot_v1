@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { repositoryDiscovery } from "../src/app/api/_composition/repository-discovery.server";
 import { repositoryStarLists } from "../src/app/api/_composition/repository-star-lists.server";
 import {
   GET as listGet,
@@ -9,6 +10,7 @@ import {
   GET as listsGet,
   POST as listsPost,
 } from "../src/app/api/repositories/lists/route";
+import { GET as discoverGet } from "../src/app/api/repositories/lists/discover/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
 
 test("Repository Star List HTTP uses verified LINE identity and owner use cases", async () => {
@@ -26,6 +28,17 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
     createdAt: 1,
     updatedAt: 1,
   };
+  const discover = mock.method(repositoryDiscovery, "publishedStarLists", async () => [
+    {
+      id: "list-a",
+      ownerLogin: "alice",
+      name: "Operations",
+      description: "",
+      visibleRepositoryCount: 1,
+      updatedAt: 1,
+      repositories: [{ id: "repository-a", ownerLogin: "acme", name: "Operations" }],
+    },
+  ]);
   const mine = mock.method(repositoryStarLists, "mine", async () => [list]);
   const create = mock.method(repositoryStarLists, "create", async () => ({
     id: "list-a",
@@ -69,6 +82,7 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
     });
 
   try {
+    assert.equal((await discoverGet(request("/api/repositories/lists/discover"))).status, 200);
     assert.equal((await listsGet(request("/api/repositories/lists"))).status, 200);
     assert.equal(
       (
@@ -100,12 +114,14 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
       ).status,
       200,
     );
+    assert.equal(discover.mock.callCount(), 1);
     assert.equal(mine.mock.callCount(), 1);
     assert.equal(create.mock.callCount(), 1);
     assert.equal(detail.mock.callCount(), 1);
     assert.equal(command.mock.callCount(), 1);
   } finally {
     fetch.mock.restore();
+    discover.mock.restore();
     mine.mock.restore();
     create.mock.restore();
     detail.mock.restore();

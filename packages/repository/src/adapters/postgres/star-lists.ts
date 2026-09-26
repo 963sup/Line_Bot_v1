@@ -16,6 +16,7 @@ import type {
   RepositoryStarListVisibility,
 } from "../../application/ports/star-lists.js";
 import { RepositoryError } from "../../domain.js";
+import { readVisibleStarListRepositoryRows } from "./star-list-reads.js";
 
 type ListRow = {
   id: string;
@@ -26,15 +27,6 @@ type ListRow = {
   version: number | string;
   created_at: number | string;
   updated_at: number | string;
-  visible_repository_count?: number | string;
-};
-
-type RepositoryRow = {
-  id: string;
-  owner_account_id: string;
-  owner_account_kind: "USER" | "ORGANIZATION";
-  name: string;
-  visibility: string;
 };
 
 type Receipt = Readonly<{
@@ -124,19 +116,7 @@ async function visibleRepositories(
   viewerUserId: string,
   listId: string,
 ): Promise<RepositoryStarListRepository[]> {
-  const rows = (
-    await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility
-       FROM repository_star_list_items i
-       JOIN repositories r ON r.id=i.repository_id
-       LEFT JOIN repository_effective_access a
-         ON a.repository_id=r.id AND a.user_id=$1
-       WHERE i.list_id=$2
-         AND (r.visibility='public' OR a.repository_id IS NOT NULL)
-       ORDER BY i.added_at DESC,r.id`,
-      [viewerUserId, listId],
-    )
-  ).rows as RepositoryRow[];
+  const rows = await readVisibleStarListRepositoryRows(sql, viewerUserId, [listId]);
   const owners = await readAccountLogins(
     sql,
     rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
@@ -147,7 +127,12 @@ async function visibleRepositories(
   return rows.map((row) => {
     const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
     if (!ownerLogin) throw new RepositoryError(409, "Repository owner locator 不可用。");
-    return { id: row.id, ownerLogin, name: row.name, visibility: row.visibility };
+    return {
+      id: row.repository_id,
+      ownerLogin,
+      name: row.repository_name,
+      visibility: row.repository_visibility,
+    };
   });
 }
 
@@ -178,24 +163,23 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
     return this.db.transaction(async (sql) => {
       const rows = (
         await sql.query(
-          `SELECT l.id,l.owner_user_id,l.name,l.description,l.visibility,l.version,
-                  l.created_at,l.updated_at,
-                  count(r.id) FILTER (
-                    WHERE r.visibility='public' OR a.repository_id IS NOT NULL
-                  )::int AS visible_repository_count
-           FROM repository_star_lists l
-           LEFT JOIN repository_star_list_items i ON i.list_id=l.id
-           LEFT JOIN repositories r ON r.id=i.repository_id
-           LEFT JOIN repository_effective_access a
-             ON a.repository_id=r.id AND a.user_id=$1
-           WHERE l.owner_user_id=$1
-           GROUP BY l.id,l.owner_user_id,l.name,l.description,l.visibility,l.version,
-                    l.created_at,l.updated_at
-           ORDER BY l.updated_at DESC,l.id`,
+          `SELECT id,owner_user_id,name,description,visibility,version,created_at,updated_at
+           FROM repository_star_lists
+           WHERE owner_user_id=$1
+           ORDER BY updated_at DESC,id`,
           [userId],
         )
       ).rows as ListRow[];
       if (!rows.length) return [];
+      const visibleRows = await readVisibleStarListRepositoryRows(
+        sql,
+        userId,
+        rows.map((row) => row.id),
+      );
+      const visibleCounts = new Map<string, number>();
+      for (const row of visibleRows) {
+        visibleCounts.set(row.list_id, (visibleCounts.get(row.list_id) ?? 0) + 1);
+      }
       const owner = await readAccountLogin(sql, userId, "USER");
       if (!owner) throw new RepositoryError(409, "List owner locator 不可用。");
       return rows.map((row) => ({
@@ -205,7 +189,7 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
         description: row.description,
         visibility: row.visibility,
         version: Number(row.version),
-        visibleRepositoryCount: Number(row.visible_repository_count ?? 0),
+        visibleRepositoryCount: visibleCounts.get(row.id) ?? 0,
         createdAt: Number(row.created_at),
         updatedAt: Number(row.updated_at),
       }));
