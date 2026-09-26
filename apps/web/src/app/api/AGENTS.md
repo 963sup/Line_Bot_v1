@@ -14,7 +14,7 @@
 
 | URL | Owner / scope |
 | --- | --- |
-| `/api/membership`、`/api/membership/register`、`/api/membership/restore`、`/api/membership/manage`、`/api/membership/google-link` | Account 與明確組裝的既有 membership wire contract；Google protocol 由 integration 擁有 |
+| `/api/membership`、`/api/membership/register`、`/api/membership/restore`、`/api/membership/manage`、`/api/membership/google-link` | Account 與明確組裝的既有 membership wire contract；GET `view=account` 是 Account-only projection，default/readback/checkIn 仍保留既有 DailyCheckIn composition；Google protocol 由 integration 擁有 |
 | `/api/profile`、`/api/follows` | Account Profile/Follow |
 | `/api/permissions` | Identity/Access；不能因 Web presenter 在 account 目錄就歸為 Account domain |
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |

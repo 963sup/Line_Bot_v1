@@ -120,15 +120,18 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
       policy: checkInPolicy,
     };
   };
-  const member = () =>
+  const accountMember = () =>
     state.status
       ? {
           id: "synthetic-line",
           status: state.status,
           googleEmail: state.linked,
-          coins: coins(),
         }
       : null;
+  const member = () => {
+    const account = accountMember();
+    return account ? { ...account, coins: coins() } : null;
+  };
   const checkInResponse = (claim, credited, replayed) => ({
     member: member(),
     checkIn: {
@@ -190,6 +193,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     }
     if (target.pathname === "/api/membership") {
       const google = target.searchParams.get("google") === "link";
+      const accountOnly = target.searchParams.get("view") === "account";
       const checkInDay = target.searchParams.get("checkInDay");
       const candidate =
         request.headers().authorization === `Bearer ${session("second").access_token}`
@@ -245,7 +249,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
       }
       return route.fulfill({
         json: {
-          member: member(),
+          member: accountOnly ? accountMember() : member(),
           googleEmail: google ? candidate : null,
         },
       });
@@ -309,6 +313,7 @@ try {
     await page.goto(base + "/settings");
     await expect(button("綁定 Google（選填）")).toBeEnabled();
     await expect(button("重新整理狀態")).toBeEnabled();
+    await expect(main()).not.toContainText("每日簽到");
     assert.ok(state.reads.length > 0, "Membership must load independently of profile");
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     if (output)
@@ -421,7 +426,7 @@ try {
       nextClaims: [claim],
       reducedMotion: "no-preference",
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     await expect(main()).toContainText("每日簽到轉盤");
     await expect(main()).toContainText("0.5 Coin");
     await expect(main()).toContainText("60%");
@@ -455,7 +460,7 @@ try {
       claimedToday: true,
       reducedMotion: "reduce",
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     await expect(button("查看今日簽到結果")).toBeEnabled();
     await page.reload();
     await expect(button("查看今日簽到結果")).toBeEnabled();
@@ -473,7 +478,7 @@ try {
       dropCheckInBeforeCommit: true,
       reducedMotion: "reduce",
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     await button("簽到並轉動轉盤").click();
     await expect(dialog()).toContainText("尚無已完成的簽到");
     assert.equal(state.checkInPosts.length, 1);
@@ -494,7 +499,7 @@ try {
       dayAfterCommit: "2026-09-11",
       reducedMotion: "reduce",
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     await button("簽到並轉動轉盤").click();
     await openCheckInResult();
     await expect(dialog()).toContainText("2026-09-10 抽中 0.5 Coin");
@@ -509,7 +514,7 @@ try {
       failCheckInBeforeCommit: true,
       reducedMotion: "reduce",
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     assert.equal(state.checkInPosts.length, 0, "Check-in must not auto POST on load");
     await button("簽到並轉動轉盤").click();
     await expect(dialog()).toContainText("今日簽到尚未提交。");
@@ -529,7 +534,7 @@ try {
       dayAfterCommit: "2026-09-11",
       reducedMotion: "reduce",
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     await button("簽到並轉動轉盤").click();
     await expect(dialog()).toContainText("簽到請求未確認；目前沒有可顯示的入帳結果。");
     await expect(resultLookupButton()).toBeEnabled();
@@ -548,7 +553,7 @@ try {
       reducedMotion: "reduce",
       viewport: { width, height: 844 },
     });
-    await page.goto(base + "/settings");
+    await page.goto(base + "/daily-check-in");
     await assertNoHorizontalOverflow();
     await button("簽到並轉動轉盤").click();
     await openCheckInResult();

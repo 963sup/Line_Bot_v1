@@ -36,6 +36,7 @@ export default function Page() {
 
       <SectionHeading title="Operations" />
       <div className="menu-group">
+        <ActionRow href="/daily-check-in" icon="◎" tone="green" title="Daily Check-in" />
         <ActionRow href="/attendance" icon="◷" tone="blue" title="Attendance" />
         <ActionRow href="/expenses" icon="$" tone="yellow" title="Expenses" />
         <ActionRow href="/diary" icon="□" title="Work Diary" />

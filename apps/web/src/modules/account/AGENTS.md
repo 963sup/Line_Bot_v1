@@ -17,3 +17,5 @@ FPT users 對照 User/Profile/Follow；LINE/Google qualification 是本地 integ
 - Owns account-facing presentation, view models and interaction wiring only; Account package owns identity/lifecycle truth.
 - Server revalidates identity, qualification, scope, version and replay; client profile/session state is never authority.
 - Do not duplicate Account domain rules or query Account persistence from this module.
+
+- Account Settings reads the explicit `/api/membership?view=account` projection; it must not load or present DailyCheckIn/Wallet state. DailyCheckIn presentation and recovery live in the sibling `daily-check-in` module.

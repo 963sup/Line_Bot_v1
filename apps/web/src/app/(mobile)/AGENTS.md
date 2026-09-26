@@ -29,3 +29,5 @@ It does not own business truth, authorization, persistence, package boundaries, 
 - `/home/assistant` is compatibility-only and redirects to canonical `/assistant`.
 - AppShell owns the shared skip target, content frame, and Bottom Navigation only; page-specific headings/actions stay with their destination instead of becoming global shell chrome.
 - Home alone renders the Account/Profile avatar in its header. It resolves the current Account-owned login through the trusted membership projection and links to canonical `/{login}`; Inbox, Explore, AI, resource/work pages do not repeat it. `/settings` remains viewer configuration, not User identity.
+
+- `/daily-check-in` is the authenticated DailyCheckIn presentation surface. It is secondary navigation from Home, not a global tab and not part of Settings.
