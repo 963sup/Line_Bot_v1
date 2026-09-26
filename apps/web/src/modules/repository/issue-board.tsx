@@ -373,7 +373,8 @@ export default function IssueBoard({
               )}
               {initialCreating && currentRepository && !canWrite && (
                 <p className="empty-copy">
-                  你目前只有 {currentRepository.capability} capability，不能在此 Repository 建立 Issue。
+                  你目前只有 {currentRepository.capability} capability，不能在此 Repository 建立
+                  Issue。
                 </p>
               )}
               {creating && canWrite && (

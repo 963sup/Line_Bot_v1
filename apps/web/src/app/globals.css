@@ -2359,7 +2359,6 @@ summary:focus-visible {
   margin-bottom: 0;
 }
 
-
 .home-heading-actions {
   display: flex;
   align-items: center;
@@ -2446,7 +2445,6 @@ summary:focus-visible {
     flex-basis: 40px;
   }
 }
-
 
 .home-create-menu {
   position: relative;
