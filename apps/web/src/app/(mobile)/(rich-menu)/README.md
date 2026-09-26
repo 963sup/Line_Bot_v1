@@ -16,9 +16,8 @@ Rich Menu
 │  ├─ 協作空間
 │  └─ 訊息中心
 │
-└─ Center actions
-   ├─ 上班打卡
-   └─ 下班打卡
+└─ Center entry
+   └─ 出勤
 ```
 
 ## Ownership map
@@ -30,8 +29,7 @@ Rich Menu
 | 工作台 | Cross-owner application composition |
 | 協作空間 | Collaboration composition over existing owner capabilities |
 | 訊息中心 | Notifications recipient projection |
-| 上班打卡 | Attendance clock-in |
-| 下班打卡 | Attendance clock-out |
+| 出勤 | Attendance capability entry; clock-in / clock-out remain commands within the Attendance-owned surface |
 
 ## Current implementation rule
 
