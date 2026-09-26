@@ -9,7 +9,7 @@ Release semantics 見 [Release](../docs/070-operations/020-release.md)；Supabas
 - Automatic 與 manual Supabase jobs 共用 production resource concurrency；所有 repository-owned database mutation 另由 provider operation script 的 database lock 序列化。
 - Vercel Production mutation 只能經 canonical `vercel:deploy:production` adapter；provider mutation 前必須由 GitHub readback 證明 adapter 位於同 SHA 的 active Release，且 `gate`／`supabase` jobs 已成功。
 - Affected-source cursor 只接受先前整體 `conclusion=success` 的 same-repository `Release <validated-sha>`，且該 SHA 必須是 current validated SHA 的 git ancestor。任何 downstream external-effect failure 都不得前進 cursor；沒有合格 baseline 時才使用 empty tree。
-- Validation workflow 維持 read-only、secret-free、credential-free。External mutation secret 只放實際需要的最小 step `env`；checkout 不 persist credentials。
+- Validation workflow 維持 read-only、secret-free、credential-free。Draft → Ready 是 merge-candidate full-validation intent：`ready_for_review` 對 exact PR head 跑 `pnpm validate`；一般 Ready PR synchronize 保留 `pnpm check` fast feedback，head 改變後必須重新 Draft → Ready 才取得新 revision 的 full validation。External mutation secret 只放實際需要的最小 step `env`；checkout 不 persist credentials。
 - Artifact 只保存該 run 的操作 evidence，不成為 acceptance index 或 business truth。
 - Workflow 只因 trigger／permission／external-effect boundary 不同而拆分；只有真實多 consumer 且 input/permission contract 一致才抽 reusable workflow。
 - 修改 workflow 後跑 `tooling:check` 與相關 tests；若改動受 guard 保護，同步 `scripts/tooling/check-tooling.mjs` 的 positive／violating／repaired cases。
