@@ -39,6 +39,10 @@ export default function RepositoryStarListDetail({
     generation.current++;
     setItem(null);
     setStarred([]);
+    setName("");
+    setDescription("");
+    setRepositoryId("");
+    setPending(null);
     setBusy(false);
     setError("");
     setNotice("");
@@ -47,14 +51,16 @@ export default function RepositoryStarListDetail({
   async function session() {
     const token = await liffClient.session(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
-    return token;
+    const profile = await liffClient.profile();
+    if (!profile.userId) throw Object.assign(new Error("LINE 身分不可用，請重新登入。"), { status: 401 });
+    return { token, subject: profile.userId };
   }
 
-  async function read(token: string) {
+  async function read(current: { token: string; subject: string }) {
     const response = await fetch(`/api/repositories/lists/${encodeURIComponent(listId)}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(20_000),
-      headers: { "x-line-token": token },
+      headers: { "x-line-token": current.token },
     });
     const payload = (await response.json()) as {
       item?: RepositoryStarListDetailValue;
@@ -70,7 +76,7 @@ export default function RepositoryStarListDetail({
       const starredResponse = await fetch("/api/repositories/starred", {
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
-        headers: { "x-line-token": token },
+        headers: { "x-line-token": current.token },
       });
       const starredPayload = (await starredResponse.json()) as {
         items?: StarredRepository[];
@@ -81,7 +87,8 @@ export default function RepositoryStarListDetail({
       }
       stars = starredPayload.items;
     }
-    if ((await liffClient.session(liffId)) !== token) {
+    const latest = await session();
+    if (latest.token !== current.token || latest.subject !== current.subject) {
       clear();
       return false;
     }
@@ -99,9 +106,11 @@ export default function RepositoryStarListDetail({
     setBusy(true);
     setError("");
     try {
-      const token = await session();
-      if (!(await read(token)) || ticket !== generation.current) return;
-      setPending(readPendingRepositoryStarListCommand(window.localStorage, listId));
+      const current = await session();
+      if (!(await read(current)) || ticket !== generation.current) return;
+      setPending(
+        readPendingRepositoryStarListCommand(window.localStorage, current.subject, listId),
+      );
     } catch (cause) {
       if (ticket === generation.current) {
         setError(cause instanceof Error ? cause.message : "List 讀取失敗。");
@@ -115,17 +124,22 @@ export default function RepositoryStarListDetail({
     setBusy(true);
     setError("");
     setNotice("");
-    setPending(command);
-    writePendingRepositoryStarListCommand(window.localStorage, listId, command);
     try {
-      const token = await session();
+      const current = await session();
+      setPending(command);
+      writePendingRepositoryStarListCommand(
+        window.localStorage,
+        current.subject,
+        listId,
+        command,
+      );
       const response = await fetch(`/api/repositories/lists/${encodeURIComponent(listId)}`, {
         method: "POST",
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
         headers: {
           "content-type": "application/json",
-          "x-line-token": token,
+          "x-line-token": current.token,
         },
         body: JSON.stringify(command),
       });
@@ -135,17 +149,34 @@ export default function RepositoryStarListDetail({
       };
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) {
-          clearPendingRepositoryStarListCommand(window.localStorage, listId);
-          setPending(null);
-          if (response.status === 409) await read(token);
+          if (
+            clearPendingRepositoryStarListCommand(
+              window.localStorage,
+              current.subject,
+              listId,
+              command.requestId,
+            )
+          ) {
+            setPending(null);
+          }
+          if (response.status === 409) await read(current);
         }
         throw Object.assign(new Error(payload.error ?? "List 操作失敗。"), {
           status: response.status,
         });
       }
-      clearPendingRepositoryStarListCommand(window.localStorage, listId);
-      setPending(null);
-      if ((await liffClient.session(liffId)) !== token) {
+      if (
+        clearPendingRepositoryStarListCommand(
+          window.localStorage,
+          current.subject,
+          listId,
+          command.requestId,
+        )
+      ) {
+        setPending(null);
+      }
+      const latest = await session();
+      if (latest.token !== current.token || latest.subject !== current.subject) {
         clear();
         return;
       }
@@ -153,7 +184,7 @@ export default function RepositoryStarListDetail({
         window.location.assign(repositoryStarListsPath());
         return;
       }
-      await read(token);
+      await read(current);
       setNotice("List 已更新。");
     } catch (cause) {
       setError(
