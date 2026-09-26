@@ -28,18 +28,32 @@ export function createLiffClient(
     await initialization;
     return !new URL(href()).searchParams.has("liff.state");
   }
+
+  function accessToken() {
+    const token = sdk().getAccessToken();
+    if (!token) throw new Error("請從 LINE 重新開啟。");
+    return token;
+  }
+
   return {
     initialize,
+
+    /** Reads an already-established LINE session without initiating provider login. */
+    async existingSession(liffId: string) {
+      if (!(await initialize(liffId)) || !sdk().isLoggedIn()) return null;
+      return accessToken();
+    },
+
+    /** Requires LINE login and starts the provider redirect when no session exists. */
     async session(liffId: string) {
       if (!(await initialize(liffId))) return null;
       if (!sdk().isLoggedIn()) {
         sdk().login({ redirectUri: loginReturnUrl(href()) });
         return null;
       }
-      const token = sdk().getAccessToken();
-      if (!token) throw new Error("請從 LINE 重新開啟。");
-      return token;
+      return accessToken();
     },
+
     inClient: () => initialized && sdk().isInClient(),
     profile: () => sdk().getProfile(),
     close: () => sdk().closeWindow(),
