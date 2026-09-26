@@ -14,7 +14,8 @@ test("every published operation survives LINE login and resolves to the canonica
     repositories: "/repositories",
     partners: "/partners",
     feedback: "/feedback",
-    membership: "/settings",
+    membership: "/profile",
+    profile: "/profile",
     records: "/history",
     register: "/membership/register",
     restore: "/membership/restore",
@@ -44,8 +45,9 @@ test("primary LIFF redirect waits; restored intent selects only explicit operati
   assert.equal(entryRoute("https://example.com/expenses?liff.state=%3Fmembership%3D1"), "pending");
   assert.equal(entryRoute("https://example.com/expenses"), "home");
   assert.equal(entryRoute("https://example.com/expenses?membership=1"), "membership");
+  assert.equal(entryRoute("https://example.com/expenses?profile=1"), "profile");
   assert.equal(entryRoute("https://example.com/?attendance=1"), "attendance");
-  for (const route of ["repositories", "partners", "feedback", "clockIn", "clockOut"] as const) {
+  for (const route of ["repositories", "partners", "feedback", "profile", "clockIn", "clockOut"] as const) {
     assert.equal(entryRoute(`https://example.com/?${route}=1`), route);
     assert.equal(entryRoute(`https://example.com/?${route}=1&membership=1`), "invalid");
     assert.equal(
@@ -93,8 +95,8 @@ test("login keeps supported view parameters but drops ambiguous views and creden
 
 test("MINI App entry uses the current miniapp.line.me permanent-link domain only", () => {
   assert.equal(
-    miniAppEntryUrl("https://miniapp.line.me/123-test", "membership"),
-    "https://miniapp.line.me/123-test?membership=1",
+    miniAppEntryUrl("https://miniapp.line.me/123-test", "profile"),
+    "https://miniapp.line.me/123-test?profile=1",
   );
   assert.throws(
     () => miniAppEntryUrl("https://liff.line.me/123-test", "membership"),
