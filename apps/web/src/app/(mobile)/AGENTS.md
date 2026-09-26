@@ -23,7 +23,9 @@ It does not own business truth, authorization, persistence, package boundaries, 
 - Mobile navigation, resource navigation, and same-page view state are separate layers.
 - Page/layout code performs delivery/composition only; it does not duplicate owner use cases.
 - Direct open, refresh, soft navigation, and back must converge on the same authoritative query/command semantics.
-- Do not invent Favorites, saved Shortcuts, Recent activity, Trending, Templates, Activity feed, or Project runtime capability without a selected owner and real contract.
+- Do not invent Favorites, saved Shortcuts, Recent activity, Trending, Templates, Activity feed, cross-Repository Issue/Discussion feeds, or Project runtime capability without a selected owner and real contract.
+- `/repositories` is the current viewer's authorized Repository collection; it does not alias IssueBoard. Repository subresources stay under canonical `/{login}/{repository}/...`.
+- `/settings` is viewer Account configuration only; Enterprise, Organization, Team, operational utilities and Admin keep their own owner surfaces instead of being grouped under Settings.
 - `/home/assistant` is compatibility-only and redirects to canonical `/assistant`.
 - AppShell owns the shared skip target, content frame, and Bottom Navigation only; page-specific headings/actions stay with their destination instead of becoming global shell chrome.
 - Home alone renders the Account/Profile avatar in its header. It resolves the current Account-owned login through the trusted membership projection and links to canonical `/{login}`; Inbox, Explore, AI, resource/work pages do not repeat it. `/settings` remains viewer configuration, not User identity.

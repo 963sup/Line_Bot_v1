@@ -14,7 +14,7 @@ Current URL：`/repositories`、`/explore`、`/{login}/{repository}` 與其 `iss
 
 FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承接。Issue.number、Milestone.number 是 Repository-local；Discussion 使用 opaque id；Label 目前只有 collection。不能為了模仿 GitHub URL 新增 Discussion number 或 Label detail identity。
 
-目前 Discussion/Comment、Label、Milestone 為 authorized read；write management 與 Project 不因頁面存在而完成。Repository root、IssueBoard 與 resources-panel 的 sibling navigation 應維持一致 contract，修改時同時覆蓋 public/private 根頁與直接開啟的子頁。
+目前 `/repositories` 是 current viewer 的 authorized Repository collection；IssueBoard 只在 canonical Repository Issues surface 使用，不再把 Repository collection 等同 Issue collection。Discussion/Comment、Label、Milestone 為 authorized read；write management 與 Project 不因頁面存在而完成。Repository root、IssueBoard 與 resources-panel 的 sibling navigation 應維持一致 contract，修改時同時覆蓋 public/private 根頁與直接開啟的子頁。
 
 只在存在不同 lifecycle/consumer 需要時細分檔案；不建立 generic resource CRUD 抹去各資源語意。
 

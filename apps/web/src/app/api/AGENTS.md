@@ -22,6 +22,7 @@
 | `/api/discussions`、`/api/discussions/{discussionId}` | Repository Discussion/comment authorized GET；必須提供 `owner` + `name` |
 | `/api/repository-labels` | Repository Label authorized GET；必須提供 `owner` + `name` |
 | `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | Repository Milestone authorized GET；必須提供 `owner` + `name` |
+| `/api/repositories` | Current User 的 authorized Repository collection；只回傳 Repository locator/capability projection |
 | `/api/repositories/explore` | Repository discovery/Star transport |
 | `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |
 | `/api/notifications` | recipient-scoped Notifications |
