@@ -203,8 +203,7 @@ export default function DiscoveryPanel({
             </div>
           )}
         </div>
-  
-        )}
+      )}
       {showActivity && (
         <div className="explore-section">
           <SectionHeading
@@ -251,7 +250,7 @@ export default function DiscoveryPanel({
             </div>
           )}
         </div>
-        )}
+      )}
     </div>
   );
 }
