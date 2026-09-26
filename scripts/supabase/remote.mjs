@@ -630,9 +630,7 @@ export function permissionSubjectVersionExpansionSql(source = permissionAdminist
   return source.slice(start, end + endMarker.length);
 }
 
-export function repositoryEffectiveAccessExpansionSql(
-  source = crossOwnerProjectionSchemaSql,
-) {
+export function repositoryEffectiveAccessExpansionSql(source = crossOwnerProjectionSchemaSql) {
   const start = source.indexOf("create view app_private.repository_effective_access");
   const endMarker = "group by repository_id, user_id;";
   const end = source.indexOf(endMarker, start);
@@ -1221,9 +1219,57 @@ async function verifyRepositoryRuntimeCompatibility(client) {
         has_table_privilege(
           'line_app','app_private.repository_commands','INSERT'
         ) as commands_insert,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_commands'::regclass
+        ) as commands_rls,
         not has_table_privilege(
           'anon','app_private.repository_commands','SELECT'
         ) as anon_no_commands,
+        has_table_privilege(
+          'line_app','app_private.repository_labels','SELECT'
+        ) as labels_select,
+        not has_table_privilege(
+          'line_app','app_private.repository_labels','INSERT'
+        ) as labels_no_insert,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_labels'::regclass
+        ) as labels_rls,
+        has_table_privilege(
+          'line_app','app_private.repository_milestones','SELECT'
+        ) as milestones_select,
+        not has_table_privilege(
+          'line_app','app_private.repository_milestones','INSERT'
+        ) as milestones_no_insert,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_milestones'::regclass
+        ) as milestones_rls,
+        has_table_privilege('line_app','app_private.issues','SELECT') as issues_select,
+        not has_table_privilege('line_app','app_private.issues','INSERT') as issues_no_table_insert,
+        has_column_privilege(
+          'line_app','app_private.issues','number','INSERT'
+        ) as issues_number_insert,
+        has_column_privilege(
+          'line_app','app_private.issues','status','UPDATE'
+        ) as issues_status_update,
+        not has_column_privilege(
+          'line_app','app_private.issues','milestone_id','INSERT'
+        ) as issues_no_milestone_insert,
+        has_table_privilege('line_app','app_private.discussions','SELECT') as discussions_select,
+        not has_table_privilege(
+          'line_app','app_private.discussions','INSERT'
+        ) as discussions_no_insert,
+        has_table_privilege(
+          'line_app','app_private.discussion_comments','SELECT'
+        ) as comments_select,
+        not has_table_privilege(
+          'line_app','app_private.discussion_comments','INSERT'
+        ) as comments_no_insert,
         not has_table_privilege('anon','app_private.repository_stars','SELECT') as anon_no_stars,
         (
           select c.relrowsecurity
@@ -1259,7 +1305,23 @@ async function verifyRepositoryRuntimeCompatibility(client) {
     !acceptance.stars_delete ||
     !acceptance.commands_select ||
     !acceptance.commands_insert ||
+    !acceptance.commands_rls ||
     !acceptance.anon_no_commands ||
+    !acceptance.labels_select ||
+    !acceptance.labels_no_insert ||
+    !acceptance.labels_rls ||
+    !acceptance.milestones_select ||
+    !acceptance.milestones_no_insert ||
+    !acceptance.milestones_rls ||
+    !acceptance.issues_select ||
+    !acceptance.issues_no_table_insert ||
+    !acceptance.issues_number_insert ||
+    !acceptance.issues_status_update ||
+    !acceptance.issues_no_milestone_insert ||
+    !acceptance.discussions_select ||
+    !acceptance.discussions_no_insert ||
+    !acceptance.comments_select ||
+    !acceptance.comments_no_insert ||
     !acceptance.anon_no_stars ||
     !acceptance.stars_rls ||
     !acceptance.team_access_rls ||
@@ -1514,8 +1576,15 @@ async function ensureRepositoryRuntimeCompatibility() {
 
       await verifyRepositoryRuntimeCompatibility(client);
       const after = await repositoryRuntimeCompatibilityState(client);
-      if (after.repositoryRows !== before.repositoryRows) {
-        throw new Error("Repository runtime compatibility repair changed Repository business rows.");
+      if (
+        after.repositoryRows !== before.repositoryRows ||
+        after.issueRows !== before.issueRows ||
+        after.discussionRows !== before.discussionRows ||
+        after.discussionCommentRows !== before.discussionCommentRows
+      ) {
+        throw new Error(
+          "Repository runtime compatibility repair changed Repository business rows.",
+        );
       }
       await client.query("COMMIT");
       writeFileSync(
