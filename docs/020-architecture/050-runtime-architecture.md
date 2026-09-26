@@ -32,7 +32,7 @@ MINI App/login intent 白名單由 [LINE MINI App](../030-platform/010-line.md) 
 
 | 使用者任務 | MINI App／Next.js surface | 權威來源與實作界線 |
 | --- | --- | --- |
-| 查看 User／管理目前 viewer 設定、登入與恢復資格 | `/{login}`、`/settings/*`、onboarding 與 LINE identity flow | Account/User current qualification；`login` 是 User locator，authenticated viewer 只是 self-resolution context，不建立 `/me` 第二套 identity；register/restore 各自擁有明確流程 |
+| 查看 User／管理目前 viewer Profile、設定、登入與恢復資格 | `/{login}`、`/profile`、`/settings/*`、onboarding 與 LINE identity flow | `/{login}` 是 canonical User/Organization locator；`/profile` 只組合 authenticated viewer 的 owner-approved self projections，不建立 `/me` 或第二套 identity；register/restore 各自擁有明確流程 |
 | 選擇可參與的 Organization | 經 server 授權的組織列表與詳情 | Organization query 回傳可讀 summary；URL/local storage/LINE group 不建立 participation |
 | 管理 Organization 成員 | 成員列表、加入／移除操作及確認結果 | Organization owns invitation/direct membership source/effective membership；Identity/Access owns scoped RoleAssignment |
 | 管理 Organization Team | 組織內 Team 列表、詳情與成員管理 | Team owner 驗證 immutable Organization scope、Organization participation、TeamMembership 與 TeamMaintainer invariant；不是 EnterpriseTeam alias |
@@ -72,7 +72,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | Route | Responsibility |
 | --- | --- |
 | `/`, `/login`, `/privacy`, `/terms` | 公開內容與登入意圖；不讀 private business data |
-| `/{login}` | User / Organization public locator；login 只定位，不授權，User 是否公開依 Account profile visibility |
+| `/{login}` | User / Organization public locator；login 只定位，不授權，User 是否公開依 Account profile visibility |\n| `/profile` | authenticated viewer Profile hub composition；Account/Achievement/Activity、Repository、Organization 等仍由各 owner 授權與查詢，不是第二個 User locator |
 | `/membership/register`, `/membership/restore`, `/complete` | 註冊／恢復與一次性結果；完成後重新讀後端資格 |
 | `/auth/callback`, `/unavailable` | OAuth／LINE 接續與特殊結果；不常駐 business state |
 
@@ -102,7 +102,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
 | `/history` | 工作紀錄入口 |
 | `/{login}` | canonical User / Organization locator；Home header 的 Account/Profile avatar 在 Account-owned current login 已解析時導向此 locator；legacy User 若已有 Account projection 但缺 login，只能導向 `/settings/profile` 做 explicit locator recovery，不得推導 fabricated login；viewer自己的 User Profile才可顯示 Settings齒輪，依 trusted membership login與 route login一致性判斷；其他工作目的地不重複顯示 avatar |
-| `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
+| `/profile` | authenticated viewer Profile hub；Rich Menu 個人入口可達，空／不可用 projection 不以 fake count 補值 |\n| `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
 | `/feedback`, `/planned` | 只有明確定義的功能或「未開放」結果；不得產生假資料 |
 
 Stable ID 只定位 entity，不授權。Detail route 直接開啟、刷新與 list navigation 都必須回同一 authoritative use case，不建立 route-specific business copy。
