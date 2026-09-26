@@ -1486,7 +1486,10 @@
         ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/lists/route.ts",
-          "apps/web/src/app/api/repositories/lists/[listId]/route.ts"
+          "apps/web/src/app/api/repositories/lists/[listId]/route.ts",
+          "apps/web/src/app/(mobile)/repositories/lists/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/lists/new/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/star-lists.test.ts",
@@ -1528,7 +1531,8 @@
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/(mobile)/explore/page.tsx",
-          "apps/web/src/app/api/repositories/lists/discover/route.ts"
+          "apps/web/src/app/api/repositories/lists/discover/route.ts",
+          "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/discovery.test.ts",
@@ -2856,6 +2860,20 @@
       }
     },
     {
+      "id": "repository-star-list-id",
+      "concept": "repository-star-list",
+      "status": "active",
+      "fields": [
+        "listId"
+      ],
+      "scope": "repository-star-list-global-id",
+      "scopeAuthority": "repository",
+      "routeFiles": [
+        "apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"
+      ],
+      "note": "Repository Star List uses its opaque stable ListId as the detail locator under the already-reserved /repositories root; the locator never grants Repository or List authority."
+    },
+    {
       "id": "issue-number",
       "concept": "issue",
       "status": "active",
@@ -3124,6 +3142,7 @@
         "organization-login",
         "enterprise-slug",
         "repository-owner-name",
+        "repository-star-list-id",
         "issue-number",
         "discussion-opaque-id",
         "repository-milestone-number",

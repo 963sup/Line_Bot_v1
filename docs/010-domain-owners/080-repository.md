@@ -35,9 +35,12 @@ Stable identity 是 `RepositoryId`。Repository owner 僅為 `User | Organizatio
 /{ownerLogin}/{repositoryName}/labels
 /{ownerLogin}/{repositoryName}/milestones
 /{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}
+/repositories/lists
+/repositories/lists/{listId}
+/repositories/lists/discover
 ```
 
-Locator 只定位；protected read/write 仍重新驗證 current User 與 Repository access。`Issue.number` 與 `RepositoryMilestone.number` 是 Repository-local locator，`IssueId` 與 `RepositoryMilestoneId` 仍是 stable identity。Discussion URL 使用本產品 opaque `DiscussionId`，不採用 GitHub Discussion number。Label collection 以 Repository scope 讀取，沒有獨立 label URL locator。
+`RepositoryStarListId` 是 globally stable opaque identity，也作 `/repositories/lists/{listId}` locator value；它不占用 Account login / Repository name namespace。Locator 只定位；protected read/write 仍重新驗證 current User 與 Repository access。`Issue.number` 與 `RepositoryMilestone.number` 是 Repository-local locator，`IssueId` 與 `RepositoryMilestoneId` 仍是 stable identity。Discussion URL 使用本產品 opaque `DiscussionId`，不採用 GitHub Discussion number。Label collection 以 Repository scope 讀取，沒有獨立 label URL locator。
 
 HTTP transport 目前由 `/api/issues`、`/api/issues/{issueNumber}`、`/api/discussions`、`/api/discussions/{discussionId}`、`/api/repository-labels`、`/api/repository-milestones` 與 `/api/repository-milestones/{milestoneNumber}` 承接。Issue 保留既有 workbench/default repository、repository id 與 owner/name selector 行為；新增 Discussion、Label、Milestone read API 要求 `owner` + `name` selector 並重新解析 current effective access。
 

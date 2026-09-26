@@ -12,6 +12,14 @@ import {
 } from "../src/app/api/repositories/lists/route";
 import { GET as discoverGet } from "../src/app/api/repositories/lists/discover/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
+import {
+  clearPendingRepositoryStarListCommand,
+  clearPendingRepositoryStarListCreate,
+  readPendingRepositoryStarListCommand,
+  readPendingRepositoryStarListCreate,
+  writePendingRepositoryStarListCommand,
+  writePendingRepositoryStarListCreate,
+} from "../src/modules/repository/star-list-pending-storage";
 
 test("Repository Star List HTTP uses verified LINE identity and owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
@@ -129,4 +137,34 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
     if (previousOrigin === undefined) delete process.env.APP_ORIGIN;
     else process.env.APP_ORIGIN = previousOrigin;
   }
+});
+
+
+test("Repository Star List pending storage preserves exact retry identity", () => {
+  const data = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => void data.set(key, value),
+    removeItem: (key: string) => void data.delete(key),
+  } as Storage;
+
+  const create = {
+    requestId: "11111111-1111-4111-8111-111111111111",
+    name: "Operations",
+    description: "Curated",
+  };
+  writePendingRepositoryStarListCreate(storage, create);
+  assert.deepEqual(readPendingRepositoryStarListCreate(storage), create);
+  clearPendingRepositoryStarListCreate(storage);
+  assert.equal(readPendingRepositoryStarListCreate(storage), null);
+
+  const command = {
+    requestId: "22222222-2222-4222-8222-222222222222",
+    action: "publish" as const,
+    expectedVersion: 3,
+  };
+  writePendingRepositoryStarListCommand(storage, "list-a", command);
+  assert.deepEqual(readPendingRepositoryStarListCommand(storage, "list-a"), command);
+  clearPendingRepositoryStarListCommand(storage, "list-a");
+  assert.equal(readPendingRepositoryStarListCommand(storage, "list-a"), null);
 });
