@@ -326,7 +326,7 @@ async function run() {
     await expect(page.getByRole("heading", { name: "Discover", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Trending Repositories/ })).toHaveAttribute(
       "href",
-      "#trending",
+      "/explore/trending",
     );
     await expect(page.getByRole("link", { name: /Awesome Lists/ })).toHaveAttribute(
       "href",
@@ -334,11 +334,21 @@ async function run() {
     );
     await expect(
       page.getByRole("heading", { name: "Trending Repositories", exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
+
+    await page.getByRole("link", { name: /Trending Repositories/ }).click();
+    await expect(page).toHaveURL(`${base}/explore/trending`);
+    await expect(
+      page.getByRole("heading", { name: "Trending Repositories", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "acme/Operations", exact: true })).toHaveAttribute(
       "href",
       "/acme/Operations",
     );
+    await expect(page.getByRole("heading", { name: "Activity", exact: true })).toHaveCount(0);
+    await page.getByRole("link", { name: /返回/ }).click();
+    await expect(page).toHaveURL(`${base}/explore`);
     await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Prepare payroll/ })).toHaveAttribute(
       "href",
@@ -456,7 +466,7 @@ async function run() {
       });
     }
     console.log(
-      "PASS: Home IA, Explore Trending/Awesome Lists/Activity, Star List management, scoped Repository resources and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
+      "PASS: Home IA, Explore Trending child/Awesome Lists/Activity, Star List management, scoped Repository resources and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
     );
   } finally {
     if (artifactDir) await context.tracing.stop({ path: path.join(artifactDir, "trace.zip") });
