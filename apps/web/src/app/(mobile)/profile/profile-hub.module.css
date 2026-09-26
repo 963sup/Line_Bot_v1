@@ -110,6 +110,12 @@
   font-size: 16px;
 }
 
+.statusIcon {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
 .achievements {
   display: flex;
   min-height: 78px;
@@ -123,9 +129,10 @@
 }
 
 .trophy {
+  display: grid;
   flex: 0 0 auto;
+  place-items: center;
   color: var(--muted);
-  font-size: 21px;
 }
 
 .achievementRail {
@@ -214,8 +221,33 @@
 }
 
 .repositoryOwner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.repositoryOwnerAvatar,
+.repositoryOwnerFallback {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.repositoryOwnerAvatar {
+  object-fit: cover;
+}
+
+.repositoryOwnerFallback {
+  display: grid;
+  place-items: center;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
 }
 
 .repositoryCard strong {
@@ -268,7 +300,25 @@
   place-items: center;
   border-radius: 8px;
   background: #30363d;
-  color: var(--ink);
+  color: #f0f6fc;
+}
+
+.resourceIcon[data-kind="repositories"] {
+  background: #3b4252;
+}
+
+.resourceIcon[data-kind="organizations"] {
+  background: #f0883e;
+}
+
+.resourceIcon[data-kind="starred"] {
+  background: #f1c40f;
+  color: #161b22;
+}
+
+.resourceIcon[data-kind="projects"] {
+  background: #8c959f;
+  color: #161b22;
 }
 
 .resourceRow > span:nth-child(2) {
