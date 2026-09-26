@@ -193,6 +193,6 @@ test("resource continuation keeps notification IDs but normalizes legacy Reposit
   );
   assert.equal(
     entryDestination(`https://example.com/repositories/${id}?membership=1`),
-    "/settings",
+    "/profile",
   );
 });
