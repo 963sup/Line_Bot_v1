@@ -577,6 +577,7 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
     repositoryAccessTable: true,
     repositoryTeamAccessTable: true,
     repositoryStarsTable: true,
+    repositoryCommandsTable: true,
     repositoryEffectiveAccessView: true,
     provisionRepositoryFunction: true,
   };
@@ -591,6 +592,7 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
       legacyOrganizationIdColumn: true,
       repositoryTeamAccessTable: false,
       repositoryStarsTable: false,
+      repositoryCommandsTable: false,
       repositoryEffectiveAccessView: false,
       provisionRepositoryFunction: false,
     }),
