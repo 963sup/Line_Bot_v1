@@ -8,7 +8,7 @@
 
 ## 現行 surface 與 invariant
 
-Current surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`、`/admin/members`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/follows`。
+Current Account-owned surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`、`/admin/members`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/profile/activity`、`/api/follows`。Authenticated `/profile` viewer hub 由 app composition 擁有，僅消費本 module／其他 owner 的 published projections，不成為 Account 第二套 identity owner。
 
 FPT users 對照 User/Profile/Follow；LINE/Google qualification 是本地 integration contract。`permissions-panel.tsx`、`permissions.server.ts` 目前服務 `/settings/permissions`、`/admin`、`/admin/permissions`、`/api/permissions`，其真正 owner 是 `@line-work/identity-access`；位置不授予 Account domain 權限管理責任。修改時對照各自 DTO，User management 為 `actorId/users/detail.user`，不可用舊 fixture 欄位冒充現行契約。
 
