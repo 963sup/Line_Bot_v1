@@ -21,9 +21,8 @@ export function createRepositoryDiscovery(deps: {
       });
     },
     publishedStarLists: async (subject: string) =>
-      deps.store().publishedStarLists(
-        (await deps.activeUser(subject)).id,
-        PUBLISHED_STAR_LIST_LIMIT,
-      ),
+      deps
+        .store()
+        .publishedStarLists((await deps.activeUser(subject)).id, PUBLISHED_STAR_LIST_LIMIT),
   };
 }
