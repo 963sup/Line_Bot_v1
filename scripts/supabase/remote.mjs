@@ -1417,6 +1417,93 @@ async function ensureRepositoryRuntimeCompatibility() {
         await client.query(repositoryCommandSchemaSql);
         changed = true;
       }
+      if (!afterStructure.repositoryLabelsTable) {
+        await client.query(repositoryLabelSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryMilestonesTable) {
+        await client.query(repositoryMilestoneSchemaSql);
+        changed = true;
+      }
+
+      if (!afterStructure.issueNumberColumn || !afterStructure.issueMilestoneColumn) {
+        if (afterStructure.issueRows !== 0) {
+          throw new Error(
+            "Issue runtime migration requires zero legacy Issue rows for automatic recovery.",
+          );
+        }
+        if (!afterStructure.issueNumberColumn) {
+          await client.query("alter table app_private.issues add column number bigint not null");
+          changed = true;
+        }
+        if (!afterStructure.issueMilestoneColumn) {
+          await client.query("alter table app_private.issues add column milestone_id text");
+          changed = true;
+        }
+      }
+
+      const issueConstraints = new Set(
+        (
+          await client.query(
+            "select conname from pg_constraint where conrelid='app_private.issues'::regclass",
+          )
+        ).rows.map((row) => row.conname),
+      );
+      if (!issueConstraints.has("issues_repository_id_number_unique")) {
+        await client.query(
+          "alter table app_private.issues add constraint issues_repository_id_number_unique unique (repository_id,number)",
+        );
+        changed = true;
+      }
+      if (!issueConstraints.has("issues_number_check")) {
+        await client.query(
+          "alter table app_private.issues add constraint issues_number_check check (number > 0)",
+        );
+        changed = true;
+      }
+      if (!issueConstraints.has("issues_milestone_scope_fkey")) {
+        await client.query(
+          "alter table app_private.issues add constraint issues_milestone_scope_fkey foreign key (repository_id,milestone_id) references app_private.repository_milestones(repository_id,id)",
+        );
+        changed = true;
+      }
+
+      await client.query(
+        "revoke all on app_private.issues from public, anon, authenticated, line_app",
+      );
+      await client.query("grant select on app_private.issues to line_app");
+      await client.query(
+        "grant insert (id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at) on app_private.issues to line_app",
+      );
+      await client.query(
+        "grant update (status,version,updated_at) on app_private.issues to line_app",
+      );
+      await client.query("drop policy if exists backend on app_private.issues");
+      await client.query("drop policy if exists backend_read on app_private.issues");
+      await client.query("drop policy if exists backend_insert on app_private.issues");
+      await client.query("drop policy if exists backend_transition on app_private.issues");
+      await client.query(
+        "create policy backend_read on app_private.issues for select to line_app using (true)",
+      );
+      await client.query(
+        "create policy backend_insert on app_private.issues for insert to line_app with check (true)",
+      );
+      await client.query(
+        "create policy backend_transition on app_private.issues for update to line_app using (true) with check (true)",
+      );
+
+      for (const relation of ["discussions", "discussion_comments"]) {
+        await client.query(
+          `revoke all on app_private.${relation} from public, anon, authenticated, line_app`,
+        );
+        await client.query(`grant select on app_private.${relation} to line_app`);
+        await client.query(`drop policy if exists backend on app_private.${relation}`);
+        await client.query(`drop policy if exists backend_read on app_private.${relation}`);
+        await client.query(
+          `create policy backend_read on app_private.${relation} for select to line_app using (true)`,
+        );
+      }
+
       if (!afterStructure.repositoryEffectiveAccessView) {
         await client.query(repositoryEffectiveAccessExpansionSql());
         changed = true;
