@@ -20,11 +20,20 @@ export type RepositoryStarListCommandBody =
       repositoryId: string;
     }>;
 
-const createKey = "repository-star-list-create-pending:v1";
-const commandPrefix = "repository-star-list-command-pending:v1:";
+const createPrefix = "repository-star-list-create-pending:v2:";
+const commandPrefix = "repository-star-list-command-pending:v2:";
 
-function commandKey(listId: string) {
-  return `${commandPrefix}${listId}`;
+function scopedSubject(value: string): string {
+  if (!value) throw new Error("Repository Star List retry scope is missing.");
+  return encodeURIComponent(value);
+}
+
+function createKey(subject: string) {
+  return `${createPrefix}${scopedSubject(subject)}`;
+}
+
+function commandKey(subject: string, listId: string) {
+  return `${commandPrefix}${scopedSubject(subject)}:${encodeURIComponent(listId)}`;
 }
 
 function validCreate(value: unknown): value is RepositoryStarListCreateCommand {
@@ -62,13 +71,15 @@ function validCommand(value: unknown): value is RepositoryStarListCommandBody {
 
 export function readPendingRepositoryStarListCreate(
   storage: Storage,
+  subject: string,
 ): RepositoryStarListCreateCommand | null {
+  const key = createKey(subject);
   try {
-    const raw = storage.getItem(createKey);
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     if (!validCreate(value)) {
-      storage.removeItem(createKey);
+      storage.removeItem(key);
       return null;
     }
     return value;
@@ -79,25 +90,36 @@ export function readPendingRepositoryStarListCreate(
 
 export function writePendingRepositoryStarListCreate(
   storage: Storage,
+  subject: string,
   command: RepositoryStarListCreateCommand,
 ): void {
-  storage.setItem(createKey, JSON.stringify(command));
+  storage.setItem(createKey(subject), JSON.stringify(command));
 }
 
-export function clearPendingRepositoryStarListCreate(storage: Storage): void {
-  storage.removeItem(createKey);
+export function clearPendingRepositoryStarListCreate(
+  storage: Storage,
+  subject: string,
+  requestId: string,
+): boolean {
+  const key = createKey(subject);
+  const stored = readPendingRepositoryStarListCreate(storage, subject);
+  if (stored?.requestId !== requestId) return false;
+  storage.removeItem(key);
+  return true;
 }
 
 export function readPendingRepositoryStarListCommand(
   storage: Storage,
+  subject: string,
   listId: string,
 ): RepositoryStarListCommandBody | null {
+  const key = commandKey(subject, listId);
   try {
-    const raw = storage.getItem(commandKey(listId));
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     if (!validCommand(value)) {
-      storage.removeItem(commandKey(listId));
+      storage.removeItem(key);
       return null;
     }
     return value;
@@ -108,12 +130,22 @@ export function readPendingRepositoryStarListCommand(
 
 export function writePendingRepositoryStarListCommand(
   storage: Storage,
+  subject: string,
   listId: string,
   command: RepositoryStarListCommandBody,
 ): void {
-  storage.setItem(commandKey(listId), JSON.stringify(command));
+  storage.setItem(commandKey(subject, listId), JSON.stringify(command));
 }
 
-export function clearPendingRepositoryStarListCommand(storage: Storage, listId: string): void {
-  storage.removeItem(commandKey(listId));
+export function clearPendingRepositoryStarListCommand(
+  storage: Storage,
+  subject: string,
+  listId: string,
+  requestId: string,
+): boolean {
+  const key = commandKey(subject, listId);
+  const stored = readPendingRepositoryStarListCommand(storage, subject, listId);
+  if (stored?.requestId !== requestId) return false;
+  storage.removeItem(key);
+  return true;
 }
