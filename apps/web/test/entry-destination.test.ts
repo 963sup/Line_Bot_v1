@@ -23,6 +23,7 @@ test("public entry is passive unless LINE carries an intent or SDK continuation"
   assert.equal(hasEntryContinuation("https://example.com/?utm_source=test"), false);
   assert.equal(hasEntryContinuation("https://example.com/?liff.state=%3Frepositories%3D1"), true);
   assert.equal(hasEntryContinuation("https://example.com/?membership=1"), true);
+  assert.equal(hasEntryContinuation("https://example.com/?profile=1"), true);
 });
 
 test("external LINE login responses activate the SDK without interpreting its redirect", () => {
@@ -44,6 +45,7 @@ test("canonical destinations retain only validated business intent after LIFF in
   const base = "https://example.com/";
   assert.equal(entryDestination(base + "?liff.state=x"), "pending");
   assert.equal(entryDestination(base + "?membership=1&repositories=1"), "invalid");
+  assert.equal(entryDestination(base + "?profile=1"), "/profile");
   assert.equal(entryDestination(base + "?expense=bad"), "invalid");
   assert.equal(entryDestination(base + "?membership=1&membership=1"), "invalid");
   assert.equal(entryDestination(base + "?repositories=1"), "/repositories");
@@ -148,7 +150,8 @@ test("legacy expense endpoint resolves menu intents and never opens an unspecifi
   }
   for (const [intent, target] of [
     ["repositories=1", "/repositories"],
-    ["membership=1", "/settings"],
+    ["membership=1", "/profile"],
+    ["profile=1", "/profile"],
     ["notifications=1&notificationView=unread", "/notifications?notificationView=unread"],
     ["clockIn=1", "/attendance/clock-in"],
     ["clockOut=1", "/attendance/clock-out"],
