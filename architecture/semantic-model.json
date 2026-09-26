@@ -982,6 +982,39 @@
       }
     },
     {
+      "id": "read-user-profile-activity",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read Account-owned Achievement awards and contribution-day facts for the authenticated User Profile without granting or inventing recognition.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authenticated User Profile recognition and activity read projection",
+        "sourcePaths": [
+          "packages/account/src/application/profile-activity.ts",
+          "packages/account/src/application/ports/profile-activity.ts"
+        ],
+        "publicExports": [
+          "./application/profile-activity",
+          "./application/ports/profile-activity"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/activity/route.ts",
+          "apps/web/src/app/(mobile)/profile/page.tsx"
+        ],
+        "testPaths": ["packages/account/test/profile-activity.test.ts"],
+        "note": "Read-only projection of persisted Account facts; it does not claim an Achievement award writer or rule engine exists."
+      }
+    },
+    {
       "id": "manage-user-follow",
       "owner": "account",
       "kind": "leaf",
@@ -2697,8 +2730,10 @@
     {
       "id": "achievement",
       "kind": "derived-result",
-      "status": "deferred",
-      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+      "status": "adopted",
+      "concepts": ["user"],
+      "capabilities": ["read-user-profile-activity"],
+      "reason": "Product has Account-owned earned Achievement facts and an authenticated Profile read projection. Adoption is read-only recognition semantics; definition/qualification/grant/progress runtime is not claimed."
     },
     {
       "id": "star-signal",
