@@ -1,5 +1,5 @@
-import RepositoryStarListCreate from "../../../../../modules/repository/star-list-create";
 import { repositoryStarListsPath } from "../../../../../modules/repository/resource-navigation";
+import RepositoryStarListCreate from "../../../../../modules/repository/star-list-create";
 import { lineMiniApp } from "../../../../../shared/server/line-mini-app";
 import { PageHeading } from "../../../../../shared/ui/page-layout";
 import AppShell from "../../../_shell/app-shell";
