@@ -655,8 +655,7 @@ export function classifyRepositoryRuntimeCompatibility(state) {
     state.repositoryTeamAccessTable &&
     state.repositoryStarsTable &&
     state.repositoryEffectiveAccessView &&
-    state.provisionRepositoryFunction &&
-    state.permissionSubjectVersionsTable;
+    state.provisionRepositoryFunction;
 
   if (structuralCurrent && supportCurrent) return "ready";
   if (structuralCurrent && state.repositoryAccessTable) return "repairable";
@@ -992,6 +991,116 @@ async function ensureDailyCheckInCompatibility() {
   return true;
 }
 
+async function ensurePermissionSubjectVersionCompatibility() {
+  return withRemoteClient(async (client) => {
+    await client.query("BEGIN");
+    try {
+      await client.query("LOCK TABLE app_private.users IN SHARE ROW EXCLUSIVE MODE");
+      const [state] = (
+        await client.query(`
+          select
+            to_regclass('app_private.permission_subject_versions') is not null as table_exists,
+            exists(
+              select 1 from information_schema.columns
+              where table_schema='app_private' and table_name='users'
+                and column_name='permissions_version'
+            ) as legacy_version_column
+        `)
+      ).rows;
+
+      let changed = false;
+      if (!state.table_exists) {
+        await client.query(permissionSubjectVersionExpansionSql());
+        if (state.legacy_version_column) {
+          await client.query(`
+            insert into app_private.permission_subject_versions(user_id,version)
+            select id,permissions_version from app_private.users
+            on conflict(user_id) do nothing
+          `);
+        }
+        changed = true;
+      }
+
+      if (state.legacy_version_column) {
+        const mismatch = Number(
+          (
+            await client.query(`
+              select count(*)::int as count
+              from app_private.users u
+              join app_private.permission_subject_versions v on v.user_id=u.id
+              where v.version<>u.permissions_version
+            `)
+          ).rows[0]?.count ?? 0,
+        );
+        if (mismatch) {
+          throw new Error(
+            "Legacy users.permissions_version disagrees with permission_subject_versions; refusing ambiguous authority.",
+          );
+        }
+      }
+
+      const [acceptance] = (
+        await client.query(`
+          select
+            c.relrowsecurity as rls_enabled,
+            has_table_privilege(
+              'line_app','app_private.permission_subject_versions','SELECT'
+            ) as line_app_select,
+            has_table_privilege(
+              'line_app','app_private.permission_subject_versions','INSERT'
+            ) as line_app_insert,
+            has_table_privilege(
+              'line_app','app_private.permission_subject_versions','UPDATE'
+            ) as line_app_update,
+            not has_table_privilege(
+              'anon','app_private.permission_subject_versions','SELECT'
+            ) as anon_no_select,
+            not has_table_privilege(
+              'authenticated','app_private.permission_subject_versions','SELECT'
+            ) as authenticated_no_select
+          from pg_class c
+          where c.oid='app_private.permission_subject_versions'::regclass
+        `)
+      ).rows;
+      if (
+        !acceptance?.rls_enabled ||
+        !acceptance.line_app_select ||
+        !acceptance.line_app_insert ||
+        !acceptance.line_app_update ||
+        !acceptance.anon_no_select ||
+        !acceptance.authenticated_no_select
+      ) {
+        throw new Error("Remote permission subject version compatibility is invalid.");
+      }
+
+      const rowCount = Number(
+        (
+          await client.query(
+            "select count(*)::int as count from app_private.permission_subject_versions",
+          )
+        ).rows[0]?.count ?? 0,
+      );
+      await client.query("COMMIT");
+      writeFileSync(
+        new URL("permission-subject-version-compat.json", artifacts),
+        `${JSON.stringify(
+          {
+            changed,
+            legacyVersionColumn: state.legacy_version_column,
+            subjectVersionRows: rowCount,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      return changed;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    }
+  });
+}
+
 async function repositoryRuntimeCompatibilityState(client) {
   const row = (
     await client.query(`
@@ -1023,14 +1132,7 @@ async function repositoryRuntimeCompatibilityState(client) {
         to_regclass('app_private.repository_effective_access') is not null
           as repository_effective_access_view,
         to_regprocedure('app_private.provision_repository(text,text,text,text,text)') is not null
-          as provision_repository_function,
-        to_regclass('app_private.permission_subject_versions') is not null
-          as permission_subject_versions_table,
-        exists(
-          select 1 from information_schema.columns
-          where table_schema='app_private' and table_name='users'
-            and column_name='permissions_version'
-        ) as legacy_user_permissions_version_column
+          as provision_repository_function
     `)
   ).rows[0];
   return {
@@ -1044,8 +1146,6 @@ async function repositoryRuntimeCompatibilityState(client) {
     repositoryStarsTable: row.repository_stars_table,
     repositoryEffectiveAccessView: row.repository_effective_access_view,
     provisionRepositoryFunction: row.provision_repository_function,
-    permissionSubjectVersionsTable: row.permission_subject_versions_table,
-    legacyUserPermissionsVersionColumn: row.legacy_user_permissions_version_column,
   };
 }
 
@@ -1261,36 +1361,6 @@ async function ensureRepositoryRuntimeCompatibility() {
       await client.query(repositoryProvisionCompatibilitySql());
       await client.query(repositoryProvisionCompatibilityAccessSql());
 
-      if (!afterStructure.permissionSubjectVersionsTable) {
-        await client.query(permissionSubjectVersionExpansionSql());
-        if (afterStructure.legacyUserPermissionsVersionColumn) {
-          await client.query(`
-            insert into app_private.permission_subject_versions(user_id,version)
-            select id,permissions_version from app_private.users
-            on conflict(user_id) do nothing
-          `);
-        }
-        changed = true;
-      }
-
-      if (afterStructure.legacyUserPermissionsVersionColumn) {
-        const mismatch = Number(
-          (
-            await client.query(`
-              select count(*)::int as count
-              from app_private.users u
-              join app_private.permission_subject_versions v on v.user_id=u.id
-              where v.version<>u.permissions_version
-            `)
-          ).rows[0]?.count ?? 0,
-        );
-        if (mismatch) {
-          throw new Error(
-            "Legacy users.permissions_version disagrees with permission_subject_versions; refusing ambiguous authority.",
-          );
-        }
-      }
-
       await verifyRepositoryRuntimeCompatibility(client);
       const after = await repositoryRuntimeCompatibilityState(client);
       if (after.repositoryRows !== before.repositoryRows) {
@@ -1328,8 +1398,9 @@ async function ensureRepositoryRuntimeCompatibility() {
 async function repairRuntimeCompatibility() {
   const accountLoginChanged = await ensureAccountLoginCompatibility();
   const dailyCheckInChanged = await ensureDailyCheckInCompatibility();
+  const permissionChanged = await ensurePermissionSubjectVersionCompatibility();
   const repositoryChanged = await ensureRepositoryRuntimeCompatibility();
-  return accountLoginChanged || dailyCheckInChanged || repositoryChanged;
+  return accountLoginChanged || dailyCheckInChanged || permissionChanged || repositoryChanged;
 }
 
 async function prepareGeneralManagementExpansion() {
