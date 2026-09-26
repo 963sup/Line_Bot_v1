@@ -1,0 +1,334 @@
+.hub {
+  display: grid;
+  gap: 26px;
+}
+
+.toolbar {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbarAction,
+.toolbarButton {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--green-strong);
+  text-decoration: none;
+  font: inherit;
+  font-size: 24px;
+}
+
+.hub .toolbarButton {
+  width: 44px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--green-strong);
+}
+
+.toolbarAction:hover,
+.toolbarAction:focus-visible,
+.hub .toolbarButton:hover,
+.hub .toolbarButton:focus-visible {
+  background: var(--surface-muted);
+}
+
+.identity {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hub section.identity,
+.hub section.section,
+.hub section.resources {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.identityRow {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+}
+
+.avatar {
+  display: grid;
+  width: 104px;
+  height: 104px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 40px;
+  font-weight: 750;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identityCopy {
+  min-width: 0;
+}
+
+.identityCopy h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.identityCopy p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.statusCard {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.achievementStrip {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+}
+
+.trophy {
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.achievement {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.achievementEmpty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.section {
+  display: grid;
+  gap: 14px;
+}
+
+.section h2,
+.sectionHeader h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionHeader span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.repositoryRail {
+  display: grid;
+  grid-auto-columns: minmax(230px, 78%);
+  grid-auto-flow: column;
+  gap: 12px;
+  margin-inline: -16px;
+  padding: 0 16px 4px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: none;
+}
+
+.repositoryRail::-webkit-scrollbar {
+  display: none;
+}
+
+.repositoryCard {
+  display: grid;
+  min-height: 154px;
+  align-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  scroll-snap-align: start;
+}
+
+.repositoryCard small,
+.repositoryCard strong {
+  display: block;
+}
+
+.repositoryCard small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.repositoryCard strong {
+  margin-top: 7px;
+  font-size: 19px;
+  overflow-wrap: anywhere;
+}
+
+.repositoryMeta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.resources {
+  display: grid;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.resourceRow {
+  display: grid;
+  min-height: 72px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.resourceRow + .resourceRow {
+  border-top: 1px solid var(--line);
+}
+
+.resourceIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: #30363d;
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.resourceLabel {
+  font-size: 17px;
+  font-weight: 550;
+}
+
+.resourceCount {
+  color: var(--muted);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.resourceRowDisabled {
+  color: var(--muted);
+}
+
+.activityList {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.activityRow {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.activityRow span {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.empty,
+.notice {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.notice {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+@media (max-width: 390px) {
+  .identityRow {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .avatar {
+    width: 88px;
+    height: 88px;
+    font-size: 34px;
+  }
+
+  .identityCopy h1 {
+    font-size: 24px;
+  }
+
+  .repositoryRail {
+    grid-auto-columns: minmax(220px, 88%);
+  }
+}
