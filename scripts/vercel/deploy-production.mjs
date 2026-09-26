@@ -101,7 +101,6 @@ export async function verifyProductionReleaseAuthorization({
   runId,
   sha,
   repository,
-  actionSha,
   fetchImpl = fetch,
 }) {
   const expectedRepository = `${VERCEL_PRODUCTION_TARGET.gitOrg}/${VERCEL_PRODUCTION_TARGET.gitRepo}`;
@@ -110,10 +109,6 @@ export async function verifyProductionReleaseAuthorization({
   if (repository !== expectedRepository) {
     throw new Error("Production deployment GitHub repository does not match the production owner.");
   }
-  if (actionSha !== sha) {
-    throw new Error("Production deployment SHA does not match the active GitHub Actions revision.");
-  }
-
   const run = await requestGitHubJson(
     fetchImpl,
     `/repos/${expectedRepository}/actions/runs/${runId}`,
@@ -368,7 +363,6 @@ async function main() {
     runId: process.env.GITHUB_RUN_ID,
     sha,
     repository: process.env.GITHUB_REPOSITORY,
-    actionSha: process.env.GITHUB_SHA,
   });
   const result = await deployProduction({ token: process.env.VERCEL_TOKEN, sha });
   console.log(JSON.stringify(result));
