@@ -2,16 +2,9 @@ import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { repositoryDiscovery } from "../src/app/api/_composition/repository-discovery.server";
 import { repositoryStarLists } from "../src/app/api/_composition/repository-star-lists.server";
-import {
-  GET as listGet,
-  POST as listPost,
-} from "../src/app/api/repositories/lists/[listId]/route";
-import {
-  GET as listsGet,
-  POST as listsPost,
-} from "../src/app/api/repositories/lists/route";
+import { GET as listGet, POST as listPost } from "../src/app/api/repositories/lists/[listId]/route";
 import { GET as discoverGet } from "../src/app/api/repositories/lists/discover/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
+import { GET as listsGet, POST as listsPost } from "../src/app/api/repositories/lists/route";
 import {
   clearPendingRepositoryStarListCommand,
   clearPendingRepositoryStarListCreate,
@@ -20,6 +13,7 @@ import {
   writePendingRepositoryStarListCommand,
   writePendingRepositoryStarListCreate,
 } from "../src/modules/repository/star-list-pending-storage";
+import { lineMiniApp } from "../src/shared/server/line-mini-app";
 
 test("Repository Star List HTTP uses verified LINE identity and owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
@@ -105,10 +99,7 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
       201,
     );
     const context = { params: Promise.resolve({ listId: "list-a" }) };
-    assert.equal(
-      (await listGet(request("/api/repositories/lists/list-a"), context)).status,
-      200,
-    );
+    assert.equal((await listGet(request("/api/repositories/lists/list-a"), context)).status, 200);
     assert.equal(
       (
         await listPost(
@@ -139,7 +130,6 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
   }
 });
 
-
 test("Repository Star List pending storage scopes retries and clears only acknowledged requests", () => {
   const data = new Map<string, string>();
   const storage = {
@@ -162,10 +152,7 @@ test("Repository Star List pending storage scopes retries and clears only acknow
   assert.equal(readPendingRepositoryStarListCreate(storage, "subject-b"), null);
 
   writePendingRepositoryStarListCreate(storage, "subject-a", newerCreate);
-  assert.equal(
-    clearPendingRepositoryStarListCreate(storage, "subject-a", create.requestId),
-    false,
-  );
+  assert.equal(clearPendingRepositoryStarListCreate(storage, "subject-a", create.requestId), false);
   assert.deepEqual(readPendingRepositoryStarListCreate(storage, "subject-a"), newerCreate);
   assert.equal(
     clearPendingRepositoryStarListCreate(storage, "subject-a", newerCreate.requestId),
@@ -179,10 +166,7 @@ test("Repository Star List pending storage scopes retries and clears only acknow
     expectedVersion: 3,
   };
   writePendingRepositoryStarListCommand(storage, "subject-a", "list-a", command);
-  assert.deepEqual(
-    readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"),
-    command,
-  );
+  assert.deepEqual(readPendingRepositoryStarListCommand(storage, "subject-a", "list-a"), command);
   assert.equal(readPendingRepositoryStarListCommand(storage, "subject-b", "list-a"), null);
   assert.equal(readPendingRepositoryStarListCommand(storage, "subject-a", "list-b"), null);
   assert.equal(
