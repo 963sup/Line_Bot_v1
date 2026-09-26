@@ -9,7 +9,7 @@
 Upstream：
 
 - Directory: https://github.com/github/docs/tree/main/src/graphql/data/fpt
-- 本次核對 revision: `github/docs@03d2e24b34bd88c361f1185f0aae1c46062c6510`
+- 本次核對 revision: `github/docs@18945a31a4f2d97beb6c5c1a7479102e23c25727`
 - GraphQL data 是 generated/reference contract；Line_Bot_v1 的 current truth 仍依本 repository 的 code / schema / tests / canonical owner docs。
 
 ## Reading model
@@ -47,16 +47,19 @@ code / schema / tests / canonical docs
 
 ## Pipeline responsibility
 
-官方 [GraphQL README](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/README.md)
+官方 [GraphQL README](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/README.md)
 提供入口；實際分工需沿程式查證：
 
 | Responsibility | Pinned upstream evidence | 本專案對照 |
 | --- | --- | --- |
-| Source / version sync | [sync.ts](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/scripts/sync.ts) | Benchmark revision 是外部證據邊界，不自動更新產品模型 |
-| Category partition / index | 同一 sync 呼叫 category bucket 與 category file writer | 完整 source inventory 與 category decision；不由檔名推 product owner |
-| Structure validation | [validator.ts](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/lib/validator.ts) | Benchmark、semantic、implementation、data 各驗自己的 contract |
-| Version / category loading | [lib/index.ts](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/lib/index.ts) | 缺片、錯誤 source 與 unresolved reference 是失敗，不回填別的版本 |
+| Source / version sync | [sync.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/sync.ts) | Benchmark revision 是外部證據邊界，不自動更新產品模型 |
+| Semantic category resolution | [process-schemas.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/utils/process-schemas.ts) | 先讀 explicit `@docsCategory`；未標註結構只從 semantic source 推導。Mutation Input、Connection/Edge、reference inheritance 都是 derived ownership；referrers 不一致時不得猜 owner |
+| Category partition / index | [sync.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/sync.ts) | 把已分類的完整 graph materialize 成 per-category fragments 與 `category-map.json`；projection 不反向成為 authority |
+| Structure validation | [validator.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/lib/validator.ts) | Benchmark、semantic、implementation、data 各驗自己的 contract |
+| Version / category loading | [lib/index.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/lib/index.ts) | 缺片、錯誤 source 與 unresolved reference 是失敗，不回填別的版本 |
 | Consumer rendering | 同一 loader 提供 schema、preview、upcoming change 與 history 的分別讀取入口 | `pnpm semantic view` 從 canonical model 產生 read model，輸出不得反向成為 authority |
+
+GitHub FPT 的 category ownership 採保守 derivation：explicit metadata 優先；能從唯一 semantic source 推導時才 derive；多個 referrer 不一致時保留 unresolved/other，而不是 first-match wins。Line_Bot_v1 的 benchmark 只保存這套 provenance 與外部 evidence，產品 owner 仍由自己的 semantic model 明確決定。
 
 本專案保留自己的可編輯 product model；不複製 GitHub 的 GraphQL runtime、整套 schema 或 generated schema 檔案。`gitBlobSha` 是來源檔案的 identity；inventory 的檔名與 blob identity 依 Git tree 格式重建後，必須符合固定的 `gitTreeSha`，避免刪掉未被引用的分片仍通過。離線 guard 驗固定來源集合、metadata 與引用一致性，不冒充重新向 GitHub 下載比對，也不證明產品 runtime。
 
