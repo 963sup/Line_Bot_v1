@@ -32,8 +32,8 @@ The Rich Menu information architecture is:
 Top row
 數據洞察｜異常事件｜工作台｜協作空間｜訊息中心
 
-Center actions
-上班打卡｜下班打卡
+Center entry
+出勤
 ```
 
 ### Top row
@@ -46,12 +46,11 @@ Center actions
 | 協作空間 | Collaboration entry across existing owner capabilities; do not create a Collaboration Domain merely for navigation. |
 | 訊息中心 | Presentation entry to Notifications-owned recipient projection; do not create Inbox/MessageCenter persistence. |
 
-### Center actions
+### Center entry
 
 | Label | Responsibility |
 | --- | --- |
-| 上班打卡 | Attendance clock-in command entry. Attendance remains authoritative for qualification, workplace, replay, version, transaction, and attendance facts. |
-| 下班打卡 | Attendance clock-out command entry. Same Attendance invariants apply. |
+| 出勤 | Attendance capability entry. The Rich Menu navigates to the canonical Attendance surface; clock-in and clock-out remain Attendance-owned commands inside that surface. |
 
 ## Invariants
 
@@ -59,7 +58,7 @@ Center actions
 - Every Rich Menu destination must resolve to one canonical URL owner.
 - Navigation labels are presentation vocabulary; they do not imply a new package, schema, bounded context, or source of truth.
 - Existing owner contracts must be reused before adding a route or adapter.
-- Clock-in and clock-out must not bypass Attendance application contracts or weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
+- `出勤` is a navigation label, not a new Domain concept. Clock-in and clock-out remain distinct Attendance commands and must not bypass Attendance application contracts or weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
 - Notifications remain authoritative for recipient-scoped message state even when the UI label is `訊息中心`.
 - Data insight and anomaly surfaces must remain read projections unless a real command responsibility is explicitly owned elsewhere.
 - Direct entry from LINE, refresh, back, and authenticated continuation must converge on the same authoritative application semantics.
