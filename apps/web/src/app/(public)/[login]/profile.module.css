@@ -144,49 +144,6 @@
   font-size: 13px;
 }
 
-.resourceList {
-  display: grid;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.resourceRow {
-  display: grid;
-  min-height: 68px;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.resourceRow:hover,
-.resourceRow:focus-visible {
-  background: var(--surface-muted);
-}
-
-.resourceIcon {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 8px;
-  background: #30363d;
-  color: var(--ink);
-}
-
-.resourceLabel {
-  min-width: 0;
-  font-size: 17px;
-  font-weight: 550;
-}
-
-.resourceCount {
-  color: var(--muted);
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-}
-
 .emptyRepositories {
   margin: 0;
   padding: 18px;
