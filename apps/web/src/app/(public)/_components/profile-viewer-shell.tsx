@@ -73,11 +73,14 @@ function ResourceRow({
 }) {
   const body = (
     <>
-      <span className={`${styles.resourceIcon} ${styles[`resourceIcon${tone[0]!.toUpperCase()}${tone.slice(1)}`]}`} aria-hidden="true">
+      <span
+        className={`${styles.resourceIcon} ${styles[`resourceIcon${tone[0]!.toUpperCase()}${tone.slice(1)}`]}`}
+        aria-hidden="true"
+      >
         {icon}
       </span>
       <span className={styles.resourceLabel}>{label}</span>
-      <span className={styles.resourceMeta}>{disabled ? "未開放" : meta ?? ""}</span>
+      <span className={styles.resourceMeta}>{disabled ? "未開放" : (meta ?? "")}</span>
     </>
   );
 
@@ -200,9 +203,7 @@ export default function ProfileViewerShell({
     [],
   );
 
-  const shellClassName = ownProfile
-    ? `app-shell app-shell-tabs ${styles.shell}`
-    : styles.shell;
+  const shellClassName = ownProfile ? `app-shell app-shell-tabs ${styles.shell}` : styles.shell;
 
   return (
     <div className={shellClassName}>
