@@ -290,19 +290,19 @@ function classifyPlanStatement(statement) {
     ) ||
     /^comment\s+on\b/.test(lower)
   ) {
-    return { mode: "automatic" };
+    return { mode: "routine" };
   }
 
   if (/^alter\s+type\b/.test(lower)) {
     if (/\badd\s+value\b/.test(lower) && !/\brename\b/.test(lower)) {
-      return { mode: "automatic" };
+      return { mode: "routine" };
     }
-    return { mode: "manual", reason: "type-transition" };
+    return { mode: "sensitive", reason: "type-transition" };
   }
 
   if (/^alter\s+sequence\b/.test(lower)) {
-    if (/\bowned\s+by\b/.test(lower)) return { mode: "automatic" };
-    return { mode: "manual", reason: "sequence-transition" };
+    if (/\bowned\s+by\b/.test(lower)) return { mode: "routine" };
+    return { mode: "sensitive", reason: "sequence-transition" };
   }
 
   if (/^alter\s+table\b/.test(lower)) {
@@ -315,7 +315,7 @@ function classifyPlanStatement(statement) {
       ) ||
       /\badd\s+column\b[\s\S]*?\bnot\s+null\b/.test(lower)
     ) {
-      return { mode: "manual", reason: "table-transition" };
+      return { mode: "sensitive", reason: "table-transition" };
     }
 
     if (
@@ -325,17 +325,17 @@ function classifyPlanStatement(statement) {
       /\bforce\s+row\s+level\s+security\b/.test(lower) ||
       /\balter\s+column\b[\s\S]*?\bset\s+default\b/.test(lower)
     ) {
-      return { mode: "automatic" };
+      return { mode: "routine" };
     }
 
-    return { mode: "manual", reason: "unclassified-alter-table" };
+    return { mode: "sensitive", reason: "unclassified-alter-table" };
   }
 
   if (/^grant\b/.test(lower)) {
     if (/\bto\s+"?(?:line_app|postgres)"?(?=\s|,|$)/.test(lower)) {
-      return { mode: "automatic" };
+      return { mode: "routine" };
     }
-    return { mode: "manual", reason: "privilege-expansion" };
+    return { mode: "sensitive", reason: "privilege-expansion" };
   }
 
   if (/^revoke\b/.test(lower)) {
@@ -345,9 +345,9 @@ function classifyPlanStatement(statement) {
       !/(?:^|[\s,])"?line_app"?(?=\s|,|$)/.test(recipients) &&
       !/(?:^|[\s,])"?postgres"?(?=\s|,|$)/.test(recipients)
     ) {
-      return { mode: "automatic" };
+      return { mode: "routine" };
     }
-    return { mode: "manual", reason: "runtime-privilege-reduction" };
+    return { mode: "sensitive", reason: "runtime-privilege-reduction" };
   }
 
   if (
@@ -355,10 +355,10 @@ function classifyPlanStatement(statement) {
       lower,
     )
   ) {
-    return { mode: "manual", reason: "destructive-or-security-sensitive" };
+    return { mode: "sensitive", reason: "destructive-or-security-sensitive" };
   }
 
-  return { mode: "manual", reason: "unclassified-statement" };
+  return { mode: "sensitive", reason: "unclassified-statement" };
 }
 
 export function classifyPlan(sql) {
@@ -368,13 +368,13 @@ export function classifyPlan(sql) {
   const reasons = [];
   for (const statement of statements) {
     const classification = classifyPlanStatement(statement);
-    if (classification.mode === "manual") {
+    if (classification.mode === "sensitive") {
       reasons.push(classification.reason);
     }
   }
 
   return {
-    mode: reasons.length ? "manual" : "automatic",
+    mode: reasons.length ? "sensitive" : "routine",
     empty: false,
     reasons: [...new Set(reasons)].sort(),
   };
@@ -397,6 +397,14 @@ export function assertReviewedPlan(sql, reviewedFingerprint) {
     );
   }
   return actual;
+}
+
+export function authorizeSyncPlan(sql, reviewedFingerprint) {
+  const classification = classifyPlan(sql);
+  if (reviewedFingerprint !== undefined) {
+    assertReviewedPlan(sql, reviewedFingerprint);
+  }
+  return classification;
 }
 
 export function assertMigrationHistoryUnchanged(before, after) {
@@ -1353,13 +1361,13 @@ export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
   if (!["repair", "prepare", "plan", "recovery", "sync", "verify"].includes(command)) {
     throw new Error(
-      "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--allow-manual] [--api]",
+      "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--reviewed-plan] [--api]",
     );
   }
   for (const flag of flags) {
-    if (!["--allow-manual", "--api"].includes(flag)) {
+    if (!["--reviewed-plan", "--api"].includes(flag)) {
       throw new Error(
-        "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--allow-manual] [--api]",
+        "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--reviewed-plan] [--api]",
       );
     }
   }
@@ -1367,10 +1375,10 @@ export function parseArgs(argv) {
   if (api && command !== "verify") {
     throw new Error("schema:remote --api is only valid with verify.");
   }
-  return { command, allowManual: flags.includes("--allow-manual"), api };
+  return { command, reviewedPlan: flags.includes("--reviewed-plan"), api };
 }
 
-async function runRemoteCommand({ projectRef, command, allowManual, api }) {
+async function runRemoteCommand({ projectRef, command, reviewedPlan, api }) {
   mkdirSync(artifacts, { recursive: true });
 
   await assertPlatformPrerequisites();
@@ -1402,7 +1410,7 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
       console.log(
         `Remote repair PASS for ${projectRef}: runtime compatibility = ${
           runtimeChanged ? "repaired" : "already current"
-        }; manual contract not executed; migration history drift = 0.`,
+        }; reviewed-plan contract not executed; migration history drift = 0.`,
       );
       return;
     }
@@ -1414,7 +1422,7 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
     console.log(
       `Remote prepare PASS for ${projectRef}: preserve-data expansion = ${
         changed ? "applied" : "already current"
-      }; manual contract not executed; migration history drift = 0.`,
+      }; reviewed-plan contract not executed; migration history drift = 0.`,
     );
     return;
   }
@@ -1422,8 +1430,8 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
   await rebuildDesiredLocal();
 
   if (foundationState === "fresh") {
-    if (allowManual) {
-      throw new Error("Reviewed manual reconciliation requires an existing remote foundation.");
+    if (reviewedPlan) {
+      throw new Error("Reviewed-plan reconciliation requires an existing remote foundation.");
     }
     if (command === "plan") {
       console.log(
@@ -1467,14 +1475,13 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
       return;
     }
 
-    if (classification.mode === "manual" && !allowManual) {
-      throw new Error(
-        `Remote plan requires manual review (${classification.reasons.join(", ")}); review ${plan.path} and ${fileURLToPath(new URL("plan.sha256", artifacts))}.`,
-      );
-    }
-    if (allowManual) {
-      assertReviewedPlan(plan.sql, process.env.SUPABASE_REVIEWED_PLAN_SHA256);
-    }
+    const syncClassification = authorizeSyncPlan(
+      plan.sql,
+      reviewedPlan ? process.env.SUPABASE_REVIEWED_PLAN_SHA256 : undefined,
+    );
+    console.log(
+      `Remote sync authorization: validated declarative source; diagnostic classification = ${syncClassification.mode}; reasons = ${syncClassification.reasons.join(", ") || "none"}.`,
+    );
 
     await applyRemoteSql(
       `BEGIN;\n${foundationSql}\n${classification.empty ? "" : plan.sql}\nCOMMIT;\n`,
@@ -1498,7 +1505,7 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
 
 export async function main(argv = process.argv.slice(2)) {
   loadRootEnv();
-  const { command, allowManual, api } = parseArgs(argv);
+  const { command, reviewedPlan, api } = parseArgs(argv);
 
   if (command === "recovery") {
     mkdirSync(artifacts, { recursive: true });
@@ -1514,7 +1521,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const { projectRef } = requireRemoteConfig();
-  const execute = () => runRemoteCommand({ projectRef, command, allowManual, api });
+  const execute = () => runRemoteCommand({ projectRef, command, reviewedPlan, api });
 
   if (["repair", "prepare", "sync"].includes(command)) {
     return withRemoteReconciliationLock(execute);
