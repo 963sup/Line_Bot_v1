@@ -1,15 +1,30 @@
-name: Supabase Replace
+name: Supabase Manual Reconcile
 
 on:
   workflow_dispatch:
     inputs:
+      operation:
+        description: Prepare/review a plan, or apply an already reviewed exact plan
+        required: true
+        type: choice
+        options:
+          - prepare-plan
+          - apply
       confirm_project:
         description: Type the target Supabase project ref
         required: true
         type: string
-      confirm_replace:
-        description: Type "replace nmssogphayjymjpbnrxv" to authorize destructive reconciliation
-        required: true
+      reviewed_plan_sha256:
+        description: For apply, paste the exact lowercase SHA-256 from the reviewed plan artifact
+        required: false
+        type: string
+      confirm_recovery:
+        description: For apply, type "recovery verified nmssogphayjymjpbnrxv"
+        required: false
+        type: string
+      confirm_apply:
+        description: For apply, type "apply reviewed plan nmssogphayjymjpbnrxv"
+        required: false
         type: string
 
 permissions:
@@ -17,18 +32,24 @@ permissions:
   checks: read
   statuses: read
 
-concurrency:
-  group: supabase-replace
-  cancel-in-progress: false
-
 jobs:
-  replace:
+  reconcile:
     if: >-
       github.ref == 'refs/heads/main' &&
       inputs.confirm_project == 'nmssogphayjymjpbnrxv' &&
-      inputs.confirm_replace == 'replace nmssogphayjymjpbnrxv'
+      (
+        inputs.operation == 'prepare-plan' ||
+        (
+          inputs.operation == 'apply' &&
+          inputs.confirm_recovery == 'recovery verified nmssogphayjymjpbnrxv' &&
+          inputs.confirm_apply == 'apply reviewed plan nmssogphayjymjpbnrxv'
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: supabase-production-nmssogphayjymjpbnrxv
+      cancel-in-progress: false
     steps:
       - name: Require exact main revision
         shell: bash
@@ -39,7 +60,7 @@ jobs:
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
-            echo "Schema replacement must run against the current main revision."
+            echo "Manual reconciliation must run against the current main revision."
             exit 1
           }
 
@@ -72,6 +93,17 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
 
+      - name: Validate reviewed plan fingerprint and recovery attestation
+        if: inputs.operation == 'apply'
+        shell: bash
+        env:
+          REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}
+        run: |
+          [[ "$REVIEWED_PLAN_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
+            echo "Apply requires the exact lowercase SHA-256 from a reviewed plan artifact."
+            exit 1
+          }
+
       - name: Prepare preserve-data compatibility expansion
         run: pnpm schema:remote prepare
         env:
@@ -80,20 +112,31 @@ jobs:
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
           SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}
 
-      - name: Replace and verify remote schema without migration history
-        run: pnpm schema:remote sync --allow-destructive
+      - name: Generate exact reconciliation plan for review
+        if: inputs.operation == 'prepare-plan'
+        run: pnpm schema:remote plan
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
 
-      - name: Preserve destructive reconciliation evidence
+      - name: Apply only the reviewed exact plan
+        if: inputs.operation == 'apply'
+        run: pnpm schema:remote sync --allow-manual
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+          SUPABASE_REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}
+
+      - name: Preserve manual reconciliation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: supabase-replace-${{ github.sha }}
+          name: supabase-manual-${{ inputs.operation }}-${{ github.sha }}
           path: |
             .artifacts/supabase-remote/plan.sql
+            .artifacts/supabase-remote/plan.sha256
             .artifacts/supabase-remote/verification.sql
             .artifacts/supabase-remote/migration-history.before.txt
             .artifacts/supabase-remote/migration-history.after.txt

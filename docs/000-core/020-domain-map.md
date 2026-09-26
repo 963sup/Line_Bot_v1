@@ -203,6 +203,7 @@ Subdomain
 | Expense intake state | Expense | Current；confirmed != approval/payment/accounting |
 | Partner / Referral lifecycle | Partners | Current |
 | Notification inbox / read-state / delivery projection | Notifications | Current |
+| Shared cross-owner namespace scope / reservation / collision policy | Namespace | Current global-root reservation slice；owner-local name format、rename、number allocation 仍由各 owner 決定 |
 | Feature permission / scoped access decision | Identity / Access + owning business policy | identity proof / membership 不自動推導 permission |
 | Accounting / Payment / Settlement | 尚未有 current universal owner | 只有真實 use case / consumer 出現後才建立，不併入 Billing umbrella |
 

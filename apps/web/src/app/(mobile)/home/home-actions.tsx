@@ -51,6 +51,15 @@ export default function HomeActions({ liffId }: { liffId: string }) {
           </svg>
         </summary>
         <div className="home-create-popover">
+          <Link href="/repositories/new">
+            <span className="home-create-icon" aria-hidden="true">
+              □
+            </span>
+            <span>
+              <strong>New Repository</strong>
+              <small>建立 private Repository</small>
+            </span>
+          </Link>
           <Link href="/repositories?intent=create-issue">
             <span className="home-create-icon" aria-hidden="true">
               ◎

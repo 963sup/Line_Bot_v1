@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -177,6 +178,7 @@ from unnest(array[
 where to_regclass(format('app_private.%I', relation_name)) is null;
 `;
 const apiReadbackTimeoutMs = 10_000;
+const reconciliationLockName = "line-bot-v1:supabase-schema-reconciliation";
 
 export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnabled }) {
   if (![401, 403, 404].includes(usersStatus)) {
@@ -188,12 +190,212 @@ export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnab
   return { publicDataApiDenied: true, googleEnabled: googleEnabled === true };
 }
 
+function splitSqlStatements(sql) {
+  const statements = [];
+  let current = "";
+  let index = 0;
+
+  while (index < sql.length) {
+    if (sql.startsWith("--", index)) {
+      const end = sql.indexOf("\n", index + 2);
+      index = end < 0 ? sql.length : end + 1;
+      current += " ";
+      continue;
+    }
+
+    if (sql.startsWith("/*", index)) {
+      const end = sql.indexOf("*/", index + 2);
+      if (end < 0) {
+        current += sql.slice(index);
+        break;
+      }
+      index = end + 2;
+      current += " ";
+      continue;
+    }
+
+    const char = sql[index];
+    if (char === "'") {
+      current += "''";
+      index += 1;
+      while (index < sql.length) {
+        if (sql[index] === "'" && sql[index + 1] === "'") {
+          index += 2;
+          continue;
+        }
+        if (sql[index] === "'") {
+          index += 1;
+          break;
+        }
+        index += 1;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      const start = index;
+      index += 1;
+      while (index < sql.length) {
+        if (sql[index] === '"' && sql[index + 1] === '"') {
+          index += 2;
+          continue;
+        }
+        if (sql[index] === '"') {
+          index += 1;
+          break;
+        }
+        index += 1;
+      }
+      current += sql.slice(start, index);
+      continue;
+    }
+
+    if (char === "$") {
+      const tag = sql.slice(index).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/)?.[0];
+      if (tag) {
+        const end = sql.indexOf(tag, index + tag.length);
+        if (end < 0) {
+          current += sql.slice(index);
+          break;
+        }
+        current += `${tag}<body>${tag}`;
+        index = end + tag.length;
+        continue;
+      }
+    }
+
+    if (char === ";") {
+      if (current.trim()) statements.push(current.trim());
+      current = "";
+      index += 1;
+      continue;
+    }
+
+    current += char;
+    index += 1;
+  }
+
+  if (current.trim()) statements.push(current.trim());
+  return statements;
+}
+
+function classifyPlanStatement(statement) {
+  const normalized = statement.replace(/\s+/g, " ").trim();
+  const lower = normalized.toLowerCase();
+
+  if (
+    /^create\s+(?:or\s+replace\s+)?(?:table|type|view|materialized\s+view|function|procedure|sequence|(?:unique\s+)?index|(?:constraint\s+)?trigger|policy)\b/.test(
+      lower,
+    ) ||
+    /^comment\s+on\b/.test(lower)
+  ) {
+    return { mode: "automatic" };
+  }
+
+  if (/^alter\s+type\b/.test(lower)) {
+    if (/\badd\s+value\b/.test(lower) && !/\brename\b/.test(lower)) {
+      return { mode: "automatic" };
+    }
+    return { mode: "manual", reason: "type-transition" };
+  }
+
+  if (/^alter\s+sequence\b/.test(lower)) {
+    if (/\bowned\s+by\b/.test(lower)) return { mode: "automatic" };
+    return { mode: "manual", reason: "sequence-transition" };
+  }
+
+  if (/^alter\s+table\b/.test(lower)) {
+    if (
+      /\b(drop|rename)\b/.test(lower) ||
+      /\bdisable\s+row\s+level\s+security\b/.test(lower) ||
+      /\bno\s+force\s+row\s+level\s+security\b/.test(lower) ||
+      /\balter\s+column\b[\s\S]*?\b(type|set\s+not\s+null|drop\s+not\s+null|drop\s+default)\b/.test(
+        lower,
+      ) ||
+      /\badd\s+column\b[\s\S]*?\bnot\s+null\b/.test(lower)
+    ) {
+      return { mode: "manual", reason: "table-transition" };
+    }
+
+    if (
+      /\badd\s+column\b/.test(lower) ||
+      /\badd\s+(?:constraint\s+)?/.test(lower) ||
+      /\benable\s+row\s+level\s+security\b/.test(lower) ||
+      /\bforce\s+row\s+level\s+security\b/.test(lower) ||
+      /\balter\s+column\b[\s\S]*?\bset\s+default\b/.test(lower)
+    ) {
+      return { mode: "automatic" };
+    }
+
+    return { mode: "manual", reason: "unclassified-alter-table" };
+  }
+
+  if (/^grant\b/.test(lower)) {
+    if (/\bto\s+"?(?:line_app|postgres)"?(?=\s|,|$)/.test(lower)) {
+      return { mode: "automatic" };
+    }
+    return { mode: "manual", reason: "privilege-expansion" };
+  }
+
+  if (/^revoke\b/.test(lower)) {
+    const recipients = lower.split(/\bfrom\b/, 2)[1] ?? "";
+    if (
+      recipients &&
+      !/(?:^|[\s,])"?line_app"?(?=\s|,|$)/.test(recipients) &&
+      !/(?:^|[\s,])"?postgres"?(?=\s|,|$)/.test(recipients)
+    ) {
+      return { mode: "automatic" };
+    }
+    return { mode: "manual", reason: "runtime-privilege-reduction" };
+  }
+
+  if (
+    /^(?:drop|truncate|alter\s+policy|alter\s+default\s+privileges|create\s+extension|alter\s+extension|drop\s+extension)\b/.test(
+      lower,
+    )
+  ) {
+    return { mode: "manual", reason: "destructive-or-security-sensitive" };
+  }
+
+  return { mode: "manual", reason: "unclassified-statement" };
+}
+
 export function classifyPlan(sql) {
-  const destructive =
-    /\b(drop\s+(table|column|schema|type|function|view)|alter\s+table[\s\S]*?\badd\s+column[\s\S]*?\bnot\s+null\b|alter\s+table[\s\S]*?\balter\s+column[\s\S]*?\btype\b|alter\s+table[\s\S]*?\bset\s+not\s+null\b|(?:^|;)\s*truncate\s+(?:table\s+)?|\brename\s+(table|column|to)\b)/im.test(
-      sql,
+  const statements = splitSqlStatements(sql);
+  if (!statements.length) return { mode: "noop", empty: true, reasons: [] };
+
+  const reasons = [];
+  for (const statement of statements) {
+    const classification = classifyPlanStatement(statement);
+    if (classification.mode === "manual") {
+      reasons.push(classification.reason);
+    }
+  }
+
+  return {
+    mode: reasons.length ? "manual" : "automatic",
+    empty: false,
+    reasons: [...new Set(reasons)].sort(),
+  };
+}
+
+export function planFingerprint(sql) {
+  return createHash("sha256").update(sql).digest("hex");
+}
+
+export function assertReviewedPlan(sql, reviewedFingerprint) {
+  const actual = planFingerprint(sql);
+  if (!/^[0-9a-f]{64}$/.test(reviewedFingerprint ?? "")) {
+    throw new Error(
+      "SUPABASE_REVIEWED_PLAN_SHA256 must be an exact lowercase SHA-256 fingerprint.",
     );
-  return { destructive, empty: sql.trim().length === 0 };
+  }
+  if (actual !== reviewedFingerprint) {
+    throw new Error(
+      `Reviewed Supabase plan no longer matches current remote state (expected ${reviewedFingerprint}, actual ${actual}).`,
+    );
+  }
+  return actual;
 }
 
 export function assertMigrationHistoryUnchanged(before, after) {
@@ -464,6 +666,8 @@ function run(args, { capture = false, secrets = [] } = {}) {
 }
 
 let remoteConfig;
+let activeRemoteClient;
+
 function requireRemoteConfig() {
   if (remoteConfig) return remoteConfig;
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -479,7 +683,45 @@ function requireRemoteConfig() {
   return remoteConfig;
 }
 
+function queryResultRows(result) {
+  if (Array.isArray(result)) return result.at(-1)?.rows ?? [];
+  return result.rows;
+}
+
+async function withRemoteClient(work) {
+  if (activeRemoteClient) return work(activeRemoteClient);
+  const { postgresUrl } = requireRemoteConfig();
+  return withPostgres(postgresUrl, { remote: true }, work);
+}
+
+async function withRemoteReconciliationLock(work) {
+  if (activeRemoteClient) {
+    throw new Error("Remote reconciliation lock is already active in this process.");
+  }
+  return withRemoteClient(async (client) => {
+    const [lock] = (
+      await client.query("select pg_try_advisory_lock(hashtextextended($1, 0)) as locked", [
+        reconciliationLockName,
+      ])
+    ).rows;
+    if (!lock?.locked) {
+      throw new Error("Another production Supabase reconciliation already owns the database lock.");
+    }
+
+    activeRemoteClient = client;
+    try {
+      return await work();
+    } finally {
+      activeRemoteClient = undefined;
+      await client.query("select pg_advisory_unlock(hashtextextended($1, 0))", [
+        reconciliationLockName,
+      ]);
+    }
+  });
+}
+
 async function queryRemote(sql) {
+  if (activeRemoteClient) return queryResultRows(await activeRemoteClient.query(sql));
   const { postgresUrl } = requireRemoteConfig();
   return queryRows(postgresUrl, sql, { remote: true });
 }
@@ -558,12 +800,21 @@ function generatePlan(artifactName = "plan.sql") {
     ],
     { secrets: [postgresUrl] },
   );
-  return { path: plan, sql: readFileSync(plan, "utf8") };
+  const sql = readFileSync(plan, "utf8");
+  const fingerprint = planFingerprint(sql);
+  if (artifactName === "plan.sql") {
+    writeFileSync(new URL("plan.sha256", artifacts), `${fingerprint}\n`);
+  }
+  return { path: plan, sql, fingerprint };
 }
 
 async function applyRemoteSql(sql, artifactName) {
   const { postgresUrl } = requireRemoteConfig();
   writeFileSync(new URL(artifactName, artifacts), sql);
+  if (activeRemoteClient) {
+    await activeRemoteClient.query(sql);
+    return;
+  }
   await executeSql(postgresUrl, sql, { remote: true });
 }
 
@@ -910,8 +1161,7 @@ async function prepareGeneralManagementExpansion() {
 }
 
 async function verifyRuntimeAuthBoundary() {
-  const { postgresUrl } = requireRemoteConfig();
-  await withPostgres(postgresUrl, { remote: true }, async (client) => {
+  await withRemoteClient(async (client) => {
     await client.query("BEGIN");
     try {
       await client.query("SET LOCAL ROLE line_app");
@@ -1031,13 +1281,13 @@ export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
   if (!["repair", "prepare", "plan", "sync", "verify"].includes(command)) {
     throw new Error(
-      "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-destructive] [--api]",
+      "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-manual] [--api]",
     );
   }
   for (const flag of flags) {
-    if (!["--allow-destructive", "--api"].includes(flag)) {
+    if (!["--allow-manual", "--api"].includes(flag)) {
       throw new Error(
-        "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-destructive] [--api]",
+        "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-manual] [--api]",
       );
     }
   }
@@ -1045,13 +1295,10 @@ export function parseArgs(argv) {
   if (api && command !== "verify") {
     throw new Error("schema:remote --api is only valid with verify.");
   }
-  return { command, allowDestructive: flags.includes("--allow-destructive"), api };
+  return { command, allowManual: flags.includes("--allow-manual"), api };
 }
 
-export async function main(argv = process.argv.slice(2)) {
-  loadRootEnv();
-  const { projectRef } = requireRemoteConfig();
-  const { command, allowDestructive, api } = parseArgs(argv);
+async function runRemoteCommand({ projectRef, command, allowManual, api }) {
   mkdirSync(artifacts, { recursive: true });
 
   await assertPlatformPrerequisites();
@@ -1083,7 +1330,7 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(
         `Remote repair PASS for ${projectRef}: runtime compatibility = ${
           runtimeChanged ? "repaired" : "already current"
-        }; destructive contract not executed; migration history drift = 0.`,
+        }; manual contract not executed; migration history drift = 0.`,
       );
       return;
     }
@@ -1095,7 +1342,7 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(
       `Remote prepare PASS for ${projectRef}: preserve-data expansion = ${
         changed ? "applied" : "already current"
-      }; destructive contract not executed; migration history drift = 0.`,
+      }; manual contract not executed; migration history drift = 0.`,
     );
     return;
   }
@@ -1103,6 +1350,9 @@ export async function main(argv = process.argv.slice(2)) {
   await rebuildDesiredLocal();
 
   if (foundationState === "fresh") {
+    if (allowManual) {
+      throw new Error("Reviewed manual reconciliation requires an existing remote foundation.");
+    }
     if (command === "plan") {
       console.log(
         `Remote target: ${projectRef}; foundation: fresh. Full application bootstrap will apply ${schemaFileNames().join(", ")} in one transaction; Supabase platform state and migration history stay outside the mutation boundary.`,
@@ -1120,6 +1370,11 @@ export async function main(argv = process.argv.slice(2)) {
     const classification = classifyPlan(plan.sql);
     if (command === "plan") {
       console.log(`Remote target: ${projectRef}; foundation: existing.`);
+      console.log(
+        `Plan classification: ${classification.mode}; fingerprint: ${plan.fingerprint}; reasons: ${
+          classification.reasons.join(", ") || "none"
+        }.`,
+      );
       console.log(plan.sql || "Remote app_private schema already matches supabase/schemas.");
       return;
     }
@@ -1139,11 +1394,16 @@ export async function main(argv = process.argv.slice(2)) {
       );
       return;
     }
-    if (classification.destructive && !allowDestructive) {
+
+    if (classification.mode === "manual" && !allowManual) {
       throw new Error(
-        `Remote plan contains destructive/data-sensitive DDL; review ${plan.path} and rerun with --allow-destructive.`,
+        `Remote plan requires manual review (${classification.reasons.join(", ")}); review ${plan.path} and ${fileURLToPath(new URL("plan.sha256", artifacts))}.`,
       );
     }
+    if (allowManual) {
+      assertReviewedPlan(plan.sql, process.env.SUPABASE_REVIEWED_PLAN_SHA256);
+    }
+
     await applyRemoteSql(
       `BEGIN;\n${foundationSql}\n${classification.empty ? "" : plan.sql}\nCOMMIT;\n`,
       "apply.sql",
@@ -1162,6 +1422,18 @@ export async function main(argv = process.argv.slice(2)) {
   console.log(
     `Remote sync PASS for ${projectRef}: schema drift = 0; ownership/security readback = PASS; migration history drift = 0.`,
   );
+}
+
+export async function main(argv = process.argv.slice(2)) {
+  loadRootEnv();
+  const { projectRef } = requireRemoteConfig();
+  const { command, allowManual, api } = parseArgs(argv);
+  const execute = () => runRemoteCommand({ projectRef, command, allowManual, api });
+
+  if (["repair", "prepare", "sync"].includes(command)) {
+    return withRemoteReconciliationLock(execute);
+  }
+  return execute();
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

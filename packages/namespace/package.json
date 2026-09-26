@@ -1,0 +1,25 @@
+{
+  "name": "@line-work/namespace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./root": {
+      "types": "./dist/root.d.ts",
+      "default": "./dist/root.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -4,6 +4,7 @@ import {
   normalizeRepositoryMilestoneNumber,
   normalizeRepositoryName,
 } from "../domain.js";
+import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type {
   RepositoryLabelCursor,
   RepositoryMilestoneCursor,
@@ -22,11 +23,12 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
     }
     return value;
   }
+  const ownerLogin = accountLoginForRepositoryLocator(value.ownerLogin);
   const repositoryName = normalizeRepositoryName(value.repositoryName);
-  if (!value.ownerLogin || !repositoryName) {
+  if (!ownerLogin || !repositoryName) {
     throw new IssueError(400, "Repository 路徑不正確。");
   }
-  return { ownerLogin: value.ownerLogin, repositoryName };
+  return { ownerLogin, repositoryName };
 }
 
 function parseJsonCursor(after: string | undefined): Record<string, unknown> | undefined {

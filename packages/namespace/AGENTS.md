@@ -1,0 +1,12 @@
+# @line-work/namespace
+
+- Owns shared cross-owner Namespace policy: Scope / Key / Subject / qualified Locator semantics, reservation rules, and collision rules when more than one owner or runtime surface competes for the same namespace.
+- Current executable public contract is `@line-work/namespace/root`; `src/root.ts` is the machine Source of Truth for global root reserved keys. Account consumes it after Account-owned login normalization.
+- Namespace is not an entity store. Stable identity, lifecycle, authorization, and owner-local state remain with the owning Domain; resolving or reserving a Locator never grants permission or qualification.
+- Web owns actual route implementation; SQL under Account-owned persistence only enforces the Namespace policy. Tests must keep current static root routes and Account database enforcement aligned with `src/root.ts`, and must keep scoped locator declarations aligned with owner-local uniqueness boundaries.
+- Owner-local naming policy remains owner-local: Account owns login format/lifecycle/persistence; Repository owns Repository name and Label name semantics; Team owns Team slug generation; Enterprise owns Enterprise slug semantics; Repository owns Issue and Repository Milestone number allocation.
+- Being a Namespace participant does not imply a runtime dependency on `@line-work/namespace`. User / Organization share the Account login collision space and therefore consume Namespace through Account; Enterprise, Organization Team, Enterprise Team and Repository locators stay owner-local and are registered through `architecture/semantic-model.json#locators` plus owner schema constraints.
+- Do not centralize validators, slug generators, numbering, or uniqueness constraints merely because they all involve names. Move policy here only when a real shared namespace or cross-owner collision/claim contract exists.
+- Do not add application/port/adapter layers, a `namespaces` table, cache, registry, or second store until a real claim/resolve consistency or technology boundary requires them.
+- Any future claim / resolve / rename / release capability must identify the real consumers, consistency boundary, current authority, recovery semantics, and validation evidence. Do not use aliases, wrappers, or fallback registries to hide duplicate truth.
+- Authorization, stable identity, rename/recovery semantics, and database constraints must not be weakened to simplify the Namespace model.

@@ -57,6 +57,7 @@ packages/<owner>
 601_repository_user_access.sql
 602_repository_team_access.sql
 603_repository_stars.sql
+604_repository_commands.sql
 610_repository_labels.sql
 611_repository_milestones.sql
 620_issues.sql

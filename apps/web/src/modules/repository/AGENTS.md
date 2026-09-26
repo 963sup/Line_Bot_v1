@@ -25,4 +25,4 @@ FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承
 
 - `/search` reuses the authorized Repository collection as a presentation filter; it does not create a generic Search owner or a second Repository truth.
 
-- Home create intent must select a Repository with `write | admin` before entering canonical Issues with `create=1`. The query controls presentation only; the Issue command still revalidates Repository access and replay in the Repository owner.
+- Home create intent supports Repository creation at `/repositories/new` plus Issue creation. Repository create owner options come from the owner contract, use stable Account IDs, persist an exact-retry requestId in browser storage for unknown outcomes, and redirect only after a committed create result. Issue create仍 must select a Repository with `write | admin` before entering canonical Issues with `create=1`.

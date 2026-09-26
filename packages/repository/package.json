@@ -67,6 +67,18 @@
     "./adapters/postgres/collection": {
       "types": "./dist/adapters/postgres/collection.d.ts",
       "default": "./dist/adapters/postgres/collection.js"
+    },
+    "./application/creation": {
+      "types": "./dist/application/creation.d.ts",
+      "default": "./dist/application/creation.js"
+    },
+    "./application/ports/creation": {
+      "types": "./dist/application/ports/creation.d.ts",
+      "default": "./dist/application/ports/creation.js"
+    },
+    "./adapters/postgres/creation": {
+      "types": "./dist/adapters/postgres/creation.d.ts",
+      "default": "./dist/adapters/postgres/creation.js"
     }
   },
   "files": [
@@ -80,7 +92,8 @@
   "dependencies": {
     "@line-work/platform": "workspace:*",
     "@line-work/account": "workspace:*",
-    "@line-work/organization": "workspace:*"
+    "@line-work/organization": "workspace:*",
+    "@line-work/identity-access": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
