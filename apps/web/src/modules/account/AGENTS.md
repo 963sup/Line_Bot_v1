@@ -8,7 +8,7 @@
 
 ## 現行 surface 與 invariant
 
-Current surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`、`/admin/members`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/follows`。
+Current module-owned surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`、`/admin/members`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/profile/achievements`、`/api/follows`。Authenticated `/profile` viewer hub 由 App delivery/composition 擁有，本 module 只提供 Account projection/API，不取得跨 owner composition responsibility。
 
 FPT users 對照 User/Profile/Follow；LINE/Google qualification 是本地 integration contract。`permissions-panel.tsx`、`permissions.server.ts` 目前服務 `/settings/permissions`、`/admin`、`/admin/permissions`、`/api/permissions`，其真正 owner 是 `@line-work/identity-access`；位置不授予 Account domain 權限管理責任。修改時對照各自 DTO，User management 為 `actorId/users/detail.user`，不可用舊 fixture 欄位冒充現行契約。
 
@@ -19,3 +19,5 @@ FPT users 對照 User/Profile/Follow；LINE/Google qualification 是本地 integ
 - Do not duplicate Account domain rules or query Account persistence from this module.
 
 - Account Settings reads the explicit `/api/membership?view=account` projection; it must not load or present DailyCheckIn/Wallet state. DailyCheckIn presentation and recovery live in the sibling `daily-check-in` module.
+
+- `/profile` composes current self projections only at the App boundary. LINE picture/status are provider presentation data; they never replace Account identity. Earned Achievement facts come from Account-owned `user_achievements` and are read-only on this surface.

@@ -47,6 +47,7 @@ test("canonical destinations retain only validated business intent after LIFF in
   assert.equal(entryDestination(base + "?expense=bad"), "invalid");
   assert.equal(entryDestination(base + "?membership=1&membership=1"), "invalid");
   assert.equal(entryDestination(base + "?repositories=1"), "/repositories");
+  assert.equal(entryDestination(base + "?profile=1"), "/profile");
   assert.equal(entryDestination(base + "?partners=1"), "/partners");
   assert.equal(entryDestination(base + "?partners=1&partnerView=news"), "/partners/news");
   assert.equal(entryDestination(base + "?partners=1&partnerView=referrals"), "/partners/referrals");
@@ -149,6 +150,7 @@ test("legacy expense endpoint resolves menu intents and never opens an unspecifi
   for (const [intent, target] of [
     ["repositories=1", "/repositories"],
     ["membership=1", "/settings"],
+    ["profile=1", "/profile"],
     ["notifications=1&notificationView=unread", "/notifications?notificationView=unread"],
     ["clockIn=1", "/attendance/clock-in"],
     ["clockOut=1", "/attendance/clock-out"],

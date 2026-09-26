@@ -11,7 +11,7 @@ create table app_private.account_logins (
     login = lower(login)
     and length(login) between 1 and 39
     and login ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'
-    and login not in ('admin','api','assistant','attendance','auth','complete','daily-check-in','diary','enterprises','expenses','explore','feedback','google-link','history','home','login','membership','notifications','organizations','orgs','partners','planned','privacy','projects','repositories','search','settings','team','terms','unavailable')
+    and login not in ('admin','api','assistant','attendance','auth','complete','daily-check-in','diary','enterprises','expenses','explore','feedback','google-link','history','home','login','membership','notifications','organizations','orgs','partners','planned','privacy','profile','projects','repositories','search','settings','team','terms','trending','unavailable')
   ),
   constraint account_logins_account_fkey foreign key (account_id, account_kind)
     references app_private.accounts(id, kind)
@@ -39,7 +39,7 @@ begin
      or p_at is null or p_at < 0
      or normalized !~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'
      or length(normalized) not between 1 and 39
-     or normalized in ('admin','api','assistant','attendance','auth','complete','daily-check-in','diary','enterprises','expenses','explore','feedback','google-link','history','home','login','membership','notifications','organizations','orgs','partners','planned','privacy','projects','repositories','search','settings','team','terms','unavailable') then
+     or normalized in ('admin','api','assistant','attendance','auth','complete','daily-check-in','diary','enterprises','expenses','explore','feedback','google-link','history','home','login','membership','notifications','organizations','orgs','partners','planned','privacy','profile','projects','repositories','search','settings','team','terms','trending','unavailable') then
     raise exception 'account_login_invalid' using errcode = '22023';
   end if;
   if not exists (

@@ -42,6 +42,7 @@ async function run() {
   const reads = [];
   let membershipLogin = "viewer";
   const repositoryId = "repo-1";
+  const viewerRepositoryId = "repo-2";
   const issueId = "11111111-1111-4111-8111-111111111111";
   const issueNumber = 1;
   const notificationId = "22222222-2222-4222-8222-222222222222";
@@ -91,7 +92,7 @@ async function run() {
     if (url.hostname === "static.line-scdn.net") {
       return route.fulfill({
         contentType: "text/javascript",
-        body: "window.liff={init:async()=>{const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({displayName:'測試使用者'}),login:()=>{}};",
+        body: "window.liff={init:async()=>{const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({displayName:'測試使用者',statusMessage:'Ready to work'}),login:()=>{}};",
       });
     }
     if (url.origin !== base) return route.abort();
@@ -103,6 +104,60 @@ async function run() {
 
     if (url.pathname === "/api/membership") {
       return route.fulfill({ json: { member: { login: membershipLogin || null } } });
+    }
+    if (url.pathname === "/api/profile/achievements") {
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: "first-repository",
+              name: "First Repository",
+              description: "Created the first Repository.",
+              iconRef: null,
+              sourceKind: "repository",
+              sourceId: viewerRepositoryId,
+              awardedAt: Date.now(),
+            },
+          ],
+        },
+      });
+    }
+    if (url.pathname === "/api/profile") {
+      return route.fulfill({
+        json: {
+          profile: {
+            userId: "user-1",
+            displayName: "測試使用者",
+            bio: null,
+            avatarRef: null,
+            visibility: "private",
+            version: 1,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        },
+      });
+    }
+    if (url.pathname === "/api/organization") {
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: "org-1",
+              login: "acme-org",
+              name: "Acme",
+              status: "active",
+              version: 1,
+              actorMembershipStatus: "active",
+              actorDirectMembershipVersion: 1,
+              actorInvitationStatus: null,
+              actorInvitationVersion: null,
+              actorIsOwner: false,
+            },
+          ],
+          next: null,
+        },
+      });
     }
     if (url.pathname === "/api/repositories/starred") {
       return route.fulfill({
@@ -163,6 +218,12 @@ async function run() {
         json: {
           items: [
             { id: repositoryId, ownerLogin: "acme", name: "Operations", capability: "admin" },
+            {
+              id: viewerRepositoryId,
+              ownerLogin: "viewer",
+              name: "Personal",
+              capability: "admin",
+            },
           ],
         },
       });
@@ -180,6 +241,16 @@ async function run() {
               capability: "admin",
               recentStarCount: 2,
               starCount: 3,
+              starred: false,
+            },
+            {
+              id: viewerRepositoryId,
+              ownerLogin: "viewer",
+              name: "Personal",
+              visibility: "private",
+              capability: "admin",
+              recentStarCount: 1,
+              starCount: 2,
               starred: false,
             },
           ],
@@ -285,6 +356,27 @@ async function run() {
     await expect(
       page.getByRole("link", { name: "Search repositories", exact: true }),
     ).toHaveAttribute("href", "/search");
+
+    await page.goto(`${base}/profile`);
+    await page.getByRole("heading", { name: "測試使用者", exact: true }).waitFor();
+    await expect(page.getByText("@viewer", { exact: true })).toBeVisible();
+    await expect(page.getByText("Ready to work", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("First Repository", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Repositories/ })).toHaveAttribute(
+      "href",
+      "/repositories",
+    );
+    await expect(page.getByRole("link", { name: /Organizations/ })).toHaveAttribute(
+      "href",
+      "/organizations",
+    );
+    await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute(
+      "href",
+      "/home#favorites",
+    );
+    await expect(page.getByText("Projects", { exact: true })).toBeVisible();
+
+    await page.goto(`${base}/home`);
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
     for (const section of ["My Work", "Favorites", "Shortcuts", "Recent"]) {
       await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
@@ -326,12 +418,22 @@ async function run() {
     await expect(page.getByRole("heading", { name: "Discover", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Trending Repositories/ })).toHaveAttribute(
       "href",
-      "#trending",
+      "/trending",
     );
     await expect(page.getByRole("link", { name: /Awesome Lists/ })).toHaveAttribute(
       "href",
       "/repositories/lists/discover",
     );
+    await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Prepare payroll/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations/issues/1",
+    );
+
+    await page.goto(`${base}/trending`);
+    await page.getByRole("heading", { name: "Trending", exact: true }).waitFor();
+    await expect(page.getByText("最近 7 天", { exact: true })).toBeVisible();
+    await expect(page.getByText("目前可存取", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Trending Repositories", exact: true }),
     ).toBeVisible();
@@ -339,16 +441,11 @@ async function run() {
       "href",
       "/acme/Operations",
     );
-    await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Prepare payroll/ })).toHaveAttribute(
-      "href",
-      "/acme/Operations/issues/1",
-    );
-    await page.getByRole("button", { name: "Star", exact: true }).click();
+    await page.getByRole("button", { name: "Star", exact: true }).first().click();
     await page.getByText("已加入 Star。", { exact: true }).waitFor();
     if (artifactDir) {
       await page.screenshot({
-        path: path.join(artifactDir, "explore.png"),
+        path: path.join(artifactDir, "trending.png"),
         fullPage: true,
       });
     }
@@ -456,7 +553,7 @@ async function run() {
       });
     }
     console.log(
-      "PASS: Home IA, Explore Trending/Awesome Lists/Activity, Star List management, scoped Repository resources and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
+      "PASS: Home/Profile IA, Explore Activity, dedicated Trending, Awesome Lists, Star List management, scoped Repository resources and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
     );
   } finally {
     if (artifactDir) await context.tracing.stop({ path: path.join(artifactDir, "trace.zip") });
