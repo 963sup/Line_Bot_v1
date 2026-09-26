@@ -6,6 +6,7 @@ export {
   readAccountLogins,
   resolveAccountLogin,
 } from "./postgres/login-directory.js";
+export { PostgresUserProfileActivityStore } from "./postgres/profile-activity.js";
 export { PostgresUserProfileStore } from "./postgres/profile.js";
 export {
   hasUserIdentity,
