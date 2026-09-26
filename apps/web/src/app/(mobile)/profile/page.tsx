@@ -1,4 +1,4 @@
-import ProfileHub from "../../../modules/account/profile-hub";
+import ProfileHub from "./profile-hub";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import AppShell from "../_shell/app-shell";
 
