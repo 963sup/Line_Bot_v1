@@ -167,9 +167,7 @@ export default function DiscoveryPanel({
             description="最近 7 天仍有效的 Star 優先；沒有近期訊號時再以總 Star 數排序。"
           />
           {items?.length === 0 && (
-            <p className="empty-copy">
-              目前沒有可探索的 Repository。取得存取權後會出現在這裡。
-            </p>
+            <p className="empty-copy">目前沒有可探索的 Repository。取得存取權後會出現在這裡。</p>
           )}
           {items && items.length > 0 && (
             <div className="discovery-list">
@@ -242,7 +240,8 @@ export default function DiscoveryPanel({
                   </div>
                   <div className="explore-activity-preview">
                     <small>
-                      {item.repository.ownerLogin}/{item.repository.name} · Issue #{item.issue.number}
+                      {item.repository.ownerLogin}/{item.repository.name} · Issue #
+                      {item.issue.number}
                     </small>
                     <strong>{item.issue.title}</strong>
                   </div>
