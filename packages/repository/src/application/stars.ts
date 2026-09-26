@@ -24,7 +24,5 @@ export function createRepositoryStars(deps: {
       deps.store().unstar(await actor(subject), repositoryId(target)),
 
     starred: async (subject: string) => deps.store().starred(await actor(subject)),
-
-    explore: async (subject: string) => deps.store().explore(await actor(subject)),
   };
 }

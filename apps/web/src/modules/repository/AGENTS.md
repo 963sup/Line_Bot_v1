@@ -24,5 +24,6 @@ FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承
 - Project planning references Issues through Project contracts; this module never turns Project metadata into Issue truth.
 
 - `/search` reuses the authorized Repository collection as a presentation filter; it does not create a generic Search owner or a second Repository truth.
+- `/explore` consumes the Repository discovery contract. Trending uses the owner-defined 7-day active-Star window with total Star/name/id tie-breaks; Activity currently exposes immutable Issue lifecycle events only after current effective Repository access is rechecked. Neither creates a generic Explore/Activity owner or cross-owner feed.
 
 - Home create intent supports Repository creation at `/repositories/new` plus Issue creation. Repository create owner options come from the owner contract, use stable Account IDs, persist an exact-retry requestId in browser storage for unknown outcomes, and redirect only after a committed create result. Issue create仍 must select a Repository with `write | admin` before entering canonical Issues with `create=1`.

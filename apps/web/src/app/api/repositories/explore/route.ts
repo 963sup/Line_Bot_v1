@@ -1,6 +1,7 @@
 import { IssueError } from "@line-work/repository/domain";
 import { issueBody, repositoryFailure } from "../../../../modules/repository/http.server";
 import { jsonResponse } from "../../../../shared/server/http";
+import { repositoryDiscovery } from "../../_composition/repository-discovery.server";
 import { repositoryStars } from "../../_composition/repository-stars.server";
 import { requestLineIdentity } from "../../_composition/request-identity.server";
 
@@ -9,8 +10,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const snapshot = await repositoryDiscovery.discover(await requestLineIdentity(request));
     return jsonResponse({
-      items: await repositoryStars.explore(await requestLineIdentity(request)),
+      items: snapshot.trending,
+      activity: snapshot.activity,
     });
   } catch (error) {
     return repositoryFailure(error);

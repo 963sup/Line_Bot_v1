@@ -79,6 +79,18 @@
     "./adapters/postgres/creation": {
       "types": "./dist/adapters/postgres/creation.d.ts",
       "default": "./dist/adapters/postgres/creation.js"
+    },
+    "./application/discovery": {
+      "types": "./dist/application/discovery.d.ts",
+      "default": "./dist/application/discovery.js"
+    },
+    "./application/ports/discovery": {
+      "types": "./dist/application/ports/discovery.d.ts",
+      "default": "./dist/application/ports/discovery.js"
+    },
+    "./adapters/postgres/discovery": {
+      "types": "./dist/adapters/postgres/discovery.d.ts",
+      "default": "./dist/adapters/postgres/discovery.js"
     }
   },
   "files": [

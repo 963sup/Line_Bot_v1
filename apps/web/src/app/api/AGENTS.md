@@ -24,7 +24,7 @@
 | `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | Repository Milestone authorized GET；必須提供 `owner` + `name` |
 | `/api/repositories` | GET：Current User 的 authorized Repository collection；POST：Repository owner contract 的 replay-safe private Repository create |
 | `/api/repositories/owners` | Repository create owner options：current User 本人 + current effective OrganizationOwner scopes |
-| `/api/repositories/explore` | Repository discovery/Star transport |
+| `/api/repositories/explore` | GET：Repository Trending + current-access-filtered Issue Activity projection；POST：Repository Star/unstar transport |
 | `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |
 | `/api/notifications` | recipient-scoped Notifications |
 | `/api/assistant` | Assistant Ask / Issue-draft Generate / text Review transport；current User qualification required，output 不形成 formal write |
