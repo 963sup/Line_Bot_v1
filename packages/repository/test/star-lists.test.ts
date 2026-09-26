@@ -13,7 +13,7 @@ async function activeUser(
   login: string,
 ) {
   await pg.query(
-    'insert into app_private.users(id,status,status_version,"createdAt") values($1,\'active\',1,1)',
+    "insert into app_private.users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
     [id],
   );
   await pg.query("select app_private.set_account_login($1,'USER',$2,1)", [id, login]);
@@ -169,7 +169,10 @@ test("Repository Star Lists preserve replay, versioning, Star dependency and vie
   const viewer = await store.detail("viewer", created.id);
   assert.equal(viewer.visibleRepositoryCount, 1);
   assert.equal(viewer.editable, false);
-  assert.deepEqual(viewer.repositories.map((repository) => repository.id), ["repo-a"]);
+  assert.deepEqual(
+    viewer.repositories.map((repository) => repository.id),
+    ["repo-a"],
+  );
 
   await assert.rejects(
     store.execute(
