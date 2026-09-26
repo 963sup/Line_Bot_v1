@@ -40,6 +40,14 @@ const repositoryStarsSchemaSql = readFileSync(
   new URL("supabase/schemas/603_repository_stars.sql", root),
   "utf8",
 );
+const repositoryLabelSchemaSql = readFileSync(
+  new URL("supabase/schemas/610_repository_labels.sql", root),
+  "utf8",
+);
+const repositoryMilestoneSchemaSql = readFileSync(
+  new URL("supabase/schemas/611_repository_milestones.sql", root),
+  "utf8",
+);
 const repositoryCommandSchemaSql = readFileSync(
   new URL("supabase/schemas/604_repository_commands.sql", root),
   "utf8",
@@ -659,13 +667,26 @@ export function classifyRepositoryRuntimeCompatibility(state) {
     state.repositoryTeamAccessTable &&
     state.repositoryStarsTable &&
     state.repositoryCommandsTable &&
+    state.repositoryLabelsTable &&
+    state.repositoryMilestonesTable &&
+    state.issueNumberColumn &&
+    state.issueMilestoneColumn &&
     state.repositoryEffectiveAccessView &&
     state.provisionRepositoryFunction;
 
   if (structuralCurrent && supportCurrent) return "ready";
-  if (structuralCurrent && state.repositoryAccessTable) return "repairable";
+  if (
+    structuralCurrent &&
+    state.repositoryAccessTable &&
+    (state.issueRows === 0 || (state.issueNumberColumn && state.issueMilestoneColumn))
+  ) {
+    return "repairable";
+  }
   if (
     state.repositoryRows === 0 &&
+    state.issueRows === 0 &&
+    state.discussionRows === 0 &&
+    state.discussionCommentRows === 0 &&
     state.repositoryAccessTable &&
     state.legacyOrganizationIdColumn &&
     !state.ownerAccountIdColumn &&
@@ -1111,6 +1132,9 @@ async function repositoryRuntimeCompatibilityState(client) {
     await client.query(`
       select
         (select count(*)::int from app_private.repositories) as repository_rows,
+        (select count(*)::int from app_private.issues) as issue_rows,
+        (select count(*)::int from app_private.discussions) as discussion_rows,
+        (select count(*)::int from app_private.discussion_comments) as discussion_comment_rows,
         exists(
           select 1 from information_schema.columns
           where table_schema='app_private' and table_name='repositories'
@@ -1135,6 +1159,16 @@ async function repositoryRuntimeCompatibilityState(client) {
         to_regclass('app_private.repository_team_access') is not null as repository_team_access_table,
         to_regclass('app_private.repository_stars') is not null as repository_stars_table,
         to_regclass('app_private.repository_commands') is not null as repository_commands_table,
+        to_regclass('app_private.repository_labels') is not null as repository_labels_table,
+        to_regclass('app_private.repository_milestones') is not null as repository_milestones_table,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='issues' and column_name='number'
+        ) as issue_number_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='issues' and column_name='milestone_id'
+        ) as issue_milestone_column,
         to_regclass('app_private.repository_effective_access') is not null
           as repository_effective_access_view,
         to_regprocedure('app_private.provision_repository(text,text,text,text,text)') is not null
@@ -1143,6 +1177,9 @@ async function repositoryRuntimeCompatibilityState(client) {
   ).rows[0];
   return {
     repositoryRows: Number(row.repository_rows),
+    issueRows: Number(row.issue_rows),
+    discussionRows: Number(row.discussion_rows),
+    discussionCommentRows: Number(row.discussion_comment_rows),
     ownerAccountIdColumn: row.owner_account_id_column,
     ownerAccountKindColumn: row.owner_account_kind_column,
     nextIssueNumberColumn: row.next_issue_number_column,
@@ -1151,6 +1188,10 @@ async function repositoryRuntimeCompatibilityState(client) {
     repositoryTeamAccessTable: row.repository_team_access_table,
     repositoryStarsTable: row.repository_stars_table,
     repositoryCommandsTable: row.repository_commands_table,
+    repositoryLabelsTable: row.repository_labels_table,
+    repositoryMilestonesTable: row.repository_milestones_table,
+    issueNumberColumn: row.issue_number_column,
+    issueMilestoneColumn: row.issue_milestone_column,
     repositoryEffectiveAccessView: row.repository_effective_access_view,
     provisionRepositoryFunction: row.provision_repository_function,
   };
