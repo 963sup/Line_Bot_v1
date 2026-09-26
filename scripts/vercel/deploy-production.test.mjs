@@ -3,8 +3,8 @@ import { test } from "node:test";
 import {
   deployProduction,
   parseProductionDeployArgs,
-  verifyProductionReleaseAuthorization,
   VERCEL_PRODUCTION_TARGET,
+  verifyProductionReleaseAuthorization,
 } from "./deploy-production.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
