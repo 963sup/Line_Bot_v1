@@ -6,10 +6,7 @@ import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import {
-  repositoryPath,
-  repositoryStarListsPath,
-} from "./resource-navigation";
+import { repositoryPath, repositoryStarListsPath } from "./resource-navigation";
 import {
   clearPendingRepositoryStarListCommand,
   type RepositoryStarListCommandBody,
@@ -52,7 +49,8 @@ export default function RepositoryStarListDetail({
     const token = await liffClient.session(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
     const profile = await liffClient.profile();
-    if (!profile.userId) throw Object.assign(new Error("LINE 身分不可用，請重新登入。"), { status: 401 });
+    if (!profile.userId)
+      throw Object.assign(new Error("LINE 身分不可用，請重新登入。"), { status: 401 });
     return { token, subject: profile.userId };
   }
 
@@ -127,12 +125,7 @@ export default function RepositoryStarListDetail({
     try {
       const current = await session();
       setPending(command);
-      writePendingRepositoryStarListCommand(
-        window.localStorage,
-        current.subject,
-        listId,
-        command,
-      );
+      writePendingRepositoryStarListCommand(window.localStorage, current.subject, listId, command);
       const response = await fetch(`/api/repositories/lists/${encodeURIComponent(listId)}`, {
         method: "POST",
         cache: "no-store",
@@ -187,9 +180,7 @@ export default function RepositoryStarListDetail({
       await read(current);
       setNotice("List 已更新。");
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "List 操作結果尚待確認，請重試原操作。",
-      );
+      setError(cause instanceof Error ? cause.message : "List 操作結果尚待確認，請重試原操作。");
     } finally {
       setBusy(false);
     }
@@ -334,9 +325,7 @@ export default function RepositoryStarListDetail({
             <>
               <h3>Add starred Repository</h3>
               {available.length === 0 ? (
-                <p className="empty-copy">
-                  沒有其他目前可存取且已 Star 的 Repository 可加入。
-                </p>
+                <p className="empty-copy">沒有其他目前可存取且已 Star 的 Repository 可加入。</p>
               ) : (
                 <form
                   onSubmit={(event) => {
