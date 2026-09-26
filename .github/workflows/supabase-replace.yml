@@ -14,6 +14,14 @@ on:
         description: Type the target Supabase project ref
         required: true
         type: string
+      legacy_enterprise_name:
+        description: Only when prepare reports one unresolved legacy Enterprise, provide its canonical name
+        required: false
+        type: string
+      legacy_enterprise_slug:
+        description: Only when prepare reports one unresolved legacy Enterprise, provide its canonical URL slug
+        required: false
+        type: string
       reviewed_plan_sha256:
         description: For apply, paste the exact lowercase SHA-256 from the reviewed plan artifact
         required: false
@@ -110,7 +118,8 @@ jobs:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
-          SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}
+          SUPABASE_LEGACY_ENTERPRISE_NAME: ${{ inputs.legacy_enterprise_name }}
+          SUPABASE_LEGACY_ENTERPRISE_SLUG: ${{ inputs.legacy_enterprise_slug }}
 
       - name: Generate exact reconciliation plan for review
         if: inputs.operation == 'prepare-plan'

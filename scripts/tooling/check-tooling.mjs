@@ -641,14 +641,15 @@ export function validate(root) {
         "CI: automatic Supabase release must repair additive runtime compatibility, then changed-safe-sync or unchanged-verify before evidence",
       );
     }
+    const automaticPrepareEnv = JSON.stringify(supabaseSteps[supabasePrepare]?.env ?? {});
     if (
-      !JSON.stringify(supabaseSteps[supabasePrepare]?.env ?? {}).includes(
-        "SUPABASE_ENTERPRISE_METADATA_BACKFILL",
-      )
-    )
+      automaticPrepareEnv.includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL") ||
+      automaticPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_")
+    ) {
       errors.push(
-        "CI: automatic Supabase release must scope Enterprise metadata backfill to prepare",
+        "CI: automatic Supabase release must not own explicit Enterprise business metadata",
       );
+    }
 
     const deploymentSteps = releaseDeployment?.steps ?? [];
     const deploymentCheckout = deploymentSteps.findIndex(
@@ -744,7 +745,9 @@ export function validate(root) {
       replaceInputs.operation?.type !== "choice" ||
       !Array.isArray(replaceInputs.operation?.options) ||
       !replaceInputs.operation.options.includes("prepare-plan") ||
-      !replaceInputs.operation.options.includes("apply")
+      !replaceInputs.operation.options.includes("apply") ||
+      replaceInputs.legacy_enterprise_name?.type !== "string" ||
+      replaceInputs.legacy_enterprise_slug?.type !== "string"
     ) {
       errors.push(
         "CI: manual Supabase reconciliation must use workflow_dispatch with prepare-plan/apply modes",
@@ -823,13 +826,14 @@ export function validate(root) {
         "CI: manual Supabase reconciliation must validate, attest, prepare, plan/apply exact reviewed SQL, then preserve evidence without owning Web deployment",
       );
     }
+    const manualPrepareEnv = JSON.stringify(replaceSteps[replacePrepare]?.env ?? {});
     if (
-      !JSON.stringify(replaceSteps[replacePrepare]?.env ?? {}).includes(
-        "SUPABASE_ENTERPRISE_METADATA_BACKFILL",
-      )
+      !manualPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_NAME") ||
+      !manualPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_SLUG") ||
+      manualPrepareEnv.includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL")
     ) {
       errors.push(
-        "CI: manual Supabase reconciliation must scope Enterprise metadata backfill to prepare",
+        "CI: manual Supabase reconciliation must scope explicit legacy Enterprise name/slug to prepare",
       );
     }
   } catch (error) {
