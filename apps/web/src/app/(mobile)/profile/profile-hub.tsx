@@ -298,7 +298,11 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
             )}
             <div className={styles.identityCopy}>
               <h1>{title}</h1>
-              <p>{login ? `@${login}` : "登入名稱尚未設定"}</p>
+              {login && title.toLocaleLowerCase() !== login.toLocaleLowerCase() ? (
+                <p>@{login}</p>
+              ) : !login ? (
+                <p>登入名稱尚未設定</p>
+              ) : null}
             </div>
           </div>
 
@@ -308,14 +312,40 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
             </Link>
           )}
 
-          <div className={styles.statusRow}>
-            <span aria-hidden="true">☺</span>
-            <span>{providerStatus || "Set your LINE status"}</span>
+          <div className={styles.statusRow} aria-label="Profile status">
+            <span className={styles.statusIcon} aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M8.5 10h.01M15.5 10h.01M8.8 14.5c.9 1 2 1.5 3.2 1.5s2.3-.5 3.2-1.5" />
+              </svg>
+            </span>
+            <span>{providerStatus || "Set your status"}</span>
           </div>
 
           <div className={styles.achievements} aria-label="Achievements">
             <span className={styles.trophy} aria-hidden="true">
-              ♜
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M8 4h8v4c0 3-1.7 5-4 5s-4-2-4-5V4Z" />
+                <path d="M8 6H5v1c0 2.2 1.2 3.6 3.4 4.1M16 6h3v1c0 2.2-1.2 3.6-3.4 4.1M12 13v4M8.5 20h7M10 17h4" />
+              </svg>
             </span>
             {snapshot.achievements.length === 0 ? (
               <span className={styles.achievementEmpty}>尚未取得成就</span>
@@ -339,7 +369,19 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
 
           <div className={styles.popular} aria-labelledby="profile-popular">
             <h2 id="profile-popular">
-              <span aria-hidden="true">☆</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" />
+              </svg>
               Popular
             </h2>
             {popular.length === 0 ? (
@@ -352,7 +394,26 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
                     href={repositoryPath(repository.ownerLogin, repository.name)}
                     className={styles.repositoryCard}
                   >
-                    <span className={styles.repositoryOwner}>@{repository.ownerLogin}</span>
+                    <span className={styles.repositoryOwner}>
+                      {snapshot.provider?.pictureUrl?.startsWith("https://") ? (
+                        // Popular is filtered to the current User's repositories, so the provider
+                        // picture is only presentation for that same owner and is never identity authority.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          className={styles.repositoryOwnerAvatar}
+                          src={snapshot.provider.pictureUrl}
+                          width={28}
+                          height={28}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <span className={styles.repositoryOwnerFallback} aria-hidden="true">
+                          {initials(repository.ownerLogin)}
+                        </span>
+                      )}
+                      <span>@{repository.ownerLogin}</span>
+                    </span>
                     <strong>{repository.name}</strong>
                     <span className={styles.repositoryMeta}>
                       <span aria-hidden="true">★</span>
@@ -368,21 +429,21 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
 
           <nav className={styles.resourceList} aria-label="Profile resources">
             <Link href="/repositories" className={styles.resourceRow}>
-              <span className={styles.resourceIcon}>
+              <span className={styles.resourceIcon} data-kind="repositories">
                 <ResourceIcon kind="repositories" />
               </span>
               <span>Repositories</span>
               <strong>{ownedRepositories.length}</strong>
             </Link>
             <Link href="/organizations" className={styles.resourceRow}>
-              <span className={styles.resourceIcon}>
+              <span className={styles.resourceIcon} data-kind="organizations">
                 <ResourceIcon kind="organizations" />
               </span>
               <span>Organizations</span>
               <strong>{organizations.length}</strong>
             </Link>
             <Link href="/home#favorites" className={styles.resourceRow}>
-              <span className={styles.resourceIcon}>
+              <span className={styles.resourceIcon} data-kind="starred">
                 <ResourceIcon kind="starred" />
               </span>
               <span>Starred</span>
@@ -392,7 +453,7 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
               className={`${styles.resourceRow} ${styles.resourceDisabled}`}
               aria-disabled="true"
             >
-              <span className={styles.resourceIcon}>
+              <span className={styles.resourceIcon} data-kind="projects">
                 <ResourceIcon kind="projects" />
               </span>
               <span>Projects</span>
