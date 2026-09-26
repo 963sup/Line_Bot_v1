@@ -71,11 +71,7 @@ const items: Destination[] = [
   },
 ];
 
-export default function WorkNavigation({
-  activeHref,
-}: {
-  activeHref?: Destination["href"];
-}) {
+export default function WorkNavigation({ activeHref }: { activeHref?: Destination["href"] }) {
   const pathname = usePathname();
   return (
     <nav className="work-navigation" aria-label="主要導覽">

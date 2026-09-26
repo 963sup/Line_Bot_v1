@@ -3,9 +3,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import WorkNavigation from "../../_shell/work-navigation";
 import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
+import WorkNavigation from "../../_shell/work-navigation";
 import ProfileShare from "./profile-share";
 import { isOwnProfileLogin } from "./profile-viewer";
 import styles from "./profile-viewer-shell.module.css";
@@ -15,7 +15,6 @@ type AccountProjection = {
     login?: string | null;
   } | null;
 };
-
 
 export default function ProfileViewerShell({
   children,
@@ -73,7 +72,12 @@ export default function ProfileViewerShell({
       <main id="main-content" className={`app-content ${styles.content}`}>
         <header className={styles.toolbar}>
           {ownProfile ? (
-            <Link className={styles.toolbarAction} href="/home" aria-label="返回 Home" title="返回 Home">
+            <Link
+              className={styles.toolbarAction}
+              href="/home"
+              aria-label="返回 Home"
+              title="返回 Home"
+            >
               <svg
                 viewBox="0 0 24 24"
                 width="24"

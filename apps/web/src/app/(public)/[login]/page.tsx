@@ -157,11 +157,7 @@ export default async function Page({ params }: { params: Promise<{ login: string
     const repositories = await popularRepositoryProjection(owner.login);
     return (
       <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
-        <ProfileContent
-          login={owner.login}
-          title={organization.name}
-          repositories={repositories}
-        />
+        <ProfileContent login={owner.login} title={organization.name} repositories={repositories} />
       </ProfileViewerShell>
     );
   }
