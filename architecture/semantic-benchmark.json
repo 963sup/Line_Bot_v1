@@ -3,7 +3,7 @@
   "role": "derived-general-management-semantic-benchmark",
   "authority": {
     "repository": "github/docs",
-    "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+    "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
     "path": "src/graphql/data/fpt",
     "role": "pinned-external-machine-readable-authority"
   },
@@ -19,7 +19,7 @@
     ]
   },
   "sourceInventoryMetadata": {
-    "gitTreeSha": "83872fe8c0968af641608b139bb0dedde1fab308",
+    "gitTreeSha": "d41e5128015bbb3265280f9472cf4b10151e4c34",
     "source": "github/docs src/graphql/data/fpt Git tree at pinned authority.revision"
   },
   "sourceInventory": [
@@ -305,7 +305,7 @@
     },
     {
       "file": "schema-pulls.json",
-      "gitBlobSha": "f158839baaa959bb481b390bbd04ad5ab8f0cfe4",
+      "gitBlobSha": "ca30aa2fcee64d07fb068cc036d1eb30626d1529",
       "role": "schema-fragment",
       "category": "pulls",
       "disposition": "excluded",
@@ -393,7 +393,7 @@
     },
     {
       "file": "schema.docs.graphql",
-      "gitBlobSha": "4ef569cc41927f90cfff61251927daf81d0fec02",
+      "gitBlobSha": "e3c1e2b7b8b95b5c30fd63725e0ecae3ef3c320f",
       "role": "rendered-schema",
       "reason": "Rendered GraphQL schema output retained for upstream reference parity, not product authority."
     },
@@ -410,7 +410,7 @@
       "meaning": "Pinned upstream sync stage fetches preview, upcoming-change, and schema inputs, then writes generated static data for each GraphQL version.",
       "source": {
         "repository": "github/docs",
-        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/scripts/sync.ts"
       },
       "outputFamilies": [
@@ -422,34 +422,58 @@
       ]
     },
     {
-      "id": "category-partition",
-      "meaning": "Pinned upstream sync stage buckets processed schema data by category and writes per-category schema fragments consumed by reference pages.",
+      "id": "semantic-category-resolution",
+      "meaning": "Pinned upstream processSchemas parses the complete GraphQL schema, prefers explicit @docsCategory metadata, derives mutation-input and Connection/Edge/reference categories from their semantic sources, and keeps ambiguous ownership unresolved instead of guessing.",
       "source": {
         "repository": "github/docs",
-        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
+        "path": "src/graphql/scripts/utils/process-schemas.ts"
+      },
+      "outputFamilies": [
+        "schema-fragment"
+      ]
+    },
+    {
+      "id": "category-partition",
+      "meaning": "Pinned upstream sync stage materializes already categorized schema data into per-category schema fragments and category-map.json; category ownership is resolved upstream by semantic-category-resolution.",
+      "source": {
+        "repository": "github/docs",
+        "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/scripts/sync.ts"
       },
-      "outputFamilies": ["schema-fragment", "category-index"]
+      "outputFamilies": [
+        "schema-fragment",
+        "category-index"
+      ]
     },
     {
       "id": "version-category-loader",
       "meaning": "Pinned upstream loader reads schema fragments by GraphQL version and category; this benchmark preserves that version/category provenance instead of flattening it into product authority.",
       "source": {
         "repository": "github/docs",
-        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/lib/index.ts"
       },
-      "outputFamilies": ["schema-fragment", "history", "future-change", "preview"]
+      "outputFamilies": [
+        "schema-fragment",
+        "history",
+        "future-change",
+        "preview"
+      ]
     },
     {
       "id": "schema-shape-validation",
       "meaning": "Pinned upstream validator defines the generated schema member shape for queries, mutations, objects, interfaces, enums, unions, input objects, and scalars.",
       "source": {
         "repository": "github/docs",
-        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "src/graphql/lib/validator.ts"
       },
-      "outputFamilies": ["schema-fragment", "preview", "future-change"]
+      "outputFamilies": [
+        "schema-fragment",
+        "preview",
+        "future-change"
+      ]
     }
   ],
   "nodes": [
@@ -613,7 +637,9 @@
         "category": "users",
         "symbol": "CreatedRepositoryContribution"
       },
-      "implements": ["contribution"]
+      "implements": [
+        "contribution"
+      ]
     },
     {
       "id": "joined-user-contribution",
@@ -625,7 +651,9 @@
         "category": "users",
         "symbol": "JoinedGitHubContribution"
       },
-      "implements": ["contribution"]
+      "implements": [
+        "contribution"
+      ]
     },
     {
       "id": "contribution",
@@ -642,7 +670,9 @@
       "kind": "event-fact",
       "meaning": "An observable fact that a user created a repository-scoped work item; this is a neutral projection of CreatedIssueContribution.",
       "temporalField": "occurredAt",
-      "implements": ["contribution"],
+      "implements": [
+        "contribution"
+      ],
       "source": {
         "file": "schema-users.json",
         "category": "users",
@@ -1819,7 +1849,7 @@
       "source": {
         "kind": "canonical-docs",
         "repository": "github/docs",
-        "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+        "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
         "path": "content/account-and-profile/reference/profile-reference.md",
         "section": "Earning Achievements"
       },
@@ -1868,7 +1898,7 @@
     {
       "kind": "canonical-docs",
       "repository": "github/docs",
-      "revision": "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+      "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
       "path": "content/account-and-profile/reference/profile-reference.md",
       "purpose": "Documented derived profile recognition semantics that are not exposed as Achievement GraphQL result types in FPT."
     }
