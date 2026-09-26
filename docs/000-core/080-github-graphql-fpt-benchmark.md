@@ -54,7 +54,7 @@ code / schema / tests / canonical docs
 | --- | --- | --- |
 | Source / version sync | [sync.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/sync.ts) | Benchmark revision 是外部證據邊界，不自動更新產品模型 |
 | Semantic category resolution | [process-schemas.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/utils/process-schemas.ts) | 先讀 explicit `@docsCategory`；未標註結構只從 semantic source 推導。Mutation Input、Connection/Edge、reference inheritance 都是 derived ownership；referrers 不一致時不得猜 owner |
-| Category partition / index | [sync.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/sync.ts) | 把已分類的完整 graph materialize 成 per-category fragments 與 `category-map.json`；projection 不反向成為 authority |
+| Category partition / index | [bucket-by-category.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/scripts/utils/bucket-by-category.ts) | 把已分類的完整 graph materialize 成 deterministic per-category fragments 與 `category-map.json`，並重寫 cross-category href；projection 不反向成為 authority |
 | Structure validation | [validator.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/lib/validator.ts) | Benchmark、semantic、implementation、data 各驗自己的 contract |
 | Version / category loading | [lib/index.ts](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/src/graphql/lib/index.ts) | 缺片、錯誤 source 與 unresolved reference 是失敗，不回填別的版本 |
 | Consumer rendering | 同一 loader 提供 schema、preview、upcoming change 與 history 的分別讀取入口 | `pnpm semantic view` 從 canonical model 產生 read model，輸出不得反向成為 authority |
