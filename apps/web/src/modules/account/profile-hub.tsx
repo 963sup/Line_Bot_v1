@@ -275,7 +275,7 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
 
       {snapshot && (
         <>
-          <section className={styles.identity} aria-label="Profile identity">
+          <div className={styles.identity} aria-label="Profile identity">
             {snapshot.provider?.pictureUrl?.startsWith("https://") ? (
               // LINE hosts the signed-in user's presentation image. It is not Account identity authority.
               // eslint-disable-next-line @next/next/no-img-element
@@ -296,7 +296,7 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
               <h1>{title}</h1>
               <p>{login ? `@${login}` : "登入名稱尚未設定"}</p>
             </div>
-          </section>
+          </div>
 
           {!login && (
             <Link className={styles.locatorRecovery} href="/settings/profile">
@@ -309,7 +309,7 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
             <span>{providerStatus || "Set your LINE status"}</span>
           </div>
 
-          <section className={styles.achievements} aria-label="Achievements">
+          <div className={styles.achievements} aria-label="Achievements">
             <span className={styles.trophy} aria-hidden="true">
               ♜
             </span>
@@ -329,11 +329,11 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
                 ))}
               </div>
             )}
-          </section>
+          </div>
 
           <div className={styles.divider} />
 
-          <section className={styles.popular} aria-labelledby="profile-popular">
+          <div className={styles.popular} aria-labelledby="profile-popular">
             <h2 id="profile-popular">
               <span aria-hidden="true">☆</span>
               Popular
@@ -360,7 +360,7 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
                 ))}
               </div>
             )}
-          </section>
+          </div>
 
           <nav className={styles.resourceList} aria-label="Profile resources">
             <Link href="/repositories" className={styles.resourceRow}>
