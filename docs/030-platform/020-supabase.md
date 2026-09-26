@@ -86,18 +86,28 @@ Secret values、project ID、callback origin 等不寫入 docs 範例。
 
 ## Schema and deployed state
 
-`supabase/schemas/` 是 current desired schema 的唯一 Source of Truth；`supabase/migrations/` 不參與 current contract、tests、remote deployment 或 consistency proof。Supabase 官方 `db push`／`db reset --linked`／`migration up`／`migration repair` 不屬於本專案 remote schema path。
+Schema authority與「DDL vs business data transform」的語意由 [Schema model](../040-data/030-schema-model.md) 擁有；本文件只描述 Supabase provider與 remote reconciliation mechanism。
 
-Repository schema 存在只證明 desired state。Development remote 是否一致必須由指定 project 的 catalog／role／grant／RLS/function/trigger readback 證明；SQL success、local PGlite 或 migration history 都不能取代 remote evidence。
+Repository-owned remote reconciliation使用 `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL`／`SUPABASE_CONFIRM_PROJECT`交叉確認 exact target。Application mutation boundary只包含 repository-owned application schema；`auth`、`storage`、provider `public` helper與 `supabase_migrations` 不在其中。
 
-Remote schema state 與 deployed consumer revision 是兩個獨立 contract。Live Web 使用中的 Supabase project 不可只因 application data 為空就視為「可任意重建」；data emptiness 不代表 consumer compatibility。每次 successful same-repository `main` `Validate` 都觸發 GitHub `Release`。Affected-source routing 只以前次 **completed Release 中成功的固定 `gate` job**、`Release <validated-sha>` display title 與 git ancestor check 建立 cursor；整體 Release conclusion 是 downstream external-effect evidence，不是 routing authority。沒有合格 cursor 時才以 empty tree bootstrap。
+Current commands：
 
-每個 validated main 的 Supabase job 先執行 metadata-free additive `repair`，只復原可由 current declarative source 完整決定的 runtime compatibility。若 declarative schema 相對 cursor 有變更，validated source change本身就是 application-schema mutation authorization，workflow直接執行 history-free plain `sync`，由 clean-local desired state產生完整 remote diff並 transaction apply；`noop / routine / sensitive`只作診斷。Apply後必須 second diff = 0、ownership/security readback PASS，且 `supabase_migrations.schema_migrations` fingerprint before/after完全相同。`prepare`不在 automatic schema path，只留給需要 explicit business metadata的 preserve-data/data-cutover；reviewed apply使用 `--reviewed-plan` 以 reviewed plan SHA-256 + Enterprise owner-confirmed identity fingerprint綁定 exact current plan，並有 explicit recovery-readiness attestation。Apply 前 `schema:remote recovery` 直接讀 Supabase Management API；只有 PITR/WALG 或 completed managed backup才算 provider recovery evidence，否則 fail closed。Automatic 與 manual remote mutation 共用 production resource concurrency，repository-owned write 再由 PostgreSQL advisory lock 序列化。若 schema 未變，`repair` 後仍執行 `verify`，避免 compatibility repair 被誤認成 full convergence。兩條 automatic path 都必須對 exact project 完成 post-operation readback，且 migration history before / after 保持一致；只有同一 validated revision 的 Supabase convergence 成功後才允許 Production deployment。
+- `repair`：metadata-free、idempotent compatibility repair；只恢復可由 current source完整決定的 runtime-required surface。
+- `plan`：由 clean-local desired state比較 exact remote，產生 plan與 fingerprint；`noop / routine / sensitive`只作診斷。
+- `sync`：對完整 generated diff做 bounded transaction apply，然後要求 second diff = 0與 ownership/security readback PASS。
+- `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。
+- `prepare`／`recovery`／`sync --reviewed-plan`：只供需要 explicit business metadata或額外 recovery authorization的 data-cutover contract，不是一般 schema publication gate。
 
-需要 retained production data 時仍以 reviewed forward reconciliation + backup/recovery + post-write readback 發布；remote migration history 必須 before/after 完全一致，不作 schema owner 或 deployment authority。
+所有 repository-owned remote mutation共用 PostgreSQL advisory lock；GitHub automatic與 manual jobs另共享同一 production resource concurrency。任一 remote write都必須保存必要 plan/readback evidence。
 
-- Schema rules：[Schema model](../040-data/030-schema-model.md)
-- Core data semantics：`../../040-data/010-data-boundary-model.md`
-- Production gaps：`../../090-governance/040-gaps/010-runtime-and-platform.md`
+Supabase migration history不是 current schema authority，也不是 deployment mechanism。Reconciliation不得新增、replay或repair migration history；`supabase_migrations.schema_migrations` fingerprint before/after必須完全相同。
 
-PGlite/local SQL test 能驗局部 schema / transaction，不等於 remote TLS、pool、multi-connection contention 或 production state。
+Schema publication何時由 validated `main`觸發、schema changed／unchanged如何 routing、Supabase成功後何時允許Vercel Production，由 [Release](../070-operations/020-release.md) 擁有；backup／restore與 data-cutover recovery要求由 [Recovery](../070-operations/030-recovery.md) 擁有。
+
+PGlite/local SQL test能驗局部 schema／transaction，不等於 remote TLS、pool、multi-connection contention或 production state。
+
+- Schema semantics：[Schema model](../040-data/030-schema-model.md)
+- Core data semantics：[Data boundary model](../040-data/010-data-boundary-model.md)
+- Release ordering：[Release](../070-operations/020-release.md)
+- Recovery：[Recovery](../070-operations/030-recovery.md)
+- Production gaps：[Runtime and platform gaps](../090-governance/040-gaps/010-runtime-and-platform.md)

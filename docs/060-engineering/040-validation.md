@@ -30,7 +30,14 @@ GitHub Draft pull request 代表 active iteration，validation job 必須 skip�
 
 `validate` 是完整 repository gate，不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收已完成。PR affected check 與 main full validate 是不同證據，不以其中一者冒充另一者。
 
-Full `validate` 擁有 read-only Supabase remote tooling tests。External release 是另一層 evidence：`Release` 由 successful same-repository `main` `Validate` 的 `workflow_run` completion 觸發，不重新跑 repository validation。Affected-source routing 以前次 completed Release 中成功的 `gate` job 作 cursor，不以整體 Release conclusion 取代 routing truth；Supabase 對每個 validated main revision 仍執行 changed automatic sync 或 unchanged verify，只有 remote convergence 成功後才允許 Production deployment。`sync` 對 validated declarative SQL change一律執行完整 remote diff；`routine / sensitive` classification只作診斷，不作 approval gate。真正 acceptance 是 exact target、transaction apply、second diff = 0、ownership/security readback與 migration-history fingerprint unchanged。需要 explicit business metadata或 data-cutover recovery authorization時才使用 `prepare-plan → reviewed plan SHA-256 → apply`。Automatic 與 manual GitHub jobs 共用 production database concurrency key，repository-owned remote mutation另有 PostgreSQL advisory lock。
+Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Production，也不證明指定 remote 已收斂。External release 是另一層 evidence；publication trigger與 ordering由 [Release](../070-operations/020-release.md) 擁有，Supabase remote reconciliation semantics由 [Supabase](../030-platform/020-supabase.md) 擁有。
+
+因此：
+
+- `schema:check`／`schema:remote:test` 證明 schema／reconciliation code contract，不證明 remote current state。
+- `pnpm validate` 證明 repository revision通過完整 gate，不等於 deployment。
+- Release Supabase success才證明該 validated revision的 database contract已完成對應 remote readback。
+- Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
 
 ## Concurrency
 
@@ -45,7 +52,7 @@ Type generation、test/build artifact 與 dependency install 在同一 checkout 
 - AI / receipt real provider probe（可能消耗 quota）
 - Webhook set / restore
 - Rich Menu publish / activate
-- schema migration / import / runtime-role setup
+- remote schema / data reconciliation / runtime-role setup
 - deployment / production API checks
 
 格式驗證、HTTP 200 或 provider 接受 request 都不等於使用者收到結果。
