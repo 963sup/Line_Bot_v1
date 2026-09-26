@@ -81,12 +81,17 @@ export default function RepositoryStarListDetail({
       }
       stars = starredPayload.items;
     }
+    if ((await liffClient.session(liffId)) !== token) {
+      clear();
+      return false;
+    }
     setItem(payload.item);
     setStarred(stars);
     setName(payload.item.name);
     setDescription(payload.item.description);
     const currentIds = new Set(payload.item.repositories.map((repository) => repository.id));
     setRepositoryId(stars.find((repository) => !currentIds.has(repository.id))?.id ?? "");
+    return true;
   }
 
   async function load() {
@@ -95,8 +100,7 @@ export default function RepositoryStarListDetail({
     setError("");
     try {
       const token = await session();
-      await read(token);
-      if ((await liffClient.session(liffId)) !== token || ticket !== generation.current) return;
+      if (!(await read(token)) || ticket !== generation.current) return;
       setPending(readPendingRepositoryStarListCommand(window.localStorage, listId));
     } catch (cause) {
       if (ticket === generation.current) {
@@ -141,12 +145,12 @@ export default function RepositoryStarListDetail({
       }
       clearPendingRepositoryStarListCommand(window.localStorage, listId);
       setPending(null);
-      if (payload.deleted) {
-        window.location.assign(repositoryStarListsPath());
-        return;
-      }
       if ((await liffClient.session(liffId)) !== token) {
         clear();
+        return;
+      }
+      if (payload.deleted) {
+        window.location.assign(repositoryStarListsPath());
         return;
       }
       await read(token);

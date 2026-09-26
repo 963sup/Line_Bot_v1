@@ -81,6 +81,10 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
       if (!payload.id || payload.deleted) throw new Error("List 建立回應不完整。");
       clearPendingRepositoryStarListCreate(window.localStorage);
       setPending(null);
+      if ((await liffClient.session(liffId)) !== token) {
+        clear();
+        return;
+      }
       window.location.assign(repositoryStarListPath(payload.id));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "List 建立結果尚待確認，請重試原操作。");
