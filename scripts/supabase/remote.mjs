@@ -40,6 +40,10 @@ const repositoryStarsSchemaSql = readFileSync(
   new URL("supabase/schemas/603_repository_stars.sql", root),
   "utf8",
 );
+const repositoryCommandSchemaSql = readFileSync(
+  new URL("supabase/schemas/604_repository_commands.sql", root),
+  "utf8",
+);
 const crossOwnerProjectionSchemaSql = readFileSync(
   new URL("supabase/schemas/900_cross_owner_projections.sql", root),
   "utf8",
@@ -654,6 +658,7 @@ export function classifyRepositoryRuntimeCompatibility(state) {
     state.repositoryAccessTable &&
     state.repositoryTeamAccessTable &&
     state.repositoryStarsTable &&
+    state.repositoryCommandsTable &&
     state.repositoryEffectiveAccessView &&
     state.provisionRepositoryFunction;
 
@@ -1129,6 +1134,7 @@ async function repositoryRuntimeCompatibilityState(client) {
         to_regclass('app_private.repository_access') is not null as repository_access_table,
         to_regclass('app_private.repository_team_access') is not null as repository_team_access_table,
         to_regclass('app_private.repository_stars') is not null as repository_stars_table,
+        to_regclass('app_private.repository_commands') is not null as repository_commands_table,
         to_regclass('app_private.repository_effective_access') is not null
           as repository_effective_access_view,
         to_regprocedure('app_private.provision_repository(text,text,text,text,text)') is not null
@@ -1144,6 +1150,7 @@ async function repositoryRuntimeCompatibilityState(client) {
     repositoryAccessTable: row.repository_access_table,
     repositoryTeamAccessTable: row.repository_team_access_table,
     repositoryStarsTable: row.repository_stars_table,
+    repositoryCommandsTable: row.repository_commands_table,
     repositoryEffectiveAccessView: row.repository_effective_access_view,
     provisionRepositoryFunction: row.provision_repository_function,
   };
@@ -1167,6 +1174,15 @@ async function verifyRepositoryRuntimeCompatibility(client) {
         has_table_privilege('line_app','app_private.repository_stars','SELECT') as stars_select,
         has_table_privilege('line_app','app_private.repository_stars','INSERT') as stars_insert,
         has_table_privilege('line_app','app_private.repository_stars','DELETE') as stars_delete,
+        has_table_privilege(
+          'line_app','app_private.repository_commands','SELECT'
+        ) as commands_select,
+        has_table_privilege(
+          'line_app','app_private.repository_commands','INSERT'
+        ) as commands_insert,
+        not has_table_privilege(
+          'anon','app_private.repository_commands','SELECT'
+        ) as anon_no_commands,
         not has_table_privilege('anon','app_private.repository_stars','SELECT') as anon_no_stars,
         (
           select c.relrowsecurity
@@ -1200,6 +1216,9 @@ async function verifyRepositoryRuntimeCompatibility(client) {
     !acceptance.stars_select ||
     !acceptance.stars_insert ||
     !acceptance.stars_delete ||
+    !acceptance.commands_select ||
+    !acceptance.commands_insert ||
+    !acceptance.anon_no_commands ||
     !acceptance.anon_no_stars ||
     !acceptance.stars_rls ||
     !acceptance.team_access_rls ||
@@ -1351,6 +1370,10 @@ async function ensureRepositoryRuntimeCompatibility() {
       }
       if (!afterStructure.repositoryStarsTable) {
         await client.query(repositoryStarsSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryCommandsTable) {
+        await client.query(repositoryCommandSchemaSql);
         changed = true;
       }
       if (!afterStructure.repositoryEffectiveAccessView) {
