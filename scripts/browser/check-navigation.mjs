@@ -88,6 +88,9 @@ async function run() {
       posts.push({ path: url.pathname, body: request.postDataJSON() });
     else reads.push(url.pathname + url.search);
 
+    if (url.pathname === "/api/membership") {
+      return route.fulfill({ json: { member: { login: "viewer" } } });
+    }
     if (url.pathname === "/api/repositories") {
       return route.fulfill({
         json: {
@@ -163,11 +166,15 @@ async function run() {
     await page.goto(`${base}/home`);
     await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
     await expect(page.locator(".member-avatar")).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+      "href",
+      "/viewer",
+    );
     await expect(
       page.getByRole("link", { name: "Search repositories", exact: true }),
     ).toHaveAttribute("href", "/search");
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.locator('summary[aria-label="Create"]').click();
     await expect(page.getByRole("link", { name: /Create Issue/ })).toHaveAttribute(
       "href",
       "/repositories?intent=create-issue",
@@ -207,7 +214,7 @@ async function run() {
     await expect(page).toHaveURL(`${base}/acme/Operations/issues`);
 
     await page.goto(`${base}/notifications`);
-    await page.getByRole("heading", { name: "通知", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Inbox", exact: true }).waitFor();
     await expect(page.locator(".member-avatar")).toHaveCount(0);
     await page.getByRole("link", { name: /Issue 已更新/ }).click();
     await expect(page).toHaveURL(`${base}/notifications/${notificationId}`);

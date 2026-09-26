@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
+import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
 type AccountProjection = {
   member?: {
@@ -13,49 +14,53 @@ type AccountProjection = {
 export default function MemberAvatar({ liffId }: { liffId: string }) {
   const [picture, setPicture] = useState<string>();
   const [login, setLogin] = useState<string>();
+  const generation = useRef(0);
 
-  useEffect(() => {
-    let active = true;
+  const clear = useCallback(() => {
+    generation.current++;
+    setPicture(undefined);
+    setLogin(undefined);
+  }, []);
 
-    async function load() {
-      const [profileResult, tokenResult] = await Promise.allSettled([
-        liffClient.profile(),
-        liffClient.session(liffId),
-      ]);
+  const load = useCallback(async () => {
+    const ticket = ++generation.current;
+    const token = await liffClient.session(liffId);
+    if (!token || ticket !== generation.current) return;
 
-      if (!active) return;
+    const [profileResult, membershipResult] = await Promise.allSettled([
+      liffClient.profile(),
+      fetch("/api/membership", {
+        headers: { "x-line-token": token },
+        cache: "no-store",
+      }),
+    ]);
+    if (ticket !== generation.current) return;
 
-      if (
-        profileResult.status === "fulfilled" &&
-        profileResult.value.pictureUrl?.startsWith("https://")
-      ) {
-        setPicture(profileResult.value.pictureUrl);
-      }
-
-      const token = tokenResult.status === "fulfilled" ? tokenResult.value : null;
-      if (!token) return;
-
-      try {
-        const response = await fetch("/api/membership", {
-          headers: { "x-line-token": token },
-          cache: "no-store",
-        });
-        if (!response.ok) return;
-        const value = (await response.json()) as AccountProjection;
-        const accountLogin = value.member?.login;
-        if (active && typeof accountLogin === "string" && accountLogin) {
-          setLogin(accountLogin);
-        }
-      } catch {
-        // Keep Profile navigation unavailable until the canonical Account locator resolves.
-      }
+    if (
+      profileResult.status === "fulfilled" &&
+      profileResult.value.pictureUrl?.startsWith("https://")
+    ) {
+      setPicture(profileResult.value.pictureUrl);
+    } else {
+      setPicture(undefined);
     }
 
-    void load();
-    return () => {
-      active = false;
-    };
+    if (membershipResult.status !== "fulfilled" || !membershipResult.value.ok) {
+      setLogin(undefined);
+      return;
+    }
+    const value = (await membershipResult.value.json()) as AccountProjection;
+    if (ticket !== generation.current) return;
+    const accountLogin = value.member?.login;
+    setLogin(typeof accountLogin === "string" && accountLogin ? accountLogin : undefined);
   }, [liffId]);
+
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    [],
+  );
 
   const avatar = picture ? (
     // LINE hosts the profile photo; avoid proxying private profile images through Next.
@@ -83,22 +88,23 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
     </svg>
   );
 
-  if (!login) {
-    return (
-      <span className="member-avatar" aria-label="個人檔案載入中" aria-disabled="true">
-        {avatar}
-      </span>
-    );
-  }
-
   return (
-    <Link
-      href={`/${encodeURIComponent(login)}`}
-      className="member-avatar"
-      aria-label="個人檔案"
-      title="個人檔案"
-    >
-      {avatar}
-    </Link>
+    <>
+      <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
+      {login ? (
+        <Link
+          href={`/${encodeURIComponent(login)}`}
+          className="member-avatar"
+          aria-label="個人檔案"
+          title="個人檔案"
+        >
+          {avatar}
+        </Link>
+      ) : (
+        <span className="member-avatar" aria-label="個人檔案載入中" aria-disabled="true">
+          {avatar}
+        </span>
+      )}
+    </>
   );
 }
