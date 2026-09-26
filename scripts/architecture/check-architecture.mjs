@@ -73,6 +73,7 @@ export function checkAppRoot(root = repository) {
     "(resource)",
     "(rich-menu)",
     "(system)",
+    "_shell",
     "api",
   ]);
   const files = new Set(["layout.tsx", "global-error.tsx", "globals.css", "AGENTS.md"]);

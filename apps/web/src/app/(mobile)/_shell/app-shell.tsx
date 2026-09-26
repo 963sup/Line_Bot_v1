@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import WorkNavigation from "./work-navigation";
+import WorkNavigation from "../../_shell/work-navigation";
 
 export type AppShellNavigation = "tabs" | "secondary";
 

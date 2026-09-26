@@ -27,6 +27,7 @@ test("app root rejects unexpected folders, new root files and wrong entry kinds"
       "(resource)",
       "(rich-menu)",
       "(system)",
+      "_shell",
       "api",
     ])
       mkdirSync(resolve(app, folder), { recursive: true });
