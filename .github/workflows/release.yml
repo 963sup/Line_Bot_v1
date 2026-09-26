@@ -198,6 +198,7 @@ jobs:
 
       - name: Deploy and read back exact production revision
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           SHA: ${{ needs.gate.outputs.head_sha }}
         run: pnpm vercel:deploy:production -- --live --sha "$SHA"
