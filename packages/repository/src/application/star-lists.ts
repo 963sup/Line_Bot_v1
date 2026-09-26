@@ -106,9 +106,7 @@ function parseCommand(targetListId: string, raw: unknown): RepositoryStarListCom
 
   if (action === "publish" || action === "unpublish" || action === "delete") {
     if (
-      Object.keys(value).some(
-        (key) => !["requestId", "action", "expectedVersion"].includes(key),
-      )
+      Object.keys(value).some((key) => !["requestId", "action", "expectedVersion"].includes(key))
     ) {
       throw new RepositoryError(400, "List 操作包含不支援的欄位。");
     }
