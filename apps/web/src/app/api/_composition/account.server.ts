@@ -1,10 +1,12 @@
 import {
   PostgresFollowStore,
+  PostgresUserAchievementStore,
   PostgresGoogleLinkStore,
   PostgresLoginDirectoryStore,
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line-work/account/adapters/postgres";
+import { createUserAchievements } from "@line-work/account/application/achievements";
 import { createFollows } from "@line-work/account/application/follows";
 import { createLoginDirectory } from "@line-work/account/application/login-directory";
 import { createUserProfiles } from "@line-work/account/application/profile";
@@ -22,6 +24,7 @@ const state = globalThis as typeof globalThis & {
   walletStore?: PostgresWalletStore;
   dailyCheckInStore?: PostgresDailyCheckInStore;
   followStore?: PostgresFollowStore;
+  achievementStore?: PostgresUserAchievementStore;
   profileStore?: PostgresUserProfileStore;
   loginDirectoryStore?: PostgresLoginDirectoryStore;
 };
@@ -39,6 +42,9 @@ function dailyCheckInStore() {
 }
 function followStore() {
   return (state.followStore ??= new PostgresFollowStore());
+}
+function achievementStore() {
+  return (state.achievementStore ??= new PostgresUserAchievementStore());
 }
 function profileStore() {
   return (state.profileStore ??= new PostgresUserProfileStore());
@@ -73,6 +79,10 @@ export const {
   restoreUser,
 } = user;
 export const loginDirectory = createLoginDirectory(loginDirectoryStore);
+export const achievements = createUserAchievements({
+  activeUser: activeLineUser,
+  store: achievementStore,
+});
 export const follows = createFollows({
   activeUser: activeLineUser,
   store: followStore,
