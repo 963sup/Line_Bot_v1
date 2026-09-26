@@ -1267,7 +1267,8 @@ async function ensureRepositoryRuntimeCompatibility() {
 async function repairRuntimeCompatibility() {
   const accountLoginChanged = await ensureAccountLoginCompatibility();
   const dailyCheckInChanged = await ensureDailyCheckInCompatibility();
-  return accountLoginChanged || dailyCheckInChanged;
+  const repositoryChanged = await ensureRepositoryRuntimeCompatibility();
+  return accountLoginChanged || dailyCheckInChanged || repositoryChanged;
 }
 
 async function prepareGeneralManagementExpansion() {
