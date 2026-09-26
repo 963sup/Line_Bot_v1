@@ -1,8 +1,8 @@
 import {
   PostgresFollowStore,
-  PostgresUserAchievementStore,
   PostgresGoogleLinkStore,
   PostgresLoginDirectoryStore,
+  PostgresUserAchievementStore,
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line-work/account/adapters/postgres";
