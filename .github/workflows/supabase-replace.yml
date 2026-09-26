@@ -22,8 +22,16 @@ on:
         description: Only when prepare reports one unresolved legacy Enterprise, provide its canonical URL slug
         required: false
         type: string
+      reviewed_plan_run_id:
+        description: For apply, paste the successful prepare-plan workflow run ID
+        required: false
+        type: string
       reviewed_plan_sha256:
-        description: For apply, paste the exact lowercase SHA-256 from the reviewed plan artifact
+        description: For apply, paste the exact lowercase SHA-256 from that prepare-plan artifact
+        required: false
+        type: string
+      recovery_evidence_reference:
+        description: For apply, provide a non-secret backup/PITR/restore evidence reference
         required: false
         type: string
       confirm_recovery:
@@ -37,6 +45,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   checks: read
   statuses: read
 
@@ -101,16 +110,97 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
 
-      - name: Validate reviewed plan fingerprint and recovery attestation
+      - name: Validate reviewed plan provenance and recovery evidence
         if: inputs.operation == 'apply'
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REVIEWED_PLAN_RUN_ID: ${{ inputs.reviewed_plan_run_id }}
           REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}
+          RECOVERY_EVIDENCE_REFERENCE: ${{ inputs.recovery_evidence_reference }}
         run: |
-          [[ "$REVIEWED_PLAN_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
-            echo "Apply requires the exact lowercase SHA-256 from a reviewed plan artifact."
+          [[ "$REVIEWED_PLAN_RUN_ID" =~ ^[0-9]+$ ]] || {
+            echo "Apply requires the workflow run ID of the reviewed prepare-plan."
             exit 1
           }
+          [[ "$REVIEWED_PLAN_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
+            echo "Apply requires the exact lowercase SHA-256 from the reviewed prepare-plan artifact."
+            exit 1
+          }
+          test -n "${RECOVERY_EVIDENCE_REFERENCE//[[:space:]]/}" || {
+            echo "Apply requires a non-secret backup/PITR/restore evidence reference."
+            exit 1
+          }
+          test "${#RECOVERY_EVIDENCE_REFERENCE}" -le 512 || {
+            echo "Recovery evidence reference must be 512 characters or fewer."
+            exit 1
+          }
+
+          gh api "repos/$REPOSITORY/actions/runs/$REVIEWED_PLAN_RUN_ID" > reviewed-run.json
+          jq -e --arg sha "$SHA" '
+            .event == "workflow_dispatch" and
+            .head_sha == $sha and
+            .path == ".github/workflows/supabase-replace.yml" and
+            .status == "completed" and
+            .conclusion == "success"
+          ' reviewed-run.json >/dev/null || {
+            echo "Reviewed prepare-plan run is not a successful run of this workflow for current main."
+            exit 1
+          }
+
+          mapfile -t artifact_ids < <(
+            gh api "repos/$REPOSITORY/actions/runs/$REVIEWED_PLAN_RUN_ID/artifacts" \
+              --jq ".artifacts[] | select(.name == \"supabase-manual-prepare-plan-$SHA\") | .id"
+          )
+          test "${#artifact_ids[@]}" -eq 1 || {
+            echo "Reviewed prepare-plan run must contain exactly one matching reconciliation artifact."
+            exit 1
+          }
+          gh api "repos/$REPOSITORY/actions/artifacts/${artifact_ids[0]}/zip" > reviewed-plan.zip
+          unzip -p reviewed-plan.zip plan-provenance.json > reviewed-plan-provenance.json
+          jq -e \
+            --arg project "nmssogphayjymjpbnrxv" \
+            --arg sha "$SHA" \
+            --arg run_id "$REVIEWED_PLAN_RUN_ID" \
+            --arg plan_sha "$REVIEWED_PLAN_SHA256" \
+            '.projectRef == $project and
+             .sourceSha == $sha and
+             .workflowRunId == $run_id and
+             .planSha256 == $plan_sha' \
+            reviewed-plan-provenance.json >/dev/null || {
+              echo "Reviewed plan provenance does not match current source, target, run, or plan hash."
+              exit 1
+            }
+
+      - name: Record manual authorization evidence
+        if: inputs.operation == 'apply'
+        shell: bash
+        env:
+          SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          REVIEWED_PLAN_RUN_ID: ${{ inputs.reviewed_plan_run_id }}
+          REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}
+          RECOVERY_EVIDENCE_REFERENCE: ${{ inputs.recovery_evidence_reference }}
+        run: |
+          mkdir -p .artifacts/supabase-remote
+          jq -n \
+            --arg project_ref "nmssogphayjymjpbnrxv" \
+            --arg source_sha "$SHA" \
+            --arg apply_run_id "$RUN_ID" \
+            --arg reviewed_plan_run_id "$REVIEWED_PLAN_RUN_ID" \
+            --arg reviewed_plan_sha256 "$REVIEWED_PLAN_SHA256" \
+            --arg recovery_evidence_reference "$RECOVERY_EVIDENCE_REFERENCE" \
+            '{
+              projectRef: $project_ref,
+              sourceSha: $source_sha,
+              applyRunId: $apply_run_id,
+              reviewedPlanRunId: $reviewed_plan_run_id,
+              reviewedPlanSha256: $reviewed_plan_sha256,
+              recoveryEvidenceReference: $recovery_evidence_reference,
+              recoveryAttested: true
+            }' > .artifacts/supabase-remote/manual-authorization.json
 
       - name: Prepare preserve-data compatibility expansion
         run: pnpm schema:remote prepare
@@ -129,6 +219,30 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
 
+      - name: Record prepare-plan provenance
+        if: inputs.operation == 'prepare-plan'
+        shell: bash
+        env:
+          SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          plan_sha="$(tr -d '\r\n' < .artifacts/supabase-remote/plan.sha256)"
+          [[ "$plan_sha" =~ ^[0-9a-f]{64}$ ]] || {
+            echo "prepare-plan did not produce a valid plan SHA-256."
+            exit 1
+          }
+          jq -n \
+            --arg project_ref "nmssogphayjymjpbnrxv" \
+            --arg source_sha "$SHA" \
+            --arg workflow_run_id "$RUN_ID" \
+            --arg plan_sha256 "$plan_sha" \
+            '{
+              projectRef: $project_ref,
+              sourceSha: $source_sha,
+              workflowRunId: $workflow_run_id,
+              planSha256: $plan_sha256
+            }' > .artifacts/supabase-remote/plan-provenance.json
+
       - name: Apply only the reviewed exact plan
         if: inputs.operation == 'apply'
         run: pnpm schema:remote sync --allow-manual
@@ -146,6 +260,8 @@ jobs:
           path: |
             .artifacts/supabase-remote/plan.sql
             .artifacts/supabase-remote/plan.sha256
+            .artifacts/supabase-remote/plan-provenance.json
+            .artifacts/supabase-remote/manual-authorization.json
             .artifacts/supabase-remote/verification.sql
             .artifacts/supabase-remote/migration-history.before.txt
             .artifacts/supabase-remote/migration-history.after.txt

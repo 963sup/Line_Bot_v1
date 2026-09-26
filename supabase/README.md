@@ -105,7 +105,7 @@ Automatic Release 的 plain `sync` 不帶 `--allow-manual`；若 plan 分類為 
 
 ### Manual Supabase Reconciliation
 
-Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql` 與 `plan.sha256` 給 operator review；`apply` 額外要求 recovery-readiness attestation、explicit apply confirmation 與 reviewed SHA-256，然後重新 prepare、重新產生 current plan，只有 fingerprint 完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback 與 retained evidence。
+Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql`、`plan.sha256` 與 `plan-provenance.json` 給 operator review；provenance 固定 target project、source SHA、workflow run ID 與 plan SHA-256。`apply` 額外要求該 successful prepare-plan run ID、recovery-readiness attestation、non-secret backup/PITR/restore evidence reference、explicit apply confirmation 與 reviewed SHA-256。Workflow 先從 GitHub Actions API讀回同一 current source SHA 的 prepare-plan run與 retained artifact，驗 provenance/hash完全相符後才重新 prepare、重新產生 current plan；只有 fingerprint 仍完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback與 retained `manual-authorization.json`。
 
 `prepare` 成功不代表 manual contract 已完成；`sync --allow-manual` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation，不冒充 Supabase provider backup/PITR readback。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
 兩條 path 都由

@@ -747,7 +747,10 @@ export function validate(root) {
       !replaceInputs.operation.options.includes("prepare-plan") ||
       !replaceInputs.operation.options.includes("apply") ||
       replaceInputs.legacy_enterprise_name?.type !== "string" ||
-      replaceInputs.legacy_enterprise_slug?.type !== "string"
+      replaceInputs.legacy_enterprise_slug?.type !== "string" ||
+      replaceInputs.reviewed_plan_run_id?.type !== "string" ||
+      replaceInputs.reviewed_plan_sha256?.type !== "string" ||
+      replaceInputs.recovery_evidence_reference?.type !== "string"
     ) {
       errors.push(
         "CI: manual Supabase reconciliation must use workflow_dispatch with prepare-plan/apply modes",
@@ -762,6 +765,7 @@ export function validate(root) {
       !replaceJob.if.includes("nmssogphayjymjpbnrxv") ||
       !replaceJob.if.includes("confirm_recovery") ||
       !replaceJob.if.includes("confirm_apply") ||
+      replaceWorkflow.permissions?.actions !== "read" ||
       replaceJob?.concurrency?.group !== "supabase-production-nmssogphayjymjpbnrxv" ||
       replaceJob?.concurrency?.["cancel-in-progress"] !== false ||
       JSON.stringify(replaceJob?.env ?? {}).includes("secrets.")
@@ -778,11 +782,25 @@ export function validate(root) {
         step.run.includes("check-runs") &&
         step.run.includes('.name == "validate"'),
     );
-    const replaceFingerprint = replaceSteps.findIndex(
+    const replaceProvenance = replaceSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
+        step.run.includes("REVIEWED_PLAN_RUN_ID") &&
         step.run.includes("REVIEWED_PLAN_SHA256") &&
+        step.run.includes("RECOVERY_EVIDENCE_REFERENCE") &&
+        step.run.includes("actions/runs/$REVIEWED_PLAN_RUN_ID") &&
+        step.run.includes("supabase-manual-prepare-plan-$SHA") &&
+        step.run.includes("plan-provenance.json") &&
         step.run.includes("[0-9a-f]{64}") &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'apply'"),
+    );
+    const replaceAuthorization = replaceSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("manual-authorization.json") &&
+        step.run.includes("recoveryEvidenceReference") &&
+        step.run.includes("reviewedPlanRunId") &&
         typeof step.if === "string" &&
         step.if.includes("operation == 'apply'"),
     );
@@ -792,6 +810,15 @@ export function validate(root) {
     const replacePlan = replaceSteps.findIndex(
       (step) =>
         step.run === "pnpm schema:remote plan" &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'prepare-plan'"),
+    );
+    const replacePlanProvenance = replaceSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("plan-provenance.json") &&
+        step.run.includes("workflowRunId") &&
+        step.run.includes("planSha256") &&
         typeof step.if === "string" &&
         step.if.includes("operation == 'prepare-plan'"),
     );
@@ -807,23 +834,27 @@ export function validate(root) {
         step.uses === "actions/upload-artifact@v4" &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sha256") &&
+        JSON.stringify(step.with ?? {}).includes("plan-provenance.json") &&
+        JSON.stringify(step.with ?? {}).includes("manual-authorization.json") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
     );
     if (
       replaceValidate < 0 ||
-      replaceFingerprint <= replaceValidate ||
-      replacePrepare <= replaceFingerprint ||
+      replaceProvenance <= replaceValidate ||
+      replaceAuthorization <= replaceProvenance ||
+      replacePrepare <= replaceAuthorization ||
       replacePlan <= replacePrepare ||
-      replaceSync <= replacePlan ||
+      replacePlanProvenance <= replacePlan ||
+      replaceSync <= replacePlanProvenance ||
       replaceEvidence <= replaceSync ||
       JSON.stringify(replaceSteps).includes("--allow-destructive") ||
       JSON.stringify(replaceSteps).includes("VERCEL_TOKEN") ||
       JSON.stringify(replaceSteps).includes("commits/$SHA/status")
     ) {
       errors.push(
-        "CI: manual Supabase reconciliation must validate, attest, prepare, plan/apply exact reviewed SQL, then preserve evidence without owning Web deployment",
+        "CI: manual Supabase reconciliation must bind apply to a successful same-source prepare-plan artifact, retain recovery authorization evidence, re-prepare, apply exact reviewed SQL, then preserve evidence without owning Web deployment",
       );
     }
     const manualPrepareEnv = JSON.stringify(replaceSteps[replacePrepare]?.env ?? {});
