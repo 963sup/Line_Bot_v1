@@ -58,10 +58,13 @@ pnpm schema:remote verify --api
 `prepare` 只供 **preserve-data destructive cutover 前置**。它不 drop table/column/function、不改
 migration history，也不把 target constraint 降級。它會在單一 transaction 內鎖定相關 authority
 relations、確認 legacy source 是否可安全搬移，建立 current runtime 必須先存在的 additive
-surface，並 read back。若既有資料需要不可推導的新 business metadata，必須由 operator 以
-`SUPABASE_ENTERPRISE_METADATA_BACKFILL` 提供 explicit mapping；script 只接受 exact
-`accountId/name/slug` JSON，不能從 UUID、display text、歷史 UI 或 provider state猜值。
-任何 non-empty legacy owner data沒有明確 migration rule時都 fail closed。
+surface，並 read back。Automatic Release 不取得不可推導的 owner business metadata；若 remote
+恰好有一筆 legacy Enterprise 缺 current `name` / `slug`，automatic `prepare` 會 fail closed，
+改由 manual reconciliation 的 `legacy_enterprise_name` / `legacy_enterprise_slug` explicit
+inputs 提供。Script 在 transaction lock 內自行讀取唯一 unresolved remote Enterprise 並綁定 stable
+account ID；operator 不輸入 production account ID，也不能從 UUID、login、display text、歷史 UI
+或 provider state 猜值。若 unresolved Enterprise 不是恰好一筆，就要求另外的 explicit multi-row
+owner migration，不把一次性案例擴成通用 mapping surface。
 
 `plan` 從 declarative schemas 重建 clean local target，再比較 exact remote
 `app_private`。Normal `sync` 會在同一程序完成 initial plan、apply、second diff

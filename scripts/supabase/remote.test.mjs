@@ -16,11 +16,12 @@ import {
   governanceCompatibilityAccessSql,
   governanceCompatibilityFunctionSql,
   parseArgs,
-  parseEnterpriseMetadataBackfill,
+  parseLegacyEnterpriseMetadata,
   permissionNamesFromSource,
   permissionSubjectVersionExpansionSql,
   planFingerprint,
   projectRefFromSupabaseUrl,
+  resolveLegacyEnterpriseMetadata,
   supabaseApiReadbackConfig,
   verifySupabaseApiReadback,
 } from "./remote.mjs";
@@ -348,24 +349,20 @@ test("DailyCheckIn compatibility distinguishes missing, ready and partial state"
   );
 });
 
-test("Enterprise metadata backfill is explicit, exact, and bounded", () => {
-  assert.deepEqual(parseEnterpriseMetadataBackfill(""), []);
-  assert.deepEqual(
-    parseEnterpriseMetadataBackfill(
-      JSON.stringify([{ accountId: "enterprise-1", name: "Operations", slug: "operations" }]),
-    ),
-    [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
-  );
-  for (const value of [
-    "{}",
-    JSON.stringify([{ accountId: "enterprise-1", name: "Operations", slug: "Operations" }]),
-    JSON.stringify([{ accountId: "enterprise-1", name: "Operations", slug: "ops", extra: true }]),
-    JSON.stringify([
-      { accountId: "enterprise-1", name: "Operations", slug: "ops" },
-      { accountId: "enterprise-2", name: "Other", slug: "ops" },
-    ]),
+test("legacy Enterprise cutover input is explicit, exact, and bounded", () => {
+  assert.equal(parseLegacyEnterpriseMetadata("", ""), null);
+  assert.deepEqual(parseLegacyEnterpriseMetadata("Operations", "operations"), {
+    name: "Operations",
+    slug: "operations",
+  });
+  for (const [name, slug] of [
+    ["", "operations"],
+    ["Operations", ""],
+    [" Operations", "operations"],
+    ["Operations", "Operations"],
+    ["Operations", "invalid slug"],
   ]) {
-    assert.throws(() => parseEnterpriseMetadataBackfill(value), /backfill|slug|array|entries/i);
+    assert.throws(() => parseLegacyEnterpriseMetadata(name, slug), /name|slug|both/i);
   }
 });
 
@@ -428,48 +425,61 @@ function expansionState(overrides = {}) {
   };
 }
 
-test("general-management prepare accepts only evidence-complete preservable state", () => {
-  assert.doesNotThrow(() =>
-    assertGeneralManagementExpansionState(expansionState(), [
-      { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-    ]),
+test("general-management prepare rejects unsupported legacy state before metadata binding", () => {
+  assert.doesNotThrow(() => assertGeneralManagementExpansionState(expansionState()));
+  assert.throws(
+    () => assertGeneralManagementExpansionState(expansionState({ projectIssueReferences: 1 })),
+    /explicit owner migration/i,
+  );
+});
+
+test("legacy Enterprise metadata binds only to one unresolved remote Enterprise", () => {
+  const input = { name: "Operations", slug: "operations" };
+
+  assert.throws(
+    () => resolveLegacyEnterpriseMetadata(expansionState(), null),
+    /explicit Enterprise name and slug/i,
+  );
+  assert.deepEqual(resolveLegacyEnterpriseMetadata(expansionState(), input), [
+    { accountId: "enterprise-1", name: "Operations", slug: "operations" },
+  ]);
+
+  assert.throws(
+    () =>
+      resolveLegacyEnterpriseMetadata(
+        expansionState({
+          enterpriseRows: [
+            { accountId: "enterprise-1", name: null, slug: null },
+            { accountId: "enterprise-2", name: null, slug: null },
+          ],
+        }),
+        input,
+      ),
+    /multi-row owner migration/i,
   );
 
   assert.throws(
     () =>
-      assertGeneralManagementExpansionState(expansionState({ projectIssueReferences: 1 }), [
-        { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-      ]),
-    /explicit owner migration/i,
-  );
-  assert.throws(
-    () => assertGeneralManagementExpansionState(expansionState(), []),
-    /missing required Enterprise metadata/i,
-  );
-  assert.throws(
-    () =>
-      assertGeneralManagementExpansionState(expansionState(), [
-        { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-        { accountId: "enterprise-2", name: "Other", slug: "other" },
-      ]),
-    /unknown Enterprise/i,
-  );
-  assert.throws(
-    () =>
-      assertGeneralManagementExpansionState(
+      resolveLegacyEnterpriseMetadata(
         expansionState({
           enterpriseRows: [{ accountId: "enterprise-1", name: "Existing", slug: null }],
         }),
-        [{ accountId: "enterprise-1", name: "Different", slug: "operations" }],
+        input,
       ),
     /conflicts/i,
   );
-  assert.doesNotThrow(() =>
-    assertGeneralManagementExpansionState(
-      expansionState({
-        enterpriseRows: [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
+
+  const current = expansionState({
+    enterpriseRows: [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
+  });
+  assert.deepEqual(resolveLegacyEnterpriseMetadata(current, null), []);
+  assert.deepEqual(resolveLegacyEnterpriseMetadata(current, input), []);
+  assert.throws(
+    () =>
+      resolveLegacyEnterpriseMetadata(current, {
+        name: "Different",
+        slug: "different",
       }),
-      [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
-    ),
+    /exactly one already-current Enterprise/i,
   );
 });

@@ -475,55 +475,66 @@ export function classifyDailyCheckInCompatibility({ tableExists, functionExists,
   return "partial";
 }
 
-export function parseEnterpriseMetadataBackfill(raw = "") {
-  if (!raw.trim()) return [];
-  let value;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    throw new Error("SUPABASE_ENTERPRISE_METADATA_BACKFILL must be valid JSON.");
+export function parseLegacyEnterpriseMetadata(name = "", slug = "") {
+  if (!name && !slug) return null;
+  if (!name || !slug) {
+    throw new Error("Legacy Enterprise cutover requires both name and slug.");
   }
-  if (!Array.isArray(value)) {
-    throw new Error("SUPABASE_ENTERPRISE_METADATA_BACKFILL must be a JSON array.");
+  if (
+    name !== name.trim() ||
+    name.length < 1 ||
+    name.length > 120 ||
+    slug !== slug.trim() ||
+    slug !== slug.toLowerCase() ||
+    slug.length < 1 ||
+    slug.length > 39 ||
+    !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)
+  ) {
+    throw new Error("Legacy Enterprise cutover contains an invalid name or slug.");
   }
+  return { name, slug };
+}
 
-  const ids = new Set();
-  const slugs = new Set();
-  return value.map((entry) => {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-      throw new Error("Enterprise metadata backfill entries must be objects.");
-    }
-    if (Object.keys(entry).sort().join(",") !== "accountId,name,slug") {
+export function resolveLegacyEnterpriseMetadata(state, input) {
+  const unresolved = state.enterpriseMetadataRows;
+
+  if (!input) {
+    if (unresolved.length) {
       throw new Error(
-        "Enterprise metadata backfill entries require accountId, name and slug only.",
+        `Remote preserve-data preparation requires explicit Enterprise name and slug for ${unresolved.length} unresolved legacy Enterprise row(s); use manual reconciliation.`,
       );
     }
+    return [];
+  }
 
-    const { accountId, name, slug } = entry;
+  if (unresolved.length > 1) {
+    throw new Error(
+      `Single-Enterprise cutover input cannot resolve ${unresolved.length} legacy Enterprise rows; an explicit multi-row owner migration is required.`,
+    );
+  }
+
+  if (unresolved.length === 1) {
+    const [row] = unresolved;
     if (
-      typeof accountId !== "string" ||
-      !accountId ||
-      accountId !== accountId.trim() ||
-      typeof name !== "string" ||
-      name !== name.trim() ||
-      name.length < 1 ||
-      name.length > 120 ||
-      typeof slug !== "string" ||
-      slug !== slug.trim() ||
-      slug !== slug.toLowerCase() ||
-      slug.length < 1 ||
-      slug.length > 39 ||
-      !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)
+      (row.name != null && row.name !== input.name) ||
+      (row.slug != null && row.slug !== input.slug)
     ) {
-      throw new Error("Enterprise metadata backfill contains an invalid accountId, name or slug.");
+      throw new Error(
+        "Legacy Enterprise cutover conflicts with an already persisted current value.",
+      );
     }
-    if (ids.has(accountId) || slugs.has(slug)) {
-      throw new Error("Enterprise metadata backfill contains duplicate accountId or slug values.");
-    }
-    ids.add(accountId);
-    slugs.add(slug);
-    return { accountId, name, slug };
-  });
+    return [{ accountId: row.accountId, ...input }];
+  }
+
+  const exact = state.enterpriseRows.filter(
+    (row) => row.name === input.name && row.slug === input.slug,
+  );
+  if (exact.length !== 1) {
+    throw new Error(
+      "Legacy Enterprise cutover input does not match exactly one already-current Enterprise.",
+    );
+  }
+  return [];
 }
 
 export function dailyCheckInCompatibilitySql(
@@ -598,7 +609,7 @@ export function permissionNamesFromSource(source = permissionDefinitionSchemaSql
   return names;
 }
 
-export function assertGeneralManagementExpansionState(state, metadata) {
+export function assertGeneralManagementExpansionState(state) {
   const unsupported = [
     ["BotAccount roots", state.botAccountRoots],
     ["BotAccount rows", state.botAccounts],
@@ -616,30 +627,6 @@ export function assertGeneralManagementExpansionState(state, metadata) {
     throw new Error(
       `Remote preserve-data preparation needs an explicit owner migration for ${blocked[0]} (${blocked[1]} row(s)); refusing to guess or delete data.`,
     );
-  }
-
-  const existing = new Map(state.enterpriseRows.map((row) => [row.accountId, row]));
-  const supplied = new Map(metadata.map((entry) => [entry.accountId, entry]));
-  for (const entry of metadata) {
-    const row = existing.get(entry.accountId);
-    if (!row) {
-      throw new Error("SUPABASE_ENTERPRISE_METADATA_BACKFILL contains an unknown Enterprise.");
-    }
-    if (
-      (row.name != null && row.name !== entry.name) ||
-      (row.slug != null && row.slug !== entry.slug)
-    ) {
-      throw new Error(
-        "Enterprise metadata backfill conflicts with an already persisted current value.",
-      );
-    }
-  }
-  for (const row of state.enterpriseMetadataRows) {
-    if (!supplied.has(row.accountId)) {
-      throw new Error(
-        `SUPABASE_ENTERPRISE_METADATA_BACKFILL is missing required Enterprise metadata for ${state.enterpriseMetadataRows.length} row(s).`,
-      );
-    }
   }
 }
 
@@ -926,8 +913,9 @@ async function repairRuntimeCompatibility() {
 }
 
 async function prepareGeneralManagementExpansion() {
-  const metadata = parseEnterpriseMetadataBackfill(
-    process.env.SUPABASE_ENTERPRISE_METADATA_BACKFILL ?? "",
+  const legacyEnterpriseMetadata = parseLegacyEnterpriseMetadata(
+    process.env.SUPABASE_LEGACY_ENTERPRISE_NAME ?? "",
+    process.env.SUPABASE_LEGACY_ENTERPRISE_SLUG ?? "",
   );
   const { postgresUrl } = requireRemoteConfig();
 
@@ -1029,7 +1017,8 @@ async function prepareGeneralManagementExpansion() {
         enterpriseRows,
         enterpriseMetadataRows,
       };
-      assertGeneralManagementExpansionState(state, metadata);
+      assertGeneralManagementExpansionState(state);
+      const metadata = resolveLegacyEnterpriseMetadata(state, legacyEnterpriseMetadata);
 
       let changed = false;
       if (!hasColumn("enterprises", "name")) {
