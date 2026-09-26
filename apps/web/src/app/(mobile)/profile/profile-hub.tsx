@@ -8,9 +8,9 @@ import type { StarredRepository } from "@line-work/repository/application/ports/
 import type { RepositorySummary } from "@line-work/repository/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
-import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import styles from "./profile-hub.module.css";
 
 type ProviderProfile = {
@@ -50,7 +50,11 @@ function initials(value: string) {
   return Array.from(value.trim())[0]?.toLocaleUpperCase("zh-TW") ?? "•";
 }
 
-function ResourceIcon({ kind }: { kind: "repositories" | "organizations" | "starred" | "projects" }) {
+function ResourceIcon({
+  kind,
+}: {
+  kind: "repositories" | "organizations" | "starred" | "projects";
+}) {
   const paths = {
     repositories: "M5 4.5h12a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2V4.5ZM7 16h12M9 8h6",
     organizations:
