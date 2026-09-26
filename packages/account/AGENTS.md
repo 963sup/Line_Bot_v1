@@ -7,5 +7,6 @@
 - Login is Account-owned locator state shared by User and Organization resolution; keep stable UserId as identity, keep login/display/profile as mutable projections, and do not use provider display data as Account authority.
 - Shared global-root reservation/collision policy is Namespace-owned. Account normalizes its own login then consumes `@line-work/namespace/root`; do not copy a reserved-root list back into Account.
 - Profile visibility governs Account-authored profile fields only. It does not hide identity existence, grant private access, or replace per-owner authorization checks.
+- Account-owned Achievement awards and contribution-day facts may be projected into the authenticated User Profile; the read surface does not invent award rules, grant missing achievements, or treat presentation activity as authorization evidence.
 - Follow edges are Account-owned social relations between active users; they are not Organization membership, Team participation, Repository access, notification subscription, or authorization evidence.
 - Google linking is optional external mapping: pending link requests remain explicit, one-time and version/expiry-bound. Unlink requires trusted LINE identity and explicit active-User intent; preserve ownership/history, and never merge users by email.
