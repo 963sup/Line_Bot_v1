@@ -7,6 +7,7 @@ import {
   assertMigrationHistoryUnchanged,
   assertRemoteTarget,
   assertReviewedPlan,
+  assertSupabaseRecoveryReadback,
   assertSupabaseRestReadback,
   classifyAccountLoginCompatibility,
   classifyDailyCheckInCompatibility,
@@ -23,7 +24,9 @@ import {
   projectRefFromSupabaseUrl,
   resolveLegacyEnterpriseMetadata,
   supabaseApiReadbackConfig,
+  supabaseManagementRecoveryConfig,
   verifySupabaseApiReadback,
+  verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
 
 test("classifyPlan allows only known automatic DDL", () => {
@@ -113,6 +116,11 @@ test("parseArgs defaults to sync and exposes one explicit manual authorization f
     api: false,
   });
   assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowManual: false, api: false });
+  assert.deepEqual(parseArgs(["recovery"]), {
+    command: "recovery",
+    allowManual: false,
+    api: false,
+  });
   assert.deepEqual(parseArgs(["sync", "--allow-manual"]), {
     command: "sync",
     allowManual: true,
@@ -167,6 +175,128 @@ test("Supabase API readback config is explicit and same-target", () => {
       }),
     /SUPABASE_URL/,
   );
+});
+
+test("Supabase recovery config binds Management API access to the confirmed project", () => {
+  assert.deepEqual(
+    supabaseManagementRecoveryConfig({
+      SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+      SUPABASE_CONFIRM_PROJECT: "nmssogphayjymjpbnrxv",
+      SUPABASE_ACCESS_TOKEN: "management-token",
+    }),
+    {
+      projectRef: "nmssogphayjymjpbnrxv",
+      accessToken: "management-token",
+    },
+  );
+  assert.throws(
+    () =>
+      supabaseManagementRecoveryConfig({
+        SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+        SUPABASE_CONFIRM_PROJECT: "nmssogphayjymjpbnrxv",
+      }),
+    /SUPABASE_ACCESS_TOKEN/,
+  );
+  assert.throws(
+    () =>
+      supabaseManagementRecoveryConfig({
+        SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+        SUPABASE_CONFIRM_PROJECT: "other",
+        SUPABASE_ACCESS_TOKEN: "management-token",
+      }),
+    /exactly match/,
+  );
+});
+
+test("Supabase recovery readback accepts PITR/WALG or a completed managed backup", () => {
+  assert.deepEqual(
+    assertSupabaseRecoveryReadback({
+      pitr_enabled: true,
+      walg_enabled: true,
+      backups: [],
+    }),
+    {
+      provider: "supabase",
+      pitrEnabled: true,
+      walgEnabled: true,
+      completedBackupCount: 0,
+      latestCompletedBackupAt: null,
+      latestCompletedBackupPhysical: null,
+    },
+  );
+
+  assert.deepEqual(
+    assertSupabaseRecoveryReadback({
+      pitr_enabled: false,
+      walg_enabled: false,
+      backups: [
+        {
+          status: "COMPLETED",
+          inserted_at: "2026-09-25T12:00:00Z",
+          is_physical_backup: true,
+        },
+        {
+          status: "FAILED",
+          inserted_at: "2026-09-26T12:00:00Z",
+          is_physical_backup: true,
+        },
+      ],
+    }),
+    {
+      provider: "supabase",
+      pitrEnabled: false,
+      walgEnabled: false,
+      completedBackupCount: 1,
+      latestCompletedBackupAt: "2026-09-25T12:00:00Z",
+      latestCompletedBackupPhysical: true,
+    },
+  );
+
+  assert.throws(
+    () =>
+      assertSupabaseRecoveryReadback({
+        pitr_enabled: false,
+        walg_enabled: false,
+        backups: [],
+      }),
+    /recovery is unavailable/i,
+  );
+  assert.throws(() => assertSupabaseRecoveryReadback({}), /unexpected response/i);
+});
+
+test("Supabase recovery readback calls the exact Management API target without leaking token", async () => {
+  const calls = [];
+  const result = await verifySupabaseRecoveryReadback(
+    { projectRef: "nmssogphayjymjpbnrxv", accessToken: "management-token" },
+    async (url, options) => {
+      calls.push({
+        url,
+        authorization: options.headers.Authorization,
+        hasSignal: Boolean(options.signal),
+      });
+      return Response.json({
+        pitr_enabled: false,
+        walg_enabled: false,
+        backups: [
+          {
+            status: "COMPLETED",
+            inserted_at: "2026-09-25T12:00:00Z",
+            is_physical_backup: false,
+          },
+        ],
+      });
+    },
+  );
+
+  assert.deepEqual(calls, [
+    {
+      url: "https://api.supabase.com/v1/projects/nmssogphayjymjpbnrxv/database/backups",
+      authorization: "Bearer management-token",
+      hasSignal: true,
+    },
+  ]);
+  assert.equal(result.projectRef, "nmssogphayjymjpbnrxv");
+  assert.equal(result.completedBackupCount, 1);
 });
 
 test("Supabase REST readback treats Google provider state as diagnostic evidence", () => {

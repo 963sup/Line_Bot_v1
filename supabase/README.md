@@ -50,6 +50,7 @@ Repository-owned remote commands：
 ```sh
 pnpm schema:remote prepare
 pnpm schema:remote plan
+pnpm schema:remote recovery
 pnpm schema:remote sync
 pnpm schema:remote verify
 pnpm schema:remote verify --api
@@ -105,9 +106,9 @@ Automatic Release 的 plain `sync` 不帶 `--allow-manual`；若 plan 分類為 
 
 ### Manual Supabase Reconciliation
 
-Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql`、`plan.sha256` 與 `plan-provenance.json` 給 operator review；provenance 固定 target project、source SHA、workflow run ID 與 plan SHA-256。`apply` 額外要求該 successful prepare-plan run ID、recovery-readiness attestation、non-secret backup/PITR/restore evidence reference、explicit apply confirmation 與 reviewed SHA-256。Workflow 先從 GitHub Actions API讀回同一 current source SHA 的 prepare-plan run與 retained artifact，驗 provenance/hash完全相符後才重新 prepare、重新產生 current plan；只有 fingerprint 仍完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback與 retained `manual-authorization.json`。
+Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql`、`plan.sha256` 與 `plan-provenance.json` 給 operator review；provenance 固定 target project、source SHA、workflow run ID、plan SHA-256 與 Enterprise owner-confirmed `name/slug` 的 identity fingerprint。`apply` 必須使用同一 owner-confirmed identity，並額外要求 successful prepare-plan run ID、recovery-readiness attestation、explicit apply confirmation 與 reviewed SHA-256。Apply 在任何 destructive write 前先執行 `schema:remote recovery`，用 `SUPABASE_ACCESS_TOKEN` 從 Supabase Management API read back recovery capability；只有 PITR+WALG 或至少一筆 completed managed backup才通過，結果寫入 `recovery-readback.json`。Workflow 再從 GitHub Actions API讀回同一 current source SHA 的 prepare-plan artifact，驗 source/run/plan/identity fingerprint完全一致後才重新 prepare、重新產生 current plan；只有 fingerprint 仍完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback與 retained `manual-authorization.json`，其 authorization綁定 recovery readback hash。
 
-`prepare` 成功不代表 manual contract 已完成；`sync --allow-manual` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation，不冒充 Supabase provider backup/PITR readback。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
+`prepare` 成功不代表 manual contract 已完成；`sync --allow-manual` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation；provider recovery 必須由 `schema:remote recovery` machine readback。Free plan若沒有 managed backup/PITR會 fail closed，不以文字 reference、GitHub artifact或同一 Supabase project內的 Storage 假裝 off-site recovery。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
 兩條 path 都由
 `scripts/supabase/remote.mjs` 擁有 reconciliation semantics，不新增 migration file，也不改寫
 `supabase_migrations.schema_migrations`。
