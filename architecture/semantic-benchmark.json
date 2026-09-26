@@ -435,11 +435,11 @@
     },
     {
       "id": "category-partition",
-      "meaning": "Pinned upstream sync stage materializes already categorized schema data into per-category schema fragments and category-map.json; category ownership is resolved upstream by semantic-category-resolution.",
+      "meaning": "Pinned upstream bucket-by-category stage groups categorized schema items, rewrites cross-category hrefs, writes deterministic schema-<category>.json files, and emits category-map.json.",
       "source": {
         "repository": "github/docs",
         "revision": "18945a31a4f2d97beb6c5c1a7479102e23c25727",
-        "path": "src/graphql/scripts/sync.ts"
+        "path": "src/graphql/scripts/utils/bucket-by-category.ts"
       },
       "outputFamilies": [
         "schema-fragment",
