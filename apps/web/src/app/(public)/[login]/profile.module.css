@@ -59,6 +59,11 @@
   background: transparent;
 }
 
+.profile section.section {
+  border: 0;
+  background: transparent;
+}
+
 .sectionHeading {
   display: flex;
   align-items: center;

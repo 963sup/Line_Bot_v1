@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isOwnProfileLogin } from "../src/app/(public)/_components/profile-viewer-shell";
+import { isOwnProfileLogin } from "../src/app/(public)/_components/profile-viewer";
 
 test("Profile Settings gear is scoped to the current viewer login", () => {
   assert.equal(isOwnProfileLogin("viewer", "viewer"), true);

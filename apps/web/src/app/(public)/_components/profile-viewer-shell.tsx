@@ -7,6 +7,7 @@ import WorkNavigation from "../../_shell/work-navigation";
 import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 import ProfileShare from "./profile-share";
+import { isOwnProfileLogin } from "./profile-viewer";
 import styles from "./profile-viewer-shell.module.css";
 
 type AccountProjection = {
@@ -15,9 +16,6 @@ type AccountProjection = {
   } | null;
 };
 
-export function isOwnProfileLogin(accountLogin: unknown, profileLogin: string) {
-  return typeof accountLogin === "string" && accountLogin === profileLogin;
-}
 
 export default function ProfileViewerShell({
   children,
