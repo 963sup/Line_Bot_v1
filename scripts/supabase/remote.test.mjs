@@ -579,7 +579,6 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
     repositoryStarsTable: true,
     repositoryEffectiveAccessView: true,
     provisionRepositoryFunction: true,
-    permissionSubjectVersionsTable: true,
   };
   assert.equal(classifyRepositoryRuntimeCompatibility(ready), "ready");
 
@@ -594,7 +593,6 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
       repositoryStarsTable: false,
       repositoryEffectiveAccessView: false,
       provisionRepositoryFunction: false,
-      permissionSubjectVersionsTable: false,
     }),
     "repairable",
   );
