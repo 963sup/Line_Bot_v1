@@ -1,8 +1,27 @@
 .shell {
+  --ink: #f0f6fc;
+  --muted: #8b949e;
+  --green: #58a6ff;
+  --green-strong: #79c0ff;
+  --green-soft: #1f6feb2e;
+  --line: #30363d;
+  --surface: #161b22;
+  --surface-muted: #21262d;
+  --canvas: #0d1117;
+  --danger: #f85149;
   min-height: 100dvh;
+  color-scheme: dark;
+  color: var(--ink);
+  background: var(--canvas);
 }
 
 .content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 14px 16px 48px;
+}
+
+:global(.app-shell).shell .content {
   padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 
@@ -51,6 +70,25 @@
   display: inline-flex;
 }
 
+.content .toolbar :global(button.profile-settings-action) {
+  display: inline-grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.content .toolbar :global(button.profile-settings-action:hover),
+.content .toolbar :global(button.profile-settings-action:focus-visible) {
+  background: var(--surface-muted);
+}
+
 .toolbar :global(.profile-share-notice) {
   position: absolute;
   z-index: 20;
@@ -68,8 +106,92 @@
   box-shadow: 0 10px 28px #0008;
 }
 
+.content section.resources {
+  display: grid;
+  margin: 28px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.resourceList {
+  display: grid;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.resourceRow {
+  display: grid;
+  min-height: 68px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.resourceRow + .resourceRow {
+  border-top: 1px solid var(--line);
+}
+
+.resourceRow:hover,
+.resourceRow:focus-visible {
+  background: var(--surface-muted);
+}
+
+.resourceRow:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+.resourceRowDisabled {
+  cursor: default;
+}
+
+.resourceRowDisabled:hover {
+  background: transparent;
+}
+
+.resourceIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.resourceIconNeutral {
+  background: #30363d;
+}
+
+.resourceIconOrange {
+  background: #bc4c00;
+}
+
+.resourceIconYellow {
+  background: #9e6a03;
+}
+
+.resourceLabel {
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 550;
+}
+
+.resourceMeta {
+  min-width: 24px;
+  color: var(--muted);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 @media (min-width: 601px) {
-  .content {
+  :global(.app-shell).shell .content {
     padding-bottom: 48px;
   }
 }
