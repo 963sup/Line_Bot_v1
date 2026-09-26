@@ -91,6 +91,18 @@
     "./adapters/postgres/discovery": {
       "types": "./dist/adapters/postgres/discovery.d.ts",
       "default": "./dist/adapters/postgres/discovery.js"
+    },
+    "./application/star-lists": {
+      "types": "./dist/application/star-lists.d.ts",
+      "default": "./dist/application/star-lists.js"
+    },
+    "./application/ports/star-lists": {
+      "types": "./dist/application/ports/star-lists.d.ts",
+      "default": "./dist/application/ports/star-lists.js"
+    },
+    "./adapters/postgres/star-lists": {
+      "types": "./dist/adapters/postgres/star-lists.d.ts",
+      "default": "./dist/adapters/postgres/star-lists.js"
     }
   },
   "files": [

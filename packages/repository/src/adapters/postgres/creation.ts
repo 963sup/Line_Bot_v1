@@ -111,7 +111,7 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
     return this.db.transaction(async (sql) => {
       const owner = await currentOwner(sql, userId, command);
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-        `repository-create:${userId}:${command.requestId}`,
+        `repository-command:${userId}:${command.requestId}`,
       ]);
 
       const previous = (

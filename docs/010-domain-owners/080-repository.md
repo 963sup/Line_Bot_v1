@@ -4,7 +4,7 @@ Repository 是 User 或 Organization 擁有的獨立工作容器，並擁有容�
 
 ## Owns
 
-- Repository identity、visibility、access 與 User → Repository star。
+- Repository identity、visibility、access、User → Repository star，以及 User-owned Repository Star List / List membership。
 - Issue lifecycle、assignment、Label、Repository Milestone、command receipt 與 event history。
 - Discussion thread 與 comment。
 - 由 Repository access/star facts與 immutable Issue events 衍生的 discovery / Trending / Activity projection；projection 不取得新的 business authority。
@@ -13,14 +13,14 @@ Project 只參照 Repository work，不取得 Issue/Discussion authority；Notif
 
 Current runtime 已接線的 Repository resource read 包含：
 
-- Repository owner/name read 與 accessible Repository discovery。
+- Repository owner/name read 與 accessible Repository discovery。\n- Repository Star List：User 對自己 current Stars 的 curated grouping；List create 預設 private、publish 顯式切為 public，item add 要求 current Star + current Repository access，List membership 不授予 Repository access。
 - Explore discovery read：Trending 以目前仍有效且最近 7 天建立的 Star 數優先，再以總 Star/name/id 穩定排序；Activity 第一版只投影 immutable Issue lifecycle events，且每次 read 重新核驗 current effective Repository access。
 - Issue list/detail read 與 Issue command runtime。
 - Discussion list/detail/comment read。
 - Repository Label collection read。
 - Repository Milestone list/detail read。
 
-Repository create 已啟用；rename/visibility、direct/Team access grant management，以及 Discussion、Label、Repository Milestone、IssueLabel 的一般 write management 尚未宣稱 runtime 完成。Create 第一版固定 `private`：active User 可在自己名下建立；Organization-owned Repository 必須由 current effective `OrganizationOwner` 建立，且同一 transaction 建立 creator 的 direct `admin` access。User-owned Repository 依 existing effective-access projection由 current active owner取得 admin，不重複寫 direct grant。Current runtime writes包含 Repository create、Issue create/transition（含 Repository-local issue number allocation）與 Repository star/unstar。
+Repository create 已啟用；rename/visibility、direct/Team access grant management，以及 Discussion、Label、Repository Milestone、IssueLabel 的一般 write management 尚未宣稱 runtime 完成。Create 第一版固定 `private`：active User 可在自己名下建立；Organization-owned Repository 必須由 current effective `OrganizationOwner` 建立，且同一 transaction 建立 creator 的 direct `admin` access。User-owned Repository 依 existing effective-access projection由 current active owner取得 admin，不重複寫 direct grant。Current runtime writes包含 Repository create、Issue create/transition（含 Repository-local issue number allocation）、Repository star/unstar，以及 Repository Star List create/update/publish/unpublish/item add-remove/delete。
 
 ## Locator
 
@@ -57,13 +57,17 @@ Canonical create surface 是 `/repositories/new`；API 使用 `POST /api/reposit
 - 每個 Issue / Discussion 恰屬一個 Repository。
 - Issue、Discussion、Notification 是不同概念；Discussion/Comment 不觸發 Issue lifecycle transition。
 - Discussion comment 保留 author 與 creation time，不把 conversation 改寫成 Issue history。
-- Star/unstar idempotent，且不授予 Repository access。
+- Star/unstar idempotent，且不授予 Repository access。\n- Repository Star List item 只能存在於同一 owner User 的 current Star 上；Unstar 會以 declarative FK cascade 移除該 Repository 的 List memberships，但不刪除 List。\n- Private List 只對 owner 可讀；public List metadata 可被 discovery 使用，但任何 Repository item 仍以 viewer 的 current visibility/access 重驗，raw hidden item count 不得對 viewer 洩漏。\n- Repository Star List `version` 保護直接 List command concurrency；Star prerequisite 消失造成的 FK cascade 是外部 prerequisite invalidation，不冒充直接 List command version transition。
 - Assignment 與 protected read/write 以 current effective Repository access 判斷。
 - Organization-owned Repository 的 direct/Team grant 仍要求 current Organization qualification。
 - Command 以 stable request identity 防重；conditional transition 使用 expected version。
 - Event/history 是 durable evidence，不由 current snapshot 覆寫。
 - Discovery ranking/read model 只衍生既有 Repository/Star/Event truth；不得反向成為 Repository、Star 或 Issue authority。
 - Activity event 曾經存在不代表現在仍可見；exposure 永遠以 current effective Repository access 重驗。
+
+## GitHub benchmark
+
+Pinned GitHub Docs revision `18945a31a4f2d97beb6c5c1a7479102e23c25727` 的 [Saving repositories with stars](https://github.com/github/docs/blob/18945a31a4f2d97beb6c5c1a7479102e23c25727/content/get-started/exploring-projects-on-github/saving-repositories-with-stars.md) 提供 List curation benchmark：List 組織已 Star Repository，支援 create/add/remove/edit/delete，private Repository 只對具有 read access 的 viewer 顯示。本產品採用 curation 與 minimum-disclosure principle；visibility lifecycle、command/replay、URL 與 persistence 仍由本產品 current contracts 決定，不複製 GitHub internal implementation。
 
 ## Mapping
 
