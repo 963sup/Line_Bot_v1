@@ -304,6 +304,26 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "repository-star-list",
+      "canonicalName": "Repository Star List",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "User-owned curated List whose membership references that User's current Repository stars; List membership never grants Repository access.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-star-list-item",
+      "canonicalName": "Repository Star List Item",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-owned List membership that references one Repository through the List owner's current Star relationship.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "issue",
       "canonicalName": "Issue",
       "kind": "authoritative",
@@ -1163,6 +1183,8 @@
         "create-repository",
         "manage-repository-access",
         "manage-repository-stars",
+        "manage-repository-star-lists",
+        "read-repository-discovery",
         "manage-issues",
         "manage-discussions",
         "manage-repository-labels",
@@ -1300,10 +1322,51 @@
       }
     },
     {
+      "id": "manage-repository-star-lists",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage replay-safe User curated Lists over the User's current Repository stars.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User-owned private/public Repository Star List lifecycle and Star-backed membership",
+        "sourcePaths": [
+          "packages/repository/src/application/star-lists.ts",
+          "packages/repository/src/application/ports/star-lists.ts",
+          "packages/repository/src/adapters/postgres/star-lists.ts"
+        ],
+        "publicExports": [
+          "./application/star-lists",
+          "./application/ports/star-lists",
+          "./adapters/postgres/star-lists"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/lists/route.ts",
+          "apps/web/src/app/api/repositories/lists/[listId]/route.ts",
+          "apps/web/src/app/(mobile)/repositories/lists/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/lists/new/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/star-lists.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts"
+        ],
+        "note": "Create is private by default; publish is explicit. Items require the owner Star and current access when added. Unstar removes matching memberships through the declared Star foreign-key invariant. List visibility never grants Repository access."
+      }
+    },
+    {
       "id": "read-repository-discovery",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Read authorized Repository Trending and recent Issue activity projections without creating a new Explore authority.",
+      "intent": "Read authorized Repository Trending, recent Issue activity and published Repository Star List projections without creating a new Explore authority.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1315,7 +1378,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository-owned discovery read model over current access, active Star timing/counts and immutable Issue event evidence",
+        "scope": "Repository-owned discovery read model over current access, active Star timing/counts, immutable Issue event evidence and published Star Lists",
         "sourcePaths": [
           "packages/repository/src/application/discovery.ts",
           "packages/repository/src/application/ports/discovery.ts"
@@ -1327,13 +1390,16 @@
         ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
-          "apps/web/src/app/(mobile)/explore/page.tsx"
+          "apps/web/src/app/(mobile)/explore/page.tsx",
+          "apps/web/src/app/api/repositories/lists/discover/route.ts",
+          "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/discovery.test.ts",
-          "apps/web/test/profile-discovery-api.test.ts"
+          "apps/web/test/profile-discovery-api.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts"
         ],
-        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity currently projects Issue events only and rechecks current effective Repository access before exposure."
+        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity projects Issue events only. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only."
       }
     },
     {
@@ -2422,6 +2488,16 @@
       }
     },
     {
+      "id": "repository-star-list-id",
+      "concept": "repository-star-list",
+      "status": "active",
+      "fields": ["listId"],
+      "scope": "repository-star-list-global-id",
+      "scopeAuthority": "repository",
+      "routeFiles": ["apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"],
+      "note": "Repository Star List uses its opaque stable ListId as the detail locator under the already-reserved /repositories root; the locator never grants Repository or List authority."
+    },
+    {
       "id": "issue-number",
       "concept": "issue",
       "status": "active",
@@ -2652,6 +2728,7 @@
         "organization-login",
         "enterprise-slug",
         "repository-owner-name",
+        "repository-star-list-id",
         "issue-number",
         "discussion-opaque-id",
         "repository-milestone-number",
