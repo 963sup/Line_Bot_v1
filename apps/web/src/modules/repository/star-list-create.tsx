@@ -22,21 +22,27 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
   const [error, setError] = useState("");
 
   function clear() {
+    setName("");
+    setDescription("");
+    setPending(null);
+    setBusy(false);
     setError("");
   }
 
   async function session() {
     const token = await liffClient.session(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
-    return token;
+    const profile = await liffClient.profile();
+    if (!profile.userId) throw Object.assign(new Error("LINE 身分不可用，請重新登入。"), { status: 401 });
+    return { token, subject: profile.userId };
   }
 
   async function load() {
     setBusy(true);
     setError("");
     try {
-      await session();
-      const stored = readPendingRepositoryStarListCreate(window.localStorage);
+      const current = await session();
+      const stored = readPendingRepositoryStarListCreate(window.localStorage, current.subject);
       if (stored) {
         setPending(stored);
         setName(stored.name);
@@ -52,17 +58,17 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
   async function execute(command: RepositoryStarListCreateCommand) {
     setBusy(true);
     setError("");
-    setPending(command);
-    writePendingRepositoryStarListCreate(window.localStorage, command);
     try {
-      const token = await session();
+      const current = await session();
+      setPending(command);
+      writePendingRepositoryStarListCreate(window.localStorage, current.subject, command);
       const response = await fetch("/api/repositories/lists", {
         method: "POST",
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
         headers: {
           "content-type": "application/json",
-          "x-line-token": token,
+          "x-line-token": current.token,
         },
         body: JSON.stringify(command),
       });
@@ -71,17 +77,32 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
       };
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) {
-          clearPendingRepositoryStarListCreate(window.localStorage);
-          setPending(null);
+          if (
+            clearPendingRepositoryStarListCreate(
+              window.localStorage,
+              current.subject,
+              command.requestId,
+            )
+          ) {
+            setPending(null);
+          }
         }
         throw Object.assign(new Error(payload.error ?? "List 建立失敗。"), {
           status: response.status,
         });
       }
       if (!payload.id || payload.deleted) throw new Error("List 建立回應不完整。");
-      clearPendingRepositoryStarListCreate(window.localStorage);
-      setPending(null);
-      if ((await liffClient.session(liffId)) !== token) {
+      if (
+        clearPendingRepositoryStarListCreate(
+          window.localStorage,
+          current.subject,
+          command.requestId,
+        )
+      ) {
+        setPending(null);
+      }
+      const latest = await session();
+      if (latest.token !== current.token || latest.subject !== current.subject) {
         clear();
         return;
       }
