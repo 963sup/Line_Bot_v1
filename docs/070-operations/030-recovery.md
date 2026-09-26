@@ -6,7 +6,7 @@ Recovery 以不遺失已確認業務資料、不復活已撤銷資格、不破�
 
 ## Backup requirements
 
-針對實際服務方案確認 backup capability、retention、cost、RPO 與 RTO；文件與 provider 預設值不能代替指定環境驗證。
+針對實際服務方案確認 backup capability、retention、cost、RPO 與 RTO；文件與 provider 預設值不能代替指定環境驗證。Destructive/data-sensitive manual reconciliation 至少要保存 non-secret provider backup/PITR/restore evidence reference 與 operator recovery attestation；reference 只提供可追溯性，不等於 machine-verified provider recovery capability。沒有可追溯 recovery evidence 時不得把 apply 視為已授權。
 
 隔離 restore 至少核對：
 
