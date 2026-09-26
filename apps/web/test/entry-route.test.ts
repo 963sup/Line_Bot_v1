@@ -15,6 +15,7 @@ test("every published operation survives LINE login and resolves to the canonica
     partners: "/partners",
     feedback: "/feedback",
     membership: "/settings",
+    profile: "/profile",
     records: "/history",
     register: "/membership/register",
     restore: "/membership/restore",
@@ -45,7 +46,7 @@ test("primary LIFF redirect waits; restored intent selects only explicit operati
   assert.equal(entryRoute("https://example.com/expenses"), "home");
   assert.equal(entryRoute("https://example.com/expenses?membership=1"), "membership");
   assert.equal(entryRoute("https://example.com/?attendance=1"), "attendance");
-  for (const route of ["repositories", "partners", "feedback", "clockIn", "clockOut"] as const) {
+  for (const route of ["repositories", "partners", "feedback", "profile", "clockIn", "clockOut"] as const) {
     assert.equal(entryRoute(`https://example.com/?${route}=1`), route);
     assert.equal(entryRoute(`https://example.com/?${route}=1&membership=1`), "invalid");
     assert.equal(
