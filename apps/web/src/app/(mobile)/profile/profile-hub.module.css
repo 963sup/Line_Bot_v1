@@ -273,7 +273,7 @@
 .resourceList {
   display: grid;
   margin: 24px -16px 0;
-  border-top: 1px solid #21262d;
+  border-top: 12px solid #010409;
   border-bottom: 1px solid #21262d;
 }
 
