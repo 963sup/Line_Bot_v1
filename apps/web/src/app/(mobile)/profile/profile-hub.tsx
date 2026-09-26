@@ -194,7 +194,7 @@ export default function ProfileHub({ liffId }: { liffId: string }) {
   const title =
     snapshot?.profile?.displayName ??
     snapshot?.provider?.displayName ??
-    (login ? `@${login}` : "Profile");
+    (login ? login : "Profile");
   const providerStatus = snapshot?.provider?.statusMessage?.trim();
 
   return (
