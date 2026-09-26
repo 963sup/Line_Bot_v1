@@ -2332,3 +2332,30 @@ summary:focus-visible {
 .app-shell .nav-icon svg {
   display: block;
 }
+
+
+.public-profile-identity {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.public-profile-avatar {
+  display: grid;
+  width: 88px;
+  height: 88px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green-strong);
+  font-size: 36px;
+  font-weight: 750;
+  line-height: 1;
+  user-select: none;
+}
+
+.public-profile-identity .page-heading {
+  width: 100%;
+  margin-bottom: 0;
+}

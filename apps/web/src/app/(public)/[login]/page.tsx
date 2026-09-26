@@ -9,6 +9,15 @@ import { publicRepositories } from "../_composition/repository.server";
 
 export const dynamic = "force-dynamic";
 
+function ProfileAvatar({ label }: { label: string }) {
+  const initial = Array.from(label.trim())[0]?.toLocaleUpperCase("zh-TW") ?? "•";
+  return (
+    <div className="public-profile-avatar" aria-hidden="true">
+      {initial}
+    </div>
+  );
+}
+
 async function repositoryProjection(login: string) {
   return publicRepositories().listByOwner(login, 6);
 }
@@ -79,11 +88,14 @@ export default async function Page({ params }: { params: Promise<{ login: string
   return (
     <main className="app-content">
       <p className="eyebrow">User</p>
-      <PageHeading
-        title={profile?.displayName ?? `@${user.login}`}
-        description={`@${user.login}`}
-        actions={<ProfileShare />}
-      />
+      <div className="public-profile-identity">
+        <ProfileAvatar label={profile?.displayName ?? user.login} />
+        <PageHeading
+          title={profile?.displayName ?? `@${user.login}`}
+          description={`@${user.login}`}
+          actions={<ProfileShare />}
+        />
+      </div>
       {profile?.bio && <p>{profile.bio}</p>}
       <RepositorySection repositories={repositories} />
     </main>

@@ -18,7 +18,7 @@ test("profile use case owns presentation metadata only", async () => {
             userId: "user-a",
             displayName: "Alice",
             bio: null,
-            avatarRef: null,
+            avatarRef: "profile-avatar-a",
             visibility: "private",
             version: 1,
             createdAt: 10,
@@ -128,7 +128,11 @@ test("public profile visibility does not control User identity existence", async
     now: () => 10,
   });
 
-  assert.equal((await profiles.publicByUserId("user-a"))?.userId, "user-a");
+  assert.deepEqual(await profiles.publicByUserId("user-a"), {
+    displayName: "Alice",
+    bio: null,
+    avatarRef: "profile-avatar-a",
+  });
   current = { ...publicProfile, visibility: "private" };
   assert.equal(await profiles.publicByUserId("user-a"), null);
 });
