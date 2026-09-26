@@ -1052,7 +1052,8 @@
           "./application/ports/achievements"
         ],
         "entrypoints": [
-          "apps/web/src/app/api/profile/achievements/route.ts"
+          "apps/web/src/app/api/profile/achievements/route.ts",
+          "apps/web/src/app/(mobile)/profile/page.tsx"
         ],
         "testPaths": [
           "packages/account/test/achievements.test.ts",
