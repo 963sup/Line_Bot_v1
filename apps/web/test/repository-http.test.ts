@@ -32,13 +32,12 @@ test("issue delivery rejects wrong origin, oversized body and malformed JSON", a
   }
 });
 
-test("repository entry preserves only fixed issue view intents without credentials", () => {
-  for (const view of ["all", "mine", "created"]) {
-    const href = `https://example.com/?repositories=1&issueView=${view}&token=secret`;
-    assert.equal(entryDestination(href), `/repositories?issueView=${view}`);
-    assert.equal(new URL(loginReturnUrl(href)).searchParams.get("issueView"), view);
-    assert.equal(new URL(loginReturnUrl(href)).searchParams.has("token"), false);
-  }
+test("Repository entry keeps collection intent but drops stale Issue-view state", () => {
+  const href = "https://example.com/?repositories=1&issueView=mine&token=secret";
+  assert.equal(entryDestination(href), "/repositories");
+  const returned = new URL(loginReturnUrl(href));
+  assert.equal(returned.searchParams.has("issueView"), false);
+  assert.equal(returned.searchParams.has("token"), false);
   assert.equal(
     entryDestination("https://example.com/?repositories=1&issueView=https://evil.example"),
     "/repositories",

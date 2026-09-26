@@ -68,8 +68,11 @@ test("primary LIFF redirect waits; restored intent selects only explicit operati
 });
 
 test("login keeps supported view parameters but drops ambiguous views and credentials", () => {
+  assert.equal(
+    loginReturnUrl("https://example.com/repositories?issueView=mine&code=secret#token"),
+    "https://example.com/repositories",
+  );
   for (const [path, key, values] of [
-    ["repositories", "issueView", ["all", "mine", "created"]],
     ["notifications", "notificationView", ["all", "unread"]],
     ["partners", "partnerView", ["news", "directory", "referrals"]],
   ] as const) {

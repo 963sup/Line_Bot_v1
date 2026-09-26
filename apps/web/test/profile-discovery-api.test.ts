@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { follows, profiles } from "../src/app/api/_composition/account.server";
+import { repositoryCollection } from "../src/app/api/_composition/repository-collection.server";
 import { repositoryStars } from "../src/app/api/_composition/repository-stars.server";
 import { GET as followsGet, POST as followsPost } from "../src/app/api/follows/route";
 import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/route";
+import { GET as repositoriesGet } from "../src/app/api/repositories/route";
 import { GET as exploreGet, POST as explorePost } from "../src/app/api/repositories/explore/route";
 import { GET as starredGet } from "../src/app/api/repositories/starred/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
@@ -29,6 +31,14 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
   const followers = mock.method(follows, "followers", async () => []);
   const following = mock.method(follows, "following", async () => []);
   const follow = mock.method(follows, "follow", async () => {});
+  const accessible = mock.method(repositoryCollection, "accessible", async () => [
+    {
+      id: "repository-a",
+      ownerLogin: "acme",
+      name: "Repository A",
+      capability: "read" as const,
+    },
+  ]);
   const explore = mock.method(repositoryStars, "explore", async () => [
     {
       id: "repository-a",
@@ -122,6 +132,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
       200,
     );
 
+    assert.equal((await repositoriesGet(request("/api/repositories"))).status, 200);
     assert.equal((await exploreGet(request("/api/repositories/explore"))).status, 200);
     assert.equal((await starredGet(request("/api/repositories/starred"))).status, 200);
     assert.equal(
@@ -141,6 +152,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(followers.mock.callCount(), 1);
     assert.equal(following.mock.callCount(), 1);
     assert.equal(follow.mock.callCount(), 1);
+    assert.equal(accessible.mock.callCount(), 1);
     assert.equal(explore.mock.callCount(), 1);
     assert.equal(starred.mock.callCount(), 1);
     assert.equal(star.mock.callCount(), 1);
@@ -151,6 +163,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     followers.mock.restore();
     following.mock.restore();
     follow.mock.restore();
+    accessible.mock.restore();
     explore.mock.restore();
     starred.mock.restore();
     star.mock.restore();

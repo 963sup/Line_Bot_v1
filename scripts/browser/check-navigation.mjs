@@ -88,6 +88,15 @@ async function run() {
       posts.push({ path: url.pathname, body: request.postDataJSON() });
     else reads.push(url.pathname + url.search);
 
+    if (url.pathname === "/api/repositories") {
+      return route.fulfill({
+        json: {
+          items: [
+            { id: repositoryId, ownerLogin: "acme", name: "Operations", capability: "admin" },
+          ],
+        },
+      });
+    }
     if (url.pathname === "/api/issues") {
       if (request.method() === "POST") return route.fulfill({ json: { issue } });
       return route.fulfill({
@@ -148,7 +157,7 @@ async function run() {
 
     await page.goto(`${base}/?liff.state=%3Fmembership%3D1`);
     await expect(page).toHaveURL(`${base}/settings?google=link`);
-    await page.getByRole("heading", { name: "Profile", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
     await expect(page.getByRole("heading", { name: "讓每天的工作，更有條理。" })).toHaveCount(0);
 
     await page.goto(`${base}/home`);
@@ -156,14 +165,12 @@ async function run() {
     await expect(page.locator(".member-avatar")).toHaveCount(1);
 
     await page.goto(`${base}/repositories`);
-    await page.getByRole("heading", { name: "儲存庫", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Repositories", exact: true }).waitFor();
     await expect(page.locator(".member-avatar")).toHaveCount(0);
-    const issueLink = page.getByRole("link", {
-      name: new RegExp(`^${issue.title}\\s+待承接$`),
-    });
-    await expect(issueLink).toHaveAttribute("href", `/acme/Operations/issues/${issueNumber}`);
-    await issueLink.click();
-    await expect(page).toHaveURL(`${base}/acme/Operations/issues/${issueNumber}`);
+    const repositoryLink = page.getByRole("link", { name: /acme\/Operations/ });
+    await expect(repositoryLink).toHaveAttribute("href", "/acme/Operations");
+
+    await page.goto(`${base}/acme/Operations/issues/${issueNumber}`);
     await page.getByRole("heading", { name: "Issue", exact: true }).waitFor();
     await page.getByRole("heading", { name: issue.title, exact: true }).waitFor();
     const issueBackLink = page.getByRole("link", { name: "← 返回 Issues", exact: true });
@@ -180,6 +187,7 @@ async function run() {
     await page.getByRole("button", { name: "標示為已讀", exact: true }).click();
     await page.getByText("已讀", { exact: true }).waitFor();
 
+    assert.ok(reads.some((value) => value.startsWith("/api/repositories")));
     assert.ok(reads.some((value) => value.startsWith("/api/issues")));
     assert.ok(reads.some((value) => value.startsWith("/api/notifications")));
     assert.deepEqual(
