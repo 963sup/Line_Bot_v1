@@ -90,7 +90,7 @@ Data Boundary
 supabase/schemas
 ```
 
-查 mapping 使用 [Architecture](../../architecture/README.md) 的 `pnpm semantic explain`、`pnpm semantic plan`、`pnpm boundaries` 與 schema commands；不要從 folder name猜。
+查 mapping 使用 [Architecture](../../architecture/README.md) 的 `pnpm semantic explain repository`、`pnpm semantic plan "<intent>"`、`pnpm boundaries` 與 schema commands；不要從 folder name猜。
 
 ## Stop rule
 

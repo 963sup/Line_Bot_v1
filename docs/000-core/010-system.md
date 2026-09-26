@@ -37,6 +37,7 @@ Provider proof、UI、client state、cache、projection 或 telemetry 都不能�
 - Navigation、page、button、URL 或 provider session 不授權。
 - Loading、empty、forbidden、source failure、not-implemented 與 unknown-result 必須可區分。
 - External entry 只表示開啟外部服務，不能冒充已提交、核准、付款或同步。
+- External destination 不得附加 Member ID、LINE user ID、session/access token 或其他未經 provider/integration contract 定義且非 minimum-necessary 的個人識別資料。
 - AI/provider output 先視為 input/draft；正式 business write 仍經 owner validation、authorization 與 transition。
 - 未啟用能力不得用 fake data、disabled shell 或文案製造已完成的語意。
 
