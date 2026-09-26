@@ -43,7 +43,13 @@ function relativeAge(at: number) {
   return `${Math.floor(hours / 24)}d`;
 }
 
-export default function DiscoveryPanel({ liffId }: { liffId: string }) {
+export default function DiscoveryPanel({
+  liffId,
+  sections = "all",
+}: {
+  liffId: string;
+  sections?: "all" | "trending" | "activity";
+}) {
   const [snapshot, setSnapshot] = useState<DiscoverySnapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -154,7 +160,7 @@ export default function DiscoveryPanel({ liffId }: { liffId: string }) {
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
 
-      <div id="trending" className="explore-section">
+      {sections !== "activity" && <div id="trending" className="explore-section">
         <SectionHeading
           title="Trending Repositories"
           description="最近 7 天仍有效的 Star 優先；沒有近期訊號時再以總 Star 數排序。"
@@ -193,9 +199,9 @@ export default function DiscoveryPanel({ liffId }: { liffId: string }) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
-      <div className="explore-section">
+      {sections !== "trending" && <div className="explore-section">
         <SectionHeading
           title="Activity"
           description="目前只投影仍可存取 Repository 的 durable Issue lifecycle evidence。"
@@ -239,7 +245,7 @@ export default function DiscoveryPanel({ liffId }: { liffId: string }) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
