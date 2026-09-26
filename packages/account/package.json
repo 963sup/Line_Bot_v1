@@ -60,6 +60,14 @@
       "types": "./dist/application/ports/profile.d.ts",
       "default": "./dist/application/ports/profile.js"
     },
+    "./application/profile-activity": {
+      "types": "./dist/application/profile-activity.d.ts",
+      "default": "./dist/application/profile-activity.js"
+    },
+    "./application/ports/profile-activity": {
+      "types": "./dist/application/ports/profile-activity.d.ts",
+      "default": "./dist/application/ports/profile-activity.js"
+    },
     "./domain/login": {
       "types": "./dist/domain/login.d.ts",
       "default": "./dist/domain/login.js"
