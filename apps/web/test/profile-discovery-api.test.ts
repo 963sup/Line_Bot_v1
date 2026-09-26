@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { follows, profiles } from "../src/app/api/_composition/account.server";
+import { achievements, follows, profiles } from "../src/app/api/_composition/account.server";
 import { repositoryCollection } from "../src/app/api/_composition/repository-collection.server";
 import { repositoryDiscovery } from "../src/app/api/_composition/repository-discovery.server";
 import { repositoryStars } from "../src/app/api/_composition/repository-stars.server";
 import { GET as followsGet, POST as followsPost } from "../src/app/api/follows/route";
+import { GET as achievementsGet } from "../src/app/api/profile/achievements/route";
 import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/route";
 import { GET as exploreGet, POST as explorePost } from "../src/app/api/repositories/explore/route";
 import { GET as repositoriesGet } from "../src/app/api/repositories/route";
@@ -27,6 +28,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     updatedAt: 10,
   };
 
+  const achievementRead = mock.method(achievements, "list", async () => []);
   const profileRead = mock.method(profiles, "get", async () => profile);
   const profileUpdate = mock.method(profiles, "update", async () => profile);
   const followers = mock.method(follows, "followers", async () => []);
@@ -92,6 +94,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
 
   try {
     assert.equal((await profileGet(request("/api/profile"))).status, 200);
+    assert.equal((await achievementsGet(request("/api/profile/achievements"))).status, 200);
     assert.equal(
       (
         await profilePost(
@@ -152,6 +155,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
       200,
     );
 
+    assert.equal(achievementRead.mock.callCount(), 1);
     assert.equal(profileRead.mock.callCount(), 1);
     assert.equal(profileUpdate.mock.callCount(), 1);
     assert.equal(followers.mock.callCount(), 1);
@@ -163,6 +167,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(star.mock.callCount(), 1);
   } finally {
     fetch.mock.restore();
+    achievementRead.mock.restore();
     profileRead.mock.restore();
     profileUpdate.mock.restore();
     followers.mock.restore();
