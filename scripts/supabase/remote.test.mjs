@@ -570,6 +570,9 @@ test("Repository runtime recovery derives projection and coordinator from canoni
 test("Repository runtime recovery only auto-migrates a zero-row legacy owner shape", () => {
   const ready = {
     repositoryRows: 0,
+    issueRows: 0,
+    discussionRows: 0,
+    discussionCommentRows: 0,
     ownerAccountIdColumn: true,
     ownerAccountKindColumn: true,
     nextIssueNumberColumn: true,
@@ -578,6 +581,10 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
     repositoryTeamAccessTable: true,
     repositoryStarsTable: true,
     repositoryCommandsTable: true,
+    repositoryLabelsTable: true,
+    repositoryMilestonesTable: true,
+    issueNumberColumn: true,
+    issueMilestoneColumn: true,
     repositoryEffectiveAccessView: true,
     provisionRepositoryFunction: true,
   };
@@ -593,6 +600,10 @@ test("Repository runtime recovery only auto-migrates a zero-row legacy owner sha
       repositoryTeamAccessTable: false,
       repositoryStarsTable: false,
       repositoryCommandsTable: false,
+      repositoryLabelsTable: false,
+      repositoryMilestonesTable: false,
+      issueNumberColumn: false,
+      issueMilestoneColumn: false,
       repositoryEffectiveAccessView: false,
       provisionRepositoryFunction: false,
     }),
