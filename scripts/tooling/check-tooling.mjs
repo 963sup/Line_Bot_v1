@@ -539,16 +539,10 @@ export function validate(root) {
         !step.run.includes("scripts/supabase/remote") &&
         step.run.includes("assets/line/rich-menu/") &&
         step.run.includes("actions/workflows/release.yml/runs") &&
-        step.run.includes("status=completed") &&
-        !step.run.includes("status=success") &&
+        step.run.includes("status=success") &&
+        !step.run.includes("status=completed") &&
         step.run.includes("display_title") &&
         step.run.includes("^Release\\ [0-9a-f]{40}$") &&
-        step.run.includes("actions/runs/$run_id/jobs") &&
-        step.run.includes("filter=latest") &&
-        step.run.includes("job_name") &&
-        step.run.includes("gate") &&
-        step.run.includes("job_conclusion") &&
-        step.run.includes("success") &&
         step.run.includes("merge-base --is-ancestor") &&
         step.run.includes("empty_tree") &&
         step.run.includes("VALIDATED_SHA") &&
@@ -562,7 +556,7 @@ export function validate(root) {
     );
     if (currentMain < 0 || releaseCheckout <= currentMain || detectChanges <= releaseCheckout) {
       errors.push(
-        "CI: Release gate must validate current main, checkout exact validated SHA and detect affected source from a previous completed Release with successful gate",
+        "CI: Release gate must validate current main, checkout exact validated SHA and detect affected source from a previous fully successful Release",
       );
     }
     if (waitsForValidate) {
@@ -663,6 +657,7 @@ export function validate(root) {
     const productionDeploy = deploymentSteps.findIndex(
       (step) =>
         step.run === 'pnpm vercel:deploy:production -- --live --sha "$SHA"' &&
+        JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
         JSON.stringify(step.env ?? {}).includes("VERCEL_TOKEN"),
     );
     if (

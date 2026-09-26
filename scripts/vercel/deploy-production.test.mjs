@@ -4,6 +4,7 @@ import {
   deployProduction,
   parseProductionDeployArgs,
   VERCEL_PRODUCTION_TARGET,
+  verifyProductionReleaseAuthorization,
 } from "./deploy-production.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
@@ -30,6 +31,61 @@ test("production deploy requires explicit live authorization and exact SHA", () 
   assert.throws(() => parseProductionDeployArgs(["--sha", SHA]), /--live/);
   assert.throws(() => parseProductionDeployArgs(["--live", "--sha", "main"]), /exact commit SHA/);
   assert.deepEqual(parseProductionDeployArgs(["--live", "--sha", SHA]), { sha: SHA });
+});
+
+test("production release authorization accepts only a current Release after Supabase success", async () => {
+  const responses = [
+    json({
+      id: 123,
+      path: ".github/workflows/release.yml",
+      event: "workflow_run",
+      head_branch: "main",
+      head_sha: SHA,
+      status: "in_progress",
+    }),
+    json({
+      jobs: [
+        { name: "gate", conclusion: "success" },
+        { name: "supabase", conclusion: "success" },
+      ],
+    }),
+  ];
+  await verifyProductionReleaseAuthorization({
+    token: "test-token",
+    runId: "123",
+    sha: SHA,
+    repository: "963sup/Line_Bot_v1",
+    fetchImpl: async () => responses.shift(),
+  });
+});
+
+test("production release authorization fails closed before Supabase success", async () => {
+  const responses = [
+    json({
+      id: 123,
+      path: ".github/workflows/release.yml",
+      event: "workflow_run",
+      head_branch: "main",
+      head_sha: SHA,
+      status: "in_progress",
+    }),
+    json({
+      jobs: [
+        { name: "gate", conclusion: "success" },
+        { name: "supabase", conclusion: "failure" },
+      ],
+    }),
+  ];
+  await assert.rejects(
+    verifyProductionReleaseAuthorization({
+      token: "test-token",
+      runId: "123",
+      sha: SHA,
+      repository: "963sup/Line_Bot_v1",
+      fetchImpl: async () => responses.shift(),
+    }),
+    /successful gate and Supabase convergence/,
+  );
 });
 
 test("production deploy targets the selected project and reads back the exact SHA", async () => {

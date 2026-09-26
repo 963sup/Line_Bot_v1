@@ -127,7 +127,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/release.yml",
-    "run-name: Release ${{ github.event.workflow_run.head_sha }}\non:\n  workflow_run:\n    workflows: [Validate]\n    types: [completed]\n    branches: [main]\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository\n    steps:\n      - run: echo 'branches/main VALIDATED_SHA superseded before release routing'\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.workflow_run.head_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - run: echo 'actions/workflows/release.yml/runs status=completed display_title ^Release\\ [0-9a-f]{40}$ actions/runs/$run_id/jobs filter=latest job_name gate job_conclusion success merge-base --is-ancestor empty_tree VALIDATED_SHA ^supabase/schemas/.*\\.sql$ assets/line/rich-menu/ GITHUB_OUTPUT'\n  supabase:\n    needs: gate\n    if: needs.gate.result == 'success'\n    concurrency:\n      group: supabase-production-nmssogphayjymjpbnrxv\n      cancel-in-progress: false\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote repair\n      - if: needs.gate.outputs.schema_changed == 'true'\n        run: pnpm schema:remote sync\n      - if: needs.gate.outputs.schema_changed != 'true'\n        run: pnpm schema:remote verify\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/daily-check-in-compat.sql\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/plan.sha256\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: always() && needs.gate.result == 'success' && needs.supabase.result == 'success'\n    env: {}\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ needs.gate.outputs.head_sha }}\n          persist-credentials: false\n      - run: echo 'branches/main superseded before Vercel production deployment'\n      - env:\n          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}\n          SHA: ${{ needs.gate.outputs.head_sha }}\n        run: pnpm vercel:deploy:production -- --live --sha \"$SHA\"\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n          cache: true\n          cache_dependency_path: pnpm-lock.yaml\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
+    "run-name: Release ${{ github.event.workflow_run.head_sha }}\non:\n  workflow_run:\n    workflows: [Validate]\n    types: [completed]\n    branches: [main]\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository\n    steps:\n      - run: echo 'branches/main VALIDATED_SHA superseded before release routing'\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.workflow_run.head_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - run: echo 'actions/workflows/release.yml/runs status=success display_title ^Release\\ [0-9a-f]{40}$ merge-base --is-ancestor empty_tree VALIDATED_SHA ^supabase/schemas/.*\\.sql$ assets/line/rich-menu/ GITHUB_OUTPUT'\n  supabase:\n    needs: gate\n    if: needs.gate.result == 'success'\n    concurrency:\n      group: supabase-production-nmssogphayjymjpbnrxv\n      cancel-in-progress: false\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote repair\n      - if: needs.gate.outputs.schema_changed == 'true'\n        run: pnpm schema:remote sync\n      - if: needs.gate.outputs.schema_changed != 'true'\n        run: pnpm schema:remote verify\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/daily-check-in-compat.sql\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/plan.sha256\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: always() && needs.gate.result == 'success' && needs.supabase.result == 'success'\n    env: {}\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ needs.gate.outputs.head_sha }}\n          persist-credentials: false\n      - run: echo 'branches/main superseded before Vercel production deployment'\n      - env:\n          GITHUB_TOKEN: ${{ github.token }}\n          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}\n          SHA: ${{ needs.gate.outputs.head_sha }}\n        run: pnpm vercel:deploy:production -- --live --sha \"$SHA\"\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n          cache: true\n          cache_dependency_path: pnpm-lock.yaml\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
   );
   write(
     ".github/workflows/supabase-replace.yml",
@@ -472,19 +472,13 @@ test("Release routes schema and workflow changes through one reconciliation pass
   );
   rejects(root, "successful same-repository main push Validate");
 
-  write(".github/workflows/release.yml", workflow.replace("status=completed ", ""));
+  write(".github/workflows/release.yml", workflow.replace("status=success ", ""));
   rejects(root, "detect affected source");
 
-  write(".github/workflows/release.yml", workflow.replace("status=completed", "status=success"));
-  rejects(root, "completed Release with successful gate");
+  write(".github/workflows/release.yml", workflow.replace("status=success", "status=completed"));
+  rejects(root, "previous fully successful Release");
 
   write(".github/workflows/release.yml", workflow.replace("display_title ", ""));
-  rejects(root, "detect affected source");
-
-  write(".github/workflows/release.yml", workflow.replace("actions/runs/$run_id/jobs ", ""));
-  rejects(root, "detect affected source");
-
-  write(".github/workflows/release.yml", workflow.replace("filter=latest ", ""));
   rejects(root, "detect affected source");
 
   write(".github/workflows/release.yml", workflow.replace("merge-base --is-ancestor ", ""));
@@ -534,6 +528,12 @@ test("Release routes schema and workflow changes through one reconciliation pass
     workflow.replace("pnpm schema:remote verify", "echo skip-verify"),
   );
   rejects(root, "auto-sync changed declarative schemas");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace("GITHUB_TOKEN: ${{ github.token }}", "RELEASE_TOKEN: ${{ github.token }}"),
+  );
+  rejects(root, "production deployment must follow Supabase convergence");
 
   write(
     ".github/workflows/release.yml",
