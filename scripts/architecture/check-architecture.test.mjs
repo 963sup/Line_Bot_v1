@@ -166,11 +166,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       "apps/web/src/app/(onboarding)/membership/register/page.tsx",
       "export default function Page() {}",
     );
-    write(
-      root,
-      "apps/web/src/app/(rich-menu)/page.tsx",
-      importing("../(mobile)/_shell/app-shell"),
-    );
+    write(root, "apps/web/src/app/(rich-menu)/page.tsx", importing("../(mobile)/_shell/app-shell"));
     assert.ok(
       (await checkArchitecture(root)).errors.some((error) =>
         error.startsWith("route-group-does-not-borrow-mobile-shell:"),
