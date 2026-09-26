@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeading
         title="組織團隊"
         description="Organization Team 一定屬於 Organization；先選 Organization，再建立或選擇 Team。"
-        back="/settings"
+        back="/home"
       />
       <TeamPanel liffId={lineMiniApp().liffId} />
     </AppShell>

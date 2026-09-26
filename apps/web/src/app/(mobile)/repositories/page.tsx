@@ -8,22 +8,28 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ intent?: string | string[] }>;
+  searchParams: Promise<{ intent?: string | string[]; resource?: string | string[] }>;
 }) {
-  const { intent } = await searchParams;
+  const { intent, resource } = await searchParams;
   const createIssue = intent === "create-issue";
+  const browseResource = resource === "issues" || resource === "discussions" ? resource : undefined;
+  const choosingRepository = createIssue || Boolean(browseResource);
 
   return (
     <AppShell>
       <PageHeading
-        title={createIssue ? "Choose Repository" : "Repositories"}
+        title={choosingRepository ? "Choose Repository" : "Repositories"}
         description={
           createIssue
             ? "選擇具 write 或 admin capability 的 Repository，再建立該 Repository 擁有的 Issue。"
-            : "目前登入者可存取的工作容器；進入後再查看該 Repository 的 Issues、Discussions、Labels 與 Milestones。"
+            : browseResource === "issues"
+              ? "選擇 Repository，再進入該 Repository 的 canonical Issues surface。"
+              : browseResource === "discussions"
+                ? "選擇 Repository，再進入該 Repository 的 canonical Discussions surface。"
+                : "目前登入者可存取的工作容器；進入後再查看該 Repository 的 Issues、Discussions、Labels 與 Milestones。"
         }
         actions={
-          createIssue ? undefined : (
+          choosingRepository ? undefined : (
             <div className="inline-actions">
               <PrimaryLink href="/repositories/new">New Repository</PrimaryLink>
               <PrimaryLink href="/explore" tone="secondary">
@@ -32,11 +38,19 @@ export default async function Page({
             </div>
           )
         }
-        back={createIssue ? "/home" : undefined}
+        back={choosingRepository ? "/home" : undefined}
       />
       <RepositoryList
         liffId={lineMiniApp().liffId}
-        intent={createIssue ? "create-issue" : undefined}
+        intent={
+          createIssue
+            ? "create-issue"
+            : browseResource === "issues"
+              ? "browse-issues"
+              : browseResource === "discussions"
+                ? "browse-discussions"
+                : undefined
+        }
       />
     </AppShell>
   );
