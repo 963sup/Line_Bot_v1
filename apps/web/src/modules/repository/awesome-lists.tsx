@@ -69,8 +69,8 @@ export default function AwesomeLists({ liffId }: { liffId: string }) {
     <div className="discovery-panel">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <p className="discovery-boundary">
-        Awesome Lists 是 public Repository Star Lists 的探索投影；只顯示你當下可見的
-        Repository 與對應數量。
+        Awesome Lists 是 public Repository Star Lists 的探索投影；只顯示你當下可見的 Repository
+        與對應數量。
       </p>
       {busy && <p role="status">正在讀取 Awesome Lists…</p>}
       {error && <p role="alert">{error}</p>}
@@ -82,10 +82,7 @@ export default function AwesomeLists({ liffId }: { liffId: string }) {
           {items.map((item) => (
             <article className="discovery-item star-list-card" key={item.id}>
               <div className="discovery-copy">
-                <Link
-                  className="discovery-repository-link"
-                  href={repositoryStarListPath(item.id)}
-                >
+                <Link className="discovery-repository-link" href={repositoryStarListPath(item.id)}>
                   {item.name}
                 </Link>
                 <p>@{item.ownerLogin}</p>
