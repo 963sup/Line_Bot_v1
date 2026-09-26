@@ -59,27 +59,16 @@ jobs:
           VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           baseline_sha=""
-          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100" \
-            --jq '.workflow_runs[] | [.id, .display_title] | @tsv' > release-runs.tsv
-          while IFS=$'\t' read -r run_id display_title; do
+          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=success&per_page=100" \
+            --jq '.workflow_runs[] | .display_title' > release-runs.txt
+          while IFS= read -r display_title; do
             [[ "$display_title" =~ ^Release\ [0-9a-f]{40}$ ]] || continue
             candidate_sha="${display_title#Release }"
             git cat-file -e "$candidate_sha^{commit}" 2>/dev/null || continue
             git merge-base --is-ancestor "$candidate_sha" "$VALIDATED_SHA" || continue
-            gh api "repos/$REPOSITORY/actions/runs/$run_id/jobs?filter=latest&per_page=100" \
-              --jq '.jobs[] | [.name, .conclusion] | @tsv' > release-run-jobs.tsv
-            gate_succeeded=false
-            while IFS=$'\t' read -r job_name job_conclusion; do
-              if [ "$job_name" = "gate" ] && [ "$job_conclusion" = "success" ]; then
-                gate_succeeded=true
-                break
-              fi
-            done < release-run-jobs.tsv
-            if [ "$gate_succeeded" = "true" ]; then
-              baseline_sha="$candidate_sha"
-              break
-            fi
-          done < release-runs.tsv
+            baseline_sha="$candidate_sha"
+            break
+          done < release-runs.txt
           if [ -n "$baseline_sha" ] && git cat-file -e "$baseline_sha^{commit}" 2>/dev/null; then
             git diff --name-only "$baseline_sha" "$VALIDATED_SHA" > changed-files.txt
           else
