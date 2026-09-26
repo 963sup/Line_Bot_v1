@@ -2684,7 +2684,6 @@ summary:focus-visible {
   grid-template-columns: minmax(0, 1fr);
 }
 
-
 /* Dedicated Repository Trending surface. Filters mirror only current backend semantics. */
 .app-shell .trending-filters {
   display: flex;
