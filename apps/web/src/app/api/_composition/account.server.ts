@@ -2,11 +2,13 @@ import {
   PostgresFollowStore,
   PostgresGoogleLinkStore,
   PostgresLoginDirectoryStore,
+  PostgresUserProfileActivityStore,
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line-work/account/adapters/postgres";
 import { createFollows } from "@line-work/account/application/follows";
 import { createLoginDirectory } from "@line-work/account/application/login-directory";
+import { createUserProfileActivity } from "@line-work/account/application/profile-activity";
 import { createUserProfiles } from "@line-work/account/application/profile";
 import { createGoogleLink, createUser } from "@line-work/account/application/user";
 import { requireActiveUser } from "@line-work/account/domain/user";
@@ -22,6 +24,7 @@ const state = globalThis as typeof globalThis & {
   walletStore?: PostgresWalletStore;
   dailyCheckInStore?: PostgresDailyCheckInStore;
   followStore?: PostgresFollowStore;
+  profileActivityStore?: PostgresUserProfileActivityStore;
   profileStore?: PostgresUserProfileStore;
   loginDirectoryStore?: PostgresLoginDirectoryStore;
 };
@@ -39,6 +42,9 @@ function dailyCheckInStore() {
 }
 function followStore() {
   return (state.followStore ??= new PostgresFollowStore());
+}
+function profileActivityStore() {
+  return (state.profileActivityStore ??= new PostgresUserProfileActivityStore());
 }
 function profileStore() {
   return (state.profileStore ??= new PostgresUserProfileStore());
@@ -82,6 +88,10 @@ export const profiles = createUserProfiles({
   activeUser: activeLineUser,
   store: profileStore,
   now: () => Date.now(),
+});
+export const profileActivity = createUserProfileActivity({
+  activeUser: activeLineUser,
+  store: profileActivityStore,
 });
 
 export function getUser(subject: string) {
