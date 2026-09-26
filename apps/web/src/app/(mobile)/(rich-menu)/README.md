@@ -18,6 +18,8 @@ Rich Menu
 │
 └─ Center entry
    └─ 工時紀錄（Time Tracking）
+      ├─ 開始工作（Start）
+      └─ 結束工作（Stop）
 ```
 
 ## Ownership map
@@ -29,7 +31,7 @@ Rich Menu
 | 工作台 | Cross-owner application composition |
 | 協作空間 | Collaboration composition over existing owner capabilities |
 | 訊息中心 | Notifications recipient projection |
-| 工時紀錄（Time Tracking） | Time Tracking capability entry; clock-in / clock-out remain commands within the Time Tracking-owned surface |
+| 工時紀錄（Time Tracking） | Time Tracking entry; `開始工作（Start）` starts a tracked work interval and `結束工作（Stop）` ends it. Current underlying business authority remains Attendance until a separately validated domain migration. |
 
 ## Current implementation rule
 
