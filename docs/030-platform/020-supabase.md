@@ -92,7 +92,7 @@ Repository-owned remote reconciliation使用 `POSTGRES_URL_NON_POOLING`，並以
 
 Current commands：
 
-- `repair`：metadata-free、idempotent compatibility repair；只恢復可由 current source完整決定的 runtime-required surface。
+- `repair`：metadata-free、idempotent compatibility repair；只恢復可由 current source 完整決定的 runtime-required surface。若必須移除 legacy structure，只有同一受鎖 transaction 的 catalog／row-count precondition 證明受影響 business rows = 0 時才允許，完成後仍須證明 row count 不變、RLS／grants／authorization boundary 收斂；存在 retained rows 或需要 business metadata 一律 fail closed。
 - `plan`：由 clean-local desired state比較 exact remote，產生 plan與 fingerprint；`noop / routine / sensitive`只作診斷。
 - `sync`：對完整 generated diff做 bounded transaction apply，然後要求 second diff = 0與 ownership/security readback PASS。
 - `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。
