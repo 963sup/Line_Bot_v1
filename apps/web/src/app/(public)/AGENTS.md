@@ -4,7 +4,7 @@
 
 - `/{login}` 是 canonical User/Organization profile composition：先由 directory 分辨 owner，再呈現 owner identity 與各 owner 明確允許的 public projection。Repository 公開列表由 Repository public contract 提供；不得在 page 直接查表或複製 Repository truth。
 - 公開入口與法律頁採簡潔 header＋單欄內容；登入是明確 CTA。Canonical `/{login}` Profile 在 trusted current membership login 與 route login 相同時，可投影 authenticated app shell／Home-active Bottom Navigation；匿名或其他 viewer 不顯示私人工作 tab。Shell 只提供 presentation/navigation，不建立 authorization。
-- Mobile 的 Profile tab 對應 authenticated viewer hub，不取代本層 canonical profile URL。
+- Authenticated viewer hub 使用 `/profile`，不取代本層 canonical `/{login}` profile URL。它可以組合多個 owner 的 self projection，但不能把其 count／empty state 反向變成 identity 或 authorization truth。
 
 ## 現行 URL 與 invariant
 
