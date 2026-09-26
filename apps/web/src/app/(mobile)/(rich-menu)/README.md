@@ -17,7 +17,7 @@ Rich Menu
 │  └─ 訊息中心
 │
 └─ Center entry
-   └─ 出勤
+   └─ 工時紀錄（Time Tracking）
 ```
 
 ## Ownership map
@@ -29,7 +29,7 @@ Rich Menu
 | 工作台 | Cross-owner application composition |
 | 協作空間 | Collaboration composition over existing owner capabilities |
 | 訊息中心 | Notifications recipient projection |
-| 出勤 | Attendance capability entry; clock-in / clock-out remain commands within the Attendance-owned surface |
+| 工時紀錄（Time Tracking） | Time Tracking capability entry; clock-in / clock-out remain commands within the Time Tracking-owned surface |
 
 ## Current implementation rule
 
