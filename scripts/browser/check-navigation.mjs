@@ -40,6 +40,7 @@ async function run() {
   const errors = [];
   const posts = [];
   const reads = [];
+  let membershipLogin = "viewer";
   const repositoryId = "repo-1";
   const issueId = "11111111-1111-4111-8111-111111111111";
   const issueNumber = 1;
@@ -89,7 +90,7 @@ async function run() {
     else reads.push(url.pathname + url.search);
 
     if (url.pathname === "/api/membership") {
-      return route.fulfill({ json: { member: { login: "viewer" } } });
+      return route.fulfill({ json: { member: { login: membershipLogin || null } } });
     }
     if (url.pathname === "/api/repositories") {
       return route.fulfill({
@@ -195,6 +196,22 @@ async function run() {
     await page.goto(`${base}/home`);
     await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
     await expect(page.locator(".member-avatar")).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+      "href",
+      "/viewer",
+    );
+
+    membershipLogin = "";
+    await page.goto(`${base}/home`);
+    await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
+    const locatorRecovery = page.getByRole("link", { name: "設定登入名稱", exact: true });
+    await expect(locatorRecovery).toHaveAttribute("href", "/settings/profile");
+    await locatorRecovery.click();
+    await expect(page).toHaveURL(`${base}/settings/profile`);
+
+    membershipLogin = "viewer";
+    await page.goto(`${base}/home`);
+    await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
     await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
       "href",
       "/viewer",
