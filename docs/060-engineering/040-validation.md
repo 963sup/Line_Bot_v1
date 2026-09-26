@@ -26,7 +26,7 @@ Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的�
 
 `check` 先依 Git 變更責任分流：純 Markdown 只跑 `docs:check`，所有 `AGENTS.md` 視為 tooling metadata 並額外跑 `tooling:check`，純 declarative schema 只跑 `schema:check`；產品／runtime source 進 Biome lint、architecture、Knip deadcode 與 Turbo affected type/test。Knip config／editor tooling 變更也會觸發對應 tooling/deadcode gate。無法可靠判斷範圍時保守退回完整 fast gates。root config / shared dependency 改動可擴張到整個 workspace；手動 filter 必須涵蓋所有 consumer，不以縮小 filter 隱藏跨 package failure。
 
-GitHub Draft pull request 代表 active iteration，validation job 必須 skip，避免每次 checkpoint push 都配置 hosted runner；`ready_for_review` 與 Ready PR 的後續更新才執行 `pnpm check`。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。push 到 `main` 才執行完整 `pnpm validate`。
+GitHub Draft pull request 代表 active iteration，validation job 必須 skip，避免每次 checkpoint push 都配置 hosted runner；`ready_for_review` 轉換代表目前 head 被宣告為 merge candidate，因此同一 exact PR head 會同時取得 `pnpm check` 與完整 `pnpm validate` 證據。Ready PR 後續 `synchronize` 只重新執行 `pnpm check`；因 head SHA 已改變，舊 full-validate 證據不再屬於新 revision，merge 前必須重新轉為 Draft 再 Ready 以取得新 head 的完整驗證。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。push 到 `main` 仍再次執行完整 `pnpm validate`，作為 release routing 的 validated-main evidence。
 
 `validate` 是完整 repository gate，不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收已完成。PR affected check 與 main full validate 是不同證據，不以其中一者冒充另一者。
 
