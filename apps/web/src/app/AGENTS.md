@@ -26,6 +26,7 @@ Current shell 固定四個主目的地與 Bottom Navigation；Account/Profile av
 | [(public)](%28public%29/AGENTS.md) | 公開入口與 `/{login}` User/Organization locator |
 | [(resource)](%28resource%29/AGENTS.md) | `/{login}/{repository}` public/private projection 分流 |
 | [(mobile)](%28mobile%29/AGENTS.md) | Mobile / LINE MINI App 工作台、主要導覽與 authenticated work surfaces |
+| [(rich-menu)](%28rich-menu%29/AGENTS.md) | LINE Rich Menu entry composition；與 `(mobile)` 平行，Route Group 不進 URL，不取得 business truth 或 authorization ownership |
 | [(onboarding)](%28onboarding%29/AGENTS.md) | 註冊、恢復、完成結果 |
 | [(admin)](%28admin%29/AGENTS.md) | 現有管理入口與未開放頁面 |
 | [(system)](%28system%29/AGENTS.md) | callback、Google 交接、不可用結果 |
