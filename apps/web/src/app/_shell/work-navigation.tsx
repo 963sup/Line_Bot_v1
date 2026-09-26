@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 type Destination = {
-  href: string;
+  href: "/home" | "/notifications" | "/explore" | "/assistant";
   label: string;
   exact: boolean;
   icon: ReactNode;
@@ -71,12 +71,18 @@ const items: Destination[] = [
   },
 ];
 
-export default function WorkNavigation() {
+export default function WorkNavigation({
+  activeHref,
+}: {
+  activeHref?: Destination["href"];
+}) {
   const pathname = usePathname();
   return (
     <nav className="work-navigation" aria-label="主要導覽">
       {items.map(({ href, label, icon, exact }) => {
-        const active = pathname === href || (!exact && pathname.startsWith(`${href}/`));
+        const active = activeHref
+          ? href === activeHref
+          : pathname === href || (!exact && pathname.startsWith(`${href}/`));
         return (
           <Link key={href} href={href} aria-current={active ? "page" : undefined}>
             <span className="nav-icon">{icon}</span>

@@ -22,5 +22,11 @@ export function createPublicRepositories(store: PublicRepositoryStore) {
         ? store.listByOwner(login, publicListLimit(limit))
         : Promise.resolve({ items: [], totalCount: 0 });
     },
+    popularByOwner(ownerLogin: string, limit = 6) {
+      const login = accountLoginForRepositoryLocator(ownerLogin);
+      return login
+        ? store.popularByOwner(login, publicListLimit(limit))
+        : Promise.resolve({ items: [], totalCount: 0 });
+    },
   };
 }
