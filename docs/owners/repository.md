@@ -31,4 +31,4 @@ Runtime owner: `packages/repository`. Web presentation: `apps/web/src/modules/re
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
 
-Adjacent owners: [Project](180-project.md) · [Notifications](090-notifications.md) · [Organization](030-organization.md) · [Authorization](../050-security/030-authorization.md)
+Adjacent owners: [Project](project.md) · [Notifications](notifications.md) · [Organization](organization.md) · [Authorization](../reference/security/permissions.md)
