@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  gate:
+  release_plan:
     if: >-
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.conclusion == 'success' &&
@@ -27,11 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
-      head_sha: ${{ steps.changed.outputs.head_sha }}
-      schema_changed: ${{ steps.changed.outputs.schema_changed }}
-      rich_menu_changed: ${{ steps.changed.outputs.rich_menu_changed }}
+      head_sha: ${{ steps.plan.outputs.head_sha }}
+      schema_changed: ${{ steps.plan.outputs.schema_changed }}
+      web_affected: ${{ steps.plan.outputs.web_affected }}
+      rich_menu_changed: ${{ steps.plan.outputs.rich_menu_changed }}
+      rich_menu_requires_web: ${{ steps.plan.outputs.rich_menu_requires_web }}
     steps:
-      - name: Require validated current main before release routing
+      - name: Require validated current main before release planning
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -40,7 +42,7 @@ jobs:
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$VALIDATED_SHA" = "$main_sha" || {
-            echo "Validated commit was superseded before release routing."
+            echo "Validated commit was superseded before release planning."
             exit 1
           }
 
@@ -49,47 +51,116 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
 
-      - name: Detect release-owned source changes
-        id: changed
+      - name: Plan owner-specific external convergence
+        id: plan
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          baseline_sha=""
-          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=success&per_page=100" \
-            --jq '.workflow_runs[] | .display_title' > release-runs.txt
-          while IFS= read -r display_title; do
-            [[ "$display_title" =~ ^Release\ [0-9a-f]{40}$ ]] || continue
-            candidate_sha="${display_title#Release }"
-            git cat-file -e "$candidate_sha^{commit}" 2>/dev/null || continue
-            git merge-base --is-ancestor "$candidate_sha" "$VALIDATED_SHA" || continue
-            baseline_sha="$candidate_sha"
-            break
-          done < release-runs.txt
-          if [ -n "$baseline_sha" ] && git cat-file -e "$baseline_sha^{commit}" 2>/dev/null; then
-            git diff --name-only "$baseline_sha" "$VALIDATED_SHA" > changed-files.txt
-          else
-            empty_tree="$(git hash-object -t tree /dev/null)"
-            git diff --name-only "$empty_tree" "$VALIDATED_SHA" > changed-files.txt
-          fi
+          set -euo pipefail
+
+          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100"             --jq '.workflow_runs[] | [.id, .display_title] | @tsv' > release-runs.tsv
+
+          find_owner_baseline() {
+            local owner="$1"
+            local run_id display_title candidate_sha jobs
+            while IFS=$'	' read -r run_id display_title; do
+              [[ "$display_title" =~ ^Release [0-9a-f]{40}$ ]] || continue
+              candidate_sha="${display_title#Release }"
+              test "$candidate_sha" != "$VALIDATED_SHA" || continue
+              git cat-file -e "$candidate_sha^{commit}" 2>/dev/null || continue
+              git merge-base --is-ancestor "$candidate_sha" "$VALIDATED_SHA" || continue
+              jobs="$(gh api "repos/$REPOSITORY/actions/runs/$run_id/jobs?filter=latest&per_page=100")"
+              case "$owner" in
+                supabase)
+                  jq -e '.jobs[] | select(.name == "supabase" and .conclusion == "success")'                     >/dev/null <<<"$jobs" || continue
+                  ;;
+                deployment)
+                  jq -e '.jobs[] | select(.name == "deployment" and .conclusion == "success")'                     >/dev/null <<<"$jobs" || continue
+                  ;;
+                rich_menu)
+                  jq -e '.jobs[] | select((.name == "rich_menu" or .name == "rich_menu_direct" or .name == "rich_menu_after_deployment") and .conclusion == "success")'                     >/dev/null <<<"$jobs" || continue
+                  ;;
+                *)
+                  echo "Unknown release owner: $owner" >&2
+                  exit 1
+                  ;;
+              esac
+              printf '%s\n' "$candidate_sha"
+              return 0
+            done < release-runs.tsv
+          }
+
+          diff_from() {
+            local baseline="$1"
+            local output="$2"
+            if [ -n "$baseline" ]; then
+              git diff --name-only "$baseline" "$VALIDATED_SHA" > "$output"
+            else
+              empty_tree="$(git hash-object -t tree /dev/null)"
+              git diff --name-only "$empty_tree" "$VALIDATED_SHA" > "$output"
+            fi
+          }
+
+          supabase_baseline="$(find_owner_baseline supabase || true)"
+          deployment_baseline="$(find_owner_baseline deployment || true)"
+          rich_menu_baseline="$(find_owner_baseline rich_menu || true)"
+
+          diff_from "$supabase_baseline" supabase-changed-files.txt
+          diff_from "$deployment_baseline" deployment-changed-files.txt
+          diff_from "$rich_menu_baseline" rich-menu-changed-files.txt
+
           schema_changed=false
           rich_menu_changed=false
-          if grep -Eq '^supabase/schemas/.*\.sql$' changed-files.txt; then
+          web_affected=false
+
+          if grep -Eq '^supabase/schemas/.*\.sql$' supabase-changed-files.txt; then
             schema_changed=true
           fi
-          if grep -Eq '^(assets/line/rich-menu/|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)' changed-files.txt; then
+
+          if grep -Eq '^(assets/line/rich-menu/|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)' rich-menu-changed-files.txt; then
             rich_menu_changed=true
           fi
+
+          if [ -z "$deployment_baseline" ]; then
+            web_affected=true
+          else
+            affected="$(TURBO_SCM_BASE="$deployment_baseline" pnpm exec turbo query affected --tasks build --packages @line-work/web)"
+            affected_count="$(jq -r '.data.affectedTasks.length // (.data.affectedTasks.items | length) // 0' <<<"$affected")"
+            if [ "$affected_count" -gt 0 ]; then
+              grep -Ev '^(docs/|\.github/|\.agents/|\.codex/|architecture/|scripts/|supabase/|assets/line/rich-menu/|apps/web/test/|packages/[^/]+/test/|.*(?:^|/)AGENTS\.md$|.*(?:^|/)README\.md$|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)'                 deployment-changed-files.txt > web-runtime-candidates.txt || true
+              if [ -s web-runtime-candidates.txt ]; then
+                web_affected=true
+              fi
+            fi
+          fi
+
+          rich_menu_requires_web=false
+          if [ "$rich_menu_changed" = true ] && [ "$web_affected" = true ]; then
+            rich_menu_requires_web=true
+          fi
+
           echo "head_sha=$VALIDATED_SHA" >> "$GITHUB_OUTPUT"
           echo "schema_changed=$schema_changed" >> "$GITHUB_OUTPUT"
+          echo "web_affected=$web_affected" >> "$GITHUB_OUTPUT"
           echo "rich_menu_changed=$rich_menu_changed" >> "$GITHUB_OUTPUT"
+          echo "rich_menu_requires_web=$rich_menu_requires_web" >> "$GITHUB_OUTPUT"
 
   supabase:
-    needs: gate
-    if: needs.gate.result == 'success'
+    needs: release_plan
+    if: needs.release_plan.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -100,7 +171,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.gate.outputs.head_sha }}
+          ref: ${{ needs.release_plan.outputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -117,7 +188,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SHA: ${{ needs.gate.outputs.head_sha }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
@@ -133,7 +204,7 @@ jobs:
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
 
       - name: Converge changed declarative schema
-        if: needs.gate.outputs.schema_changed == 'true'
+        if: needs.release_plan.outputs.schema_changed == 'true'
         run: pnpm schema:remote sync
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
@@ -141,7 +212,7 @@ jobs:
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
 
       - name: Verify unchanged declarative schema before publication
-        if: needs.gate.outputs.schema_changed != 'true'
+        if: needs.release_plan.outputs.schema_changed != 'true'
         run: pnpm schema:remote verify
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
@@ -152,7 +223,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: supabase-reconciliation-${{ needs.gate.outputs.head_sha }}
+          name: supabase-reconciliation-${{ needs.release_plan.outputs.head_sha }}
           path: |
             .artifacts/supabase-remote/account-login-compat.sql
             .artifacts/supabase-remote/daily-check-in-compat.sql
@@ -167,17 +238,18 @@ jobs:
           retention-days: 7
 
   deployment:
-    needs: [gate, supabase]
+    needs: [release_plan, supabase]
     if: >-
       always() &&
-      needs.gate.result == 'success' &&
+      needs.release_plan.result == 'success' &&
+      needs.release_plan.outputs.web_affected == 'true' &&
       needs.supabase.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.gate.outputs.head_sha }}
+          ref: ${{ needs.release_plan.outputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -192,7 +264,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SHA: ${{ needs.gate.outputs.head_sha }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
@@ -204,12 +276,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          SHA: ${{ needs.gate.outputs.head_sha }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: pnpm vercel:deploy:production --live --sha "$SHA"
 
-  rich_menu:
-    needs: [gate, deployment]
-    if: needs.gate.outputs.rich_menu_changed == 'true'
+  rich_menu_direct:
+    needs: release_plan
+    if: >-
+      needs.release_plan.result == 'success' &&
+      needs.release_plan.outputs.rich_menu_changed == 'true' &&
+      needs.release_plan.outputs.rich_menu_requires_web != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -218,7 +293,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.gate.outputs.head_sha }}
+          ref: ${{ needs.release_plan.outputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -237,7 +312,55 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SHA: ${{ needs.gate.outputs.head_sha }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
+        run: |
+          main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
+          test "$SHA" = "$main_sha" || {
+            echo "Release was superseded before Rich Menu publication."
+            exit 1
+          }
+
+      - name: Publish Rich Menu desired state
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        run: pnpm line:rich-menu publish all
+
+  rich_menu_after_deployment:
+    needs: [release_plan, deployment]
+    if: >-
+      always() &&
+      needs.release_plan.result == 'success' &&
+      needs.release_plan.outputs.rich_menu_changed == 'true' &&
+      needs.release_plan.outputs.rich_menu_requires_web == 'true' &&
+      needs.deployment.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release_plan.outputs.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo run build --filter='@line-work/web^...'
+      - run: pnpm line:rich-menu preview all
+
+      - name: Require current main before LINE mutation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
