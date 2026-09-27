@@ -98,4 +98,4 @@ Commit 整理不能替代 repository validation，也不能藉 rebase / squash �
 - 一般程式修改：`pnpm check`
 - 合併／發布前：`pnpm validate`
 
-實際驗證責任與證據邊界由 [Validation and tooling entry points](040-validation.md) 擁有。PR 應分開說明本地 static/test/build 與 deployment、remote API、LINE 真機等外部證據。
+實際驗證責任與證據邊界由 [Validation and tooling entry points](validation-pipeline.md) 擁有。PR 應分開說明本地 static/test/build 與 deployment、remote API、LINE 真機等外部證據。
