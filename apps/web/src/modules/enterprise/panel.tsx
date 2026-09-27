@@ -344,8 +344,8 @@ export default function EnterprisePanel({
             >
               <h3>完成 Enterprise identity</h3>
               <p>
-                此 Enterprise 建立於 name / slug 成為必要欄位之前。請由 EnterpriseOwner
-                明確設定 display name 與 canonical URL slug；系統不從 LINE 或 provider metadata 推導。
+                此 Enterprise 建立於 name / slug 成為必要欄位之前。請由 EnterpriseOwner 明確設定
+                display name 與 canonical URL slug；系統不從 LINE 或 provider metadata 推導。
               </p>
               <label>
                 Enterprise name
