@@ -37,7 +37,7 @@ Supabase secret / service-role 類高權限變數即使由 Marketplace 一併注
 
 Web runtime 的 PostgreSQL application connection contract 是 provider-owned `POSTGRES_URL`。Vercel 與 Supabase resource 綁定後由平台同步該值；Vercel serverless runtime 使用 Supavisor transaction pooler（port 6543），business transaction 內立即 `SET LOCAL ROLE line_app`，維持 grants、RLS 與 application data boundary。
 
-Supabase schema/operator reconciliation 與 product runtime 明確解耦：development remote sync 只由 `pnpm schema:remote` 使用 provider-owned `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL` 驗證 exact project；不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
+Supabase schema/operator reconciliation 與 product runtime 明確解耦：production remote mutation 只由 current `main` 的 GitHub Actions Release 呼叫 `pnpm schema:remote repair|sync`，使用 provider-owned `POSTGRES_URL_NON_POOLING` 並以 `SUPABASE_URL` 驗證 exact project；本機與任意 branch 只允許 `plan`、`verify`、`recovery` 等 read-only diagnosis/readback。`prepare` 保留為受控資料轉換 primitive，但不得從本機或任意 branch 對 production 執行；不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
 
 ## RLS / application authorization separation
 
@@ -98,7 +98,7 @@ Current commands：
 - `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。
 - Business identity/data 不由 Supabase reconciliation 補值；需要 owner confirmation 的資料修正必須走 owning domain command。Schema publication 只接受 validated `main` 的 `supabase/schemas/*.sql` desired state，經 Release 呼叫 plain `schema:remote sync` 收斂 remote。
 
-所有 repository-owned remote mutation共用 PostgreSQL advisory lock；GitHub automatic與 manual jobs另共享同一 production resource concurrency。任一 remote write都必須保存必要 plan/readback evidence。
+所有 repository-owned remote mutation只允許 current `main` 的 GitHub Actions Release 授權，並共用 PostgreSQL advisory lock與 production resource concurrency。任一 remote write都必須保存必要 plan/readback evidence。
 
 Supabase migration history不是 current schema authority，也不是 deployment mechanism。Reconciliation不得新增、replay或repair migration history；`supabase_migrations.schema_migrations` fingerprint before/after必須完全相同。
 
