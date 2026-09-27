@@ -479,6 +479,96 @@
         "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
       }
     },
+    "docs/change/migrations/enterprise-organization-workforce-payroll.md": {
+      "outcome": "keep",
+      "baselineBytes": 6320,
+      "maxBytes": 6320,
+      "contentBlob": "1a63ba595eafcfa138522e676afd2bb3340dcb13",
+      "sources": {
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5",
+        "docs/owners/attendance.md": "6ab6a7c7f1cb6f54f3014dc385eafaa9c29df304",
+        "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/migrations/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 525,
+      "maxBytes": 525,
+      "contentBlob": "709a6d0f7e51b8e4f4adab84333ab3cbbe0c5623",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    },
+    "docs/change/proposals/data-target.md": {
+      "outcome": "keep",
+      "baselineBytes": 4593,
+      "maxBytes": 4593,
+      "contentBlob": "5378ca37c05d3dee8126103b4dc265ad6e55c6ae",
+      "sources": {
+        "architecture/data-topology.json": "d8065437794243ca312d94bd35eb74452e880811",
+        "docs/reference/data/boundaries.md": "338d17db73862523956e022c440b72ed997fb338",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/proposals/domain-target.md": {
+      "outcome": "keep",
+      "baselineBytes": 5658,
+      "maxBytes": 5658,
+      "contentBlob": "b0b4c525e4254d907e4f5d9341ac609784288c3c",
+      "sources": {
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/proposals/mobile-presentation-target.md": {
+      "outcome": "keep",
+      "baselineBytes": 3247,
+      "maxBytes": 3247,
+      "contentBlob": "8ace3de23cb399bdf758cb4b4ccfb8ce81b0c42c",
+      "sources": {
+        "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/proposals/security-target.md": {
+      "outcome": "keep",
+      "baselineBytes": 4466,
+      "maxBytes": 4466,
+      "contentBlob": "cf7957efdb8f751a7edfb0f77b8dce42b6285e3d",
+      "sources": {
+        "docs/reference/security/permissions.md": "80a4d7421d29ce34ab87c999e6bc87d2e4f80a72",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1415,
+      "maxBytes": 1415,
+      "contentBlob": "638423cc53c337a365acb23cc8872c0534058bca",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    },
+    "docs/change/risks/active-risks.md": {
+      "outcome": "keep",
+      "baselineBytes": 3282,
+      "maxBytes": 3282,
+      "contentBlob": "50553e863fe1b6634b282f587e277fc4cc3d7d77",
+      "sources": {
+        "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "docs/change/gaps/README.md": "eaf390e6e2aa93f4972e19c6c7636dd2724aec21"
+      }
+    },
+    "docs/change/risks/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 286,
+      "maxBytes": 286,
+      "contentBlob": "06374d92f6892e2918abb416b521ced7ff726c47",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    },
     "docs/facts/sources-of-truth.md": {
       "outcome": "keep",
       "baselineBytes": 1200,
