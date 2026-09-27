@@ -1,6 +1,7 @@
 ---
 name: context-convergence
-description: Machine-tracked convergence for all repository Markdown.
+source: repository
+description: Machine-tracked Markdown convergence.
 ---
 
 # Context convergence
@@ -12,10 +13,10 @@ Use `pnpm docs:convergence`:
 
 - `status` / `next`: coverage / oldest unresolved
 - `begin <path>`: baseline
-- `record <path> <keep|updated|distilled|blocked> [--source <path>]`: close file
-- `retire <path> <deleted|moved|merged> [target]`: close removed file
+- `record <path> <keep|updated|distilled|blocked> [--source <path>]`: close
+- `retire <path> <deleted|moved|merged> [target]`: remove
 - `review-skill <name> <keep|refreshed|blocked>`: imported corpus
-- `complete`: strict zero-unresolved check
+- `complete`: zero-unresolved check
 - `seal`: strict pass → `phase=complete`
 
 Per unit load only applicable AGENTS + authority/freshness evidence; classify truth/instruction/router/reference/change-history/generated-upstream; choose update, distill, move/merge, delete, keep, or upstream refresh.
