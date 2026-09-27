@@ -7,7 +7,7 @@ import {
   releaseSha,
   richMenuChanged,
   schemaChanged,
-  webRuntimeCandidate,
+  publicationOnlyRichMenuSource,
 } from "./release-plan.mjs";
 
 const SHA = "a".repeat(40);
@@ -30,12 +30,12 @@ test("release source classifiers preserve owner boundaries", () => {
   assert.equal(schemaChanged(["scripts/supabase/remote.mjs"]), false);
   assert.equal(richMenuChanged(["assets/line/rich-menu/menu.png"]), true);
   assert.equal(richMenuChanged(["apps/web/src/modules/assistant/rich-menu/definition.ts"]), true);
-  assert.equal(webRuntimeCandidate("apps/web/src/app/page.tsx"), true);
+  assert.equal(publicationOnlyRichMenuSource("apps/web/src/app/page.tsx"), false);
   assert.equal(
-    webRuntimeCandidate("apps/web/src/modules/assistant/rich-menu/definition.ts"),
-    false,
+    publicationOnlyRichMenuSource("apps/web/src/modules/assistant/rich-menu/definition.ts"),
+    true,
   );
-  assert.equal(webRuntimeCandidate("docs/README.md"), false);
+  assert.equal(publicationOnlyRichMenuSource("scripts/runtime/next.mjs"), false);
 });
 
 test("owner baseline advances only on that owner success and ancestry", async () => {
@@ -63,6 +63,43 @@ test("owner baseline advances only on that owner success and ancestry", async ()
     },
   });
   assert.equal(baseline, OLD);
+});
+
+test("Web routing follows Turbo build inputs instead of a scripts denylist", async () => {
+  const runs = [{ id: 6, display_title: `Release ${PREVIOUS}` }];
+  const fetchImpl = async (url) => {
+    const value = String(url);
+    if (value.endsWith("/branches/main")) return json({ commit: { sha: SHA } });
+    if (value.includes("/actions/workflows/release.yml/runs?")) {
+      return json({ workflow_runs: runs });
+    }
+    if (value.includes("/actions/runs/6/jobs?")) {
+      return json({
+        jobs: [
+          { name: "supabase", conclusion: "success" },
+          { name: "deployment", conclusion: "success" },
+          { name: "rich_menu_direct", conclusion: "success" },
+        ],
+      });
+    }
+    throw new Error(`Unexpected URL: ${value}`);
+  };
+
+  const plan = await planRelease({
+    sha: SHA,
+    repository: "963sup/Line_Bot_v1",
+    token: "token",
+    fetchImpl,
+    git: {
+      hasCommit: () => true,
+      isAncestor: () => true,
+      changedFiles: () => ["scripts/runtime/next.mjs"],
+    },
+    turbo: { webBuildAffected: () => true },
+  });
+
+  assert.equal(plan.web_affected, true);
+  assert.equal(plan.rich_menu_changed, false);
 });
 
 test("release plan keeps owner cursors independent and rich menu direct when Web is unchanged", async () => {
