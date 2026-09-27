@@ -14,10 +14,10 @@ User state 是 current human qualification authority。LINE `destination` 是 In
 
 ## Adjacent owners
 
-- [Account target rules](../090-governance/010-decisions/070-account-identity-design.md)
-- [DailyCheckIn rules](160-daily-check-in.md)
-- [Asset](130-asset.md) · [Wallet](140-wallet.md) · [Ledger](150-ledger.md)
-- [External identity mapping](../040-data/050-identity-mapping.md)
-- [LINE identity verification](../030-platform/010-line.md)
-- [Feature permissions](../050-security/030-authorization.md)
-- [Namespace](190-namespace.md)
+- [Account target rules](../change/decisions/account-identity-design.md)
+- [DailyCheckIn rules](daily-check-in.md)
+- [Asset](asset.md) · [Wallet](wallet.md) · [Ledger](ledger.md)
+- [External identity mapping](../reference/data/identity-mapping.md)
+- [LINE identity verification](line-integration.md)
+- [Feature permissions](../reference/security/permissions.md)
+- [Namespace](namespace.md)
