@@ -113,6 +113,9 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@line_bot_v1/project':
+        specifier: workspace:*
+        version: link:../../packages/project
       '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../../packages/repository
@@ -491,7 +494,23 @@ importers:
         version: 5.9.3
 
   packages/project:
+    dependencies:
+      '@line_bot_v1/identity-access':
+        specifier: workspace:*
+        version: link:../identity-access
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
