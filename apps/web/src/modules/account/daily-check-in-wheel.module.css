@@ -26,9 +26,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid #e4ead7;
+  border: 1px solid var(--line, #e4ead7);
   border-radius: 12px;
-  background: #ffffffa8;
+  background: var(--surface, #ffffffa8);
 }
 
 .overlay {
@@ -46,10 +46,11 @@
   max-height: calc(100dvh - 36px);
   overflow: auto;
   padding: 20px;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--line, #ffffff);
   border-radius: 24px;
-  background: #fbfff8;
-  box-shadow: 0 22px 60px #16332b33;
+  background: var(--surface, #fbfff8);
+  color: var(--ink, #16332b);
+  box-shadow: 0 22px 60px #00000055;
 }
 
 .dialog:focus {
@@ -57,7 +58,7 @@
 }
 
 .dialog:focus-visible {
-  outline: 3px solid #087f55;
+  outline: 3px solid var(--green, #087f55);
   outline-offset: 3px;
 }
 
@@ -154,16 +155,16 @@
 
 .result {
   padding: 14px;
-  border: 1px solid #dce8d5;
+  border: 1px solid var(--line, #dce8d5);
   border-radius: 16px;
-  background: #ffffffbf;
+  background: var(--surface-muted, #ffffffbf);
   text-align: center;
 }
 
 .result strong {
   display: block;
   margin-top: 6px;
-  color: #087f55;
+  color: var(--green-strong, #087f55);
   font-size: 28px;
 }
 
@@ -173,8 +174,8 @@
 }
 
 .secondaryAction {
-  background: #edf3ee !important;
-  color: #16332b !important;
+  background: var(--surface-muted, #edf3ee) !important;
+  color: var(--ink, #16332b) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

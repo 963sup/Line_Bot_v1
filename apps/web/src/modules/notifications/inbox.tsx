@@ -98,7 +98,7 @@ export default function Inbox({
 
   return (
     <>
-      <PageHeading title="收件匣" description="查看與你相關的 Issue、Discussion 與系統通知。" />
+      <PageHeading title="Inbox" />
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={() => setBusy(false)} />
       {notificationId ? (
         <Link

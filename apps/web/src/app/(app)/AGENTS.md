@@ -2,7 +2,7 @@
 
 ## GitHub Mobile current slice / remaining target
 
-- Home current 採「我的工作／收藏／快捷入口」分區：Repository、Organization、Enterprise、Team、Attendance、Expense 等只組裝既有 owner 能力；收藏直接使用 Repository-owned Star projection，不新增 Favorites truth、假推薦、假 count 或未完成 Project 頁面。
+- Home current 採 GitHub Mobile 的資訊層級語法「My Work / Favorites / Shortcuts」，但內容只組裝本地真實 owner：Repository/Issue、Organization、Enterprise、Team、Attendance、Expense；Favorites 仍直接使用 Repository-owned Star projection，Shortcuts 目前只做固定入口，不建立可儲存 Shortcut truth，也不新增假推薦、假 count、Pull Request 或未啟用 Project 頁面。
 - 各主 tab 的排序、URL 與安全返回由父層 app 契約統一；`/repositories` 保留為 collection/workbench，不因移出底部 tab 失去入口。
 - Repository 內頁在 resource header 下提供 scope 內導航；全域 tab、resource navigation、list filter 是三層，不互相替代。手機避免多個大按鈕擠壓標題。
 - 一般 tab 切換不重做 LIFF 初始化、不自動送命令；直接開啟與返回都回到同一 owner query。未開放入口集中說明，不能用看似可操作的空管理畫面充數。

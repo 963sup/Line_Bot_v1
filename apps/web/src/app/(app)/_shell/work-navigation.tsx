@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/home", label: "首頁", icon: "⌂" },
-  { href: "/notifications", label: "收件匣", icon: "●" },
-  { href: "/explore", label: "探索", icon: "◇" },
-  { href: "/settings", label: "我的", icon: "◎" },
+  { href: "/home", label: "Home", icon: "⌂" },
+  { href: "/notifications", label: "Inbox", icon: "▣" },
+  { href: "/explore", label: "Explore", icon: "◇" },
+  { href: "/settings", label: "Profile", icon: "◎" },
 ] as const;
 
 export default function WorkNavigation() {
