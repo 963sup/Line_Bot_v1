@@ -20,10 +20,10 @@
   "sources": {
     "externalBenchmark": "architecture/semantic-benchmark.json",
     "implementationTopology": "architecture/implementation-topology.json",
-    "businessOwnerDocs": "docs/010-domain-owners/",
+    "businessOwnerDocs": "docs/owners/",
     "runtimeBehavior": "source-code-and-tests",
     "persistenceCurrentState": "supabase/schemas/",
-    "historicalChange": "docs/090-governance/",
+    "historicalChange": "docs/change/",
     "dataTopology": "architecture/data-topology.json"
   },
   "semanticOwners": [
@@ -31,139 +31,139 @@
       "id": "account",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/010-account.md"
+      "doc": "docs/owners/account.md"
     },
     {
       "id": "enterprise",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/020-enterprise.md"
+      "doc": "docs/owners/enterprise.md"
     },
     {
       "id": "organization",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/030-organization.md"
+      "doc": "docs/owners/organization.md"
     },
     {
       "id": "workforce",
       "kind": "business-owner",
       "lifecycle": "current-foundation",
-      "doc": "docs/010-domain-owners/040-workforce.md"
+      "doc": "docs/owners/workforce.md"
     },
     {
       "id": "attendance",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/050-attendance.md"
+      "doc": "docs/owners/attendance.md"
     },
     {
       "id": "payroll",
       "kind": "business-owner",
       "lifecycle": "current-foundation",
-      "doc": "docs/010-domain-owners/060-payroll.md"
+      "doc": "docs/owners/payroll.md"
     },
     {
       "id": "team",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/070-team.md"
+      "doc": "docs/owners/team.md"
     },
     {
       "id": "repository",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/080-repository.md"
+      "doc": "docs/owners/repository.md"
     },
     {
       "id": "notifications",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/090-notifications.md"
+      "doc": "docs/owners/notifications.md"
     },
     {
       "id": "expense",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/100-expense.md"
+      "doc": "docs/owners/expense.md"
     },
     {
       "id": "audit",
       "kind": "business-owner",
       "lifecycle": "current-foundation",
-      "doc": "docs/050-security/060-audit.md"
+      "doc": "docs/owners/audit.md"
     },
     {
       "id": "partner-directory",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/110-partners.md"
+      "doc": "docs/owners/partners.md"
     },
     {
       "id": "assistant",
       "kind": "application-capability-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/120-assistant.md"
+      "doc": "docs/owners/assistant.md"
     },
     {
       "id": "asset",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/130-asset.md"
+      "doc": "docs/owners/asset.md"
     },
     {
       "id": "wallet",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/140-wallet.md"
+      "doc": "docs/owners/wallet.md"
     },
     {
       "id": "ledger",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/150-ledger.md"
+      "doc": "docs/owners/ledger.md"
     },
     {
       "id": "daily-check-in",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/160-daily-check-in.md"
+      "doc": "docs/owners/daily-check-in.md"
     },
     {
       "id": "project",
       "kind": "business-owner",
       "lifecycle": "current-data-only",
-      "doc": "docs/010-domain-owners/180-project.md"
+      "doc": "docs/owners/project.md"
     },
     {
       "id": "identity-access",
       "kind": "policy-owner",
       "lifecycle": "current",
-      "doc": "docs/050-security/030-authorization.md"
+      "doc": "docs/owners/identity-access.md"
     },
     {
       "id": "line-integration",
       "kind": "integration-owner",
       "lifecycle": "current",
-      "doc": "docs/030-platform/010-line.md"
+      "doc": "docs/owners/line-integration.md"
     },
     {
       "id": "google-workspace",
       "kind": "integration-owner",
       "lifecycle": "current",
-      "doc": "docs/030-platform/050-google-workspace.md"
+      "doc": "docs/owners/google-workspace.md"
     },
     {
       "id": "namespace",
       "kind": "policy-owner",
       "lifecycle": "current",
-      "doc": "docs/010-domain-owners/190-namespace.md"
+      "doc": "docs/owners/namespace.md"
     },
     {
       "id": "platform",
       "kind": "support-owner",
       "lifecycle": "current",
-      "doc": "docs/020-architecture/050-runtime-architecture.md"
+      "doc": "docs/owners/platform.md"
     }
   ],
   "boundedContexts": [

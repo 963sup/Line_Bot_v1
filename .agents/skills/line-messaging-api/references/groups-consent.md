@@ -16,7 +16,7 @@
 
 缺少 userId 時保持未識別狀態，按既有契約跳過需要身分的業務；不能用顯示名稱、groupId 或 mention 目標補成動作者。Profile 取得失敗也可能是封鎖、未加好友、bot 被移出或使用者離群，不能單憑失敗就推論未同意。
 
-本專案依 [Account](../../../../docs/010-domain-owners/010-account.md) 核驗 active membership／owner；群友、官方帳號訂閱會員與本產品會員不是同一授權。原生 mention 依事件 mention 結構核對 bot，不以文字剛好含 @名稱 當觸發。
+本專案依 [Account](../../../../docs/owners/account.md) 核驗 active membership／owner；群友、官方帳號訂閱會員與本產品會員不是同一授權。原生 mention 依事件 mention 結構核對 bot，不以文字剛好含 @名稱 當觸發。
 
 ## 任務相關驗證
 

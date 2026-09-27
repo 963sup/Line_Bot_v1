@@ -19,7 +19,7 @@
 - 模組內若出現新獨立的 lifecycle/authorization/consumer，先在 local AGENTS 寫清責任與邊界，再決定分檔；只為分類整齊不建立空資料夾或通用 resource manager。
 - 改 module 需同步對應 route/composition、browser-safe imports、錯誤投影與 tests；不以檔案搬移改 wire URL、command fingerprint 或資料 ownership。
 
-責任與允許依賴見 [Module ownership](../../../../docs/020-architecture/030-module-boundaries.md) 與 [Dependency rules](../../../../docs/020-architecture/040-dependency-rules.md)。
+責任與允許依賴見 [Dependency boundaries](../../../../docs/rules/dependency-boundaries.md)。
 
 - module 擁有專用畫面、互動、文案與 HTTP 投影；用例／查詢協調放 application，規則放 domain。
 - 不 import app 或其他 module 私有實作；跨功能具體依賴由 app/api/_composition 注入。

@@ -1,6 +1,6 @@
 # GitHub integration scope
 
-Release semantics 見 [Release](../docs/070-operations/020-release.md)；Supabase provider semantics 見 [Supabase](../docs/030-platform/020-supabase.md)；Vercel provider semantics 見 [Vercel](../docs/030-platform/040-vercel.md)。
+Release semantics 見 [Release](../docs/reference/operations/release.md)；Supabase provider semantics 見 [Supabase](../docs/reference/platform/supabase.md)；Vercel provider semantics 見 [Vercel](../docs/reference/platform/vercel.md)。
 
 - `.github/` 只擁有 GitHub integration：workflow trigger、permissions、checkout/setup、affected-source routing、GitHub evidence 與 repository collaboration metadata；不擁有產品或 provider 內部規則。
 - Workflow 保持 thin adapter：優先呼叫 root canonical commands，不在 YAML 重寫 lint、architecture、test、build 或 provider business logic。

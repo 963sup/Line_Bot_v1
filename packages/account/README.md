@@ -1,10 +1,8 @@
 # @line-work/account
 
-`@line-work/account` package entrypoint.
+Navigation only.
 
-- Canonical context: [Account](../../docs/010-domain-owners/010-account.md)
-- Local change constraints: [AGENTS.md](AGENTS.md)
-- Executable public surface: [package.json](package.json)
+- Owner contract: [account](../../docs/owners/account.md)
+- Local constraints: [AGENTS.md](AGENTS.md)
+- Public surface: [package.json](package.json)
 - Parent package rules: [../AGENTS.md](../AGENTS.md)
-
-This README is navigation only. Business rules, schema facts, exports, and validation remain owned by their canonical sources.
