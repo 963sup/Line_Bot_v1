@@ -25,7 +25,7 @@ const retiredProjectIdentities = [
   { label: "workspace namespace", value: `${["@line", "work"].join("-")}/` },
   { label: "system id", value: ["line", "work", "assistant"].join("-") },
   { label: "English display name", value: ["LINE", "Work", "Assistant"].join(" ") },
-  { label: "Chinese display name", value: ["LINE", "工作助手"].join(" ") },
+  { label: "Chinese display name", value: ["LINE", ["工作", "助手"].join("")].join(" ") },
   { label: "short Chinese display name", value: ["工作", "助手"].join("") },
   { label: "legacy Rich Menu prefix", value: `${["work", "assistant"].join("-")}-` },
   { label: "legacy provider slug", value: `${["line", "work"].join("-")}-` },
