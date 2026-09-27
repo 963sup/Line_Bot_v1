@@ -81,6 +81,7 @@ test("private menu navigation refreshes authoritative state, delivers only menus
       linkedId = url.pathname.slice(url.pathname.lastIndexOf("/") + 1);
       return new Response(null, { status: 200 });
     }
+    if (!linkedId) return new Response(null, { status: 404 });
     return Response.json({ richMenuId: linkedId });
   }) as typeof fetch;
   const states = ["ready", "working", "working", "ready"] as const;
