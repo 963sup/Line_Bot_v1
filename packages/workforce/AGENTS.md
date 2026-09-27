@@ -1,8 +1,8 @@
 # @line-work/workforce
 
-- Owns the target Workforce responsibility: Employment lifecycle, EmploymentTerms, WorkPolicyVersion, Calendar and Schedule semantics.
-- Does not own User identity/qualification, Organization participation, actual Attendance facts, Payroll calculation/result, or authorization policy.
-- Employment is a time-bounded working relationship between User and Organization; Employee is a contextual description, not a global identity or AccountKind.
-- The workspace/module boundary is active, but runtime capability, public exports and Workforce persistence are not. Do not invent APIs, adapters, schema or policy defaults before a real use case and authority decision exists.
-- Before activating the first Workforce capability, resolve the canonical open policies called out by the owner doc, including OrganizationMembership qualification and overlapping Employment semantics.
-- Changes follow the repository decision chain: first principles → expert benchmark/repository evidence → root cause → Owner/Truth/Boundary → Occam's Razor → validation.
+Owner: Workforce target responsibility for Employment lifecycle, terms/policy, calendar, and schedule. Current state is module foundation only; canonical status and semantics: [Workforce](../../docs/owners/workforce.md).
+
+- Do not invent runtime APIs, public exports, persistence, adapters, or policy defaults before a real consumer and authority decision exist.
+- Employment is a time-bounded User↔Organization working relationship; it is not Account identity or Organization membership. `Employee` is contextual, not a global identity.
+- Account owns User qualification; Organization owns participation; Attendance owns actual facts; Payroll owns calculation/result; Identity/Access owns authorization policy.
+- Before the first runtime capability, resolve the activation gates in the owner document.

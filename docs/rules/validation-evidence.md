@@ -1,16 +1,16 @@
 # Validation and evidence
 
-Validation選擇由變更責任決定；不要用較小的證據冒充較大的 claim。
+Choose evidence by responsibility; smaller evidence never proves a larger claim.
 
 | Evidence | Proves | Does not prove |
 | --- | --- | --- |
-| `pnpm docs:check` | Markdown / local links contract | code behavior / deployment |
-| `pnpm schema:check` | local declarative schema/database contract | remote Supabase current state |
+| `pnpm docs:check` | Markdown structure/links + convergence manifest integrity | code/runtime/deployment |
+| `pnpm schema:check` | local declarative schema contract | remote Supabase state |
 | `pnpm check` | repository fast gate for affected change | full merge/release gate |
-| `pnpm validate` | full repository static/test/build gate | deployment/provider/device |
+| `pnpm validate` | full static/test/build gate | deployment/provider/device |
 | Provider/API readback | specific remote state | unrelated business flow |
-| Device/browser acceptance | observed user flow/environment | schema/source correctness outside that scope |
+| Device/browser acceptance | observed user flow/environment | unrelated source/schema correctness |
 
-一般修改先 `pnpm check`；merge/release前 `pnpm validate`。External mutation/probe不屬一般 offline validation。
+一般修改用 `pnpm check`；merge/release 前用 `pnpm validate`。External mutation/probe 不是一般 offline validation。
 
-Validation failure先讀實際 log，沿 consumer/contract/owner追根因；不為「變綠」放寬 authorization、architecture guard、schema invariant或 test expectation。
+Failure 先讀實際 log，沿 consumer/contract/owner 找根因；不得為變綠放寬 authorization、architecture guard、schema invariant 或 test expectation。
