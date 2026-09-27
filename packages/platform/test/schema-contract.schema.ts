@@ -144,7 +144,7 @@ test("runtime provisioning creates governance roots only through narrow coordina
   assert.deepEqual(organizationOwner.rows, [{ status: "active", membership_version: 1 }]);
 });
 
-test("current-data-only Project relations expose no line_app runtime DML", async (t) => {
+test("Project runtime exposes only aggregate-root read access", async (t) => {
   const { pg } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -174,7 +174,7 @@ test("current-data-only Project relations expose no line_app runtime DML", async
     expected.map((relname) => ({
       relname,
       relrowsecurity: true,
-      can_select: false,
+      can_select: relname === "projects",
       can_insert: false,
       can_update: false,
       can_delete: false,
