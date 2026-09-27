@@ -1,24 +1,42 @@
 ---
 name: Bug 回報
-about: 回報可重現的錯誤
+about: 回報可重現、可驗證的錯誤
 ---
 
-## 問題描述
+## 可觀察問題
 
-請說明發生的問題。
+<!-- 只描述已觀察到的現象；不要先猜根因。 -->
 
-## 重現步驟
+## 影響
 
-1. 
-2. 
-3. 
+<!-- 哪個使用情境、功能或角色受影響？問題會阻止什麼結果成立？ -->
 
-## 預期與實際結果
+## 最小重現
 
-- 預期：
-- 實際：
+1.
+2.
+3.
 
-## 環境與相關紀錄
+## 預期結果
 
-<!-- 提供版本或 commit、裝置／瀏覽器、LINE 內或外部瀏覽器，以及相關錯誤或截圖。 -->
-<!-- 請移除 token、憑證與個人資料。 -->
+<!-- 描述應成立的可觀察結果。 -->
+
+## 實際結果
+
+<!-- 描述實際觀察結果；若為間歇性問題，補充發生頻率。 -->
+
+## 環境
+
+- Commit / version:
+- Runtime:
+- Device / browser:
+- LINE client / external browser:
+
+## Evidence
+
+<!-- 提供最小且相關的 error、log、screenshot、request ID 或其他可驗證 evidence。 -->
+<!-- 請勿提交 token、cookie、credential、personal data 或 production-sensitive payload。 -->
+
+## 已知範圍
+
+<!-- 若已確認「會發生／不會發生」的條件，列在這裡；未知可留空。 -->
