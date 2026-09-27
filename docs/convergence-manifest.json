@@ -324,6 +324,52 @@
         "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
       }
     },
+    "docs/change/evidence/acceptance-evidence.md": {
+      "outcome": "keep",
+      "baselineBytes": 1954,
+      "maxBytes": 1954,
+      "contentBlob": "cebe8f9db3509f7903f7d15873aa0eb206d63529",
+      "sources": {
+        "docs/rules/validation-evidence.md": "5d5e152604c7766360303250832def7d66c94e25"
+      }
+    },
+    "docs/change/evidence/account-expansion-extraction.md": {
+      "outcome": "keep",
+      "baselineBytes": 1763,
+      "maxBytes": 1763,
+      "contentBlob": "a44fbd82c873fd5cc75e3b0af1d7a955b534678b",
+      "sources": {}
+    },
+    "docs/change/evidence/atomic-schema-remote-convergence.md": {
+      "outcome": "keep",
+      "baselineBytes": 1496,
+      "maxBytes": 1496,
+      "contentBlob": "6b4a59970f2ed27e6a8b5b3e88f8e7a54435815d",
+      "sources": {}
+    },
+    "docs/change/evidence/four-model-cutover-validation.md": {
+      "outcome": "keep",
+      "baselineBytes": 1385,
+      "maxBytes": 1385,
+      "contentBlob": "c902fe380577b3bfd83d1ff12214a9fb4d77a8b1",
+      "sources": {}
+    },
+    "docs/change/evidence/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1271,
+      "maxBytes": 1271,
+      "contentBlob": "03b5737d1ac6610603218bb52751ef2ecd9e55bd",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    },
+    "docs/change/evidence/schema-history-extraction.md": {
+      "outcome": "keep",
+      "baselineBytes": 1495,
+      "maxBytes": 1495,
+      "contentBlob": "630abc5383d13d0be65a215e311476d58824a3f3",
+      "sources": {}
+    },
     "docs/facts/sources-of-truth.md": {
       "outcome": "keep",
       "baselineBytes": 1200,
