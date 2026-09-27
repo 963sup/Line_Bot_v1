@@ -14,6 +14,14 @@ Upstream：
 
 ## Reading model
 
+可機械查核的 pinned 檔案範圍、Git blob identity、output family 與 category decision 由
+[`semantic-benchmark.json`](../../architecture/semantic-benchmark.json) 的 `sourceInventory` 擁有。
+下方逐檔說明是導航；新增或更新來源時，以指定 revision 的完整目錄核對 inventory，不能將缺片解讀成空分類。
+
+Benchmark 的 `included` 表示可用於外部語意 graph；`reference-only` 表示只參考 identity、locator、query 或共用契約；`excluded` 表示不引入該分類。
+這些都不是產品啟用狀態。產品採用與延後決策留在
+[`semantic-model.json`](../../architecture/semantic-model.json)，沒有 current runtime 的概念不得因 upstream contract 存在就被啟用。
+
 ~~~text
 GitHub upstream FPT
 ├─ category / index
@@ -36,6 +44,23 @@ code / schema / tests / canonical docs
 ~~~
 
 `schema-*.json` 不是「一檔一 bounded context」的證明；它是 GitHub GraphQL documentation data 的 category/capability partition。Line_Bot_v1 只提取 concept boundary、naming、ownership、relationship、locator、current-actor semantics，不引入 Git/SCM/code-hosting-specific capability。
+
+## Pipeline responsibility
+
+官方 [GraphQL README](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/README.md)
+提供入口；實際分工需沿程式查證：
+
+| Responsibility | Pinned upstream evidence | 本專案對照 |
+| --- | --- | --- |
+| Source / version sync | [sync.ts](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/scripts/sync.ts) | Benchmark revision 是外部證據邊界，不自動更新產品模型 |
+| Category partition / index | 同一 sync 呼叫 category bucket 與 category file writer | 完整 source inventory 與 category decision；不由檔名推 product owner |
+| Structure validation | [validator.ts](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/lib/validator.ts) | Benchmark、semantic、implementation、data 各驗自己的 contract |
+| Version / category loading | [lib/index.ts](https://github.com/github/docs/blob/03d2e24b34bd88c361f1185f0aae1c46062c6510/src/graphql/lib/index.ts) | 缺片、錯誤 source 與 unresolved reference 是失敗，不回填別的版本 |
+| Consumer rendering | 同一 loader 提供 schema、preview、upcoming change 與 history 的分別讀取入口 | `pnpm semantic view` 從 canonical model 產生 read model，輸出不得反向成為 authority |
+
+本專案保留自己的可編輯 product model；不複製 GitHub 的 GraphQL runtime、整套 schema 或 generated schema 檔案。`gitBlobSha` 是來源檔案的 identity；inventory 的檔名與 blob identity 依 Git tree 格式重建後，必須符合固定的 `gitTreeSha`，避免刪掉未被引用的分片仍通過。離線 guard 驗固定來源集合、metadata 與引用一致性，不冒充重新向 GitHub 下載比對，也不證明產品 runtime。
+
+`symbol`／`field` 是否真的存在於上游 fragment，屬於更新 benchmark 時的外部來源核對：依 `authority.revision` 讀取每個被引用的檔案，確認 symbol 與 member，再檢查 Git blob／tree identity。一般離線檢查只驗引用形狀、分類與來源範圍；它不下載 schema，也不能將拼字檢查視為上游 readback。變更 `authority.revision` 或 `gitTreeSha` 是顯式來源更新，必須重新核對，不在 checker 另抄一份 pin。
 
 ## 49-file index
 

@@ -2,7 +2,7 @@
 import type { Partner, PartnerContact, PartnersView } from "@line-work/partners/contracts";
 import type { PartnerCommand } from "@line-work/partners/domain";
 import { parsePartnerCommand } from "@line-work/partners/domain";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState } from "../../shared/ui/page-layout";
@@ -153,17 +153,22 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       if (ticket === sequence.current) setBusy(false);
     }
   }
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+  const onPageHide = useEffectEvent(() => {
+    clear();
+  });
   useEffect(() => {
-    const visibility = () => {
-      if (document.visibilityState === "hidden") clear();
-      else void load();
-    };
+    const visibility = () => onVisibilityChange();
+    const pagehide = () => onPageHide();
     document.addEventListener("visibilitychange", visibility);
-    window.addEventListener("pagehide", clear);
+    window.addEventListener("pagehide", pagehide);
     return () => {
       sequence.current++;
       document.removeEventListener("visibilitychange", visibility);
-      window.removeEventListener("pagehide", clear);
+      window.removeEventListener("pagehide", pagehide);
     };
   }, []);
   const blocked = busy || Boolean(pending);

@@ -49,7 +49,7 @@ export type AttendanceNotificationJob = {
   token: string;
 };
 export type NotificationOutcome = "accepted" | "retry" | "failed";
-export interface AttendanceMaintenanceStore {
+interface AttendanceMaintenanceStore {
   claimMenu(now: number, provider: string, subject?: string): Promise<AttendanceMenuJob | null>;
   completeMenu(job: AttendanceMenuJob, success: boolean, now: number): Promise<boolean>;
   claimNotification(

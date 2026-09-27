@@ -22,6 +22,20 @@ function ownerCapabilities(compiled, ownerId) {
   return [...compiled.capabilities.values()].filter((capability) => capability.owner === ownerId);
 }
 
+function capabilityEvidence(compiled, capability) {
+  if (!capability) return null;
+  return {
+    capability,
+    owner: compiled.owners.get(capability.owner) ?? null,
+    implementation: capability.implementation ?? null,
+    members: (capability.members ?? []).map((id) => compiled.capabilities.get(id)).filter(Boolean),
+    validation: (capability.validationProfiles ?? [])
+      .map((id) => compiled.validationProfiles.get(id))
+      .filter(Boolean),
+    evidenceRule: compiled.model.evidenceModel?.scopeRule ?? null,
+  };
+}
+
 function ownerInvariants(compiled, ownerId) {
   const ids = new Set(
     ownerCapabilities(compiled, ownerId).flatMap((capability) => capability.preserves ?? []),
@@ -40,6 +54,8 @@ function contractsFor(compiled, ownerId) {
 }
 
 function evidenceFor(compiled, id) {
+  if (compiled.capabilities.has(id))
+    return capabilityEvidence(compiled, compiled.capabilities.get(id));
   const concept = compiled.concepts.get(id);
   const ownerId = concept?.owner ?? (compiled.owners.has(id) ? id : null);
   if (!ownerId) return null;
@@ -62,6 +78,9 @@ function evidenceFor(compiled, id) {
   }
   return {
     owner: compiled.owners.get(ownerId),
+    capabilities: ownerCapabilities(compiled, ownerId).map((capability) =>
+      capabilityEvidence(compiled, capability),
+    ),
     benchmark,
     validation: [...profiles.values()],
     evidenceRule: compiled.model.evidenceModel?.scopeRule ?? null,
@@ -70,6 +89,20 @@ function evidenceFor(compiled, id) {
 }
 
 function explain(compiled, id) {
+  if (compiled.capabilities.has(id)) {
+    const evidence = capabilityEvidence(compiled, compiled.capabilities.get(id));
+    return {
+      capability: evidence.capability,
+      owner: evidence.owner,
+      implementation: evidence.implementation,
+      members: evidence.members,
+      boundaries: boundarySnapshot(compiled, [evidence.capability.owner]),
+      invariants: (evidence.capability.preserves ?? [])
+        .map((invariantId) => compiled.invariants.get(invariantId))
+        .filter(Boolean),
+      evidence,
+    };
+  }
   const concept = compiled.concepts.get(id);
   const ownerId = concept?.owner ?? (compiled.owners.has(id) ? id : null);
   if (!ownerId) return null;
@@ -92,6 +125,7 @@ export function querySemanticArchitecture(compiled, command, args) {
   const id = args[0];
   if (command === "owner") return compiled.owners.get(id) ?? null;
   if (command === "concept") return compiled.concepts.get(id) ?? null;
+  if (command === "capability") return compiled.capabilities.get(id) ?? null;
   if (command === "benchmark") return compiled.benchmarkNodes.get(id) ?? null;
   if (command === "resolve") return resolveSemanticIntent(compiled, args.join(" "));
   if (command === "neighbors") {
@@ -133,9 +167,18 @@ export function querySemanticArchitecture(compiled, command, args) {
   if (command === "truth") {
     return (compiled.model.truthRegistry ?? []).find((entry) => entry.id === id) ?? null;
   }
+  if (command === "locators") return [...compiled.locators.values()];
+  if (command === "benchmark-coverage") {
+    return {
+      mappedNodes: [...compiled.concepts.values()]
+        .filter((concept) => concept.benchmark?.node)
+        .map((concept) => ({ node: concept.benchmark.node, concept: concept.id })),
+      decisions: compiled.model.benchmarkDecisions ?? [],
+    };
+  }
   if (command === "explain") return explain(compiled, id);
 
   throw new Error(
-    "Usage: pnpm semantic <owner|concept|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|explain> <id|intent> [to]",
+    "Usage: pnpm semantic <owner|concept|capability|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|benchmark-coverage|explain> <id|intent> [to]",
   );
 }

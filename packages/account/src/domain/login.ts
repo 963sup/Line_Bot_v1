@@ -1,4 +1,4 @@
-export class AccountLoginError extends Error {}
+class AccountLoginError extends Error {}
 
 const reservedLogins = new Set([
   "admin",

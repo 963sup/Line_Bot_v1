@@ -6,7 +6,7 @@ import type {
   OrganizationDetail,
   OrganizationList,
 } from "@line-work/organization/contracts/organization-governance";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
@@ -120,8 +120,13 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
     }
   }
 
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+
   useEffect(() => {
-    const visibility = () => (document.visibilityState === "hidden" ? clear() : void load());
+    const visibility = () => onVisibilityChange();
     document.addEventListener("visibilitychange", visibility);
     return () => document.removeEventListener("visibilitychange", visibility);
   }, []);

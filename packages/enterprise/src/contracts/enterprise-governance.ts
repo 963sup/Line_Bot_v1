@@ -46,7 +46,7 @@ export type EnterpriseTeamProjection = Readonly<{
   organizations: readonly EnterpriseTeamOrganizationProjection[];
 }>;
 
-export type EnterpriseSummary = Readonly<{
+type EnterpriseSummary = Readonly<{
   id: string;
   name: string;
   slug: string;

@@ -23,12 +23,12 @@ export type PayrollReadinessInput = Readonly<{
   requiredRuleKeys?: readonly PayrollRuleKey[];
 }>;
 
-export type PayrollMissingInput =
+type PayrollMissingInput =
   | "workforce-version"
   | "attendance-period-version"
   | `rule:${PayrollRuleKey}`;
 
-export type PayrollInputVersion = Readonly<{
+type PayrollInputVersion = Readonly<{
   workforceVersion: string;
   attendancePeriodVersion: string;
   ruleVersions: readonly PayrollRuleVersion[];

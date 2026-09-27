@@ -60,7 +60,7 @@ test("tooling metadata stays separate while root build metadata expands conserva
       schemaAffected: false,
       toolingAffected: true,
     });
-  for (const file of [".github/workflows/validate.yml", ".vscode/settings.json", "knip.jsonc"])
+  for (const file of [".github/workflows/validate.yml", ".vscode/settings.json"])
     assert.deepEqual(classifyChangedFiles([file]), {
       codeAffected: false,
       docsAffected: false,
@@ -99,4 +99,24 @@ test("mixed product and documentation changes run product and docs gates", () =>
       toolingAffected: false,
     },
   );
+});
+
+test("source-only changes always run the architecture gate", () => {
+  for (const file of [
+    "apps/web/src/modules/account/login-panel.tsx",
+    "packages/account/src/domain.ts",
+  ]) {
+    const scope = classifyChangedFiles([file]);
+    assert.equal(scope.toolingAffected, false);
+    assert.equal(scope.schemaAffected, false);
+    assert.equal(shouldRunFast("architecture", scope), true);
+  }
+  assert.equal(shouldRunFast("architecture", classifyChangedFiles(["docs/README.md"])), false);
+});
+
+test("Knip configuration changes run formatting and reachability checks", () => {
+  const scope = classifyChangedFiles(["knip.jsonc"]);
+  assert.equal(shouldRunFast("lint", scope), true);
+  assert.equal(shouldRunFast("deadcode", scope), true);
+  assert.equal(shouldRunFast("tooling:check", scope), true);
 });

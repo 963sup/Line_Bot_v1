@@ -1,7 +1,7 @@
 import type { DailyCheckInRepository } from "./application/ports/daily-check-in-repository.js";
 import { DAILY_CHECK_IN_COIN_REWARD, dailyCheckInDay } from "./domain.js";
 
-export type DailyCheckInMemberView = {
+type DailyCheckInMemberView = {
   id: string;
   status: "paused" | "active" | "suspended";
   createdAt: number;

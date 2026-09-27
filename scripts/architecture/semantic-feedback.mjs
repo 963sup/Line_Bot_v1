@@ -55,6 +55,14 @@ export function compareSemanticFeedback(compiled, bundle) {
     if (!capability) fail("unknown capability " + claim.capability);
     const owner = compiled.owners.get(capability.owner);
     const expectation = capability.runtimeExpectation;
+    const aggregateMembers = (capability.members ?? [])
+      .map((member) => compiled.capabilities.get(member))
+      .filter(Boolean)
+      .map((member) => ({
+        capability: member.id,
+        expectation: member.runtimeExpectation,
+        implementationStatus: member.implementation?.status ?? null,
+      }));
 
     let result = "aligned";
     let reason = "Observation matches the declared runtime expectation.";
@@ -77,6 +85,9 @@ export function compareSemanticFeedback(compiled, bundle) {
       capability: capability.id,
       owner: capability.owner,
       ownerLifecycle: owner?.lifecycle ?? null,
+      kind: capability.kind,
+      implementationStatus: capability.implementation?.status ?? null,
+      aggregateMembers,
       expectation,
       observed: claim.status,
       evidenceRef: claim.evidenceRef,

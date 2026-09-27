@@ -1,7 +1,7 @@
 import type { Expense } from "../../domain.js";
 
 /** Resolves a verified subject to a currently active member; rejects otherwise. */
-export type ActiveUser = (subject: string) => Promise<{ id: string }>;
+type ActiveUser = (subject: string) => Promise<{ id: string }>;
 
 /** Implementations own atomic windows and deduplication; arm/receive recheck membership in the transaction. */
 export interface ReceiptIntakeStore {

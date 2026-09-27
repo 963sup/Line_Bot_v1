@@ -10,9 +10,9 @@ export type Organization = Readonly<{
   version: number;
 }>;
 
-export type OrganizationMembershipStatus = "active" | "removed";
+type OrganizationMembershipStatus = "active" | "removed";
 
-export type OrganizationMembership = Readonly<{
+type OrganizationMembership = Readonly<{
   organizationAccountId: OrganizationAccountId;
   userId: UserId;
   status: OrganizationMembershipStatus;
@@ -21,7 +21,7 @@ export type OrganizationMembership = Readonly<{
 
 export type OrganizationDirectMembership = OrganizationMembership;
 
-export type OrganizationInvitationStatus = "pending" | "accepted" | "cancelled" | "declined";
+type OrganizationInvitationStatus = "pending" | "accepted" | "cancelled" | "declined";
 
 export type OrganizationInvitation = Readonly<{
   organizationAccountId: OrganizationAccountId;

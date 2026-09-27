@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: payroll
+-- scope: PayStatement, Earning, Deduction, GrossPay, NetPay, and publication result for Employment + PayPeriod.
+-- canonical target: docs/010-domain-owners/060-payroll.md
+-- migration gate: docs/090-governance/040-gaps/090-payroll.md
+-- activation: remove reserved status only after deterministic calculation, self-read privacy, publication/correction, authorization, data-topology relations, tests, and validation evidence are current.

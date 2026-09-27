@@ -36,26 +36,11 @@
       ],
       "project": ["src/**/*.{ts,tsx}", "test/**/*.ts"]
     },
-    // Production entries still come from package exports; package-specific test entries
-    // are declared only where tests exist and are not already reachable from exports.
+    // Private workspace exports are checked against repository consumers.
+    // Production entries come from package exports; tsx discovers test entries.
     "packages/*": {
-      "project": ["src/**/*.{ts,tsx}"]
-    },
-    "packages/assistant": {
-      "entry": ["test/**/*.test.ts"],
-      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
-    },
-    "packages/attendance": {
-      "entry": ["test/**/*.test.ts"],
-      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
-    },
-    "packages/expense": {
-      "entry": ["test/**/*.test.ts"],
-      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
-    },
-    "packages/payroll": {
-      "entry": ["test/**/*.test.ts"],
-      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
+      "includeEntryExports": true,
+      "project": ["{src,test}/**/*.{ts,tsx}"]
     }
   }
 }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { parse } from "smol-toml";
+import { loadDataTopologySources } from "../architecture/data-topology-core.mjs";
 import { localSchemaCommands } from "./schema-local.mjs";
 import {
   assertSchemaOwnership,
@@ -17,6 +18,10 @@ function hasTopLevelMutation(sql) {
   );
   return /^\s*(drop|insert|update|delete)\s/im.test(withoutFunctionBodies);
 }
+
+test("reserved schema files remain comment-only naming reservations", async () => {
+  await loadDataTopologySources();
+});
 
 test("config and schema assembly use the same complete lexical order", () => {
   const config = parse(

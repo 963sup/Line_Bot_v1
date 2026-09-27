@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: workforce
+-- scope: versioned EmploymentTerms applicable to an Employment and its compensation/work terms.
+-- canonical target: docs/010-domain-owners/040-workforce.md
+-- migration gate: docs/090-governance/040-gaps/060-workforce.md
+-- activation: remove reserved status only when a real consumer requires versioned terms and missing/conflict semantics, then add current DDL, data-topology relations, tests, and validation evidence.

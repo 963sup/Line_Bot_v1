@@ -96,7 +96,10 @@ function workspaceSources(root) {
       if (!existsSync(resolve(root, directory, "package.json"))) {
         throw new Error(`${directory}: source workspace requires package.json`);
       }
-      entries.push(`${directory}/src`);
+      if (!existsSync(resolve(root, directory, "tsconfig.json"))) {
+        throw new Error(`${directory}: source workspace requires tsconfig.json`);
+      }
+      if (existsSync(resolve(root, directory, "src"))) entries.push(`${directory}/src`);
       const manifest = JSON.parse(readFileSync(resolve(root, directory, "package.json"), "utf8"));
       for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
         const compiled = typeof target === "string" ? target : target.default;

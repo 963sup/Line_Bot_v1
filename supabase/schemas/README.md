@@ -1,6 +1,6 @@
 # Object / Relationship schema tree
 
-`supabase/schemas/` 是 application-owned PostgreSQL current desired state。此目錄不是 migration history，也不是按照 package 資料夾鏡像；它依 **Object / Relationship authority** 與 lexical dependency 排序。
+`supabase/schemas/` 的可執行 SQL 是 application-owned PostgreSQL current desired state。此目錄不是 migration history，也不是按照 package 資料夾鏡像；它依 **Object / Relationship authority** 與 lexical dependency 排序。`870–891` 是純註解 reserved target namespace，尚不定義 current PostgreSQL structure。
 
 Authority chain：
 
@@ -96,11 +96,36 @@ packages/<owner>
 862_partner_referrals.sql
 863_partner_commands.sql
 
+870_employments.sql                  # reserved: Workforce target
+871_employment_terms.sql             # reserved: Workforce target
+872_work_policy_versions.sql         # reserved: Workforce target
+873_workforce_calendars.sql          # reserved: Workforce target
+874_workforce_schedules.sql          # reserved: Workforce target
+875_scheduled_intervals.sql          # reserved: Workforce target
+880_pay_periods.sql                  # reserved: Payroll target
+881_payroll_runs.sql                 # reserved: Payroll target
+882_pay_statements.sql               # reserved: Payroll target
+883_payroll_input_versions.sql       # reserved: Payroll target
+890_audit_events.sql                 # reserved: Audit target
+891_audit_logs.sql                   # reserved: Audit target
+
 900_cross_owner_projections.sql
 910_cross_owner_constraints.sql
 920_transaction_coordinators.sql
 930_access_enforcement.sql
 ```
+
+## Reserved target files
+
+`870–891` currently reserve selected target names only. They are pure `--` comment files registered in `architecture/data-topology.json` with `role = "reserved"` and a `targetOwner`; they do not define tables, views, functions, grants, policies or runtime capability.
+
+Reserved files are allowed only to prevent future naming drift for targets already selected in canonical docs:
+
+- Workforce: Employment, EmploymentTerms, WorkPolicyVersion, Calendar, Schedule and ScheduledInterval.
+- Payroll: PayPeriod, PayrollRun, PayStatement and PayrollInputVersion.
+- Audit: AuditEvent and AuditLog/query projection.
+
+Activating any reserved file requires removing the reserved marker and updating the actual SQL, data topology relation mapping, current owner docs, consumer contract, tests and validation evidence in the same change. A reserved SQL file is not remote Supabase evidence, deployment evidence or business acceptance.
 
 ## Object boundaries
 
@@ -113,6 +138,7 @@ packages/<owner>
 - Project owns Project, ProjectItem references, WBS, Project Milestone and explicit Project→Repository reference. Referenced Issue remains Repository authority.
 - Asset owns denomination definition; Ledger owns append-only value facts; Wallet remains derived and has no writable balance table.
 - Attendance owns attendance/workplace facts and outbox; Notifications and Partner Directory own their own durable relations.
+- Workforce, Payroll and Audit `870–891` are reserved target namespaces until their activation gates are met; they do not yet own current persisted relations in this directory.
 
 ## Cross-owner mechanisms
 
@@ -135,6 +161,7 @@ No table representing new business truth belongs in these files.
 4. relation owner agrees with mapped semantic concept;
 5. concepts requiring relation persistence have an authoritative relation;
 6. authoritative files do not mix semantic owners;
-7. cross-owner mechanisms do not claim business authority.
+7. reserved files contain only matching line-comment markers and no current relation mapping;
+8. cross-owner mechanisms do not claim business authority.
 
 Database execution is separately proven by `pnpm schema:check`; remote Supabase is separately proven by `schema:remote plan/sync/verify`.

@@ -627,9 +627,7 @@ export function validate(root) {
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
     );
     const redundantReplaceSteps = replaceSteps.filter(
-      (step) =>
-        step.run === "pnpm schema:remote plan" ||
-        step.run === "pnpm schema:remote verify",
+      (step) => step.run === "pnpm schema:remote plan" || step.run === "pnpm schema:remote verify",
     );
     if (
       replaceValidate < 0 ||

@@ -28,5 +28,3 @@ export function createRepositoryStars(deps: {
     explore: async (subject: string) => deps.store().explore(await actor(subject)),
   };
 }
-
-export type RepositoryStarUseCases = ReturnType<typeof createRepositoryStars>;

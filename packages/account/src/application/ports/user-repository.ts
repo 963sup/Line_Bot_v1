@@ -1,12 +1,12 @@
 import type { User } from "../../domain/user.js";
 import type { VerifiedGoogleIdentity } from "./identity-provider.js";
 
-export type UserView = User & {
+type UserView = User & {
   login: string | null;
   googleEmail: string | null;
 };
 
-export type PublicUser = Readonly<{
+type PublicUser = Readonly<{
   id: string;
   login: string;
 }>;
@@ -22,7 +22,7 @@ export interface UserRepository {
   pause(userId: string): Promise<UserView>;
 }
 
-export type GoogleLinkRequest = { id: string; email: string | null; expiresAt: number };
+type GoogleLinkRequest = { id: string; email: string | null; expiresAt: number };
 export interface GoogleLinkRepository {
   start(provider: string, subject: string, now: number): Promise<{ token: string }>;
   stage(token: string, google: VerifiedGoogleIdentity, now: number): Promise<void>;

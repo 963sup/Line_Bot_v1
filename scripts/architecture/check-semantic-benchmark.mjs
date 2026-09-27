@@ -1,39 +1,7 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-
-const allowedCategories = new Set([
-  "users",
-  "enterprise-admin",
-  "orgs",
-  "teams",
-  "repos",
-  "projects",
-  "issues",
-  "discussions",
-  "reactions",
-]);
-
-const forbiddenCategories = new Set([
-  "actions",
-  "branches",
-  "checks",
-  "code-scanning",
-  "code-security",
-  "codespaces",
-  "commits",
-  "dependabot",
-  "dependency-graph",
-  "deploy-keys",
-  "deployments",
-  "git",
-  "packages",
-  "pages",
-  "pulls",
-  "releases",
-  "secret-scanning",
-  "security-advisories",
-]);
 
 const forbiddenNodeKinds = new Set([
   "adapter",
@@ -56,6 +24,276 @@ const requiredNodes = new Set([
   "discussion",
 ]);
 
+const allowedInventoryRoles = new Set([
+  "schema-fragment",
+  "category-index",
+  "rendered-schema",
+  "preview",
+  "future-change",
+  "history",
+]);
+
+const allowedSchemaDispositions = new Set(["included", "reference-only", "excluded"]);
+
+const requiredInventoryRoles = new Set([
+  "schema-fragment",
+  "category-index",
+  "rendered-schema",
+  "preview",
+  "future-change",
+  "history",
+]);
+
+const forbiddenScmCategories = new Set([
+  "actions",
+  "branches",
+  "checks",
+  "code-scanning",
+  "code-security",
+  "codespaces",
+  "commits",
+  "dependabot",
+  "dependency-graph",
+  "deploy-keys",
+  "deployments",
+  "git",
+  "packages",
+  "pages",
+  "pulls",
+  "releases",
+  "secret-scanning",
+  "security-advisories",
+]);
+
+const fixedOutputRoles = new Map([
+  ["category-map.json", "category-index"],
+  ["changelog.json", "history"],
+  ["graphql_upcoming_changes.public.yml", "future-change"],
+  ["previews.json", "preview"],
+  ["schema.docs.graphql", "rendered-schema"],
+  ["upcoming-changes.json", "future-change"],
+]);
+
+function categoryFromSchemaFile(file) {
+  const match = /^schema-([a-z0-9-]+)\.json$/.exec(file ?? "");
+  return match?.[1] ?? null;
+}
+
+function sourceInventoryGitTreeSha(entries) {
+  const treeEntries = entries.map((entry) => {
+    if (!entry?.file || !/^[0-9a-f]{40}$/.test(entry?.gitBlobSha ?? "")) return null;
+    return { file: entry.file, gitBlobSha: entry.gitBlobSha };
+  });
+  if (treeEntries.some((entry) => entry === null)) return null;
+
+  treeEntries.sort((left, right) =>
+    Buffer.compare(Buffer.from(left.file, "utf8"), Buffer.from(right.file, "utf8")),
+  );
+  const body = Buffer.concat(
+    treeEntries.flatMap((entry) => [
+      Buffer.from(`100644 ${entry.file}\0`, "utf8"),
+      Buffer.from(entry.gitBlobSha, "hex"),
+    ]),
+  );
+  return createHash("sha1")
+    .update(Buffer.concat([Buffer.from(`tree ${body.length}\0`, "utf8"), body]))
+    .digest("hex");
+}
+
+function buildInventory(graph, errors) {
+  const inventory = Array.isArray(graph?.sourceInventory) ? graph.sourceInventory : [];
+  if (!Array.isArray(graph?.sourceInventory)) {
+    errors.push("Semantic benchmark: sourceInventory must be an array");
+  }
+
+  const byFile = new Map();
+  const seenCategories = new Set();
+  const seenRoles = new Set();
+  for (const entry of inventory) {
+    const file = entry?.file ?? "<missing>";
+    if (!entry?.file || byFile.has(entry.file)) {
+      errors.push(`Semantic benchmark: sourceInventory file must be unique: ${file}`);
+      continue;
+    }
+    byFile.set(entry.file, entry);
+    if (!/^[0-9a-f]{40}$/.test(entry?.gitBlobSha ?? "")) {
+      errors.push(`Semantic benchmark: sourceInventory ${file} must pin a Git blob SHA`);
+    }
+    if (!allowedInventoryRoles.has(entry?.role)) {
+      errors.push(`Semantic benchmark: sourceInventory ${file} has invalid role: ${entry?.role}`);
+    } else {
+      seenRoles.add(entry.role);
+    }
+    if (!entry?.reason) {
+      errors.push(`Semantic benchmark: sourceInventory ${file} must explain the scope decision`);
+    }
+
+    const schemaCategory = categoryFromSchemaFile(entry.file);
+    if (entry?.role === "schema-fragment") {
+      if (!schemaCategory) {
+        errors.push(
+          `Semantic benchmark: sourceInventory ${file} role must match a schema fragment`,
+        );
+      }
+      if (entry?.category !== schemaCategory) {
+        errors.push(
+          `Semantic benchmark: sourceInventory ${file} category must match its schema file name`,
+        );
+      }
+      if (!allowedSchemaDispositions.has(entry?.disposition)) {
+        errors.push(
+          `Semantic benchmark: sourceInventory ${file} has invalid schema disposition: ${entry?.disposition}`,
+        );
+      }
+      if (entry?.category) seenCategories.add(entry.category);
+    } else {
+      if (schemaCategory) {
+        errors.push(
+          `Semantic benchmark: sourceInventory ${file} schema file must use schema-fragment role`,
+        );
+      }
+      const expectedRole = fixedOutputRoles.get(entry.file);
+      if (expectedRole && entry.role !== expectedRole) {
+        errors.push(
+          `Semantic benchmark: sourceInventory ${file} must use output role ${expectedRole}`,
+        );
+      }
+      if (entry?.category || entry?.disposition) {
+        errors.push(
+          `Semantic benchmark: sourceInventory ${file} non-schema output must not declare category or disposition`,
+        );
+      }
+    }
+  }
+
+  for (const role of requiredInventoryRoles) {
+    if (!seenRoles.has(role)) {
+      errors.push(`Semantic benchmark: sourceInventory missing output family role: ${role}`);
+    }
+  }
+  for (const category of forbiddenScmCategories) {
+    const entry = [...byFile.values()].find((item) => item.category === category);
+    if (!entry) {
+      errors.push(
+        `Semantic benchmark: SCM/software category is missing from inventory: ${category}`,
+      );
+    } else if (entry.disposition !== "excluded") {
+      errors.push(`Semantic benchmark: SCM/software category must stay excluded: ${category}`);
+    }
+  }
+
+  const metadata = graph?.sourceInventoryMetadata;
+  if (!metadata) {
+    errors.push("Semantic benchmark: sourceInventoryMetadata is required");
+  } else {
+    if (!/^[0-9a-f]{40}$/.test(metadata.gitTreeSha ?? "")) {
+      errors.push("Semantic benchmark: sourceInventoryMetadata.gitTreeSha must pin a Git tree SHA");
+    }
+    const computedTreeSha = sourceInventoryGitTreeSha(inventory);
+    if (computedTreeSha && metadata.gitTreeSha !== computedTreeSha) {
+      errors.push(
+        "Semantic benchmark: sourceInventoryMetadata.gitTreeSha does not match inventory",
+      );
+    }
+    if (/\blatest\b/i.test(metadata.source ?? "")) {
+      errors.push("Semantic benchmark: sourceInventoryMetadata.source must describe a pinned tree");
+    }
+  }
+
+  return { byFile, seenCategories };
+}
+
+function inventoryEntryForSource(source, inventory, errors, context, allowedDispositions) {
+  const entry = inventory.byFile.get(source?.file);
+  if (!entry) {
+    errors.push(`Semantic benchmark: ${context} cites a file outside sourceInventory`);
+    return null;
+  }
+  if (entry.role !== "schema-fragment") {
+    errors.push(`Semantic benchmark: ${context} must cite one FPT schema fragment`);
+    return entry;
+  }
+  if (source?.category !== entry.category) {
+    errors.push(`Semantic benchmark: ${context} category must match sourceInventory`);
+  }
+  if (!allowedDispositions.has(entry.disposition)) {
+    errors.push(
+      `Semantic benchmark: ${context} uses ${entry.disposition} source category: ${entry.category}`,
+    );
+  }
+  return entry;
+}
+
+function validateSymbolSource(
+  source,
+  errors,
+  context,
+  inventory,
+  allowedDispositions,
+  options = {},
+) {
+  inventoryEntryForSource(source, inventory, errors, context, allowedDispositions);
+  if (!/^schema-[a-z0-9-]+\.json$/.test(source?.file ?? "")) {
+    errors.push(`Semantic benchmark: ${context} must cite one FPT schema fragment`);
+  }
+  if (!source?.symbol) {
+    errors.push(`Semantic benchmark: ${context} must cite an upstream symbol`);
+  }
+  if (options.field === "required" && !source?.field) {
+    errors.push(`Semantic benchmark: ${context} must cite upstream symbol + field evidence`);
+  }
+}
+
+function validateSourcePipeline(graph, errors) {
+  const pipeline = Array.isArray(graph?.sourcePipeline) ? graph.sourcePipeline : [];
+  if (!pipeline.length) {
+    errors.push("Semantic benchmark: sourcePipeline must cite pinned upstream pipeline evidence");
+    return;
+  }
+
+  const ids = new Set();
+  const inventoryRoles = new Set((graph?.sourceInventory ?? []).map((entry) => entry.role));
+  const pipelineFamilies = new Set();
+  for (const stage of pipeline) {
+    if (!stage?.id || ids.has(stage.id)) {
+      errors.push(
+        `Semantic benchmark: sourcePipeline id must be unique: ${stage?.id ?? "<missing>"}`,
+      );
+      continue;
+    }
+    ids.add(stage.id);
+    if (!stage?.meaning) {
+      errors.push(`Semantic benchmark: sourcePipeline ${stage.id} must explain meaning`);
+    }
+    if (
+      stage?.source?.repository !== graph?.authority?.repository ||
+      stage?.source?.revision !== graph?.authority?.revision ||
+      !stage?.source?.path?.startsWith("src/graphql/")
+    ) {
+      errors.push(
+        `Semantic benchmark: sourcePipeline ${stage.id} must cite pinned github/docs src/graphql source`,
+      );
+    }
+    if (!Array.isArray(stage?.outputFamilies) || stage.outputFamilies.length === 0) {
+      errors.push(`Semantic benchmark: sourcePipeline ${stage.id} must declare output families`);
+      continue;
+    }
+    for (const family of stage.outputFamilies) {
+      pipelineFamilies.add(family);
+      if (!inventoryRoles.has(family)) {
+        errors.push(
+          `Semantic benchmark: sourcePipeline ${stage.id} references missing inventory family: ${family}`,
+        );
+      }
+    }
+  }
+  for (const role of requiredInventoryRoles) {
+    if (inventoryRoles.has(role) && !pipelineFamilies.has(role)) {
+      errors.push(`Semantic benchmark: sourcePipeline does not cover inventory family: ${role}`);
+    }
+  }
+}
+
 export function validateSemanticBenchmark(graph) {
   const errors = [];
   if (graph?.version !== 2) errors.push("Semantic benchmark: version must be 2");
@@ -76,22 +314,16 @@ export function validateSemanticBenchmark(graph) {
     errors.push("Semantic benchmark: authority.revision must pin a Git commit SHA");
   }
 
-  const included = new Set(graph?.scope?.includedCategories ?? []);
-  const excluded = new Set(graph?.scope?.excludedCategories ?? []);
-  for (const category of included) {
-    if (!allowedCategories.has(category)) {
-      errors.push(
-        `Semantic benchmark: included category is outside the management allow-list: ${category}`,
-      );
-    }
+  if (graph?.scope?.includedCategories || graph?.scope?.excludedCategories) {
+    errors.push(
+      "Semantic benchmark: scope categories must be owned by sourceInventory, not duplicated in scope",
+    );
   }
-  for (const category of forbiddenCategories) {
-    if (!excluded.has(category)) {
-      errors.push(
-        `Semantic benchmark: software-development category must stay explicitly excluded: ${category}`,
-      );
-    }
-  }
+
+  const inventory = buildInventory(graph, errors);
+  validateSourcePipeline(graph, errors);
+  const domainDispositions = new Set(["included"]);
+  const referenceDispositions = new Set(["included", "reference-only"]);
 
   const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];
   const nodeIds = new Set();
@@ -109,15 +341,7 @@ export function validateSemanticBenchmark(graph) {
     if (forbiddenNodeKinds.has(node.kind)) {
       errors.push(`Semantic benchmark: implementation node kind is forbidden: ${node.kind}`);
     }
-    if (!included.has(node?.source?.category)) {
-      errors.push(`Semantic benchmark: node ${node.id} uses a non-included source category`);
-    }
-    if (!/^schema-[a-z0-9-]+\.json$/.test(node?.source?.file ?? "")) {
-      errors.push(`Semantic benchmark: node ${node.id} must cite one FPT schema fragment`);
-    }
-    if (!node?.source?.symbol) {
-      errors.push(`Semantic benchmark: node ${node.id} must cite an upstream symbol`);
-    }
+    validateSymbolSource(node?.source, errors, `node ${node.id}`, inventory, domainDispositions);
   }
 
   for (const node of nodes) {
@@ -145,15 +369,9 @@ export function validateSemanticBenchmark(graph) {
     if (!nodeIds.has(edge?.to))
       errors.push(`Semantic benchmark: edge target does not exist: ${edge?.to}`);
     if (!edge?.type) errors.push(`Semantic benchmark: edge type is required: ${key}`);
-    if (!included.has(edge?.source?.category)) {
-      errors.push(`Semantic benchmark: edge ${key} uses a non-included source category`);
-    }
-    if (!/^schema-[a-z0-9-]+\.json$/.test(edge?.source?.file ?? "")) {
-      errors.push(`Semantic benchmark: edge ${key} must cite one FPT schema fragment`);
-    }
-    if (!edge?.source?.symbol || !edge?.source?.field) {
-      errors.push(`Semantic benchmark: edge ${key} must cite upstream symbol + field evidence`);
-    }
+    validateSymbolSource(edge?.source, errors, `edge ${key}`, inventory, domainDispositions, {
+      field: "required",
+    });
     const attributeNames = new Set();
     for (const attribute of edge?.attributes ?? []) {
       if (!attribute?.name || attributeNames.has(attribute.name)) {
@@ -163,21 +381,14 @@ export function validateSemanticBenchmark(graph) {
         continue;
       }
       attributeNames.add(attribute.name);
-      if (!included.has(attribute?.source?.category)) {
-        errors.push(
-          `Semantic benchmark: edge ${key} attribute ${attribute.name} uses a non-included source category`,
-        );
-      }
-      if (!/^schema-[a-z0-9-]+\.json$/.test(attribute?.source?.file ?? "")) {
-        errors.push(
-          `Semantic benchmark: edge ${key} attribute ${attribute.name} must cite one FPT schema fragment`,
-        );
-      }
-      if (!attribute?.source?.symbol || !attribute?.source?.field) {
-        errors.push(
-          `Semantic benchmark: edge ${key} attribute ${attribute.name} must cite upstream symbol + field evidence`,
-        );
-      }
+      validateSymbolSource(
+        attribute?.source,
+        errors,
+        `edge ${key} attribute ${attribute.name}`,
+        inventory,
+        domainDispositions,
+        { field: "required" },
+      );
     }
   }
 
@@ -210,14 +421,40 @@ export function validateSemanticBenchmark(graph) {
     if (!sources.length)
       errors.push(`Semantic benchmark: projection ${projection.id} must cite FPT evidence`);
     for (const source of sources) {
-      if (!included.has(source?.category)) {
-        errors.push(
-          `Semantic benchmark: projection ${projection.id} uses a non-included source category`,
-        );
-      }
-      if (!/^schema-[a-z0-9-]+\.json$/.test(source?.file ?? "") || !source?.symbol) {
-        errors.push(`Semantic benchmark: projection ${projection.id} must cite an FPT symbol`);
-      }
+      validateSymbolSource(
+        source,
+        errors,
+        `projection ${projection.id}`,
+        inventory,
+        domainDispositions,
+      );
+    }
+  }
+
+  const referenceIds = new Set();
+  for (const contract of Array.isArray(graph?.referenceContracts) ? graph.referenceContracts : []) {
+    if (!contract?.id || referenceIds.has(contract.id)) {
+      errors.push(
+        `Semantic benchmark: reference contract id must be unique: ${contract?.id ?? "<missing>"}`,
+      );
+      continue;
+    }
+    referenceIds.add(contract.id);
+    if (!contract?.meaning) {
+      errors.push(`Semantic benchmark: reference contract ${contract.id} must explain meaning`);
+    }
+    if (!Array.isArray(contract?.sources) || contract.sources.length === 0) {
+      errors.push(`Semantic benchmark: reference contract ${contract.id} must cite FPT sources`);
+      continue;
+    }
+    for (const source of contract.sources) {
+      validateSymbolSource(
+        source,
+        errors,
+        `reference contract ${contract.id}`,
+        inventory,
+        referenceDispositions,
+      );
     }
   }
 

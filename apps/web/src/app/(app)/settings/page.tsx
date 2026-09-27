@@ -9,10 +9,7 @@ export default function SettingsPage() {
   const miniApp = lineMiniApp();
   return (
     <AppShell>
-      <PageHeading
-        title="我的"
-        description="個人資料、帳號設定、治理範圍與低頻工具集中在這裡。"
-      />
+      <PageHeading title="我的" description="個人資料、帳號設定、治理範圍與低頻工具集中在這裡。" />
 
       <SectionHeading title="帳號" />
       <div className="menu-group">

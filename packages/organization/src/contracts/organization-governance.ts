@@ -22,7 +22,7 @@ export type OrganizationInvitationProjection = Readonly<{
   version: number;
 }>;
 
-export type OrganizationSummary = Readonly<{
+type OrganizationSummary = Readonly<{
   id: string;
   login: string;
   name: string;

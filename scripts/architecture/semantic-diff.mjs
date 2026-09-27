@@ -1,5 +1,10 @@
-function keyed(items) {
-  return new Map((items ?? []).map((item) => [item.id ?? item.semanticOwner, item]));
+function keyed(items, label) {
+  return new Map(
+    (items ?? []).map((item) => [
+      label === "benchmarkDecisions" ? `${item.kind}:${item.id}` : (item.id ?? item.semanticOwner),
+      item,
+    ]),
+  );
 }
 
 function propertyChanges(before, after) {
@@ -54,15 +59,31 @@ function classifyChanged(label, before, after) {
     breaking = true;
   } else if (label === "capabilities") {
     classification = "capability-change";
-    breaking = properties.includes("owner");
+    breaking =
+      properties.some((property) =>
+        ["owner", "kind", "members", "runtimeExpectation", "implementation"].includes(property),
+      ) ||
+      ["preserves", "validationProfiles"].some((property) =>
+        (before[property] ?? []).some((id) => !(after[property] ?? []).includes(id)),
+      );
+  } else if (label === "locators") {
+    classification = "locator-change";
+    breaking = properties.some((property) =>
+      ["concept", "fields", "scope", "status", "routeFiles"].includes(property),
+    );
+  } else if (label === "benchmarkDecisions") {
+    classification = "benchmark-decision-change";
+    breaking = properties.some((property) =>
+      ["status", "concepts", "capabilities", "locators"].includes(property),
+    );
   }
 
   return { classification, breaking, properties };
 }
 
 function diffCollection(before, after, label) {
-  const left = keyed(before);
-  const right = keyed(after);
+  const left = keyed(before, label);
+  const right = keyed(after, label);
   const changes = [];
 
   for (const [id, value] of left) {
@@ -128,6 +149,8 @@ export function diffSemanticModels(before, after) {
     ...diffCollection(before.concepts, after.concepts, "concepts"),
     ...diffCollection(before.relationships, after.relationships, "relationships"),
     ...diffCollection(before.capabilities, after.capabilities, "capabilities"),
+    ...diffCollection(before.locators, after.locators, "locators"),
+    ...diffCollection(before.benchmarkDecisions, after.benchmarkDecisions, "benchmarkDecisions"),
     ...diffCollection(before.invariants, after.invariants, "invariants"),
     ...diffCollection(before.policies, after.policies, "policies"),
     ...diffCollection(before.truthRegistry, after.truthRegistry, "truthRegistry"),

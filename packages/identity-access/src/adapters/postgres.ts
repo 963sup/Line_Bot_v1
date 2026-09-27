@@ -17,7 +17,6 @@ export {
   hasOrganizationOwnerAssignment,
   hasReplacementEnterpriseOwner,
   hasReplacementOrganizationOwner,
-  isEnterpriseOwner,
   isOrganizationOwner,
   isTeamMaintainer,
   readEnterpriseOwnerAssignments,

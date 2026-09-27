@@ -1,12 +1,12 @@
-export type GovernanceScopeKind = "enterprise" | "organization" | "organization-team";
-export type GovernancePrincipalKind = "user" | "organization-team";
+type GovernanceScopeKind = "enterprise" | "organization" | "organization-team";
+type GovernancePrincipalKind = "user" | "organization-team";
 
-export type GovernancePrincipal = Readonly<{
+type GovernancePrincipal = Readonly<{
   kind: GovernancePrincipalKind;
   id: string;
 }>;
 
-export const governanceRoleDefinitions = {
+const governanceRoleDefinitions = {
   EnterpriseOwner: {
     scopeKind: "enterprise",
     principalKinds: ["user"],
@@ -35,7 +35,7 @@ export const governanceRoleDefinitions = {
   },
 } as const;
 
-export type GovernanceRole = keyof typeof governanceRoleDefinitions;
+type GovernanceRole = keyof typeof governanceRoleDefinitions;
 
 export type ScopedRoleCommand = Readonly<{
   action: "grant" | "revoke";
@@ -74,7 +74,7 @@ export class GovernanceAccessError extends Error {
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const stableId = /^[\w-]{1,128}$/;
 
-export function roleSupportsAssignment(
+function roleSupportsAssignment(
   role: GovernanceRole,
   scopeKind: GovernanceScopeKind,
   principalKind: GovernancePrincipalKind,

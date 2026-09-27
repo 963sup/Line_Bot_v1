@@ -4,7 +4,7 @@ const base = "https://keep.googleapis.com/v1/notes";
 export function listNotes(options: GoogleRequestOptions, request: typeof fetch = fetch) {
   return readPages(new URL(base), "notes", options, request);
 }
-/** noteId is the ID portion, without the notes/ prefix. */
+/** @public Public Keep adapter listed in packages/google-workspace/README.md; noteId omits notes/. */
 export function getNote(
   options: GoogleRequestOptions & { noteId: string },
   request: typeof fetch = fetch,

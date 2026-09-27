@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: workforce
+-- scope: ScheduledInterval planned work/rest interval facts, including non-overlap and cross-day time semantics.
+-- canonical target: docs/010-domain-owners/040-workforce.md
+-- migration gate: docs/090-governance/040-gaps/060-workforce.md
+-- activation: remove reserved status only after interval publication/version, non-overlap, cross-day time, authorization, consumer contracts, tests, and validation evidence are current.

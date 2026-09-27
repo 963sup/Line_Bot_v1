@@ -1,7 +1,7 @@
 import { IssueError, issueText, normalizeRepositoryName } from "../domain.js";
 import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
 
-export function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
+function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
   const { requestId, repositoryId, action } = value;
   if (
     typeof requestId !== "string" ||

@@ -3,7 +3,7 @@
 import type { ContactMethod, PartnersView } from "@line-work/partners/contracts";
 import type { PartnerCommand } from "@line-work/partners/domain";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import ContactMethods from "./contact-methods";
@@ -127,11 +127,13 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
     }
   }
 
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+
   useEffect(() => {
-    const change = () => {
-      if (document.visibilityState === "hidden") clear();
-      else void load();
-    };
+    const change = () => onVisibilityChange();
     document.addEventListener("visibilitychange", change);
     return () => document.removeEventListener("visibilitychange", change);
   }, []);
