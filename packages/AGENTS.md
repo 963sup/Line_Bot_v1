@@ -5,6 +5,34 @@
 - `packages/<owner>` 是該責任的 module owner；先確認既有 owner、consumer、public contract 與依賴方向，再決定放置位置。
 - Bounded Context、Module Boundary、Data Boundary 可以對齊，但不得因目錄或 package 名稱而假設它們是同一邊界。
 
+## AGENTS routing index
+
+`packages/` 共有 23 份 package-scope 指引：本檔是 1 份父層 scope contract，另有 22 份 owner-local AGENTS。進入 package 工作時，先讀本檔，再讀目標 owner 最近的 AGENTS；子檔只補 local constraint，不複製本檔正文。
+
+- 父層 scope：[`packages/AGENTS.md`](AGENTS.md)
+- Account：[`account/AGENTS.md`](account/AGENTS.md)
+- Asset：[`asset/AGENTS.md`](asset/AGENTS.md)
+- Assistant：[`assistant/AGENTS.md`](assistant/AGENTS.md)
+- Attendance：[`attendance/AGENTS.md`](attendance/AGENTS.md)
+- Audit：[`audit/AGENTS.md`](audit/AGENTS.md)
+- Daily Check-in：[`daily-check-in/AGENTS.md`](daily-check-in/AGENTS.md)
+- Enterprise：[`enterprise/AGENTS.md`](enterprise/AGENTS.md)
+- Expense：[`expense/AGENTS.md`](expense/AGENTS.md)
+- Google Workspace：[`google-workspace/AGENTS.md`](google-workspace/AGENTS.md)
+- Identity/Access：[`identity-access/AGENTS.md`](identity-access/AGENTS.md)
+- Ledger：[`ledger/AGENTS.md`](ledger/AGENTS.md)
+- LINE Channel：[`line-channel/AGENTS.md`](line-channel/AGENTS.md)
+- Notifications：[`notifications/AGENTS.md`](notifications/AGENTS.md)
+- Organization：[`organization/AGENTS.md`](organization/AGENTS.md)
+- Partners：[`partners/AGENTS.md`](partners/AGENTS.md)
+- Payroll：[`payroll/AGENTS.md`](payroll/AGENTS.md)
+- Platform：[`platform/AGENTS.md`](platform/AGENTS.md)
+- Project：[`project/AGENTS.md`](project/AGENTS.md)
+- Repository：[`repository/AGENTS.md`](repository/AGENTS.md)
+- Team：[`team/AGENTS.md`](team/AGENTS.md)
+- Wallet：[`wallet/AGENTS.md`](wallet/AGENTS.md)
+- Workforce：[`workforce/AGENTS.md`](workforce/AGENTS.md)
+
 ## Boundary
 
 - Consumer 只能使用各 package `package.json` 宣告的 public exports；產品 source 不得依賴其他 package 的 internal、dist 或 testing path。

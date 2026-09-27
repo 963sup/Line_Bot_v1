@@ -1,5 +1,5 @@
 import type { DailyCheckInRepository } from "./application/ports/daily-check-in-repository.js";
-import { DAILY_CHECK_IN_COIN_REWARD, dailyCheckInDay } from "./domain.js";
+import { DAILY_CHECK_IN_POLICY, dailyCheckInDay, parseDailyCheckInDay } from "./domain.js";
 
 type DailyCheckInMemberView = {
   id: string;
@@ -16,37 +16,41 @@ export interface DailyCheckInDependencies {
   repository(): DailyCheckInRepository;
   /** Consumer-owned projection over the Wallet owner. */
   coinBalance(userId: string): Promise<number>;
-  /** Consumer-owned query over Ledger facts for the DailyCheckIn source/day. */
-  claimedToday(userId: string, day: string): Promise<boolean>;
   now(): number;
 }
 
 export function createDailyCheckIn(deps: DailyCheckInDependencies) {
   return {
-    checkIn: async (subject: string) => {
+    checkIn: async (subject: string, expectedDay: unknown) => {
       const account = await deps.activeUser(subject);
       const now = deps.now();
-      const credited = await deps.repository().claim(account.id, now);
+      const day = parseDailyCheckInDay(expectedDay);
+      const result = await deps.repository().claim(account.id, now, day);
       const coins = await coinView(account.id, now);
       return {
         member: { ...(await deps.member(account.id)), coins },
-        checkIn: { credited, coins },
+        checkIn: { ...result, coins },
       };
+    },
+    readClaim: async (subject: string, day: unknown) => {
+      const account = await deps.activeUser(subject);
+      return deps.repository().read(account.id, parseDailyCheckInDay(day), "active");
     },
     coinView,
   };
 
   async function coinView(memberId: string, now: number) {
     const day = dailyCheckInDay(now);
-    const [balance, claimedToday] = await Promise.all([
+    const [balance, claim] = await Promise.all([
       deps.coinBalance(memberId),
-      deps.claimedToday(memberId, day),
+      deps.repository().read(memberId, day, "any"),
     ]);
     return {
       balance,
       day,
-      claimedToday,
-      dailyReward: DAILY_CHECK_IN_COIN_REWARD,
+      claimedToday: claim !== null,
+      claim,
+      policy: DAILY_CHECK_IN_POLICY,
     };
   }
 }

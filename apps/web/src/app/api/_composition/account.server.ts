@@ -13,9 +13,7 @@ import { requireActiveUser } from "@line-work/account/domain/user";
 import { COIN_ASSET_CODE } from "@line-work/asset/domain";
 import { PostgresDailyCheckInStore } from "@line-work/daily-check-in/adapters/postgres";
 import { createDailyCheckIn } from "@line-work/daily-check-in/application";
-import { DAILY_CHECK_IN_LEDGER_SOURCE } from "@line-work/daily-check-in/domain";
 import { protectPermissionAdministrator } from "@line-work/identity-access/adapters/postgres";
-import { PostgresLedgerStore } from "@line-work/ledger/adapters/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
 import { PostgresWalletStore } from "@line-work/wallet/adapters/postgres";
 
@@ -23,7 +21,6 @@ const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;
   walletStore?: PostgresWalletStore;
   dailyCheckInStore?: PostgresDailyCheckInStore;
-  ledgerStore?: PostgresLedgerStore;
   followStore?: PostgresFollowStore;
   profileStore?: PostgresUserProfileStore;
   loginDirectoryStore?: PostgresLoginDirectoryStore;
@@ -39,9 +36,6 @@ function walletStore() {
 }
 function dailyCheckInStore() {
   return (state.dailyCheckInStore ??= new PostgresDailyCheckInStore());
-}
-function ledgerStore() {
-  return (state.ledgerStore ??= new PostgresLedgerStore());
 }
 function followStore() {
   return (state.followStore ??= new PostgresFollowStore());
@@ -59,8 +53,6 @@ const dailyCheckIn = createDailyCheckIn({
   member: (userId) => userStore().view(userId),
   repository: dailyCheckInStore,
   coinBalance: async (userId) => (await walletStore().balance(userId, COIN_ASSET_CODE)).balance,
-  claimedToday: (userId, day) =>
-    ledgerStore().hasEntry(userId, COIN_ASSET_CODE, DAILY_CHECK_IN_LEDGER_SOURCE, day),
   now: () => Date.now(),
 });
 const user = createUser({
@@ -102,3 +94,4 @@ export async function getUser(subject: string) {
 }
 
 export const checkIn = dailyCheckIn.checkIn;
+export const readClaim = dailyCheckIn.readClaim;

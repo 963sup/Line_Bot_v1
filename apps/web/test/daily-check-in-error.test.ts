@@ -20,6 +20,16 @@ test("account qualification failures retain their own HTTP contract", async () =
   assert.equal((await response.json()).code, "membership_denied");
 });
 
+test("stale check-in day is a conflict, not an automatically retryable claim", async () => {
+  const response = apiError(new DailyCheckInError(409, "簽到日期已變更，請重新整理後再試。"));
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), {
+    error: "簽到日期已變更，請重新整理後再試。",
+    code: "operation_conflict",
+    retryable: false,
+  });
+});
+
 test("untrusted error-shaped objects do not become public business failures", async () => {
   const response = apiError({ status: 400, message: "private upstream detail" });
   assert.equal(response.status, 503);

@@ -12,4 +12,5 @@
 - Provider-owned `auth`、`storage`、`public` helper、`supabase_migrations` 不可被 application schema 做 DDL/DCL mutation；必要 Auth dependency 只能用 FK 或 narrow SECURITY DEFINER capability，`line_app` 不持 direct Auth privilege。
 - Runtime `line_app` 不得持 LOGIN、SUPERUSER、BYPASSRLS、schema ownership、DDL 或 migration authority。RLS/grants 是 defense in depth，不取代 application authorization。
 - Remote mutation 只走 repository-owned reconciliation：normal path 為 `plan → sync → verify`；destructive/data-sensitive diff 只能由 explicit Supabase Replace workflow 授權，且先以 `prepare` 做 preserve-data additive expansion/preflight。`prepare` 不得猜 business metadata、drop legacy authority 或取代 destructive authorization。任何 remote write 後都要 read back catalog/security 與 migration-history fingerprint。
+- `config.toml` 只支援 local/declarative schema workflow；不得把它當成允許 official `db push`、linked reset、migration repair 或 remote migration replay 的證據。調整 Supabase CLI behavior 時，同步檢查 `scripts/supabase/*`、`.github/workflows/*` 與本 README 的 remote contract。
 - 不提交 secret、個資、production-sensitive dump 或 fabricated verification data。Static/schema/test/build/deployment/provider/device evidence 分開回報。

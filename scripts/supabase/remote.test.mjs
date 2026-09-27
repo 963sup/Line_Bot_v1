@@ -6,6 +6,7 @@ import {
   assertGeneralManagementExpansionState,
   assertMigrationHistoryUnchanged,
   assertRemoteTarget,
+  assertSupabaseRestReadback,
   classifyAccountLoginCompatibility,
   classifyPlan,
   classifyRemoteFoundationState,
@@ -16,6 +17,8 @@ import {
   permissionNamesFromSource,
   permissionSubjectVersionExpansionSql,
   projectRefFromSupabaseUrl,
+  supabaseApiReadbackConfig,
+  verifySupabaseApiReadback,
 } from "./remote.mjs";
 
 test("classifyPlan accepts additive DDL", () => {
@@ -67,15 +70,31 @@ test("migration history must remain byte-stable modulo outer whitespace", () => 
 });
 
 test("parseArgs defaults to sync and keeps one canonical reconciliation path", () => {
-  assert.deepEqual(parseArgs([]), { command: "sync", allowDestructive: false });
+  assert.deepEqual(parseArgs([]), { command: "sync", allowDestructive: false, api: false });
   assert.throws(() => parseArgs(["compat"]), /Usage/);
-  assert.deepEqual(parseArgs(["prepare"]), { command: "prepare", allowDestructive: false });
-  assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowDestructive: false });
+  assert.deepEqual(parseArgs(["prepare"]), {
+    command: "prepare",
+    allowDestructive: false,
+    api: false,
+  });
+  assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowDestructive: false, api: false });
   assert.deepEqual(parseArgs(["sync", "--allow-destructive"]), {
     command: "sync",
     allowDestructive: true,
+    api: false,
   });
-  assert.deepEqual(parseArgs(["verify"]), { command: "verify", allowDestructive: false });
+  assert.deepEqual(parseArgs(["verify"]), {
+    command: "verify",
+    allowDestructive: false,
+    api: false,
+  });
+  assert.deepEqual(parseArgs(["verify", "--api"]), {
+    command: "verify",
+    allowDestructive: false,
+    api: true,
+  });
+  assert.throws(() => parseArgs(["sync", "--api"]), /only valid/);
+  assert.throws(() => parseArgs(["verify", "--unknown"]), /Usage/);
 });
 
 test("Supabase project URL yields the exact project ref", () => {
@@ -84,6 +103,85 @@ test("Supabase project URL yields the exact project ref", () => {
     "nmssogphayjymjpbnrxv",
   );
   assert.throws(() => projectRefFromSupabaseUrl("https://example.com"), /SUPABASE_URL/);
+});
+
+test("Supabase API readback config is explicit and same-target", () => {
+  assert.deepEqual(
+    supabaseApiReadbackConfig({
+      SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co/",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable",
+    }),
+    {
+      supabaseUrl: "https://nmssogphayjymjpbnrxv.supabase.co",
+      publishableKey: "publishable",
+    },
+  );
+  assert.throws(
+    () =>
+      supabaseApiReadbackConfig({
+        SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+      }),
+    /PUBLISHABLE_KEY/,
+  );
+  assert.throws(
+    () =>
+      supabaseApiReadbackConfig({
+        SUPABASE_URL: "https://example.com",
+        SUPABASE_PUBLISHABLE_KEY: "publishable",
+      }),
+    /SUPABASE_URL/,
+  );
+});
+
+test("Supabase REST readback treats Google provider state as diagnostic evidence", () => {
+  assert.deepEqual(
+    assertSupabaseRestReadback({ usersStatus: 403, authStatus: 200, googleEnabled: false }),
+    { publicDataApiDenied: true, googleEnabled: false },
+  );
+  assert.throws(
+    () => assertSupabaseRestReadback({ usersStatus: 200, authStatus: 200, googleEnabled: true }),
+    /public Data API/i,
+  );
+  assert.throws(
+    () => assertSupabaseRestReadback({ usersStatus: 403, authStatus: 503, googleEnabled: true }),
+    /Auth settings/i,
+  );
+});
+
+test("Supabase API readback uses public key and bounded fetches", async () => {
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, apikey: options.headers.apikey, hasSignal: Boolean(options.signal) });
+    if (url.endsWith("/rest/v1/users?select=id&limit=1"))
+      return new Response("{}", { status: 404 });
+    if (url.endsWith("/auth/v1/settings")) {
+      return Response.json({ external: { google: false } });
+    }
+    return new Response("unexpected", { status: 500 });
+  };
+
+  assert.deepEqual(
+    await verifySupabaseApiReadback(
+      {
+        supabaseUrl: "https://nmssogphayjymjpbnrxv.supabase.co",
+        publishableKey: "public-key",
+      },
+      fetchImpl,
+    ),
+    { publicDataApiDenied: true, googleEnabled: false },
+  );
+  assert.deepEqual(calls, [
+    {
+      url: "https://nmssogphayjymjpbnrxv.supabase.co/rest/v1/users?select=id&limit=1",
+      apikey: "public-key",
+      hasSignal: true,
+    },
+    {
+      url: "https://nmssogphayjymjpbnrxv.supabase.co/auth/v1/settings",
+      apikey: "public-key",
+      hasSignal: true,
+    },
+  ]);
 });
 
 test("explicit project confirmation is mandatory and must match the URL-derived target", () => {

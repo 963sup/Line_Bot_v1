@@ -1,23 +1,15 @@
-/**
- * ============================================================================
- * 第一性原理分析：LINE Flex 支出通知卡片語法校驗腳本 (Expense Card Validation Script)
- * ============================================================================
- *
- * 1. 根本問題 (Root Problem):
- *    LINE Flex Message JSON 結構複雜且具有極度嚴格的官方 schema 約束。
- *    若未經事先驗證直接向群組發送，格式錯誤將導致整筆推播失敗；若透過實際發送測試，
- *    又會對測試群組造成垃圾訊息干擾與 Quota 浪費。
- *
- * 2. 核心公理與離線核驗約束 (Core Axioms & Dry-Run Validation):
- *    - 【零實際發送公理 (Zero-Send Invariant)】：
- *      利用 LINE 官方 API 之 `validateReply` 端點，僅進行 JSON Schema 伺服端校驗，
- *      不發送任何實際推播訊息 (`messagesSent: 0`)。
- *    - 【脫敏與假名化】：使用合成的 UUID 與流水號測試卡片渲染，不洩漏任何真實支出實體。
- * ============================================================================
- */
+// Live LINE validateReply probe for a synthetic expense card. No message is sent.
 
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
+
+if (process.argv.slice(2).join(" ") !== "--live") {
+  console.error(
+    "Usage: node scripts/probes/check-expense-card.mjs --live (one live LINE validateReply call; messagesSent remains 0).",
+  );
+  process.exitCode = 1;
+  process.exit();
+}
 
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createLineClient } = await import(

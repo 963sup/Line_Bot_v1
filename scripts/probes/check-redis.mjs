@@ -4,6 +4,14 @@ import { createRequire } from "node:module";
 
 import { loadRootEnv } from "../runtime/load-env.mjs";
 
+if (process.argv.slice(2).join(" ") !== "--live") {
+  console.error(
+    "Usage: node scripts/probes/check-redis.mjs --live (live Redis REST probe; creates short-lived synthetic keys).",
+  );
+  process.exitCode = 1;
+  process.exit();
+}
+
 const appRequire = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createUpstashRedisRestTransport, RedisIdempotencyStore, RedisRateLimiter } = await import(
   appRequire.resolve("@line-work/platform/adapters/redis")

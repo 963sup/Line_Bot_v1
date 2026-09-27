@@ -36,7 +36,7 @@ let deny = false,
   pending;
 let savedPartner = null,
   lose = false,
-  memberId = "synthetic",
+  userId = "synthetic",
   conflict = false;
 const posts = [],
   receipts = new Map();
@@ -88,7 +88,7 @@ await context.route("**/*", async (route) => {
     const second = url.searchParams.has("after");
     return route.fulfill({
       json: {
-        memberId,
+        userId,
         canReview: false,
         news: [],
         referrals: [],
@@ -211,13 +211,13 @@ try {
   await page.getByLabel("修改原因", { exact: true }).fill("換身分拒絕");
   await page.getByRole("checkbox").check();
   const count = posts.length;
-  memberId = "other";
+  userId = "other";
   await page.getByRole("button", { name: "確認儲存", exact: true }).click();
   await expect(
     page.getByText("LINE 身分已變更，請重新讀取後編輯。", { exact: true }),
   ).toBeVisible();
   assert.equal(posts.length, count);
-  memberId = "synthetic";
+  userId = "synthetic";
   await page.getByRole("button", { name: "重新讀取", exact: true }).click();
   await expect(page.getByRole("heading", { name: "新夥伴（已下架）" })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });

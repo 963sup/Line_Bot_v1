@@ -4,6 +4,7 @@ import {
   checkIn,
   getUser,
   pauseUser,
+  readClaim,
   updateLogin,
 } from "../_composition/account.server";
 import { requestLineIdentity } from "../_composition/request-identity.server";
@@ -12,6 +13,7 @@ export const { GET, POST } = createUserRequest({
   activeLineUser,
   checkIn,
   pauseUser,
+  readClaim,
   updateLogin,
   getUser,
   requestIdentity: requestLineIdentity,

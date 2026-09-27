@@ -4,6 +4,7 @@
 - CLI 只負責操作流程，不承擔產品領域規則。
 - 命令從專案根目錄執行；一般入口使用 `package.json` 的 pnpm scripts，完整驗證使用 `pnpm validate`。
 - 外部探測、資料庫維運與發布須另行執行，不納入本地驗證。
+- `probe:*` 命令都是明確 live probe，package script 已內建 `--live`；直接執行 `node scripts/probes/*.mjs` 時才需手動帶 `--live`。它們可能呼叫 Gemini、LINE、Redis 或 provider validation API，不屬於 `check`／`validate` 證據。
 - 操作契約由對應 canonical doc 維護；本索引只標示責任與入口，不在 script 目錄複製第二份產品規格。
 - 變更腳本時，同步修正受影響的命令、測試、驗證流程、部署清單與文件引用。
 

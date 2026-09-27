@@ -95,9 +95,6 @@ importers:
       '@line-work/identity-access':
         specifier: workspace:*
         version: link:../../packages/identity-access
-      '@line-work/ledger':
-        specifier: workspace:*
-        version: link:../../packages/ledger
       '@line-work/line-channel':
         specifier: workspace:*
         version: link:../../packages/line-channel

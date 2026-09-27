@@ -20,7 +20,6 @@
     "@line-work/enterprise": "workspace:*",
     "@line-work/expense": "workspace:*",
     "@line-work/identity-access": "workspace:*",
-    "@line-work/ledger": "workspace:*",
     "@line-work/line-channel": "workspace:*",
     "@line-work/organization": "workspace:*",
     "@line-work/partners": "workspace:*",

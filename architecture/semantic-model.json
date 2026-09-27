@@ -460,7 +460,8 @@
       "owner": "daily-check-in",
       "lifecycle": "current",
       "definition": "Business-day check-in and reward decision.",
-      "authorityMode": "authoritative"
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     },
     {
       "id": "asset",
@@ -1346,7 +1347,8 @@
         "sourcePaths": [
           "packages/daily-check-in/src/application.ts",
           "packages/daily-check-in/src/application/ports/daily-check-in-repository.ts",
-          "packages/daily-check-in/src/domain.ts"
+          "packages/daily-check-in/src/domain.ts",
+          "packages/daily-check-in/src/adapters/postgres.ts"
         ],
         "publicExports": [
           "./application",
@@ -1356,7 +1358,8 @@
         "entrypoints": ["apps/web/src/app/(app)/home/page.tsx"],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",
-          "packages/daily-check-in/test/daily-check-in-policy.test.ts"
+          "packages/daily-check-in/test/daily-check-in-policy.test.ts",
+          "packages/daily-check-in/test/daily-check-in-postgres.test.ts"
         ],
         "note": "Source/export evidence exists; one-per-day behavior requires test evidence."
       }

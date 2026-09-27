@@ -16,14 +16,7 @@
         "scripts/browser/check-repository-resources.mjs",
         "scripts/browser/check-workplaces.mjs",
         "scripts/browser/measure-loading.mjs",
-        "scripts/line/rich-menu/sync.ts",
-        "scripts/probes/check-agent.mjs",
-        "scripts/probes/check-expense-card.mjs",
-        "scripts/probes/check-gemini.mjs",
-        "scripts/probes/check-line.mjs",
-        "scripts/probes/check-receipt.mjs",
-        "scripts/probes/check-redis.mjs",
-        "scripts/supabase/verify-supabase.mjs"
+        "scripts/line/rich-menu/sync.ts"
       ],
       // Root operator scripts intentionally resolve these from their owning workspace:
       // Next/tsx from Web and the repository-owned Supabase CLI.

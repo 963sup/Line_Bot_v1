@@ -6,3 +6,5 @@
 - 必須保留 TLS requirement、bounded timeout/cooldown、hashed identifier、namespace validation、TTL、single-winner claim、owner-token completion 與 stale-owner rejection。
 - Redis unavailable 時不得退回 process-local Map 冒充跨 instance guarantee；不得新增 destructive scan/FLUSHDB 行為。
 - `adapters/supabase`、`adapters/migration` 與 `testing/postgres` 目前仍是 transition facades；不得因 Redis 收斂而混入其 Data Boundary migration。
+- PostgreSQL support is runtime mechanism only: preserve Supavisor transaction-mode assumptions, reduced application role, local statement timeout and explicit transaction boundary when touching database helpers.
+- `testing/postgres` is test-only public surface. Product runtime cannot import it, and package AGENTS must not use it as evidence that remote schema, RLS, privileges or deployment are synchronized.

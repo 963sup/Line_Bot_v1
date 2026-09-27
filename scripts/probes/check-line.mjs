@@ -4,6 +4,14 @@
  */
 import { createRequire } from "node:module";
 
+if (process.argv.slice(2).join(" ") !== "--live") {
+  console.error(
+    "Usage: node scripts/probes/check-line.mjs --live (one live LINE getBotInfo call; no messages sent).",
+  );
+  process.exitCode = 1;
+  process.exit();
+}
+
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createLineClient } = await import(
   require.resolve("@line-work/line-channel/adapters/messaging")

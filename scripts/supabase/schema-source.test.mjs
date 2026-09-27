@@ -43,8 +43,8 @@ test("config and schema assembly use the same complete lexical order", () => {
 test("local rebuild cannot target a linked or arbitrary database", () => {
   const commands = localSchemaCommands();
   assert.deepEqual(
-    commands.map((command) => command[0]),
-    ["start", "db", "status"],
+    commands.map((command) => command.join(" ")),
+    ["db start", "db reset --local --no-seed", "status --output json"],
   );
   assert.ok(commands[1].includes("--local"));
   for (const command of commands) {

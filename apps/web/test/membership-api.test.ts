@@ -81,18 +81,69 @@ test("LINE-only membership preserves ownership and rewards; retired direct Googl
     assert.equal(registered[0].member.googleEmail, null);
     assert.equal((await POST(request({ action: "registerLine" }))).status, 400);
     const otherId = await activateMember(other);
+    const checkInTime = mock.method(Date, "now", () => Date.parse("2026-09-24T15:59:59Z"));
+    const expectedDay = "2026-09-24";
+    const unclaimed = await GET(
+      new Request(`https://app.example/api/membership?checkInDay=${expectedDay}`, request()),
+    );
+    assert.equal((await unclaimed.json()).claim, null);
+    assert.equal((await walletStore().balance(id, COIN_ASSET_CODE)).balance, 0);
+    assert.equal((await POST(request({ action: "checkIn" }))).status, 400);
+    assert.equal(
+      (await POST(request({ action: "checkIn", expectedDay: "2026-02-30" }))).status,
+      400,
+    );
+    assert.equal(
+      (await POST(request({ action: "checkIn", expectedDay: "2026-09-25" }))).status,
+      409,
+    );
     const results = await Promise.all(
       Array.from({ length: 8 }, () =>
-        POST(request({ action: "checkIn", amount: 1000, memberId: otherId, day: "2099-01-01" })),
+        POST(
+          request({
+            action: "checkIn",
+            expectedDay,
+            amount: 1000,
+            memberId: otherId,
+            day: "2099-01-01",
+            prizeCode: "coin-four",
+          }),
+        ),
       ),
     );
     assert.ok(results.every((r) => r.status === 200));
     const data = await Promise.all(results.map((r) => r.json()));
+    const claim = data[0].checkIn.claim;
+    assert.ok([0.5, 1, 4].includes(claim.reward));
+    assert.equal(claim.day, expectedDay);
+    assert.equal(claim.policyVersion, "wheel-v1");
+    assert.ok(data.every((item) => JSON.stringify(item.checkIn.claim) === JSON.stringify(claim)));
+    assert.equal(data.filter((item) => !item.checkIn.replayed).length, 1);
     assert.equal(
       data.reduce((n, r) => n + r.checkIn.credited, 0),
-      1,
+      claim.reward,
     );
     assert.equal((await walletStore().balance(otherId, COIN_ASSET_CODE)).balance, 0);
+    checkInTime.mock.mockImplementation(() => Date.parse("2026-09-24T16:00:01Z"));
+    const replay = await POST(request({ action: "checkIn", expectedDay }));
+    assert.equal(replay.status, 200);
+    const replayData = await replay.json();
+    assert.deepEqual(replayData.checkIn.claim, claim);
+    assert.equal(replayData.checkIn.credited, 0);
+    assert.equal(replayData.member.coins.claimedToday, false);
+    const recovered = await GET(
+      new Request(`https://app.example/api/membership?checkInDay=${expectedDay}`, request()),
+    );
+    assert.deepEqual((await recovered.json()).claim, claim);
+    const isolated = await GET(
+      new Request(
+        `https://app.example/api/membership?checkInDay=${expectedDay}&userId=${id}`,
+        request(undefined, "other"),
+      ),
+    );
+    assert.equal((await isolated.json()).claim, null);
+    assert.equal((await POST(request({ action: "checkIn", expectedDay }, "other"))).status, 409);
+    checkInTime.mock.restore();
     const point = { latitude: 25, longitude: 121, accuracy: 5 };
     const time = mock.method(Date, "now", () => Date.parse("2026-09-07T00:00:00Z"));
     assert.equal((await POST(request({ action: "clockIn", location: point }))).status, 400);
@@ -122,7 +173,15 @@ test("LINE-only membership preserves ownership and rewards; retired direct Googl
     failed.mock.restore();
     assert.equal((await POST(request({ action: "deactivate" }))).status, 200);
     assert.equal((await POST(request({ action: "checkIn" }))).status, 403);
-    assert.equal((await walletStore().balance(id, COIN_ASSET_CODE)).balance, 2);
+    assert.equal(
+      (
+        await GET(
+          new Request(`https://app.example/api/membership?checkInDay=${expectedDay}`, request()),
+        )
+      ).status,
+      403,
+    );
+    assert.equal((await walletStore().balance(id, COIN_ASSET_CODE)).balance, claim.reward + 1);
     assert.equal((await REGISTER(request({ login: "alice" }))).status, 409);
     assert.equal((await RESTORE(request({}))).status, 200);
     assert.equal((await memberStore().get(id)).id, id);

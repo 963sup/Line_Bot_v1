@@ -204,6 +204,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/805_daily_check_in_claims.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/810_ledger_entries.sql",
       "role": "authoritative"
     },
@@ -750,6 +754,14 @@
       "authority": true,
       "semanticOwner": "asset",
       "concept": "asset"
+    },
+    {
+      "name": "daily_check_in_claims",
+      "kind": "table",
+      "path": "supabase/schemas/805_daily_check_in_claims.sql",
+      "authority": true,
+      "semanticOwner": "daily-check-in",
+      "concept": "daily-check-in"
     },
     {
       "name": "asset_ledger_entries",

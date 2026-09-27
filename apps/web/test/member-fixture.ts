@@ -6,7 +6,6 @@ import { PostgresAttendanceStore } from "@line-work/attendance/adapters/postgres
 import { PostgresDailyCheckInStore } from "@line-work/daily-check-in/adapters/postgres";
 import { PostgresExpenseStore } from "@line-work/expense/adapters/postgres";
 import { protectPermissionAdministrator } from "@line-work/identity-access/adapters/postgres";
-import { PostgresLedgerStore } from "@line-work/ledger/adapters/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
 import { postgresFixture } from "@line-work/platform/testing/postgres";
 import { PostgresWalletStore } from "@line-work/wallet/adapters/postgres";
@@ -18,7 +17,6 @@ const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;
   dailyCheckInStore?: PostgresDailyCheckInStore;
   walletStore?: PostgresWalletStore;
-  ledgerStore?: PostgresLedgerStore;
   attendanceStore?: PostgresAttendanceStore;
   expenseStore?: PostgresExpenseStore;
   lineIdempotency?: WebhookIdempotencyStore;
@@ -40,7 +38,6 @@ export async function mockSupabase() {
   });
   state.dailyCheckInStore = new PostgresDailyCheckInStore(fixture.db);
   state.walletStore = new PostgresWalletStore(fixture.db);
-  state.ledgerStore = new PostgresLedgerStore(fixture.db);
   state.attendanceStore = new PostgresAttendanceStore(fixture.db);
   state.expenseStore = new PostgresExpenseStore(fixture.db);
   mock.method(supabaseIdentity(), "verify", async (token: string) => {
@@ -56,9 +53,6 @@ export function memberStore() {
 }
 export function walletStore() {
   return state.walletStore!;
-}
-export function ledgerStore() {
-  return state.ledgerStore!;
 }
 export function expenseStore() {
   return state.expenseStore!;
