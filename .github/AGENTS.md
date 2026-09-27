@@ -32,6 +32,7 @@ Trivial fail-closed assertion（例如 exact SHA 仍為 current `main`）可保�
 - Affected-source routing 的 policy authority 在 GitHub integration；若 routing algorithm 已超過 thin adapter responsibility，executable implementation 必須移到經 evidence 證明的 operation owner，workflow只消費其 machine-readable result。
 - Supabase 每個 validated `main` 都先執行 `schema:remote repair`；affected `supabase/schemas/*.sql` → plain `schema:remote sync`；schema unchanged → `schema:remote verify`。Production mutation 只由 GitHub Actions Release授權，且 migration history fingerprint before/after 必須完全相同。
 - Web deployment 只在 `@line_bot_v1/web#build` 真正受 pending runtime changes 影響時執行。Vercel Production若依賴 current database contract，可保留 Supabase convergence edge；此 edge必須由 consumer dependency證明，不是 global publication order。
+- Attendance scheduler 是獨立 operational desired state：只由 canonical `pnpm attendance:scheduler reconcile` 收斂；一定等待 Supabase，且 pending Web runtime 時等待 exact-SHA Vercel Production。缺 worker credential、target/readback 不一致一律 fail closed，不在 workflow 內重寫 cron/Vault logic。
 - Rich Menu publication cursor 獨立於 Supabase/Vercel。Publication-only change直接 publish；只有同一 pending change需要新 Web runtime時才等待 exact SHA Vercel deployment。
 - Rich Menu definition / desired state / publication transaction 的真正 owner 維持在 Web Rich Menu module；`scripts/line/rich-menu/sync.ts` 只是 CLI execution adapter。
 - Vercel provider mutation前仍需 exact target、exact SHA、active Release authorization 與 readback；provider semantics由 Vercel operation owner維護，不在 YAML重寫。
