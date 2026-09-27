@@ -33,9 +33,12 @@ const runMaintenance = createAttendanceMaintenance({
       menuAlias(state === "working" ? "attendance-out" : "attendance-in"),
     );
     if (!id) throw new Error("attendance_menu_not_configured");
-    await client.linkUser(subject, id);
-    if ((await client.getUserMenu(subject)) !== id)
-      throw new Error("attendance_menu_readback_mismatch");
+    const current = await client.getUserMenu(subject);
+    if (current !== id) {
+      await client.linkUser(subject, id);
+      if ((await client.getUserMenu(subject)) !== id)
+        throw new Error("attendance_menu_readback_mismatch");
+    }
   },
   notify: (job) =>
     pushLineText(

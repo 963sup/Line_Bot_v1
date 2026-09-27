@@ -66,6 +66,7 @@ Attendance state 是 authority；Rich Menu 是可重試 projection。
 - Menu sync failure 不回滾打卡。
 - Notification delivery failure 不回滾打卡。
 - Outbox / lease 必須防止舊工作永久覆蓋較新的 menu expectation。
+- 已同步的 per-user menu 仍需週期性 readback；maintenance 以 current alias target 作 expected projection，只有 provider binding 不一致時才 relink，避免 Rich Menu publication 後留下舊 menu generation。
 - 每次 operation 的 notification 有固定 recipient / payload / retry identity；平台接受不等於手機已送達。
 
 LINE alias、Messaging API retry 技術細節由 LINE integration / operations owner 維護。
