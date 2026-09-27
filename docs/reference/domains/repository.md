@@ -1,6 +1,6 @@
 # Repository detailed reference
 
-Low-frequency Repository runtime, locator and discovery details. Ownership/invariants remain canonical in [Repository](../../010-domain-owners/080-repository.md).
+Low-frequency Repository runtime, locator and discovery details. Ownership/invariants remain canonical in [Repository](../../owners/repository.md).
 
 ## Runtime capability status
 
