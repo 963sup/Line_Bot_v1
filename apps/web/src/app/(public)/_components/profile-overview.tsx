@@ -3,6 +3,7 @@
 import type { UserAchievement } from "@line_bot_v1/account/application/ports/achievements";
 import type { UserProfile } from "@line_bot_v1/account/application/ports/profile";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../../shared/browser/liff-client";
 import styles from "./profile-viewer-shell.module.css";
@@ -17,6 +18,13 @@ type Loadable<T> =
   | { state: "loading" }
   | { state: "ready"; value: T }
   | { state: "error" };
+type ResourceKind = "repositories" | "organizations" | "starred";
+type ProfileResource = Readonly<{
+  href: string;
+  kind: ResourceKind;
+  label: string;
+  count?: number;
+}>;
 
 async function readJson<T>(path: string, token: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(path, {
@@ -34,7 +42,7 @@ function initials(value: string) {
   return Array.from(value.trim())[0]?.toLocaleUpperCase("zh-TW") ?? "•";
 }
 
-function ResourceIcon({ kind }: { kind: "repositories" | "organizations" | "starred" }) {
+function ResourceIcon({ kind }: { kind: ResourceKind }) {
   const paths = {
     repositories: "M5 4.5h12a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2V4.5ZM7 16h12M9 8h6",
     organizations:
@@ -59,14 +67,18 @@ function ResourceIcon({ kind }: { kind: "repositories" | "organizations" | "star
 }
 
 export default function ProfileOverview({
+  children,
   profileBio,
   profileLogin,
   profileTitle,
+  publicRepositoryCount,
   token,
 }: {
+  children: ReactNode;
   profileBio?: string | null;
   profileLogin: string;
   profileTitle: string;
+  publicRepositoryCount?: number;
   token?: string;
 }) {
   const [provider, setProvider] = useState<Loadable<ProviderProfile>>({ state: "idle" });
@@ -124,6 +136,16 @@ export default function ProfileOverview({
   const profileValue = token && profile.state === "ready" ? profile.value : null;
   const title = profileValue?.displayName ?? providerValue?.displayName ?? profileTitle;
   const bio = token && profile.state === "ready" ? profileValue?.bio : profileBio;
+  const resources: readonly ProfileResource[] = [
+    {
+      href: "/repositories",
+      kind: "repositories",
+      label: "Repositories",
+      count: publicRepositoryCount,
+    },
+    { href: "/organizations", kind: "organizations", label: "Organizations" },
+    { href: "/stars", kind: "starred", label: "Starred" },
+  ];
 
   return (
     <>
@@ -174,45 +196,47 @@ export default function ProfileOverview({
       </section>
 
       {token ? (
-        <aside className={styles.self} aria-label="你的 Profile 資源">
-          <section className={styles.selfAchievements} aria-labelledby="profile-achievements">
-            <h2 id="profile-achievements">Achievements</h2>
-            {achievements.state === "loading" ? (
-              <p role="status">正在載入 Achievements…</p>
-            ) : achievements.state === "error" ? (
-              <p role="status">Achievements 目前不可用。</p>
-            ) : achievements.state === "ready" && achievements.value.length > 0 ? (
-              <div className={styles.achievementRail}>
-                {achievements.value.map((achievement) => (
-                  <span
-                    className={styles.achievementBadge}
-                    key={achievement.id}
-                    title={`${achievement.name}: ${achievement.description}`}
-                    aria-label={achievement.name}
-                  >
-                    {initials(achievement.name)}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p>尚未取得成就。</p>
-            )}
-          </section>
-          <nav className={styles.selfResources} aria-label="你的 Profile 資源">
-            <Link href="/repositories">
-              <ResourceIcon kind="repositories" />
-              <span>Repositories</span>
+        <section className={styles.selfAchievements} aria-labelledby="profile-achievements">
+          <h2 id="profile-achievements">Achievements</h2>
+          {achievements.state === "loading" ? (
+            <p role="status">正在載入 Achievements…</p>
+          ) : achievements.state === "error" ? (
+            <p role="status">Achievements 目前不可用。</p>
+          ) : achievements.state === "ready" && achievements.value.length > 0 ? (
+            <div className={styles.achievementRail}>
+              {achievements.value.map((achievement) => (
+                <span
+                  className={styles.achievementBadge}
+                  key={achievement.id}
+                  title={`${achievement.name}: ${achievement.description}`}
+                  aria-label={achievement.name}
+                >
+                  {initials(achievement.name)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p>尚未取得成就。</p>
+          )}
+        </section>
+      ) : null}
+
+      {children}
+
+      {token ? (
+        <nav className={styles.selfResources} aria-label="你的 Profile 資源">
+          {resources.map((resource) => (
+            <Link href={resource.href} key={resource.kind}>
+              <span className={styles.resourceIcon} data-kind={resource.kind} aria-hidden="true">
+                <ResourceIcon kind={resource.kind} />
+              </span>
+              <span>{resource.label}</span>
+              {resource.count === undefined ? null : (
+                <span className={styles.resourceCount}>{resource.count}</span>
+              )}
             </Link>
-            <Link href="/organizations">
-              <ResourceIcon kind="organizations" />
-              <span>Organizations</span>
-            </Link>
-            <Link href="/home#favorites">
-              <ResourceIcon kind="starred" />
-              <span>Starred</span>
-            </Link>
-          </nav>
-        </aside>
+          ))}
+        </nav>
       ) : null}
     </>
   );
