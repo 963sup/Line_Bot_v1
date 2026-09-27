@@ -71,8 +71,8 @@ Important source content 不能被靜默截斷後仍宣稱「完整分析」。
 
 ## Adjacent owners
 
-- Assistant product use cases：[Assistant](../010-domain-owners/120-assistant.md)
+- Assistant product use cases：[Assistant](../../owners/assistant.md)
 - AI provider credential / platform setup：本 integration directory 的 provider-specific 文件
-- Data retention：[Data](../040-data/README.md)
-- Secrets：[Secret handling](../050-security/050-secret-handling.md)
+- Data retention：[Data](../README.md)
+- Secrets：[Secret handling](../security/secrets.md)
 - 未定成本／品質門檻：`../../../090-governance/040-gaps/`
