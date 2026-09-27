@@ -242,6 +242,31 @@ async function record(relative, outcome, sources, note) {
   console.log(`${relative}: ${outcome}, ${previous.baselineBytes} -> ${facts.bytes} bytes`);
 }
 
+async function retire(relative, disposition, target = null) {
+  if (!new Set(["deleted", "moved", "merged"]).has(disposition))
+    throw new Error(`Invalid retire disposition: ${disposition}`);
+  const { manifest, lock } = await loadState();
+  if (lockedSkillFor(relative, lock))
+    throw new Error(`Use review-skill for imported skill corpus: ${relative}`);
+  const previous = manifest.files[relative];
+  if (!previous || previous.outcome !== "reviewing")
+    throw new Error(`Run begin before retire: ${relative}`);
+  try {
+    await fileFacts(relative);
+    throw new Error(`${relative}: file still exists; retire only after move/merge/delete`);
+  } catch (error) {
+    if (!String(error?.message ?? error).includes("ENOENT") && !String(error?.code ?? "").includes("ENOENT"))
+      throw error;
+  }
+  if (disposition !== "deleted") {
+    if (!target) throw new Error(`${disposition} requires a target path`);
+    await fileFacts(normalize(target));
+  }
+  delete manifest.files[relative];
+  await writeManifest(manifest);
+  console.log(`${relative}: ${disposition}${target ? ` -> ${normalize(target)}` : ""}`);
+}
+
 async function reviewSkill(name, outcome) {
   if (!skillOutcomes.has(outcome)) throw new Error(`Invalid skill outcome: ${outcome}`);
   const { manifest, lock } = await loadState();
@@ -275,6 +300,7 @@ async function main() {
   const [command = "status", ...args] = process.argv.slice(2);
   if (command === "seal") return seal();
   if (command === "begin") return begin(normalize(args[0] ?? ""));
+  if (command === "retire") return retire(normalize(args[0] ?? ""), args[1], args[2] ?? null);
   if (command === "record") {
     const { rest, sources, note } = parseFlags(args);
     return record(normalize(rest[0] ?? ""), rest[1], sources, note);
