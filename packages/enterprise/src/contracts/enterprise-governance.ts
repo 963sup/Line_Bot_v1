@@ -48,8 +48,8 @@ export type EnterpriseTeamProjection = Readonly<{
 
 type EnterpriseSummary = Readonly<{
   id: string;
-  name: string;
-  slug: string;
+  name: string | null;
+  slug: string | null;
   status: "active" | "inactive";
   version: number;
   actorAffiliations: readonly EnterpriseAffiliationSource[];
@@ -82,6 +82,15 @@ export type EnterpriseCommand =
       requestId: string;
       slug: string;
       name: string;
+      reason: string;
+    }>
+  | Readonly<{
+      action: "complete-enterprise-identity";
+      requestId: string;
+      enterpriseAccountId: string;
+      slug: string;
+      name: string;
+      expectedVersion: number;
       reason: string;
     }>
   | Readonly<{
