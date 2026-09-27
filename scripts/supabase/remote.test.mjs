@@ -8,8 +8,10 @@ import {
   assertRemoteTarget,
   assertSupabaseRestReadback,
   classifyAccountLoginCompatibility,
+  classifyDailyCheckInCompatibility,
   classifyPlan,
   classifyRemoteFoundationState,
+  dailyCheckInCompatibilitySql,
   governanceCompatibilityAccessSql,
   governanceCompatibilityFunctionSql,
   parseArgs,
@@ -273,6 +275,42 @@ test("Account login compatibility exposes partial state for the canonical diff r
   );
   assert.equal(
     classifyAccountLoginCompatibility({ tableExists: false, functionExists: true }),
+    "partial",
+  );
+});
+
+test("DailyCheckIn runtime compatibility stays sourced from canonical schema owners", () => {
+  const sql = dailyCheckInCompatibilitySql();
+  assert.match(sql, /create table app_private\.daily_check_in_claims/);
+  assert.match(sql, /daily_check_in_claims_user_id_fkey/);
+  assert.match(sql, /enforce_daily_check_in_claim_ledger_parity/);
+  assert.match(sql, /daily_check_in_claim_requires_ledger/);
+  assert.doesNotMatch(sql, /create table app_private\.\"asset_ledger_entries\"/);
+});
+
+test("DailyCheckIn compatibility distinguishes missing, ready and partial state", () => {
+  assert.equal(
+    classifyDailyCheckInCompatibility({
+      tableExists: false,
+      functionExists: false,
+      triggerExists: false,
+    }),
+    "missing",
+  );
+  assert.equal(
+    classifyDailyCheckInCompatibility({
+      tableExists: true,
+      functionExists: true,
+      triggerExists: true,
+    }),
+    "ready",
+  );
+  assert.equal(
+    classifyDailyCheckInCompatibility({
+      tableExists: true,
+      functionExists: false,
+      triggerExists: false,
+    }),
     "partial",
   );
 });
