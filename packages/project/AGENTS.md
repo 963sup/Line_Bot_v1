@@ -1,9 +1,7 @@
 # Project
 
-- Owns Project identity/access, cross-Repository planning, WBS ordering, Project Milestone state, and stable references to Repository work.
-- Project does not own Repository Issue content/lifecycle or Repository access; references must preserve Repository authority.
-- Project is not WBS: WBS is Project-owned work decomposition, not the Project management boundary itself.
-- This workspace/module owner currently has no runtime source or public export. Do not add empty layers, adapters, contracts, or dependencies for symmetry alone.
-- If a real runtime consumer activates Project capabilities, add only the required public contracts/source and update tests plus canonical docs in the same change.
-- Project references Repository work by stable Repository-owned identity. It must not copy Issue/Discussion lifecycle, Repository access, labels, milestones or source history into a second authority.
-- Runtime activation must define Project access/authorization, expected version, replay identity, reference integrity and a real consumer before adding schema writers or public exports.
+Owner: cross-Repository planning, WBS, Project Milestones, and references to Repository work. Canonical semantics: [Project](../../docs/owners/project.md).
+
+- Project ≠ WBS; Project Items reference Repository-owned work and never copy its lifecycle/access truth.
+- Runtime capability is inactive; do not add APIs, exports, writers, adapters, or empty layers before a real consumer and authorization contract exist.
+- Activation must define Project access, expected version, replay identity, and Repository reference integrity.
