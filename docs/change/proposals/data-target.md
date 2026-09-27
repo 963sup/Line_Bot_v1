@@ -1,6 +1,6 @@
 # Selected data target
 
-狀態：selected future data design，不是 current database truth。Current desired PostgreSQL structure 只由 `supabase/schemas/` 擁有；current data contract 回 [Data](../../040-data/README.md)。
+狀態：selected future data design，不是 current database truth。Current desired PostgreSQL structure 只由 `supabase/schemas/` 擁有；current data contract 回 [Data](../../reference/data/boundaries.md)。
 
 ## Target scope
 
@@ -85,9 +85,9 @@ Remote write 不使用 migration history 當 current truth；current repository 
 
 ## Routing
 
-- Current schema：[Schema model](../../040-data/030-schema-model.md)
-- Transaction/replay：[Transaction and idempotency](../../040-data/040-transaction-and-idempotency.md)
-- Identity mapping：[Identity mapping](../../040-data/050-identity-mapping.md)
-- Target domain：[Selected domain target](010-domain-target.md)
-- Target security：[Selected security target](040-security-target.md)
-- Active migration：[Migration](../030-migrations/040-enterprise-organization-workforce-payroll.md)
+- Current schema：[Schema model](../../reference/data/schema.md)
+- Transaction/replay：[Transaction and idempotency](../../reference/data/transactions.md)
+- Identity mapping：[Identity mapping](../../reference/data/identity-mapping.md)
+- Target domain：[Selected domain target](domain-target.md)
+- Target security：[Selected security target](security-target.md)
+- Active migration：[Migration](../migrations/enterprise-organization-workforce-payroll.md)

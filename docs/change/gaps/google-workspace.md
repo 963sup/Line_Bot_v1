@@ -11,4 +11,4 @@ Google identity、Workspace API authorization、User/Organization/Team participa
 - Google Forms 若無可信 callback/mapping，不宣稱本系統已收到提交。
 - External success/local timeout 先 reconcile，尤其 email 不盲目 retry。
 - Workspace API deterministic flow 與 AI provider 分開；不需先引入 LLM。
-- Provider/scopes/token technical contract 由 [Google Workspace integration](../../030-platform/050-google-workspace.md) 擁有；本文件只保存 open gaps。
+- Provider/scopes/token technical contract 由 [Google Workspace integration](google-workspace.md) 擁有；本文件只保存 open gaps。

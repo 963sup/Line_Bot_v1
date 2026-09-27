@@ -48,7 +48,7 @@ Adapter ownership 搬移不等於 Data Boundary 搬移；跨 owner relation 使�
 
 ## Remote gate
 
-這份 migration 只保存 Workforce／Attendance／Payroll cutover 自己的未完成條件，不維護通用 Supabase publication contract。Current schema publication、provider reconciliation、release ordering與 recovery 分別由 [Schema model](../../040-data/030-schema-model.md)、[Supabase](../../030-platform/020-supabase.md)、[Release](../../070-operations/020-release.md) 與 [Recovery](../../070-operations/030-recovery.md) 擁有。
+這份 migration 只保存 Workforce／Attendance／Payroll cutover 自己的未完成條件，不維護通用 Supabase publication contract。Current schema publication、provider reconciliation、release ordering與 recovery 分別由 [Schema model](../../reference/data/schema.md)、[Supabase](../../reference/platform/supabase.md)、[Release](../../reference/operations/release.md) 與 [Recovery](../../reference/operations/recovery.md) 擁有。
 
 本 migration 需要額外確認的只有：
 

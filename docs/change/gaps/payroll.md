@@ -1,12 +1,12 @@
 # Payroll gaps
 
-Payroll target 已定義並有 readiness foundation，但尚無可宣稱正式算薪的完整 PayrollRun/PayStatement runtime、deployable schema 或 business acceptance。模型與 lifecycle 由 [Payroll rules](../../010-domain-owners/060-payroll.md) 擁有。
+Payroll target 已定義並有 readiness foundation，但尚無可宣稱正式算薪的完整 PayrollRun/PayStatement runtime、deployable schema 或 business acceptance。模型與 lifecycle 由 [Payroll rules](../../owners/payroll.md) 擁有。
 
 Current [readiness source](../../../packages/payroll/src/domain/readiness.ts) 只檢查 versioned input 是否齊備並拒絕重複／空 rule version/source；它不計算金額、不寫資料或授權。`ready: true` 不代表 rule applicability、來源事實、scope、部署或業務驗收已完成。這是 foundation 的責任，不是禁止 Payroll owner 新增後續能力。
 
 ## Implementation versus activation
 
-依 [Migration slices](../030-migrations/040-enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices) 可先交付純模型、versioned input contract 與 deterministic tests，不必先完成 payment、Finance、所有 HR UI 或全域 compatibility 清理。合成 fixture 必須標示為測試資料，不進正式 rules registry、不掛可用算薪入口、不作驗收依據。
+依 [Migration slices](../migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices) 可先交付純模型、versioned input contract 與 deterministic tests，不必先完成 payment、Finance、所有 HR UI 或全域 compatibility 清理。合成 fixture 必須標示為測試資料，不進正式 rules registry、不掛可用算薪入口、不作驗收依據。
 
 | 待啟用能力 | 必須完成的相關條件 |
 | --- | --- |

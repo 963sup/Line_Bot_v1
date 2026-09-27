@@ -1,6 +1,6 @@
 # Selected domain target
 
-狀態：selected future design，不是 current implementation、schema、remote state、deployment 或 device acceptance。Current truth 回 [Domain owners](../../010-domain-owners/README.md)、[Domain map](../../facts/ownership.md) 與實際 source/schema/tests。
+狀態：selected future design，不是 current implementation、schema、remote state、deployment 或 device acceptance。Current truth 回 [Domain owners](../../owners/README.md)、[Domain map](../../facts/ownership.md) 與實際 source/schema/tests。
 
 ## Target focus
 
@@ -102,9 +102,9 @@ Public contract 不序列化 private Entity/repository，也不因 provider SDK�
 
 ## Routing
 
-- Current owner：[Domain owners](../../010-domain-owners/README.md)
+- Current owner：[Domain owners](../../owners/README.md)
 - Current relationships：[Repository map](../../facts/sources-of-truth.md)
-- Target data：[Selected data target](030-data-target.md)
-- Target security：[Selected security target](040-security-target.md)
-- Workforce / Attendance / Payroll cutover：[Migration](../030-migrations/040-enterprise-organization-workforce-payroll.md)
-- Open completion conditions：[Gaps](../040-gaps/README.md)
+- Target data：[Selected data target](data-target.md)
+- Target security：[Selected security target](security-target.md)
+- Workforce / Attendance / Payroll cutover：[Migration](../migrations/enterprise-organization-workforce-payroll.md)
+- Open completion conditions：[Gaps](../gaps/README.md)

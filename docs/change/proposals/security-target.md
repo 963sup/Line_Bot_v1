@@ -1,6 +1,6 @@
 # Selected security target
 
-狀態：selected future security design，不是 current authorization/data isolation/audit implementation claim。Current contract 回 [Security](../../050-security/README.md) 與實際 owner source/tests。
+狀態：selected future security design，不是 current authorization/data isolation/audit implementation claim。Current contract 回 [Security](../../reference/security/permissions.md) 與實際 owner source/tests。
 
 ## Authorization chain
 
@@ -33,7 +33,7 @@ Organization selection 只改 acting scope，不把 Organization/Enterprise acco
 
 ## Current vs target
 
-Current typed permissions / RoleAssignments 由 [Authorization](../../050-security/030-authorization.md) 擁有；本文件不重抄 current EnterpriseOwner、OrganizationOwner、TeamMaintainer 規則。
+Current typed permissions / RoleAssignments 由 [Authorization](../../reference/security/permissions.md) 擁有；本文件不重抄 current EnterpriseOwner、OrganizationOwner、TeamMaintainer 規則。
 
 尚未 current 的 security delta只有：
 
@@ -92,8 +92,8 @@ Private projection 採 minimum necessary disclosure；browser cache、navigation
 
 ## Routing
 
-- Current authorization：[Authorization](../../050-security/030-authorization.md)
-- Scope/isolation：[Scope and data isolation](../../050-security/040-scope-and-data-isolation.md)
-- Target domain：[Selected domain target](010-domain-target.md)
-- Target data：[Selected data target](030-data-target.md)
-- Active migration：[Migration](../030-migrations/040-enterprise-organization-workforce-payroll.md)
+- Current authorization：[Authorization](../../reference/security/permissions.md)
+- Scope/isolation：[Scope and data isolation](../../reference/security/data-isolation.md)
+- Target domain：[Selected domain target](domain-target.md)
+- Target data：[Selected data target](data-target.md)
+- Active migration：[Migration](../migrations/enterprise-organization-workforce-payroll.md)
