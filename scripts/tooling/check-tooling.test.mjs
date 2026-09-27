@@ -558,7 +558,7 @@ test("Release routes schema and workflow changes through one reconciliation pass
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace('pnpm vercel:deploy:production -- --live --sha "$SHA"', "echo skip-deploy"),
+    workflow.replace('pnpm vercel:deploy:production --live --sha "$SHA"', "echo skip-deploy"),
   );
   rejects(root, "production deployment must install dependencies");
 
