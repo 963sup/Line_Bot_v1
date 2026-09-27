@@ -1,19 +1,29 @@
 # Architecture
 
-從產品意思與責任開始，沿外部證據、產品決策、實作與資料邊界查到可驗證的 consumer。目錄內 JSON 是各自範圍的 machine-readable authority；本頁只提供入口。
+此目錄保存 machine-readable architecture truth；Human docs 只作 explanation / routing。
 
-| 問題 | 唯一來源 | 查核入口 |
+| 問題 | Authority | Validation / query |
 | --- | --- | --- |
-| GitHub FPT 實際提供什麼、哪些分類適用？ | [Semantic benchmark](semantic-benchmark.json) | `pnpm architecture` |
-| 產品採用什麼語意、誰負責、能力與 locator 是什麼狀態？ | [Semantic model](semantic-model.json) | `pnpm semantic check`、`pnpm semantic explain repository` |
+| GitHub-like external benchmark 真正提供什麼？ | [Semantic benchmark](semantic-benchmark.json) + JSON 內 pinned upstream provenance | `pnpm architecture` |
+| 產品採用什麼語意、owner、relationship、invariant、locator、status？ | [Semantic model](semantic-model.json) | `pnpm semantic check`、`pnpm semantic explain <concept>` |
 | 哪個 module 實作 owner、允許依賴誰？ | [Implementation topology](implementation-topology.json) | `pnpm boundaries` |
-| 哪個 owner 擁有資料、誰只參照或投影？ | [Data topology](data-topology.json) | `pnpm architecture` |
-| 實際 SQL、constraint、RLS 是什麼？ | [Declarative schemas](../supabase/schemas/README.md) | `pnpm schema:check` |
-| 實際 runtime 與公開 contract 是什麼？ | [Owner packages](../packages/AGENTS.md)、[Web runtime](../docs/020-architecture/050-runtime-architecture.md) | Owner source、manifest、consumer 與 tests |
-| 有哪些已執行的驗收證據？ | [Acceptance evidence](../docs/090-governance/060-acceptance/010-acceptance-evidence.md) | 具日期、環境與範圍的紀錄 |
+| 哪個 owner 擁有 persisted relation、誰只 projection/reference？ | [Data topology](data-topology.json) | `pnpm architecture` |
+| 實際 SQL / constraint / RLS 是什麼？ | [Declarative schemas](../supabase/schemas/README.md) | `pnpm schema:check` |
+| Current human meaning / routing 在哪？ | [Core docs](../docs/000-core/README.md) + [Domain owners](../docs/010-domain-owners/README.md) | `pnpm docs:check` |
+| Dated release / remote / device evidence 在哪？ | [Acceptance](../docs/090-governance/060-acceptance/README.md) | evidence 自己的日期 / revision / environment |
 
-可讀投影由 `pnpm semantic view docs` 產生；變更影響用 `pnpm semantic plan "<intent>"` 與 `pnpm semantic context "<intent>"` 查詢，不手工保存第二套 owner／能力清單。
+```text
+External benchmark
+        ↓ explicit product adoption
+semantic-model.json
+        ↓ explicit mapping
+implementation-topology.json / data-topology.json
+        ↓
+source / package exports / supabase schemas / tests
+        ↓
+evidence
+```
 
-外部分類、產品 owner、module、data boundary、頁面路由是不同維度。FPT 的檔案分片不直接決定 package；benchmark 存在不代表產品採用，資料或 module 存在也不代表 runtime、部署與實機驗收已完成。
+Benchmark category 不等於 product owner；Semantic owner 不等於 package；package 不等於 Data Boundary；schema relation 不等於 runtime acceptance。
 
-結構與命令契約見 [Repository architecture](../docs/020-architecture/010-repository-architecture.md)；官方來源與 pipeline 對照見 [FPT benchmark](../docs/000-core/080-github-graphql-fpt-benchmark.md)。
+可讀 projection 使用 `pnpm semantic view docs`，change impact 使用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。不要手工保存第二套 owner/capability/benchmark 清單。

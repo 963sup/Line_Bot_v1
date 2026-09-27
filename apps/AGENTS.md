@@ -29,7 +29,7 @@
 ## 來源與 FPT 對照
 
 - 對照 [GitHub FPT](https://github.com/github/docs/tree/main/src/graphql/data/fpt) 的 resource、relationship、query/mutation、identity/locator 與版本語意；category 檔案不是一檔一 package，也不是 Next.js 路由模板。
-- 固定版本與完整分類決策以 [FPT benchmark](../architecture/semantic-benchmark.json) 和 [來源說明](../docs/000-core/080-github-graphql-fpt-benchmark.md) 為準；upstream `main` 只供查證，不自動改本地 pin 或產品能力。
+- 固定版本、provenance 與完整分類決策以 [FPT benchmark](../architecture/semantic-benchmark.json) 為準；pinned upstream source 由該 machine-readable benchmark 記錄，upstream `main` 只供查證，不自動改本地 pin 或產品能力。
 - `schema-users` → Account/User；`schema-orgs` → Organization；`schema-teams` → Organization Team；`schema-enterprise-admin` → Enterprise；`schema-repos`、`schema-issues`、`schema-discussions` → 本產品 Repository owner 的不同資源。這是語意對照，不是資料夾搬移指令。
 - Attendance、Expense、Partners、LINE、Google 等本地能力按自身契約治理；不能因 FPT 沒有對應 category 就刪除，也不能因 FPT 有 Project 等 category 就建立空功能。
 - 採用狀態、owner、locator 與 evidence 由 [Semantic model](../architecture/semantic-model.json) 擁有；依賴由 [Implementation topology](../architecture/implementation-topology.json) 擁有；URL 由 [Web runtime](../docs/020-architecture/050-runtime-architecture.md) 與實際 route 核對。
