@@ -953,7 +953,14 @@ export function validate(root) {
         if (agents.has(data.name)) throw new Error("duplicate agent name");
         agents.add(data.name);
         if (
-          ["repository-mapper", "root-cause-analyst", "architecture-analyst", "technical-researcher", "diff-reviewer", "evidence-verifier"].includes(data.name) &&
+          [
+            "repository-mapper",
+            "root-cause-analyst",
+            "architecture-analyst",
+            "technical-researcher",
+            "diff-reviewer",
+            "evidence-verifier",
+          ].includes(data.name) &&
           data.sandbox_mode !== "read-only"
         )
           throw new Error("review/navigation role must remain read-only");
