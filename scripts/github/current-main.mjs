@@ -8,12 +8,7 @@ export function parseExactSha(argv) {
   return argv[1];
 }
 
-export async function requireCurrentMain({
-  sha,
-  repository,
-  token,
-  fetchImpl = fetch,
-}) {
+export async function requireCurrentMain({ sha, repository, token, fetchImpl = fetch }) {
   if (!/^[0-9a-f]{40}$/.test(sha ?? "")) throw new Error("Exact commit SHA is required.");
   const target = requireRepository(repository);
   const branch = await githubJson(`/repos/${target}/branches/main`, { token, fetchImpl });
