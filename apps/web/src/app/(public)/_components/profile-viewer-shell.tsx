@@ -27,7 +27,7 @@ export default function ProfileViewerShell({
   profileLogin,
   profileTitle,
   profileUserId,
-  repositoryCount,
+  publicRepositoryCount,
 }: {
   children: ReactNode;
   liffId: string;
@@ -36,7 +36,7 @@ export default function ProfileViewerShell({
   profileLogin: string;
   profileTitle: string;
   profileUserId?: string;
-  repositoryCount?: number;
+  publicRepositoryCount?: number;
 }) {
   const [viewer, setViewer] = useState<{
     profileKind: "USER";
@@ -150,7 +150,7 @@ export default function ProfileViewerShell({
           profileBio={profileBio}
           profileLogin={profileLogin}
           profileTitle={profileTitle}
-          repositoryCount={repositoryCount}
+          publicRepositoryCount={publicRepositoryCount}
           token={ownProfile ? viewer?.token : undefined}
         >
           {children}
