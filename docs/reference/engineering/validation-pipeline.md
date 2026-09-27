@@ -32,7 +32,7 @@ GitHub Draft pull request 代表 active iteration，validation job 必須 skip�
 
 `validate` 是完整 repository gate，不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收已完成。PR affected check 與 main full validate 是不同證據，不以其中一者冒充另一者。
 
-Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Production，也不證明指定 remote 已收斂。External release 是另一層 evidence；publication trigger與 ordering由 [Release](release.md) 擁有，Supabase remote reconciliation semantics由 [Supabase](../platform/supabase.md) 擁有。
+Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Production，也不證明指定 remote 已收斂。External release 是另一層 evidence；publication trigger與 ordering由 [Release](../operations/release.md) 擁有，Supabase remote reconciliation semantics由 [Supabase](../platform/supabase.md) 擁有。
 
 因此：
 
