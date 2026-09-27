@@ -1809,12 +1809,12 @@
       "runtimeExpectation": "not-asserted",
       "implementation": {
         "status": "data-only",
-        "scope": "Project-owned schema/topology without active runtime use case",
+        "scope": "Project planning mutations remain data-only",
         "sourcePaths": [],
         "publicExports": [],
         "entrypoints": [],
         "testPaths": [],
-        "note": "Project has current data topology and package registration, but no runtime capability is asserted."
+        "note": "Authorized Project collection read is modeled separately by read-projects; create/update/WBS/Item/Milestone management is not asserted."
       }
     },
     {
