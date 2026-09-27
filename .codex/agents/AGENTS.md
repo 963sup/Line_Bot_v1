@@ -10,6 +10,18 @@
 | GPT-5.6 推理、研究與審查 | `gpt-5.6-sol` | 複雜問題分析、技術研究、現有架構與程式碼理解、方案比較、架構推理、語意與 bounded context 檢查、相依性與風險分析、執行結果審查、衝突與遺漏檢查 |
 | GPT-5.5 通用與工程執行 | `gpt-5.5` | 程式碼與檔案搜尋、修改、重構、SQL／Schema／Migration、測試與除錯、文件與索引同步、資料整理、規則化與明確可執行任務、其他中等複雜度實作 |
 
+## 單一責任契約
+
+每個子代理只擁有一個 Primary Responsibility。角色 TOML 必須以一致欄位表達 `Mission / Input / Owns / Must / Must Not / Deliverable / Stop / Validation`；不得因方便把搜尋、架構決策、實作與獨立審查混進同一角色。
+
+- `code-mapper`：只負責定位 entry point、consumer、contract、dependency 與 test path；不決定架構、不修改檔案。
+- `analyst`：只負責把一個 bounded problem 轉成 decision-ready analysis；不執行修改、不替指揮做 owner／architecture 最終決策。
+- `engineering-worker`：只負責執行已定義的 bounded change 與必要 validation；遇到 owner／contract 衝突立即停止並回報。
+- `change-reviewer`：只審 scoped diff 的 concrete defect 與 regression risk；不重新設計、不修改、不承擔文件基線核對。
+- `baseline-reviewer`：只核對 contract/status claim 與 implementation/evidence 是否一致；不做一般 code review、不修改。
+
+新增角色只在出現新的獨立 responsibility，且需要不同 permission/tool policy、不同 model/reasoning profile，或可獨立驗收的真實工作邊界時成立；不得因名稱、技術分類或未來可能性預建角色。
+
 ## 調度流程
 
 - 簡單且明確的執行工作，直接交給 GPT-5.5；不要求所有工作依序經過全部模型。
