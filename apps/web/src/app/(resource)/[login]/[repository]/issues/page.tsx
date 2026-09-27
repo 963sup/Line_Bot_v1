@@ -1,8 +1,8 @@
 import { normalizeAccountLogin } from "@line-work/account/domain/login";
 import { notFound } from "next/navigation";
-import RepositoryResourcesPanel from "../../../../../modules/repository/resources-panel";
+import IssueBoard from "../../../../../modules/repository/issue-board";
 import { lineMiniApp } from "../../../../../shared/server/line-mini-app";
-import AppShell from "../../../_shell/app-shell";
+import AppShell from "../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +18,14 @@ export default async function Page({
   } catch {
     notFound();
   }
+
   return (
     <AppShell>
-      <RepositoryResourcesPanel
-        key={`${ownerLogin}/${repository}/discussions`}
+      <IssueBoard
+        key={`${ownerLogin}/${repository}`}
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
         repositoryName={repository}
-        kind="discussions"
       />
     </AppShell>
   );

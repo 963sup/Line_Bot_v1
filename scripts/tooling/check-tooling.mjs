@@ -22,10 +22,17 @@ export function validate(root) {
     const workspace = YAML.parse(read(resolve(root, "pnpm-workspace.yaml")));
     const exact = /^\d+\.\d+\.\d+$/;
     const engines = manifest.engines ?? {};
-    for (const name of ["node", "pnpm"]) {
-      if (!exact.test(engines[name] ?? ""))
-        errors.push(`package.json: engines.${name} must be an exact version`);
-    }
+    const nodeVersionFile = resolve(root, ".node-version");
+    const exactNodeVersion = existsSync(nodeVersionFile) ? read(nodeVersionFile).trim() : "";
+    if (!exact.test(exactNodeVersion))
+      errors.push(".node-version: exact repository Node version is required");
+    const exactNodeMajor = exactNodeVersion.match(/^(\d+)\./)?.[1];
+    if (!exactNodeMajor || engines.node !== `${exactNodeMajor}.x`)
+      errors.push(
+        `package.json: engines.node must match the .node-version major as ${exactNodeMajor ?? "<major>"}.x`,
+      );
+    if (!exact.test(engines.pnpm ?? ""))
+      errors.push("package.json: engines.pnpm must be an exact version");
     if (manifest.packageManager !== `pnpm@${engines.pnpm}`)
       errors.push("package.json: packageManager must match engines.pnpm");
     for (const name of ["engineStrict", "saveExact"]) {
@@ -359,6 +366,23 @@ export function validate(root) {
         "turbo.json: runtime/operator secrets must not enter the Web build cache contract",
       );
 
+    for (const workflowFile of files(".github/workflows/*.{yml,yaml}")) {
+      const workflowData = YAML.parse(read(workflowFile));
+      const setupNodeSteps = Object.values(workflowData.jobs ?? {}).flatMap((job) =>
+        (job?.steps ?? []).filter((step) => step.uses?.startsWith("actions/setup-node@")),
+      );
+      if (
+        setupNodeSteps.some(
+          (step) =>
+            step.with?.["node-version-file"] !== ".node-version" ||
+            Object.hasOwn(step.with ?? {}, "node-version"),
+        )
+      )
+        errors.push(
+          `${relative(root, workflowFile)}: actions/setup-node must use the repository .node-version exact pin`,
+        );
+    }
+
     const validateWorkflowFile = resolve(root, ".github/workflows/validate.yml");
     const validateWorkflowSource = read(validateWorkflowFile);
     const workflow = YAML.parse(validateWorkflowSource);
@@ -399,11 +423,11 @@ export function validate(root) {
       setupSteps.length !== validationJobs.length ||
       setupSteps.some(
         (step) =>
-          step.with?.["node-version-file"] !== "package.json" ||
+          step.with?.["node-version-file"] !== ".node-version" ||
           Object.hasOwn(step.with ?? {}, "node-version"),
       )
     )
-      errors.push("CI: Node version must come from package.json");
+      errors.push("CI: Node version must come from the repository .node-version exact pin");
     const pullRequestTypes = workflow.on?.pull_request?.types;
     if (
       !Array.isArray(pullRequestTypes) ||
@@ -857,13 +881,14 @@ export function validate(root) {
 
 if (import.meta.main) {
   const manifest = JSON.parse(read(resolve(repositoryRoot, "package.json")));
+  const exactNodeVersion = read(resolve(repositoryRoot, ".node-version")).trim();
   const pnpmVersion = process.env.npm_config_user_agent?.match(/^pnpm\/([^ ]+)/)?.[1];
   if (
-    process.versions.node !== manifest.engines.node ||
+    process.versions.node !== exactNodeVersion ||
     `pnpm@${pnpmVersion}` !== manifest.packageManager
   ) {
     console.error(
-      `Expected Node ${manifest.engines.node} and ${manifest.packageManager}; got Node ${process.versions.node}, pnpm ${pnpmVersion ?? "unknown"}. Run through the project pnpm entry point.`,
+      `Expected Node ${exactNodeVersion} and ${manifest.packageManager}; got Node ${process.versions.node}, pnpm ${pnpmVersion ?? "unknown"}. Run through the repository-pinned toolchain.`,
     );
     process.exit(1);
   }

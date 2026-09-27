@@ -2,6 +2,7 @@ class AccountLoginError extends Error {}
 
 const reservedLogins = new Set([
   "admin",
+  "assistant",
   "api",
   "attendance",
   "auth",

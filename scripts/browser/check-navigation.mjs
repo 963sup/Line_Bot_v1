@@ -78,7 +78,7 @@ async function run() {
     if (url.hostname === "static.line-scdn.net") {
       return route.fulfill({
         contentType: "text/javascript",
-        body: "window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({displayName:'測試使用者'}),login:()=>{}};",
+        body: "window.liff={init:async()=>{const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({displayName:'測試使用者'}),login:()=>{}};",
       });
     }
     if (url.origin !== base) return route.abort();
@@ -134,6 +134,11 @@ async function run() {
   });
 
   try {
+    await page.goto(`${base}/?liff.state=%3Fmembership%3D1`);
+    await expect(page).toHaveURL(`${base}/settings?google=link`);
+    await page.getByRole("heading", { name: "Profile", exact: true }).waitFor();
+    await expect(page.getByRole("heading", { name: "讓每天的工作，更有條理。" })).toHaveCount(0);
+
     await page.goto(`${base}/repositories`);
     await page.getByRole("heading", { name: "儲存庫", exact: true }).waitFor();
     const issueLink = page.getByRole("link", {

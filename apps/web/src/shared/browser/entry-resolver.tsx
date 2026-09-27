@@ -1,6 +1,6 @@
 "use client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { entryNavigation } from "../presentation/entry-navigation";
 import type { EntryRoute } from "../presentation/entry-route";
 import MiniAppRuntime from "./mini-app-runtime";
@@ -18,6 +18,7 @@ export default function EntryResolver({
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
+  const renderedPathname = useRef(pathname);
   const [state, setState] = useState<"waiting" | "ready" | "pending" | "invalid">("waiting");
   if (state === "ready") return children;
   return (
@@ -27,7 +28,7 @@ export default function EntryResolver({
         liffId={liffId}
         onWait={() => setState("waiting")}
         onReady={async () => {
-          const next = entryNavigation(location.href, fallback);
+          const next = entryNavigation(location.href, fallback, renderedPathname.current);
           if (next.state === "redirect") {
             router.replace(next.target);
             return;

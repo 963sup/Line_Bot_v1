@@ -1,7 +1,7 @@
 const measuredPaths = new Set([
   "/",
   "/home",
-  "/home/assistant",
+  "/assistant",
   "/settings",
   "/attendance",
   "/repositories",

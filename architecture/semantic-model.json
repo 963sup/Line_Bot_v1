@@ -908,7 +908,7 @@
         "publicExports": ["./application/profile", "./application/ports/profile"],
         "entrypoints": [
           "apps/web/src/app/api/profile/route.ts",
-          "apps/web/src/app/(app)/settings/profile/page.tsx"
+          "apps/web/src/app/(mobile)/settings/profile/page.tsx"
         ],
         "testPaths": ["packages/account/test/profile.test.ts"],
         "note": "Profile source and public exports exist; tests are evidence locations, not proof unless executed."
@@ -938,7 +938,7 @@
         "publicExports": ["./application/follows", "./application/ports/follows"],
         "entrypoints": [
           "apps/web/src/app/api/follows/route.ts",
-          "apps/web/src/app/(app)/settings/network/page.tsx"
+          "apps/web/src/app/(mobile)/settings/network/page.tsx"
         ],
         "testPaths": ["packages/account/test/follows.test.ts"],
         "note": "Follow source/export evidence is current; runtime availability is separately validated."
@@ -972,8 +972,8 @@
           "./domain"
         ],
         "entrypoints": [
-          "apps/web/src/app/(app)/enterprises/page.tsx",
-          "apps/web/src/app/(app)/enterprises/[slug]/page.tsx"
+          "apps/web/src/app/(mobile)/enterprises/page.tsx",
+          "apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"
         ],
         "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
         "note": "Enterprise source/export evidence exists; slug locator stability is distinct from authorization."
@@ -1001,7 +1001,7 @@
           "packages/enterprise/src/domain.ts"
         ],
         "publicExports": ["./application/enterprise-governance", "./domain"],
-        "entrypoints": ["apps/web/src/app/(app)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
         "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
         "note": "Enterprise Team is current domain behavior; route locator does not grant access by itself."
       }
@@ -1032,7 +1032,7 @@
           "./application/ports/organization-governance",
           "./domain"
         ],
-        "entrypoints": ["apps/web/src/app/(app)/organizations/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/organizations/page.tsx"],
         "testPaths": [],
         "note": "Organization source/export evidence exists; no test result is implied by this metadata."
       }
@@ -1060,7 +1060,7 @@
         "publicExports": ["./domain", "./application/organization-governance"],
         "entrypoints": [
           "apps/web/src/app/api/organization/route.ts",
-          "apps/web/src/app/(app)/organizations/page.tsx",
+          "apps/web/src/app/(mobile)/organizations/page.tsx",
           "apps/web/src/modules/organization/panel.tsx"
         ],
         "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
@@ -1091,8 +1091,8 @@
         ],
         "publicExports": ["./application/collaboration", "./application/ports", "./domain"],
         "entrypoints": [
-          "apps/web/src/app/(app)/team/page.tsx",
-          "apps/web/src/app/(app)/organizations/[login]/teams/[teamSlug]/page.tsx"
+          "apps/web/src/app/(mobile)/team/page.tsx",
+          "apps/web/src/app/(mobile)/organizations/[login]/teams/[teamSlug]/page.tsx"
         ],
         "testPaths": ["packages/team/test/team.test.ts"],
         "note": "Team collaboration is Organization-scoped; route files are locator evidence only."
@@ -1148,7 +1148,7 @@
         "publicExports": ["./application/public", "./application/ports/public"],
         "entrypoints": [
           "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
-          "apps/web/src/app/(app)/repositories/page.tsx"
+          "apps/web/src/app/(mobile)/repositories/page.tsx"
         ],
         "testPaths": ["packages/repository/test/stars.test.ts"],
         "note": "Public Repository lookup resolves owner login plus repository name; URL does not become authorization."
@@ -1199,7 +1199,7 @@
           "packages/repository/src/application/ports/stars.ts"
         ],
         "publicExports": ["./application/stars", "./application/ports/stars"],
-        "entrypoints": ["apps/web/src/app/(app)/explore/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/explore/page.tsx"],
         "testPaths": ["packages/repository/test/stars.test.ts"],
         "note": "Star is an interaction signal; it does not imply repository authority."
       }
@@ -1229,8 +1229,8 @@
         "entrypoints": [
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/issues/page.tsx",
-          "apps/web/src/app/(app)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/issues.test.ts",
@@ -1271,8 +1271,8 @@
         "entrypoints": [
           "apps/web/src/app/api/discussions/route.ts",
           "apps/web/src/app/api/discussions/[discussionId]/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/discussions/page.tsx",
-          "apps/web/src/app/(app)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/resources.test.ts",
@@ -1311,7 +1311,7 @@
         ],
         "entrypoints": [
           "apps/web/src/app/api/repository-labels/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/labels/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/labels/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/resources.test.ts",
@@ -1351,8 +1351,8 @@
         "entrypoints": [
           "apps/web/src/app/api/repository-milestones/route.ts",
           "apps/web/src/app/api/repository-milestones/[milestoneNumber]/route.ts",
-          "apps/web/src/app/(app)/[login]/[repository]/milestones/page.tsx",
-          "apps/web/src/app/(app)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/resources.test.ts",
@@ -1477,9 +1477,9 @@
         ],
         "publicExports": ["./application/clock", "./application/ports/clock", "./domain"],
         "entrypoints": [
-          "apps/web/src/app/(app)/attendance/page.tsx",
-          "apps/web/src/app/(app)/attendance/clock-in/page.tsx",
-          "apps/web/src/app/(app)/attendance/clock-out/page.tsx"
+          "apps/web/src/app/(mobile)/attendance/page.tsx",
+          "apps/web/src/app/(mobile)/attendance/clock-in/page.tsx",
+          "apps/web/src/app/(mobile)/attendance/clock-out/page.tsx"
         ],
         "testPaths": [
           "packages/attendance/test/attendance.test.ts",
@@ -1516,7 +1516,7 @@
           "./application/ports/daily-check-in-repository",
           "./domain"
         ],
-        "entrypoints": ["apps/web/src/app/(app)/home/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/home/page.tsx"],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",
           "packages/daily-check-in/test/daily-check-in-policy.test.ts",
@@ -1587,7 +1587,7 @@
         ],
         "entrypoints": [
           "apps/web/src/app/(admin)/admin/permissions/page.tsx",
-          "apps/web/src/app/(app)/settings/permissions/page.tsx"
+          "apps/web/src/app/(mobile)/settings/permissions/page.tsx"
         ],
         "testPaths": [],
         "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
@@ -2256,7 +2256,7 @@
       "status": "active",
       "fields": ["slug"],
       "scope": "enterprise-slug-namespace",
-      "routeFiles": ["apps/web/src/app/(app)/enterprises/[slug]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"],
       "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
       "benchmark": {
         "file": "schema-enterprise-admin.json",
@@ -2286,7 +2286,9 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "number"],
       "scope": "repository-scoped-issue-number",
-      "routeFiles": ["apps/web/src/app/(app)/[login]/[repository]/issues/[issueNumber]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+      ],
       "note": "Issue number is scoped to Repository and is not a global stable identifier.",
       "benchmark": {
         "file": "schema-issues.json",
@@ -2302,7 +2304,7 @@
       "fields": ["ownerLogin", "repositoryName", "discussionId"],
       "scope": "repository-scoped-local-discussion-id",
       "routeFiles": [
-        "apps/web/src/app/(app)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+        "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
       ],
       "note": "Discussion detail URL uses the local opaque DiscussionId. GitHub Discussion.number exists in FPT, but this product does not adopt it as the local Discussion locator."
     },
@@ -2313,7 +2315,7 @@
       "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
       "scope": "repository-scoped-milestone-number",
       "routeFiles": [
-        "apps/web/src/app/(app)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+        "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
       ],
       "note": "Repository Milestone number is scoped to Repository and remains separate from Project Milestone identity.",
       "benchmark": {
@@ -2329,7 +2331,7 @@
       "status": "active",
       "fields": ["organizationLogin", "teamSlug"],
       "scope": "organization-scoped-team-slug",
-      "routeFiles": ["apps/web/src/app/(app)/organizations/[login]/teams/[teamSlug]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/organizations/[login]/teams/[teamSlug]/page.tsx"],
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "benchmark": {
         "file": "schema-teams.json",
@@ -2344,7 +2346,7 @@
       "status": "active",
       "fields": ["enterpriseSlug", "teamSlug"],
       "scope": "enterprise-scoped-team-slug",
-      "routeFiles": ["apps/web/src/app/(app)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
       "note": "Enterprise Team slug is scoped to Enterprise and is independent from Organization Team slug.",
       "benchmark": {
         "file": "schema-enterprise-admin.json",

@@ -20,6 +20,7 @@ test("telemetry rejects callbacks, unknown paths and malformed URLs", () => {
     "https://example.com/expenses/private-id",
     "https://example.com/acme/operations/issues/33333333-3333-4333-8333-333333333333",
     "https://example.com/notifications/private-id",
+    "https://example.com/home/assistant",
     "invalid",
   ]) {
     assert.equal(sanitizeMeasuredPageTelemetryEvent({ url }), null);
@@ -29,6 +30,7 @@ test("telemetry rejects callbacks, unknown paths and malformed URLs", () => {
 test("primary MINI App pages retain only aggregate paths", () => {
   for (const path of [
     "/home",
+    "/assistant",
     "/settings",
     "/attendance",
     "/repositories",
