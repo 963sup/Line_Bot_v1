@@ -1,4 +1,4 @@
-// Canonical dependency contract: docs/020-architecture/040-dependency-rules.md.
+// Canonical dependency contract: docs/rules/dependency-boundaries.md.
 import { readFileSync } from "node:fs";
 
 const topology = JSON.parse(
