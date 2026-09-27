@@ -145,6 +145,8 @@ export async function findOwnerBaseline({
   token,
   fetchImpl,
   git,
+  loadJobs = ({ runId }) =>
+    jobsForRun({ repository, runId, token, fetchImpl }),
 }) {
   const acceptedJobs = OWNER_JOBS[owner];
   if (!acceptedJobs) throw new Error(`Unknown release owner: ${owner}`);
@@ -153,12 +155,7 @@ export async function findOwnerBaseline({
     const candidate = releaseSha(runEvidence?.display_title);
     if (!candidate || candidate === targetSha) continue;
     if (!git.hasCommit(candidate) || !git.isAncestor(candidate, targetSha)) continue;
-    const jobs = await jobsForRun({
-      repository,
-      runId: runEvidence.id,
-      token,
-      fetchImpl,
-    });
+    const jobs = await loadJobs({ runId: runEvidence.id });
     if (
       jobs.some(
         (job) => acceptedJobs.has(job?.name) && job?.conclusion === "success",
@@ -194,6 +191,22 @@ export async function planRelease({
     fetchImpl,
   });
 
+  const jobsCache = new Map();
+  const loadJobs = async ({ runId }) => {
+    if (!jobsCache.has(runId)) {
+      jobsCache.set(
+        runId,
+        jobsForRun({
+          repository: targetRepository,
+          runId,
+          token,
+          fetchImpl,
+        }),
+      );
+    }
+    return jobsCache.get(runId);
+  };
+
   const [supabaseBaseline, deploymentBaseline, richMenuBaseline] = await Promise.all([
     findOwnerBaseline({
       owner: "supabase",
@@ -203,6 +216,7 @@ export async function planRelease({
       token,
       fetchImpl,
       git,
+      loadJobs,
     }),
     findOwnerBaseline({
       owner: "deployment",
@@ -212,6 +226,7 @@ export async function planRelease({
       token,
       fetchImpl,
       git,
+      loadJobs,
     }),
     findOwnerBaseline({
       owner: "richMenu",
@@ -221,6 +236,7 @@ export async function planRelease({
       token,
       fetchImpl,
       git,
+      loadJobs,
     }),
   ]);
 
@@ -246,11 +262,6 @@ export async function planRelease({
       rich_menu: richMenuBaseline,
     },
   };
-}
-
-function writeGithubOutputs(plan, outputPath) {
-  if (!outputPath) return;
-  const fs = await import("node:fs");
 }
 
 export function githubOutputLines(plan) {
