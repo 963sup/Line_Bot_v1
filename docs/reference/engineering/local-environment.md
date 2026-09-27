@@ -26,10 +26,10 @@ pnpm docs:check
 
 ## Configuration responsibility
 
-- LINE Messaging channel secret/access token：deployment secret；單一 LINE integration provider namespace 與 MINI App Developing / Review / Published public identity 由 source 擁有，不以 env 重複設定：[LINE integrations](../030-platform/010-line.md)
-- Supabase public/runtime/operator configuration：[Supabase platform contract](../030-platform/020-supabase.md)
-- Redis：Vercel Marketplace resource 的 `KV_REST_API_URL` / `KV_REST_API_TOKEN` 是唯一 application connection contract；environment namespace 由 runtime environment 推導：[Redis coordination](../030-platform/030-redis.md)
-- Current AI runtime credential / model setting：[AI integration](../030-platform/060-ai.md)
+- LINE Messaging channel secret/access token：deployment secret；單一 LINE integration provider namespace 與 MINI App Developing / Review / Published public identity 由 source 擁有，不以 env 重複設定：[LINE integrations](../line/identity.md)
+- Supabase public/runtime/operator configuration：[Supabase platform contract](../platform/supabase.md)
+- Redis：Vercel Marketplace resource 的 `KV_REST_API_URL` / `KV_REST_API_TOKEN` 是唯一 application connection contract；environment namespace 由 runtime environment 推導：[Redis coordination](../platform/redis.md)
+- Current AI runtime credential / model setting：[AI integration](../platform/ai.md)
 - Workplace / allowed Members：business data，由 Attendance/permission 流程管理，不用 env 授權。
 
 Public configuration（例如 publishable key / public URL）仍不等於 business authorization；browser bundle 不得包含 server credential。
@@ -38,4 +38,4 @@ Public configuration（例如 publishable key / public URL）仍不等於 busine
 
 CLI / probe / deployment tools 可能讀 environment 或進行外部寫入。Supabase remote schema tooling 只使用 provider-owned `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL` 驗證 exact project；Web runtime 的 `POSTGRES_URL` 不作 schema/operator fallback。執行前確認 exact project/channel/environment 與既有授權；名稱叫 `check` / `probe` 不代表一定唯讀。
 
-Validation scope 見 [Validation and tooling entry points](040-validation.md)。
+Validation scope 見 [Validation and tooling entry points](validation-pipeline.md)。
