@@ -55,7 +55,7 @@ Time Tracking
 | 通知中心 | Notifications-owned recipient projection |
 | 開始工作 / 結束工作 | current Attendance application contract |
 
-Legacy `membership=1` remains a compatibility entry to `/settings`; current Rich Menu personal navigation uses the distinct `profile=1` intent and must not regress back to Settings.
+Legacy `membership=1` is retained only as a protocol alias and converges to the same `/profile` destination as `profile=1`; Rich Menu personal navigation has one product destination and must not regress to Settings.
 
 ## Invariants
 
