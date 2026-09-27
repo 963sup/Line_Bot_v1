@@ -1,2 +1,2 @@
-// Application use cases will be defined with the first authorized consumer.
-export {};
+export { createProjectCollection } from "./collection.js";
+export type { ProjectCollectionStore } from "./ports/collection.js";
