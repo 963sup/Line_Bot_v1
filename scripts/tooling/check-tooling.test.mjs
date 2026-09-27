@@ -549,9 +549,15 @@ test("Release routes schema and workflow changes through one reconciliation pass
 
   write(
     ".github/workflows/release.yml",
+    workflow.replace("      - run: pnpm install --frozen-lockfile\n\n      - name: Require current main before production deployment", "      - name: Require current main before production deployment"),
+  );
+  rejects(root, "production deployment must install locked dependencies");
+
+  write(
+    ".github/workflows/release.yml",
     workflow.replace('pnpm vercel:deploy:production -- --live --sha "$SHA"', "echo skip-deploy"),
   );
-  rejects(root, "production deployment must follow Supabase convergence");
+  rejects(root, "production deployment must install locked dependencies");
 
   write(
     ".github/workflows/release.yml",
