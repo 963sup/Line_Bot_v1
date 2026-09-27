@@ -245,7 +245,7 @@ LINE identity是外部身分證明；內部Account/User qualification與business
 
 Server收到LINE proof後驗證Channel/Provider、token validity與可信subject，再透過persisted identity mapping解析internal human identity。Webhook signature 只證明 LINE Platform request proof；它不授予 business permission。
 
-Current implementation解析stable Member ID；target Account migration完成後同一stable identity語意為 `UserId`。這是current->target命名/責任migration，不代表本docs branch已修改schema/runtime。
+Current human identity semantics 已由 Account/User 擁有：LINE provider subject 經 server-side verification 後解析 current `UserId`；historical `Member` / `member_id` literal 只在既有 protocol/storage boundary 保留，不形成第二套 identity authority。Employment-scoped qualification 的未完成 cutover 另見 Governance；本文件不以 legacy naming 表示 Account migration 尚未完成。
 
 以下不能直接當identity authority：browser提供的memberId/accountId、LIFF profile、client decoded ID token/userId、display name/email、LINE groupId、editable metadata。
 

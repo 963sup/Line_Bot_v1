@@ -13,7 +13,8 @@ Project 只參照 Repository work，不取得 Issue/Discussion authority；Notif
 
 Current runtime 已接線的 Repository resource read 包含：
 
-- Repository owner/name read 與 accessible Repository discovery。\n- Repository Star List：User 對自己 current Stars 的 curated grouping；List create 預設 private、publish 顯式切為 public，item add 要求 current Star + current Repository access，List membership 不授予 Repository access。
+- Repository owner/name read 與 accessible Repository discovery。
+- Repository Star List：User 對自己 current Stars 的 curated grouping；List create 預設 private、publish 顯式切為 public，item add 要求 current Star + current Repository access，List membership 不授予 Repository access。
 - Explore discovery read：Trending 以目前仍有效且最近 7 天建立的 Star 數優先，再以總 Star/name/id 穩定排序；Activity 第一版只投影 immutable Issue lifecycle events；published Repository Star List discovery 只收 active owner 的 public Lists，且至少有一個 viewer 當下可見 Repository。所有 projection 都在 read 時重新核驗 current visibility/access。
 - Issue list/detail read 與 Issue command runtime。
 - Discussion list/detail/comment read。
@@ -60,7 +61,10 @@ Canonical create surface 是 `/repositories/new`；API 使用 `POST /api/reposit
 - 每個 Issue / Discussion 恰屬一個 Repository。
 - Issue、Discussion、Notification 是不同概念；Discussion/Comment 不觸發 Issue lifecycle transition。
 - Discussion comment 保留 author 與 creation time，不把 conversation 改寫成 Issue history。
-- Star/unstar idempotent，且不授予 Repository access。\n- Repository Star List item 只能存在於同一 owner User 的 current Star 上；Unstar 會以 declarative FK cascade 移除該 Repository 的 List memberships，但不刪除 List。\n- Private List 只對 owner 可讀；public List metadata 可被 discovery 使用，但任何 Repository item 仍以 viewer 的 current visibility/access 重驗，raw hidden item count 不得對 viewer 洩漏。\n- Repository Star List `version` 保護直接 List command concurrency；Star prerequisite 消失造成的 FK cascade 是外部 prerequisite invalidation，不冒充直接 List command version transition。
+- Star/unstar idempotent，且不授予 Repository access。
+- Repository Star List item 只能存在於同一 owner User 的 current Star 上；Unstar 會以 declarative FK cascade 移除該 Repository 的 List memberships，但不刪除 List。
+- Private List 只對 owner 可讀；public List metadata 可被 discovery 使用，但任何 Repository item 仍以 viewer 的 current visibility/access 重驗，raw hidden item count 不得對 viewer 洩漏。
+- Repository Star List `version` 保護直接 List command concurrency；Star prerequisite 消失造成的 FK cascade 是外部 prerequisite invalidation，不冒充直接 List command version transition。
 - Assignment 與 protected read/write 以 current effective Repository access 判斷。
 - Organization-owned Repository 的 direct/Team grant 仍要求 current Organization qualification。
 - Command 以 stable request identity 防重；conditional transition 使用 expected version。

@@ -1,112 +1,83 @@
 # Dependency rules
 
-Context-first 的現有 package 與允許依賴見 [Repository structure](010-repository-architecture.md)；新行為由 owning context/integration/support package 承接，不重建 horizontal packages。
+Dependency 是 change propagation 與 understanding path。只保留必要依賴，並讓 authority、public contract 與方向可預測。
 
-## Source dependency direction
+## Source direction
 
-依賴規則用來保護 owner、authority 與 runtime boundary，不用來美化目錄。
+- `app` 可組裝 `modules` / `shared`；`modules` / `shared` 不反向依賴 app composition。
+- `shared` 不引用 feature module，也不擁有 feature authorization、store 或 business branching。
+- Owner package 的 Domain 不依賴 framework、HTTP、SDK、database、environment 或 adapter。
+- Application 協調 owner use case；需要外部 capability 時依賴 consumer-owned port / public contract。
+- Adapter 實作 port，可依必要 public type；不得取得 business lifecycle / authorization authority。
+- Integration package 擁有 provider protocol/credential boundary；provider SDK type 不滲入 business Domain。
+- `platform` 只擁有無 business authority 的中立 mechanism，不成為所有 adapter 的 mega barrel。
+- Owner-specific Agent只做 extraction/draft/inference；正式 write 仍經 deterministic validation、authorization 與 owner use case。
 
-- `app` 可以組裝 `modules` 與 `shared`；`modules` 不引用 `app`。
-- `shared` 不反向引用 feature modules 或 app，也不得保存 feature-specific authorization、store 或 business branching。
-- 一個 feature composition 不直接引用另一 feature composition。需要跨功能 concrete port 時，由 `app/api/_composition` 在最外層組裝與注入。
-- Context package 內的 `domain` 不依賴 adapter、framework、HTTP、SDK、database 或 environment。
-- Context package 內的 `application` 只依賴 owner domain/contracts/ports，以及經核定的其他 owner public contract；外部能力使用 ports。
-- Context-specific adapter 實作 owner ports，可依必要 owner public types；adapter 不成為 business authority。
-- Integration package（例如 `line-channel`、`google-workspace`）擁有 provider protocol/credential boundary，不把 provider SDK type 滲入 business domain。
-- `platform` 只保存沒有 business authority 的中立 runtime/persistence mechanism；不得成為所有 business adapters 的 mega barrel。
-- Workspace dependency allowlist 的 machine Source of Truth 是 `architecture/implementation-topology.json`；`.dependency-cruiser.mjs` 直接由此派生 source-edge forbidden rules，不另維護第二份 package allowlist。Manifest 與 source graph 皆必須符合同一 topology。
-- Owner-specific `agents` 只做 extraction/draft/model interaction；結果仍需 deterministic validation、authorization 與 owner use case 才能形成正式 write。
-
-Horizontal compatibility packages 已移除；後續不得以 migration re-export、wrapper、facade 或 alias 重建第二個 owner。
+Workspace dependency allowlist 唯一 machine owner 是 `architecture/implementation-topology.json`；source graph、package manifests 與 guards必須收斂到同一 topology。
 
 ## Public surface
 
-跨 package 只使用 owning package 的公開 exports。禁止直接依賴：
+跨 package 只能依賴 owning package 的 public exports。禁止：
 
-- `dist/`
-- 其他 package 的 source implementation path
-- 未公開 internal path
-- product runtime 的 test / testing-only export
-- 已移除或未註冊的 horizontal compatibility package
+- `dist/`；
+- 其他 package private source path；
+- internal/generated private artifact；
+- runtime 對 test/testing-only export；
+- 直接讀其他 owner table/private schema。
 
-需要跨 package 的概念如果沒有 public export，先判斷 owner 是否正確；不要用 import/export alias、wrapper 或 facade 偷渡私有實作。
+`import type` 仍是 ownership dependency；不進 runtime bundle 不代表可以越界。
 
-`import type` 仍然是 ownership dependency。型別不進 runtime bundle，不代表 consumer 可以繞過 private module / Context boundary。
+若缺 public export，先確認真正 owner 與 consumer need，再決定是否需要新 contract；不要先用 alias/wrapper 暴露 private model。
 
-## Browser / server
+## Browser / server graph
 
-Browser bundle 不得可達：
+Browser-reachable graph 不得包含 secret、database adapter、Node-only runtime、server composition、owner `adapters/agents/testing` 或其他 server-only implementation，除非該 surface 明確是 browser-owned capability。
 
-- server-only composition
-- secrets / environment credentials
-- database adapters
-- Node-only private runtime
-- owner-specific `adapters` / `agents`
-- test fixture / `testing`
+檔名與 `use client` 是表達手段；真正隔離由 module graph guard驗證。
 
-Server-only 判斷不得依賴歷史 horizontal package 名稱。Architecture guard 以責任路徑判斷：`packages/<owner>/src/adapters`、`agents`、`testing`、`database`、`migration` 預設 server-only；只有明確 browser-owned surface（例如 LINE MINI App browser adapter）例外。
+## Cross-owner decision order
 
-`.server.ts`、server directory、`use client` 與 explicit browser export 是表達／防護手段；真正安全由可執行 dependency guard 驗證，不能只靠檔名假設隔離成立。
+需要另一 owner 時：
 
-## Cross-module dependencies
+1. Stable ID / primitive business fact 已足夠 → 傳該值。
+2. 需要 current owner decision → public query / capability contract。
+3. 需要 owner state transition → owner command / use case。
+4. 多個真實 asynchronous consumer 需要 committed fact，且同步耦合不合理 → event。
+5. 只為 read/navigation → projection。
+6. External/upstream model 會污染 local language → adapter translation / ACL。
 
-跨 module 依賴前先回答：
+Event、shared DTO、facade 或 interface 不因「未來可能需要」提前建立。
 
-1. Consumer 真正需要的是另一 module 的 public contract，還是共用中立能力？
-2. 這是 Bounded Context 互動、Code Module reuse，還是 Data Boundary？三者不得混用。
-3. 依賴方向是否讓 authority 從 owner 流向 consumer，而不是 consumer 反向讀 private state？
-4. 是否已有 application port / contract 可承接，不需要新增 facade？
+## Data disclosure
 
-同一概念維持單一名稱。若名稱或 owner 錯誤，修正 source，而不是在 consumer 用 alias 掩蓋。
+跨 boundary 只傳 consumer 所需最小資訊：
 
-### Cross-boundary decision order
+- stable identity，而不是 producer Aggregate graph；
+- narrow projection，而不是 database row / ORM entity；
+- verified business intent，而不是 client 宣告的 actor/role；
+- version/request identity只作 concurrency/replay contract，不作 permission；
+- provider payload先由 integration boundary驗證／翻譯，再進 business model。
 
-需要別的 owner 時，先用第一性原理確認真正 consumer need，再以高手思維對照既有 contract，沿依賴追到根因；之後才用奧卡姆剃刀選擇必要 dependency：
-
-1. **Stable ID / primitive business fact** 已足夠：只傳該值。
-2. 需要 current owner decision：依賴 owner 的 public query / application contract。
-3. 需要 owner 執行 state transition：呼叫 owner command/use case，不直接改它的 repository/table。
-4. 多個 consumer 需要 committed fact 且同步耦合不合理：再定義 integration event。
-5. 只有責任、契約、修改原因都相同的純 mechanism，才抽 shared/support。
-
-不要反過來先建立 shared DTO / event / facade 再讓 owner 配合它。
-
-## Data passed across boundaries
-
-跨 boundary 的資料遵循必要揭露（least necessary disclosure），這是 security / ownership invariant，不是『最小 change』策略：
-
-- 傳 stable identity，不傳整個 producer Aggregate graph。
-- 傳 consumer 需要的 projection，不傳 database row 或 ORM entity。
-- 傳已驗證 business intent，不傳 client 宣告的 actor / role 作 authority。
-- 傳 version / request identity 只作 concurrency / replay contract，不把它們當 permission。
-- Provider payload 先由 integration/application boundary 驗證與翻譯，再進入 Domain；不讓 SDK type 滲入核心模型。
-
-若 consumer 需要大量 producer private fields 才能工作，先檢查 Context/module boundary 是否錯誤，而不是擴大 export。
-
-## Implementation convergence
-
-每次把 horizontal implementation 搬回 context 時：
-
-1. public export path 預設保持不變；consumer 不因搬檔被迫知道 private layout。
-2. 先搬 owner implementation 與 owner-specific tests，再刪 horizontal source/export/dependency。
-3. adapter 搬移不等於 Data Boundary 搬移；table、schema、RLS、transaction/replay/version 不隨目錄自動改動。
-4. 若移除 horizontal dependency 需要新增另一個 compatibility package，先停止並重新找 owner；不要把舊複雜度換名字。
-5. 移除已不再使用的 legacy dependency，不把 transition dependency 當永久 architecture；不以全部依賴數只能下降作為新功能限制。新增真實 owner public-contract 依賴時，須說明 consumer 與方向，同步 package.json、manifest、guard 合法／違規案例；不得放寬既有安全邊界或引入 cycle。
+若 consumer 需要大量 producer private fields 才能成立，回頭檢查 ownership/boundary，而不是擴大 export。
 
 ## Cycles
 
-遇到循環依賴時不新增第三個 `common` package 來藏 cycle。先找：
+遇到 cycle 不新增第三個 `common` package。先查：
 
-- 哪一側才是真正 authority。
-- 是否應由 application orchestration / port 反轉 dependency。
-- 是否把兩個其實不同的 model 用同一 shared type 綁住。
-- 是否有責任放錯 layer / module。
-- 是否只是 UI/read projection 應在 composition layer 組合，而不是兩個 Context 互相依賴。
+- 哪一側才是 authority；
+- 是否應由 outer application composition 或 port 反轉 dependency；
+- 是否誤把不同 Context model 用 shared type 綁住；
+- 是否只是 read projection 應由 composition組合；
+- 是否有 responsibility 放錯 owner/layer。
 
-只有真的存在中立、穩定、無 business authority 的共同 contract，才允許提到 contracts/support owner。
+只有真實中立、穩定、無 business authority 的共同 mechanism 才能進 shared/support。
 
-## 驗證
+## Change contract
 
-實際允許／拒絕矩陣由 architecture guard scripts 與測試維護。修改 guard 時必須同時有合法案例與能直接暴露根因的違規反例，不得只是放寬規則讓現況變綠。
+新增、刪除或改變 workspace dependency 時，同 changeset 同步 consumer/owner `package.json`、`architecture/implementation-topology.json` 與 lockfile；不得只放寬 guard。新增依賴需能指出真實 consumer capability與方向。
 
-Guard owner：[Architecture guard contract](../060-engineering/060-architecture-guards.md)。
+Authorization、transaction、replay/version、tenant isolation、recovery 與 public wire semantics 不得因 dependency refactor 改弱。
+
+## Validation
+
+實際允許／拒絕矩陣由 architecture guards/tests維護。修改規則時同時提供合法案例與能暴露根因的違規反例；完成後走 root canonical validation。

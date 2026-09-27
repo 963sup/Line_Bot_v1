@@ -154,7 +154,7 @@ LIFF state decoding、entry intent 白名單與 login continuation 由 [LINE MIN
 
 ## Command entrypoints
 
-狀態：runtime target contract。Next.js版本仍由manifest/lockfile擁有；以下固定inbound responsibility，不把framework API或action ID當作business boundary。Current入口尚未完成Account/Employmentcutover。
+以下只描述 inbound/runtime responsibility；Next.js version 由 package manifest / lockfile 擁有，不在本頁複製。Account/User 已是 current identity owner；Employment-scoped flow 仍依 Governance 的 migration / gap 狀態放行，不在本頁冒充完成。Framework API 或 action ID 都不是 business boundary。
 
 ## Core rule
 
