@@ -465,7 +465,7 @@ test("Release plans owner-specific convergence and preserves real dependencies",
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("find_owner_baseline()", "find_baseline_removed()"),
+    workflow.replace("find_owner_baseline() {", "find_baseline_removed() {"),
   );
   rejects(root, "owner-specific convergence");
 
