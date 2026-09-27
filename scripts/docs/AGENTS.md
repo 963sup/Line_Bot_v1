@@ -1,5 +1,6 @@
-# Documentation validation scripts
+# Documentation governance scripts
 
-- Documentation checks validate Markdown structure, local links and declared documentation hygiene only; they do not prove runtime, schema, deployment, API or device behavior.
-- Generated/indexed documentation must retain canonical owner links and distinguish current, target, history and acceptance evidence; do not make a checker pass by duplicating or weakening a contract.
-- Test fixtures must include valid, broken-link, malformed-frontmatter and boundary cases without broad exclusions for protected or generated paths.
+- Own Markdown syntax/link checks and convergence machine state; never product/runtime truth.
+- `check-docs.mjs`: structure/local links. `convergence.mjs`: inventory, review freshness, byte ceiling, upstream coverage, and completion via `docs/convergence-manifest.json`.
+- Manifest is current state; Git owns history. Imported skill provenance stays in `skills-lock.json`.
+- Never weaken owner/security/transaction/evidence contracts to pass checks.
