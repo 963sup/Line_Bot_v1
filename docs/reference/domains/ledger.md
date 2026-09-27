@@ -1,6 +1,6 @@
 # Ledger detailed reference
 
-Low-frequency Ledger implementation / activation detail. Ownership remains canonical in [Ledger](../../010-domain-owners/150-ledger.md).
+Low-frequency Ledger implementation / activation detail. Ownership remains canonical in [Ledger](../../owners/ledger.md).
 
 ## Current persistence boundary
 
@@ -25,10 +25,10 @@ Required checks include unchanged per-holder/source totals and denomination, mis
 
 ## Adjacent owners
 
-- [Asset](../../010-domain-owners/130-asset.md): definition and denomination.
-- [Wallet](../../010-domain-owners/140-wallet.md): eligibility and derived holding.
-- [DailyCheckIn](../../010-domain-owners/160-daily-check-in.md): daily reward policy.
-- [Attendance](../../010-domain-owners/050-attendance.md): clock reward policy.
-- [Current identity data](../../040-data/010-data-boundary-model.md)
-- [Transactions](../../040-data/040-transaction-and-idempotency.md)
-- [Migration gates](../../090-governance/030-migrations/040-enterprise-organization-workforce-payroll.md)
+- [Asset](../../owners/asset.md): definition and denomination.
+- [Wallet](../../owners/wallet.md): eligibility and derived holding.
+- [DailyCheckIn](../../owners/daily-check-in.md): daily reward policy.
+- [Attendance](../../owners/attendance.md): clock reward policy.
+- [Current identity data](../data/boundaries.md)
+- [Transactions](../data/transactions.md)
+- [Migration gates](../../change/migrations/enterprise-organization-workforce-payroll.md)
