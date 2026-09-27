@@ -4,7 +4,7 @@ import { postgresFixture } from "@line-work/platform/testing/postgres";
 import { PostgresPublicRepositoryStore } from "../src/adapters/postgres/public.js";
 import { createPublicRepositories } from "../src/application/public.js";
 
-test("public Repository list exposes only public owner resources with a deterministic limit", async (t) => {
+test("public Repository list and popularity expose only public owner resources deterministically", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -18,6 +18,13 @@ test("public Repository list exposes only public owner resources with a determin
     "alice",
     2,
   ]);
+  for (const id of ["fan-a", "fan-b"]) {
+    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      id,
+      "active",
+      1,
+    ]);
+  }
   for (const [id, name, visibility] of [
     ["repository-a", "Alpha", "public"],
     ["repository-b", "Beta", "public"],
@@ -28,13 +35,21 @@ test("public Repository list exposes only public owner resources with a determin
       [id, "public-owner", name, visibility],
     );
   }
+  await pg.query(
+    "insert into app_private.repository_stars(repository_id,user_id,created_at) values($1,$2,$3),($1,$4,$5),($6,$2,$7)",
+    ["repository-b", "fan-a", 10, "fan-b", 11, "repository-a", 12],
+  );
 
   const publicRepositories = createPublicRepositories(new PostgresPublicRepositoryStore(db));
   assert.deepEqual(await publicRepositories.listByOwner("alice", 1), {
     items: [{ id: "repository-a", ownerLogin: "alice", name: "Alpha" }],
     totalCount: 2,
   });
-  assert.deepEqual(await publicRepositories.listByOwner("missing", 6), {
+  assert.deepEqual(await publicRepositories.popularByOwner("alice", 1), {
+    items: [{ id: "repository-b", ownerLogin: "alice", name: "Beta", starCount: 2 }],
+    totalCount: 2,
+  });
+  assert.deepEqual(await publicRepositories.popularByOwner("missing", 6), {
     items: [],
     totalCount: 0,
   });

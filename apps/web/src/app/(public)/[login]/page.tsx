@@ -2,60 +2,145 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
-import { PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 import { loginDirectory, profiles, publicUserByLogin } from "../../api/_composition/account.server";
-import ProfileSettingsAction from "../_components/profile-settings-action";
-import ProfileShare from "../_components/profile-share";
+import ProfileViewerShell from "../_components/profile-viewer-shell";
 import { publicOrganizations } from "../_composition/directory.server";
 import { publicRepositories } from "../_composition/repository.server";
+import styles from "./profile.module.css";
 
 export const dynamic = "force-dynamic";
 
 function ProfileAvatar({ label }: { label: string }) {
   const initial = Array.from(label.trim())[0]?.toLocaleUpperCase("zh-TW") ?? "•";
   return (
-    <div className="public-profile-avatar" aria-hidden="true">
+    <div className={`public-profile-avatar ${styles.avatar}`} aria-hidden="true">
       {initial}
     </div>
   );
 }
 
-async function repositoryProjection(login: string) {
-  return publicRepositories().listByOwner(login, 6);
+async function popularRepositoryProjection(login: string) {
+  return publicRepositories().popularByOwner(login, 6);
 }
 
-function RepositorySection({
+function ProfileIdentity({
+  login,
+  title,
+  bio,
+}: {
+  login: string;
+  title: string;
+  bio?: string | null;
+}) {
+  return (
+    <div className={styles.identity}>
+      <div className={styles.identityRow}>
+        <ProfileAvatar label={title || login} />
+        <div className={styles.identityCopy}>
+          <h1>{title || `@${login}`}</h1>
+          <p>@{login}</p>
+        </div>
+      </div>
+      {bio && <p className={styles.bio}>{bio}</p>}
+    </div>
+  );
+}
+
+function PopularRepositories({
   repositories,
 }: {
-  repositories: Awaited<ReturnType<typeof repositoryProjection>>;
+  repositories: Awaited<ReturnType<typeof popularRepositoryProjection>>;
 }) {
-  if (repositories.totalCount === 0) return null;
   return (
-    <section>
-      <SectionHeading
-        title="Repositories"
-        description={`${repositories.totalCount} 個公開 Repository`}
-      />
-      <div className="menu-group">
-        {repositories.items.map((repository) => (
-          <Link
-            className="action-row"
-            key={repository.id}
-            href={repositoryPath(repository.ownerLogin, repository.name)}
-          >
-            <span className="action-row-copy">
-              <strong>{repository.name}</strong>
-              <small>
-                {repository.ownerLogin}/{repository.name}
-              </small>
-            </span>
-            <span className="action-chevron" aria-hidden="true">
-              ›
-            </span>
-          </Link>
-        ))}
+    <section id="popular-repositories" className={styles.section}>
+      <h2 className={styles.sectionHeading}>
+        <svg
+          viewBox="0 0 24 24"
+          width="21"
+          height="21"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" />
+        </svg>
+        Popular
+      </h2>
+      {repositories.totalCount === 0 ? (
+        <p className={styles.emptyRepositories}>目前沒有公開 Repository。</p>
+      ) : (
+        <div className={styles.repositoryRail}>
+          {repositories.items.map((repository) => (
+            <Link
+              className={styles.repositoryCard}
+              key={repository.id}
+              href={repositoryPath(repository.ownerLogin, repository.name)}
+            >
+              <span>
+                <small className={styles.repositoryOwner}>@{repository.ownerLogin}</small>
+                <strong className={styles.repositoryName}>{repository.name}</strong>
+              </span>
+              <span className={styles.repositoryMeta}>
+                <span aria-hidden="true">★</span>
+                <span>{repository.starCount}</span>
+                <span>Stars</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RepositorySummary({ totalCount }: { totalCount: number }) {
+  return (
+    <section className={styles.section} aria-label="Profile resources">
+      <div className={styles.resourceList}>
+        <a className={styles.resourceRow} href="#popular-repositories">
+          <span className={styles.resourceIcon} aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 4.5h12a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2V4.5Z" />
+              <path d="M7 16h12M9 8h6" />
+            </svg>
+          </span>
+          <span className={styles.resourceLabel}>Repositories</span>
+          <span className={styles.resourceCount}>{totalCount}</span>
+        </a>
       </div>
     </section>
+  );
+}
+
+function ProfileContent({
+  login,
+  title,
+  bio,
+  repositories,
+}: {
+  login: string;
+  title: string;
+  bio?: string | null;
+  repositories: Awaited<ReturnType<typeof popularRepositoryProjection>>;
+}) {
+  return (
+    <div className={styles.profile}>
+      <ProfileIdentity login={login} title={title} bio={bio} />
+      <PopularRepositories repositories={repositories} />
+      <RepositorySummary totalCount={repositories.totalCount} />
+    </div>
   );
 }
 
@@ -64,20 +149,16 @@ export default async function Page({ params }: { params: Promise<{ login: string
   const owner = await loginDirectory.resolve(login);
   if (!owner) notFound();
 
+  const liffId = lineMiniApp().liffId;
+
   if (owner.kind === "ORGANIZATION") {
     const organization = await publicOrganizations().byLogin(owner.login);
     if (!organization) notFound();
-    const repositories = await repositoryProjection(owner.login);
+    const repositories = await popularRepositoryProjection(owner.login);
     return (
-      <main className="app-content">
-        <p className="eyebrow">Organization</p>
-        <PageHeading
-          title={organization.name}
-          description={`@${organization.login}`}
-          actions={<ProfileShare />}
-        />
-        <RepositorySection repositories={repositories} />
-      </main>
+      <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
+        <ProfileContent login={owner.login} title={organization.name} repositories={repositories} />
+      </ProfileViewerShell>
     );
   }
 
@@ -85,26 +166,16 @@ export default async function Page({ params }: { params: Promise<{ login: string
   if (!user) notFound();
   const [profile, repositories] = await Promise.all([
     profiles.publicByUserId(user.id),
-    repositoryProjection(owner.login),
+    popularRepositoryProjection(owner.login),
   ]);
   return (
-    <main className="app-content">
-      <p className="eyebrow">User</p>
-      <div className="public-profile-identity">
-        <ProfileAvatar label={profile?.displayName ?? user.login} />
-        <PageHeading
-          title={profile?.displayName ?? `@${user.login}`}
-          description={`@${user.login}`}
-          actions={
-            <div className="inline-actions">
-              <ProfileShare />
-              <ProfileSettingsAction liffId={lineMiniApp().liffId} profileLogin={user.login} />
-            </div>
-          }
-        />
-      </div>
-      {profile?.bio && <p>{profile.bio}</p>}
-      <RepositorySection repositories={repositories} />
-    </main>
+    <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
+      <ProfileContent
+        login={owner.login}
+        title={profile?.displayName ?? user.login}
+        bio={profile?.bio}
+        repositories={repositories}
+      />
+    </ProfileViewerShell>
   );
 }
