@@ -12,8 +12,8 @@ LINE channel credentials 屬 integration binding；rotation 只更新 credential
 
 Webhook adapter 只做平台解析、驗簽、identity evidence 與 transport。具體 business flow 由 module owner 擁有，例如：
 
-- Attendance workplace chat flow：[Attendance](../../010-domain-owners/050-attendance.md)
-- Expense receipt intake：[Expense](../../010-domain-owners/100-expense.md)
+- Attendance workplace chat flow：[Attendance](../../owners/attendance.md)
+- Expense receipt intake：[Expense](../../owners/expense.md)
 - Rich Menu：`rich-menu.md`
 
 Adapter 不保存第二套 product command/state machine。
