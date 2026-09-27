@@ -1,7 +1,8 @@
 # @line-work/enterprise
 
-- Owns Enterprise lifecycle, direct affiliation, Enterprise↔Organization attachment, Enterprise invitations, Enterprise Teams, EnterpriseTeamMembership and Team→Organization assignment.
-- Enterprise Team is not Organization Team. Organization membership/invitation facts remain Organization authority; Enterprise may request Organization-owned changes only through Organization public contracts or an explicit transaction coordinator.
-- Identity/Access owns RoleAssignment; Enterprise consumes authorization decisions/contracts and must not become a second role writer.
-- Preserve effective-user qualification, membership-source provenance, expected-version/replay, owner protection, audit and recovery semantics.
-- Legacy Enterprise identity recovery is Enterprise-owned: only a current EnterpriseOwner may complete the paired `name` / `slug` once; never derive it from LINE/provider metadata or mutate it through Supabase reconciliation.
+Owner: Enterprise lifecycle, direct affiliation, Organization attachment, invitations, Enterprise Teams, memberships, and Team→Organization assignment. Canonical semantics: [Enterprise](../../docs/owners/enterprise.md).
+
+- Enterprise Team ≠ Organization Team; Organization membership/invitation remain Organization authority.
+- Identity/Access is the RoleAssignment writer; Enterprise consumes authorization and never duplicates role authority.
+- Preserve effective-user qualification, membership-source provenance, expected-version/replay, owner protection, audit, and recovery.
+- Legacy Enterprise name/slug recovery is one-time Enterprise-owned behavior for a current EnterpriseOwner; never derive it from provider metadata or Supabase reconciliation.
