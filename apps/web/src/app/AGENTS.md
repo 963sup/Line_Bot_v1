@@ -11,7 +11,7 @@
 - 任意 `returnUrl`、credential、private draft、authorization decision 或 mutable server state 不進產品 URL。
 - `app/api/_composition` 只在最外層接 concrete adapters；module/shared 不反向依賴 app composition。
 
-Current route inventory、Mobile app-shell 與 URL contract 由 [Web runtime](../../../../docs/020-architecture/050-runtime-architecture.md) 與實際 route tree共同證明；本檔不再手抄第二份 route/feature清單。
+Current route inventory、Mobile app-shell 與 URL contract 由 [Web runtime](../../../../docs/reference/runtime/routes.md) 與實際 route tree共同證明；本檔不再手抄第二份 route/feature清單。
 
 ## Scope routing
 
@@ -36,4 +36,4 @@ FPT / Mobile benchmark usage 繼承 [apps scope](../../../AGENTS.md)。Locator �
 - External callback/webhook 按 provider trust contract 驗證；credential 不複製到產品 URL。
 - 未實作能力留在 Governance / semantic status，不建立空 page/API 宣稱完成。
 
-相關 current contract：[Web runtime](../../../../docs/020-architecture/050-runtime-architecture.md)；repository placement：[Repository architecture](../../../../docs/020-architecture/010-repository-architecture.md)。
+相關 current contract：[Web runtime](../../../../docs/reference/runtime/routes.md)；repository placement：[Dependency boundaries](../../../../docs/rules/dependency-boundaries.md)。
