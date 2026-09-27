@@ -127,7 +127,6 @@ test("review becomes stale when reviewed Markdown changes", async () => {
   }
 });
 
-
 test("seal requires zero unresolved work and makes future pending work fail closed", async () => {
   const root = await fixture();
   try {
@@ -146,7 +145,6 @@ test("seal requires zero unresolved work and makes future pending work fail clos
     await rm(root, { recursive: true, force: true });
   }
 });
-
 
 test("retire closes deleted review state without storing history", async () => {
   const root = await fixture();
