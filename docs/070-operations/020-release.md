@@ -9,8 +9,11 @@ Release 是把已驗證的版本與必要外部變更放行到指定環境的受
 一般順序：
 
 1. 確認 release candidate、target environment、operator、recovery owner 與已有外部操作授權。
-2. 完成適用的 repository validation 與 deployment readiness；兩者是獨立 evidence，只有 external change 確實依賴新的 runtime contract 時才要求對應 deployment revision，不把無關變更強制綁成同一 SHA。
-   - Current GitHub `Release` 由 `main` 的 `Validate` 成功完成後觸發，不在平行 runner 內 sleep 等待 validation。它只接受同 repository、同 `main` head SHA 的 successful push validation。Affected-source baseline 只信前次成功 workflow_run Release 的 `run-name`／display title `Release <validated-sha>`，並且該 run 的固定 `gate` job 必須 success、`<validated-sha>` 必須是 current validated SHA 的 ancestor；沒有合格 baseline 時保守以 empty tree 比對 current tree，作為首次 bootstrap 收斂。只有 Supabase declarative schema／Release workflow 或 Rich Menu desired-state source 受影響時才配置對應 mutation。Supabase schema change 只跑一次 history-free `sync --allow-destructive`，在同一程序內完成 plan/apply/second-diff/readback 並保存 evidence，避免重複 local rebuild。Reconciler-only 修改不啟動 remote runner。Destructive replacement 留給 explicit `Supabase Replace`，先做 preserve-data `prepare`/preflight，再由人工 confirmation 授權 contract；Rich Menu publication 另等待 `mini-app-line` deployment success。
+2. 完成 repository validation，再依 runtime dependency order 放行外部 contract；validation、database convergence、deployment 與 provider publication 是不同 evidence，但需要彼此相容的 revision 必須由同一 Release ordering 約束。
+   - Current GitHub `Release` 由 `main` 的 `Validate` 成功完成後觸發，不在平行 runner 內 sleep 等待 validation。它只接受同 repository、同 `main` head SHA 的 successful push validation。Affected-source baseline 只信前次成功 workflow_run Release 的 `run-name`／display title `Release <validated-sha>`、成功的固定 `gate` job 與 git ancestor check；沒有合格 baseline 時以 empty tree 比對 current tree。
+   - 若 declarative schema 受影響，Release 先執行 preserve-data `prepare`，只接受 explicit business metadata，再執行 history-free `sync --allow-destructive`；只有 second diff、catalog/security readback 與 migration-history fingerprint 都完成後，database contract 才算 converged。任何一步失敗，後續 Production deployment 必須保持 blocked。
+   - Vercel Git integration 不直接把 `main` 推成 Production。Supabase job 成功或因本次沒有 schema change 而 skipped 後，Release 才透過 `pnpm vercel:deploy:production -- --live --sha <validated-sha>` 對固定 `mini-app-line` project 執行一次 mutation，並 read back Production target、exact Git SHA 與 production alias。未知結果不得盲目重新建立 deployment。
+   - Rich Menu publication 只在 desired state 受影響時執行，且依賴上述 Production deployment 成功。Manual `Supabase Replace` 只負責 database prepare/sync/evidence；它不要求尚未安全發布的 Web 當前置條件，也不自行部署 Web。完成 replacement 後由 Release/rerun 對 exact validated SHA 執行 Production deployment。
 3. 必要時暫停舊 writer / 舊管理入口，取得備份與 migration 前對帳。
 4. 依相依順序套用 forward migration、runtime role/config 與 Web deployment。
 5. 驗證 deny path、authorized read/write、version/replay、durable readback。
@@ -19,7 +22,7 @@ Release 是把已驗證的版本與必要外部變更放行到指定環境的受
 
 ## Compatibility
 
-Schema 與 Web 若需要協調切換，不能讓舊 Web 在已移除舊 schema contract 的資料庫上繼續服務。Migration 已套用後，若舊版本不再相容，應維持入口關閉並向前修復，不以單純程式 rollback 破壞新資料。
+Schema 與 Web 若需要協調切換，必須先建立向前相容的 database contract，再 promotion 新 runtime；不能先讓新 Web 依賴尚未存在的 relation，也不能讓舊 Web 在已移除舊 schema contract 的資料庫上繼續服務。Database convergence 失敗時維持上一個 Production runtime；migration 已套用後若舊版本不再相容，應維持入口關閉並向前修復，不以單純程式 rollback 破壞新資料。
 
 ## Authorization changes
 

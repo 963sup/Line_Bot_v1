@@ -58,25 +58,6 @@ jobs:
             exit 1
           }
 
-      - name: Require deployed Web consumer for this commit
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          result="$(gh api "repos/$REPOSITORY/commits/$SHA/status" --jq '[.statuses[] | select(.context == "Vercel")][0] | "\(.state // "")|\(.target_url // "")"')"
-          state="${result%%|*}"
-          target_url="${result#*|}"
-          test "$state" = "success" || {
-            echo "Vercel deployment is not successful for $SHA: $state"
-            exit 1
-          }
-          [[ "$target_url" == https://vercel.com/96sup/mini-app-line/* ]] || {
-            echo "Vercel status does not belong to the expected mini-app-line project."
-            exit 1
-          }
-
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.sha }}

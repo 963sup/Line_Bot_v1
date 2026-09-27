@@ -50,6 +50,7 @@ function fixture(t) {
         deadcode: "knip",
         semantic: "node scripts/architecture/semantic-cli.mjs",
         "patch:apply": "node scripts/changes/patch-apply.mjs",
+        "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
       },
       devDependencies: { "@biomejs/biome": "2.5.12" },
     }),
@@ -106,16 +107,29 @@ function fixture(t) {
     }),
   );
   write(
+    "apps/web/vercel.json",
+    JSON.stringify({
+      git: {
+        deploymentEnabled: {
+          "**": false,
+          main: false,
+          preview: true,
+          "preview/**": true,
+        },
+      },
+    }),
+  );
+  write(
     ".github/workflows/validate.yml",
     "on:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n  push:\n    branches: [main]\npermissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n      - run: pnpm check\n  validate:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: package.json\n      - run: pnpm validate\n",
   );
   write(
     ".github/workflows/release.yml",
-    "run-name: Release ${{ github.event.workflow_run.head_sha }}\non:\n  workflow_run:\n    workflows: [Validate]\n    types: [completed]\n    branches: [main]\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository\n    steps:\n      - run: echo 'branches/main VALIDATED_SHA superseded before release routing'\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.workflow_run.head_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - run: echo 'actions/workflows/release.yml/runs status=success display_title ^Release\\ [0-9a-f]{40}$ actions/runs/$run_id/jobs filter=latest job_name gate job_conclusion success merge-base --is-ancestor empty_tree VALIDATED_SHA supabase/schemas/ .github/workflows/release.yml assets/line/rich-menu/ GITHUB_OUTPUT'\n  supabase:\n    needs: gate\n    if: needs.gate.outputs.schema_changed == 'true'\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    steps:\n      - run: echo 'commits/$SHA/status select(.context == \"Vercel\") https://vercel.com/96sup/mini-app-line/'\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n          cache: true\n          cache_dependency_path: pnpm-lock.yaml\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
+    "run-name: Release ${{ github.event.workflow_run.head_sha }}\non:\n  workflow_run:\n    workflows: [Validate]\n    types: [completed]\n    branches: [main]\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository\n    steps:\n      - run: echo 'branches/main VALIDATED_SHA superseded before release routing'\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.workflow_run.head_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - run: echo 'actions/workflows/release.yml/runs status=success display_title ^Release\\ [0-9a-f]{40}$ actions/runs/$run_id/jobs filter=latest job_name gate job_conclusion success merge-base --is-ancestor empty_tree VALIDATED_SHA supabase/schemas/ .github/workflows/release.yml assets/line/rich-menu/ GITHUB_OUTPUT'\n  supabase:\n    needs: gate\n    if: needs.gate.outputs.schema_changed == 'true'\n    env: {}\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote prepare\n        env:\n          SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: always() && needs.gate.result == 'success' && (needs.supabase.result == 'success' || needs.supabase.result == 'skipped')\n    env: {}\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ needs.gate.outputs.head_sha }}\n          persist-credentials: false\n      - run: echo 'branches/main superseded before Vercel production deployment'\n      - env:\n          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}\n          SHA: ${{ needs.gate.outputs.head_sha }}\n        run: pnpm vercel:deploy:production -- --live --sha \"$SHA\"\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n          cache: true\n          cache_dependency_path: pnpm-lock.yaml\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
   );
   write(
     ".github/workflows/supabase-replace.yml",
-    "on:\n  workflow_dispatch:\npermissions:\n  contents: read\n  checks: read\n  statuses: read\njobs:\n  replace:\n    if: github.ref == \'refs/heads/main\' && inputs.confirm_project == \'nmssogphayjymjpbnrxv\' && inputs.confirm_replace == \'replace nmssogphayjymjpbnrxv\'\n    env: {}\n    steps:\n      - run: echo \'check-runs .name == \"validate\"\'\n      - run: echo \'commits/$SHA/status https://vercel.com/96sup/mini-app-line/\'\n      - run: pnpm schema:remote prepare\n        env:\n          SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n",
+    "on:\n  workflow_dispatch:\npermissions:\n  contents: read\n  checks: read\n  statuses: read\njobs:\n  replace:\n    if: github.ref == \'refs/heads/main\' && inputs.confirm_project == \'nmssogphayjymjpbnrxv\' && inputs.confirm_replace == \'replace nmssogphayjymjpbnrxv\'\n    env: {}\n    steps:\n      - run: echo \'check-runs .name == \"validate\"\'\n      - run: pnpm schema:remote prepare\n        env:\n          SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}\n      - run: pnpm schema:remote sync --allow-destructive\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n",
   );
   return { root, write };
 }
@@ -479,15 +493,27 @@ test("Release routes schema and workflow changes through one reconciliation pass
 
   write(
     ".github/workflows/release.yml",
+    workflow.replace("pnpm schema:remote prepare", "echo skip-prepare"),
+  );
+  rejects(root, "current-main/prepare/sync/evidence");
+
+  write(
+    ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote sync --allow-destructive", "echo skip-sync"),
   );
-  rejects(root, "current-main/sync/evidence");
+  rejects(root, "current-main/prepare/sync/evidence");
 
   write(
     ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote sync --allow-destructive", "pnpm schema:remote sync"),
   );
-  rejects(root, "current-main/sync/evidence");
+  rejects(root, "current-main/prepare/sync/evidence");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace('pnpm vercel:deploy:production -- --live --sha "$SHA"', "echo skip-deploy"),
+  );
+  rejects(root, "production deployment must follow Supabase convergence");
 
   write(
     ".github/workflows/release.yml",
@@ -501,6 +527,14 @@ test("Release routes schema and workflow changes through one reconciliation pass
   assert.deepEqual(validate(root), []);
 });
 
+test("main Git integration cannot bypass controlled production release", (t) => {
+  const { root, write } = fixture(t);
+  const config = JSON.parse(readFileSync(resolve(root, "apps/web/vercel.json"), "utf8"));
+  config.git.deploymentEnabled.main = true;
+  write("apps/web/vercel.json", JSON.stringify(config));
+  rejects(root, "main Git integration must not bypass");
+});
+
 test("Supabase Replace requires explicit dispatch authorization", (t) => {
   const { root, write } = fixture(t);
   const workflow = readFileSync(resolve(root, ".github/workflows/supabase-replace.yml"), "utf8");
@@ -512,13 +546,13 @@ test("Supabase Replace requires explicit dispatch authorization", (t) => {
     ".github/workflows/supabase-replace.yml",
     workflow.replace("pnpm schema:remote sync --allow-destructive", "pnpm schema:remote sync"),
   );
-  rejects(root, "validate/deployed-Web/prepare/replace/evidence");
+  rejects(root, "validate/prepare/replace/evidence");
 
   write(
     ".github/workflows/supabase-replace.yml",
     workflow.replace("pnpm schema:remote prepare", "echo skip-prepare"),
   );
-  rejects(root, "validate/deployed-Web/prepare/replace/evidence");
+  rejects(root, "validate/prepare/replace/evidence");
 
   write(".github/workflows/supabase-replace.yml", workflow);
   write(".github/workflows/rich-menu.yml", "name: duplicate\n");
