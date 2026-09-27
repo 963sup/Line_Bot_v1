@@ -11,4 +11,4 @@ Governance 只保存仍會影響未來 decision、cutover、open gap、risk 或�
 
 Raw historical logs、已退役 current baseline、完成且沒有 recovery value 的 migration、無 consumer 的 speculative target 不留在 current tree。原始內容需要追溯時由 Git history 取得，不建立 `090-history/` 第二套知識面。
 
-完成 migration 或 proposal 被 current owner 吸收後，仍成立的 truth 蒸餾回 `000-core/`、`010-domain-owners/` 或 machine source；其餘刪除。Acceptance 只證明指定 revision / environment，不得用舊環境推導 current operational target。
+完成 migration 或 proposal 被 current owner 吸收後，仍成立的 truth 回到對應 `facts/`、`rules/`、`010-domain-owners/` 或 machine source；其餘刪除。Acceptance 只證明指定 revision / environment，不得用舊環境推導 current operational target。

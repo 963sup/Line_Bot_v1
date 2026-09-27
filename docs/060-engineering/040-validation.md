@@ -6,8 +6,10 @@ Repository validation 使用既有 scripts 作單一入口；不要把 typecheck
 
 | Command | Responsibility |
 | --- | --- |
-| `docs:check` | Markdown、canonical docs 檔名與 local file links 的機械檢查；不驗 remote URL、runtime behavior 或手機 |\n| `schema:check` | `@line-work/platform` 執行 declarative schema source tests 與 PGlite clean-build / runtime-role / RLS contract tests；不代表 remote catalog 一致 |
-| `lint` | `biome check .` 的 read-only static gate；驗 formatter、lint 與 assist/import ordering，不修改檔案 |\n| `format` | `biome check --write .` 的 canonical local mutation；一次套用 formatter、safe lint fixes 與 assist/import ordering，之後再跑 read-only validation |
+| `docs:check` | Markdown structure、frontmatter/conflict markers 與 local file links 的機械檢查；不驗 remote URL、runtime behavior 或手機 |
+| `schema:check` | `@line-work/platform` 執行 declarative schema source tests 與 PGlite clean-build / runtime-role / RLS contract tests；不代表 remote catalog 一致 |
+| `lint` | `biome check .` 的 read-only static gate；驗 formatter、lint 與 assist/import ordering，不修改檔案 |
+| `format` | `biome check --write .` 的 canonical local mutation；一次套用 formatter、safe lint fixes 與 assist/import ordering，之後再跑 read-only validation |
 | `architecture` / `architecture:test` | dependency graph、runtime boundary、合法/違規反例 |
 | `deadcode` | `knip` 的 repository reachability gate；檢查 dead file、unused export／dependency。finding 必須回到 owner／consumer／entry point 判讀，禁止用 broad `ignore` 消音 |
 | `typecheck` | TypeScript contract |
