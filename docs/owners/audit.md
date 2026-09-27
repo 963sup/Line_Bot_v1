@@ -20,4 +20,4 @@ Audit / command history 只保存追溯需要的 actor、scope、action、target
 
 ## Retention
 
-Audit 並非自動永久保存。期限、撤銷、備份與 recovery 行為由 [Retention and lifecycle](../040-data/070-retention-and-lifecycle.md) 與對應 module contract 決定。
+Audit 並非自動永久保存。期限、撤銷、備份與 recovery 行為由 [Retention and lifecycle](../reference/data/retention.md) 與對應 module contract 決定。
