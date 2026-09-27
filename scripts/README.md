@@ -15,6 +15,7 @@
 | `architecture/` | semantic compiler/type-policy/query/impact/plan/agent-context/diff/drift/runtime-feedback/view、implementation topology 與依賴邊界檢查 |
 | `changes/` | 批次變更計畫 |
 | `docs/` | 文件與連結檢查 |
+| `github/` | GitHub integration 的 read-only branch / Actions evidence 與 Release affected-source routing implementation；workflow 只呼叫 canonical command |
 | `probes/` | 外部服務與功能探測 |
 | `supabase/` | Supabase schema/local/remote reconciliation 與 verification；資料結構 owner 見 [root supabase](../supabase/README.md) |
 | `vercel/` | Vercel production deployment adapter；exact target/SHA、mutation、poll/readback 與 unknown-result handling |

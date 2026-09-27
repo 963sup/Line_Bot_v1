@@ -38,7 +38,9 @@
     "probe:receipt": "node scripts/probes/check-receipt.mjs --live",
     "probe:redis": "node scripts/probes/check-redis.mjs --live",
     "semantic": "node scripts/architecture/semantic-cli.mjs",
-    "patch:apply": "node scripts/changes/patch-apply.mjs"
+    "patch:apply": "node scripts/changes/patch-apply.mjs",
+    "github:current-main": "node scripts/github/current-main.mjs",
+    "github:release-plan": "node scripts/github/release-plan.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",

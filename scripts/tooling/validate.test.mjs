@@ -78,6 +78,18 @@ test("tooling metadata stays separate while root build metadata expands conserva
   });
 });
 
+test("GitHub operation changes run owner-local GitHub tests and tooling boundary checks", () => {
+  const scope = classifyChangedFiles(["scripts/github/release-plan.mjs"]);
+  assert.deepEqual(scope, {
+    codeAffected: true,
+    docsAffected: false,
+    schemaAffected: false,
+    toolingAffected: true,
+  });
+  assert.equal(shouldRunFast("github:test", scope), true);
+  assert.equal(shouldRunFast("tooling:check", scope), true);
+});
+
 test("Vercel production adapter changes run the tooling-owned deployment tests", () => {
   const scope = classifyChangedFiles(["scripts/vercel/deploy-production.mjs"]);
   assert.deepEqual(scope, {

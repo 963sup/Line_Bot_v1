@@ -105,6 +105,10 @@ export function validate(root) {
       errors.push(
         "package.json: vercel:deploy:production must own controlled production deployment",
       );
+    if (manifest.scripts?.["github:current-main"] !== "node scripts/github/current-main.mjs")
+      errors.push("package.json: github:current-main must own exact-main GitHub readback");
+    if (manifest.scripts?.["github:release-plan"] !== "node scripts/github/release-plan.mjs")
+      errors.push("package.json: github:release-plan must own Release affected-source routing");
     if (Object.hasOwn(manifest.scripts ?? {}, "change:plan"))
       errors.push(
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
@@ -584,6 +588,22 @@ export function validate(root) {
       );
     }
 
+    const forbiddenInlineReleaseLogic = [
+      "gh api ",
+      "git diff ",
+      "git merge-base ",
+      "git cat-file ",
+      "turbo query affected",
+      "find_owner_baseline",
+      "release-runs.tsv",
+      "grep -E",
+    ];
+    if (forbiddenInlineReleaseLogic.some((token) => releaseWorkflowSource.includes(token))) {
+      errors.push(
+        "CI: release.yml must remain a thin adapter and call canonical GitHub operation commands instead of implementing routing logic inline",
+      );
+    }
+
     const planSteps = releasePlan?.steps ?? [];
     if (
       typeof releasePlan?.if !== "string" ||
@@ -596,13 +616,6 @@ export function validate(root) {
         "CI: release_plan must only accept successful same-repository main push Validate runs",
       );
     }
-    const currentMain = planSteps.findIndex(
-      (step) =>
-        typeof step.run === "string" &&
-        step.run.includes("branches/main") &&
-        step.run.includes("VALIDATED_SHA") &&
-        step.run.includes("superseded before release planning"),
-    );
     const releaseCheckout = planSteps.findIndex(
       (step) =>
         step.uses?.startsWith("actions/checkout@") &&
@@ -610,27 +623,25 @@ export function validate(root) {
         step.with?.["fetch-depth"] === 0 &&
         step.with?.["persist-credentials"] === false,
     );
-    const detectChanges = planSteps.findIndex(
+    const planCommand = planSteps.findIndex(
       (step) =>
-        typeof step.run === "string" &&
-        step.run.includes("find_owner_baseline") &&
-        step.run.includes("release_title_pattern=") &&
-        step.run.includes("=~ $release_title_pattern") &&
-        step.run.includes('owner == "supabase"') === false &&
-        step.run.includes('case "$owner"') &&
-        step.run.includes("status=completed") &&
-        step.run.includes("merge-base --is-ancestor") &&
-        step.run.includes("supabase/schemas/.*\\.sql$") &&
-        step.run.includes("turbo query affected --tasks build --packages @line-work/web") &&
-        step.run.includes("assets/line/rich-menu/") &&
-        step.run.includes("rich_menu_requires_web") &&
-        step.run.includes("GITHUB_OUTPUT"),
+        step.run === 'pnpm github:release-plan --sha "$VALIDATED_SHA"' &&
+        JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
+        JSON.stringify(step.env ?? {}).includes("GITHUB_REPOSITORY"),
     );
-    if (currentMain < 0 || releaseCheckout <= currentMain || detectChanges <= releaseCheckout) {
+    if (releaseCheckout < 0 || planCommand <= releaseCheckout) {
       errors.push(
-        "CI: release_plan must validate current main, checkout exact validated SHA and compute owner-specific convergence from successful owner jobs",
+        "CI: release_plan must checkout exact validated history and delegate routing to github:release-plan",
       );
     }
+
+    const currentMainIndex = (steps) =>
+      steps.findIndex(
+        (step) =>
+          step.run === 'pnpm github:current-main --sha "$SHA"' &&
+          JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
+          JSON.stringify(step.env ?? {}).includes("GITHUB_REPOSITORY"),
+      );
 
     if (
       typeof releaseSupabase?.if !== "string" ||
@@ -656,9 +667,7 @@ export function validate(root) {
       errors.push("CI: automatic Supabase release must serialize the production database resource");
     }
     const supabaseSteps = releaseSupabase?.steps ?? [];
-    const supabaseMain = supabaseSteps.findIndex(
-      (step) => typeof step.run === "string" && step.run.includes("branches/main"),
-    );
+    const supabaseMain = currentMainIndex(supabaseSteps);
     const supabaseRepair = supabaseSteps.findIndex(
       (step) => step.run === "pnpm schema:remote repair" && step.if === undefined,
     );
@@ -692,23 +701,12 @@ export function validate(root) {
       supabaseEvidence <= supabaseVerify
     ) {
       errors.push(
-        "CI: Supabase must repair, sync changed declarative schemas or verify unchanged schemas, and preserve migration-history evidence",
+        "CI: Supabase must guard current main, repair, sync/verify declarative schemas and preserve unchanged migration-history evidence",
       );
     }
 
     const deploymentSteps = releaseDeployment?.steps ?? [];
-    const deploymentCheckout = deploymentSteps.findIndex(
-      (step) =>
-        step.uses?.startsWith("actions/checkout@") &&
-        step.with?.ref === "${{ needs.release_plan.outputs.head_sha }}" &&
-        step.with?.["persist-credentials"] === false,
-    );
-    const deploymentMain = deploymentSteps.findIndex(
-      (step) =>
-        typeof step.run === "string" &&
-        step.run.includes("branches/main") &&
-        step.run.includes("superseded before Vercel production deployment"),
-    );
+    const deploymentMain = currentMainIndex(deploymentSteps);
     const productionDeploy = deploymentSteps.findIndex(
       (step) =>
         step.run === 'pnpm vercel:deploy:production --live --sha "$SHA"' &&
@@ -721,12 +719,11 @@ export function validate(root) {
       !releaseDeployment.if.includes("needs.supabase.result == 'success'") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("release_plan") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
-      deploymentCheckout < 0 ||
       deploymentMain < 0 ||
       productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: production deployment must be Web-affected only, follow Supabase contract convergence and deploy the exact planned SHA",
+        "CI: production deployment must be Web-affected only, guard current main, follow Supabase contract convergence and invoke the Vercel owner",
       );
     }
 
@@ -746,9 +743,7 @@ export function validate(root) {
       }
       const steps = job.steps ?? [];
       const preview = steps.findIndex((step) => step.run === "pnpm line:rich-menu preview all");
-      const main = steps.findIndex(
-        (step) => typeof step.run === "string" && step.run.includes("branches/main"),
-      );
+      const main = currentMainIndex(steps);
       const publish = steps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
       return (
         preview >= 0 &&
@@ -760,12 +755,12 @@ export function validate(root) {
     };
     if (!validateRichJob(releaseRichDirect, "direct")) {
       errors.push(
-        "CI: direct Rich Menu publication must depend only on release_plan when no Web runtime dependency exists",
+        "CI: direct Rich Menu publication must guard current main and depend only on release_plan when no Web runtime dependency exists",
       );
     }
     if (!validateRichJob(releaseRichAfterDeployment, "after")) {
       errors.push(
-        "CI: Rich Menu with pending Web runtime dependency must wait for exact deployment evidence",
+        "CI: Rich Menu with pending Web runtime dependency must guard current main and wait for exact deployment evidence",
       );
     }
   } catch (error) {

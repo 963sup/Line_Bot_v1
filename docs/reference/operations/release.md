@@ -21,7 +21,9 @@ Validate current main
 
 Current GitHub `Release` 只接受同 repository、current `main` 的 successful push `Validate`。
 
-`release_plan` 是 read-only router：
+`release_plan` 是 GitHub Actions adapter job；routing policy authority 在 GitHub integration，executable implementation 由 canonical `pnpm github:release-plan`（`scripts/github/release-plan.mjs`）擁有。Workflow 只提供 trigger、checkout/setup、permission 與 outputs wiring。
+
+Planner 是 read-only router：
 
 1. 確認 validated SHA 仍是 current `main`。
 2. 對 Supabase、Vercel、Rich Menu 分別尋找「最近一次該 owner job 成功」且為 current SHA ancestor 的 baseline。
@@ -49,7 +51,7 @@ Supabase migration history不是 deployment authority；reconciliation不得新�
 
 只有 `@line-work/web#build` 有 pending runtime-affecting change時才部署 Production。因 Web runtime依賴 database contract，Vercel deployment仍要求同一 Release的 Supabase convergence成功。
 
-Canonical adapter只驗證 active current-main Release與 successful `release_plan`；跨 provider dependency由 GitHub Release graph擁有，不在 Vercel adapter複製第二份 release policy。
+Canonical adapter只驗證 active current-main Release與 successful `release_plan`；跨 provider dependency由 GitHub Release graph擁有，不在 Vercel adapter複製第二份 release policy。每個 external mutation 前的 exact-SHA current-main readback由 canonical `pnpm github:current-main` 提供，workflow不重寫 GitHub API / branch判斷。
 
 ### Rich Menu
 
