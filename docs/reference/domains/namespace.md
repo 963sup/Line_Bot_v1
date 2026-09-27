@@ -1,6 +1,6 @@
 # Namespace detailed reference
 
-Low-frequency Namespace details. The owner boundary and invariants remain canonical in [Namespace](../../010-domain-owners/190-namespace.md).
+Low-frequency Namespace details. The owner boundary and invariants remain canonical in [Namespace](../../owners/namespace.md).
 
 ## Ubiquitous Language
 
