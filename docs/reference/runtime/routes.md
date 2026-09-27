@@ -19,7 +19,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 
 | Route | Owner responsibility |
 | --- | --- |
-| `/home` | 工作台組裝；current IA = My Work / Favorites / Shortcuts / Recent。Issues/Discussions先選 Repository再進 canonical scoped route；Projects在 owner model 與 authorized runtime contract 完成前只顯示 target；Favorites重用 Star；Shortcuts不持久化；Recent無 owner時不造資料 |
+| `/home` | 工作台組裝；current IA = My Work / Favorites / Shortcuts / Recent。Issues/Discussions先選 Repository再進 canonical scoped route；Projects進入 authorized `/projects` collection；Favorites重用 Star；Shortcuts不持久化；Recent無 owner時不造資料 |
 | `/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write；`/home/assistant` 為 compatibility redirect |
 | `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
@@ -30,6 +30,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/enterprises`, `/enterprises/{enterpriseSlug}` | Authenticated Enterprise collection / canonical governance detail；slug 只定位，不授權 |
 | `/enterprises/{enterpriseSlug}/teams/{teamSlug}` | Authenticated Enterprise Team canonical detail；stable TeamId 由 server 產生，slug 由 name derive並隨 rename 更新 |
 | `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
+| `/projects` | Authorized Project collection read；User-owned Project 只對 owner User 可見，Organization-owned Project 目前只對 current `OrganizationOwner` 可見；不宣稱 Project planning write management |
 | `/repositories`, `/explore` | Repository collection/workbench、Trending / Awesome Lists / Activity discovery + Star surface |
 | `/stars` | Current User 已 Star 且目前仍可存取的 Repository；使用既有 Repository Star query，Home Favorites 為相同 query 的摘要入口 |
 | `/issues` | Repository 選擇入口，進入 `/{login}/{repository}/issues`；目前不是跨 Repository Issue aggregate |
@@ -74,8 +75,9 @@ Current Repository resource read API：
 | `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
+| `/api/projects` | Authorized Project collection read；每次 request 重驗 current User，Organization-owned Project 只接受 current `OrganizationOwner` scope |
 
-新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability；Project 仍是 data-only owner；目前 Organization-only persistence 與 Account-owned（User | Organization）產品語意不一致。先導正 ownership model，再定義 Project access/runtime contract；完成前不開 Project 空頁或 API。
+新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability。Project aggregate-root read 已 active；Project planning create/update、WBS/Item/Milestone mutation 仍是 data-only。
 
 ## Same-page view state
 
