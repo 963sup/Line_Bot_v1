@@ -1,17 +1,18 @@
 "use client";
 import type { PermissionView } from "@line-work/identity-access/contracts/permissions";
-import {
-  type Permission,
-  type PermissionCommand,
-  permissions,
-} from "@line-work/identity-access/domain/permission";
+import { type Permission, permissions } from "@line-work/identity-access/domain/permission";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { ActionRow, PageHeading } from "../../shared/ui/page-layout";
+import {
+  clearPendingPermissionOperation,
+  type PendingPermissionOperation,
+  requestPermissions,
+  restorePendingPermissionOperation,
+  savePendingPermissionOperation,
+} from "./permission-operations";
 
-const storageKey = "permission-operation";
-type Pending = { owner: string; command: PermissionCommand };
 const label = (p: string) => permissions[p as Permission] ?? p;
 const entries = [
   ["users.read", "/admin/members", "使用者管理"],
@@ -36,7 +37,7 @@ export default function PermissionsPanel({
   const [enabled, setEnabled] = useState(true);
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const [pending, setPending] = useState<Pending | null>(null);
+  const [pending, setPending] = useState<PendingPermissionOperation | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -72,24 +73,6 @@ export default function PermissionsPanel({
       document.removeEventListener("visibilitychange", changed);
     };
   }, []);
-  async function request(proof: string, id = "", command?: PermissionCommand) {
-    const response = await fetch("/api/permissions?target=" + encodeURIComponent(id), {
-      method: command ? "POST" : "GET",
-      cache: "no-store",
-      headers: {
-        "x-line-token": proof,
-        ...(command ? { "Content-Type": "application/json" } : {}),
-      },
-      body: command ? JSON.stringify(command) : undefined,
-      signal: AbortSignal.timeout(20000),
-    });
-    const value = await response.json();
-    if (!response.ok)
-      throw Object.assign(new Error(value.error ?? "權限服務暫不可用。"), {
-        status: response.status,
-      });
-    return value;
-  }
   async function load(id = "", keepNotice = false) {
     if (locked.current) return;
     const ticket = ++generation.current;
@@ -101,7 +84,7 @@ export default function PermissionsPanel({
     try {
       const proof = await liffClient.session(liffId);
       if (!proof) throw new Error("請完成 LINE 登入。");
-      const value: PermissionView = await request(proof, id);
+      const value: PermissionView = await requestPermissions(proof, id);
       if (ticket !== generation.current) return;
       if ((await liffClient.session(liffId)) !== proof) throw new Error("帳號已變更，請重新載入。");
       if (ticket !== generation.current) return;
@@ -117,13 +100,7 @@ export default function PermissionsPanel({
         setNotice("");
       }
       setData(changed ? { ...value, target: null, history: [], moreHistory: false } : value);
-      const saved = sessionStorage.getItem(storageKey);
-      const operation: Pending | null = saved ? JSON.parse(saved) : null;
-      if (operation?.owner === value.userId) setPending(operation);
-      else {
-        sessionStorage.removeItem(storageKey);
-        setPending(null);
-      }
+      setPending(restorePendingPermissionOperation(sessionStorage, value.userId));
     } catch (e) {
       if (ticket === generation.current) {
         setData(null);
@@ -133,7 +110,7 @@ export default function PermissionsPanel({
       if (ticket === generation.current) setBusy(false);
     }
   }
-  async function save(operation: Pending) {
+  async function save(operation: PendingPermissionOperation) {
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
@@ -142,11 +119,11 @@ export default function PermissionsPanel({
     const ticket = ++generation.current;
     let success = false;
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(operation));
+      savePendingPermissionOperation(sessionStorage, operation);
       setPending(operation);
       const proof = await liffClient.session(liffId);
       if (!proof) throw new Error("請完成 LINE 登入。");
-      const fresh: PermissionView = await request(proof);
+      const fresh: PermissionView = await requestPermissions(proof);
       if (ticket !== generation.current) return;
       if (
         fresh.userId !== operation.owner ||
@@ -155,10 +132,10 @@ export default function PermissionsPanel({
       )
         throw Object.assign(new Error("身分或權限已變更，請重新載入。"), { status: 403 });
       if (ticket !== generation.current) return;
-      const result = await request(proof, "", operation.command);
+      const result = await requestPermissions(proof, "", operation.command);
       if (result.requestId !== operation.command.requestId || !Number.isSafeInteger(result.version))
         throw new Error("回執不完整，請重試原操作。");
-      sessionStorage.removeItem(storageKey);
+      clearPendingPermissionOperation(sessionStorage);
       if (ticket !== generation.current) return;
       setPending(null);
       setReason("");
@@ -169,7 +146,7 @@ export default function PermissionsPanel({
       if (ticket === generation.current) {
         const status = (e as { status?: number }).status;
         if (status && status < 500 && status !== 429) {
-          sessionStorage.removeItem(storageKey);
+          clearPendingPermissionOperation(sessionStorage);
           setPending(null);
         }
         setData(null);

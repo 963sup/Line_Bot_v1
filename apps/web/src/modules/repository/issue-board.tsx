@@ -13,6 +13,7 @@ import {
   restorePendingIssueCommand,
   savePendingIssueCommand,
 } from "./issue-pending-storage";
+import { postIssueCommand, requestIssueSnapshot } from "./issue-requests";
 import {
   repositoryDiscussionsPath,
   repositoryIssuePath,
@@ -96,46 +97,6 @@ export default function IssueBoard({
     setBusy(false);
   }, []);
 
-  async function requestSnapshot(
-    token: string,
-    nextRepository = selectedRepository,
-    nextView = view,
-  ) {
-    if (issueNumber !== undefined) {
-      const detailQuery = new URLSearchParams();
-      if (ownerLogin && repositoryName) {
-        detailQuery.set("owner", ownerLogin);
-        detailQuery.set("name", repositoryName);
-      }
-      const suffix = detailQuery.size ? `?${detailQuery}` : "";
-      const response = await fetch(`/api/issues/${issueNumber}${suffix}`, {
-        headers: { "x-line-token": token },
-        cache: "no-store",
-      });
-      const value = await response.json();
-      if (!response.ok) throw new Error(value.error || "Issue 讀取失敗。");
-      const snapshot = value as IssueSnapshot;
-      if (repositoryId && snapshot.issues[0]?.repositoryId !== repositoryId) {
-        throw new Error("Issue 不屬於指定儲存庫。");
-      }
-      return snapshot;
-    }
-    const query = new URLSearchParams({ issueView: nextView });
-    if (ownerLogin && repositoryName) {
-      query.set("owner", ownerLogin);
-      query.set("name", repositoryName);
-    } else if (nextRepository) {
-      query.set("repository", nextRepository);
-    }
-    const response = await fetch(`/api/issues?${query}`, {
-      headers: { "x-line-token": token },
-      cache: "no-store",
-    });
-    const value = await response.json();
-    if (!response.ok) throw new Error(value.error || "Issue 讀取失敗。");
-    return value as IssueSnapshot;
-  }
-
   async function load(nextRepository = selectedRepository, nextView = view) {
     const ticket = ++generation.current;
     setBusy(true);
@@ -143,7 +104,15 @@ export default function IssueBoard({
     try {
       const token = await liffClient.session(liffId);
       if (!token || ticket !== generation.current) return;
-      const snapshot = await requestSnapshot(token, nextRepository, nextView);
+      const snapshot = await requestIssueSnapshot({
+        token,
+        issueNumber,
+        repositoryId,
+        ownerLogin,
+        repositoryName,
+        repository: nextRepository,
+        view: nextView,
+      });
       if (ticket !== generation.current) return;
       const routedRepository = snapshot.repositories.find(
         (item) =>
@@ -182,15 +151,7 @@ export default function IssueBoard({
     try {
       const token = await liffClient.session(liffId);
       if (!token) throw new Error("請重新登入 LINE。");
-      const response = await fetch("/api/issues", {
-        method: "POST",
-        headers: {
-          "x-line-token": token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(command),
-      });
-      const value = await response.json();
+      const { response, value } = await postIssueCommand(token, command);
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) forgetPending(pendingCommand);
         throw new Error(value.error || "結果尚未確認，請重試原操作。");
@@ -202,7 +163,17 @@ export default function IssueBoard({
       setNotice("Issue 已更新。");
       const tokenAfter = await liffClient.session(liffId);
       if (!tokenAfter || ticket !== generation.current) return;
-      setData(await requestSnapshot(tokenAfter, command.repositoryId, view));
+      setData(
+        await requestIssueSnapshot({
+          token: tokenAfter,
+          issueNumber,
+          repositoryId,
+          ownerLogin,
+          repositoryName,
+          repository: command.repositoryId,
+          view,
+        }),
+      );
     } catch (cause) {
       if (ticket === generation.current) {
         setError(cause instanceof Error ? cause.message : "結果尚未確認，請重試原操作。");
