@@ -1,6 +1,6 @@
 # Team detailed reference
 
-Low-frequency Team details. The owner boundary and invariants remain canonical in [Team](../../010-domain-owners/070-team.md).
+Low-frequency Team details. The owner boundary and invariants remain canonical in [Team](../../owners/team.md).
 
 ## Locator
 
@@ -21,7 +21,7 @@ Current declarative contract 要求每個 Organization Team 都有 non-null slug
 
 User 暫停／停權、OrganizationMembership 失效或 TeamMembership 離開／被移除後，均不得再取得該 Team 的私有讀寫能力。管理畫面可以向 effective TeamMaintainer 顯示失效狀態，以便處理責任，但失效 assignment 不授權。
 
-若參與者仍是未完成 Issue 的 publisher 或 assignee，不可移除該 TeamMembership。必須先完成相關 Issue；首版不自動轉移責任，也不提供代理驗收或自動改派。這項限制保護 [Repository](../../010-domain-owners/080-repository.md) 的責任鏈。
+若參與者仍是未完成 Issue 的 publisher 或 assignee，不可移除該 TeamMembership。必須先完成相關 Issue；首版不自動轉移責任，也不提供代理驗收或自動改派。這項限制保護 [Repository](../../owners/repository.md) 的責任鏈。
 
 ## 命令與一致性
 
