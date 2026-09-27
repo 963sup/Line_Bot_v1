@@ -1,6 +1,6 @@
-import { createGeminiClient, runGeminiProbe } from "@line-work/assistant/adapters/gemini";
-import { runIntakeAgent } from "@line-work/assistant/agents/intake";
-import { createAnswerAssistantQuestion } from "@line-work/assistant/application/answer-question";
+import { createGeminiClient, runGeminiProbe } from "@line_bot_v1/assistant/adapters/gemini";
+import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
+import { createAnswerAssistantQuestion } from "@line_bot_v1/assistant/application/answer-question";
 import { presentAnswer } from "./answer-presenter.server";
 
 // Shared process-local cooldown; this is not a distributed quota.

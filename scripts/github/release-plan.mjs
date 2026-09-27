@@ -83,7 +83,7 @@ function turboAdapter(cwd) {
           "--tasks",
           "build",
           "--packages",
-          "@line-work/web",
+          "@line_bot_v1/web",
         ],
         {
           cwd,

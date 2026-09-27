@@ -5,19 +5,19 @@ import {
   PostgresUserAchievementStore,
   PostgresUserProfileStore,
   PostgresUserStore,
-} from "@line-work/account/adapters/postgres";
-import { createUserAchievements } from "@line-work/account/application/achievements";
-import { createFollows } from "@line-work/account/application/follows";
-import { createLoginDirectory } from "@line-work/account/application/login-directory";
-import { createUserProfiles } from "@line-work/account/application/profile";
-import { createGoogleLink, createUser } from "@line-work/account/application/user";
-import { requireActiveUser } from "@line-work/account/domain/user";
-import { COIN_ASSET_CODE } from "@line-work/asset/domain";
-import { PostgresDailyCheckInStore } from "@line-work/daily-check-in/adapters/postgres";
-import { createDailyCheckIn } from "@line-work/daily-check-in/application";
-import { protectPermissionAdministrator } from "@line-work/identity-access/adapters/postgres";
-import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
-import { PostgresWalletStore } from "@line-work/wallet/adapters/postgres";
+} from "@line_bot_v1/account/adapters/postgres";
+import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
+import { createFollows } from "@line_bot_v1/account/application/follows";
+import { createLoginDirectory } from "@line_bot_v1/account/application/login-directory";
+import { createUserProfiles } from "@line_bot_v1/account/application/profile";
+import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
+import { requireActiveUser } from "@line_bot_v1/account/domain/user";
+import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
+import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
+import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application";
+import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/adapters/postgres";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { PostgresWalletStore } from "@line_bot_v1/wallet/adapters/postgres";
 
 const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;

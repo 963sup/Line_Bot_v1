@@ -1,6 +1,5 @@
-# @line-work/daily-check-in
-
-Owner: DailyCheckIn policy/application contract. Canonical semantics: [DailyCheckIn](../../docs/owners/daily-check-in.md).
+# @line_bot_v1/daily-check-in
+Owner: DailyCheckIn policy/application contract. Semantics: [DailyCheckIn](../../docs/owners/daily-check-in.md).
 
 - Keep DailyCheckIn separate from Attendance, Payroll, identity, and generic user events.
 - Preserve qualification/scope recheck, one-command replay, durable claim authority, and distinct failure outcomes.

@@ -1,4 +1,4 @@
-import type { Sql } from "@line-work/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 import { UserError } from "../../domain/user.js";
 
 export interface AccountAdministrationGuard {

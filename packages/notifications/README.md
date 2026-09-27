@@ -1,7 +1,4 @@
-# @line-work/notifications
-
-Navigation only.
-
+# @line_bot_v1/notifications
 - Owner contract: [notifications](../../docs/owners/notifications.md)
 - Local constraints: [AGENTS.md](AGENTS.md)
 - Public surface: [package.json](package.json)

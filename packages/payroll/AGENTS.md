@@ -1,6 +1,5 @@
-# @line-work/payroll
-
-Owner: Payroll readiness and future payroll lifecycle. Canonical semantics: [Payroll](../../docs/owners/payroll.md).
+# @line_bot_v1/payroll
+Owner: Payroll readiness and future payroll lifecycle. Semantics: [Payroll](../../docs/owners/payroll.md).
 
 - Readiness aggregates versioned Workforce, AttendancePeriod, and rule inputs; missing/duplicate/invalid required inputs fail closed.
 - Validate PayPeriod before upstream reads.

@@ -2,12 +2,12 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   readAccountLogin,
   readActiveUserQualification,
-} from "@line-work/account/adapters/postgres";
+} from "@line_bot_v1/account/adapters/postgres";
 import {
   isOrganizationOwner,
   readOrganizationOwnerScopeIds,
-} from "@line-work/identity-access/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationResult,

@@ -1,4 +1,4 @@
-import type { createRepositoryCreation } from "@line-work/repository/application/creation";
+import type { createRepositoryCreation } from "@line_bot_v1/repository/application/creation";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryBody, repositoryFailure } from "./http.server";
 

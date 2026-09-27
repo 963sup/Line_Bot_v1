@@ -1,5 +1,5 @@
 {
-  "name": "line-work-assistant",
+  "name": "line_bot_v1",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.19.0",
@@ -8,12 +8,12 @@
     "pnpm": "11.19.0"
   },
   "scripts": {
-    "dev": "turbo run dev --filter=@line-work/web",
+    "dev": "turbo run dev --filter=@line_bot_v1/web",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:browser": "node scripts/browser/run-local.mjs",
-    "line:rich-menu": "pnpm --filter @line-work/web exec tsx ../../scripts/line/rich-menu/sync.ts",
+    "line:rich-menu": "pnpm --filter @line_bot_v1/web exec tsx ../../scripts/line/rich-menu/sync.ts",
     "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
     "check": "node scripts/tooling/validate.mjs --fast",
     "validate": "node scripts/tooling/validate.mjs",
@@ -29,7 +29,7 @@
     "schema:local": "node scripts/supabase/schema-local.mjs",
     "tooling:check": "node scripts/tooling/check-tooling.mjs",
     "tooling:rules": "node scripts/tooling/check-rules.mjs",
-    "start": "pnpm --filter @line-work/web start",
+    "start": "pnpm --filter @line_bot_v1/web start",
     "boundaries": "node scripts/architecture/check-implementation-topology.mjs",
     "schema:remote": "node scripts/supabase/remote.mjs",
     "schema:remote:test": "node --test scripts/supabase/postgres.test.mjs scripts/supabase/remote.test.mjs",

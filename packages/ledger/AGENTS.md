@@ -1,6 +1,5 @@
-# @line-work/ledger
-
-Owner: immutable value facts, posting identity, and idempotency. Canonical semantics: [Ledger](../../docs/owners/ledger.md).
+# @line_bot_v1/ledger
+Owner: immutable value facts, posting identity, and idempotency. Semantics: [Ledger](../../docs/owners/ledger.md).
 
 - Wallet derives balances; consumers never mutate Ledger persistence directly.
 - Preserve holder/scope isolation, source identity, atomicity, immutable history, and reconciliation.

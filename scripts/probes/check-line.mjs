@@ -14,7 +14,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createLineClient } = await import(
-  require.resolve("@line-work/line-channel/adapters/messaging")
+  require.resolve("@line_bot_v1/line-channel/adapters/messaging")
 );
 
 import { loadRootEnv } from "../runtime/load-env.mjs";

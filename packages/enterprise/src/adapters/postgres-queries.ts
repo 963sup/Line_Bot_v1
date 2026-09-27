@@ -3,13 +3,13 @@ import {
   readEnterpriseOwnerAssignments,
   readEnterpriseOwnerScopeIds,
   resolveVerifiedLineActor,
-} from "@line-work/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
 import type {
   GovernanceQuery,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import type { Database } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import type { Database } from "@line_bot_v1/platform/adapters/postgres";
 import type {
   EnterpriseAffiliationSource,
   EnterpriseDetail,

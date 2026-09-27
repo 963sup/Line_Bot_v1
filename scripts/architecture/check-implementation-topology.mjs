@@ -21,7 +21,7 @@ function workspaceDependencies(packageJson) {
     ...(packageJson.dependencies ?? {}),
     ...(packageJson.peerDependencies ?? {}),
     ...(packageJson.devDependencies ?? {}),
-  }).filter((dependency) => dependency.startsWith("@line-work/"));
+  }).filter((dependency) => dependency.startsWith("@line_bot_v1/"));
 }
 
 function checkAllowedDependencies(errors, owner, dependencies, allowedWorkspaceDependencies = []) {

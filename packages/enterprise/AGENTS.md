@@ -1,6 +1,5 @@
-# @line-work/enterprise
-
-Owner: Enterprise lifecycle, direct affiliation, Organization attachment, invitations, Enterprise Teams, memberships, and Team→Organization assignment. Canonical semantics: [Enterprise](../../docs/owners/enterprise.md).
+# @line_bot_v1/enterprise
+Owner: Enterprise lifecycle, direct affiliation, Organization attachment, invitations, Enterprise Teams, memberships, and Team→Organization assignment. Semantics: [Enterprise](../../docs/owners/enterprise.md).
 
 - Enterprise Team ≠ Organization Team; Organization membership/invitation remain Organization authority.
 - Identity/Access is the RoleAssignment writer; Enterprise consumes authorization and never duplicates role authority.

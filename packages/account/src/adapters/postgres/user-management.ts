@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type { UserManagementRepository } from "../../application/ports/user-management.js";
 import type {
   ManagedUser,

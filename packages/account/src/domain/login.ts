@@ -1,4 +1,4 @@
-import { isReservedRootNamespaceKey } from "@line-work/namespace/root";
+import { isReservedRootNamespaceKey } from "@line_bot_v1/namespace/root";
 
 class AccountLoginError extends Error {}
 

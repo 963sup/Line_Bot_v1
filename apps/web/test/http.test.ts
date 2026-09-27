@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { UserError } from "@line-work/account/domain/user";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import { membershipFailureCode } from "../src/modules/account/failure-code.server";
 import { apiError, readJsonBody } from "../src/modules/account/http.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../src/shared/server/http";

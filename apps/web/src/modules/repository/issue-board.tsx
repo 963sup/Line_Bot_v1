@@ -1,7 +1,7 @@
 "use client";
 
-import type { IssueCommand, IssueSnapshot } from "@line-work/repository/application/ports/issues";
-import type { IssueAction, IssueStatus } from "@line-work/repository/domain";
+import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/repository/application/ports/issues";
+import type { IssueAction, IssueStatus } from "@line_bot_v1/repository/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/identity-access",
+  "name": "@line_bot_v1/identity-access",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -49,8 +49,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@line-work/account": "workspace:*",
-    "@line-work/platform": "workspace:*"
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

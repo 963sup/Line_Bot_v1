@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mock, test } from "node:test";
-import { PostgresAttendanceStore } from "@line-work/attendance/adapters/postgres";
+import { PostgresAttendanceStore } from "@line_bot_v1/attendance/adapters/postgres";
 import { showAttendanceMenu } from "../src/app/api/_composition/attendance.server";
 import { POST } from "../src/app/api/internal/attendance-maintenance/route";
 import { closeFixture, mockSupabase } from "./member-fixture";

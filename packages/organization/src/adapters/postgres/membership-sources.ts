@@ -2,9 +2,9 @@ import {
   hasOrganizationOwnerAssignment,
   hasReplacementOrganizationOwner,
   revokeOrganizationOwnerForMembershipRemoval,
-} from "@line-work/identity-access/adapters/postgres";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import type { Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 
 export async function assertOrganizationMembershipSourceRemovable(
   sql: Sql,

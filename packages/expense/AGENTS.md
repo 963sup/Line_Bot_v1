@@ -1,6 +1,5 @@
-# @line-work/expense
-
-Owner: Expense state, commands, receipt intent, and recognition boundary. Canonical semantics: [Expense](../../docs/owners/expense.md).
+# @line_bot_v1/expense
+Owner: Expense state, commands, receipt intent, and recognition boundary. Semantics: [Expense](../../docs/owners/expense.md).
 
 - Preserve revision OCC, terminal idempotency, owner/scope isolation, receipt-intent atomicity, final transaction recheck, and audit/event persistence.
 - Receipt recognition returns untrusted draft data only; never authorize, post value, persist image bytes by default, or guess uncertain fields.

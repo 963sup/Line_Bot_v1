@@ -1,7 +1,4 @@
-# @line-work/identity-access
-
-Navigation only.
-
+# @line_bot_v1/identity-access
 - Owner contract: [identity-access](../../docs/owners/identity-access.md)
 - Local constraints: [AGENTS.md](AGENTS.md)
 - Public surface: [package.json](package.json)

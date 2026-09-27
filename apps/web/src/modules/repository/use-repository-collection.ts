@@ -1,6 +1,6 @@
 "use client";
 
-import type { RepositorySummary } from "@line-work/repository/domain";
+import type { RepositorySummary } from "@line_bot_v1/repository/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 

@@ -1,6 +1,5 @@
 # System facts
-
-LINE Work Assistant 是 LINE-first 的 Enterprise Workforce & Operations Management system。Next.js / Vercel 提供 application host，Supabase PostgreSQL 保存 authoritative application data；LINE、Google、AI、Redis 等只在各自 integration/mechanism boundary提供能力。
+Line_Bot_v1 是 LINE-first 的 Enterprise Workforce & Operations Management system。Next.js / Vercel 提供 application host，Supabase PostgreSQL 保存 authoritative application data；LINE、Google、AI、Redis 等只在各自 integration/mechanism boundary提供能力。
 
 ```text
 LINE / Browser

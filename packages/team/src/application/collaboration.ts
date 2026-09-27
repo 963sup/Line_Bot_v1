@@ -1,4 +1,4 @@
-import { normalizeAccountLogin } from "@line-work/account/domain/login";
+import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
 import { normalizeTeamSlug, parseTeamCommand, TeamError, teamAssert } from "../domain.js";
 import type { TeamActor, TeamRepository } from "./ports.js";
 

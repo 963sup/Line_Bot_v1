@@ -2,13 +2,13 @@ import {
   LineIdentityError,
   LineIdentityUnavailableError,
   verifyLiffUser,
-} from "@line-work/line-channel/adapters/identity";
+} from "@line_bot_v1/line-channel/adapters/identity";
 import {
   createUpstashRedisRestTransport,
   RedisRateLimiter,
   RedisUnavailableError,
   redisUnavailableCode,
-} from "@line-work/platform/adapters/redis";
+} from "@line_bot_v1/platform/adapters/redis";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { RequestIdentityError } from "../../../shared/server/request-identity-error";
 import { redisNamespace } from "../../../shared/server/runtime-environment";

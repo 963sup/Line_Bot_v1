@@ -1,13 +1,10 @@
 # Validation
-
 Repository validation 使用既有 scripts 作單一入口；不要把 typecheck、test、build、deployment、API probe 或手機驗收混成同一種證據。
-
 ## Main commands
-
 | Command | Responsibility |
 | --- | --- |
 | `docs:check` | Markdown structure、frontmatter/conflict markers 與 local file links 的機械檢查；不驗 remote URL、runtime behavior 或手機 |
-| `schema:check` | `@line-work/platform` 執行 declarative schema source tests 與 PGlite clean-build / runtime-role / RLS contract tests；不代表 remote catalog 一致 |
+| `schema:check` | `@line_bot_v1/platform` 執行 declarative schema source tests 與 PGlite clean-build / runtime-role / RLS contract tests；不代表 remote catalog 一致 |
 | `lint` | `biome check .` 的 read-only static gate；驗 formatter、lint 與 assist/import ordering，不修改檔案 |
 | `format` | `biome check --write .` 的 canonical local mutation；一次套用 formatter、safe lint fixes 與 assist/import ordering，之後再跑 read-only validation |
 | `architecture` / `architecture:test` | dependency graph、runtime boundary、合法/違規反例 |
@@ -23,9 +20,7 @@ Repository validation 使用既有 scripts 作單一入口；不要把 typecheck
 實際順序由 `scripts/tooling/validate.mjs` 與 package scripts 擁有；文件不複製 implementation 細節作 second source。VS Code workspace 使用 `.vscode/settings.json` 在 save 時套用同一 Biome formatter / organize imports；Agent／CLI 產出使用 `pnpm format`，CI 仍只做 read-only `pnpm lint`。
 
 Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的呼叫位置與 effect dependencies 也納入 correctness gate。Knip 對 private workspace package 的 entry exports 檢查實際 repository consumer；未使用 export 應先區分內部宣告、必要公開契約與真正死碼，再收斂 public surface。
-
 ## Fast vs full validation
-
 `check` 先依 Git 變更責任分流：純 Markdown 只跑 `docs:check`，所有 `AGENTS.md` 視為 tooling metadata 並額外跑 `tooling:check`，純 declarative schema 只跑 `schema:check`；產品／runtime source 進 Biome lint、architecture、Knip deadcode 與 Turbo affected type/test。Knip config／editor tooling 變更也會觸發對應 tooling/deadcode gate。無法可靠判斷範圍時保守退回完整 fast gates。root config / shared dependency 改動可擴張到整個 workspace；手動 filter 必須涵蓋所有 consumer，不以縮小 filter 隱藏跨 package failure。
 
 GitHub Draft pull request 代表 active iteration，validation job 必須 skip，避免每次 checkpoint push 都配置 hosted runner；`ready_for_review` 轉換代表目前 head 被宣告為 merge candidate，因此同一 exact PR head 會同時取得 `pnpm check` 與完整 `pnpm validate` 證據。Ready PR 後續 `synchronize` 只重新執行 `pnpm check`；因 head SHA 已改變，舊 full-validate 證據不再屬於新 revision，merge 前必須重新轉為 Draft 再 Ready 以取得新 head 的完整驗證。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。push 到 `main` 仍再次執行完整 `pnpm validate`，作為 release routing 的 validated-main evidence。
@@ -40,13 +35,9 @@ Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Pro
 - `pnpm validate` 證明 repository revision通過完整 gate，不等於 deployment。
 - Release Supabase success才證明該 validated revision的 database contract已完成對應 remote readback。
 - Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
-
 ## Concurrency
-
 Type generation、test/build artifact 與 dependency install 在同一 checkout 可能競爭。驗證流程預設按 repository runner 順序執行；不要同時手動跑另一套會寫相同產物的 command。
-
 ## External-effect tools
-
 以下可能需要明確環境／授權，不屬一般 offline validate：
 
 - LINE / Supabase connection probes
@@ -58,7 +49,5 @@ Type generation、test/build artifact 與 dependency install 在同一 checkout 
 - deployment / production API checks
 
 格式驗證、HTTP 200 或 provider 接受 request 都不等於使用者收到結果。
-
 ## Evidence
-
 具日期的驗證結果應保存於 `090-governance/060-acceptance/`，內容標明版本、環境、範圍、結果與未驗證項。工程規範只描述如何驗，不保存歷次結果。

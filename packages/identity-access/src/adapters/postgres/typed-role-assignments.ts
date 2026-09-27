@@ -1,5 +1,5 @@
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import type { Sql } from "@line-work/platform/adapters/postgres";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 import { requireActiveTargetUser } from "./actor.js";
 
 export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {

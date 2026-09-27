@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { UserError } from "@line-work/account/domain/user";
-import { COIN_ASSET_CODE } from "@line-work/asset/domain";
-import { recordLedgerCredit } from "@line-work/ledger/adapters/postgres";
-import type { Database, Sql } from "@line-work/platform/adapters/postgres";
-import { postgresFixture } from "@line-work/platform/testing/postgres";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
+import { recordLedgerCredit } from "@line_bot_v1/ledger/adapters/postgres";
+import type { Database, Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresDailyCheckInStore } from "../src/adapters/postgres.js";
 import { createDailyCheckIn } from "../src/application.js";
 import { DAILY_CHECK_IN_LEDGER_SOURCE, DailyCheckInError } from "../src/domain.js";

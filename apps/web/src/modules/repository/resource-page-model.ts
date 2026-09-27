@@ -4,7 +4,7 @@ import type {
   RepositoryLabelsResult,
   RepositoryMilestoneResult,
   RepositoryMilestonesResult,
-} from "@line-work/repository/application/ports/resources";
+} from "@line_bot_v1/repository/application/ports/resources";
 
 export type ResourcesKind = "discussions" | "discussion" | "labels" | "milestones" | "milestone";
 export type MilestoneStatus = "open" | "closed";

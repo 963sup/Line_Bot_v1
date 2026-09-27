@@ -1,7 +1,7 @@
-import type { AccountId } from "@line-work/account/domain";
-import type { AssetCode } from "@line-work/asset/domain";
-import type { LedgerCredit, LedgerSource } from "@line-work/ledger/domain";
-import type { Sql } from "@line-work/platform/adapters/postgres";
+import type { AccountId } from "@line_bot_v1/account/domain";
+import type { AssetCode } from "@line_bot_v1/asset/domain";
+import type { LedgerCredit, LedgerSource } from "@line_bot_v1/ledger/domain";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 
 export async function recordLedgerCredit(sql: Sql, credit: LedgerCredit): Promise<number> {
   if (!Number.isFinite(credit.amount) || credit.amount <= 0)

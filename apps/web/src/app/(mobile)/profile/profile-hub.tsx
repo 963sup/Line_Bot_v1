@@ -1,11 +1,11 @@
 "use client";
 
-import type { UserAchievement } from "@line-work/account/application/ports/achievements";
-import type { UserProfile } from "@line-work/account/application/ports/profile";
-import type { OrganizationList } from "@line-work/organization/contracts/organization-governance";
-import type { TrendingRepository } from "@line-work/repository/application/ports/discovery";
-import type { StarredRepository } from "@line-work/repository/application/ports/stars";
-import type { RepositorySummary } from "@line-work/repository/domain";
+import type { UserAchievement } from "@line_bot_v1/account/application/ports/achievements";
+import type { UserProfile } from "@line_bot_v1/account/application/ports/profile";
+import type { OrganizationList } from "@line_bot_v1/organization/contracts/organization-governance";
+import type { TrendingRepository } from "@line_bot_v1/repository/application/ports/discovery";
+import type { StarredRepository } from "@line_bot_v1/repository/application/ports/stars";
+import type { RepositorySummary } from "@line_bot_v1/repository/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";

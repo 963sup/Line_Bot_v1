@@ -1,7 +1,7 @@
 "use client";
-import type { Partner, PartnerContact, PartnersView } from "@line-work/partners/contracts";
-import type { PartnerCommand } from "@line-work/partners/domain";
-import { parsePartnerCommand } from "@line-work/partners/domain";
+import type { Partner, PartnerContact, PartnersView } from "@line_bot_v1/partners/contracts";
+import type { PartnerCommand } from "@line_bot_v1/partners/domain";
+import { parsePartnerCommand } from "@line_bot_v1/partners/domain";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

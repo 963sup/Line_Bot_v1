@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/notifications",
+  "name": "@line_bot_v1/notifications",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -30,7 +30,7 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line-work/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

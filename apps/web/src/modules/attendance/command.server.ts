@@ -1,5 +1,5 @@
-import type { createClockAttendance } from "@line-work/attendance/application/clock";
-import { AttendanceError } from "@line-work/attendance/domain";
+import type { createClockAttendance } from "@line_bot_v1/attendance/application/clock";
+import { AttendanceError } from "@line_bot_v1/attendance/domain";
 import { jsonResponse } from "../../shared/server/http";
 import { attendanceApiError, readAttendanceJsonBody } from "./http.server";
 

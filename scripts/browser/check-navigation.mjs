@@ -314,7 +314,7 @@ async function run() {
 
   try {
     await page.goto(`${base}/`);
-    await page.getByRole("heading", { name: "LINE 工作助手", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Line_Bot_v1", exact: true }).waitFor();
     await expect(page.getByRole("link", { name: "使用 LINE 進入", exact: true })).toHaveAttribute(
       "href",
       "/home",

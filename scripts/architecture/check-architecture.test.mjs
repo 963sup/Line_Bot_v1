@@ -65,7 +65,7 @@ test("architecture checks source exports, types, ports, browser reachability and
         root,
         `packages/${name}/package.json`,
         JSON.stringify({
-          name: `@line-work/${name}`,
+          name: `@line_bot_v1/${name}`,
           exports: {
             ".": { default: "./dist/index.js" },
             "./ports/repository": { default: "./dist/ports/repository.js" },
@@ -95,7 +95,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       write(
         root,
         `apps/${name}/package.json`,
-        JSON.stringify({ name: `@line-work/${name}`, private: true }),
+        JSON.stringify({ name: `@line_bot_v1/${name}`, private: true }),
       );
       write(
         root,
@@ -107,13 +107,13 @@ test("architecture checks source exports, types, ports, browser reachability and
     write(
       root,
       "packages/attendance/src/index.ts",
-      "import type { Value } from '@line-work/account'; export type Result = Value;",
+      "import type { Value } from '@line_bot_v1/account'; export type Result = Value;",
     );
     write(root, "packages/platform/src/index.ts", "export type Store = string;");
     write(
       root,
       "apps/web/src/index.ts",
-      "import type { Result } from '@line-work/attendance'; export type Response = Result;",
+      "import type { Result } from '@line_bot_v1/attendance'; export type Response = Result;",
     );
     assert.deepEqual(
       (await checkArchitecture(root)).errors,
@@ -126,14 +126,14 @@ test("architecture checks source exports, types, ports, browser reachability and
     write(
       root,
       "packages/config/package.json",
-      JSON.stringify({ name: "@line-work/config", private: true }),
+      JSON.stringify({ name: "@line_bot_v1/config", private: true }),
     );
     await assert.rejects(checkArchitecture(root), /source workspace requires tsconfig.json/);
     rmSync(resolve(root, "packages/config"), { recursive: true });
     write(
       root,
       "packages/config/package.json",
-      JSON.stringify({ name: "@line-work/config", private: true }),
+      JSON.stringify({ name: "@line_bot_v1/config", private: true }),
     );
     write(
       root,
@@ -249,7 +249,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       ],
       [
         "apps/web/src/shared/server/leak.ts",
-        "import type { Value } from '@line-work/account';",
+        "import type { Value } from '@line_bot_v1/account';",
         "shared-server-is-neutral",
       ],
       [
@@ -264,7 +264,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       ],
       [
         "packages/platform/src/index.ts",
-        "import type { Value } from '@line-work/account';",
+        "import type { Value } from '@line_bot_v1/account';",
         "topology-platform-dependencies",
       ],
       ["packages/platform/src/index.ts", importing("./testing/postgres"), "testing-is-not-runtime"],
@@ -382,7 +382,7 @@ test("architecture checks source exports, types, ports, browser reachability and
     write(
       root,
       "apps/web/src/helper.ts",
-      importing("@line-work/line-channel/adapters/mini-app/browser"),
+      importing("@line_bot_v1/line-channel/adapters/mini-app/browser"),
     );
     assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(

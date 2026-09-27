@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/platform",
+  "name": "@line_bot_v1/platform",
   "version": "0.0.0",
   "private": true,
   "type": "module",

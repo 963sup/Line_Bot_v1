@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { richMenuImage } from "@line-work/line-channel/adapters/messaging";
+import { richMenuImage } from "@line_bot_v1/line-channel/adapters/messaging";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { type MenuPage, menuAsset, workAssistantRichMenu } from "./definition";
 

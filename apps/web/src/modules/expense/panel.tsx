@@ -1,5 +1,5 @@
 "use client";
-import type { Expense, ExpenseFields } from "@line-work/expense/domain";
+import type { Expense, ExpenseFields } from "@line_bot_v1/expense/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

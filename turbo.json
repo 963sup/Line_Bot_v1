@@ -27,7 +27,7 @@
       "cache": false,
       "persistent": true
     },
-    "@line-work/web#build": {
+    "@line_bot_v1/web#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
       "env": ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
@@ -39,7 +39,7 @@
         "$TURBO_ROOT$/scripts/runtime/next.mjs"
       ]
     },
-    "@line-work/web#typecheck": {
+    "@line_bot_v1/web#typecheck": {
       "dependsOn": ["^build"],
       "outputs": [],
       "inputs": [
@@ -48,7 +48,7 @@
         "$TURBO_ROOT$/scripts/runtime/next.mjs"
       ]
     },
-    "@line-work/web#test": {
+    "@line_bot_v1/web#test": {
       "dependsOn": ["^build"],
       "outputs": [],
       "inputs": [
@@ -59,7 +59,7 @@
         "$TURBO_ROOT$/scripts/probes/*.mjs"
       ]
     },
-    "@line-work/platform#schema:check": {
+    "@line_bot_v1/platform#schema:check": {
       "cache": false,
       "outputs": [],
       "inputs": [

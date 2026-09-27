@@ -1,12 +1,12 @@
 import {
   PostgresAttendanceStore,
   PostgresWorkplaceStore,
-} from "@line-work/attendance/adapters/postgres";
-import { createClockAttendance } from "@line-work/attendance/application/clock";
-import { createAttendanceMaintenance } from "@line-work/attendance/application/maintenance";
-import { createWorkplaces } from "@line-work/attendance/application/workplaces";
-import { createRichMenuClient, pushLineText } from "@line-work/line-channel/adapters/messaging";
-import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
+} from "@line_bot_v1/attendance/adapters/postgres";
+import { createClockAttendance } from "@line_bot_v1/attendance/application/clock";
+import { createAttendanceMaintenance } from "@line_bot_v1/attendance/application/maintenance";
+import { createWorkplaces } from "@line_bot_v1/attendance/application/workplaces";
+import { createRichMenuClient, pushLineText } from "@line_bot_v1/line-channel/adapters/messaging";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { menuAlias } from "../../../modules/assistant/rich-menu/definition";
 import { attendanceNotificationText } from "../../../modules/attendance/format";
 import { activeLineUser } from "./account.server";

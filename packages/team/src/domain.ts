@@ -1,4 +1,4 @@
-import type { UserStatus } from "@line-work/account/domain/user";
+import type { UserStatus } from "@line_bot_v1/account/domain/user";
 
 type TeamMembershipStatus = "pending" | "active" | "removed";
 

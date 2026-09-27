@@ -1,9 +1,9 @@
 import {
   readActiveUserQualification,
   resolveAccountLogin,
-} from "@line-work/account/adapters/postgres";
-import { readOrganizationQualification } from "@line-work/organization/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/account/adapters/postgres";
+import { readOrganizationQualification } from "@line_bot_v1/organization/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type {
   PopularPublicRepositoryList,
   PublicRepository,

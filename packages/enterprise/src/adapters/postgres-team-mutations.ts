@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { requireActiveTargetUser } from "@line-work/identity-access/adapters/postgres";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
+import { requireActiveTargetUser } from "@line_bot_v1/identity-access/adapters/postgres";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
   assertOrganizationMembershipSourceRemovable,
   cancelPendingOrganizationInvitation,
   readOrganizationQualification,
   refreshOrganizationMembershipFromSources,
-} from "@line-work/organization/adapters/postgres";
-import type { Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/organization/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type { EnterpriseCommand, EnterpriseReceipt } from "../contracts/enterprise-governance.js";
 import { enterpriseTeamSlugFromName } from "../domain.js";
 import { makeEnterpriseReceipt } from "./postgres-receipt.js";

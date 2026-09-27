@@ -1,11 +1,11 @@
-import type { RoleAssignmentPort } from "@line-work/identity-access/application/ports/role-assignments";
+import type { RoleAssignmentPort } from "@line_bot_v1/identity-access/application/ports/role-assignments";
 import type {
   GovernanceReceipt,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
-import type { ScopedRoleCommand } from "@line-work/identity-access/domain/role-assignment";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/contracts/governance";
+import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import { requireActiveTargetUser, resolveVerifiedLineActor } from "./actor.js";
 import { governanceFingerprint, readGovernanceReplay, recordGovernanceResult } from "./receipts.js";
 import {

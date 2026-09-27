@@ -1,6 +1,6 @@
 "use client";
-import type { PermissionView } from "@line-work/identity-access/contracts/permissions";
-import { type Permission, permissions } from "@line-work/identity-access/domain/permission";
+import type { PermissionView } from "@line_bot_v1/identity-access/contracts/permissions";
+import { type Permission, permissions } from "@line_bot_v1/identity-access/domain/permission";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

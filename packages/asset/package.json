@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/asset",
+  "name": "@line_bot_v1/asset",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -24,6 +24,6 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@line-work/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*"
   }
 }

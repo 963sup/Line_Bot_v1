@@ -36,8 +36,8 @@ function fixture(t) {
     ".codex/AGENTS.md",
   ])
     write(path, "# Scope\\n");
-  write("packages/demo/AGENTS.md", "# @line-work/demo\\n");
-  write("packages/demo/README.md", "# @line-work/demo\\n");
+  write("packages/demo/AGENTS.md", "# @line_bot_v1/demo\\n");
+  write("packages/demo/README.md", "# @line_bot_v1/demo\\n");
   write(".node-version", `${exactNodeVersion}\n`);
   write(
     "package.json",
@@ -104,7 +104,7 @@ function fixture(t) {
         test: {
           inputs: ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"],
         },
-        "@line-work/web#build": {
+        "@line_bot_v1/web#build": {
           env: ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
           passThroughEnv: ["SENTRY_AUTH_TOKEN"],
           inputs: ["$TURBO_ROOT$/.env.local"],
@@ -182,6 +182,18 @@ for (const [file, content, message] of [
     rejects(root, message);
   });
 }
+test("retired project identity cannot reappear in current surfaces", (t) => {
+  const { root, write } = fixture(t);
+
+  const retiredScope = `${["@line", "work"].join("-")}/demo`;
+  write("docs/identity.md", `# ${retiredScope}\n`);
+  rejects(root, "retired project workspace namespace");
+
+  const retiredSystemId = ["line", "work", "assistant"].join("-");
+  write("docs/identity.md", `# ${retiredSystemId}\n`);
+  rejects(root, "retired project system id");
+});
+
 test("validation entrypoints stay canonical and read-only", (t) => {
   const { root, write } = fixture(t);
   const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
@@ -272,7 +284,7 @@ test("environment contract keeps secrets out of global build hashing", (t) => {
       globalEnv: ["LINE_*"],
       globalDependencies: [".env.local"],
       tasks: {
-        "@line-work/web#build": {
+        "@line_bot_v1/web#build": {
           env: ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
           passThroughEnv: ["SENTRY_AUTH_TOKEN"],
           inputs: ["$TURBO_ROOT$/.env.local"],
@@ -294,7 +306,7 @@ test("product test cache remains coupled to declarative schemas", (t) => {
 
 test("Next and Sentry instrumentation entrypoints stay at the Web project root", (t) => {
   const { root, write } = fixture(t);
-  write("apps/web/package.json", '{"name":"@line-work/web"}');
+  write("apps/web/package.json", '{"name":"@line_bot_v1/web"}');
   rejects(root, "Next/Sentry framework entrypoint must live at project root");
 
   write("apps/web/instrumentation.ts", "export function register() {}\n");
@@ -310,7 +322,7 @@ test("Next and Sentry instrumentation entrypoints stay at the Web project root",
 test("Sentry build credentials pass through without entering the cache hash", (t) => {
   const { root, write } = fixture(t);
   const turbo = JSON.parse(readFileSync(resolve(root, "turbo.json"), "utf8"));
-  const webBuild = turbo.tasks["@line-work/web#build"];
+  const webBuild = turbo.tasks["@line_bot_v1/web#build"];
   webBuild.env.push("SENTRY_AUTH_TOKEN");
   webBuild.passThroughEnv = [];
   write("turbo.json", JSON.stringify(turbo));
@@ -595,7 +607,7 @@ test("package AGENTS use parent scope instead of duplicated boilerplate", (t) =>
   const { root, write } = fixture(t);
   write(
     "packages/demo/AGENTS.md",
-    "# @line-work/demo\n\n- 本 package 是 owning context 的公開入口；Web 與其他 consumer 只可使用 package.json 已宣告 exports。\n- domain / application / contracts / adapters / agents surface 依需求存在，不預建空 layer。\n- 目前 facade 只為無行為變更遷移；新增功能直接放入此 context，禁止新增 legacy horizontal export。\n- 移除 facade 前必須保留型別、授權、交易、重播、隔離與既有測試。\n",
+    "# @line_bot_v1/demo\n\n- 本 package 是 owning context 的公開入口；Web 與其他 consumer 只可使用 package.json 已宣告 exports。\n- domain / application / contracts / adapters / agents surface 依需求存在，不預建空 layer。\n- 目前 facade 只為無行為變更遷移；新增功能直接放入此 context，禁止新增 legacy horizontal export。\n- 移除 facade 前必須保留型別、授權、交易、重播、隔離與既有測試。\n",
   );
   rejects(root, "duplicated package boilerplate belongs in packages/AGENTS.md");
 });
@@ -604,11 +616,11 @@ test("AGENTS hot path rejects target or proposal sections", (t) => {
   const { root, write } = fixture(t);
   write(
     "packages/demo/AGENTS.md",
-    "# @line-work/demo\n\n## Future target design\n\n- Add a speculative capability later.\n",
+    "# @line_bot_v1/demo\n\n## Future target design\n\n- Add a speculative capability later.\n",
   );
   rejects(root, "target/proposal design belongs in docs/change");
 
-  write("packages/demo/AGENTS.md", "# @line-work/demo\n\n- Current local invariant only.\n");
+  write("packages/demo/AGENTS.md", "# @line_bot_v1/demo\n\n- Current local invariant only.\n");
   assert.deepEqual(validate(root), []);
 });
 
@@ -631,7 +643,7 @@ test("catalog references pass", (t) => {
 });
 test("platform owns an executable schema:check task", (t) => {
   const { root, write } = fixture(t);
-  write("packages/platform/package.json", '{"name":"@line-work/platform","scripts":{}}');
+  write("packages/platform/package.json", '{"name":"@line_bot_v1/platform","scripts":{}}');
   rejects(root, "schema:check task owner");
 });
 

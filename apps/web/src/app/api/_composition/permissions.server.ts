@@ -1,5 +1,5 @@
-import { PostgresPermissionStore } from "@line-work/identity-access/adapters/postgres";
-import { createPermissions } from "@line-work/identity-access/application/permissions";
+import { PostgresPermissionStore } from "@line_bot_v1/identity-access/adapters/postgres";
+import { createPermissions } from "@line_bot_v1/identity-access/application/permissions";
 import { activeLineUser } from "./account.server";
 
 export const permissions = createPermissions({

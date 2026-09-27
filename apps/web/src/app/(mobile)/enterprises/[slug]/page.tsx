@@ -1,4 +1,4 @@
-import { normalizeEnterpriseSlug } from "@line-work/enterprise/domain";
+import { normalizeEnterpriseSlug } from "@line_bot_v1/enterprise/domain";
 import { notFound } from "next/navigation";
 import EnterprisePanel from "../../../../modules/enterprise/panel";
 import { lineMiniApp } from "../../../../shared/server/line-mini-app";

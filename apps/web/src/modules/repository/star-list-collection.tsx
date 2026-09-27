@@ -1,6 +1,6 @@
 "use client";
 
-import type { RepositoryStarListSummary } from "@line-work/repository/application/ports/star-lists";
+import type { RepositoryStarListSummary } from "@line_bot_v1/repository/application/ports/star-lists";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
