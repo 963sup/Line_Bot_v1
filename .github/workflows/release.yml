@@ -183,6 +183,9 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
 
       - name: Require current main before production deployment
         shell: bash
