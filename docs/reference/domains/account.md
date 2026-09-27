@@ -1,6 +1,6 @@
 # Account detailed reference
 
-Low-frequency Account flows and edge cases. The owner boundary and invariants remain canonical in [Account](../../010-domain-owners/010-account.md).
+Low-frequency Account flows and edge cases. The owner boundary and invariants remain canonical in [Account](../../owners/account.md).
 
 ## Lifecycle
 
@@ -21,7 +21,7 @@ Google link 是選填 external identity mapping，不是 LINE 日常 qualificati
 
 ## User management
 
-Current permissions 是 `users.read` 與獨立的 `users.suspend`；不從 TeamMaintainer、LINE group、OrganizationAdmin 或其他管理能力推定。Read 只取得 safe projection；suspend/unsuspend 需額外 capability，禁止自我停權。Permission persistence 與 public contract 使用相同 User 語意，不保留 `members.*` permission alias；permission schema 的唯一 owner 見 [Feature permissions](../../050-security/030-authorization.md)。`membership_denied` 等既有 wire/history code 只保留既有 protocol/history 意義，不重新成為 Domain 名稱。
+Current permissions 是 `users.read` 與獨立的 `users.suspend`；不從 TeamMaintainer、LINE group、OrganizationAdmin 或其他管理能力推定。Read 只取得 safe projection；suspend/unsuspend 需額外 capability，禁止自我停權。Permission persistence 與 public contract 使用相同 User 語意，不保留 `members.*` permission alias；permission schema 的唯一 owner 見 [Feature permissions](../../security/permissions.md)。`membership_denied` 等既有 wire/history code 只保留既有 protocol/history 意義，不重新成為 Domain 名稱。
 
 Active/paused 可進 suspended 並保存前態；解除回可靠前態，未知 legacy 前態回 paused。停權不刪 identity、Ledger、Attendance、Repository Issue 或其他 history，也不自動下班或改派工作。最後一位有效 permission administrator 的既有保護仍保留。
 
@@ -31,7 +31,7 @@ Active/paused 可進 suspended 並保存前態；解除回可靠前態，未知 
 
 Application 先解析可信 LINE subject 並核驗 active User，再以 server time 呼叫 DailyCheckIn policy。PostgreSQL transaction 重新鎖定／驗證 qualification，提交既有 `daily_checkin` audit/protocol result 與 Ledger credit；失敗全部 rollback。
 
-既有外部 protocol 若仍需 composed legacy projection，必須明確留在 protocol adapter，不得再把 `Member` 回流為 Account Domain type。Ledger V1 `membership/daily_checkin/businessDay` 屬已發布歷史 protocol，不因 policy owner 分離而改寫；同一天最多一筆 credit。金額與日界線唯一規則見 [DailyCheckIn](../../010-domain-owners/160-daily-check-in.md)。
+既有外部 protocol 若仍需 composed legacy projection，必須明確留在 protocol adapter，不得再把 `Member` 回流為 Account Domain type。Ledger V1 `membership/daily_checkin/businessDay` 屬已發布歷史 protocol，不因 policy owner 分離而改寫；同一天最多一筆 credit。金額與日界線唯一規則見 [DailyCheckIn](../../owners/daily-check-in.md)。
 
 ## Lifecycle/API scope assessment
 
