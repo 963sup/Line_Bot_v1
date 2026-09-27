@@ -5,6 +5,7 @@ Provider contract 見 [Supabase platform](../../docs/030-platform/020-supabase.m
 - `schema-source.mjs` owns ordered declarative SQL reading；`schema-local.mjs` owns clean local rebuild；`remote.mjs` owns remote `repair|prepare|plan|recovery|sync|verify` semantics；`postgres.mjs` owns SQL transport helpers。
 - Scripts 必須分開 source/rebuild、local verification、remote reconciliation 與 remote mutation；local success 不能冒充 remote convergence。
 - Remote access 必須驗 exact project、explicit target、bounded timeout、least-privilege connection 與 PostgreSQL advisory lock；不得從 runtime connection 或 provider metadata 猜 target。
+- `repair` 只處理 metadata-free、current-source-determined 的 runtime compatibility。若 recovery 需要移除 legacy structure，必須先在同一受鎖 transaction 以 catalog + row-count readback 證明受影響 business rows 為 0，且 post-readback 證明 row count、RLS/grants/authorization boundary 不變或收緊；存在 retained rows、ambiguous authority 或需要 business metadata 時一律 fail closed。
 - Plain `sync` 對 generated declarative diff 做 transaction apply，完成後要求 second diff = 0、ownership/security readback 與 migration-history fingerprint unchanged。`noop / routine / sensitive` 只作診斷，不作 DDL approval gate。
 - `prepare`、`recovery` 與 `sync --reviewed-plan` 只承接 explicit data-cutover/recovery 責任；不得讓 script 自行創造 business metadata。
 - `supabase_migrations` 只作 readback evidence；operation script 不得新增、replay、repair 或改寫 migration history。

@@ -14,6 +14,7 @@ import {
   classifyDailyCheckInCompatibility,
   classifyPlan,
   classifyRemoteFoundationState,
+  classifyRepositoryRuntimeCompatibility,
   dailyCheckInCompatibilitySql,
   governanceCompatibilityAccessSql,
   governanceCompatibilityFunctionSql,
@@ -23,6 +24,9 @@ import {
   permissionSubjectVersionExpansionSql,
   planFingerprint,
   projectRefFromSupabaseUrl,
+  repositoryEffectiveAccessExpansionSql,
+  repositoryProvisionCompatibilityAccessSql,
+  repositoryProvisionCompatibilitySql,
   resolveLegacyEnterpriseMetadata,
   runWithRemoteReconciliationLock,
   supabaseApiReadbackConfig,
@@ -542,6 +546,77 @@ test("DailyCheckIn compatibility distinguishes missing, ready and partial state"
       tableExists: true,
       functionExists: false,
       triggerExists: false,
+    }),
+    "partial",
+  );
+});
+
+test("Repository runtime recovery derives projection and coordinator from canonical schema owners", () => {
+  const projection = repositoryEffectiveAccessExpansionSql();
+  assert.match(projection, /create view app_private\.repository_effective_access/);
+  assert.match(projection, /repository_team_access/);
+  assert.match(projection, /organization_memberships/);
+
+  const provision = repositoryProvisionCompatibilitySql();
+  assert.match(provision, /create or replace function app_private\.provision_repository/);
+  assert.match(provision, /owner_account_id,owner_account_kind/);
+  assert.match(provision, /repository_access/);
+
+  const access = repositoryProvisionCompatibilityAccessSql();
+  assert.match(access, /revoke all on function app_private\.provision_repository/i);
+  assert.match(access, /grant execute on function app_private\.provision_repository/i);
+});
+
+test("Repository runtime recovery only auto-migrates a zero-row legacy owner shape", () => {
+  const ready = {
+    repositoryRows: 0,
+    issueRows: 0,
+    discussionRows: 0,
+    discussionCommentRows: 0,
+    ownerAccountIdColumn: true,
+    ownerAccountKindColumn: true,
+    nextIssueNumberColumn: true,
+    legacyOrganizationIdColumn: false,
+    repositoryAccessTable: true,
+    repositoryTeamAccessTable: true,
+    repositoryStarsTable: true,
+    repositoryCommandsTable: true,
+    repositoryLabelsTable: true,
+    repositoryMilestonesTable: true,
+    issueNumberColumn: true,
+    issueMilestoneColumn: true,
+    repositoryEffectiveAccessView: true,
+    provisionRepositoryFunction: true,
+  };
+  assert.equal(classifyRepositoryRuntimeCompatibility(ready), "ready");
+
+  assert.equal(
+    classifyRepositoryRuntimeCompatibility({
+      ...ready,
+      ownerAccountIdColumn: false,
+      ownerAccountKindColumn: false,
+      nextIssueNumberColumn: false,
+      legacyOrganizationIdColumn: true,
+      repositoryTeamAccessTable: false,
+      repositoryStarsTable: false,
+      repositoryCommandsTable: false,
+      repositoryLabelsTable: false,
+      repositoryMilestonesTable: false,
+      issueNumberColumn: false,
+      issueMilestoneColumn: false,
+      repositoryEffectiveAccessView: false,
+      provisionRepositoryFunction: false,
+    }),
+    "repairable",
+  );
+
+  assert.equal(
+    classifyRepositoryRuntimeCompatibility({
+      ...ready,
+      repositoryRows: 1,
+      ownerAccountIdColumn: false,
+      ownerAccountKindColumn: false,
+      legacyOrganizationIdColumn: true,
     }),
     "partial",
   );

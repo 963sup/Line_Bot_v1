@@ -32,6 +32,30 @@ const permissionAdministrationSchemaSql = readFileSync(
   new URL("supabase/schemas/512_permission_administration.sql", root),
   "utf8",
 );
+const repositoryTeamAccessSchemaSql = readFileSync(
+  new URL("supabase/schemas/602_repository_team_access.sql", root),
+  "utf8",
+);
+const repositoryStarsSchemaSql = readFileSync(
+  new URL("supabase/schemas/603_repository_stars.sql", root),
+  "utf8",
+);
+const repositoryLabelSchemaSql = readFileSync(
+  new URL("supabase/schemas/610_repository_labels.sql", root),
+  "utf8",
+);
+const repositoryMilestoneSchemaSql = readFileSync(
+  new URL("supabase/schemas/611_repository_milestones.sql", root),
+  "utf8",
+);
+const repositoryCommandSchemaSql = readFileSync(
+  new URL("supabase/schemas/604_repository_commands.sql", root),
+  "utf8",
+);
+const crossOwnerProjectionSchemaSql = readFileSync(
+  new URL("supabase/schemas/900_cross_owner_projections.sql", root),
+  "utf8",
+);
 const transactionCoordinatorSchemaSql = readFileSync(
   new URL("supabase/schemas/920_transaction_coordinators.sql", root),
   "utf8",
@@ -606,6 +630,71 @@ export function permissionSubjectVersionExpansionSql(source = permissionAdminist
   return source.slice(start, end + endMarker.length);
 }
 
+export function repositoryEffectiveAccessExpansionSql(source = crossOwnerProjectionSchemaSql) {
+  const start = source.indexOf("create view app_private.repository_effective_access");
+  const endMarker = "group by repository_id, user_id;";
+  const end = source.indexOf(endMarker, start);
+  if (start < 0 || end < 0) {
+    throw new Error("Could not locate canonical repository_effective_access projection.");
+  }
+  return source.slice(start, end + endMarker.length);
+}
+
+export function repositoryProvisionCompatibilitySql(source = transactionCoordinatorSchemaSql) {
+  return extractFunctionDefinition(source, "provision_repository");
+}
+
+export function repositoryProvisionCompatibilityAccessSql(source = accessEnforcementSchemaSql) {
+  const signature = "provision_repository(text,text,text,text,text)";
+  return source
+    .split(/;\s*\n/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.includes(signature))
+    .map((statement) => `${statement};`)
+    .join("\n");
+}
+
+export function classifyRepositoryRuntimeCompatibility(state) {
+  const structuralCurrent =
+    state.ownerAccountIdColumn &&
+    state.ownerAccountKindColumn &&
+    state.nextIssueNumberColumn &&
+    !state.legacyOrganizationIdColumn;
+  const supportCurrent =
+    state.repositoryAccessTable &&
+    state.repositoryTeamAccessTable &&
+    state.repositoryStarsTable &&
+    state.repositoryCommandsTable &&
+    state.repositoryLabelsTable &&
+    state.repositoryMilestonesTable &&
+    state.issueNumberColumn &&
+    state.issueMilestoneColumn &&
+    state.repositoryEffectiveAccessView &&
+    state.provisionRepositoryFunction;
+
+  if (structuralCurrent && supportCurrent) return "ready";
+  if (
+    structuralCurrent &&
+    state.repositoryAccessTable &&
+    (state.issueRows === 0 || (state.issueNumberColumn && state.issueMilestoneColumn))
+  ) {
+    return "repairable";
+  }
+  if (
+    state.repositoryRows === 0 &&
+    state.issueRows === 0 &&
+    state.discussionRows === 0 &&
+    state.discussionCommentRows === 0 &&
+    state.repositoryAccessTable &&
+    state.legacyOrganizationIdColumn &&
+    !state.ownerAccountIdColumn &&
+    !state.ownerAccountKindColumn
+  ) {
+    return "repairable";
+  }
+  return "partial";
+}
+
 export function permissionNamesFromSource(source = permissionDefinitionSchemaSql) {
   const match = source.match(
     /create\s+type\s+app_private\.permission_name\s+as\s+enum\s*\(([^;]+)\)\s*;/i,
@@ -926,10 +1015,612 @@ async function ensureDailyCheckInCompatibility() {
   return true;
 }
 
+async function ensurePermissionSubjectVersionCompatibility() {
+  return withRemoteClient(async (client) => {
+    await client.query("BEGIN");
+    try {
+      await client.query("LOCK TABLE app_private.users IN SHARE ROW EXCLUSIVE MODE");
+      const [state] = (
+        await client.query(`
+          select
+            to_regclass('app_private.permission_subject_versions') is not null as table_exists,
+            exists(
+              select 1 from information_schema.columns
+              where table_schema='app_private' and table_name='users'
+                and column_name='permissions_version'
+            ) as legacy_version_column
+        `)
+      ).rows;
+
+      let changed = false;
+      if (!state.table_exists) {
+        await client.query(permissionSubjectVersionExpansionSql());
+        if (state.legacy_version_column) {
+          await client.query(`
+            insert into app_private.permission_subject_versions(user_id,version)
+            select id,permissions_version from app_private.users
+            on conflict(user_id) do nothing
+          `);
+        }
+        changed = true;
+      }
+
+      if (state.legacy_version_column) {
+        const mismatch = Number(
+          (
+            await client.query(`
+              select count(*)::int as count
+              from app_private.users u
+              join app_private.permission_subject_versions v on v.user_id=u.id
+              where v.version<>u.permissions_version
+            `)
+          ).rows[0]?.count ?? 0,
+        );
+        if (mismatch) {
+          throw new Error(
+            "Legacy users.permissions_version disagrees with permission_subject_versions; refusing ambiguous authority.",
+          );
+        }
+      }
+
+      const [acceptance] = (
+        await client.query(`
+          select
+            c.relrowsecurity as rls_enabled,
+            has_table_privilege(
+              'line_app','app_private.permission_subject_versions','SELECT'
+            ) as line_app_select,
+            has_table_privilege(
+              'line_app','app_private.permission_subject_versions','INSERT'
+            ) as line_app_insert,
+            has_table_privilege(
+              'line_app','app_private.permission_subject_versions','UPDATE'
+            ) as line_app_update,
+            not has_table_privilege(
+              'anon','app_private.permission_subject_versions','SELECT'
+            ) as anon_no_select,
+            not has_table_privilege(
+              'authenticated','app_private.permission_subject_versions','SELECT'
+            ) as authenticated_no_select
+          from pg_class c
+          where c.oid='app_private.permission_subject_versions'::regclass
+        `)
+      ).rows;
+      if (
+        !acceptance?.rls_enabled ||
+        !acceptance.line_app_select ||
+        !acceptance.line_app_insert ||
+        !acceptance.line_app_update ||
+        !acceptance.anon_no_select ||
+        !acceptance.authenticated_no_select
+      ) {
+        throw new Error("Remote permission subject version compatibility is invalid.");
+      }
+
+      const rowCount = Number(
+        (
+          await client.query(
+            "select count(*)::int as count from app_private.permission_subject_versions",
+          )
+        ).rows[0]?.count ?? 0,
+      );
+      await client.query("COMMIT");
+      writeFileSync(
+        new URL("permission-subject-version-compat.json", artifacts),
+        `${JSON.stringify(
+          {
+            changed,
+            legacyVersionColumn: state.legacy_version_column,
+            subjectVersionRows: rowCount,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      return changed;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    }
+  });
+}
+
+async function repositoryRuntimeCompatibilityState(client) {
+  const row = (
+    await client.query(`
+      select
+        (select count(*)::int from app_private.repositories) as repository_rows,
+        (select count(*)::int from app_private.issues) as issue_rows,
+        (select count(*)::int from app_private.discussions) as discussion_rows,
+        (select count(*)::int from app_private.discussion_comments) as discussion_comment_rows,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='owner_account_id'
+        ) as owner_account_id_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='owner_account_kind'
+        ) as owner_account_kind_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='next_issue_number'
+        ) as next_issue_number_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='repositories'
+            and column_name='organization_id'
+        ) as legacy_organization_id_column,
+        to_regclass('app_private.repository_access') is not null as repository_access_table,
+        to_regclass('app_private.repository_team_access') is not null as repository_team_access_table,
+        to_regclass('app_private.repository_stars') is not null as repository_stars_table,
+        to_regclass('app_private.repository_commands') is not null as repository_commands_table,
+        to_regclass('app_private.repository_labels') is not null as repository_labels_table,
+        to_regclass('app_private.repository_milestones') is not null as repository_milestones_table,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='issues' and column_name='number'
+        ) as issue_number_column,
+        exists(
+          select 1 from information_schema.columns
+          where table_schema='app_private' and table_name='issues' and column_name='milestone_id'
+        ) as issue_milestone_column,
+        to_regclass('app_private.repository_effective_access') is not null
+          as repository_effective_access_view,
+        to_regprocedure('app_private.provision_repository(text,text,text,text,text)') is not null
+          as provision_repository_function
+    `)
+  ).rows[0];
+  return {
+    repositoryRows: Number(row.repository_rows),
+    issueRows: Number(row.issue_rows),
+    discussionRows: Number(row.discussion_rows),
+    discussionCommentRows: Number(row.discussion_comment_rows),
+    ownerAccountIdColumn: row.owner_account_id_column,
+    ownerAccountKindColumn: row.owner_account_kind_column,
+    nextIssueNumberColumn: row.next_issue_number_column,
+    legacyOrganizationIdColumn: row.legacy_organization_id_column,
+    repositoryAccessTable: row.repository_access_table,
+    repositoryTeamAccessTable: row.repository_team_access_table,
+    repositoryStarsTable: row.repository_stars_table,
+    repositoryCommandsTable: row.repository_commands_table,
+    repositoryLabelsTable: row.repository_labels_table,
+    repositoryMilestonesTable: row.repository_milestones_table,
+    issueNumberColumn: row.issue_number_column,
+    issueMilestoneColumn: row.issue_milestone_column,
+    repositoryEffectiveAccessView: row.repository_effective_access_view,
+    provisionRepositoryFunction: row.provision_repository_function,
+  };
+}
+
+async function verifyRepositoryRuntimeCompatibility(client) {
+  const state = await repositoryRuntimeCompatibilityState(client);
+  if (classifyRepositoryRuntimeCompatibility(state) !== "ready") {
+    throw new Error("Remote Repository runtime compatibility is incomplete.");
+  }
+  const [acceptance] = (
+    await client.query(`
+      select
+        has_table_privilege('line_app','app_private.repositories','SELECT') as repository_select,
+        not has_table_privilege('line_app','app_private.repositories','INSERT') as repository_no_insert,
+        has_column_privilege(
+          'line_app','app_private.repositories','next_issue_number','UPDATE'
+        ) as repository_issue_number_update,
+        has_table_privilege('line_app','app_private.repository_access','SELECT') as access_select,
+        not has_table_privilege('line_app','app_private.repository_access','INSERT') as access_no_insert,
+        has_table_privilege('line_app','app_private.repository_stars','SELECT') as stars_select,
+        has_table_privilege('line_app','app_private.repository_stars','INSERT') as stars_insert,
+        has_table_privilege('line_app','app_private.repository_stars','DELETE') as stars_delete,
+        has_table_privilege(
+          'line_app','app_private.repository_commands','SELECT'
+        ) as commands_select,
+        has_table_privilege(
+          'line_app','app_private.repository_commands','INSERT'
+        ) as commands_insert,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_commands'::regclass
+        ) as commands_rls,
+        not has_table_privilege(
+          'anon','app_private.repository_commands','SELECT'
+        ) as anon_no_commands,
+        has_table_privilege(
+          'line_app','app_private.repository_labels','SELECT'
+        ) as labels_select,
+        not has_table_privilege(
+          'line_app','app_private.repository_labels','INSERT'
+        ) as labels_no_insert,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_labels'::regclass
+        ) as labels_rls,
+        has_table_privilege(
+          'line_app','app_private.repository_milestones','SELECT'
+        ) as milestones_select,
+        not has_table_privilege(
+          'line_app','app_private.repository_milestones','INSERT'
+        ) as milestones_no_insert,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_milestones'::regclass
+        ) as milestones_rls,
+        has_table_privilege('line_app','app_private.issues','SELECT') as issues_select,
+        not has_table_privilege('line_app','app_private.issues','INSERT') as issues_no_table_insert,
+        has_column_privilege(
+          'line_app','app_private.issues','number','INSERT'
+        ) as issues_number_insert,
+        has_column_privilege(
+          'line_app','app_private.issues','status','UPDATE'
+        ) as issues_status_update,
+        not has_column_privilege(
+          'line_app','app_private.issues','milestone_id','INSERT'
+        ) as issues_no_milestone_insert,
+        has_table_privilege('line_app','app_private.discussions','SELECT') as discussions_select,
+        not has_table_privilege(
+          'line_app','app_private.discussions','INSERT'
+        ) as discussions_no_insert,
+        has_table_privilege(
+          'line_app','app_private.discussion_comments','SELECT'
+        ) as comments_select,
+        not has_table_privilege(
+          'line_app','app_private.discussion_comments','INSERT'
+        ) as comments_no_insert,
+        not has_table_privilege('anon','app_private.repository_stars','SELECT') as anon_no_stars,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_stars'::regclass
+        ) as stars_rls,
+        (
+          select c.relrowsecurity
+          from pg_class c
+          where c.oid='app_private.repository_team_access'::regclass
+        ) as team_access_rls,
+        has_function_privilege(
+          'line_app',
+          'app_private.provision_repository(text,text,text,text,text)',
+          'EXECUTE'
+        ) as provision_execute,
+        not has_function_privilege(
+          'anon',
+          'app_private.provision_repository(text,text,text,text,text)',
+          'EXECUTE'
+        ) as anon_no_provision,
+        not has_schema_privilege('anon','app_private','USAGE') as anon_no_private_usage
+    `)
+  ).rows;
+  if (
+    !acceptance?.repository_select ||
+    !acceptance.repository_no_insert ||
+    !acceptance.repository_issue_number_update ||
+    !acceptance.access_select ||
+    !acceptance.access_no_insert ||
+    !acceptance.stars_select ||
+    !acceptance.stars_insert ||
+    !acceptance.stars_delete ||
+    !acceptance.commands_select ||
+    !acceptance.commands_insert ||
+    !acceptance.commands_rls ||
+    !acceptance.anon_no_commands ||
+    !acceptance.labels_select ||
+    !acceptance.labels_no_insert ||
+    !acceptance.labels_rls ||
+    !acceptance.milestones_select ||
+    !acceptance.milestones_no_insert ||
+    !acceptance.milestones_rls ||
+    !acceptance.issues_select ||
+    !acceptance.issues_no_table_insert ||
+    !acceptance.issues_number_insert ||
+    !acceptance.issues_status_update ||
+    !acceptance.issues_no_milestone_insert ||
+    !acceptance.discussions_select ||
+    !acceptance.discussions_no_insert ||
+    !acceptance.comments_select ||
+    !acceptance.comments_no_insert ||
+    !acceptance.anon_no_stars ||
+    !acceptance.stars_rls ||
+    !acceptance.team_access_rls ||
+    !acceptance.provision_execute ||
+    !acceptance.anon_no_provision ||
+    !acceptance.anon_no_private_usage
+  ) {
+    throw new Error("Remote Repository runtime privileges or authorization boundary are invalid.");
+  }
+}
+
+async function ensureRepositoryRuntimeCompatibility() {
+  return withRemoteClient(async (client) => {
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        "LOCK TABLE app_private.repositories, app_private.repository_access IN ACCESS EXCLUSIVE MODE",
+      );
+      const before = await repositoryRuntimeCompatibilityState(client);
+      const classification = classifyRepositoryRuntimeCompatibility(before);
+      if (classification === "ready") {
+        await verifyRepositoryRuntimeCompatibility(client);
+        await client.query("COMMIT");
+        writeFileSync(
+          new URL("repository-runtime-compat.json", artifacts),
+          `${JSON.stringify(
+            {
+              before: {
+                classification,
+                repositoryRows: before.repositoryRows,
+                legacyOrganizationIdColumn: before.legacyOrganizationIdColumn,
+              },
+              after: {
+                classification,
+                repositoryRows: before.repositoryRows,
+                legacyOrganizationIdColumn: before.legacyOrganizationIdColumn,
+              },
+              changed: false,
+            },
+            null,
+            2,
+          )}\n`,
+        );
+        return false;
+      }
+      if (classification !== "repairable") {
+        throw new Error(
+          "Remote Repository runtime compatibility is partial or contains retained rows; refusing an unsafe automatic cutover.",
+        );
+      }
+
+      let changed = false;
+      if (!before.ownerAccountIdColumn || !before.ownerAccountKindColumn) {
+        if (before.repositoryRows !== 0 || !before.legacyOrganizationIdColumn) {
+          throw new Error(
+            "Repository owner migration requires zero legacy Repository rows for automatic recovery.",
+          );
+        }
+        await client.query(
+          "alter table app_private.repositories add column owner_account_id text not null",
+        );
+        await client.query(
+          "alter table app_private.repositories add column owner_account_kind text not null",
+        );
+        changed = true;
+      }
+      if (!before.nextIssueNumberColumn) {
+        await client.query(
+          "alter table app_private.repositories add column next_issue_number bigint not null default 1",
+        );
+        changed = true;
+      }
+      if (before.legacyOrganizationIdColumn) {
+        if (before.repositoryRows !== 0) {
+          throw new Error(
+            "Legacy repositories.organization_id cannot be removed while Repository rows exist.",
+          );
+        }
+        await client.query("alter table app_private.repositories drop column organization_id");
+        changed = true;
+      }
+
+      const constraints = new Set(
+        (
+          await client.query(
+            "select conname from pg_constraint where conrelid='app_private.repositories'::regclass",
+          )
+        ).rows.map((row) => row.conname),
+      );
+      if (!constraints.has("repositories_id_owner_account_id_key")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_id_owner_account_id_key unique (id,owner_account_id)",
+        );
+        changed = true;
+      }
+      if (!constraints.has("repositories_owner_kind_check")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_owner_kind_check check (owner_account_kind in ('USER','ORGANIZATION'))",
+        );
+        changed = true;
+      }
+      if (!constraints.has("repositories_next_issue_number_check")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_next_issue_number_check check (next_issue_number > 0)",
+        );
+        changed = true;
+      }
+      if (!constraints.has("repositories_owner_account_fkey")) {
+        await client.query(
+          "alter table app_private.repositories add constraint repositories_owner_account_fkey foreign key (owner_account_id,owner_account_kind) references app_private.accounts(id,kind)",
+        );
+        changed = true;
+      }
+
+      await client.query(
+        "create unique index if not exists repositories_owner_name on app_private.repositories(owner_account_id,lower(name))",
+      );
+      await client.query(
+        "revoke all on app_private.repositories from public, anon, authenticated, line_app",
+      );
+      await client.query("grant select on app_private.repositories to line_app");
+      await client.query(
+        "grant update (next_issue_number) on app_private.repositories to line_app",
+      );
+      await client.query("drop policy if exists backend on app_private.repositories");
+      await client.query("drop policy if exists backend_read on app_private.repositories");
+      await client.query("drop policy if exists backend_issue_number on app_private.repositories");
+      await client.query(
+        "create policy backend_read on app_private.repositories for select to line_app using (true)",
+      );
+      await client.query(
+        "create policy backend_issue_number on app_private.repositories for update to line_app using (true) with check (true)",
+      );
+
+      await client.query(
+        "revoke all on app_private.repository_access from public, anon, authenticated, line_app",
+      );
+      await client.query("grant select on app_private.repository_access to line_app");
+      await client.query("drop policy if exists backend on app_private.repository_access");
+      await client.query("drop policy if exists backend_read on app_private.repository_access");
+      await client.query(
+        "create policy backend_read on app_private.repository_access for select to line_app using (true)",
+      );
+
+      const afterStructure = await repositoryRuntimeCompatibilityState(client);
+      if (!afterStructure.repositoryTeamAccessTable) {
+        await client.query(repositoryTeamAccessSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryStarsTable) {
+        await client.query(repositoryStarsSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryCommandsTable) {
+        await client.query(repositoryCommandSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryLabelsTable) {
+        await client.query(repositoryLabelSchemaSql);
+        changed = true;
+      }
+      if (!afterStructure.repositoryMilestonesTable) {
+        await client.query(repositoryMilestoneSchemaSql);
+        changed = true;
+      }
+
+      if (!afterStructure.issueNumberColumn || !afterStructure.issueMilestoneColumn) {
+        if (afterStructure.issueRows !== 0) {
+          throw new Error(
+            "Issue runtime migration requires zero legacy Issue rows for automatic recovery.",
+          );
+        }
+        if (!afterStructure.issueNumberColumn) {
+          await client.query("alter table app_private.issues add column number bigint not null");
+          changed = true;
+        }
+        if (!afterStructure.issueMilestoneColumn) {
+          await client.query("alter table app_private.issues add column milestone_id text");
+          changed = true;
+        }
+      }
+
+      const issueConstraints = new Set(
+        (
+          await client.query(
+            "select conname from pg_constraint where conrelid='app_private.issues'::regclass",
+          )
+        ).rows.map((row) => row.conname),
+      );
+      if (!issueConstraints.has("issues_repository_id_number_unique")) {
+        await client.query(
+          "alter table app_private.issues add constraint issues_repository_id_number_unique unique (repository_id,number)",
+        );
+        changed = true;
+      }
+      if (!issueConstraints.has("issues_number_check")) {
+        await client.query(
+          "alter table app_private.issues add constraint issues_number_check check (number > 0)",
+        );
+        changed = true;
+      }
+      if (!issueConstraints.has("issues_milestone_scope_fkey")) {
+        await client.query(
+          "alter table app_private.issues add constraint issues_milestone_scope_fkey foreign key (repository_id,milestone_id) references app_private.repository_milestones(repository_id,id)",
+        );
+        changed = true;
+      }
+
+      await client.query(
+        "revoke all on app_private.issues from public, anon, authenticated, line_app",
+      );
+      await client.query("grant select on app_private.issues to line_app");
+      await client.query(
+        "grant insert (id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at) on app_private.issues to line_app",
+      );
+      await client.query(
+        "grant update (status,version,updated_at) on app_private.issues to line_app",
+      );
+      await client.query("drop policy if exists backend on app_private.issues");
+      await client.query("drop policy if exists backend_read on app_private.issues");
+      await client.query("drop policy if exists backend_insert on app_private.issues");
+      await client.query("drop policy if exists backend_transition on app_private.issues");
+      await client.query(
+        "create policy backend_read on app_private.issues for select to line_app using (true)",
+      );
+      await client.query(
+        "create policy backend_insert on app_private.issues for insert to line_app with check (true)",
+      );
+      await client.query(
+        "create policy backend_transition on app_private.issues for update to line_app using (true) with check (true)",
+      );
+
+      for (const relation of ["discussions", "discussion_comments"]) {
+        await client.query(
+          `revoke all on app_private.${relation} from public, anon, authenticated, line_app`,
+        );
+        await client.query(`grant select on app_private.${relation} to line_app`);
+        await client.query(`drop policy if exists backend on app_private.${relation}`);
+        await client.query(`drop policy if exists backend_read on app_private.${relation}`);
+        await client.query(
+          `create policy backend_read on app_private.${relation} for select to line_app using (true)`,
+        );
+      }
+
+      if (!afterStructure.repositoryEffectiveAccessView) {
+        await client.query(repositoryEffectiveAccessExpansionSql());
+        changed = true;
+      }
+
+      await client.query(repositoryProvisionCompatibilitySql());
+      await client.query(repositoryProvisionCompatibilityAccessSql());
+
+      await verifyRepositoryRuntimeCompatibility(client);
+      const after = await repositoryRuntimeCompatibilityState(client);
+      if (
+        after.repositoryRows !== before.repositoryRows ||
+        after.issueRows !== before.issueRows ||
+        after.discussionRows !== before.discussionRows ||
+        after.discussionCommentRows !== before.discussionCommentRows
+      ) {
+        throw new Error(
+          "Repository runtime compatibility repair changed Repository business rows.",
+        );
+      }
+      await client.query("COMMIT");
+      writeFileSync(
+        new URL("repository-runtime-compat.json", artifacts),
+        `${JSON.stringify(
+          {
+            before: {
+              classification,
+              repositoryRows: before.repositoryRows,
+              legacyOrganizationIdColumn: before.legacyOrganizationIdColumn,
+            },
+            after: {
+              classification: classifyRepositoryRuntimeCompatibility(after),
+              repositoryRows: after.repositoryRows,
+              legacyOrganizationIdColumn: after.legacyOrganizationIdColumn,
+            },
+            changed,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      return changed;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    }
+  });
+}
+
 async function repairRuntimeCompatibility() {
   const accountLoginChanged = await ensureAccountLoginCompatibility();
   const dailyCheckInChanged = await ensureDailyCheckInCompatibility();
-  return accountLoginChanged || dailyCheckInChanged;
+  const permissionChanged = await ensurePermissionSubjectVersionCompatibility();
+  const repositoryChanged = await ensureRepositoryRuntimeCompatibility();
+  return accountLoginChanged || dailyCheckInChanged || permissionChanged || repositoryChanged;
 }
 
 async function prepareGeneralManagementExpansion() {
