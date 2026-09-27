@@ -1,28 +1,26 @@
 ---
 name: context-convergence
-description: Converge repository Markdown and agent instructions to the smallest sufficient context without weakening ownership, source-of-truth, boundary, security, or validation semantics. Use for instruction cleanup, Markdown distillation, AGENTS.md minimization, and agent-context optimization.
+description: Standard workflow for Markdown convergence, instruction compression, AGENTS.md minimization, and agent-context optimization. Load whenever reducing or restructuring agent-facing Markdown.
 ---
 
 # Context convergence
 
-Reduce decision-path context, not truth.
+Priority: `Authority > Relevant Context > Responsibility > Machine-readable Truth > Validation Evidence > Encoding`.
 
-## Workflow
+Goal: minimum context for a correct agent decision.
 
-1. Read only the applicable root/nearest `AGENTS.md` and the canonical source needed for the target file.
-2. Pick one existing Markdown file at a time; when order matters, start with the oldest unprocessed candidate.
-3. Identify its single retrieval job: instruction, router, current truth, reference, or change/history evidence.
-4. Remove duplicated facts, parent rules, examples, history, and machine-readable facts already owned elsewhere. Replace them with direct canonical references when needed.
-5. Preserve anything that changes Owner, Source of Truth, Boundary/Dependency, Invariant, Security/Authorization, Recovery, or Validation.
-6. For an existing file, require the edited file to be smaller than before. If reduction would weaken semantics, do not force the edit.
-7. Validate with the narrowest canonical command that actually covers the change and report only the evidence produced.
+1. Unless a file is named, choose the oldest unprocessed Markdown.
+2. Read only applicable `AGENTS.md` plus the canonical source needed to judge that file.
+3. Give the file one job: instruction, routing, current truth, reference, or change/history.
+4. Delete duplicate, stale, vague, historical, example-heavy, or machine-derived text that does not change a decision.
+5. Preserve anything that changes Authority, Owner, Truth, Boundary/Dependency, Invariant, Security/Authorization, Recovery, Change Surface, or Validation.
+6. Prefer direct natural language and canonical references; do not add process or tooling without need.
+7. Existing files must decrease in bytes. If reduction weakens correctness, make no change.
+8. Change one file at a time; continue oldest → next oldest.
+9. Run only the narrowest canonical validation and report exactly its evidence.
 
-## Decision rule
+Keep a statement only if removing it could change a correct action.
 
-Keep content only if removing it would change a correct agent decision.
+Preferred shape: `Owner → Boundary → Invariant → Decision Rule → Validation`.
 
-Prefer:
-
-`Owner → Boundary → Invariant → Decision Rule → Validation`
-
-Stop when further compression would no longer reduce context without reducing correctness.
+Stop when more reading or compression no longer changes the decision.
