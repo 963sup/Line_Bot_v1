@@ -5,7 +5,7 @@ description: 開發、診斷或審查 LINE MINI App 與 LIFF 初始化、入口�
 
 # LINE MINI App
 
-讓指定 MINI App 在正確 channel、環境與瀏覽器完成使用者流程。先讀 [LINE integration](../../../docs/030-platform/010-line.md) 與 [Monorepo](../../../docs/020-architecture/010-repository-architecture.md)，沿用現有 Web，不因 skill 建立獨立 app。
+讓指定 MINI App 在正確 channel、環境與瀏覽器完成使用者流程。先讀 [LINE integration](../../../docs/030-platform/010-line.md) 與 [System facts](../../../docs/facts/system.md)，沿用現有 Web，不因 skill 建立獨立 app。
 
 ## 文件與定位
 
