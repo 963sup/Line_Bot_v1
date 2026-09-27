@@ -124,7 +124,8 @@ async function completedReleaseRuns({ repository, token, fetchImpl }) {
     `/repos/${repository}/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100`,
     { token, fetchImpl },
   );
-  if (!Array.isArray(body.workflow_runs)) throw new Error("GitHub Release run evidence is invalid.");
+  if (!Array.isArray(body.workflow_runs))
+    throw new Error("GitHub Release run evidence is invalid.");
   return body.workflow_runs;
 }
 
@@ -145,8 +146,7 @@ export async function findOwnerBaseline({
   token,
   fetchImpl,
   git,
-  loadJobs = ({ runId }) =>
-    jobsForRun({ repository, runId, token, fetchImpl }),
+  loadJobs = ({ runId }) => jobsForRun({ repository, runId, token, fetchImpl }),
 }) {
   const acceptedJobs = OWNER_JOBS[owner];
   if (!acceptedJobs) throw new Error(`Unknown release owner: ${owner}`);
@@ -156,11 +156,7 @@ export async function findOwnerBaseline({
     if (!candidate || candidate === targetSha) continue;
     if (!git.hasCommit(candidate) || !git.isAncestor(candidate, targetSha)) continue;
     const jobs = await loadJobs({ runId: runEvidence.id });
-    if (
-      jobs.some(
-        (job) => acceptedJobs.has(job?.name) && job?.conclusion === "success",
-      )
-    ) {
+    if (jobs.some((job) => acceptedJobs.has(job?.name) && job?.conclusion === "success")) {
       return candidate;
     }
   }
@@ -247,8 +243,7 @@ export async function planRelease({
   const schema = schemaChanged(supabaseFiles);
   const richMenu = richMenuChanged(richMenuFiles);
   const webCandidates = deploymentFiles.filter(webRuntimeCandidate);
-  const web =
-    webCandidates.length > 0 && turbo.webBuildAffected(deploymentBaseline, targetSha);
+  const web = webCandidates.length > 0 && turbo.webBuildAffected(deploymentBaseline, targetSha);
 
   return {
     head_sha: targetSha,
