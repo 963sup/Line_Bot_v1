@@ -155,7 +155,7 @@ LINE Work Assistant 的行動體驗目標不是把所有能力塞進單一首頁
 
 ## 主要使用體驗
 
-目前工作區提供的使用者工作面包括：工作台、出勤、外部工作日誌入口、任務、團隊協作、公告、合作夥伴、工作紀錄、個人資料、回饋與管理工作區。這是產品能力／入口語意，不在 Product 文件維護正式 URL 清單；URL 與 route owner 由 [Web route contract](../020-architecture/050-runtime-architecture.md) 擁有。
+目前工作區提供的使用者工作面包括：工作台、出勤、外部工作日誌入口、任務、團隊協作、公告、合作夥伴、工作紀錄、個人資料、回饋與管理工作區。Current authenticated App Shell 以 Home、Inbox、Explore、AI 為四個主目的地；Profile 由 avatar 作為 secondary account surface。AI 只投影既有 Assistant one-shot 問答／草稿／文字檢視能力，不因主 tab 存在而建立 Copilot session 或正式 business write。這是產品能力／入口語意，不在 Product 文件維護正式 URL 清單；URL 與 route owner 由 [Web route contract](../020-architecture/050-runtime-architecture.md) 擁有。
 
 跨能力體驗遵守以下原則：
 

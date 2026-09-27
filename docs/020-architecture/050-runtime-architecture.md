@@ -81,6 +81,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | Route | Owner responsibility |
 | --- | --- |
 | `/home` | 工作台組裝；不擁有各 module 規則 |
+| `/home/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write |
 | `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
 | `/expenses` | 指定 Expense 操作／結果 |

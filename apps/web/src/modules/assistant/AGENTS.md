@@ -1,14 +1,16 @@
 # Web assistant module
 
-## GitHub Mobile 目標（後續實作）
+## Current Web surface
 
-- Assistant 在既有 LINE 對話呈現清楚的草稿、確認、執行結果與失敗；採資源上下文與短摘要，不把生成文字當正式 Issue/Expense 狀態。
-- 上游 Mobile 已有 Copilot tab，但本產品沒有對等 Web 聊天/session contract；不為布局新增第五個 AI tab、`/assistant` 空頁或假對話。
-- 後續若有正式 Assistant UI 需求，先定義可信 tool/use case、draft-to-command 邊界及 URL，再調整本檔。
+- Bottom Navigation 的 AI 目的地是 `/home/assistant`；選用既有 `/home` namespace 避免建立會與 public `/{login}` 衝突的新 top-level locator。
+- `/home/assistant` 提供 Ask / Generate / Review 三個 one-shot Web modes。Ask 使用既有 answer use case；Generate 只產生 Issue draft；Review 只產生文字建議。三者都不建立 durable chat/session，也不直接形成 formal business write。
+- `/api/assistant` 只負責 HTTP transport、LINE identity 與 current User qualification，再委派既有 Assistant application/provider capability；不得把 client-selected mode 當 business authorization。
+- Assistant output 仍是 untrusted draft/advice。Issue、Expense、Repository 或其他 owner 的正式 mutation 必須經各自 deterministic validation、authorization、version/replay 與 persistence contract。
+- Web surface 保留 input/output bound、cooldown、provider unavailable、換帳號清除與遲到回應隔離；不得因 AI tab 存在宣稱 Copilot session、tool registry、自主 writer 或 durable agent memory 已完成。
 
-## 現行 surface 與 invariant
+## Existing LINE surface
 
-Current entry：`/api/line/webhook` 由 app composition 接到 event-router／answer／command presentation；沒有獨立 `/assistant` page 或 API。FPT 只可提供被操作資源的語意，不能把 Assistant 當 Repository/Issue writer。
+`/api/line/webhook` 仍由 app composition 接到 event-router／answer／command presentation。1:1 與 group/room activation、Rich Menu 及 explicit command 依既有 LINE contract；Web AI page 不改 webhook semantics。
 
 Rich Menu 的 local 契約見 [rich-menu](rich-menu/AGENTS.md)。改產品 URL 時核對 menu URI/entry intent；本地 definition 更新與遠端發布分開，不因改 AGENTS 自動發布。
 
