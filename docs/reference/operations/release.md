@@ -27,8 +27,6 @@ Release 只負責決定「哪個外部 owner 需要被呼叫」與「先後順�
 5. 其他 LINE／scheduler／external platform change 依各 owner contract 逐項 mutation 與 readback。
 6. 需要 real-device／business acceptance 的能力，在對應 evidence 完成前不得宣稱整體完成。
 
-Manual Supabase data-cutover workflow 只負責自己的 business metadata／recovery／reviewed-plan contract，不取得 Web deployment ownership。完成後仍由 Release 對 current validated SHA 重新判定 publication order。
-
 ## Compatibility
 
 Schema 與 Web 若需要協調切換，必須維持 consumer compatibility：不能先讓新 Web 依賴尚未存在的 relation，也不能讓舊 Web 持續服務於已與其不相容的 schema。
