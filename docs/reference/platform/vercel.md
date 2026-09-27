@@ -11,4 +11,4 @@ Vercel 是 `apps/web` 的 Next.js deployment/runtime platform，不是 persisten
 - Deployment READY 只證明該 deployment 狀態與上述 provider readback，不證明 LINE、外部 API 或手機流程已驗收。
 - Analytics / performance / error telemetry 若存在，只提供 production evidence；不得成 authorization 或 business state authority。
 
-Deployment / release / recovery 程序見 [Operations](../070-operations/README.md)。
+Deployment / release / recovery 程序見 [Operations](../README.md)。
