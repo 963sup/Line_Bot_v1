@@ -672,6 +672,9 @@ export function validate(root) {
         step.with?.ref === "${{ needs.gate.outputs.head_sha }}" &&
         step.with?.["persist-credentials"] === false,
     );
+    const deploymentInstall = deploymentSteps.findIndex(
+      (step) => step.run === "pnpm install --frozen-lockfile",
+    );
     const deploymentMain = deploymentSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
@@ -693,11 +696,12 @@ export function validate(root) {
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
       JSON.stringify(releaseDeployment?.env ?? {}).includes("secrets.") ||
       deploymentCheckout < 0 ||
-      deploymentMain <= deploymentCheckout ||
+      deploymentInstall <= deploymentCheckout ||
+      deploymentMain <= deploymentInstall ||
       productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: production deployment must follow Supabase convergence and deploy the exact validated SHA",
+        "CI: production deployment must install dependencies, follow Supabase convergence and deploy the exact validated SHA",
       );
     }
 
