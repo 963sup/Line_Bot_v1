@@ -59,7 +59,7 @@ Cross-owner mechanism 只允許：
 
 `870–891` 只保留已選定 target 的命名空間，且必須是符合 `data-topology.json` reserved declaration 的純 line-comment file。Reserved file 不代表 table、view、function、policy、runtime capability、remote state 或 acceptance 已存在。
 
-啟用 reserved target 時，同一 changeset 必須建立真實 SQL / relation mapping、current owner contract、consumer、authorization/transaction semantics、tests 與適用 evidence；再移除 reserved role。Target rationale / migration state 留在 `docs/090-governance/`。
+啟用 reserved target 時，同一 changeset 必須建立真實 SQL / relation mapping、current owner contract、consumer、authorization/transaction semantics、tests 與適用 evidence；再移除 reserved role。Target rationale / migration state 留在 `docs/change/`。
 
 ## Navigation
 
