@@ -105,6 +105,10 @@ export function validate(root) {
       errors.push(
         "package.json: vercel:deploy:production must own controlled production deployment",
       );
+    if (manifest.scripts?.["github:current-main"] !== "node scripts/github/current-main.mjs")
+      errors.push("package.json: github:current-main must own exact-main GitHub readback");
+    if (manifest.scripts?.["github:release-plan"] !== "node scripts/github/release-plan.mjs")
+      errors.push("package.json: github:release-plan must own Release affected-source routing");
     if (Object.hasOwn(manifest.scripts ?? {}, "change:plan"))
       errors.push(
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
