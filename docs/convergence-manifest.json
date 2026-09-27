@@ -14,9 +14,12 @@
     ".agents/skills/context-convergence/SKILL.md": {
       "outcome": "keep",
       "baselineBytes": 1411,
-      "maxBytes": 1411,
-      "contentBlob": "045a34ceff32bf30a5491b8d4ed0e8522bda8f30",
-      "sources": {}
+      "maxBytes": 1192,
+      "contentBlob": "1f0884fb0496142672cad463937900b6eebc3010",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9",
+        "scripts/docs/convergence.mjs": "6b7b57de2d10673995e271725a9c9d53af88e6a9"
+      }
     },
     ".codex/AGENTS.md": {
       "outcome": "keep",
@@ -51,7 +54,7 @@
       "maxBytes": 531,
       "contentBlob": "5e297b27c1f66de6bfa92e3f6a9d20b0a4c86df8",
       "sources": {
-        ".agents/skills/context-convergence/SKILL.md": "045a34ceff32bf30a5491b8d4ed0e8522bda8f30"
+        ".agents/skills/context-convergence/SKILL.md": "1f0884fb0496142672cad463937900b6eebc3010"
       }
     },
     ".github/agents/database-reviewer.agent.md": {
@@ -156,7 +159,7 @@
       "maxBytes": 516,
       "contentBlob": "218b64bd46e3556625b69caef726369ac0d21830",
       "sources": {
-        ".agents/skills/context-convergence/SKILL.md": "045a34ceff32bf30a5491b8d4ed0e8522bda8f30"
+        ".agents/skills/context-convergence/SKILL.md": "1f0884fb0496142672cad463937900b6eebc3010"
       }
     },
     ".github/prompts/debug-deployment.prompt.md": {
@@ -184,7 +187,33 @@
       "contentBlob": "e3a7dba1b9c2e084aed400d05f19684079cb691a",
       "sources": {
         "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92",
-        "docs/facts/sources-of-truth.md": "32f4241cb182b901af7e63b4183d671e93a58453"
+        "docs/facts/sources-of-truth.md": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6"
+      }
+    },
+    "docs/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 1028,
+      "maxBytes": 1028,
+      "contentBlob": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9",
+      "sources": {
+        "AGENTS.md": "e3a7dba1b9c2e084aed400d05f19684079cb691a"
+      }
+    },
+    "docs/facts/sources-of-truth.md": {
+      "outcome": "keep",
+      "baselineBytes": 1200,
+      "maxBytes": 1200,
+      "contentBlob": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6",
+      "sources": {}
+    },
+    "docs/rules/validation-evidence.md": {
+      "outcome": "keep",
+      "baselineBytes": 1000,
+      "maxBytes": 1000,
+      "contentBlob": "5d5e152604c7766360303250832def7d66c94e25",
+      "sources": {
+        "package.json": "259e6f8825d149e1e0a7ae4ae3be87c221b35000",
+        "scripts/tooling/validate.mjs": "68dce9f301d87557fdcb5eeeb90649c8b6e58842"
       }
     },
     "packages/account/AGENTS.md": {
@@ -338,6 +367,16 @@
       "contentBlob": "ba95d3bb535411bd1a12397f94eedf3667735b61",
       "sources": {
         "docs/owners/wallet.md": "d2cf4776583100cb2ad486633f602ea6813ba35a"
+      }
+    },
+    "scripts/docs/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 486,
+      "maxBytes": 486,
+      "contentBlob": "0c766e88fe6d5b64b3652ab751bc56511e693bfe",
+      "sources": {
+        "scripts/AGENTS.md": "73d04b8e474ca6fc4c9ac9a5ed51e25bc4ca6107",
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
       }
     }
   },
