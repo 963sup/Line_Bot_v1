@@ -4,51 +4,59 @@
 
 ## 模型責任
 
-| 模型 | 設定 ID | 責任 |
+| 人類名稱 | 設定 ID | 責任 |
 | --- | --- | --- |
-| GPT-6 指揮 | `gpt-6-astra` | 理解最終目標與上下文、第一性原理分析、架構與邊界決策、任務拆解與優先順序、子代理與模型調度、結果整合、最終驗收與下一步決策 |
-| GPT-5.6 推理、研究與審查 | `gpt-5.6-sol` | 複雜問題分析、技術研究、現有架構與程式碼理解、方案比較、架構推理、語意與 bounded context 檢查、相依性與風險分析、執行結果審查、衝突與遺漏檢查 |
-| GPT-5.5 通用與工程執行 | `gpt-5.5` | 程式碼與檔案搜尋、修改、重構、SQL／Schema／Migration、測試與除錯、文件與索引同步、資料整理、規則化與明確可執行任務、其他中等複雜度實作 |
+| GPT-6 Astra 指揮 | `gpt-6-astra` | 理解最終目標與上下文、第一性原理分析、架構與邊界最終決策、任務拆解與優先順序、子代理調度、結果整合與最終驗收 |
+| GPT-5.6 Sol 推理 | `gpt-5.6-sol` | Root cause、architecture、technical research、diff review、evidence verification 等唯讀深度工作 |
+| GPT-5.5 執行 | `gpt-5.5` | Repository mapping 與已批准 bounded change 的實作、測試、文件、SQL/schema/migration 等工程執行 |
+
+檔名同時保留 model ID 與 role，例如 `gpt-5.6-sol-architecture-analyst.toml`，方便人類直接從目錄理解「哪個模型負責什麼」。TOML 內的 `name` 只保存穩定 role name，避免 model 更換時污染 role identity。
 
 ## 單一責任契約
 
-每個子代理只擁有一個 Primary Responsibility。角色 TOML 必須以一致欄位表達 `Mission / Input / Owns / Must / Must Not / Deliverable / Stop / Validation`；不得因方便把搜尋、架構決策、實作與獨立審查混進同一角色。
+每個子代理只擁有一個 Primary Responsibility。角色 TOML 必須使用一致欄位：
+`Mission / Input / Owns / Must / Must Not / Deliverable / Stop / Validation`。
 
-- `code-mapper`：只負責定位 entry point、consumer、contract、dependency 與 test path；不決定架構、不修改檔案。
-- `analyst`：只負責把一個 bounded problem 轉成 decision-ready analysis；不執行修改、不替指揮做 owner／architecture 最終決策。
-- `engineering-worker`：只負責執行已定義的 bounded change 與必要 validation；遇到 owner／contract 衝突立即停止並回報。
-- `change-reviewer`：只審 scoped diff 的 concrete defect 與 regression risk；不重新設計、不修改、不承擔文件基線核對。
-- `baseline-reviewer`：只核對 contract/status claim 與 implementation/evidence 是否一致；不做一般 code review、不修改。
+- `repository-mapper`：只定位 entry point、consumer、contract、dependency、test 與 likely change path；不決定架構、不修改。
+- `root-cause-analyst`：只追 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger；不做 architecture 最終決策。
+- `architecture-analyst`：只分析 Ownership / Source of Truth / Boundary / Dependency 與可行方案；不執行修改、不替 GPT-6 做最終決策。
+- `technical-researcher`：只查 current primary technical sources並回傳可採用事實；不分析 repository ownership、不實作。
+- `implementation-worker`：只執行已批准的 bounded change 與必要 validation；遇到 owner/contract 衝突立即停止。
+- `diff-reviewer`：只找 scoped diff 引入的 concrete defect / regression risk；不重新設計、不修改。
+- `evidence-verifier`：只驗證 claim 是否被 implementation / validation / dated evidence 精確支持；不做一般 code review、不修改。
 
-新增角色只在出現新的獨立 responsibility，且需要不同 permission/tool policy、不同 model/reasoning profile，或可獨立驗收的真實工作邊界時成立；不得因名稱、技術分類或未來可能性預建角色。
+新增角色只在出現新的獨立 responsibility，且具有可獨立派工的問題、唯一 deliverable、明確 stop condition 與可獨立驗收方式時成立。不得因技術分類、名稱對稱或未來可能性預建角色。
 
-## 調度流程
+## 調度
 
-- 簡單且明確的執行工作，直接交給 GPT-5.5；不要求所有工作依序經過全部模型。
-- 跨模組、語意、架構、資料模型或高風險變更，由 GPT-5.6 先分析，GPT-6 確認必要決策後交給 GPT-5.5 執行，完成後由 GPT-5.6 審查。
-- 重大目標、bounded context、owner、架構或優先順序變更由 GPT-6 決策；子代理回報選項、證據與待決事項。
-- 優先以最低足夠能力完成任務；模型與推理強度依複雜度選擇，能力不足或需要獨立審查時才升級，不強制最高推理強度。
-- 優先讓同一代理延續既有上下文；派工附上目標、範圍、檔案 ownership、已確認證據、限制與驗收條件。不要重複研究已確認事項或重讀整份歷史。
-- 高階模型專注決策與整合，明確機械工作交給執行代理；只有能獨立進行的具體工作才並行，避免為派工增加無效交接。
-- 子代理上限為 8，不代表每次開滿。依相依性、token 成本與可驗收產出控制實際數量。
-- 所有寫入代理都必須知道自己不是唯一工作者；保留其他人的修改，不還原他人工作。同 checkout 不並行寫同一檔案、migration 順序或測試／建置產物。
-- 子代理不自行擴張範圍或再派工，由 GPT-6 統一調度。需要新的研究、owner 決策或權限時回報具體原因。
-- 驗收分開回報靜態檢查、測試、建置、部署、外部 API readback 與實機證據；未驗證明示。
-- 派工同時指定可修改與排除路徑、預期交付物、停止條件及驗證負責人；跨 ownership 的必要修改先回報指揮，不自行接管。唯讀研究以檔案位置與可重現證據交付，避免只給抽象建議。
-- 指揮整合前核對各代理 diff、未決事項與受影響 consumer；全庫 formatter、dependency install、test/build 等共用寫入由單一協調者排程，子代理不得各自重跑造成競爭。
+- 路徑已知且 change 已決定：直接用 `implementation-worker`。
+- 不知道 code / schema / test path：用 `repository-mapper`。
+- 已知 symptom 但根因不明：用 `root-cause-analyst`。
+- Owner / Truth / Boundary / Dependency 不明：用 `architecture-analyst`。
+- Framework / provider / model / API 等 current technical fact 不明：用 `technical-researcher`。
+- Implementation 完成後需要 concrete defect review：用 `diff-reviewer`。
+- 要宣稱「已完成 / 已驗證 / 已部署 / 已 readback」：用 `evidence-verifier`。
+- 重大目標、bounded context、owner、architecture、priority 與最終 acceptance 仍由 GPT-6 Astra 決定。
+- 不要求所有任務依序經過全部角色；只使用會改變決策或提升 acceptance confidence 的最少角色。
+- 子代理上限為 8，不代表每次開滿。只並行能獨立驗收且不競爭同一寫入面的工作。
+- 子代理不自行擴張範圍或再派工；需要新的 owner 決策、研究或權限時回報 GPT-6。
+- 所有寫入代理保留他人修改；同 checkout 不並行寫同一檔案、migration order 或共用 generated output。
+- 驗收分開回報 static check、test、build、deployment、external API readback 與 device/runtime evidence；沒有執行就不得宣稱。
+- 派工附上目標、scope、allowed/excluded paths、已確認 evidence、invariants、deliverable、stop condition 與 validation owner。
 
-## 角色選擇
+## 角色檔案
 
-- `engineering-worker`：GPT-5.5 的實作、測試、文件與明確資料處理。
-- `code-mapper`：GPT-5.5 的唯讀定點搜尋與執行路徑定位；複雜架構語意問題交給 analyst。
-- `analyst`：GPT-5.6 的唯讀深度分析、技術研究、方案比較與風險檢查。
-- `change-reviewer`：GPT-5.6 的唯讀 scoped diff 正確性、授權、並行與回歸審查。
-- `baseline-reviewer`：GPT-5.6 的唯讀文件契約、實作與驗收證據核對。
-
-根目錄 AGENTS.md 與專案 config 明確引用本檔；角色 TOML 定義各自工作限制。
-模型名稱以本機模型目錄確認；設定被解析不代表帳號呼叫、即時切換或並行上限已實測。
-若當前工具未提供指定模型或角色，明示限制，由指揮模型決定可用替代，不默默替換。
-已開啟工作可能仍使用既有設定；新的設定須由 runtime 載入，不能假設檔案寫入會熱更新。
+| Model | Role | File |
+| --- | --- | --- |
+| GPT-5.5 | repository-mapper | `gpt-5.5-repository-mapper.toml` |
+| GPT-5.6 Sol | root-cause-analyst | `gpt-5.6-sol-root-cause-analyst.toml` |
+| GPT-5.6 Sol | architecture-analyst | `gpt-5.6-sol-architecture-analyst.toml` |
+| GPT-5.6 Sol | technical-researcher | `gpt-5.6-sol-technical-researcher.toml` |
+| GPT-5.5 | implementation-worker | `gpt-5.5-implementation-worker.toml` |
+| GPT-5.6 Sol | diff-reviewer | `gpt-5.6-sol-diff-reviewer.toml` |
+| GPT-5.6 Sol | evidence-verifier | `gpt-5.6-sol-evidence-verifier.toml` |
 
 設定格式來源：[OpenAI Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)、
 [Configuration Reference](https://learn.chatgpt.com/docs/config-file/config-reference)。
+
+模型名稱與設定 ID 以 repository 當下 config 為 current truth；檔案被解析不代表帳號呼叫、即時切換或並行上限已實測。
