@@ -76,8 +76,9 @@ jobs:
           find_owner_baseline() {
             local owner="$1"
             local run_id display_title candidate_sha jobs
+            local release_title_pattern='^Release [0-9a-f]{40}$'
             while IFS=$'	' read -r run_id display_title; do
-              [[ "$display_title" =~ ^Release [0-9a-f]{40}$ ]] || continue
+              [[ "$display_title" =~ $release_title_pattern ]] || continue
               candidate_sha="${display_title#Release }"
               test "$candidate_sha" != "$VALIDATED_SHA" || continue
               git cat-file -e "$candidate_sha^{commit}" 2>/dev/null || continue

@@ -614,6 +614,8 @@ export function validate(root) {
       (step) =>
         typeof step.run === "string" &&
         step.run.includes("find_owner_baseline") &&
+        step.run.includes("release_title_pattern=") &&
+        step.run.includes("=~ $release_title_pattern") &&
         step.run.includes('owner == "supabase"') === false &&
         step.run.includes('case "$owner"') &&
         step.run.includes("status=completed") &&
