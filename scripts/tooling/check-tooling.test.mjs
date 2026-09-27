@@ -477,6 +477,15 @@ test("Release plans owner-specific convergence and preserves real dependencies",
   );
   rejects(root, "owner-specific convergence");
 
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace(
+      '[[ "$display_title" =~ $release_title_pattern ]]',
+      '[[ "$display_title" =~ ^Release [0-9a-f]{40}$ ]]',
+    ),
+  );
+  rejects(root, "owner-specific convergence");
+
   write(".github/workflows/release.yml", workflow.replace("status=completed", "status=success"));
   rejects(root, "owner-specific convergence");
 
