@@ -532,79 +532,73 @@ export function validate(root) {
     )
       errors.push("CI: Release workflow must keep read-only GitHub permissions");
 
-    const releaseGate = releaseWorkflow.jobs?.gate;
+    const releasePlan = releaseWorkflow.jobs?.release_plan;
     const releaseSupabase = releaseWorkflow.jobs?.supabase;
     const releaseDeployment = releaseWorkflow.jobs?.deployment;
-    const releaseRichMenu = releaseWorkflow.jobs?.rich_menu;
-    if (!releaseGate || !releaseSupabase || !releaseDeployment || !releaseRichMenu) {
+    const releaseRichDirect = releaseWorkflow.jobs?.rich_menu_direct;
+    const releaseRichAfterDeployment = releaseWorkflow.jobs?.rich_menu_after_deployment;
+    if (
+      !releasePlan ||
+      !releaseSupabase ||
+      !releaseDeployment ||
+      !releaseRichDirect ||
+      !releaseRichAfterDeployment
+    ) {
       errors.push(
-        "CI: Release must define gate, Supabase, deployment and Rich Menu responsibilities",
+        "CI: Release must define planning, Supabase, deployment and both Rich Menu dependency paths",
       );
     }
 
-    const gateSteps = releaseGate?.steps ?? [];
+    const planSteps = releasePlan?.steps ?? [];
     if (
-      typeof releaseGate?.if !== "string" ||
-      !releaseGate.if.includes("workflow_run.event == 'push'") ||
-      !releaseGate.if.includes("workflow_run.conclusion == 'success'") ||
-      !releaseGate.if.includes("workflow_run.head_branch == 'main'") ||
-      !releaseGate.if.includes("workflow_run.head_repository.full_name == github.repository")
+      typeof releasePlan?.if !== "string" ||
+      !releasePlan.if.includes("workflow_run.event == 'push'") ||
+      !releasePlan.if.includes("workflow_run.conclusion == 'success'") ||
+      !releasePlan.if.includes("workflow_run.head_branch == 'main'") ||
+      !releasePlan.if.includes("workflow_run.head_repository.full_name == github.repository")
     ) {
       errors.push(
-        "CI: Release gate must only accept successful same-repository main push Validate runs",
+        "CI: release_plan must only accept successful same-repository main push Validate runs",
       );
     }
-    const currentMain = gateSteps.findIndex(
+    const currentMain = planSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
         step.run.includes("branches/main") &&
         step.run.includes("VALIDATED_SHA") &&
-        step.run.includes("superseded before release routing"),
+        step.run.includes("superseded before release planning"),
     );
-    const releaseCheckout = gateSteps.findIndex(
+    const releaseCheckout = planSteps.findIndex(
       (step) =>
         step.uses?.startsWith("actions/checkout@") &&
         step.with?.ref === "${{ github.event.workflow_run.head_sha }}" &&
         step.with?.["fetch-depth"] === 0 &&
         step.with?.["persist-credentials"] === false,
     );
-    const detectChanges = gateSteps.findIndex(
+    const detectChanges = planSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
-        step.run.includes("^supabase/schemas/.*\\.sql$") &&
-        !step.run.includes("supabase/schemas/.*\\.sql|\\.github/workflows/release\\.yml") &&
-        !step.run.includes("scripts/supabase/remote") &&
-        step.run.includes("assets/line/rich-menu/") &&
-        step.run.includes("actions/workflows/release.yml/runs") &&
-        step.run.includes("status=success") &&
-        !step.run.includes("status=completed") &&
-        step.run.includes("display_title") &&
-        step.run.includes("^Release\\ [0-9a-f]{40}$") &&
+        step.run.includes("find_owner_baseline") &&
+        step.run.includes('owner == "supabase"') === false &&
+        step.run.includes('case "$owner"') &&
+        step.run.includes("status=completed") &&
         step.run.includes("merge-base --is-ancestor") &&
-        step.run.includes("empty_tree") &&
-        step.run.includes("VALIDATED_SHA") &&
+        step.run.includes("supabase/schemas/.*\\.sql$") &&
+        step.run.includes("turbo query affected --tasks build --packages @line-work/web") &&
+        step.run.includes("assets/line/rich-menu/") &&
+        step.run.includes("rich_menu_requires_web") &&
         step.run.includes("GITHUB_OUTPUT"),
-    );
-    const waitsForValidate = gateSteps.some(
-      (step) =>
-        typeof step.run === "string" &&
-        step.run.includes("check-runs") &&
-        step.run.includes('.name == "validate"'),
     );
     if (currentMain < 0 || releaseCheckout <= currentMain || detectChanges <= releaseCheckout) {
       errors.push(
-        "CI: Release gate must validate current main, checkout exact validated SHA and detect affected source from a previous fully successful Release",
+        "CI: release_plan must validate current main, checkout exact validated SHA and compute owner-specific convergence from successful owner jobs",
       );
-    }
-    if (waitsForValidate) {
-      errors.push("CI: Release must not spend runner minutes polling for Validate");
     }
 
     if (
       typeof releaseSupabase?.if !== "string" ||
-      !releaseSupabase.if.includes("needs.gate.result == 'success'") ||
+      !releaseSupabase.if.includes("needs.release_plan.result == 'success'") ||
       releaseSupabase.if.includes("schema_changed") ||
-      releaseSupabase.if.includes("schema_compat_changed") ||
       releaseSupabase?.env?.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main" ||
       JSON.stringify(releaseSupabase?.env ?? {}).includes("secrets.")
     ) {
@@ -638,29 +632,17 @@ export function validate(root) {
       (step) =>
         step.run === "pnpm schema:remote sync" &&
         typeof step.if === "string" &&
-        step.if.includes("schema_changed == 'true'"),
+        step.if.includes("needs.release_plan.outputs.schema_changed == 'true'"),
     );
     const supabaseVerify = supabaseSteps.findIndex(
       (step) =>
         step.run === "pnpm schema:remote verify" &&
         typeof step.if === "string" &&
-        step.if.includes("schema_changed != 'true'"),
+        step.if.includes("needs.release_plan.outputs.schema_changed != 'true'"),
     );
     const supabaseEvidence = supabaseSteps.findIndex(
       (step) =>
         step.uses === "actions/upload-artifact@v4" &&
-        JSON.stringify(step.with ?? {}).includes(
-          ".artifacts/supabase-remote/daily-check-in-compat.sql",
-        ) &&
-        JSON.stringify(step.with ?? {}).includes(
-          ".artifacts/supabase-remote/permission-subject-version-compat.json",
-        ) &&
-        JSON.stringify(step.with ?? {}).includes(
-          ".artifacts/supabase-remote/repository-runtime-compat.json",
-        ) &&
-        JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
-        JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sha256") &&
-        JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
     );
@@ -673,15 +655,7 @@ export function validate(root) {
       supabaseEvidence <= supabaseVerify
     ) {
       errors.push(
-        "CI: automatic Supabase release must repair runtime compatibility, auto-sync changed declarative schemas, or verify unchanged schemas before evidence",
-      );
-    }
-    if (
-      JSON.stringify(supabaseSteps).includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL") ||
-      JSON.stringify(supabaseSteps).includes("SUPABASE_LEGACY_ENTERPRISE_")
-    ) {
-      errors.push(
-        "CI: automatic Supabase release must not own explicit Enterprise business metadata",
+        "CI: Supabase must repair, sync changed declarative schemas or verify unchanged schemas, and preserve migration-history evidence",
       );
     }
 
@@ -689,11 +663,8 @@ export function validate(root) {
     const deploymentCheckout = deploymentSteps.findIndex(
       (step) =>
         step.uses?.startsWith("actions/checkout@") &&
-        step.with?.ref === "${{ needs.gate.outputs.head_sha }}" &&
+        step.with?.ref === "${{ needs.release_plan.outputs.head_sha }}" &&
         step.with?.["persist-credentials"] === false,
-    );
-    const deploymentInstall = deploymentSteps.findIndex(
-      (step) => step.run === "pnpm install --frozen-lockfile",
     );
     const deploymentMain = deploymentSteps.findIndex(
       (step) =>
@@ -709,65 +680,56 @@ export function validate(root) {
     );
     if (
       typeof releaseDeployment?.if !== "string" ||
-      releaseDeployment.if.includes("rich_menu_changed") ||
+      !releaseDeployment.if.includes("needs.release_plan.outputs.web_affected == 'true'") ||
       !releaseDeployment.if.includes("needs.supabase.result == 'success'") ||
-      releaseDeployment.if.includes("needs.supabase.result == 'skipped'") ||
-      !JSON.stringify(releaseDeployment?.needs ?? []).includes("gate") ||
+      !JSON.stringify(releaseDeployment?.needs ?? []).includes("release_plan") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
-      JSON.stringify(releaseDeployment?.env ?? {}).includes("secrets.") ||
       deploymentCheckout < 0 ||
-      deploymentInstall <= deploymentCheckout ||
-      deploymentMain <= deploymentInstall ||
+      deploymentMain < 0 ||
       productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: production deployment must install dependencies, follow Supabase convergence and deploy the exact validated SHA",
+        "CI: production deployment must be Web-affected only, follow Supabase contract convergence and deploy the exact planned SHA",
       );
     }
 
-    if (
-      typeof releaseRichMenu?.if !== "string" ||
-      !releaseRichMenu.if.includes("rich_menu_changed") ||
-      !JSON.stringify(releaseRichMenu?.needs ?? []).includes("deployment") ||
-      JSON.stringify(releaseRichMenu?.env ?? {}).includes("secrets.")
-    ) {
-      errors.push("CI: Rich Menu release must be affected-only after deployment evidence");
-    }
-    const richSteps = releaseRichMenu?.steps ?? [];
-    const richPnpmSetup = richSteps.findIndex(
-      (step) =>
-        step.uses?.startsWith("pnpm/action-setup@") &&
-        step.with?.cache === true &&
-        step.with?.["cache_dependency_path"] === "pnpm-lock.yaml",
-    );
-    const richBuild = richSteps.findIndex(
-      (step) => typeof step.run === "string" && step.run.includes("@line-work/web^..."),
-    );
-    const richPreview = richSteps.findIndex(
-      (step) => step.run === "pnpm line:rich-menu preview all",
-    );
-    const richMain = richSteps.findIndex(
-      (step) => typeof step.run === "string" && step.run.includes("branches/main"),
-    );
-    const richPublish = richSteps.findIndex(
-      (step) => step.run === "pnpm line:rich-menu publish all",
-    );
-    if (
-      richPnpmSetup < 0 ||
-      richBuild < 0 ||
-      richPreview <= richBuild ||
-      richMain <= richPreview ||
-      richPublish <= richMain
-    ) {
+    const validateRichJob = (job, mode) => {
+      if (!job || typeof job.if !== "string") return false;
+      const source = JSON.stringify(job);
+      if (!job.if.includes("needs.release_plan.outputs.rich_menu_changed == 'true'")) return false;
+      if (mode === "direct") {
+        if (!job.if.includes("needs.release_plan.outputs.rich_menu_requires_web != 'true'"))
+          return false;
+        if (source.includes("needs.deployment")) return false;
+      } else {
+        if (!job.if.includes("needs.release_plan.outputs.rich_menu_requires_web == 'true'"))
+          return false;
+        if (!job.if.includes("needs.deployment.result == 'success'")) return false;
+        if (!JSON.stringify(job.needs ?? []).includes("deployment")) return false;
+      }
+      const steps = job.steps ?? [];
+      const preview = steps.findIndex((step) => step.run === "pnpm line:rich-menu preview all");
+      const main = steps.findIndex(
+        (step) => typeof step.run === "string" && step.run.includes("branches/main"),
+      );
+      const publish = steps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
+      return (
+        preview >= 0 &&
+        main > preview &&
+        publish > main &&
+        !source.includes("SUPABASE_") &&
+        JSON.stringify(steps[publish]?.env ?? {}).includes("LINE_CHANNEL_ACCESS_TOKEN")
+      );
+    };
+    if (!validateRichJob(releaseRichDirect, "direct")) {
       errors.push(
-        "CI: automatic Rich Menu release order must be build/preview/current-main/publish",
+        "CI: direct Rich Menu publication must depend only on release_plan when no Web runtime dependency exists",
       );
     }
-    if (
-      JSON.stringify(releaseRichMenu ?? {}).includes("SUPABASE_") ||
-      !JSON.stringify(richSteps[richPublish]?.env ?? {}).includes("LINE_CHANNEL_ACCESS_TOKEN")
-    ) {
-      errors.push("CI: Rich Menu release must consume only its publication secret at publish");
+    if (!validateRichJob(releaseRichAfterDeployment, "after")) {
+      errors.push(
+        "CI: Rich Menu with pending Web runtime dependency must wait for exact deployment evidence",
+      );
     }
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);

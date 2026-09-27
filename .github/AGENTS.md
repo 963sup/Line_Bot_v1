@@ -5,11 +5,14 @@ Release semantics 見 [Release](../docs/reference/operations/release.md)；Supab
 - `.github/` 只擁有 GitHub integration：workflow trigger、permissions、checkout/setup、affected-source routing、GitHub evidence 與 repository collaboration metadata；不擁有產品或 provider 內部規則。
 - Workflow 保持 thin adapter：優先呼叫 root canonical commands，不在 YAML 重寫 lint、architecture、test、build 或 provider business logic。
 - `validate.yml` 只做 repository validation；`release.yml` 只在 successful same-repository current-`main` validation 後編排 external convergence。
-- Release routing 必須維持：每個 validated `main` 先執行 `schema:remote repair` 恢復 metadata-free runtime compatibility；affected `supabase/schemas/*.sql` → `schema:remote sync`；schema unchanged → `schema:remote verify`；Supabase 成功後才允許 exact validated SHA 的 Vercel Production；Rich Menu 再依 affected source 於 deployment 成功後處理。
-- Supabase Production mutation 只由 validated current-`main` 的 Release 授權；`repair`／`sync` 是目前 Release mutation commands，直接本機或任意 branch production mutation 禁止；所有 repository-owned database mutation另由 provider operation script 的 database lock 序列化。
-- Vercel Production mutation 只能經 canonical `vercel:deploy:production` adapter；provider mutation 前必須由 GitHub readback 證明 adapter 位於同 SHA 的 active Release，且 `gate`／`supabase` jobs 已成功。
-- Affected-source cursor 只接受先前整體 `conclusion=success` 的 same-repository `Release <validated-sha>`，且該 SHA 必須是 current validated SHA 的 git ancestor。任何 downstream external-effect failure 都不得前進 cursor；沒有合格 baseline 時才使用 empty tree。
-- Validation workflow 維持 read-only、secret-free、credential-free。Draft → Ready 是 merge-candidate full-validation intent：`ready_for_review` 對 exact PR head 跑 `pnpm validate`；一般 Ready PR synchronize 保留 `pnpm check` fast feedback，head 改變後必須重新 Draft → Ready 才取得新 revision 的 full validation。External mutation secret 只放實際需要的最小 step `env`；checkout 不 persist credentials。
-- Artifact 只保存該 run 的操作 evidence，不成為 acceptance index 或 business truth。
-- Workflow 只因 trigger／permission／external-effect boundary 不同而拆分；只有真實多 consumer 且 input/permission contract 一致才抽 reusable workflow。
-- 修改 workflow 後跑 `tooling:check` 與相關 tests；若改動受 guard 保護，同步 `scripts/tooling/check-tooling.mjs` 的 positive／violating／repaired cases。
+- `release_plan` 是 read-only Release router。它必須先確認 validated SHA 仍是 current `main`，再以各 external owner 最近一次成功 job 的 ancestor SHA 作獨立 baseline；不得因另一 owner failure 共用或前進錯誤 cursor。
+- Supabase 每個 validated `main` 都先執行 `schema:remote repair`；該 owner baseline 之後若 affected `supabase/schemas/*.sql`，執行 plain `schema:remote sync`，否則執行 `schema:remote verify`。Production mutation 只由 GitHub Actions Release 授權，且 migration history fingerprint before/after 必須完全相同。
+- Web deployment 只在 `@line-work/web#build` 真正受 pending deployment changes 影響時執行。Vercel Production 仍必須等待 Supabase current-contract convergence，因 Web runtime 依賴 database contract；這是實際 runtime dependency，不是 global release ordering。
+- Rich Menu publication baseline 獨立於 Supabase/Vercel。Rich Menu desired state changed 且沒有 pending Web runtime dependency時，直接由 validated current `main` publish；若同一 pending change 需要新 Web runtime，才等待 exact SHA Vercel deployment 成功後 publish。
+- Rich Menu publication-only source 是 `assets/line/rich-menu/**`、`apps/web/src/modules/assistant/rich-menu/definition.ts`、`desired-state.server.ts`。這些來源本身不得因位於 Web package 就被誤判成必須部署 Web runtime。
+- Supabase Production mutation只使用 repository-owned `schema:remote repair|sync`；本機與任意 branch production mutation禁止。所有 database mutation由 provider operation script 的 advisory lock序列化。
+- Vercel Production mutation只能經 canonical `vercel:deploy:production` adapter；provider mutation前由 GitHub readback證明 adapter 位於同 SHA 的 active Release，且 `release_plan` 已成功。跨 provider dependency由 Release graph 擁有，不由 Vercel adapter硬編碼。
+- Validation workflow維持 read-only、secret-free、credential-free。External mutation secret只放實際需要的最小 step `env`；checkout不 persist credentials。
+- Artifact只保存該 run 的操作 evidence，不成為 acceptance index 或 business truth。
+- Workflow只因 trigger／permission／external-effect boundary不同而拆分；只有真實多 consumer且 input/permission contract一致才抽 reusable workflow。
+- 修改 workflow後跑 `tooling:check` 與相關 tests；若改動受 guard保護，同步 `scripts/tooling/check-tooling.mjs` 的 positive／violating／repaired cases。

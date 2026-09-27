@@ -127,7 +127,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/release.yml",
-    "run-name: Release ${{ github.event.workflow_run.head_sha }}\non:\n  workflow_run:\n    workflows: [Validate]\n    types: [completed]\n    branches: [main]\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  gate:\n    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository\n    steps:\n      - run: echo 'branches/main VALIDATED_SHA superseded before release routing'\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.workflow_run.head_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - run: echo 'actions/workflows/release.yml/runs status=success display_title ^Release\\ [0-9a-f]{40}$ merge-base --is-ancestor empty_tree VALIDATED_SHA ^supabase/schemas/.*\\.sql$ assets/line/rich-menu/ GITHUB_OUTPUT'\n  supabase:\n    needs: gate\n    if: needs.gate.result == 'success'\n    concurrency:\n      group: supabase-production-nmssogphayjymjpbnrxv\n      cancel-in-progress: false\n    env:\n      SUPABASE_REMOTE_MUTATION_CONTEXT: validated-main\n    steps:\n      - run: echo branches/main\n      - run: pnpm schema:remote repair\n      - if: needs.gate.outputs.schema_changed == 'true'\n        run: pnpm schema:remote sync\n      - if: needs.gate.outputs.schema_changed != 'true'\n        run: pnpm schema:remote verify\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/daily-check-in-compat.sql\n            .artifacts/supabase-remote/permission-subject-version-compat.json\n            .artifacts/supabase-remote/repository-runtime-compat.json\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/plan.sha256\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n  deployment:\n    needs: [gate, supabase]\n    if: always() && needs.gate.result == 'success' && needs.supabase.result == 'success'\n    env: {}\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ needs.gate.outputs.head_sha }}\n          persist-credentials: false\n      - run: pnpm install --frozen-lockfile\n      - run: echo 'branches/main superseded before Vercel production deployment'\n      - env:\n          GITHUB_TOKEN: ${{ github.token }}\n          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}\n          SHA: ${{ needs.gate.outputs.head_sha }}\n        run: pnpm vercel:deploy:production --live --sha \"$SHA\"\n  rich_menu:\n    needs: [gate, deployment]\n    if: needs.gate.outputs.rich_menu_changed == 'true'\n    env: {}\n    steps:\n      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n          cache: true\n          cache_dependency_path: pnpm-lock.yaml\n      - run: pnpm exec turbo run build --filter='@line-work/web^...'\n      - run: pnpm line:rich-menu preview all\n      - run: echo branches/main\n      - env:\n          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}\n        run: pnpm line:rich-menu publish all\n",
+    readFileSync(resolve(repo, ".github/workflows/release.yml"), "utf8"),
   );
   write(
     ".github/workflows/supabase-replace.yml",
@@ -444,7 +444,7 @@ test("validate workflow remains read-only, secret-free, and credential-free", (t
   rejects(root, "must not consume repository secrets");
 });
 
-test("Release routes schema and workflow changes through one reconciliation pass before publication", (t) => {
+test("Release plans owner-specific convergence and preserves real dependencies", (t) => {
   const { root, write } = fixture(t);
   const workflow = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
 
@@ -453,66 +453,42 @@ test("Release routes schema and workflow changes through one reconciliation pass
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("workflows: [Validate]", "workflows: [Other]"),
+    workflow.replace('workflows: ["Validate"]', 'workflows: ["Other"]'),
   );
   rejects(root, "completed main Validate");
 
   write(".github/workflows/release.yml", workflow.replace("actions: read", "actions: write"));
   rejects(root, "read-only GitHub permissions");
 
-  write(".github/workflows/release.yml", workflow.replace("conclusion == 'success' && ", ""));
-  rejects(root, "successful same-repository main push Validate");
-
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace("head_repository.full_name", "repository.full_name"),
-  );
-  rejects(root, "successful same-repository main push Validate");
-
-  write(".github/workflows/release.yml", workflow.replace("status=success ", ""));
-  rejects(root, "detect affected source");
-
-  write(".github/workflows/release.yml", workflow.replace("status=success", "status=completed"));
-  rejects(root, "previous fully successful Release");
-
-  write(".github/workflows/release.yml", workflow.replace("display_title ", ""));
-  rejects(root, "detect affected source");
-
-  write(".github/workflows/release.yml", workflow.replace("merge-base --is-ancestor ", ""));
-  rejects(root, "detect affected source");
-
-  write(".github/workflows/release.yml", workflow.replace("empty_tree ", ""));
-  rejects(root, "detect affected source");
-
   write(
     ".github/workflows/release.yml",
     workflow.replace(
-      "- run: echo 'actions/workflows/release.yml/runs",
-      '- run: echo \'check-runs .name == "validate" actions/workflows/release.yml/runs',
+      "workflow_run.conclusion == 'success'",
+      "workflow_run.conclusion == 'failure'",
     ),
   );
-  rejects(root, "must not spend runner minutes polling for Validate");
+  rejects(root, "successful same-repository main push Validate");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replaceAll("find_owner_baseline", "find_baseline_removed"),
+  );
+  rejects(root, "owner-specific convergence");
+
+  write(".github/workflows/release.yml", workflow.replace("status=completed", "status=success"));
+  rejects(root, "owner-specific convergence");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace("turbo query affected --tasks build --packages @line-work/web", "echo web"),
+  );
+  rejects(root, "owner-specific convergence");
 
   write(
     ".github/workflows/release.yml",
     workflow.replace("supabase-production-nmssogphayjymjpbnrxv", "other-lock"),
   );
   rejects(root, "serialize the production database resource");
-
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace(
-      "      - if: needs.gate.outputs.schema_changed == 'true'\n        run: pnpm schema:remote sync",
-      "      - if: needs.gate.outputs.schema_changed == 'true'\n        run: pnpm schema:remote prepare\n      - if: needs.gate.outputs.schema_changed == 'true'\n        run: pnpm schema:remote sync",
-    ),
-  );
-  rejects(root, "auto-sync changed declarative schemas");
-
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace("pnpm schema:remote sync", "echo skip-sync"),
-  );
-  rejects(root, "auto-sync changed declarative schemas");
 
   write(
     ".github/workflows/release.yml",
@@ -524,49 +500,47 @@ test("Release routes schema and workflow changes through one reconciliation pass
     ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote verify", "echo skip-verify"),
   );
-  rejects(root, "auto-sync changed declarative schemas");
+  rejects(root, "Supabase must repair");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace(".artifacts/supabase-remote/permission-subject-version-compat.json", ""),
+    workflow.replace("needs.release_plan.outputs.web_affected == 'true'", "true"),
   );
-  rejects(root, "before evidence");
+  rejects(root, "Web-affected only");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace(".artifacts/supabase-remote/repository-runtime-compat.json", ""),
+    workflow.replace("needs.supabase.result == 'success'", "true"),
   );
-  rejects(root, "before evidence");
-
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace("GITHUB_TOKEN: ${{ github.token }}", "RELEASE_TOKEN: ${{ github.token }}"),
-  );
-  rejects(root, "production deployment must install dependencies");
-
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace(
-      /(  deployment:\n[\s\S]*?)(      - run: pnpm install --frozen-lockfile\n)/,
-      "$1",
-    ),
-  );
-  rejects(root, "production deployment must install dependencies");
+  rejects(root, "follow Supabase contract convergence");
 
   write(
     ".github/workflows/release.yml",
     workflow.replace('pnpm vercel:deploy:production --live --sha "$SHA"', "echo skip-deploy"),
   );
-  rejects(root, "production deployment must install dependencies");
+  rejects(root, "deploy the exact planned SHA");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("pnpm line:rich-menu publish all", "echo skip"),
+    workflow.replace(
+      "needs.release_plan.outputs.rich_menu_requires_web != 'true'",
+      "needs.release_plan.outputs.rich_menu_requires_web == 'true'",
+    ),
   );
-  rejects(root, "build/preview/current-main/publish");
+  rejects(root, "direct Rich Menu publication");
 
-  write(".github/workflows/release.yml", workflow.replace("cache: true", "cache: false"));
-  rejects(root, "build/preview/current-main/publish");
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace("needs.deployment.result == 'success'", "true"),
+  );
+  rejects(root, "pending Web runtime dependency");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replaceAll("pnpm line:rich-menu publish all", "echo skip"),
+  );
+  rejects(root, "Rich Menu");
+
   write(".github/workflows/release.yml", workflow);
   assert.deepEqual(validate(root), []);
 });
