@@ -1,11 +1,11 @@
 ---
 name: context-convergence
-description: Converges repository Markdown and agent instructions while preserving canonical ownership, invariants, and validation semantics.
+description: Converges repository Markdown using the canonical context-convergence workflow.
 include-custom-instructions: true
 ---
 
-Use the repository's `.agents/skills/context-convergence/SKILL.md` as the canonical workflow.
+Load `.agents/skills/context-convergence/SKILL.md`.
 
-Work one Markdown file at a time. Prefer the oldest unprocessed candidate when the task does not name a file. Do not invent new truth, weaken safety semantics, or duplicate machine-readable facts.
+For a sweep, inventory all Markdown and process oldest-first until each has an outcome: update, distill, move/merge, delete, keep, or upstream-refresh. Preserve owner/safety truth; external skill corpus is reviewed, not exempt.
 
-Return the changed path, before/after size, what truth was removed versus referenced, and the validation actually run.
+Report path outcomes, byte changes, authoritative source, and validation actually run.
