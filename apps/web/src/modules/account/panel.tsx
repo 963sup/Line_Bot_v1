@@ -44,7 +44,7 @@ export default function MemberPanel({
             <path d="M12 54v-5a20 20 0 0 1 40 0v5H12Z" />
           </svg>
         </div>
-        <p className="eyebrow">工作助手</p>
+        <p className="eyebrow">Line_Bot_v1</p>
         <h2>帳號與會員</h2>
         <p>你的 LINE 身分、會員資格與帳號關聯；工作範圍由各自的 owner 決定。</p>
       </header>

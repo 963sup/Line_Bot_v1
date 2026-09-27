@@ -48,7 +48,7 @@ export async function runAiProbe(
     const result = await Promise.race([
       client.models.generateContent({
         model,
-        contents: "請用繁體中文的一句短句確認你是工作助手，最多二十個字。",
+        contents: "請用繁體中文的一句短句確認你是Line_Bot_v1，最多二十個字。",
         config: {
           maxOutputTokens: 256,
           httpOptions: { timeout: 10_000, retryOptions: { attempts: 1 } },

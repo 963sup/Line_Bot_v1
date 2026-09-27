@@ -15,11 +15,11 @@ test("Rich Menu desired state is derived from canonical definitions and assets",
   );
   assert.equal(
     desired.find(({ page }) => page === "home")?.image,
-    "assets/line/rich-menu/work-assistant-attendance-in.png",
+    "assets/line/rich-menu/line_bot_v1-attendance-in.png",
   );
   assert.equal(
     desired.find(({ page }) => page === "team-out")?.image,
-    "assets/line/rich-menu/work-assistant-team.png",
+    "assets/line/rich-menu/line_bot_v1-team.png",
   );
   for (const item of desired) {
     assert.ok(item.upload.length > 0, item.page);

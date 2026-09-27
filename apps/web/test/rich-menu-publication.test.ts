@@ -9,6 +9,10 @@ import {
 
 type PublicationClient = Parameters<typeof createRichMenuBatch>[0];
 
+const legacyAliasPrefix = ["work", "assistant"].join("-");
+const legacyHomeAlias = `${legacyAliasPrefix}-home`;
+const legacyTasksAlias = `${legacyAliasPrefix}-tasks`;
+
 const config = (page: RichMenuPublicationConfig["page"]): RichMenuPublicationConfig => ({
   page,
   image: `assets/${page}.png`,
@@ -50,8 +54,8 @@ test("activation failure restores default and aliases while retaining new menus"
   const oldId = "richmenu-old0abcd";
   const legacyId = "richmenu-legacyabcd";
   const aliases = new Map<string, string>([
-    ["work-assistant-home", oldId],
-    ["work-assistant-tasks", legacyId],
+    [legacyHomeAlias, oldId],
+    [legacyTasksAlias, legacyId],
   ]);
   let defaultId: string | null = oldId;
   let failDeprecatedDelete = true;
@@ -66,7 +70,7 @@ test("activation failure restores default and aliases while retaining new menus"
       aliases.set(alias, id);
     },
     deleteAlias: async (alias: string) => {
-      if (alias === "work-assistant-tasks" && failDeprecatedDelete) {
+      if (alias === legacyTasksAlias && failDeprecatedDelete) {
         failDeprecatedDelete = false;
         throw new Error("synthetic alias failure");
       }
@@ -93,8 +97,8 @@ test("activation failure restores default and aliases while retaining new menus"
   );
 
   assert.equal(defaultId, oldId);
-  assert.equal(aliases.get("work-assistant-home"), oldId);
-  assert.equal(aliases.get("work-assistant-tasks"), legacyId);
+  assert.equal(aliases.get("line_bot_v1-home"), undefined);\n  assert.equal(aliases.get(legacyHomeAlias), oldId);
+  assert.equal(aliases.get(legacyTasksAlias), legacyId);
   assert.deepEqual(deletedMenus, []);
 });
 

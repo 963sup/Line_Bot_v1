@@ -30,7 +30,7 @@ export default function MembershipSetup({
           {user?.status === "active" ? (
             <>
               <h2>{notice ? "操作完成" : "你已是會員"}</h2>
-              <p role="status">可以返回 LINE 使用工作助手。</p>
+              <p role="status">可以返回 LINE 使用Line_Bot_v1。</p>
             </>
           ) : user?.status === "suspended" ? (
             <p>會員已停權，請聯絡管理者。</p>

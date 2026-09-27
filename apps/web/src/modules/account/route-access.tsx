@@ -39,7 +39,7 @@ export default function RouteAccess({
   return (
     <main className="app-content">
       <MiniAppRuntime liffId={liffId} onReady={check} onWait={() => setState("waiting")} />
-      <h1>{mode === "app" ? "進入工作助手" : "完成會員設定"}</h1>
+      <h1>{mode === "app" ? "進入Line_Bot_v1" : "完成會員設定"}</h1>
       {state === "loading" || state === "waiting" || state === "pending" ? (
         <p role="status">正在確認 LINE 登入與會員資格…</p>
       ) : state === "invalid" ? (
