@@ -1,2 +1,1 @@
-/** Public Project type for the explicitly requested package scaffold. @public */
-export type { Project } from "./entities/project.js";
+export type { Project, ProjectOwnerKind } from "./entities/project.js";
