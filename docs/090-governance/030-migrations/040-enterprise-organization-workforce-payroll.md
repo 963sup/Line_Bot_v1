@@ -62,7 +62,7 @@ validated desired schema
 → runtime negative/positive smoke
 ```
 
-Unknown、destructive、data-sensitive 或敏感 privilege transition 只走 manual reconciliation：先 `prepare-plan` 產生 exact plan + SHA-256，review 後以相同 fingerprint、recovery-readiness attestation 與 explicit apply authorization 執行。Auth/Storage/provider-owned state 不在 app schema rebuild boundary。External write 結果未知時先 readback，不盲目重跑。
+Validated declarative schema change不再依 DDL risk分類切換人工 approval；`routine / sensitive`只留作 plan診斷。Automatic sync必須在同一 history-free reconciliation中 transaction apply、second diff zero、security/ownership readback PASS且 migration-history fingerprint unchanged。只有 schema無法決定的 business data transform／metadata cutover才走 manual reconciliation：先 `prepare-plan` 產生 exact plan + SHA-256，review 後以相同 fingerprint、recovery-readiness attestation與 explicit apply authorization執行。Auth/Storage/provider-owned state 不在 app schema rebuild boundary。External write 結果未知時先 readback，不盲目重跑。
 
 ## Acceptance matrix
 

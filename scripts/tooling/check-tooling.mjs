@@ -582,9 +582,9 @@ export function validate(root) {
     }
     if (
       releaseWorkflowSource.includes("schema:remote sync --allow-destructive") ||
-      releaseWorkflowSource.includes("schema:remote sync --allow-manual")
+      releaseWorkflowSource.includes("schema:remote sync --reviewed-plan")
     ) {
-      errors.push("CI: automatic Release must never authorize manual Supabase reconciliation");
+      errors.push("CI: automatic Release must use plain declarative schema sync");
     }
     if (
       releaseSupabase?.concurrency?.group !== "supabase-production-nmssogphayjymjpbnrxv" ||
@@ -600,10 +600,7 @@ export function validate(root) {
       (step) => step.run === "pnpm schema:remote repair" && step.if === undefined,
     );
     const supabasePrepare = supabaseSteps.findIndex(
-      (step) =>
-        step.run === "pnpm schema:remote prepare" &&
-        typeof step.if === "string" &&
-        step.if.includes("schema_changed == 'true'"),
+      (step) => step.run === "pnpm schema:remote prepare",
     );
     const supabaseSync = supabaseSteps.findIndex(
       (step) =>
@@ -632,19 +629,18 @@ export function validate(root) {
     if (
       supabaseMain < 0 ||
       supabaseRepair <= supabaseMain ||
-      supabasePrepare <= supabaseRepair ||
-      supabaseSync <= supabasePrepare ||
+      supabasePrepare >= 0 ||
+      supabaseSync <= supabaseRepair ||
       supabaseVerify <= supabaseSync ||
       supabaseEvidence <= supabaseVerify
     ) {
       errors.push(
-        "CI: automatic Supabase release must repair additive runtime compatibility, then changed-safe-sync or unchanged-verify before evidence",
+        "CI: automatic Supabase release must repair runtime compatibility, auto-sync changed declarative schemas, or verify unchanged schemas before evidence",
       );
     }
-    const automaticPrepareEnv = JSON.stringify(supabaseSteps[supabasePrepare]?.env ?? {});
     if (
-      automaticPrepareEnv.includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL") ||
-      automaticPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_")
+      JSON.stringify(supabaseSteps).includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL") ||
+      JSON.stringify(supabaseSteps).includes("SUPABASE_LEGACY_ENTERPRISE_")
     ) {
       errors.push(
         "CI: automatic Supabase release must not own explicit Enterprise business metadata",
@@ -838,7 +834,7 @@ export function validate(root) {
     );
     const replaceSync = replaceSteps.findIndex(
       (step) =>
-        step.run === "pnpm schema:remote sync --allow-manual" &&
+        step.run === "pnpm schema:remote sync --reviewed-plan" &&
         typeof step.if === "string" &&
         step.if.includes("operation == 'apply'") &&
         JSON.stringify(step.env ?? {}).includes("SUPABASE_REVIEWED_PLAN_SHA256"),

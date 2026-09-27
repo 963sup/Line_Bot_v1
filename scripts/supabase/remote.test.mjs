@@ -9,6 +9,7 @@ import {
   assertReviewedPlan,
   assertSupabaseRecoveryReadback,
   assertSupabaseRestReadback,
+  authorizeSyncPlan,
   classifyAccountLoginCompatibility,
   classifyDailyCheckInCompatibility,
   classifyPlan,
@@ -29,7 +30,7 @@ import {
   verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
 
-test("classifyPlan allows only known automatic DDL", () => {
+test("classifyPlan marks routine DDL for diagnostics", () => {
   for (const sql of [
     "create table app_private.example(id bigint);",
     "alter table app_private.example add column note text;",
@@ -38,11 +39,11 @@ test("classifyPlan allows only known automatic DDL", () => {
     "revoke all on table app_private.x from public, anon, authenticated;",
     "create or replace function app_private.example() returns void language sql as $$ select null $$;",
   ]) {
-    assert.equal(classifyPlan(sql).mode, "automatic", sql);
+    assert.equal(classifyPlan(sql).mode, "routine", sql);
   }
 });
 
-test("classifyPlan requires manual review for destructive, security-sensitive and unknown DDL", () => {
+test("classifyPlan marks destructive, security-sensitive and unknown DDL as sensitive diagnostics", () => {
   for (const sql of [
     "drop table app_private.example;",
     "alter table app_private.example drop column old_name;",
@@ -56,7 +57,7 @@ test("classifyPlan requires manual review for destructive, security-sensitive an
     "revoke execute on function app_private.example() from line_app;",
     "select app_private.example();",
   ]) {
-    assert.equal(classifyPlan(sql).mode, "manual", sql);
+    assert.equal(classifyPlan(sql).mode, "sensitive", sql);
   }
 });
 
@@ -71,7 +72,7 @@ test("classifyPlan ignores comments and quoted function bodies when classifying 
     $function$;
   `;
   assert.deepEqual(classifyPlan(sql), {
-    mode: "automatic",
+    mode: "routine",
     empty: false,
     reasons: [],
   });
@@ -85,13 +86,30 @@ test("empty plan is recognized as a no-op", () => {
   });
 });
 
-test("reviewed plan fingerprint binds manual authorization to exact SQL", () => {
+test("reviewed plan fingerprint binds an optional reviewed-plan contract to exact SQL", () => {
   const sql = "drop table app_private.example;\n";
   const fingerprint = planFingerprint(sql);
   assert.match(fingerprint, /^[0-9a-f]{64}$/);
   assert.equal(assertReviewedPlan(sql, fingerprint), fingerprint);
   assert.throws(() => assertReviewedPlan(sql, "0".repeat(64)), /no longer matches/i);
   assert.throws(() => assertReviewedPlan(sql, "not-a-hash"), /exact lowercase SHA-256/i);
+});
+
+test("plain sync authorizes sensitive declarative plans while reviewed-plan mode binds exact SQL", () => {
+  const sql = "drop table app_private.example;\n";
+  assert.deepEqual(authorizeSyncPlan(sql, undefined), {
+    mode: "sensitive",
+    empty: false,
+    reasons: ["destructive-or-security-sensitive"],
+  });
+
+  const fingerprint = planFingerprint(sql);
+  assert.deepEqual(authorizeSyncPlan(sql, fingerprint), {
+    mode: "sensitive",
+    empty: false,
+    reasons: ["destructive-or-security-sensitive"],
+  });
+  assert.throws(() => authorizeSyncPlan(sql, "0".repeat(64)), /no longer matches/i);
 });
 
 test("migration history must remain byte-stable modulo outer whitespace", () => {
@@ -107,34 +125,35 @@ test("migration history must remain byte-stable modulo outer whitespace", () => 
   );
 });
 
-test("parseArgs defaults to sync and exposes one explicit manual authorization flag", () => {
-  assert.deepEqual(parseArgs([]), { command: "sync", allowManual: false, api: false });
+test("parseArgs defaults to automatic sync and exposes reviewed-plan binding separately", () => {
+  assert.deepEqual(parseArgs([]), { command: "sync", reviewedPlan: false, api: false });
   assert.throws(() => parseArgs(["compat"]), /Usage/);
   assert.deepEqual(parseArgs(["prepare"]), {
     command: "prepare",
-    allowManual: false,
+    reviewedPlan: false,
     api: false,
   });
-  assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowManual: false, api: false });
+  assert.deepEqual(parseArgs(["plan"]), { command: "plan", reviewedPlan: false, api: false });
   assert.deepEqual(parseArgs(["recovery"]), {
     command: "recovery",
-    allowManual: false,
+    reviewedPlan: false,
     api: false,
   });
-  assert.deepEqual(parseArgs(["sync", "--allow-manual"]), {
+  assert.deepEqual(parseArgs(["sync", "--reviewed-plan"]), {
     command: "sync",
-    allowManual: true,
+    reviewedPlan: true,
     api: false,
   });
+  assert.throws(() => parseArgs(["sync", "--allow-manual"]), /Usage/);
   assert.throws(() => parseArgs(["sync", "--allow-destructive"]), /Usage/);
   assert.deepEqual(parseArgs(["verify"]), {
     command: "verify",
-    allowManual: false,
+    reviewedPlan: false,
     api: false,
   });
   assert.deepEqual(parseArgs(["verify", "--api"]), {
     command: "verify",
-    allowManual: false,
+    reviewedPlan: false,
     api: true,
   });
   assert.throws(() => parseArgs(["sync", "--api"]), /only valid/);

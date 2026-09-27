@@ -269,7 +269,7 @@ jobs:
 
       - name: Apply only the reviewed exact plan
         if: inputs.operation == 'apply'
-        run: pnpm schema:remote sync --allow-manual
+        run: pnpm schema:remote sync --reviewed-plan
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

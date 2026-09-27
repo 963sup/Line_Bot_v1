@@ -141,15 +141,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
 
-      - name: Prepare preserve-data compatibility expansion
-        if: needs.gate.outputs.schema_changed == 'true'
-        run: pnpm schema:remote prepare
-        env:
-          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
-
-      - name: Safely reconcile changed declarative schema
+      - name: Converge changed declarative schema
         if: needs.gate.outputs.schema_changed == 'true'
         run: pnpm schema:remote sync
         env:
