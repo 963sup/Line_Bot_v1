@@ -5,6 +5,7 @@ import {
   assertConfirmedProject,
   assertGeneralManagementExpansionState,
   assertMigrationHistoryUnchanged,
+  assertRemoteMutationContext,
   assertRemoteTarget,
   assertReviewedPlan,
   assertSupabaseRecoveryReadback,
@@ -211,6 +212,28 @@ test("parseArgs defaults to automatic sync and exposes reviewed-plan binding sep
   });
   assert.throws(() => parseArgs(["sync", "--api"]), /only valid/);
   assert.throws(() => parseArgs(["verify", "--unknown"]), /Usage/);
+});
+
+test("remote mutations require the validated-main GitHub Actions context", () => {
+  for (const command of ["repair", "prepare", "sync"]) {
+    assert.throws(
+      () => assertRemoteMutationContext(command, {}),
+      /GitHub Actions current-main reconciliation path/,
+    );
+    assert.throws(
+      () => assertRemoteMutationContext(command, { GITHUB_ACTIONS: "true" }),
+      /GitHub Actions current-main reconciliation path/,
+    );
+    assert.doesNotThrow(() =>
+      assertRemoteMutationContext(command, {
+        GITHUB_ACTIONS: "true",
+        SUPABASE_REMOTE_MUTATION_CONTEXT: "validated-main",
+      }),
+    );
+  }
+  for (const command of ["plan", "verify", "recovery"]) {
+    assert.doesNotThrow(() => assertRemoteMutationContext(command, {}));
+  }
 });
 
 test("Supabase project URL yields the exact project ref", () => {
