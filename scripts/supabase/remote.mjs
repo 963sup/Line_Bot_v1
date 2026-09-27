@@ -2149,6 +2149,15 @@ export function parseArgs(argv) {
   return { command, reviewedPlan: flags.includes("--reviewed-plan"), api };
 }
 
+export function assertRemoteMutationContext(command, env = process.env) {
+  if (!["repair", "prepare", "sync"].includes(command)) return;
+  if (env.GITHUB_ACTIONS !== "true" || env.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main") {
+    throw new Error(
+      "Supabase remote mutation is allowed only from the repository GitHub Actions current-main reconciliation path.",
+    );
+  }
+}
+
 async function runRemoteCommand({ projectRef, command, reviewedPlan, api }) {
   mkdirSync(artifacts, { recursive: true });
 
@@ -2277,6 +2286,7 @@ async function runRemoteCommand({ projectRef, command, reviewedPlan, api }) {
 export async function main(argv = process.argv.slice(2)) {
   loadRootEnv();
   const { command, reviewedPlan, api } = parseArgs(argv);
+  assertRemoteMutationContext(command);
 
   if (command === "recovery") {
     mkdirSync(artifacts, { recursive: true });

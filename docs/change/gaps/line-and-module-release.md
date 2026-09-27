@@ -23,4 +23,4 @@
 - 「程式存在」與「指定環境已放行」分開。
 - LINE menu definition、alias 或 route 存在不等於手機可用。
 - 外部平台接受 request 不等於使用者裝置已收到或看見結果。
-- 模組規則改動應回 `docs/010-domain-owners/`；本文件只追蹤尚未完成的 release/acceptance hinge。
+- 模組規則改動應回 `docs/owners/`；本文件只追蹤尚未完成的 release/acceptance hinge。

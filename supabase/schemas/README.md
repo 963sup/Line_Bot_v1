@@ -59,7 +59,7 @@ Cross-owner mechanism 只允許：
 
 `870–891` 只保留已選定 target 的命名空間，且必須是符合 `data-topology.json` reserved declaration 的純 line-comment file。Reserved file 不代表 table、view、function、policy、runtime capability、remote state 或 acceptance 已存在。
 
-啟用 reserved target 時，同一 changeset 必須建立真實 SQL / relation mapping、current owner contract、consumer、authorization/transaction semantics、tests 與適用 evidence；再移除 reserved role。Target rationale / migration state 留在 `docs/090-governance/`。
+啟用 reserved target 時，同一 changeset 必須建立真實 SQL / relation mapping、current owner contract、consumer、authorization/transaction semantics、tests 與適用 evidence；再移除 reserved role。Target rationale / migration state 留在 `docs/change/`。
 
 ## Navigation
 
@@ -74,4 +74,4 @@ Cross-owner mechanism 只允許：
 
 ## Validation
 
-`pnpm architecture` 驗證 schema files 與 `data-topology.json` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Remote Supabase convergence 另由 `schema:remote plan/sync/verify` 與 provider readback證明，不能由 local file存在推定。
+`pnpm architecture` 驗證 schema files 與 `data-topology.json` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由 current `main` 的 GitHub Actions Release 執行；`schema:remote plan/verify` 與 provider readback證明 remote result，不能由 local file 存在推定。

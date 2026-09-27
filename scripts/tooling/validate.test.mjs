@@ -6,18 +6,21 @@ test("lockfile consistency gate cannot be skipped by fast scope", () => {
   for (const scope of [
     null,
     classifyChangedFiles([]),
-    classifyChangedFiles(["docs/060-engineering/README.md"]),
+    classifyChangedFiles(["docs/reference/engineering/development-workflow.md"]),
   ])
     assert.equal(shouldRunFast("lockfile", scope), true);
 });
 
 test("documentation-only changes run only documentation-owned fast gates", () => {
-  assert.deepEqual(classifyChangedFiles(["docs/060-engineering/README.md", "README.md"]), {
-    codeAffected: false,
-    docsAffected: true,
-    schemaAffected: false,
-    toolingAffected: false,
-  });
+  assert.deepEqual(
+    classifyChangedFiles(["docs/reference/engineering/development-workflow.md", "README.md"]),
+    {
+      codeAffected: false,
+      docsAffected: true,
+      schemaAffected: false,
+      toolingAffected: false,
+    },
+  );
 });
 
 test("schema-only changes run schema, remote-contract, architecture and product test gates", () => {

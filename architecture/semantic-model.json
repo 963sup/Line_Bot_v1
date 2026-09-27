@@ -1931,7 +1931,7 @@
     },
     {
       "id": "owner-local-business-rules",
-      "authority": "docs/010-domain-owners/* + source + tests",
+      "authority": "docs/owners/* + source + tests",
       "scope": "owner-local current semantics"
     },
     {
@@ -1966,7 +1966,7 @@
     },
     {
       "id": "historical-change",
-      "authority": "docs/090-governance/",
+      "authority": "docs/change/",
       "scope": "proposal/migration/history/acceptance evidence"
     },
     {
