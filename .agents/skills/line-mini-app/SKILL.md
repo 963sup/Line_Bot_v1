@@ -5,7 +5,7 @@ description: 開發、診斷或審查 LINE MINI App 與 LIFF 初始化、入口�
 
 # LINE MINI App
 
-讓指定 MINI App 在正確 channel、環境與瀏覽器完成使用者流程。先讀 [LINE integration](../../../docs/030-platform/010-line.md) 與 [System facts](../../../docs/facts/system.md)，沿用現有 Web，不因 skill 建立獨立 app。
+讓指定 MINI App 在正確 channel、環境與瀏覽器完成使用者流程。先讀 [LINE integration](../../../docs/owners/line-integration.md) 與 [System facts](../../../docs/facts/system.md)，沿用現有 Web，不因 skill 建立獨立 app。
 
 ## 文件與定位
 
@@ -23,7 +23,7 @@ description: 開發、診斷或審查 LINE MINI App 與 LIFF 初始化、入口�
 
 1. 等待 `liff.init()` 成功才使用相依 API；處理初始化失敗、未登入、scope 缺少與功能不可用。避免 SSR 執行瀏覽器 SDK。
 2. 將原始 ID token／access token 傳到後端核驗；前端 profile、decoded token 或 userId 不作後端授權。需要時讀 [line-login](../line-login/SKILL.md)，不得記錄 token。
-3. 依 [Account](../../../docs/010-domain-owners/010-account.md) 與 [Supabase platform contract](../../../docs/030-platform/020-supabase.md) 處理內外瀏覽器，不假定 cookie／session 共用；LINE 身分證明不取代會員資格。
+3. 依 [Account](../../../docs/owners/account.md) 與 [Supabase platform contract](../../../docs/reference/platform/supabase.md) 處理內外瀏覽器，不假定 cookie／session 共用；LINE 身分證明不取代會員資格。
 4. 分辨永久入口、endpoint 與登入 callback；跳轉保留必要狀態、限制目的地，不把秘密放 URL。服務訊息與 Messaging API 訊息的資格及用途分開查證。
 5. 依改動驗證 Android／iOS LINE 內開啟、外部瀏覽器、取消登入、返回及重新整理。使用 repository 驗證入口；沒有手機實測就列待驗收。
 
