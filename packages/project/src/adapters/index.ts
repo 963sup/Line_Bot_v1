@@ -1,2 +1,1 @@
-// Runtime adapters are not active in this scaffold.
-export {};
+export { PostgresProjectCollectionStore } from "./postgres/collection.js";
