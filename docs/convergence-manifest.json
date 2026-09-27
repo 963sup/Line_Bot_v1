@@ -255,6 +255,19 @@
         "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92"
       }
     },
+    "docs/change/decisions/attendance-employment-scope-target-design.md": {
+      "outcome": "distilled",
+      "baselineBytes": 3159,
+      "maxBytes": 3035,
+      "contentBlob": "f2d7fb47210d76a7efb46086ff4918ceb437ceec",
+      "sources": {
+        "docs/owners/attendance.md": "6ab6a7c7f1cb6f54f3014dc385eafaa9c29df304",
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5",
+        "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92"
+      }
+    },
     "docs/change/decisions/enterprise-target-design.md": {
       "outcome": "distilled",
       "baselineBytes": 6490,
@@ -280,6 +293,18 @@
         "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92"
       }
     },
+    "docs/change/decisions/payroll-target-design.md": {
+      "outcome": "distilled",
+      "baselineBytes": 3044,
+      "maxBytes": 2989,
+      "contentBlob": "8b1c41af997e422315954ca6e5f661331384bbad",
+      "sources": {
+        "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3",
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5",
+        "docs/owners/attendance.md": "6ab6a7c7f1cb6f54f3014dc385eafaa9c29df304",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
     "docs/change/decisions/README.md": {
       "outcome": "keep",
       "baselineBytes": 1032,
@@ -287,6 +312,16 @@
       "contentBlob": "d55b72d42a7c6abc1e940b24b8c1c4c183d68b8f",
       "sources": {
         "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    },
+    "docs/change/decisions/workforce-target-design.md": {
+      "outcome": "keep",
+      "baselineBytes": 2279,
+      "maxBytes": 2279,
+      "contentBlob": "8ba0c0fd87d89e03cf7b3d66195bea4a6f702298",
+      "sources": {
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
       }
     },
     "docs/facts/sources-of-truth.md": {
