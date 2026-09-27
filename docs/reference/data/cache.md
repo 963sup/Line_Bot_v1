@@ -55,6 +55,6 @@ Redis 目前只承擔被明確採用的短效 coordination、event claim、coold
 ## 相鄰 owner
 
 - Durable persistence：[Persistence model](020-persistence-model.md)
-- Redis integration：[Redis](../030-platform/030-redis.md)
-- Runtime boundary：[Runtime architecture](../020-architecture/050-runtime-architecture.md)
-- Quality priorities：[Quality attributes](../020-architecture/060-quality-attributes.md)
+- Redis integration：[Redis](../platform/redis.md)
+- Runtime boundary：[Runtime architecture](../runtime/routes.md)
+- Quality priorities：[Quality attributes](../architecture/quality-tradeoffs.md)
