@@ -57,4 +57,4 @@ Machine owner / status：
 [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
 
 Migration sequencing：
-[Workforce / Attendance / Payroll slices](../090-governance/030-migrations/040-enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices)
+[Workforce / Attendance / Payroll slices](../change/migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices)
