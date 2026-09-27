@@ -4,7 +4,7 @@
 
 `supabase/schemas/` 是 current desired PostgreSQL structure 的唯一 Source of Truth。Schema modules 以數字前綴表達 lexical dependency order；table、constraint、index、RLS、grant、function、trigger 與 role 都由負責的 declarative SQL 定義。
 
-`supabase/migrations/` 不屬於 current contract，也不是 remote deployment source。歷史 SQL 的追溯與恢復見 [History extraction](../090-governance/060-acceptance/040-schema-history-extraction.md)；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
+`supabase/migrations/` 不屬於 current contract，也不是 remote deployment source。歷史 SQL 的追溯與恢復見 [History extraction](../../change/evidence/schema-history-extraction.md)；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
 
 ## Schema change
 
@@ -61,14 +61,14 @@ Production與development共享同一 schema authority與 reconciliation mechanis
 
 Production schema DDL仍由 validated current schemas自動收斂。只有不可由 schema決定的 business data transform／metadata cutover需要獨立 reviewed data-cutover procedure。所有 remote reconciliation都不得新增或修補 Supabase migration history。
 
-Schema與runtime需要協調切換時，由 [Release](../070-operations/020-release.md) 擁有 publication ordering；backup／restore責任由 [Recovery](../070-operations/030-recovery.md) 擁有；Supabase provider與 remote reconciliation mechanism由 [Supabase](../030-platform/020-supabase.md) 擁有。
+Schema與runtime需要協調切換時，由 [Release](../operations/release.md) 擁有 publication ordering；backup／restore責任由 [Recovery](../operations/recovery.md) 擁有；Supabase provider與 remote reconciliation mechanism由 [Supabase](../platform/supabase.md) 擁有。
 
 ## Verification
 
 Current repository schema verification只證明 declarative source、clean build與安全 boundary；remote parity、deployment與business acceptance是不同 evidence。
 
-- 開發入口：[Supabase README](../../supabase/README.md)
-- Supabase platform：[Supabase](../030-platform/020-supabase.md)
-- Release：[Release](../070-operations/020-release.md)
-- Recovery：[Recovery](../070-operations/030-recovery.md)
-- Acceptance evidence：[Acceptance](../090-governance/060-acceptance/README.md)
+- 開發入口：[Supabase README](../../../supabase/README.md)
+- Supabase platform：[Supabase](../platform/supabase.md)
+- Release：[Release](../operations/release.md)
+- Recovery：[Recovery](../operations/recovery.md)
+- Acceptance evidence：[Acceptance](../../change/evidence/README.md)
