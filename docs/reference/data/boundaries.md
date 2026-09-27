@@ -14,8 +14,8 @@ supabase/schemas/*.sql
 ```
 
 This document explains the cross-owner data invariants only. Physical object inventory belongs to
-[Data topology](../../architecture/data-topology.json) and the
-[Schema tree](../../supabase/schemas/README.md).
+[Data topology](../../../architecture/data-topology.json) and the
+[Schema tree](../../../supabase/schemas/README.md).
 
 ## Account identity
 
@@ -85,5 +85,5 @@ Repository schemas describe desired current application structure. They do not p
 Current source includes Account/User, Enterprise/Organization/Team governance, Repository/Issue/Discussion, Project data authority, Attendance/Workplace, value facts, Expense, Notifications and Partner Directory. Workforce module ownership exists, but Employment/Calendar/Schedule runtime remains selected target; formal Payroll flow also remains gated.
 
 Target design and cutover sequencing live in
-[Governance](../090-governance/README.md). Dated remote evidence stays in
-[Acceptance evidence](../090-governance/060-acceptance/010-acceptance-evidence.md) and never becomes current truth.
+[Governance](../../change/README.md). Dated remote evidence stays in
+[Acceptance evidence](../../change/evidence/acceptance-evidence.md) and never becomes current truth.
