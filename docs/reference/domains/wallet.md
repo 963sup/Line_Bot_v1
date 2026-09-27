@@ -1,6 +1,6 @@
 # Wallet detailed reference
 
-Low-frequency Wallet implementation / activation detail. Ownership remains canonical in [Wallet](../../010-domain-owners/140-wallet.md).
+Low-frequency Wallet implementation / activation detail. Ownership remains canonical in [Wallet](../../owners/wallet.md).
 
 ## Current source and desired schema
 
@@ -30,9 +30,9 @@ Tests must retain existing amount/denomination totals, zero-entry versus missing
 
 ## Adjacent owners
 
-- [Account data and expansion boundary](../../040-data/010-data-boundary-model.md)
-- [Asset](../../010-domain-owners/130-asset.md): value definition and denomination.
-- [Ledger](../../010-domain-owners/150-ledger.md): immutable value facts and posting.
-- [Current human lifecycle](../../010-domain-owners/010-account.md)
-- [Account identity design](../../090-governance/010-decisions/070-account-identity-design.md)
-- [Migration gates](../../090-governance/030-migrations/040-enterprise-organization-workforce-payroll.md)
+- [Account data and expansion boundary](../data/boundaries.md)
+- [Asset](../../owners/asset.md): value definition and denomination.
+- [Ledger](../../owners/ledger.md): immutable value facts and posting.
+- [Current human lifecycle](../../owners/account.md)
+- [Account identity design](../../change/decisions/account-identity-design.md)
+- [Migration gates](../../change/migrations/enterprise-organization-workforce-payroll.md)
