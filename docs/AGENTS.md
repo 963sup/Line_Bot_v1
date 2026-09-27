@@ -1,15 +1,14 @@
 # Documentation retrieval contract
 
-Optimize for relevant information / loaded context.
+Optimize for relevant information per loaded context.
 
-- One file serves one primary retrieval job; information not usually needed in the same decision belongs in another unit.
-- `README` is routing only. `AGENTS.md` contains behavior-changing constraints only.
-- High-frequency docs preserve why, invariant, dangerous assumption and decision; reliable code/manifest/schema/config facts are linked, not recopied.
-- One fact/rule has one canonical owner; other locations use pointers.
-- Current knowledge lives in `facts/`, `owners/`, `rules/`, task routing and machine sources. Detailed low-frequency knowledge lives in `reference/`.
-- Target/proposal/migration/gap/risk/dated evidence live in `change/`; they never override current truth.
-- Do not create redirect/alias Markdown when moving knowledge. Fix all references in the same change.
-- Machine semantic/module/data truth: `architecture/semantic-model.json`, `implementation-topology.json`, `data-topology.json`; actual SQL: `supabase/schemas/`.
-- Documentation refactors must not weaken authorization, transaction, replay/version, tenant isolation, recovery, privacy or evidence semantics.
+- One file serves one retrieval job. `README` routes only; `AGENTS.md` holds behavior-changing constraints only.
+- One fact/rule has one canonical owner; other locations reference it.
+- `facts/`, `owners/`, `rules/`, and task routing hold current high-frequency knowledge; `reference/` holds on-demand detail.
+- `change/` holds target/proposal/migration/gap/risk/evidence and never overrides current truth.
+- Machine semantic/module/data truth lives in `architecture/*.json`; SQL truth in `supabase/schemas/`; do not recopy it into prose.
+- Markdown review state lives in `convergence-manifest.json`; use `pnpm docs:convergence <status|next|begin|record|review-skill|complete>`.
+- Moves/deletes update inbound references in the same change; no redirect Markdown.
+- Documentation changes preserve authorization, transaction, replay/version, isolation, recovery, privacy, and evidence semantics.
 
-After docs changes run `pnpm docs:check`; repository-level completion follows root `AGENTS.md`.
+Run `pnpm docs:check` after docs changes.

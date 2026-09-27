@@ -1,21 +1,22 @@
 # Sources of truth
 
-Use this table when two answers conflict; do not load another background document first.
+Conflicting answers use the authority below; do not load more background first.
 
 | Question | Authority |
 | --- | --- |
 | Current source behavior | source + tests |
-| Business concept / owner / relationship / invariant / capability status | `architecture/semantic-model.json` |
-| Module path / kind / allowed workspace dependency | `architecture/implementation-topology.json` |
-| Persisted relation owner / role / schema-file mapping | `architecture/data-topology.json` |
-| Actual PostgreSQL DDL / constraint / RLS | `supabase/schemas/` |
+| Business concept/owner/relationship/invariant/capability | `architecture/semantic-model.json` |
+| Module path/kind/dependency allowlist | `architecture/implementation-topology.json` |
+| Persisted relation owner/schema mapping | `architecture/data-topology.json` |
+| PostgreSQL DDL/constraint/RLS | `supabase/schemas/` |
 | Public package API | owner `package.json#exports` |
-| Repository commands / versions | root `package.json`, lockfile, runtime config |
+| Commands/versions | root `package.json`, lockfile, runtime config |
 | Scoped Agent constraints | root + nearest `AGENTS.md` |
-| Owner rule not directly inferable from code | `docs/owners/<owner>.md` |
-| External GitHub-like semantic benchmark | `architecture/semantic-benchmark.json` + pinned provenance |
-| Target / proposal / migration / gap / risk | `docs/change/` |
-| Deployment/provider/device reality | dated provider/API/device readback |
-| Historical acceptance / recovery evidence | `docs/change/evidence/` |
+| Owner rule not inferable from machine truth | `docs/owners/<owner>.md` |
+| Markdown convergence/review state | `docs/convergence-manifest.json` |
+| GitHub-like benchmark | `architecture/semantic-benchmark.json` + provenance |
+| Target/proposal/migration/gap/risk | `docs/change/` |
+| Deployment/provider/device reality | dated readback |
+| Historical acceptance/recovery evidence | `docs/change/evidence/` |
 
-Human docs explain meaning, constraints, decisions and operations. Machine-readable facts are not maintained twice in Markdown.
+Markdown explains meaning/constraints/decisions/operations; machine facts are not maintained twice.

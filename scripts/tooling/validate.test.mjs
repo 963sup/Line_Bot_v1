@@ -12,15 +12,19 @@ test("lockfile consistency gate cannot be skipped by fast scope", () => {
 });
 
 test("documentation-only changes run only documentation-owned fast gates", () => {
-  assert.deepEqual(
-    classifyChangedFiles(["docs/reference/engineering/development-workflow.md", "README.md"]),
-    {
-      codeAffected: false,
-      docsAffected: true,
-      schemaAffected: false,
-      toolingAffected: false,
-    },
-  );
+  const scope = classifyChangedFiles([
+    "docs/reference/engineering/development-workflow.md",
+    "README.md",
+  ]);
+  assert.deepEqual(scope, {
+    codeAffected: false,
+    docsAffected: true,
+    schemaAffected: false,
+    toolingAffected: false,
+  });
+  for (const task of ["docs:test", "docs:check", "docs:convergence"])
+    assert.equal(shouldRunFast(task, scope), true);
+  assert.equal(shouldRunFast("tooling:check", scope), false);
 });
 
 test("schema-only changes run schema, remote-contract, architecture and product test gates", () => {

@@ -1,7 +1,8 @@
 # @line-work/payroll
 
-- 本 package 是 Payroll 程式 owner；業務契約見 [Payroll rules](../../docs/owners/payroll.md)，current foundation 與未完成能力見 [Payroll gaps](../../docs/change/gaps/payroll.md)。
-- Readiness 只聚合 versioned Workforce、AttendancePeriod 與 payroll rule inputs；缺任何 required input 必須 fail closed。
-- PayPeriod 必須在讀 upstream dependency 前完成格式與範圍驗證；duplicate rule version、空 version/source ID 必須拒絕。
-- Readiness 評估本身保持無寫入／無授權副作用，不因 ready=true 建立 PayrollRun/PayStatement、計算正式薪資或授予 permission；ready 也不代表公式適用性、scope 與 upstream provenance 已驗證。
-- 後續 calculation、lifecycle、persistence 與 publication 可依 [Migration slices](../../docs/change/migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices) 在本 owner 實作；啟用前逐項滿足 Payroll gaps 的 input、policy、authorization、audit/correction 與驗收條件，不能靠縮減 required inputs 或假公式繞過。
+Owner: Payroll readiness and future payroll lifecycle. Canonical semantics: [Payroll](../../docs/owners/payroll.md).
+
+- Readiness aggregates versioned Workforce, AttendancePeriod, and rule inputs; missing/duplicate/invalid required inputs fail closed.
+- Validate PayPeriod before upstream reads.
+- Readiness is read-only and does not create PayrollRun/PayStatement, calculate pay, publish results, or grant permission.
+- Do not activate calculation/lifecycle/persistence/publication by shrinking required inputs or inventing formulas; satisfy the explicit owner/gap contracts first.

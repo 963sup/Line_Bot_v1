@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "phase": "in-progress",
+  "files": {
+    ".agents/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 837,
+      "maxBytes": 837,
+      "contentBlob": "52ddf8e4ca94d520a4cc51c03f032fa6f3f7ebdf",
+      "sources": {
+        "skills-lock.json": "712af9309b54f0d1a1ae198bd6ed7c8e71a4609b"
+      }
+    },
+    ".agents/skills/context-convergence/SKILL.md": {
+      "outcome": "keep",
+      "baselineBytes": 1411,
+      "maxBytes": 1130,
+      "contentBlob": "7871149c793c74f882cf598974da1196387fa901",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9",
+        "scripts/docs/convergence.mjs": "ebc00ac8a29e3ea33f2d1997a649af32be8cf78d"
+      }
+    },
+    ".codex/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 763,
+      "maxBytes": 763,
+      "contentBlob": "28c956310f38407b399743925aed6f3a1db077d0",
+      "sources": {
+        ".codex/config.toml": "cfc071f51df766574ca033b8799d503d64f4b4ce"
+      }
+    },
+    ".codex/agents/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 2153,
+      "maxBytes": 2153,
+      "contentBlob": "19f6e8bfab0803718f2db4ba631876e3280ab25a",
+      "sources": {
+        ".codex/config.toml": "cfc071f51df766574ca033b8799d503d64f4b4ce"
+      }
+    },
+    ".github/agents/architecture-reviewer.agent.md": {
+      "outcome": "keep",
+      "baselineBytes": 760,
+      "maxBytes": 760,
+      "contentBlob": "c7acf4cb822040999d761e6b3c63bbde82db6cc6",
+      "sources": {
+        "docs/tasks/architecture-change.md": "4f18259b937325cd781852ca597b7b149e3bcf18"
+      }
+    },
+    ".github/agents/context-convergence.agent.md": {
+      "outcome": "keep",
+      "baselineBytes": 531,
+      "maxBytes": 531,
+      "contentBlob": "5e297b27c1f66de6bfa92e3f6a9d20b0a4c86df8",
+      "sources": {
+        ".agents/skills/context-convergence/SKILL.md": "7871149c793c74f882cf598974da1196387fa901"
+      }
+    },
+    ".github/agents/database-reviewer.agent.md": {
+      "outcome": "keep",
+      "baselineBytes": 725,
+      "maxBytes": 725,
+      "contentBlob": "f752df827ebeb8c9f3604821ab81a9960f67fdbc",
+      "sources": {
+        "docs/tasks/database-change.md": "d9b66401c11b3d14b8f29e2badfd35acbe309b6a"
+      }
+    },
+    ".github/agents/root-cause-debugger.agent.md": {
+      "outcome": "keep",
+      "baselineBytes": 792,
+      "maxBytes": 792,
+      "contentBlob": "e5ec8510685f27eb4b9c7f00525653419176bb8a",
+      "sources": {
+        "docs/tasks/bug-fix.md": "4a6ba52621c4e39c09fff3570b31c9859db78348",
+        "docs/tasks/deployment-debug.md": "b276815f326c49df336953f76ad6e0cca35742cf"
+      }
+    },
+    ".github/agents/security-reviewer.agent.md": {
+      "outcome": "keep",
+      "baselineBytes": 693,
+      "maxBytes": 693,
+      "contentBlob": "7f5177ab285bde47ee2fd284edc599e9cd85157d",
+      "sources": {
+        "docs/tasks/auth-change.md": "a1e0e6144463900f30436f9ed298ad891b8242e2"
+      }
+    },
+    ".github/ISSUE_TEMPLATE/bug_report.md": {
+      "outcome": "keep",
+      "baselineBytes": 273,
+      "maxBytes": 273,
+      "contentBlob": "bb1e4fffb24e884c23b0500e76e906b9622102e6",
+      "sources": {}
+    },
+    ".github/ISSUE_TEMPLATE/feature_request.md": {
+      "outcome": "keep",
+      "baselineBytes": 108,
+      "maxBytes": 108,
+      "contentBlob": "11543cb307fccea16593d36fe9a05f69148178ad",
+      "sources": {}
+    },
+    ".github/prompts/change-api.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 382,
+      "maxBytes": 382,
+      "contentBlob": "0c4ce67feec50009c58012d0b64bafe76b021bbe",
+      "sources": {
+        "docs/tasks/api-change.md": "165f4a306552bfa0e3740454df76389456c4ccbe"
+      }
+    },
+    ".github/prompts/change-architecture.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 426,
+      "maxBytes": 426,
+      "contentBlob": "402b2d5952d8e7d2b1d8dcbc8ddf7fcbc171cca9",
+      "sources": {
+        "docs/tasks/architecture-change.md": "4f18259b937325cd781852ca597b7b149e3bcf18"
+      }
+    },
+    ".github/prompts/change-auth.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 369,
+      "maxBytes": 369,
+      "contentBlob": "785e6afaea484043c1b5ab728e7063427e4da735",
+      "sources": {
+        "docs/tasks/auth-change.md": "a1e0e6144463900f30436f9ed298ad891b8242e2"
+      }
+    },
+    ".github/prompts/change-business-rule.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 374,
+      "maxBytes": 374,
+      "contentBlob": "aa81f3f4a6e9e91e4ed958d8054c9fa371fe2e4d",
+      "sources": {
+        "docs/tasks/business-rule.md": "66c9ba40abd72ae0d3ca216efe851ad3247f44fc"
+      }
+    },
+    ".github/prompts/change-database.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 383,
+      "maxBytes": 383,
+      "contentBlob": "c9c2aed130b5c2fe25efb4e23f84d2feb9991f76",
+      "sources": {
+        "docs/tasks/database-change.md": "d9b66401c11b3d14b8f29e2badfd35acbe309b6a"
+      }
+    },
+    ".github/prompts/change-feature.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 364,
+      "maxBytes": 364,
+      "contentBlob": "94c09b76ec2458872052d5aac218275e47854f2c",
+      "sources": {
+        "docs/tasks/feature-change.md": "d8671da96081d013e66f8c3a4f1ba5ccf0309ec3"
+      }
+    },
+    ".github/prompts/converge-markdown.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 516,
+      "maxBytes": 516,
+      "contentBlob": "218b64bd46e3556625b69caef726369ac0d21830",
+      "sources": {
+        ".agents/skills/context-convergence/SKILL.md": "7871149c793c74f882cf598974da1196387fa901"
+      }
+    },
+    ".github/prompts/debug-deployment.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 374,
+      "maxBytes": 374,
+      "contentBlob": "736c2b868e467fe361b4c7181d4a8fdffd1de524",
+      "sources": {
+        "docs/tasks/deployment-debug.md": "b276815f326c49df336953f76ad6e0cca35742cf"
+      }
+    },
+    ".github/prompts/fix-bug.prompt.md": {
+      "outcome": "keep",
+      "baselineBytes": 371,
+      "maxBytes": 371,
+      "contentBlob": "49d9f085a0e8ac897d0122488f97ec2d936ce8ea",
+      "sources": {
+        "docs/tasks/bug-fix.md": "4a6ba52621c4e39c09fff3570b31c9859db78348"
+      }
+    },
+    "AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 2225,
+      "maxBytes": 2225,
+      "contentBlob": "e3a7dba1b9c2e084aed400d05f19684079cb691a",
+      "sources": {
+        "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92",
+        "docs/facts/sources-of-truth.md": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6"
+      }
+    },
+    "docs/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 1028,
+      "maxBytes": 1028,
+      "contentBlob": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9",
+      "sources": {
+        "AGENTS.md": "e3a7dba1b9c2e084aed400d05f19684079cb691a"
+      }
+    },
+    "docs/facts/sources-of-truth.md": {
+      "outcome": "keep",
+      "baselineBytes": 1200,
+      "maxBytes": 1200,
+      "contentBlob": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6",
+      "sources": {}
+    },
+    "docs/rules/validation-evidence.md": {
+      "outcome": "keep",
+      "baselineBytes": 1000,
+      "maxBytes": 1000,
+      "contentBlob": "5d5e152604c7766360303250832def7d66c94e25",
+      "sources": {
+        "package.json": "259e6f8825d149e1e0a7ae4ae3be87c221b35000",
+        "scripts/tooling/validate.mjs": "68dce9f301d87557fdcb5eeeb90649c8b6e58842"
+      }
+    },
+    "packages/account/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 1033,
+      "maxBytes": 1033,
+      "contentBlob": "9cda59936f2f88bcadb2de7187b0164cbcdf53ca",
+      "sources": {
+        "docs/owners/account.md": "75654cd2b32a3a6669bfca1e0e1cab51e4ab04ee"
+      }
+    },
+    "packages/asset/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 490,
+      "maxBytes": 490,
+      "contentBlob": "76ac103c351442e2fce23ee69dff89a27f9eb7ad",
+      "sources": {
+        "docs/owners/asset.md": "b6834b9563aa1e46182ab1d0675fd83b6a7543d4"
+      }
+    },
+    "packages/audit/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 719,
+      "maxBytes": 719,
+      "contentBlob": "085d9b257d8038de7c221aee0863fe12c20db53e",
+      "sources": {
+        "docs/owners/audit.md": "2c7a4a74a6440599635b17bdd38e66cb9991453e"
+      }
+    },
+    "packages/daily-check-in/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 552,
+      "maxBytes": 552,
+      "contentBlob": "5e5813642f8eb70c4ba2d3216e5b7c6a9ca3cbbf",
+      "sources": {
+        "docs/owners/daily-check-in.md": "c716d21ed805e017904cf3f4678018234f7b1ff0"
+      }
+    },
+    "packages/enterprise/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 784,
+      "maxBytes": 784,
+      "contentBlob": "ad972a0e29f7bcde30fc69755795421878f5a54f",
+      "sources": {
+        "docs/owners/enterprise.md": "7f6e24f89980b6f4577f02a51081291caf9853a0"
+      }
+    },
+    "packages/expense/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 779,
+      "maxBytes": 779,
+      "contentBlob": "8693b8364fa75bcd70a250a0f3c1345ddc8f1b36",
+      "sources": {
+        "docs/owners/expense.md": "5271120323d3551a9481f220b3827ca24fb08d9e"
+      }
+    },
+    "packages/identity-access/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 637,
+      "maxBytes": 637,
+      "contentBlob": "c4f0962f3b02ff268c26978a9095d3b5db079212",
+      "sources": {
+        "docs/owners/identity-access.md": "2f96535cf78c6fa4d435f99f015f5fef15468614"
+      }
+    },
+    "packages/ledger/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 556,
+      "maxBytes": 556,
+      "contentBlob": "066d09e466a9265da3732669ab322b210f8b7b55",
+      "sources": {
+        "docs/owners/ledger.md": "3bfab8b6eae15c88ae4d3e1dc80c6293e5e017bc"
+      }
+    },
+    "packages/namespace/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 755,
+      "maxBytes": 755,
+      "contentBlob": "fc3d14496a4de491b08a98f9cd9d28968a1b268b",
+      "sources": {
+        "docs/owners/namespace.md": "3c67be797ac492b560a887b00fa0b6a41cbf9962"
+      }
+    },
+    "packages/notifications/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 572,
+      "maxBytes": 572,
+      "contentBlob": "977224e837ffd7e7183b482471e502c1ee33526d",
+      "sources": {
+        "docs/owners/notifications.md": "38e2e84d844c87e3a02c8d8311d335fddc8855de"
+      }
+    },
+    "packages/partners/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 640,
+      "maxBytes": 640,
+      "contentBlob": "0dc37f45e284f207f0216277c417977adbfec05f",
+      "sources": {
+        "docs/owners/partners.md": "aa373328bbebd73bf40d05286d5ba84e96687067"
+      }
+    },
+    "packages/payroll/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 605,
+      "maxBytes": 605,
+      "contentBlob": "5b33675918df2d6750a279c5a4194e5050324277",
+      "sources": {
+        "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3"
+      }
+    },
+    "packages/platform/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 618,
+      "maxBytes": 618,
+      "contentBlob": "f416fa598a4a10bf191582d97a7feb5f80056e34",
+      "sources": {
+        "docs/owners/platform.md": "2d919702426f8cf7c226944dd715c69b20bc27ff"
+      }
+    },
+    "packages/project/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 540,
+      "maxBytes": 540,
+      "contentBlob": "a0f330c20589e0617bb082596e2bebd2d60db8b3",
+      "sources": {
+        "docs/owners/project.md": "2ab3dce474f06013b939ec34c5578be8e9f40e8c"
+      }
+    },
+    "packages/repository/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 913,
+      "maxBytes": 913,
+      "contentBlob": "b0a2e80590616ccfd25773382c2b75a42db0639c",
+      "sources": {
+        "docs/owners/repository.md": "562d2e9e8b2eb60b4329b92e112808c47c702762"
+      }
+    },
+    "packages/team/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 606,
+      "maxBytes": 606,
+      "contentBlob": "136d5f61d43d5ee386c656d14cfd454c2decfe5e",
+      "sources": {
+        "docs/owners/team.md": "41fd24cf99265e2bfec9683f233b809748955d78"
+      }
+    },
+    "packages/wallet/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 565,
+      "maxBytes": 565,
+      "contentBlob": "ba95d3bb535411bd1a12397f94eedf3667735b61",
+      "sources": {
+        "docs/owners/wallet.md": "d2cf4776583100cb2ad486633f602ea6813ba35a"
+      }
+    },
+    "scripts/docs/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 486,
+      "maxBytes": 486,
+      "contentBlob": "0c766e88fe6d5b64b3652ab751bc56511e693bfe",
+      "sources": {
+        "scripts/AGENTS.md": "73d04b8e474ca6fc4c9ac9a5ed51e25bc4ca6107",
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    }
+  },
+  "upstreamSkills": {}
+}
