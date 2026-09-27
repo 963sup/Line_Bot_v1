@@ -1,12 +1,12 @@
 ---
 agent: 'agent'
-description: 'Converge one Markdown file to the smallest sufficient agent context'
+description: 'Converge Markdown in a file, scope, or the whole repository'
 ---
 
-Use the repository's `.agents/skills/context-convergence/SKILL.md`.
+Load `.agents/skills/context-convergence/SKILL.md`.
 
-Scope: ${input:scope:Path or directory to converge; leave blank to choose the oldest unprocessed Markdown candidate}
+Scope: ${input:scope:Path/directory, or repository for a full sweep}
 
-Converge exactly one existing Markdown file. Preserve authoritative meaning and all behavior-changing constraints. The resulting file must be smaller than before, unless compression would weaken correctness; in that case, report why and make no change.
+Inventory the scope, process oldest-first, and give every Markdown an outcome: update, distill, merge/move, delete, keep, or upstream-refresh. Edited existing files must become smaller without weakening truth.
 
-Report the path, before/after size, canonical references retained, and validation evidence.
+Report outcomes, byte changes, authoritative sources, and validation actually run.
