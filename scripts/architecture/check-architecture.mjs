@@ -71,6 +71,7 @@ export function checkAppRoot(root = repository) {
     "(onboarding)",
     "(public)",
     "(resource)",
+    "(rich-menu)",
     "(system)",
     "api",
   ]);
@@ -173,7 +174,7 @@ export async function checkArchitecture(root = repository) {
     errors.push(...checkAppRoot(root));
     const modules = new Map(graph.modules.map((module) => [normalize(module.source), module]));
     const isolatedFromMobileShell =
-      /^apps\/web\/src\/app\/\((?:admin|onboarding|public|system)\)\//;
+      /^apps\/web\/src\/app\/\((?:admin|onboarding|public|rich-menu|system)\)\//;
     for (const source of modules.keys()) {
       errors.push(...checkCrossWorkspaceRelativeImports(root, source));
       if (isolatedFromMobileShell.test(source)) {

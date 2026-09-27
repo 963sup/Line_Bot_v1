@@ -1,6 +1,8 @@
 import { pathToFileURL } from "node:url";
 
 const API_ORIGIN = "https://api.vercel.com";
+const GITHUB_API_ORIGIN = "https://api.github.com";
+const RELEASE_WORKFLOW_PATH = ".github/workflows/release.yml";
 const ACTIVE_DEPLOYMENT_STATES = new Set(["QUEUED", "BUILDING", "INITIALIZING"]);
 
 export const VERCEL_PRODUCTION_TARGET = Object.freeze({
@@ -65,6 +67,79 @@ async function requestJson(fetchImpl, path, token, label, init = {}, mutation = 
   }
   if (!response.ok) throw new Error(`${label}: provider request failed (${response.status}).`);
   return body;
+}
+
+async function requestGitHubJson(fetchImpl, path, token, label) {
+  let response;
+  try {
+    response = await fetchImpl(`${GITHUB_API_ORIGIN}${path}`, {
+      headers: {
+        accept: "application/vnd.github+json",
+        authorization: `Bearer ${token}`,
+        "x-github-api-version": "2022-11-28",
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch {
+    throw new Error(`${label}: GitHub evidence read failed.`);
+  }
+  const text = await response.text();
+  let body = {};
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      throw new Error(`${label}: GitHub returned non-JSON response (${response.status}).`);
+    }
+  }
+  if (!response.ok) throw new Error(`${label}: GitHub request failed (${response.status}).`);
+  return body;
+}
+
+export async function verifyProductionReleaseAuthorization({
+  token,
+  runId,
+  sha,
+  repository,
+  fetchImpl = fetch,
+}) {
+  const expectedRepository = `${VERCEL_PRODUCTION_TARGET.gitOrg}/${VERCEL_PRODUCTION_TARGET.gitRepo}`;
+  if (!token) throw new Error("Production deployment requires GitHub Release evidence.");
+  if (!/^\d+$/.test(runId ?? "")) throw new Error("Production deployment requires GITHUB_RUN_ID.");
+  if (repository !== expectedRepository) {
+    throw new Error("Production deployment GitHub repository does not match the production owner.");
+  }
+  const run = await requestGitHubJson(
+    fetchImpl,
+    `/repos/${expectedRepository}/actions/runs/${runId}`,
+    token,
+    "Production Release run preflight",
+  );
+  if (
+    String(run.id) !== runId ||
+    run.path !== RELEASE_WORKFLOW_PATH ||
+    run.event !== "workflow_run" ||
+    run.head_branch !== "main" ||
+    run.head_sha !== sha ||
+    run.status !== "in_progress"
+  ) {
+    throw new Error("Production deployment is not running inside the current authorized Release.");
+  }
+
+  const jobs = await requestGitHubJson(
+    fetchImpl,
+    `/repos/${expectedRepository}/actions/runs/${runId}/jobs?filter=latest&per_page=100`,
+    token,
+    "Production Release job preflight",
+  );
+  if (!Array.isArray(jobs.jobs)) {
+    throw new Error("Production Release job evidence is invalid.");
+  }
+  const succeeded = (name) =>
+    jobs.jobs.some((job) => job?.name === name && job?.conclusion === "success");
+  if (!succeeded("gate") || !succeeded("supabase")) {
+    throw new Error("Production deployment requires successful gate and Supabase convergence.");
+  }
 }
 
 const deploymentId = (deployment) => deployment?.id ?? deployment?.uid ?? "";
@@ -283,6 +358,12 @@ export async function deployProduction({
 
 async function main() {
   const { sha } = parseProductionDeployArgs(process.argv.slice(2));
+  await verifyProductionReleaseAuthorization({
+    token: process.env.GITHUB_TOKEN,
+    runId: process.env.GITHUB_RUN_ID,
+    sha,
+    repository: process.env.GITHUB_REPOSITORY,
+  });
   const result = await deployProduction({ token: process.env.VERCEL_TOKEN, sha });
   console.log(JSON.stringify(result));
 }

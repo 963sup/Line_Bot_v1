@@ -48,21 +48,17 @@ Adapter ownership 搬移不等於 Data Boundary 搬移；跨 owner relation 使�
 
 ## Remote gate
 
-Current remote target 由 operations/release configuration 與 live readback共同確認；目前 explicit project ref 是 `nmssogphayjymjpbnrxv`。操作前仍必須重新 readback metadata/catalog，不靠文件日期、舊 chat 或 retired evidence 推定 environment/data 可刪。
+這份 migration 只保存 Workforce／Attendance／Payroll cutover 自己的未完成條件，不維護通用 Supabase publication contract。Current schema publication、provider reconciliation、release ordering與 recovery 分別由 [Schema model](../../040-data/030-schema-model.md)、[Supabase](../../030-platform/020-supabase.md)、[Release](../../070-operations/020-release.md) 與 [Recovery](../../070-operations/030-recovery.md) 擁有。
 
-預設 preserve-data：
+本 migration 需要額外確認的只有：
 
-```text
-validated desired schema
-→ live catalog/data preflight
-→ reviewed diff / explicit business backfill
-→ stop incompatible writer
-→ bounded transaction/apply
-→ catalog/security/data readback
-→ runtime negative/positive smoke
-```
+- historical／open-session／Employment mapping 不猜 scope 或 identity；
+- 需要 business backfill 時，mapping由對應 owner明確提供，不從 SQL、provider metadata或空資料推導；
+- incompatible writer切換前先確認唯一 writer、停寫點與 consumer compatibility；
+- data transform需要 recovery authorization時，依 canonical Recovery contract取得 evidence；
+- apply後驗證本 slice 的 business facts、authorization、replay/version與 runtime smoke。
 
-Validated declarative schema change不再依 DDL risk分類切換人工 approval；`routine / sensitive`只留作 plan診斷。Automatic sync必須在同一 history-free reconciliation中 transaction apply、second diff zero、security/ownership readback PASS且 migration-history fingerprint unchanged。只有 schema無法決定的 business data transform／metadata cutover才走 manual reconciliation：先 `prepare-plan` 產生 exact plan + SHA-256，review 後以相同 fingerprint、recovery-readiness attestation與 explicit apply authorization執行。Auth/Storage/provider-owned state 不在 app schema rebuild boundary。External write 結果未知時先 readback，不盲目重跑。
+Current provider target只由 operations/release configuration與 live readback確認；本 migration不保存 project ID或環境快照。External write結果未知時先 readback，不盲目重跑。
 
 ## Acceptance matrix
 

@@ -1,17 +1,15 @@
-import MemberPanel from "../../../modules/account/panel";
-import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { ActionRow, PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
 export default function SettingsPage() {
-  const miniApp = lineMiniApp();
   return (
-    <AppShell>
+    <AppShell navigation="secondary">
       <PageHeading
         title="Settings"
         description="目前登入者自己的 Account 設定；公開 Profile 仍使用 canonical /{login}。"
+        back="/home"
       />
 
       <SectionHeading title="Account" />
@@ -22,6 +20,13 @@ export default function SettingsPage() {
           tone="pink"
           title="Edit Profile"
           description="顯示名稱、自我介紹、login 與 visibility"
+        />
+        <ActionRow
+          href="/settings/account"
+          icon="◇"
+          tone="green"
+          title="Account & Connections"
+          description="User lifecycle、LINE 身分與外部連線"
         />
         <ActionRow
           href="/settings/network"
@@ -38,8 +43,6 @@ export default function SettingsPage() {
           description="查看自己的功能與管理範圍"
         />
       </div>
-
-      <MemberPanel liffId={miniApp.liffId} miniAppUrl={miniApp.url} />
     </AppShell>
   );
 }

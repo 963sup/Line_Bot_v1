@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default function Page() {
   return (
-    <AppShell>
+    <AppShell navigation="secondary">
       <PageHeading
         title="編輯個人資料"
         description="編輯產品內的顯示名稱與介紹；LINE Profile 仍只是外部 presentation data。"

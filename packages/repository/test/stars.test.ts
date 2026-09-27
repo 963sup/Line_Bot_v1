@@ -48,35 +48,7 @@ test("star rejects an empty Repository identity before touching persistence", as
   assert.equal(touched, false);
 });
 
-test("explore is a read model over accessible repositories rather than a new truth owner", async () => {
-  const stars = service({
-    explore: async () => [
-      {
-        id: "repository-a",
-        ownerLogin: "organization-a",
-        name: "Repository A",
-        visibility: "private",
-        capability: "read",
-        starCount: 3,
-        starred: true,
-      },
-    ],
-  });
-
-  assert.deepEqual(await stars.explore("line-subject"), [
-    {
-      id: "repository-a",
-      ownerLogin: "organization-a",
-      name: "Repository A",
-      visibility: "private",
-      capability: "read",
-      starCount: 3,
-      starred: true,
-    },
-  ]);
-});
-
-test("Postgres stars require current Repository access and Explore stays a read model", async (t) => {
+test("Postgres stars require current Repository access and star remains idempotent", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -117,17 +89,9 @@ test("Postgres stars require current Repository access and Explore stays a read 
       starCount: 1,
     },
   ]);
-  assert.deepEqual(await store.explore("repository-owner"), [
-    {
-      id: "repository-a",
-      ownerLogin: "organization-a",
-      name: "Repository A",
-      visibility: "private",
-      capability: "read",
-      starCount: 1,
-      starred: true,
-    },
-  ]);
+
+  await store.unstar("repository-owner", "repository-a");
+  assert.deepEqual(await store.starred("repository-owner"), []);
 
   await assert.rejects(
     store.star("outsider", "repository-a", 30),

@@ -1,132 +1,54 @@
 # Supabase 開發入口
 
-開發階段以 [`schemas/`](schemas) 作為 database structure 的唯一 Source of Truth。歷史 SQL 已完成價值提取並退出工作樹；原 commit、逐檔 checksum 與恢復方式見 [History extraction](../docs/090-governance/060-acceptance/040-schema-history-extraction.md)。歷史不參與 current schema contract、一般測試或 `schema:check`，也不改寫遠端 migration history。
+本 README 只提供導航；不維護第二套 schema、release、recovery 或 remote reconciliation truth。
 
-Supabase 官方 `db push`／`db reset --linked`／`migration up`／`migration repair` 會建立、重播或改寫 remote migration state；本專案 remote schema reconciliation 不使用它們。`config.toml` 停用 migration replay，`supabase/schemas/` 始終是唯一 current schema owner。
+## Source of Truth
 
-## Schema ownership
+| Concern | Owner |
+| --- | --- |
+| Current PostgreSQL structure | [`schemas/`](schemas/) |
+| Schema semantics / DDL vs data transform | [Schema model](../docs/040-data/030-schema-model.md) |
+| Persisted relation ownership | [Data topology](../architecture/data-topology.json) |
+| Supabase provider / remote reconciliation | [Supabase platform](../docs/030-platform/020-supabase.md) |
+| Publication ordering | [Release](../docs/070-operations/020-release.md) |
+| Backup / restore / recovery | [Recovery](../docs/070-operations/030-recovery.md) |
+| Historical schema extraction | [History extraction](../docs/090-governance/060-acceptance/040-schema-history-extraction.md) |
+| Object / relationship navigation | [Schema tree](schemas/README.md) |
 
-Database truth 分三層，不在 README 重複維護 object inventory：
+`supabase/migrations/` 不參與 current schema contract 或 remote deployment；不要把 migration history 當成 current schema authority。
 
-1. [semantic model](../architecture/semantic-model.json)：business concept / owner。
-2. [data topology](../architecture/data-topology.json)：persisted relation authority、role、physical file。
-3. [declarative schemas](schemas/)：actual PostgreSQL definition。
-
-[Schema tree](schemas/README.md) 只提供 object/navigation view。Authoritative relation 恰有一個 semantic owner；`900–930` 只承接 projection、cross-owner invariant、transaction coordination 與 access enforcement，不取得 business authority。Runtime package 不能因共用 PostgreSQL 直接讀寫其他 owner private relation。
-
-## 修改流程
-
-1. 先修改負責的 `supabase/schemas/*.sql`；不要先改 Dashboard／SQL Editor 再回填 Git。
-2. 驗證 current schemas：
+## Common commands
 
 ```sh
 pnpm schema:check
-pnpm check
-```
-
-`schema:check` 直接從 declarative schemas 建立乾淨 PGlite database，驗證 schema 可建立及核心 RLS／role boundary；不 replay migrations，也不驗 migration parity。PR fast validation 另會對 schema change 執行 remote reconciliation contract tests、Data Topology architecture check，以及全 workspace typecheck/test，避免 application adapter 靜默落後於 SQL desired state。
-
-3. 需要完整 local Supabase database 時，使用：
-
-```sh
 pnpm schema:local
-```
 
-此命令只操作 `--local`：先 reset local database，再由 `supabase/schemas/` 重建 `app_private`。它會移除 local application data，不接受 linked／remote target。
-
-4. Remote schema 只由 repository-owned reconciliation 收斂：validated `main` 的 `supabase/schemas/*.sql` 變更會由 Release 自動產生 current remote → desired diff並直接 apply；不建立 migration file、不 replay migration、不 repair migration history。
-5. 若 schema 變更同時需要不可由 SQL 決定的 business data transform／metadata cutover，該 data cutover 走獨立 `prepare-plan` contract；它不改變 schema 自動同步的 authority。
-6. 寫入 remote 後重新讀回 catalog／roles／grants／RLS／functions／triggers，並要求 second diff = 0；`supabase_migrations.schema_migrations` fingerprint before/after 必須完全相同。
-
-`app_private`、`auth`、`storage` 是不同 Data Boundary；重建 application schema 不代表可以刪除 Auth users 或 Storage。Runtime 不持 DDL、schema owner、migration 或 BYPASSRLS 權限。
-
-PGlite/local validation 不等於 remote PostgreSQL、deployment、Auth、Storage 或 LINE 實機驗收；各層證據分開回報。
-
-## Remote reconciliation
-
-Repository-owned remote commands：
-
-```sh
-pnpm schema:remote prepare
 pnpm schema:remote plan
-pnpm schema:remote recovery
 pnpm schema:remote sync
 pnpm schema:remote verify
 pnpm schema:remote verify --api
+
+pnpm schema:remote prepare
+pnpm schema:remote recovery
 ```
 
-`prepare` 只供 **preserve-data destructive cutover 前置**。它不 drop table/column/function、不改
-migration history，也不把 target constraint 降級。它會在單一 transaction 內鎖定相關 authority
-relations、確認 legacy source 是否可安全搬移，建立 current runtime 必須先存在的 additive
-surface，並 read back。它只用於需要 preserve-data/data cutover 的明確操作，不參與 Automatic
-Release 的一般 schema publication。若 remote 有 legacy Enterprise 缺 current `name` / `slug`，
-manual reconciliation 只能接受 Enterprise owner-confirmed `name` / `slug`；script在 transaction
-lock內自行讀取唯一 unresolved remote Enterprise並綁定 stable account ID，operator不輸入 production
-account ID，也不能從 UUID、login、display text、歷史 UI或 provider state猜值。
+- `schema:check`：驗 declarative schemas 與核心 database boundary。
+- `schema:local`：用 current schemas 重建 local application schema。
+- `plan / sync / verify`：remote current-vs-desired reconciliation；詳細 contract 見 [Supabase platform](../docs/030-platform/020-supabase.md)。
+- `prepare / recovery`：只供需要 explicit business data cutover／recovery authorization 的操作；不是一般 schema publication 必經步驟。
 
-`plan` 從 declarative schemas 重建 clean local target，再比較 exact remote
-`app_private`。Normal `sync` 會在同一程序完成 initial plan、apply、second diff
-與 acceptance readback；partial application-owned drift 交由 canonical diff 收斂，缺少 runtime
-foundation role 時先以 idempotent foundation repair 修復。plain `sync` 由 validated declarative
-source授權完整 remote diff；`classifyPlan` 只輸出 `noop / routine / sensitive` 診斷，不阻擋
-schema apply。若某個 data-cutover workflow 需要把 apply綁定既有 reviewed plan，使用
-`--reviewed-plan`，並要求 `SUPABASE_REVIEWED_PLAN_SHA256` 與當下重新產生的 `plan.sql`
-SHA-256完全相同。兩種 sync都不得改寫 migration history，且都必須完成 second diff與
-acceptance readback。Standalone `verify` 保留給人工診斷；
-`verify --api` 另用 publishable key 讀回 public Data API denial 與 Auth settings（Google provider
-狀態只作診斷，不是 acceptance gate）。Release/Replace
-保存 initial `plan.sql`、`plan.sha256`、post-sync `verification.sql` 與 migration-history before/after evidence。
+## Change routing
 
-Remote target 由 `SUPABASE_URL` 與 `POSTGRES_URL_NON_POOLING` 交叉驗證，並要求
-`SUPABASE_CONFIRM_PROJECT` exact match。Auth、Storage、`public` provider helper 與
-`supabase_migrations` 都在 application mutation boundary 外。
-
-### Automatic Release
-
-每次 successful same-repository `main` `Validate` 都會觸發 `Release`。Release 的 `gate` 以先前 **completed Release 中成功的固定 `gate` job** 作 affected-source cursor；整體 Release conclusion 只代表 downstream external-effect evidence，不是 routing authority。沒有合格 cursor 時才以 empty tree 做 bootstrap。Supabase job 先執行 metadata-free additive `repair`，讓 current Production runtime 所需、且可從 declarative source 完整重建的 compatibility surface 在 unrelated destructive drift 存在時仍可安全復原；它不代表 full schema convergence。
-
-Declarative schema 相對 cursor 有變更時：
+一般 schema change：
 
 ```text
-current validated main
-→ repair additive runtime compatibility
-→ plain sync (clean desired → diff → transaction apply → second diff → acceptance)
-→ assert migration-history fingerprint unchanged
-→ preserve plan / verification / history evidence
+edit supabase/schemas/*.sql
+→ pnpm schema:check
+→ pnpm check
+→ validated main
+→ Release / Supabase reconciliation
 ```
 
-Declarative schema沒有變更時仍執行：
+若 change 還需要不可由 schema 決定的 business metadata 或 data transform，另外依 owner 建立 data-cutover procedure；不要把 backfill truth 藏進 declarative DDL。
 
-```text
-current validated main
-→ repair additive runtime compatibility
-→ verify remote desired/current parity
-→ preserve verification evidence
-```
-
-Automatic Release 的 plain `sync` 不帶 `--reviewed-plan`，因為 mutation authorization 已由
-successful current-`main` validation + affected `supabase/schemas/*.sql` source change提供。
-`routine / sensitive` 只作 evidence；apply失敗、second diff非零、security readback失敗或 migration
-history fingerprint改變都使 Release fail。Automatic Release與 manual data-cutover workflow共用同一
-production Supabase GitHub concurrency key，repository-owned remote mutation另由 PostgreSQL
-advisory lock序列化。Supabase convergence成功後才允許 Release進入 Vercel Production deployment。
-
-### Manual Supabase Reconciliation
-
-Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql`、`plan.sha256` 與 `plan-provenance.json` 給 operator review；provenance 固定 target project、source SHA、workflow run ID、plan SHA-256 與 Enterprise owner-confirmed `name/slug` 的 identity fingerprint。`apply` 必須使用同一 owner-confirmed identity，並額外要求 successful prepare-plan run ID、recovery-readiness attestation、explicit apply confirmation 與 reviewed SHA-256。Apply 在任何 destructive write 前先執行 `schema:remote recovery`，用 `SUPABASE_ACCESS_TOKEN` 從 Supabase Management API read back recovery capability；只有 PITR+WALG 或至少一筆 completed managed backup才通過，結果寫入 `recovery-readback.json`。Workflow 再從 GitHub Actions API讀回同一 current source SHA 的 prepare-plan artifact，驗 source/run/plan/identity fingerprint完全一致後才重新 prepare、重新產生 current plan；只有 fingerprint 仍完全一致才執行 `sync --reviewed-plan`，最後完成 second diff、acceptance readback與 retained `manual-authorization.json`，其 authorization綁定 recovery readback hash。
-
-`prepare` 成功不代表 manual contract 已完成；`sync --reviewed-plan` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation；provider recovery 必須由 `schema:remote recovery` machine readback。Free plan若沒有 managed backup/PITR會 fail closed，不以文字 reference、GitHub artifact或同一 Supabase project內的 Storage 假裝 off-site recovery。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
-兩條 path 都由
-`scripts/supabase/remote.mjs` 擁有 reconciliation semantics，不新增 migration file，也不改寫
-`supabase_migrations.schema_migrations`。
-
-## Production boundary
-
-需要保留正式資料的 remote 也不建立 Supabase migration history。Forward schema change先修改
-current schemas；validated main後由 automatic diff/apply直接收斂 DDL。不可由 schema本身決定的
-business data transform才建立獨立 reviewed data-cutover contract。所有 remote write完成後 read back
-catalog／roles／grants／RLS／functions／triggers，且 migration history before/after必須一致。
-
-操作規則見 [Supabase platform contract](../docs/030-platform/020-supabase.md)、[Schema evolution](../docs/040-data/030-schema-model.md) 與 [Release process](../docs/070-operations/020-release.md)。具日期的既有結果只保存在 [Acceptance evidence](../docs/090-governance/060-acceptance/010-acceptance-evidence.md)。
-
-官方參考：[Declarative database schemas](https://supabase.com/docs/guides/local-development/declarative-database-schemas)。
+Remote mutation、publication 與 recovery 的完整規則只在上表 canonical owner 維護。

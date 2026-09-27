@@ -1286,9 +1286,54 @@
           "packages/repository/src/application/ports/stars.ts"
         ],
         "publicExports": ["./application/stars", "./application/ports/stars"],
-        "entrypoints": ["apps/web/src/app/(mobile)/explore/page.tsx"],
-        "testPaths": ["packages/repository/test/stars.test.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/api/repositories/starred/route.ts",
+          "apps/web/src/app/(mobile)/explore/page.tsx",
+          "apps/web/src/app/(mobile)/home/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/stars.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
         "note": "Star is an interaction signal; it does not imply repository authority."
+      }
+    },
+    {
+      "id": "read-repository-discovery",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Trending and recent Issue activity projections without creating a new Explore authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-owned discovery read model over current access, active Star timing/counts and immutable Issue event evidence",
+        "sourcePaths": [
+          "packages/repository/src/application/discovery.ts",
+          "packages/repository/src/application/ports/discovery.ts"
+        ],
+        "publicExports": [
+          "./application/discovery",
+          "./application/ports/discovery",
+          "./adapters/postgres/discovery"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/(mobile)/explore/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/discovery.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity currently projects Issue events only and rechecks current effective Repository access before exposure."
       }
     },
     {

@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 首頁 Home | `/home` | 我的工作、可用資源入口與已授權收藏投影 |
 | Inbox | `/notifications` | Notifications owner 的 recipient-scoped read projection；不建立 Inbox Domain，也不混入一般公告或活動 feed |
-| 探索 Explore | `/explore` | 現有 Repository discovery/Star；不假裝已有跨 owner 全域搜尋、Trending 或 Activity feed |
+| 探索 Explore | `/explore` | Repository-owned discovery composition：7-day active-Star Trending + Search entry + current-access-filtered Issue Activity；不建立跨 owner 全域 feed 或 Awesome Lists |
 | AI | `/assistant` | 既有 Assistant one-shot Ask / Issue-draft Generate / text Review；不建立 durable chat session 或 autonomous writer |
 
 Current shell 固定四個主目的地與 Bottom Navigation；Account/Profile avatar 只出現在 Home header，使用 Account-owned current login 導向 canonical `/{login}` Profile。Viewer自己的 User Profile右上角才顯示 Settings齒輪並導向 `/settings`；其他 User/Organization Profile不得因此取得 viewer設定入口。Inbox、Explore、AI 與其他工作頁不重複顯示 Profile avatar；`/settings` 是 viewer configuration secondary surface，兩者不再混用。Home current IA固定為 `My Work → Favorites → Shortcuts → Recent`：My Work 的 Issues/Discussions只做 Repository selector gateway，不冒充跨 Repository feed；Projects在沒有 runtime contract前只顯示 target；Favorites只重用 Repository Star projection；Shortcuts只放固定現有 route，不持久化 saved shortcuts；Recent沒有 owner/runtime時只顯示 empty state，不從 localStorage/browser history或其他 owner activity造資料。`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。Inbox 是 presentation vocabulary，`/notifications` 與 `/api/notifications` 是 current published transport；兩者不要求同名，也不能因 tab 命名順便建立 `packages/inbox`、平行 schema 或新的 source root。
@@ -26,6 +26,7 @@ Current shell 固定四個主目的地與 Bottom Navigation；Account/Profile av
 | [(public)](%28public%29/AGENTS.md) | 公開入口與 `/{login}` User/Organization locator |
 | [(resource)](%28resource%29/AGENTS.md) | `/{login}/{repository}` public/private projection 分流 |
 | [(mobile)](%28mobile%29/AGENTS.md) | Mobile / LINE MINI App 工作台、主要導覽與 authenticated work surfaces |
+| [(rich-menu)](%28rich-menu%29/AGENTS.md) | LINE Rich Menu entry composition；與 `(mobile)` 平行，Route Group 不進 URL，不取得 business truth 或 authorization ownership |
 | [(onboarding)](%28onboarding%29/AGENTS.md) | 註冊、恢復、完成結果 |
 | [(admin)](%28admin%29/AGENTS.md) | 現有管理入口與未開放頁面 |
 | [(system)](%28system%29/AGENTS.md) | callback、Google 交接、不可用結果 |

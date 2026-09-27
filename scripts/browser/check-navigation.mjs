@@ -100,6 +100,35 @@ async function run() {
         },
       });
     }
+    if (url.pathname === "/api/repositories/explore") {
+      if (request.method() === "POST") return route.fulfill({ json: { ok: true } });
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: repositoryId,
+              ownerLogin: "acme",
+              name: "Operations",
+              visibility: "private",
+              capability: "admin",
+              recentStarCount: 2,
+              starCount: 3,
+              starred: false,
+            },
+          ],
+          activity: [
+            {
+              id: `${issueId}:1`,
+              occurredAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
+              actorLogin: "viewer",
+              action: "create",
+              repository: { id: repositoryId, ownerLogin: "acme", name: "Operations" },
+              issue: { number: issueNumber, title: issue.title },
+            },
+          ],
+        },
+      });
+    }
     if (url.pathname === "/api/issues") {
       if (request.method() === "POST") return route.fulfill({ json: { issue } });
       return route.fulfill({
@@ -209,6 +238,38 @@ async function run() {
       "/acme/Operations",
     );
 
+    await page.goto(`${base}/explore`);
+    await page.getByRole("heading", { name: "Explore", exact: true }).waitFor();
+    await expect(page.getByRole("heading", { name: "Discover", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Trending Repositories/ })).toHaveAttribute(
+      "href",
+      "#trending",
+    );
+    await expect(page.getByRole("link", { name: /Search Repositories/ })).toHaveAttribute(
+      "href",
+      "/search",
+    );
+    await expect(
+      page.getByRole("heading", { name: "Trending Repositories", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "acme/Operations", exact: true })).toHaveAttribute(
+      "href",
+      "/acme/Operations",
+    );
+    await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Prepare payroll/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations/issues/1",
+    );
+    await page.getByRole("button", { name: "Star", exact: true }).click();
+    await page.getByText("已加入 Star。", { exact: true }).waitFor();
+    if (artifactDir) {
+      await page.screenshot({
+        path: path.join(artifactDir, "explore.png"),
+        fullPage: true,
+      });
+    }
+
     await page.goto(`${base}/repositories?intent=create-issue`);
     await page.getByRole("heading", { name: "Choose Repository", exact: true }).waitFor();
     const createRepositoryLink = page.getByRole("link", { name: /acme\/Operations/ });
@@ -260,7 +321,7 @@ async function run() {
     assert.ok(reads.some((value) => value.startsWith("/api/notifications")));
     assert.deepEqual(
       posts.map((value) => value.path),
-      ["/api/notifications"],
+      ["/api/repositories/explore", "/api/notifications"],
     );
     assert.deepEqual(errors, []);
 
@@ -271,7 +332,7 @@ async function run() {
       });
     }
     console.log(
-      "PASS: Home IA, scoped Repository resource gateways, Repository/Issue and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
+      "PASS: Home IA, Explore discovery/activity, scoped Repository resource gateways, Repository/Issue and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
     );
   } finally {
     if (artifactDir) await context.tracing.stop({ path: path.join(artifactDir, "trace.zip") });

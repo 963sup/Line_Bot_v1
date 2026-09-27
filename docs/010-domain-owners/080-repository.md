@@ -7,13 +7,14 @@ Repository 是 User 或 Organization 擁有的獨立工作容器，並擁有容�
 - Repository identity、visibility、access 與 User → Repository star。
 - Issue lifecycle、assignment、Label、Repository Milestone、command receipt 與 event history。
 - Discussion thread 與 comment。
-- 由 Repository access/star facts 衍生的 discovery projection。
+- 由 Repository access/star facts與 immutable Issue events 衍生的 discovery / Trending / Activity projection；projection 不取得新的 business authority。
 
 Project 只參照 Repository work，不取得 Issue/Discussion authority；Notifications 只投遞來源 reference，不取得 source truth。
 
 Current runtime 已接線的 Repository resource read 包含：
 
 - Repository owner/name read 與 accessible Repository discovery。
+- Explore discovery read：Trending 以目前仍有效且最近 7 天建立的 Star 數優先，再以總 Star/name/id 穩定排序；Activity 第一版只投影 immutable Issue lifecycle events，且每次 read 重新核驗 current effective Repository access。
 - Issue list/detail read 與 Issue command runtime。
 - Discussion list/detail/comment read。
 - Repository Label collection read。
@@ -61,6 +62,8 @@ Canonical create surface 是 `/repositories/new`；API 使用 `POST /api/reposit
 - Organization-owned Repository 的 direct/Team grant 仍要求 current Organization qualification。
 - Command 以 stable request identity 防重；conditional transition 使用 expected version。
 - Event/history 是 durable evidence，不由 current snapshot 覆寫。
+- Discovery ranking/read model 只衍生既有 Repository/Star/Event truth；不得反向成為 Repository、Star 或 Issue authority。
+- Activity event 曾經存在不代表現在仍可見；exposure 永遠以 current effective Repository access 重驗。
 
 ## Mapping
 

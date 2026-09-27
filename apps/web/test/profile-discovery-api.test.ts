@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { follows, profiles } from "../src/app/api/_composition/account.server";
 import { repositoryCollection } from "../src/app/api/_composition/repository-collection.server";
+import { repositoryDiscovery } from "../src/app/api/_composition/repository-discovery.server";
 import { repositoryStars } from "../src/app/api/_composition/repository-stars.server";
 import { GET as followsGet, POST as followsPost } from "../src/app/api/follows/route";
 import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/route";
@@ -39,17 +40,21 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
       capability: "read" as const,
     },
   ]);
-  const explore = mock.method(repositoryStars, "explore", async () => [
-    {
-      id: "repository-a",
-      ownerLogin: "acme",
-      name: "Repository A",
-      visibility: "private",
-      capability: "read" as const,
-      starCount: 1,
-      starred: false,
-    },
-  ]);
+  const discover = mock.method(repositoryDiscovery, "discover", async () => ({
+    trending: [
+      {
+        id: "repository-a",
+        ownerLogin: "acme",
+        name: "Repository A",
+        visibility: "private",
+        capability: "read" as const,
+        recentStarCount: 1,
+        starCount: 1,
+        starred: false,
+      },
+    ],
+    activity: [],
+  }));
   const star = mock.method(repositoryStars, "star", async () => {});
   const starred = mock.method(repositoryStars, "starred", async () => [
     {
@@ -153,7 +158,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(following.mock.callCount(), 1);
     assert.equal(follow.mock.callCount(), 1);
     assert.equal(accessible.mock.callCount(), 1);
-    assert.equal(explore.mock.callCount(), 1);
+    assert.equal(discover.mock.callCount(), 1);
     assert.equal(starred.mock.callCount(), 1);
     assert.equal(star.mock.callCount(), 1);
   } finally {
@@ -164,7 +169,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     following.mock.restore();
     follow.mock.restore();
     accessible.mock.restore();
-    explore.mock.restore();
+    discover.mock.restore();
     starred.mock.restore();
     star.mock.restore();
     if (previousOrigin === undefined) delete process.env.APP_ORIGIN;
