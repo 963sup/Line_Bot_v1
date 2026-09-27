@@ -9,7 +9,7 @@
 - Page/layout 只組合 owner public capability；不複製 use case。
 - Direct open、refresh、soft navigation、back 必須收斂到同一 authoritative query/command。
 - Home / Explore / Inbox 類 surface 是 composition/presentation vocabulary；不能因 UI 名稱建立同名 Domain/package。
-- Canonical resource route、published compatibility route 與 current app-shell 以 [Web runtime](../../../../../docs/020-architecture/050-runtime-architecture.md) 和實際 route source 為準；本檔不維護完整 route inventory。
+- Canonical resource route、published compatibility route 與 current app-shell 以 [Web runtime](../../../../../docs/reference/runtime/routes.md) 和實際 route source 為準；本檔不維護完整 route inventory。
 - Project、Recent、cross-owner feed 或其他尚無 current owner/runtime contract 的能力不得由 localStorage、browser history、fake count 或 disabled shell 冒充。
 - Profile / Settings / navigation locator 只使用 owner已驗證 projection；不得從 LINE profile、display name、provider metadata 或 opaque UserId fabricated login/slug。
 - Search / discovery 只能宣稱實際 owner contract 支援的 coverage；UI filter 不擴張資料 authority。
