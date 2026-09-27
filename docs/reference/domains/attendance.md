@@ -1,6 +1,6 @@
 # Attendance detailed reference
 
-Low-frequency Attendance flows and edge cases. The owner boundary and invariants remain canonical in [Attendance](../../010-domain-owners/050-attendance.md).
+Low-frequency Attendance flows and edge cases. The owner boundary and invariants remain canonical in [Attendance](../../owners/attendance.md).
 
 ## Operations
 
@@ -34,7 +34,7 @@ Attendance 決定：
 - reward business day。
 - reward amount = 0.5 Coin。
 
-Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只投影 balance。[DailyCheckIn](../../010-domain-owners/160-daily-check-in.md) 是獨立的每日簽到 owner；既有 source context/type 的相容與保留規則由該 owner 維護，不因更名重寫 persisted literal。Attendance reward 與薪資無關。
+Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只投影 balance。[DailyCheckIn](../../owners/daily-check-in.md) 是獨立的每日簽到 owner；既有 source context/type 的相容與保留規則由該 owner 維護，不因更名重寫 persisted literal。Attendance reward 與薪資無關。
 
 ## Workplace eligibility
 
@@ -72,7 +72,7 @@ LINE alias、Messaging API retry 技術細節由 LINE integration / operations o
 
 ## Legal boundary
 
-目前保存真實起訖與分鐘級資料，但尚未具備完整排班、休息、例假、加班核定、可稽核更正與 production retention/recovery 證據，因此不能宣稱為完整法定工時／算薪系統。Workforce 方向與缺口見 [Workforce gaps](../../090-governance/040-gaps/060-workforce.md)。
+目前保存真實起訖與分鐘級資料，但尚未具備完整排班、休息、例假、加班核定、可稽核更正與 production retention/recovery 證據，因此不能宣稱為完整法定工時／算薪系統。Workforce 方向與缺口見 [Workforce gaps](../../change/gaps/workforce.md)。
 
 ## Workplace chat flow
 
