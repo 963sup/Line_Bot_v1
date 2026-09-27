@@ -1,10 +1,10 @@
 # DailyCheckIn detailed reference
 
-Low-frequency DailyCheckIn details. The owner boundary and invariants remain canonical in [DailyCheckIn](../../010-domain-owners/160-daily-check-in.md).
+Low-frequency DailyCheckIn details. The owner boundary and invariants remain canonical in [DailyCheckIn](../../owners/daily-check-in.md).
 
 ## Current implementation / target distinction
 
-Current human qualification 由 [Account/User](../../010-domain-owners/010-account.md) 擁有。DailyCheckIn 用例解析可信 LINE subject 對應的 User；claim adapter 在同一 SQL transaction 內鎖定並重查 User qualification，再提交每日獎勵結果、Ledger credit 與 audit。Current Web surface 是 `/daily-check-in`，由 `apps/web/src/modules/daily-check-in` 承接 claim/recovery/presentation lifecycle。前端轉盤只呈現已提交的結果，動畫完成、關閉或跳過都不決定是否入帳；Account `/settings` 使用 Account-only read projection，不載入 DailyCheckIn/Wallet。
+Current human qualification 由 [Account/User](../../owners/account.md) 擁有。DailyCheckIn 用例解析可信 LINE subject 對應的 User；claim adapter 在同一 SQL transaction 內鎖定並重查 User qualification，再提交每日獎勵結果、Ledger credit 與 audit。Current Web surface 是 `/daily-check-in`，由 `apps/web/src/modules/daily-check-in` 承接 claim/recovery/presentation lifecycle。前端轉盤只呈現已提交的結果，動畫完成、關閉或跳過都不決定是否入帳；Account `/settings` 使用 Account-only read projection，不載入 DailyCheckIn/Wallet。
 
 DailyCheckIn 接受合格 User 的明確 intent。它不擁有 Account lifecycle、Asset denomination、Wallet balance、Ledger history 或 Attendance clock reward；不新增泛用 Reward Context、點數引擎或活動平台。
 
@@ -24,7 +24,7 @@ Browser cases 使用合成 LINE／API，驗證 server 結果呈現、重整不�
 
 完整 release 仍需對應遠端、跨入口及 unknown-result 驗收；本機用例／transaction port 分離不宣稱這些驗收已完成。
 
-- [Ledger](../../010-domain-owners/150-ledger.md)：posting/idempotency。
-- [Account current rules](../../010-domain-owners/010-account.md)：User qualification。
-- [Account identity design](../../090-governance/010-decisions/070-account-identity-design.md)：未完成 Account/Bot target。
-- [Convergence plan](../../090-governance/030-migrations/040-enterprise-organization-workforce-payroll.md)：階段與未完成條件。
+- [Ledger](../../owners/ledger.md)：posting/idempotency。
+- [Account current rules](../../owners/account.md)：User qualification。
+- [Account identity design](../../change/decisions/account-identity-design.md)：未完成 Account/Bot target。
+- [Convergence plan](../../change/migrations/enterprise-organization-workforce-payroll.md)：階段與未完成條件。
