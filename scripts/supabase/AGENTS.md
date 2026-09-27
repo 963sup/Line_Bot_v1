@@ -1,6 +1,6 @@
 # Supabase operation scripts
 
-Provider contract 見 [Supabase platform](../../docs/030-platform/020-supabase.md)；publication ordering 見 [Release](../../docs/070-operations/020-release.md)。
+Provider contract 見 [Supabase platform](../../docs/reference/platform/supabase.md)；publication ordering 見 [Release](../../docs/reference/operations/release.md)。
 
 - `schema-source.mjs` owns ordered declarative SQL reading；`schema-local.mjs` owns clean local rebuild；`remote.mjs` owns remote `repair|prepare|plan|recovery|sync|verify` semantics；`postgres.mjs` owns SQL transport helpers。
 - Scripts 必須分開 source/rebuild、local verification、remote reconciliation 與 remote mutation；local success 不能冒充 remote convergence。
