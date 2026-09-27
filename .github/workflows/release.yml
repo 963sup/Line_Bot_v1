@@ -161,7 +161,6 @@ jobs:
             .artifacts/supabase-remote/verification.sql
             .artifacts/supabase-remote/migration-history.before.txt
             .artifacts/supabase-remote/migration-history.after.txt
-            .artifacts/supabase-remote/general-management-prepare.json
           if-no-files-found: ignore
           retention-days: 7
 
