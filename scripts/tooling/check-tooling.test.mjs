@@ -460,7 +460,7 @@ test("Release plans owner-specific convergence and preserves real dependencies",
   write(".github/workflows/release.yml", workflow.replace("actions: read", "actions: write"));
   rejects(root, "read-only GitHub permissions");
 
-  write(".github/workflows/release.yml", workflow.replace("conclusion == 'success' && ", ""));
+  write(".github/workflows/release.yml", workflow.replace("workflow_run.conclusion == 'success'", "workflow_run.conclusion == 'failure'"));
   rejects(root, "successful same-repository main push Validate");
 
   write(
