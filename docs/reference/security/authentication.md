@@ -22,4 +22,4 @@ OAuth / identity protocol 必要的短效 code 只在指定 callback 處理，�
 
 「使用者是誰」與「目前能做什麼」分開。已有 identity mapping 不代表 Member 一定 active；authorization 仍由 `../030-authorization/` 與 module contract 決定。
 
-Provider-specific verification：[Platform](../030-platform/README.md)；external identity data mapping：[Identity mapping](../040-data/050-identity-mapping.md)。
+Provider-specific verification：[Platform](../README.md)；external identity data mapping：[Identity mapping](../data/identity-mapping.md)。
