@@ -1,7 +1,7 @@
-# Model: GPT-5.5 (gpt-5.5)
+# Model: GPT-5.6 Sol (gpt-5.6-sol)
 name = "implementation-worker"
 description = "Implement one approved bounded change across the necessary code, schema, tests and documentation while preserving explicit ownership and invariants."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "medium"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md.

@@ -1,7 +1,7 @@
-# Model: GPT-5.5 (gpt-5.5)
+# Model: GPT-5.6 Sol (gpt-5.6-sol)
 name = "repository-mapper"
 description = "Read-only repository navigation for one bounded question: trace entry points, consumers, contracts, dependencies, tests and likely change locations."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """
