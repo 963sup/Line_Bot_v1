@@ -545,7 +545,7 @@ test("Release routes schema and workflow changes through one reconciliation pass
     ".github/workflows/release.yml",
     workflow.replace("GITHUB_TOKEN: ${{ github.token }}", "RELEASE_TOKEN: ${{ github.token }}"),
   );
-  rejects(root, "production deployment must follow Supabase convergence");
+  rejects(root, "production deployment must install dependencies");
 
   write(
     ".github/workflows/release.yml",
