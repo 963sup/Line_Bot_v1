@@ -569,12 +569,39 @@
         "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
       }
     },
+    "docs/facts/glossary.md": {
+      "outcome": "keep",
+      "baselineBytes": 2063,
+      "maxBytes": 2063,
+      "contentBlob": "120b8232a13cd55fa9e8b22710d73c0970a78f71",
+      "sources": {
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/facts/ownership.md": {
+      "outcome": "keep",
+      "baselineBytes": 1158,
+      "maxBytes": 1158,
+      "contentBlob": "8b7ff44026dcf420a227e47f7676e6c211416c8d",
+      "sources": {
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
     "docs/facts/sources-of-truth.md": {
       "outcome": "keep",
       "baselineBytes": 1200,
       "maxBytes": 1200,
       "contentBlob": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6",
       "sources": {}
+    },
+    "docs/facts/system.md": {
+      "outcome": "keep",
+      "baselineBytes": 745,
+      "maxBytes": 745,
+      "contentBlob": "f495bd60828bd3ba690ea3cb95dadf3df4f34244",
+      "sources": {
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
     },
     "docs/README.md": {
       "outcome": "keep",
