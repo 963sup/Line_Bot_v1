@@ -59,6 +59,7 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
     assert.equal(view.owner, undefined);
     assert.equal(view.scope, undefined);
     assert.equal(view.imageId, undefined);
+    assert.equal(view.project, undefined);
     const oversized = await POST(request({ revision: 1, padding: "x".repeat(8192) }), context);
     assert.equal(oversized.status, 413);
     assert.deepEqual(await oversized.json(), { error: "資料過大。" });
@@ -87,7 +88,6 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
       currency: "TWD",
       date: "2026-09-06",
       invoiceNumber: "",
-      project: "富士",
       payment: "advance",
     };
     const cmd = { type: "confirm", revision: draft.revision, fields };

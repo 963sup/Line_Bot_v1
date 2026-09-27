@@ -13,7 +13,6 @@ const labels = {
   currency: "幣別",
   date: "日期",
   invoiceNumber: "憑證號碼（選填）",
-  project: "專案",
 };
 
 export default function ExpensePanel({ liffId }: { liffId: string }) {

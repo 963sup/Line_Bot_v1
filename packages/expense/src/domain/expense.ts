@@ -23,7 +23,7 @@
 
 /**
  * 支出實體的可編輯業務欄位集合
- * 包含交易對象、金額、幣別、日期、憑證號碼、專案歸屬與支付方式。
+ * 包含交易對象、金額、幣別、日期、憑證號碼與目前 Expense-local 支付描述。
  */
 export type ExpenseFields = {
   merchant: string;
@@ -31,7 +31,6 @@ export type ExpenseFields = {
   currency: string;
   date: string;
   invoiceNumber: string;
-  project: string;
   payment: "" | "advance" | "company" | "unpaid";
 };
 
@@ -88,7 +87,7 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
     throw new ExpenseError(400, "資料格式不正確。");
   }
   const v = input as Record<string, unknown>;
-  const keys = ["merchant", "amount", "currency", "date", "invoiceNumber", "project", "payment"];
+  const keys = ["merchant", "amount", "currency", "date", "invoiceNumber", "payment"];
 
   // 檢查白名單鍵值與基礎型別長度、不可包含控制字元
   if (
@@ -131,11 +130,8 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
   }
 
   // 若為正式入帳確認 (complete=true)，不可留空關鍵財務欄位
-  if (
-    complete &&
-    [f.merchant, f.amount, f.currency, f.date, f.project, f.payment].some((x) => !x)
-  ) {
-    throw new ExpenseError(400, "請補齊商家、金額、幣別、日期、專案與付款方式。");
+  if (complete && [f.merchant, f.amount, f.currency, f.date, f.payment].some((x) => !x)) {
+    throw new ExpenseError(400, "請補齊商家、金額、幣別、日期與付款方式。");
   }
 
   return f;

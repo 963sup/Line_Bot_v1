@@ -84,7 +84,6 @@ test("received result preserves the persisted expense and rechecks membership on
     currency: "",
     date: "",
     invoiceNumber: "",
-    project: "",
     payment: "",
   };
   let active = true;

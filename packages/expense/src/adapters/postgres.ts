@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line-work/account/adapters/postgres";
-import { UserError } from "@line-work/account/domain/user";
 import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
 import type { ExpenseRepository } from "../application/ports/expense-repository.js";
 import type { ReceiptIntakeStore } from "../application/ports/receipt-intake.js";
@@ -17,7 +16,7 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
   constructor(private db: Database = businessDatabase()) {}
   private async activeOwner(sql: Sql, owner: string) {
     if (!(await readActiveUserQualification(sql, owner, "update"))) {
-      throw new UserError(403, "會員目前無法操作支出。");
+      throw new ExpenseError(403, "會員目前無法操作支出。");
     }
   }
   arm(scope: string, owner: string, now = Date.now()) {
@@ -88,7 +87,6 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
         currency: "",
         date: "",
         invoiceNumber: "",
-        project: "",
         payment: "",
       };
       const row = (
@@ -141,7 +139,6 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
         currency: reading.currency ?? "",
         date: reading.date ?? "",
         invoiceNumber: reading.invoiceNumber ?? "",
-        project: "",
         payment: "",
       });
       const next: Expense = { ...d, ...fields, status: "draft", revision: d.revision + 1 };

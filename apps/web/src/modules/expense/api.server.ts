@@ -17,7 +17,8 @@ const json = (data: unknown, status = 200) =>
  * 脫敏投影：過濾內部敏感屬性 (owner, scope, imageId)
  */
 const publicExpense = (d: Expense) => {
-  const { owner, scope, imageId, ...view } = d;
+  const view = { ...d } as Record<string, unknown>;
+  for (const key of ["owner", "scope", "imageId", "project"]) delete view[key];
   return view;
 };
 
