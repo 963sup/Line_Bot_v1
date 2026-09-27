@@ -21,15 +21,15 @@
 
 | Quality | Contract | Canonical owner / enforcement |
 | --- | --- | --- |
-| Single Responsibility | 一個 module 只擁有一個 coherent responsibility；不同 business authority、invariant 或 change reason 不塞進同一 owner。只有真實責任不同才拆 module，不為目錄對稱建立空 layer。 | [Module boundaries](030-module-boundaries.md)、[Repository architecture](010-repository-architecture.md)、`architecture/semantic-model.json` + `architecture/implementation-topology.json` |
-| Dependency through Interface | Module 間只透過明確 public surface / port / contract 溝通；consumer 不依賴 private implementation、`dist`、testing-only surface 或 database row。 | [Dependency rules](040-dependency-rules.md)、各 `package.json#exports`、architecture guards |
-| Change Isolation | 變更預設只修改真正 owner；只有 contract、consumer 或 cross-cutting invariant 真正受影響時才擴張 change surface。不得以順手重構、compatibility facade 或 alias 把局部變更擴散。 | [Code quality](../060-engineering/050-code-quality.md)、[Change routing](../README.md) |
-| Single Source of Truth | 同一項 business meaning、architecture fact、schema、public surface、command 或 runtime evidence 只由一個 authoritative source 維護；其他位置 summary + link / derive / enforce。 | [Repository map](../facts/sources-of-truth.md)、`architecture/semantic-model.json`、`architecture/implementation-topology.json`、`docs/AGENTS.md`、machine owners |
-| Separation of Concerns | UI / delivery、business rule、application orchestration、data access、provider/runtime mechanism 依不同責任分離；Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 不互相代替。 | [Hexagonal architecture](020-hexagonal-architecture.md)、[Module boundaries](030-module-boundaries.md)、[Repository map](../facts/sources-of-truth.md) |
-| Explicit Boundary | 每個 owner 對外要能說清楚 responsibility、public surface、consumer、private implementation 與 authority/failure semantics；沒有真實 consumer 不擴大 export。 | [Module boundaries](030-module-boundaries.md)、public exports、architecture guards |
-| Testability | Core business rule 與 deterministic invariant 能在不依賴 framework/provider 的情況下直接驗證；需要 transaction、locking、RLS 或 provider behavior 的 claim 使用相應 integration evidence，不用 mock 冒充。 | [Testing strategy](../060-engineering/030-testing-strategy.md) |
-| Reproducibility | 安裝、開發、檢查、完整驗證使用 manifest / lockfile / canonical command；本地與 CI 共用 repository command owner，不建立只在單一機器成立的隱性流程。 | [Local environment](../060-engineering/010-local-environment.md)、[Validation](../060-engineering/040-validation.md)、root `package.json#scripts` |
-| Understandability | 同一 concept 維持單一名稱；path、owner、README routing、public contract 與 validation 位置可預測。陌生 developer / Agent 應能由 task 快速定位 Owner → Truth → Boundary → Change surface → Validation。 | [Change routing](../README.md)、[Repository architecture](010-repository-architecture.md)、[Code quality](../060-engineering/050-code-quality.md) |
+| Single Responsibility | 一個 module 只擁有一個 coherent responsibility；不同 business authority、invariant 或 change reason 不塞進同一 owner。只有真實責任不同才拆 module，不為目錄對稱建立空 layer。 | [Module boundaries](../../rules/dependency-boundaries.md)、[Repository architecture](../../../facts/sources-of-truth.md)、`architecture/semantic-model.json` + `architecture/implementation-topology.json` |
+| Dependency through Interface | Module 間只透過明確 public surface / port / contract 溝通；consumer 不依賴 private implementation、`dist`、testing-only surface 或 database row。 | [Dependency rules](../../rules/dependency-boundaries.md)、各 `package.json#exports`、architecture guards |
+| Change Isolation | 變更預設只修改真正 owner；只有 contract、consumer 或 cross-cutting invariant 真正受影響時才擴張 change surface。不得以順手重構、compatibility facade 或 alias 把局部變更擴散。 | [Code quality](../engineering/code-quality.md)、[Change routing](../README.md) |
+| Single Source of Truth | 同一項 business meaning、architecture fact、schema、public surface、command 或 runtime evidence 只由一個 authoritative source 維護；其他位置 summary + link / derive / enforce。 | [Repository map](../../facts/sources-of-truth.md)、`architecture/semantic-model.json`、`architecture/implementation-topology.json`、`docs/AGENTS.md`、machine owners |
+| Separation of Concerns | UI / delivery、business rule、application orchestration、data access、provider/runtime mechanism 依不同責任分離；Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 不互相代替。 | [Hexagonal architecture](hexagonal.md)、[Module boundaries](../../rules/dependency-boundaries.md)、[Repository map](../../facts/sources-of-truth.md) |
+| Explicit Boundary | 每個 owner 對外要能說清楚 responsibility、public surface、consumer、private implementation 與 authority/failure semantics；沒有真實 consumer 不擴大 export。 | [Module boundaries](../../rules/dependency-boundaries.md)、public exports、architecture guards |
+| Testability | Core business rule 與 deterministic invariant 能在不依賴 framework/provider 的情況下直接驗證；需要 transaction、locking、RLS 或 provider behavior 的 claim 使用相應 integration evidence，不用 mock 冒充。 | [Testing strategy](../engineering/testing.md) |
+| Reproducibility | 安裝、開發、檢查、完整驗證使用 manifest / lockfile / canonical command；本地與 CI 共用 repository command owner，不建立只在單一機器成立的隱性流程。 | [Local environment](../engineering/local-environment.md)、[Validation](../engineering/validation-pipeline.md)、root `package.json#scripts` |
+| Understandability | 同一 concept 維持單一名稱；path、owner、README routing、public contract 與 validation 位置可預測。陌生 developer / Agent 應能由 task 快速定位 Owner → Truth → Boundary → Change surface → Validation。 | [Change routing](../README.md)、[Repository architecture](../../../facts/sources-of-truth.md)、[Code quality](../engineering/code-quality.md) |
 
 ### Root-cause acceptance rule
 
@@ -122,9 +122,9 @@ Scale solution 必須指出目前瓶頸與量測方式。沒有 evidence 時，�
 
 ## 相鄰 owner
 
-- System boundary：[System](../rules/system-invariants.md)
-- Runtime：[Runtime architecture](050-runtime-architecture.md)
-- Cache policy：[Cache and projections](../040-data/060-cache-and-projections.md)
-- Security：[Security](../050-security/README.md)
-- Engineering quality：[Code quality](../060-engineering/050-code-quality.md)
-- Recovery：[Recovery](../070-operations/030-recovery.md)
+- System boundary：[System](../../rules/system-invariants.md)
+- Runtime：[Runtime architecture](../runtime/routes.md)
+- Cache policy：[Cache and projections](../data/cache.md)
+- Security：[Security](../../rules/request-authorization.md)
+- Engineering quality：[Code quality](../engineering/code-quality.md)
+- Recovery：[Recovery](../operations/recovery.md)
