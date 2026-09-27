@@ -43,9 +43,9 @@ Rich Menu desired-state source 是 release-owned external state。當 `assets/li
 
 Publication 不建立 `.artifacts/rich-menu*.json`，Rich Menu ID 只在單次 process 記憶體中傳遞；LINE remote definition／alias／default readback 才是 publication evidence。Create request 若未取得 ID 就失敗，可能是 unknown result；不得盲目重跑。Activation 若失敗，依記憶體 snapshot 回復 default／aliases；本次新建 menus 不自動刪除，避免短暫 alias 可見期間未知好友已切換後被誤刪。需要人工 reconcile 時，非敏感的 retained Rich Menu IDs 與 rollback failure 類別直接留在 workflow log，不另建 receipt source of truth。
 
-圖片修改後必須重新 `preview`／`publish`；publication 會重新 upload 並讀回 remote definition。具日期的 remote publication、手機顯示與實機限制由 [Acceptance evidence](../../090-governance/060-acceptance/010-acceptance-evidence.md) 保存，不寫回 current contract。
+圖片修改後必須重新 `preview`／`publish`；publication 會重新 upload 並讀回 remote definition。具日期的 remote publication、手機顯示與實機限制由 [Acceptance evidence](../../change/evidence/acceptance-evidence.md) 保存，不寫回 current contract。
 
-完整發布／回復 gate 見 [Release process](../../070-operations/020-release.md)。
+完整發布／回復 gate 見 [Release process](../release.md)。
 
 ## 安全與導覽
 
