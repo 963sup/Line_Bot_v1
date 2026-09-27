@@ -94,6 +94,12 @@ test("GitHub operation changes run owner-local GitHub tests and tooling boundary
   assert.equal(shouldRunFast("tooling:check", scope), true);
 });
 
+test("Attendance scheduler changes run the owner-local scheduler tests", () => {
+  const scope = classifyChangedFiles(["scripts/attendance/scheduler.mjs"]);
+  assert.equal(scope.codeAffected, true);
+  assert.equal(shouldRunFast("attendance:scheduler:test", scope), true);
+});
+
 test("Vercel production adapter changes run the tooling-owned deployment tests", () => {
   const scope = classifyChangedFiles(["scripts/vercel/deploy-production.mjs"]);
   assert.deepEqual(scope, {

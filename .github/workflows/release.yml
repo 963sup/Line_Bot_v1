@@ -245,3 +245,48 @@ jobs:
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         run: pnpm line:rich-menu publish all
+
+  attendance_scheduler:
+    needs: [release_plan, supabase, deployment]
+    env:
+      SUPABASE_REMOTE_MUTATION_CONTEXT: validated-main
+    if: >-
+      always() &&
+      needs.release_plan.result == 'success' &&
+      needs.supabase.result == 'success' &&
+      (needs.release_plan.outputs.web_affected != 'true' || needs.deployment.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: supabase-production-nmssogphayjymjpbnrxv
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release_plan.outputs.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+
+      - name: Require current main before Attendance scheduler mutation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
+        run: pnpm github:current-main --sha "$SHA"
+
+      - name: Reconcile and read back Attendance scheduler
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+          ATTENDANCE_WORKER_SECRET: ${{ secrets.ATTENDANCE_WORKER_SECRET }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
+        run: pnpm attendance:scheduler reconcile --live --sha "$SHA"

@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mock, test } from "node:test";
 import { PostgresAttendanceStore } from "@line_bot_v1/attendance/adapters/postgres";
 import { showAttendanceMenu } from "../src/app/api/_composition/attendance.server";
-import { POST } from "../src/app/api/internal/attendance-maintenance/route";
+import { GET, POST } from "../src/app/api/internal/attendance-maintenance/route";
 import { closeFixture, mockSupabase } from "./member-fixture";
 
 test("maintenance rejects absent configuration and wrong bearer before opening a database", async () => {
@@ -16,9 +16,15 @@ test("maintenance rejects absent configuration and wrong bearer before opening a
         headers: { authorization },
       });
     assert.equal((await POST(request())).status, 503);
+    assert.equal((await GET(request())).status, 503);
     process.env.ATTENDANCE_WORKER_SECRET = "test-only-worker-secret-32-characters";
     const rejected = await POST(request("Bearer wrong"));
     assert.equal(rejected.status, 401);
+    const preflightRejected = await GET(request("Bearer wrong"));
+    assert.equal(preflightRejected.status, 401);
+    const preflight = await GET(request("Bearer test-only-worker-secret-32-characters"));
+    assert.equal(preflight.status, 204);
+    assert.match(preflight.headers.get("cache-control") ?? "", /no-store/);
     assert.match(rejected.headers.get("cache-control") ?? "", /no-store/);
   } finally {
     if (previous === undefined) delete process.env.ATTENDANCE_WORKER_SECRET;
