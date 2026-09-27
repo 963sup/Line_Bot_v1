@@ -13,7 +13,7 @@ Project 是跨一個或多個 Repository 的 planning boundary。它擁有 plann
 - Project → Repository reference。
 
 Current persisted facts 位於 `700–704` schema object group，semantic lifecycle 是 `current-data-only`。
-`packages/project` 已註冊為 module owner，但目前沒有 executable source、public export、Web consumer 或 active runtime capability。
+`packages/project` 已建立分層雛型，root public export 提供 `Project` 型別，欄位對齊現有 Project identity、organization、name 與 version。URL collection 命名為 `projects`；尚未建立 Web route、consumer 或 active runtime capability。型別不執行資料驗證或授權。
 
 ## Invariants
 
@@ -30,7 +30,7 @@ Current persisted facts 位於 `700–704` schema object group，semantic lifecy
 - Project access / authorization contract。
 - planning command、expected version、request replay。
 - Repository current-access validation。
-- public exports、application/domain source 與 Web presentation。
+- executable application/domain behavior、runtime public exports 與 Web presentation。
 
 不得因 persisted data 或 module folder 已存在，就宣稱上述 runtime behavior 已完成。
 

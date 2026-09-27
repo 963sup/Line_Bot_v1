@@ -9,6 +9,12 @@
     "dependenciesUsePublicContracts": true
   },
   "modules": {
+    "@line_bot_v1/explore": {
+      "path": "packages/explore",
+      "moduleKind": "application-module",
+      "semanticOwner": "repository",
+      "allowedWorkspaceDependencies": []
+    },
     "@line_bot_v1/account": {
       "path": "packages/account",
       "moduleKind": "domain-module",
