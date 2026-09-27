@@ -28,7 +28,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "test": "tsx --test test/*.test.ts",
-    "schema:check": "node --test ../../scripts/supabase/schema-source.test.mjs && tsx --test test/schema-contract.schema.ts"
+    "schema:check": "node --test ../../scripts/supabase/schema-source.test.mjs && node --no-wasm-code-gc --import tsx --test test/schema-contract.schema.ts"
   },
   "dependencies": {
     "pg": "catalog:"

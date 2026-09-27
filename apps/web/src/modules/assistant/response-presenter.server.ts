@@ -64,9 +64,9 @@ export function membershipMessage(
       type: "buttons" as const,
       text:
         intent === "restore"
-          ? "恢復會員功能後，即可使用工作助手。"
+          ? "恢復會員功能後，即可使用Line_Bot_v1。"
           : intent === "register"
-            ? "完成 LINE 會員註冊後，即可使用工作助手。"
+            ? "完成 LINE 會員註冊後，即可使用Line_Bot_v1。"
             : "查看你的會員資料。",
       actions: [{ type: "uri" as const, label, uri: miniAppEntryUrl(miniAppUrl, intent) }],
     },

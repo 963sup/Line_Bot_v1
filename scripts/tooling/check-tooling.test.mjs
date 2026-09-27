@@ -192,6 +192,26 @@ test("retired project identity cannot reappear in current surfaces", (t) => {
   const retiredSystemId = ["line", "work", "assistant"].join("-");
   write("docs/identity.md", `# ${retiredSystemId}\n`);
   rejects(root, "retired project system id");
+
+  const retiredShortChineseName = ["工作", "助手"].join("");
+  write("docs/identity.md", `# ${retiredShortChineseName}\n`);
+  rejects(root, "retired project short Chinese display name");
+
+  const retiredRichMenuPrefix = `${["work", "assistant"].join("-")}-home`;
+  write("docs/identity.md", `# ${retiredRichMenuPrefix}\n`);
+  rejects(root, "retired project legacy Rich Menu prefix");
+
+  const retiredProviderSlug = `${["line", "work"].join("-")}-web`;
+  write("docs/identity.md", `# ${retiredProviderSlug}\n`);
+  rejects(root, "retired project legacy provider slug");
+
+  const retiredRuntimePrefix = `${["line", "bot"].join("-")}:production`;
+  write("docs/identity.md", `# ${retiredRuntimePrefix}\n`);
+  rejects(root, "retired project legacy runtime prefix");
+
+  const retiredSchemaOperator = `${["line", "bot"].join("-")}-schema-operator`;
+  write("docs/identity.md", `# ${retiredSchemaOperator}\n`);
+  rejects(root, "retired project legacy schema operator");
 });
 
 test("validation entrypoints stay canonical and read-only", (t) => {

@@ -77,16 +77,16 @@ prefix_rule(
     pattern = [["gcloud", "gcloud.cmd"], "run", "deploy"],
     decision = "prompt",
     justification = "Confirm the exact project, service, image digest and existing deployment authorization.",
-    match = ["gcloud run deploy line-work-web --project=example", "gcloud.cmd run deploy line-work-web"],
-    not_match = ["gcloud run services describe line-work-web"],
+    match = ["gcloud run deploy line-bot-v1-web --project=example", "gcloud.cmd run deploy line-bot-v1-web"],
+    not_match = ["gcloud run services describe line-bot-v1-web"],
 )
 
 prefix_rule(
     pattern = [["gcloud", "gcloud.cmd"], "sql", "instances", "delete"],
     decision = "prompt",
     justification = "Database deletion requires an exact target and explicit destructive-action authorization.",
-    match = ["gcloud sql instances delete line-work-db", "gcloud.cmd sql instances delete line-work-db"],
-    not_match = ["gcloud sql instances describe line-work-db"],
+    match = ["gcloud sql instances delete line-bot-v1-db", "gcloud.cmd sql instances delete line-bot-v1-db"],
+    not_match = ["gcloud sql instances describe line-bot-v1-db"],
 )
 
 prefix_rule(

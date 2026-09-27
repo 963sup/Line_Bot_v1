@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { workAssistantRichMenu } from "../src/modules/assistant/rich-menu/definition";
+import { lineBotV1RichMenu } from "../src/modules/assistant/rich-menu/definition";
 import { teamApiError, teamBody, teamQuery } from "../src/modules/team/http.server";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-route";
 
 test("team menu replaces all three entries and preserves their destination through login", () => {
-  const menu = workAssistantRichMenu(
+  const menu = lineBotV1RichMenu(
     "https://miniapp.line.me/123-test",
     { width: 1536, height: 1024 },
     "team",

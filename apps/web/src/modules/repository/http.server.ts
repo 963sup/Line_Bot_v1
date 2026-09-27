@@ -34,7 +34,7 @@ async function jsonObjectBody(
     throw failure(503, "服務網址尚未設定。");
   }
   if (request.headers.get("origin") !== configured) {
-    throw failure(403, "請從工作助手頁面操作。");
+    throw failure(403, "請從Line_Bot_v1頁面操作。");
   }
   if (request.headers.get("content-type")?.split(";")[0]?.trim() !== "application/json") {
     throw failure(415, "需要 JSON 格式。");

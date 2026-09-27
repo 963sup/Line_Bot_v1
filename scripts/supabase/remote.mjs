@@ -207,7 +207,7 @@ where to_regclass(format('app_private.%I', relation_name)) is null;
 `;
 const apiReadbackTimeoutMs = 10_000;
 const managementApiBaseUrl = "https://api.supabase.com/v1";
-const reconciliationLockName = "line-bot-v1:supabase-schema-reconciliation";
+const reconciliationLockName = "line_bot_v1:supabase-schema-reconciliation";
 
 export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnabled }) {
   if (![401, 403, 404].includes(usersStatus)) {

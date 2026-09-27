@@ -105,7 +105,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
   return (
     <>
       <MiniAppRuntime liffId={liffId} onReady={initialize} onWait={() => setBusy(false)} />
-      <p className="eyebrow">工作助手 · 支出</p>
+      <p className="eyebrow">Line_Bot_v1 · 支出</p>
       <h1>{expense ? `支出 #${expense.number}` : "處理支出"}</h1>
       {busy && <p role="status">{expense ? "處理中，請稍候…" : "正在驗證 LINE 身分…"}</p>}
       {error && (
