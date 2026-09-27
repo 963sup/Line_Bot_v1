@@ -19,7 +19,7 @@ Current runtime 已接線的 Repository resource read 包含：
 - Repository Label collection read。
 - Repository Milestone list/detail read。
 
-Discussion、Label 與 Repository Milestone 的 create/update/delete/close/comment 管理仍未宣稱 runtime 完成；這些 write semantics 只保留資料與 owner 契約，不由 read API 冒充。
+Repository create/rename/visibility、direct/Team access grant management，以及 Discussion、Label、Repository Milestone、IssueLabel 的 write management 都尚未宣稱 runtime 完成；這些 persisted facts 保留 Repository data authority，但 `line_app` 不因此取得未啟用的 mutation authority。Current runtime writes只包含 Issue create/transition（含 Repository-local issue number allocation）與 Repository star/unstar。
 
 ## Locator
 

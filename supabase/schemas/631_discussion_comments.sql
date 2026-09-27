@@ -16,5 +16,7 @@ create table app_private."discussion_comments" (
 create index discussion_comments_discussion_created on app_private.discussion_comments (discussion_id, created_at, id);
 alter table app_private."discussion_comments" enable row level security;
 revoke all on app_private."discussion_comments" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.discussion_comments to line_app;
-create policy "backend" on app_private.discussion_comments as permissive for all to line_app using (true) with check (true);
+-- DiscussionComment write management is data-only; current runtime is authorized read only.
+grant select on app_private.discussion_comments to line_app;
+create policy "backend_read" on app_private.discussion_comments
+  for select to line_app using (true);

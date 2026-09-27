@@ -13,8 +13,10 @@ create table app_private."repository_access" (
 );
 alter table app_private."repository_access" enable row level security;
 revoke all on app_private."repository_access" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.repository_access to line_app;
-create policy "backend" on app_private.repository_access as permissive for all to line_app using (true) with check (true);
+-- Access facts are current data authority; grant-management runtime is not active.
+grant select on app_private.repository_access to line_app;
+create policy "backend_read" on app_private.repository_access
+  for select to line_app using (true);
 
 -- Repository owns the grant; Team continues to own TeamMembership. organization_id is
 -- present only for Organization-owned repositories so the Repository and Team share one scope.

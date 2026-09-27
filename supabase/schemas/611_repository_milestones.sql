@@ -22,5 +22,7 @@ create table app_private.repository_milestones (
 create index repository_milestones_repository_status on app_private.repository_milestones(repository_id, status, number);
 alter table app_private.repository_milestones enable row level security;
 revoke all on app_private.repository_milestones from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.repository_milestones to line_app;
-create policy backend on app_private.repository_milestones for all to line_app using (true) with check (true);
+-- Milestone write management is data-only until a real runtime command is activated.
+grant select on app_private.repository_milestones to line_app;
+create policy backend_read on app_private.repository_milestones
+  for select to line_app using (true);
