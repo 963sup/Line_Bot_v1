@@ -1,6 +1,5 @@
-# Documentation governance scripts
+# Documentation checks
 
-- Own Markdown syntax/link checks and convergence machine state; never product/runtime truth.
-- `check-docs.mjs`: structure/local links. `convergence.mjs`: inventory, review freshness, byte ceiling, upstream coverage, and completion via `docs/convergence-manifest.json`.
-- Manifest is current state; Git owns history. Imported skill provenance stays in `skills-lock.json`.
-- Never weaken owner/security/transaction/evidence contracts to pass checks.
+Own Markdown syntax and local-link checks in `check-docs.mjs`. Git owns change history; no review-state manifest or per-file approval workflow.
+
+Keep owner, authorization, transaction and evidence meaning intact. Task entrypoints belong in `.github/prompts/`; documentation records project facts, not a second agent workflow.

@@ -22,8 +22,7 @@ test("documentation-only changes run only documentation-owned fast gates", () =>
     schemaAffected: false,
     toolingAffected: false,
   });
-  for (const task of ["docs:test", "docs:check", "docs:convergence"])
-    assert.equal(shouldRunFast(task, scope), true);
+  for (const task of ["docs:test", "docs:check"]) assert.equal(shouldRunFast(task, scope), true);
   assert.equal(shouldRunFast("tooling:check", scope), false);
 });
 

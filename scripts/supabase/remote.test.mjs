@@ -1,34 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  accountLoginExpansionSql,
   assertConfirmedProject,
-  assertGeneralManagementExpansionState,
   assertMigrationHistoryUnchanged,
   assertRemoteMutationContext,
   assertRemoteTarget,
-  assertReviewedPlan,
   assertSupabaseRecoveryReadback,
   assertSupabaseRestReadback,
-  authorizeSyncPlan,
-  classifyAccountLoginCompatibility,
-  classifyDailyCheckInCompatibility,
   classifyPlan,
   classifyRemoteFoundationState,
-  classifyRepositoryRuntimeCompatibility,
-  dailyCheckInCompatibilitySql,
-  governanceCompatibilityAccessSql,
-  governanceCompatibilityFunctionSql,
   parseArgs,
-  parseLegacyEnterpriseMetadata,
-  permissionNamesFromSource,
-  permissionSubjectVersionExpansionSql,
   planFingerprint,
   projectRefFromSupabaseUrl,
-  repositoryEffectiveAccessExpansionSql,
-  repositoryProvisionCompatibilityAccessSql,
-  repositoryProvisionCompatibilitySql,
-  resolveLegacyEnterpriseMetadata,
   runWithRemoteReconciliationLock,
   supabaseApiReadbackConfig,
   supabaseManagementRecoveryConfig,
@@ -140,30 +123,10 @@ test("empty plan is recognized as a no-op", () => {
   });
 });
 
-test("reviewed plan fingerprint binds an optional reviewed-plan contract to exact SQL", () => {
-  const sql = "drop table app_private.example;\n";
-  const fingerprint = planFingerprint(sql);
-  assert.match(fingerprint, /^[0-9a-f]{64}$/);
-  assert.equal(assertReviewedPlan(sql, fingerprint), fingerprint);
-  assert.throws(() => assertReviewedPlan(sql, "0".repeat(64)), /no longer matches/i);
-  assert.throws(() => assertReviewedPlan(sql, "not-a-hash"), /exact lowercase SHA-256/i);
-});
-
-test("plain sync authorizes sensitive declarative plans while reviewed-plan mode binds exact SQL", () => {
-  const sql = "drop table app_private.example;\n";
-  assert.deepEqual(authorizeSyncPlan(sql, undefined), {
-    mode: "sensitive",
-    empty: false,
-    reasons: ["destructive-or-security-sensitive"],
-  });
-
-  const fingerprint = planFingerprint(sql);
-  assert.deepEqual(authorizeSyncPlan(sql, fingerprint), {
-    mode: "sensitive",
-    empty: false,
-    reasons: ["destructive-or-security-sensitive"],
-  });
-  assert.throws(() => authorizeSyncPlan(sql, "0".repeat(64)), /no longer matches/i);
+test("plan fingerprint binds diagnostic evidence to exact SQL", () => {
+  const sql = "drop table app_private.example;";
+  assert.match(planFingerprint(sql), /^[0-9a-f]{64}$/);
+  assert.notEqual(planFingerprint(sql), planFingerprint(sql + "\n"));
 });
 
 test("migration history must remain byte-stable modulo outer whitespace", () => {
@@ -179,43 +142,23 @@ test("migration history must remain byte-stable modulo outer whitespace", () => 
   );
 });
 
-test("parseArgs defaults to automatic sync and exposes reviewed-plan binding separately", () => {
-  assert.deepEqual(parseArgs([]), { command: "sync", reviewedPlan: false, api: false });
-  assert.throws(() => parseArgs(["compat"]), /Usage/);
-  assert.deepEqual(parseArgs(["prepare"]), {
-    command: "prepare",
-    reviewedPlan: false,
-    api: false,
-  });
-  assert.deepEqual(parseArgs(["plan"]), { command: "plan", reviewedPlan: false, api: false });
-  assert.deepEqual(parseArgs(["recovery"]), {
-    command: "recovery",
-    reviewedPlan: false,
-    api: false,
-  });
-  assert.deepEqual(parseArgs(["sync", "--reviewed-plan"]), {
-    command: "sync",
-    reviewedPlan: true,
-    api: false,
-  });
-  assert.throws(() => parseArgs(["sync", "--allow-manual"]), /Usage/);
-  assert.throws(() => parseArgs(["sync", "--allow-destructive"]), /Usage/);
-  assert.deepEqual(parseArgs(["verify"]), {
-    command: "verify",
-    reviewedPlan: false,
-    api: false,
-  });
-  assert.deepEqual(parseArgs(["verify", "--api"]), {
-    command: "verify",
-    reviewedPlan: false,
-    api: true,
-  });
+test("remote command surface only exposes sync and explicit read-only diagnostics", () => {
+  assert.deepEqual(parseArgs([]), { command: "sync", api: false });
+  for (const command of ["sync", "plan", "verify", "recovery"]) {
+    assert.deepEqual(parseArgs([command]), { command, api: false });
+  }
+  for (const command of ["repair", "prepare", "compat"])
+    assert.throws(() => parseArgs([command]), /Usage/);
+  for (const flag of ["--reviewed-plan", "--allow-manual", "--allow-destructive"]) {
+    assert.throws(() => parseArgs(["sync", flag]), /Usage/);
+  }
+  assert.deepEqual(parseArgs(["verify", "--api"]), { command: "verify", api: true });
   assert.throws(() => parseArgs(["sync", "--api"]), /only valid/);
   assert.throws(() => parseArgs(["verify", "--unknown"]), /Usage/);
 });
 
 test("remote mutations require the validated-main GitHub Actions context", () => {
-  for (const command of ["repair", "prepare", "sync"]) {
+  for (const command of ["sync"]) {
     assert.throws(
       () => assertRemoteMutationContext(command, {}),
       /GitHub Actions current-main reconciliation path/,
@@ -509,285 +452,5 @@ test("remote foundation classifies repairable drift without confusing it with ap
   assert.equal(
     classifyRemoteFoundationState({ appPrivateExists: true, lineAppExists: false }),
     "repairable",
-  );
-});
-
-test("Account login compatibility expansion stays sourced from 101_account_logins.sql", () => {
-  const sql = accountLoginExpansionSql();
-  assert.match(sql, /create table app_private\.account_logins/);
-  assert.match(sql, /create function app_private\.set_account_login/);
-  assert.doesNotMatch(sql, /create table app_private\.accounts/);
-});
-
-test("Account login compatibility exposes partial state for the canonical diff reconciler", () => {
-  assert.equal(
-    classifyAccountLoginCompatibility({ tableExists: false, functionExists: false }),
-    "missing",
-  );
-  assert.equal(
-    classifyAccountLoginCompatibility({ tableExists: true, functionExists: true }),
-    "ready",
-  );
-  assert.equal(
-    classifyAccountLoginCompatibility({ tableExists: true, functionExists: false }),
-    "partial",
-  );
-  assert.equal(
-    classifyAccountLoginCompatibility({ tableExists: false, functionExists: true }),
-    "partial",
-  );
-});
-
-test("DailyCheckIn runtime compatibility stays sourced from canonical schema owners", () => {
-  const sql = dailyCheckInCompatibilitySql();
-  assert.match(sql, /create table app_private\.daily_check_in_claims/);
-  assert.match(sql, /daily_check_in_claims_user_id_fkey/);
-  assert.match(sql, /enforce_daily_check_in_claim_ledger_parity/);
-  assert.match(sql, /daily_check_in_claim_requires_ledger/);
-  assert.doesNotMatch(sql, /create table app_private\.\"asset_ledger_entries\"/);
-});
-
-test("DailyCheckIn compatibility distinguishes missing, ready and partial state", () => {
-  assert.equal(
-    classifyDailyCheckInCompatibility({
-      tableExists: false,
-      functionExists: false,
-      triggerExists: false,
-    }),
-    "missing",
-  );
-  assert.equal(
-    classifyDailyCheckInCompatibility({
-      tableExists: true,
-      functionExists: true,
-      triggerExists: true,
-    }),
-    "ready",
-  );
-  assert.equal(
-    classifyDailyCheckInCompatibility({
-      tableExists: true,
-      functionExists: false,
-      triggerExists: false,
-    }),
-    "partial",
-  );
-});
-
-test("Repository runtime recovery derives projection and coordinator from canonical schema owners", () => {
-  const projection = repositoryEffectiveAccessExpansionSql();
-  assert.match(projection, /create view app_private\.repository_effective_access/);
-  assert.match(projection, /repository_team_access/);
-  assert.match(projection, /organization_memberships/);
-
-  const provision = repositoryProvisionCompatibilitySql();
-  assert.match(provision, /create or replace function app_private\.provision_repository/);
-  assert.match(provision, /owner_account_id,owner_account_kind/);
-  assert.match(provision, /repository_access/);
-
-  const access = repositoryProvisionCompatibilityAccessSql();
-  assert.match(access, /revoke all on function app_private\.provision_repository/i);
-  assert.match(access, /grant execute on function app_private\.provision_repository/i);
-});
-
-test("Repository runtime recovery only auto-migrates a zero-row legacy owner shape", () => {
-  const ready = {
-    repositoryRows: 0,
-    issueRows: 0,
-    discussionRows: 0,
-    discussionCommentRows: 0,
-    ownerAccountIdColumn: true,
-    ownerAccountKindColumn: true,
-    nextIssueNumberColumn: true,
-    legacyOrganizationIdColumn: false,
-    repositoryAccessTable: true,
-    repositoryTeamAccessTable: true,
-    repositoryStarsTable: true,
-    repositoryCommandsTable: true,
-    repositoryStarListsTable: true,
-    repositoryStarListItemsTable: true,
-    repositoryLabelsTable: true,
-    repositoryMilestonesTable: true,
-    issueNumberColumn: true,
-    issueMilestoneColumn: true,
-    repositoryEffectiveAccessView: true,
-    provisionRepositoryFunction: true,
-  };
-  assert.equal(classifyRepositoryRuntimeCompatibility(ready), "ready");
-
-  assert.equal(
-    classifyRepositoryRuntimeCompatibility({
-      ...ready,
-      ownerAccountIdColumn: false,
-      ownerAccountKindColumn: false,
-      nextIssueNumberColumn: false,
-      legacyOrganizationIdColumn: true,
-      repositoryTeamAccessTable: false,
-      repositoryStarsTable: false,
-      repositoryCommandsTable: false,
-      repositoryStarListsTable: false,
-      repositoryStarListItemsTable: false,
-      repositoryLabelsTable: false,
-      repositoryMilestonesTable: false,
-      issueNumberColumn: false,
-      issueMilestoneColumn: false,
-      repositoryEffectiveAccessView: false,
-      provisionRepositoryFunction: false,
-    }),
-    "repairable",
-  );
-
-  assert.equal(
-    classifyRepositoryRuntimeCompatibility({
-      ...ready,
-      repositoryStarListItemsTable: false,
-    }),
-    "partial",
-  );
-
-  assert.equal(
-    classifyRepositoryRuntimeCompatibility({
-      ...ready,
-      repositoryRows: 1,
-      ownerAccountIdColumn: false,
-      ownerAccountKindColumn: false,
-      legacyOrganizationIdColumn: true,
-    }),
-    "partial",
-  );
-});
-
-test("legacy Enterprise cutover input is explicit, exact, and bounded", () => {
-  assert.equal(parseLegacyEnterpriseMetadata("", ""), null);
-  assert.deepEqual(parseLegacyEnterpriseMetadata("Operations", "operations"), {
-    name: "Operations",
-    slug: "operations",
-  });
-  for (const [name, slug] of [
-    ["", "operations"],
-    ["Operations", ""],
-    [" Operations", "operations"],
-    ["Operations", "Operations"],
-    ["Operations", "invalid slug"],
-  ]) {
-    assert.throws(() => parseLegacyEnterpriseMetadata(name, slug), /name|slug|both/i);
-  }
-});
-
-test("prepare derives permission and governance compatibility SQL from canonical schema sources", () => {
-  assert.deepEqual(permissionNamesFromSource(), [
-    "users.read",
-    "users.suspend",
-    "workplaces.manage",
-    "partners.manage",
-    "partners.review",
-  ]);
-
-  const versions = permissionSubjectVersionExpansionSql();
-  assert.match(versions, /create table app_private\.permission_subject_versions/);
-  assert.match(versions, /grant select, insert, update/i);
-  assert.match(versions, /create policy backend/i);
-  assert.doesNotMatch(versions, /permission_commands/);
-
-  const functions = governanceCompatibilityFunctionSql();
-  assert.match(
-    functions,
-    /provision_enterprise_scope\(\s*p_target_id text,\s*p_user_id text,\s*p_slug text,\s*p_name text,\s*p_requested_at bigint/s,
-  );
-  assert.match(
-    functions,
-    /provision_organization_scope\(\s*p_target_id text,\s*p_user_id text,\s*p_login text,\s*p_name text,\s*p_requested_at bigint/s,
-  );
-  assert.doesNotMatch(functions, /provision_bot_account/);
-
-  const access = governanceCompatibilityAccessSql();
-  assert.match(
-    access,
-    /grant execute on function app_private\.provision_enterprise_scope\(text,text,text,text,bigint\) to line_app/i,
-  );
-  assert.match(
-    access,
-    /revoke all on function app_private\.bootstrap_enterprise\(text,text,text,text,text,text,text,uuid,bigint\) from public, anon, authenticated, line_app/i,
-  );
-  assert.doesNotMatch(access, /provision_bot_account/);
-});
-
-function expansionState(overrides = {}) {
-  const enterpriseRows = overrides.enterpriseRows ?? [
-    { accountId: "enterprise-1", name: null, slug: null },
-  ];
-  return {
-    botAccountRoots: 0,
-    botAccounts: 0,
-    botReceipts: 0,
-    projectIssueReferences: 0,
-    repositoriesNeedingOwnerMigration: 0,
-    issuesNeedingNumber: 0,
-    organizationsNeedingName: 0,
-    teamsNeedingSlug: 0,
-    enterpriseTeamsNeedingSlug: 0,
-    invalidPermissions: 0,
-    ...overrides,
-    enterpriseRows,
-    enterpriseMetadataRows: enterpriseRows.filter((row) => row.name == null || row.slug == null),
-  };
-}
-
-test("general-management prepare rejects unsupported legacy state before metadata binding", () => {
-  assert.doesNotThrow(() => assertGeneralManagementExpansionState(expansionState()));
-  assert.throws(
-    () => assertGeneralManagementExpansionState(expansionState({ projectIssueReferences: 1 })),
-    /explicit owner migration/i,
-  );
-});
-
-test("legacy Enterprise metadata binds only to one unresolved remote Enterprise", () => {
-  const input = { name: "Operations", slug: "operations" };
-
-  assert.throws(
-    () => resolveLegacyEnterpriseMetadata(expansionState(), null),
-    /explicit Enterprise name and slug/i,
-  );
-  assert.deepEqual(resolveLegacyEnterpriseMetadata(expansionState(), input), [
-    { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-  ]);
-
-  assert.throws(
-    () =>
-      resolveLegacyEnterpriseMetadata(
-        expansionState({
-          enterpriseRows: [
-            { accountId: "enterprise-1", name: null, slug: null },
-            { accountId: "enterprise-2", name: null, slug: null },
-          ],
-        }),
-        input,
-      ),
-    /multi-row owner migration/i,
-  );
-
-  assert.throws(
-    () =>
-      resolveLegacyEnterpriseMetadata(
-        expansionState({
-          enterpriseRows: [{ accountId: "enterprise-1", name: "Existing", slug: null }],
-        }),
-        input,
-      ),
-    /conflicts/i,
-  );
-
-  const current = expansionState({
-    enterpriseRows: [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
-  });
-  assert.deepEqual(resolveLegacyEnterpriseMetadata(current, null), []);
-  assert.deepEqual(resolveLegacyEnterpriseMetadata(current, input), []);
-  assert.throws(
-    () =>
-      resolveLegacyEnterpriseMetadata(current, {
-        name: "Different",
-        slug: "different",
-      }),
-    /exactly one already-current Enterprise/i,
   );
 });

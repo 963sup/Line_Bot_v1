@@ -9,6 +9,7 @@
       "*.json",
       "knip.jsonc",
       "architecture/**/*.json",
+      ".vscode/**",
       ".dependency-cruiser.mjs",
       "!**/next-env.d.ts"
     ]

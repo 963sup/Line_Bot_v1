@@ -34,9 +34,9 @@ source: repository
 
 | 本次工作 | 搭配技能 |
 | --- | --- |
-| 鍵盤、焦點或自動無障礙檢查 | [a11y testing](../a11y-testing/SKILL.md) |
-| 審查 Web 介面與互動設計 | [Web design guidelines](../web-design-guidelines/SKILL.md) |
-| 載入或互動效能診斷 | [Web performance](../web-perf/SKILL.md) |
+| 鍵盤、焦點或自動無障礙檢查 | runtime 可用的 accessibility 技能 |
+| 審查 Web 介面與互動設計 | runtime 的 Web design guidelines |
+| 載入或互動效能診斷 | runtime 的 Web performance |
 
 只載入符合本次問題的技能，沿用專案既有測試工具；技能範例不構成新增套件或修改測試框架的理由。瀏覽器測試不取代 LINE 手機內的 LIFF 與登入接續驗收。
 

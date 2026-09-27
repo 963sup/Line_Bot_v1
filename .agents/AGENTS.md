@@ -1,9 +1,7 @@
-# Agent capabilities scope
+# Agent capability scope
 
-- `.agents/` owns reusable agent capabilities/references, never product/architecture/data/security truth.
-- Repository truth remains code/schema/manifest/tests/nearest AGENTS/canonical docs; skills cannot override it.
-- External skill provenance/version/hash belongs to root `skills-lock.json`; imported skill corpus is not rewritten into repository governance.
-- Load skills only when relevant; do not add overlapping skills without a real consumer or external boundary.
-- Preserve provenance/license on updates; never inject secrets or private project data into skills.
-- Project rules already enforced by code/types/guards/tests/docs are referenced, not duplicated.
-- Before applying a skill, verify its tools/commands exist in the current runtime; examples are not installation evidence or authorization.
+Project task entrypoints live in `.github/prompts/`; Codex role configuration lives in `.codex/agents/`. Root and nearest AGENTS define repository constraints.
+
+Keep `.agents/skills/` only for project-specific knowledge with a concrete consumer. Do not vendor general framework guides already available through runtime skills or official documentation. Skills do not own product truth or duplicate repository checks.
+
+No Markdown review database, mandatory byte quotas or per-file review ceremony. Check links and correctness through ordinary review and `pnpm docs:check`.

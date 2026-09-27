@@ -14,7 +14,6 @@ const fastTasks = new Set([
   "tooling:check",
   "docs:test",
   "docs:check",
-  "docs:convergence",
   "lint",
   "schema:check",
   "schema:remote:test",
@@ -52,7 +51,6 @@ export function classifyChangedFiles(files) {
     file.startsWith(".codex/") ||
     file.startsWith(".agents/") ||
     file.startsWith(".vscode/") ||
-    file === "skills-lock.json" ||
     file === ".node-version";
   const toolingAffected = changed.some(
     (file) =>
@@ -111,8 +109,7 @@ export function shouldRunFast(task, scope) {
   if (task === "lockfile") return true;
   if (!scope) return true;
   if (task === "tooling:check") return scope.toolingAffected;
-  if (task === "docs:test" || task === "docs:check" || task === "docs:convergence")
-    return scope.docsAffected;
+  if (task === "docs:test" || task === "docs:check") return scope.docsAffected;
   if (task === "schema:check" || task === "schema:remote:test") return scope.schemaAffected;
   if (task === "github:test") return scope.toolingAffected;
   if (task === "attendance:scheduler:test") return scope.codeAffected;
@@ -153,12 +150,8 @@ function main() {
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
     ],
     ["tooling:check", ["scripts/tooling/check-tooling.mjs"]],
-    [
-      "docs:test",
-      ["--test", "scripts/docs/check-docs.test.mjs", "scripts/docs/convergence.test.mjs"],
-    ],
+    ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
-    ["docs:convergence", ["scripts/docs/convergence.mjs", "check"]],
     ["lint", [biome, "check", "."]],
     [
       "architecture:test",

@@ -9,7 +9,6 @@
 - `.codex/config.toml`：專案 Codex 設定；agent concurrency 是上限，不是每次都要委派。
 - `.codex/agents/`：專案角色責任；當前工具權限與使用者指示優先。
 - `.codex/rules/default.rules`：只約束列出的 command patterns；不能取代 GitHub/Supabase/LINE 等實際平台授權。
-- `skills-lock.json`：專案 skill source/version metadata；skill 不取代 code/docs source of truth。
 
 ## Working principle
 

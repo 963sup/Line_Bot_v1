@@ -1,12 +1,10 @@
 ---
 agent: 'agent'
-description: 'Converge Markdown in a file, scope, or the whole repository'
+description: 'Simplify documentation against current repository evidence'
 ---
 
-Load `.agents/skills/context-convergence/SKILL.md`.
+Scope: ${input:scope:Path or directory}
 
-Scope: ${input:scope:Path/directory, or repository for a full sweep}
+Read root and nearest AGENTS plus the actual source. Remove stale or repeated guidance; keep each fact with its owner and close broken links after moves/deletions. Prefer concise task entrypoints here and Codex role settings in `.codex/agents/`.
 
-Inventory the scope, process oldest-first, and give every Markdown an outcome: update, distill, merge/move, delete, keep, or upstream-refresh. Edited existing files must become smaller without weakening truth.
-
-Report outcomes, byte changes, authoritative sources, and validation actually run.
+Do not add review manifests, byte quotas or duplicate rules. Preserve authorization, transaction and evidence boundaries. Run `pnpm docs:check` and report actual changes and unverified claims.

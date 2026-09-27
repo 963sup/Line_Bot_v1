@@ -35,7 +35,7 @@ Context7 可用時先 resolve `LINE Developers`，選官方文件庫，再 query
 
 針對本次修改選擇相關驗證：偽造簽章、原文改動、重複事件、群組／會員隔離、外部逾時及成功路徑。程式修改使用 repository validate；僅技能／文件修改檢查格式、連結及契約一致性。Webhook 200、API 接受、實際送達與使用者完成操作分開回報。
 
-解析器、正規化或事件重複處理需要涵蓋多種輸入及排列時，可搭配 [property-based-testing](../property-based-testing/SKILL.md)，先從契約定義不變條件。一般 endpoint 範例測試不必追加此方法；產生式測試不證明 LINE 實際送達。
+解析器、正規化或事件重複處理需要涵蓋多種輸入及排列時，可搭配 runtime 提供的 property-based-testing 技能，先從契約定義不變條件。一般 endpoint 範例測試不必追加此方法；產生式測試不證明 LINE 實際送達。
 
 ## 官方入口
 

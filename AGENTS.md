@@ -15,7 +15,7 @@
 
 先用 [task router](docs/README.md) 取最小 context；已知 owner 時直接讀 owner contract + nearest `AGENTS.md`。跨 owner/語意變更可用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。
 
-Markdown / instruction / `AGENTS.md` 收斂或 agent-context optimization：修改前必須載入 [context-convergence](.agents/skills/context-convergence/SKILL.md)。
+修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`、Codex 角色放 `.codex/agents/`，不維護重複 skill 或 Markdown review database。
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
 

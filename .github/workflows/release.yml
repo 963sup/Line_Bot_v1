@@ -31,7 +31,7 @@ jobs:
       schema_changed: ${{ steps.plan.outputs.schema_changed }}
       web_affected: ${{ steps.plan.outputs.web_affected }}
       rich_menu_changed: ${{ steps.plan.outputs.rich_menu_changed }}
-      rich_menu_requires_web: ${{ steps.plan.outputs.rich_menu_requires_web }}
+      scheduler_changed: ${{ steps.plan.outputs.scheduler_changed }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -57,7 +57,7 @@ jobs:
 
   supabase:
     needs: release_plan
-    if: needs.release_plan.result == 'success'
+    if: needs.release_plan.result == 'success' && needs.release_plan.outputs.schema_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -87,24 +87,8 @@ jobs:
           SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: pnpm github:current-main --sha "$SHA"
 
-      - name: Repair additive runtime compatibility
-        run: pnpm schema:remote repair
-        env:
-          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
-
-      - name: Converge changed declarative schema
-        if: needs.release_plan.outputs.schema_changed == 'true'
+      - name: Synchronize declared schema
         run: pnpm schema:remote sync
-        env:
-          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
-
-      - name: Verify unchanged declarative schema before publication
-        if: needs.release_plan.outputs.schema_changed != 'true'
-        run: pnpm schema:remote verify
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -116,10 +100,6 @@ jobs:
         with:
           name: supabase-reconciliation-${{ needs.release_plan.outputs.head_sha }}
           path: |
-            .artifacts/supabase-remote/account-login-compat.sql
-            .artifacts/supabase-remote/daily-check-in-compat.sql
-            .artifacts/supabase-remote/permission-subject-version-compat.json
-            .artifacts/supabase-remote/repository-runtime-compat.json
             .artifacts/supabase-remote/plan.sql
             .artifacts/supabase-remote/plan.sha256
             .artifacts/supabase-remote/verification.sql
@@ -134,7 +114,7 @@ jobs:
       always() &&
       needs.release_plan.result == 'success' &&
       needs.release_plan.outputs.web_affected == 'true' &&
-      needs.supabase.result == 'success'
+      (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -164,12 +144,11 @@ jobs:
           SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: pnpm vercel:deploy:production --live --sha "$SHA"
 
-  rich_menu_direct:
+  rich_menu:
     needs: release_plan
     if: >-
       needs.release_plan.result == 'success' &&
-      needs.release_plan.outputs.rich_menu_changed == 'true' &&
-      needs.release_plan.outputs.rich_menu_requires_web != 'true'
+      needs.release_plan.outputs.rich_menu_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -190,49 +169,6 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec turbo run build --filter='@line_bot_v1/web^...'
-      - run: pnpm line:rich-menu preview all
-
-      - name: Require current main before LINE mutation
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          SHA: ${{ needs.release_plan.outputs.head_sha }}
-        run: pnpm github:current-main --sha "$SHA"
-
-      - name: Publish Rich Menu desired state
-        env:
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-        run: pnpm line:rich-menu publish all
-
-  rich_menu_after_deployment:
-    needs: [release_plan, deployment]
-    if: >-
-      always() &&
-      needs.release_plan.result == 'success' &&
-      needs.release_plan.outputs.rich_menu_changed == 'true' &&
-      needs.release_plan.outputs.rich_menu_requires_web == 'true' &&
-      needs.deployment.result == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-      TURBO_TELEMETRY_DISABLED: "1"
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.release_plan.outputs.head_sha }}
-          persist-credentials: false
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .node-version
-      - uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-          cache: true
-          cache_dependency_path: pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec turbo run build --filter='@line_bot_v1/web^...'
-      - run: pnpm line:rich-menu preview all
 
       - name: Require current main before LINE mutation
         env:
@@ -253,8 +189,9 @@ jobs:
     if: >-
       always() &&
       needs.release_plan.result == 'success' &&
-      needs.supabase.result == 'success' &&
-      (needs.release_plan.outputs.web_affected != 'true' || needs.deployment.result == 'success')
+      (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped')) &&
+      needs.release_plan.outputs.scheduler_changed == 'true' &&
+      (needs.deployment.result == 'success' || (needs.release_plan.outputs.web_affected != 'true' && needs.deployment.result == 'skipped'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:

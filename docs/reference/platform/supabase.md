@@ -37,7 +37,7 @@ Supabase secret / service-role 類高權限變數即使由 Marketplace 一併注
 
 Web runtime 的 PostgreSQL application connection contract 是 provider-owned `POSTGRES_URL`。Vercel 與 Supabase resource 綁定後由平台同步該值；Vercel serverless runtime 使用 Supavisor transaction pooler（port 6543），business transaction 內立即 `SET LOCAL ROLE line_app`，維持 grants、RLS 與 application data boundary。
 
-Supabase schema/operator reconciliation 與 product runtime 明確解耦：production remote mutation 只由 current `main` 的 GitHub Actions Release 呼叫 `pnpm schema:remote repair|sync`，使用 provider-owned `POSTGRES_URL_NON_POOLING` 並以 `SUPABASE_URL` 驗證 exact project；本機與任意 branch 只允許 `plan`、`verify`、`recovery` 等 read-only diagnosis/readback。`prepare` 保留為受控資料轉換 primitive，但不得從本機或任意 branch 對 production 執行；不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
+Supabase schema/operator reconciliation 與 product runtime 明確解耦：production remote mutation 只由 current `main` 的 GitHub Actions Release 呼叫 `pnpm schema:remote sync`，使用 provider-owned `POSTGRES_URL_NON_POOLING` 並以 `SUPABASE_URL` 驗證 exact project；本機與任意 branch 只允許 `plan`、`verify`、`recovery` 等 read-only diagnosis/readback。不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
 
 ## RLS / application authorization separation
 
@@ -90,9 +90,10 @@ Schema authority與「DDL vs business data transform」的語意由 [Schema mode
 
 Repository-owned remote reconciliation使用 `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL`／`SUPABASE_CONFIRM_PROJECT`交叉確認 exact target。Application mutation boundary只包含 repository-owned application schema；`auth`、`storage`、provider `public` helper與 `supabase_migrations` 不在其中。
 
+只有 `supabase/schemas/*.sql` 有待發布變更才自動執行 sync；不在每次 Release 修補或驗證未變更的 schema。已移除 repair／prepare 舊結構轉換與 reviewed-plan 模式。
+
 Current commands：
 
-- `repair`：metadata-free、idempotent compatibility repair；只恢復可由 current source 完整決定的 runtime-required surface。若必須移除 legacy structure，只有同一受鎖 transaction 的 catalog／row-count precondition 證明受影響 business rows = 0 時才允許，完成後仍須證明 row count 不變、RLS／grants／authorization boundary 收斂；存在 retained rows 或需要 business metadata 一律 fail closed。
 - `plan`：由 clean-local desired state比較 exact remote，產生 plan與 fingerprint；`noop / routine / sensitive`只作診斷。
 - `sync`：對完整 generated diff做 bounded transaction apply，然後要求 second diff = 0與 ownership/security readback PASS。
 - `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。

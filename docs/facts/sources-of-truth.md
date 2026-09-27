@@ -13,7 +13,6 @@ Conflicting answers use the authority below; do not load more background first.
 | Commands/versions | root `package.json`, lockfile, runtime config |
 | Scoped Agent constraints | root + nearest `AGENTS.md` |
 | Owner rule not inferable from machine truth | `docs/owners/<owner>.md` |
-| Markdown convergence/review state | `docs/convergence-manifest.json` |
 | GitHub-like benchmark | `architecture/semantic-benchmark.json` + provenance |
 | Target/proposal/migration/gap/risk | `docs/change/` |
 | Deployment/provider/device reality | dated readback |

@@ -23,7 +23,6 @@ function fixture(t) {
   };
   const write = writeRaw;
   write(".codex/config.toml", "[agents]\nenabled = true\n");
-  write("skills-lock.json", '{"version":1,"skills":{}}');
   write(
     "AGENTS.md",
     "[Packages](packages/AGENTS.md) [Scripts](scripts/AGENTS.md) [GitHub](.github/AGENTS.md) [Skills](.agents/AGENTS.md) [Codex](.codex/AGENTS.md)\\n",
@@ -531,9 +530,9 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("pnpm schema:remote verify", "echo skip-verify"),
+    workflow.replace("needs.release_plan.outputs.schema_changed == 'true'", "true"),
   );
-  rejects(root, "Supabase must guard current main");
+  rejects(root, "Supabase must run only for changed schema");
 
   write(
     ".github/workflows/release.yml",
@@ -555,18 +554,15 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace(
-      "needs.release_plan.outputs.rich_menu_requires_web != 'true'",
-      "needs.release_plan.outputs.rich_menu_requires_web == 'true'",
-    ),
+    workflow.replace("needs.release_plan.outputs.rich_menu_changed == 'true'", "true"),
   );
-  rejects(root, "direct Rich Menu publication");
+  rejects(root, "one independent changed-source publication job");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("needs.deployment.result == 'success'", "true"),
+    workflow.replace("needs.release_plan.outputs.scheduler_changed == 'true'", "true"),
   );
-  rejects(root, "pending Web runtime dependency");
+  rejects(root, "Attendance scheduler must be changed-source driven");
 
   write(
     ".github/workflows/release.yml",
@@ -688,19 +684,16 @@ test("skill frontmatter rejects wrong folder", (t) => {
   write(".agents/skills/demo/SKILL.md", "---\nname: other\ndescription: example\n---\n");
   rejects(root, "mismatch");
 });
-test("skills declare external lock provenance or repository-local ownership", (t) => {
+test("project skills declare repository ownership", (t) => {
   const { root, write } = fixture(t);
   write(".agents/skills/demo/SKILL.md", "---\nname: demo\ndescription: example\n---\n");
-  rejects(root, "skills-lock provenance or source: repository");
+  rejects(root, "Project skills must declare source: repository");
 
   write(
     ".agents/skills/demo/SKILL.md",
     "---\nname: demo\ndescription: example\nsource: repository\n---\n",
   );
   assert.deepEqual(validate(root), []);
-
-  write("skills-lock.json", '{"version":1,"skills":{"demo":{"source":"example"}}}');
-  rejects(root, "locked external skill cannot declare source: repository");
 });
 for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {
   test(`${role} cannot gain write access`, (t) => {

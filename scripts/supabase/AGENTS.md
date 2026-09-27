@@ -1,14 +1,11 @@
 # Supabase operation scripts
 
-Provider contract 見 [Supabase platform](../../docs/reference/platform/supabase.md)；publication ordering 見 [Release](../../docs/reference/operations/release.md)。
+- `schema-source.mjs` reads ordered declarative SQL; `schema-local.mjs` rebuilds local desired state; `remote.mjs` compares/applies/verifies remote state; `postgres.mjs` owns SQL transport.
+- Normal publication is `schema:remote sync`, only when `supabase/schemas/*.sql` changed. Apply the complete generated diff, including destructive DDL, in a transaction; do not precede it with historical compatibility or business-data conversions.
+- Preserve exact project confirmation, non-pooling operator connection, TLS, timeout and advisory lock. Mutation requires validated current-main Release authorization.
+- Require second diff = 0, ownership/security readback and unchanged migration-history fingerprint. No migration file/history creation, replay or repair; provider-owned auth/storage remain outside mutation scope.
+- Plan/verify/recovery are explicit read-only diagnostics, never automatic work on unchanged schema. Classification is diagnostic, not a DDL approval gate.
+- Do not invent business metadata. Unknown results require readback before retry; rollback/unlock must preserve the original error.
+- `.artifacts/supabase-remote/` is transient evidence, not a source of truth.
 
-- `schema-source.mjs` owns ordered declarative SQL reading；`schema-local.mjs` owns clean local rebuild；`remote.mjs` owns remote `repair|prepare|plan|recovery|sync|verify` semantics；`postgres.mjs` owns SQL transport helpers。
-- Scripts 必須分開 source/rebuild、local verification、remote reconciliation 與 remote mutation；local success 不能冒充 remote convergence。
-- Remote access 必須驗 exact project、explicit target、bounded timeout、least-privilege connection 與 PostgreSQL advisory lock；不得從 runtime connection 或 provider metadata 猜 target。
-- `repair` 只處理 metadata-free、current-source-determined 的 runtime compatibility。若 recovery 需要移除 legacy structure，必須先在同一受鎖 transaction 以 catalog + row-count readback 證明受影響 business rows 為 0，且 post-readback 證明 row count、RLS/grants/authorization boundary 不變或收緊；存在 retained rows、ambiguous authority 或需要 business metadata 時一律 fail closed。
-- Plain `sync` 對 generated declarative diff 做 transaction apply，完成後要求 second diff = 0、ownership/security readback 與 migration-history fingerprint unchanged。`noop / routine / sensitive` 只作診斷，不作 DDL approval gate。
-- `prepare`、`recovery` 與 `sync --reviewed-plan` 只承接 explicit data-cutover/recovery 責任；不得讓 script 自行創造 business metadata。
-- `supabase_migrations` 只作 readback evidence；operation script 不得新增、replay、repair 或改寫 migration history。
-- Failure after external write 是 unknown result，先 readback 再決定下一步；不得盲目重送 mutation。 Lock cleanup／rollback 屬 recovery responsibility；cleanup failure 不得覆蓋原始 reconciliation error。
-- `.artifacts/supabase-remote/` 只保存 transient plan/readback evidence，不手工編輯、不提交、不作長期 business truth。
-- 修改 remote command、target check、lock、evidence 或 acceptance semantics 時，補 `scripts/supabase/*.test.mjs` 對應正反測試並同步受保護的 tooling contract。
+Test target, lock, transaction, history and acceptance behavior locally; remote convergence requires separate readback. Contracts: [Supabase](../../docs/reference/platform/supabase.md), [Release](../../docs/reference/operations/release.md).

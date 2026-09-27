@@ -5,9 +5,7 @@
       "label": "repo: dev",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "dev"
-      ],
+      "args": ["dev"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -25,9 +23,7 @@
       "label": "repo: format",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "format"
-      ],
+      "args": ["format"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -45,9 +41,7 @@
       "label": "repo: check",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "check"
-      ],
+      "args": ["check"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -69,9 +63,7 @@
       "label": "repo: validate",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "validate"
-      ],
+      "args": ["validate"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -89,9 +81,7 @@
       "label": "repo: browser test",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "test:browser"
-      ],
+      "args": ["test:browser"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -109,9 +99,7 @@
       "label": "repo: docs check",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "docs:check"
-      ],
+      "args": ["docs:check"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -121,9 +109,7 @@
       "label": "repo: schema check",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "schema:check"
-      ],
+      "args": ["schema:check"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -133,11 +119,7 @@
       "label": "semantic: context",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "semantic",
-        "context",
-        "${input:changeIntent}"
-      ],
+      "args": ["semantic", "context", "${input:changeIntent}"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -147,11 +129,7 @@
       "label": "semantic: plan",
       "type": "process",
       "command": "pnpm",
-      "args": [
-        "semantic",
-        "plan",
-        "${input:changeIntent}"
-      ],
+      "args": ["semantic", "plan", "${input:changeIntent}"],
       "options": {
         "cwd": "${workspaceFolder}"
       },

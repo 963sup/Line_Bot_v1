@@ -7,12 +7,34 @@ const OWNER_JOBS = Object.freeze({
   supabase: new Set(["supabase"]),
   deployment: new Set(["deployment"]),
   richMenu: new Set(["rich_menu", "rich_menu_direct", "rich_menu_after_deployment"]),
+  scheduler: new Set(["attendance_scheduler"]),
 });
 
-const RICH_MENU_SOURCES = [
+const PUBLICATION_ONLY_SOURCES = [
   /^assets\/line\/rich-menu\//,
+  /^scripts\/line\/rich-menu\/.*\.(?:ts|mjs)$/,
   /^apps\/web\/src\/modules\/assistant\/rich-menu\/(definition|desired-state\.server)\.ts$/,
 ];
+const RICH_MENU_SOURCES = [
+  ...PUBLICATION_ONLY_SOURCES,
+  /^apps\/web\/src\/modules\/assistant\/rich-menu\/.*\.ts$/,
+  /^apps\/web\/src\/shared\/server\/line-mini-app\.ts$/,
+  /^apps\/web\/src\/shared\/presentation\/entry-route\.ts$/,
+  /^apps\/web\/src\/modules\/diary\/form\.ts$/,
+  /^packages\/line-channel\/src\/adapters\/messaging\/(?:index|rich-menu-client|rich-menu-image)\.ts$/,
+  /^scripts\/runtime\/load-env\.mjs$/,
+  /^(?:pnpm-lock\.yaml|package\.json|apps\/web\/package\.json|packages\/line-channel\/package\.json)$/,
+];
+
+function executableSource(file) {
+  return !/\.(?:test|spec)\.[^/]+$/.test(file);
+}
+
+export function schedulerChanged(files) {
+  return files.some(
+    (file) => executableSource(file) && /^scripts\/attendance\/.*\.mjs$/.test(file),
+  );
+}
 
 function exactSha(value) {
   if (!/^[0-9a-f]{40}$/.test(value ?? "")) throw new Error("Exact commit SHA is required.");
@@ -25,15 +47,17 @@ export function releaseSha(displayTitle) {
 }
 
 export function schemaChanged(files) {
-  return files.some((file) => /^supabase\/schemas\/.*\.sql$/.test(file));
+  return files.some((file) => /^supabase\/schemas\/[^/]+\.sql$/.test(file));
 }
 
 export function richMenuChanged(files) {
-  return files.some((file) => RICH_MENU_SOURCES.some((pattern) => pattern.test(file)));
+  return files.some(
+    (file) => executableSource(file) && RICH_MENU_SOURCES.some((pattern) => pattern.test(file)),
+  );
 }
 
 export function publicationOnlyRichMenuSource(file) {
-  return RICH_MENU_SOURCES.some((pattern) => pattern.test(file));
+  return executableSource(file) && PUBLICATION_ONLY_SOURCES.some((pattern) => pattern.test(file));
 }
 
 function run(command, args, { cwd, env = process.env } = {}) {
@@ -57,7 +81,7 @@ function gitAdapter(cwd) {
     changedFiles(baseline, target) {
       const from =
         baseline ||
-        run("git", ["hash-object", "-t", "tree", "/dev/null"], {
+        run("git", ["hash-object", "-t", "tree", "--stdin"], {
           cwd,
         });
       const output = run("git", ["diff", "--name-only", from, target], { cwd });
@@ -101,13 +125,17 @@ function turboAdapter(cwd) {
 }
 
 async function completedReleaseRuns({ repository, token, fetchImpl }) {
-  const body = await githubJson(
-    `/repos/${repository}/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100`,
-    { token, fetchImpl },
-  );
-  if (!Array.isArray(body.workflow_runs))
-    throw new Error("GitHub Release run evidence is invalid.");
-  return body.workflow_runs;
+  const runs = [];
+  for (let page = 1; ; page++) {
+    const body = await githubJson(
+      `/repos/${repository}/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100&page=${page}`,
+      { token, fetchImpl },
+    );
+    if (!Array.isArray(body.workflow_runs))
+      throw new Error("GitHub Release run evidence is invalid.");
+    runs.push(...body.workflow_runs);
+    if (body.workflow_runs.length < 100) return runs;
+  }
 }
 
 async function jobsForRun({ repository, runId, token, fetchImpl }) {
@@ -134,7 +162,7 @@ export async function findOwnerBaseline({
 
   for (const runEvidence of runs) {
     const candidate = releaseSha(runEvidence?.display_title);
-    if (!candidate || candidate === targetSha) continue;
+    if (!candidate) continue;
     if (!git.hasCommit(candidate) || !git.isAncestor(candidate, targetSha)) continue;
     const jobs = await loadJobs({ runId: runEvidence.id });
     if (jobs.some((job) => acceptedJobs.has(job?.name) && job?.conclusion === "success")) {
@@ -184,58 +212,76 @@ export async function planRelease({
     return jobsCache.get(runId);
   };
 
-  const [supabaseBaseline, deploymentBaseline, richMenuBaseline] = await Promise.all([
-    findOwnerBaseline({
-      owner: "supabase",
-      runs,
-      targetSha,
-      repository: targetRepository,
-      token,
-      fetchImpl,
-      git,
-      loadJobs,
-    }),
-    findOwnerBaseline({
-      owner: "deployment",
-      runs,
-      targetSha,
-      repository: targetRepository,
-      token,
-      fetchImpl,
-      git,
-      loadJobs,
-    }),
-    findOwnerBaseline({
-      owner: "richMenu",
-      runs,
-      targetSha,
-      repository: targetRepository,
-      token,
-      fetchImpl,
-      git,
-      loadJobs,
-    }),
-  ]);
+  const [supabaseBaseline, deploymentBaseline, richMenuBaseline, schedulerBaseline] =
+    await Promise.all([
+      findOwnerBaseline({
+        owner: "supabase",
+        runs,
+        targetSha,
+        repository: targetRepository,
+        token,
+        fetchImpl,
+        git,
+        loadJobs,
+      }),
+      findOwnerBaseline({
+        owner: "deployment",
+        runs,
+        targetSha,
+        repository: targetRepository,
+        token,
+        fetchImpl,
+        git,
+        loadJobs,
+      }),
+      findOwnerBaseline({
+        owner: "richMenu",
+        runs,
+        targetSha,
+        repository: targetRepository,
+        token,
+        fetchImpl,
+        git,
+        loadJobs,
+      }),
+      findOwnerBaseline({
+        owner: "scheduler",
+        runs,
+        targetSha,
+        repository: targetRepository,
+        token,
+        fetchImpl,
+        git,
+        loadJobs,
+      }),
+    ]);
 
   const supabaseFiles = git.changedFiles(supabaseBaseline, targetSha);
   const deploymentFiles = git.changedFiles(deploymentBaseline, targetSha);
   const richMenuFiles = git.changedFiles(richMenuBaseline, targetSha);
+  const schedulerFiles = git.changedFiles(schedulerBaseline, targetSha);
 
   const schema = schemaChanged(supabaseFiles);
   const richMenu = richMenuChanged(richMenuFiles);
-  const hasPendingWebSource = deploymentFiles.some((file) => !publicationOnlyRichMenuSource(file));
-  const web = hasPendingWebSource && turbo.webBuildAffected(deploymentBaseline, targetSha);
+  const pendingWeb = (files, baseline) =>
+    files.some((file) => !publicationOnlyRichMenuSource(file)) &&
+    turbo.webBuildAffected(baseline, targetSha);
+  const web = pendingWeb(deploymentFiles, deploymentBaseline);
 
   return {
     head_sha: targetSha,
     schema_changed: schema,
     web_affected: web,
     rich_menu_changed: richMenu,
-    rich_menu_requires_web: richMenu && web,
+    scheduler_changed:
+      schedulerChanged(schedulerFiles) ||
+      schemaChanged(schedulerFiles) ||
+      pendingWeb(schedulerFiles, schedulerBaseline),
     baselines: {
       supabase: supabaseBaseline,
       deployment: deploymentBaseline,
       rich_menu: richMenuBaseline,
+      scheduler: schedulerBaseline,
     },
   };
 }
@@ -246,7 +292,7 @@ export function githubOutputLines(plan) {
     `schema_changed=${plan.schema_changed}`,
     `web_affected=${plan.web_affected}`,
     `rich_menu_changed=${plan.rich_menu_changed}`,
-    `rich_menu_requires_web=${plan.rich_menu_requires_web}`,
+    `scheduler_changed=${plan.scheduler_changed}`,
   ];
 }
 

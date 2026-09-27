@@ -592,18 +592,16 @@ export function validate(root) {
     const releasePlan = releaseWorkflow.jobs?.release_plan;
     const releaseSupabase = releaseWorkflow.jobs?.supabase;
     const releaseDeployment = releaseWorkflow.jobs?.deployment;
-    const releaseRichDirect = releaseWorkflow.jobs?.rich_menu_direct;
-    const releaseRichAfterDeployment = releaseWorkflow.jobs?.rich_menu_after_deployment;
+    const releaseRich = releaseWorkflow.jobs?.rich_menu;
+    const releaseScheduler = releaseWorkflow.jobs?.attendance_scheduler;
     if (
       !releasePlan ||
       !releaseSupabase ||
       !releaseDeployment ||
-      !releaseRichDirect ||
-      !releaseRichAfterDeployment
+      !releaseRich ||
+      !releaseScheduler
     ) {
-      errors.push(
-        "CI: Release must define planning, Supabase, deployment and both Rich Menu dependency paths",
-      );
+      errors.push("CI: Release must define planning and one job per external operation");
     }
 
     const forbiddenInlineReleaseLogic = [
@@ -662,22 +660,11 @@ export function validate(root) {
       );
 
     if (
-      typeof releaseSupabase?.if !== "string" ||
-      !releaseSupabase.if.includes("needs.release_plan.result == 'success'") ||
-      releaseSupabase.if.includes("schema_changed") ||
+      !releaseSupabase?.if?.includes("needs.release_plan.outputs.schema_changed == 'true'") ||
       releaseSupabase?.env?.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main" ||
       JSON.stringify(releaseSupabase?.env ?? {}).includes("secrets.")
-    ) {
-      errors.push(
-        "CI: Supabase release must verify every validated main revision with step-scoped secrets",
-      );
-    }
-    if (
-      releaseWorkflowSource.includes("schema:remote sync --allow-destructive") ||
-      releaseWorkflowSource.includes("schema:remote sync --reviewed-plan")
-    ) {
-      errors.push("CI: automatic Release must use plain declarative schema sync");
-    }
+    )
+      errors.push("CI: Supabase must run only for changed schema with step-scoped secrets");
     if (
       releaseSupabase?.concurrency?.group !== "supabase-production-nmssogphayjymjpbnrxv" ||
       releaseSupabase?.concurrency?.["cancel-in-progress"] !== false
@@ -685,44 +672,28 @@ export function validate(root) {
       errors.push("CI: automatic Supabase release must serialize the production database resource");
     }
     const supabaseSteps = releaseSupabase?.steps ?? [];
-    const supabaseMain = currentMainIndex(supabaseSteps);
-    const supabaseRepair = supabaseSteps.findIndex(
-      (step) => step.run === "pnpm schema:remote repair" && step.if === undefined,
-    );
-    const supabasePrepare = supabaseSteps.findIndex(
-      (step) => step.run === "pnpm schema:remote prepare",
-    );
-    const supabaseSync = supabaseSteps.findIndex(
-      (step) =>
-        step.run === "pnpm schema:remote sync" &&
-        typeof step.if === "string" &&
-        step.if.includes("needs.release_plan.outputs.schema_changed == 'true'"),
-    );
-    const supabaseVerify = supabaseSteps.findIndex(
-      (step) =>
-        step.run === "pnpm schema:remote verify" &&
-        typeof step.if === "string" &&
-        step.if.includes("needs.release_plan.outputs.schema_changed != 'true'"),
-    );
-    const supabaseEvidence = supabaseSteps.findIndex(
-      (step) =>
-        step.uses === "actions/upload-artifact@v4" &&
-        JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
-        JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
-    );
-    if (
-      supabaseMain < 0 ||
-      supabaseRepair <= supabaseMain ||
-      supabasePrepare >= 0 ||
-      supabaseSync <= supabaseRepair ||
-      supabaseVerify <= supabaseSync ||
-      supabaseEvidence <= supabaseVerify
-    ) {
-      errors.push(
-        "CI: Supabase must guard current main, repair, sync/verify declarative schemas and preserve unchanged migration-history evidence",
-      );
+    const sync = supabaseSteps.findIndex((step) => step.run === "pnpm schema:remote sync");
+    const main = currentMainIndex(supabaseSteps);
+    const remoteCommands = supabaseSteps.filter((step) => step.run?.includes("schema:remote"));
+    if (remoteCommands.length !== 1 || sync < 0) {
+      errors.push("CI: automatic Release must use plain declarative schema sync only");
     }
-
+    if (main < 0 || sync <= main) errors.push("CI: Supabase must guard current main before sync");
+    if (
+      !supabaseSteps.some(
+        (step) =>
+          step.uses === "actions/upload-artifact@v4" &&
+          step.if === "always()" &&
+          JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
+          JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
+      )
+    ) {
+      errors.push("CI: Supabase must preserve migration-history evidence even on failure");
+    }
+    const schemaReady =
+      "(needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))";
+    const webReady =
+      "(needs.deployment.result == 'success' || (needs.release_plan.outputs.web_affected != 'true' && needs.deployment.result == 'skipped'))";
     const deploymentSteps = releaseDeployment?.steps ?? [];
     const deploymentMain = currentMainIndex(deploymentSteps);
     const productionDeploy = deploymentSteps.findIndex(
@@ -732,60 +703,59 @@ export function validate(root) {
         JSON.stringify(step.env ?? {}).includes("VERCEL_TOKEN"),
     );
     if (
-      typeof releaseDeployment?.if !== "string" ||
+      !releaseDeployment?.if?.includes("always()") ||
       !releaseDeployment.if.includes("needs.release_plan.outputs.web_affected == 'true'") ||
-      !releaseDeployment.if.includes("needs.supabase.result == 'success'") ||
-      !JSON.stringify(releaseDeployment?.needs ?? []).includes("release_plan") ||
-      !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
+      !releaseDeployment.if.includes(schemaReady) ||
+      !releaseDeployment.needs?.includes("supabase") ||
       deploymentMain < 0 ||
       productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: production deployment must be Web-affected only, guard current main, follow Supabase contract convergence and invoke the Vercel owner",
+        "CI: production deployment must be Web-affected only, follow Supabase contract convergence or unchanged skip, and invoke the Vercel owner after current-main guard",
       );
     }
-
-    const validateRichJob = (job, mode) => {
-      if (!job || typeof job.if !== "string") return false;
-      const source = JSON.stringify(job);
-      if (!job.if.includes("needs.release_plan.outputs.rich_menu_changed == 'true'")) return false;
-      if (mode === "direct") {
-        if (!job.if.includes("needs.release_plan.outputs.rich_menu_requires_web != 'true'"))
-          return false;
-        if (source.includes("needs.deployment")) return false;
-      } else {
-        if (!job.if.includes("needs.release_plan.outputs.rich_menu_requires_web == 'true'"))
-          return false;
-        if (!job.if.includes("needs.deployment.result == 'success'")) return false;
-        if (!JSON.stringify(job.needs ?? []).includes("deployment")) return false;
-      }
-      const steps = job.steps ?? [];
-      const preview = steps.findIndex((step) => step.run === "pnpm line:rich-menu preview all");
-      const main = currentMainIndex(steps);
-      const publish = steps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
-      return (
-        preview >= 0 &&
-        main > preview &&
-        publish > main &&
-        !source.includes("SUPABASE_") &&
-        JSON.stringify(steps[publish]?.env ?? {}).includes("LINE_CHANNEL_ACCESS_TOKEN")
-      );
-    };
-    if (!validateRichJob(releaseRichDirect, "direct")) {
+    const richSteps = releaseRich?.steps ?? [];
+    const richMain = currentMainIndex(richSteps);
+    const publish = richSteps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
+    if (
+      releaseRich?.needs !== "release_plan" ||
+      !releaseRich?.if?.includes("needs.release_plan.outputs.rich_menu_changed == 'true'") ||
+      richMain < 0 ||
+      publish <= richMain ||
+      !JSON.stringify(richSteps[publish]?.env ?? {}).includes("LINE_CHANNEL_ACCESS_TOKEN") ||
+      JSON.stringify(releaseRich).includes("SUPABASE_") ||
+      releaseWorkflow.jobs?.rich_menu_direct ||
+      releaseWorkflow.jobs?.rich_menu_after_deployment
+    ) {
       errors.push(
-        "CI: direct Rich Menu publication must guard current main and depend only on release_plan when no Web runtime dependency exists",
+        "CI: Rich Menu must use one independent changed-source publication job with current-main guard",
       );
     }
-    if (!validateRichJob(releaseRichAfterDeployment, "after")) {
+    const schedulerSteps = releaseScheduler?.steps ?? [];
+    const schedulerMain = currentMainIndex(schedulerSteps);
+    const reconcile = schedulerSteps.findIndex(
+      (step) => step.run === 'pnpm attendance:scheduler reconcile --live --sha "$SHA"',
+    );
+    if (
+      !releaseScheduler?.if?.includes("always()") ||
+      !releaseScheduler.if.includes("needs.release_plan.outputs.scheduler_changed == 'true'") ||
+      !releaseScheduler.if.includes(schemaReady) ||
+      !releaseScheduler.if.includes(webReady) ||
+      !releaseScheduler.needs?.includes("supabase") ||
+      !releaseScheduler.needs?.includes("deployment") ||
+      releaseScheduler.env?.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main" ||
+      releaseScheduler.concurrency?.group !== releaseSupabase?.concurrency?.group ||
+      releaseScheduler.concurrency?.["cancel-in-progress"] !== false ||
+      schedulerMain < 0 ||
+      reconcile <= schedulerMain
+    ) {
       errors.push(
-        "CI: Rich Menu with pending Web runtime dependency must guard current main and wait for exact deployment evidence",
+        "CI: Attendance scheduler must be changed-source driven, guard current main and accept only successful or unchanged skipped dependencies",
       );
     }
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }
-  const skillLock = JSON.parse(read(resolve(root, "skills-lock.json")));
-  const lockedSkills = new Set(Object.keys(skillLock.skills ?? {}));
   const names = new Set();
   for (const file of files(".agents/skills/*/SKILL.md")) {
     try {
@@ -800,11 +770,10 @@ export function validate(root) {
       names.add(name);
       if (typeof data.description !== "string" || !data.description.trim())
         throw new Error("missing description");
-      const repositoryLocal = data.source === "repository";
-      if (!lockedSkills.has(name) && !repositoryLocal)
-        throw new Error("skill must have skills-lock provenance or source: repository");
-      if (lockedSkills.has(name) && repositoryLocal)
-        throw new Error("locked external skill cannot declare source: repository");
+      if (data.source !== "repository")
+        throw new Error(
+          "Project skills must declare source: repository; use runtime skills for external guides",
+        );
     } catch (error) {
       errors.push(`${relative(root, file)}: ${error.message}`);
     }
