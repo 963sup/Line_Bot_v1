@@ -453,7 +453,7 @@ test("Release plans owner-specific convergence and preserves real dependencies",
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("workflows: [Validate]", "workflows: [Other]"),
+    workflow.replace('workflows: ["Validate"]', 'workflows: ["Other"]'),
   );
   rejects(root, "completed main Validate");
 
