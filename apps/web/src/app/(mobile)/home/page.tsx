@@ -37,7 +37,7 @@ export default function Page() {
       <SectionHeading title="My Work" />
       <div className="menu-group home-resource-list">
         <ActionRow
-          href="/repositories?resource=issues"
+          href="/issues"
           icon="◎"
           tone="blue"
           title="Issues"
@@ -66,7 +66,7 @@ export default function Page() {
           description="目前登入者可治理或參與的 Organization"
         />
         <ActionRow
-          href="#favorites"
+          href="/stars"
           icon="★"
           tone="yellow"
           title="Starred"

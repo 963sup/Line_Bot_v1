@@ -1,4 +1,4 @@
-import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { normalizeDiscussionId } from "@line_bot_v1/repository/domain";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";

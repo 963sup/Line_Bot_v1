@@ -86,6 +86,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     recoveryReads: [],
     reads: [],
     status,
+    login: "synthetic-member",
     linked: null,
     hold: false,
     release: null,
@@ -124,6 +125,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     state.status
       ? {
           id: "synthetic-line",
+          login: state.login,
           status: state.status,
           googleEmail: state.linked,
         }
@@ -202,6 +204,12 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
       if (request.method() === "POST") {
         const body = request.postDataJSON();
         state.posts.push(body);
+        if (body.action === "updateLogin") {
+          if (body.expectedLogin !== state.login)
+            return route.fulfill({ status: 409, json: { error: "登入名稱已變更，請重新讀取。" } });
+          state.login = body.login;
+          return route.fulfill({ json: { member: accountMember() } });
+        }
         if (body.action === "checkIn") {
           state.checkInPosts.push(body);
           if (state.dropCheckInBeforeCommit) {
@@ -232,7 +240,8 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
           });
         }
         state.linked = candidate;
-      } else state.reads.push({ google, authorization: request.headers().authorization });
+      } else
+        state.reads.push({ google, accountOnly, authorization: request.headers().authorization });
       if (checkInDay) {
         state.recoveryReads.push(checkInDay);
         if (state.recoveryFailuresRemaining > 0) {
@@ -308,9 +317,33 @@ async function assertWheelMarker(claim) {
   );
 }
 try {
+  {
+    const state = await fixture("active");
+    await page.goto(base + "/settings/profile");
+    const login = page.getByLabel("Login", { exact: true });
+    await expect(login).toHaveValue("synthetic-member");
+    assert.ok(state.reads.some((read) => read.accountOnly));
+    await login.fill("renamed-member");
+    await button("保存登入名稱").click();
+    await expect(page.getByText("登入名稱已保存。", { exact: true })).toBeVisible();
+    assert.deepEqual(state.posts.at(-1), {
+      action: "updateLogin",
+      login: "renamed-member",
+      expectedLogin: "synthetic-member",
+    });
+    state.login = "changed-elsewhere";
+    await login.fill("stale-edit");
+    await button("保存登入名稱").click();
+    await expect(page.getByText("登入名稱已變更，請重新讀取。", { exact: true })).toBeVisible();
+    assert.equal(state.posts.at(-1).expectedLogin, "renamed-member");
+    assert.equal(state.login, "changed-elsewhere");
+    await page.reload();
+    await expect(login).toHaveValue("changed-elsewhere");
+    await finish("Login editor sends observed name and preserves stale-edit conflict", state);
+  }
   for (const profileMode of ["hold", "fail"]) {
     const state = await fixture("active", false, profileMode);
-    await page.goto(base + "/settings");
+    await page.goto(base + "/settings/account");
     await expect(button("綁定 Google（選填）")).toBeEnabled();
     await expect(button("重新整理狀態")).toBeEnabled();
     await expect(main()).not.toContainText("每日簽到");
@@ -360,6 +393,8 @@ try {
     } else if (action === "restore") {
       await expect(button("確認恢復")).toBeEnabled();
     } else {
+      await page.getByRole("link", { name: /Account & Connections/ }).click();
+      await expect(page).toHaveURL(base + "/settings/account");
       await expect(button("重新整理狀態")).toBeEnabled();
     }
     assert.equal(state.documents, 1, label);
@@ -370,7 +405,7 @@ try {
 
   {
     const state = await fixture("active", true);
-    await page.goto(base + "/settings");
+    await page.goto(base + "/settings/account");
     await expect(button("綁定 Google（選填）")).toBeEnabled();
     await button("綁定 Google（選填）").click();
     await expect(page).toHaveURL(base + "/google-link");
@@ -387,7 +422,7 @@ try {
     assert.equal(state.liffRequests, 1);
     assert.equal(state.linked, null, "Google stage must not bind the member");
     state.pending.email = "first@example.test";
-    await page.goto(base + "/settings");
+    await page.goto(base + "/settings/account");
     await expect(button("確認綁定 Google")).toBeEnabled();
     await expect(page.getByText("Google：first@example.test", { exact: true })).toBeVisible();
     await button("取消綁定").click();

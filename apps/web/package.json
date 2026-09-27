@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*",
     "@line_bot_v1/notifications": "workspace:*",
     "@line_bot_v1/asset": "workspace:*",
     "@line_bot_v1/assistant": "workspace:*",

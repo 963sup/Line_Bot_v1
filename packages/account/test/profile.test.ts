@@ -76,11 +76,18 @@ test("profile parser rejects locator and unsupported fields", () => {
 test("Postgres profile save supports create, exact retry, optimistic update and conflict", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    "user-a",
-    "active",
-    1,
-  ]);
+  await pg.transaction(async (sql) => {
+    await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      "user-a",
+      "active",
+      1,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "user-a",
+      "user-a",
+      1,
+    ]);
+  });
 
   const store = new PostgresUserProfileStore(db);
   const input = {

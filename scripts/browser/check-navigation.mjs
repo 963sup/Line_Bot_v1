@@ -41,6 +41,7 @@ async function run() {
   const posts = [];
   const reads = [];
   let membershipLogin = "viewer";
+  const membershipStatus = "active";
   const repositoryId = "repo-1";
   const viewerRepositoryId = "repo-2";
   const issueId = "11111111-1111-4111-8111-111111111111";
@@ -92,7 +93,7 @@ async function run() {
     if (url.hostname === "static.line-scdn.net") {
       return route.fulfill({
         contentType: "text/javascript",
-        body: "window.liff={init:async()=>{const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({displayName:'測試使用者',statusMessage:'Ready to work'}),login:()=>{}};",
+        body: "window.liff={init:async()=>{const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({userId:'U11111111111111111111111111111111',displayName:'測試使用者',statusMessage:'Ready to work'}),login:()=>{}};",
       });
     }
     if (url.origin !== base) return route.abort();
@@ -103,7 +104,39 @@ async function run() {
     else reads.push(url.pathname + url.search);
 
     if (url.pathname === "/api/membership") {
-      return route.fulfill({ json: { member: { login: membershipLogin || null } } });
+      return route.fulfill({
+        json: {
+          member: { id: "user-1", login: membershipLogin || null, status: membershipStatus },
+        },
+      });
+    }
+    if (url.pathname === "/api/team") {
+      if (
+        url.searchParams.get("organizationLogin") !== "acme" ||
+        url.searchParams.get("teamSlug") !== "operations"
+      ) {
+        return route.fulfill({ status: 403, json: { error: "無法存取此組織團隊。" } });
+      }
+      const team = {
+        id: "team-1",
+        organizationAccountId: "org-1",
+        name: "Operations Team",
+        slug: "operations",
+        version: 1,
+        membershipStatus: "active",
+        isMaintainer: false,
+      };
+      return route.fulfill({
+        json: {
+          userId: "user-1",
+          organizations: [{ organizationAccountId: "org-1", login: "acme" }],
+          organizationAccountId: "org-1",
+          organizationLogin: "acme",
+          teams: [team],
+          team,
+          members: [],
+        },
+      });
     }
     if (url.pathname === "/api/profile/achievements") {
       return route.fulfill({
@@ -341,10 +374,13 @@ async function run() {
     membershipLogin = "";
     await page.goto(`${base}/home`);
     await page.getByRole("heading", { name: "Home", exact: true }).waitFor();
-    const locatorRecovery = page.getByRole("link", { name: "設定登入名稱", exact: true });
-    await expect(locatorRecovery).toHaveAttribute("href", "/settings/profile");
-    await locatorRecovery.click();
-    await expect(page).toHaveURL(`${base}/settings/profile`);
+    await expect(page.getByRole("link", { name: "設定登入名稱", exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("個人檔案目前不可用", { exact: true })).toBeVisible();
+
+    await page.goto(`${base}/profile`);
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      "帳號識別資料不完整，個人檔案目前無法使用。請聯絡管理者。",
+    );
 
     membershipLogin = "viewer";
     await page.goto(`${base}/home`);
@@ -357,34 +393,12 @@ async function run() {
       page.getByRole("link", { name: "Search repositories", exact: true }),
     ).toHaveAttribute("href", "/search");
 
-    await page.goto(`${base}/profile`);
-    await page.getByRole("heading", { name: "測試使用者", exact: true }).waitFor();
-    await expect(page.getByText("@viewer", { exact: true })).toBeVisible();
-    await expect(page.getByText("Ready to work", { exact: true })).toBeVisible();
-    await expect(page.getByLabel("First Repository", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Repositories/ })).toHaveAttribute(
-      "href",
-      "/repositories",
-    );
-    await expect(page.getByRole("link", { name: /Organizations/ })).toHaveAttribute(
-      "href",
-      "/organizations",
-    );
-    await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute(
-      "href",
-      "/home#favorites",
-    );
-    await expect(page.getByText("Projects", { exact: true })).toBeVisible();
-
     await page.goto(`${base}/home`);
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
     for (const section of ["My Work", "Favorites", "Shortcuts", "Recent"]) {
       await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
     }
-    await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute(
-      "href",
-      "/repositories?resource=issues",
-    );
+    await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute("href", "/issues");
     await expect(page.getByRole("link", { name: /Discussions/ })).toHaveAttribute(
       "href",
       "/repositories?resource=discussions",
@@ -393,7 +407,20 @@ async function run() {
       "href",
       "/organizations",
     );
-    await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute("href", "#favorites");
+    await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute("href", "/stars");
+    await page.getByRole("link", { name: /Starred/ }).click();
+    await expect(page).toHaveURL(`${base}/stars`);
+    await expect(page.getByRole("heading", { name: "Stars", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations",
+    );
+    await page.reload();
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toBeVisible();
+    if (artifactDir) {
+      await page.screenshot({ path: path.join(artifactDir, "stars.png"), fullPage: true });
+    }
+    await page.goto(`${base}/home`);
     await expect(page.getByText("Projects", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Projects/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Settings/ })).toHaveCount(0);
@@ -425,7 +452,7 @@ async function run() {
       "/repositories/lists/discover",
     );
     await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Prepare payroll/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: new RegExp(issue.title) })).toHaveAttribute(
       "href",
       "/acme/Operations/issues/1",
     );
@@ -505,6 +532,25 @@ async function run() {
     await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
       "href",
       "/acme/Operations/issues",
+    );
+    await page.goto(`${base}/issues`);
+    await expect(page.getByRole("heading", { name: "Issues", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations/issues",
+    );
+    await page.goto(`${base}/orgs/acme/teams/operations`);
+    await expect(page.getByRole("heading", { name: "Operations Team", exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Operations Team", exact: true })).toBeVisible();
+    const publishedTeamResponse = await page.goto(`${base}/organizations/acme/teams/operations`);
+    assert.equal(publishedTeamResponse?.status(), 200);
+    assert.equal(publishedTeamResponse?.request().redirectedFrom(), null);
+    await expect(page.getByRole("heading", { name: "Operations Team", exact: true })).toBeVisible();
+    await page.goto(`${base}/orgs/other/teams/operations`);
+    await expect(page.getByText("無法存取此組織團隊。", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Operations Team", exact: true })).toHaveCount(
+      0,
     );
 
     await page.goto(`${base}/repositories?resource=discussions`);

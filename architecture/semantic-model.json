@@ -155,7 +155,7 @@
     },
     {
       "id": "namespace",
-      "kind": "policy-owner",
+      "kind": "business-owner",
       "lifecycle": "current",
       "doc": "docs/owners/namespace.md"
     },
@@ -632,6 +632,16 @@
       "definition": "Enterprise-owned assignment from an Enterprise Team to an attached Organization.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "account-namespace-binding",
+      "canonicalName": "Account Namespace Binding",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Unique global login bound to a stable User or Organization Account, independently of qualification and resource authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -639,7 +649,7 @@
       "id": "namespace-account-root-reservation",
       "provider": "namespace",
       "consumer": "account",
-      "meaning": "Account consumes the shared global-root reservation policy before accepting a User or Organization login locator.",
+      "meaning": "Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence.",
       "integrationMode": "query",
       "authority": "namespace",
       "consistency": "current-policy"
@@ -904,9 +914,66 @@
       "integrationMode": "stable-identity+query",
       "authority": "account",
       "consistency": "current-state"
+    },
+    {
+      "id": "namespace-organization-locator",
+      "provider": "namespace",
+      "consumer": "organization",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-repository-locator",
+      "provider": "namespace",
+      "consumer": "repository",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-team-locator",
+      "provider": "namespace",
+      "consumer": "team",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
     }
   ],
   "capabilities": [
+    {
+      "id": "construct-namespace-paths",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Describe cross-owner resource path scopes and construct only active canonical paths from owner-validated locator values.",
+      "preserves": ["K1", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "structured active/planned route contract and pure path construction consumed by Web Account and Team navigation",
+        "sourcePaths": ["packages/namespace/src/domain/routes.ts"],
+        "publicExports": ["."],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/profile/profile-resolver.ts",
+          "apps/web/src/modules/account/member-avatar.tsx",
+          "apps/web/src/modules/team/panel.tsx"
+        ],
+        "testPaths": [
+          "packages/namespace/test/routes.test.ts",
+          "apps/web/test/profile-settings-navigation.test.ts"
+        ],
+        "note": "Path construction is not resource lookup, normalization, number allocation, or authorization. Planned routes remain unbuildable and do not activate their business capabilities."
+      }
+    },
     {
       "id": "govern-root-namespace",
       "owner": "namespace",
@@ -923,11 +990,11 @@
       "implementation": {
         "status": "implemented",
         "scope": "current shared global-root reservation policy consumed by Account login validation",
-        "sourcePaths": ["packages/namespace/src/root.ts"],
-        "publicExports": ["./root"],
-        "entrypoints": ["packages/account/src/domain/login.ts"],
+        "sourcePaths": ["packages/namespace/src/domain/root.ts"],
+        "publicExports": ["."],
+        "entrypoints": ["packages/namespace/src/domain/namespace.ts"],
         "testPaths": ["packages/namespace/test/root.test.ts", "packages/account/test/user.test.ts"],
-        "note": "Namespace owns reservation/collision policy only; Account retains login normalization, lifecycle and persistence, while SQL and route inventory are enforcement/evidence."
+        "note": "Namespace owns root collision and global Account login naming. Qualification stays with Account."
       }
     },
     {
@@ -1006,7 +1073,7 @@
         "publicExports": ["./application/achievements", "./application/ports/achievements"],
         "entrypoints": [
           "apps/web/src/app/api/profile/achievements/route.ts",
-          "apps/web/src/app/(mobile)/profile/page.tsx"
+          "apps/web/src/app/(public)/[login]/page.tsx"
         ],
         "testPaths": [
           "packages/account/test/achievements.test.ts",
@@ -1193,7 +1260,7 @@
         "publicExports": ["./application/collaboration", "./application/ports", "./domain"],
         "entrypoints": [
           "apps/web/src/app/(mobile)/team/page.tsx",
-          "apps/web/src/app/(mobile)/organizations/[login]/teams/[teamSlug]/page.tsx"
+          "apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"
         ],
         "testPaths": ["packages/team/test/team.test.ts"],
         "note": "Team collaboration is Organization-scoped; route files are locator evidence only."
@@ -1345,6 +1412,7 @@
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/api/repositories/starred/route.ts",
+          "apps/web/src/app/(mobile)/stars/page.tsx",
           "apps/web/src/app/(mobile)/explore/page.tsx",
           "apps/web/src/app/(mobile)/home/page.tsx"
         ],
@@ -1462,6 +1530,7 @@
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/issues/page.tsx",
+          "apps/web/src/app/(mobile)/issues/page.tsx",
           "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
         ],
         "testPaths": [
@@ -1824,6 +1893,42 @@
         "testPaths": [],
         "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
       }
+    },
+    {
+      "id": "manage-account-namespace",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Claim, resolve and compare-and-set rename the shared User/Organization global login without changing stable identity or authorization.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Global User/Organization Account naming in existing caller transactions",
+        "sourcePaths": [
+          "packages/namespace/src/domain/namespace.ts",
+          "packages/namespace/src/application/claim-namespace.ts",
+          "packages/namespace/src/application/rename-namespace.ts",
+          "packages/namespace/src/application/resolve-namespace.ts",
+          "packages/namespace/src/adapters/postgres.ts"
+        ],
+        "publicExports": [".", "./adapters/postgres"],
+        "entrypoints": [
+          "packages/account/src/adapters/postgres/user.ts",
+          "apps/web/src/app/api/_composition/namespace.server.ts"
+        ],
+        "testPaths": [
+          "packages/namespace/test/namespace.test.ts",
+          "packages/account/test/user.test.ts"
+        ],
+        "note": "Existing account_logins rows retained; no duplicate registry and no release capability. Scoped entity-owned locators are not claimed to have moved persistence."
+      }
     }
   ],
   "invariants": [
@@ -2071,7 +2176,7 @@
     {
       "semanticOwner": "namespace",
       "module": "@line_bot_v1/namespace",
-      "note": "Namespace exposes the current global-root reservation policy through @line_bot_v1/namespace/root; broader claim/resolve capabilities remain unimplemented until a real shared consistency boundary exists."
+      "note": "Namespace owns global Account login lifecycle plus structured path contracts; scoped entity locators retain their existing persistence authority."
     },
     {
       "semanticOwner": "platform",
@@ -2463,7 +2568,7 @@
       "status": "active",
       "fields": ["login"],
       "scope": "shared-account-login-namespace",
-      "scopeAuthority": "account",
+      "scopeAuthority": "namespace",
       "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
       "note": "User and Organization share the login namespace. URL/resourcePath is locator evidence, not authorization or stable database identity.",
       "benchmark": {
@@ -2479,7 +2584,7 @@
       "status": "active",
       "fields": ["login"],
       "scope": "shared-account-login-namespace",
-      "scopeAuthority": "account",
+      "scopeAuthority": "namespace",
       "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
       "note": "Organization login shares the account login namespace and is resolved by the public owner page. Rename/display concerns stay separate from stable account identity.",
       "benchmark": {
@@ -2586,7 +2691,7 @@
       "fields": ["organizationLogin", "teamSlug"],
       "scope": "organization-scoped-team-slug",
       "scopeAuthority": "team",
-      "routeFiles": ["apps/web/src/app/(mobile)/organizations/[login]/teams/[teamSlug]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"],
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "benchmark": {
         "file": "schema-teams.json",

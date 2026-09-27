@@ -51,7 +51,7 @@ Time Tracking
 | 異常通報 | incident Rich Menu submenu; external form entries remain navigation only |
 | 表單作業 | forms submenu; external forms do not create local business truth |
 | 團隊協作 | team submenu backed by existing Team/Partner destinations |
-| 個人 | `/profile`; authenticated viewer Profile hub. `/{login}` remains the canonical User/Organization locator |
+| 個人 | `/profile` resolves the authenticated User and replaces the URL with `/{login}`, the single Profile surface |
 | 通知中心 | Notifications-owned recipient projection |
 | 開始工作 / 結束工作 | current Attendance application contract |
 
@@ -64,7 +64,7 @@ Legacy `membership=1` is retained only as a protocol alias and converges to the 
 - Every Rich Menu destination resolves to one canonical application surface.
 - Navigation labels are presentation vocabulary; they do not imply a new package, schema, Bounded Context, or source of truth.
 - Existing owner contracts are reused before adding a route or adapter.
-- `/profile` is a viewer composition, not a second User identity. Share/public identity remains `/{login}`.
+- `/profile` only resolves the current User entry; it does not render a Profile. Self, public and shared Profile use `/{login}` with owner-authorized projections.
 - Time Tracking presentation commands still reuse Attendance application contracts and preserve qualification, replay/idempotency, version, tenant isolation, transaction, and recovery semantics.
 - Notifications remain authoritative for recipient-scoped message state even when the UI label is 通知中心.
 - Direct entry from LINE, refresh, back, and authenticated continuation converge on the same authoritative application semantics.

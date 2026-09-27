@@ -91,7 +91,7 @@ begin
 
   insert into app_private.accounts(id,kind,created_at)
     values(p_target_id,'ORGANIZATION',p_requested_at);
-  perform app_private.set_account_login(p_target_id,'ORGANIZATION',p_login,p_requested_at);
+  perform app_private.claim_account_login(p_target_id,'ORGANIZATION',p_login,p_requested_at);
   insert into app_private.organizations(account_id,name,status,version,created_at)
     values(p_target_id,trim(p_name),'active',1,p_requested_at);
   insert into app_private.organization_direct_memberships(

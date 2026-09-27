@@ -6,55 +6,76 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 import WorkNavigation from "../../_shell/work-navigation";
+import ProfileOverview from "./profile-overview";
 import ProfileShare from "./profile-share";
-import { isOwnProfileLogin } from "./profile-viewer";
+import { isVerifiedSelfUser } from "./profile-viewer";
 import styles from "./profile-viewer-shell.module.css";
 
 type AccountProjection = {
   member?: {
+    id?: string | null;
     login?: string | null;
+    status?: string | null;
   } | null;
 };
 
 export default function ProfileViewerShell({
   children,
   liffId,
+  profileKind,
+  profileBio,
   profileLogin,
+  profileTitle,
+  profileUserId,
 }: {
   children: ReactNode;
   liffId: string;
+  profileKind: "USER" | "ORGANIZATION";
+  profileBio?: string | null;
   profileLogin: string;
+  profileTitle: string;
+  profileUserId?: string;
 }) {
-  const [ownProfile, setOwnProfile] = useState(false);
+  const [viewer, setViewer] = useState<{
+    profileKind: "USER";
+    profileLogin: string;
+    profileUserId: string;
+    token: string;
+  } | null>(null);
   const generation = useRef(0);
+  const ownProfile =
+    profileKind === "USER" &&
+    viewer?.profileKind === profileKind &&
+    viewer.profileLogin === profileLogin &&
+    viewer.profileUserId === profileUserId;
 
   const clear = useCallback(() => {
     generation.current++;
-    setOwnProfile(false);
+    setViewer(null);
   }, []);
 
   const load = useCallback(async () => {
     const ticket = ++generation.current;
+    setViewer(null);
     try {
       const token = await liffClient.session(liffId);
-      if (!token || ticket !== generation.current) {
-        setOwnProfile(false);
-        return;
-      }
+      if (!token || ticket !== generation.current) return;
       const response = await fetch("/api/membership?view=account", {
         headers: { "x-line-token": token },
         cache: "no-store",
       });
-      if (ticket !== generation.current || !response.ok) {
-        setOwnProfile(false);
-        return;
-      }
+      if (ticket !== generation.current || !response.ok) return;
       const value = (await response.json()) as AccountProjection;
-      setOwnProfile(isOwnProfileLogin(value.member?.login, profileLogin));
+      if (ticket !== generation.current) return;
+      setViewer(
+        profileUserId && isVerifiedSelfUser(value.member, profileUserId, profileLogin, profileKind)
+          ? { profileKind: "USER", profileLogin, profileUserId, token }
+          : null,
+      );
     } catch {
-      if (ticket === generation.current) setOwnProfile(false);
+      if (ticket === generation.current) setViewer(null);
     }
-  }, [liffId, profileLogin]);
+  }, [liffId, profileKind, profileLogin, profileUserId]);
 
   useEffect(
     () => () => {
@@ -122,6 +143,13 @@ export default function ProfileViewerShell({
             )}
           </div>
         </header>
+        <ProfileOverview
+          key={`${profileKind}:${profileUserId ?? ""}:${profileLogin}:${ownProfile ? viewer?.token : "public"}`}
+          profileBio={profileBio}
+          profileLogin={profileLogin}
+          profileTitle={profileTitle}
+          token={ownProfile ? viewer?.token : undefined}
+        />
         {children}
       </main>
       {ownProfile && <WorkNavigation activeHref="/home" />}

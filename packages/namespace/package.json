@@ -4,9 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./root": {
-      "types": "./dist/root.d.ts",
-      "default": "./dist/root.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
     }
   },
   "files": [
@@ -16,6 +20,9 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

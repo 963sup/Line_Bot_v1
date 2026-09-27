@@ -60,22 +60,6 @@
       "types": "./dist/application/ports/profile.d.ts",
       "default": "./dist/application/ports/profile.js"
     },
-    "./domain/login": {
-      "types": "./dist/domain/login.d.ts",
-      "default": "./dist/domain/login.js"
-    },
-    "./application/login-directory": {
-      "types": "./dist/application/login-directory.d.ts",
-      "default": "./dist/application/login-directory.js"
-    },
-    "./application/ports/login-directory": {
-      "types": "./dist/application/ports/login-directory.d.ts",
-      "default": "./dist/application/ports/login-directory.js"
-    },
-    "./adapters/postgres/login-directory": {
-      "types": "./dist/adapters/postgres/login-directory.d.ts",
-      "default": "./dist/adapters/postgres/login-directory.js"
-    },
     "./application/achievements": {
       "types": "./dist/application/achievements.d.ts",
       "default": "./dist/application/achievements.js"

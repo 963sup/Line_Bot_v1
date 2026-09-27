@@ -71,6 +71,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../../packages/namespace
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../../packages/account
@@ -371,6 +374,10 @@ importers:
         version: 5.9.3
 
   packages/namespace:
+    dependencies:
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -400,6 +407,9 @@ importers:
 
   packages/organization:
     dependencies:
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
@@ -474,6 +484,9 @@ importers:
 
   packages/repository:
     dependencies:
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
@@ -499,6 +512,9 @@ importers:
 
   packages/team:
     dependencies:
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account

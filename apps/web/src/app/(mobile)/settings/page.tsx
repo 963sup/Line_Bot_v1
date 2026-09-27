@@ -19,7 +19,7 @@ export default function SettingsPage() {
           icon="◎"
           tone="pink"
           title="Edit Profile"
-          description="顯示名稱、自我介紹、login 與 visibility"
+          description="顯示名稱、自我介紹與可見範圍"
         />
         <ActionRow
           href="/settings/account"

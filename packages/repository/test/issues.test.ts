@@ -7,13 +7,16 @@ test("Issue number is monotonic within each Repository and independent across Re
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const id of ["publisher", "assignee"]) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
-      "active",
-      1,
-    ]);
-  }
+  await db.transaction(async (sql) => {
+    for (const id of ["publisher", "assignee"]) {
+      await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+        id,
+        "active",
+        1,
+      ]);
+      await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
+    }
+  });
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "organization-a",
     "publisher",
@@ -56,11 +59,6 @@ test("Issue number is monotonic within each Repository and independent across Re
       10,
     );
 
-  await pg.query("select app_private.set_account_login($1,'USER',$2,$3)", [
-    "publisher",
-    "publisher",
-    6,
-  ]);
   await pg.query(
     "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
     ["repository-user", "publisher", "Personal"],

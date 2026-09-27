@@ -9,15 +9,18 @@ import { PostgresDailyCheckInStore } from "../src/adapters/postgres.js";
 import { createDailyCheckIn } from "../src/application.js";
 import { DAILY_CHECK_IN_LEDGER_SOURCE, DailyCheckInError } from "../src/domain.js";
 
+async function activeUser(db: Database, id: string) {
+  await db.transaction(async (sql) => {
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [id, "active", 1]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
+  });
+}
+
 test("Postgres DailyCheckIn persists one wheel outcome and replays across Taipei midnight", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   const memberId = "daily-user";
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    memberId,
-    "active",
-    1,
-  ]);
+  await activeUser(db, memberId);
   let draws = 0;
   const store = new PostgresDailyCheckInStore(db, () => {
     draws++;
@@ -57,11 +60,7 @@ test("Postgres DailyCheckIn refuses stale unclaimed days and orphan Ledger facts
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   for (const memberId of ["stale-user", "orphan-ledger-user"]) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      memberId,
-      "active",
-      1,
-    ]);
+    await activeUser(db, memberId);
   }
   const store = new PostgresDailyCheckInStore(db, () => 0);
   await assert.rejects(
@@ -86,14 +85,10 @@ test("Postgres DailyCheckIn refuses stale unclaimed days and orphan Ledger facts
 });
 
 test("Postgres DailyCheckIn rolls back claim outcome when Ledger posting fails", async (t) => {
-  const { pg } = await postgresFixture();
+  const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   const memberId = "rollback-user";
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    memberId,
-    "active",
-    1,
-  ]);
+  await activeUser(db, memberId);
   const failingDb: Database = {
     transaction: (work) =>
       pg.transaction(async (tx) => {
@@ -122,11 +117,7 @@ test("Postgres rejects a committed DailyCheckIn claim without matching Ledger fa
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   const memberId = "direct-claim-user";
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    memberId,
-    "active",
-    1,
-  ]);
+  await activeUser(db, memberId);
 
   await assert.rejects(
     db.transaction((sql) =>
@@ -145,11 +136,7 @@ test("DailyCheckIn qualification is rechecked in the transaction and claims are 
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   const memberId = "qualification-user";
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    memberId,
-    "active",
-    1,
-  ]);
+  await activeUser(db, memberId);
   const store = new PostgresDailyCheckInStore(db, () => 60);
   const app = createDailyCheckIn({
     activeUser: async () => {

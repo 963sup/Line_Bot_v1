@@ -1,14 +1,12 @@
 import {
   PostgresFollowStore,
   PostgresGoogleLinkStore,
-  PostgresLoginDirectoryStore,
   PostgresUserAchievementStore,
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line_bot_v1/account/adapters/postgres";
 import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
 import { createFollows } from "@line_bot_v1/account/application/follows";
-import { createLoginDirectory } from "@line_bot_v1/account/application/login-directory";
 import { createUserProfiles } from "@line_bot_v1/account/application/profile";
 import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
 import { requireActiveUser } from "@line_bot_v1/account/domain/user";
@@ -26,7 +24,6 @@ const state = globalThis as typeof globalThis & {
   followStore?: PostgresFollowStore;
   achievementStore?: PostgresUserAchievementStore;
   profileStore?: PostgresUserProfileStore;
-  loginDirectoryStore?: PostgresLoginDirectoryStore;
 };
 
 const accountAdministration = { protectPermissionAdministrator };
@@ -49,9 +46,6 @@ function achievementStore() {
 function profileStore() {
   return (state.profileStore ??= new PostgresUserProfileStore());
 }
-function loginDirectoryStore() {
-  return (state.loginDirectoryStore ??= new PostgresLoginDirectoryStore());
-}
 
 const dailyCheckIn = createDailyCheckIn({
   activeUser: async (subject) =>
@@ -72,13 +66,12 @@ export const googleLink = createGoogleLink({
 export const {
   findUser,
   activeLineUser,
-  publicByLogin: publicUserByLogin,
+  publicById: publicUserById,
   updateLogin,
   registerUser,
   pauseUser,
   restoreUser,
 } = user;
-export const loginDirectory = createLoginDirectory(loginDirectoryStore);
 export const achievements = createUserAchievements({
   activeUser: activeLineUser,
   store: achievementStore,

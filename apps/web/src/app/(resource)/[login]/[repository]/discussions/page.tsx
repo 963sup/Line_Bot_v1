@@ -1,4 +1,4 @@
-import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../modules/repository/resources-panel";
 import { lineMiniApp } from "../../../../../shared/server/line-mini-app";

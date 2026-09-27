@@ -1,10 +1,8 @@
-import {
-  readAccountLogin,
-  readActiveUserQualification,
-} from "@line_bot_v1/account/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
 import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/adapters/postgres";
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { readAccountLogin } from "@line_bot_v1/namespace/adapters/postgres";
 import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 
 export type OrganizationTeamQualification = Readonly<{

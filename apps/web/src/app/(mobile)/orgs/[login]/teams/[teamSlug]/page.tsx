@@ -1,4 +1,4 @@
-import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { normalizeTeamSlug } from "@line_bot_v1/team/domain";
 import { notFound } from "next/navigation";
 import TeamPanel from "../../../../../../modules/team/panel";

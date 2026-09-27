@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { claimNamespace, NamespaceError, renameNamespace } from "@line_bot_v1/namespace";
+import { PostgresNamespaceStore, readAccountLogin } from "@line_bot_v1/namespace/adapters/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type { VerifiedGoogleIdentity } from "../../application/ports/identity-provider.js";
 import type { UserRepository } from "../../application/ports/user-repository.js";
@@ -28,35 +30,35 @@ export class PostgresUserStore implements UserRepository {
     return this.db.transaction((sql) => this.getFrom(sql, id));
   }
 
-  publicByLogin(login: string) {
+  publicById(userId: string) {
     return this.db.transaction(async (sql) => {
       const row = (
         await sql.query(
-          `SELECT u.id,l.login
-           FROM account_logins l
-           JOIN users u ON u.id=l.account_id
-           WHERE l.account_kind='USER' AND l.login=$1 AND u.status='active'`,
-          [login],
+          `SELECT id,login FROM user_namespace_projection
+           WHERE id=$1 AND status='active'`,
+          [userId],
         )
       ).rows[0] as { id: string; login: string } | undefined;
-      return row ?? null;
+      if (!row) return null;
+      if (!row.login) throw new UserError(500, "User 登入名稱資料不完整。");
+      return row;
     });
   }
 
-  updateLogin(userId: string, login: string, now: number) {
+  updateLogin(userId: string, login: string, expectedLogin: string, now: number) {
     return this.db.transaction(async (sql) => {
       const current = await this.getFrom(sql, userId, true);
       if (current.status !== "active") throw new UserError(403, "目前會員資格無法更新登入名稱。");
       try {
-        await sql.query("SELECT app_private.set_account_login($1,'USER',$2,$3)", [
-          userId,
+        await renameNamespace(
+          new PostgresNamespaceStore(sql),
+          { id: userId, kind: "USER" },
+          expectedLogin,
           login,
           now,
-        ]);
+        );
       } catch (error) {
-        if ((error as { code?: string }).code === "23505") {
-          throw new UserError(409, "登入名稱已被使用。");
-        }
+        if (error instanceof NamespaceError) throw new UserError(error.status, error.message);
         throw error;
       }
       return this.viewFrom(sql, userId);
@@ -114,28 +116,12 @@ export class PostgresUserStore implements UserRepository {
         if (m.status === "suspended") throw new UserError(403, "會員已停權。");
         if (operation === "register") {
           if (!login) throw new UserError(400, "登入名稱格式不正確。");
-          const currentLogin = (
-            await sql.query(
-              "SELECT login FROM account_logins WHERE account_id=$1 AND account_kind='USER'",
-              [m.id],
-            )
-          ).rows[0] as { login: string } | undefined;
+          const currentLogin = await readAccountLogin(sql, m.id, "USER");
           if (currentLogin && currentLogin.login !== login) {
             throw new UserError(409, "此 User 已使用其他登入名稱。");
           }
           if (!currentLogin) {
-            try {
-              await sql.query("SELECT app_private.set_account_login($1,'USER',$2,$3)", [
-                m.id,
-                login,
-                now,
-              ]);
-            } catch (error) {
-              if ((error as { code?: string }).code === "23505") {
-                throw new UserError(409, "登入名稱已被使用。");
-              }
-              throw error;
-            }
+            throw new UserError(500, "User 登入名稱資料不完整。");
           }
         }
         if (m.status !== "active") {
@@ -161,15 +147,14 @@ export class PostgresUserStore implements UserRepository {
       ]);
       if (!login) throw new UserError(400, "登入名稱格式不正確。");
       try {
-        await sql.query("SELECT app_private.set_account_login($1,'USER',$2,$3)", [
-          m.id,
+        await claimNamespace(
+          new PostgresNamespaceStore(sql),
+          { id: m.id, kind: "USER" },
           login,
           now,
-        ]);
+        );
       } catch (error) {
-        if ((error as { code?: string }).code === "23505") {
-          throw new UserError(409, "登入名稱已被使用。");
-        }
+        if (error instanceof NamespaceError) throw new UserError(error.status, error.message);
         throw error;
       }
       await sql.query("INSERT INTO user_identities(provider,subject,user_id) VALUES($1,$2,$3)", [
@@ -257,24 +242,29 @@ export class PostgresUserStore implements UserRepository {
   }
 
   private async viewFrom(sql: Sql, id: string) {
-    const m = await this.getFrom(sql, id);
-    const login = (
+    const row = (
       await sql.query(
-        "SELECT login FROM account_logins WHERE account_id=$1 AND account_kind='USER'",
+        `SELECT id,status,"createdAt",login,google_email
+         FROM user_namespace_projection WHERE id=$1`,
         [id],
       )
-    ).rows[0] as { login: string } | undefined;
-    const g = (
-      await sql.query("SELECT email FROM user_identities WHERE user_id=$1 AND provider='google'", [
-        id,
-      ])
-    ).rows[0];
+    ).rows[0] as
+      | {
+          id: string;
+          status: User["status"];
+          createdAt: number | string;
+          login: string | null;
+          google_email: string | null;
+        }
+      | undefined;
+    if (!row) throw new UserError(404, "會員不存在。");
+    if (!row.login) throw new UserError(500, "User 登入名稱資料不完整。");
     return {
-      id: m.id,
-      status: m.status,
-      createdAt: m.createdAt,
-      login: login?.login ?? null,
-      googleEmail: g?.email ?? null,
+      id: row.id,
+      status: row.status,
+      createdAt: Number(row.createdAt),
+      login: row.login,
+      googleEmail: row.google_email,
     };
   }
 

@@ -61,13 +61,16 @@ test("Postgres follow persistence keeps one directional edge and rejects self-fo
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const id of ["user-a", "user-b"]) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
-      "active",
-      1,
-    ]);
-  }
+  await pg.transaction(async (sql) => {
+    for (const id of ["user-a", "user-b"]) {
+      await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+        id,
+        "active",
+        1,
+      ]);
+      await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
+    }
+  });
 
   const store = new PostgresFollowStore(db);
   await store.follow("user-a", "user-b", 10);

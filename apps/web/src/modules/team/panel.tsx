@@ -1,5 +1,6 @@
 "use client";
 
+import { buildNamespacePath } from "@line_bot_v1/namespace";
 import type { TeamView } from "@line_bot_v1/team/contracts";
 import type { TeamCommand } from "@line_bot_v1/team/domain";
 import { useRouter } from "next/navigation";
@@ -146,9 +147,10 @@ export default function TeamPanel({
       if (canonicalTeam) {
         if (value.organizationLogin && value.team?.slug) {
           router.replace(
-            `/organizations/${encodeURIComponent(value.organizationLogin)}/teams/${encodeURIComponent(
-              value.team.slug,
-            )}`,
+            buildNamespacePath("organization-team", {
+              organization: value.organizationLogin,
+              teamSlug: value.team.slug,
+            }),
           );
         } else {
           router.replace("/team");
@@ -218,9 +220,10 @@ export default function TeamPanel({
         if (canonicalTeam) {
           if (fresh.organizationLogin && fresh.team?.slug) {
             router.replace(
-              `/organizations/${encodeURIComponent(fresh.organizationLogin)}/teams/${encodeURIComponent(
-                fresh.team.slug,
-              )}`,
+              buildNamespacePath("organization-team", {
+                organization: fresh.organizationLogin,
+                teamSlug: fresh.team.slug,
+              }),
             );
           } else {
             router.replace("/team");

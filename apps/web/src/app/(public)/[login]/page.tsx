@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
-import { loginDirectory, profiles, publicUserByLogin } from "../../api/_composition/account.server";
+import { profiles, publicUserById } from "../../api/_composition/account.server";
+import { resolveAccountNamespace } from "../../api/_composition/namespace.server";
 import ProfileViewerShell from "../_components/profile-viewer-shell";
 import { publicOrganizations } from "../_composition/directory.server";
 import { publicRepositories } from "../_composition/repository.server";
@@ -10,40 +11,8 @@ import styles from "./profile.module.css";
 
 export const dynamic = "force-dynamic";
 
-function ProfileAvatar({ label }: { label: string }) {
-  const initial = Array.from(label.trim())[0]?.toLocaleUpperCase("zh-TW") ?? "•";
-  return (
-    <div className={`public-profile-avatar ${styles.avatar}`} aria-hidden="true">
-      {initial}
-    </div>
-  );
-}
-
 async function popularRepositoryProjection(login: string) {
   return publicRepositories().popularByOwner(login, 6);
-}
-
-function ProfileIdentity({
-  login,
-  title,
-  bio,
-}: {
-  login: string;
-  title: string;
-  bio?: string | null;
-}) {
-  return (
-    <div className={styles.identity}>
-      <div className={styles.identityRow}>
-        <ProfileAvatar label={title || login} />
-        <div className={styles.identityCopy}>
-          <h1>{title || `@${login}`}</h1>
-          <p>@{login}</p>
-        </div>
-      </div>
-      {bio && <p className={styles.bio}>{bio}</p>}
-    </div>
-  );
 }
 
 function PopularRepositories({
@@ -125,19 +94,12 @@ function RepositorySummary({ totalCount }: { totalCount: number }) {
 }
 
 function ProfileContent({
-  login,
-  title,
-  bio,
   repositories,
 }: {
-  login: string;
-  title: string;
-  bio?: string | null;
   repositories: Awaited<ReturnType<typeof popularRepositoryProjection>>;
 }) {
   return (
     <div className={styles.profile}>
-      <ProfileIdentity login={login} title={title} bio={bio} />
       <PopularRepositories repositories={repositories} />
       <RepositorySummary totalCount={repositories.totalCount} />
     </div>
@@ -146,36 +108,47 @@ function ProfileContent({
 
 export default async function Page({ params }: { params: Promise<{ login: string }> }) {
   const { login } = await params;
-  const owner = await loginDirectory.resolve(login);
+  const owner = await resolveAccountNamespace(login);
   if (!owner) notFound();
 
   const liffId = lineMiniApp().liffId;
 
   if (owner.kind === "ORGANIZATION") {
-    const organization = await publicOrganizations().byLogin(owner.login);
+    const [organization, repositories] = await Promise.all([
+      publicOrganizations().byLogin(owner.login),
+      popularRepositoryProjection(owner.login),
+    ]);
     if (!organization) notFound();
-    const repositories = await popularRepositoryProjection(owner.login);
     return (
-      <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
-        <ProfileContent login={owner.login} title={organization.name} repositories={repositories} />
+      <ProfileViewerShell
+        key={`${owner.kind}:${owner.id}:${owner.login}`}
+        liffId={liffId}
+        profileKind="ORGANIZATION"
+        profileLogin={owner.login}
+        profileTitle={organization.name}
+      >
+        <ProfileContent repositories={repositories} />
       </ProfileViewerShell>
     );
   }
 
-  const user = await publicUserByLogin(owner.login);
-  if (!user) notFound();
-  const [profile, repositories] = await Promise.all([
-    profiles.publicByUserId(user.id),
+  const [user, profile, repositories] = await Promise.all([
+    publicUserById(owner.id),
+    profiles.publicByUserId(owner.id),
     popularRepositoryProjection(owner.login),
   ]);
+  if (!user || user.login !== owner.login) notFound();
   return (
-    <ProfileViewerShell liffId={liffId} profileLogin={owner.login}>
-      <ProfileContent
-        login={owner.login}
-        title={profile?.displayName ?? user.login}
-        bio={profile?.bio}
-        repositories={repositories}
-      />
+    <ProfileViewerShell
+      key={`${owner.kind}:${owner.id}:${owner.login}`}
+      liffId={liffId}
+      profileBio={profile?.bio}
+      profileKind="USER"
+      profileLogin={owner.login}
+      profileTitle={profile?.displayName ?? user.login}
+      profileUserId={owner.id}
+    >
+      <ProfileContent repositories={repositories} />
     </ProfileViewerShell>
   );
 }

@@ -8,23 +8,26 @@ test("public Repository list and popularity expose only public owner resources d
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    "public-owner",
-    "active",
-    1,
-  ]);
-  await pg.query("select app_private.set_account_login($1,'USER',$2,$3)", [
-    "public-owner",
-    "alice",
-    2,
-  ]);
-  for (const id of ["fan-a", "fan-b"]) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
+  await db.transaction(async (sql) => {
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+      "public-owner",
       "active",
       1,
     ]);
-  }
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "public-owner",
+      "alice",
+      2,
+    ]);
+    for (const id of ["fan-a", "fan-b"]) {
+      await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+        id,
+        "active",
+        1,
+      ]);
+      await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
+    }
+  });
   for (const [id, name, visibility] of [
     ["repository-a", "Alpha", "public"],
     ["repository-b", "Beta", "public"],

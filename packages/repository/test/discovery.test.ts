@@ -49,18 +49,20 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const [id, login, at] of [
-    ["viewer", "viewer", 1],
-    ["owner", "acme", 2],
-    ["peer", "peer", 3],
-  ] as const) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
-      "active",
-      at,
-    ]);
-    await pg.query("select app_private.set_account_login($1,'USER',$2,$3)", [id, login, at]);
-  }
+  await db.transaction(async (sql) => {
+    for (const [id, login, at] of [
+      ["viewer", "viewer", 1],
+      ["owner", "acme", 2],
+      ["peer", "peer", 3],
+    ] as const) {
+      await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+        id,
+        "active",
+        at,
+      ]);
+      await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, login, at]);
+    }
+  });
 
   await pg.query(
     "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",

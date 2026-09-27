@@ -79,11 +79,18 @@ test("runtime provisioning creates governance roots only through narrow coordina
   const { pg } = await postgresFixture();
   t.after(() => pg.close());
 
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    "creator",
-    "active",
-    1,
-  ]);
+  await pg.transaction(async (sql) => {
+    await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      "creator",
+      "active",
+      1,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "creator",
+      "creator",
+      1,
+    ]);
+  });
 
   const privileges = await pg.query(
     "select has_function_privilege('line_app','app_private.provision_enterprise_scope(text,text,text,text,bigint)','EXECUTE') as enterprise_create, has_function_privilege('line_app','app_private.provision_organization_scope(text,text,text,text,bigint)','EXECUTE') as organization_create, has_function_privilege('line_app','app_private.bootstrap_enterprise(text,text,text,text,text,text,text,uuid,bigint)','EXECUTE') as enterprise_bootstrap",
@@ -268,13 +275,20 @@ test("repository effective access combines direct and active same-organization T
   const { pg } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const userId of ["repository-owner", "team-user", "removed-team-user"]) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      userId,
-      "active",
-      1,
-    ]);
-  }
+  await pg.transaction(async (sql) => {
+    for (const userId of ["repository-owner", "team-user", "removed-team-user"]) {
+      await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+        userId,
+        "active",
+        1,
+      ]);
+      await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+        userId,
+        userId,
+        1,
+      ]);
+    }
+  });
 
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "organization-a",

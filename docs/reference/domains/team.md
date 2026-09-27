@@ -4,7 +4,7 @@ Low-frequency Team details. The owner boundary and invariants remain canonical i
 
 ## Locator
 
-TeamId 是 stable identity；Organization Team 的 human-readable locator 是 Organization `login` + Team `slug`。GitHub FPT 定義 `Organization.team(slug)` 與 `Team.slug`，GitHub REST docs 另明示 Team slug 由 Team name 產生，因此 current implementation 在 create／rename 時由 `name` deterministic derive slug，rename 會改變 slug，但不改 TeamId。Canonical authenticated route 是 `/organizations/{organizationLogin}/teams/{teamSlug}`；`/team` 仍是 collection/workbench。舊 slug 不建立 speculative redirect/history。
+TeamId 是 stable identity；Organization Team 的 human-readable locator 是 Organization `login` + Team `slug`。GitHub FPT 定義 `Organization.team(slug)` 與 `Team.slug`，GitHub REST docs 另明示 Team slug 由 Team name 產生，因此 current implementation 在 create／rename 時由 `name` deterministic derive slug，rename 會改變 slug，但不改 TeamId。Canonical authenticated route 是 `/orgs/{organizationLogin}/teams/{teamSlug}`；`/team` 仍是 collection/workbench。舊 slug 不建立 speculative redirect/history。
 
 Current declarative contract 要求每個 Organization Team 都有 non-null slug，且同一 Organization 內唯一；create 與 rename 都由 name deterministic derive slug。Locator 只定位：direct open 仍重新驗 LINE proof、active OrganizationMembership、active TeamMembership 與 TeamMaintainer policy。
 

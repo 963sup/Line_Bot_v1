@@ -10,6 +10,7 @@ Conflicting answers use the authority below; do not load more background first.
 | Persisted relation owner/schema mapping | `architecture/data-topology.json` |
 | PostgreSQL DDL/constraint/RLS | `supabase/schemas/` |
 | Public package API | owner `package.json#exports` |
+| Global login lifecycle / root reservation / selected path contract | `packages/namespace/src/domain/namespace.ts` / `packages/namespace/src/domain/root.ts` / `packages/namespace/src/domain/routes.ts`；actual delivery evidence remains App Router source |
 | Commands/versions | root `package.json`, lockfile, runtime config |
 | Scoped Agent constraints | root + nearest `AGENTS.md` |
 | Owner rule not inferable from machine truth | `docs/owners/<owner>.md` |

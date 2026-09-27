@@ -29,16 +29,18 @@ test("Postgres Repository collection returns only current effective access", asy
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    "repository-viewer",
-    "active",
-    1,
-  ]);
-  await pg.query("select app_private.set_account_login($1,'USER',$2,$3)", [
-    "repository-viewer",
-    "viewer",
-    2,
-  ]);
+  await db.transaction(async (sql) => {
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+      "repository-viewer",
+      "active",
+      1,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "repository-viewer",
+      "viewer",
+      2,
+    ]);
+  });
   await pg.query(
     "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
     ["repository-a", "repository-viewer", "Operations"],

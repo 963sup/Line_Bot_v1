@@ -34,12 +34,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // OAuth 回調包含一次性授權碼；開發與執行期間嚴禁記錄傳入請求的完整 URL
   logging: { incomingRequests: false },
-  async redirects() {
+  async rewrites() {
+    // Previously published Team links and cached /orgs -> /organizations 308s must still resolve.
+    // An internal rewrite reuses the sole page without reversing that cached redirect.
     return [
       {
-        source: "/orgs/:login/teams/:teamSlug",
-        destination: "/organizations/:login/teams/:teamSlug",
-        permanent: true,
+        source: "/organizations/:login/teams/:teamSlug",
+        destination: "/orgs/:login/teams/:teamSlug",
       },
     ];
   },
@@ -53,6 +54,9 @@ const nextConfig: NextConfig = {
       "/trending/:path*",
       "/enterprises/:path*",
       "/organizations/:path*",
+      "/orgs/:path*",
+      "/stars",
+      "/issues",
       "/team/:path*",
       "/repositories/:path*",
       "/:login/:repository/:path*",

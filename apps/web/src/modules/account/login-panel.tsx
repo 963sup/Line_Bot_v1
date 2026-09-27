@@ -9,6 +9,7 @@ type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 
 export default function LoginPanel({ liffId }: { liffId: string }) {
   const [login, setLogin] = useState("");
+  const [expectedLogin, setExpectedLogin] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -18,6 +19,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
   function clear() {
     generation.current++;
     setLogin("");
+    setExpectedLogin("");
     setLoaded(false);
     setBusy(false);
     setError("");
@@ -32,7 +34,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     try {
       const token = await liffClient.session(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
-      const response = await fetch("/api/membership", {
+      const response = await fetch("/api/membership?view=account", {
         headers: { "x-line-token": token },
         cache: "no-store",
       });
@@ -40,6 +42,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
       if (!response.ok) throw new Error(value.error ?? "登入名稱讀取失敗。");
       if (ticket !== generation.current) return;
       setLogin(value.member?.login ?? "");
+      setExpectedLogin(value.member?.login ?? "");
       setLoaded(Boolean(value.member));
     } catch (cause) {
       if (ticket === generation.current) {
@@ -66,12 +69,13 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
           "x-line-token": token,
           "content-type": "application/json",
         },
-        body: JSON.stringify({ action: "updateLogin", login }),
+        body: JSON.stringify({ action: "updateLogin", login, expectedLogin }),
       });
       const value = (await response.json()) as { member?: AccountView; error?: string };
       if (!response.ok || !value.member) throw new Error(value.error ?? "登入名稱保存失敗。");
       if (ticket !== generation.current) return;
       setLogin(value.member.login ?? "");
+      setExpectedLogin(value.member.login ?? "");
       setLoaded(true);
       setNotice("登入名稱已保存。");
     } catch (cause) {
@@ -101,7 +105,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     <section>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <h2>登入名稱</h2>
-      <p>Login 是 User 的公開 locator，不屬於 Profile metadata。</p>
+      <p>登入名稱用於你的公開個人頁網址。</p>
       {busy && <p role="status">正在確認登入名稱…</p>}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}

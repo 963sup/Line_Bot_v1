@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import type { Database } from "@line_bot_v1/platform/adapters/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryCreationStore } from "../src/adapters/postgres/creation.js";
 import { createRepositoryCreation } from "../src/application/creation.js";
@@ -50,22 +51,20 @@ test("Repository create application canonicalizes input before the store", async
   );
 });
 
-async function activeUser(
-  pg: { query(sql: string, values?: unknown[]): Promise<unknown> },
-  id: string,
-  login: string,
-) {
-  await pg.query(
-    "insert into app_private.users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
-    [id],
-  );
-  await pg.query("select app_private.set_account_login($1,'USER',$2,1)", [id, login]);
+async function activeUser(db: Database, id: string, login: string) {
+  await db.transaction(async (sql) => {
+    await sql.query(
+      "insert into users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
+      [id],
+    );
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, login]);
+  });
 }
 
 test("Repository creation lists only effective owner scopes and preserves exact replay", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
-  await activeUser(pg, "creator", "alice");
+  await activeUser(db, "creator", "alice");
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "org-active",
     "creator",
@@ -131,8 +130,8 @@ test("Repository creation lists only effective owner scopes and preserves exact 
 test("Organization Repository creation requires current OrganizationOwner and bootstraps creator admin atomically", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
-  await activeUser(pg, "owner", "owner");
-  await activeUser(pg, "member", "member");
+  await activeUser(db, "owner", "owner");
+  await activeUser(db, "member", "member");
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "org",
     "owner",

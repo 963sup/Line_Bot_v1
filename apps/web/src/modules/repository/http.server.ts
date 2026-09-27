@@ -1,5 +1,5 @@
-import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import {
   IssueError,
   normalizeRepositoryName,

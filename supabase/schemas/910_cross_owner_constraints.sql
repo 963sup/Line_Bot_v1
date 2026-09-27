@@ -56,6 +56,54 @@ create constraint trigger user_facet_complete
   after insert or update or delete on app_private.users
   deferrable initially deferred for each row execute function app_private.enforce_account_facet();
 
+-- Account User lifecycle and the global Namespace binding commit together.
+-- The deferred check permits either creation order while preventing removal or reassignment.
+create function app_private.enforce_user_login()
+returns trigger
+language plpgsql
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+declare
+  identity_id text;
+  identity_ids text[] := array[]::text[];
+begin
+  if tg_table_name = 'users' then
+    if tg_op <> 'INSERT' then
+      identity_ids := array_append(identity_ids, old.id);
+    end if;
+    if tg_op <> 'DELETE' then
+      identity_ids := array_append(identity_ids, new.id);
+    end if;
+  else
+    if tg_op <> 'INSERT' and old.account_kind = 'USER' then
+      identity_ids := array_append(identity_ids, old.account_id);
+    end if;
+    if tg_op <> 'DELETE' and new.account_kind = 'USER' then
+      identity_ids := array_append(identity_ids, new.account_id);
+    end if;
+  end if;
+
+  foreach identity_id in array identity_ids loop
+    if exists (select 1 from app_private.users where id = identity_id)
+       and not exists (
+         select 1 from app_private.account_logins
+         where account_id = identity_id and account_kind = 'USER'
+       ) then
+      raise exception 'user_login_missing' using errcode = '23514';
+    end if;
+  end loop;
+  return null;
+end
+$function$;
+revoke all on function app_private.enforce_user_login() from public, anon, authenticated, line_app;
+grant execute on function app_private.enforce_user_login() to line_app;
+create constraint trigger user_login_complete
+after insert or update or delete on app_private.users
+deferrable initially deferred for each row execute function app_private.enforce_user_login();
+create constraint trigger account_login_user_complete
+after insert or update or delete on app_private.account_logins
+deferrable initially deferred for each row execute function app_private.enforce_user_login();
+
 create function app_private.protect_governance_account_identity()
 returns trigger
 language plpgsql

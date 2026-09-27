@@ -1,4 +1,4 @@
-import { normalizeAccountLogin } from "../domain/login.js";
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { requireActiveUser, UserError } from "../domain/user.js";
 import type { VerifiedGoogleIdentity } from "./ports/identity-provider.js";
 import type { GoogleLinkRepository, UserRepository } from "./ports/user-repository.js";
@@ -23,26 +23,23 @@ export function createUser(deps: UserDependencies) {
     activeLineUser: async (subject: string) =>
       requireActiveUser(await deps.repository().find(deps.lineProvider(), subject)),
 
-    /** Resolves an active User by its Account-owned login. */
-    publicByLogin: async (value: string) => {
-      try {
-        return deps.repository().publicByLogin(normalizeAccountLogin(value));
-      } catch {
-        return null;
-      }
-    },
+    /** Reads an active User after Namespace has resolved its stable Account ID. */
+    publicById: (userId: string) => deps.repository().publicById(userId),
 
     /** Changes the current User locator without coupling it to Profile metadata. */
-    updateLogin: async (subject: string, value: unknown) => {
-      if (typeof value !== "string") throw new UserError(400, "登入名稱格式不正確。");
+    updateLogin: async (subject: string, value: unknown, expectedValue: unknown) => {
+      if (typeof value !== "string" || typeof expectedValue !== "string")
+        throw new UserError(400, "登入名稱格式不正確。");
       let login: string;
+      let expectedLogin: string;
       try {
         login = normalizeAccountLogin(value);
+        expectedLogin = normalizeAccountLogin(expectedValue);
       } catch {
         throw new UserError(400, "登入名稱格式不正確或已保留。");
       }
       const account = requireActiveUser(await deps.repository().find(deps.lineProvider(), subject));
-      return deps.repository().updateLogin(account.id, login, Date.now());
+      return deps.repository().updateLogin(account.id, login, expectedLogin, Date.now());
     },
 
     /** Explicit LINE registration; the repository returns the committed Account projection. */

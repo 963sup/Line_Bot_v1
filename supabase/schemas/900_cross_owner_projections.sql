@@ -1,5 +1,23 @@
 -- Read-only cross-context projections; no mutation authority originates here.
 
+-- Account lifecycle plus Namespace locator and optional Google identity for Account-owned reads.
+create view app_private.user_namespace_projection
+with (security_invoker = true)
+as
+select
+  u.id,
+  u.status,
+  u."createdAt" as "createdAt",
+  l.login,
+  g.email as google_email
+from app_private.users u
+join app_private.account_logins l
+  on l.account_id=u.id and l.account_kind='USER'
+left join app_private.user_identities g
+  on g.user_id=u.id and g.provider='google';
+revoke all on app_private.user_namespace_projection from public, anon, authenticated, line_app;
+grant select on app_private.user_namespace_projection to line_app;
+
 -- Effective Organization membership can have one direct source and multiple Enterprise Team sources.
 create view app_private.organization_membership_sources
 with (security_invoker = true)

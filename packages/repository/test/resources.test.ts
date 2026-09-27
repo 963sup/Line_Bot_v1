@@ -1,42 +1,30 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import type { Database } from "@line_bot_v1/platform/adapters/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryResourceStore } from "../src/adapters/postgres/resources.js";
 import type { RepositoryResourceStore } from "../src/application/ports/resources.js";
 import { createRepositoryResources } from "../src/application/resources.js";
 import { IssueError } from "../src/domain.js";
 
-async function activeUser(
-  pg: { query(sql: string, values?: unknown[]): Promise<unknown> },
-  id: string,
-) {
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    id,
-    "active",
-    1,
-  ]);
-}
-
-async function userLogin(
-  pg: { query(sql: string, values?: unknown[]): Promise<unknown> },
-  id: string,
-  login: string,
-) {
-  await activeUser(pg, id);
-  await pg.query("select app_private.set_account_login($1,'USER',$2,$3)", [id, login, 2]);
+async function activeUser(db: Database, id: string, login = id) {
+  await db.transaction(async (sql) => {
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [id, "active", 1]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, login, 2]);
+  });
 }
 
 async function repositoryFixture() {
   const fixture = await postgresFixture();
-  const { pg } = fixture;
+  const { pg, db } = fixture;
   for (const [id, login] of [
     ["owner-a", "owner-a"],
     ["owner-b", "owner-b"],
   ] as const) {
-    await userLogin(pg, id, login);
+    await activeUser(db, id, login);
   }
   for (const id of ["reader", "writer", "outsider", "author"]) {
-    await activeUser(pg, id);
+    await activeUser(db, id);
   }
   for (const repository of [
     ["repo-a", "owner-a", "Alpha", "private"],
@@ -223,7 +211,7 @@ test("Repository resource reads recheck Organization Team access qualification o
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   for (const id of ["org-owner", "team-reader", "author"]) {
-    await activeUser(pg, id);
+    await activeUser(db, id);
   }
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "organization-a",

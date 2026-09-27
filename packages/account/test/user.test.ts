@@ -157,12 +157,160 @@ test("registration atomically claims a globally unique login", async (t) => {
   assert.deepEqual(secondIdentity.rows, [{ count: 0 }]);
 });
 
-test("Account owns login lookup and update independently from Profile", async () => {
+test("a User and login commit atomically while incomplete creation and login removal roll back", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  await assert.rejects(
+    pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      "incomplete-user",
+      "active",
+      1,
+    ]),
+    (error) =>
+      (error as { code?: string; message?: string }).code === "23514" &&
+      Boolean((error as Error).message.includes("user_login_missing")),
+  );
+  const rolledBack = await pg.query(
+    "select count(*)::int as count from app_private.users where id='incomplete-user'",
+  );
+  assert.deepEqual(rolledBack.rows, [{ count: 0 }]);
+
+  await pg.transaction(async (sql) => {
+    await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      "complete-user",
+      "active",
+      2,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "complete-user",
+      "complete-user",
+      2,
+    ]);
+  });
+  await assert.rejects(
+    pg.query("delete from app_private.account_logins where account_id='complete-user'"),
+    (error) =>
+      (error as { code?: string; message?: string }).code === "23514" &&
+      Boolean((error as Error).message.includes("user_login_missing")),
+  );
+  const locator = await pg.query(
+    "select login from app_private.account_logins where account_id='complete-user'",
+  );
+  assert.deepEqual(locator.rows, [{ login: "complete-user" }]);
+
+  await pg.transaction(async (sql) => {
+    await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      "second-user",
+      "active",
+      3,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "second-user",
+      "second-user",
+      3,
+    ]);
+  });
+  await assert.rejects(
+    pg.transaction(async (sql) => {
+      await sql.query("delete from app_private.account_logins where account_id='second-user'");
+      await sql.query(
+        "update app_private.account_logins set account_id='second-user' where account_id='complete-user'",
+      );
+    }),
+    (error) =>
+      (error as { code?: string; message?: string }).code === "23514" &&
+      Boolean((error as Error).message.includes("user_login_missing")),
+  );
+  const preserved = await pg.query(
+    "select account_id,login from app_private.account_logins where account_id in ('complete-user','second-user') order by account_id",
+  );
+  assert.deepEqual(preserved.rows, [
+    { account_id: "complete-user", login: "complete-user" },
+    { account_id: "second-user", login: "second-user" },
+  ]);
+
+  await pg.query("select app_private.rename_account_login($1,'USER',$2,$3,$4)", [
+    "complete-user",
+    "complete-user",
+    "renamed-user",
+    4,
+  ]);
+  const renamed = await pg.query(
+    "select login from app_private.account_logins where account_id='complete-user'",
+  );
+  assert.deepEqual(renamed.rows, [{ login: "renamed-user" }]);
+});
+
+test("Account projection uses one joined read and reports missing login as integrity failure", async () => {
+  let queries = 0;
+  const store = new PostgresUserStore({
+    transaction: async (work: (sql: { query: (text: string) => Promise<unknown> }) => unknown) =>
+      work({
+        query: async (text: string) => {
+          queries++;
+          assert.match(text, /FROM user_namespace_projection/);
+          return {
+            rows: [
+              {
+                id: "member-1",
+                status: "active",
+                createdAt: 1,
+                login: null,
+                google_email: null,
+              },
+            ],
+          };
+        },
+      }),
+  } as never);
+
+  await assert.rejects(
+    store.view("member-1"),
+    (error) =>
+      error instanceof UserError &&
+      error.status === 500 &&
+      error.message === "User 登入名稱資料不完整。",
+  );
+  assert.equal(queries, 1);
+});
+
+test("registration retry reports missing login integrity instead of fabricating a repair", async () => {
+  const statements: string[] = [];
+  const store = new PostgresUserStore({
+    transaction: async (work: (sql: { query: (text: string) => Promise<unknown> }) => unknown) =>
+      work({
+        query: async (text: string) => {
+          statements.push(text);
+          if (text.includes("FROM users m JOIN user_identities")) {
+            return {
+              rows: [{ id: "member-1", status: "active", createdAt: 1, auth_user_id: null }],
+            };
+          }
+          return { rows: [] };
+        },
+      }),
+  } as never);
+
+  await assert.rejects(
+    store.registerLine("line:test", `U${"1".repeat(32)}`, "alice", 10),
+    (error) =>
+      error instanceof UserError &&
+      error.status === 500 &&
+      error.message === "User 登入名稱資料不完整。",
+  );
+  assert.equal(
+    statements.some((statement) => statement.includes("claim_account_login")),
+    false,
+  );
+});
+
+test("Account reads a resolved stable User ID and updates login independently from Profile", async () => {
   const calls: unknown[][] = [];
   const service = createUser(
     dependencies({
       find: async () => ({ id: "member-1", status: "active", createdAt: 1 }),
-      publicByLogin: async (login) => (login === "alice" ? { id: "member-1", login } : null),
+      publicById: async (userId) => (userId === "member-1" ? { id: userId, login: "alice" } : null),
       updateLogin: async (...args) => {
         calls.push(args);
         return { ...memberView, login: String(args[1]) };
@@ -170,11 +318,41 @@ test("Account owns login lookup and update independently from Profile", async ()
     }),
   );
 
-  assert.deepEqual(await service.publicByLogin(" Alice "), { id: "member-1", login: "alice" });
-  assert.deepEqual(await service.updateLogin("subject", " Alice-2 "), {
+  assert.deepEqual(await service.publicById("member-1"), { id: "member-1", login: "alice" });
+  assert.deepEqual(await service.updateLogin("subject", " Alice-2 ", "alice"), {
     ...memberView,
     login: "alice-2",
   });
   assert.equal(calls[0]?.[0], "member-1");
   assert.equal(calls[0]?.[1], "alice-2");
+  assert.equal(calls[0]?.[2], "alice");
+});
+
+test("login rename requires the observed login before reaching persistence", async () => {
+  const service = createUser(dependencies({}));
+  await assert.rejects(
+    () => service.updateLogin("subject", "alice-2", undefined),
+    (error) => error instanceof UserError && error.status === 400,
+  );
+});
+
+test("login rename rejects stale edits and collisions without changing identity", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  const store = new PostgresUserStore(db);
+  const user = await store.registerLine("line:test", `U${"3".repeat(32)}`, "alice", 1);
+  await store.registerLine("line:test", `U${"4".repeat(32)}`, "bob", 1);
+  const renamed = await store.updateLogin(user.id, "alice-2", "alice", 2);
+  assert.equal(renamed.id, user.id);
+  assert.equal(renamed.login, "alice-2");
+  for (const [login, expectedLogin] of [
+    ["alice-3", "alice"],
+    ["bob", "alice-2"],
+  ]) {
+    await assert.rejects(
+      store.updateLogin(user.id, login!, expectedLogin!, 3),
+      (error) => error instanceof UserError && error.status === 409,
+    );
+  }
+  assert.equal((await store.view(user.id))?.login, "alice-2");
 });

@@ -377,7 +377,8 @@
       "kind": "table",
       "path": "supabase/schemas/101_account_logins.sql",
       "authority": true,
-      "semanticOwner": "account"
+      "semanticOwner": "namespace",
+      "concept": "account-namespace-binding"
     },
     {
       "name": "users",
@@ -1048,6 +1049,14 @@
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "team", "identity-access"]
+    },
+    {
+      "name": "user_namespace_projection",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "namespace"]
     }
   ]
 }

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import type { Database } from "@line_bot_v1/platform/adapters/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryStarListStore } from "../src/adapters/postgres/star-lists.js";
 import { PostgresRepositoryStarStore } from "../src/adapters/postgres/stars.js";
@@ -7,16 +8,14 @@ import type { RepositoryStarListStore } from "../src/application/ports/star-list
 import { createRepositoryStarLists } from "../src/application/star-lists.js";
 import { RepositoryError } from "../src/domain.js";
 
-async function activeUser(
-  pg: { query(sql: string, values?: unknown[]): Promise<unknown> },
-  id: string,
-  login: string,
-) {
-  await pg.query(
-    "insert into app_private.users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
-    [id],
-  );
-  await pg.query("select app_private.set_account_login($1,'USER',$2,1)", [id, login]);
+async function activeUser(db: Database, id: string, login: string) {
+  await db.transaction(async (sql) => {
+    await sql.query(
+      "insert into users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
+      [id],
+    );
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, login]);
+  });
 }
 
 test("Repository Star List application canonicalizes commands before persistence", async () => {
@@ -89,8 +88,8 @@ test("Repository Star Lists preserve replay, versioning, Star dependency and vie
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  await activeUser(pg, "owner", "owner");
-  await activeUser(pg, "viewer", "viewer");
+  await activeUser(db, "owner", "owner");
+  await activeUser(db, "viewer", "viewer");
 
   for (const [id, name] of [
     ["repo-a", "Visible"],
@@ -210,7 +209,7 @@ test("Repository Star Lists preserve replay, versioning, Star dependency and vie
 test("Repository Star List add requires an existing Star", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
-  await activeUser(pg, "owner", "owner");
+  await activeUser(db, "owner", "owner");
   await pg.query(
     "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
   );

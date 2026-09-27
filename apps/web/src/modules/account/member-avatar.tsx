@@ -1,5 +1,6 @@
 "use client";
 
+import { buildNamespacePath } from "@line_bot_v1/namespace";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -8,6 +9,7 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 type AccountProjection = {
   member?: {
     login?: string | null;
+    status?: string | null;
   } | null;
 };
 
@@ -24,49 +26,45 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
 
   const load = useCallback(async () => {
     const ticket = ++generation.current;
+    setPicture(undefined);
+    setDestination(undefined);
     const token = await liffClient.session(liffId);
     if (!token || ticket !== generation.current) return;
 
-    const [profileResult, membershipResult] = await Promise.allSettled([
-      liffClient.profile(),
-      fetch("/api/membership", {
+    void liffClient.profile().then(
+      (profile) => {
+        if (ticket !== generation.current) return;
+        setPicture(profile.pictureUrl?.startsWith("https://") ? profile.pictureUrl : undefined);
+      },
+      () => {
+        if (ticket === generation.current) setPicture(undefined);
+      },
+    );
+
+    try {
+      const response = await fetch("/api/membership?view=account", {
         headers: { "x-line-token": token },
         cache: "no-store",
-      }),
-    ]);
-    if (ticket !== generation.current) return;
-
-    if (
-      profileResult.status === "fulfilled" &&
-      profileResult.value.pictureUrl?.startsWith("https://")
-    ) {
-      setPicture(profileResult.value.pictureUrl);
-    } else {
-      setPicture(undefined);
-    }
-
-    if (membershipResult.status !== "fulfilled" || !membershipResult.value.ok) {
+      });
+      const value = (await response.json()) as AccountProjection;
+      if (ticket !== generation.current) return;
+      if (!response.ok || value.member?.status !== "active") {
+        setDestination(undefined);
+        return;
+      }
+      const accountLogin = value.member.login;
+      if (typeof accountLogin !== "string" || accountLogin.length === 0) {
+        setDestination(undefined);
+        return;
+      }
+      setDestination({
+        href: buildNamespacePath("account", { login: accountLogin }),
+        label: "個人檔案",
+      });
+    } catch {
+      if (ticket !== generation.current) return;
       setDestination(undefined);
-      return;
     }
-    const value = (await membershipResult.value.json()) as AccountProjection;
-    if (ticket !== generation.current) return;
-    if (!value.member) {
-      setDestination(undefined);
-      return;
-    }
-    const accountLogin = value.member.login;
-    setDestination(
-      typeof accountLogin === "string" && accountLogin
-        ? {
-            href: `/${encodeURIComponent(accountLogin)}`,
-            label: "個人檔案",
-          }
-        : {
-            href: "/settings/profile",
-            label: "設定登入名稱",
-          },
-    );
   }, [liffId]);
 
   useEffect(
@@ -85,7 +83,7 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
       width={44}
       height={44}
       referrerPolicy="no-referrer"
-      onError={() => setPicture(undefined)}
+      onError={() => setPicture((current) => (current === picture ? undefined : current))}
     />
   ) : (
     <svg
@@ -115,7 +113,7 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
           {avatar}
         </Link>
       ) : (
-        <span className="member-avatar" aria-label="個人檔案載入中" aria-disabled="true">
+        <span className="member-avatar" aria-label="個人檔案目前不可用" aria-disabled="true">
           {avatar}
         </span>
       )}

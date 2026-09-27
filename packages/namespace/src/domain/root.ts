@@ -1,8 +1,7 @@
 /**
  * Canonical shared reservation policy for the application's global first path segment.
  *
- * Account owns login normalization/lifecycle. Web owns route implementation. Namespace owns the
- * collision policy between those participants.
+ * Namespace owns normalization, reservation, and collision for the global Account locator.
  */
 export const ROOT_NAMESPACE_RESERVED_KEYS = [
   "admin",
@@ -20,6 +19,7 @@ export const ROOT_NAMESPACE_RESERVED_KEYS = [
   "google-link",
   "history",
   "home",
+  "issues",
   "login",
   "membership",
   "notifications",
@@ -30,9 +30,12 @@ export const ROOT_NAMESPACE_RESERVED_KEYS = [
   "privacy",
   "profile",
   "projects",
+  "pulls",
   "repositories",
   "search",
   "settings",
+  "sponsors",
+  "stars",
   "team",
   "terms",
   "trending",

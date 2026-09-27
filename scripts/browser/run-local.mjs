@@ -32,7 +32,9 @@ mkdirSync(output, { recursive: true });
 const env = {};
 for (const [key, value] of Object.entries(process.env)) {
   if (
-    /^(path|systemroot|windir|comspec|temp|tmp|userprofile|home|localappdata|appdata)$/i.test(key)
+    /^(path|pathext|systemroot|windir|comspec|temp|tmp|userprofile|home|localappdata|appdata)$/i.test(
+      key,
+    )
   ) {
     env[key] = value;
   }
@@ -125,6 +127,7 @@ try {
   }
   if (!ready) throw new Error("Local Web did not become ready.");
   await command([path.join(root, "scripts/browser/check-navigation.mjs")], root, "browser.log");
+  await command([path.join(root, "scripts/browser/check-profile.mjs")], root, "profile.log");
   await command(
     [path.join(root, "scripts/browser/check-repository-resources.mjs")],
     root,

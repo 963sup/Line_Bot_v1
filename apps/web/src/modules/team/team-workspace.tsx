@@ -1,3 +1,4 @@
+import { buildNamespacePath } from "@line_bot_v1/namespace";
 import type { TeamView } from "@line_bot_v1/team/contracts";
 import type { TeamCommand } from "@line_bot_v1/team/domain";
 import type { RefObject } from "react";
@@ -123,7 +124,10 @@ export function TeamWorkspace({
                 <h2>{data.team.name}</h2>
                 {data.team.slug && data.organizationLogin && (
                   <p className={styles.meta}>
-                    /organizations/{data.organizationLogin}/teams/{data.team.slug}
+                    {buildNamespacePath("organization-team", {
+                      organization: data.organizationLogin,
+                      teamSlug: data.team.slug,
+                    })}
                   </p>
                 )}
                 <p className={styles.meta}>Team ID：{data.team.id}</p>

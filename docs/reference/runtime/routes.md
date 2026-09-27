@@ -11,7 +11,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | Route | Responsibility |
 | --- | --- |
 | `/`, `/login`, `/privacy`, `/terms` | 公開內容與登入意圖；不讀 private business data |
-| `/{login}` | User / Organization public locator；login 只定位，不授權，User 是否公開依 Account profile visibility |
+| `/{login}` | User / Organization canonical locator；login 只定位，不授權；Account profile visibility 控制個人資料欄位，私人本人資料須重新核驗身分 |
 | `/membership/register`, `/membership/restore`, `/complete` | 註冊／恢復與一次性結果；完成後重新讀後端資格 |
 | `/auth/callback`, `/unavailable` | OAuth／LINE 接續與特殊結果；不常駐 business state |
 
@@ -25,11 +25,14 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
 | `/expenses` | 指定 Expense 操作／結果 |
 | `/team` | Organization Team collection/workbench；不是 Team resource identity |
-| `/organizations/{organizationLogin}/teams/{teamSlug}` | Authenticated Organization Team canonical detail；slug 由 Team name derive，rename 後 canonical URL 隨新 slug 更新，TeamId 仍是 stable command identity |
+| `/orgs/{organizationLogin}/teams/{teamSlug}` | Authenticated Organization Team canonical detail；slug 由 Team name derive，rename 後 canonical URL 隨新 slug 更新，TeamId 仍是 stable command identity |
+| `/organizations/{organizationLogin}/teams/{teamSlug}` | 已發布入口透過 internal rewrite 使用同一 `/orgs/...` page；不反向 redirect，以免與舊版已快取的永久轉址形成循環 |
 | `/enterprises`, `/enterprises/{enterpriseSlug}` | Authenticated Enterprise collection / canonical governance detail；slug 只定位，不授權 |
 | `/enterprises/{enterpriseSlug}/teams/{teamSlug}` | Authenticated Enterprise Team canonical detail；stable TeamId 由 server 產生，slug 由 name derive並隨 rename 更新 |
 | `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
 | `/repositories`, `/explore` | Repository collection/workbench、Trending / Awesome Lists / Activity discovery + Star surface |
+| `/stars` | Current User 已 Star 且目前仍可存取的 Repository；使用既有 Repository Star query，Home Favorites 為相同 query 的摘要入口 |
+| `/issues` | Repository 選擇入口，進入 `/{login}/{repository}/issues`；目前不是跨 Repository Issue aggregate |
 | `/repositories/lists`, `/repositories/lists/new` | Current User Repository Star List collection/create；create預設 private，pending requestId 只作 exact-retry presentation metadata |
 | `/repositories/lists/{listId}` | Repository Star List detail/manage；stable ListId只定位，private/public read與 mutation仍由 Repository owner重驗 |
 | `/repositories/lists/discover` | Awesome Lists presentation：public Repository Star List discovery，只顯示 viewer 可見 Repository/count |
@@ -43,8 +46,8 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
 | `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
 | `/history` | 工作紀錄入口 |
-| `/{login}` | canonical User / Organization locator；Home header 的 Account/Profile avatar 在 Account-owned current login 已解析時導向此 locator；legacy User 若已有 Account projection 但缺 login，只能導向 `/settings/profile` 做 explicit locator recovery，不得推導 fabricated login；viewer自己的 User Profile才可顯示 Settings齒輪，依 trusted membership login與 route login一致性判斷；其他工作目的地不重複顯示 avatar |
-| `/profile` | authenticated viewer Profile hub；組合本人 owner-approved projection 與 Account-owned earned Achievements，分享仍回 `/{login}`，不建立第二 identity locator |
+| `/{login}` | 唯一 User / Organization Profile；Home 頭像、Rich Menu 個人入口與分享收斂於此。Namespace 解析後使用 stable ID 查 User，不重做 login 解析；只有 trusted active User 與目標 User 相符才載入本人資料、Achievements 與 Settings，其他訪客只有 public projection |
+| `/profile` | 已發布個人入口解析：核驗 LINE 身分並取得 Account login 後 replace 至 `/{login}`；不呈現第二個 Profile。缺 login 是資料完整性錯誤，不導向設定或推導名稱 |
 | `/trending` | Explore-active Repository discovery secondary surface；沿 Repository 7-day active-Star ranking，只顯示 current-accessible Repository，不建立 Explore/Trending owner |
 | `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
 | `/feedback`, `/planned` | 只有明確定義的功能或「未開放」結果；不得產生假資料 |

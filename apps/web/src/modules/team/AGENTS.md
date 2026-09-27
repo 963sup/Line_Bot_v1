@@ -1,6 +1,6 @@
 # Web team module
 ## 現行 surface 與 invariant
-URLs：`/team`（Organization Team 工作台）、`/organizations/{login}/teams/{teamSlug}`（canonical detail）；API `/api/team`。
+URLs：`/team`（Organization Team 工作台）、`/orgs/{login}/teams/{teamSlug}`（canonical detail）；API `/api/team`。
 
 FPT `schema-teams` 對照 Organization-owned Team；EnterpriseTeam 由 enterprise module 擁有。Team slug 隨 rename 改變、stable TeamId 保留；`/team` 不是單一 Team identity，也不是 Partners 的 parent owner。
 

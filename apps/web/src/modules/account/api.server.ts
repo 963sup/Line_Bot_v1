@@ -100,7 +100,9 @@ async function post(request: Request, dependencies: UserRequests) {
       });
     }
     if (body.action === "updateLogin") {
-      return jsonResponse({ member: await dependencies.updateLogin(subject, body.login) });
+      return jsonResponse({
+        member: await dependencies.updateLogin(subject, body.login, body.expectedLogin),
+      });
     }
     await dependencies.activeLineUser(subject);
     throw new UserError(400, "不支援的會員操作。");

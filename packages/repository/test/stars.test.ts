@@ -52,13 +52,16 @@ test("Postgres stars require current Repository access and star remains idempote
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const id of ["repository-owner", "outsider"]) {
-    await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
-      "active",
-      1,
-    ]);
-  }
+  await db.transaction(async (sql) => {
+    for (const id of ["repository-owner", "outsider"]) {
+      await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+        id,
+        "active",
+        1,
+      ]);
+      await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
+    }
+  });
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "organization-a",
     "repository-owner",
@@ -103,11 +106,18 @@ test("public Repository lookup resolves Organization login plus Repository name"
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    "public-repository-owner",
-    "active",
-    1,
-  ]);
+  await db.transaction(async (sql) => {
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+      "public-repository-owner",
+      "active",
+      1,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "public-repository-owner",
+      "public-repository-owner",
+      1,
+    ]);
+  });
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "public-organization",
     "public-repository-owner",
@@ -129,16 +139,18 @@ test("public Repository lookup resolves Organization login plus Repository name"
   });
   assert.equal(await store.byOwnerAndName("missing", "Payroll"), null);
 
-  await pg.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
-    "public-user-owner",
-    "active",
-    3,
-  ]);
-  await pg.query("select app_private.set_account_login($1,'USER',$2,$3)", [
-    "public-user-owner",
-    "alice",
-    4,
-  ]);
+  await db.transaction(async (sql) => {
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
+      "public-user-owner",
+      "active",
+      3,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "public-user-owner",
+      "alice",
+      4,
+    ]);
+  });
   await pg.query(
     "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'public',1)",
     ["public-user-repository", "public-user-owner", "Notes"],

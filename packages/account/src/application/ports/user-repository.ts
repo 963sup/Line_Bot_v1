@@ -2,7 +2,7 @@ import type { User } from "../../domain/user.js";
 import type { VerifiedGoogleIdentity } from "./identity-provider.js";
 
 type UserView = User & {
-  login: string | null;
+  login: string;
   googleEmail: string | null;
 };
 
@@ -14,8 +14,8 @@ type PublicUser = Readonly<{
 export interface UserRepository {
   find(provider: string, subject: string): Promise<User | null>;
   view(userId: string): Promise<UserView>;
-  publicByLogin(login: string): Promise<PublicUser | null>;
-  updateLogin(userId: string, login: string, now: number): Promise<UserView>;
+  publicById(userId: string): Promise<PublicUser | null>;
+  updateLogin(userId: string, login: string, expectedLogin: string, now: number): Promise<UserView>;
   registerLine(provider: string, subject: string, login: string): Promise<UserView>;
   restoreLine(provider: string, subject: string): Promise<UserView>;
   bind(provider: string, subject: string, google: VerifiedGoogleIdentity): Promise<User>;
