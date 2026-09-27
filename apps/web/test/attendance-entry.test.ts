@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  isMenuPage,
   lineBotV1RichMenu,
   MENU_PAGES,
   menuAlias,
@@ -9,17 +10,44 @@ import { attendanceOperationLabels } from "../src/modules/attendance/operation-l
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-route";
 
-test("native menu states retain geometry and return each submenu to its source state", () => {
+test("only two attendance menus remain, with direct links and no unfinished feature targets", () => {
+  assert.deepEqual(MENU_PAGES, ["attendance-in", "attendance-out"]);
+  for (const retired of [
+    "home",
+    "team",
+    "forms",
+    "notifications",
+    "incident",
+    "team-out",
+    "forms-out",
+    "notifications-out",
+    "incident-out",
+  ]) {
+    assert.equal(isMenuPage(retired), false);
+  }
+  const destinations = ["/repositories", "/partners", "/profile", "/notifications"];
   for (const page of MENU_PAGES) {
     assert.equal(menuAlias(page), `line_bot_v1-${page}`);
-    assert.ok(menuAlias(page).length <= 32, "LINE aliases cannot exceed 32 characters");
     const menu = lineBotV1RichMenu(
       "https://miniapp.line.me/123-test",
       { width: 1536, height: 1024 },
       page,
     );
-    assert.equal(menu.areas.length, page === "home" || page.startsWith("attendance-") ? 7 : 4);
-    for (const [i, { bounds: a, action }] of menu.areas.entries()) {
+    assert.equal(menu.areas.length, 5);
+    assert.equal(menu.areas[0]!.action.label, page === "attendance-out" ? "下班" : "上班");
+    assert.deepEqual(
+      menu.areas.slice(1).map((a) => a.action.label),
+      ["儲存庫", "團隊協作", "個人", "通知中心"],
+    );
+    for (const [index, area] of menu.areas.slice(1).entries()) {
+      assert.equal(area.action.type, "uri");
+      if (area.action.type === "uri") {
+        assert.equal(entryDestination(area.action.uri), destinations[index]);
+        assert.equal(entryDestination(loginReturnUrl(area.action.uri)), destinations[index]);
+      }
+    }
+    for (const [index, { bounds: a, action }] of menu.areas.entries()) {
+      assert.equal(action.type, "uri");
       assert.ok(
         a.x >= 0 &&
           a.y >= 0 &&
@@ -28,7 +56,7 @@ test("native menu states retain geometry and return each submenu to its source s
           a.x + a.width <= 1536 &&
           a.y + a.height <= 1024,
       );
-      for (const { bounds: b } of menu.areas.slice(i + 1))
+      for (const { bounds: b } of menu.areas.slice(index + 1)) {
         assert.ok(
           !(
             a.x < b.x + b.width &&
@@ -37,107 +65,9 @@ test("native menu states retain geometry and return each submenu to its source s
             a.y + a.height > b.y
           ),
         );
-      assert.notEqual(action.type, "postback");
-      if (action.type === "richmenuswitch")
-        assert.ok(MENU_PAGES.some((p) => menuAlias(p) === action.richMenuAliasId));
+      }
     }
   }
-  const start = lineBotV1RichMenu(
-    "https://miniapp.line.me/123-test",
-    { width: 1536, height: 1024 },
-    "attendance-in",
-  );
-  const end = lineBotV1RichMenu(
-    "https://miniapp.line.me/123-test",
-    { width: 1536, height: 1024 },
-    "attendance-out",
-  );
-  assert.deepEqual(
-    start.areas.map((a) => a.bounds),
-    end.areas.map((a) => a.bounds),
-  );
-  assert.equal(start.areas[0]!.action.label, "上班");
-  assert.equal(end.areas[0]!.action.label, "下班");
-  const home = lineBotV1RichMenu("https://miniapp.line.me/123-test", {
-    width: 1536,
-    height: 1024,
-  });
-  assert.deepEqual(home.areas, start.areas);
-  for (const menu of [home, start, end]) {
-    const center = menu.areas.find(
-      ({ bounds: b }) => b.x <= 768 && b.x + b.width > 768 && b.y <= 512 && b.y + b.height > 512,
-    )!;
-    assert.equal(center.action.type, "uri");
-    const profile = menu.areas.find((a) => a.action.label === "個人")!.action;
-    assert.equal(profile.type, "uri");
-    if (profile.type === "uri") {
-      assert.equal(profile.uri, "https://miniapp.line.me/123-test?profile=1");
-      assert.equal(entryDestination(profile.uri), "/profile");
-    }
-    const repositories = menu.areas.find((a) => a.action.label === "儲存庫")!.action;
-    assert.equal(repositories.type, "uri");
-    if (repositories.type === "uri") {
-      assert.equal(repositories.uri, "https://miniapp.line.me/123-test?repositories=1");
-      assert.equal(entryDestination(repositories.uri), "/repositories");
-    }
-    assert.deepEqual(
-      menu.areas.slice(1).map((a) => a.action.label),
-      ["儲存庫", "異常通報", "表單作業", "團隊協作", "個人", "通知中心"],
-    );
-  }
-  for (const page of ["team", "forms", "notifications", "incident"] as const) {
-    for (const state of ["home", "attendance-in", "attendance-out"] as const) {
-      const menu = lineBotV1RichMenu(
-        "https://miniapp.line.me/123-test",
-        { width: 1536, height: 1024 },
-        state,
-      );
-      const target = state === "attendance-out" ? (`${page}-out` as const) : page;
-      const action = menu.areas.find(
-        (area) =>
-          area.action.type === "richmenuswitch" &&
-          area.action.richMenuAliasId === menuAlias(target),
-      )?.action;
-      assert.equal(action?.type, "richmenuswitch");
-    }
-    const base = lineBotV1RichMenu(
-      "https://miniapp.line.me/123-test",
-      { width: 1536, height: 1024 },
-      page,
-    );
-    const out = lineBotV1RichMenu(
-      "https://miniapp.line.me/123-test",
-      { width: 1536, height: 1024 },
-      `${page}-out`,
-    );
-    assert.deepEqual(base.areas.slice(1), out.areas.slice(1));
-    assert.deepEqual(base.areas[0]!.action, {
-      type: "richmenuswitch",
-      label: "返回主選單",
-      richMenuAliasId: menuAlias("attendance-in"),
-      data: "menu=attendance-in",
-    });
-    assert.deepEqual(out.areas[0]!.action, {
-      type: "richmenuswitch",
-      label: "返回主選單",
-      richMenuAliasId: menuAlias("attendance-out"),
-      data: "menu=attendance-out",
-    });
-  }
-});
-test("expense and leave entries open their published Google Forms directly", () => {
-  const menu = lineBotV1RichMenu(
-    "https://miniapp.line.me/123-test",
-    { width: 1536, height: 1024 },
-    "forms",
-  );
-  assert.deepEqual(
-    menu.areas.slice(2).map(({ action }) => action),
-    [
-      { type: "uri", label: "費用申請", uri: "https://forms.gle/AySvenv4ELkFwB1z9" },
-      { type: "uri", label: "請假申請", uri: "https://forms.gle/E88kHQgRFcQ6YKyW6" },
-    ],
-  );
 });
 test("only explicit start/end survive LIFF and login; removed overtime and duplicate intents are rejected", () => {
   const found = new Set<string>();

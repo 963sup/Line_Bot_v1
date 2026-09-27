@@ -6,14 +6,7 @@ import { richMenuImage } from "../src/adapters/messaging/rich-menu-image.js";
 
 test("actual upload dimensions and malformed image rejection", () => {
   const directory = new URL("../../../assets/line/rich-menu/", import.meta.url);
-  const files = [
-    "line_bot_v1-attendance-in.png",
-    "line_bot_v1-attendance-out.png",
-    "line_bot_v1-forms.png",
-    "line_bot_v1-incident.png",
-    "line_bot_v1-notifications.png",
-    "line_bot_v1-team.png",
-  ];
+  const files = ["line_bot_v1-attendance-in.png", "line_bot_v1-attendance-out.png"];
   assert.deepEqual(readdirSync(directory).sort(), files);
   for (const file of files) {
     const image = readFileSync(new URL(file, directory));

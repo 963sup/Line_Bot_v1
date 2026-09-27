@@ -1,27 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { lineBotV1RichMenu } from "../src/modules/assistant/rich-menu/definition";
 import { teamApiError, teamBody, teamQuery } from "../src/modules/team/http.server";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-route";
 
-test("team menu replaces all three entries and preserves their destination through login", () => {
-  const menu = lineBotV1RichMenu(
-    "https://miniapp.line.me/123-test",
-    { width: 1536, height: 1024 },
-    "team",
-  );
-  const destinations = ["/partners/news", "/partners", "/partners/referrals"];
-  assert.deepEqual(
-    menu.areas.slice(1).map((area) => area.action.label),
-    ["最新消息", "合作夥伴", "夥伴推薦"],
-  );
-  for (const [index, area] of menu.areas.slice(1).entries()) {
-    assert.equal(area.action.type, "uri");
-    if (area.action.type === "uri") {
-      assert.equal(entryDestination(area.action.uri), destinations[index]);
-      assert.equal(entryDestination(loginReturnUrl(area.action.uri)), destinations[index]);
-    }
+test("partner entry destinations survive login independently of Rich Menu navigation", () => {
+  for (const [view, destination] of [
+    ["news", "/partners/news"],
+    ["directory", "/partners"],
+    ["referrals", "/partners/referrals"],
+  ] as const) {
+    const uri = `https://miniapp.line.me/123-test?partners=1&partnerView=${view}`;
+    assert.equal(entryDestination(uri), destination);
+    assert.equal(entryDestination(loginReturnUrl(uri)), destination);
   }
   assert.equal(entryDestination("https://app.test/?partners=1&partnerView=unknown"), "/partners");
   assert.equal(

@@ -1,27 +1,20 @@
 # LINE rich-menu reference
 ## 現行結構
-主選單中央提供出勤操作，外圈提供 Repository、異常通報、表單作業、團隊協作、個人、通知等入口。current `profile` intent 與既有 `membership` protocol alias 都解析到 authenticated `/profile` viewer hub；個人入口只有一個 product destination，不再保留 `/settings` 雙軌。`/profile` 不建立第二套 User identity；canonical share/public locator 仍是 `/{login}`。
-
-原生子選單、外部表單與 Rich Menu switch 只負責 navigation。Rich Menu 的產品入口以 `uri` action 直接指向 source-owned current-stage `miniapp.line.me` permanent URL，加上白名單 intent；不經額外產品 redirect。表單開啟不代表提交成功，也不建立本系統的審批、案件或出勤結果。
-
-正式素材共六張：
+只保留 `attendance-in` 與 `attendance-out` 兩個選單及兩張 1536 × 1024 PNG；default 使用上班選單，不再建立 home 或子選單版本。
 
 - `line_bot_v1-attendance-in.png`
 - `line_bot_v1-attendance-out.png`
-- `line_bot_v1-team.png`
-- `line_bot_v1-forms.png`
-- `line_bot_v1-notifications.png`
-- `line_bot_v1-incident.png`
 
-`home` 與 `attendance-in` 共用 attendance-in 圖片；四類子選單的基本／`-out` 狀態各自共用同一張 PNG。Repository 由主選單 URI 直接開啟既有工作面，不建立額外 submenu；四類子選單各有基本／`-out` 狀態，加上 `home`／`attendance-in`／`attendance-out`，共十一份 menu configuration。
+中央提供上班／下班操作，外圈保留儲存庫、團隊協作（夥伴頁）、個人及通知中心的直接 URI。表單作業與異常通報留待未來開發，圖片保留但不配置點擊區域；不連結舊表單或新增佔位頁。點擊範圍按實際圖片尺寸等比例計算。
+
 ## 出勤 menu state
-Rich Menu 目前區分 `attendance-in` 與 `attendance-out` 主狀態及其對應子選單版本。中央按鈕帶 `clock-in`／`clock-out` intent 進入出勤流程。後端 Attendance state 才是 authority；過時 menu 不得反轉操作；menu sync／notification failure 不回滾合法完成的出勤交易。
+Rich Menu 只區分 `attendance-in` 與 `attendance-out`。中央按鈕帶 `clock-in`／`clock-out` intent 進入出勤流程。後端 Attendance state 才是 authority；過時 menu 不得反轉操作；menu sync／notification failure 不回滾合法完成的出勤交易。
 
 個人綁定優先於 default，但它屬於 Attendance runtime responsibility，不是 Rich Menu publication responsibility。Rich Menu publication只證明 LINE menu definition／alias／default；Attendance maintenance 會週期性比較目前 alias target 與 per-user binding，只有不一致時才重新 link，再以 provider readback 驗證。如此 Rich Menu 換版後，既有 per-user binding 也會由同一 reconciliation loop 收斂。
 ## Alias
 Alias 使用 `line_bot_v1-<page>`；實際 menu definition、圖片尺寸與點擊範圍是發布 source。Repository desired state 不證明 LINE remote state 已同步；publication 必須以 LINE readback 作部署證據。
 
-pre-Line_Bot_v1 tasks／announcements aliases 已退役。Publication 先完成新 aliases/default 與 readback，再移除退役 aliases；Attendance 個人 binding 不參與這個 release transaction。
+home、四類子選單及其 -out aliases，以及 pre-Line_Bot_v1 aliases 已退役。Publication 先完成新 aliases/default 與 readback，再移除退役 aliases；Attendance 個人 binding 不參與這個 release transaction。
 ## Repository operation
 從 repository 根目錄只使用 `package.json` 的 canonical entry：
 
@@ -40,7 +33,7 @@ Publication 不建立 `.artifacts/rich-menu*.json`，Rich Menu ID 只在單次 p
 完整發布／回復契約見 [Release process](../operations/release.md)。
 ## 安全與導覽
 - URI 只帶固定 MINI App intent 與必要白名單 view，不帶 token 或私人資料。
-- `richmenuswitch` 只切換畫面，不授予 module role。
+- 現行選單不使用 `richmenuswitch`；URI 不授予 module role。
 - LINE group、chat 或 Rich Menu context 不等於 TeamMembership、Project membership 或任何管理權限。
 - 尚未有資料來源、角色或正式操作契約的項目，不以 Rich Menu 入口宣稱能力完成。
 - `publish` 是外部 mutation，不納入一般 `pnpm check`／`pnpm validate`，也不因 merge、push、build 或本地測試成功自動取得發布授權；必須由 successful current-`main` Validate 觸發的 GitHub Release，經 planner 與 exact-SHA current-main evidence 明確授權。

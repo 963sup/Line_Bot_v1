@@ -11,7 +11,20 @@ type RichMenuClient = ReturnType<typeof createRichMenuClient>;
 type CreatedMenu = { page: MenuPage; richMenuId: string };
 
 const legacyAliasPrefix = ["work", "assistant"].join("-");
+const retiredPages = [
+  "home",
+  "team",
+  "forms",
+  "notifications",
+  "incident",
+  "team-out",
+  "forms-out",
+  "notifications-out",
+  "incident-out",
+];
 const deprecatedAliases = [
+  ...retiredPages.map((page) => `line_bot_v1-${page}`),
+  ...retiredPages.map((page) => `${legacyAliasPrefix}-${page}`),
   ...MENU_PAGES.map((page) => `${legacyAliasPrefix}-${page}`),
   `${legacyAliasPrefix}-tasks`,
   `${legacyAliasPrefix}-tasks-out`,
@@ -143,8 +156,8 @@ export async function activateRichMenuBatch(
     await assertRemoteDefinition(client, menu.richMenuId, config.menu, menu.page);
   }
 
-  const home = created.find((menu) => menu.page === "home");
-  if (!home) throw new Error("Home Rich Menu is missing");
+  const defaultMenu = created.find((menu) => menu.page === "attendance-in");
+  if (!defaultMenu) throw new Error("Attendance-in Rich Menu is missing");
 
   const aliasNames = [
     ...new Set<string>([...configs.map((config) => menuAlias(config.page)), ...deprecatedAliases]),
@@ -160,8 +173,8 @@ export async function activateRichMenuBatch(
 
     mutated = true;
 
-    if (previousDefault !== home.richMenuId) await client.activate(home.richMenuId);
-    if ((await client.getDefault()) !== home.richMenuId)
+    if (previousDefault !== defaultMenu.richMenuId) await client.activate(defaultMenu.richMenuId);
+    if ((await client.getDefault()) !== defaultMenu.richMenuId)
       throw new Error("Default readback mismatch");
 
     const removedAliases: string[] = [];
@@ -173,7 +186,7 @@ export async function activateRichMenuBatch(
     }
     return {
       status: "activated",
-      default: home.richMenuId,
+      default: defaultMenu.richMenuId,
       clockInId: created.find((menu) => menu.page === "attendance-in")?.richMenuId ?? null,
       clockOutId: created.find((menu) => menu.page === "attendance-out")?.richMenuId ?? null,
       removedAliases,

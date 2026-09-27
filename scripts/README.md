@@ -20,7 +20,7 @@
 | `supabase/` | Supabase declarative schema 同步與明確診斷（無 migration history／歷史相容修補）；資料結構 owner 見 [root supabase](../supabase/README.md) |
 | `vercel/` | Vercel production deployment adapter；exact target/SHA、mutation、poll/readback 與 unknown-result handling |
 | [browser/](browser/README.md) | 僅對本機 Web 的可重跑瀏覽器探測 |
-| [`line/rich-menu/`](line/rich-menu) | LINE Rich Menu execution adapter（env／argv／輸出）；definition、desired state 與 publication transaction 由 Web Rich Menu module 擁有；契約見 [Rich Menu integration](../docs/reference/README.md) |
+| [`line/rich-menu/`](line/rich-menu) | 兩張出勤 Rich Menu 的 execution adapter（env／argv／輸出）；definition、desired state 與 publication transaction 由 Web Rich Menu module 擁有；契約見 [Rich Menu integration](../docs/reference/README.md) |
 | [attendance/](attendance/README.md) | Attendance maintenance worker 與排程操作 |
 
 正式 Rich Menu 圖片位於 `assets/line/rich-menu/`，不與 script 混放。`tooling/validate.mjs` 是 `pnpm check`／`pnpm validate` 的實作入口。

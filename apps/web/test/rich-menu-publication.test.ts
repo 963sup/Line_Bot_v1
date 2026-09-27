@@ -27,7 +27,7 @@ const config = (page: RichMenuPublicationConfig["page"]): RichMenuPublicationCon
 });
 
 test("create batch removes every known menu created in a failed operation", async () => {
-  const configs = [config("home"), config("attendance-in")];
+  const configs = [config("attendance-in"), config("attendance-out")];
   const deleted: string[] = [];
   let creates = 0;
   const client = {
@@ -49,7 +49,7 @@ test("create batch removes every known menu created in a failed operation", asyn
 });
 
 test("activation failure restores default and aliases while retaining new menus", async () => {
-  const home = config("home");
+  const home = config("attendance-in");
   const newId = "richmenu-new0abcd";
   const oldId = "richmenu-old0abcd";
   const legacyId = "richmenu-legacyabcd";
@@ -92,22 +92,35 @@ test("activation failure restores default and aliases while retaining new menus"
   } as unknown as PublicationClient;
 
   await assert.rejects(
-    activateRichMenuBatch(client, [home], [{ page: "home", richMenuId: newId }]),
+    activateRichMenuBatch(client, [home], [{ page: "attendance-in", richMenuId: newId }]),
     /previous remote state was restored; retained new menus/,
   );
 
   assert.equal(defaultId, oldId);
-  assert.equal(aliases.get("line_bot_v1-home"), undefined);
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), undefined);
   assert.equal(aliases.get(legacyHomeAlias), oldId);
   assert.equal(aliases.get(legacyTasksAlias), legacyId);
   assert.deepEqual(deletedMenus, []);
 });
 
 test("publish keeps preflight before creation and activation in one process", async () => {
-  const home = config("home");
+  const home = config("attendance-in");
   const events: string[] = [];
   let defaultId: string | null = null;
-  const aliases = new Map<string, string>();
+  const retiredAliases = [
+    "line_bot_v1-home",
+    "line_bot_v1-team",
+    "line_bot_v1-team-out",
+    "line_bot_v1-forms",
+    "line_bot_v1-forms-out",
+    "line_bot_v1-notifications",
+    "line_bot_v1-notifications-out",
+    "line_bot_v1-incident",
+    "line_bot_v1-incident-out",
+  ];
+  const aliases = new Map<string, string>(
+    retiredAliases.map((alias) => [alias, "richmenu-old0abcd"]),
+  );
   const client = {
     validate: async () => {
       events.push("validate");
@@ -146,6 +159,10 @@ test("publish keeps preflight before creation and activation in one process", as
   const result = await publishRichMenuBatch(client, [home]);
 
   assert.equal(result.activation.status, "activated");
+  assert.equal(defaultId, "richmenu-new0abcd");
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), defaultId);
+  assert.deepEqual(result.activation.removedAliases.sort(), [...retiredAliases].sort());
+  for (const alias of retiredAliases) assert.equal(aliases.has(alias), false);
   assert.ok(events.indexOf("validate") < events.indexOf("create"));
   assert.ok(events.indexOf("upload") < events.indexOf("alias"));
   assert.ok(events.indexOf("alias") < events.indexOf("activate"));

@@ -241,7 +241,6 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "apps/web/src/modules/assistant/rich-menu/operator.server.ts",
     "apps/web/src/shared/server/line-mini-app.ts",
     "apps/web/src/shared/presentation/entry-route.ts",
-    "apps/web/src/modules/diary/form.ts",
     "packages/line-channel/src/adapters/messaging/rich-menu-client.ts",
     "packages/line-channel/src/adapters/messaging/rich-menu-image.ts",
     "scripts/runtime/load-env.mjs",

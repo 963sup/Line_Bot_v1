@@ -4,7 +4,7 @@ import { loadRootEnv, repositoryRoot } from "../../runtime/load-env.mjs";
 loadRootEnv();
 
 try {
-  const [command = "preview", target = "home"] = process.argv.slice(2);
+  const [command = "preview", target = "all"] = process.argv.slice(2);
   const result = await runRichMenuOperation({
     command,
     target,
