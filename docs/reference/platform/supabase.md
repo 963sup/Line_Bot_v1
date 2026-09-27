@@ -86,7 +86,7 @@ Secret values、project ID、callback origin 等不寫入 docs 範例。
 
 ## Schema and deployed state
 
-Schema authority與「DDL vs business data transform」的語意由 [Schema model](../040-data/030-schema-model.md) 擁有；本文件只描述 Supabase provider與 remote reconciliation mechanism。
+Schema authority與「DDL vs business data transform」的語意由 [Schema model](../data/schema.md) 擁有；本文件只描述 Supabase provider與 remote reconciliation mechanism。
 
 Repository-owned remote reconciliation使用 `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL`／`SUPABASE_CONFIRM_PROJECT`交叉確認 exact target。Application mutation boundary只包含 repository-owned application schema；`auth`、`storage`、provider `public` helper與 `supabase_migrations` 不在其中。
 
@@ -102,12 +102,12 @@ Current commands：
 
 Supabase migration history不是 current schema authority，也不是 deployment mechanism。Reconciliation不得新增、replay或repair migration history；`supabase_migrations.schema_migrations` fingerprint before/after必須完全相同。
 
-Schema publication何時由 validated `main`觸發、schema changed／unchanged如何 routing、Supabase成功後何時允許Vercel Production，由 [Release](../070-operations/020-release.md) 擁有；backup／restore與 data-cutover recovery要求由 [Recovery](../070-operations/030-recovery.md) 擁有。
+Schema publication何時由 validated `main`觸發、schema changed／unchanged如何 routing、Supabase成功後何時允許Vercel Production，由 [Release](../operations/release.md) 擁有；backup／restore與 data-cutover recovery要求由 [Recovery](../operations/recovery.md) 擁有。
 
 PGlite/local SQL test能驗局部 schema／transaction，不等於 remote TLS、pool、multi-connection contention或 production state。
 
-- Schema semantics：[Schema model](../040-data/030-schema-model.md)
-- Core data semantics：[Data boundary model](../040-data/010-data-boundary-model.md)
-- Release ordering：[Release](../070-operations/020-release.md)
-- Recovery：[Recovery](../070-operations/030-recovery.md)
-- Production gaps：[Runtime and platform gaps](../090-governance/040-gaps/010-runtime-and-platform.md)
+- Schema semantics：[Schema model](../data/schema.md)
+- Core data semantics：[Data boundary model](../data/boundaries.md)
+- Release ordering：[Release](../operations/release.md)
+- Recovery：[Recovery](../operations/recovery.md)
+- Production gaps：[Runtime and platform gaps](../../change/gaps/runtime-and-platform.md)
