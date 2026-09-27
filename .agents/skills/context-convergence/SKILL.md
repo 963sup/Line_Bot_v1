@@ -1,26 +1,24 @@
 ---
 name: context-convergence
-description: Standard workflow for Markdown convergence, instruction compression, AGENTS.md minimization, and agent-context optimization. Load whenever reducing or restructuring agent-facing Markdown.
+description: Standard workflow to review and converge repository Markdown through update, distillation, relocation, deletion, or compression.
 ---
 
 # Context convergence
 
-Priority: `Authority > Relevant Context > Responsibility > Machine-readable Truth > Validation Evidence > Encoding`.
+Priority: `Authority > Relevant Context > Responsibility > Machine Truth > Evidence > Encoding`.
 
-Goal: minimum context for a correct agent decision.
+Goal: every Markdown earns its bytes.
 
-1. Unless a file is named, choose the oldest unprocessed Markdown.
-2. Read only applicable `AGENTS.md` plus the canonical source needed to judge that file.
-3. Give the file one job: instruction, routing, current truth, reference, or change/history.
-4. Delete duplicate, stale, vague, historical, example-heavy, or machine-derived text that does not change a decision.
-5. Preserve anything that changes Authority, Owner, Truth, Boundary/Dependency, Invariant, Security/Authorization, Recovery, Change Surface, or Validation.
-6. Prefer direct natural language and canonical references; do not add process or tooling without need.
-7. Existing files must decrease in bytes. If reduction weakens correctness, make no change.
-8. Change one file at a time; continue oldest → next oldest.
-9. Run only the narrowest canonical validation and report exactly its evidence.
+1. Inventory all `*.md`; process oldest-modified first.
+2. Per file, load only applicable `AGENTS.md`, authoritative owner/source, and freshness evidence.
+3. Classify: truth, instruction, router, reference, change/history, generated/upstream.
+4. Check for stale, duplicate, misplaced, vague, obsolete, or machine-derived content.
+5. Choose: update, distill, move/merge, delete, keep, or upstream-refresh. Review external corpus too; refresh via its source workflow, not silent local rewrite.
+6. Preserve Authority, Owner, Boundary/Dependency, Invariants, Security/Authorization, Transaction/Replay/Isolation/Recovery, and Validation semantics.
+7. Edited existing files must shrink in bytes. If truth cannot be updated while shrinking, resolve ownership/split instead of padding.
+8. Continue until every Markdown has an outcome.
+9. Run only the narrowest canonical validation and report exact evidence.
 
-Keep a statement only if removing it could change a correct action.
+Keep text only when removing it could change a correct decision or required explanation.
 
-Preferred shape: `Owner → Boundary → Invariant → Decision Rule → Validation`.
-
-Stop when more reading or compression no longer changes the decision.
+Shape: `Owner → Truth → Boundary → Invariant → Decision → Validation`.
