@@ -203,7 +203,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           SHA: ${{ needs.gate.outputs.head_sha }}
-        run: pnpm vercel:deploy:production -- --live --sha "$SHA"
+        run: pnpm vercel:deploy:production --live --sha "$SHA"
 
   rich_menu:
     needs: [gate, deployment]
