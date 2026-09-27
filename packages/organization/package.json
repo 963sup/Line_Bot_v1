@@ -42,7 +42,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@line-work/account": "workspace:*",
@@ -50,6 +51,8 @@
     "@line-work/platform": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }
