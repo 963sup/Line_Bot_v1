@@ -33,9 +33,9 @@ qualified active User 可以提交推薦；案件 lifecycle 為 `pending -> succ
 
 ## 與其他模組的邊界
 
-- Team/TeamMembership/TeamManager 由 [Team](070-team.md) 擁有。
+- Team/TeamMembership/TeamManager 由 [Team](team.md) 擁有。
 - Account/User 提供 current human qualification；Partners 不建立第二套 human identity alias。
 - LINE 選單只導向視圖，不定義授權／狀態。
 - Feature permission 的授予／撤銷由 Identity/Access／Security owner 擁有。
-- persistence、schema、transaction 與 cursor 實作由 [Data](../040-data/README.md) 擁有。
+- persistence、schema、transaction 與 cursor 實作由 [Data](../reference/README.md) 擁有。
 - 遠端 migration、LINE 發布與手機驗收狀態不寫在本文件。
