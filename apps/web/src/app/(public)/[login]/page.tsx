@@ -85,7 +85,7 @@ export default async function Page({ params }: { params: Promise<{ login: string
         profileKind="ORGANIZATION"
         profileLogin={owner.login}
         profileTitle={organization.name}
-        repositoryCount={repositories.totalCount}
+        publicRepositoryCount={repositories.totalCount}
       >
         <PopularRepositories repositories={repositories} />
       </ProfileViewerShell>
@@ -107,7 +107,7 @@ export default async function Page({ params }: { params: Promise<{ login: string
       profileLogin={owner.login}
       profileTitle={profile?.displayName ?? user.login}
       profileUserId={owner.id}
-      repositoryCount={repositories.totalCount}
+      publicRepositoryCount={repositories.totalCount}
     >
       <PopularRepositories repositories={repositories} />
     </ProfileViewerShell>
