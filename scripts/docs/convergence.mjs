@@ -1,12 +1,21 @@
-import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const manifestPath = path.join(root, "docs/convergence-manifest.json");
-const ignored = new Set([".git", "node_modules", "dist", ".next", ".artifacts", ".vercel", ".turbo", ".temp"]);
+const ignored = new Set([
+  ".git",
+  "node_modules",
+  "dist",
+  ".next",
+  ".artifacts",
+  ".vercel",
+  ".turbo",
+  ".temp",
+]);
 const fileOutcomes = new Set(["keep", "updated", "distilled", "blocked", "reviewing"]);
 const skillOutcomes = new Set(["keep", "refreshed", "blocked"]);
 
@@ -53,7 +62,8 @@ async function loadState() {
     upstreamSkills: {},
   });
   const lock = await loadJson("skills-lock.json", { version: 1, skills: {} });
-  if (manifest.version !== 1) throw new Error(`Unsupported convergence manifest version: ${manifest.version}`);
+  if (manifest.version !== 1)
+    throw new Error(`Unsupported convergence manifest version: ${manifest.version}`);
   if (!new Set(["in-progress", "complete"]).has(manifest.phase))
     throw new Error(`Invalid convergence phase: ${manifest.phase}`);
   manifest.files ??= {};
@@ -76,8 +86,10 @@ async function inspect({ requireComplete = false } = {}) {
   const errors = [];
 
   for (const [relative, entry] of Object.entries(manifest.files)) {
-    if (!fileOutcomes.has(entry.outcome)) errors.push(`${relative}: invalid outcome ${entry.outcome}`);
-    if (!current.has(relative)) errors.push(`${relative}: manifest entry has no current Markdown file`);
+    if (!fileOutcomes.has(entry.outcome))
+      errors.push(`${relative}: invalid outcome ${entry.outcome}`);
+    if (!current.has(relative))
+      errors.push(`${relative}: manifest entry has no current Markdown file`);
   }
 
   for (const relative of markdown) {
@@ -90,7 +102,8 @@ async function inspect({ requireComplete = false } = {}) {
         rows.push({ path: relative, status: "upstream-stale", skill: locked.name });
       } else if (review.lockHash !== locked.computedHash)
         rows.push({ path: relative, status: "upstream-stale", skill: locked.name });
-      else if (review.outcome === "blocked") rows.push({ path: relative, status: "blocked", skill: locked.name });
+      else if (review.outcome === "blocked")
+        rows.push({ path: relative, status: "blocked", skill: locked.name });
       else rows.push({ path: relative, status: "upstream-reviewed", skill: locked.name });
       continue;
     }
@@ -103,7 +116,11 @@ async function inspect({ requireComplete = false } = {}) {
 
     const facts = await fileFacts(relative);
     let status =
-      entry.outcome === "blocked" ? "blocked" : entry.outcome === "reviewing" ? "reviewing" : "reviewed";
+      entry.outcome === "blocked"
+        ? "blocked"
+        : entry.outcome === "reviewing"
+          ? "reviewing"
+          : "reviewed";
 
     if (entry.maxBytes != null && facts.bytes > entry.maxBytes) {
       errors.push(`${relative}: grew from reviewed max ${entry.maxBytes} to ${facts.bytes} bytes`);
@@ -162,7 +179,9 @@ async function writeManifest(manifest) {
   const ordered = {
     version: 1,
     phase: manifest.phase,
-    files: Object.fromEntries(Object.entries(manifest.files ?? {}).sort(([a], [b]) => a.localeCompare(b))),
+    files: Object.fromEntries(
+      Object.entries(manifest.files ?? {}).sort(([a], [b]) => a.localeCompare(b)),
+    ),
     upstreamSkills: Object.fromEntries(
       Object.entries(manifest.upstreamSkills ?? {}).sort(([a], [b]) => a.localeCompare(b)),
     ),
@@ -215,7 +234,9 @@ async function record(relative, outcome, sources, note) {
 
   const facts = await fileFacts(relative);
   if (facts.bytes > previous.baselineBytes)
-    throw new Error(`${relative}: ${facts.bytes} bytes exceeds review baseline ${previous.baselineBytes}`);
+    throw new Error(
+      `${relative}: ${facts.bytes} bytes exceeds review baseline ${previous.baselineBytes}`,
+    );
   if (new Set(["updated", "distilled"]).has(outcome) && facts.blob === previous.baselineBlob)
     throw new Error(`${relative}: ${outcome} requires a content change`);
   if (new Set(["updated", "distilled"]).has(outcome) && facts.bytes >= previous.baselineBytes)
@@ -255,7 +276,10 @@ async function retire(relative, disposition, target = null) {
     await fileFacts(relative);
     throw new Error(`${relative}: file still exists; retire only after move/merge/delete`);
   } catch (error) {
-    if (!String(error?.message ?? error).includes("ENOENT") && !String(error?.code ?? "").includes("ENOENT"))
+    if (
+      !String(error?.message ?? error).includes("ENOENT") &&
+      !String(error?.code ?? "").includes("ENOENT")
+    )
       throw error;
   }
   if (disposition !== "deleted") {
