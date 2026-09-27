@@ -1,2 +1,1 @@
-// Ports will describe concrete application dependencies when introduced.
-export {};
+export type { ProjectList, ProjectSummary } from "./project-collection.js";
