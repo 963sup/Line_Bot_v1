@@ -20,6 +20,7 @@
 - 每個 CLI只對應一個 operation responsibility；argv/env/output adapter與可測試 behavior可在同檔案內，但不得建立無第二 consumer或無 technology/policy boundary的 wrapper。
 - GitHub API transport若被兩個以上 operation真實重用，可共用 read-only capability；不得把 provider-specific policy塞進 transport helper。
 - Release planning輸出只描述 routing facts，例如 pending owner、changed state與真實 dependency；不直接執行 external mutation。
+- Web affected 判斷以 Turborepo `@line-work/web#build` graph 為 build dependency Source of Truth；不得再維護平行的 general path denylist。只有具明確 semantic owner 的 publication-only source 可作 bounded override。
 - Current-main check只證明 supplied exact SHA仍是 repository `main`；不順手判斷 provider readiness。
 
 ## Safety
