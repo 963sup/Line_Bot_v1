@@ -10,6 +10,7 @@ Validate current main
    release_plan
     ├─ Supabase
     ├─ Vercel
+    ├─ Attendance scheduler
     └─ Rich Menu
 ```
 
@@ -43,6 +44,19 @@ Supabase migration history不是 deployment authority；reconciliation不得新�
 只有 `@line_bot_v1/web#build` 有 pending runtime-affecting change時才部署 Production。因 Web runtime依賴 database contract，Vercel deployment仍要求同一 Release的 Supabase convergence成功。
 
 Canonical adapter只驗證 active current-main Release與 successful `release_plan`；跨 provider dependency由 GitHub Release graph擁有，不在 Vercel adapter複製第二份 release policy。每個 external mutation 前的 exact-SHA current-main readback由 canonical `pnpm github:current-main` 提供，workflow不重寫 GitHub API / branch判斷。
+### Attendance scheduler
+
+Attendance per-user Rich Menu reconciliation 需要 production background scheduler，但 scheduler 不是 Attendance business authority。Canonical `pnpm attendance:scheduler reconcile --live --sha <sha>` 只收斂 operational desired state：
+
+1. 先以 authenticated GET 驗證 production `/api/internal/attendance-maintenance` 已部署且接受同一 worker credential；這一步不處理 outbox。
+2. 使用 exact Supabase production target guard 與 non-pooling operator connection。
+3. 收斂 `pg_cron`、`pg_net`、Supabase Vault worker credential binding 與 named `attendance-maintenance` cron job。
+4. read back extension、Vault binding presence、job name/schedule/command/active state；不讀出或輸出 secret value。
+
+Release graph只保留真實 dependency：Scheduler 一定等待 Supabase convergence；若 `web_affected=true`，還必須等待同 SHA Vercel Production成功，避免 cron先呼叫舊 Web contract。若 Web 未變，沿 current production runtime直接 reconcile。
+
+`ATTENDANCE_WORKER_SECRET` 是跨 Vercel runtime 與 Supabase Vault 的同一 credential binding；兩邊保存 secret 是 trust-boundary necessity，不是兩份 business truth。缺少任何 binding或 readback不一致時 fail closed。
+
 ### Rich Menu
 Rich Menu desired state changed時一定進 publication path，但分兩種：
 
