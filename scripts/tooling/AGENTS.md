@@ -1,7 +1,10 @@
 # Repository tooling checks
 
-- Tooling checks own executable validation of manifests, versions, scripts, workflows and runtime configuration; AGENTS text is not a substitute for a machine check where a rule is deterministic.
-- `check-tooling.mjs` is an offline metadata guard: it may parse manifests, workflow YAML, TOML and source text, but must not load product code, `.env*`, credentials, provider APIs or build output.
-- Keep positive, negative and repaired cases for semantic rules; do not weaken validation or add broad ignore patterns to accommodate an invalid configuration. If a new AGENTS rule is deterministic, prefer adding an executable check here instead of relying on prose.
-- Workflow, package-script, AGENTS-routing, dependency/version and runtime-config contracts should fail with a specific owner-facing message that tells which source of truth moved, not a generic parser error.
-- Tooling checks are repository evidence only. They must not claim external credentials, deployment, GitHub protection, Supabase state or Desktop hot reload unless independently read back.
+- Tooling checks own executable validation of manifests, versions, scripts, workflows and runtime configuration；AGENTS text不是 machine check 的替代品。
+- `check-tooling.mjs` 是 offline metadata / boundary guard：可 parse manifests、workflow YAML、TOML與source text，但不得 load product code、`.env*`、credentials、provider API或build output。
+- Tooling guard驗「邊界是否正確」與「canonical entrypoint是否被使用」；不得重新實作 owner algorithm，亦不得靠比對大量 owner內部細節形成第二套 Source of Truth。
+- Behavior、routing decision、provider transaction、recovery semantics若已有 owner-local executable test，`check-tooling` 只驗它沒有被 workflow / manifest 繞過。
+- Keep positive、negative、repaired cases for deterministic boundary rules；不得為通過 invalid configuration 而放寬 guard或加 broad ignore。
+- Workflow、package-script、AGENTS-routing、dependency/version與runtime-config contract應回報具 owner的錯誤訊息，不用 generic parser error。
+- 當 workflow從 thin adapter 漂移成 inline implementation時，guard應阻止「直接在 YAML 重寫可測試 logic」，而不是開始解析並認可那套 inline implementation。
+- Tooling checks是 repository evidence only；不得宣稱 external credentials、deployment、GitHub protection、Supabase state或device/runtime evidence。
