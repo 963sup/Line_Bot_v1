@@ -1,6 +1,6 @@
 # Notifications
 
-Notifications owns user-facing notification facts, inbox read state, and delivery attempts. It is a projection and delivery owner, not the source of repository issues or discussions.
+Notifications owns user-facing Notification facts, recipient read state, and delivery attempts. Inbox is the recipient-scoped read/navigation projection over those facts; it is not a second business owner. Notifications remains a projection/delivery owner relative to source Issue/Discussion truth.
 
 ## Owns
 
@@ -23,4 +23,4 @@ Notifications owns user-facing notification facts, inbox read state, and deliver
 
 ## Data and modules
 
-Current persistence is split between [`850_notifications.sql`](../../supabase/schemas/850_notifications.sql) and [`851_notification_deliveries.sql`](../../supabase/schemas/851_notification_deliveries.sql). Runtime code belongs under `packages/notifications`; Web presentation belongs under `apps/web/src/modules/notifications`.
+Current persistence is split between [`850_notifications.sql`](../../supabase/schemas/850_notifications.sql) and [`851_notification_deliveries.sql`](../../supabase/schemas/851_notification_deliveries.sql). Runtime authority belongs under `packages/notifications`; Web presentation remains under `apps/web/src/modules/notifications`. The current authenticated destination is named Inbox in the UI while the published Web/API transport remains `/notifications` / `/api/notifications`; transport naming does not create a second owner.

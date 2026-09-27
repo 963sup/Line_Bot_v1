@@ -3,6 +3,7 @@ export { PostgresGoogleLinkStore } from "./postgres/google-link.js";
 export {
   PostgresLoginDirectoryStore,
   readAccountLogin,
+  readAccountLogins,
   resolveAccountLogin,
 } from "./postgres/login-directory.js";
 export { PostgresUserProfileStore } from "./postgres/profile.js";

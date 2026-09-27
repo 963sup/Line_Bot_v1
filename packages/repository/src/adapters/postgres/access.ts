@@ -1,4 +1,8 @@
-import { readAccountLogin, resolveAccountLogin } from "@line-work/account/adapters/postgres";
+import {
+  readAccountLogin,
+  readAccountLogins,
+  resolveAccountLogin,
+} from "@line-work/account/adapters/postgres";
 import type { Sql } from "@line-work/platform/adapters/postgres";
 import type { RepositorySelector } from "../../application/ports/selectors.js";
 import { IssueError, type RepositoryCapability, type RepositorySummary } from "../../domain.js";
@@ -25,19 +29,24 @@ export async function accessibleRepositories(
     name: string;
     capability: RepositoryCapability;
   }>;
-  const result: RepositorySummary[] = [];
-  for (const row of rows) {
-    const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
-    if (owner) {
-      result.push({
-        id: row.id,
-        ownerLogin: owner.login,
-        name: row.name,
-        capability: row.capability,
-      });
-    }
-  }
-  return result;
+  const owners = await readAccountLogins(
+    sql,
+    rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
+  );
+  const ownerLogins = new Map(owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login]));
+  return rows.flatMap((row) => {
+    const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
+    return ownerLogin
+      ? [
+          {
+            id: row.id,
+            ownerLogin,
+            name: row.name,
+            capability: row.capability,
+          },
+        ]
+      : [];
+  });
 }
 
 export async function repositoryScope(

@@ -519,9 +519,20 @@
       "kind": "authoritative",
       "owner": "notifications",
       "lifecycle": "current",
-      "definition": "Recipient-scoped inbox/read-state fact and delivery projection reference.",
+      "definition": "Recipient-addressed notification fact that references source identity/version and carries recipient read state without taking source authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "notification-inbox",
+      "canonicalName": "Inbox",
+      "kind": "derived-projection",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Recipient-scoped read projection over Notifications for navigation and presentation. Inbox is not a second notification authority or package owner.",
+      "derivedFrom": ["notification"],
+      "authorityMode": "derived",
+      "persistenceExpectation": "derived"
     },
     {
       "id": "partner",

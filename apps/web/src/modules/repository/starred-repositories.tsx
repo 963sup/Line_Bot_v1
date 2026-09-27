@@ -2,9 +2,10 @@
 
 import type { StarredRepository } from "@line-work/repository/application/ports/stars";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { repositoryPath } from "./resource-navigation";
 
 export default function StarredRepositories({ liffId }: { liffId: string }) {
   const [items, setItems] = useState<StarredRepository[] | null>(null);
@@ -45,12 +46,19 @@ export default function StarredRepositories({ liffId }: { liffId: string }) {
     }
   }
 
-  useEffect(
-    () => () => {
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load();
+  });
+
+  useEffect(() => {
+    const visibility = () => onVisibilityChange();
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
       generation.current++;
-    },
-    [],
-  );
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, []);
 
   return (
     <div className="starred-repositories">
@@ -66,10 +74,12 @@ export default function StarredRepositories({ liffId }: { liffId: string }) {
             <Link
               className="action-row"
               key={item.id}
-              href={`/repositories?repository=${encodeURIComponent(item.id)}`}
+              href={repositoryPath(item.ownerLogin, item.name)}
             >
               <span>
-                <strong>{item.name}</strong>
+                <strong>
+                  {item.ownerLogin}/{item.name}
+                </strong>
                 <small>
                   {item.visibility} · {item.starCount} Stars
                 </small>

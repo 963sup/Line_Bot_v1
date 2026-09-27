@@ -2,6 +2,7 @@ import type { RepositoryCapability } from "../../domain.js";
 
 export type StarredRepository = {
   id: string;
+  ownerLogin: string;
   name: string;
   visibility: string;
   starredAt: number;
@@ -10,6 +11,7 @@ export type StarredRepository = {
 
 export type ExploreRepository = {
   id: string;
+  ownerLogin: string;
   name: string;
   visibility: string;
   capability: RepositoryCapability;

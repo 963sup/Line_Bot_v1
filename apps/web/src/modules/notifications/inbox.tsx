@@ -9,7 +9,7 @@ import { PageHeading, PageState } from "../../shared/ui/page-layout";
 
 type NotificationPage = { items: Notification[] };
 
-export default function NotificationInbox({
+export default function Inbox({
   liffId,
   notificationId,
   view = "all",
@@ -98,7 +98,7 @@ export default function NotificationInbox({
 
   return (
     <>
-      <PageHeading title="通知" description="查看與你相關的 Issue、Discussion 與系統通知。" />
+      <PageHeading title="收件匣" description="查看與你相關的 Issue、Discussion 與系統通知。" />
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={() => setBusy(false)} />
       {notificationId ? (
         <Link
