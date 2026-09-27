@@ -34,4 +34,4 @@ Forms 若只是 external entry且沒有 trustworthy response→User mapping，�
 
 List pagination有界；頁面失敗不回 partial 冒充完整；operation有 timeout/cancellation；adapter不保存 token、不自動 retry side-effect write；caller仍需 owner/scope/resource validation。
 
-Open OAuth/source/recovery/real-account requirements 見 [Google Workspace gaps](../090-governance/040-gaps/050-google-workspace.md)。
+Open OAuth/source/recovery/real-account requirements 見 [Google Workspace gaps](../../change/gaps/google-workspace.md)。
