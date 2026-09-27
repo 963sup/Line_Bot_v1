@@ -126,3 +126,23 @@ test("review becomes stale when reviewed Markdown changes", async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+
+test("seal requires zero unresolved work and makes future pending work fail closed", async () => {
+  const root = await fixture();
+  try {
+    assert.equal(run(root, "begin", "README.md").status, 0);
+    assert.equal(run(root, "record", "README.md", "keep").status, 0);
+    assert.equal(run(root, "review-skill", "demo", "keep").status, 0);
+    const seal = run(root, "seal");
+    assert.equal(seal.status, 0, seal.stderr);
+    assert.match(seal.stdout, /phase=complete/);
+
+    await writeFile(path.join(root, "NEW.md"), "# New\n");
+    const status = run(root, "check");
+    assert.equal(status.status, 1);
+    assert.match(status.stderr, /convergence incomplete/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
