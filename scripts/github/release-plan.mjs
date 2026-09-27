@@ -32,27 +32,8 @@ export function richMenuChanged(files) {
   return files.some((file) => RICH_MENU_SOURCES.some((pattern) => pattern.test(file)));
 }
 
-export function webRuntimeCandidate(file) {
-  if (
-    file.startsWith("docs/") ||
-    file.startsWith(".github/") ||
-    file.startsWith(".agents/") ||
-    file.startsWith(".codex/") ||
-    file.startsWith("architecture/") ||
-    file.startsWith("scripts/") ||
-    file.startsWith("supabase/") ||
-    file.startsWith("assets/line/rich-menu/") ||
-    file.startsWith("apps/web/test/") ||
-    /^packages\/[^/]+\/test\//.test(file) ||
-    /(^|\/)AGENTS\.md$/.test(file) ||
-    /(^|\/)README\.md$/.test(file) ||
-    /^apps\/web\/src\/modules\/assistant\/rich-menu\/(definition|desired-state\.server)\.ts$/.test(
-      file,
-    )
-  ) {
-    return false;
-  }
-  return true;
+export function publicationOnlyRichMenuSource(file) {
+  return RICH_MENU_SOURCES.some((pattern) => pattern.test(file));
 }
 
 function run(command, args, { cwd, env = process.env } = {}) {
@@ -242,8 +223,11 @@ export async function planRelease({
 
   const schema = schemaChanged(supabaseFiles);
   const richMenu = richMenuChanged(richMenuFiles);
-  const webCandidates = deploymentFiles.filter(webRuntimeCandidate);
-  const web = webCandidates.length > 0 && turbo.webBuildAffected(deploymentBaseline, targetSha);
+  const hasPendingWebSource = deploymentFiles.some(
+    (file) => !publicationOnlyRichMenuSource(file),
+  );
+  const web =
+    hasPendingWebSource && turbo.webBuildAffected(deploymentBaseline, targetSha);
 
   return {
     head_sha: targetSha,
