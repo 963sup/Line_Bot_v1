@@ -1,10 +1,8 @@
 name: Release
-run-name: Release ${{ github.event.workflow_run.head_sha }}
+run-name: Release ${{ github.sha }}
 
 on:
-  workflow_run:
-    workflows: ["Validate"]
-    types: [completed]
+  push:
     branches: [main]
 
 permissions:
@@ -13,17 +11,14 @@ permissions:
   checks: read
   statuses: read
 
-concurrency:
-  group: release-main
-  cancel-in-progress: false
-
 jobs:
+  validation:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
   release_plan:
-    if: >-
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -35,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v6
@@ -52,12 +47,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: pnpm github:release-plan --sha "$VALIDATED_SHA"
+          SHA: ${{ github.sha }}
+        run: pnpm github:release-plan --sha "$SHA"
 
   supabase:
-    needs: release_plan
-    if: needs.release_plan.result == 'success' && needs.release_plan.outputs.schema_changed == 'true'
+    needs: [release_plan, validation]
+    if: needs.validation.result == 'success' && needs.release_plan.result == 'success' && needs.release_plan.outputs.schema_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -109,10 +104,13 @@ jobs:
           retention-days: 7
 
   deployment:
-    needs: [release_plan, supabase]
+    concurrency:
+      group: vercel-production-mini-app-line
+      cancel-in-progress: false
+    needs: [release_plan, validation, supabase]
     if: >-
       always() &&
-      needs.release_plan.result == 'success' &&
+      needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
       needs.release_plan.outputs.web_affected == 'true' &&
       (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))
     runs-on: ubuntu-latest
@@ -145,9 +143,12 @@ jobs:
         run: pnpm vercel:deploy:production --live --sha "$SHA"
 
   rich_menu:
-    needs: release_plan
+    concurrency:
+      group: line-rich-menu-production
+      cancel-in-progress: false
+    needs: [release_plan, validation]
     if: >-
-      needs.release_plan.result == 'success' &&
+      needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
       needs.release_plan.outputs.rich_menu_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -183,12 +184,12 @@ jobs:
         run: pnpm line:rich-menu publish all
 
   attendance_scheduler:
-    needs: [release_plan, supabase, deployment]
+    needs: [release_plan, validation, supabase, deployment]
     env:
       SUPABASE_REMOTE_MUTATION_CONTEXT: validated-main
     if: >-
       always() &&
-      needs.release_plan.result == 'success' &&
+      needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
       (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped')) &&
       needs.release_plan.outputs.scheduler_changed == 'true' &&
       (needs.deployment.result == 'success' || (needs.release_plan.outputs.web_affected != 'true' && needs.deployment.result == 'skipped'))

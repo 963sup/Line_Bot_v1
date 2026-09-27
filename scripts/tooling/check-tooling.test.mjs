@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { dirname, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import YAML from "yaml";
 import { validate } from "./check-tooling.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
@@ -60,7 +61,10 @@ function fixture(t) {
       devDependencies: { "@biomejs/biome": "2.5.12" },
     }),
   );
-  write("scripts/tooling/validate.mjs", "export const validation = true;\\n");
+  write(
+    "scripts/tooling/validate.mjs",
+    readFileSync(resolve(repo, "scripts/tooling/validate.mjs"), "utf8"),
+  );
   write(
     "pnpm-workspace.yaml",
     'packages: ["packages/*"]\nengineStrict: true\nsaveExact: true\nverifyDepsBeforeRun: error\ncatalog:\n  typescript: 5.9.3\n',
@@ -126,7 +130,7 @@ function fixture(t) {
   );
   write(
     ".github/workflows/validate.yml",
-    "on:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n  push:\n    branches: [main]\npermissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm check\n  full-validate:\n    if: github.event_name == 'pull_request' && github.event.action == 'ready_for_review'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.event.pull_request.head.sha }}\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm validate\n  validate:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm validate\n",
+    readFileSync(resolve(repo, ".github/workflows/validate.yml"), "utf8"),
   );
   write(
     ".github/workflows/release.yml",
@@ -461,7 +465,7 @@ test("validation workflow keeps PR affected and main full gates separate", (t) =
   );
   rejects(root, "full Git history");
   rejects(root, "pull requests must run affected pnpm check");
-  rejects(root, "main push must run full pnpm validate");
+  rejects(root, "main and ready-for-review must run every canonical validation group in parallel");
 });
 
 test("validate workflow remains read-only, secret-free, and credential-free", (t) => {
@@ -486,11 +490,8 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
   write(".github/workflows/release.yml", workflow.replace("run-name: Release", "run-name: Run"));
   rejects(root, "run-name must preserve");
 
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace('workflows: ["Validate"]', 'workflows: ["Other"]'),
-  );
-  rejects(root, "completed main Validate");
+  write(".github/workflows/release.yml", workflow.replace("branches: [main]", "branches: [other]"));
+  rejects(root, "only main push events");
 
   write(".github/workflows/release.yml", workflow.replace("actions: read", "actions: write"));
   rejects(root, "read-only GitHub permissions");
@@ -498,15 +499,18 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
   write(
     ".github/workflows/release.yml",
     workflow.replace(
-      "workflow_run.conclusion == 'success'",
-      "workflow_run.conclusion == 'failure'",
+      "needs.validation.result == 'success'",
+      "needs.validation.result == 'failure'",
     ),
   );
-  rejects(root, "successful same-repository main push Validate");
+  rejects(
+    root,
+    "every external operation must require successful same-SHA validation and planning",
+  );
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace('pnpm github:release-plan --sha "$VALIDATED_SHA"', "echo skip-plan"),
+    workflow.replace('pnpm github:release-plan --sha "$SHA"', "echo skip-plan"),
   );
   rejects(root, "delegate routing to github:release-plan");
 
@@ -577,6 +581,56 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
   rejects(root, "thin adapter");
 
   write(".github/workflows/release.yml", workflow);
+  assert.deepEqual(validate(root), []);
+});
+
+test("parallel validation preserves complete coverage and an unconditional failure gate", (t) => {
+  const { root, write } = fixture(t);
+  const source = readFileSync(resolve(root, ".github/workflows/validate.yml"), "utf8");
+  for (const mutate of [
+    (jobs) => jobs["full-validate"].strategy.matrix.group.pop(),
+    (jobs) => {
+      jobs["full-validate"].needs = "check";
+    },
+    (jobs) => {
+      jobs["full-validate"].strategy["fail-fast"] = true;
+    },
+  ]) {
+    const data = YAML.parse(source);
+    mutate(data.jobs);
+    write(".github/workflows/validate.yml", YAML.stringify(data));
+    rejects(root, "every canonical validation group in parallel");
+  }
+  for (const run of ['test "$RESULT" != failure', "echo success"]) {
+    const data = YAML.parse(source);
+    data.jobs.validate.steps[0].run = run;
+    write(".github/workflows/validate.yml", YAML.stringify(data));
+    rejects(root, "reject failed, cancelled or skipped groups");
+  }
+  write(".github/workflows/validate.yml", source);
+  assert.deepEqual(validate(root), []);
+});
+
+test("parallel releases retain every publication gate and resource lock", (t) => {
+  const { root, write } = fixture(t);
+  const source = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
+  for (const name of ["supabase", "deployment", "rich_menu", "attendance_scheduler"]) {
+    const data = YAML.parse(source);
+    data.jobs[name].needs = data.jobs[name].needs.filter((need) => need !== "validation");
+    write(".github/workflows/release.yml", YAML.stringify(data));
+    rejects(root, "every external operation must require successful same-SHA validation");
+  }
+  for (const name of ["deployment", "rich_menu"]) {
+    const data = YAML.parse(source);
+    data.jobs[name].concurrency["cancel-in-progress"] = true;
+    write(".github/workflows/release.yml", YAML.stringify(data));
+    rejects(root, "serialize their own resource without cancelling writes");
+  }
+  const data = YAML.parse(source);
+  data.jobs.release_plan.needs = "validation";
+  write(".github/workflows/release.yml", YAML.stringify(data));
+  rejects(root, "in parallel with validation");
+  write(".github/workflows/release.yml", source);
   assert.deepEqual(validate(root), []);
 });
 

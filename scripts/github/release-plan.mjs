@@ -123,11 +123,11 @@ function turboAdapter(cwd) {
   };
 }
 
-async function completedReleaseRuns({ repository, token, fetchImpl }) {
+async function releaseRuns({ repository, token, fetchImpl }) {
   const runs = [];
   for (let page = 1; ; page++) {
     const body = await githubJson(
-      `/repos/${repository}/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100&page=${page}`,
+      `/repos/${repository}/actions/workflows/release.yml/runs?branch=main&per_page=100&page=${page}`,
       { token, fetchImpl },
     );
     if (!Array.isArray(body.workflow_runs))
@@ -189,7 +189,7 @@ export async function planRelease({
     fetchImpl,
   });
 
-  const runs = await completedReleaseRuns({
+  const runs = await releaseRuns({
     repository: targetRepository,
     token,
     fetchImpl,

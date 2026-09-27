@@ -5,6 +5,7 @@ import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
 import YAML from "yaml";
+import { validationGroups } from "./validate.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (file) => readFileSync(file, "utf8");
@@ -479,70 +480,67 @@ export function validate(root) {
     const validateJob = workflow.jobs?.validate;
     if (!checkJob || !fullValidateJob || !validateJob)
       errors.push(
-        "CI: validation workflow must define PR check, pre-merge full validate, and main validate jobs",
+        "CI: validation workflow must define PR check, parallel full validation and aggregate gate",
       );
-    const validationJobs = [checkJob, fullValidateJob, validateJob].filter(Boolean);
-    const checkoutSteps = validationJobs.flatMap((job) =>
-      (job.steps ?? []).filter((step) => step.uses?.startsWith("actions/checkout@")),
+    if (!Object.hasOwn(workflow.on ?? {}, "workflow_call") || workflow.on?.push)
+      errors.push(
+        "CI: main validation must be called by Release without a duplicate push workflow",
+      );
+    const validationJobs = Object.values(workflow.jobs ?? {}).filter(
+      (job) =>
+        job !== validateJob ||
+        (job.steps ?? []).some((step) => step.uses?.startsWith("actions/checkout@")),
     );
-    if (
-      checkoutSteps.length !== validationJobs.length ||
-      checkoutSteps.some((step) => step.with?.["persist-credentials"] !== false)
-    )
-      errors.push("CI: validation checkout must not persist credentials");
-    const checkCheckout = (checkJob?.steps ?? []).find((step) =>
-      step.uses?.startsWith("actions/checkout@"),
-    );
-    if (checkCheckout?.with?.["fetch-depth"] !== 0)
-      errors.push("CI: PR affected check requires full Git history");
-    const setupSteps = validationJobs.flatMap((job) =>
-      (job.steps ?? []).filter((step) => step.uses?.startsWith("actions/setup-node@")),
-    );
-    if (
-      setupSteps.length !== validationJobs.length ||
-      setupSteps.some(
-        (step) =>
-          step.with?.["node-version-file"] !== ".node-version" ||
-          Object.hasOwn(step.with ?? {}, "node-version"),
-      )
-    )
-      errors.push("CI: Node version must come from the repository .node-version exact pin");
+    for (const job of validationJobs) {
+      const checkout = (job.steps ?? []).find((step) => step.uses?.startsWith("actions/checkout@"));
+      if (checkout?.with?.["persist-credentials"] !== false)
+        errors.push("CI: validation checkout must not persist credentials");
+      if (checkout?.with?.["fetch-depth"] !== 0)
+        errors.push("CI: validation requires full Git history");
+      if (checkout?.with?.ref !== "${{ github.event.pull_request.head.sha || github.sha }}")
+        errors.push("CI: validation must check out the exact PR or main SHA");
+    }
     const pullRequestTypes = workflow.on?.pull_request?.types;
     if (
-      !Array.isArray(pullRequestTypes) ||
-      !pullRequestTypes.includes("ready_for_review") ||
-      !pullRequestTypes.includes("synchronize")
+      !pullRequestTypes?.includes("ready_for_review") ||
+      !pullRequestTypes?.includes("synchronize")
     )
       errors.push("CI: PR validation must distinguish draft iteration from review-ready updates");
     if (
-      typeof checkJob?.if !== "string" ||
-      !checkJob.if.includes("pull_request") ||
-      !checkJob.if.includes("pull_request.draft == false") ||
-      !(checkJob.steps ?? []).some((step) => step.run === "pnpm check")
+      !checkJob?.if?.includes("pull_request.draft == false") ||
+      !checkJob?.if?.includes("github.event.action != 'ready_for_review'") ||
+      !(checkJob?.steps ?? []).some((step) => step.run === "pnpm check")
     )
-      errors.push("CI: ready pull requests must run affected pnpm check while drafts skip runners");
+      errors.push(
+        "CI: ready pull requests must run affected pnpm check without duplicating full validation",
+      );
+    const fullCondition =
+      "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'ready_for_review' && github.event.pull_request.draft == false)";
     if (
-      typeof fullValidateJob?.if !== "string" ||
-      !fullValidateJob.if.includes("pull_request") ||
-      !fullValidateJob.if.includes("ready_for_review") ||
-      !(fullValidateJob.steps ?? []).some((step) => step.run === "pnpm validate")
+      fullValidateJob?.if !== fullCondition ||
+      fullValidateJob?.needs ||
+      fullValidateJob?.strategy?.["fail-fast"] !== false ||
+      JSON.stringify(fullValidateJob?.strategy?.matrix?.group) !==
+        JSON.stringify(Object.keys(validationGroups)) ||
+      !(fullValidateJob?.steps ?? []).some(
+        (step) =>
+          step.run === 'pnpm validate --group "$VALIDATION_GROUP"' &&
+          step.env?.VALIDATION_GROUP === "${{ matrix.group }}",
+      )
     )
-      errors.push("CI: ready-for-review transition must run pre-merge pnpm validate");
-    const fullValidateCheckout = (fullValidateJob?.steps ?? []).find((step) =>
-      step.uses?.startsWith("actions/checkout@"),
-    );
+      errors.push(
+        "CI: main and ready-for-review must run every canonical validation group in parallel",
+      );
     if (
-      fullValidateCheckout?.with?.ref !== "${{ github.event.pull_request.head.sha }}" ||
-      fullValidateCheckout?.with?.["fetch-depth"] !== 0
+      validateJob?.needs !== "full-validate" ||
+      validateJob?.if !== "always() && (" + fullCondition + ")" ||
+      !(validateJob?.steps ?? []).some(
+        (step) =>
+          step.env?.RESULT === "${{ needs.full-validate.result }}" &&
+          step.run === 'test "$RESULT" = success',
+      )
     )
-      errors.push("CI: pre-merge validate must run against the exact PR head with full history");
-    if (
-      typeof validateJob?.if !== "string" ||
-      !validateJob.if.includes("push") ||
-      !validateJob.if.includes("refs/heads/main") ||
-      !(validateJob.steps ?? []).some((step) => step.run === "pnpm validate")
-    )
-      errors.push("CI: main push must run full pnpm validate");
+      errors.push("CI: aggregate validation must reject failed, cancelled or skipped groups");
 
     for (const retiredWorkflow of [
       ".github/workflows/supabase-schema.yml",
@@ -558,26 +556,25 @@ export function validate(root) {
     const releaseWorkflowFile = resolve(root, ".github/workflows/release.yml");
     const releaseWorkflowSource = read(releaseWorkflowFile);
     const releaseWorkflow = YAML.parse(releaseWorkflowSource);
-    if (releaseWorkflow["run-name"] !== "Release ${{ github.event.workflow_run.head_sha }}")
+    if (releaseWorkflow["run-name"] !== "Release ${{ github.sha }}")
       errors.push("CI: Release run-name must preserve the validated SHA for routing baseline");
     const releaseTriggers = releaseWorkflow.on;
-    const releaseWorkflowRun = releaseTriggers?.workflow_run;
-    const releaseWorkflows = releaseWorkflowRun?.workflows;
-    const releaseTypes = releaseWorkflowRun?.types;
-    const releaseBranches = releaseWorkflowRun?.branches;
     if (
-      !table(releaseTriggers) ||
-      !table(releaseWorkflowRun) ||
-      !Array.isArray(releaseWorkflows) ||
-      !releaseWorkflows.includes("Validate") ||
-      !Array.isArray(releaseTypes) ||
-      !releaseTypes.includes("completed") ||
-      !Array.isArray(releaseBranches) ||
-      !releaseBranches.includes("main")
+      JSON.stringify(Object.keys(releaseTriggers ?? {})) !== JSON.stringify(["push"]) ||
+      JSON.stringify(releaseTriggers?.push?.branches) !== JSON.stringify(["main"])
     )
-      errors.push(
-        "CI: Release must run after completed main Validate, not as a parallel push runner",
-      );
+      errors.push("CI: Release must accept only main push events");
+    if (releaseWorkflow.concurrency)
+      errors.push("CI: Release must lock individual resources, not the whole workflow");
+    const validation = releaseWorkflow.jobs?.validation;
+    if (
+      validation?.uses !== "./.github/workflows/validate.yml" ||
+      validation.needs ||
+      validation.if ||
+      validation.secrets ||
+      JSON.stringify(validation.permissions) !== JSON.stringify({ contents: "read" })
+    )
+      errors.push("CI: Release must start secret-free full validation independently of planning");
     const releasePermissions = releaseWorkflow.permissions;
     if (
       !table(releasePermissions) ||
@@ -622,26 +619,54 @@ export function validate(root) {
 
     const planSteps = releasePlan?.steps ?? [];
     if (
-      typeof releasePlan?.if !== "string" ||
-      !releasePlan.if.includes("workflow_run.event == 'push'") ||
-      !releasePlan.if.includes("workflow_run.conclusion == 'success'") ||
-      !releasePlan.if.includes("workflow_run.head_branch == 'main'") ||
-      !releasePlan.if.includes("workflow_run.head_repository.full_name == github.repository")
+      releasePlan?.if !== "github.event_name == 'push' && github.ref == 'refs/heads/main'" ||
+      releasePlan.needs
     ) {
-      errors.push(
-        "CI: release_plan must only accept successful same-repository main push Validate runs",
+      errors.push("CI: release_plan must run on main push in parallel with validation");
+    }
+    for (const job of [releaseSupabase, releaseDeployment, releaseRich, releaseScheduler]) {
+      if (
+        !job?.needs?.includes("validation") ||
+        !job?.needs?.includes("release_plan") ||
+        !job?.if?.includes("needs.validation.result == 'success'") ||
+        !job?.if?.includes("needs.release_plan.result == 'success'")
+      )
+        errors.push(
+          "CI: every external operation must require successful same-SHA validation and planning",
+        );
+      const checkout = (job?.steps ?? []).find((step) =>
+        step.uses?.startsWith("actions/checkout@"),
       );
+      if (
+        checkout?.with?.ref !== "${{ needs.release_plan.outputs.head_sha }}" ||
+        checkout?.with?.["persist-credentials"] !== false
+      )
+        errors.push(
+          "CI: every external operation must check out the exact planned SHA without persisted credentials",
+        );
+    }
+    for (const [job, resource] of [
+      [releaseRich, "line-rich-menu-production"],
+      [releaseDeployment, "vercel-production-mini-app-line"],
+    ]) {
+      if (
+        job?.concurrency?.group !== resource ||
+        job?.concurrency?.["cancel-in-progress"] !== false
+      )
+        errors.push(
+          "CI: LINE and Vercel must serialize their own resource without cancelling writes",
+        );
     }
     const releaseCheckout = planSteps.findIndex(
       (step) =>
         step.uses?.startsWith("actions/checkout@") &&
-        step.with?.ref === "${{ github.event.workflow_run.head_sha }}" &&
+        step.with?.ref === "${{ github.sha }}" &&
         step.with?.["fetch-depth"] === 0 &&
         step.with?.["persist-credentials"] === false,
     );
     const planCommand = planSteps.findIndex(
       (step) =>
-        step.run === 'pnpm github:release-plan --sha "$VALIDATED_SHA"' &&
+        step.run === 'pnpm github:release-plan --sha "$SHA"' &&
         JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
         JSON.stringify(step.env ?? {}).includes("GITHUB_REPOSITORY"),
     );
@@ -718,7 +743,7 @@ export function validate(root) {
     const richMain = currentMainIndex(richSteps);
     const publish = richSteps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
     if (
-      releaseRich?.needs !== "release_plan" ||
+      JSON.stringify(releaseRich?.needs) !== JSON.stringify(["release_plan", "validation"]) ||
       !releaseRich?.if?.includes("needs.release_plan.outputs.rich_menu_changed == 'true'") ||
       richMain < 0 ||
       publish <= richMain ||

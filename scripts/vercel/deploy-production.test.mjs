@@ -38,13 +38,16 @@ test("production release authorization accepts only a current planned Release", 
     json({
       id: 123,
       path: ".github/workflows/release.yml",
-      event: "workflow_run",
+      event: "push",
       head_branch: "main",
       head_sha: SHA,
       status: "in_progress",
     }),
     json({
-      jobs: [{ name: "release_plan", conclusion: "success" }],
+      jobs: [
+        { name: "release_plan", conclusion: "success" },
+        { name: "validation / validate", conclusion: "success" },
+      ],
     }),
   ];
   await verifyProductionReleaseAuthorization({
@@ -61,13 +64,16 @@ test("production release authorization fails closed before Release planning succ
     json({
       id: 123,
       path: ".github/workflows/release.yml",
-      event: "workflow_run",
+      event: "push",
       head_branch: "main",
       head_sha: SHA,
       status: "in_progress",
     }),
     json({
-      jobs: [{ name: "release_plan", conclusion: "failure" }],
+      jobs: [
+        { name: "release_plan", conclusion: "failure" },
+        { name: "validation / validate", conclusion: "success" },
+      ],
     }),
   ];
   await assert.rejects(
@@ -81,6 +87,37 @@ test("production release authorization fails closed before Release planning succ
     /successful Release planning/,
   );
 });
+
+for (const conclusion of ["failure", "cancelled", "skipped", null]) {
+  test(`production release rejects ${conclusion} validation despite successful planning`, async () => {
+    const responses = [
+      json({
+        id: 123,
+        path: ".github/workflows/release.yml",
+        event: "push",
+        head_branch: "main",
+        head_sha: SHA,
+        status: "in_progress",
+      }),
+      json({
+        jobs: [
+          { name: "release_plan", conclusion: "success" },
+          { name: "validation / validate", conclusion },
+        ],
+      }),
+    ];
+    await assert.rejects(
+      verifyProductionReleaseAuthorization({
+        token: "test-token",
+        runId: "123",
+        sha: SHA,
+        repository: "963sup/Line_Bot_v1",
+        fetchImpl: async () => responses.shift(),
+      }),
+      /successful full validation/,
+    );
+  });
+}
 
 test("production deploy targets the selected project and reads back the exact SHA", async () => {
   const calls = [];

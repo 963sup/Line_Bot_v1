@@ -118,7 +118,7 @@ export async function verifyProductionReleaseAuthorization({
   if (
     String(run.id) !== runId ||
     run.path !== RELEASE_WORKFLOW_PATH ||
-    run.event !== "workflow_run" ||
+    run.event !== "push" ||
     run.head_branch !== "main" ||
     run.head_sha !== sha ||
     run.status !== "in_progress"
@@ -137,6 +137,9 @@ export async function verifyProductionReleaseAuthorization({
   }
   const succeeded = (name) =>
     jobs.jobs.some((job) => job?.name === name && job?.conclusion === "success");
+  if (!succeeded("validation / validate")) {
+    throw new Error("Production deployment requires successful full validation.");
+  }
   if (!succeeded("release_plan")) {
     throw new Error("Production deployment requires successful Release planning.");
   }

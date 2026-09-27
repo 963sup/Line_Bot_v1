@@ -25,6 +25,39 @@ const fastTasks = new Set([
   "typecheck+test",
 ]);
 
+export const validationGroups = Object.freeze({
+  tooling: [
+    "lockfile",
+    "tooling:check",
+    "patch:apply:test",
+    "github:test",
+    "attendance:scheduler:test",
+  ],
+  docs: ["docs:test", "docs:check"],
+  lint: ["lint"],
+  architecture: ["architecture:test", "architecture"],
+  schema: ["schema:remote:test", "schema:check"],
+  deadcode: ["deadcode"],
+  "typecheck-test": ["typecheck+test"],
+  build: ["build"],
+});
+
+export function selectValidationStages(stages, group) {
+  const assigned = Object.values(validationGroups).flat();
+  const tasks = stages.map(([task]) => task);
+  if (
+    new Set(assigned).size !== assigned.length ||
+    assigned.length !== tasks.length ||
+    tasks.some((task) => !assigned.includes(task))
+  ) {
+    throw new Error("Every validation stage must belong to exactly one CI group.");
+  }
+  if (!group) return stages;
+  if (!Object.hasOwn(validationGroups, group))
+    throw new Error(`Unknown validation group: ${group}`);
+  return stages.filter(([task]) => validationGroups[group].includes(task));
+}
+
 function lines(value) {
   return value
     .split(/\r?\n/)
@@ -129,7 +162,12 @@ export function fastTaskArgs(task, command, scope, selection, explicitFilters = 
 
 function main() {
   const fast = process.argv[2] === "--fast";
-  const filters = process.argv.slice(fast ? 3 : 2);
+  const grouped = process.argv[2] === "--group";
+  const group = grouped ? process.argv[3] : null;
+  if (grouped && (!group || process.argv.length !== 4)) {
+    throw new Error("Usage: validate.mjs --group <name>");
+  }
+  const filters = grouped ? [] : process.argv.slice(fast ? 3 : 2);
   if (filters.length && (!fast || filters.some((arg) => !/^--filter=.+/.test(arg)))) {
     console.error("Usage: validate.mjs [--fast [--filter=<Turbo selector> ...]]");
     process.exit(1);
@@ -182,7 +220,7 @@ function main() {
     ["build", [turbo, "run", "build"]],
   ];
 
-  for (const [task, command] of stages) {
+  for (const [task, command] of selectValidationStages(stages, group)) {
     if (fast && !shouldRunFast(task, scope)) continue;
     const args = fast ? fastTaskArgs(task, command, scope, selection, filters.length > 0) : command;
     const started = performance.now();

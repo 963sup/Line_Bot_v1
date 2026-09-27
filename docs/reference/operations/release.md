@@ -1,10 +1,10 @@
 # Release
 
-Only a successful same-repository current-main push Validate can release its exact SHA. GitHub owns trigger, permissions, job dependencies, secrets and artifacts; commands own executable operations.
+Main push starts Release planning and reusable Validate concurrently for its exact SHA. External operations require both successful planning and full validation, then recheck current main before writing. GitHub owns trigger, permissions, job dependencies, secrets and artifacts; commands own executable operations.
 
 ## Pending sources
 
-`pnpm github:release-plan` compares each operation with its own successful ancestor job. Failed/skipped operations do not advance its cursor; a successful same-SHA operation is not repeated on rerun. Missing baseline means first publication.
+`pnpm github:release-plan` compares each operation with its own successful ancestor job, including completed jobs in still-running Releases. Failed/skipped operations do not advance its cursor; a successful same-SHA operation is not repeated on rerun. Missing baseline means first publication. Planning is an early snapshot: an overlapping operation that finishes later may cause redundant convergence, but resource locks and current-main checks prevent concurrent writes to the same target.
 
 | Operation | Changed inputs | Command |
 | --- | --- | --- |
@@ -17,12 +17,13 @@ No relevant pending source means no remote operation. Source classifiers and tes
 
 ## Execution
 
+- Validate runs eight independent groups, including Web build, on separate runners while release planning runs. All groups must succeed before publication. Local build evidence is not the Vercel production artifact; Vercel still builds with its production configuration during deployment.
 - Supabase directly applies the declared diff, including destructive DDL, then verifies parity/security and unchanged migration history. No automatic historical compatibility repair or unchanged-schema verification.
 - Rich Menu has one independent job. Publish performs preflight/create/upload/activate/readback in one process; it does not wait for Supabase or Web deployment.
 - Web waits for changed schema sync to succeed; an unchanged, skipped schema job does not block it.
 - Scheduler waits for required schema/Web changes to succeed and accepts unchanged dependencies as skipped. It reconciles pg_cron/pg_net/Vault and reads back the exact job. Missing worker credential or inconsistent target/readback fails closed.
 
-Every write keeps a current-main check and exact target. Supabase and scheduler serialize access to the same database. Credentials are step-scoped; general validation remains secret-free. No operation invents business identity or authorization.
+Every write keeps a current-main check and exact target. Supabase and scheduler serialize access to the same database; LINE and Vercel have their own resource locks. There is no whole-Release lock, so unrelated providers in different releases can progress independently. Credentials are step-scoped; general validation remains secret-free. No operation invents business identity or authorization.
 
 ## Evidence
 

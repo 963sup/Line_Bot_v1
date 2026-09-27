@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { classifyChangedFiles, fastTaskArgs, shouldRunFast } from "./validate.mjs";
+import {
+  classifyChangedFiles,
+  fastTaskArgs,
+  selectValidationStages,
+  shouldRunFast,
+  validationGroups,
+} from "./validate.mjs";
 
 test("lockfile consistency gate cannot be skipped by fast scope", () => {
   for (const scope of [
@@ -154,4 +160,27 @@ test("Knip configuration changes run formatting and reachability checks", () => 
   assert.equal(shouldRunFast("lint", scope), true);
   assert.equal(shouldRunFast("deadcode", scope), true);
   assert.equal(shouldRunFast("tooling:check", scope), true);
+});
+
+test("CI groups partition validation and reject unknown or unassigned stages", () => {
+  const stages = Object.values(validationGroups)
+    .flat()
+    .map((task) => [task, [task]]);
+  assert.deepEqual(selectValidationStages(stages), stages);
+  const selected = Object.keys(validationGroups).flatMap((group) =>
+    selectValidationStages(stages, group),
+  );
+  assert.equal(new Set(selected.map(([task]) => task)).size, stages.length);
+  assert.equal(selected.length, stages.length);
+  assert.throws(() => selectValidationStages(stages, "typo"), /Unknown validation group/);
+  assert.throws(() => selectValidationStages([...stages, ["new-check", []]]), /exactly one/);
+  assert.throws(() => selectValidationStages(stages.slice(1)), /exactly one/);
+  assert.deepEqual(
+    selectValidationStages(stages, "build").map(([task]) => task),
+    ["build"],
+  );
+  assert.deepEqual(
+    selectValidationStages(stages, "typecheck-test").map(([task]) => task),
+    ["typecheck+test"],
+  );
 });

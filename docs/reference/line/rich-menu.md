@@ -36,4 +36,4 @@ Publication 不建立 `.artifacts/rich-menu*.json`，Rich Menu ID 只在單次 p
 - 現行選單不使用 `richmenuswitch`；URI 不授予 module role。
 - LINE group、chat 或 Rich Menu context 不等於 TeamMembership、Project membership 或任何管理權限。
 - 尚未有資料來源、角色或正式操作契約的項目，不以 Rich Menu 入口宣稱能力完成。
-- `publish` 是外部 mutation，不納入一般 `pnpm check`／`pnpm validate`，也不因 merge、push、build 或本地測試成功自動取得發布授權；必須由 successful current-`main` Validate 觸發的 GitHub Release，經 planner 與 exact-SHA current-main evidence 明確授權。
+- `publish` 是外部 mutation，不納入一般 `pnpm check`／`pnpm validate`，也不因 merge、push、build 或本地測試成功自動取得發布授權；必須由 current-`main` push 的 GitHub Release，經 successful same-SHA Validate、planner 與 exact-SHA current-main evidence 明確授權。

@@ -26,6 +26,53 @@ test("release evidence title accepts only exact Release SHA", () => {
   assert.equal(releaseSha(`Other ${PREVIOUS}`), null);
 });
 
+test("successful owner jobs advance independently while other jobs in the Release still run", async () => {
+  const plan = await planRelease({
+    sha: SHA,
+    repository: "963sup/Line_Bot_v1",
+    token: "token",
+    fetchImpl: async (url) => {
+      const parsed = new URL(url);
+      if (parsed.pathname.endsWith("/branches/main")) return json({ commit: { sha: SHA } });
+      if (parsed.pathname.endsWith("/workflows/release.yml/runs")) {
+        // Model the API filters: a completed-only or workflow_run-only query loses this evidence.
+        const visible = !parsed.searchParams.has("status") && !parsed.searchParams.has("event");
+        return json({
+          workflow_runs: visible
+            ? [
+                {
+                  id: 10,
+                  display_title: `Release ${PREVIOUS}`,
+                  event: "push",
+                  status: "in_progress",
+                },
+              ]
+            : [],
+        });
+      }
+      if (parsed.pathname.endsWith("/runs/10/jobs"))
+        return json({
+          jobs: [
+            { name: "rich_menu", conclusion: "success" },
+            { name: "supabase", conclusion: null },
+          ],
+        });
+      throw new Error(`Unexpected URL: ${url}`);
+    },
+    git: {
+      hasCommit: () => true,
+      isAncestor: () => true,
+      changedFiles: (baseline) =>
+        baseline ? [] : ["assets/line/rich-menu/menu.png", "supabase/schemas/200_enterprises.sql"],
+    },
+    turbo: { webBuildAffected: () => false },
+  });
+  assert.equal(plan.baselines.rich_menu, PREVIOUS);
+  assert.equal(plan.rich_menu_changed, false);
+  assert.equal(plan.baselines.supabase, null);
+  assert.equal(plan.schema_changed, true);
+});
+
 test("release source classifiers preserve owner boundaries", () => {
   assert.equal(schemaChanged(["supabase/schemas/200_enterprises.sql"]), true);
   assert.equal(schemaChanged(["scripts/supabase/remote.mjs"]), false);
