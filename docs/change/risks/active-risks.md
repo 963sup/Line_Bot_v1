@@ -24,7 +24,7 @@ DailyCheckIn/Attendance V1 source key、receipt fingerprint/result、Ledger hist
 
 Risk 必須落到 architecture/security guard、constraint/transaction、negative/concurrency/recovery tests；已消除項移除，長期 invariant 回 canonical owner。
 
-- [Account ADR](../010-decisions/070-account-identity-design.md)
-- [Migration](../030-migrations/040-enterprise-organization-workforce-payroll.md)
-- [Gaps](../040-gaps/README.md)
-- [Acceptance](../060-acceptance/README.md)
+- [Account ADR](../decisions/account-identity-design.md)
+- [Migration](../migrations/enterprise-organization-workforce-payroll.md)
+- [Gaps](../gaps/README.md)
+- [Acceptance](../evidence/README.md)
