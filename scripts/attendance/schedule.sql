@@ -20,8 +20,7 @@ SELECT cron.schedule('attendance-maintenance', '* * * * *', $job$
   )
   WHERE EXISTS (
     SELECT 1 FROM app_private.attendance_menu_outbox
-    WHERE revision > synced_revision
-      AND available_at <= extract(epoch FROM clock_timestamp()) * 1000
+    WHERE available_at <= extract(epoch FROM clock_timestamp()) * 1000
       AND (lease_until IS NULL OR lease_until < extract(epoch FROM clock_timestamp()) * 1000)
   ) OR EXISTS (
     SELECT 1 FROM app_private.attendance_notification_outbox
