@@ -1,4 +1,4 @@
-import type { ProjectOwnerKind } from "../domain/index.js";
+import type { ProjectOwnerKind } from "../domain/entities/project.js";
 
 export type ProjectSummary = Readonly<{
   id: string;
