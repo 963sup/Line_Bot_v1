@@ -74,4 +74,4 @@ Cross-owner mechanism 只允許：
 
 ## Validation
 
-`pnpm architecture` 驗證 schema files 與 `data-topology.json` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Remote Supabase convergence 另由 `schema:remote plan/sync/verify` 與 provider readback證明，不能由 local file存在推定。
+`pnpm architecture` 驗證 schema files 與 `data-topology.json` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由 current `main` 的 GitHub Actions Release 執行；`schema:remote plan/verify` 與 provider readback證明 remote result，不能由 local file 存在推定。
