@@ -745,7 +745,7 @@ test("reviewer cannot gain write access", (t) => {
   const { root, write } = fixture(t);
   write(
     ".codex/agents/reviewer.toml",
-    'name="change-reviewer"\ndescription="review"\ndeveloper_instructions="review only"\nsandbox_mode="workspace-write"\n',
+    'name="diff-reviewer"\ndescription="review"\ndeveloper_instructions="review only"\nsandbox_mode="workspace-write"\n',
   );
   rejects(root, "read-only");
 });
