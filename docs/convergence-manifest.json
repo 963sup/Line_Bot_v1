@@ -190,6 +190,41 @@
         "docs/facts/sources-of-truth.md": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6"
       }
     },
+    "apps/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 2596,
+      "maxBytes": 2596,
+      "contentBlob": "709d00f7c706bfe382a2f35b0ca267c459155524",
+      "sources": {
+        "architecture/semantic-benchmark.json": "497865106d44ca774c261b9744949fbe2e5f4451",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "architecture/implementation-topology.json": "b8ef19807ac196e0d1504607209270ed1e08a11b",
+        "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97"
+      }
+    },
+    "apps/web/src/app/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 3010,
+      "maxBytes": 3010,
+      "contentBlob": "5d42de6b1169b1546709803b2e340300e22edbf7",
+      "sources": {
+        "apps/AGENTS.md": "709d00f7c706bfe382a2f35b0ca267c459155524",
+        "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97",
+        "docs/rules/dependency-boundaries.md": "0d1b87c25a90895f1e7ac227b9b64c15d6e38b4a"
+      }
+    },
+    "architecture/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1847,
+      "maxBytes": 1847,
+      "contentBlob": "93b2af1fb290831eff03bd4e747cd485260c6ac6",
+      "sources": {
+        "architecture/semantic-benchmark.json": "497865106d44ca774c261b9744949fbe2e5f4451",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "architecture/implementation-topology.json": "b8ef19807ac196e0d1504607209270ed1e08a11b",
+        "architecture/data-topology.json": "d8065437794243ca312d94bd35eb74452e880811"
+      }
+    },
     "docs/AGENTS.md": {
       "outcome": "keep",
       "baselineBytes": 1028,
@@ -205,6 +240,15 @@
       "maxBytes": 1200,
       "contentBlob": "4ecb5cd9f175ec21fd4095dc3d6c003a05a711b6",
       "sources": {}
+    },
+    "docs/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1864,
+      "maxBytes": 1864,
+      "contentBlob": "da0ad702eb2fe64c93f0a4f7777f7e1c2d3da89f",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
     },
     "docs/rules/validation-evidence.md": {
       "outcome": "keep",
@@ -223,6 +267,17 @@
       "contentBlob": "9cda59936f2f88bcadb2de7187b0164cbcdf53ca",
       "sources": {
         "docs/owners/account.md": "75654cd2b32a3a6669bfca1e0e1cab51e4ab04ee"
+      }
+    },
+    "packages/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 3075,
+      "maxBytes": 3075,
+      "contentBlob": "e96b13735e74d7330ef9f0ec3b9b74b05cb89",
+      "sources": {
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "architecture/implementation-topology.json": "b8ef19807ac196e0d1504607209270ed1e08a11b",
+        "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92"
       }
     },
     "packages/asset/AGENTS.md": {
@@ -367,6 +422,16 @@
       "contentBlob": "ba95d3bb535411bd1a12397f94eedf3667735b61",
       "sources": {
         "docs/owners/wallet.md": "d2cf4776583100cb2ad486633f602ea6813ba35a"
+      }
+    },
+    "README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1127,
+      "maxBytes": 1127,
+      "contentBlob": "88def45234f078b70ccbd6af67f8655e3a52bbb8",
+      "sources": {
+        "package.json": "259e6f8825d149e1e0a7ae4ae3be87c221b35000",
+        "docs/README.md": "da0ad702eb2fe64c93f0a4f7777f7e1c2d3da89f"
       }
     },
     "scripts/docs/AGENTS.md": {
