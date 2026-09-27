@@ -64,12 +64,9 @@ test("canonical destinations retain only validated business intent after LIFF in
     entryDestination(
       base + "?membership=1&google=link&access_token=secret&returnUrl=https://evil.test#token",
     ),
-    "/settings?google=link",
+    "/profile",
   );
-  assert.equal(
-    entryDestination(base + "membership?google=link", "membership"),
-    "/settings?google=link",
-  );
+  assert.equal(entryDestination(base + "membership?google=link", "membership"), "/profile");
   assert.equal(
     entryDestination(base + "?expense=12345678-1234-1234-1234-123456789abc&code=secret"),
     "/expenses?expense=12345678-1234-1234-1234-123456789abc",
@@ -149,7 +146,7 @@ test("legacy expense endpoint resolves menu intents and never opens an unspecifi
   }
   for (const [intent, target] of [
     ["repositories=1", "/repositories"],
-    ["membership=1", "/settings"],
+    ["membership=1", "/profile"],
     ["profile=1", "/profile"],
     ["notifications=1&notificationView=unread", "/notifications?notificationView=unread"],
     ["clockIn=1", "/attendance/clock-in"],
@@ -190,8 +187,5 @@ test("resource continuation keeps notification IDs but normalizes legacy Reposit
     ),
     "/repositories",
   );
-  assert.equal(
-    entryDestination(`https://example.com/repositories/${id}?membership=1`),
-    "/settings",
-  );
+  assert.equal(entryDestination(`https://example.com/repositories/${id}?membership=1`), "/profile");
 });

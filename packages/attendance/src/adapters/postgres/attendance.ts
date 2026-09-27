@@ -268,7 +268,7 @@ export class PostgresAttendanceStore implements AttendanceStore {
         await sql.query(
           `SELECT o.*,i.subject FROM attendance_menu_outbox o
     JOIN attendance_identity_bindings i ON i.user_id=o.uid AND i.provider=$2
-    WHERE o.revision>o.synced_revision AND o.available_at<=$1
+    WHERE o.available_at<=$1
       AND (o.lease_until IS NULL OR o.lease_until<$1)
       AND (i.auth_user_id IS NULL OR attendance_account_active(i.auth_user_id,$1::bigint))
       AND ($3::text IS NULL OR i.subject=$3) ORDER BY o.available_at LIMIT 1 FOR UPDATE OF o SKIP LOCKED`,
@@ -308,6 +308,7 @@ export class PostgresAttendanceStore implements AttendanceStore {
       }
       const current = Number(r.revision) === job.revision;
       const delay = Math.min(3600000, 1000 * 2 ** Math.min(Number(r.attempts), 12));
+      const verificationInterval = 5 * 60 * 1000;
       await sql.query(
         `UPDATE attendance_menu_outbox SET synced_revision=$3,lease_token=NULL,lease_until=NULL,
     attempts=$4,available_at=$5 WHERE uid=$1 AND lease_token=$2`,
@@ -316,7 +317,7 @@ export class PostgresAttendanceStore implements AttendanceStore {
           job.token,
           success && current ? job.revision : r.synced_revision,
           success ? 0 : Number(r.attempts) + 1,
-          success || !current ? now : now + delay,
+          success && current ? now + verificationInterval : !current ? now : now + delay,
         ],
       );
       return success && current;

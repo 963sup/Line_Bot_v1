@@ -14,7 +14,7 @@ test("every published operation survives LINE login and resolves to the canonica
     repositories: "/repositories",
     partners: "/partners",
     feedback: "/feedback",
-    membership: "/settings",
+    membership: "/profile",
     profile: "/profile",
     records: "/history",
     register: "/membership/register",

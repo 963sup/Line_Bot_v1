@@ -2,7 +2,7 @@
 
 ## 現行結構
 
-主選單中央提供出勤操作，外圈提供 Repository、異常通報、表單作業、團隊協作、個人、通知等入口。current `profile` intent 解析到 authenticated `/profile` viewer hub；既有 `membership` intent 只作相容 protocol 名稱並仍解析到 `/settings`，不再作 Rich Menu 個人入口。`/profile` 不建立第二套 User identity；canonical share/public locator 仍是 `/{login}`。
+主選單中央提供出勤操作，外圈提供 Repository、異常通報、表單作業、團隊協作、個人、通知等入口。current `profile` intent 與既有 `membership` protocol alias 都解析到 authenticated `/profile` viewer hub；個人入口只有一個 product destination，不再保留 `/settings` 雙軌。`/profile` 不建立第二套 User identity；canonical share/public locator 仍是 `/{login}`。
 
 原生子選單、外部表單與 Rich Menu switch 只負責 navigation。Rich Menu 的產品入口以 `uri` action 直接指向 source-owned current-stage `miniapp.line.me` permanent URL，加上白名單 intent；不經額外產品 redirect。表單開啟不代表提交成功，也不建立本系統的審批、案件或出勤結果。
 
@@ -21,7 +21,7 @@
 
 Rich Menu 目前區分 `attendance-in` 與 `attendance-out` 主狀態及其對應子選單版本。中央按鈕帶 `clock-in`／`clock-out` intent 進入出勤流程。後端 Attendance state 才是 authority；過時 menu 不得反轉操作；menu sync／notification failure 不回滾合法完成的出勤交易。
 
-個人綁定優先於 default，但它屬於 Attendance runtime responsibility，不是 Rich Menu publication responsibility。Rich Menu publication 只證明 LINE menu definition／alias／default；既有個人 binding 的重新同步由 Attendance flow 在使用者操作或 maintenance 時處理。
+個人綁定優先於 default，但它屬於 Attendance runtime responsibility，不是 Rich Menu publication responsibility。Rich Menu publication只證明 LINE menu definition／alias／default；Attendance maintenance 會週期性比較目前 alias target 與 per-user binding，只有不一致時才重新 link，再以 provider readback 驗證。如此 Rich Menu 換版後，既有 per-user binding 也會由同一 reconciliation loop 收斂。
 
 ## Alias
 
