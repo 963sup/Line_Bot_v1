@@ -73,9 +73,9 @@ Nested Team／permission inheritance、team-derived grant、EnterpriseTeam auto-
 
 ## Canonical routing
 
-- [Account current rules](../../010-domain-owners/010-account.md)
-- [Domain target](../020-proposals/010-domain-target.md)
-- [Organization](../../010-domain-owners/030-organization.md) · [Team](../../010-domain-owners/070-team.md)
-- [Target authorization](../../090-governance/020-proposals/040-security-target.md)
-- [Target data model](../../090-governance/020-proposals/030-data-target.md)
-- [Migration plan](../030-migrations/040-enterprise-organization-workforce-payroll.md)
+- [Account current rules](../../owners/account.md)
+- [Domain target](../proposals/domain-target.md)
+- [Organization](../../owners/organization.md) · [Team](../../owners/team.md)
+- [Target authorization](../proposals/security-target.md)
+- [Target data model](../proposals/data-target.md)
+- [Migration plan](../migrations/enterprise-organization-workforce-payroll.md)
