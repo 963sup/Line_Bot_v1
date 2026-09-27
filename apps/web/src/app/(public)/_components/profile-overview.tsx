@@ -71,14 +71,14 @@ export default function ProfileOverview({
   profileBio,
   profileLogin,
   profileTitle,
-  repositoryCount,
+  publicRepositoryCount,
   token,
 }: {
   children: ReactNode;
   profileBio?: string | null;
   profileLogin: string;
   profileTitle: string;
-  repositoryCount?: number;
+  publicRepositoryCount?: number;
   token?: string;
 }) {
   const [provider, setProvider] = useState<Loadable<ProviderProfile>>({ state: "idle" });
@@ -141,7 +141,7 @@ export default function ProfileOverview({
       href: "/repositories",
       kind: "repositories",
       label: "Repositories",
-      count: repositoryCount,
+      count: publicRepositoryCount,
     },
     { href: "/organizations", kind: "organizations", label: "Organizations" },
     { href: "/stars", kind: "starred", label: "Starred" },
