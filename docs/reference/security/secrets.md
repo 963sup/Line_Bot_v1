@@ -36,4 +36,4 @@ Secret 名稱與載入規則由 engineering environment 文件管理；實際值
 
 Credential rotation 要確認 consumer、deployment order、readback 與 rollback/forward-repair。外部操作結果未知時先核對 provider state，不因 credential error 無限重試。
 
-Platform-specific credential 契約由 [Platform](../030-platform/README.md) 擁有，operations change control 由 [External change control](../070-operations/050-external-change-control.md) 擁有。
+Platform-specific credential 契約由 [Platform](../README.md) 擁有，operations change control 由 [External change control](../../rules/external-effects.md) 擁有。
