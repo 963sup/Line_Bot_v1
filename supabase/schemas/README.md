@@ -66,10 +66,10 @@ Cross-owner mechanism 只允許：
 | Need | Owner |
 | --- | --- |
 | Exact relation → owner → file mapping | [Data topology](../../architecture/data-topology.json) |
-| DDL / schema design semantics | [Schema model](../../docs/040-data/030-schema-model.md) |
-| Cross-owner Data Boundary | [Data boundary](../../docs/040-data/010-data-boundary-model.md) |
-| Owner business semantics | [Domain owners](../../docs/010-domain-owners/README.md) |
-| Remote Supabase operation | [Supabase platform](../../docs/030-platform/020-supabase.md) |
+| DDL / schema design semantics | [Schema model](../../docs/reference/data/schema.md) |
+| Cross-owner Data Boundary | [Data boundary](../../docs/reference/data/boundaries.md) |
+| Owner business semantics | [Domain owners](../../docs/owners/README.md) |
+| Remote Supabase operation | [Supabase platform](../../docs/reference/platform/supabase.md) |
 | Local schema change constraints | [AGENTS](AGENTS.md) |
 
 ## Validation
