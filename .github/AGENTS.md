@@ -1,45 +1,31 @@
 # GitHub integration scope
-Release semantics 見 [Release](../docs/reference/operations/release.md)；Supabase provider semantics 見 [Supabase](../docs/reference/platform/supabase.md)；Vercel provider semantics 見 [Vercel](../docs/reference/platform/vercel.md)。
-## Ownership
-- `.github/` 只擁有 GitHub integration：workflow trigger、permissions、concurrency、checkout/setup、job dependency wiring、affected-source routing contract、GitHub evidence、secret injection boundary、artifact wiring 與 repository collaboration metadata。
-- `.github/` 不擁有產品 Domain rule、provider transaction semantics、schema reconciliation algorithm、deployment recovery、LINE publication transaction 或其他可由 owner-local test驗證的 implementation。
-- Workflow/job 名稱不是 ownership evidence；跨 provider dependency 必須能對應到真實 consumer contract，不能因為同一 Release event 就建立順序。
-## Thin workflow rule
-Workflow 是 adapter，不是 implementation module。YAML 允許：
 
-- trigger / permission / concurrency
-- checkout / runtime setup
-- job `needs` / `if` wiring
-- minimal secret injection
-- canonical command invocation
-- artifact upload / GitHub-native evidence plumbing
+Release semantics見 [Release](../docs/reference/operations/release.md)；provider semantics見 [Supabase](../docs/reference/platform/supabase.md) 與 [Vercel](../docs/reference/platform/vercel.md)。
 
-Workflow 不應內嵌可獨立測試的：
+## Owner / boundary
 
-- 多步 Git history traversal
-- baseline selection algorithm
-- changed-file classification
-- path-policy routing
-- complex parsing / loops / branching
-- provider-specific reconciliation / recovery
-- business or authorization policy
+- `.github/` 只擁有 GitHub trigger、permissions、concurrency、checkout/setup、job dependency/routing、secret injection boundary、artifact與 GitHub evidence。
+- Workflow/job 名稱不建立 owner；產品規則、schema/deployment/recovery、LINE publication與其他 owner-local implementation 留在真正 owner。
+- 跨 provider dependency 必須來自 consumer contract，不因同一 Release event 建立順序。
 
-若上述 logic 出現，先確認真正 Owner 與 Source of Truth，再由 workflow 呼叫該 owner 的 canonical executable entrypoint；不得只把 Bash 原封不動搬到新 wrapper。
+## Thin workflow
 
-Trivial fail-closed assertion（例如 exact SHA 仍為 current `main`）可保留在 workflow，前提是它不形成第二套 policy truth；若相同 assertion已有 canonical owner command，優先呼叫 owner command。
-## Release
-- `validate.yml` 只做 repository validation；`release.yml` 只在 successful same-repository current-`main` validation 後編排 external convergence。
-- Affected-source routing 的 policy authority 在 GitHub integration；若 routing algorithm 已超過 thin adapter responsibility，executable implementation 必須移到經 evidence 證明的 operation owner，workflow只消費其 machine-readable result。
-- Supabase 每個 validated `main` 都先執行 `schema:remote repair`；affected `supabase/schemas/*.sql` → plain `schema:remote sync`；schema unchanged → `schema:remote verify`。Production mutation 只由 GitHub Actions Release授權，且 migration history fingerprint before/after 必須完全相同。
-- Web deployment 只在 `@line_bot_v1/web#build` 真正受 pending runtime changes 影響時執行。Vercel Production若依賴 current database contract，可保留 Supabase convergence edge；此 edge必須由 consumer dependency證明，不是 global publication order。
-- Attendance scheduler 是獨立 operational desired state：只由 canonical `pnpm attendance:scheduler reconcile` 收斂；一定等待 Supabase，且 pending Web runtime 時等待 exact-SHA Vercel Production。缺 worker credential、target/readback 不一致一律 fail closed，不在 workflow 內重寫 cron/Vault logic。
-- Rich Menu publication cursor 獨立於 Supabase/Vercel。Publication-only change直接 publish；只有同一 pending change需要新 Web runtime時才等待 exact SHA Vercel deployment。
-- Rich Menu definition / desired state / publication transaction 的真正 owner 維持在 Web Rich Menu module；`scripts/line/rich-menu/sync.ts` 只是 CLI execution adapter。
-- Vercel provider mutation前仍需 exact target、exact SHA、active Release authorization 與 readback；provider semantics由 Vercel operation owner維護，不在 YAML重寫。
+YAML 只保留 trigger/permission/concurrency、setup、`needs`/`if`、最小 secret injection、canonical command與 GitHub-native evidence plumbing。Baseline selection、changed-file classification、provider reconciliation/recovery、loops/complex parsing與 business/auth policy 必須在可測試 owner command；已有 canonical assertion 時 workflow 不重寫。
+
+## Release invariants
+
+- `validate.yml` 只做 repository validation；`release.yml` 只在 successful same-repository current-`main` validation 後收斂 external state。
+- Supabase：每個 validated `main` 先 `schema:remote repair`；schema changed → `sync`，unchanged → `verify`；remote mutation只允許 validated-main Release，migration history before/after不變。
+- Web：只有 `@line_bot_v1/web#build` pending runtime change才部署；需要 database contract時保留 Supabase edge。
+- Attendance scheduler：只由 `pnpm attendance:scheduler reconcile` 收斂；等待 Supabase，pending Web runtime時再等待 exact-SHA Vercel。缺 worker credential、target/readback不一致均 fail closed；YAML不重寫 cron/Vault logic。
+- Rich Menu cursor獨立於 Supabase/Vercel；publication-only change直接 publish，只有需要新 Web runtime才等待 exact-SHA deployment。Definition/publication transaction仍由 Web Rich Menu module擁有。
+- Vercel mutation前需要 exact target/SHA、active Release authorization與 provider readback。
+- 每個 external mutation前保留 current-main / exact-SHA guard。
+
 ## Security / evidence
-- Validation workflow維持 read-only、secret-free、credential-free。External mutation secret只放實際需要的最小 step `env`；checkout不 persist credentials。
-- Artifact只保存該 run 的操作 evidence，不成為 acceptance index 或 business truth。
-- 每個 external mutation前的 current-main / exact-SHA防護屬 Essential Complexity；可收斂 implementation，但不可刪除 invariant。
-- Workflow只因 trigger／permission／external-effect boundary不同而拆分；只有真實多 consumer且 input/permission contract一致才抽 reusable workflow。
+
+Validation維持 read-only、secret-free、credential-free。External secret只注入需要它的 step；checkout不 persist credentials。Artifact只保存該 run evidence，不成 acceptance/business truth；owner success不可冒充其他 owner或 device/business acceptance。
+
 ## Validation
-修改 workflow後跑 `tooling:check` 與相關 owner tests。Tooling guard只應驗 GitHub integration boundary與 canonical command wiring；owner behavior由 owner-local tests驗，不在 `check-tooling` 複製第二套 implementation truth。
+
+Workflow change跑 `tooling:check` 與相關 owner tests；GitHub guard只驗 integration boundary/canonical wiring，owner behavior由 owner-local tests驗。
