@@ -96,7 +96,7 @@ Current commands：
 - `plan`：由 clean-local desired state比較 exact remote，產生 plan與 fingerprint；`noop / routine / sensitive`只作診斷。
 - `sync`：對完整 generated diff做 bounded transaction apply，然後要求 second diff = 0與 ownership/security readback PASS。
 - `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。
-- `prepare`／`recovery`／`sync --reviewed-plan`：只供需要 explicit business metadata或額外 recovery authorization的 data-cutover contract，不是一般 schema publication gate。
+- Business identity/data 不由 Supabase reconciliation 補值；需要 owner confirmation 的資料修正必須走 owning domain command。Schema publication 只接受 validated `main` 的 `supabase/schemas/*.sql` desired state，經 Release 呼叫 plain `schema:remote sync` 收斂 remote。
 
 所有 repository-owned remote mutation共用 PostgreSQL advisory lock；GitHub automatic與 manual jobs另共享同一 production resource concurrency。任一 remote write都必須保存必要 plan/readback evidence。
 

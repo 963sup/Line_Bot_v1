@@ -314,3 +314,59 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
   assert.ok(lifecycleUpdate < receiptInsert);
   assert.ok(receiptInsert < auditInsert);
 });
+
+test("legacy Enterprise identity completion is owner-authorized, versioned, replay-safe, and one-time", async () => {
+  const queries: QueryRecord[] = [];
+  const command: EnterpriseCommand = {
+    action: "complete-enterprise-identity",
+    requestId: "11111111-1111-4111-8111-111111111111",
+    enterpriseAccountId: "enterprise-1",
+    name: "Acme Enterprise",
+    slug: "acme-enterprise",
+    expectedVersion: 1,
+    reason: "owner confirms legacy identity",
+  };
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
+      return {
+        rows: [
+          {
+            account_id: "enterprise-1",
+            name: null,
+            slug: null,
+            status: "active",
+            version: 1,
+          },
+        ],
+      };
+    }
+    if (
+      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("identity_access_enterprise_scopes")
+    ) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (text.includes("UPDATE enterprises")) return { rows: [{ version: 2 }] };
+    if (text.includes("INSERT INTO governance_command_receipts")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
+    throw new Error(`unexpected query: ${text}`);
+  }, queries);
+  const governance = new PostgresEnterpriseGovernance(db);
+
+  const receipt = await governance.execute(actor, command, 100);
+
+  assert.equal(receipt.action, "complete-enterprise-identity");
+  assert.equal(receipt.version, 2);
+  assert.ok(queryIndex(queries, "FROM enterprise_role_assignments") >= 0);
+  assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
+  assert.deepEqual(queries.find((query) => query.text.includes("UPDATE enterprises"))?.values, [
+    "enterprise-1",
+    "Acme Enterprise",
+    "acme-enterprise",
+  ]);
+  assert.ok(queryIndex(queries, "INSERT INTO governance_command_receipts") >= 0);
+  assert.ok(queryIndex(queries, "INSERT INTO governance_audit_events") >= 0);
+});

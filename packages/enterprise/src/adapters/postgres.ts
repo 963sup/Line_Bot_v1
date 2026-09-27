@@ -37,7 +37,7 @@ import {
 async function lockEnterprise(sql: Sql, id: string) {
   const row = (
     await sql.query(
-      "SELECT account_id,status,version FROM enterprises WHERE account_id=$1 FOR UPDATE",
+      "SELECT account_id,name,slug,status,version FROM enterprises WHERE account_id=$1 FOR UPDATE",
       [id],
     )
   ).rows[0];
@@ -138,6 +138,76 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
       }
 
       const enterprise = await lockEnterprise(sql, command.enterpriseAccountId);
+
+      if (command.action === "complete-enterprise-identity") {
+        await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
+        const replay = await readGovernanceReplay(
+          sql,
+          principal.userId,
+          command.requestId,
+          fingerprint,
+        );
+        if (replay) return replay;
+        if (enterprise.version !== command.expectedVersion) {
+          throw new GovernanceAccessError(409, "conflict", "Enterprise 版本已更新。");
+        }
+        if (enterprise.name !== null || enterprise.slug !== null) {
+          throw new GovernanceAccessError(
+            409,
+            "invalid-transition",
+            "Enterprise identity 已完成，不能再次以 recovery command 修改。",
+          );
+        }
+        let changed: Record<string, unknown> | undefined;
+        try {
+          changed = (
+            await sql.query(
+              `UPDATE enterprises
+               SET name=$2,slug=$3,version=version+1
+               WHERE account_id=$1 AND name IS NULL AND slug IS NULL
+               RETURNING version`,
+              [command.enterpriseAccountId, command.name, command.slug],
+            )
+          ).rows[0];
+        } catch (error) {
+          if ((error as { code?: string }).code === "23505") {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise slug 已被使用。");
+          }
+          throw error;
+        }
+        if (!changed) {
+          throw new GovernanceAccessError(
+            409,
+            "conflict",
+            "Enterprise identity 已被其他操作完成，請重新載入。",
+          );
+        }
+        const result: EnterpriseReceipt = {
+          requestId: command.requestId,
+          action: command.action,
+          scopeId: command.enterpriseAccountId,
+          subjectKind: null,
+          subjectId: null,
+          status: enterprise.status,
+          version: Number(changed.version),
+          at: now,
+        };
+        await recordGovernanceResult(sql, {
+          actorUserId: principal.userId,
+          actorStatusVersion: principal.userStatusVersion,
+          requestId: command.requestId,
+          fingerprint,
+          action: command.action,
+          scopeKind: "enterprise",
+          scopeId: command.enterpriseAccountId,
+          subjectKind: null,
+          subjectId: null,
+          reason: command.reason,
+          at: now,
+          result,
+        });
+        return result;
+      }
 
       let organization: { id: string; status: "active" | "inactive"; version: number } | null =
         null;

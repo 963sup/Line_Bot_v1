@@ -123,7 +123,9 @@ test("Enterprise, Team, and Repository locators preserve their owner-local uniqu
     },
   );
 
-  assert.match(readRepoFile("supabase/schemas/200_enterprises.sql"), /slug text not null unique/);
+  const enterpriseSchema = readRepoFile("supabase/schemas/200_enterprises.sql");
+  assert.match(enterpriseSchema, /slug text unique/);
+  assert.match(enterpriseSchema, /enterprises_identity_completeness_check/);
   assert.match(
     readRepoFile("supabase/schemas/400_teams.sql"),
     /create unique index teams_organization_slug\s+on app_private\.teams\(organization_account_id, slug\);/,

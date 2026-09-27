@@ -106,6 +106,37 @@ function parseEnterpriseCommand(raw: unknown): EnterpriseCommand {
     }
   }
   const enterpriseAccountId = parseId(base.enterpriseAccountId, "Enterprise");
+  if (base.action === "complete-enterprise-identity") {
+    requireExactGovernanceKeys(base, [
+      "action",
+      "requestId",
+      "enterpriseAccountId",
+      "slug",
+      "name",
+      "expectedVersion",
+      "reason",
+    ]);
+    if (
+      typeof base.slug !== "string" ||
+      typeof base.name !== "string" ||
+      !base.name.trim() ||
+      base.name.trim().length > 120
+    ) {
+      throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 或 name 不正確。");
+    }
+    try {
+      return {
+        ...evidence,
+        action: base.action,
+        enterpriseAccountId,
+        slug: normalizeEnterpriseSlug(base.slug),
+        name: base.name.trim(),
+        expectedVersion: parseVersion(base.expectedVersion, "Enterprise"),
+      };
+    } catch {
+      throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 不正確。");
+    }
+  }
   if (base.action === "deactivate" || base.action === "reactivate") {
     requireExactGovernanceKeys(base, [
       "action",

@@ -27,9 +27,6 @@ pnpm schema:remote plan
 pnpm schema:remote sync
 pnpm schema:remote verify
 pnpm schema:remote verify --api
-
-pnpm schema:remote prepare
-pnpm schema:remote recovery
 ```
 
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
