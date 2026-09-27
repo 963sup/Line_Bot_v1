@@ -32,4 +32,4 @@ Member identity、ledger、attendance facts、command receipts、audit、version
 
 AI draft、cache、projection、export 與 external copy 都是衍生資料，不會因來源仍存在就自動取得永久保存權。Source version / authorization 改變時，舊衍生資料是否可繼續使用要由 owner contract 決定。
 
-Security data boundaries：[Scope and data isolation](../050-security/040-scope-and-data-isolation.md)；backup/recovery：[Recovery](../070-operations/030-recovery.md)。
+Security data boundaries：[Scope and data isolation](../security/data-isolation.md)；backup/recovery：[Recovery](../operations/recovery.md)。
