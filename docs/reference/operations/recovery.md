@@ -39,12 +39,12 @@ Current schema publication不以 migration history作 rollback機制，也不改
 3. 已產生新資料或已完成不可逆 business transform時，優先停止 writer並向前修復；只有在明確停機、備份與授權下才執行受控 restore。
 4. Recovery完成後重新由 current declarative schemas驗證 desired/current parity；不得以重播舊 migration history取代 current reconciliation。
 
-Schema publication ordering見 [Release](020-release.md)；Supabase recovery/readback mechanism見 [Supabase](../030-platform/020-supabase.md)。
+Schema publication ordering見 [Release](release.md)；Supabase recovery/readback mechanism見 [Supabase](../platform/supabase.md)。
 
 ## External state
 
-Database recovery不自動恢復 LINE Rich Menu、webhook、scheduler、Google/Supabase console等外部狀態；外部平台狀態由 [External change control](050-external-change-control.md)逐項 readback。
+Database recovery不自動恢復 LINE Rich Menu、webhook、scheduler、Google/Supabase console等外部狀態；外部平台狀態由 [External change control](../../rules/external-effects.md)逐項 readback。
 
 ## Validation
 
-Recovery只有在 restore／forward-fix後重新驗證 authorization、isolation、replay、version、停權／撤權與必要 end-to-end flow後才算完成。具日期 evidence歸 [Acceptance](../090-governance/060-acceptance/README.md)。
+Recovery只有在 restore／forward-fix後重新驗證 authorization、isolation、replay、version、停權／撤權與必要 end-to-end flow後才算完成。具日期 evidence歸 [Acceptance](../../change/evidence/README.md)。
