@@ -326,6 +326,49 @@ export default function EnterprisePanel({
             使用停用／重新啟用管理生命週期；本人可退出。
           </p>
 
+          {detail.actorIsOwner && detail.name === null && detail.slug === null && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const data = new FormData(event.currentTarget);
+                void execute({
+                  action: "complete-enterprise-identity",
+                  requestId: crypto.randomUUID(),
+                  enterpriseAccountId: detail.id,
+                  name: String(data.get("name")).trim(),
+                  slug: String(data.get("slug")).trim(),
+                  expectedVersion: detail.version,
+                  reason: "由 EnterpriseOwner 完成 legacy Enterprise identity",
+                });
+              }}
+            >
+              <h3>完成 Enterprise identity</h3>
+              <p>
+                此 Enterprise 建立於 name / slug 成為必要欄位之前。請由 EnterpriseOwner
+                明確設定 display name 與 canonical URL slug；系統不從 LINE 或 provider metadata 推導。
+              </p>
+              <label>
+                Enterprise name
+                <input name="name" maxLength={120} required placeholder="Acme Enterprise" />
+              </label>
+              <label>
+                Enterprise slug
+                <input
+                  name="slug"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  maxLength={39}
+                  pattern="[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+                  required
+                  placeholder="acme-enterprise"
+                />
+              </label>
+              <button disabled={busy || !!pending} type="submit">
+                完成 Enterprise identity
+              </button>
+            </form>
+          )}
+
           {detail.actorInvitationStatus === "pending" && detail.actorAffiliations.length === 0 && (
             <button
               disabled={busy || !!pending}
