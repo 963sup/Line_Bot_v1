@@ -22,10 +22,10 @@ Validation 類型必須分開表述：
 
 目前只保留仍能支援 recovery / regression / release reasoning 的四組 transition evidence：
 
-- [Schema history extraction — 2026-09-13](040-schema-history-extraction.md)
-- [Account expansion extraction — 2026-09-13](050-account-expansion-extraction.md)
-- [Four-model cutover validation — 2026-09-14](060-four-model-cutover-validation.md)
-- [Atomic declarative schema / remote convergence — 2026-09-18](080-atomic-schema-remote-convergence.md)
+- [Schema history extraction — 2026-09-13](schema-history-extraction.md)
+- [Account expansion extraction — 2026-09-13](account-expansion-extraction.md)
+- [Four-model cutover validation — 2026-09-14](four-model-cutover-validation.md)
+- [Atomic declarative schema / remote convergence — 2026-09-18](atomic-schema-remote-convergence.md)
 
 原始舊 baseline、console logs、已退役 provider identifiers 與被後續 acceptance 取代的中間 release snapshot 不保留在 current tree；Git history 已提供追溯能力。
 

@@ -16,6 +16,6 @@ Source 基準為 `30f241afaae425ecdc68f73d2296651adb557dd2`，提取來源為 `6
 
 這只證明當時 Account/User expansion 的 data-preserving transition。它不證明目前 Supabase parity、Vercel deployment、LINE device、Enterprise/Organization/Workforce/Payroll acceptance。
 
-Current Account contract 回 [Account owner](../../010-domain-owners/010-account.md)；current schema 回 `supabase/schemas/`；current remote target 只由 operations/release configuration 與 live readback決定。
+Current Account contract 回 [Account owner](../../owners/account.md)；current schema 回 `supabase/schemas/`；current remote target 只由 operations/release configuration 與 live readback決定。
 
 原始 catalog counts、provider identifiers、row snapshots、DDL hash 與一次性操作細節已從 current tree 蒸餾；需要稽核時由 Git history 取得。

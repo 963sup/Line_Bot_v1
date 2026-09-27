@@ -19,6 +19,6 @@ git show 30f241afaae425ecdc68f73d2296651adb557dd2:supabase/migrations/2026091202
 - Current database structure 只由 `supabase/schemas/` 擁有。
 - `supabase_migrations` history 不是 current schema authority。
 - 本 evidence 不證明 current remote parity、deployment、LINE device 或 business acceptance。
-- 後續 Account expansion 見 [Account expansion evidence](050-account-expansion-extraction.md)。
+- 後續 Account expansion 見 [Account expansion evidence](account-expansion-extraction.md)。
 
 原始逐檔 checksum、catalog counts 與當次 row snapshot 已從 working tree 蒸餾；需要稽核時由 Git history 取得。

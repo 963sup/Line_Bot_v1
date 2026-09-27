@@ -55,15 +55,15 @@ GitHub outside collaborator/resource-level access 尚未有本地 authoritative 
 
 ## Canonical contract routing
 
-- [Organization rules](../../010-domain-owners/030-organization.md)：current lifecycle/invitation/membership source/effective membership/owner/query。
-- [Enterprise rules](../../010-domain-owners/020-enterprise.md)：current EnterpriseTeam、Team membership、Organization assignment 與跨 scope invariant。
-- [Team rules](../../010-domain-owners/070-team.md)：current Organization Team collaboration、TeamMembership/TeamMaintainer；不擁有 Repository access 或 Issue lifecycle。
-- [Target language](../020-proposals/010-domain-target.md)、[Target consistency](../020-proposals/010-domain-target.md)：跨 owner target language/consistency。
-- [Public contracts](../020-proposals/010-domain-target.md)：Workforce/Payroll 等 owner-approved target projection/ports。
-- [Target data](../020-proposals/030-data-target.md)、[Persistence](../020-proposals/030-data-target.md)、[Isolation](../020-proposals/040-security-target.md)：scope/history/cutover。
+- [Organization rules](../../owners/organization.md)：current lifecycle/invitation/membership source/effective membership/owner/query。
+- [Enterprise rules](../../owners/enterprise.md)：current EnterpriseTeam、Team membership、Organization assignment 與跨 scope invariant。
+- [Team rules](../../owners/team.md)：current Organization Team collaboration、TeamMembership/TeamMaintainer；不擁有 Repository access 或 Issue lifecycle。
+- [Target language](../proposals/domain-target.md)、[Target consistency](../proposals/domain-target.md)：跨 owner target language/consistency。
+- [Public contracts](../proposals/domain-target.md)：Workforce/Payroll 等 owner-approved target projection/ports。
+- [Target data](../proposals/data-target.md)、[Persistence](../proposals/data-target.md)、[Isolation](../proposals/security-target.md)：scope/history/cutover。
 
 ## Deferred
 
 建立 Employment 是否要求 active OrganizationMembership、historical resource ownership backfill、outside collaborator/resource access、Bot entry、離職後 self-read 各回真正 owner。Department/job grade/nested Organization Team/generic tenant/plugin framework 不因 Organization exists 預建。
 
-Current source 與未完成項見 [Implementation state](../../rules/system-invariants.md)、[Gaps](../040-gaps/080-enterprise-and-organization.md) 與 [Migration plan](../030-migrations/040-enterprise-organization-workforce-payroll.md)。
+Current source 與未完成項見 [Implementation state](../../rules/system-invariants.md)、[Gaps](../gaps/enterprise-and-organization.md) 與 [Migration plan](../migrations/enterprise-organization-workforce-payroll.md)。

@@ -19,14 +19,14 @@ Organization、Workforce、Attendance、Payroll 的 authority、lifecycle 與歷
 
 - Current User / Organization 可以先獨立演進；Workforce 未完成時不得把 Attendance / Payroll target 宣稱已交付。
 - 不建立 `packages/employment`；只有 W1 有真實 consumer 且獨立 public/dependency boundary 有價值時，才建立 `packages/workforce`。
-- Participation prerequisite、overlap policy、authority、replay/version、calendar/policy source 等尚未定案事項只留在 [Workforce gaps](../040-gaps/060-workforce.md)。
-- 實作順序與 activation/rollback 只由 [Migration plan](../030-migrations/040-enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices) 維護。
+- Participation prerequisite、overlap policy、authority、replay/version、calendar/policy source 等尚未定案事項只留在 [Workforce gaps](../gaps/workforce.md)。
+- 實作順序與 activation/rollback 只由 [Migration plan](../migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices) 維護。
 
 ## Canonical contracts
 
-- [Workforce business rules](../../010-domain-owners/040-workforce.md)
-- [Target language](../020-proposals/010-domain-target.md)
-- [Target consistency boundaries](../020-proposals/010-domain-target.md)
-- [Target public contracts](../020-proposals/010-domain-target.md)
-- [Target persistence](../020-proposals/030-data-target.md)
-- [Target authorization](../020-proposals/040-security-target.md)
+- [Workforce business rules](../../owners/workforce.md)
+- [Target language](../proposals/domain-target.md)
+- [Target consistency boundaries](../proposals/domain-target.md)
+- [Target public contracts](../proposals/domain-target.md)
+- [Target persistence](../proposals/data-target.md)
+- [Target authorization](../proposals/security-target.md)

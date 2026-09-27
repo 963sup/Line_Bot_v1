@@ -73,4 +73,4 @@ EnterpriseTeam current slice 的 schema/runtime 已按同一 vertical slice 完�
 
 SCIM/IdP sync、license/catalog、ruleset bypass、generic policy DSL、跨 Enterprise data sharing 等沒有 current consumer 的能力不預建。GitHub 是 semantic benchmark，不代表一次複製所有 GitHub product features。
 
-正式 current/target 狀態分別由 [Enterprise business rules](../../010-domain-owners/020-enterprise.md)、[Target authorization](../020-proposals/040-security-target.md)、[Target data model](../020-proposals/030-data-target.md) 與 governance acceptance/gaps 文件承接。
+正式 current/target 狀態分別由 [Enterprise business rules](../../owners/enterprise.md)、[Target authorization](../proposals/security-target.md)、[Target data model](../proposals/data-target.md) 與 governance acceptance/gaps 文件承接。

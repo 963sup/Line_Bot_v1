@@ -1,6 +1,6 @@
 # Attendance employment-scope target design
 
-狀態：已選定 target decision，尚未實作Employment cutover。Current Attendance仍是Member-scopedstream；[Account decision](070-account-identity-design.md) 不把它機械改成genericAccount-scopedattendance。
+狀態：已選定 target decision，尚未實作Employment cutover。Current Attendance仍是Member-scopedstream；[Account decision](account-identity-design.md) 不把它機械改成genericAccount-scopedattendance。
 
 ## Decision / purpose
 
@@ -16,13 +16,13 @@ Workforce提供scheduled/applicableversions；Attendance提供actualfacts/correc
 
 ## Canonical contracts
 
-- [Attendance target rules](../../010-domain-owners/050-attendance.md)：state、clock/correction/finalize、self/managementboundary、failure與acceptance。
-- [Workforce](../../010-domain-owners/040-workforce.md)：effectiveEmployment/schedulepolicy。
-- [Consistency](../020-proposals/010-domain-target.md)：stream/periodboundary。
-- [Public contract](../020-proposals/010-domain-target.md)：projection與ports。
-- [Authorization](../020-proposals/040-security-target.md)、[Audit](../020-proposals/040-security-target.md)：actualPrincipal、sensitivecorrection、scope/revoke。
-- [Persistence](../020-proposals/030-data-target.md)：singlewriter、history、receipts與transaction。
-- [Events](../020-proposals/010-domain-target.md)：AttendancePeriodFinalized只在實際consumer需要時部署。
+- [Attendance target rules](../../owners/attendance.md)：state、clock/correction/finalize、self/managementboundary、failure與acceptance。
+- [Workforce](../../owners/workforce.md)：effectiveEmployment/schedulepolicy。
+- [Consistency](../proposals/domain-target.md)：stream/periodboundary。
+- [Public contract](../proposals/domain-target.md)：projection與ports。
+- [Authorization](../proposals/security-target.md)、[Audit](../proposals/security-target.md)：actualPrincipal、sensitivecorrection、scope/revoke。
+- [Persistence](../proposals/data-target.md)：singlewriter、history、receipts與transaction。
+- [Events](../proposals/domain-target.md)：AttendancePeriodFinalized只在實際consumer需要時部署。
 
 ## Remaining activation decisions
 
@@ -34,7 +34,7 @@ Bot不能因AccountKind自行替人clock；delegated入口要獨立use case/cred
 
 先建立可信Employment/Organizationrelation，再切workingstream；legacy/newwriter不得各建一筆session。Same-request/staleversion/unknown-result、並行scope、currentqualification、Workplace、reward、outbox、correction/finalizedversion皆需positive/negative驗證。
 
-[Migration stages](../030-migrations/040-enterprise-organization-workforce-payroll.md) 擁有實作順序與data/recoverygate，不以舊Phase3/4文字當currentplan。沒有實際source/schema/remoteevidence，仍是target。
+[Migration stages](../migrations/enterprise-organization-workforce-payroll.md) 擁有實作順序與data/recoverygate，不以舊Phase3/4文字當currentplan。沒有實際source/schema/remoteevidence，仍是target。
 
 ## Deferred
 
