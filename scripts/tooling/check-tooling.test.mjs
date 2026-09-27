@@ -549,7 +549,10 @@ test("Release routes schema and workflow changes through one reconciliation pass
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("      - run: pnpm install --frozen-lockfile\n\n      - name: Require current main before production deployment", "      - name: Require current main before production deployment"),
+    workflow.replace(
+      "      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n      - run: pnpm install --frozen-lockfile\n\n      - name: Require current main before production deployment",
+      "      - uses: pnpm/action-setup@v6\n        with:\n          run_install: false\n\n      - name: Require current main before production deployment",
+    ),
   );
   rejects(root, "production deployment must install dependencies");
 
