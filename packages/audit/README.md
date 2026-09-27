@@ -4,7 +4,7 @@
 
 - Selected domain target: [Selected domain target](../../docs/090-governance/020-proposals/010-domain-target.md)
 - Selected security/audit target: [Selected security target](../../docs/090-governance/020-proposals/040-security-target.md)
-- Current cross-owner/source-of-truth routing: [Repository map](../../docs/000-core/030-repository-map.md)
+- Current cross-owner/source-of-truth routing: [Repository map](../../docs/facts/sources-of-truth.md)
 - Local change constraints: [AGENTS.md](AGENTS.md)
 - Parent package rules: [../AGENTS.md](../AGENTS.md)
 

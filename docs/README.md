@@ -1,12 +1,30 @@
-# 文件入口
+# Knowledge task router
 
-本目錄以 Agent 的最短決策路徑組織，不按 source tree 重複知識。
+先判斷「現在要完成什麼」，再載入最小 knowledge unit。不要先讀完整 docs tree。
 
-1. 已知任務：先讀 [Change routing](000-core/040-change-routing.md)。
-2. 已知 business owner：直接讀 [Domain owners](010-domain-owners/README.md) 與對應 owner 文件。
-3. 跨 owner、Source of Truth、Boundary 或 dependency 問題：讀 [Repository map](000-core/030-repository-map.md)。
-4. Business semantic / Bounded Context 問題：讀 [Domain map](000-core/020-domain-map.md)；需要外部 GitHub-like evidence 時，再從 [Architecture](../architecture/README.md) 進 machine benchmark 與 pinned upstream source。
-5. implementation/provider/data/security mechanism 只有受影響時才讀 `020–070`。
-6. decision、proposal、migration、gap、risk 或具日期 evidence 才讀 [Governance](090-governance/README.md)。
+| Task | First load | Add only when needed |
+| --- | --- | --- |
+| 修 bug | [bug-fix](tasks/bug-fix.md) + affected owner | affected rule / reference |
+| 修改 API / route | [api-change](tasks/api-change.md) + affected owner | [runtime entrypoints](rules/runtime-entrypoints.md)、authorization |
+| 新增 feature | [feature-change](tasks/feature-change.md) | owner contract + affected cross-cutting rule |
+| 修改 database | [database-change](tasks/database-change.md) + owner | [database writes](rules/database-writes.md) |
+| Authentication / authorization | [auth-change](tasks/auth-change.md) + owner | [request authorization](rules/request-authorization.md) |
+| Debug deployment / remote state | [deployment-debug](tasks/deployment-debug.md) | provider / release / recovery reference |
+| Architecture / boundary change | [architecture-change](tasks/architecture-change.md) | [dependency boundaries](rules/dependency-boundaries.md) + decision |
+| 找 business rule | [business-rule](tasks/business-rule.md) + owner | owner reference only for the relevant flow |
 
-`000-core/` 只保留五個 decision interface：System、Domain Map、Repository Map、Change Routing、Glossary。Current truth 與 target/history 分離；README 與 AGENTS 不建立第二套產品或架構 authority。
+## Progressive disclosure
+
+```text
+Level 0  task router
+   ↓
+Level 1  one owner contract + one relevant rule
+   ↓
+Level 2  task/reference detail only when the decision needs it
+   ↓
+Level 3  proposal / migration / dated evidence / history only for change-over-time questions
+```
+
+Current machine facts先查 [sources of truth](facts/sources-of-truth.md)。跨 Context vocabulary查 [glossary](facts/glossary.md)。系統目的查 [system](facts/system.md)。
+
+Detailed architecture/platform/data/security/engineering/operations docs 是 reference，不是預設上下文。Governance資料只在問題明確涉及 target、migration、gap、risk、acceptance evidence 時載入。

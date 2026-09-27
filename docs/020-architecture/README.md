@@ -9,4 +9,4 @@
 - [Runtime architecture](050-runtime-architecture.md)
 - [Quality attributes](060-quality-attributes.md)
 
-Strategic DDD 先讀 [Core](../000-core/README.md)；business semantics 直接讀 [Domain owners](../010-domain-owners/README.md)。
+Strategic DDD 先讀 [Core](../README.md)；business semantics 直接讀 [Domain owners](../010-domain-owners/README.md)。

@@ -1,6 +1,6 @@
 # Selected domain target
 
-狀態：selected future design，不是 current implementation、schema、remote state、deployment 或 device acceptance。Current truth 回 [Domain owners](../../010-domain-owners/README.md)、[Domain map](../../000-core/020-domain-map.md) 與實際 source/schema/tests。
+狀態：selected future design，不是 current implementation、schema、remote state、deployment 或 device acceptance。Current truth 回 [Domain owners](../../010-domain-owners/README.md)、[Domain map](../../facts/ownership.md) 與實際 source/schema/tests。
 
 ## Target focus
 
@@ -31,7 +31,7 @@ Workforce/Employment、Attendance Employment cutover、versioned Payroll input/r
 - Asset 是 value definition；Wallet 是 holding/balance projection；Ledger 是 append-only value facts，不等於 accounting General Ledger。
 - Assistant/Agent 只能產生 draft/orchestration；模型輸出不是正式 authority。
 - Principal、subject、scope、holder 分開；scope 或 provider identity 不冒充 actor。
-- Accounting、Billing / Charging、Payment、Settlement 的責任定義只由 [Glossary](../../000-core/050-glossary.md) 維護。
+- Accounting、Billing / Charging、Payment、Settlement 的責任定義只由 [Glossary](../../facts/glossary.md) 維護。
 
 ## Target owner deltas
 
@@ -103,7 +103,7 @@ Public contract 不序列化 private Entity/repository，也不因 provider SDK�
 ## Routing
 
 - Current owner：[Domain owners](../../010-domain-owners/README.md)
-- Current relationships：[Repository map](../../000-core/030-repository-map.md)
+- Current relationships：[Repository map](../../facts/sources-of-truth.md)
 - Target data：[Selected data target](030-data-target.md)
 - Target security：[Selected security target](040-security-target.md)
 - Workforce / Attendance / Payroll cutover：[Migration](../030-migrations/040-enterprise-organization-workforce-payroll.md)

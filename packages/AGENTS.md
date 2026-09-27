@@ -19,7 +19,7 @@
 
 ## Invariants
 
-- 純 placement、naming、dependency 或 boundary refactor 必須保持 [Invariant kernel](../docs/000-core/010-system.md) 的 authority、authorization/isolation、concurrency/replay、atomicity/recovery、ownership/dependency 與 evidence semantics。
+- 純 placement、naming、dependency 或 boundary refactor 必須保持 [Invariant kernel](../docs/rules/system-invariants.md) 的 authority、authorization/isolation、concurrency/replay、atomicity/recovery、ownership/dependency 與 evidence semantics。
 - 新能力直接進真正 owner；不得用 alias、facade、compatibility package 或 pass-through service 掩蓋 responsibility 問題。
 - Generated/reference data 若存在，必須能追到 canonical source；generated output、history、target design 與 current business truth 不得互相取代。
 

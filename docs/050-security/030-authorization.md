@@ -43,7 +43,7 @@
 
 ## 相鄰責任
 
-- 系統級 interaction / authority invariant：[System](../000-core/010-system.md)
+- 系統級 interaction / authority invariant：[System](../rules/system-invariants.md)
 - 各 module business role：[Domain owners](../010-domain-owners/README.md)
 - Data boundary：[Data](../040-data/README.md)
 - Permission persistence / schema：[Data](../040-data/README.md)

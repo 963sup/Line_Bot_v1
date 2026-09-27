@@ -1,6 +1,6 @@
 # Account identity design decision
 
-決策日期：2026-09-13；本頁保存設計理由與取捨。Current implementation 狀態隨 source 演進，見 [System baseline](../../000-core/010-system.md)；本 ADR 不以當時「尚未實作」敘述凍結後續 current 狀態。
+決策日期：2026-09-13；本頁保存設計理由與取捨。Current implementation 狀態隨 source 演進，見 [System baseline](../../rules/system-invariants.md)；本 ADR 不以當時「尚未實作」敘述凍結後續 current 狀態。
 
 ## Problem
 

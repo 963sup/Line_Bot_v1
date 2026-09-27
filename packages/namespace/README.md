@@ -5,7 +5,7 @@
 - Public contract: `@line-work/namespace/root`
 - Current source: [`src/root.ts`](src/root.ts)
 - Canonical semantics: [Namespace](../../docs/010-domain-owners/190-namespace.md)
-- Cross-context vocabulary: [Glossary](../../docs/000-core/050-glossary.md)
+- Cross-context vocabulary: [Glossary](../../docs/facts/glossary.md)
 - Local change constraints: [AGENTS.md](AGENTS.md)
 - Parent package rules: [../AGENTS.md](../AGENTS.md)
 - Semantic owner / scoped locator registry: [semantic model](../../architecture/semantic-model.json)

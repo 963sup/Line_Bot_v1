@@ -1,0 +1,94 @@
+# Runtime route inventory
+
+Low-frequency route lookup. Route existence does not grant authorization or prove a capability is active.
+
+## Route contract
+
+正式 URL 只有一個 route owner。Route Group 只表達 layout/runtime 分區，不改 URL，也不授予 business permission。
+
+## Public / onboarding / system
+
+| Route | Responsibility |
+| --- | --- |
+| `/`, `/login`, `/privacy`, `/terms` | 公開內容與登入意圖；不讀 private business data |
+| `/{login}` | User / Organization public locator；login 只定位，不授權，User 是否公開依 Account profile visibility |
+| `/membership/register`, `/membership/restore`, `/complete` | 註冊／恢復與一次性結果；完成後重新讀後端資格 |
+| `/auth/callback`, `/unavailable` | OAuth／LINE 接續與特殊結果；不常駐 business state |
+
+## Mobile application routes
+
+| Route | Owner responsibility |
+| --- | --- |
+| `/home` | 工作台組裝；current IA = My Work / Favorites / Shortcuts / Recent。Issues/Discussions先選 Repository再進 canonical scoped route；Projects無 runtime時只顯示 target；Favorites重用 Star；Shortcuts不持久化；Recent無 owner時不造資料 |
+| `/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write；`/home/assistant` 為 compatibility redirect |
+| `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
+| `/diary` | Product external-entry surface；不代表存在 Diary business state |
+| `/expenses` | 指定 Expense 操作／結果 |
+| `/team` | Organization Team collection/workbench；不是 Team resource identity |
+| `/organizations/{organizationLogin}/teams/{teamSlug}` | Authenticated Organization Team canonical detail；slug 由 Team name derive，rename 後 canonical URL 隨新 slug 更新，TeamId 仍是 stable command identity |
+| `/enterprises`, `/enterprises/{enterpriseSlug}` | Authenticated Enterprise collection / canonical governance detail；slug 只定位，不授權 |
+| `/enterprises/{enterpriseSlug}/teams/{teamSlug}` | Authenticated Enterprise Team canonical detail；stable TeamId 由 server 產生，slug 由 name derive並隨 rename 更新 |
+| `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
+| `/repositories`, `/explore` | Repository collection/workbench、Trending / Awesome Lists / Activity discovery + Star surface |
+| `/repositories/lists`, `/repositories/lists/new` | Current User Repository Star List collection/create；create預設 private，pending requestId 只作 exact-retry presentation metadata |
+| `/repositories/lists/{listId}` | Repository Star List detail/manage；stable ListId只定位，private/public read與 mutation仍由 Repository owner重驗 |
+| `/repositories/lists/discover` | Awesome Lists presentation：public Repository Star List discovery，只顯示 viewer 可見 Repository/count |
+| `/{ownerLogin}/{repositoryName}` | Repository canonical locator；owner 是 User 或 Organization login；public 直接讀 public projection，private/internal 重新驗目前 User access |
+| `/{ownerLogin}/{repositoryName}/issues` | Repository-scoped Issue collection；owner/name 只定位 Repository，read API 重新驗 current User access |
+| `/{ownerLogin}/{repositoryName}/issues/{issueNumber}` | Repository-scoped Issue detail；`issueNumber` 是 Repository-local locator，stable IssueId 仍只作 internal identity/command reference；重新解析 owner/name 並驗目前 access |
+| `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；只讀 authorized conversations，不宣稱 Discussion write management |
+| `/{ownerLogin}/{repositoryName}/discussions/{discussionId}` | Repository-scoped Discussion detail；`discussionId` 是本產品 opaque id，不採用 GitHub Discussion number；comments 隨 detail authorized read 載入 |
+| `/{ownerLogin}/{repositoryName}/labels` | Repository Label collection；Label 是 Repository-owned classification metadata，沒有獨立 label URL identity |
+| `/{ownerLogin}/{repositoryName}/milestones` | Repository Milestone collection；Milestone 是 Repository goal/checkpoint，不等於 Project Milestone |
+| `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
+| `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
+| `/history` | 工作紀錄入口 |
+| `/{login}` | canonical User / Organization locator；Home header 的 Account/Profile avatar 在 Account-owned current login 已解析時導向此 locator；legacy User 若已有 Account projection 但缺 login，只能導向 `/settings/profile` 做 explicit locator recovery，不得推導 fabricated login；viewer自己的 User Profile才可顯示 Settings齒輪，依 trusted membership login與 route login一致性判斷；其他工作目的地不重複顯示 avatar |
+| `/profile` | authenticated viewer Profile hub；組合本人 owner-approved projection 與 Account-owned earned Achievements，分享仍回 `/{login}`，不建立第二 identity locator |
+| `/trending` | Explore-active Repository discovery secondary surface；沿 Repository 7-day active-Star ranking，只顯示 current-accessible Repository，不建立 Explore/Trending owner |
+| `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
+| `/feedback`, `/planned` | 只有明確定義的功能或「未開放」結果；不得產生假資料 |
+
+Stable ID 只定位 entity，不授權。Detail route 直接開啟、刷新與 list navigation 都必須回同一 authoritative use case，不建立 route-specific business copy。
+
+## Admin routes
+
+`/admin` 與子頁由 admin partition 組裝。Static navigation 可以存在，但 private read/write 仍由各 feature permission / module contract 驗證。
+
+Current / target capability status 回 [Domain map](../../000-core/020-domain-map.md) 與 [Governance](../../090-governance/README.md)；permission contract 見 [Authorization](../../050-security/030-authorization.md)。
+
+## API
+
+`/api/**` 是 transport boundary。每一 request 重新驗 identity、qualification、authorization 與 input；頁面已顯示、query parameter 或先前成功操作都不能代替 API authorization。
+
+Route handler 不複製 application use case，concrete adapters 在最外層 composition 注入。
+
+Current Repository resource read API：
+
+| Route | Responsibility |
+| --- | --- |
+| `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and Issue command transport；保留既有 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
+| `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
+| `/api/repository-labels` | Repository Label collection read |
+| `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
+
+新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability；Project 仍是 data-only owner，未知 access/command contract 前不開 Project 空頁或 API。
+
+## Same-page view state
+
+目前可由 URL 保存的白名單 view intent 包含：
+
+- Notifications：`notificationView=all|unread`
+- Repository：`repository=<stable RepositoryId>` 只選擇目前可存取的 Repository
+- Repository Issues：`issueView=all|mine|created`
+- Partners：`partnerView=news|directory|referrals`
+
+省略、重複或非法值回到各自安全預設／拒絕規則。View value 只代表 navigation intent，不授予 team role、publish permission 或 command authorization。
+
+View change 可以使用 browser history 支援 direct open、refresh、back/forward；URL 不保存 token、任意 return URL、private draft、team selection、pagination cursor 或 authorization decision。
+
+送出中的 command / unknown result 不能因 view change、refresh 或 route remount 自動變成第二個 command。
+
+## MINI App entry
+
+LIFF state decoding、entry intent 白名單與 login continuation 由 [LINE MINI App](../../030-platform/010-line.md) 擁有；route contract 不複製平台 SDK 行為。

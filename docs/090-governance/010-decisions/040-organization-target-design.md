@@ -66,4 +66,4 @@ GitHub outside collaborator/resource-level access 尚未有本地 authoritative 
 
 建立 Employment 是否要求 active OrganizationMembership、historical resource ownership backfill、outside collaborator/resource access、Bot entry、離職後 self-read 各回真正 owner。Department/job grade/nested Organization Team/generic tenant/plugin framework 不因 Organization exists 預建。
 
-Current source 與未完成項見 [Implementation state](../../000-core/010-system.md)、[Gaps](../040-gaps/080-enterprise-and-organization.md) 與 [Migration plan](../030-migrations/040-enterprise-organization-workforce-payroll.md)。
+Current source 與未完成項見 [Implementation state](../../rules/system-invariants.md)、[Gaps](../040-gaps/080-enterprise-and-organization.md) 與 [Migration plan](../030-migrations/040-enterprise-organization-workforce-payroll.md)。
