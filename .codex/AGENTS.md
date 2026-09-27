@@ -1,10 +1,8 @@
 # Codex runtime scope
 
-- `.codex/` 只擁有 Codex runtime configuration、agent role profiles 與 execution safety policy；不是產品 architecture、business rule 或 repository knowledge 的第二個 owner。
-- `config.toml` 只保存 runtime 必須的 machine configuration；模型責任與調度的 human-readable canonical contract 由 [agents/AGENTS.md](agents/AGENTS.md) 擁有。
-- `agents/*.toml` 定義角色的可執行 profile 與權限限制；不得複製完整 repository 規則，執行時仍套用 root 與 nearest local AGENTS。
-- `rules/*.rules` 只處理能由 Codex runtime enforcement 的 command safety；不能取代 GitHub、Supabase、LINE、Vercel 等平台本身的 authorization。
-- 修改 runtime config、agent profile 或 rules 時使用既有 `tooling:check`，需要 execpolicy semantic 驗證時再跑 `tooling:rules`；檔案存在或靜態解析成功不代表目前 session 已熱載入。
-- 未有真實 runtime constraint 時不新增第二套 config、wrapper 或 compatibility layer。
-- 修改前先分清 repository 設定、使用者層設定與當前 session 實際能力；只修擁有問題的層，不為了通過命令放寬 sandbox、approval 或外部平台權限。
-- 變更 execution policy 時核對允許與拒絕案例及命令匹配範圍；不把下載、安裝、發布或破壞性操作包進 broad prefix。驗證與 runtime 載入證據分開記錄，缺少 CLI 時明示 semantic check 未執行。
+- `.codex/` owns Codex runtime config, agent profiles, and command-safety policy; never product/business/repository truth.
+- `config.toml` stores machine config; [agents/AGENTS.md](agents/AGENTS.md) owns human-readable model/role routing.
+- Agent profiles may restrict role/tools but do not duplicate repository rules; root + nearest AGENTS still apply.
+- `rules/*.rules` enforces Codex command safety only and never replaces external-platform authorization.
+- Validate runtime config with `tooling:check`; use `tooling:rules` for execpolicy semantics. Static success ≠ current-session reload.
+- Do not broaden sandbox/approval or command prefixes to make a task pass; verify allow/deny cases and report runtime-load evidence separately.
