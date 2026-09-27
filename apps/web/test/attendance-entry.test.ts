@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  lineBotV1RichMenu,
   MENU_PAGES,
   menuAlias,
-  lineBotV1RichMenu,
 } from "../src/modules/assistant/rich-menu/definition";
 import { attendanceOperationLabels } from "../src/modules/attendance/operation-labels";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
