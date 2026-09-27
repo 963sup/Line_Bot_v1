@@ -7,7 +7,19 @@ import { parse } from "smol-toml";
 import YAML from "yaml";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
-const read = (file) => readFileSync(file, "utf8").replace(/^\uFEFF/, "");
+const read = (file) => readFileSync(file, "utf8");
+const repositoryTextPatterns = [
+  "*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  ".github/**/*.{md,yml,yaml}",
+  ".agents/**/*.{md,json,yml,yaml}",
+  ".codex/**/*.{md,toml,rules}",
+  "apps/**/*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  "architecture/**/*.{md,json,jsonc}",
+  "docs/**/*.md",
+  "packages/**/*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  "scripts/**/*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  "supabase/**/*.{md,sql,toml}",
+];
 const table = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
 export function validate(root) {
@@ -18,6 +30,17 @@ export function validate(root) {
       .sort()
       .map((file) => resolve(root, file));
   try {
+    const repositoryTextFiles = new Set(
+      repositoryTextPatterns.flatMap((pattern) => files(pattern)),
+    );
+    for (const file of repositoryTextFiles) {
+      const source = read(file);
+      const path = relative(root, file).split(sep).join("/");
+      if (source.startsWith("\uFEFF"))
+        errors.push(`${path}: repository text must be UTF-8 without BOM`);
+      if (source.includes("\r")) errors.push(`${path}: repository text must use LF line endings`);
+    }
+
     const manifest = JSON.parse(read(resolve(root, "package.json")));
     const workspace = YAML.parse(read(resolve(root, "pnpm-workspace.yaml")));
     const exact = /^\d+\.\d+\.\d+$/;
@@ -82,10 +105,6 @@ export function validate(root) {
       errors.push(
         "package.json: vercel:deploy:production must own controlled production deployment",
       );
-    if (manifest.scripts?.["github:current-main"] !== "node scripts/github/current-main.mjs")
-      errors.push("package.json: github:current-main must own exact-main GitHub readback");
-    if (manifest.scripts?.["github:release-plan"] !== "node scripts/github/release-plan.mjs")
-      errors.push("package.json: github:release-plan must own Release affected-source routing");
     if (Object.hasOwn(manifest.scripts ?? {}, "change:plan"))
       errors.push(
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
@@ -342,6 +361,18 @@ export function validate(root) {
         );
     }
 
+    const hotPathTargetHeading =
+      /^#{1,6}\s+.*(?:target|proposal|future|planned|remaining target|後續實作|未來目標|目標設計).*$/im;
+    for (const file of files("**/AGENTS.md").filter(
+      (file) => !relative(root, file).split(sep).join("/").startsWith(".agents/skills/"),
+    )) {
+      const source = read(file);
+      if (hotPathTargetHeading.test(source))
+        errors.push(
+          `${relative(root, file)}: target/proposal design belongs in docs/change, not AGENTS hot-path context`,
+        );
+    }
+
     const webProject = resolve(root, "apps/web/package.json");
     if (existsSync(webProject)) {
       for (const name of ["instrumentation.ts", "instrumentation-client.ts"]) {
@@ -553,22 +584,6 @@ export function validate(root) {
       );
     }
 
-    const forbiddenInlineReleaseLogic = [
-      "gh api ",
-      "git diff ",
-      "git merge-base ",
-      "git cat-file ",
-      "turbo query affected",
-      "find_owner_baseline",
-      "release-runs.tsv",
-      "grep -E",
-    ];
-    if (forbiddenInlineReleaseLogic.some((token) => releaseWorkflowSource.includes(token))) {
-      errors.push(
-        "CI: release.yml must remain a thin adapter and call canonical GitHub operation commands instead of implementing routing logic inline",
-      );
-    }
-
     const planSteps = releasePlan?.steps ?? [];
     if (
       typeof releasePlan?.if !== "string" ||
@@ -581,6 +596,13 @@ export function validate(root) {
         "CI: release_plan must only accept successful same-repository main push Validate runs",
       );
     }
+    const currentMain = planSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("branches/main") &&
+        step.run.includes("VALIDATED_SHA") &&
+        step.run.includes("superseded before release planning"),
+    );
     const releaseCheckout = planSteps.findIndex(
       (step) =>
         step.uses?.startsWith("actions/checkout@") &&
@@ -588,25 +610,25 @@ export function validate(root) {
         step.with?.["fetch-depth"] === 0 &&
         step.with?.["persist-credentials"] === false,
     );
-    const planCommand = planSteps.findIndex(
+    const detectChanges = planSteps.findIndex(
       (step) =>
-        step.run === 'pnpm github:release-plan --sha "$VALIDATED_SHA"' &&
-        JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
-        JSON.stringify(step.env ?? {}).includes("GITHUB_REPOSITORY"),
+        typeof step.run === "string" &&
+        step.run.includes("find_owner_baseline") &&
+        step.run.includes('owner == "supabase"') === false &&
+        step.run.includes('case "$owner"') &&
+        step.run.includes("status=completed") &&
+        step.run.includes("merge-base --is-ancestor") &&
+        step.run.includes("supabase/schemas/.*\\.sql$") &&
+        step.run.includes("turbo query affected --tasks build --packages @line-work/web") &&
+        step.run.includes("assets/line/rich-menu/") &&
+        step.run.includes("rich_menu_requires_web") &&
+        step.run.includes("GITHUB_OUTPUT"),
     );
-    if (releaseCheckout < 0 || planCommand <= releaseCheckout) {
+    if (currentMain < 0 || releaseCheckout <= currentMain || detectChanges <= releaseCheckout) {
       errors.push(
-        "CI: release_plan must checkout exact validated history and delegate routing to github:release-plan",
+        "CI: release_plan must validate current main, checkout exact validated SHA and compute owner-specific convergence from successful owner jobs",
       );
     }
-
-    const currentMainIndex = (steps) =>
-      steps.findIndex(
-        (step) =>
-          step.run === 'pnpm github:current-main --sha "$SHA"' &&
-          JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
-          JSON.stringify(step.env ?? {}).includes("GITHUB_REPOSITORY"),
-      );
 
     if (
       typeof releaseSupabase?.if !== "string" ||
@@ -632,7 +654,9 @@ export function validate(root) {
       errors.push("CI: automatic Supabase release must serialize the production database resource");
     }
     const supabaseSteps = releaseSupabase?.steps ?? [];
-    const supabaseMain = currentMainIndex(supabaseSteps);
+    const supabaseMain = supabaseSteps.findIndex(
+      (step) => typeof step.run === "string" && step.run.includes("branches/main"),
+    );
     const supabaseRepair = supabaseSteps.findIndex(
       (step) => step.run === "pnpm schema:remote repair" && step.if === undefined,
     );
@@ -666,12 +690,23 @@ export function validate(root) {
       supabaseEvidence <= supabaseVerify
     ) {
       errors.push(
-        "CI: Supabase must guard current main, repair, sync/verify declarative schemas and preserve unchanged migration-history evidence",
+        "CI: Supabase must repair, sync changed declarative schemas or verify unchanged schemas, and preserve migration-history evidence",
       );
     }
 
     const deploymentSteps = releaseDeployment?.steps ?? [];
-    const deploymentMain = currentMainIndex(deploymentSteps);
+    const deploymentCheckout = deploymentSteps.findIndex(
+      (step) =>
+        step.uses?.startsWith("actions/checkout@") &&
+        step.with?.ref === "${{ needs.release_plan.outputs.head_sha }}" &&
+        step.with?.["persist-credentials"] === false,
+    );
+    const deploymentMain = deploymentSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("branches/main") &&
+        step.run.includes("superseded before Vercel production deployment"),
+    );
     const productionDeploy = deploymentSteps.findIndex(
       (step) =>
         step.run === 'pnpm vercel:deploy:production --live --sha "$SHA"' &&
@@ -684,11 +719,12 @@ export function validate(root) {
       !releaseDeployment.if.includes("needs.supabase.result == 'success'") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("release_plan") ||
       !JSON.stringify(releaseDeployment?.needs ?? []).includes("supabase") ||
+      deploymentCheckout < 0 ||
       deploymentMain < 0 ||
       productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: production deployment must be Web-affected only, guard current main, follow Supabase contract convergence and invoke the Vercel owner",
+        "CI: production deployment must be Web-affected only, follow Supabase contract convergence and deploy the exact planned SHA",
       );
     }
 
@@ -708,7 +744,9 @@ export function validate(root) {
       }
       const steps = job.steps ?? [];
       const preview = steps.findIndex((step) => step.run === "pnpm line:rich-menu preview all");
-      const main = currentMainIndex(steps);
+      const main = steps.findIndex(
+        (step) => typeof step.run === "string" && step.run.includes("branches/main"),
+      );
       const publish = steps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
       return (
         preview >= 0 &&
@@ -720,17 +758,19 @@ export function validate(root) {
     };
     if (!validateRichJob(releaseRichDirect, "direct")) {
       errors.push(
-        "CI: direct Rich Menu publication must guard current main and depend only on release_plan when no Web runtime dependency exists",
+        "CI: direct Rich Menu publication must depend only on release_plan when no Web runtime dependency exists",
       );
     }
     if (!validateRichJob(releaseRichAfterDeployment, "after")) {
       errors.push(
-        "CI: Rich Menu with pending Web runtime dependency must guard current main and wait for exact deployment evidence",
+        "CI: Rich Menu with pending Web runtime dependency must wait for exact deployment evidence",
       );
     }
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }
+  const skillLock = JSON.parse(read(resolve(root, "skills-lock.json")));
+  const lockedSkills = new Set(Object.keys(skillLock.skills ?? {}));
   const names = new Set();
   for (const file of files(".agents/skills/*/SKILL.md")) {
     try {
@@ -745,6 +785,11 @@ export function validate(root) {
       names.add(name);
       if (typeof data.description !== "string" || !data.description.trim())
         throw new Error("missing description");
+      const repositoryLocal = data.source === "repository";
+      if (!lockedSkills.has(name) && !repositoryLocal)
+        throw new Error("skill must have skills-lock provenance or source: repository");
+      if (lockedSkills.has(name) && repositoryLocal)
+        throw new Error("locked external skill cannot declare source: repository");
     } catch (error) {
       errors.push(`${relative(root, file)}: ${error.message}`);
     }

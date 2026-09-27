@@ -1,10 +1,5 @@
 # Web expense module
 
-## GitHub Mobile 目標（後續實作）
-
-- Expense detail 依「收據/來源 → 辨識草稿 → 待核對欄位 → 明確確認 → 結果」呈現；主要動作留在內容結尾或不遮擋內容的操作區。
-- 人工修改、信心不足、版本衝突與 unknown result 就地區分；confirmed 只代表該 owner 契約，不使用讓人誤會已付款/入帳的標章。
-- FPT billing 不是 Expense 對等能力；不因 Mobile 模板而建立未實作的費用首頁列表或 admin 報表。
 
 ## 現行 surface 與 invariant
 

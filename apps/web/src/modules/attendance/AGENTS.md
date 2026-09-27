@@ -1,10 +1,5 @@
 # Web attendance module
 
-## GitHub Mobile 目標（後續實作）
-
-- 本地能力保留：首頁工作捷徑 → 今日出勤狀態 → 明確 clock-in/clock-out → receipt；採緊湊狀態區與一個主要操作，地點/定位結果/時間保持可讀。
-- 權限拒絕、GPS 拒絕、來源故障與 unknown result 各自提供正確下一步；不能用漂亮的成功勾號代替 receipt，也不能因返回或切 tab 再次打卡。
-- 工作場所管理用列表→地點詳情/設定；未完成 Employment/歷史查詢能力不以 GitHub timeline 外觀填補。
 
 ## 現行 surface 與 invariant
 

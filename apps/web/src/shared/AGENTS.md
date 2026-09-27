@@ -1,10 +1,5 @@
 # Web shared 約束
 
-## Mobile support target
-
-以 GitHub Mobile 的穩定導覽、內容層級及狀態連續性支援 app；具體視覺由 ui、瀏覽器生命週期由 browser、純導航意圖由 presentation 擁有。底部 tab 與 feature actions 由 caller 提供，不由 shared 掃描 FPT category 自動生成。
-
-跨 tab「保留位置」只保留安全 UI intent；不可保留已失效的私人資料、token 或授權結果。樣式共用不意味 role/error/cache/retry 共用；語意不同就沿 owner contract。
 
 ## FPT 對照與 URL 邊界
 

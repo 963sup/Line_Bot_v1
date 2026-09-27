@@ -1,10 +1,5 @@
 # System route group
 
-## GitHub Mobile 目標（後續實作）
-
-- provider 交接採任務頁：正在驗證、成功、取消、過期或服務不可用各有清楚下一步；不套複雜資源列表或主要工作 tab。
-- 從 LINE 到外部 Google 再返回的 context 以原有一次性契約維持，不能以模仿原生 tab 行為建立新 window/token cache。
-- 返回目的地須通過 allowlist；重試不產生第二次綁定或重複 business command。
 
 ## 現行 URL 與 invariant
 

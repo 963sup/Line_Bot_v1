@@ -16,12 +16,14 @@ function fixture(t) {
   mkdirSync(artifacts, { recursive: true });
   const root = mkdtempSync(resolve(artifacts, "tooling-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const write = (name, content) => {
+  const writeRaw = (name, content) => {
     const file = resolve(root, name);
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, content);
   };
+  const write = writeRaw;
   write(".codex/config.toml", "[agents]\nenabled = true\n");
+  write("skills-lock.json", '{"version":1,"skills":{}}');
   write(
     "AGENTS.md",
     "[Packages](packages/AGENTS.md) [Scripts](scripts/AGENTS.md) [GitHub](.github/AGENTS.md) [Skills](.agents/AGENTS.md) [Codex](.codex/AGENTS.md)\\n",
@@ -53,8 +55,6 @@ function fixture(t) {
         semantic: "node scripts/architecture/semantic-cli.mjs",
         "patch:apply": "node scripts/changes/patch-apply.mjs",
         "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
-        "github:current-main": "node scripts/github/current-main.mjs",
-        "github:release-plan": "node scripts/github/release-plan.mjs",
       },
       devDependencies: { "@biomejs/biome": "2.5.12" },
     }),
@@ -135,7 +135,7 @@ function fixture(t) {
     ".github/workflows/supabase-replace.yml",
     "on:\n  workflow_dispatch:\n    inputs:\n      operation:\n        type: choice\n        options: [prepare-plan, apply]\n      enterprise_owner_confirmed_name:\n        type: string\n      enterprise_owner_confirmed_slug:\n        type: string\n      confirm_enterprise_identity:\n        type: string\n      reviewed_plan_run_id:\n        type: string\n      reviewed_plan_sha256:\n        type: string\npermissions:\n  contents: read\n  actions: read\n  checks: read\n  statuses: read\njobs:\n  reconcile:\n    if: github.ref == \'refs/heads/main\' && inputs.confirm_project == \'nmssogphayjymjpbnrxv\' && inputs.confirm_enterprise_identity == \'enterprise owner confirmed identity nmssogphayjymjpbnrxv\' && inputs.confirm_recovery == \'recovery verified nmssogphayjymjpbnrxv\' && inputs.confirm_apply == \'apply reviewed plan nmssogphayjymjpbnrxv\'\n    concurrency:\n      group: supabase-production-nmssogphayjymjpbnrxv\n      cancel-in-progress: false\n    env: {}\n    steps:\n      - run: echo \'check-runs .name == \"validate\"\'\n      - if: inputs.operation == \'apply\'\n        run: pnpm schema:remote recovery\n        env:\n          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv\n      - if: inputs.operation == \'apply\'\n        run: echo \'REVIEWED_PLAN_RUN_ID REVIEWED_PLAN_SHA256 ENTERPRISE_NAME ENTERPRISE_SLUG enterprise_identity_sha256 enterpriseIdentitySha256 actions/runs/$REVIEWED_PLAN_RUN_ID supabase-manual-prepare-plan-$SHA plan-provenance.json [0-9a-f]{64}\'\n      - if: inputs.operation == \'apply\'\n        run: echo \'manual-authorization.json recoveryEvidenceSha256 enterpriseIdentitySha256 reviewedPlanRunId\'\n      - run: pnpm schema:remote prepare\n        env:\n          SUPABASE_LEGACY_ENTERPRISE_NAME: ${{ inputs.enterprise_owner_confirmed_name }}\n          SUPABASE_LEGACY_ENTERPRISE_SLUG: ${{ inputs.enterprise_owner_confirmed_slug }}\n      - if: inputs.operation == \'prepare-plan\'\n        run: pnpm schema:remote plan\n      - if: inputs.operation == \'prepare-plan\'\n        run: echo \'plan-provenance.json workflowRunId planSha256 enterpriseIdentitySha256\'\n      - if: inputs.operation == \'apply\'\n        run: pnpm schema:remote sync --reviewed-plan\n        env:\n          SUPABASE_REVIEWED_PLAN_SHA256: ${{ inputs.reviewed_plan_sha256 }}\n      - uses: actions/upload-artifact@v4\n        with:\n          path: |\n            .artifacts/supabase-remote/plan.sql\n            .artifacts/supabase-remote/plan.sha256\n            .artifacts/supabase-remote/plan-provenance.json\n            .artifacts/supabase-remote/manual-authorization.json\n            .artifacts/supabase-remote/recovery-readback.json\n            .artifacts/supabase-remote/verification.sql\n            .artifacts/supabase-remote/migration-history.before.txt\n            .artifacts/supabase-remote/migration-history.after.txt\n",
   );
-  return { root, write };
+  return { root, write, writeRaw };
 }
 function rejects(root, message) {
   const errors = validate(root);
@@ -446,7 +446,7 @@ test("validate workflow remains read-only, secret-free, and credential-free", (t
   rejects(root, "must not consume repository secrets");
 });
 
-test("Release workflow remains a thin adapter over canonical owner commands", (t) => {
+test("Release plans owner-specific convergence and preserves real dependencies", (t) => {
   const { root, write } = fixture(t);
   const workflow = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
 
@@ -473,18 +473,18 @@ test("Release workflow remains a thin adapter over canonical owner commands", (t
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace(
-      'pnpm github:release-plan --sha "$VALIDATED_SHA"',
-      'pnpm github:release-plan --sha "$VALIDATED_SHA" && git diff HEAD^ HEAD',
-    ),
+    workflow.replaceAll("find_owner_baseline", "find_baseline_removed"),
   );
-  rejects(root, "thin adapter");
+  rejects(root, "owner-specific convergence");
+
+  write(".github/workflows/release.yml", workflow.replace("status=completed", "status=success"));
+  rejects(root, "owner-specific convergence");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace('pnpm github:release-plan --sha "$VALIDATED_SHA"', "echo skip-plan"),
+    workflow.replace("turbo query affected --tasks build --packages @line-work/web", "echo web"),
   );
-  rejects(root, "delegate routing to github:release-plan");
+  rejects(root, "owner-specific convergence");
 
   write(
     ".github/workflows/release.yml",
@@ -502,13 +502,7 @@ test("Release workflow remains a thin adapter over canonical owner commands", (t
     ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote verify", "echo skip-verify"),
   );
-  rejects(root, "Supabase must guard current main");
-
-  write(
-    ".github/workflows/release.yml",
-    workflow.replace('pnpm github:current-main --sha "$SHA"', "echo skip-main"),
-  );
-  rejects(root, "guard current main");
+  rejects(root, "Supabase must repair");
 
   write(
     ".github/workflows/release.yml",
@@ -526,7 +520,7 @@ test("Release workflow remains a thin adapter over canonical owner commands", (t
     ".github/workflows/release.yml",
     workflow.replace('pnpm vercel:deploy:production --live --sha "$SHA"', "echo skip-deploy"),
   );
-  rejects(root, "invoke the Vercel owner");
+  rejects(root, "deploy the exact planned SHA");
 
   write(
     ".github/workflows/release.yml",
@@ -551,20 +545,6 @@ test("Release workflow remains a thin adapter over canonical owner commands", (t
 
   write(".github/workflows/release.yml", workflow);
   assert.deepEqual(validate(root), []);
-});
-
-test("GitHub operation command surface stays canonical", (t) => {
-  const { root, write } = fixture(t);
-  const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
-
-  packageJson.scripts["github:current-main"] = "node other.mjs";
-  write("package.json", JSON.stringify(packageJson));
-  rejects(root, "github:current-main");
-
-  packageJson.scripts["github:current-main"] = "node scripts/github/current-main.mjs";
-  packageJson.scripts["github:release-plan"] = "node other.mjs";
-  write("package.json", JSON.stringify(packageJson));
-  rejects(root, "github:release-plan");
 });
 
 test("main Git integration cannot bypass controlled production release", (t) => {
@@ -599,6 +579,18 @@ test("package AGENTS use parent scope instead of duplicated boilerplate", (t) =>
     "# @line-work/demo\n\n- 本 package 是 owning context 的公開入口；Web 與其他 consumer 只可使用 package.json 已宣告 exports。\n- domain / application / contracts / adapters / agents surface 依需求存在，不預建空 layer。\n- 目前 facade 只為無行為變更遷移；新增功能直接放入此 context，禁止新增 legacy horizontal export。\n- 移除 facade 前必須保留型別、授權、交易、重播、隔離與既有測試。\n",
   );
   rejects(root, "duplicated package boilerplate belongs in packages/AGENTS.md");
+});
+
+test("AGENTS hot path rejects target or proposal sections", (t) => {
+  const { root, write } = fixture(t);
+  write(
+    "packages/demo/AGENTS.md",
+    "# @line-work/demo\n\n## Future target design\n\n- Add a speculative capability later.\n",
+  );
+  rejects(root, "target/proposal design belongs in docs/change");
+
+  write("packages/demo/AGENTS.md", "# @line-work/demo\n\n- Current local invariant only.\n");
+  assert.deepEqual(validate(root), []);
 });
 
 test("shared dependencies require catalog", (t) => {
@@ -644,6 +636,20 @@ test("skill frontmatter rejects wrong folder", (t) => {
   const { root, write } = fixture(t);
   write(".agents/skills/demo/SKILL.md", "---\nname: other\ndescription: example\n---\n");
   rejects(root, "mismatch");
+});
+test("skills declare external lock provenance or repository-local ownership", (t) => {
+  const { root, write } = fixture(t);
+  write(".agents/skills/demo/SKILL.md", "---\nname: demo\ndescription: example\n---\n");
+  rejects(root, "skills-lock provenance or source: repository");
+
+  write(
+    ".agents/skills/demo/SKILL.md",
+    "---\nname: demo\ndescription: example\nsource: repository\n---\n",
+  );
+  assert.deepEqual(validate(root), []);
+
+  write("skills-lock.json", '{"version":1,"skills":{"demo":{"source":"example"}}}');
+  rejects(root, "locked external skill cannot declare source: repository");
 });
 for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {
   test(`${role} cannot gain write access`, (t) => {
@@ -750,13 +756,15 @@ test("wrong Node stops before metadata checks", (t) => {
   assert.match(result.stderr, /Expected Node 0\.0\.0/);
   assert.equal(result.stdout, "");
 });
-test("BOM and CRLF metadata pass", (t) => {
-  const { root, write } = fixture(t);
-  write(".codex/config.toml", "\uFEFF[agents]\r\nmax_threads = 2\r\n");
-  write(
-    ".agents/skills/demo/SKILL.md",
-    "\uFEFF---\r\nname: demo\r\ndescription: example\r\n---\r\n",
-  );
+test("repository text has one canonical encoding and line-ending format", (t) => {
+  const { root, write, writeRaw } = fixture(t);
+  writeRaw("README.md", "\uFEFF# Scope\n");
+  rejects(root, "UTF-8 without BOM");
+
+  writeRaw("README.md", "# Scope\r\n");
+  rejects(root, "must use LF line endings");
+
+  write("README.md", "# Scope\n");
   assert.deepEqual(validate(root), []);
 });
 test("malformed and duplicate YAML fail", (t) => {

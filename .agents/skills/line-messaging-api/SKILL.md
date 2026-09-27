@@ -1,6 +1,7 @@
 ---
 name: line-messaging-api
 description: 開發、診斷或審查 LINE Messaging API Webhook、驗簽、重送、群組事件、使用者同意、SDK 與回覆／推播；純卡片排版或圖文選單使用對應專用技能。
+source: repository
 ---
 
 # LINE Messaging API

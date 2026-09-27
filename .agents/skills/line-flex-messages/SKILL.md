@@ -1,6 +1,7 @@
 ---
 name: line-flex-messages
 description: 建立、修改或診斷 LINE Flex Message 卡片、bubble／carousel 排版、影片與 Simulator 預覽；適用於訊息 JSON 和渲染問題，不處理純 MINI App 網頁 UI。
+source: repository
 ---
 
 # LINE Flex Messages
