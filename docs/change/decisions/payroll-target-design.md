@@ -1,58 +1,69 @@
 # Payroll target design
 
-狀態：已選定的 target domain design，尚未完整實作／驗收。Payroll是第一階段Core target；具體法規/公司公式未定案，不以假公式冒充正式能力。
+本文保存 Payroll target domain decision；current foundation/runtime status、未完成 gap 與 acceptance evidence 由 Payroll owner、semantic model 與 change/evidence sources 擁有。未核定法規/公司公式不得以假公式冒充正式能力。
 
-## Purpose
+## Decision
 
-Payroll回答某 `OrganizationAccount + PayPeriod` 中，每個 Employment應產生什麼可追溯薪資結果、使用哪些input/rule versions、何時finalized。
+Payroll 回答某 `OrganizationAccount + PayPeriod` 中，每個 Employment 應產生什麼可追溯薪資結果、使用哪些 input/rule versions，以及何時 finalized / published。
 
 ```text
-Workforce versioned facts + Attendance finalized facts
+Workforce versioned facts
++ Attendance finalized facts
         ↓ EmploymentId
-Payroll
+      Payroll
         ↓
-Finance when consumer exists
+Finance only when a real consumer exists
 ```
 
-## Owned Model / Scope
+Payroll 擁有 PayPeriod、PayrollRun、PayStatement、Earning/Deduction/GrossPay/NetPay、PayrollInputVersion，以及 publication/correction semantics。
 
-Payroll擁有 PayPeriod、PayrollRun、PayStatement、Earning/Deduction/GrossPay/NetPay、PayrollInputVersion、publication/correction semantics。
+## Scope / identity
 
-PayrollRun scope固定 `OrganizationAccountId + PayPeriod + run version`；PayStatement scope固定 `EmploymentId + PayPeriod + calculation version`。User本人權限透過Employment relation解析，不用MemberId當永久Payroll identity。
+- PayrollRun scope = `OrganizationAccountId + PayPeriod + run version`。
+- PayStatement scope = `EmploymentId + PayPeriod + calculation version`。
+- User self-read 透過 User → Employment 關係解析，不以 legacy Member identity 作永久 Payroll key。
+- Command/audit actor 使用 PrincipalId；resource/scope identifier不冒充 actor。
 
 ## Invariants
 
-- 缺必要 Workforce/Attendance/rule input不得FINALIZED。
-- finalized result pin住input versions；上游correction不靜默改寫。
-- money precision-safe。
-- APPROVED/FINALIZED後correction走新version/adjustment/reversal。
-- `calculated != approved != finalized != published != paid != posted`。
-- Finance不自行重算PayStatement。
+- 缺必要 Workforce / Attendance / rule input 不得 FINALIZED。
+- Finalized result pin住 input versions；上游 correction 不靜默改寫既有結果。
+- Money representation 必須 precision-safe。
+- Approved/finalized 後的 correction 走新 version / adjustment / reversal。
+- `calculated ≠ approved ≠ finalized ≠ published ≠ paid ≠ posted`。
+- Finance 不重新計算 PayStatement。
+- Replay/stale/unknown-result 不得造成重複或 silent last-write-wins。
 
-## Lifecycle
+## Lifecycle / authority
 
-PayrollRun：DRAFT -> CALCULATING -> CALCULATED -> APPROVED -> FINALIZED。PayStatement publication：UNPUBLISHED -> PUBLISHED。
+PayrollRun target lifecycle：
 
-## Relationships / Authorization
+```text
+DRAFT → CALCULATING → CALCULATED → APPROVED → FINALIZED
+```
 
-Upstream Organization提供OrganizationAccount scope；Workforce提供Employment/versioned inputs；Attendance提供finalized period。一般User只讀透過本人Employment有權取得且已published的statement。OrganizationMembership/OrganizationAdmin/TeamManager/EnterpriseAdmin都不自動等於Payroll manager/approver。
+PayStatement publication：
 
-Command/audit actor使用PrincipalId，不以OrganizationAccountId或EnterpriseAccountId冒充actor。
+```text
+UNPUBLISHED → PUBLISHED
+```
 
-## Events / Integration
+Organization participation、Team role、Enterprise role 都不自動等於 Payroll manager/approver。Payroll management/calculate/approve/finalize 必須由 explicit policy owner決定。
 
-`PayrollRunFinalized`只有Finance async consumer存在時使用；`PayStatementPublished`供notification/projection consumer。Consumer不讀private Payroll tables。
+## Integration
 
-## Failure / Replay / Persistence
+`PayrollRunFinalized` 只有真實 Finance async consumer存在時才需要；`PayStatementPublished` 只在 notification/projection consumer 真實存在時建立。Consumer 不讀 Payroll private tables。
 
-至少區分scope/authz、missing input、rule unavailable、stale/replay conflict、partial calculation、lifecycle conflict、unknown result。有副作用command使用requestId/fingerprint/durable result；FINALIZED不接受last-write-wins。
+## Open decisions / deferred
 
-PostgreSQL durable result與versioned input trace是authority；schema在implementation phase由Data owner定義。
+正式 calculation rule source、manager/approver representation、correction shape、Finance consumer、retention/audit policy仍需 owner evidence。台灣稅/勞健保/勞退/加班費公式、bank payment、generic formula DSL、多國 Payroll abstraction都不得提前假定。
 
-## Known Drift / Open Questions
+## Current-state routing
 
-Current沒有正式Payroll runtime；Workforce/Attendance upstream尚未完整落地。正式calculation rule source、manager/approver representation、correction shape、Finance consumer、retention/audit來源仍待定。
-
-## Acceptance Criteria
-
-至少證明跨Organization不漏statement、missing input不能FINALIZED、replay不重複、finalized可重建source versions、correction不覆寫舊result、unpublished不進Personal Center、self read由User->Employment關係解析。
+- [Payroll owner](../../owners/payroll.md)
+- [Workforce owner](../../owners/workforce.md)
+- [Attendance owner](../../owners/attendance.md)
+- [Semantic model](../../../architecture/semantic-model.json)
+- [Domain target](../proposals/domain-target.md)
+- [Security target](../proposals/security-target.md)
+- [Data target](../proposals/data-target.md)
