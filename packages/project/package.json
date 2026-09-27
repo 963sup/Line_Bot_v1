@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
     "./application/collection": {
       "types": "./dist/application/collection.d.ts",
       "default": "./dist/application/collection.js"
@@ -23,10 +19,6 @@
     "./contracts/project-collection": {
       "types": "./dist/contracts/project-collection.d.ts",
       "default": "./dist/contracts/project-collection.js"
-    },
-    "./domain": {
-      "types": "./dist/domain/index.d.ts",
-      "default": "./dist/domain/index.js"
     }
   },
   "files": [
