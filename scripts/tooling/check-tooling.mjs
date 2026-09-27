@@ -252,10 +252,10 @@ export function validate(root) {
     const retiredHumanAccountPath = ["user", "account"].join("-");
     const externalSemanticBenchmarkArtifacts = new Set(["architecture/semantic-benchmark.json"]);
     const historicalUserVocabularyDocuments = new Set([
-      "docs/090-governance/060-acceptance/040-schema-history-extraction.md",
-      "docs/090-governance/060-acceptance/050-account-expansion-extraction.md",
-      "docs/090-governance/060-acceptance/060-four-model-cutover-validation.md",
-      "docs/090-governance/060-acceptance/080-atomic-schema-remote-convergence.md",
+      "docs/change/evidence/schema-history-extraction.md",
+      "docs/change/evidence/account-expansion-extraction.md",
+      "docs/change/evidence/four-model-cutover-validation.md",
+      "docs/change/evidence/atomic-schema-remote-convergence.md",
     ]);
     const currentDocumentationSources = files("docs/**/*.md").filter(
       (file) => !historicalUserVocabularyDocuments.has(relative(root, file).split(sep).join("/")),
@@ -270,16 +270,35 @@ export function validate(root) {
       ...files("supabase/**/*.{sql,md,toml}"),
       ...currentDocumentationSources,
     ];
+    const retiredDocPrefixes = [
+      ["docs", "000-core"].join("/"),
+      ["docs", "010-domain-owners"].join("/"),
+      ["docs", "020-architecture"].join("/"),
+      ["docs", "030-platform"].join("/"),
+      ["docs", "040-data"].join("/"),
+      ["docs", "050-security"].join("/"),
+      ["docs", "060-engineering"].join("/"),
+      ["docs", "070-operations"].join("/"),
+      ["docs", "090-governance"].join("/"),
+    ];
     for (const file of new Set(currentUserVocabularySources)) {
       const relativePath = relative(root, file).split(sep).join("/");
       if (externalSemanticBenchmarkArtifacts.has(relativePath)) continue;
+      const source = read(file);
       if (
-        retiredUserVocabulary.test(read(file)) ||
+        retiredUserVocabulary.test(source) ||
         relative(root, file).includes(retiredHumanAccountPath)
       ) {
         errors.push(
           `${relative(root, file)}: retired User vocabulary is forbidden in current repository surfaces; use User/users`,
         );
+      }
+      for (const prefix of retiredDocPrefixes) {
+        if (source.includes(`${prefix}/`)) {
+          errors.push(
+            `${relative(root, file)}: retired documentation path ${prefix}/ is forbidden in current repository surfaces`,
+          );
+        }
       }
     }
 
@@ -586,6 +605,7 @@ export function validate(root) {
       !releaseSupabase.if.includes("needs.gate.result == 'success'") ||
       releaseSupabase.if.includes("schema_changed") ||
       releaseSupabase.if.includes("schema_compat_changed") ||
+      releaseSupabase?.env?.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main" ||
       JSON.stringify(releaseSupabase?.env ?? {}).includes("secrets.")
     ) {
       errors.push(
@@ -683,7 +703,7 @@ export function validate(root) {
     );
     const productionDeploy = deploymentSteps.findIndex(
       (step) =>
-        step.run === 'pnpm vercel:deploy:production -- --live --sha "$SHA"' &&
+        step.run === 'pnpm vercel:deploy:production --live --sha "$SHA"' &&
         JSON.stringify(step.env ?? {}).includes("GITHUB_TOKEN") &&
         JSON.stringify(step.env ?? {}).includes("VERCEL_TOKEN"),
     );
