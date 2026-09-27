@@ -14,7 +14,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 
 const appRequire = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createUpstashRedisRestTransport, RedisIdempotencyStore, RedisRateLimiter } = await import(
-  appRequire.resolve("@line-work/platform/adapters/redis")
+  appRequire.resolve("@line_bot_v1/platform/adapters/redis")
 );
 
 let command, one, two, firstStore, secondStore, idempotencyKey;

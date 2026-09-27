@@ -189,7 +189,7 @@ jobs:
           cache: true
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec turbo run build --filter='@line-work/web^...'
+      - run: pnpm exec turbo run build --filter='@line_bot_v1/web^...'
       - run: pnpm line:rich-menu preview all
 
       - name: Require current main before LINE mutation
@@ -231,7 +231,7 @@ jobs:
           cache: true
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec turbo run build --filter='@line-work/web^...'
+      - run: pnpm exec turbo run build --filter='@line_bot_v1/web^...'
       - run: pnpm line:rich-menu preview all
 
       - name: Require current main before LINE mutation

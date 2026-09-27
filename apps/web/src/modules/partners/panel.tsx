@@ -1,7 +1,7 @@
 "use client";
 
-import type { ContactMethod, PartnersView } from "@line-work/partners/contracts";
-import type { PartnerCommand } from "@line-work/partners/domain";
+import type { ContactMethod, PartnersView } from "@line_bot_v1/partners/contracts";
+import type { PartnerCommand } from "@line_bot_v1/partners/domain";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

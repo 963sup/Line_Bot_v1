@@ -53,15 +53,18 @@ test("User and Organization share Account login namespace through the sole direc
   assert.deepEqual(user.fields, ["login"]);
   assert.deepEqual(organization.fields, ["login"]);
 
-  assert.equal(workspaceDependencies("@line-work/account").includes("@line-work/namespace"), true);
+  assert.equal(
+    workspaceDependencies("@line_bot_v1/account").includes("@line_bot_v1/namespace"),
+    true,
+  );
   for (const moduleName of [
-    "@line-work/enterprise",
-    "@line-work/organization",
-    "@line-work/repository",
-    "@line-work/team",
+    "@line_bot_v1/enterprise",
+    "@line_bot_v1/organization",
+    "@line_bot_v1/repository",
+    "@line_bot_v1/team",
   ]) {
     assert.equal(
-      workspaceDependencies(moduleName).includes("@line-work/namespace"),
+      workspaceDependencies(moduleName).includes("@line_bot_v1/namespace"),
       false,
       `${moduleName} owns a scoped locator and must not depend on Namespace without shared policy`,
     );
@@ -160,7 +163,7 @@ test("Repository child locators remain Repository-scoped instead of becoming glo
 
 test("Repository Label name remains a Repository-local namespace key", () => {
   assert.equal(
-    workspaceDependencies("@line-work/repository").includes("@line-work/namespace"),
+    workspaceDependencies("@line_bot_v1/repository").includes("@line_bot_v1/namespace"),
     false,
   );
   assert.match(

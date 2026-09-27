@@ -1,6 +1,5 @@
-# @line-work/google-workspace
-
-Owner: Google Workspace/Maps provider protocol and adapters. Canonical semantics: [Google Workspace](../../docs/owners/google-workspace.md).
+# @line_bot_v1/google-workspace
+Owner: Google Workspace/Maps provider protocol and adapters. Semantics: [Google Workspace](../../docs/owners/google-workspace.md).
 
 - Server-only. Caller establishes identity, scope, resource owner, and operation intent before provider access.
 - Do not own Account identity links, business authorization, browser token caches, or arbitrary URL proxying.

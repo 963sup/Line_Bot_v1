@@ -1,9 +1,9 @@
-import type { WorkplaceChatInput } from "@line-work/attendance/domain";
+import type { WorkplaceChatInput } from "@line_bot_v1/attendance/domain";
 import {
   type LineWebhookEvent,
   parseLineMessage,
   parseLineSource,
-} from "@line-work/line-channel/adapters/messaging";
+} from "@line_bot_v1/line-channel/adapters/messaging";
 import type { AssistantEvent } from "../../../modules/assistant/event-router.server";
 
 export type SelectedLineWebhookEvent = {

@@ -1,5 +1,5 @@
 {
-  "name": "LINE 工作助手",
+  "name": "Line_Bot_v1",
   "description": "工作群組的任務協作空間。",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

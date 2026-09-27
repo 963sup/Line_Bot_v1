@@ -1,4 +1,4 @@
-import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { enterpriseRequest } from "../../../modules/enterprise/http.server";
 import { enterpriseRoles, enterpriseService } from "../_composition/enterprise.server";
 import { requestLineIdentity } from "../_composition/request-identity.server";

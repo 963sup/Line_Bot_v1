@@ -1,5 +1,5 @@
-import type { createRepositoryResources } from "@line-work/repository/application/resources";
-import { IssueError, normalizeRepositoryMilestoneNumber } from "@line-work/repository/domain";
+import type { createRepositoryResources } from "@line_bot_v1/repository/application/resources";
+import { IssueError, normalizeRepositoryMilestoneNumber } from "@line_bot_v1/repository/domain";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
 

@@ -1,4 +1,4 @@
-import type { GovernanceReceipt } from "@line-work/identity-access/contracts/governance";
+import type { GovernanceReceipt } from "@line_bot_v1/identity-access/contracts/governance";
 
 export type EnterpriseAffiliationSource = Readonly<{
   kind: "direct" | "organization";

@@ -1,4 +1,4 @@
-import { readAccountLogin } from "@line-work/account/adapters/postgres";
+import { readAccountLogin } from "@line_bot_v1/account/adapters/postgres";
 import {
   governanceFingerprint,
   hasOrganizationOwnerAssignment,
@@ -10,13 +10,13 @@ import {
   requireOrganizationLifecycleOwner,
   requireOrganizationOwner,
   resolveVerifiedLineActor,
-} from "@line-work/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
 import type {
   GovernanceQuery,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type { OrganizationGovernancePort } from "../application/ports/organization-governance.js";
 import type {
   OrganizationCommand,

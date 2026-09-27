@@ -1,5 +1,5 @@
-import { normalizeAccountLogin } from "@line-work/account/domain/login";
-import { normalizeDiscussionId } from "@line-work/repository/domain";
+import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
+import { normalizeDiscussionId } from "@line_bot_v1/repository/domain";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";
 import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";

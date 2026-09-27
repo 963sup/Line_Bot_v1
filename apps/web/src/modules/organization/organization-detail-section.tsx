@@ -1,8 +1,8 @@
-import type { ScopedRoleCommand } from "@line-work/identity-access/domain/role-assignment";
+import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type {
   OrganizationCommand,
   OrganizationDetail,
-} from "@line-work/organization/contracts/organization-governance";
+} from "@line_bot_v1/organization/contracts/organization-governance";
 
 type PendingOrganizationCommand = OrganizationCommand | ScopedRoleCommand;
 

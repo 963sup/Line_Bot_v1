@@ -1,6 +1,6 @@
-import { UserError } from "@line-work/account/domain/user";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import { OrganizationError } from "@line-work/organization/domain";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { OrganizationError } from "@line_bot_v1/organization/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

@@ -1,4 +1,4 @@
-import type { Sql } from "@line-work/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 
 export type VisibleStarListRepositoryRow = Readonly<{
   list_id: string;

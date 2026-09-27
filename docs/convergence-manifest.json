@@ -39,6 +39,13 @@
         ".codex/config.toml": "cfc071f51df766574ca033b8799d503d64f4b4ce"
       }
     },
+    ".github/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 4374,
+      "maxBytes": 4365,
+      "contentBlob": "0153a3e783178dd7e090ee26bfe944d31d5f3679",
+      "sources": {}
+    },
     ".github/agents/architecture-reviewer.agent.md": {
       "outcome": "keep",
       "baselineBytes": 760,
@@ -222,6 +229,62 @@
         "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97",
         "docs/rules/dependency-boundaries.md": "0d1b87c25a90895f1e7ac227b9b64c15d6e38b4a"
       }
+    },
+    "apps/web/src/modules/account/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 2022,
+      "maxBytes": 2013,
+      "contentBlob": "a79cac03e6daf472085728473f6f7bd967b29809",
+      "sources": {}
+    },
+    "apps/web/src/modules/attendance/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 1145,
+      "maxBytes": 1137,
+      "contentBlob": "e873ad678e01d5f4e25888d59295fda08bec341f",
+      "sources": {}
+    },
+    "apps/web/src/modules/daily-check-in/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 1193,
+      "maxBytes": 1189,
+      "contentBlob": "f23f5021eaa4c0243a3ae86aaddebff977b23139",
+      "sources": {}
+    },
+    "apps/web/src/modules/enterprise/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 918,
+      "maxBytes": 912,
+      "contentBlob": "c74c187c9a3edbd21108ca19b25f1c3c7238e705",
+      "sources": {}
+    },
+    "apps/web/src/modules/notifications/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 1122,
+      "maxBytes": 1121,
+      "contentBlob": "bbf76dce3194dfd35b4058a2342c1e69edfb9383",
+      "sources": {}
+    },
+    "apps/web/src/modules/partners/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 941,
+      "maxBytes": 933,
+      "contentBlob": "9a8883614bd846dc2472a3ca1d9d6a9e8585ce3d",
+      "sources": {}
+    },
+    "apps/web/src/modules/repository/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 2786,
+      "maxBytes": 2778,
+      "contentBlob": "89425168df1177d913f526780ebe932dee421d95",
+      "sources": {}
+    },
+    "apps/web/src/modules/team/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 1001,
+      "maxBytes": 993,
+      "contentBlob": "31878bd32c23c5831983a964e62f5bdcb2f6193c",
+      "sources": {}
     },
     "architecture/README.md": {
       "outcome": "keep",
@@ -595,13 +658,27 @@
       "sources": {}
     },
     "docs/facts/system.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 745,
-      "maxBytes": 745,
-      "contentBlob": "f495bd60828bd3ba690ea3cb95dadf3df4f34244",
+      "maxBytes": 736,
+      "contentBlob": "42cee62e411abe4cce1d38419eb2523dd8e8e606",
       "sources": {
-        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+        "architecture/semantic-model.json": "04fa2a8ede3d2b2ae14ec0303ee78645c0f2bcd6"
       }
+    },
+    "docs/owners/assistant.md": {
+      "outcome": "updated",
+      "baselineBytes": 2519,
+      "maxBytes": 2494,
+      "contentBlob": "6eb324cbd67476f52b20dfeab164d504648c0230",
+      "sources": {}
+    },
+    "docs/owners/line-integration.md": {
+      "outcome": "updated",
+      "baselineBytes": 2335,
+      "maxBytes": 2318,
+      "contentBlob": "e745c7ca7ddf1db09e012e6d5bd1663e65ba587a",
+      "sources": {}
     },
     "docs/README.md": {
       "outcome": "keep",
@@ -611,6 +688,83 @@
       "sources": {
         "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
       }
+    },
+    "docs/reference/domains/account.md": {
+      "outcome": "updated",
+      "baselineBytes": 7439,
+      "maxBytes": 7430,
+      "contentBlob": "c972e838197c586e66339948d31ca1b76d148744",
+      "sources": {}
+    },
+    "docs/reference/domains/namespace.md": {
+      "outcome": "updated",
+      "baselineBytes": 7593,
+      "maxBytes": 7580,
+      "contentBlob": "d6e4437e8627b531e661d9c41161ec77002e2743",
+      "sources": {}
+    },
+    "docs/reference/domains/payroll.md": {
+      "outcome": "updated",
+      "baselineBytes": 5507,
+      "maxBytes": 5481,
+      "contentBlob": "862e3e5d4c3da16d8f3641c74c7e841b062be281",
+      "sources": {}
+    },
+    "docs/reference/engineering/validation-pipeline.md": {
+      "outcome": "updated",
+      "baselineBytes": 5766,
+      "maxBytes": 5757,
+      "contentBlob": "5dc2f53b8b9ab4ff1f86363152e0269cb43db0cc",
+      "sources": {}
+    },
+    "docs/reference/line/rich-menu.md": {
+      "outcome": "updated",
+      "baselineBytes": 6495,
+      "maxBytes": 6487,
+      "contentBlob": "c290c7490ee66683378d22466cba66274cbe14a6",
+      "sources": {}
+    },
+    "docs/reference/line/webhook.md": {
+      "outcome": "updated",
+      "baselineBytes": 2837,
+      "maxBytes": 2833,
+      "contentBlob": "1fc1a447454507367bbbcb7ec7109046b10098a5",
+      "sources": {}
+    },
+    "docs/reference/operations/release.md": {
+      "outcome": "updated",
+      "baselineBytes": 5165,
+      "maxBytes": 5152,
+      "contentBlob": "48ae19f65392b4a8058ab0c71d07f7fbbe55008d",
+      "sources": {}
+    },
+    "docs/reference/platform/ai.md": {
+      "outcome": "updated",
+      "baselineBytes": 3626,
+      "maxBytes": 3606,
+      "contentBlob": "6883fdc6217672c2b8413d38cda38e833dba00b4",
+      "sources": {}
+    },
+    "docs/reference/platform/google-workspace.md": {
+      "outcome": "updated",
+      "baselineBytes": 2649,
+      "maxBytes": 2639,
+      "contentBlob": "b1d823a42f57bedd2037d41625592697fa257dd6",
+      "sources": {}
+    },
+    "docs/reference/platform/redis.md": {
+      "outcome": "updated",
+      "baselineBytes": 3505,
+      "maxBytes": 3488,
+      "contentBlob": "2b0e3978cb09330e118a7293b2aca20a46db9f6e",
+      "sources": {}
+    },
+    "docs/reference/security/permissions.md": {
+      "outcome": "updated",
+      "baselineBytes": 4673,
+      "maxBytes": 4652,
+      "contentBlob": "d1ed31f116e505c82f88a02a2ac344b80ca9bba2",
+      "sources": {}
     },
     "docs/rules/validation-evidence.md": {
       "outcome": "keep",
@@ -623,13 +777,20 @@
       }
     },
     "packages/account/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 1033,
-      "maxBytes": 1033,
-      "contentBlob": "9cda59936f2f88bcadb2de7187b0164cbcdf53ca",
+      "maxBytes": 1024,
+      "contentBlob": "1fec8e273c6917064b8294f017728b939eea4129",
       "sources": {
         "docs/owners/account.md": "75654cd2b32a3a6669bfca1e0e1cab51e4ab04ee"
       }
+    },
+    "packages/account/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 242,
+      "maxBytes": 225,
+      "contentBlob": "631204e6bc5c549b02d1a39319364978898b4cab",
+      "sources": {}
     },
     "packages/AGENTS.md": {
       "outcome": "keep",
@@ -643,13 +804,48 @@
       }
     },
     "packages/asset/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 490,
-      "maxBytes": 490,
-      "contentBlob": "76ac103c351442e2fce23ee69dff89a27f9eb7ad",
+      "maxBytes": 481,
+      "contentBlob": "94f9e578a9670eec1dd6e9747f2121c5aa592146",
       "sources": {
         "docs/owners/asset.md": "b6834b9563aa1e46182ab1d0675fd83b6a7543d4"
       }
+    },
+    "packages/asset/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 236,
+      "maxBytes": 219,
+      "contentBlob": "15bcb7f0a75773626581024d7fc4efd206b9c649",
+      "sources": {}
+    },
+    "packages/assistant/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 611,
+      "maxBytes": 602,
+      "contentBlob": "0351867f05b1974be49a31ad4b527cc2ddc93c3a",
+      "sources": {}
+    },
+    "packages/assistant/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 248,
+      "maxBytes": 231,
+      "contentBlob": "e0bd45dd2b12597c324998292d4ee8daed725d44",
+      "sources": {}
+    },
+    "packages/attendance/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 609,
+      "maxBytes": 600,
+      "contentBlob": "3cd5a5d2ee5b7b6b823bd60a5e4c60a75bb2302e",
+      "sources": {}
+    },
+    "packages/attendance/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 251,
+      "maxBytes": 234,
+      "contentBlob": "943b12ffae115b6a9c02333c55c359331e3aed6b",
+      "sources": {}
     },
     "packages/audit/AGENTS.md": {
       "outcome": "keep",
@@ -660,95 +856,214 @@
         "docs/owners/audit.md": "2c7a4a74a6440599635b17bdd38e66cb9991453e"
       }
     },
+    "packages/audit/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 236,
+      "maxBytes": 219,
+      "contentBlob": "b39ddc311bc760394d977b77aa4ef62fd05b0e5b",
+      "sources": {}
+    },
     "packages/daily-check-in/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 552,
-      "maxBytes": 552,
-      "contentBlob": "5e5813642f8eb70c4ba2d3216e5b7c6a9ca3cbbf",
+      "maxBytes": 543,
+      "contentBlob": "7fa31776ef60f345de19d96bdc39bdbc0e6b0885",
       "sources": {
         "docs/owners/daily-check-in.md": "c716d21ed805e017904cf3f4678018234f7b1ff0"
       }
     },
+    "packages/daily-check-in/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 263,
+      "maxBytes": 246,
+      "contentBlob": "dba1e8ec325bbdff03292fe6e822d8b24b09beb5",
+      "sources": {}
+    },
     "packages/enterprise/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 784,
-      "maxBytes": 784,
-      "contentBlob": "ad972a0e29f7bcde30fc69755795421878f5a54f",
+      "maxBytes": 775,
+      "contentBlob": "8184c97b7a300c07984e607a2a4cdcc4f97824b4",
       "sources": {
         "docs/owners/enterprise.md": "7f6e24f89980b6f4577f02a51081291caf9853a0"
       }
     },
+    "packages/enterprise/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 251,
+      "maxBytes": 234,
+      "contentBlob": "1e12af22b60e466023f309f7f6b3fe940b3145eb",
+      "sources": {}
+    },
     "packages/expense/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 779,
-      "maxBytes": 779,
-      "contentBlob": "8693b8364fa75bcd70a250a0f3c1345ddc8f1b36",
+      "maxBytes": 770,
+      "contentBlob": "63bca327c1fe33e028ea122658eefd8ea702850b",
       "sources": {
         "docs/owners/expense.md": "5271120323d3551a9481f220b3827ca24fb08d9e"
       }
     },
+    "packages/expense/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 242,
+      "maxBytes": 225,
+      "contentBlob": "3ff3509d3c0f34d352fca92ed287b3503839b608",
+      "sources": {}
+    },
+    "packages/google-workspace/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 622,
+      "maxBytes": 613,
+      "contentBlob": "15b9ca7761839522d9a22be7b28f1f36332c11fd",
+      "sources": {}
+    },
+    "packages/google-workspace/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 269,
+      "maxBytes": 252,
+      "contentBlob": "3d74478b4b4768f4e757a7eb2362beb5a0cd95e3",
+      "sources": {}
+    },
     "packages/identity-access/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 637,
-      "maxBytes": 637,
-      "contentBlob": "c4f0962f3b02ff268c26978a9095d3b5db079212",
+      "maxBytes": 628,
+      "contentBlob": "d1158877c27bade6f0b4f81f96ce9303d768499c",
       "sources": {
         "docs/owners/identity-access.md": "2f96535cf78c6fa4d435f99f015f5fef15468614"
       }
     },
+    "packages/identity-access/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 266,
+      "maxBytes": 249,
+      "contentBlob": "3f1c187bb2697dfe6afed6be2afebbdf000c08d1",
+      "sources": {}
+    },
     "packages/ledger/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 556,
-      "maxBytes": 556,
-      "contentBlob": "066d09e466a9265da3732669ab322b210f8b7b55",
+      "maxBytes": 547,
+      "contentBlob": "d894f0cd0cfe060097d7baf733ef2eadde7a3028",
       "sources": {
         "docs/owners/ledger.md": "3bfab8b6eae15c88ae4d3e1dc80c6293e5e017bc"
       }
     },
+    "packages/ledger/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 239,
+      "maxBytes": 222,
+      "contentBlob": "fbc688db49fd839b255ea934c112befa9071708b",
+      "sources": {}
+    },
+    "packages/line-channel/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 849,
+      "maxBytes": 840,
+      "contentBlob": "8ff6d3781eb3617aa468e3ecb6295107d2ce008a",
+      "sources": {}
+    },
+    "packages/line-channel/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 265,
+      "maxBytes": 248,
+      "contentBlob": "27ebc17eab84499a22a13f69b81121fd0e0b34e0",
+      "sources": {}
+    },
     "packages/namespace/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 755,
-      "maxBytes": 755,
-      "contentBlob": "fc3d14496a4de491b08a98f9cd9d28968a1b268b",
+      "maxBytes": 748,
+      "contentBlob": "fbeabd831792be72c28b17577708c54cfdb68b98",
       "sources": {
         "docs/owners/namespace.md": "3c67be797ac492b560a887b00fa0b6a41cbf9962"
       }
     },
+    "packages/namespace/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 248,
+      "maxBytes": 231,
+      "contentBlob": "3522fcb147aa15448e730ea90fdb86ecd5378bbd",
+      "sources": {}
+    },
     "packages/notifications/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 572,
-      "maxBytes": 572,
-      "contentBlob": "977224e837ffd7e7183b482471e502c1ee33526d",
+      "maxBytes": 563,
+      "contentBlob": "b721c6efe41560a2866200a1dae878084f246a20",
       "sources": {
         "docs/owners/notifications.md": "38e2e84d844c87e3a02c8d8311d335fddc8855de"
       }
     },
+    "packages/notifications/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 260,
+      "maxBytes": 243,
+      "contentBlob": "38dbcd9eea0efbaf052e5777a11bdda698dad802",
+      "sources": {}
+    },
+    "packages/organization/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 660,
+      "maxBytes": 651,
+      "contentBlob": "0d4528d34ae6855b6ef53d133d5c08a6b35673d5",
+      "sources": {}
+    },
+    "packages/organization/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 257,
+      "maxBytes": 240,
+      "contentBlob": "f6186a8abd8041b8907bca36578fa9a63a959008",
+      "sources": {}
+    },
     "packages/partners/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 640,
-      "maxBytes": 640,
-      "contentBlob": "0dc37f45e284f207f0216277c417977adbfec05f",
+      "maxBytes": 631,
+      "contentBlob": "e45fc8cecfc0db7376d17fd758383daed956902d",
       "sources": {
         "docs/owners/partners.md": "aa373328bbebd73bf40d05286d5ba84e96687067"
       }
     },
+    "packages/partners/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 245,
+      "maxBytes": 228,
+      "contentBlob": "ce1be55123ea8d8d794038566b4a94270534736e",
+      "sources": {}
+    },
     "packages/payroll/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 605,
-      "maxBytes": 605,
-      "contentBlob": "5b33675918df2d6750a279c5a4194e5050324277",
+      "maxBytes": 596,
+      "contentBlob": "148f32396acb5df23d5a9003a274e8b36eaf3c1b",
       "sources": {
         "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3"
       }
     },
+    "packages/payroll/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 242,
+      "maxBytes": 225,
+      "contentBlob": "977f323e301da268ab87f44c5255ccb752074eef",
+      "sources": {}
+    },
     "packages/platform/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 618,
-      "maxBytes": 618,
-      "contentBlob": "f416fa598a4a10bf191582d97a7feb5f80056e34",
+      "maxBytes": 609,
+      "contentBlob": "a4a49802a82b5601a68aa9ea0483cc5feed76935",
       "sources": {
         "docs/owners/platform.md": "2d919702426f8cf7c226944dd715c69b20bc27ff"
       }
+    },
+    "packages/platform/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 245,
+      "maxBytes": 228,
+      "contentBlob": "144aeefcb6c1919652279f17e7adee8bdfcd315b",
+      "sources": {}
     },
     "packages/project/AGENTS.md": {
       "outcome": "keep",
@@ -759,40 +1074,82 @@
         "docs/owners/project.md": "2ab3dce474f06013b939ec34c5578be8e9f40e8c"
       }
     },
+    "packages/project/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 242,
+      "maxBytes": 225,
+      "contentBlob": "b299b77673c557a3e75d3fca38f55cafb36e6e18",
+      "sources": {}
+    },
     "packages/repository/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 913,
-      "maxBytes": 913,
-      "contentBlob": "b0a2e80590616ccfd25773382c2b75a42db0639c",
+      "maxBytes": 904,
+      "contentBlob": "d46239570131f26fecbdfa03b35ae2a2151574dd",
       "sources": {
         "docs/owners/repository.md": "562d2e9e8b2eb60b4329b92e112808c47c702762"
       }
     },
+    "packages/repository/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 251,
+      "maxBytes": 234,
+      "contentBlob": "54ee24ab445bea1741d49fb9ba64c8e7031fc16a",
+      "sources": {}
+    },
     "packages/team/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 606,
-      "maxBytes": 606,
-      "contentBlob": "136d5f61d43d5ee386c656d14cfd454c2decfe5e",
+      "maxBytes": 597,
+      "contentBlob": "b9e6fec3027ef65e29ce6f9a91f5904d2dac822c",
       "sources": {
         "docs/owners/team.md": "41fd24cf99265e2bfec9683f233b809748955d78"
       }
     },
+    "packages/team/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 233,
+      "maxBytes": 216,
+      "contentBlob": "551b639c405a94c75755aee30670ed6bee6c8a5e",
+      "sources": {}
+    },
     "packages/wallet/AGENTS.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 565,
-      "maxBytes": 565,
-      "contentBlob": "ba95d3bb535411bd1a12397f94eedf3667735b61",
+      "maxBytes": 556,
+      "contentBlob": "c91283205152a5116eef7bbaec2f7f9f834a975c",
       "sources": {
         "docs/owners/wallet.md": "d2cf4776583100cb2ad486633f602ea6813ba35a"
       }
     },
+    "packages/wallet/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 239,
+      "maxBytes": 222,
+      "contentBlob": "e3bb215a0ea409235407d1edab076d23be3f416b",
+      "sources": {}
+    },
+    "packages/workforce/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 829,
+      "maxBytes": 777,
+      "contentBlob": "3e3a65bbac22c0bc6845084b3b8b1741f5783a2e",
+      "sources": {}
+    },
+    "packages/workforce/README.md": {
+      "outcome": "updated",
+      "baselineBytes": 248,
+      "maxBytes": 231,
+      "contentBlob": "5e778c18db4defee934982e2341acd5bcfd1f53b",
+      "sources": {}
+    },
     "README.md": {
-      "outcome": "keep",
+      "outcome": "updated",
       "baselineBytes": 1127,
-      "maxBytes": 1127,
-      "contentBlob": "88def45234f078b70ccbd6af67f8655e3a52bbb8",
+      "maxBytes": 1116,
+      "contentBlob": "bb3c5332b793dc243883282805270e3341b022ad",
       "sources": {
-        "package.json": "259e6f8825d149e1e0a7ae4ae3be87c221b35000",
+        "package.json": "65ec89fa7d9d1bd350f74c06aeea090e285d532b",
         "docs/README.md": "da0ad702eb2fe64c93f0a4f7777f7e1c2d3da89f"
       }
     },
@@ -805,6 +1162,20 @@
         "scripts/AGENTS.md": "73d04b8e474ca6fc4c9ac9a5ed51e25bc4ca6107",
         "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
       }
+    },
+    "scripts/github/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 2212,
+      "maxBytes": 2203,
+      "contentBlob": "98474a18425a1dd0d96ac1d63f9280eb5419a5d7",
+      "sources": {}
+    },
+    "scripts/line/AGENTS.md": {
+      "outcome": "updated",
+      "baselineBytes": 1949,
+      "maxBytes": 1919,
+      "contentBlob": "497dd153c0b4245dac915a58302f7cf8e9977c1c",
+      "sources": {}
     }
   },
   "upstreamSkills": {}

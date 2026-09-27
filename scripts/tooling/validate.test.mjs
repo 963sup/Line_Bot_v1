@@ -54,8 +54,8 @@ test("schema scope expands typecheck and tests to the full workspace by default"
   assert.deepEqual(fastTaskArgs("typecheck+test", command, schemaOnly, selection), command);
   assert.deepEqual(fastTaskArgs("typecheck+test", command, mixed, selection), command);
   assert.deepEqual(
-    fastTaskArgs("typecheck+test", command, mixed, ["--filter=@line-work/repository"], true),
-    [...command, "--filter=@line-work/repository"],
+    fastTaskArgs("typecheck+test", command, mixed, ["--filter=@line_bot_v1/repository"], true),
+    [...command, "--filter=@line_bot_v1/repository"],
   );
 });
 

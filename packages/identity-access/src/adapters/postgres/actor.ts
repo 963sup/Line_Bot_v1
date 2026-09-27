@@ -1,10 +1,10 @@
 import {
   readActiveUserQualification,
   readUserByIdentity,
-} from "@line-work/account/adapters/postgres";
-import type { VerifiedLineActor } from "@line-work/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import type { Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/account/adapters/postgres";
+import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
 
 export type ResolvedGovernanceActor = Readonly<{
   userId: string;

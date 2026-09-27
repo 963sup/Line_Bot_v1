@@ -1,5 +1,5 @@
-import { normalizeAccountLogin } from "@line-work/account/domain/login";
-import { normalizeTeamSlug } from "@line-work/team/domain";
+import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
+import { normalizeTeamSlug } from "@line_bot_v1/team/domain";
 import { notFound } from "next/navigation";
 import TeamPanel from "../../../../../../modules/team/panel";
 import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";

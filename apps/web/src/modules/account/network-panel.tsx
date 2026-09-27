@@ -1,6 +1,6 @@
 "use client";
 
-import type { FollowItem } from "@line-work/account/application/ports/follows";
+import type { FollowItem } from "@line_bot_v1/account/application/ports/follows";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

@@ -1,7 +1,4 @@
-# @line-work/namespace
-
-Navigation only.
-
+# @line_bot_v1/namespace
 - Owner contract: [namespace](../../docs/owners/namespace.md)
 - Local constraints: [AGENTS.md](AGENTS.md)
 - Public surface: [package.json](package.json)

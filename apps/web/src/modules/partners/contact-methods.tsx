@@ -1,6 +1,6 @@
 "use client";
-import type { PartnerContact } from "@line-work/partners/contracts";
-import { partnerContactHref } from "@line-work/partners/domain";
+import type { PartnerContact } from "@line_bot_v1/partners/contracts";
+import { partnerContactHref } from "@line_bot_v1/partners/domain";
 import { useState } from "react";
 
 export default function ContactMethods({

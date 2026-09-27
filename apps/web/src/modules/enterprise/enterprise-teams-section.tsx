@@ -1,7 +1,7 @@
 import type {
   EnterpriseCommand,
   EnterpriseDetail,
-} from "@line-work/enterprise/contracts/enterprise-governance";
+} from "@line_bot_v1/enterprise/contracts/enterprise-governance";
 import Link from "next/link";
 
 export function EnterpriseTeamsSection({

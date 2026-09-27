@@ -11,9 +11,9 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 }
 
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
-const { runIntakeAgent } = await import(require.resolve("@line-work/assistant/agents/intake"));
+const { runIntakeAgent } = await import(require.resolve("@line_bot_v1/assistant/agents/intake"));
 const { createGeminiClient } = await import(
-  require.resolve("@line-work/assistant/adapters/gemini")
+  require.resolve("@line_bot_v1/assistant/adapters/gemini")
 );
 
 import { loadRootEnv } from "../runtime/load-env.mjs";

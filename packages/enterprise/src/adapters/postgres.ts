@@ -12,14 +12,14 @@ import {
   requireEnterpriseOwner,
   resolveVerifiedLineActor,
   revokeEnterpriseOwnerForAffiliationRemoval,
-} from "@line-work/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
 import type {
   GovernanceQuery,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
-import { readOrganizationQualification } from "@line-work/organization/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { readOrganizationQualification } from "@line_bot_v1/organization/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type { EnterpriseGovernancePort } from "../application/ports/enterprise-governance.js";
 import type {
   EnterpriseCommand,

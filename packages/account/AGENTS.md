@@ -1,6 +1,5 @@
-# @line-work/account
-
-Owner: User/Account lifecycle, qualification, login/profile/follow, external identity links, and earned Achievement facts. Canonical semantics: [Account](../../docs/owners/account.md).
+# @line_bot_v1/account
+Owner: User/Account lifecycle, qualification, login/profile/follow, external identity links, and earned Achievement facts. Semantics: [Account](../../docs/owners/account.md).
 
 - Employment, Organization membership, and authorization remain separate owners; external proof never invents qualification.
 - Preserve lifecycle/version checks, replay safety, tenant isolation, and public contracts.

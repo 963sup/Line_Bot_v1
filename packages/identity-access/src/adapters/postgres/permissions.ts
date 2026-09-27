@@ -1,19 +1,19 @@
 import {
   readActiveUserQualification,
   readUserQualification,
-} from "@line-work/account/adapters/postgres";
-import { UserError } from "@line-work/account/domain/user";
-import type { PermissionStore } from "@line-work/identity-access/application/permissions/ports";
+} from "@line_bot_v1/account/adapters/postgres";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import type { PermissionStore } from "@line_bot_v1/identity-access/application/permissions/ports";
 import type {
   PermissionGrant,
   PermissionView,
-} from "@line-work/identity-access/contracts/permissions";
+} from "@line_bot_v1/identity-access/contracts/permissions";
 import {
   type Permission,
   type PermissionCommand,
   PermissionError,
-} from "@line-work/identity-access/domain/permission";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/domain/permission";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 
 async function permissionVersion(sql: Sql, userId: string, lock = false): Promise<number> {
   const row = (

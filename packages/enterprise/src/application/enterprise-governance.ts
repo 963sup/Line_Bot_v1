@@ -1,8 +1,8 @@
 import type {
   GovernanceQuery,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
+} from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { normalizeEnterpriseSlug } from "../domain.js";
 
 const governanceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

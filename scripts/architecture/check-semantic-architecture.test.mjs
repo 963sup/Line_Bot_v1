@@ -27,7 +27,7 @@ function fixture() {
     role: "implementation-topology",
     semanticModel: "architecture/semantic-model.json",
     modules: {
-      "@line-work/repository": {
+      "@line_bot_v1/repository": {
         path: "packages/repository",
         moduleKind: "domain-module",
         semanticOwner: "repository",
@@ -215,7 +215,7 @@ function fixture() {
       },
     ],
     implementationMappings: [
-      { semanticOwner: "repository", module: "@line-work/repository" },
+      { semanticOwner: "repository", module: "@line_bot_v1/repository" },
       { semanticOwner: "project", module: null },
     ],
   };
@@ -422,7 +422,7 @@ test("rejects and repairs mixed leaf and aggregate evidence shapes", () => {
 
 test("rejects a module pretending to be a bounded context", () => {
   const { model, benchmark, topology } = fixture();
-  topology.modules["@line-work/repository"].moduleKind = "bounded-context";
+  topology.modules["@line_bot_v1/repository"].moduleKind = "bounded-context";
   assert.match(
     validateSemanticArchitecture(model, benchmark, topology).join("\n"),
     /must not masquerade/,
@@ -440,15 +440,17 @@ test("rejects unknown benchmark adoption", () => {
 
 test("cross-owner workspace dependencies require an explicit semantic relationship contract", () => {
   const { model, benchmark, topology } = fixture();
-  topology.modules["@line-work/project"] = {
+  topology.modules["@line_bot_v1/project"] = {
     path: "packages/project",
     moduleKind: "domain-module",
     semanticOwner: "project",
     allowedWorkspaceDependencies: [],
   };
-  topology.modules["@line-work/repository"].allowedWorkspaceDependencies = ["@line-work/project"];
+  topology.modules["@line_bot_v1/repository"].allowedWorkspaceDependencies = [
+    "@line_bot_v1/project",
+  ];
   model.implementationMappings.find((mapping) => mapping.semanticOwner === "project").module =
-    "@line-work/project";
+    "@line_bot_v1/project";
 
   assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
 
@@ -465,13 +467,13 @@ test("cross-owner workspace dependencies require an explicit semantic relationsh
   ];
   assert.match(
     validateSemanticArchitecture(model, benchmark, topology).join("\n"),
-    /cross-owner dependency @line-work\/project .* lacks explicit semantic relationship contract/,
+    /cross-owner dependency @line_bot_v1\/project .* lacks explicit semantic relationship contract/,
   );
 });
 
 test("rejects topology semantic owners that do not resolve", () => {
   const { model, benchmark, topology } = fixture();
-  topology.modules["@line-work/repository"].semanticOwner = "missing";
+  topology.modules["@line_bot_v1/repository"].semanticOwner = "missing";
   assert.match(
     validateSemanticArchitecture(model, benchmark, topology).join("\n"),
     /semanticOwner must resolve/,
@@ -488,7 +490,7 @@ test("query path and impact are derived from compiled relationships", () => {
   const impact = querySemanticArchitecture(compiled, "impact", ["repository"]);
   assert.equal(impact.owner.id, "repository");
   assert.deepEqual(impact.direct, [{ owner: "project", path: ["repository", "project"] }]);
-  assert.equal(impact.implementation.module, "@line-work/repository");
+  assert.equal(impact.implementation.module, "@line_bot_v1/repository");
 });
 
 test("semantic diff classifies ownership changes as breaking", () => {

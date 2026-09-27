@@ -1,7 +1,4 @@
-# @line-work/expense
-
-Navigation only.
-
+# @line_bot_v1/expense
 - Owner contract: [expense](../../docs/owners/expense.md)
 - Local constraints: [AGENTS.md](AGENTS.md)
 - Public surface: [package.json](package.json)

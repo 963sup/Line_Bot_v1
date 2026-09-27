@@ -1,5 +1,5 @@
-import { PostgresIssueStore } from "@line-work/repository/adapters/postgres";
-import { createIssues } from "@line-work/repository/application/issues";
+import { PostgresIssueStore } from "@line_bot_v1/repository/adapters/postgres";
+import { createIssues } from "@line_bot_v1/repository/application/issues";
 import { activeLineUser } from "./account.server";
 
 let store: PostgresIssueStore | undefined;

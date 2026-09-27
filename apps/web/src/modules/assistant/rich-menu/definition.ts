@@ -1,4 +1,4 @@
-import type { RichMenuDefinition } from "@line-work/line-channel/adapters/messaging";
+import type { RichMenuDefinition } from "@line_bot_v1/line-channel/adapters/messaging";
 import { miniAppEntryUrl } from "../../../shared/presentation/entry-route";
 import { DIARY_FORM_URL } from "../../diary/form";
 

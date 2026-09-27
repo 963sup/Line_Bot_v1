@@ -1,6 +1,5 @@
-# @line-work/notifications
-
-Owner: Notification facts, recipient read state, and delivery attempts. Canonical semantics: [Notifications](../../docs/owners/notifications.md).
+# @line_bot_v1/notifications
+Owner: Notification facts, recipient read state, and delivery attempts. Semantics: [Notifications](../../docs/owners/notifications.md).
 
 - Inbox is a derived recipient projection, not a second owner.
 - Notifications reference source facts but never own source lifecycle/content.

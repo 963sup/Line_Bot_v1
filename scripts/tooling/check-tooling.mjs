@@ -21,6 +21,12 @@ const repositoryTextPatterns = [
   "supabase/**/*.{md,sql,toml}",
 ];
 const table = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const retiredProjectIdentities = [
+  { label: "workspace namespace", value: `${["@line", "work"].join("-")}/` },
+  { label: "system id", value: ["line", "work", "assistant"].join("-") },
+  { label: "English display name", value: ["LINE", "Work", "Assistant"].join(" ") },
+  { label: "Chinese display name", value: ["LINE", "工作助手"].join(" ") },
+];
 
 export function validate(root) {
   root = realpathSync(root);
@@ -39,6 +45,10 @@ export function validate(root) {
       if (source.startsWith("\uFEFF"))
         errors.push(`${path}: repository text must be UTF-8 without BOM`);
       if (source.includes("\r")) errors.push(`${path}: repository text must use LF line endings`);
+      for (const retired of retiredProjectIdentities) {
+        if (source.includes(retired.value))
+          errors.push(`${path}: retired project ${retired.label} is forbidden in current surfaces`);
+      }
     }
 
     const manifest = JSON.parse(read(resolve(root, "package.json")));
@@ -131,7 +141,7 @@ export function validate(root) {
     }
     const platformManifest = manifests.get(resolve(root, "packages/platform/package.json"));
     if (platformManifest && typeof platformManifest.scripts?.["schema:check"] !== "string")
-      errors.push("@line-work/platform: schema:check task owner is required");
+      errors.push("@line_bot_v1/platform: schema:check task owner is required");
     const uses = new Map();
     for (const [file, data] of manifests) {
       for (const section of [
@@ -399,7 +409,7 @@ export function validate(root) {
       errors.push(
         "turbo.json: product tests must hash declarative schemas so SQL changes cannot reuse stale test cache",
       );
-    const webBuild = turbo.tasks?.["@line-work/web#build"] ?? {};
+    const webBuild = turbo.tasks?.["@line_bot_v1/web#build"] ?? {};
     const webBuildEnv = webBuild.env ?? [];
     const webBuildInputs = webBuild.inputs ?? [];
     const webBuildPassThroughEnv = webBuild.passThroughEnv ?? [];

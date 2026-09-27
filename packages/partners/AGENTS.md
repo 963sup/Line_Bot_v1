@@ -1,6 +1,5 @@
-# @line-work/partners
-
-Owner: partner directory, referral/contact lifecycle, and publication visibility. Canonical semantics: [Partners](../../docs/owners/partners.md).
+# @line_bot_v1/partners
+Owner: partner directory, referral/contact lifecycle, and publication visibility. Semantics: [Partners](../../docs/owners/partners.md).
 
 - External contact data is not identity proof, authorization, or trusted business relation.
 - Preserve scope authorization, lifecycle/version, visibility filtering, audit evidence, and distinct not-found/forbidden/unavailable outcomes.

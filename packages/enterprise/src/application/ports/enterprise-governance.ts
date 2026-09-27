@@ -1,7 +1,7 @@
 import type {
   GovernanceQuery,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
+} from "@line_bot_v1/identity-access/contracts/governance";
 import type {
   EnterpriseCommand,
   EnterpriseDetail,

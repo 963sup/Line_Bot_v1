@@ -1,6 +1,5 @@
-# @line-work/team
-
-Owner: Organization Team lifecycle and TeamMembership. Canonical semantics: [Team](../../docs/owners/team.md).
+# @line_bot_v1/team
+Owner: Organization Team lifecycle and TeamMembership. Semantics: [Team](../../docs/owners/team.md).
 
 - Team membership is participation, not authorization; TeamMaintainer authority is Identity/Access RoleAssignment.
 - Preserve Organization scope, qualification, last-effective-maintainer protection, expected version, replay, and transaction/lock ordering.

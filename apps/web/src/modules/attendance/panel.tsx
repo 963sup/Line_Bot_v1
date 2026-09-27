@@ -1,5 +1,5 @@
 "use client";
-import type { AttendanceView, Workplace } from "@line-work/attendance/domain";
+import type { AttendanceView, Workplace } from "@line_bot_v1/attendance/domain";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

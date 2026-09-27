@@ -2,19 +2,19 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   readActiveUserQualification,
   readUserQualification,
-} from "@line-work/account/adapters/postgres";
+} from "@line_bot_v1/account/adapters/postgres";
 import {
   grantTeamMaintainer,
   isTeamMaintainer,
   resolveVerifiedLineActor,
   revokeTeamMaintainer,
-} from "@line-work/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
 import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
   qualifyOrganizationTeamScope,
-} from "@line-work/organization/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/organization/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type { TeamActor, TeamRepository } from "../application/ports.js";
 import type {
   TeamCommandReceipt,

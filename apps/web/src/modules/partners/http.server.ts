@@ -1,6 +1,6 @@
-import { UserError } from "@line-work/account/domain/user";
-import type { createPartners } from "@line-work/partners/application/partners";
-import { PartnerError } from "@line-work/partners/domain";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import type { createPartners } from "@line_bot_v1/partners/application/partners";
+import { PartnerError } from "@line_bot_v1/partners/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

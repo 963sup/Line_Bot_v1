@@ -22,7 +22,7 @@ import { VercelObservability } from "../shared/browser/vercel-observability";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LINE 工作助手",
+  title: "Line_Bot_v1",
   description: "工作群組的任務協作空間。",
 };
 

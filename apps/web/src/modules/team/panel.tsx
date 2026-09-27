@@ -1,7 +1,7 @@
 "use client";
 
-import type { TeamView } from "@line-work/team/contracts";
-import type { TeamCommand } from "@line-work/team/domain";
+import type { TeamView } from "@line_bot_v1/team/contracts";
+import type { TeamCommand } from "@line_bot_v1/team/domain";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

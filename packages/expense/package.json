@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/expense",
+  "name": "@line_bot_v1/expense",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -59,8 +59,8 @@
   },
   "dependencies": {
     "@google/genai": "catalog:",
-    "@line-work/account": "workspace:*",
-    "@line-work/platform": "workspace:*"
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:",

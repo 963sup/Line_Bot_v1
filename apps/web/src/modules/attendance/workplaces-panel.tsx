@@ -1,5 +1,5 @@
 "use client";
-import type { Workplace, WorkplaceCommand } from "@line-work/attendance/domain";
+import type { Workplace, WorkplaceCommand } from "@line_bot_v1/attendance/domain";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

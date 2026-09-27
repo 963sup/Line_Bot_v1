@@ -1,4 +1,4 @@
-import { UserError } from "@line-work/account/domain/user";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import { infrastructureFailureCode } from "../../shared/server/failure-code";
 
 /** Membership-specific public diagnostic wrapper over neutral infrastructure classification. */

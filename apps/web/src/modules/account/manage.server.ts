@@ -1,12 +1,12 @@
-import { PostgresUserManagement } from "@line-work/account/adapters/postgres";
-import { createUserManagement } from "@line-work/account/application/manage-users";
-import type { UserUseCases } from "@line-work/account/application/user";
-import type { UserManagementQuery } from "@line-work/account/contracts/user-management";
-import { UserError } from "@line-work/account/domain/user";
+import { PostgresUserManagement } from "@line_bot_v1/account/adapters/postgres";
+import { createUserManagement } from "@line_bot_v1/account/application/manage-users";
+import type { UserUseCases } from "@line_bot_v1/account/application/user";
+import type { UserManagementQuery } from "@line_bot_v1/account/contracts/user-management";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import {
   hasPermission,
   protectPermissionAdministrator,
-} from "@line-work/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/adapters/postgres";
 import { jsonResponse } from "../../shared/server/http";
 import { apiError, readJsonBody } from "./http.server";
 

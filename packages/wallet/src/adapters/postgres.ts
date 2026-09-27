@@ -1,11 +1,11 @@
-import { readUserQualification } from "@line-work/account/adapters/postgres";
-import type { AccountId } from "@line-work/account/domain";
-import { readAssetDefinition } from "@line-work/asset/adapters/postgres";
-import { type AssetCode, assetAmount } from "@line-work/asset/domain";
-import { sumLedgerUnits } from "@line-work/ledger/adapters/postgres";
-import { businessDatabase, type Database } from "@line-work/platform/adapters/postgres";
-import type { WalletRepository } from "@line-work/wallet/application/ports/wallet-repository";
-import type { WalletBalance } from "@line-work/wallet/domain";
+import { readUserQualification } from "@line_bot_v1/account/adapters/postgres";
+import type { AccountId } from "@line_bot_v1/account/domain";
+import { readAssetDefinition } from "@line_bot_v1/asset/adapters/postgres";
+import { type AssetCode, assetAmount } from "@line_bot_v1/asset/domain";
+import { sumLedgerUnits } from "@line_bot_v1/ledger/adapters/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/adapters/postgres";
+import type { WalletRepository } from "@line_bot_v1/wallet/application/ports/wallet-repository";
+import type { WalletBalance } from "@line_bot_v1/wallet/domain";
 
 export class PostgresWalletStore implements WalletRepository {
   constructor(private db: Database = businessDatabase()) {}

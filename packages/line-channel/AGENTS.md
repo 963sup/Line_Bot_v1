@@ -1,6 +1,5 @@
-# @line-work/line-channel
-
-Owner: LINE protocol, user-proof verification, Messaging/Webhook clients, and browser-safe MINI App integration. Canonical semantics: [LINE](../../docs/owners/line-integration.md).
+# @line_bot_v1/line-channel
+Owner: LINE protocol, user-proof verification, Messaging/Webhook clients, and browser-safe MINI App integration. Semantics: [LINE](../../docs/owners/line-integration.md).
 
 - Business qualification, authorization, navigation policy, and domain state stay with their owners.
 - Keep browser LIFF separate from server credentials/SDKs. `source.userId` is a human external subject; signed `destination` is receiving-bot metadata, not product authority.

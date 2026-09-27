@@ -1,6 +1,10 @@
-import { normalizeAccountLogin } from "@line-work/account/domain/login";
-import { UserError } from "@line-work/account/domain/user";
-import { IssueError, normalizeRepositoryName, RepositoryError } from "@line-work/repository/domain";
+import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import {
+  IssueError,
+  normalizeRepositoryName,
+  RepositoryError,
+} from "@line_bot_v1/repository/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

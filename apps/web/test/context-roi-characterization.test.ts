@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PermissionCommand } from "@line-work/identity-access/domain/permission";
-import type { TeamView } from "@line-work/team/contracts";
+import type { PermissionCommand } from "@line_bot_v1/identity-access/domain/permission";
+import type { TeamView } from "@line_bot_v1/team/contracts";
 import {
   clearPendingPermissionOperation,
   restorePendingPermissionOperation,
