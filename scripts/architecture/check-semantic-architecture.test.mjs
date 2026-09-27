@@ -279,6 +279,7 @@ test("rejects active locators for data-only or target concepts", () => {
       status: "active",
       fields: ["number"],
       scope: "fixture",
+      scopeAuthority: "repository",
       routeFiles: ["apps/web/src/app/(mobile)/projects/[number]/page.tsx"],
       benchmark: { file: "schema-projects.json", category: "projects", symbol: "ProjectV2" },
     },
@@ -301,12 +302,64 @@ test("rejects active current locators without route evidence", () => {
       status: "active",
       fields: ["owner", "name"],
       scope: "fixture",
+      scopeAuthority: "repository",
       routeFiles: [],
     },
   ];
   assert.match(
     validateSemanticArchitecture(model, benchmark, topology).join("\n"),
     /active locator requires routeFiles/,
+  );
+});
+
+test("locator scopes require an explicit semantic authority", () => {
+  const { model, benchmark, topology } = fixture();
+  model.locators = [
+    {
+      id: "repository-url",
+      concept: "repository",
+      status: "active",
+      fields: ["owner", "name"],
+      scope: "repository-owner-name",
+      routeFiles: ["apps/web/src/app/(resource)/[owner]/[name]/page.tsx"],
+    },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /scopeAuthority is required/,
+  );
+  model.locators[0].scopeAuthority = "missing";
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /unknown scopeAuthority missing/,
+  );
+});
+
+test("all locators in one namespace scope must agree on authority", () => {
+  const { model, benchmark, topology } = fixture();
+  model.locators = [
+    {
+      id: "repository-url",
+      concept: "repository",
+      status: "active",
+      fields: ["owner", "name"],
+      scope: "shared-scope",
+      scopeAuthority: "repository",
+      routeFiles: ["apps/web/src/app/(resource)/[owner]/[name]/page.tsx"],
+    },
+    {
+      id: "project-url",
+      concept: "project",
+      status: "reference-only",
+      fields: ["number"],
+      scope: "shared-scope",
+      scopeAuthority: "project",
+      routeFiles: [],
+    },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    /conflicting authorities repository and project/,
   );
 });
 
@@ -466,6 +519,7 @@ test("semantic diff treats locator route changes as breaking", () => {
       status: "active",
       fields: ["owner", "name"],
       scope: "fixture",
+      scopeAuthority: "repository",
       routeFiles: ["apps/web/src/app/(resource)/[owner]/[name]/page.tsx"],
     },
   ];
@@ -651,6 +705,7 @@ test("filesystem guard rejects fake source, public export and route evidence", a
       status: "active",
       fields: ["owner", "name"],
       scope: "fixture",
+      scopeAuthority: "repository",
       routeFiles: ["apps/web/src/not-app/[owner]/[name]/page.tsx"],
     },
   ];
@@ -698,6 +753,7 @@ test("locator view derives URLs from route files without storing a second patter
       status: "active",
       fields: ["owner", "name"],
       scope: "fixture",
+      scopeAuthority: "repository",
       routeFiles: ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
     },
   ];

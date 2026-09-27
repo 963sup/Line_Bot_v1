@@ -306,3 +306,99 @@ begin
 end
 $function$;
 
+
+
+-- Repository creation is a narrow privileged coordinator because line_app intentionally has
+-- no unrestricted INSERT on repositories or repository_access.
+create function app_private.provision_repository(
+  p_repository_id text,
+  p_actor_user_id text,
+  p_owner_account_id text,
+  p_owner_account_kind text,
+  p_name text
+) returns table(repository_id text, owner_login text)
+language plpgsql
+security definer
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+begin
+  if length(trim(coalesce(p_repository_id, ''))) = 0
+     or p_repository_id <> trim(p_repository_id)
+     or length(p_repository_id) > 128
+     or length(trim(coalesce(p_actor_user_id, ''))) = 0
+     or p_actor_user_id <> trim(p_actor_user_id)
+     or length(p_actor_user_id) > 128
+     or length(trim(coalesce(p_owner_account_id, ''))) = 0
+     or p_owner_account_id <> trim(p_owner_account_id)
+     or length(p_owner_account_id) > 128
+     or p_owner_account_kind not in ('USER','ORGANIZATION')
+     or p_name is null or p_name <> trim(p_name)
+     or length(p_name) not between 1 and 100 then
+    raise exception 'provision_repository_input_invalid' using errcode = '22023';
+  end if;
+
+  perform 1 from app_private.users
+    where id=p_actor_user_id and status='active'
+    for update;
+  if not found then
+    raise exception 'provision_repository_actor_not_active' using errcode = '42501';
+  end if;
+
+  if p_owner_account_kind='USER' then
+    if p_owner_account_id <> p_actor_user_id then
+      raise exception 'provision_repository_user_owner_forbidden' using errcode = '42501';
+    end if;
+    perform 1 from app_private.accounts
+      where id=p_owner_account_id and kind='USER'
+      for share;
+    if not found then
+      raise exception 'provision_repository_user_owner_missing' using errcode = '42501';
+    end if;
+  else
+    perform 1
+      from app_private.organizations o
+      join app_private.organization_memberships m
+        on m.organization_account_id=o.account_id
+       and m.user_id=p_actor_user_id
+      join app_private.organization_role_assignments r
+        on r.organization_account_id=o.account_id
+       and r.user_id=p_actor_user_id
+       and r.role='OrganizationOwner'
+      join app_private.users u on u.id=p_actor_user_id
+      where o.account_id=p_owner_account_id
+        and o.status='active'
+        and m.status='active'
+        and u.status='active'
+        and r.status='active'
+        and r.user_status_version=u.status_version
+        and r.membership_version=m.version
+      for share of o,m,r,u;
+    if not found then
+      raise exception 'provision_repository_organization_owner_forbidden' using errcode = '42501';
+    end if;
+  end if;
+
+  perform 1 from app_private.account_logins
+    where account_id=p_owner_account_id and account_kind=p_owner_account_kind
+    for share;
+  if not found then
+    raise exception 'provision_repository_owner_login_missing' using errcode = '42501';
+  end if;
+
+  insert into app_private.repositories(
+    id,owner_account_id,owner_account_kind,name,visibility,version
+  ) values(
+    p_repository_id,p_owner_account_id,p_owner_account_kind,p_name,'private',1
+  );
+
+  if p_owner_account_kind='ORGANIZATION' then
+    insert into app_private.repository_access(repository_id,principal_id,capability,version)
+      values(p_repository_id,p_actor_user_id,'admin',1);
+  end if;
+
+  return query
+    select p_repository_id,l.login
+    from app_private.account_logins l
+    where l.account_id=p_owner_account_id and l.account_kind=p_owner_account_kind;
+end
+$function$;

@@ -8,7 +8,7 @@
 
 ## AGENTS routing index
 
-`packages/` 共有 23 份 package-scope 指引：本檔是 1 份父層 scope contract，另有 22 份 owner-local AGENTS。進入 package 工作時，先讀本檔，再讀目標 owner 最近的 AGENTS；子檔只補 local constraint，不複製本檔正文。
+`packages/` 共有 24 份 package-scope 指引：本檔是 1 份父層 scope contract，另有 23 份 owner-local AGENTS。進入 package 工作時，先讀本檔，再讀目標 owner 最近的 AGENTS；子檔只補 local constraint，不複製本檔正文。
 
 - 父層 scope：[`packages/AGENTS.md`](AGENTS.md)
 - Account：[`account/AGENTS.md`](account/AGENTS.md)
@@ -24,6 +24,7 @@
 - Ledger：[`ledger/AGENTS.md`](ledger/AGENTS.md)
 - LINE Channel：[`line-channel/AGENTS.md`](line-channel/AGENTS.md)
 - Notifications：[`notifications/AGENTS.md`](notifications/AGENTS.md)
+- Namespace：[`namespace/AGENTS.md`](namespace/AGENTS.md)
 - Organization：[`organization/AGENTS.md`](organization/AGENTS.md)
 - Partners：[`partners/AGENTS.md`](partners/AGENTS.md)
 - Payroll：[`payroll/AGENTS.md`](payroll/AGENTS.md)

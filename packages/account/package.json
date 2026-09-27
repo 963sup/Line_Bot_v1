@@ -86,6 +86,7 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
+    "@line-work/namespace": "workspace:*",
     "@line-work/platform": "workspace:*",
     "@supabase/supabase-js": "catalog:"
   },

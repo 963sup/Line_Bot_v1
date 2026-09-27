@@ -8,6 +8,8 @@ GitHub benchmark graph 中的 `Profile`、`Followers`、`Following`、`Repositor
 
 | Term | Canonical meaning | Owner / boundary | Not the same as |
 | --- | --- | --- | --- |
+| Namespace | 在明確 Scope 內，讓 locator Key 可唯一解析到 stable Subject 的命名邊界；shared namespace 另包含 reservation / collision policy | Namespace policy + owning Domain | stable identity / URL route / authorization |
+| Locator | 對 entity 的可解析名稱或複合鍵；可隨 rename 改變，不能取代 stable identity | owning Domain；跨 owner collision 受 Namespace policy 約束 | AccountId / RepositoryId / permission |
 | Repository | 可獨立擁有內容、權限、狀態與生命週期的工作容器 | Product semantic baseline | Source-code repository / Git repository / Project |
 | Project | 可管理一個或多個 Repository／Work reference 的獨立規劃與管理邊界 | Project planning boundary | Repository / WBS / Repository child |
 | Project Item | Project 對 underlying work/content 的 planning reference，可承載 project-local field／view／workflow metadata | Project planning boundary | underlying business truth / copied Work |

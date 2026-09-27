@@ -42,6 +42,7 @@ Hexagonal Architecture
 ```mermaid
 flowchart LR
     Line["LINE integration"] -->|"verified identity proof"| Account["Account / User"]
+    Namespace["Namespace"] -->|"root reservation policy"| Account
     Enterprise["Enterprise"] -->|"membership source projection"| Organization["Organization"]
     Account --> Team["Team"]
     Account --> Attendance["Attendance"]
@@ -62,6 +63,7 @@ Selected future 的 Workforce → Attendance → Payroll → Finance 關係只�
 
 | Upstream / policy owner | Consumer | Consumer needs | Current semantic form | 不可推論 |
 | --- | --- | --- | --- | --- |
+| Namespace | Account / User | global root reservation / collision policy before accepting login | Query / policy contract | reserved key != identity / authorization |
 | LINE integration | Account / User | verified LINE identity proof for mapping / qualification | External proof | provider identity proof != User qualification / business authorization |
 | Enterprise | Organization | active Enterprise Team membership + Team-to-Organization assignment | Projection | Enterprise membership source != Organization authority |
 | Account / User | Team | current User qualification + participation identity | Stable ID + Query | active User != Team member / TeamMaintainer |
@@ -105,6 +107,7 @@ Cross-context structured semantics 以 `architecture/semantic-model.json` 為準
 | Team | `packages/team` | Organization-scoped Team facts | package exports |
 | Repository | `packages/repository` | Repository identity/access + Issue/Discussion lifecycle facts | package exports |
 | Project | `packages/project` | Project data authority 已存在；runtime capability 尚未啟用 | 目前無 public export |
+| Namespace | `packages/namespace` | shared cross-owner namespace policy；目前不擁有獨立 persistence | `@line-work/namespace/root` |
 | Attendance | `packages/attendance` | Attendance / Workplace facts | package exports |
 | Payroll | `packages/payroll` | current readiness foundation; formal result persistence remains gated | package exports |
 | Asset | `packages/asset` | value definition / denomination | package exports |
@@ -114,7 +117,7 @@ Cross-context structured semantics 以 `architecture/semantic-model.json` 為準
 | Identity / Access | `packages/identity-access` | authorization-related persisted facts where applicable | package exports |
 | LINE / Google | integration packages | provider mapping/config only; not business authority | integration exports |
 
-Workforce 與 Project 已有明確 workspace/module boundary，但 module existence 不等於 runtime capability 或已驗收產品行為；是否 active 仍以 source、public exports、persistence 與實際 validation evidence 判斷。
+Workforce、Project 與 Namespace 已有明確 workspace/module boundary，但 module existence 不等於所有 capability 已完成。Namespace 目前只有 global-root reservation policy 是 executable；更廣泛的 claim / resolve / rename capability 仍需以真實 consumer、source、public exports、consistency boundary 與 validation evidence 判斷。
 
 ## Source of truth
 

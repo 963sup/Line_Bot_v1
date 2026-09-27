@@ -32,12 +32,14 @@ test("membership rejects anonymous and suspended provider subjects before protec
   await assert.rejects(active("subject"), /停權/);
 });
 
-test("top-level application destinations remain reserved Account logins", () => {
+test("Namespace-reserved root keys cannot become Account logins", () => {
   const account = createUser(dependencies({}));
-  assert.throws(
-    () => account.registerUser("subject", "assistant"),
-    (error) => error instanceof UserError && error.status === 400,
-  );
+  for (const login of ["assistant", "daily-check-in"]) {
+    assert.throws(
+      () => account.registerUser("subject", login),
+      (error) => error instanceof UserError && error.status === 400,
+    );
+  }
 });
 
 test("registration returns only the Account-owned committed projection", async () => {

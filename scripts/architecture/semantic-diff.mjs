@@ -69,7 +69,7 @@ function classifyChanged(label, before, after) {
   } else if (label === "locators") {
     classification = "locator-change";
     breaking = properties.some((property) =>
-      ["concept", "fields", "scope", "status", "routeFiles"].includes(property),
+      ["concept", "fields", "scope", "scopeAuthority", "status", "routeFiles"].includes(property),
     );
   } else if (label === "benchmarkDecisions") {
     classification = "benchmark-decision-change";

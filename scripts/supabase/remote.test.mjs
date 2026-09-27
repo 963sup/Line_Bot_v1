@@ -6,6 +6,7 @@ import {
   assertGeneralManagementExpansionState,
   assertMigrationHistoryUnchanged,
   assertRemoteTarget,
+  assertReviewedPlan,
   assertSupabaseRestReadback,
   classifyAccountLoginCompatibility,
   classifyDailyCheckInCompatibility,
@@ -18,19 +19,26 @@ import {
   parseEnterpriseMetadataBackfill,
   permissionNamesFromSource,
   permissionSubjectVersionExpansionSql,
+  planFingerprint,
   projectRefFromSupabaseUrl,
   supabaseApiReadbackConfig,
   verifySupabaseApiReadback,
 } from "./remote.mjs";
 
-test("classifyPlan accepts additive DDL", () => {
-  assert.deepEqual(classifyPlan("create table app_private.example(id bigint);"), {
-    destructive: false,
-    empty: false,
-  });
+test("classifyPlan allows only known automatic DDL", () => {
+  for (const sql of [
+    "create table app_private.example(id bigint);",
+    "alter table app_private.example add column note text;",
+    "alter table app_private.example add constraint example_id_check check (id > 0);",
+    'grant select on table "app_private"."x" to "postgres";',
+    "revoke all on table app_private.x from public, anon, authenticated;",
+    "create or replace function app_private.example() returns void language sql as $$ select null $$;",
+  ]) {
+    assert.equal(classifyPlan(sql).mode, "automatic", sql);
+  }
 });
 
-test("classifyPlan blocks destructive and data-sensitive DDL", () => {
+test("classifyPlan requires manual review for destructive, security-sensitive and unknown DDL", () => {
   for (const sql of [
     "drop table app_private.example;",
     "alter table app_private.example drop column old_name;",
@@ -39,23 +47,47 @@ test("classifyPlan blocks destructive and data-sensitive DDL", () => {
     "alter table app_private.example add column value bigint not null;",
     "truncate app_private.example;",
     "alter table app_private.example rename column a to b;",
+    "drop policy backend on app_private.example;",
+    "grant select on table app_private.example to authenticated;",
+    "revoke execute on function app_private.example() from line_app;",
+    "select app_private.example();",
   ]) {
-    assert.equal(classifyPlan(sql).destructive, true, sql);
+    assert.equal(classifyPlan(sql).mode, "manual", sql);
   }
 });
 
-test("classifyPlan does not confuse GRANT TRUNCATE privilege with a TRUNCATE statement", () => {
-  assert.equal(
-    classifyPlan(
-      'GRANT DELETE, INSERT, SELECT, TRIGGER, TRUNCATE, UPDATE ON TABLE "app_private"."x" TO "postgres";',
-    ).destructive,
-    false,
-  );
-  assert.equal(classifyPlan("TRUNCATE TABLE app_private.x;").destructive, true);
+test("classifyPlan ignores comments and quoted function bodies when classifying top-level SQL", () => {
+  const sql = `
+    -- drop table app_private.not_real;
+    create or replace function app_private.example()
+    returns text
+    language sql
+    as $function$
+      select 'drop table app_private.also_not_real;';
+    $function$;
+  `;
+  assert.deepEqual(classifyPlan(sql), {
+    mode: "automatic",
+    empty: false,
+    reasons: [],
+  });
 });
 
-test("empty plan is recognized", () => {
-  assert.equal(classifyPlan("  \n").empty, true);
+test("empty plan is recognized as a no-op", () => {
+  assert.deepEqual(classifyPlan("  \n-- comment only\n"), {
+    mode: "noop",
+    empty: true,
+    reasons: [],
+  });
+});
+
+test("reviewed plan fingerprint binds manual authorization to exact SQL", () => {
+  const sql = "drop table app_private.example;\n";
+  const fingerprint = planFingerprint(sql);
+  assert.match(fingerprint, /^[0-9a-f]{64}$/);
+  assert.equal(assertReviewedPlan(sql, fingerprint), fingerprint);
+  assert.throws(() => assertReviewedPlan(sql, "0".repeat(64)), /no longer matches/i);
+  assert.throws(() => assertReviewedPlan(sql, "not-a-hash"), /exact lowercase SHA-256/i);
 });
 
 test("migration history must remain byte-stable modulo outer whitespace", () => {
@@ -71,28 +103,29 @@ test("migration history must remain byte-stable modulo outer whitespace", () => 
   );
 });
 
-test("parseArgs defaults to sync and keeps one canonical reconciliation path", () => {
-  assert.deepEqual(parseArgs([]), { command: "sync", allowDestructive: false, api: false });
+test("parseArgs defaults to sync and exposes one explicit manual authorization flag", () => {
+  assert.deepEqual(parseArgs([]), { command: "sync", allowManual: false, api: false });
   assert.throws(() => parseArgs(["compat"]), /Usage/);
   assert.deepEqual(parseArgs(["prepare"]), {
     command: "prepare",
-    allowDestructive: false,
+    allowManual: false,
     api: false,
   });
-  assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowDestructive: false, api: false });
-  assert.deepEqual(parseArgs(["sync", "--allow-destructive"]), {
+  assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowManual: false, api: false });
+  assert.deepEqual(parseArgs(["sync", "--allow-manual"]), {
     command: "sync",
-    allowDestructive: true,
+    allowManual: true,
     api: false,
   });
+  assert.throws(() => parseArgs(["sync", "--allow-destructive"]), /Usage/);
   assert.deepEqual(parseArgs(["verify"]), {
     command: "verify",
-    allowDestructive: false,
+    allowManual: false,
     api: false,
   });
   assert.deepEqual(parseArgs(["verify", "--api"]), {
     command: "verify",
-    allowDestructive: false,
+    allowManual: false,
     api: true,
   });
   assert.throws(() => parseArgs(["sync", "--api"]), /only valid/);

@@ -44,12 +44,20 @@ export function normalizeRepositoryMilestoneNumber(value: number | string): numb
   return Number.isSafeInteger(number) && number >= 1 ? number : null;
 }
 
-export class IssueError extends Error {
+export class RepositoryError extends Error {
   constructor(
     public status: number,
     message: string,
   ) {
     super(message);
+    this.name = "RepositoryError";
+  }
+}
+
+export class IssueError extends RepositoryError {
+  constructor(status: number, message: string) {
+    super(status, message);
+    this.name = "IssueError";
   }
 }
 

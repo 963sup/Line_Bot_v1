@@ -66,12 +66,10 @@ surface，並 read back。若既有資料需要不可推導的新 business metad
 `plan` 從 declarative schemas 重建 clean local target，再比較 exact remote
 `app_private`。Normal `sync` 會在同一程序完成 initial plan、apply、second diff
 與 acceptance readback；partial application-owned drift 交由 canonical diff 收斂，缺少 runtime
-foundation role 時先以 idempotent foundation repair 修復。沒有 `--allow-destructive` 時，
-destructive/data-sensitive DDL 仍 fail closed；帶 `--allow-destructive` 時仍不得改寫 migration
-history，且要完成 second diff 與 acceptance readback。Standalone `verify` 保留給人工診斷；
+foundation role 時先以 idempotent foundation repair 修復。plain `sync` 只接受 `automatic` plan；unknown、destructive、data-sensitive 或敏感 privilege transition 會分類為 `manual` 並 fail closed。Manual apply 只能帶 `--allow-manual`，且 `SUPABASE_REVIEWED_PLAN_SHA256` 必須與當下重新產生的 `plan.sql` SHA-256 完全相同；即使 manual apply 仍不得改寫 migration history，且要完成 second diff 與 acceptance readback。Standalone `verify` 保留給人工診斷；
 `verify --api` 另用 publishable key 讀回 public Data API denial 與 Auth settings（Google provider
 狀態只作診斷，不是 acceptance gate）。Release/Replace
-保存 initial `plan.sql`、post-sync `verification.sql` 與 migration-history before/after evidence。
+保存 initial `plan.sql`、`plan.sha256`、post-sync `verification.sql` 與 migration-history before/after evidence。
 
 Remote target 由 `SUPABASE_URL` 與 `POSTGRES_URL_NON_POOLING` 交叉驗證，並要求
 `SUPABASE_CONFIRM_PROJECT` exact match。Auth、Storage、`public` provider helper 與
@@ -100,23 +98,13 @@ current validated main
 → preserve verification evidence
 ```
 
-Automatic Release 的 plain `sync` 不帶 `--allow-destructive`；若 plan 含 destructive / data-sensitive DDL，必須 fail closed，由 manual `Supabase Replace` 承接 explicit destructive authorization。Supabase convergence 成功後才允許 Release 進入 Vercel Production deployment；database failure 不得留下已先接流量的新 runtime。
+Automatic Release 的 plain `sync` 不帶 `--allow-manual`；若 plan 分類為 `manual`，必須 fail closed，由 manual reconciliation 承接 reviewed-plan authorization。Automatic Release 與 manual reconciliation 共用同一 production Supabase GitHub concurrency key，repository-owned remote mutation 另由 PostgreSQL advisory lock 序列化。Supabase convergence 成功後才允許 Release 進入 Vercel Production deployment；database failure 不得留下已先接流量的新 runtime。
 
-### Explicit Supabase Replace
+### Manual Supabase Reconciliation
 
-Destructive/data-sensitive plan 只由 `Supabase Replace` workflow 授權。它固定 target
-`nmssogphayjymjpbnrxv`、要求 exact current `main`、repository validation與人工 confirmation，
-然後執行：
+Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql` 與 `plan.sha256` 給 operator review；`apply` 額外要求 recovery-readiness attestation、explicit apply confirmation 與 reviewed SHA-256，然後重新 prepare、重新產生 current plan，只有 fingerprint 完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback 與 retained evidence。
 
-```text
-prepare preserve-data expansion
-→ sync --allow-destructive (plan → apply → second diff → acceptance)
-→ retained evidence
-```
-
-`prepare` 成功不代表 destructive contract 已完成；`sync --allow-destructive` 成功也不代表
-deployment/device/business acceptance。Supabase Replace 只修 database contract，不取得 Web
-deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
+`prepare` 成功不代表 manual contract 已完成；`sync --allow-manual` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation，不冒充 Supabase provider backup/PITR readback。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
 兩條 path 都由
 `scripts/supabase/remote.mjs` 擁有 reconciliation semantics，不新增 migration file，也不改寫
 `supabase_migrations.schema_migrations`。
