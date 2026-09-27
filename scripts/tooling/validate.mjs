@@ -19,6 +19,7 @@ const fastTasks = new Set([
   "schema:check",
   "schema:remote:test",
   "github:test",
+  "attendance:scheduler:test",
   "architecture:test",
   "architecture",
   "deadcode",
@@ -114,6 +115,7 @@ export function shouldRunFast(task, scope) {
     return scope.docsAffected;
   if (task === "schema:check" || task === "schema:remote:test") return scope.schemaAffected;
   if (task === "github:test") return scope.toolingAffected;
+  if (task === "attendance:scheduler:test") return scope.codeAffected;
   if (task === "architecture:test") return scope.toolingAffected && scope.codeAffected;
   if (task === "architecture")
     return scope.codeAffected || scope.toolingAffected || scope.schemaAffected;
@@ -179,6 +181,7 @@ function main() {
       "schema:remote:test",
       ["--test", "scripts/supabase/postgres.test.mjs", "scripts/supabase/remote.test.mjs"],
     ],
+    ["attendance:scheduler:test", ["--test", "scripts/attendance/scheduler.test.mjs"]],
     ["schema:check", [turbo, "run", "schema:check"]],
     ["architecture", ["scripts/architecture/check-all.mjs"]],
     ["deadcode", ["node_modules/knip/bin/knip.js"]],
