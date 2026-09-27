@@ -960,6 +960,8 @@ export function validate(root) {
             "technical-researcher",
             "diff-reviewer",
             "evidence-verifier",
+            "architecture-decider",
+            "acceptance-decider",
           ].includes(data.name) &&
           data.sandbox_mode !== "read-only"
         )
