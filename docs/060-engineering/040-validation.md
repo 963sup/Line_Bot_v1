@@ -30,7 +30,7 @@ GitHub Draft pull request 代表 active iteration，validation job 必須 skip�
 
 `validate` 是完整 repository gate，不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收已完成。PR affected check 與 main full validate 是不同證據，不以其中一者冒充另一者。
 
-Full `validate` 擁有 read-only Supabase remote tooling tests。Affected external release 是另一層 evidence：`Release` 在相關 main source 或 Release workflow 變更時執行，先要求同 SHA `validate`；已授權的 Supabase destructive reconciliation 之後，只有需要 deployed Web 的 provider publication 再等待 deployment evidence。它不重新跑 repository validation。
+Full `validate` 擁有 read-only Supabase remote tooling tests。External release 是另一層 evidence：`Release` 由 successful same-repository `main` `Validate` 的 `workflow_run` completion 觸發，不重新跑 repository validation。Affected-source routing 以前次 completed Release 中成功的 `gate` job 作 cursor，不以整體 Release conclusion 取代 routing truth；Supabase 對每個 validated main revision 仍執行 changed safe sync 或 unchanged verify，只有 remote convergence 成功後才允許 Production deployment，destructive/data-sensitive reconciliation 仍只由 manual `Supabase Replace` 授權。
 
 ## Concurrency
 

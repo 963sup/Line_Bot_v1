@@ -20,7 +20,7 @@ export default async function Page({
   }
   if (!discussionId || discussionId.length > 120) notFound();
   return (
-    <AppShell active="repositories">
+    <AppShell>
       <RepositoryResourcesPanel
         key={`${ownerLogin}/${repository}/discussion/${discussionId}`}
         liffId={lineMiniApp().liffId}

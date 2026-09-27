@@ -79,21 +79,26 @@ Remote target 由 `SUPABASE_URL` 與 `POSTGRES_URL_NON_POOLING` 交叉驗證，�
 
 ### Automatic Release
 
-Validated `main` 只有 declarative schema state 改變時才啟動 Supabase remote job：
+每次 successful same-repository `main` `Validate` 都會觸發 `Release`。Release 的 `gate` 以先前 **completed Release 中成功的固定 `gate` job** 作 affected-source cursor；整體 Release conclusion 只代表 downstream external-effect evidence，不是 routing authority。沒有合格 cursor 時才以 empty tree 做 bootstrap。
+
+Declarative schema 相對 cursor 有變更時：
 
 ```text
-current main
+current validated main
 → prepare preserve-data expansion / preflight
-→ sync --allow-destructive (plan → apply → second diff → acceptance)
+→ plain sync (plan → apply → second diff → acceptance)
 → preserve plan / verification / history evidence
 ```
 
-單純修改 reconciler 不會觸發 remote runner；它由 repository validation 驗證，等下一次真正
-schema change 再使用，避免重複消耗 GitHub Actions 分鐘。Automatic Release 的 destructive
-authorization 只來自 validated current `main` 的 schema/source change、exact project target、
-current-main precondition 與 post-write readback；需要不可推導 business data 時仍 fail closed。
-Supabase convergence 成功後才允許 Release 進入 Vercel Production deployment；database failure
-不得留下已先接流量的新 runtime。
+Declarative schema沒有變更時仍執行：
+
+```text
+current validated main
+→ verify remote desired/current parity
+→ preserve verification evidence
+```
+
+Automatic Release 的 plain `sync` 不帶 `--allow-destructive`；若 plan 含 destructive / data-sensitive DDL，必須 fail closed，由 manual `Supabase Replace` 承接 explicit destructive authorization。Supabase convergence 成功後才允許 Release 進入 Vercel Production deployment；database failure 不得留下已先接流量的新 runtime。
 
 ### Explicit Supabase Replace
 

@@ -1,6 +1,6 @@
 # App 路由約束
 
-## GitHub Mobile 導覽目標（尚未實作）
+## GitHub Mobile 導覽契約
 
 全域導覽由 app shell 擁有；採用四個穩定目的地，是本產品對 GitHub Mobile 模式的選擇，不宣稱為上游所有版本的固定 tab 清單。
 
@@ -11,7 +11,7 @@
 | 探索 Explore | `/explore` | 現有 Repository discovery/Star；不假裝已有跨 owner 全域搜尋 |
 | 我的 Profile | `/settings` | 當前 viewer 的帳號入口、公開個人頁連結、組織與管理入口；不是 public `/{login}` 替代品 |
 
-Current shell 仍有 `/repositories` 第五個 tab；目標將它保留為 Home 資源入口與既有 deep link，不刪 URL。資料夾、API、LIFF intent 與發布選單不能因 tab 排序順便改名。
+Current shell 固定四個主目的地；`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。資料夾、API、LIFF intent 與發布選單不能因 tab 排序順便改名。
 
 導航層級：主 tab → owner/collection → resource detail → 明確操作。一般內頁使用 back、title、最多一個主要快捷操作及適當 overflow；不能把每個 resource 提升為主 tab。切 tab 可保留同一 viewer 的安全瀏覽位置，但私有資料與命令恢復仍依 owner/session 規則。
 

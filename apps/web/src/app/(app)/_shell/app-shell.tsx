@@ -3,13 +3,7 @@ import type { ReactNode } from "react";
 import MemberAvatar from "../../../modules/account/member-avatar";
 import WorkNavigation from "./work-navigation";
 
-export default function AppShell({
-  children,
-  active,
-}: {
-  children: ReactNode;
-  active?: "repositories";
-}) {
+export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -24,7 +18,7 @@ export default function AppShell({
       <main id="main-content" className="app-content">
         {children}
       </main>
-      <WorkNavigation active={active} />
+      <WorkNavigation />
     </div>
   );
 }

@@ -22,7 +22,7 @@ export default async function Page({
   if (!Number.isSafeInteger(number) || number < 1) notFound();
 
   return (
-    <AppShell active="repositories">
+    <AppShell>
       <IssueBoard
         key={`${ownerLogin}/${repository}/${number}`}
         liffId={lineMiniApp().liffId}

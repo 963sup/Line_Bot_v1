@@ -1,8 +1,8 @@
 # Authenticated app route group
 
-## GitHub Mobile 目標（後續實作）
+## GitHub Mobile current slice / remaining target
 
-- Home 目標採「我的工作／資源捷徑」分區列表：Repository、Organization、Enterprise、Team 與出勤/費用等已實作本地入口；收藏只使用可授權取得的 Star 投影，不新增假推薦、假 count 或未完成 Project 頁面。
+- Home current 採「我的工作／收藏／快捷入口」分區：Repository、Organization、Enterprise、Team、Attendance、Expense 等只組裝既有 owner 能力；收藏直接使用 Repository-owned Star projection，不新增 Favorites truth、假推薦、假 count 或未完成 Project 頁面。
 - 各主 tab 的排序、URL 與安全返回由父層 app 契約統一；`/repositories` 保留為 collection/workbench，不因移出底部 tab 失去入口。
 - Repository 內頁在 resource header 下提供 scope 內導航；全域 tab、resource navigation、list filter 是三層，不互相替代。手機避免多個大按鈕擠壓標題。
 - 一般 tab 切換不重做 LIFF 初始化、不自動送命令；直接開啟與返回都回到同一 owner query。未開放入口集中說明，不能用看似可操作的空管理畫面充數。

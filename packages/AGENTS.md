@@ -4,6 +4,7 @@
 
 - `packages/<owner>` 是該責任的 module owner；先確認既有 owner、consumer、public contract 與依賴方向，再決定放置位置。
 - Bounded Context、Module Boundary、Data Boundary 可以對齊，但不得因目錄或 package 名稱而假設它們是同一邊界。
+- `packages/` 的完整性以 `architecture/semantic-model.json` 的真實 owner 與 `architecture/implementation-topology.json` 的 module mapping 判斷，不以 GitHub Mobile 選單、FPT category 或 Web module 數量判斷。Issue / Discussion / Label / Repository Milestone / Star 由 Repository owner 承接；WBS / Project Milestone 由 Project owner 承接；沒有新的 authority/lifecycle 就不建立同名 package。
 
 ## AGENTS routing index
 

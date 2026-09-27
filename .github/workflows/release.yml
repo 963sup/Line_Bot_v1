@@ -59,7 +59,7 @@ jobs:
           VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           baseline_sha=""
-          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=success&per_page=100" \
+          gh api "repos/$REPOSITORY/actions/workflows/release.yml/runs?branch=main&event=workflow_run&status=completed&per_page=100" \
             --jq '.workflow_runs[] | [.id, .display_title] | @tsv' > release-runs.tsv
           while IFS=$'\t' read -r run_id display_title; do
             [[ "$display_title" =~ ^Release\ [0-9a-f]{40}$ ]] || continue

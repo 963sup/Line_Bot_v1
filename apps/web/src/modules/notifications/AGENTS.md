@@ -1,8 +1,8 @@
 # Web notifications module
 
-## GitHub Mobile 目標（後續實作）
+## GitHub Mobile current slice / remaining target
 
-- Inbox 以可操作的通知列表為中心：resource 種類、主旨、Repository/owner context、未讀狀態與可用時間；all/unread filter 保留現行 query 契約。
+- Inbox current 已以 recipient-scoped list/detail/read state 為核心，並使用既有 `notificationView=all|unread` / `unreadOnly` contract 提供 All / Unread filter；resource context 等額外欄位只有 owner contract 真實提供時才顯示。
 - 詳情／來源連結先驗可讀，再回到保留 filter 的 inbox；通知存在不代表來源仍可存取，不能用通知內容繞過 revoke。
 - 上游的 Focused、Done、Saved、snooze、swipe/bulk actions 不自動成為本地能力；只展示已有 command 的操作。全域 badge 只顯示可靠 count，未知不顯示 0。
 
