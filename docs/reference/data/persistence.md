@@ -16,4 +16,4 @@ PostgreSQL 保存需要 constraint、transaction、concurrency control、authori
 
 Aggregate / Domain model 不等於 table model；一致性邊界由「哪些 invariants 必須一起成立」決定。跨 owner database object 只有物理必要時才提升到 cross-owner schema layer。
 
-Transaction / replay 詳見 [Transaction and idempotency](040-transaction-and-idempotency.md)；current SQL truth 見 [Schema model](030-schema-model.md) 與 `supabase/schemas/`。
+Transaction / replay 詳見 [Transaction and idempotency](transactions.md)；current SQL truth 見 [Schema model](schema.md) 與 `supabase/schemas/`。
