@@ -1,10 +1,5 @@
 # Browser shared boundary
 
-## GitHub Mobile 目標（後續實作）
-
-- 目標支援 Mobile 式 tab/返回位置連續性，但只能保存同一可信 viewer 下的非敏感導航 intent；tab 切換不重建 provider session，不為每頁重複載入 LIFF。
-- 帳號切換、登出、scope/revoke、visibility 恢復先按現行契約清除或重驗私人投影；遲到 response 不得恢復舊身分畫面。列表位置保留不等於業務資料永久快取。
-- Deep link、外部瀏覽器、Android back 與 iOS 手勢返回都需實測或明列未驗證；不可假設 Next navigation 等同原生 app。
 
 ## 現行機制與 invariant
 

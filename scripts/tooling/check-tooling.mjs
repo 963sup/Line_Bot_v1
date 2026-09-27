@@ -7,7 +7,19 @@ import { parse } from "smol-toml";
 import YAML from "yaml";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
-const read = (file) => readFileSync(file, "utf8").replace(/^\uFEFF/, "");
+const read = (file) => readFileSync(file, "utf8");
+const repositoryTextPatterns = [
+  "*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  ".github/**/*.{md,yml,yaml}",
+  ".agents/**/*.{md,json,yml,yaml}",
+  ".codex/**/*.{md,toml,rules}",
+  "apps/**/*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  "architecture/**/*.{md,json,jsonc}",
+  "docs/**/*.md",
+  "packages/**/*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  "scripts/**/*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
+  "supabase/**/*.{md,sql,toml}",
+];
 const table = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
 export function validate(root) {
@@ -18,6 +30,17 @@ export function validate(root) {
       .sort()
       .map((file) => resolve(root, file));
   try {
+    const repositoryTextFiles = new Set(
+      repositoryTextPatterns.flatMap((pattern) => files(pattern)),
+    );
+    for (const file of repositoryTextFiles) {
+      const source = read(file);
+      const path = relative(root, file).split(sep).join("/");
+      if (source.startsWith("\uFEFF"))
+        errors.push(`${path}: repository text must be UTF-8 without BOM`);
+      if (source.includes("\r")) errors.push(`${path}: repository text must use LF line endings`);
+    }
+
     const manifest = JSON.parse(read(resolve(root, "package.json")));
     const workspace = YAML.parse(read(resolve(root, "pnpm-workspace.yaml")));
     const exact = /^\d+\.\d+\.\d+$/;
@@ -335,6 +358,18 @@ export function validate(root) {
       if (duplicatedPackageBoilerplate.every((line) => source.includes(line)))
         errors.push(
           `${relative(root, file)}: duplicated package boilerplate belongs in packages/AGENTS.md`,
+        );
+    }
+
+    const hotPathTargetHeading =
+      /^#{1,6}\s+.*(?:target|proposal|future|planned|remaining target|後續實作|未來目標|目標設計).*$/im;
+    for (const file of files("**/AGENTS.md").filter(
+      (file) => !relative(root, file).split(sep).join("/").startsWith(".agents/skills/"),
+    )) {
+      const source = read(file);
+      if (hotPathTargetHeading.test(source))
+        errors.push(
+          `${relative(root, file)}: target/proposal design belongs in docs/change, not AGENTS hot-path context`,
         );
     }
 
@@ -734,6 +769,8 @@ export function validate(root) {
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }
+  const skillLock = JSON.parse(read(resolve(root, "skills-lock.json")));
+  const lockedSkills = new Set(Object.keys(skillLock.skills ?? {}));
   const names = new Set();
   for (const file of files(".agents/skills/*/SKILL.md")) {
     try {
@@ -748,6 +785,11 @@ export function validate(root) {
       names.add(name);
       if (typeof data.description !== "string" || !data.description.trim())
         throw new Error("missing description");
+      const repositoryLocal = data.source === "repository";
+      if (!lockedSkills.has(name) && !repositoryLocal)
+        throw new Error("skill must have skills-lock provenance or source: repository");
+      if (lockedSkills.has(name) && repositoryLocal)
+        throw new Error("locked external skill cannot declare source: repository");
     } catch (error) {
       errors.push(`${relative(root, file)}: ${error.message}`);
     }

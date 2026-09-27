@@ -1,10 +1,5 @@
 # Admin route group
 
-## GitHub Mobile 目標（後續實作）
-
-- 管理入口從 viewer hub 或已授權任務進入；admin 維持明確標題與退出/返回，不增加第五個全域管理 tab，也不把危險操作放入首頁快捷點擊。
-- 先顯示 scope 與可操作對象，再以緊湊列表進詳情/表單；停權、權限等 mutation 保留原因、確認、版本與結果。overflow 只改呈現，不省略確認。
-- 未開放的 audit/attendance/expenses/settings 仍顯示未實作；FPT audit-log 或 Mobile 管理畫面不能當成已有本地讀取能力。
 
 ## 現行 URL 與 invariant
 

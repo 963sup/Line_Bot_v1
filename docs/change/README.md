@@ -1,14 +1,16 @@
 # Governance
 
-Governance 只保存仍會影響未來 decision、cutover、open gap、risk 或可重現 acceptance 的 change-over-time knowledge；不成 current product / architecture 的第二份 truth。
+Governance only stores change-over-time knowledge that still affects a future decision, cutover, open gap, active risk, or reproducible acceptance/recovery decision. It is never a second source of current product or architecture truth.
 
-- `010-decisions/`：已選定、仍有未來決策價值的 rationale / target direction。
-- `020-proposals/`：尚未升格為 current truth、且仍有真實 consumer / activation question 的 proposal。
-- `030-migrations/`：仍需執行或驗證的 cutover。
-- `040-gaps/`：仍未完成的事項與 completion condition。
-- `050-risks/`：active risk。
-- `060-acceptance/`：具日期、revision、環境與範圍，且仍能支援 recovery / regression / release 判斷的 evidence。
+- `decisions/`: selected rationale or target direction that still has future decision value.
+- `proposals/`: proposals not yet promoted to current truth and still backed by a real consumer or activation question.
+- `migrations/`: cutovers that still need execution or verification.
+- `gaps/`: incomplete work with an explicit completion condition.
+- `risks/`: active risks.
+- `evidence/`: dated/revision-scoped evidence that still supports recovery, regression, or release decisions.
 
-Raw historical logs、已退役 current baseline、完成且沒有 recovery value 的 migration、無 consumer 的 speculative target 不留在 current tree。原始內容需要追溯時由 Git history 取得，不建立 `090-history/` 第二套知識面。
+Raw historical logs, retired baselines, completed migrations without recovery value, and speculative targets without a consumer do not stay in the current tree. Use Git history when raw history is needed; do not create a second history knowledge surface.
 
-完成 migration 或 proposal 被 current owner 吸收後，仍成立的 truth 回到對應 `facts/`、`rules/`、`010-domain-owners/` 或 machine source；其餘刪除。Acceptance 只證明指定 revision / environment，不得用舊環境推導 current operational target。
+When a migration or proposal becomes current, move the durable truth to its real owner: `docs/facts/`, `docs/rules/`, `docs/owners/`, source/tests, architecture manifests, or schema. Delete the obsolete change artifact when it no longer has decision/recovery value.
+
+Acceptance evidence proves only its recorded revision/environment/scope. It never proves current provider, deployment, device, or business state by itself.
