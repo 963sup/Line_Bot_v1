@@ -741,14 +741,16 @@ test("skill frontmatter rejects wrong folder", (t) => {
   write(".agents/skills/demo/SKILL.md", "---\nname: other\ndescription: example\n---\n");
   rejects(root, "mismatch");
 });
-test("reviewer cannot gain write access", (t) => {
-  const { root, write } = fixture(t);
-  write(
-    ".codex/agents/reviewer.toml",
-    'name="change-reviewer"\ndescription="review"\ndeveloper_instructions="review only"\nsandbox_mode="workspace-write"\n',
-  );
-  rejects(root, "read-only");
-});
+for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {
+  test(`${role} cannot gain write access`, (t) => {
+    const { root, write } = fixture(t);
+    write(
+      ".codex/agents/read-only-role.toml",
+      `name="${role}"\ndescription="read only"\ndeveloper_instructions="read only"\nsandbox_mode="workspace-write"\n`,
+    );
+    rejects(root, "read-only");
+  });
+}
 test("invalid TOML fails", (t) => {
   const { root, write } = fixture(t);
   write(".codex/config.toml", "[agents");
