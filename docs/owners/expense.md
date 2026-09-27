@@ -20,9 +20,9 @@ LINE Rich Menu 另有外部費用申請 Google Form 入口。開啟／提交外�
 
 ## Adjacent owners
 
-- [Rich Menu](../030-platform/010-line.md)
-- [Security](../050-security/README.md)
-- [External workflow gaps](../090-governance/040-gaps/030-external-workflows.md)
+- [Rich Menu](line-integration.md)
+- [Security](../rules/system-invariants.md)
+- [External workflow gaps](../change/gaps/external-workflows.md)
 
 
 ## Receipt intake from LINE
@@ -69,6 +69,6 @@ Business transaction 與 LINE reply 是不同 transaction：
 ## Adjacent owners
 
 - Expense state / fields：本文
-- AI cost / provider behavior：`../../../030-platform/060-ai.md`
-- LINE webhook：`../../../030-platform/010-line.md`
+- AI cost / provider behavior：`../../../reference/platform/ai.md`
+- LINE webhook：`../../line-integration.md`
 - Persistence / replay：`../../../040-data/040-transaction-and-idempotency.md`
