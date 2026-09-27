@@ -24,15 +24,15 @@ pnpm schema:check
 pnpm schema:local
 
 pnpm schema:remote plan
-pnpm schema:remote sync
 pnpm schema:remote verify
 pnpm schema:remote verify --api
+pnpm schema:remote recovery
 ```
 
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
 - `schema:local`：用 current schemas 重建 local application schema。
-- `plan / sync / verify`：remote current-vs-desired reconciliation；詳細 contract 見 [Supabase platform](../docs/reference/platform/supabase.md)。
-- `prepare / recovery`：只供需要 explicit business data cutover／recovery authorization 的操作；不是一般 schema publication 必經步驟。
+- `plan / verify / recovery`：read-only remote diagnosis / recovery readback；詳細 contract 見 [Supabase platform](../docs/reference/platform/supabase.md)。
+- `repair / prepare / sync`：remote mutation；只允許 current `main` 的 GitHub Actions Release 呼叫，不作本機或任意 branch 操作。
 
 ## Change routing
 
