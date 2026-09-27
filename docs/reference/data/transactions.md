@@ -57,7 +57,7 @@ Audit records do not automatically grant read access to the original private bus
 
 ## Adjacent owners
 
-- Module-specific state/command semantics：[Domain owners](../010-domain-owners/README.md)
+- Module-specific state/command semantics：[Domain owners](../../owners/README.md)
 - Schema constraints / RLS：`../030-schema/`
-- Security / authorization：[Security](../050-security/README.md)
-- External delivery / recovery：[Operations](../070-operations/README.md)
+- Security / authorization：[Security](../../rules/system-invariants.md)
+- External delivery / recovery：[Operations](../README.md)
