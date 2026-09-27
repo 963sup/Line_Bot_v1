@@ -29,6 +29,18 @@ export function normalizeRepositoryName(value: string): string | null {
   return name && name.length <= 100 ? name : null;
 }
 
+export function normalizeRepositoryStarListName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.trim();
+  return name && name.length <= 100 ? name : null;
+}
+
+export function normalizeRepositoryStarListDescription(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const description = value.trim();
+  return description.length <= 500 ? description : null;
+}
+
 export function normalizeIssueNumber(value: number | string): number | null {
   const number = typeof value === "number" ? value : Number(value);
   return Number.isSafeInteger(number) && number >= 1 ? number : null;

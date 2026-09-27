@@ -81,7 +81,7 @@ fix(identity): preserve membership when Google linking fails
 
 ## Pull request and merge
 
-PR 描述的是完整 change set；commit history 描述其中值得保留的獨立決策。Active iteration 與 remote CI intent 必須分開：開發／Agent 高頻修改期間 PR 保持 **Draft**，local commit 可以頻繁，但 push 應以 coherent checkpoint 為單位；Draft PR 的 synchronize 不配置 validation runner。準備取得 remote PR evidence 時才標記 **Ready for review**，由該 head SHA 執行 `pnpm check`。Ready PR 後續若再 push，視為新的 CI intent。
+PR 描述的是完整 change set；commit history 描述其中值得保留的獨立決策。Active iteration 與 remote CI intent 必須分開：開發／Agent 高頻修改期間 PR 保持 **Draft**，local commit 可以頻繁，但 push 應以 coherent checkpoint 為單位；Draft PR 的 synchronize 不配置 validation runner。準備把目前 head 當作 merge candidate 時才標記 **Ready for review**；該 transition 對 exact PR head 執行 `pnpm check` 與 `pnpm validate`。Ready PR 後續若再 push，視為新的 CI intent：fast `pnpm check` 會重跑，但原 full-validate 屬舊 SHA，merge 前必須重新 Draft → Ready 取得目前 head 的完整證據。
 
 GitHub workflow 的原子邊界是獨立 trigger、permission、external effect 或 rollback responsibility，不是 YAML step 數量；checkout/setup/verify 的重複不足以建立 reusable workflow。只有已有至少兩個真實 consumer，且 inputs、permissions、failure semantics 一致時才抽 reusable owner。
 

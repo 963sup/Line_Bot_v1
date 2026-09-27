@@ -58,6 +58,7 @@ packages/<owner>
 602_repository_team_access.sql
 603_repository_stars.sql
 604_repository_commands.sql
+605_repository_star_lists.sql
 610_repository_labels.sql
 611_repository_milestones.sql
 620_issues.sql
@@ -136,7 +137,7 @@ Activating any reserved file requires removing the reserved marker and updating 
 - Organization owns Organization membership and invitation facts. Organization does not own Enterprise attachment.
 - Team owns Organization-scoped Team, TeamMembership and Team command receipts. TeamMaintainer RoleAssignment belongs to Identity/Access.
 - Identity/Access owns typed RoleAssignment, feature permission grants/administration and governance evidence.
-- Repository owns Repository identity/access/star, Label, Repository Milestone, Issue/IssueLabel and Discussion objects.
+- Repository owns Repository identity/access/star, User-owned Repository Star Lists/List membership, Label, Repository Milestone, Issue/IssueLabel and Discussion objects.
 - Project owns Project, ProjectItem references, WBS, Project Milestone and explicit Project→Repository reference. Referenced Issue remains Repository authority.
 - Asset owns denomination definition; DailyCheckIn owns durable reward outcomes; Ledger owns append-only value facts; Wallet remains derived and has no writable balance table.
 - Attendance owns attendance/workplace facts and outbox; Notifications and Partner Directory own their own durable relations.

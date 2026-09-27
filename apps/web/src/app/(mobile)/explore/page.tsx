@@ -19,11 +19,11 @@ export default function Page() {
           description="近期 Star 訊號優先的 Repository discovery"
         />
         <ActionRow
-          href="/search"
-          icon="⌕"
+          href="/repositories/lists/discover"
+          icon="☺"
           tone="purple"
-          title="Search Repositories"
-          description="搜尋目前有權存取的 Repository"
+          title="Awesome Lists"
+          description="探索公開 curated Repository Lists"
         />
       </div>
       <DiscoveryPanel liffId={lineMiniApp().liffId} />

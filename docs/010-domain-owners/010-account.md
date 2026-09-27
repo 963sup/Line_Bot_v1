@@ -19,7 +19,7 @@ Stable UserId 不因重新登入、session expiry、重啟或 LINE chat context 
 
 ## Registration, restore and identity link
 
-Register 只建立不存在的 User，並在同一 transaction 建立 Account-owned global unique `login`；active exact retry 必須使用同一 login 並回既有結果，不同 login 衝突，paused 衝突，suspended 拒絕。Restore 只恢復 paused；不存在或 suspended 拒絕，active retry 不新增 event。Qualification/state mutation 在同一 transaction；client-supplied ID/status 不是 authority。
+Register 只建立不存在的 User，並在同一 transaction 建立 Account-owned global unique `login`；active exact retry 必須使用同一 login 並回既有結果，不同 login 衝突，paused 衝突，suspended 拒絕。Restore 只恢復 paused；不存在或 suspended 拒絕，active retry 不新增 event。若歷史 User 早於 locator contract 而存在 `active User + missing login`，它是明確的 legacy recovery state：保留 stable UserId 與既有 history，由同一可信 User 透過既有 `updateLogin` 明確選定唯一 login；不得從 LINE display name/picture、Google email、provider subject 或 UserId fabricated backfill。Qualification/state mutation 在同一 transaction；client-supplied ID/status 不是 authority。
 
 Google link 是選填 external identity mapping，不是 LINE 日常 qualification。可信 User 發起短效 request，原發起者明確確認 verified candidate 後才建立 link；不按 email 合併。Request 綁原 User/status/version/expiry/one-time capability；provider token 不保存為 Account record，provider session 失效不改 User lifecycle。已啟用 User 可由同一可信 LINE identity 明確解除 Google mapping；unlink 只刪除 optional Google binding／pending request 並留下 event，不改 UserId、LINE identity、lifecycle 或歷史 ownership。
 

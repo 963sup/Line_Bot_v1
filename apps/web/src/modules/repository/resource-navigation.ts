@@ -29,3 +29,19 @@ export function repositoryIssuePath(
 ) {
   return `${repositoryIssuesPath(ownerLogin, repositoryName)}/${issueNumber}`;
 }
+
+export function repositoryStarListsPath() {
+  return "/repositories/lists";
+}
+
+export function repositoryStarListCreatePath() {
+  return "/repositories/lists/new";
+}
+
+export function repositoryStarListDiscoverPath() {
+  return "/repositories/lists/discover";
+}
+
+export function repositoryStarListPath(listId: string) {
+  return `${repositoryStarListsPath()}/${encodeURIComponent(listId)}`;
+}

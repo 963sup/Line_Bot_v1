@@ -13,13 +13,13 @@ type AccountProjection = {
 
 export default function MemberAvatar({ liffId }: { liffId: string }) {
   const [picture, setPicture] = useState<string>();
-  const [login, setLogin] = useState<string>();
+  const [destination, setDestination] = useState<{ href: string; label: string }>();
   const generation = useRef(0);
 
   const clear = useCallback(() => {
     generation.current++;
     setPicture(undefined);
-    setLogin(undefined);
+    setDestination(undefined);
   }, []);
 
   const load = useCallback(async () => {
@@ -46,13 +46,27 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
     }
 
     if (membershipResult.status !== "fulfilled" || !membershipResult.value.ok) {
-      setLogin(undefined);
+      setDestination(undefined);
       return;
     }
     const value = (await membershipResult.value.json()) as AccountProjection;
     if (ticket !== generation.current) return;
-    const accountLogin = value.member?.login;
-    setLogin(typeof accountLogin === "string" && accountLogin ? accountLogin : undefined);
+    if (!value.member) {
+      setDestination(undefined);
+      return;
+    }
+    const accountLogin = value.member.login;
+    setDestination(
+      typeof accountLogin === "string" && accountLogin
+        ? {
+            href: `/${encodeURIComponent(accountLogin)}`,
+            label: "個人檔案",
+          }
+        : {
+            href: "/settings/profile",
+            label: "設定登入名稱",
+          },
+    );
   }, [liffId]);
 
   useEffect(
@@ -91,12 +105,12 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
   return (
     <>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
-      {login ? (
+      {destination ? (
         <Link
-          href={`/${encodeURIComponent(login)}`}
+          href={destination.href}
           className="member-avatar"
-          aria-label="個人檔案"
-          title="個人檔案"
+          aria-label={destination.label}
+          title={destination.label}
         >
           {avatar}
         </Link>

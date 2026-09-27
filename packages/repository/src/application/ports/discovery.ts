@@ -11,6 +11,22 @@ export type TrendingRepository = Readonly<{
   starred: boolean;
 }>;
 
+export type RepositoryStarListDiscovery = Readonly<{
+  id: string;
+  ownerLogin: string;
+  name: string;
+  description: string;
+  visibleRepositoryCount: number;
+  updatedAt: number;
+  repositories: ReadonlyArray<
+    Readonly<{
+      id: string;
+      ownerLogin: string;
+      name: string;
+    }>
+  >;
+}>;
+
 export type RepositoryActivityItem = Readonly<{
   id: string;
   occurredAt: number;
@@ -43,4 +59,5 @@ export interface RepositoryDiscoveryStore {
     userId: string,
     options: RepositoryDiscoveryOptions,
   ): Promise<RepositoryDiscoverySnapshot>;
+  publishedStarLists(userId: string, limit: number): Promise<RepositoryStarListDiscovery[]>;
 }

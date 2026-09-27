@@ -152,6 +152,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/605_repository_star_lists.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/610_repository_labels.sql",
       "role": "authoritative"
     },
@@ -657,6 +661,22 @@
       "path": "supabase/schemas/604_repository_commands.sql",
       "authority": true,
       "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_star_lists",
+      "kind": "table",
+      "path": "supabase/schemas/605_repository_star_lists.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-star-list"
+    },
+    {
+      "name": "repository_star_list_items",
+      "kind": "table",
+      "path": "supabase/schemas/605_repository_star_lists.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-star-list-item"
     },
     {
       "name": "repository_labels",

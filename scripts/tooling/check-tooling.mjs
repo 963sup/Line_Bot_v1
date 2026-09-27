@@ -399,10 +399,13 @@ export function validate(root) {
     if (/^\s*VERCEL:\s*["']?1["']?\s*$/m.test(validateWorkflowSource))
       errors.push("CI: GitHub validation must not impersonate the Vercel runtime");
     const checkJob = workflow.jobs?.check;
+    const fullValidateJob = workflow.jobs?.["full-validate"];
     const validateJob = workflow.jobs?.validate;
-    if (!checkJob || !validateJob)
-      errors.push("CI: validation workflow must define PR check and main validate jobs");
-    const validationJobs = [checkJob, validateJob].filter(Boolean);
+    if (!checkJob || !fullValidateJob || !validateJob)
+      errors.push(
+        "CI: validation workflow must define PR check, pre-merge full validate, and main validate jobs",
+      );
+    const validationJobs = [checkJob, fullValidateJob, validateJob].filter(Boolean);
     const checkoutSteps = validationJobs.flatMap((job) =>
       (job.steps ?? []).filter((step) => step.uses?.startsWith("actions/checkout@")),
     );
@@ -442,6 +445,21 @@ export function validate(root) {
       !(checkJob.steps ?? []).some((step) => step.run === "pnpm check")
     )
       errors.push("CI: ready pull requests must run affected pnpm check while drafts skip runners");
+    if (
+      typeof fullValidateJob?.if !== "string" ||
+      !fullValidateJob.if.includes("pull_request") ||
+      !fullValidateJob.if.includes("ready_for_review") ||
+      !(fullValidateJob.steps ?? []).some((step) => step.run === "pnpm validate")
+    )
+      errors.push("CI: ready-for-review transition must run pre-merge pnpm validate");
+    const fullValidateCheckout = (fullValidateJob?.steps ?? []).find((step) =>
+      step.uses?.startsWith("actions/checkout@"),
+    );
+    if (
+      fullValidateCheckout?.with?.ref !== "${{ github.event.pull_request.head.sha }}" ||
+      fullValidateCheckout?.with?.["fetch-depth"] !== 0
+    )
+      errors.push("CI: pre-merge validate must run against the exact PR head with full history");
     if (
       typeof validateJob?.if !== "string" ||
       !validateJob.if.includes("push") ||

@@ -25,7 +25,7 @@
 | `/api/repositories` | GET：Current User 的 authorized Repository collection；POST：Repository owner contract 的 replay-safe private Repository create |
 | `/api/repositories/owners` | Repository create owner options：current User 本人 + current effective OrganizationOwner scopes |
 | `/api/repositories/explore` | GET：Repository Trending + current-access-filtered Issue Activity projection；POST：Repository Star/unstar transport |
-| `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |
+| `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |\n| `/api/repositories/lists`、`/api/repositories/lists/{listId}` | Repository Star List owner lifecycle；create預設 private，mutation使用 stable requestId + expectedVersion，item add 仍由 Repository owner重驗 Star/access |\n| `/api/repositories/lists/discover` | Published Repository Star List discovery projection；只計算並預覽 viewer 當下可見的 Repository items |
 | `/api/notifications` | recipient-scoped Notifications |
 | `/api/assistant` | Assistant Ask / Issue-draft Generate / text Review transport；current User qualification required，output 不形成 formal write |
 | `/api/attendance`、`/api/attendance/clock-in`、`/api/attendance/clock-out`、`/api/workplaces` | Attendance 現行 subject 與工作場所契約 |
