@@ -21,6 +21,7 @@ import type { ReactNode } from "react";
 import { VercelObservability } from "../shared/browser/vercel-observability";
 import "./globals.css";
 
+// Root metadata supplies the shared application title and description.
 export const metadata: Metadata = {
   title: "Line_Bot_v1",
   description: "工作群組的任務協作空間。",

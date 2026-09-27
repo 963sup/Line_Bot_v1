@@ -1,4 +1,5 @@
 -- Application-owned private schema and runtime role foundation.
+-- Keep the application namespace separate from provider-owned schemas.
 create schema if not exists app_private;
 revoke all on schema app_private from public, anon, authenticated;
 do $$ begin

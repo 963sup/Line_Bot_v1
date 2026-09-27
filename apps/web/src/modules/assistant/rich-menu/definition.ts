@@ -1,6 +1,7 @@
 import type { RichMenuDefinition } from "@line_bot_v1/line-channel/adapters/messaging";
 import { miniAppEntryUrl } from "../../../shared/presentation/entry-route";
 
+// Publication uses the same page keys for menu definitions, assets and aliases.
 export const MENU_PAGES = ["attendance-in", "attendance-out"] as const;
 export type MenuPage = (typeof MENU_PAGES)[number];
 
