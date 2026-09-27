@@ -54,15 +54,15 @@ export default function RepositoryList({
                 <strong>
                   {item.ownerLogin}/{item.name}
                 </strong>
-                <small>
-                  {intent === "create-issue"
-                    ? `Create Issue · ${item.capability}`
-                    : intent === "browse-issues"
-                      ? `Issues · ${item.capability}`
-                      : intent === "browse-discussions"
-                        ? `Discussions · ${item.capability}`
-                        : item.capability}
-                </small>
+                {intent && (
+                  <small>
+                    {intent === "create-issue"
+                      ? "Create Issue"
+                      : intent === "browse-issues"
+                        ? "Issues"
+                        : "Discussions"}
+                  </small>
+                )}
               </span>
               <span className="action-chevron" aria-hidden="true">
                 ›
