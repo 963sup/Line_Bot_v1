@@ -53,6 +53,8 @@ function fixture(t) {
         semantic: "node scripts/architecture/semantic-cli.mjs",
         "patch:apply": "node scripts/changes/patch-apply.mjs",
         "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
+        "github:current-main": "node scripts/github/current-main.mjs",
+        "github:release-plan": "node scripts/github/release-plan.mjs",
       },
       devDependencies: { "@biomejs/biome": "2.5.12" },
     }),
@@ -444,7 +446,7 @@ test("validate workflow remains read-only, secret-free, and credential-free", (t
   rejects(root, "must not consume repository secrets");
 });
 
-test("Release plans owner-specific convergence and preserves real dependencies", (t) => {
+test("Release workflow remains a thin adapter over canonical owner commands", (t) => {
   const { root, write } = fixture(t);
   const workflow = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
 
@@ -471,18 +473,18 @@ test("Release plans owner-specific convergence and preserves real dependencies",
 
   write(
     ".github/workflows/release.yml",
-    workflow.replaceAll("find_owner_baseline", "find_baseline_removed"),
+    workflow.replace(
+      'pnpm github:release-plan --sha "$VALIDATED_SHA"',
+      'pnpm github:release-plan --sha "$VALIDATED_SHA" && git diff HEAD^ HEAD',
+    ),
   );
-  rejects(root, "owner-specific convergence");
-
-  write(".github/workflows/release.yml", workflow.replace("status=completed", "status=success"));
-  rejects(root, "owner-specific convergence");
+  rejects(root, "thin adapter");
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("turbo query affected --tasks build --packages @line-work/web", "echo web"),
+    workflow.replace('pnpm github:release-plan --sha "$VALIDATED_SHA"', "echo skip-plan"),
   );
-  rejects(root, "owner-specific convergence");
+  rejects(root, "delegate routing to github:release-plan");
 
   write(
     ".github/workflows/release.yml",
@@ -500,7 +502,13 @@ test("Release plans owner-specific convergence and preserves real dependencies",
     ".github/workflows/release.yml",
     workflow.replace("pnpm schema:remote verify", "echo skip-verify"),
   );
-  rejects(root, "Supabase must repair");
+  rejects(root, "Supabase must guard current main");
+
+  write(
+    ".github/workflows/release.yml",
+    workflow.replace('pnpm github:current-main --sha "$SHA"', "echo skip-main"),
+  );
+  rejects(root, "guard current main");
 
   write(
     ".github/workflows/release.yml",
@@ -518,7 +526,7 @@ test("Release plans owner-specific convergence and preserves real dependencies",
     ".github/workflows/release.yml",
     workflow.replace('pnpm vercel:deploy:production --live --sha "$SHA"', "echo skip-deploy"),
   );
-  rejects(root, "deploy the exact planned SHA");
+  rejects(root, "invoke the Vercel owner");
 
   write(
     ".github/workflows/release.yml",
@@ -543,6 +551,20 @@ test("Release plans owner-specific convergence and preserves real dependencies",
 
   write(".github/workflows/release.yml", workflow);
   assert.deepEqual(validate(root), []);
+});
+
+test("GitHub operation command surface stays canonical", (t) => {
+  const { root, write } = fixture(t);
+  const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+
+  packageJson.scripts["github:current-main"] = "node other.mjs";
+  write("package.json", JSON.stringify(packageJson));
+  rejects(root, "github:current-main");
+
+  packageJson.scripts["github:current-main"] = "node scripts/github/current-main.mjs";
+  packageJson.scripts["github:release-plan"] = "node other.mjs";
+  write("package.json", JSON.stringify(packageJson));
+  rejects(root, "github:release-plan");
 });
 
 test("main Git integration cannot bypass controlled production release", (t) => {
