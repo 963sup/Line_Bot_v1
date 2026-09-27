@@ -5,7 +5,7 @@ description: 開發、診斷或審查 LINE Messaging API Webhook、驗簽、重�
 
 # LINE Messaging API
 
-先讀 [LINE Messaging](../../../docs/030-platform/010-line.md)，定位 Webhook route、LINE adapter 與相關測試。業務觸發、收圖窗口及通知規則由主文件維護，不在 skill 另存數值。
+先讀 [LINE Messaging](../../../docs/owners/line-integration.md)，定位 Webhook route、LINE adapter 與相關測試。業務觸發、收圖窗口及通知規則由主文件維護，不在 skill 另存數值。
 
 ## 文件與環境
 
@@ -27,7 +27,7 @@ Context7 可用時先 resolve `LINE Developers`，選官方文件庫，再 query
 ## 工作流程
 
 1. 以原始 body 驗證 `x-line-signature`：channel secret、HMAC-SHA256、Base64 及安全比較／適用 SDK，通過才解析 JSON。Next.js Route Handler 不直接套 Express middleware；驗簽失敗不得觸發業務。
-2. 處理空 events、多事件、未知事件與缺少使用者身分。依可信 source 分隔 user／group／room，再依 [Account](../../../docs/010-domain-owners/010-account.md) 授權，不信任群組連結或文字角色宣告。
+2. 處理空 events、多事件、未知事件與缺少使用者身分。依可信 source 分隔 user／group／room，再依 [Account](../../../docs/owners/account.md) 授權，不信任群組連結或文字角色宣告。
 3. 使用 `webhookEventId` 設計防重；`isRedelivery` 只是提示。重送可能亂序，資料寫入與外部回覆不在同一交易；依現有持久化契約處理，不把程序快取稱為跨實例防重。
 4. 分辨 reply／push 的 token、收件條件與成本。reply token 不重複使用；結果不明先查證，僅在 endpoint 支援時以相同 retry key 重試，不盲目重送或改 push。
 5. 按任務查文字／Flex／rich menu／內容下載 API。普通聊天與圖片是否處理依主契約；下載及 AI 不因收到事件自動觸發。真實發送前形成可檢閱內容，核對收件目標及既有授權。

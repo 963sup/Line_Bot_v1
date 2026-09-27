@@ -34,15 +34,6 @@ async function collect(directory) {
 try {
   await collect(".");
   for (const file of files) {
-    if (file.split(path.sep)[0] === "docs") {
-      const name = path.basename(file);
-      const numbered = name.match(/^(\d{3})-[a-z0-9][a-z0-9-]*\.md$/i);
-      if (
-        !["README.md", "AGENTS.md"].includes(name) &&
-        (!numbered || Number(numbered[1]) === 0 || Number(numbered[1]) % 10 !== 0)
-      )
-        errors.push(`${file}: docs content file must use 010-name.md interval numbering`);
-    }
     const source = await readFile(path.join(root, file), "utf8");
     let fence = null;
     const prose = [];

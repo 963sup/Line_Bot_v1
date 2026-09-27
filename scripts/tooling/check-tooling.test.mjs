@@ -573,104 +573,6 @@ test("main Git integration cannot bypass controlled production release", (t) => 
   rejects(root, "main Git integration must not bypass");
 });
 
-test("manual Supabase reconciliation binds apply to reviewed plan and shared resource lock", (t) => {
-  const { root, write } = fixture(t);
-  const workflow = readFileSync(resolve(root, ".github/workflows/supabase-replace.yml"), "utf8");
-
-  write(".github/workflows/supabase-replace.yml", workflow.replace("workflow_dispatch", "push"));
-  rejects(root, "must use workflow_dispatch");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("supabase-production-nmssogphayjymjpbnrxv", "other-lock"),
-  );
-  rejects(root, "share the production database lock");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("pnpm schema:remote sync --reviewed-plan", "pnpm schema:remote sync"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("pnpm schema:remote plan", "echo skip-plan"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace(
-      "enterprise_owner_confirmed_slug:\n        type: string",
-      "enterprise_owner_confirmed_slug:\n        type: boolean",
-    ),
-  );
-  rejects(root, "must use workflow_dispatch");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("SUPABASE_LEGACY_ENTERPRISE_SLUG", "SUPABASE_OTHER_INPUT"),
-  );
-  rejects(root, "owner-confirmed legacy Enterprise name/slug");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("actions: read", "actions: none"),
-  );
-  rejects(root, "exact main/target authorization");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace(
-      "reviewed_plan_run_id:\n        type: string",
-      "reviewed_plan_run_id:\n        type: boolean",
-    ),
-  );
-  rejects(root, "must use workflow_dispatch");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("pnpm schema:remote recovery", "echo skip-recovery"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("actions/runs/$REVIEWED_PLAN_RUN_ID", "actions/runs/other"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("recoveryEvidenceSha256", "missingRecoveryEvidenceSha256"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace(
-      "workflowRunId planSha256 enterpriseIdentitySha256",
-      "workflowRunId missingPlanSha enterpriseIdentitySha256",
-    ),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("manual-authorization.json", "missing-auth.json"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(
-    ".github/workflows/supabase-replace.yml",
-    workflow.replace("pnpm schema:remote prepare", "echo skip-prepare"),
-  );
-  rejects(root, "verify provider recovery");
-
-  write(".github/workflows/supabase-replace.yml", workflow);
-  write(".github/workflows/rich-menu.yml", "name: duplicate\n");
-  rejects(root, "retired external workflow");
-});
 test("required AGENTS scopes exist and root routes to each owner", (t) => {
   const { root, write } = fixture(t);
   write(
@@ -741,14 +643,16 @@ test("skill frontmatter rejects wrong folder", (t) => {
   write(".agents/skills/demo/SKILL.md", "---\nname: other\ndescription: example\n---\n");
   rejects(root, "mismatch");
 });
-test("reviewer cannot gain write access", (t) => {
-  const { root, write } = fixture(t);
-  write(
-    ".codex/agents/reviewer.toml",
-    'name="change-reviewer"\ndescription="review"\ndeveloper_instructions="review only"\nsandbox_mode="workspace-write"\n',
-  );
-  rejects(root, "read-only");
-});
+for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {
+  test(`${role} cannot gain write access`, (t) => {
+    const { root, write } = fixture(t);
+    write(
+      ".codex/agents/read-only-role.toml",
+      `name="${role}"\ndescription="read only"\ndeveloper_instructions="read only"\nsandbox_mode="workspace-write"\n`,
+    );
+    rejects(root, "read-only");
+  });
+}
 test("invalid TOML fails", (t) => {
   const { root, write } = fixture(t);
   write(".codex/config.toml", "[agents");

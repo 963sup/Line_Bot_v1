@@ -9,8 +9,8 @@
 | 哪個 module 實作 owner、允許依賴誰？ | [Implementation topology](implementation-topology.json) | `pnpm boundaries` |
 | 哪個 owner 擁有 persisted relation、誰只 projection/reference？ | [Data topology](data-topology.json) | `pnpm architecture` |
 | 實際 SQL / constraint / RLS 是什麼？ | [Declarative schemas](../supabase/schemas/README.md) | `pnpm schema:check` |
-| Current human meaning / routing 在哪？ | [Core docs](../docs/000-core/README.md) + [Domain owners](../docs/010-domain-owners/README.md) | `pnpm docs:check` |
-| Dated release / remote / device evidence 在哪？ | [Acceptance](../docs/090-governance/060-acceptance/README.md) | evidence 自己的日期 / revision / environment |
+| Current human meaning / routing 在哪？ | [Core docs](../docs/README.md) + [Domain owners](../docs/owners/README.md) | `pnpm docs:check` |
+| Dated release / remote / device evidence 在哪？ | [Acceptance](../docs/change/evidence/README.md) | evidence 自己的日期 / revision / environment |
 
 ```text
 External benchmark

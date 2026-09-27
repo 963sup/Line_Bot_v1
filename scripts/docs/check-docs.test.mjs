@@ -26,7 +26,7 @@ test("frontmatter regex is not a link; prose links and incomplete metadata still
       await mkdir(path.join(root, dir), { recursive: true });
     const script = path.join(root, "scripts/docs/check-docs.mjs");
     await writeFile(script, source);
-    const fixture = path.join(root, "docs/010-fixture.md");
+    const fixture = path.join(root, "docs/fixture.md");
     for (const [body, status, message] of [
       ["---\npattern: '[x](not-a-link)'\n---\n[real](../README.md)\n", 0, "Docs OK"],
       [
@@ -43,15 +43,12 @@ test("frontmatter regex is not a link; prose links and incomplete metadata still
       assert.ok(`${result.stdout}${result.stderr}`.includes(message));
     }
     await writeFile(fixture, "# Valid\n");
-    const invalidName = path.join(root, "docs/workforce.md");
-    await writeFile(invalidName, "# Invalid name\n");
-    const invalidNameResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
-    assert.equal(invalidNameResult.status, 1);
-    assert.match(
-      invalidNameResult.stderr,
-      /docs content file must use 010-name\.md interval numbering/,
-    );
-    await rm(invalidName);
+
+    const semanticName = path.join(root, "docs/bug-fix.md");
+    await writeFile(semanticName, "# Bug fix\n");
+    const semanticNameResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(semanticNameResult.status, 0, semanticNameResult.stderr);
+    await rm(semanticName);
 
     const historyDir = path.join(root, "docs/090-governance/090-history");
     await mkdir(historyDir, { recursive: true });

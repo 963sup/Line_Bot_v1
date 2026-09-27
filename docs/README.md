@@ -1,12 +1,28 @@
-# 文件入口
+# Knowledge task router
 
-本目錄以 Agent 的最短決策路徑組織，不按 source tree 重複知識。
+Choose the task first, then load the smallest sufficient knowledge unit.
 
-1. 已知任務：先讀 [Change routing](000-core/040-change-routing.md)。
-2. 已知 business owner：直接讀 [Domain owners](010-domain-owners/README.md) 與對應 owner 文件。
-3. 跨 owner、Source of Truth、Boundary 或 dependency 問題：讀 [Repository map](000-core/030-repository-map.md)。
-4. Business semantic / Bounded Context 問題：讀 [Domain map](000-core/020-domain-map.md)；需要外部 GitHub-like evidence 時，再從 [Architecture](../architecture/README.md) 進 machine benchmark 與 pinned upstream source。
-5. implementation/provider/data/security mechanism 只有受影響時才讀 `020–070`。
-6. decision、proposal、migration、gap、risk 或具日期 evidence 才讀 [Governance](090-governance/README.md)。
+| Task | First load | Add only when needed |
+| --- | --- | --- |
+| Fix a bug | [bug fix](tasks/bug-fix.md) + [affected owner](owners/README.md) | one affected rule / reference |
+| Change API / route | [API change](tasks/api-change.md) + owner | [runtime entrypoints](rules/runtime-entrypoints.md), authorization if protected |
+| Add / change feature | [feature change](tasks/feature-change.md) | owner + affected cross-cutting rule |
+| Change database | [database change](tasks/database-change.md) + owner | [database writes](rules/database-writes.md) |
+| Authentication / authorization | [auth change](tasks/auth-change.md) + owner | [request authorization](rules/request-authorization.md) |
+| Debug deployment / remote state | [deployment debug](tasks/deployment-debug.md) | one provider / release / recovery reference |
+| Architecture / ownership | [architecture change](tasks/architecture-change.md) | [dependency boundaries](rules/dependency-boundaries.md) + decision only if why is needed |
+| Find / change business rule | [business rule](tasks/business-rule.md) + owner | owner-specific reference only for the relevant flow |
 
-`000-core/` 只保留五個 decision interface：System、Domain Map、Repository Map、Change Routing、Glossary。Current truth 與 target/history 分離；README 與 AGENTS 不建立第二套產品或架構 authority。
+## Progressive disclosure
+
+```text
+Task
+→ one owner contract
+→ one cross-cutting rule when needed
+→ exact reference detail only when the decision needs it
+→ change/history evidence only for change-over-time questions
+```
+
+Quick routing: [owners](owners/README.md) · [system facts](facts/system.md) · [sources of truth](facts/sources-of-truth.md) · [glossary](facts/glossary.md) · [reference](reference/README.md) · [change/history](change/README.md).
+
+Do not preload `reference/` or `change/`. Machine current facts remain authoritative in `architecture/*.json`, source/tests, package exports and `supabase/schemas/`.

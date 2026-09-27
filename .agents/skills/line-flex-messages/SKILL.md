@@ -5,7 +5,7 @@ description: 建立、修改或診斷 LINE Flex Message 卡片、bubble／carous
 
 # LINE Flex Messages
 
-先界定收件者需要讀懂的資訊與下一步操作，讀取 [LINE integration](../../../docs/030-platform/010-line.md) 及本次 presenter／型別／測試。選擇足以完成任務的最少內容；一張卡片能完成就不增加 carousel、影片或通用卡片框架。保留使用者明確指定的 Flex 需求。
+先界定收件者需要讀懂的資訊與下一步操作，讀取 [LINE integration](../../../docs/owners/line-integration.md) 及本次 presenter／型別／測試。選擇足以完成任務的最少內容；一張卡片能完成就不增加 carousel、影片或通用卡片框架。保留使用者明確指定的 Flex 需求。
 
 ## 結構與互動
 

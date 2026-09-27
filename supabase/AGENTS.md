@@ -1,6 +1,6 @@
 # Supabase 約束
 
-Current schema semantics 見 [Schema model](../docs/040-data/030-schema-model.md)；provider reconciliation 見 [Supabase platform](../docs/030-platform/020-supabase.md)。
+Current schema semantics 見 [Schema model](../docs/reference/data/schema.md)；provider reconciliation 見 [Supabase platform](../docs/reference/platform/supabase.md)。
 
 - `supabase/schemas/` 的可執行 SQL 是 application-owned PostgreSQL current structure 的唯一 Source of Truth；`architecture/data-topology.json` 只擁有 persisted relation → semantic owner / role / physical file mapping。
 - Schema authority unit 是 Object / Relationship relation，不是檔案。Authoritative relation 恰好一個 semantic owner；同一 authoritative SQL file 不得混合不同 owner。

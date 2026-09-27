@@ -32,5 +32,5 @@ pnpm test:browser
 
 已有相符的本機正式服務時，設定 `NAVIGATION_BASE=http://127.0.0.1:4117`，用上述 Playwright 環境執行 `node scripts/browser/<腳本>.mjs`；只接受 loopback origin。標準入口優先於手動建置／啟動。
 
-[measure-loading.mjs](measure-loading.mjs) 在相同建置、Node／瀏覽器下，以新 context 統計 script 解壓 bytes、script 與 document 次數。它使用合成 SDK、拒絕的業務 API 及停用 HTTP cache 的攔截，不能當作壓縮傳輸量、成功操作延遲或 LCP／INP／CLS。具日期歷史結果由 [Acceptance evidence](../../docs/090-governance/060-acceptance/010-acceptance-evidence.md) 導覽。
+[measure-loading.mjs](measure-loading.mjs) 在相同建置、Node／瀏覽器下，以新 context 統計 script 解壓 bytes、script 與 document 次數。它使用合成 SDK、拒絕的業務 API 及停用 HTTP cache 的攔截，不能當作壓縮傳輸量、成功操作延遲或 LCP／INP／CLS。具日期歷史結果由 [Acceptance evidence](../../docs/change/evidence/acceptance-evidence.md) 導覽。
 權限流程由 `check-permissions.mjs` 驗證明確確認、指定範圍、原命令跨重新整理重試、撤銷、禁止自改與管理入口隔離，保存 `permissions.png`、`permissions-trace.zip` 及 `permissions-results.json`。

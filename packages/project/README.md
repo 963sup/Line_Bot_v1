@@ -1,10 +1,8 @@
-# Project owner scope
+# @line-work/project
 
-`packages/project` is the registered Project workspace/module owner. It intentionally has no runtime source or public export until a real consumer exists.
+Navigation only.
 
-- Canonical semantics: [Project](../../docs/010-domain-owners/180-project.md)
-- Local change constraints: [AGENTS.md](AGENTS.md)
+- Owner contract: [project](../../docs/owners/project.md)
+- Local constraints: [AGENTS.md](AGENTS.md)
+- Public surface: [package.json](package.json)
 - Parent package rules: [../AGENTS.md](../AGENTS.md)
-- Current persistence truth: [Supabase declarative schemas](../../supabase/schemas/)
-
-The module boundary is active for ownership; runtime capability, public API, and Web presentation are not.

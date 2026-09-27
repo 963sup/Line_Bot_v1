@@ -5,7 +5,7 @@ description: 開發、診斷或審查 LINE Login OAuth／OIDC、PKCE、token 核
 
 # LINE Login
 
-先讀 [Account](../../../docs/010-domain-owners/010-account.md) 與 [Supabase platform contract](../../../docs/030-platform/020-supabase.md)，分清 LINE 身分證明、產品 session 及會員資格，避免另建平行登入系統。
+先讀 [Account](../../../docs/owners/account.md) 與 [Supabase platform contract](../../../docs/reference/platform/supabase.md)，分清 LINE 身分證明、產品 session 及會員資格，避免另建平行登入系統。
 
 ## 選擇路徑與文件
 
