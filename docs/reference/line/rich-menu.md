@@ -45,7 +45,7 @@ Publication 不建立 `.artifacts/rich-menu*.json`，Rich Menu ID 只在單次 p
 
 圖片修改後必須重新 `preview`／`publish`；publication 會重新 upload 並讀回 remote definition。具日期的 remote publication、手機顯示與實機限制由 [Acceptance evidence](../../change/evidence/acceptance-evidence.md) 保存，不寫回 current contract。
 
-完整發布／回復 gate 見 [Release process](../release.md)。
+完整發布／回復 gate 見 [Release process](../operations/release.md)。
 
 ## 安全與導覽
 
