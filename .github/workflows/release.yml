@@ -140,7 +140,7 @@ jobs:
             affected="$(TURBO_SCM_BASE="$deployment_baseline" pnpm exec turbo query affected --tasks build --packages @line-work/web)"
             affected_count="$(jq -r '.data.affectedTasks.length // (.data.affectedTasks.items | length) // 0' <<<"$affected")"
             if [ "$affected_count" -gt 0 ]; then
-              grep -Ev '^(docs/|\.github/|\.agents/|\.codex/|architecture/|scripts/|supabase/|assets/line/rich-menu/|apps/web/test/|packages/[^/]+/test/|.*(?:^|/)AGENTS\.md$|.*(?:^|/)README\.md$|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)'                 deployment-changed-files.txt > web-runtime-candidates.txt || true
+              grep -Ev '^(docs/|\.github/|\.agents/|\.codex/|architecture/|scripts/|supabase/|assets/line/rich-menu/|apps/web/test/|packages/[^/]+/test/|(.*/)?AGENTS\.md$|(.*/)?README\.md$|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)'                 deployment-changed-files.txt > web-runtime-candidates.txt || true
               if [ -s web-runtime-candidates.txt ]; then
                 web_affected=true
               fi
