@@ -745,7 +745,6 @@ export function validate(root) {
     ) {
       errors.push("CI: Rich Menu release must consume only its publication secret at publish");
     }
-
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }
