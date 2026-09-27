@@ -146,3 +146,20 @@ test("seal requires zero unresolved work and makes future pending work fail clos
     await rm(root, { recursive: true, force: true });
   }
 });
+
+
+test("retire closes deleted review state without storing history", async () => {
+  const root = await fixture();
+  try {
+    assert.equal(run(root, "begin", "README.md").status, 0);
+    await rm(path.join(root, "README.md"));
+    const retire = run(root, "retire", "README.md", "deleted");
+    assert.equal(retire.status, 0, retire.stderr);
+    const manifest = JSON.parse(
+      await readFile(path.join(root, "docs/convergence-manifest.json"), "utf8"),
+    );
+    assert.equal(manifest.files["README.md"], undefined);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
