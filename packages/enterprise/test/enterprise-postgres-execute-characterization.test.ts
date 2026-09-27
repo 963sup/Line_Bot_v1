@@ -315,7 +315,6 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
   assert.ok(receiptInsert < auditInsert);
 });
 
-
 test("legacy Enterprise identity completion is owner-authorized, versioned, replay-safe, and one-time", async () => {
   const queries: QueryRecord[] = [];
   const command: EnterpriseCommand = {
@@ -363,10 +362,11 @@ test("legacy Enterprise identity completion is owner-authorized, versioned, repl
   assert.equal(receipt.version, 2);
   assert.ok(queryIndex(queries, "FROM enterprise_role_assignments") >= 0);
   assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
-  assert.deepEqual(
-    queries.find((query) => query.text.includes("UPDATE enterprises"))?.values,
-    ["enterprise-1", "Acme Enterprise", "acme-enterprise"],
-  );
+  assert.deepEqual(queries.find((query) => query.text.includes("UPDATE enterprises"))?.values, [
+    "enterprise-1",
+    "Acme Enterprise",
+    "acme-enterprise",
+  ]);
   assert.ok(queryIndex(queries, "INSERT INTO governance_command_receipts") >= 0);
   assert.ok(queryIndex(queries, "INSERT INTO governance_audit_events") >= 0);
 });
