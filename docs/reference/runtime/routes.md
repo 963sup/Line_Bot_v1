@@ -19,7 +19,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 
 | Route | Owner responsibility |
 | --- | --- |
-| `/home` | 工作台組裝；current IA = My Work / Favorites / Shortcuts / Recent。Issues/Discussions先選 Repository再進 canonical scoped route；Projects無 runtime時只顯示 target；Favorites重用 Star；Shortcuts不持久化；Recent無 owner時不造資料 |
+| `/home` | 工作台組裝；current IA = My Work / Favorites / Shortcuts / Recent。Issues/Discussions先選 Repository再進 canonical scoped route；Projects在 owner model 與 authorized runtime contract 完成前只顯示 target；Favorites重用 Star；Shortcuts不持久化；Recent無 owner時不造資料 |
 | `/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write；`/home/assistant` 為 compatibility redirect |
 | `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
@@ -75,7 +75,7 @@ Current Repository resource read API：
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
 
-新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability；Project 仍是 data-only owner，未知 access/command contract 前不開 Project 空頁或 API。
+新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability；Project 仍是 data-only owner；目前 Organization-only persistence 與 Account-owned（User | Organization）產品語意不一致。先導正 ownership model，再定義 Project access/runtime contract；完成前不開 Project 空頁或 API。
 
 ## Same-page view state
 
