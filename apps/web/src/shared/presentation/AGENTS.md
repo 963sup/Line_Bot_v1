@@ -1,11 +1,5 @@
 # Presentation shared boundary
 
-## GitHub Mobile 目標（後續實作）
-
-- 分開全域 tab、resource subnav、list filter、detail/command state；active indicator 是顯示投影，不能以字串 prefix 將 User/Organization/Repository 混為同一 scope。
-- 返回 intent 使用既有安全 route/view 契約；沒有合法歷史時回 owner collection，不保存任意 URL 或私人草稿。tab 位置記憶與 command recovery 是不同責任。
-- FPT 的 connection/pageInfo 只供分頁語意參考；本地 after/next 契約照 owner 定義。loading/empty/denied/missing/unavailable/unimplemented/unknown 必須可區分，不能用空列表統一。
-- 文案與 badge 由 feature 提供；共用 presentation 不推導「已完成」「已授權」或精確數量。
 
 ## 現行機制與 invariant
 

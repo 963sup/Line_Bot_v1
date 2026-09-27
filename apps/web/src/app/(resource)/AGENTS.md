@@ -1,10 +1,5 @@
 # Resource route group
 
-## GitHub-Mobile-aligned current responsibility
-
-- Repository 根頁目標採 resource header（owner/name、可公開狀態）→ 概覽／已實作資源列表；Issues、Discussions、Labels、Milestones 以資源導覽或 list row 進入。
-- Current private branch 仍直接呈現 IssueBoard；後續改成 overview 必須使用同一 Repository locator/access，不複製 Issue query 或新增第二個根頁。public branch 不因與 private branch 共用 layout 而取得內容讀權。
-- 未登入與已登入各自測 header/navigation、320/390px 長名稱、列表返回與無權限結果；不能只驗一個 branch 就宣稱符合 Mobile 目標。
 
 ## 現行 URL 與 invariant
 

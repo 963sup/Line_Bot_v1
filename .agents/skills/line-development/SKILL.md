@@ -1,6 +1,7 @@
 ---
 name: line-development
 description: LINE 跨產品開發、架構選型與整合排錯；處理 Provider／channel、憑證、產品能力及上線驗收。需求跨 Bot、Login、LIFF、MINI App 或尚不確定用哪個 API 時使用；單一專題直接用專用技能。
+source: repository
 ---
 
 # LINE 開發整合

@@ -1,12 +1,5 @@
 # Web 模組約束
 
-## Mobile resource presentation target
-
-- 依 FPT 區分 User/Organization/Repository/Issue/Discussion/Team 等身份與關係，依本地 owner 提供資料；首頁捷徑、列表 row、詳情、操作頁是同一 contract 的投影，不各寫一套 use case。
-- 列表優先呈現資源種類/狀態、主要名稱、owner/scope 與必要 metadata；詳情先 identity/context，再 body/relations/history，再 owner 允許的操作。未提供 count/history 的 contract 不渲染虛構數字或 timeline。
-- 每個 feature 只定義自己的 row/detail/action 內容，主 tab 由 app、視覺 primitive 由 shared/ui 擁有；不在 module 新建平行 shell。
-- Loading、empty、restricted、not-found、upstream failure、未開放與 unknown result 是不同畫面狀態。GitHub Mobile 的 swipe/overflow/批次操作只在本地 command、權限與重播契約完整時採用，並保留可見且可及的替代按鈕。
-- 下層 Mobile 目標皆供後續實作；Current URL 與只讀/寫入能力限制不因布局目標改變。
 
 ## Owner / FPT 對照與修改入口
 

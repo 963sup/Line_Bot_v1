@@ -1,10 +1,5 @@
 # Web observability boundary
 
-## GitHub Mobile 目標（後續實作）
-
-- 後續改版量測導覽失敗、載入/錯誤狀態與安全的 route family，區分直接開啟、tab 切換與 provider 接續；不收集 raw locator/query/token 或私人 body 作 UX 分析。
-- 技術事件只能證明所量測的行為；截圖、browser trace、API result、部署及真機各有證據範圍。Mobile 動畫順暢不代表 command 成功或 audit 完整。
-- FPT audit-log 的業務紀錄仍由 owner 管理，不能以新增 telemetry 取代。
 
 ## 現行機制與 invariant
 

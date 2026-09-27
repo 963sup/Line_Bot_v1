@@ -1,10 +1,5 @@
 # Web organization module
 
-## GitHub Mobile 目標（後續實作）
-
-- FPT orgs 對應 Organization header 與成員/邀請/Team 關係分區；public profile 只展示公開 projection，治理工作面保留目前 scope 與角色資訊。
-- Direct membership 與 EnterpriseTeam-derived membership 在 row/詳情標出來源與允許操作，不能把所有成員都做成同一個 Remove 按鈕。
-- Current 工作面詳情不是獨立 deep link；目標布局可先在同一路由分層，若需要新治理 URL 必須另定 canonical/return/access 契約，不在本次文件中宣稱完成。
 
 ## 現行 surface 與 invariant
 

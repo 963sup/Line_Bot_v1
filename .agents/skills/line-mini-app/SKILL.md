@@ -1,6 +1,7 @@
 ---
 name: line-mini-app
 description: 開發、診斷或審查 LINE MINI App 與 LIFF 初始化、入口、瀏覽器接續及手機體驗；純 Webhook 使用 line-messaging-api，OAuth 核驗使用 line-login。
+source: repository
 ---
 
 # LINE MINI App

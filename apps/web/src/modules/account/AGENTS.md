@@ -1,10 +1,5 @@
 # Web account module
 
-## GitHub Mobile 目標（後續實作）
-
-- FPT User/Profile/Follow 對應 canonical `/{login}` identity/profile 與 self network 管理；`/settings` 只承擔目前 viewer 的 Account 設定，不承擔 Organization/Enterprise/Team/operations navigation，也不把 public `/{login}` 與 Settings 混成同一資源。
-- 管理帳號的清單、詳情、停權確認分層；permissions presenter 即使仍在本目錄，其 role/scope 文案及資料來自 Identity/Access。
-- GitHub Mobile 多帳號切換只作互動參考；本地尚無對等能力時不顯示可切換的假帳號。LINE 身分變更仍必須清除私人投影並重驗；Google link 不是換一個 business actor。
 
 ## 現行 surface 與 invariant
 

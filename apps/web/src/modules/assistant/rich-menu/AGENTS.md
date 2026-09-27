@@ -1,10 +1,5 @@
 # Web Rich Menu module
 
-## GitHub Mobile 目標（後續實作）
-
-- Rich Menu 是進入既有手機工作流程的入口，目標 URL 跟隨 app 契約；不要求把 Web 四個主 tab 生硬塞成同一張選單。
-- Web tab 排序改變不等於 LINE menu 必須發布。涉及 URI、圖片或 alias/default/per-user binding 時，另依完整發布授權、來源 revision 與 readback 流程。
-- 選單視覺／Web 布局／正式遠端綁定分開驗收；FPT 不提供 LINE 選單規格。
 
 ## 現行 surface 與 invariant
 
