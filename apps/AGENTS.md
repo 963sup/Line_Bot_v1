@@ -9,7 +9,7 @@
 - `shared` 只保存真正跨 feature 且無 business authority 的 Web mechanism；多處引用本身不是 shared evidence。
 - Browser state、URL、query、layout 與 navigation intent 不授權；protected operation 由 server 重新建立可信 Principal / qualification / scope。
 
-Current URL、route partition、app-shell 與 runtime contract 以 [Web runtime](../docs/020-architecture/050-runtime-architecture.md) 加實際 `apps/web/src/app` source 為準；本檔不複製 route inventory。
+Current URL、route partition、app-shell 與 runtime contract 以 [Web runtime](../docs/reference/runtime/routes.md) 加實際 `apps/web/src/app` source 為準；本檔不複製 route inventory。
 
 ## External benchmarks
 
