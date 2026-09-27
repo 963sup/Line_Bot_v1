@@ -7,26 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import styles from "./team.module.css";
-
-type Draft =
-  | { action: "create-team"; name: string }
-  | { action: "rename-team"; name: string }
-  | { action: "join"; name: string; teamId: string }
-  | {
-      action: "membership";
-      targetUserId: string;
-      status: "active" | "removed";
-      title: string;
-    }
-  | { action: "maintainer"; targetUserId: string; enabled: boolean; title: string };
-
-const labels: Record<TeamCommand["action"], string> = {
-  "create-team": "建立團隊",
-  "rename-team": "重新命名團隊",
-  join: "申請加入",
-  membership: "確認成員變更",
-  maintainer: "確認維護者變更",
-};
+import type { TeamDraft } from "./team-command";
+import { teamActionLabels } from "./team-command";
+import { TeamWorkspace } from "./team-workspace";
 
 export default function TeamPanel({
   liffId,
@@ -40,7 +23,7 @@ export default function TeamPanel({
   const router = useRouter();
   const canonicalTeam = Boolean(initialOrganizationLogin && initialTeamSlug);
   const [data, setData] = useState<TeamView | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<TeamDraft | null>(null);
   const [pending, setPending] = useState<TeamCommand | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -180,43 +163,6 @@ export default function TeamPanel({
     }
   }
 
-  function buildCommand(value: Draft): TeamCommand {
-    const context = {
-      requestId: crypto.randomUUID(),
-      organizationAccountId: data?.organizationAccountId ?? "",
-    };
-    if (value.action === "create-team") {
-      return { ...context, action: value.action, name: value.name };
-    }
-    const existing = {
-      ...context,
-      teamId: value.action === "join" ? value.teamId : (data?.team?.id ?? ""),
-      expectedVersion:
-        value.action === "rename-team" ||
-        value.action === "membership" ||
-        value.action === "maintainer"
-          ? (data?.team?.version ?? 0)
-          : 0,
-    };
-    if (value.action === "rename-team" || value.action === "join") {
-      return { ...existing, action: value.action, name: value.name };
-    }
-    if (value.action === "membership") {
-      return {
-        ...existing,
-        action: value.action,
-        targetUserId: value.targetUserId,
-        status: value.status,
-      };
-    }
-    return {
-      ...existing,
-      action: value.action,
-      targetUserId: value.targetUserId,
-      enabled: value.enabled,
-    };
-  }
-
   async function send(command: TeamCommand) {
     if (locked.current) return;
     locked.current = true;
@@ -255,7 +201,7 @@ export default function TeamPanel({
       }
       setPending(null);
       setDraft(null);
-      setNotice(`${labels[command.action]}已保存。`);
+      setNotice(`${teamActionLabels[command.action]}已保存。`);
       const organizationAccountId = result.organizationAccountId as string;
       const teamId =
         command.action === "join" ||
@@ -291,8 +237,6 @@ export default function TeamPanel({
     }
   }
 
-  const maintainer = data?.team?.isMaintainer === true;
-
   return (
     <div className={`${styles.panel} crud-manager`}>
       <MiniAppRuntime liffId={liffId} onReady={async () => load()} onWait={clear} />
@@ -316,231 +260,22 @@ export default function TeamPanel({
       )}
       {busy && <p role="status">正在確認資料…</p>}
       {data && (
-        <fieldset disabled={busy || !!pending}>
-          <section className="crud-scope-picker">
-            <div className="crud-section-head">
-              <div>
-                <h2>選擇 Organization 與 Team</h2>
-                <p>Organization 決定 Team 的工作範圍；建立 Team 前必須先選 Organization。</p>
-              </div>
-              <button
-                type="button"
-                className="crud-create"
-                disabled={!data.organizationAccountId}
-                onClick={() => setDraft({ action: "create-team", name: "" })}
-              >
-                ＋ 建立團隊
-              </button>
-            </div>
-            <label>
-              組織
-              <select
-                aria-label="組織"
-                value={data.organizationAccountId ?? ""}
-                onChange={(event) => {
-                  setDraft(null);
-                  selectedTeam.current = "";
-                  void load(event.target.value, "");
-                }}
-              >
-                <option value="">選擇組織</option>
-                {data.organizations.map((organization) => (
-                  <option
-                    key={organization.organizationAccountId}
-                    value={organization.organizationAccountId}
-                  >
-                    {organization.organizationAccountId}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {data.organizationAccountId && (
-              <label>
-                團隊
-                <select
-                  aria-label="團隊"
-                  value={data.team?.id ?? ""}
-                  onChange={(event) => {
-                    setDraft(null);
-                    void load(data.organizationAccountId ?? "", event.target.value);
-                  }}
-                >
-                  <option value="">選擇團隊</option>
-                  {data.teams
-                    .filter((team) => team.membershipStatus === "active")
-                    .map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-            )}
-
-            {data.organizationAccountId && (
-              <div className="crud-create-row">
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => setDraft({ action: "join", name: "", teamId: "" })}
-                >
-                  申請加入既有團隊
-                </button>
-              </div>
-            )}
-          </section>
-
-          {data.organizationAccountId && !data.team && (
-            <section className="crud-guidance">
-              <h2>尚未選擇 Team</h2>
-              <p>你可以從上方選擇既有 Team、建立新 Team，或用 Team ID 申請加入。</p>
-              {data.teams
-                .filter((team) => team.membershipStatus === "pending")
-                .map((team) => (
-                  <p key={team.id}>{team.name}：等待 TeamMaintainer 核准</p>
-                ))}
-            </section>
-          )}
-
-          {data.team && (
-            <section className="crud-detail">
-              <div className="crud-detail-head">
-                <div>
-                  <span className="crud-kicker">Team 詳情</span>
-                  <h2>{data.team.name}</h2>
-                  {data.team.slug && data.organizationLogin && (
-                    <p className={styles.meta}>
-                      /organizations/{data.organizationLogin}/teams/{data.team.slug}
-                    </p>
-                  )}
-                  <p className={styles.meta}>Team ID：{data.team.id}</p>
-                </div>
-                {maintainer && (
-                  <button
-                    className="secondary crud-back"
-                    onClick={() => setDraft({ action: "rename-team", name: data.team?.name ?? "" })}
-                  >
-                    重新命名
-                  </button>
-                )}
-              </div>
-              <p className="crud-lifecycle-note">
-                Lifecycle：目前 Team contract 沒有 hard
-                delete；可重新命名、管理成員／TeamMaintainer，或由成員退出。
-              </p>
-              <h3>成員</h3>
-              {data.members.map((member) => (
-                <section key={member.userId}>
-                  <h3>{member.name}</h3>
-                  <p>
-                    {member.status === "pending"
-                      ? "待核准"
-                      : member.status === "removed"
-                        ? "已移除"
-                        : member.isMaintainer
-                          ? "TeamMaintainer"
-                          : "成員"}
-                  </p>
-                  <p className={styles.meta}>{member.userId}</p>
-                  <div className={styles.actions}>
-                    {maintainer && member.status === "pending" && (
-                      <button
-                        onClick={() =>
-                          setDraft({
-                            action: "membership",
-                            targetUserId: member.userId,
-                            status: "active",
-                            title: `核准 ${member.name}`,
-                          })
-                        }
-                      >
-                        核准加入
-                      </button>
-                    )}
-                    {maintainer && member.status === "active" && (
-                      <button
-                        className="secondary"
-                        onClick={() =>
-                          setDraft({
-                            action: "maintainer",
-                            targetUserId: member.userId,
-                            enabled: !member.isMaintainer,
-                            title: `${member.isMaintainer ? "撤銷" : "授予"} TeamMaintainer：${member.name}`,
-                          })
-                        }
-                      >
-                        {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
-                      </button>
-                    )}
-                    {(maintainer || member.userId === data.userId) &&
-                      member.status !== "removed" && (
-                        <button
-                          className="secondary"
-                          onClick={() =>
-                            setDraft({
-                              action: "membership",
-                              targetUserId: member.userId,
-                              status: "removed",
-                              title: `${member.userId === data.userId ? "退出團隊" : "移除成員"}：${member.name}`,
-                            })
-                          }
-                        >
-                          {member.userId === data.userId ? "退出" : "移除／拒絕"}
-                        </button>
-                      )}
-                  </div>
-                </section>
-              ))}
-            </section>
-          )}
-
-          {draft && (
-            <form
-              ref={editor}
-              className={styles.editor}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void send(buildCommand(draft));
-              }}
-            >
-              <h2>{labels[draft.action]}</h2>
-              {(draft.action === "create-team" ||
-                draft.action === "rename-team" ||
-                draft.action === "join") && (
-                <label>
-                  {draft.action === "join" ? "你的團隊稱呼" : "團隊名稱"}
-                  <input
-                    required
-                    maxLength={80}
-                    value={draft.name}
-                    onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-                  />
-                </label>
-              )}
-              {draft.action === "join" && (
-                <label>
-                  團隊 ID
-                  <input
-                    required
-                    maxLength={128}
-                    value={draft.teamId}
-                    onChange={(event) => setDraft({ ...draft, teamId: event.target.value })}
-                  />
-                </label>
-              )}
-              {(draft.action === "membership" || draft.action === "maintainer") && (
-                <p>{draft.title}</p>
-              )}
-              <div className={styles.actions}>
-                <button type="submit">{labels[draft.action]}</button>
-                <button type="button" className="secondary" onClick={() => setDraft(null)}>
-                  取消
-                </button>
-              </div>
-            </form>
-          )}
-        </fieldset>
+        <TeamWorkspace
+          data={data}
+          draft={draft}
+          setDraft={setDraft}
+          busy={busy}
+          pending={pending}
+          send={send}
+          editor={editor}
+          selectOrganization={(organizationAccountId) => {
+            selectedTeam.current = "";
+            void load(organizationAccountId, "");
+          }}
+          selectTeam={(organizationAccountId, teamId) => {
+            void load(organizationAccountId, teamId);
+          }}
+        />
       )}
     </div>
   );

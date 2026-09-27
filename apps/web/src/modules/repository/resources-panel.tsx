@@ -1,17 +1,11 @@
 "use client";
 
-import type {
-  RepositoryDiscussionResult,
-  RepositoryDiscussionsResult,
-  RepositoryLabelsResult,
-  RepositoryMilestoneResult,
-  RepositoryMilestonesResult,
-} from "@line-work/repository/application/ports/resources";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState } from "../../shared/ui/page-layout";
+import { ResourceContent } from "./resource-content";
 import {
   repositoryDiscussionsPath,
   repositoryIssuesPath,
@@ -20,65 +14,15 @@ import {
   repositoryPath,
 } from "./resource-navigation";
 import styles from "./resource-navigation.module.css";
-
-type ResourcesKind = "discussions" | "discussion" | "labels" | "milestones" | "milestone";
-type MilestoneStatus = "open" | "closed";
-
-type PageData =
-  | ({ kind: "discussions" } & RepositoryDiscussionsResult)
-  | ({ kind: "discussion" } & RepositoryDiscussionResult)
-  | ({ kind: "labels" } & RepositoryLabelsResult)
-  | ({ kind: "milestones" } & RepositoryMilestonesResult)
-  | ({ kind: "milestone" } & RepositoryMilestoneResult);
-
-type ResourceError = { message: string; status: number };
-
-function dateTime(value: number) {
-  return new Date(value).toLocaleString("zh-TW");
-}
-
-function swatch(color: string) {
-  return /^#[0-9a-f]{6}$/i.test(color) ? color : `#${color.replaceAll("#", "")}`;
-}
-
-function discussionPath(ownerLogin: string, repositoryName: string, discussionId: string) {
-  return `${repositoryDiscussionsPath(ownerLogin, repositoryName)}/${encodeURIComponent(discussionId)}`;
-}
-
-function milestonePath(ownerLogin: string, repositoryName: string, number: number) {
-  return `${repositoryMilestonesPath(ownerLogin, repositoryName)}/${encodeURIComponent(String(number))}`;
-}
-
-function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
-  const seen = new Set(current.map((item) => item.id));
-  return [...current, ...incoming.filter((item) => !seen.has(item.id))];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function pageData(kind: ResourcesKind, value: unknown): PageData {
-  if (!isRecord(value) || !isRecord(value.repository)) {
-    throw { status: 503, message: "Repository 資源回應格式不正確。" };
-  }
-  if (kind === "discussions" && Array.isArray(value.discussions)) {
-    return { ...(value as RepositoryDiscussionsResult), kind };
-  }
-  if (kind === "discussion" && isRecord(value.discussion) && Array.isArray(value.comments)) {
-    return { ...(value as RepositoryDiscussionResult), kind };
-  }
-  if (kind === "labels" && Array.isArray(value.labels)) {
-    return { ...(value as RepositoryLabelsResult), kind };
-  }
-  if (kind === "milestones" && Array.isArray(value.milestones)) {
-    return { ...(value as RepositoryMilestonesResult), kind };
-  }
-  if (kind === "milestone" && isRecord(value.milestone)) {
-    return { ...(value as RepositoryMilestoneResult), kind };
-  }
-  throw { status: 503, message: "Repository 資源回應格式不正確。" };
-}
+import {
+  type MilestoneStatus,
+  mergeRepositoryResourcePage,
+  type PageData,
+  parseRepositoryResourcePage,
+  type ResourceError,
+  type ResourcesKind,
+  repositoryResourcesEndpoint,
+} from "./resource-page-model";
 
 export default function RepositoryResourcesPanel({
   liffId,
@@ -125,23 +69,16 @@ export default function RepositoryResourcesPanel({
   }, [ready]);
 
   const endpoint = useCallback(
-    (after?: string) => {
-      const query = new URLSearchParams({ owner: ownerLogin, name: repositoryName });
-      if (after) {
-        if (kind === "discussion") query.set("commentsAfter", after);
-        else query.set("after", after);
-      }
-      if (kind === "milestones") query.set("status", milestoneStatus);
-      if (kind === "discussion" && discussionId) {
-        return `/api/discussions/${encodeURIComponent(discussionId)}?${query}`;
-      }
-      if (kind === "labels") return `/api/repository-labels?${query}`;
-      if (kind === "milestones") return `/api/repository-milestones?${query}`;
-      if (kind === "milestone" && milestoneNumber) {
-        return `/api/repository-milestones/${encodeURIComponent(String(milestoneNumber))}?${query}`;
-      }
-      return `/api/discussions?${query}`;
-    },
+    (after?: string) =>
+      repositoryResourcesEndpoint({
+        ownerLogin,
+        repositoryName,
+        kind,
+        discussionId,
+        milestoneNumber,
+        milestoneStatus,
+        after,
+      }),
     [discussionId, kind, milestoneNumber, milestoneStatus, ownerLogin, repositoryName],
   );
 
@@ -171,8 +108,10 @@ export default function RepositoryResourcesPanel({
           throw { status: response.status, message: value.error ?? "Repository 資源讀取失敗。" };
         }
         if (ticket !== generation.current) return;
-        const incoming = pageData(kind, value);
-        setData((current: PageData | null) => mergePage(current, incoming, append));
+        const incoming = parseRepositoryResourcePage(kind, value);
+        setData((current: PageData | null) =>
+          mergeRepositoryResourcePage(current, incoming, append),
+        );
       } catch (cause) {
         if (ticket === generation.current) {
           setData(null);
@@ -307,159 +246,5 @@ export default function RepositoryResourcesPanel({
         </button>
       )}
     </>
-  );
-}
-
-function mergePage(current: PageData | null, incoming: PageData, append: boolean): PageData {
-  if (!append || !current || current.kind !== incoming.kind) return incoming;
-  if (current.kind === "discussions" && incoming.kind === "discussions") {
-    return { ...incoming, discussions: mergeById(current.discussions, incoming.discussions) };
-  }
-  if (current.kind === "labels" && incoming.kind === "labels") {
-    return { ...incoming, labels: mergeById(current.labels, incoming.labels) };
-  }
-  if (current.kind === "milestones" && incoming.kind === "milestones") {
-    return { ...incoming, milestones: mergeById(current.milestones, incoming.milestones) };
-  }
-  if (current.kind === "discussion" && incoming.kind === "discussion") {
-    return { ...incoming, comments: mergeById(current.comments, incoming.comments) };
-  }
-  return incoming;
-}
-
-function ResourceContent({
-  data,
-  ownerLogin,
-  repositoryName,
-}: {
-  data: PageData;
-  ownerLogin: string;
-  repositoryName: string;
-}) {
-  if (data.kind === "discussions") {
-    if (!data.discussions.length) {
-      return <PageState title="目前沒有 Discussions">這個儲存庫目前沒有可讀取的討論。</PageState>;
-    }
-    return (
-      <ul className="notification-list">
-        {data.discussions.map((discussion) => (
-          <li key={discussion.id}>
-            <Link
-              className="notification-item"
-              href={discussionPath(ownerLogin, repositoryName, discussion.id)}
-            >
-              <span>
-                <strong>{discussion.title}</strong>
-                <small>
-                  {discussion.category} · {discussion.author} · {dateTime(discussion.updatedAt)}
-                </small>
-              </span>
-              <span className="notification-state">v{discussion.version}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  if (data.kind === "discussion") {
-    return (
-      <article className="detail-card">
-        <Link className="back-link" href={repositoryDiscussionsPath(ownerLogin, repositoryName)}>
-          ← 返回 Discussions
-        </Link>
-        <h2>{data.discussion.title}</h2>
-        <p>
-          {data.discussion.category} · {data.discussion.author} · v{data.discussion.version}
-        </p>
-        <p>{data.discussion.body}</p>
-        <h3>Comments</h3>
-        {!data.comments.length && <p className="empty-copy">目前沒有留言。</p>}
-        <ol>
-          {data.comments.map((comment) => (
-            <li key={comment.id}>
-              <p>{comment.body}</p>
-              <small>
-                {comment.author} · {dateTime(comment.createdAt)} · v{comment.version}
-              </small>
-            </li>
-          ))}
-        </ol>
-      </article>
-    );
-  }
-  if (data.kind === "labels") {
-    if (!data.labels.length) {
-      return <PageState title="目前沒有 Labels">這個儲存庫目前沒有可讀取的標籤。</PageState>;
-    }
-    return (
-      <div className="discovery-list">
-        {data.labels.map((label) => (
-          <article className="discovery-item" key={label.id}>
-            <div className="discovery-copy">
-              <h2>
-                <span
-                  aria-hidden="true"
-                  style={{
-                    backgroundColor: swatch(label.color),
-                    display: "inline-block",
-                    height: 12,
-                    width: 12,
-                  }}
-                />{" "}
-                {label.name}
-              </h2>
-              <p>{label.description || "沒有描述。"}</p>
-              <div className="discovery-meta">
-                <span>{label.color}</span>
-                <span>v{label.version}</span>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    );
-  }
-  if (data.kind === "milestones") {
-    if (!data.milestones.length) {
-      return <PageState title="目前沒有 Milestones">這個狀態下沒有可讀取的 milestone。</PageState>;
-    }
-    return (
-      <ul className="notification-list">
-        {data.milestones.map((milestone) => (
-          <li key={milestone.id}>
-            <Link
-              className="notification-item"
-              href={milestonePath(ownerLogin, repositoryName, milestone.number)}
-            >
-              <span>
-                <strong>
-                  #{milestone.number} {milestone.title}
-                </strong>
-                <small>
-                  {milestone.status} ·{" "}
-                  {milestone.dueAt ? `到期 ${dateTime(milestone.dueAt)}` : "無到期日"}
-                </small>
-              </span>
-              <span className="notification-state">v{milestone.version}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  return (
-    <article className="detail-card">
-      <Link className="back-link" href={repositoryMilestonesPath(ownerLogin, repositoryName)}>
-        ← 返回 Milestones
-      </Link>
-      <h2>
-        #{data.milestone.number} {data.milestone.title}
-      </h2>
-      <p>
-        {data.milestone.status} · v{data.milestone.version}
-      </p>
-      <p>{data.milestone.description || "沒有描述。"}</p>
-      <p>{data.milestone.dueAt ? `到期 ${dateTime(data.milestone.dueAt)}` : "無到期日"}</p>
-    </article>
   );
 }
