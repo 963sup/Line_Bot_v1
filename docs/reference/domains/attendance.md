@@ -1,6 +1,6 @@
 # Attendance detailed reference
 
-Low-frequency Attendance flows and edge cases. The owner boundary and invariants remain canonical in [Attendance](../../../010-domain-owners/050-attendance.md).
+Low-frequency Attendance flows and edge cases. The owner boundary and invariants remain canonical in [Attendance](../../010-domain-owners/050-attendance.md).
 
 ## Operations
 

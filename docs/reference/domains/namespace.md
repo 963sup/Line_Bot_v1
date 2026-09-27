@@ -1,6 +1,6 @@
 # Namespace detailed reference
 
-Low-frequency Namespace details. The owner boundary and invariants remain canonical in [Namespace](../../../010-domain-owners/190-namespace.md).
+Low-frequency Namespace details. The owner boundary and invariants remain canonical in [Namespace](../../010-domain-owners/190-namespace.md).
 
 ## Ubiquitous Language
 
@@ -16,7 +16,7 @@ Low-frequency Namespace details. The owner boundary and invariants remain canoni
 | Claim | 在 Namespace 內把可用 Key 綁定到 Subject 的 intent |
 | Resolve | 由 Locator 找到 Subject；resolve success 不代表 authorization success |
 
-Cross-context canonical lookup 亦見 [Glossary](../../000-core/050-glossary.md)。
+Cross-context canonical lookup 亦見 [Glossary](../../facts/glossary.md)。
 
 ## Current namespace topology
 

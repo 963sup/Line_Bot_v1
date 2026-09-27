@@ -1,6 +1,6 @@
 # Enterprise detailed reference
 
-Low-frequency Enterprise flows and edge cases. The owner boundary and invariants remain canonical in [Enterprise](../../../010-domain-owners/020-enterprise.md).
+Low-frequency Enterprise flows and edge cases. The owner boundary and invariants remain canonical in [Enterprise](../../010-domain-owners/020-enterprise.md).
 
 ## Current state model
 

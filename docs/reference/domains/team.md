@@ -1,6 +1,6 @@
 # Team detailed reference
 
-Low-frequency Team details. The owner boundary and invariants remain canonical in [Team](../../../010-domain-owners/070-team.md).
+Low-frequency Team details. The owner boundary and invariants remain canonical in [Team](../../010-domain-owners/070-team.md).
 
 ## Locator
 

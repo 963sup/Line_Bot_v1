@@ -12,7 +12,7 @@
 | Public package surface | each `package.json#exports` |
 | Actual PostgreSQL definition | `supabase/schemas/` |
 | Runtime behavior | source + tests |
-| Human change routing | [Core docs](../000-core/README.md) |
+| Human change routing | [Task router](../README.md) |
 
 `pnpm architecture` / `pnpm boundaries` 驗證這些 mapping；Markdown 只說明 why / routing。
 

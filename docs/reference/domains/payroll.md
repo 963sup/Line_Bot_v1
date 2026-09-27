@@ -1,6 +1,6 @@
 # Payroll detailed reference
 
-Low-frequency Payroll flows and edge cases. The owner boundary and invariants remain canonical in [Payroll](../../../010-domain-owners/060-payroll.md).
+Low-frequency Payroll flows and edge cases. The owner boundary and invariants remain canonical in [Payroll](../../010-domain-owners/060-payroll.md).
 
 ## Commands / Queries
 

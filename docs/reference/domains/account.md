@@ -1,6 +1,6 @@
 # Account detailed reference
 
-Low-frequency Account flows and edge cases. The owner boundary and invariants remain canonical in [Account](../../../010-domain-owners/010-account.md).
+Low-frequency Account flows and edge cases. The owner boundary and invariants remain canonical in [Account](../../010-domain-owners/010-account.md).
 
 ## Lifecycle
 

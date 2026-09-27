@@ -1,6 +1,6 @@
 # DailyCheckIn detailed reference
 
-Low-frequency DailyCheckIn details. The owner boundary and invariants remain canonical in [DailyCheckIn](../../../010-domain-owners/160-daily-check-in.md).
+Low-frequency DailyCheckIn details. The owner boundary and invariants remain canonical in [DailyCheckIn](../../010-domain-owners/160-daily-check-in.md).
 
 ## Current implementation / target distinction
 

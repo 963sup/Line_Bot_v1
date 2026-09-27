@@ -1,6 +1,6 @@
 # Repository detailed reference
 
-Low-frequency Repository details. The owner boundary and invariants remain canonical in [Repository](../../../010-domain-owners/080-repository.md).
+Low-frequency Repository details. The owner boundary and invariants remain canonical in [Repository](../../010-domain-owners/080-repository.md).
 
 ## Locator
 

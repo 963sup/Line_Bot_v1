@@ -1,6 +1,6 @@
 # Organization detailed reference
 
-Low-frequency Organization flows and edge cases. The owner boundary and invariants remain canonical in [Organization](../../../010-domain-owners/030-organization.md).
+Low-frequency Organization flows and edge cases. The owner boundary and invariants remain canonical in [Organization](../../010-domain-owners/030-organization.md).
 
 ## Lifecycle
 
