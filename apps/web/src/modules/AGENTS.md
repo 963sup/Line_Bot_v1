@@ -14,7 +14,7 @@
 
 - Account/User、Organization、Enterprise、Team、Repository 依 [apps FPT 對照](../../../AGENTS.md)；Repository 包含 Issue、Discussion、Comment、Label、Milestone，不按 upstream 分片機械拆 package。
 - `account` 目前含 Identity/Access 的 permissions presenter；這是 Web surface 放置現況，不更改其 package authority，也不是要求這次搬檔。
-- `apps/web/src/modules` 的完整性由「真實 Web consumer / presentation responsibility」決定，不與 `packages/<owner>`、FPT category 或主導覽一一對稱。Project / Workforce / Payroll / Audit 等若沒有 current Web surface，就不建立空 module；DailyCheckIn、Identity/Access、LINE 等可由既有 presentation/composition 承接，直到出現獨立 UI lifecycle 才重新判斷。
+- `apps/web/src/modules` 的完整性由「真實 Web consumer / presentation responsibility」決定，不與 `packages/<owner>`、FPT category 或主導覽一一對稱。Project / Workforce / Payroll / Audit 等若沒有 current Web surface，就不建立空 module。DailyCheckIn 已有獨立 claim/recovery/UI lifecycle，因此由 `modules/daily-check-in` 承接；Identity/Access、LINE 等若尚無獨立 UI lifecycle 可維持既有 presentation/composition。
 - Notifications 的本地 recipient/read-state 契約不能只由 FPT activity 類別推導；Assistant、Attendance、Diary、Expense、Partners 的本地用途須保留自己的 evidence。
 - 模組內若出現新獨立的 lifecycle/authorization/consumer，先在 local AGENTS 寫清責任與邊界，再決定分檔；只為分類整齊不建立空資料夾或通用 resource manager。
 - 改 module 需同步對應 route/composition、browser-safe imports、錯誤投影與 tests；不以檔案搬移改 wire URL、command fingerprint 或資料 ownership。

@@ -2,7 +2,7 @@
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import styles from "./daily-check-in-wheel.module.css";
-import type { CheckInOutcome, CoinView, DailyCheckInClaim } from "./use-user";
+import type { CheckInOutcome, CoinView, DailyCheckInClaim } from "./use-daily-check-in";
 
 type WheelPhase =
   | "idle"

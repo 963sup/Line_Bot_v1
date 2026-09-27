@@ -10,7 +10,9 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const web = path.join(root, "apps/web");
 const require = createRequire(path.join(web, "package.json"));
+const rootRequire = createRequire(path.join(root, "package.json"));
 const next = require.resolve("next/dist/bin/next");
+const turbo = rootRequire.resolve("turbo/bin/turbo");
 const exactNodeVersion = readFileSync(path.join(root, ".node-version"), "utf8").trim();
 if (process.versions.node !== exactNodeVersion) {
   throw new Error(`Expected Node ${exactNodeVersion}; got ${process.versions.node}.`);
@@ -91,7 +93,14 @@ try {
   await new Promise((resolve, reject) =>
     probe.close((error) => (error ? reject(error) : resolve())),
   );
-  console.log(`Artifacts: ${output}\nBuilding isolated local Web…`);
+  console.log(`Artifacts: ${output}\nBuilding workspace dependencies for isolated Web…`);
+  await command(
+    [turbo, "run", "build", "--filter=@line-work/web^..."],
+    root,
+    "dependencies-build.log",
+  );
+  report.workspaceDependenciesBuild = "passed";
+  console.log("Building isolated local Web…");
   await command([next, "build"], web, "build.log");
   report.build = "passed";
   server = launch(

@@ -11,7 +11,7 @@
 | 探索 Explore | `/explore` | 現有 Repository discovery/Star；不假裝已有跨 owner 全域搜尋、Trending 或 Activity feed |
 | AI | `/assistant` | 既有 Assistant one-shot Ask / Issue-draft Generate / text Review；不建立 durable chat session 或 autonomous writer |
 
-Current shell 固定四個主目的地；avatar 使用 Account-owned current login 導向 canonical `/{login}` Profile；`/settings` 是 viewer configuration secondary surface，兩者不再混用。`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。Inbox 是 presentation vocabulary，`/notifications` 與 `/api/notifications` 是 current published transport；兩者不要求同名，也不能因 tab 命名順便建立 `packages/inbox`、平行 schema 或新的 source root。
+Current shell 固定四個主目的地與 Bottom Navigation；Account/Profile avatar 只出現在 Home header，使用 Account-owned current login 導向 canonical `/{login}` Profile。Inbox、Explore、AI 與其他工作頁不重複顯示 Profile avatar；`/settings` 是 viewer configuration secondary surface，兩者不再混用。`/repositories` 保留為 Home / Explore 可進入的 Repository collection/workbench 與既有 deep link，不是第五個 global tab。Inbox 是 presentation vocabulary，`/notifications` 與 `/api/notifications` 是 current published transport；兩者不要求同名，也不能因 tab 命名順便建立 `packages/inbox`、平行 schema 或新的 source root。
 
 導航層級：主 tab → owner/collection → resource detail → 明確操作。一般內頁使用 back、title、最多一個主要快捷操作及適當 overflow；不能把每個 resource 提升為主 tab。切 tab 可保留同一 viewer 的安全瀏覽位置，但私有資料與命令恢復仍依 owner/session 規則。
 

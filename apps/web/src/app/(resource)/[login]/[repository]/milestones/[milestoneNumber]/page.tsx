@@ -1,4 +1,5 @@
 import { normalizeAccountLogin } from "@line-work/account/domain/login";
+import { normalizeRepositoryMilestoneNumber } from "@line-work/repository/domain";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";
 import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
@@ -18,9 +19,8 @@ export default async function Page({
   } catch {
     notFound();
   }
-  if (!/^[1-9]\d*$/.test(milestoneNumber)) notFound();
-  const number = Number(milestoneNumber);
-  if (!Number.isSafeInteger(number)) notFound();
+  const number = normalizeRepositoryMilestoneNumber(milestoneNumber);
+  if (number === null) notFound();
   return (
     <AppShell>
       <RepositoryResourcesPanel

@@ -43,14 +43,6 @@ export function entryDestination(href: string, fallback: Destination = "home") {
       return "invalid";
     target.pathname = source.pathname;
   }
-  const issueView = source.searchParams.get("issueView");
-  if (
-    selected === "repositories" &&
-    source.searchParams.getAll("issueView").length === 1 &&
-    issueView &&
-    ["all", "mine", "created"].includes(issueView)
-  )
-    target.searchParams.set("issueView", issueView);
   if (selected === "notifications") {
     const notificationView = source.searchParams.get("notificationView");
     if (

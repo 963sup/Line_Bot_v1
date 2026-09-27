@@ -104,13 +104,6 @@ export function entryReturnUrl(href: string) {
     ["all", "unread"].includes(notificationView)
   )
     target.searchParams.set("notificationView", notificationView);
-  const issueView = current.searchParams.get("issueView");
-  if (
-    current.searchParams.getAll("issueView").length === 1 &&
-    issueView &&
-    ["all", "mine", "created"].includes(issueView)
-  )
-    target.searchParams.set("issueView", issueView);
   const partnerView = current.searchParams.get("partnerView");
   if (
     current.searchParams.getAll("partnerView").length === 1 &&

@@ -11,6 +11,12 @@ export type UserProfile = Readonly<{
   updatedAt: number;
 }>;
 
+export type PublicUserProfile = Readonly<{
+  displayName: string | null;
+  bio: string | null;
+  avatarRef: string | null;
+}>;
+
 export type UserProfileUpdate = Readonly<{
   displayName: string | null;
   bio: string | null;

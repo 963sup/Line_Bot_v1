@@ -279,7 +279,7 @@ test("rejects active locators for data-only or target concepts", () => {
       status: "active",
       fields: ["number"],
       scope: "fixture",
-      routeFiles: ["apps/web/src/app/(app)/projects/[number]/page.tsx"],
+      routeFiles: ["apps/web/src/app/(mobile)/projects/[number]/page.tsx"],
       benchmark: { file: "schema-projects.json", category: "projects", symbol: "ProjectV2" },
     },
   ];

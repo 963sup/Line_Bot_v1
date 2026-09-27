@@ -85,8 +85,11 @@ test("view selection survives continuation only for its owning destination", () 
     ),
     "/repositories",
   );
+  assert.equal(
+    entryDestination("https://example.com/?repositories=1&issueView=created"),
+    "/repositories",
+  );
   for (const [intent, key, value, path] of [
-    ["repositories", "issueView", "created", "/repositories"],
     ["notifications", "notificationView", "unread", "/notifications"],
     ["partners", "partnerView", "news", "/partners"],
   ]) {
@@ -123,7 +126,7 @@ test("entry navigation resolves continuation once and normalizes stale intent pa
     entryNavigation("https://example.com/repositories?repositories=1&issueView=mine"),
     {
       state: "redirect",
-      target: "/repositories?issueView=mine",
+      target: "/repositories",
     },
   );
   assert.deepEqual(entryNavigation("https://example.com/?liff.state=%3Frepositories%3D1"), {
@@ -183,7 +186,7 @@ test("resource continuation keeps notification IDs but normalizes legacy Reposit
     entryDestination(
       `https://example.com/repositories/${id}?repositories=1&issueView=mine&token=secret#secret`,
     ),
-    "/repositories?issueView=mine",
+    "/repositories",
   );
   assert.equal(
     entryDestination(`https://example.com/repositories/${id}?membership=1`),

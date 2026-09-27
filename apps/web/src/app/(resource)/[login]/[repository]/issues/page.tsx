@@ -8,24 +8,28 @@ export const dynamic = "force-dynamic";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ login: string; repository: string }>;
+  searchParams: Promise<{ create?: string | string[] }>;
 }) {
-  const { login, repository } = await params;
+  const [{ login, repository }, query] = await Promise.all([params, searchParams]);
   let ownerLogin: string;
   try {
     ownerLogin = normalizeAccountLogin(login);
   } catch {
     notFound();
   }
+  const initialCreating = query.create === "1";
 
   return (
     <AppShell>
       <IssueBoard
-        key={`${ownerLogin}/${repository}`}
+        key={`${ownerLogin}/${repository}:${initialCreating ? "create" : "view"}`}
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
         repositoryName={repository}
+        initialCreating={initialCreating}
       />
     </AppShell>
   );

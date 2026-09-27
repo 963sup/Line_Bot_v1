@@ -1,25 +1,34 @@
 import Link from "next/link";
 import { lineMiniApp } from "../../shared/server/line-mini-app";
 import PublicEntry from "./_entry/public-entry";
+
 export const dynamic = "force-dynamic";
+
 export default function Page() {
   return (
-    <main className="app-content">
-      <p className="eyebrow">LINE 工作助手</p>
-      <h1>讓每天的工作，更有條理。</h1>
-      <p>透過 LINE 使用出勤、日誌與收據整理服務。</p>
-      <PublicEntry liffId={lineMiniApp().liffId} />
-      <p>
-        <Link className="diary-link" href="/home">
-          進入個人工作台
+    <main className="public-gateway">
+      <div className="public-gateway-brand">
+        <div className="public-gateway-mark" aria-hidden="true">
+          L
+        </div>
+        <h1>LINE 工作助手</h1>
+        <p>使用 LINE 進入你的工作台</p>
+      </div>
+
+      <div className="public-gateway-actions">
+        <PublicEntry liffId={lineMiniApp().liffId} />
+        <Link className="public-gateway-primary" href="/home">
+          使用 LINE 進入
         </Link>
-      </p>
-      <p>
-        <Link href="/membership/register">首次使用，註冊 LINE 會員</Link>
-      </p>
-      <p>
-        <Link href="/privacy">隱私權</Link> · <Link href="/terms">服務條款</Link>
-      </p>
+        <p className="public-gateway-secondary">
+          首次使用？<Link href="/membership/register">建立會員資格</Link>
+        </p>
+        <nav className="public-gateway-legal" aria-label="法律與服務資訊">
+          <Link href="/privacy">隱私權</Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/terms">服務條款</Link>
+        </nav>
+      </div>
     </main>
   );
 }

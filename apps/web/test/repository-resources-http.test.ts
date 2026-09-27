@@ -158,7 +158,7 @@ test("repository resources HTTP exposes detail resources through owner contract"
   assert.equal(((await milestone.json()) as { milestone: { number: number } }).milestone.number, 2);
 });
 
-test("repository resource login continuation keeps resource paths and drops secrets", () => {
+test("repository resource login continuation keeps resource paths and drops unrelated state", () => {
   for (const path of [
     "/octo/hello-world/discussions",
     "/octo/hello-world/discussions/D_kwDOA1",
@@ -172,6 +172,6 @@ test("repository resource login continuation keeps resource paths and drops secr
     assert.equal(value.pathname, path);
     assert.equal(value.searchParams.has("token"), false);
     assert.equal(value.searchParams.has("liff.state"), false);
-    assert.equal(value.searchParams.get("issueView"), "mine");
+    assert.equal(value.searchParams.has("issueView"), false);
   }
 });

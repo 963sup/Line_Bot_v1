@@ -13,7 +13,7 @@
 
 ### Profile publication / discovery
 
-Self Profile 已有 current owner/runtime。尚未完成的是 public／Organization-visible reader、使用者目錄／探索、avatar object ownership/upload 與對應 privacy acceptance；在這些 consumer 與授權 projection 完成前，不把 `visibility` 推導成其他 Domain 的讀權，也不把 LINE/Google profile dump 進 User table。
+Self Profile 與 public reader 已有 current owner/runtime；public reader 僅暴露 public-safe profile fields，Web 可在沒有可解析 avatar object 時使用 deterministic fallback。尚未完成的是 Organization-visible reader、使用者目錄／探索、avatar object ownership/upload/resolver 與對應 privacy acceptance；在這些 consumer 與授權 projection 完成前，不把 `visibility` 推導成其他 Domain 的讀權，也不把 LINE/Google profile dump 進 User table。
 
 ### Account closure
 

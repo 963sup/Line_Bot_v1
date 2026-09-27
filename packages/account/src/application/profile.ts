@@ -1,5 +1,7 @@
 import { UserError } from "../domain/user.js";
 import type {
+  PublicUserProfile,
+  UserProfile,
   UserProfileStore,
   UserProfileUpdate,
   UserProfileVisibility,
@@ -43,6 +45,14 @@ export function parseUserProfileUpdate(input: unknown): UserProfileUpdate {
   };
 }
 
+function publicProfile(profile: UserProfile): PublicUserProfile {
+  return {
+    displayName: profile.displayName,
+    bio: profile.bio,
+    avatarRef: profile.avatarRef,
+  };
+}
+
 export function createUserProfiles(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   store(): UserProfileStore;
@@ -52,7 +62,7 @@ export function createUserProfiles(deps: {
     get: async (subject: string) => deps.store().read((await deps.activeUser(subject)).id),
     publicByUserId: async (userId: string) => {
       const profile = await deps.store().read(userId);
-      return profile?.visibility === "public" ? profile : null;
+      return profile?.visibility === "public" ? publicProfile(profile) : null;
     },
     update: async (subject: string, input: unknown) =>
       deps

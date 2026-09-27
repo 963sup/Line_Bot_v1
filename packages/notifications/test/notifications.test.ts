@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createNotifications } from "../src/application/notifications.js";
 import type { NotificationRepository } from "../src/application/ports/notification-repository.js";
-import type { Notification } from "../src/domain.js";
+import { type Notification, normalizeNotificationId } from "../src/domain.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const item: Notification = {
@@ -42,4 +42,28 @@ test("notification application scopes reads and read state to the active user", 
   });
   assert.equal((await notifications.markRead("line-user", id)).readAt, 10);
   assert.deepEqual(calls, [`read:user-1:${id}:true`, `read-state:user-1:${id}:10`]);
+});
+
+test("Notification owner canonicalizes locator identity before persistence", async () => {
+  const mixedCaseId = "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA";
+  assert.equal(normalizeNotificationId(mixedCaseId), "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+  assert.equal(normalizeNotificationId("not-a-notification"), null);
+
+  const calls: string[] = [];
+  const notifications = createNotifications({
+    activeUser: async () => ({ id: "user-1" }),
+    repository: () => ({
+      async read(recipient, query) {
+        calls.push(`${recipient}:${query.id ?? ""}`);
+        return { items: [] };
+      },
+      async markRead() {
+        throw new Error("not used");
+      },
+    }),
+    now: () => 10,
+  });
+
+  await notifications.read("line-user", { id: mixedCaseId });
+  assert.deepEqual(calls, ["user-1:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"]);
 });

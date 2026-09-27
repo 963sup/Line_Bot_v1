@@ -134,7 +134,7 @@ function validGraph() {
     },
     authority: {
       repository: "github/docs",
-      revision: "03d2e24b34bd88c361f1185f0aae1c46062c6510",
+      revision: "0123456789abcdef0123456789abcdef01234567",
       path: "src/graphql/data/fpt",
     },
     scope: {

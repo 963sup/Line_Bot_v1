@@ -4,7 +4,7 @@
 
 ## FPT 語意與 GitHub Mobile 布局目標
 
-狀態：四個主目的地 Home / Inbox / Explore / AI 已作為 current app-shell 契約落地；Profile 是 app-shell avatar 可達的 secondary account surface，不佔 Bottom Navigation。其餘 GitHub Mobile pattern 仍只在本地 owner/contract 真實存在時逐 slice 採用。文件或 benchmark 出現一個上游 UI 項目，不代表本產品已具備該 capability。
+狀態：四個主目的地 Home / Inbox / Explore / AI 已作為 current app-shell 契約落地；Profile 是 Home header avatar 可達的 secondary account surface，不佔 Bottom Navigation，也不在其他主目的地重複顯示。其餘 GitHub Mobile pattern 仍只在本地 owner/contract 真實存在時逐 slice 採用。文件或 benchmark 出現一個上游 UI 項目，不代表本產品已具備該 capability。
 
 兩條對照線分開：FPT 提供 resource/owner/relationship、query/mutation、identity/locator 與版本證據；GitHub Mobile 提供手機導覽與資訊層級。不能從 GraphQL schema 推導視覺布局，也不能從畫面推導授權或資料契約。
 

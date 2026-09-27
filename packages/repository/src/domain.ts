@@ -29,6 +29,21 @@ export function normalizeRepositoryName(value: string): string | null {
   return name && name.length <= 100 ? name : null;
 }
 
+export function normalizeIssueNumber(value: number | string): number | null {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isSafeInteger(number) && number >= 1 ? number : null;
+}
+
+export function normalizeDiscussionId(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 && value.length <= 120 ? value : null;
+}
+
+export function normalizeRepositoryMilestoneNumber(value: number | string): number | null {
+  if (typeof value === "string" && !/^[1-9]\d*$/.test(value)) return null;
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isSafeInteger(number) && number >= 1 ? number : null;
+}
+
 export class IssueError extends Error {
   constructor(
     public status: number,
