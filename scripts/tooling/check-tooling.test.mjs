@@ -407,10 +407,7 @@ test("only named dated evidence may preserve retired User vocabulary", (t) => {
   );
   assert.deepEqual(validate(root), []);
 
-  write(
-    "docs/change/evidence/new-current-evidence.md",
-    `${retiredType} new evidence.\n`,
-  );
+  write("docs/change/evidence/new-current-evidence.md", `${retiredType} new evidence.\n`);
   rejects(root, "retired User vocabulary");
 });
 
