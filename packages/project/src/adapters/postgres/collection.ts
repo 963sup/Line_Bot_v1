@@ -37,9 +37,7 @@ export class PostgresProjectCollectionStore implements ProjectCollectionStore {
       );
 
       return rows.flatMap((row) => {
-        const ownerLogin = ownerLogins.get(
-          `${row.owner_account_id}:\0:${row.owner_account_kind}`,
-        );
+        const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
         return ownerLogin
           ? [
               {
