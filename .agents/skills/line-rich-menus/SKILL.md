@@ -1,6 +1,7 @@
 ---
 name: line-rich-menus
 description: 建立、更新或診斷 LINE 圖文選單 rich menu、個人化選單及分頁切換；處理圖片、點擊區域、alias 與顯示優先序。聊天內卡片使用 line-flex-messages。
+source: repository
 ---
 
 # LINE 圖文選單

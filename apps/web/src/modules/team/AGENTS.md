@@ -1,10 +1,5 @@
 # Web team module
 
-## GitHub Mobile 目標（後續實作）
-
-- FPT teams 對應「Organization context → Team 列表 → Team header → members/maintainers 與可用操作」；列表與詳情持續標示 Organization，避免同名 Team 跨 scope 混淆。
-- 成員與 maintainer 的 presentation 分開，不能靠 avatar/顏色推定權限；Repository access 不由 Team 頁面自行宣稱。
-- EnterpriseTeam 留在 Enterprise 流程；Mobile 的 drill-down 是資訊層次，不建立新的 parent-child Team 關係。
 
 ## 現行 surface 與 invariant
 

@@ -8,12 +8,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## GitHub Mobile layout implementation target
-
-- 採用 apps 父層的 FPT／Mobile 雙基準；既有 Next.js managed block 與目前版本文件仍有效，Mobile 外觀不要求換 framework 或原生 runtime。
-- 頁面整合依序處理 shell/導覽、resource 列表與詳情、Account/治理、其他本地能力；每次只交付具有完整資料、授權、錯誤與返回行為的 slice。
-- 不為了視覺改版新增 GraphQL endpoint、全域狀態服務、第二套 schema/DTO 或 CSS framework。先使用現有 Next Link、owner contracts 與 feature CSS；共用組件由真實 consumer 驗證。
-- 後續 UI 驗收至少覆蓋 320/390px、較寬視窗、字體放大、鍵盤、safe area、direct link、返回、換帳號及 unknown command recovery；保存實際截圖，不能只用 AGENTS 或 build 通過宣稱符合布局。
 
 ## Web ownership routing
 

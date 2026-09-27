@@ -33,7 +33,7 @@ test("production deploy requires explicit live authorization and exact SHA", () 
   assert.deepEqual(parseProductionDeployArgs(["--live", "--sha", SHA]), { sha: SHA });
 });
 
-test("production release authorization accepts only a current Release after Supabase success", async () => {
+test("production release authorization accepts only a current planned Release", async () => {
   const responses = [
     json({
       id: 123,
@@ -44,10 +44,7 @@ test("production release authorization accepts only a current Release after Supa
       status: "in_progress",
     }),
     json({
-      jobs: [
-        { name: "gate", conclusion: "success" },
-        { name: "supabase", conclusion: "success" },
-      ],
+      jobs: [{ name: "release_plan", conclusion: "success" }],
     }),
   ];
   await verifyProductionReleaseAuthorization({
@@ -59,7 +56,7 @@ test("production release authorization accepts only a current Release after Supa
   });
 });
 
-test("production release authorization fails closed before Supabase success", async () => {
+test("production release authorization fails closed before Release planning succeeds", async () => {
   const responses = [
     json({
       id: 123,
@@ -70,10 +67,7 @@ test("production release authorization fails closed before Supabase success", as
       status: "in_progress",
     }),
     json({
-      jobs: [
-        { name: "gate", conclusion: "success" },
-        { name: "supabase", conclusion: "failure" },
-      ],
+      jobs: [{ name: "release_plan", conclusion: "failure" }],
     }),
   ];
   await assert.rejects(
@@ -84,7 +78,7 @@ test("production release authorization fails closed before Supabase success", as
       repository: "963sup/Line_Bot_v1",
       fetchImpl: async () => responses.shift(),
     }),
-    /successful gate and Supabase convergence/,
+    /successful Release planning/,
   );
 });
 

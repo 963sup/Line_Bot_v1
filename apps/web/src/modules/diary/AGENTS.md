@@ -1,9 +1,5 @@
 # Web diary module
 
-## GitHub Mobile 目標（後續實作）
-
-- Home 的日誌列明示「開啟外部表單」與返回方式；不假裝原生本地編輯器、儲存狀態或歷史列表。
-- 表單外開與取消不構成提交成功；FPT 無直接日誌 owner，未來若新增本地日誌須先定義資料與存取契約。
 
 ## 現行 surface 與 invariant
 

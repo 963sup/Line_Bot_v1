@@ -1,10 +1,5 @@
 # Web API transport boundary
 
-## GitHub Mobile 目標（後續實作）
-
-- API 沒有手機視覺布局；支援 module 的既有 projection、分頁、scope、error/result 即可。FPT query/mutation 分離語意不要求新增 GraphQL 或複製 REST 路由。
-- 列表 badge/count、scope 名稱、timeline、search 或批次操作若缺 contract，先列能力缺口，不能只為 Mobile 外觀臨時拼 SQL 或回 fake 0。
-- 保留 current URL 與 receipt/replay；UI reorder、tab rename、drawer/sheet 選擇不得影響 method/status/identity 契約。
 
 ## 現行 URL 與 invariant
 

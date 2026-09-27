@@ -1,10 +1,5 @@
 # Web partners module
 
-## GitHub Mobile 目標（後續實作）
-
-- Directory 採名稱/必要聯繫摘要的列表，詳情再展開 contact methods；news 與 referral 是 owner 內的次級目的地，不升格為全域 tab。
-- 推薦與管理採明確表單、確認、版本結果；`/admin/groups` 的畫面標題維持合作夥伴語意，命名現況不使它變成 Organization Team。
-- 後續返回導覽應遵循 Partners 任務上下文；若要變更現有 `back=/team`，同步 navigation/entry tests，不把布局文件當已修復證據。
 
 ## 現行 surface 與 invariant
 

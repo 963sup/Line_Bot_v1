@@ -137,8 +137,8 @@ export async function verifyProductionReleaseAuthorization({
   }
   const succeeded = (name) =>
     jobs.jobs.some((job) => job?.name === name && job?.conclusion === "success");
-  if (!succeeded("gate") || !succeeded("supabase")) {
-    throw new Error("Production deployment requires successful gate and Supabase convergence.");
+  if (!succeeded("release_plan")) {
+    throw new Error("Production deployment requires successful Release planning.");
   }
 }
 

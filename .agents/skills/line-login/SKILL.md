@@ -1,6 +1,7 @@
 ---
 name: line-login
 description: 開發、診斷或審查 LINE Login OAuth／OIDC、PKCE、token 核驗及 LINE 身分關聯；日常 LINE 會員授權與選填 Google 關聯分開處理。
+source: repository
 ---
 
 # LINE Login

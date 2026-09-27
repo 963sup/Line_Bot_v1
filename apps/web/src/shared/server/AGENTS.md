@@ -1,10 +1,5 @@
 # Server shared boundary
 
-## GitHub Mobile 目標（後續實作）
-
-- 手機頁面所需的 response/error 機制保持小且中立；不得為少一次 request 就在 shared 拼跨 owner dashboard SQL，或以 Mobile cache 降低每次讀寫授權。
-- 列表/detail 的失敗分類、pagination input 與 result receipt 依 owner contract；本層不得把來源失敗轉成 200 空資料來配合 UI。
-- 預載、重試或 shell reuse 必須保持 server-only graph 與秘密隔離；不因 GitHub FPT 有 meta/rateLimit 就新增未定義的本地 API。
 
 ## 現行機制與 invariant
 

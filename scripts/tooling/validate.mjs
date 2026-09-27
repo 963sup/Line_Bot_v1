@@ -16,6 +16,7 @@ const fastTasks = new Set([
   "lint",
   "schema:check",
   "schema:remote:test",
+  "github:test",
   "architecture:test",
   "architecture",
   "deadcode",
@@ -56,6 +57,7 @@ export function classifyChangedFiles(files) {
       file.startsWith("scripts/tooling/") ||
       file.startsWith("scripts/architecture/") ||
       file.startsWith("scripts/vercel/") ||
+      file.startsWith("scripts/github/") ||
       file.startsWith("architecture/") ||
       file === ".dependency-cruiser.mjs" ||
       [
@@ -108,6 +110,7 @@ export function shouldRunFast(task, scope) {
   if (task === "tooling:check") return scope.toolingAffected;
   if (task === "docs:check") return scope.docsAffected;
   if (task === "schema:check" || task === "schema:remote:test") return scope.schemaAffected;
+  if (task === "github:test") return scope.toolingAffected;
   if (task === "architecture:test") return scope.toolingAffected && scope.codeAffected;
   if (task === "architecture")
     return scope.codeAffected || scope.toolingAffected || scope.schemaAffected;
@@ -160,6 +163,10 @@ function main() {
       ],
     ],
     ["patch:apply:test", ["--test", "scripts/changes/patch-apply.test.mjs"]],
+    [
+      "github:test",
+      ["--test", "scripts/github/current-main.test.mjs", "scripts/github/release-plan.test.mjs"],
+    ],
     [
       "schema:remote:test",
       ["--test", "scripts/supabase/postgres.test.mjs", "scripts/supabase/remote.test.mjs"],
