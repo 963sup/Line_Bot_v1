@@ -5,7 +5,7 @@ description: 建立、更新或診斷 LINE 圖文選單 rich menu、個人化選
 
 # LINE 圖文選單
 
-先確認使用者在官方帳號聊天室要完成的操作、目標受眾及現有選單由誰管理。讀取 [LINE Messaging](../../../docs/030-platform/010-line.md)，保留既有入口與會員授權；顯示某個選單不代表使用者取得權限。
+先確認使用者在官方帳號聊天室要完成的操作、目標受眾及現有選單由誰管理。讀取 [LINE Messaging](../../../docs/owners/line-integration.md)，保留既有入口與會員授權；顯示某個選單不代表使用者取得權限。
 
 ## 第一性原理與根因決策
 
