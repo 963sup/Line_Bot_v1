@@ -65,47 +65,6 @@ function PopularRepositories({
   );
 }
 
-function RepositorySummary({ totalCount }: { totalCount: number }) {
-  return (
-    <section className={styles.section} aria-label="Profile resources">
-      <div className={styles.resourceList}>
-        <a className={styles.resourceRow} href="#popular-repositories">
-          <span className={styles.resourceIcon} aria-hidden="true">
-            <svg
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 4.5h12a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2V4.5Z" />
-              <path d="M7 16h12M9 8h6" />
-            </svg>
-          </span>
-          <span className={styles.resourceLabel}>Repositories</span>
-          <span className={styles.resourceCount}>{totalCount}</span>
-        </a>
-      </div>
-    </section>
-  );
-}
-
-function ProfileContent({
-  repositories,
-}: {
-  repositories: Awaited<ReturnType<typeof popularRepositoryProjection>>;
-}) {
-  return (
-    <div className={styles.profile}>
-      <PopularRepositories repositories={repositories} />
-      <RepositorySummary totalCount={repositories.totalCount} />
-    </div>
-  );
-}
-
 export default async function Page({ params }: { params: Promise<{ login: string }> }) {
   const { login } = await params;
   const owner = await resolveAccountNamespace(login);
@@ -126,8 +85,9 @@ export default async function Page({ params }: { params: Promise<{ login: string
         profileKind="ORGANIZATION"
         profileLogin={owner.login}
         profileTitle={organization.name}
+        repositoryCount={repositories.totalCount}
       >
-        <ProfileContent repositories={repositories} />
+        <PopularRepositories repositories={repositories} />
       </ProfileViewerShell>
     );
   }
@@ -147,8 +107,9 @@ export default async function Page({ params }: { params: Promise<{ login: string
       profileLogin={owner.login}
       profileTitle={profile?.displayName ?? user.login}
       profileUserId={owner.id}
+      repositoryCount={repositories.totalCount}
     >
-      <ProfileContent repositories={repositories} />
+      <PopularRepositories repositories={repositories} />
     </ProfileViewerShell>
   );
 }
