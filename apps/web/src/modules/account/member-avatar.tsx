@@ -1,33 +1,22 @@
 "use client";
 
-import { buildNamespacePath } from "@line_bot_v1/namespace";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
-type AccountProjection = {
-  member?: {
-    login?: string | null;
-    status?: string | null;
-  } | null;
-};
-
 export default function MemberAvatar({ liffId }: { liffId: string }) {
   const [picture, setPicture] = useState<string>();
-  const [destination, setDestination] = useState<{ href: string; label: string }>();
   const generation = useRef(0);
 
   const clear = useCallback(() => {
     generation.current++;
     setPicture(undefined);
-    setDestination(undefined);
   }, []);
 
   const load = useCallback(async () => {
     const ticket = ++generation.current;
     setPicture(undefined);
-    setDestination(undefined);
     const token = await liffClient.session(liffId);
     if (!token || ticket !== generation.current) return;
 
@@ -40,31 +29,6 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
         if (ticket === generation.current) setPicture(undefined);
       },
     );
-
-    try {
-      const response = await fetch("/api/membership?view=account", {
-        headers: { "x-line-token": token },
-        cache: "no-store",
-      });
-      const value = (await response.json()) as AccountProjection;
-      if (ticket !== generation.current) return;
-      if (!response.ok || value.member?.status !== "active") {
-        setDestination(undefined);
-        return;
-      }
-      const accountLogin = value.member.login;
-      if (typeof accountLogin !== "string" || accountLogin.length === 0) {
-        setDestination(undefined);
-        return;
-      }
-      setDestination({
-        href: buildNamespacePath("account", { login: accountLogin }),
-        label: "個人檔案",
-      });
-    } catch {
-      if (ticket !== generation.current) return;
-      setDestination(undefined);
-    }
   }, [liffId]);
 
   useEffect(
@@ -103,20 +67,9 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
   return (
     <>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
-      {destination ? (
-        <Link
-          href={destination.href}
-          className="member-avatar"
-          aria-label={destination.label}
-          title={destination.label}
-        >
-          {avatar}
-        </Link>
-      ) : (
-        <span className="member-avatar" aria-label="個人檔案目前不可用" aria-disabled="true">
-          {avatar}
-        </span>
-      )}
+      <Link href="/profile" className="member-avatar" aria-label="個人檔案" title="個人檔案">
+        {avatar}
+      </Link>
     </>
   );
 }
