@@ -49,6 +49,8 @@ const nextConfig: NextConfig = {
       "/membership/:path*",
       "/attendance/:path*",
       "/settings/:path*",
+      "/profile/:path*",
+      "/trending/:path*",
       "/enterprises/:path*",
       "/organizations/:path*",
       "/team/:path*",
@@ -58,6 +60,7 @@ const nextConfig: NextConfig = {
       "/api/team/:path*",
       "/groups/:path*",
       "/api/membership/:path*",
+      "/api/profile/:path*",
       "/api/attendance/:path*",
       "/api/groups/:path*",
     ].map((source) => ({

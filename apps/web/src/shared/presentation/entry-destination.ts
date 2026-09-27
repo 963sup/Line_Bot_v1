@@ -13,6 +13,7 @@ const paths: Record<Destination, string> = {
   partners: "/partners",
   feedback: "/feedback",
   membership: "/settings",
+  profile: "/profile",
   records: "/history",
   register: "/membership/register",
   restore: "/membership/restore",

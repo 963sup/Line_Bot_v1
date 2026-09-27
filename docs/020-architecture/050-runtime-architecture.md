@@ -102,6 +102,8 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
 | `/history` | 工作紀錄入口 |
 | `/{login}` | canonical User / Organization locator；Home header 的 Account/Profile avatar 在 Account-owned current login 已解析時導向此 locator；legacy User 若已有 Account projection 但缺 login，只能導向 `/settings/profile` 做 explicit locator recovery，不得推導 fabricated login；viewer自己的 User Profile才可顯示 Settings齒輪，依 trusted membership login與 route login一致性判斷；其他工作目的地不重複顯示 avatar |
+| `/profile` | authenticated viewer Profile hub；組合本人 owner-approved projection 與 Account-owned earned Achievements，分享仍回 `/{login}`，不建立第二 identity locator |
+| `/trending` | Explore-active Repository discovery secondary surface；沿 Repository 7-day active-Star ranking，只顯示 current-accessible Repository，不建立 Explore/Trending owner |
 | `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
 | `/feedback`, `/planned` | 只有明確定義的功能或「未開放」結果；不得產生假資料 |
 

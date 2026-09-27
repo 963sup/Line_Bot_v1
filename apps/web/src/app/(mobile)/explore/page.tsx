@@ -12,7 +12,7 @@ export default function Page() {
       <SectionHeading title="Discover" />
       <div className="menu-group explore-discover">
         <ActionRow
-          href="#trending"
+          href="/trending"
           icon="↗"
           tone="orange"
           title="Trending Repositories"
@@ -26,7 +26,7 @@ export default function Page() {
           description="探索公開 curated Repository Lists"
         />
       </div>
-      <DiscoveryPanel liffId={lineMiniApp().liffId} />
+      <DiscoveryPanel liffId={lineMiniApp().liffId} sections="activity" />
     </AppShell>
   );
 }

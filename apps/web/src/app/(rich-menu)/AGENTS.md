@@ -6,7 +6,7 @@
 
 It owns Rich Menu-facing navigation semantics, route composition, direct-entry continuity, and presentation mapping from Rich Menu actions to canonical application surfaces.
 
-It does not own business truth, authorization, persistence, Time Tracking rules, Notifications, collaboration data, analytics facts, or LINE Rich Menu publication/configuration.
+It does not own business truth, authorization, persistence, Attendance rules, Notifications, Repository state, Profile identity, or LINE Rich Menu publication/configuration.
 
 ## Boundary
 
@@ -22,64 +22,66 @@ owning module / package
 
 The route group is parallel to `(mobile)`; it is not owned by the Mobile shell. Route Groups do not enter the URL and do not create a second canonical URL for an existing capability.
 
-LINE provider definition, publication, rollback, and readback remain owned by `packages/line-channel` and repository LINE operations. This route group owns only the web delivery destinations reached from Rich Menu.
+LINE provider definition, publication, rollback, and readback remain owned by `packages/line-channel` and repository LINE operations. This route group owns only the Web delivery destinations reached from Rich Menu.
 
-## Navigation contract
+## Current navigation contract
 
-The Rich Menu information architecture is:
+The current outer ring is:
 
 ```text
-Top row
-數據洞察｜異常事件｜工作台｜協作空間｜訊息中心
-
-Center entry
-工時紀錄（Time Tracking）
-├─ 開始工作（Start）
-└─ 結束工作（Stop）
+Repositories
+Incident
+Forms
+Team
+Profile
+Notifications
 ```
 
-### Top row
+The center entry remains Attendance-backed Time Tracking:
 
-| Label | Responsibility |
+```text
+Time Tracking
+├─ Start
+└─ Stop
+```
+
+| Rich Menu label | Canonical destination / responsibility |
 | --- | --- |
-| 數據洞察 | Read-only insight / measurement entry. Do not fabricate analytics truth from unrelated projections. |
-| 異常事件 | Exception/anomaly entry. The owning business context remains authoritative for each anomaly. |
-| 工作台 | Cross-owner work composition; presentation only, not a new Workbench Domain. |
-| 協作空間 | Collaboration entry across existing owner capabilities; do not create a Collaboration Domain merely for navigation. |
-| 訊息中心 | Presentation entry to Notifications-owned recipient projection; do not create Inbox/MessageCenter persistence. |
+| 儲存庫 | `/repositories`; Repository-owned collection |
+| 異常通報 | incident Rich Menu submenu; external form entries remain navigation only |
+| 表單作業 | forms submenu; external forms do not create local business truth |
+| 團隊協作 | team submenu backed by existing Team/Partner destinations |
+| 個人 | `/profile`; authenticated viewer Profile hub. `/{login}` remains the canonical User/Organization locator |
+| 通知中心 | Notifications-owned recipient projection |
+| 開始工作 / 結束工作 | current Attendance application contract |
 
-### Center entry
-
-| Label | Responsibility |
-| --- | --- |
-| 工時紀錄（Time Tracking） | Time Tracking capability entry. `開始工作（Start）` and `結束工作（Stop）` are the Rich Menu command vocabulary for starting and ending a tracked work interval. Current underlying business authority remains Attendance until a separately validated semantic migration changes that authority. |
+Legacy `membership=1` remains a compatibility entry to `/settings`; current Rich Menu personal navigation uses the distinct `profile=1` intent and must not regress back to Settings.
 
 ## Invariants
 
 - Route Group does not enter the URL and does not authorize.
 - `(rich-menu)` is a sibling of `(mobile)`, not a nested Mobile route group.
-- Every Rich Menu destination must resolve to one canonical URL owner.
-- Navigation labels are presentation vocabulary; they do not imply a new package, schema, bounded context, or source of truth.
-- Existing owner contracts must be reused before adding a route or adapter.
-- Do not expose `上班打卡` / `下班打卡` or `Clock-in` / `Clock-out` as Rich Menu terminology. Use `開始工作（Start）` / `結束工作（Stop）`.
-- Time Tracking presentation commands must still reuse the current Attendance application contracts and must not weaken qualification, replay/idempotency, version, tenant isolation, transaction, or recovery semantics.
-- Notifications remain authoritative for recipient-scoped message state even when the UI label is `訊息中心`.
-- Data insight and anomaly surfaces remain read projections unless a real command responsibility is explicitly owned elsewhere.
-- Direct entry from LINE, refresh, back, and authenticated continuation must converge on the same authoritative application semantics.
-- Do not use query parameters or client navigation state as authorization evidence.
-- Do not duplicate LINE Rich Menu provider configuration in this directory.
+- Every Rich Menu destination resolves to one canonical application surface.
+- Navigation labels are presentation vocabulary; they do not imply a new package, schema, Bounded Context, or source of truth.
+- Existing owner contracts are reused before adding a route or adapter.
+- `/profile` is a viewer composition, not a second User identity. Share/public identity remains `/{login}`.
+- Time Tracking presentation commands still reuse Attendance application contracts and preserve qualification, replay/idempotency, version, tenant isolation, transaction, and recovery semantics.
+- Notifications remain authoritative for recipient-scoped message state even when the UI label is 通知中心.
+- Direct entry from LINE, refresh, back, and authenticated continuation converge on the same authoritative application semantics.
+- Query parameters and client navigation state never authorize.
+- Rich Menu provider configuration is not duplicated in this directory.
 
 ## Change rules
 
-Before adding a concrete `page.tsx`, resolve:
+Before adding a concrete destination, resolve:
 
-1. the canonical URL;
-2. the business/data owner;
-3. the existing public contract;
+1. canonical URL or viewer composition surface;
+2. business/data owner;
+3. existing public contract;
 4. authorization and direct-entry behavior;
 5. whether the destination already exists elsewhere.
 
-If an existing canonical route already owns the destination, link/redirect to it rather than creating a parallel implementation.
+If an existing canonical resource route already owns the destination, link to it rather than creating a parallel business implementation.
 
 ## Validation
 
@@ -89,4 +91,4 @@ Use repository canonical validation:
 - full validation / merge: `pnpm validate`
 - documentation-only change: `pnpm docs:check`
 
-For Rich Menu publication or external LINE verification, use the repository's canonical LINE operation and provider readback; local route validation is not publication evidence.
+For Rich Menu publication or external LINE verification, use the repository canonical LINE operation and provider readback; local route validation is not publication evidence.

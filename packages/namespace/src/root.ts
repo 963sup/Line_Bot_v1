@@ -28,12 +28,14 @@ export const ROOT_NAMESPACE_RESERVED_KEYS = [
   "partners",
   "planned",
   "privacy",
+  "profile",
   "projects",
   "repositories",
   "search",
   "settings",
   "team",
   "terms",
+  "trending",
   "unavailable",
 ] as const;
 

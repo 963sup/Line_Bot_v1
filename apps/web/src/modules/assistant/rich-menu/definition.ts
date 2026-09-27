@@ -50,7 +50,7 @@ const ringPages = [
   "incident",
   "forms",
   "team",
-  "membership",
+  "profile",
   "notifications",
 ] as const;
 const ringBounds: Rectangle[] = [
@@ -133,8 +133,8 @@ export function workAssistantRichMenu(
             ...ringPages.map((target, i) => ({
               bounds: pixels(ringBounds[i]!),
               action:
-                target === "membership"
-                  ? { type: "uri" as const, label: "設定", uri: link("membership") }
+                target === "profile"
+                  ? { type: "uri" as const, label: "個人", uri: link("profile") }
                   : target === "repositories"
                     ? { type: "uri" as const, label: "儲存庫", uri: link("repositories") }
                     : switchAction(

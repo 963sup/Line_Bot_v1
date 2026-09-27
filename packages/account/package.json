@@ -75,6 +75,14 @@
     "./adapters/postgres/login-directory": {
       "types": "./dist/adapters/postgres/login-directory.d.ts",
       "default": "./dist/adapters/postgres/login-directory.js"
+    },
+    "./application/achievements": {
+      "types": "./dist/application/achievements.d.ts",
+      "default": "./dist/application/achievements.js"
+    },
+    "./application/ports/achievements": {
+      "types": "./dist/application/ports/achievements.d.ts",
+      "default": "./dist/application/ports/achievements.js"
     }
   },
   "files": [

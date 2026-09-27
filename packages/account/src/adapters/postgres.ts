@@ -1,3 +1,4 @@
+export { PostgresUserAchievementStore } from "./postgres/achievements.js";
 export { PostgresFollowStore } from "./postgres/follows.js";
 export { PostgresGoogleLinkStore } from "./postgres/google-link.js";
 export {

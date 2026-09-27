@@ -982,6 +982,40 @@
       }
     },
     {
+      "id": "read-user-achievements",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read the current User's earned Achievement facts without turning recognition into identity or authorization.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authenticated self Achievement read projection for Profile",
+        "sourcePaths": [
+          "packages/account/src/application/achievements.ts",
+          "packages/account/src/application/ports/achievements.ts",
+          "packages/account/src/adapters/postgres/achievements.ts"
+        ],
+        "publicExports": ["./application/achievements", "./application/ports/achievements"],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/achievements/route.ts",
+          "apps/web/src/app/(mobile)/profile/page.tsx"
+        ],
+        "testPaths": [
+          "packages/account/test/achievements.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Read-only Account-owned recognition; source evidence remains durable and no Achievement mutation is implied."
+      }
+    },
+    {
       "id": "manage-user-follow",
       "owner": "account",
       "kind": "leaf",
@@ -2697,8 +2731,9 @@
     {
       "id": "achievement",
       "kind": "derived-result",
-      "status": "deferred",
-      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+      "status": "adopted",
+      "capabilities": ["read-user-achievements"],
+      "reason": "Product now has a real authenticated Profile consumer for Account-owned earned Achievement facts; only the read projection is adopted, not speculative grant/progress workflow."
     },
     {
       "id": "star-signal",

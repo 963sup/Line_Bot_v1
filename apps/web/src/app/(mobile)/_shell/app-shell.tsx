@@ -2,13 +2,16 @@ import type { ReactNode } from "react";
 import WorkNavigation from "../../_shell/work-navigation";
 
 export type AppShellNavigation = "tabs" | "secondary";
+export type AppShellActiveHref = "/home" | "/notifications" | "/explore" | "/assistant";
 
 export default function AppShell({
   children,
   navigation = "tabs",
+  activeHref,
 }: {
   children: ReactNode;
   navigation?: AppShellNavigation;
+  activeHref?: AppShellActiveHref;
 }) {
   return (
     <div className={"app-shell app-shell-" + navigation}>
@@ -18,7 +21,7 @@ export default function AppShell({
       <main id="main-content" className="app-content">
         {children}
       </main>
-      {navigation === "tabs" && <WorkNavigation />}
+      {navigation === "tabs" && <WorkNavigation activeHref={activeHref} />}
     </div>
   );
 }
