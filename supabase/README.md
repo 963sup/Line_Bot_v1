@@ -7,12 +7,12 @@
 | Concern | Owner |
 | --- | --- |
 | Current PostgreSQL structure | [`schemas/`](schemas/) |
-| Schema semantics / DDL vs data transform | [Schema model](../docs/040-data/030-schema-model.md) |
+| Schema semantics / DDL vs data transform | [Schema model](../docs/reference/data/schema.md) |
 | Persisted relation ownership | [Data topology](../architecture/data-topology.json) |
-| Supabase provider / remote reconciliation | [Supabase platform](../docs/030-platform/020-supabase.md) |
-| Publication ordering | [Release](../docs/070-operations/020-release.md) |
-| Backup / restore / recovery | [Recovery](../docs/070-operations/030-recovery.md) |
-| Historical schema extraction | [History extraction](../docs/090-governance/060-acceptance/040-schema-history-extraction.md) |
+| Supabase provider / remote reconciliation | [Supabase platform](../docs/reference/platform/supabase.md) |
+| Publication ordering | [Release](../docs/reference/operations/release.md) |
+| Backup / restore / recovery | [Recovery](../docs/reference/operations/recovery.md) |
+| Historical schema extraction | [History extraction](../docs/change/evidence/schema-history-extraction.md) |
 | Object / relationship navigation | [Schema tree](schemas/README.md) |
 
 `supabase/migrations/` 不參與 current schema contract 或 remote deployment；不要把 migration history 當成 current schema authority。
@@ -34,7 +34,7 @@ pnpm schema:remote recovery
 
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
 - `schema:local`：用 current schemas 重建 local application schema。
-- `plan / sync / verify`：remote current-vs-desired reconciliation；詳細 contract 見 [Supabase platform](../docs/030-platform/020-supabase.md)。
+- `plan / sync / verify`：remote current-vs-desired reconciliation；詳細 contract 見 [Supabase platform](../docs/reference/platform/supabase.md)。
 - `prepare / recovery`：只供需要 explicit business data cutover／recovery authorization 的操作；不是一般 schema publication 必經步驟。
 
 ## Change routing
