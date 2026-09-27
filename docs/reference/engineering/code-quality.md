@@ -1,6 +1,6 @@
 # Code quality
 
-工程品質的目標不是讓抽象層數增加，而是讓責任、修改原因與失敗模式更容易理解與驗證。Architecture quality trade-off 由 [Quality attributes](../020-architecture/060-quality-attributes.md) 擁有；本文件只描述 source change 的品質原則。
+工程品質的目標不是讓抽象層數增加，而是讓責任、修改原因與失敗模式更容易理解與驗證。Architecture quality trade-off 由 [Quality attributes](../architecture/quality-tradeoffs.md) 擁有；本文件只描述 source change 的品質原則。
 
 ## 1. Decision order
 
@@ -56,7 +56,7 @@ Unused code / dependency finding 由 `deadcode` 等工具提供證據，但刪�
 
 ## 相鄰 owner
 
-- Architecture quality：[Quality attributes](../020-architecture/060-quality-attributes.md)
-- Dependency rules：[Dependency rules](../020-architecture/040-dependency-rules.md)
-- Validation：[Validation](040-validation.md)
-- Gaps / risks：[Governance](../090-governance)
+- Architecture quality：[Quality attributes](../architecture/quality-tradeoffs.md)
+- Dependency rules：[Dependency rules](../../rules/dependency-boundaries.md)
+- Validation：[Validation](validation-pipeline.md)
+- Gaps / risks：[Governance](../../change/)
