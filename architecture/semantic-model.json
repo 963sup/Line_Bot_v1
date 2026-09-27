@@ -132,7 +132,7 @@
     {
       "id": "project",
       "kind": "business-owner",
-      "lifecycle": "current-data-only",
+      "lifecycle": "current",
       "doc": "docs/owners/project.md"
     },
     {
@@ -398,8 +398,8 @@
       "canonicalName": "Project",
       "kind": "authoritative",
       "owner": "project",
-      "lifecycle": "current-data-only",
-      "definition": "Planning boundary that references work across one or more Repositories without taking work authority.",
+      "lifecycle": "current",
+      "definition": "Account-owned (User or Organization) planning boundary that references work across one or more Repositories without taking work authority.",
       "benchmark": {
         "node": "project",
         "adoption": "planning-boundary"
@@ -734,6 +734,33 @@
       "integrationMode": "projection",
       "authority": "ledger",
       "consistency": "derived"
+    },
+    {
+      "id": "project-owner-account",
+      "provider": "account",
+      "consumer": "project",
+      "meaning": "Project owner identity is an Account constrained to User or Organization.",
+      "integrationMode": "stable-identity",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "identity-access-project-owner-authorization",
+      "provider": "identity-access",
+      "consumer": "project",
+      "meaning": "Project authorized read consumes current OrganizationOwner scope for Organization-owned Projects; personal Projects remain User-owned.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-project-owner-locator",
+      "provider": "namespace",
+      "consumer": "project",
+      "meaning": "Project presentation resolves the current canonical owner login without treating the locator as authorization.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
     },
     {
       "id": "project-repository-reference",
@@ -1729,6 +1756,42 @@
         "entrypoints": [],
         "testPaths": [],
         "note": "Repository Milestone schema/topology evidence exists and authorized read runtime is modeled by read-repository-milestones; create/update/close management is not asserted."
+      }
+    },
+    {
+      "id": "read-projects",
+      "owner": "project",
+      "kind": "leaf",
+      "intent": "Read authorized Project summaries without asserting Project planning writes or underlying Repository work authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project aggregate-root authorized collection read",
+        "sourcePaths": [
+          "packages/project/src/application/collection.ts",
+          "packages/project/src/application/ports/collection.ts",
+          "packages/project/src/adapters/postgres/collection.ts"
+        ],
+        "publicExports": [
+          "./application/collection",
+          "./application/ports/collection",
+          "./adapters/postgres/collection",
+          "./contracts/project-collection"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/projects/route.ts",
+          "apps/web/src/app/(mobile)/projects/page.tsx"
+        ],
+        "testPaths": ["packages/project/test/collection.test.ts"],
+        "note": "Personal Projects require current User ownership; Organization Projects are exposed only to current OrganizationOwner scopes until a distinct Project access policy exists. Planning writes remain inactive."
       }
     },
     {
