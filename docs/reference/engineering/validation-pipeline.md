@@ -50,4 +50,4 @@ Type generation、test/build artifact 與 dependency install 在同一 checkout 
 
 格式驗證、HTTP 200 或 provider 接受 request 都不等於使用者收到結果。
 ## Evidence
-具日期的驗證結果應保存於 `090-governance/060-acceptance/`，內容標明版本、環境、範圍、結果與未驗證項。工程規範只描述如何驗，不保存歷次結果。
+具日期的驗證結果保存於 [Acceptance evidence](../../change/evidence/)，內容標明版本、環境、範圍、結果與未驗證項。工程規範只描述如何驗，不保存歷次結果。

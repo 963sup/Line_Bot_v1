@@ -28,4 +28,4 @@ Log、metric、trace 不保存 token、secret、完整 external subject、精確
 
 Monitoring dashboard、provider status 與 runtime log 只證明其觀察範圍。真正 business completion 仍以 durable record / receipt 為準；平台接受訊息也不等於終端使用者已看到。
 
-具日期的量測與放行結果歸 `090-governance/060-acceptance/`。
+具日期的量測與放行結果歸 [Acceptance evidence](../../change/evidence/)。

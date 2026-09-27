@@ -20,7 +20,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 
 靜態檔存在或 test case 通過不證明新的 ChatGPT/Codex session 已實際載入；需要時在新 session 讀回當前 config/agents/skills。
 
-一般程式與文件驗證入口見 `../040-tooling/010-validation.md`。
+一般程式與文件驗證入口見 [Validation](validation-pipeline.md)。
 
 
 ## Commit and PR workflow
