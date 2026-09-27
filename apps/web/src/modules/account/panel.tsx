@@ -57,16 +57,22 @@ export default function MemberPanel({
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
-      {user && (
-        <DailyCheckInWheel
-          active={user.status === "active"}
-          busy={busy}
-          coins={user.coins}
-          identityKey={user.id}
-          unresolvedDay={unresolvedCheckIn}
-          onCheckIn={(retryOriginal) => action("checkIn", { retryOriginal })}
-        />
-      )}
+      {user &&
+        ("unavailable" in user.coins ? (
+          <section className="membership-coins">
+            <h2>每日簽到</h2>
+            <p role="status">簽到與 Coin 狀態暫不可用；帳號與會員資料仍可使用。</p>
+          </section>
+        ) : (
+          <DailyCheckInWheel
+            active={user.status === "active"}
+            busy={busy}
+            coins={user.coins}
+            identityKey={user.id}
+            unresolvedDay={unresolvedCheckIn}
+            onCheckIn={(retryOriginal) => action("checkIn", { retryOriginal })}
+          />
+        ))}
       {token && !user && !busy && !error && (
         <section>
           <h2>加入 LINE 會員</h2>

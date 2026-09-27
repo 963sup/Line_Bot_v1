@@ -2,6 +2,7 @@ import { createUserRequest } from "../../../modules/account/api.server";
 import {
   activeLineUser,
   checkIn,
+  getCoinView,
   getUser,
   pauseUser,
   readClaim,
@@ -12,6 +13,7 @@ import { requestLineIdentity } from "../_composition/request-identity.server";
 export const { GET, POST } = createUserRequest({
   activeLineUser,
   checkIn,
+  coinView: getCoinView,
   pauseUser,
   readClaim,
   updateLogin,

@@ -137,6 +137,44 @@ test("runtime provisioning creates governance roots only through narrow coordina
   assert.deepEqual(organizationOwner.rows, [{ status: "active", membership_version: 1 }]);
 });
 
+test("current-data-only Project relations expose no line_app runtime DML", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  const expected = [
+    "project_items",
+    "project_milestones",
+    "project_repository_references",
+    "project_wbs",
+    "projects",
+  ];
+  const result = await pg.query(
+    `select c.relname,
+      c.relrowsecurity,
+      has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
+      has_table_privilege('line_app', c.oid, 'INSERT') as can_insert,
+      has_table_privilege('line_app', c.oid, 'UPDATE') as can_update,
+      has_table_privilege('line_app', c.oid, 'DELETE') as can_delete
+     from pg_class c
+     join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private' and c.relname=any($1::text[])
+     order by c.relname`,
+    [expected],
+  );
+
+  assert.deepEqual(
+    result.rows,
+    expected.map((relname) => ({
+      relname,
+      relrowsecurity: true,
+      can_select: false,
+      can_insert: false,
+      can_update: false,
+      can_delete: false,
+    })),
+  );
+});
+
 test("repository effective access combines direct and active same-organization Team grants", async (t) => {
   const { pg } = await postgresFixture();
   t.after(() => pg.close());

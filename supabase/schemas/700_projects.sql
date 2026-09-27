@@ -13,6 +13,6 @@ create table app_private."projects" (
   constraint "projects_organization_fkey" foreign key (organization_id) references app_private.organizations(account_id)
 );
 alter table app_private."projects" enable row level security;
+-- Project is current-data-only. Runtime DML stays disabled until a real consumer
+-- defines Project authorization, version/replay semantics and a public contract.
 revoke all on app_private."projects" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private.projects to line_app;
-create policy "backend" on app_private.projects as permissive for all to line_app using (true) with check (true);
