@@ -125,15 +125,15 @@ test("private menu navigation refreshes authoritative state, delivers only menus
     assert.equal(claims, 3);
     assert.deepEqual(completed, [true, true, true]);
     assert.deepEqual(lineCalls, [
-      { method: "GET", path: "/v2/bot/richmenu/alias/work-assistant-attendance-in" },
+      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-in" },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
       { method: "POST", path: `/v2/bot/user/${subject}/richmenu/richmenu-a1` },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
-      { method: "GET", path: "/v2/bot/richmenu/alias/work-assistant-attendance-out" },
+      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-out" },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
       { method: "POST", path: `/v2/bot/user/${subject}/richmenu/richmenu-b2` },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
-      { method: "GET", path: "/v2/bot/richmenu/alias/work-assistant-attendance-out" },
+      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-out" },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
     ]);
     missingAlias = true;

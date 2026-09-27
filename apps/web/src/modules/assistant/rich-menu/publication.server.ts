@@ -3,19 +3,21 @@ import {
   createRichMenuClient,
   type RichMenuDefinition,
 } from "@line_bot_v1/line-channel/adapters/messaging";
-import { type MenuPage, menuAlias } from "./definition";
+import { MENU_PAGES, type MenuPage, menuAlias } from "./definition";
 import type { DesiredRichMenu } from "./desired-state.server";
 
 export type RichMenuPublicationConfig = DesiredRichMenu;
 type RichMenuClient = ReturnType<typeof createRichMenuClient>;
 type CreatedMenu = { page: MenuPage; richMenuId: string };
 
+const legacyAliasPrefix = ["work", "assistant"].join("-");
 const deprecatedAliases = [
-  "work-assistant-tasks",
-  "work-assistant-tasks-out",
-  "work-assistant-announcements",
-  "work-assistant-announcements-out",
-] as const;
+  ...MENU_PAGES.map((page) => `${legacyAliasPrefix}-${page}`),
+  `${legacyAliasPrefix}-tasks`,
+  `${legacyAliasPrefix}-tasks-out`,
+  `${legacyAliasPrefix}-announcements`,
+  `${legacyAliasPrefix}-announcements-out`,
+];
 
 async function assertRemoteDefinition(
   client: RichMenuClient,

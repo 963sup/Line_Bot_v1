@@ -7,12 +7,12 @@ import { richMenuImage } from "../src/adapters/messaging/rich-menu-image.js";
 test("actual upload dimensions and malformed image rejection", () => {
   const directory = new URL("../../../assets/line/rich-menu/", import.meta.url);
   const files = [
-    "work-assistant-attendance-in.png",
-    "work-assistant-attendance-out.png",
-    "work-assistant-forms.png",
-    "work-assistant-incident.png",
-    "work-assistant-notifications.png",
-    "work-assistant-team.png",
+    "line_bot_v1-attendance-in.png",
+    "line_bot_v1-attendance-out.png",
+    "line_bot_v1-forms.png",
+    "line_bot_v1-incident.png",
+    "line_bot_v1-notifications.png",
+    "line_bot_v1-team.png",
   ];
   assert.deepEqual(readdirSync(directory).sort(), files);
   for (const file of files) {
@@ -61,7 +61,7 @@ test("upload uses the MIME type detected from image bytes", async () => {
     return new Response(null, { status: 200 });
   });
   const image = readFileSync(
-    new URL("../../../assets/line/rich-menu/work-assistant-attendance-in.png", import.meta.url),
+    new URL("../../../assets/line/rich-menu/line_bot_v1-attendance-in.png", import.meta.url),
   );
   await client.upload("richmenu-0123abcd", image);
   assert.equal(requests[0]?.headers.get("content-type"), "image/png");
@@ -88,19 +88,19 @@ test("aliases use official endpoints and reject malformed identifiers", async ()
     requests.push(new Request(input, init));
     return new Response(JSON.stringify({ richMenuId: "richmenu-0123abcd" }), { status: 200 });
   });
-  await client.createAlias("work-assistant-home", "richmenu-0123abcd");
+  await client.createAlias("line_bot_v1-home", "richmenu-0123abcd");
   assert.equal(requests[0]?.url, "https://api.line.me/v2/bot/richmenu/alias");
   assert.deepEqual(await requests[0]!.json(), {
-    richMenuAliasId: "work-assistant-home",
+    richMenuAliasId: "line_bot_v1-home",
     richMenuId: "richmenu-0123abcd",
   });
-  assert.equal(await client.getAlias("work-assistant-home"), "richmenu-0123abcd");
-  await client.updateAlias("work-assistant-home", "richmenu-0123abcd");
-  assert.equal(requests[2]?.url, "https://api.line.me/v2/bot/richmenu/alias/work-assistant-home");
+  assert.equal(await client.getAlias("line_bot_v1-home"), "richmenu-0123abcd");
+  await client.updateAlias("line_bot_v1-home", "richmenu-0123abcd");
+  assert.equal(requests[2]?.url, "https://api.line.me/v2/bot/richmenu/alias/line_bot_v1-home");
   assert.equal(requests[2]?.method, "POST");
   assert.deepEqual(await requests[2]!.json(), { richMenuId: "richmenu-0123abcd" });
-  await client.deleteAlias("work-assistant-home");
-  assert.equal(requests[3]?.url, "https://api.line.me/v2/bot/richmenu/alias/work-assistant-home");
+  await client.deleteAlias("line_bot_v1-home");
+  assert.equal(requests[3]?.url, "https://api.line.me/v2/bot/richmenu/alias/line_bot_v1-home");
   assert.equal(requests[3]?.method, "DELETE");
   assert.equal(await client.getUserMenu("U0123456789abcdef0123456789abcdef"), "richmenu-0123abcd");
   assert.equal(requests[4]?.method, "GET");
