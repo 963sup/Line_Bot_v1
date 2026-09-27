@@ -43,10 +43,10 @@
 
 ## 相鄰責任
 
-- 系統級 interaction / authority invariant：[System](../rules/system-invariants.md)
-- 各 module business role：[Domain owners](../010-domain-owners/README.md)
-- Data boundary：[Data](../040-data/README.md)
-- Permission persistence / schema：[Data](../040-data/README.md)
+- 系統級 interaction / authority invariant：[System](../../rules/system-invariants.md)
+- 各 module business role：[Domain owners](../../owners/README.md)
+- Data boundary：[Data](../README.md)
+- Permission persistence / schema：[Data](../README.md)
 
 
 ## Request authorization
@@ -73,7 +73,7 @@ Authorization 是每個受保護 request / command 的 server-side 決策，不�
 
 ## Permission separation
 
-Read / write / administer / appoint administrator 是不同能力。全域 business permission 的現行集合與命令由本文擁有；module-specific role 由各 [Domain owner](../010-domain-owners/README.md) 擁有。
+Read / write / administer / appoint administrator 是不同能力。全域 business permission 的現行集合與命令由本文擁有；module-specific role 由各 [Domain owner](../../owners/README.md) 擁有。
 
 ## Failure
 
