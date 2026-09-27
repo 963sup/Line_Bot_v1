@@ -565,6 +565,8 @@ async function run() {
     await expect(page.locator(".member-avatar")).toHaveCount(0);
     const repositoryLink = page.getByRole("link", { name: /acme\/Operations/ });
     await expect(repositoryLink).toHaveAttribute("href", "/acme/Operations");
+    await expect(page.getByText("admin", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Explore", exact: true })).toHaveCount(1);
 
     await page.goto(`${base}/acme/Operations/issues/${issueNumber}`);
     await page.getByRole("heading", { name: "Issue", exact: true }).waitFor();
