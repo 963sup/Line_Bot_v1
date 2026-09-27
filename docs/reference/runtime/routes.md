@@ -55,7 +55,7 @@ Stable ID 只定位 entity，不授權。Detail route 直接開啟、刷新與 l
 
 `/admin` 與子頁由 admin partition 組裝。Static navigation 可以存在，但 private read/write 仍由各 feature permission / module contract 驗證。
 
-Current / target capability status 回 [Ownership facts](../../facts/ownership.md) 與 [Governance](../../090-governance/README.md)；permission contract 見 [Authorization](../../050-security/030-authorization.md)。
+Current / target capability status 回 [Ownership facts](../../facts/ownership.md) 與 [Governance](../../change/README.md)；permission contract 見 [Authorization](../security/permissions.md)。
 
 ## API
 
@@ -91,4 +91,4 @@ View change 可以使用 browser history 支援 direct open、refresh、back/for
 
 ## MINI App entry
 
-LIFF state decoding、entry intent 白名單與 login continuation 由 [LINE MINI App](../../030-platform/010-line.md) 擁有；route contract 不複製平台 SDK 行為。
+LIFF state decoding、entry intent 白名單與 login continuation 由 [LINE MINI App](../line/identity.md) 擁有；route contract 不複製平台 SDK 行為。
