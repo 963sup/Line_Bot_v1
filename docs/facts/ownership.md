@@ -39,4 +39,4 @@ Key separations:
 - Bounded Context ≠ Module Boundary ≠ Data Boundary ≠ Consistency Boundary。
 - Accounting ≠ Billing/Charging ≠ Payment ≠ Settlement；沒有真實 owner/lifecycle/consumer時不預建 umbrella domain。
 
-For a specific task, read only the affected owner contract under `docs/010-domain-owners/`.
+For a specific task, read only the affected owner contract under `docs/owners/`.

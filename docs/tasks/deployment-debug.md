@@ -16,10 +16,10 @@ repository validation
 | Failure | Read |
 | --- | --- |
 | CI / validation | [validation rules](../rules/validation-evidence.md) + actual job log |
-| Supabase | `docs/030-platform/020-supabase.md` |
-| Vercel | `docs/030-platform/040-vercel.md` |
-| Release ordering | `docs/070-operations/020-release.md` |
-| Recovery / unknown remote result | `docs/070-operations/030-recovery.md` |
-| LINE publish / webhook | [LINE overview](../030-platform/010-line.md) then one LINE reference |
+| Supabase | [Supabase](../reference/platform/supabase.md) |
+| Vercel | [Vercel](../reference/platform/vercel.md) |
+| Release ordering | [release](../reference/operations/release.md) |
+| Recovery / unknown remote result | [recovery](../reference/operations/recovery.md) |
+| LINE publish / webhook | [LINE owner](../owners/line-integration.md) then one LINE reference |
 
 先讀 exact failed step / provider readback。不要把 local build、HTTP 200、Git push或 READY status當成其他 boundary的成功證據。

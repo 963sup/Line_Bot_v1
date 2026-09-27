@@ -28,6 +28,6 @@ Source-of-truth routing 見 [facts/sources-of-truth.md](docs/facts/sources-of-tr
 - 可逆且由現有 contract決定的實作直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才阻塞。
 - JS/TS/JSON formatting 由 Biome；修改後可用 `pnpm format`，validation 維持 read-only。
 - 一般修改：`pnpm check`。文件：`pnpm docs:check`。Merge/release：`pnpm validate`。精確 evidence boundary 見 [validation rules](docs/rules/validation-evidence.md)。
-- Merge 前依 [development workflow](docs/060-engineering/020-development-workflow.md) 收斂 WIP/fixup history。
+- Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
 
 Scope instructions：[`packages/`](packages/AGENTS.md) · [`scripts/`](scripts/AGENTS.md) · [`.github/`](.github/AGENTS.md) · [`.agents/`](.agents/AGENTS.md) · [`.codex/`](.codex/AGENTS.md)。

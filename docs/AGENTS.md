@@ -1,15 +1,15 @@
 # Documentation retrieval contract
 
-Docs 的目標是最小充分上下文，不是主題完整度。
+Optimize for relevant information / loaded context.
 
-- 一個文件只承擔一種主要 retrieval job；通常不會在同一任務一起使用的內容必須拆開。
-- `README` / index 只 routing；`AGENTS.md` 只保存會改變 Agent 行為的 constraints。
-- 高頻 knowledge unit 優先保存 why、invariant、dangerous assumption、decision；可可靠由 code / manifest / schema / config / tests 取得的 what 只 link。
-- 同一 fact / rule 只有一個 canonical owner；其他位置只 pointer，不複製。
-- Current truth 與 target / proposal / migration / dated evidence 分開；歷史只有仍影響 recovery/regression/decision時保留。
-- Long reference 可以存在，但不能成為高頻 task 的必讀前置。
-- 搬移／刪除文件時同 changeset修所有 repository refs；不留 redirect shell 或 alias doc。
-- Machine semantic / module / data truth 分別由 `architecture/semantic-model.json`、`implementation-topology.json`、`data-topology.json` 擁有；actual SQL 由 `supabase/schemas/` 擁有。
-- 不因文件整理放寬 authorization、transaction、replay/version、tenant isolation、recovery、privacy 或 evidence semantics。
+- One file serves one primary retrieval job; information not usually needed in the same decision belongs in another unit.
+- `README` is routing only. `AGENTS.md` contains behavior-changing constraints only.
+- High-frequency docs preserve why, invariant, dangerous assumption and decision; reliable code/manifest/schema/config facts are linked, not recopied.
+- One fact/rule has one canonical owner; other locations use pointers.
+- Current knowledge lives in `facts/`, `owners/`, `rules/`, task routing and machine sources. Detailed low-frequency knowledge lives in `reference/`.
+- Target/proposal/migration/gap/risk/dated evidence live in `change/`; they never override current truth.
+- Do not create redirect/alias Markdown when moving knowledge. Fix all references in the same change.
+- Machine semantic/module/data truth: `architecture/semantic-model.json`, `implementation-topology.json`, `data-topology.json`; actual SQL: `supabase/schemas/`.
+- Documentation refactors must not weaken authorization, transaction, replay/version, tenant isolation, recovery, privacy or evidence semantics.
 
-修改 docs 後跑 `pnpm docs:check`；repository-level收尾依 root `AGENTS.md`。
+After docs changes run `pnpm docs:check`; repository-level completion follows root `AGENTS.md`.

@@ -23,4 +23,4 @@ untrusted request
 - Authorization decision盡量在 application/owner boundary；RLS/grants是 defense in depth，不是替代 business policy。
 - Cross-tenant / cross-Organization lookup fail closed，回應遵守 minimum necessary disclosure。
 
-Permission catalog與特定 owner rule只有需要時再讀 [Authorization reference](../050-security/030-authorization.md) 與對應 owner contract。
+Permission catalog與特定 owner rule只有需要時再讀 [Authorization reference](../reference/security/permissions.md) 與對應 owner contract。
