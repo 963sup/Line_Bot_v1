@@ -109,14 +109,15 @@ async function inspect({ requireComplete = false } = {}) {
       errors.push(`${relative}: grew from reviewed max ${entry.maxBytes} to ${facts.bytes} bytes`);
       status = "stale";
     }
-    if (entry.contentBlob && facts.blob !== entry.contentBlob) status = "stale";
-
-    for (const [source, expectedBlob] of Object.entries(entry.sources ?? {})) {
-      try {
-        if ((await fileFacts(source)).blob !== expectedBlob) status = "stale";
-      } catch {
-        status = "stale";
-        errors.push(`${relative}: missing authority source ${source}`);
+    if (entry.outcome !== "reviewing") {
+      if (entry.contentBlob && facts.blob !== entry.contentBlob) status = "stale";
+      for (const [source, expectedBlob] of Object.entries(entry.sources ?? {})) {
+        try {
+          if ((await fileFacts(source)).blob !== expectedBlob) status = "stale";
+        } catch {
+          status = "stale";
+          errors.push(`${relative}: missing authority source ${source}`);
+        }
       }
     }
     rows.push({ path: relative, status });
@@ -223,7 +224,8 @@ async function record(relative, outcome, sources, note) {
     );
 
   const sourceMap = {};
-  for (const source of sources) {
+  const sourcePaths = sources.length ? sources : Object.keys(previous.sources ?? {});
+  for (const source of sourcePaths) {
     const normalized = normalize(source);
     sourceMap[normalized] = (await fileFacts(normalized)).blob;
   }
@@ -257,8 +259,21 @@ async function reviewSkill(name, outcome) {
   console.log(`skill:${name}: ${outcome} @ ${skill.computedHash}`);
 }
 
+async function seal() {
+  const report = await inspect({ requireComplete: true });
+  if (report.errors.length) {
+    for (const error of report.errors) console.error(error);
+    process.exitCode = 1;
+    return;
+  }
+  report.manifest.phase = "complete";
+  await writeManifest(report.manifest);
+  console.log("Markdown convergence sealed: phase=complete");
+}
+
 async function main() {
   const [command = "status", ...args] = process.argv.slice(2);
+  if (command === "seal") return seal();
   if (command === "begin") return begin(normalize(args[0] ?? ""));
   if (command === "record") {
     const { rest, sources, note } = parseFlags(args);
