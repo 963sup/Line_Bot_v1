@@ -70,7 +70,7 @@ UserId = AccountId(kind=USER)
 
 Legacy Member → current User 的已保留 identity 必須維持同一 opaque text AccountId；不能靠 email merge、重新配 UUID 或另造 mapping ID。Account root/facet 使用同 key；provider subject 不是 UserId、EmploymentId、OrganizationId，也不是自動可信 Principal。
 
-[Account target rules](../010-domain-owners/README.md) 擁有 link confirmation 與 human lifecycle；Data 擁有 binding representation；Integration/Security 擁有 proof 驗證。不存在第二個 link writer。
+[Account target rules](../../owners/README.md) 擁有 link confirmation 與 human lifecycle；Data 擁有 binding representation；Integration/Security 擁有 proof 驗證。不存在第二個 link writer。
 
 LINE bot userId／webhook `destination` 是 signed provider context，不建立 Account-owned product identity。Human webhook `source.userId` 仍是 external subject，必須經既有 User provider mapping；receiving destination 與 human actor 不得混用。
 
@@ -92,4 +92,4 @@ Link/unlink不轉移historicalowner、不恢復suspended帳号，不以新provid
 
 HTTPprojection只回usecase必要ID/summary，admin可看帳號不表示能看rawsubject/token。Concurrentregister/link、sameprovidercollision、wrongchannel/issuer、sameemaildifferentperson、expiredcandidate、revokedqualification、same-requestreadback與LINE-only都需tests。
 
-[Target data model](../090-governance/020-proposals/030-data-target.md)、[Schema foundation](../090-governance/020-proposals/030-data-target.md)、[Authorization](../050-security/030-authorization.md)、[LINE verification](../030-platform/010-line.md) 各保留自己的authority。Current source 的 durable provider mapping 只服務實際 human User identity consumer；remote catalog、deployment 與 device evidence 仍需各自 readback，不能只靠本文件宣稱外部環境已切換。
+[Target data model](../../change/proposals/data-target.md)、[Schema foundation](../../change/proposals/data-target.md)、[Authorization](../security/permissions.md)、[LINE verification](../line/identity.md) 各保留自己的authority。Current source 的 durable provider mapping 只服務實際 human User identity consumer；remote catalog、deployment 與 device evidence 仍需各自 readback，不能只靠本文件宣稱外部環境已切換。
