@@ -16,7 +16,7 @@ test("issue delivery rejects wrong origin, oversized body and malformed JSON", a
     });
   try {
     assert.deepEqual(await issueBody(request('{"action":"create"}')), { action: "create" });
-    await assert.rejects(issueBody(request("{}", "https://attacker.example")), /工作助手/);
+    await assert.rejects(issueBody(request("{}", "https://attacker.example")), /Line_Bot_v1/);
     await assert.rejects(issueBody(request("[]")), /格式/);
     await assert.rejects(issueBody(request("bad")), /格式/);
     await assert.rejects(issueBody(request("x".repeat(8193))), /過大/);

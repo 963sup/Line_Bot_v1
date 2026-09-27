@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  lineBotV1RichMenu,
   MENU_PAGES,
   menuAlias,
-  workAssistantRichMenu,
 } from "../src/modules/assistant/rich-menu/definition";
 import { attendanceOperationLabels } from "../src/modules/attendance/operation-labels";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
@@ -11,9 +11,9 @@ import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-rou
 
 test("native menu states retain geometry and return each submenu to its source state", () => {
   for (const page of MENU_PAGES) {
-    assert.equal(menuAlias(page), `work-assistant-${page}`);
+    assert.equal(menuAlias(page), `line_bot_v1-${page}`);
     assert.ok(menuAlias(page).length <= 32, "LINE aliases cannot exceed 32 characters");
-    const menu = workAssistantRichMenu(
+    const menu = lineBotV1RichMenu(
       "https://miniapp.line.me/123-test",
       { width: 1536, height: 1024 },
       page,
@@ -42,12 +42,12 @@ test("native menu states retain geometry and return each submenu to its source s
         assert.ok(MENU_PAGES.some((p) => menuAlias(p) === action.richMenuAliasId));
     }
   }
-  const start = workAssistantRichMenu(
+  const start = lineBotV1RichMenu(
     "https://miniapp.line.me/123-test",
     { width: 1536, height: 1024 },
     "attendance-in",
   );
-  const end = workAssistantRichMenu(
+  const end = lineBotV1RichMenu(
     "https://miniapp.line.me/123-test",
     { width: 1536, height: 1024 },
     "attendance-out",
@@ -58,7 +58,7 @@ test("native menu states retain geometry and return each submenu to its source s
   );
   assert.equal(start.areas[0]!.action.label, "上班");
   assert.equal(end.areas[0]!.action.label, "下班");
-  const home = workAssistantRichMenu("https://miniapp.line.me/123-test", {
+  const home = lineBotV1RichMenu("https://miniapp.line.me/123-test", {
     width: 1536,
     height: 1024,
   });
@@ -87,7 +87,7 @@ test("native menu states retain geometry and return each submenu to its source s
   }
   for (const page of ["team", "forms", "notifications", "incident"] as const) {
     for (const state of ["home", "attendance-in", "attendance-out"] as const) {
-      const menu = workAssistantRichMenu(
+      const menu = lineBotV1RichMenu(
         "https://miniapp.line.me/123-test",
         { width: 1536, height: 1024 },
         state,
@@ -100,12 +100,12 @@ test("native menu states retain geometry and return each submenu to its source s
       )?.action;
       assert.equal(action?.type, "richmenuswitch");
     }
-    const base = workAssistantRichMenu(
+    const base = lineBotV1RichMenu(
       "https://miniapp.line.me/123-test",
       { width: 1536, height: 1024 },
       page,
     );
-    const out = workAssistantRichMenu(
+    const out = lineBotV1RichMenu(
       "https://miniapp.line.me/123-test",
       { width: 1536, height: 1024 },
       `${page}-out`,
@@ -126,7 +126,7 @@ test("native menu states retain geometry and return each submenu to its source s
   }
 });
 test("expense and leave entries open their published Google Forms directly", () => {
-  const menu = workAssistantRichMenu(
+  const menu = lineBotV1RichMenu(
     "https://miniapp.line.me/123-test",
     { width: 1536, height: 1024 },
     "forms",
@@ -142,7 +142,7 @@ test("expense and leave entries open their published Google Forms directly", () 
 test("only explicit start/end survive LIFF and login; removed overtime and duplicate intents are rejected", () => {
   const found = new Set<string>();
   for (const page of ["attendance-in", "attendance-out"] as const) {
-    const menu = workAssistantRichMenu(
+    const menu = lineBotV1RichMenu(
       "https://miniapp.line.me/123-test",
       { width: 1536, height: 1024 },
       page,

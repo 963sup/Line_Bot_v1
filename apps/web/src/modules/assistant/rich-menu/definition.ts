@@ -33,7 +33,7 @@ export function isMenuPage(value: string): value is MenuPage {
   return MENU_PAGES.some((page) => page === value);
 }
 export function menuAlias(page: MenuPage) {
-  return `work-assistant-${page}`;
+  return `line_bot_v1-${page}`;
 }
 export function menuAsset(page: MenuPage) {
   const imagePage =
@@ -42,7 +42,7 @@ export function menuAsset(page: MenuPage) {
       : page === "attendance-out"
         ? page
         : page.replace(/-out$/, "");
-  return `work-assistant-${imagePage}.png`;
+  return `line_bot_v1-${imagePage}.png`;
 }
 type Rectangle = readonly [number, number, number, number];
 const ringPages = [
@@ -66,7 +66,7 @@ const submenuBounds: Rectangle[] = [
   [12.5, 44.5, 75, 23.5],
   [12.5, 70.5, 75, 23.5],
 ];
-export function workAssistantRichMenu(
+export function lineBotV1RichMenu(
   miniAppUrl: string,
   size: { width: number; height: number },
   page: MenuPage = "home",
@@ -117,7 +117,7 @@ export function workAssistantRichMenu(
   return {
     size,
     selected: true,
-    name: `工作助手-${page}`,
+    name: `Line_Bot_v1-${page}`,
     chatBarText: menuTitle(page),
     areas:
       page === "home" || page === "attendance-in" || page === "attendance-out"

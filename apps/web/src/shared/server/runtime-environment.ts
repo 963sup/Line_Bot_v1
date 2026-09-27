@@ -3,5 +3,5 @@ export function redisNamespace() {
   const segment = /^(production|preview|development|test)$/.test(environment)
     ? environment
     : "development";
-  return `line-bot:${segment}`;
+  return `line_bot_v1:${segment}`;
 }

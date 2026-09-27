@@ -5,7 +5,7 @@ Redis 只承接有限 TTL 的協調責任，例如 rate limiting 與 Webhook cla
 ## Data boundary
 Redis key 使用 scope + hashed identifier；不保存 raw token、完整聊天內容、Member private data、Coin ledger 或 receipt body。正式 key 必須有 TTL，並以 environment-specific prefix 隔離測試與正式用途。
 
-`KV_REST_API_URL` 與 `KV_REST_API_TOKEN` 是 current server-only Redis connection contract，直接對齊此專案的 Vercel Marketplace resource。Runtime 只以 HTTPS REST transport 執行 bounded Redis commands。Key namespace 由可信 deployment class 推導 `line-bot:<environment>`（Vercel 使用 `VERCEL_ENV`，其他 runtime 使用 `NODE_ENV`），probe 另使用隨機 synthetic namespace。
+`KV_REST_API_URL` 與 `KV_REST_API_TOKEN` 是 server-only Redis contract，對齊 Vercel Marketplace resource。Runtime 只以 HTTPS REST transport 執行 bounded commands。Key namespace 由 deployment class 推導 `line_bot_v1:<environment>`（Vercel 用 `VERCEL_ENV`，其他 runtime 用 `NODE_ENV`）；probe 使用隨機 synthetic namespace。
 ## Webhook claim
 Webhook 在 signature verification 與 basic event filtering 後，可以使用 channel scope + webhook event ID 的 hash key 進行原子 claim。
 

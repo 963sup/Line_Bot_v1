@@ -27,7 +27,7 @@ try {
   const firstTransport = createUpstashRedisRestTransport(url, token);
   const secondTransport = createUpstashRedisRestTransport(url, token);
   command = firstTransport.command;
-  const prefix = `line-bot:probe:${randomUUID()}`;
+  const prefix = `line_bot_v1:probe:${randomUUID()}`;
   one = new RedisRateLimiter(prefix, firstTransport);
   two = new RedisRateLimiter(prefix, secondTransport);
 

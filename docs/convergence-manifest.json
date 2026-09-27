@@ -719,9 +719,9 @@
     },
     "docs/reference/line/rich-menu.md": {
       "outcome": "updated",
-      "baselineBytes": 6495,
-      "maxBytes": 6487,
-      "contentBlob": "c290c7490ee66683378d22466cba66274cbe14a6",
+      "baselineBytes": 6487,
+      "maxBytes": 6450,
+      "contentBlob": "68fdb1179e94853e8c2b467c3baa7433dd343262",
       "sources": {}
     },
     "docs/reference/line/webhook.md": {
@@ -755,8 +755,8 @@
     "docs/reference/platform/redis.md": {
       "outcome": "updated",
       "baselineBytes": 3505,
-      "maxBytes": 3488,
-      "contentBlob": "2b0e3978cb09330e118a7293b2aca20a46db9f6e",
+      "maxBytes": 3433,
+      "contentBlob": "42db39b394c908aaff62f818d51897b9f8afbd4e",
       "sources": {}
     },
     "docs/reference/security/permissions.md": {

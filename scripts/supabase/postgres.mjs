@@ -41,7 +41,7 @@ export function postgresConfig(rawUrl, { remote }) {
     password: decodeURIComponent(url.password),
     database: decodeURIComponent(url.pathname.slice(1)),
     ssl: remote ? { rejectUnauthorized: true, ca: repositorySupabaseCa() } : false,
-    application_name: "line-bot-schema-operator",
+    application_name: "line_bot_v1-schema-operator",
     connectionTimeoutMillis: 10_000,
     statement_timeout: 120_000,
     query_timeout: 130_000,

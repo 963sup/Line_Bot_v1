@@ -2,13 +2,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { richMenuImage } from "@line_bot_v1/line-channel/adapters/messaging";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
-import { type MenuPage, menuAsset, workAssistantRichMenu } from "./definition";
+import { lineBotV1RichMenu, type MenuPage, menuAsset } from "./definition";
 
 export type DesiredRichMenu = {
   page: MenuPage;
   image: string;
   upload: Uint8Array;
-  menu: ReturnType<typeof workAssistantRichMenu>;
+  menu: ReturnType<typeof lineBotV1RichMenu>;
 };
 
 export function buildRichMenuDesiredState(
@@ -25,7 +25,7 @@ export function buildRichMenuDesiredState(
       page,
       image,
       upload,
-      menu: workAssistantRichMenu(miniAppUrl, size, page),
+      menu: lineBotV1RichMenu(miniAppUrl, size, page),
     };
   });
 }
