@@ -14,8 +14,8 @@
     ".agents/skills/context-convergence/SKILL.md": {
       "outcome": "keep",
       "baselineBytes": 1411,
-      "maxBytes": 1192,
-      "contentBlob": "1f0884fb0496142672cad463937900b6eebc3010",
+      "maxBytes": 1173,
+      "contentBlob": "2e9180a22fe9c7393bcd03809324aca6326c828e",
       "sources": {
         "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9",
         "scripts/docs/convergence.mjs": "6b7b57de2d10673995e271725a9c9d53af88e6a9"
@@ -54,7 +54,7 @@
       "maxBytes": 531,
       "contentBlob": "5e297b27c1f66de6bfa92e3f6a9d20b0a4c86df8",
       "sources": {
-        ".agents/skills/context-convergence/SKILL.md": "1f0884fb0496142672cad463937900b6eebc3010"
+        ".agents/skills/context-convergence/SKILL.md": "2e9180a22fe9c7393bcd03809324aca6326c828e"
       }
     },
     ".github/agents/database-reviewer.agent.md": {
@@ -159,7 +159,7 @@
       "maxBytes": 516,
       "contentBlob": "218b64bd46e3556625b69caef726369ac0d21830",
       "sources": {
-        ".agents/skills/context-convergence/SKILL.md": "1f0884fb0496142672cad463937900b6eebc3010"
+        ".agents/skills/context-convergence/SKILL.md": "2e9180a22fe9c7393bcd03809324aca6326c828e"
       }
     },
     ".github/prompts/debug-deployment.prompt.md": {
