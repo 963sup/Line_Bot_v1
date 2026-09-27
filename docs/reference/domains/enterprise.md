@@ -1,6 +1,6 @@
 # Enterprise detailed reference
 
-Low-frequency Enterprise flows and edge cases. The owner boundary and invariants remain canonical in [Enterprise](../../010-domain-owners/020-enterprise.md).
+Low-frequency Enterprise flows and edge cases. The owner boundary and invariants remain canonical in [Enterprise](../../owners/enterprise.md).
 
 ## Current state model
 
@@ -55,7 +55,7 @@ Enterprise inactive 拒絕一般新 invitation/attach/Team/owner mutation；歷�
 
 Repository source、declarative schema、Supabase remote catalog/data、repository validation、Vercel deployment 與 LINE mobile acceptance 是不同證據。Current source 已包含 Enterprise Team + provenance vertical slice；remote project 的 catalog/readback 需由 acceptance evidence 或本次變更紀錄獨立證明，不能用 source existence 代替 deployment evidence。
 
-Target rationale 見 [Enterprise target design](../../090-governance/010-decisions/030-enterprise-target-design.md)；Identity/Access 見 [Target authorization](../../090-governance/020-proposals/040-security-target.md)。
+Target rationale 見 [Enterprise target design](../../change/decisions/enterprise-target-design.md)；Identity/Access 見 [Target authorization](../../change/proposals/security-target.md)。
 
 ## Locator
 
