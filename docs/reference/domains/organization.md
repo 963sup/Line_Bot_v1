@@ -1,6 +1,6 @@
 # Organization detailed reference
 
-Low-frequency Organization flows and edge cases. The owner boundary and invariants remain canonical in [Organization](../../010-domain-owners/030-organization.md).
+Low-frequency Organization flows and edge cases. The owner boundary and invariants remain canonical in [Organization](../../owners/organization.md).
 
 ## Lifecycle
 
@@ -53,7 +53,7 @@ OrganizationPolicy 是本 Organization scope 的 versioned governance constraint
 
 Private operation 由 trusted Principal 解析，按 owner authority、current participation與 feature capability 重驗。Mutation 使用 requestId/fingerprint/expectedVersion/reason 與 audit/receipt；same request 只可 exact replay，撤權後不靠舊 receipt 恢復 access。Membership source mutation、effective membership refresh、owner protection 與 invitation cleanup 必須維持同一 transaction boundary。
 
-[Persistence](../../090-governance/020-proposals/030-data-target.md) 與 [Audit](../../090-governance/020-proposals/040-security-target.md) 擁有 transaction/locking/history 要求；[Public contracts](../../090-governance/020-proposals/010-domain-target.md) 限定 consumer 依賴。
+[Persistence](../../change/proposals/data-target.md) 與 [Audit](../../change/proposals/security-target.md) 擁有 transaction/locking/history 要求；[Public contracts](../../change/proposals/domain-target.md) 限定 consumer 依賴。
 
 ## Acceptance criteria
 
