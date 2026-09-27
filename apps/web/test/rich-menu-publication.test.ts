@@ -97,7 +97,8 @@ test("activation failure restores default and aliases while retaining new menus"
   );
 
   assert.equal(defaultId, oldId);
-  assert.equal(aliases.get("line_bot_v1-home"), undefined);\n  assert.equal(aliases.get(legacyHomeAlias), oldId);
+  assert.equal(aliases.get("line_bot_v1-home"), undefined);
+  assert.equal(aliases.get(legacyHomeAlias), oldId);
   assert.equal(aliases.get(legacyTasksAlias), legacyId);
   assert.deepEqual(deletedMenus, []);
 });
