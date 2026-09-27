@@ -4,9 +4,21 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "./application/collection": {
+      "types": "./dist/application/collection.d.ts",
+      "default": "./dist/application/collection.js"
+    },
+    "./application/ports/collection": {
+      "types": "./dist/application/ports/collection.d.ts",
+      "default": "./dist/application/ports/collection.js"
+    },
+    "./adapters/postgres/collection": {
+      "types": "./dist/adapters/postgres/collection.d.ts",
+      "default": "./dist/adapters/postgres/collection.js"
+    },
+    "./contracts/project-collection": {
+      "types": "./dist/contracts/project-collection.d.ts",
+      "default": "./dist/contracts/project-collection.js"
     }
   },
   "files": [
@@ -14,9 +26,17 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/identity-access": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

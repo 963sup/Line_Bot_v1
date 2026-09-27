@@ -4,29 +4,6 @@ import { ActionRow, PageHeading, SectionHeading } from "../../../shared/ui/page-
 import AppShell from "../_shell/app-shell";
 import HomeActions from "./home-actions";
 
-function TargetRow({
-  title,
-  description,
-  icon,
-}: {
-  title: string;
-  description: string;
-  icon: string;
-}) {
-  return (
-    <div className="action-row action-row-disabled" aria-disabled="true">
-      <span className="action-row-icon action-row-icon-neutral" aria-hidden="true">
-        {icon}
-      </span>
-      <span className="action-row-copy">
-        <strong>{title}</strong>
-        <small>{description}</small>
-      </span>
-      <span className="action-row-status">未開放</span>
-    </div>
-  );
-}
-
 export default function Page() {
   const liffId = lineMiniApp().liffId;
 
@@ -50,7 +27,13 @@ export default function Page() {
           title="Discussions"
           description="先選 Repository，再查看該範圍的 Discussions"
         />
-        <TargetRow icon="◇" title="Projects" description="跨 Repository 的規劃與管理功能尚未開放" />
+        <ActionRow
+          href="/projects"
+          icon="◇"
+          tone="purple"
+          title="Projects"
+          description="查看目前可存取的跨 Repository 規劃空間"
+        />
         <ActionRow
           href="/repositories"
           icon="□"

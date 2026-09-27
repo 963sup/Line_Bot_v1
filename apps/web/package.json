@@ -25,6 +25,7 @@
     "@line_bot_v1/organization": "workspace:*",
     "@line_bot_v1/partners": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/project": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
     "@line_bot_v1/team": "workspace:*",
     "@line_bot_v1/wallet": "workspace:*",

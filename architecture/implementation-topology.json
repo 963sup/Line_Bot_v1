@@ -187,7 +187,11 @@
       "path": "packages/project",
       "moduleKind": "domain-module",
       "semanticOwner": "project",
-      "allowedWorkspaceDependencies": []
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/identity-access",
+        "@line_bot_v1/namespace",
+        "@line_bot_v1/platform"
+      ]
     },
     "@line_bot_v1/workforce": {
       "path": "packages/workforce",
@@ -216,6 +220,7 @@
         "@line_bot_v1/organization",
         "@line_bot_v1/partners",
         "@line_bot_v1/platform",
+        "@line_bot_v1/project",
         "@line_bot_v1/repository",
         "@line_bot_v1/team",
         "@line_bot_v1/wallet"

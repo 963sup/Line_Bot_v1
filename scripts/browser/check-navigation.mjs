@@ -246,6 +246,21 @@ async function run() {
         },
       });
     }
+    if (url.pathname === "/api/projects") {
+      return route.fulfill({
+        json: {
+          items: [
+            {
+              id: "project-1",
+              ownerLogin: "viewer",
+              ownerKind: "USER",
+              name: "Operations Plan",
+              version: 1,
+            },
+          ],
+        },
+      });
+    }
     if (url.pathname === "/api/repositories") {
       return route.fulfill({
         json: {
@@ -421,8 +436,12 @@ async function run() {
       await page.screenshot({ path: path.join(artifactDir, "stars.png"), fullPage: true });
     }
     await page.goto(`${base}/home`);
-    await expect(page.getByText("Projects", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Projects/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Projects/ })).toHaveAttribute("href", "/projects");
+    await page.getByRole("link", { name: /Projects/ }).click();
+    await expect(page).toHaveURL(`${base}/projects`);
+    await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+    await expect(page.getByText("Operations Plan", { exact: true })).toBeVisible();
+    await page.goto(`${base}/home`);
     await expect(page.getByRole("link", { name: /Settings/ })).toHaveCount(0);
     await page.locator('summary[aria-label="Create"]').click();
     await expect(page.getByRole("link", { name: /Create Issue/ })).toHaveAttribute(
@@ -565,6 +584,8 @@ async function run() {
     await expect(page.locator(".member-avatar")).toHaveCount(0);
     const repositoryLink = page.getByRole("link", { name: /acme\/Operations/ });
     await expect(repositoryLink).toHaveAttribute("href", "/acme/Operations");
+    await expect(page.getByText("admin", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Explore", exact: true })).toHaveCount(1);
 
     await page.goto(`${base}/acme/Operations/issues/${issueNumber}`);
     await page.getByRole("heading", { name: "Issue", exact: true }).waitFor();

@@ -30,12 +30,7 @@ export default async function Page({
         }
         actions={
           choosingRepository ? undefined : (
-            <div className="inline-actions">
-              <PrimaryLink href="/repositories/new">New Repository</PrimaryLink>
-              <PrimaryLink href="/explore" tone="secondary">
-                Explore
-              </PrimaryLink>
-            </div>
+            <PrimaryLink href="/repositories/new">New Repository</PrimaryLink>
           )
         }
         back={choosingRepository ? "/home" : undefined}
