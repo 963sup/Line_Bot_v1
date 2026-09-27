@@ -29,10 +29,7 @@ test("release source classifiers preserve owner boundaries", () => {
   assert.equal(schemaChanged(["supabase/schemas/200_enterprises.sql"]), true);
   assert.equal(schemaChanged(["scripts/supabase/remote.mjs"]), false);
   assert.equal(richMenuChanged(["assets/line/rich-menu/menu.png"]), true);
-  assert.equal(
-    richMenuChanged(["apps/web/src/modules/assistant/rich-menu/definition.ts"]),
-    true,
-  );
+  assert.equal(richMenuChanged(["apps/web/src/modules/assistant/rich-menu/definition.ts"]), true);
   assert.equal(webRuntimeCandidate("apps/web/src/app/page.tsx"), true);
   assert.equal(
     webRuntimeCandidate("apps/web/src/modules/assistant/rich-menu/definition.ts"),
@@ -87,9 +84,7 @@ test("release plan keeps owner cursors independent and rich menu direct when Web
     }
     throw new Error(`Unexpected URL: ${value}`);
   };
-  const changed = new Map([
-    [PREVIOUS, ["apps/web/src/modules/assistant/rich-menu/definition.ts"]],
-  ]);
+  const changed = new Map([[PREVIOUS, ["apps/web/src/modules/assistant/rich-menu/definition.ts"]]]);
   const plan = await planRelease({
     sha: SHA,
     repository: "963sup/Line_Bot_v1",
