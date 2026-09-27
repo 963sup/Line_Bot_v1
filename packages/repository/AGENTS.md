@@ -1,6 +1,5 @@
-# @line-work/repository
-
-Owner: Repository identity/access, stars/lists, Issue, Discussion, Label, Repository Milestone, and Repository-derived discovery. Canonical semantics: [Repository](../../docs/owners/repository.md).
+# @line_bot_v1/repository
+Owner: Repository identity/access, stars/lists, Issue, Discussion, Label, Repository Milestone, and Repository-derived discovery. Semantics: [Repository](../../docs/owners/repository.md).
 
 - Project Milestone is separate; Project may reference Repository work but never owns its lifecycle/access truth.
 - Preserve current Repository access, assignment qualification, expected version, replay identity, and durable event/history semantics.

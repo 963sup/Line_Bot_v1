@@ -7,8 +7,8 @@ function fixture() {
     semanticModel: { semanticOwners: [{ id: "account" }, { id: "attendance" }] },
     implementationTopology: {
       modules: {
-        "@line-work/account": { path: "packages/account", semanticOwner: "account" },
-        "@line-work/attendance": { path: "packages/attendance", semanticOwner: "attendance" },
+        "@line_bot_v1/account": { path: "packages/account", semanticOwner: "account" },
+        "@line_bot_v1/attendance": { path: "packages/attendance", semanticOwner: "attendance" },
       },
     },
     dataTopology: {

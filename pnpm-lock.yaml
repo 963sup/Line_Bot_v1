@@ -71,52 +71,52 @@ importers:
 
   apps/web:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../../packages/account
-      '@line-work/asset':
+      '@line_bot_v1/asset':
         specifier: workspace:*
         version: link:../../packages/asset
-      '@line-work/assistant':
+      '@line_bot_v1/assistant':
         specifier: workspace:*
         version: link:../../packages/assistant
-      '@line-work/attendance':
+      '@line_bot_v1/attendance':
         specifier: workspace:*
         version: link:../../packages/attendance
-      '@line-work/daily-check-in':
+      '@line_bot_v1/daily-check-in':
         specifier: workspace:*
         version: link:../../packages/daily-check-in
-      '@line-work/enterprise':
+      '@line_bot_v1/enterprise':
         specifier: workspace:*
         version: link:../../packages/enterprise
-      '@line-work/expense':
+      '@line_bot_v1/expense':
         specifier: workspace:*
         version: link:../../packages/expense
-      '@line-work/identity-access':
+      '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../../packages/identity-access
-      '@line-work/line-channel':
+      '@line_bot_v1/line-channel':
         specifier: workspace:*
         version: link:../../packages/line-channel
-      '@line-work/notifications':
+      '@line_bot_v1/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
-      '@line-work/organization':
+      '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../../packages/organization
-      '@line-work/partners':
+      '@line_bot_v1/partners':
         specifier: workspace:*
         version: link:../../packages/partners
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../../packages/platform
-      '@line-work/repository':
+      '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../../packages/repository
-      '@line-work/team':
+      '@line_bot_v1/team':
         specifier: workspace:*
         version: link:../../packages/team
-      '@line-work/wallet':
+      '@line_bot_v1/wallet':
         specifier: workspace:*
         version: link:../../packages/wallet
       '@sentry/nextjs':
@@ -162,10 +162,10 @@ importers:
 
   packages/account:
     dependencies:
-      '@line-work/namespace':
+      '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
       '@supabase/supabase-js':
@@ -184,7 +184,7 @@ importers:
 
   packages/asset:
     dependencies:
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -210,19 +210,19 @@ importers:
 
   packages/attendance:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/asset':
+      '@line_bot_v1/asset':
         specifier: workspace:*
         version: link:../asset
-      '@line-work/identity-access':
+      '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../identity-access
-      '@line-work/ledger':
+      '@line_bot_v1/ledger':
         specifier: workspace:*
         version: link:../ledger
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -240,16 +240,16 @@ importers:
 
   packages/daily-check-in:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/asset':
+      '@line_bot_v1/asset':
         specifier: workspace:*
         version: link:../asset
-      '@line-work/ledger':
+      '@line_bot_v1/ledger':
         specifier: workspace:*
         version: link:../ledger
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -265,16 +265,16 @@ importers:
 
   packages/enterprise:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/identity-access':
+      '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../identity-access
-      '@line-work/organization':
+      '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -293,10 +293,10 @@ importers:
       '@google/genai':
         specifier: 'catalog:'
         version: 2.21.0(@modelcontextprotocol/sdk@1.30.0(supports-color@8.1.1)(zod@4.5.4))(supports-color@8.1.1)
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -324,10 +324,10 @@ importers:
 
   packages/identity-access:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -340,13 +340,13 @@ importers:
 
   packages/ledger:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/asset':
+      '@line_bot_v1/asset':
         specifier: workspace:*
         version: link:../asset
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -384,7 +384,7 @@ importers:
 
   packages/notifications:
     dependencies:
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -400,13 +400,13 @@ importers:
 
   packages/organization:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/identity-access':
+      '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../identity-access
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -422,10 +422,10 @@ importers:
 
   packages/partners:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -474,16 +474,16 @@ importers:
 
   packages/repository:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/identity-access':
+      '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../identity-access
-      '@line-work/organization':
+      '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -499,16 +499,16 @@ importers:
 
   packages/team:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/identity-access':
+      '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../identity-access
-      '@line-work/organization':
+      '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:
@@ -524,16 +524,16 @@ importers:
 
   packages/wallet:
     dependencies:
-      '@line-work/account':
+      '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line-work/asset':
+      '@line_bot_v1/asset':
         specifier: workspace:*
         version: link:../asset
-      '@line-work/ledger':
+      '@line_bot_v1/ledger':
         specifier: workspace:*
         version: link:../ledger
-      '@line-work/platform':
+      '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
     devDependencies:

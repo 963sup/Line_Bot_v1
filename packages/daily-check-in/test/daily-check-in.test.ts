@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { UserError } from "@line-work/account/domain/user";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import { createDailyCheckIn, type DailyCheckInDependencies } from "../src/application.js";
 import { DAILY_CHECK_IN_POLICY, type DailyCheckInClaim, DailyCheckInError } from "../src/domain.js";
 

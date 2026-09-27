@@ -1,6 +1,5 @@
-# @line-work/assistant
-
-Owner: Assistant answer orchestration, Gemini adapter, and Issue-draft intake. Canonical semantics: [Assistant](../../docs/owners/assistant.md).
+# @line_bot_v1/assistant
+Owner: Assistant answer orchestration, Gemini adapter, and Issue-draft intake. Semantics: [Assistant](../../docs/owners/assistant.md).
 
 - Accept only trusted delivery text; cross-owner writes require that owner's public contract and authorization.
 - Intake may draft only: no assign, persist, authorize, or notify.

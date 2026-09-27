@@ -1,4 +1,4 @@
-import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { teamApiError, teamBody, teamQuery } from "../../../modules/team/http.server";
 import { jsonResponse } from "../../../shared/server/http";
 import { requestLineIdentity } from "../_composition/request-identity.server";

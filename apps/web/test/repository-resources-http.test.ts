@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { createRepositoryResources } from "@line-work/repository/application/resources";
+import type { createRepositoryResources } from "@line_bot_v1/repository/application/resources";
 import {
   repositoryDiscussionRequest,
   repositoryDiscussionsRequest,

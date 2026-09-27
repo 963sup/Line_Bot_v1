@@ -1,9 +1,6 @@
 # Namespace detailed reference
-
 Low-frequency Namespace details. The owner boundary and invariants remain canonical in [Namespace](../../owners/namespace.md).
-
 ## Ubiquitous Language
-
 | Term | Meaning |
 | --- | --- |
 | Namespace | 在明確 Scope 內，Key 可唯一解析到 stable Subject 的命名邊界 |
@@ -17,12 +14,10 @@ Low-frequency Namespace details. The owner boundary and invariants remain canoni
 | Resolve | 由 Locator 找到 Subject；resolve success 不代表 authorization success |
 
 Cross-context canonical lookup 亦見 [Glossary](../../facts/glossary.md)。
-
 ## Current namespace topology
-
 `architecture/semantic-model.json#locators` 是 current locator registry；下表是 human-readable ownership projection，不建立第二套 machine truth。
 
-| Locator space | Current participants | Scope / uniqueness owner | Direct `@line-work/namespace` dependency |
+| Locator space | Current participants | Scope / uniqueness owner | Direct `@line_bot_v1/namespace` dependency |
 | --- | --- | --- | --- |
 | Global root + Account login | static root routes、User login、Organization login | Namespace owns root reservation/collision；Account owns login normalization/lifecycle/persistence；`account_logins.login` global unique | Account only |
 | Enterprise slug | Enterprise | Enterprise；`enterprises.slug` global unique inside Enterprise locator space | No |
@@ -35,9 +30,7 @@ Cross-context canonical lookup 亦見 [Glossary](../../facts/glossary.md)。
 | Discussion opaque id | Discussion under Repository URL scope | Repository owns Discussion identity; current opaque id remains separate from GitHub Discussion number semantics | No |
 
 這個 dependency distinction 是刻意的：只有 shared policy 的 consumer 才依賴 Namespace public contract；owner-local namespace 透過自己的 Domain code/schema 維持 authority，再由 semantic locator registry 與 cross-owner tests證明 scope 沒有漂移。
-
-## Current implementation
-
+## Implementation
 `packages/namespace/src/root.ts` exports current global-root reservation contract：
 
 - `ROOT_NAMESPACE_RESERVED_KEYS`
@@ -48,9 +41,7 @@ Cross-context canonical lookup 亦見 [Glossary](../../facts/glossary.md)。
 Database enforcement仍位於 Account-owned `supabase/schemas/101_account_logins.sql`，因為 persisted login fact 屬 Account。它不是 Namespace policy authority；Namespace tests會比對 SQL enforcement list與 `src/root.ts`，並掃描 current App Router static root segments，確保新增 root route 不會默默變成可 claim login。
 
 Current known compatibility / held reservations例如 `orgs`、`projects` 可以沒有同名 App Router directory；absence of a route不等於自動釋放既有 reserved Key。釋放需要明確 namespace decision與 compatibility assessment。
-
 ## Module / Data mapping
-
 | Responsibility | Owner / source |
 | --- | --- |
 | Shared global-root reservation policy | `packages/namespace/src/root.ts` |
@@ -63,10 +54,8 @@ Current known compatibility / held reservations例如 `orgs`、`projects` 可以
 | DB enforcement | owning persisted relation schema |
 
 Namespace目前沒有 Data Boundary；有 executable policy不代表需要 `namespace` table。
-
 ## Current locator topology
-
-Cross-context structured truth 由 `architecture/semantic-model.json#locators` 擁有；每個 locator 現在必須明確宣告 `scopeAuthority`，同一 `scope` 不得出現兩個 authority。Runtime dependency 只在 consumer 真正需要另一 owner contract 時成立，不因為「都有名字」就依賴 `@line-work/namespace`。
+Cross-context structured truth 由 `architecture/semantic-model.json#locators` 擁有；每個 locator 現在必須明確宣告 `scopeAuthority`，同一 `scope` 不得出現兩個 authority。Runtime dependency 只在 consumer 真正需要另一 owner contract 時成立，不因為「都有名字」就依賴 `@line_bot_v1/namespace`。
 
 | Locator family | Scope authority | Namespace relationship |
 | --- | --- | --- |
@@ -96,9 +85,7 @@ Repository local name / number policy
 ```
 
 這不是少接 dependency，而是避免 Namespace 變成所有 identifier 的 God Module。
-
 ## Expansion rule
-
 只有真實 shared responsibility出現才擴張 executable surface，例如：
 
 - 多個 owner真正需要共同 claim / reserve / resolve；
@@ -106,10 +93,8 @@ Repository local name / number policy
 - 第二種 shared namespace需要共用且相同的 policy primitive。
 
 不得因為 Repository name、Label name、Team slug、Issue number都「像 namespace」就預建 generic manager / port / adapter。Project.name 目前沒有 scoped uniqueness / active locator；Expense.number 是 persistence identity，且沒有 detail route，因此兩者都不因欄位存在而自動成為 Namespace participant。
-
 ## Validation
-
-- `pnpm --filter @line-work/namespace build`：只證明 package compile / emit。
-- `pnpm --filter @line-work/namespace typecheck`：只證明 Namespace source + tests type correctness。
-- `pnpm --filter @line-work/namespace test`：驗 current root reservation、route inventory coverage、SQL enforcement parity，以及 User/Organization/Enterprise/Team/Repository 等 scoped locator ownership closure。
+- `pnpm --filter @line_bot_v1/namespace build`：只證明 package compile / emit。
+- `pnpm --filter @line_bot_v1/namespace typecheck`：只證明 Namespace source + tests type correctness。
+- `pnpm --filter @line_bot_v1/namespace test`：驗 current root reservation、route inventory coverage、SQL enforcement parity，以及 User/Organization/Enterprise/Team/Repository 等 scoped locator ownership closure。
 - 一般 repository change仍以 `pnpm check` 為 canonical fast validation；merge / release前跑 `pnpm validate`。

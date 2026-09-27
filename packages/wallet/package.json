@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/wallet",
+  "name": "@line_bot_v1/wallet",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -25,10 +25,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@line-work/account": "workspace:*",
-    "@line-work/asset": "workspace:*",
-    "@line-work/platform": "workspace:*",
-    "@line-work/ledger": "workspace:*"
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/asset": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/ledger": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:"

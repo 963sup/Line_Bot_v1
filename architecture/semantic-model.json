@@ -2,7 +2,7 @@
   "version": 1,
   "role": "canonical-product-semantic-architecture",
   "system": {
-    "id": "line-work-assistant",
+    "id": "line_bot_v1",
     "domain": "enterprise-workforce-operations-management",
     "objective": "Minimize understanding, decision, change, verification, coordination, and drift-recovery cost while preserving correctness, security, authorization, data integrity, business invariants, consistency, recoverability, and traceability.",
     "changeFlow": [
@@ -1983,99 +1983,99 @@
   "implementationMappings": [
     {
       "semanticOwner": "account",
-      "module": "@line-work/account"
+      "module": "@line_bot_v1/account"
     },
     {
       "semanticOwner": "enterprise",
-      "module": "@line-work/enterprise"
+      "module": "@line_bot_v1/enterprise"
     },
     {
       "semanticOwner": "organization",
-      "module": "@line-work/organization"
+      "module": "@line_bot_v1/organization"
     },
     {
       "semanticOwner": "team",
-      "module": "@line-work/team"
+      "module": "@line_bot_v1/team"
     },
     {
       "semanticOwner": "repository",
-      "module": "@line-work/repository"
+      "module": "@line_bot_v1/repository"
     },
     {
       "semanticOwner": "project",
-      "module": "@line-work/project",
+      "module": "@line_bot_v1/project",
       "note": "Project workspace/module ownership is registered; runtime Project capability remains inactive."
     },
     {
       "semanticOwner": "notifications",
-      "module": "@line-work/notifications"
+      "module": "@line_bot_v1/notifications"
     },
     {
       "semanticOwner": "attendance",
-      "module": "@line-work/attendance"
+      "module": "@line_bot_v1/attendance"
     },
     {
       "semanticOwner": "daily-check-in",
-      "module": "@line-work/daily-check-in"
+      "module": "@line_bot_v1/daily-check-in"
     },
     {
       "semanticOwner": "expense",
-      "module": "@line-work/expense"
+      "module": "@line_bot_v1/expense"
     },
     {
       "semanticOwner": "audit",
-      "module": "@line-work/audit",
+      "module": "@line_bot_v1/audit",
       "note": "Audit module ownership is reserved as a workspace foundation; executable capability remains inactive until a real audit consumer and contract exist."
     },
     {
       "semanticOwner": "partner-directory",
-      "module": "@line-work/partners"
+      "module": "@line_bot_v1/partners"
     },
     {
       "semanticOwner": "asset",
-      "module": "@line-work/asset"
+      "module": "@line_bot_v1/asset"
     },
     {
       "semanticOwner": "wallet",
-      "module": "@line-work/wallet"
+      "module": "@line_bot_v1/wallet"
     },
     {
       "semanticOwner": "ledger",
-      "module": "@line-work/ledger"
+      "module": "@line_bot_v1/ledger"
     },
     {
       "semanticOwner": "payroll",
-      "module": "@line-work/payroll"
+      "module": "@line_bot_v1/payroll"
     },
     {
       "semanticOwner": "workforce",
-      "module": "@line-work/workforce",
+      "module": "@line_bot_v1/workforce",
       "note": "Workforce workspace/module ownership is registered; target business capability remains unimplemented."
     },
     {
       "semanticOwner": "identity-access",
-      "module": "@line-work/identity-access"
+      "module": "@line_bot_v1/identity-access"
     },
     {
       "semanticOwner": "assistant",
-      "module": "@line-work/assistant"
+      "module": "@line_bot_v1/assistant"
     },
     {
       "semanticOwner": "line-integration",
-      "module": "@line-work/line-channel"
+      "module": "@line_bot_v1/line-channel"
     },
     {
       "semanticOwner": "google-workspace",
-      "module": "@line-work/google-workspace"
+      "module": "@line_bot_v1/google-workspace"
     },
     {
       "semanticOwner": "namespace",
-      "module": "@line-work/namespace",
-      "note": "Namespace exposes the current global-root reservation policy through @line-work/namespace/root; broader claim/resolve capabilities remain unimplemented until a real shared consistency boundary exists."
+      "module": "@line_bot_v1/namespace",
+      "note": "Namespace exposes the current global-root reservation policy through @line_bot_v1/namespace/root; broader claim/resolve capabilities remain unimplemented until a real shared consistency boundary exists."
     },
     {
       "semanticOwner": "platform",
-      "module": "@line-work/platform"
+      "module": "@line_bot_v1/platform"
     }
   ],
   "policies": [

@@ -1,4 +1,4 @@
-import { businessDatabase, type Database } from "@line-work/platform/adapters/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/adapters/postgres";
 import type { FollowItem, FollowStore } from "../../application/ports/follows.js";
 import { UserError } from "../../domain/user.js";
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { postgresFixture } from "@line-work/platform/testing/postgres";
+import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryCreationStore } from "../src/adapters/postgres/creation.js";
 import { createRepositoryCreation } from "../src/application/creation.js";
 import type { RepositoryCreationStore } from "../src/application/ports/creation.js";

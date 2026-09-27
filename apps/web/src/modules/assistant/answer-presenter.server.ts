@@ -1,4 +1,4 @@
-import type { AnswerResult } from "@line-work/assistant/application/answer-question";
+import type { AnswerResult } from "@line_bot_v1/assistant/application/answer-question";
 
 export function presentAnswer(result: AnswerResult): string {
   switch (result.type) {

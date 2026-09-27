@@ -1,4 +1,4 @@
-import type { ReceiptIntakeResult } from "@line-work/expense/application/receipt-intake";
+import type { ReceiptIntakeResult } from "@line_bot_v1/expense/application/receipt-intake";
 import { miniAppEntryUrl } from "../../shared/presentation/entry-route";
 import { DIARY_FORM_URL } from "../diary/form";
 import { renderExpenseNotice } from "../expense/notice.server";

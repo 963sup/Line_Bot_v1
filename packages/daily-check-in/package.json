@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/daily-check-in",
+  "name": "@line_bot_v1/daily-check-in",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -30,10 +30,10 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line-work/account": "workspace:*",
-    "@line-work/asset": "workspace:*",
-    "@line-work/ledger": "workspace:*",
-    "@line-work/platform": "workspace:*"
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/asset": "workspace:*",
+    "@line_bot_v1/ledger": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

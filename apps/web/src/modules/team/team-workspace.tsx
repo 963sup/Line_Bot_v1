@@ -1,5 +1,5 @@
-import type { TeamView } from "@line-work/team/contracts";
-import type { TeamCommand } from "@line-work/team/domain";
+import type { TeamView } from "@line_bot_v1/team/contracts";
+import type { TeamCommand } from "@line_bot_v1/team/domain";
 import type { RefObject } from "react";
 import styles from "./team.module.css";
 import type { TeamDraft } from "./team-command";

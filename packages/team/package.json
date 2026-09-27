@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/team",
+  "name": "@line_bot_v1/team",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -34,10 +34,10 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line-work/account": "workspace:*",
-    "@line-work/identity-access": "workspace:*",
-    "@line-work/organization": "workspace:*",
-    "@line-work/platform": "workspace:*"
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/identity-access": "workspace:*",
+    "@line_bot_v1/organization": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

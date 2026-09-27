@@ -1,12 +1,12 @@
-import { createGeminiClient } from "@line-work/assistant/adapters/gemini";
-import { PostgresExpenseStore } from "@line-work/expense/adapters/postgres";
-import { runReceiptAgent } from "@line-work/expense/agents/receipt";
-import { createCommandExpense } from "@line-work/expense/application/command-expense";
-import { createGetExpense } from "@line-work/expense/application/get-expense";
-import { createReceiptIntake } from "@line-work/expense/application/receipt-intake";
-import { createRecognizeReceipt } from "@line-work/expense/application/recognize-receipt";
-import type { Expense } from "@line-work/expense/domain";
-import { downloadLineImage } from "@line-work/line-channel/adapters/messaging";
+import { createGeminiClient } from "@line_bot_v1/assistant/adapters/gemini";
+import { PostgresExpenseStore } from "@line_bot_v1/expense/adapters/postgres";
+import { runReceiptAgent } from "@line_bot_v1/expense/agents/receipt";
+import { createCommandExpense } from "@line_bot_v1/expense/application/command-expense";
+import { createGetExpense } from "@line_bot_v1/expense/application/get-expense";
+import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-intake";
+import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
+import type { Expense } from "@line_bot_v1/expense/domain";
+import { downloadLineImage } from "@line_bot_v1/line-channel/adapters/messaging";
 import { activeLineUser } from "./account.server";
 
 /** Global state is retained across Next.js hot reloads and remains process-local. */

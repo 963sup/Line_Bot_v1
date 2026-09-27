@@ -1,4 +1,4 @@
-import { UserError } from "@line-work/account/domain/user";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import { apiError, readJsonBody } from "../../../modules/account/http.server";
 import { jsonResponse } from "../../../shared/server/http";
 import { follows } from "../_composition/account.server";

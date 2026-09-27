@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
-import { PostgresUserManagement } from "@line-work/account/adapters/postgres";
-import { UserError } from "@line-work/account/domain/user";
+import { PostgresUserManagement } from "@line_bot_v1/account/adapters/postgres";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import { GET, POST } from "../src/app/api/membership/manage/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";

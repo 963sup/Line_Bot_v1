@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
-import { supabaseIdentity } from "@line-work/account/adapters/supabase-identity";
-import { COIN_ASSET_CODE } from "@line-work/asset/domain";
+import { supabaseIdentity } from "@line_bot_v1/account/adapters/supabase-identity";
+import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { POST as clockInPost } from "../src/app/api/attendance/clock-in/route";
 import { POST as clockOutPost } from "../src/app/api/attendance/clock-out/route";
 import { GET as attendanceGet } from "../src/app/api/attendance/route";

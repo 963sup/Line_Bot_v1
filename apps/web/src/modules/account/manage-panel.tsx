@@ -3,9 +3,9 @@ import type {
   UserManagementQuery,
   UserManagementView,
   UserStatusReceipt,
-} from "@line-work/account/contracts/user-management";
-import type { UserStatusCommand } from "@line-work/account/domain/user";
-import { parseUserStatusCommand } from "@line-work/account/domain/user";
+} from "@line_bot_v1/account/contracts/user-management";
+import type { UserStatusCommand } from "@line_bot_v1/account/domain/user";
+import { parseUserStatusCommand } from "@line_bot_v1/account/domain/user";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

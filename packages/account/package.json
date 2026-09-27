@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/account",
+  "name": "@line_bot_v1/account",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -94,8 +94,8 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line-work/namespace": "workspace:*",
-    "@line-work/platform": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
     "@supabase/supabase-js": "catalog:"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { postgresFixture } from "@line-work/platform/testing/postgres";
+import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresUserProfileStore } from "../src/adapters/postgres/profile.js";
 import type { UserProfile, UserProfileStore } from "../src/application/ports/profile.js";
 import { createUserProfiles, parseUserProfileUpdate } from "../src/application/profile.js";

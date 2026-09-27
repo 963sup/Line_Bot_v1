@@ -1,5 +1,5 @@
 {
-  "name": "@line-work/payroll",
+  "name": "@line_bot_v1/payroll",
   "version": "0.0.0",
   "private": true,
   "type": "module",

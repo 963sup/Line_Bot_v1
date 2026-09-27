@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { mock } from "node:test";
-import { PostgresUserStore } from "@line-work/account/adapters/postgres";
-import { supabaseIdentity } from "@line-work/account/adapters/supabase-identity";
-import { PostgresAttendanceStore } from "@line-work/attendance/adapters/postgres";
-import { PostgresDailyCheckInStore } from "@line-work/daily-check-in/adapters/postgres";
-import { PostgresExpenseStore } from "@line-work/expense/adapters/postgres";
-import { protectPermissionAdministrator } from "@line-work/identity-access/adapters/postgres";
-import { LINE_PROVIDER_NAMESPACE } from "@line-work/line-channel/provider";
-import { postgresFixture } from "@line-work/platform/testing/postgres";
-import { PostgresWalletStore } from "@line-work/wallet/adapters/postgres";
+import { PostgresUserStore } from "@line_bot_v1/account/adapters/postgres";
+import { supabaseIdentity } from "@line_bot_v1/account/adapters/supabase-identity";
+import { PostgresAttendanceStore } from "@line_bot_v1/attendance/adapters/postgres";
+import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
+import { PostgresExpenseStore } from "@line_bot_v1/expense/adapters/postgres";
+import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/adapters/postgres";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { PostgresWalletStore } from "@line_bot_v1/wallet/adapters/postgres";
 import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";
 import { idempotencyFixture } from "./idempotency-fixture";
 

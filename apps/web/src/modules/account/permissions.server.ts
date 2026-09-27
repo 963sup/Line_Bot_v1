@@ -1,6 +1,6 @@
-import { UserError } from "@line-work/account/domain/user";
-import type { createPermissions } from "@line-work/identity-access/application/permissions";
-import { PermissionError } from "@line-work/identity-access/domain/permission";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import type { createPermissions } from "@line_bot_v1/identity-access/application/permissions";
+import { PermissionError } from "@line_bot_v1/identity-access/domain/permission";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { jsonResponse } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

@@ -3,8 +3,8 @@ import {
   readAccountLogin,
   readAccountLogins,
   readActiveUserQualification,
-} from "@line-work/account/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+} from "@line_bot_v1/account/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
 import type {
   RepositoryStarListCommand,
   RepositoryStarListCreateCommand,

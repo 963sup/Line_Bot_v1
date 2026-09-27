@@ -1,6 +1,5 @@
-# @line-work/attendance
-
-Owner: Attendance, Workplace, WorkplaceChat behavior, and Attendance-owned writes. Canonical semantics: [Attendance](../../docs/owners/attendance.md).
+# @line_bot_v1/attendance
+Owner: Attendance, Workplace, WorkplaceChat behavior, and Attendance-owned writes. Semantics: [Attendance](../../docs/owners/attendance.md).
 
 - Account owns current User qualification; Identity/Access owns workplace-management permission. Use public capabilities; do not write their relations or duplicate their policy.
 - `attendance_identity_bindings` is derived read data only.

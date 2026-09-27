@@ -1,4 +1,4 @@
-import type { AccountId, UserId } from "@line-work/account/domain";
+import type { AccountId, UserId } from "@line_bot_v1/account/domain";
 
 export type EnterpriseAccountId = AccountId;
 

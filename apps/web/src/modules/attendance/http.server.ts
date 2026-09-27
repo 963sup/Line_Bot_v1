@@ -1,5 +1,5 @@
-import { UserError } from "@line-work/account/domain/user";
-import { AttendanceError } from "@line-work/attendance/domain";
+import { UserError } from "@line_bot_v1/account/domain/user";
+import { AttendanceError } from "@line_bot_v1/attendance/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { infrastructureFailureCode } from "../../shared/server/failure-code";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";

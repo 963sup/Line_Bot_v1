@@ -1,7 +1,4 @@
-# @line-work/partners
-
-Navigation only.
-
+# @line_bot_v1/partners
 - Owner contract: [partners](../../docs/owners/partners.md)
 - Local constraints: [AGENTS.md](AGENTS.md)
 - Public surface: [package.json](package.json)

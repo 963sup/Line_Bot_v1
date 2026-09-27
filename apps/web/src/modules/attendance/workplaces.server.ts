@@ -1,4 +1,4 @@
-import type { createWorkplaces } from "@line-work/attendance/application/workplaces";
+import type { createWorkplaces } from "@line_bot_v1/attendance/application/workplaces";
 import { jsonResponse } from "../../shared/server/http";
 import { attendanceApiError, readAttendanceJsonBody } from "./http.server";
 

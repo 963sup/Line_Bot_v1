@@ -14,9 +14,11 @@ if (process.argv.slice(2).join(" ") !== "--live") {
   try {
     const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
     const { createGeminiClient } = await import(
-      require.resolve("@line-work/assistant/adapters/gemini")
+      require.resolve("@line_bot_v1/assistant/adapters/gemini")
     );
-    const { runReceiptAgent } = await import(require.resolve("@line-work/expense/agents/receipt"));
+    const { runReceiptAgent } = await import(
+      require.resolve("@line_bot_v1/expense/agents/receipt")
+    );
     loadRootEnv();
     const image = await readFile(
       new URL("../../packages/expense/test/fixtures/receipt-demo.png", import.meta.url),

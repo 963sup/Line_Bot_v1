@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { UserError } from "@line-work/account/domain/user";
+import { UserError } from "@line_bot_v1/account/domain/user";
 import { createGoogleLinkRequest } from "../src/modules/account/google-link-api.server";
 
 test("external Google handoff verifies Google without LINE and cannot confirm without LINE proof", async () => {

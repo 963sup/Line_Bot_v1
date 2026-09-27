@@ -3,7 +3,7 @@
 import type {
   UserProfile,
   UserProfileVisibility,
-} from "@line-work/account/application/ports/profile";
+} from "@line_bot_v1/account/application/ports/profile";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

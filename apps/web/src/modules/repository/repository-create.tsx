@@ -4,7 +4,7 @@ import type {
   RepositoryCreateCommand,
   RepositoryCreationResult,
   RepositoryOwnerOption,
-} from "@line-work/repository/application/ports/creation";
+} from "@line_bot_v1/repository/application/ports/creation";
 import { useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

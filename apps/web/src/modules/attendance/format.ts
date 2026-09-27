@@ -1,4 +1,4 @@
-import type { AttendanceNotification } from "@line-work/attendance/application/ports/clock";
+import type { AttendanceNotification } from "@line_bot_v1/attendance/application/ports/clock";
 
 export function attendanceTime(value: number) {
   return new Intl.DateTimeFormat("zh-TW", {

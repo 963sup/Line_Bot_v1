@@ -1,5 +1,5 @@
-import { PostgresPublicRepositoryStore } from "@line-work/repository/adapters/postgres/public";
-import { createPublicRepositories } from "@line-work/repository/application/public";
+import { PostgresPublicRepositoryStore } from "@line_bot_v1/repository/adapters/postgres/public";
+import { createPublicRepositories } from "@line_bot_v1/repository/application/public";
 
 const state = globalThis as typeof globalThis & {
   publicRepositoryStore?: PostgresPublicRepositoryStore;

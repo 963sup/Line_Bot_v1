@@ -1,6 +1,6 @@
 "use client";
 
-import type { UserUseCases } from "@line-work/account/application/user";
+import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

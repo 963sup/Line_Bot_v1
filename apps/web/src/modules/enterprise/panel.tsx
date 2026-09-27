@@ -4,8 +4,8 @@ import type {
   EnterpriseCommand,
   EnterpriseDetail,
   EnterpriseList,
-} from "@line-work/enterprise/contracts/enterprise-governance";
-import type { ScopedRoleCommand } from "@line-work/identity-access/domain/role-assignment";
+} from "@line_bot_v1/enterprise/contracts/enterprise-governance";
+import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";

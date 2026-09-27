@@ -1,9 +1,6 @@
 # Web repository module
-
-
 ## 現行 surface 與 invariant
-
-Current URL：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `issues`、`discussions`、`labels`、`milestones` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。
+URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `issues`、`discussions`、`labels`、`milestones` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。
 
 FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承接。Issue.number、Milestone.number 是 Repository-local；Discussion 使用 opaque id；Label 目前只有 collection。不能為了模仿 GitHub URL 新增 Discussion number 或 Label detail identity。
 
@@ -11,7 +8,7 @@ FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承
 
 只在存在不同 lifecycle/consumer 需要時細分檔案；不建立 generic resource CRUD 抹去各資源語意。
 
-- Owns Repository/Issue presentation and HTTP projection; Repository identity/access and Issue lifecycle remain in `@line-work/repository`.
+- Owns Repository/Issue presentation and HTTP projection; Repository identity/access and Issue lifecycle remain in `@line_bot_v1/repository`.
 - Do not use Task or Team as aliases for Repository/Issue. Team membership is not Repository access authority.
 - Preserve request replay, expected-version conflict, current access recheck and unknown-result retry semantics.
 - Project planning references Issues through Project contracts; this module never turns Project metadata into Issue truth.

@@ -95,7 +95,7 @@ try {
   );
   console.log(`Artifacts: ${output}\nBuilding workspace dependencies for isolated Web…`);
   await command(
-    [turbo, "run", "build", "--filter=@line-work/web^..."],
+    [turbo, "run", "build", "--filter=@line_bot_v1/web^..."],
     root,
     "dependencies-build.log",
   );

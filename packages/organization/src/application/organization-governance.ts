@@ -1,9 +1,9 @@
-import { normalizeAccountLogin } from "@line-work/account/domain/login";
+import { normalizeAccountLogin } from "@line_bot_v1/account/domain/login";
 import type {
   GovernanceQuery,
   VerifiedLineActor,
-} from "@line-work/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line-work/identity-access/domain/role-assignment";
+} from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 
 const governanceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const governanceId = /^[\w-]{1,128}$/;

@@ -11,7 +11,7 @@ export default function Page() {
         <div className="public-gateway-mark" aria-hidden="true">
           L
         </div>
-        <h1>LINE 工作助手</h1>
+        <h1>Line_Bot_v1</h1>
         <p>使用 LINE 進入你的工作台</p>
       </div>
 
