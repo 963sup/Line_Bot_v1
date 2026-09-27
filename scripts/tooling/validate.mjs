@@ -165,11 +165,7 @@ function main() {
     ["patch:apply:test", ["--test", "scripts/changes/patch-apply.test.mjs"]],
     [
       "github:test",
-      [
-        "--test",
-        "scripts/github/current-main.test.mjs",
-        "scripts/github/release-plan.test.mjs",
-      ],
+      ["--test", "scripts/github/current-main.test.mjs", "scripts/github/release-plan.test.mjs"],
     ],
     [
       "schema:remote:test",
