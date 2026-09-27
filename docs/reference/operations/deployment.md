@@ -41,4 +41,4 @@ Web runtime 不執行 DDL。Schema 變更使用 forward reconciliation，operato
 
 Web deployment、database reconciliation、scheduler/worker、LINE Rich Menu、LINE webhook、Google/Supabase console 設定都是不同外部變更。它們必須分別有版本、結果與恢復方式；其中一項成功不能代表其他項已完成。當 runtime 與 database contract 有明確 dependency 時，Release ordering 仍必須先 database convergence、後 exact revision Production deployment。
 
-正式放行流程見 [Release](020-release.md)；資料恢復見 [Recovery](030-recovery.md)；外部平台操作見 [External change control](050-external-change-control.md)。
+正式放行流程見 [Release](release.md)；資料恢復見 [Recovery](recovery.md)；外部平台操作見 [External change control](../../rules/external-effects.md)。
