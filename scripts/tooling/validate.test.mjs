@@ -75,6 +75,17 @@ test("tooling metadata stays separate while root build metadata expands conserva
   });
 });
 
+test("Vercel production adapter changes run the tooling-owned deployment tests", () => {
+  const scope = classifyChangedFiles(["scripts/vercel/deploy-production.mjs"]);
+  assert.deepEqual(scope, {
+    codeAffected: true,
+    docsAffected: false,
+    schemaAffected: false,
+    toolingAffected: true,
+  });
+  assert.equal(shouldRunFast("tooling:check", scope), true);
+});
+
 test("architecture tooling changes also run tooling validation", () => {
   for (const file of [
     "scripts/architecture/check-architecture.mjs",

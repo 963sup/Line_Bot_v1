@@ -88,7 +88,7 @@ jobs:
           fi
           schema_changed=false
           rich_menu_changed=false
-          if grep -Eq '^(supabase/schemas/.*\.sql|\.github/workflows/release\.yml)$' changed-files.txt; then
+          if grep -Eq '^supabase/schemas/.*\.sql$' changed-files.txt; then
             schema_changed=true
           fi
           if grep -Eq '^(assets/line/rich-menu/|apps/web/src/modules/assistant/rich-menu/(definition|desired-state\.server)\.ts$)' changed-files.txt; then
@@ -100,7 +100,7 @@ jobs:
 
   supabase:
     needs: gate
-    if: needs.gate.outputs.schema_changed == 'true'
+    if: needs.gate.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -118,7 +118,7 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
 
-      - name: Require current main before remote mutation
+      - name: Require current main before remote reconciliation
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -127,11 +127,12 @@ jobs:
         run: |
           main_sha="$(gh api "repos/$REPOSITORY/branches/main" --jq '.commit.sha')"
           test "$SHA" = "$main_sha" || {
-            echo "Release was superseded before Supabase mutation."
+            echo "Release was superseded before Supabase reconciliation."
             exit 1
           }
 
       - name: Prepare preserve-data compatibility expansion
+        if: needs.gate.outputs.schema_changed == 'true'
         run: pnpm schema:remote prepare
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
@@ -139,8 +140,17 @@ jobs:
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
           SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}
 
-      - name: Reconcile and verify remote schema without migration history
-        run: pnpm schema:remote sync --allow-destructive
+      - name: Safely reconcile changed declarative schema
+        if: needs.gate.outputs.schema_changed == 'true'
+        run: pnpm schema:remote sync
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+
+      - name: Verify unchanged declarative schema before publication
+        if: needs.gate.outputs.schema_changed != 'true'
+        run: pnpm schema:remote verify
         env:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -165,7 +175,7 @@ jobs:
     if: >-
       always() &&
       needs.gate.result == 'success' &&
-      (needs.supabase.result == 'success' || needs.supabase.result == 'skipped')
+      needs.supabase.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

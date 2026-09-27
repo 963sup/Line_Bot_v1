@@ -992,6 +992,7 @@ export async function main(argv = process.argv.slice(2)) {
       await verifyRemoteAcceptance();
       const apiReadback = api ? await verifySupabaseApiReadback() : undefined;
       const after = await migrationHistory();
+      writeFileSync(new URL("migration-history.after.txt", artifacts), `${after}\n`);
       assertMigrationHistoryUnchanged(before, after);
       console.log(
         `Remote verify PASS for ${projectRef}: schema drift = 0; ownership/security readback = PASS${
