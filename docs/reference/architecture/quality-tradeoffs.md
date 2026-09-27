@@ -1,6 +1,6 @@
 # Quality attributes
 
-本文件只保存會影響跨系統設計取捨的品質屬性。具體 lint、test、build 與工程檢查由 `060-engineering/` 擁有；沒有實測證據時不杜撰 latency、availability 或 capacity SLO。
+本文件只保存會影響跨系統設計取捨的品質屬性。具體 lint、test、build 與工程檢查由 [Engineering references](../engineering/) 擁有；沒有實測證據時不杜撰 latency、availability 或 capacity SLO。
 
 ## 優先順序
 
@@ -15,47 +15,9 @@
 
 這個排序不是「所有情境永遠相同」的企業 policy；它是目前 code / contract 已反覆保護的系統基線。若未來產品要求改變，應用明確 decision 更新，而不是在局部實作偷偷反轉優先級。
 
-## Repository design qualities
+## Repository design contract
 
-以下九項是 repository-level design contract。它們不是九套彼此獨立的規則，而是把 Ownership、Source of Truth、Boundary / Dependency、Validation 投影成可觀察的工程品質。詳細行為由各 canonical owner 維護；本節只定義跨系統判斷標準，不複製第二套 implementation rule。
-
-| Quality | Contract | Canonical owner / enforcement |
-| --- | --- | --- |
-| Single Responsibility | 一個 module 只擁有一個 coherent responsibility；不同 business authority、invariant 或 change reason 不塞進同一 owner。只有真實責任不同才拆 module，不為目錄對稱建立空 layer。 | [Module boundaries](../../rules/dependency-boundaries.md)、[Repository architecture](../../facts/sources-of-truth.md)、`architecture/semantic-model.json` + `architecture/implementation-topology.json` |
-| Dependency through Interface | Module 間只透過明確 public surface / port / contract 溝通；consumer 不依賴 private implementation、`dist`、testing-only surface 或 database row。 | [Dependency rules](../../rules/dependency-boundaries.md)、各 `package.json#exports`、architecture guards |
-| Change Isolation | 變更預設只修改真正 owner；只有 contract、consumer 或 cross-cutting invariant 真正受影響時才擴張 change surface。不得以順手重構、compatibility facade 或 alias 把局部變更擴散。 | [Code quality](../engineering/code-quality.md)、[Change routing](../README.md) |
-| Single Source of Truth | 同一項 business meaning、architecture fact、schema、public surface、command 或 runtime evidence 只由一個 authoritative source 維護；其他位置 summary + link / derive / enforce。 | [Repository map](../../facts/sources-of-truth.md)、`architecture/semantic-model.json`、`architecture/implementation-topology.json`、`docs/AGENTS.md`、machine owners |
-| Separation of Concerns | UI / delivery、business rule、application orchestration、data access、provider/runtime mechanism 依不同責任分離；Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 不互相代替。 | [Hexagonal architecture](hexagonal.md)、[Module boundaries](../../rules/dependency-boundaries.md)、[Repository map](../../facts/sources-of-truth.md) |
-| Explicit Boundary | 每個 owner 對外要能說清楚 responsibility、public surface、consumer、private implementation 與 authority/failure semantics；沒有真實 consumer 不擴大 export。 | [Module boundaries](../../rules/dependency-boundaries.md)、public exports、architecture guards |
-| Testability | Core business rule 與 deterministic invariant 能在不依賴 framework/provider 的情況下直接驗證；需要 transaction、locking、RLS 或 provider behavior 的 claim 使用相應 integration evidence，不用 mock 冒充。 | [Testing strategy](../engineering/testing.md) |
-| Reproducibility | 安裝、開發、檢查、完整驗證使用 manifest / lockfile / canonical command；本地與 CI 共用 repository command owner，不建立只在單一機器成立的隱性流程。 | [Local environment](../engineering/local-environment.md)、[Validation](../engineering/validation-pipeline.md)、root `package.json#scripts` |
-| Understandability | 同一 concept 維持單一名稱；path、owner、README routing、public contract 與 validation 位置可預測。陌生 developer / Agent 應能由 task 快速定位 Owner → Truth → Boundary → Change surface → Validation。 | [Change routing](../README.md)、[Repository architecture](../../facts/sources-of-truth.md)、[Code quality](../engineering/code-quality.md) |
-
-### Root-cause acceptance rule
-
-任何新增 module、package、public contract、shared abstraction 或 cross-owner dependency，至少必須能回答：
-
-1. **Owner**：它唯一負責什麼？既有 owner 為什麼不能承接？
-2. **Consumer**：哪個真實 consumer 現在需要它？
-3. **Contract**：consumer 真正需要的 public capability / data 是什麼？
-4. **Isolation**：修改 implementation 時，哪些其他 owner 不應被迫跟著改？
-5. **Truth**：哪一份 source 是 authoritative？其他文件／設定如何 reference 或 derive？
-6. **Validation**：哪個 executable check / test 能證明 boundary 與 behavior 沒壞？
-
-任一項沒有具體答案時，回到第一性原理與根因分析，不用 Delete / Merge / Simplify 來掩蓋 ambiguity；「未來可能」「比較乾淨」「看起來完整」本身不構成新增責任的證據。根因確認後，再用奧卡姆剃刀判斷哪些部分可以刪除、合併、重用或必須新增。
-
-## Architecture decision filter
-
-遇到兩個以上可行方案時，依序問：
-
-1. **第一性原理**：真正結果、硬約束與不可犧牲 invariant 是什麼？
-2. **高手思維**：repository 既有最佳解、外部 benchmark 與成功 pattern 怎麼處理同類責任？哪些只是表象，哪些可逆向為 principle？
-3. **根因**：當前痛點是 owner、truth、boundary、dependency、data、runtime 還是 validation 錯位？哪個 source 修正後會同時消除最多 symptom？
-4. **奧卡姆剃刀**：根因修正後，哪些 owner、state、network hop、storage、facade、cache、queue 或 failure mode 已沒有存在理由？
-5. **Dependency / contract**：consumer 真正需要哪些 capability，authority 是否仍留在 owner？
-6. **Validation / evidence**：哪個 test / guard / measurement 能證明根因已消失且 invariant 沒被削弱？
-
-「更通用」「更 enterprise」「將來容易 scale」不構成品質提升，除非有 workload、failure、consumer 或 maintenance evidence。
+Owner、Source of Truth、Boundary / Dependency 與 Validation 的 current rules 由 [repository change contract](../../../AGENTS.md)、[sources of truth](../../facts/sources-of-truth.md)、[dependency boundaries](../../rules/dependency-boundaries.md) 與 [code quality](../engineering/code-quality.md) 擁有。本文件不重述這些執行規則；只有真正改變跨系統取捨時才在此新增內容。
 
 ## Trade-offs
 

@@ -32,5 +32,5 @@ Rate limit 使用 atomic update + TTL，個別與 shared scope 可以分開。Re
 Repository probe `scripts/probes/check-redis.mjs` 會建立/刪除測試 key，屬外部操作，執行前確認環境與授權。
 
 - Cache / TTL semantics：[Cache and projections](../data/cache.md)
-- LINE webhook usage：`../010-line/030-messaging/webhook.md`
-- Production readiness：`../../090-governance/040-gaps/runtime-and-platform.md`
+- LINE webhook usage：[Webhook](../line/webhook.md)
+- Production readiness：[Runtime/platform gaps](../../change/gaps/runtime-and-platform.md)

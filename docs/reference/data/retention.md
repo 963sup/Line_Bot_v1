@@ -18,7 +18,7 @@
 | Recovery | restore 後如何重新套用停權、撤銷、刪除與版本狀態 |
 | Failure | 保存／刪除失敗如何明示與安全重試 |
 
-具體期限若尚未定案，放在 `090-governance/040-gaps/`，不要填假數字。
+具體期限若尚未定案，放在 [current gaps](../../change/gaps/)，不要填假數字。
 
 ## Historical business evidence
 
