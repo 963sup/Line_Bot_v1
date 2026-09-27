@@ -1,20 +1,18 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readAccountLogin, resolveAccountLogin } from "@line-work/account/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line-work/platform/adapters/postgres";
+import { businessDatabase, type Database } from "@line-work/platform/adapters/postgres";
 import type {
   IssueCommand,
   IssueIdentity,
   IssueSnapshot,
   IssueStore,
-  RepositorySelector,
 } from "../application/ports/issues.js";
+import type { RepositorySelector } from "../application/ports/selectors.js";
+import { type Issue, IssueError, type RepositoryCapability, transitionIssue } from "../domain.js";
 import {
-  type Issue,
-  IssueError,
-  type RepositoryCapability,
-  type RepositorySummary,
-  transitionIssue,
-} from "../domain.js";
+  accessibleRepositories,
+  repositoryScope,
+  resolveAuthorizedRepositoryId,
+} from "./postgres/access.js";
 
 type IssueRow = {
   id: string;
@@ -49,107 +47,6 @@ function issue(row: IssueRow): Issue {
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-async function repositories(sql: Sql, userId: string): Promise<RepositorySummary[]> {
-  const rows = (
-    await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
-       FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE a.user_id=$1
-       ORDER BY lower(r.name),r.id`,
-      [userId],
-    )
-  ).rows as Array<{
-    id: string;
-    owner_account_id: string;
-    owner_account_kind: "USER" | "ORGANIZATION";
-    name: string;
-    capability: RepositoryCapability;
-  }>;
-  const result: RepositorySummary[] = [];
-  for (const row of rows) {
-    const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
-    if (owner) {
-      result.push({
-        id: row.id,
-        ownerLogin: owner.login,
-        name: row.name,
-        capability: row.capability,
-      });
-    }
-  }
-  return result;
-}
-
-async function scope(sql: Sql, identity: IssueIdentity, repositoryId: string) {
-  const row = (
-    await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
-       FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE r.id=$1 AND a.user_id=$2`,
-      [repositoryId, identity.userId],
-    )
-  ).rows[0] as
-    | {
-        id: string;
-        owner_account_id: string;
-        owner_account_kind: "USER" | "ORGANIZATION";
-        name: string;
-        capability: RepositoryCapability;
-      }
-    | undefined;
-  if (!row) throw new IssueError(403, "沒有此 Repository 的存取權限。");
-  const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
-  if (!owner) throw new IssueError(409, "Repository owner locator 不可用。");
-  const access: RepositorySummary = {
-    id: row.id,
-    ownerLogin: owner.login,
-    name: row.name,
-    capability: row.capability,
-  };
-  const participants = (
-    await sql.query(
-      `SELECT user_id
-       FROM repository_effective_access
-       WHERE repository_id=$1
-       ORDER BY user_id`,
-      [repositoryId],
-    )
-  ).rows as Array<{ user_id: string }>;
-  return {
-    repository: access,
-    participants: participants.map((row) => ({
-      userId: row.user_id,
-      name: row.user_id,
-    })),
-  };
-}
-
-async function resolveRepositoryId(
-  sql: Sql,
-  identity: IssueIdentity,
-  selector: RepositorySelector,
-): Promise<string> {
-  if ("repositoryId" in selector) return selector.repositoryId;
-  const owner = await resolveAccountLogin(sql, selector.ownerLogin);
-  if (!owner) throw new IssueError(404, "找不到可存取的 Repository。");
-  const row = (
-    await sql.query(
-      `SELECT r.id
-       FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE r.owner_account_id=$1
-         AND r.owner_account_kind=$2
-         AND lower(r.name)=lower($3)
-         AND a.user_id=$4`,
-      [owner.id, owner.kind, selector.repositoryName, identity.userId],
-    )
-  ).rows[0] as { id: string } | undefined;
-  if (!row) throw new IssueError(404, "找不到可存取的 Repository。");
-  return row.id;
-}
-
 const writable = (capability: RepositoryCapability) =>
   capability === "write" || capability === "admin";
 
@@ -164,14 +61,14 @@ export class PostgresIssueStore implements IssueStore {
     page?: { after?: { at: number; id: string }; status?: string },
   ): Promise<IssueSnapshot> {
     return this.db.transaction(async (sql) => {
-      const available = await repositories(sql, who.userId);
+      const available = await accessibleRepositories(sql, who.userId);
       const selectedId = selector
-        ? await resolveRepositoryId(sql, who, selector)
+        ? await resolveAuthorizedRepositoryId(sql, who, selector)
         : available[0]?.id;
       if (!selectedId) {
         return { userId: who.userId, repositories: [], participants: [], issues: [], events: [] };
       }
-      const selected = await scope(sql, who, selectedId);
+      const selected = await repositoryScope(sql, who, selectedId);
       const rows = (
         await sql.query(
           `SELECT * FROM issues
@@ -234,9 +131,9 @@ export class PostgresIssueStore implements IssueStore {
     selector: RepositorySelector,
   ): Promise<IssueSnapshot> {
     return this.db.transaction(async (sql) => {
-      const repositoryId = await resolveRepositoryId(sql, who, selector);
-      const selected = await scope(sql, who, repositoryId);
-      const available = await repositories(sql, who.userId);
+      const repositoryId = await resolveAuthorizedRepositoryId(sql, who, selector);
+      const selected = await repositoryScope(sql, who, repositoryId);
+      const available = await accessibleRepositories(sql, who.userId);
       const row = (
         await sql.query("SELECT * FROM issues WHERE repository_id=$1 AND number=$2", [
           repositoryId,
@@ -269,7 +166,7 @@ export class PostgresIssueStore implements IssueStore {
   execute(who: IssueIdentity, command: IssueCommand, now: number): Promise<Issue> {
     const commandFingerprint = fingerprint(command);
     return this.db.transaction(async (sql) => {
-      const selected = await scope(sql, who, command.repositoryId);
+      const selected = await repositoryScope(sql, who, command.repositoryId);
       if (!writable(selected.repository.capability)) {
         throw new IssueError(403, "需要 Repository write 或 admin 權限。");
       }

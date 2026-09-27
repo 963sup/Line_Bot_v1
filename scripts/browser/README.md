@@ -17,6 +17,7 @@ pnpm test:browser
 | 腳本 | 主要範圍 |
 | --- | --- |
 | [check-navigation](check-navigation.mjs) | 列表／詳情、query、前進返回、直接開啟、初始化前接續、讀寫途中導覽 |
+| [check-repository-resources](check-repository-resources.mjs) | Repository Discussions／Labels／Milestones canonical URL、詳情、分頁、錯誤分類與換帳號清除 |
 | [check-membership](check-membership.mjs) | 註冊／恢復、Google 外部交接不載入 LIFF、原會員確認／取消、無效交接及遲到 profile |
 | [check-member-management](check-member-management.mjs) | 搜尋／分頁、停權、原命令重試與撤權 |
 | [check-partner-management](check-partner-management.mjs) | 名錄、管理、版本衝突、換帳號與未知結果 |

@@ -701,7 +701,8 @@
       "kind": "table",
       "path": "supabase/schemas/631_discussion_comments.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "repository",
+      "concept": "discussion-comment"
     },
     {
       "name": "projects",

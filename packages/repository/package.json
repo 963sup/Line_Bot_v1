@@ -16,6 +16,18 @@
       "types": "./dist/application/ports/issues.d.ts",
       "default": "./dist/application/ports/issues.js"
     },
+    "./application/resources": {
+      "types": "./dist/application/resources.d.ts",
+      "default": "./dist/application/resources.js"
+    },
+    "./application/ports/resources": {
+      "types": "./dist/application/ports/resources.d.ts",
+      "default": "./dist/application/ports/resources.js"
+    },
+    "./application/ports/selectors": {
+      "types": "./dist/application/ports/selectors.d.ts",
+      "default": "./dist/application/ports/selectors.js"
+    },
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
@@ -39,6 +51,10 @@
     "./adapters/postgres/public": {
       "types": "./dist/adapters/postgres/public.d.ts",
       "default": "./dist/adapters/postgres/public.js"
+    },
+    "./adapters/postgres/resources": {
+      "types": "./dist/adapters/postgres/resources.d.ts",
+      "default": "./dist/adapters/postgres/resources.js"
     }
   },
   "files": [

@@ -316,7 +316,7 @@
       "canonicalName": "Discussion",
       "kind": "authoritative",
       "owner": "repository",
-      "lifecycle": "current-data-only",
+      "lifecycle": "current",
       "definition": "Repository-scoped conversation distinct from Issue and Notification.",
       "benchmark": {
         "node": "discussion",
@@ -326,11 +326,25 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "discussion-comment",
+      "canonicalName": "Discussion Comment",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-owned comment that belongs to a Discussion and preserves conversation history without driving Issue lifecycle.",
+      "benchmark": {
+        "node": "discussion-comment",
+        "adoption": "conversation-comment-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "repository-label",
       "canonicalName": "Label",
       "kind": "authoritative",
       "owner": "repository",
-      "lifecycle": "current-data-only",
+      "lifecycle": "current",
       "definition": "Repository-owned classification metadata.",
       "benchmark": {
         "node": "label",
@@ -344,7 +358,7 @@
       "canonicalName": "Milestone",
       "kind": "authoritative",
       "owner": "repository",
-      "lifecycle": "current-data-only",
+      "lifecycle": "current",
       "definition": "Repository-scoped goal or checkpoint for work.",
       "benchmark": {
         "node": "milestone",
@@ -950,7 +964,7 @@
       "id": "manage-repository",
       "owner": "repository",
       "kind": "aggregate",
-      "intent": "Coordinate the Repository capability family without claiming every member has current runtime implementation.",
+      "intent": "Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -965,7 +979,10 @@
         "manage-issues",
         "manage-discussions",
         "manage-repository-labels",
-        "manage-repository-milestones"
+        "manage-repository-milestones",
+        "read-discussions",
+        "read-repository-labels",
+        "read-repository-milestones"
       ]
     },
     {
@@ -1050,17 +1067,143 @@
         "entrypoints": [
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
+          "apps/web/src/app/(app)/[login]/[repository]/issues/page.tsx",
           "apps/web/src/app/(app)/[login]/[repository]/issues/[issueNumber]/page.tsx"
         ],
-        "testPaths": ["packages/repository/test/issues.test.ts"],
+        "testPaths": [
+          "packages/repository/test/issues.test.ts",
+          "apps/web/test/repository-navigation.test.ts",
+          "apps/web/test/repository-pending-storage.test.ts"
+        ],
         "note": "Issue source/export evidence exists; command replay and version checks still need executed tests for proof."
+      }
+    },
+    {
+      "id": "read-discussions",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Discussion lists, a Discussion body, and its comments without asserting Discussion write management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Discussion read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/application/ports/resources.ts",
+          "packages/repository/src/adapters/postgres/resources.ts",
+          "packages/repository/src/adapters/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./application/ports/resources",
+          "./adapters/postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/discussions/route.ts",
+          "apps/web/src/app/api/discussions/[discussionId]/route.ts",
+          "apps/web/src/app/(app)/[login]/[repository]/discussions/page.tsx",
+          "apps/web/src/app/(app)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Read uses owner/name selector plus current user access through repository_effective_access; local Discussion id is opaque and is not the GitHub Discussion number. No write/manage Discussion use case is asserted."
+      }
+    },
+    {
+      "id": "read-repository-labels",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Label collections without asserting label create/update/delete management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Label read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/application/ports/resources.ts",
+          "packages/repository/src/adapters/postgres/resources.ts",
+          "packages/repository/src/adapters/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./application/ports/resources",
+          "./adapters/postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-labels/route.ts",
+          "apps/web/src/app/(app)/[login]/[repository]/labels/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Labels are read as Repository-owned classification metadata after current repository access resolution; collection URLs do not create an independent label locator identity."
+      }
+    },
+    {
+      "id": "read-repository-milestones",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Milestone lists and detail by repository-local number without asserting milestone write management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Milestone read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/application/ports/resources.ts",
+          "packages/repository/src/adapters/postgres/resources.ts",
+          "packages/repository/src/adapters/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./application/ports/resources",
+          "./adapters/postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-milestones/route.ts",
+          "apps/web/src/app/api/repository-milestones/[milestoneNumber]/route.ts",
+          "apps/web/src/app/(app)/[login]/[repository]/milestones/page.tsx",
+          "apps/web/src/app/(app)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Milestone number is repository-local and verified in schema/application input; write management remains separate and unasserted."
       }
     },
     {
       "id": "manage-discussions",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Preserve Repository Discussion semantics as current data without asserting an executable use case.",
+      "intent": "Preserve Repository Discussion create/update/close/comment write semantics as current data without asserting runtime management.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1076,14 +1219,14 @@
         "publicExports": [],
         "entrypoints": [],
         "testPaths": [],
-        "note": "Discussion is current-data-only: schema/topology evidence exists, but no public runtime use case is asserted."
+        "note": "Discussion schema/topology evidence exists and authorized read runtime is modeled by read-discussions; create/update/comment/close management is not asserted."
       }
     },
     {
       "id": "manage-repository-labels",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Preserve Repository Label semantics as current data without asserting an executable use case.",
+      "intent": "Preserve Repository Label create/update/delete semantics as current data without asserting runtime management.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1099,14 +1242,14 @@
         "publicExports": [],
         "entrypoints": [],
         "testPaths": [],
-        "note": "Repository Label is current-data-only: do not infer runtime management from schema presence."
+        "note": "Repository Label schema/topology evidence exists and authorized read runtime is modeled by read-repository-labels; create/update/delete management is not asserted."
       }
     },
     {
       "id": "manage-repository-milestones",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Preserve Repository Milestone semantics as current data without asserting an executable use case.",
+      "intent": "Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1122,7 +1265,7 @@
         "publicExports": [],
         "entrypoints": [],
         "testPaths": [],
-        "note": "Repository Milestone is current-data-only: do not infer runtime management from schema presence."
+        "note": "Repository Milestone schema/topology evidence exists and authorized read runtime is modeled by read-repository-milestones; create/update/close management is not asserted."
       }
     },
     {
@@ -1989,6 +2132,34 @@
       }
     },
     {
+      "id": "discussion-opaque-id",
+      "concept": "discussion",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "discussionId"],
+      "scope": "repository-scoped-local-discussion-id",
+      "routeFiles": [
+        "apps/web/src/app/(app)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+      ],
+      "note": "Discussion detail URL uses the local opaque DiscussionId. GitHub Discussion.number exists in FPT, but this product does not adopt it as the local Discussion locator."
+    },
+    {
+      "id": "repository-milestone-number",
+      "concept": "repository-milestone",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
+      "scope": "repository-scoped-milestone-number",
+      "routeFiles": [
+        "apps/web/src/app/(app)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+      ],
+      "note": "Repository Milestone number is scoped to Repository and remains separate from Project Milestone identity.",
+      "benchmark": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Milestone",
+        "field": "number"
+      }
+    },
+    {
       "id": "organization-team-slug",
       "concept": "team",
       "status": "active",
@@ -2025,13 +2196,6 @@
       "kind": "node",
       "status": "deferred",
       "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
-    },
-    {
-      "id": "discussion-comment",
-      "kind": "node",
-      "status": "adopted",
-      "reason": "Discussion comments are adopted as Repository-owned current data under the data-only Discussion capability; no runtime management use case is asserted.",
-      "capabilities": ["manage-discussions"]
     },
     {
       "id": "contributions-collection",
@@ -2177,10 +2341,12 @@
         "enterprise-slug",
         "repository-owner-name",
         "issue-number",
+        "discussion-opaque-id",
+        "repository-milestone-number",
         "organization-team-slug",
         "enterprise-team-slug"
       ],
-      "reason": "Product has explicit locator records tied to route files; URLs remain separate from authorization and stable identity."
+      "reason": "Product has explicit locator records tied to route files; collection URLs live on capability entrypoints, while detail locators remain separate from authorization and stable database identity."
     },
     {
       "id": "search-projection",
