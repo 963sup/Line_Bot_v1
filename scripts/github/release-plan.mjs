@@ -223,11 +223,8 @@ export async function planRelease({
 
   const schema = schemaChanged(supabaseFiles);
   const richMenu = richMenuChanged(richMenuFiles);
-  const hasPendingWebSource = deploymentFiles.some(
-    (file) => !publicationOnlyRichMenuSource(file),
-  );
-  const web =
-    hasPendingWebSource && turbo.webBuildAffected(deploymentBaseline, targetSha);
+  const hasPendingWebSource = deploymentFiles.some((file) => !publicationOnlyRichMenuSource(file));
+  const web = hasPendingWebSource && turbo.webBuildAffected(deploymentBaseline, targetSha);
 
   return {
     head_sha: targetSha,
