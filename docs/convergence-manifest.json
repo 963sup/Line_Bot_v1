@@ -202,6 +202,16 @@
         "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97"
       }
     },
+    "apps/web/src/app/(mobile)/AGENTS.md": {
+      "outcome": "keep",
+      "baselineBytes": 2656,
+      "maxBytes": 2656,
+      "contentBlob": "a1dc0f774613703ec6fc7c8dd55445738f2269b4",
+      "sources": {
+        "apps/web/src/app/AGENTS.md": "5d42de6b1169b1546709803b2e340300e22edbf7",
+        "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97"
+      }
+    },
     "apps/web/src/app/AGENTS.md": {
       "outcome": "keep",
       "baselineBytes": 3010,
@@ -232,6 +242,51 @@
       "contentBlob": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9",
       "sources": {
         "AGENTS.md": "e3a7dba1b9c2e084aed400d05f19684079cb691a"
+      }
+    },
+    "docs/change/decisions/account-identity-design.md": {
+      "outcome": "distilled",
+      "baselineBytes": 5548,
+      "maxBytes": 3572,
+      "contentBlob": "fd11ac4fbea8006e684710b9b39a56e9ad35a59c",
+      "sources": {
+        "docs/owners/account.md": "75654cd2b32a3a6669bfca1e0e1cab51e4ab04ee",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92"
+      }
+    },
+    "docs/change/decisions/enterprise-target-design.md": {
+      "outcome": "distilled",
+      "baselineBytes": 6490,
+      "maxBytes": 2974,
+      "contentBlob": "5098180748ef99cd912a4dbf6c9e57176c987b02",
+      "sources": {
+        "docs/owners/enterprise.md": "7f6e24f89980b6f4577f02a51081291caf9853a0",
+        "docs/owners/organization.md": "f09dfb80ac45d6ce1d3ffb9f98054c47ab757216",
+        "docs/owners/team.md": "41fd24cf99265e2bfec9683f233b809748955d78",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/decisions/organization-target-design.md": {
+      "outcome": "distilled",
+      "baselineBytes": 6074,
+      "maxBytes": 3107,
+      "contentBlob": "6859f0fb399367e6dd56126f24c07657c9667498",
+      "sources": {
+        "docs/owners/organization.md": "f09dfb80ac45d6ce1d3ffb9f98054c47ab757216",
+        "docs/owners/enterprise.md": "7f6e24f89980b6f4577f02a51081291caf9853a0",
+        "docs/owners/team.md": "41fd24cf99265e2bfec9683f233b809748955d78",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8",
+        "docs/rules/system-invariants.md": "8ae9f7429484ac070b175e3e554424575eeada92"
+      }
+    },
+    "docs/change/decisions/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1032,
+      "maxBytes": 1032,
+      "contentBlob": "d55b72d42a7c6abc1e940b24b8c1c4c183d68b8f",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
       }
     },
     "docs/facts/sources-of-truth.md": {
