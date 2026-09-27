@@ -370,6 +370,115 @@
       "contentBlob": "630abc5383d13d0be65a215e311476d58824a3f3",
       "sources": {}
     },
+    "docs/change/gaps/account-lifecycle-and-identity.md": {
+      "outcome": "distilled",
+      "baselineBytes": 2743,
+      "maxBytes": 1733,
+      "contentBlob": "0cf90842b2e403606e89efc93088c2aa236f99d3",
+      "sources": {
+        "docs/owners/account.md": "75654cd2b32a3a6669bfca1e0e1cab51e4ab04ee",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/gaps/admin-workspace.md": {
+      "outcome": "keep",
+      "baselineBytes": 1950,
+      "maxBytes": 1950,
+      "contentBlob": "18d5400185a02d1dd9729a20320a07c534612dc0",
+      "sources": {
+        "docs/reference/runtime/routes.md": "346d8d51d5af26b0870e471c3f51481abd816e97",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/gaps/enterprise-and-organization.md": {
+      "outcome": "keep",
+      "baselineBytes": 2487,
+      "maxBytes": 2487,
+      "contentBlob": "52a018a974d8f20e2fb1dac264a9e152f0eb76f1",
+      "sources": {
+        "docs/owners/enterprise.md": "7f6e24f89980b6f4577f02a51081291caf9853a0",
+        "docs/owners/organization.md": "f09dfb80ac45d6ce1d3ffb9f98054c47ab757216",
+        "docs/owners/team.md": "41fd24cf99265e2bfec9683f233b809748955d78",
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/gaps/external-workflows.md": {
+      "outcome": "keep",
+      "baselineBytes": 2426,
+      "maxBytes": 2426,
+      "contentBlob": "ccc195a87443dd2afe7dfd820cf4b83ce18f28da",
+      "sources": {
+        "docs/owners/line-integration.md": "b56448cd7ccd2a708bf0096b3a1765c2652eb567",
+        "docs/owners/expense.md": "5271120323d3551a9481f220b3827ca24fb08d9e",
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5"
+      }
+    },
+    "docs/change/gaps/google-workspace.md": {
+      "outcome": "distilled",
+      "baselineBytes": 1381,
+      "maxBytes": 1243,
+      "contentBlob": "8366db27a43469bd4e586551eeb37ef57fcf2885",
+      "sources": {
+        "docs/owners/google-workspace.md": "3cf505bf1f3e0fe2c7a17173f20be0f2fe32ed76",
+        "docs/reference/platform/google-workspace.md": "89a1564d45f8fb718a909ac33d10b751f0fd7e19"
+      }
+    },
+    "docs/change/gaps/line-and-module-release.md": {
+      "outcome": "keep",
+      "baselineBytes": 2258,
+      "maxBytes": 2258,
+      "contentBlob": "8b205a59606dba633a53b82f6505a83ced6afb66",
+      "sources": {
+        "docs/owners/line-integration.md": "b56448cd7ccd2a708bf0096b3a1765c2652eb567",
+        "docs/owners/repository.md": "562d2e9e8b2eb60b4329b92e112808c47c702762",
+        "docs/owners/notifications.md": "38e2e84d844c87e3a02c8d8311d335fddc8855de",
+        "docs/owners/partners.md": "aa373328bbebd73bf40d05286d5ba84e96687067"
+      }
+    },
+    "docs/change/gaps/payroll.md": {
+      "outcome": "distilled",
+      "baselineBytes": 4374,
+      "maxBytes": 2622,
+      "contentBlob": "93a96d80f40a829837604b3d9b2233974229d714",
+      "sources": {
+        "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/gaps/README.md": {
+      "outcome": "keep",
+      "baselineBytes": 1689,
+      "maxBytes": 1689,
+      "contentBlob": "eaf390e6e2aa93f4972e19c6c7636dd2724aec21",
+      "sources": {
+        "docs/AGENTS.md": "f0e25bc1e9b8a8edae6a16c8c6373d70e3a46ec9"
+      }
+    },
+    "docs/change/gaps/runtime-and-platform.md": {
+      "outcome": "keep",
+      "baselineBytes": 2817,
+      "maxBytes": 2817,
+      "contentBlob": "649a8797b4f1884cba0ecae7dc26257a549bf137",
+      "sources": {
+        "docs/owners/platform.md": "2d919702426f8cf7c226944dd715c69b20bc27ff",
+        "docs/owners/account.md": "75654cd2b32a3a6669bfca1e0e1cab51e4ab04ee",
+        "docs/owners/team.md": "41fd24cf99265e2bfec9683f233b809748955d78",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
+    "docs/change/gaps/workforce.md": {
+      "outcome": "keep",
+      "baselineBytes": 2315,
+      "maxBytes": 2315,
+      "contentBlob": "372e3748dc54974eff82168d99061cece5529dca",
+      "sources": {
+        "docs/owners/workforce.md": "99d847ddf266674fc9853fa7e345590a861d79c5",
+        "docs/owners/attendance.md": "6ab6a7c7f1cb6f54f3014dc385eafaa9c29df304",
+        "docs/owners/payroll.md": "92214cd6a36820de4f49defceb11a19eac94fdc3",
+        "architecture/semantic-model.json": "7d08e8ad728db76ee0db86f1d41744b08e0e56f8"
+      }
+    },
     "docs/facts/sources-of-truth.md": {
       "outcome": "keep",
       "baselineBytes": 1200,
