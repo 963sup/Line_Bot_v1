@@ -6,12 +6,12 @@
 
 正式素材共六張：
 
-- `work-assistant-attendance-in.png`
-- `work-assistant-attendance-out.png`
-- `work-assistant-team.png`
-- `work-assistant-forms.png`
-- `work-assistant-notifications.png`
-- `work-assistant-incident.png`
+- `line_bot_v1-attendance-in.png`
+- `line_bot_v1-attendance-out.png`
+- `line_bot_v1-team.png`
+- `line_bot_v1-forms.png`
+- `line_bot_v1-notifications.png`
+- `line_bot_v1-incident.png`
 
 `home` 與 `attendance-in` 共用 attendance-in 圖片；四類子選單的基本／`-out` 狀態各自共用同一張 PNG。Repository 由主選單 URI 直接開啟既有工作面，不建立額外 submenu；四類子選單各有基本／`-out` 狀態，加上 `home`／`attendance-in`／`attendance-out`，共十一份 menu configuration。
 ## 出勤 menu state
@@ -19,9 +19,9 @@ Rich Menu 目前區分 `attendance-in` 與 `attendance-out` 主狀態及其對�
 
 個人綁定優先於 default，但它屬於 Attendance runtime responsibility，不是 Rich Menu publication responsibility。Rich Menu publication只證明 LINE menu definition／alias／default；Attendance maintenance 會週期性比較目前 alias target 與 per-user binding，只有不一致時才重新 link，再以 provider readback 驗證。如此 Rich Menu 換版後，既有 per-user binding 也會由同一 reconciliation loop 收斂。
 ## Alias
-Alias 使用 `work-assistant-<page>`；實際 menu definition、圖片尺寸與點擊範圍是發布 source。Repository desired state 不證明 LINE remote state 已同步；publication 必須以 LINE readback 作部署證據。
+Alias 使用 `line_bot_v1-<page>`；實際 menu definition、圖片尺寸與點擊範圍是發布 source。Repository desired state 不證明 LINE remote state 已同步；publication 必須以 LINE readback 作部署證據。
 
-`work-assistant-tasks` 與 `work-assistant-tasks-out` 是退役 aliases。Publication 先完成新 aliases/default 與 readback，再移除退役 aliases；Attendance 個人 binding 不參與這個 release transaction。
+pre-Line_Bot_v1 tasks／announcements aliases 已退役。Publication 先完成新 aliases/default 與 readback，再移除退役 aliases；Attendance 個人 binding 不參與這個 release transaction。
 ## Repository operation
 從 repository 根目錄只使用 `package.json` 的 canonical entry：
 

@@ -719,9 +719,9 @@
     },
     "docs/reference/line/rich-menu.md": {
       "outcome": "updated",
-      "baselineBytes": 6495,
-      "maxBytes": 6487,
-      "contentBlob": "c290c7490ee66683378d22466cba66274cbe14a6",
+      "baselineBytes": 6487,
+      "maxBytes": 6450,
+      "contentBlob": "68fdb1179e94853e8c2b467c3baa7433dd343262",
       "sources": {}
     },
     "docs/reference/line/webhook.md": {
