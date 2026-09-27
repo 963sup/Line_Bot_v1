@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
+import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 import { loginDirectory, profiles, publicUserByLogin } from "../../api/_composition/account.server";
+import ProfileSettingsAction from "../_components/profile-settings-action";
 import ProfileShare from "../_components/profile-share";
 import { publicOrganizations } from "../_composition/directory.server";
 import { publicRepositories } from "../_composition/repository.server";
@@ -93,7 +95,12 @@ export default async function Page({ params }: { params: Promise<{ login: string
         <PageHeading
           title={profile?.displayName ?? `@${user.login}`}
           description={`@${user.login}`}
-          actions={<ProfileShare />}
+          actions={
+            <div className="inline-actions">
+              <ProfileShare />
+              <ProfileSettingsAction liffId={lineMiniApp().liffId} profileLogin={user.login} />
+            </div>
+          }
         />
       </div>
       {profile?.bio && <p>{profile.bio}</p>}

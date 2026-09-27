@@ -23,12 +23,12 @@ It does not own business truth, authorization, persistence, package boundaries, 
 - Mobile navigation, resource navigation, and same-page view state are separate layers.
 - Page/layout code performs delivery/composition only; it does not duplicate owner use cases.
 - Direct open, refresh, soft navigation, and back must converge on the same authoritative query/command semantics.
-- Do not invent Favorites, saved Shortcuts, Recent activity, Trending, Templates, Activity feed, cross-Repository Issue/Discussion feeds, or Project runtime capability without a selected owner and real contract.
+- Home current information architecture is `My Work → Favorites → Shortcuts → Recent`. `Issues` / `Discussions` are Repository selector gateways into canonical scoped resources, never cross-Repository feeds. `Projects` remains a target-only disabled row until a real Project runtime contract exists. `Favorites` reuses Repository Star projection. `Shortcuts` is a fixed presentation list of existing routes, not saved shortcut persistence. `Recent` has no current owner/runtime projection and therefore renders only an explicit empty state; do not synthesize it from browser history, localStorage, notifications or unrelated activity.
 - `/repositories` is the current viewer's authorized Repository collection; it does not alias IssueBoard. Repository subresources stay under canonical `/{login}/{repository}/...`.
 - `/settings` is viewer Account configuration only; Enterprise, Organization, Team, operational utilities and Admin keep their own owner surfaces instead of being grouped under Settings.
 - `/home/assistant` is compatibility-only and redirects to canonical `/assistant`.
 - AppShell owns the shared skip target, content frame, and Bottom Navigation only; page-specific headings/actions stay with their destination instead of becoming global shell chrome.
-- Home alone renders the Account/Profile avatar in its header. It resolves the current Account-owned login through the trusted membership projection and links to canonical `/{login}`; Inbox, Explore, AI, resource/work pages do not repeat it. `/settings` remains viewer configuration, not User identity.
+- Home alone renders the Account/Profile avatar in its header. It resolves the current Account-owned login through the trusted membership projection and links to canonical `/{login}`; Inbox, Explore, AI, resource/work pages do not repeat it. On a canonical User Profile, a Settings gear is visible only when trusted current membership login equals that Profile login; it links to `/settings`. `/settings` remains viewer configuration, not User identity or a Governance hub.
 
 - `/daily-check-in` is the authenticated DailyCheckIn presentation surface. It is secondary navigation from Home, not a global tab and not part of Settings.
 

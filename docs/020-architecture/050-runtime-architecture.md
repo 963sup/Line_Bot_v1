@@ -80,7 +80,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 
 | Route | Owner responsibility |
 | --- | --- |
-| `/home` | 工作台組裝；不擁有各 module 規則 |
+| `/home` | 工作台組裝；current IA = My Work / Favorites / Shortcuts / Recent。Issues/Discussions先選 Repository再進 canonical scoped route；Projects無 runtime時只顯示 target；Favorites重用 Star；Shortcuts不持久化；Recent無 owner時不造資料 |
 | `/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write；`/home/assistant` 為 compatibility redirect |
 | `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
@@ -101,7 +101,7 @@ Worker／cron／outbox 只執行 durable source 建立的待辦；外部 callbac
 | `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
 | `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
 | `/history` | 工作紀錄入口 |
-| `/{login}` | canonical User / Organization locator；Home header 的 Account/Profile avatar 只有在 Account-owned current login 已解析時才導向此 locator；其他工作目的地不重複顯示 avatar |
+| `/{login}` | canonical User / Organization locator；Home header 的 Account/Profile avatar 只有在 Account-owned current login 已解析時才導向此 locator；viewer自己的 User Profile才可顯示 Settings齒輪，依 trusted membership login與 route login一致性判斷；其他工作目的地不重複顯示 avatar |
 | `/settings`, `/settings/profile`, `/settings/network`, `/settings/permissions` | authenticated viewer 的 Account/Profile/Follow/Permission command/configuration surfaces；不是第二個 User resource locator |
 | `/feedback`, `/planned` | 只有明確定義的功能或「未開放」結果；不得產生假資料 |
 

@@ -551,6 +551,23 @@ footer {
   object-fit: cover;
 }
 
+.profile-settings-action {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: var(--surface);
+  text-decoration: none;
+}
+
+.profile-settings-action:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
 .app-shell .app-content {
   max-width: 640px;
   margin: 0 auto;
@@ -753,6 +770,21 @@ footer {
   color: #7b9085;
   font-size: 24px;
   line-height: 1;
+}
+
+.action-row-disabled {
+  cursor: default;
+  background: var(--surface-muted);
+}
+
+.action-row-status {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e8efe5;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .menu-group {

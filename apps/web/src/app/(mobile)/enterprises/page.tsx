@@ -9,7 +9,7 @@ export default function Page() {
       <PageHeading
         title="企業管理"
         description="建立、查看與治理 Enterprise；停用、退出與關係操作依目前責任顯示。"
-        back="/settings"
+        back="/home"
       />
       <EnterprisePanel liffId={lineMiniApp().liffId} />
     </AppShell>

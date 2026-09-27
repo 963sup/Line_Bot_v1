@@ -50,6 +50,7 @@ Repository-owned remote commands：
 ```sh
 pnpm schema:remote prepare
 pnpm schema:remote plan
+pnpm schema:remote recovery
 pnpm schema:remote sync
 pnpm schema:remote verify
 pnpm schema:remote verify --api
@@ -58,10 +59,13 @@ pnpm schema:remote verify --api
 `prepare` 只供 **preserve-data destructive cutover 前置**。它不 drop table/column/function、不改
 migration history，也不把 target constraint 降級。它會在單一 transaction 內鎖定相關 authority
 relations、確認 legacy source 是否可安全搬移，建立 current runtime 必須先存在的 additive
-surface，並 read back。若既有資料需要不可推導的新 business metadata，必須由 operator 以
-`SUPABASE_ENTERPRISE_METADATA_BACKFILL` 提供 explicit mapping；script 只接受 exact
-`accountId/name/slug` JSON，不能從 UUID、display text、歷史 UI 或 provider state猜值。
-任何 non-empty legacy owner data沒有明確 migration rule時都 fail closed。
+surface，並 read back。Automatic Release 不取得不可推導的 owner business metadata；若 remote
+恰好有一筆 legacy Enterprise 缺 current `name` / `slug`，automatic `prepare` 會 fail closed，
+改由 manual reconciliation 的 `legacy_enterprise_name` / `legacy_enterprise_slug` explicit
+inputs 提供。Script 在 transaction lock 內自行讀取唯一 unresolved remote Enterprise 並綁定 stable
+account ID；operator 不輸入 production account ID，也不能從 UUID、login、display text、歷史 UI
+或 provider state 猜值。若 unresolved Enterprise 不是恰好一筆，就要求另外的 explicit multi-row
+owner migration，不把一次性案例擴成通用 mapping surface。
 
 `plan` 從 declarative schemas 重建 clean local target，再比較 exact remote
 `app_private`。Normal `sync` 會在同一程序完成 initial plan、apply、second diff
@@ -102,9 +106,9 @@ Automatic Release 的 plain `sync` 不帶 `--allow-manual`；若 plan 分類為 
 
 ### Manual Supabase Reconciliation
 
-Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql` 與 `plan.sha256` 給 operator review；`apply` 額外要求 recovery-readiness attestation、explicit apply confirmation 與 reviewed SHA-256，然後重新 prepare、重新產生 current plan，只有 fingerprint 完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback 與 retained evidence。
+Manual plan 只由 `supabase-replace.yml` 的 `prepare-plan` / `apply` workflow 授權。它固定 target `nmssogphayjymjpbnrxv`、要求 exact current `main` 與 repository validation。`prepare-plan` 先執行 preserve-data additive prepare，再產生 `plan.sql`、`plan.sha256` 與 `plan-provenance.json` 給 operator review；provenance 固定 target project、source SHA、workflow run ID、plan SHA-256 與 Enterprise owner-confirmed `name/slug` 的 identity fingerprint。`apply` 必須使用同一 owner-confirmed identity，並額外要求 successful prepare-plan run ID、recovery-readiness attestation、explicit apply confirmation 與 reviewed SHA-256。Apply 在任何 destructive write 前先執行 `schema:remote recovery`，用 `SUPABASE_ACCESS_TOKEN` 從 Supabase Management API read back recovery capability；只有 PITR+WALG 或至少一筆 completed managed backup才通過，結果寫入 `recovery-readback.json`。Workflow 再從 GitHub Actions API讀回同一 current source SHA 的 prepare-plan artifact，驗 source/run/plan/identity fingerprint完全一致後才重新 prepare、重新產生 current plan；只有 fingerprint 仍完全一致才執行 `sync --allow-manual`，最後完成 second diff、acceptance readback與 retained `manual-authorization.json`，其 authorization綁定 recovery readback hash。
 
-`prepare` 成功不代表 manual contract 已完成；`sync --allow-manual` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation，不冒充 Supabase provider backup/PITR readback。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
+`prepare` 成功不代表 manual contract 已完成；`sync --allow-manual` 成功也不代表 deployment/device/business acceptance。Recovery confirmation 是 operator attestation；provider recovery 必須由 `schema:remote recovery` machine readback。Free plan若沒有 managed backup/PITR會 fail closed，不以文字 reference、GitHub artifact或同一 Supabase project內的 Storage 假裝 off-site recovery。Manual reconciliation 只修 database contract，不取得 Web deployment ownership；完成後由 Release 對 exact validated SHA 執行 production deployment。
 兩條 path 都由
 `scripts/supabase/remote.mjs` 擁有 reconciliation semantics，不新增 migration file，也不改寫
 `supabase_migrations.schema_migrations`。

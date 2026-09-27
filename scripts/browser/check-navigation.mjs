@@ -174,6 +174,25 @@ async function run() {
       page.getByRole("link", { name: "Search repositories", exact: true }),
     ).toHaveAttribute("href", "/search");
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
+    for (const section of ["My Work", "Favorites", "Shortcuts", "Recent"]) {
+      await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
+    }
+    await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute(
+      "href",
+      "/repositories?resource=issues",
+    );
+    await expect(page.getByRole("link", { name: /Discussions/ })).toHaveAttribute(
+      "href",
+      "/repositories?resource=discussions",
+    );
+    await expect(page.getByRole("link", { name: /Organizations/ })).toHaveAttribute(
+      "href",
+      "/organizations",
+    );
+    await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute("href", "#favorites");
+    await expect(page.getByText("Projects", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Projects/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Settings/ })).toHaveCount(0);
     await page.locator('summary[aria-label="Create"]').click();
     await expect(page.getByRole("link", { name: /Create Issue/ })).toHaveAttribute(
       "href",
@@ -198,6 +217,20 @@ async function run() {
     await expect(page).toHaveURL(`${base}/acme/Operations/issues?create=1`);
     await expect(page.getByRole("button", { name: "收起建立表單", exact: true })).toBeVisible();
     await expect(page.getByLabel("標題", { exact: true })).toBeVisible();
+
+    await page.goto(`${base}/repositories?resource=issues`);
+    await page.getByRole("heading", { name: "Choose Repository", exact: true }).waitFor();
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations/issues",
+    );
+
+    await page.goto(`${base}/repositories?resource=discussions`);
+    await page.getByRole("heading", { name: "Choose Repository", exact: true }).waitFor();
+    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
+      "href",
+      "/acme/Operations/discussions",
+    );
 
     await page.goto(`${base}/repositories`);
     await page.getByRole("heading", { name: "Repositories", exact: true }).waitFor();
@@ -238,7 +271,7 @@ async function run() {
       });
     }
     console.log(
-      "PASS: Repository/Issue and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
+      "PASS: Home IA, scoped Repository resource gateways, Repository/Issue and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
     );
   } finally {
     if (artifactDir) await context.tracing.stop({ path: path.join(artifactDir, "trace.zip") });

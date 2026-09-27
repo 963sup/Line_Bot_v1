@@ -7,6 +7,7 @@ import {
   assertMigrationHistoryUnchanged,
   assertRemoteTarget,
   assertReviewedPlan,
+  assertSupabaseRecoveryReadback,
   assertSupabaseRestReadback,
   classifyAccountLoginCompatibility,
   classifyDailyCheckInCompatibility,
@@ -16,13 +17,16 @@ import {
   governanceCompatibilityAccessSql,
   governanceCompatibilityFunctionSql,
   parseArgs,
-  parseEnterpriseMetadataBackfill,
+  parseLegacyEnterpriseMetadata,
   permissionNamesFromSource,
   permissionSubjectVersionExpansionSql,
   planFingerprint,
   projectRefFromSupabaseUrl,
+  resolveLegacyEnterpriseMetadata,
   supabaseApiReadbackConfig,
+  supabaseManagementRecoveryConfig,
   verifySupabaseApiReadback,
+  verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
 
 test("classifyPlan allows only known automatic DDL", () => {
@@ -112,6 +116,11 @@ test("parseArgs defaults to sync and exposes one explicit manual authorization f
     api: false,
   });
   assert.deepEqual(parseArgs(["plan"]), { command: "plan", allowManual: false, api: false });
+  assert.deepEqual(parseArgs(["recovery"]), {
+    command: "recovery",
+    allowManual: false,
+    api: false,
+  });
   assert.deepEqual(parseArgs(["sync", "--allow-manual"]), {
     command: "sync",
     allowManual: true,
@@ -166,6 +175,128 @@ test("Supabase API readback config is explicit and same-target", () => {
       }),
     /SUPABASE_URL/,
   );
+});
+
+test("Supabase recovery config binds Management API access to the confirmed project", () => {
+  assert.deepEqual(
+    supabaseManagementRecoveryConfig({
+      SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+      SUPABASE_CONFIRM_PROJECT: "nmssogphayjymjpbnrxv",
+      SUPABASE_ACCESS_TOKEN: "management-token",
+    }),
+    {
+      projectRef: "nmssogphayjymjpbnrxv",
+      accessToken: "management-token",
+    },
+  );
+  assert.throws(
+    () =>
+      supabaseManagementRecoveryConfig({
+        SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+        SUPABASE_CONFIRM_PROJECT: "nmssogphayjymjpbnrxv",
+      }),
+    /SUPABASE_ACCESS_TOKEN/,
+  );
+  assert.throws(
+    () =>
+      supabaseManagementRecoveryConfig({
+        SUPABASE_URL: "https://nmssogphayjymjpbnrxv.supabase.co",
+        SUPABASE_CONFIRM_PROJECT: "other",
+        SUPABASE_ACCESS_TOKEN: "management-token",
+      }),
+    /exactly match/,
+  );
+});
+
+test("Supabase recovery readback accepts PITR/WALG or a completed managed backup", () => {
+  assert.deepEqual(
+    assertSupabaseRecoveryReadback({
+      pitr_enabled: true,
+      walg_enabled: true,
+      backups: [],
+    }),
+    {
+      provider: "supabase",
+      pitrEnabled: true,
+      walgEnabled: true,
+      completedBackupCount: 0,
+      latestCompletedBackupAt: null,
+      latestCompletedBackupPhysical: null,
+    },
+  );
+
+  assert.deepEqual(
+    assertSupabaseRecoveryReadback({
+      pitr_enabled: false,
+      walg_enabled: false,
+      backups: [
+        {
+          status: "COMPLETED",
+          inserted_at: "2026-09-25T12:00:00Z",
+          is_physical_backup: true,
+        },
+        {
+          status: "FAILED",
+          inserted_at: "2026-09-26T12:00:00Z",
+          is_physical_backup: true,
+        },
+      ],
+    }),
+    {
+      provider: "supabase",
+      pitrEnabled: false,
+      walgEnabled: false,
+      completedBackupCount: 1,
+      latestCompletedBackupAt: "2026-09-25T12:00:00Z",
+      latestCompletedBackupPhysical: true,
+    },
+  );
+
+  assert.throws(
+    () =>
+      assertSupabaseRecoveryReadback({
+        pitr_enabled: false,
+        walg_enabled: false,
+        backups: [],
+      }),
+    /recovery is unavailable/i,
+  );
+  assert.throws(() => assertSupabaseRecoveryReadback({}), /unexpected response/i);
+});
+
+test("Supabase recovery readback calls the exact Management API target without leaking token", async () => {
+  const calls = [];
+  const result = await verifySupabaseRecoveryReadback(
+    { projectRef: "nmssogphayjymjpbnrxv", accessToken: "management-token" },
+    async (url, options) => {
+      calls.push({
+        url,
+        authorization: options.headers.Authorization,
+        hasSignal: Boolean(options.signal),
+      });
+      return Response.json({
+        pitr_enabled: false,
+        walg_enabled: false,
+        backups: [
+          {
+            status: "COMPLETED",
+            inserted_at: "2026-09-25T12:00:00Z",
+            is_physical_backup: false,
+          },
+        ],
+      });
+    },
+  );
+
+  assert.deepEqual(calls, [
+    {
+      url: "https://api.supabase.com/v1/projects/nmssogphayjymjpbnrxv/database/backups",
+      authorization: "Bearer management-token",
+      hasSignal: true,
+    },
+  ]);
+  assert.equal(result.projectRef, "nmssogphayjymjpbnrxv");
+  assert.equal(result.completedBackupCount, 1);
 });
 
 test("Supabase REST readback treats Google provider state as diagnostic evidence", () => {
@@ -348,24 +479,20 @@ test("DailyCheckIn compatibility distinguishes missing, ready and partial state"
   );
 });
 
-test("Enterprise metadata backfill is explicit, exact, and bounded", () => {
-  assert.deepEqual(parseEnterpriseMetadataBackfill(""), []);
-  assert.deepEqual(
-    parseEnterpriseMetadataBackfill(
-      JSON.stringify([{ accountId: "enterprise-1", name: "Operations", slug: "operations" }]),
-    ),
-    [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
-  );
-  for (const value of [
-    "{}",
-    JSON.stringify([{ accountId: "enterprise-1", name: "Operations", slug: "Operations" }]),
-    JSON.stringify([{ accountId: "enterprise-1", name: "Operations", slug: "ops", extra: true }]),
-    JSON.stringify([
-      { accountId: "enterprise-1", name: "Operations", slug: "ops" },
-      { accountId: "enterprise-2", name: "Other", slug: "ops" },
-    ]),
+test("legacy Enterprise cutover input is explicit, exact, and bounded", () => {
+  assert.equal(parseLegacyEnterpriseMetadata("", ""), null);
+  assert.deepEqual(parseLegacyEnterpriseMetadata("Operations", "operations"), {
+    name: "Operations",
+    slug: "operations",
+  });
+  for (const [name, slug] of [
+    ["", "operations"],
+    ["Operations", ""],
+    [" Operations", "operations"],
+    ["Operations", "Operations"],
+    ["Operations", "invalid slug"],
   ]) {
-    assert.throws(() => parseEnterpriseMetadataBackfill(value), /backfill|slug|array|entries/i);
+    assert.throws(() => parseLegacyEnterpriseMetadata(name, slug), /name|slug|both/i);
   }
 });
 
@@ -428,48 +555,61 @@ function expansionState(overrides = {}) {
   };
 }
 
-test("general-management prepare accepts only evidence-complete preservable state", () => {
-  assert.doesNotThrow(() =>
-    assertGeneralManagementExpansionState(expansionState(), [
-      { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-    ]),
+test("general-management prepare rejects unsupported legacy state before metadata binding", () => {
+  assert.doesNotThrow(() => assertGeneralManagementExpansionState(expansionState()));
+  assert.throws(
+    () => assertGeneralManagementExpansionState(expansionState({ projectIssueReferences: 1 })),
+    /explicit owner migration/i,
+  );
+});
+
+test("legacy Enterprise metadata binds only to one unresolved remote Enterprise", () => {
+  const input = { name: "Operations", slug: "operations" };
+
+  assert.throws(
+    () => resolveLegacyEnterpriseMetadata(expansionState(), null),
+    /explicit Enterprise name and slug/i,
+  );
+  assert.deepEqual(resolveLegacyEnterpriseMetadata(expansionState(), input), [
+    { accountId: "enterprise-1", name: "Operations", slug: "operations" },
+  ]);
+
+  assert.throws(
+    () =>
+      resolveLegacyEnterpriseMetadata(
+        expansionState({
+          enterpriseRows: [
+            { accountId: "enterprise-1", name: null, slug: null },
+            { accountId: "enterprise-2", name: null, slug: null },
+          ],
+        }),
+        input,
+      ),
+    /multi-row owner migration/i,
   );
 
   assert.throws(
     () =>
-      assertGeneralManagementExpansionState(expansionState({ projectIssueReferences: 1 }), [
-        { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-      ]),
-    /explicit owner migration/i,
-  );
-  assert.throws(
-    () => assertGeneralManagementExpansionState(expansionState(), []),
-    /missing required Enterprise metadata/i,
-  );
-  assert.throws(
-    () =>
-      assertGeneralManagementExpansionState(expansionState(), [
-        { accountId: "enterprise-1", name: "Operations", slug: "operations" },
-        { accountId: "enterprise-2", name: "Other", slug: "other" },
-      ]),
-    /unknown Enterprise/i,
-  );
-  assert.throws(
-    () =>
-      assertGeneralManagementExpansionState(
+      resolveLegacyEnterpriseMetadata(
         expansionState({
           enterpriseRows: [{ accountId: "enterprise-1", name: "Existing", slug: null }],
         }),
-        [{ accountId: "enterprise-1", name: "Different", slug: "operations" }],
+        input,
       ),
     /conflicts/i,
   );
-  assert.doesNotThrow(() =>
-    assertGeneralManagementExpansionState(
-      expansionState({
-        enterpriseRows: [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
+
+  const current = expansionState({
+    enterpriseRows: [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
+  });
+  assert.deepEqual(resolveLegacyEnterpriseMetadata(current, null), []);
+  assert.deepEqual(resolveLegacyEnterpriseMetadata(current, input), []);
+  assert.throws(
+    () =>
+      resolveLegacyEnterpriseMetadata(current, {
+        name: "Different",
+        slug: "different",
       }),
-      [{ accountId: "enterprise-1", name: "Operations", slug: "operations" }],
-    ),
+    /exactly one already-current Enterprise/i,
   );
 });

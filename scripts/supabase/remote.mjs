@@ -178,6 +178,7 @@ from unnest(array[
 where to_regclass(format('app_private.%I', relation_name)) is null;
 `;
 const apiReadbackTimeoutMs = 10_000;
+const managementApiBaseUrl = "https://api.supabase.com/v1";
 const reconciliationLockName = "line-bot-v1:supabase-schema-reconciliation";
 
 export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnabled }) {
@@ -475,55 +476,66 @@ export function classifyDailyCheckInCompatibility({ tableExists, functionExists,
   return "partial";
 }
 
-export function parseEnterpriseMetadataBackfill(raw = "") {
-  if (!raw.trim()) return [];
-  let value;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    throw new Error("SUPABASE_ENTERPRISE_METADATA_BACKFILL must be valid JSON.");
+export function parseLegacyEnterpriseMetadata(name = "", slug = "") {
+  if (!name && !slug) return null;
+  if (!name || !slug) {
+    throw new Error("Legacy Enterprise cutover requires both name and slug.");
   }
-  if (!Array.isArray(value)) {
-    throw new Error("SUPABASE_ENTERPRISE_METADATA_BACKFILL must be a JSON array.");
+  if (
+    name !== name.trim() ||
+    name.length < 1 ||
+    name.length > 120 ||
+    slug !== slug.trim() ||
+    slug !== slug.toLowerCase() ||
+    slug.length < 1 ||
+    slug.length > 39 ||
+    !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)
+  ) {
+    throw new Error("Legacy Enterprise cutover contains an invalid name or slug.");
   }
+  return { name, slug };
+}
 
-  const ids = new Set();
-  const slugs = new Set();
-  return value.map((entry) => {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-      throw new Error("Enterprise metadata backfill entries must be objects.");
-    }
-    if (Object.keys(entry).sort().join(",") !== "accountId,name,slug") {
+export function resolveLegacyEnterpriseMetadata(state, input) {
+  const unresolved = state.enterpriseMetadataRows;
+
+  if (!input) {
+    if (unresolved.length) {
       throw new Error(
-        "Enterprise metadata backfill entries require accountId, name and slug only.",
+        `Remote preserve-data preparation requires explicit Enterprise name and slug for ${unresolved.length} unresolved legacy Enterprise row(s); use manual reconciliation.`,
       );
     }
+    return [];
+  }
 
-    const { accountId, name, slug } = entry;
+  if (unresolved.length > 1) {
+    throw new Error(
+      `Single-Enterprise cutover input cannot resolve ${unresolved.length} legacy Enterprise rows; an explicit multi-row owner migration is required.`,
+    );
+  }
+
+  if (unresolved.length === 1) {
+    const [row] = unresolved;
     if (
-      typeof accountId !== "string" ||
-      !accountId ||
-      accountId !== accountId.trim() ||
-      typeof name !== "string" ||
-      name !== name.trim() ||
-      name.length < 1 ||
-      name.length > 120 ||
-      typeof slug !== "string" ||
-      slug !== slug.trim() ||
-      slug !== slug.toLowerCase() ||
-      slug.length < 1 ||
-      slug.length > 39 ||
-      !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)
+      (row.name != null && row.name !== input.name) ||
+      (row.slug != null && row.slug !== input.slug)
     ) {
-      throw new Error("Enterprise metadata backfill contains an invalid accountId, name or slug.");
+      throw new Error(
+        "Legacy Enterprise cutover conflicts with an already persisted current value.",
+      );
     }
-    if (ids.has(accountId) || slugs.has(slug)) {
-      throw new Error("Enterprise metadata backfill contains duplicate accountId or slug values.");
-    }
-    ids.add(accountId);
-    slugs.add(slug);
-    return { accountId, name, slug };
-  });
+    return [{ accountId: row.accountId, ...input }];
+  }
+
+  const exact = state.enterpriseRows.filter(
+    (row) => row.name === input.name && row.slug === input.slug,
+  );
+  if (exact.length !== 1) {
+    throw new Error(
+      "Legacy Enterprise cutover input does not match exactly one already-current Enterprise.",
+    );
+  }
+  return [];
 }
 
 export function dailyCheckInCompatibilitySql(
@@ -598,7 +610,7 @@ export function permissionNamesFromSource(source = permissionDefinitionSchemaSql
   return names;
 }
 
-export function assertGeneralManagementExpansionState(state, metadata) {
+export function assertGeneralManagementExpansionState(state) {
   const unsupported = [
     ["BotAccount roots", state.botAccountRoots],
     ["BotAccount rows", state.botAccounts],
@@ -616,30 +628,6 @@ export function assertGeneralManagementExpansionState(state, metadata) {
     throw new Error(
       `Remote preserve-data preparation needs an explicit owner migration for ${blocked[0]} (${blocked[1]} row(s)); refusing to guess or delete data.`,
     );
-  }
-
-  const existing = new Map(state.enterpriseRows.map((row) => [row.accountId, row]));
-  const supplied = new Map(metadata.map((entry) => [entry.accountId, entry]));
-  for (const entry of metadata) {
-    const row = existing.get(entry.accountId);
-    if (!row) {
-      throw new Error("SUPABASE_ENTERPRISE_METADATA_BACKFILL contains an unknown Enterprise.");
-    }
-    if (
-      (row.name != null && row.name !== entry.name) ||
-      (row.slug != null && row.slug !== entry.slug)
-    ) {
-      throw new Error(
-        "Enterprise metadata backfill conflicts with an already persisted current value.",
-      );
-    }
-  }
-  for (const row of state.enterpriseMetadataRows) {
-    if (!supplied.has(row.accountId)) {
-      throw new Error(
-        `SUPABASE_ENTERPRISE_METADATA_BACKFILL is missing required Enterprise metadata for ${state.enterpriseMetadataRows.length} row(s).`,
-      );
-    }
   }
 }
 
@@ -926,8 +914,9 @@ async function repairRuntimeCompatibility() {
 }
 
 async function prepareGeneralManagementExpansion() {
-  const metadata = parseEnterpriseMetadataBackfill(
-    process.env.SUPABASE_ENTERPRISE_METADATA_BACKFILL ?? "",
+  const legacyEnterpriseMetadata = parseLegacyEnterpriseMetadata(
+    process.env.SUPABASE_LEGACY_ENTERPRISE_NAME ?? "",
+    process.env.SUPABASE_LEGACY_ENTERPRISE_SLUG ?? "",
   );
   const { postgresUrl } = requireRemoteConfig();
 
@@ -1029,7 +1018,8 @@ async function prepareGeneralManagementExpansion() {
         enterpriseRows,
         enterpriseMetadataRows,
       };
-      assertGeneralManagementExpansionState(state, metadata);
+      assertGeneralManagementExpansionState(state);
+      const metadata = resolveLegacyEnterpriseMetadata(state, legacyEnterpriseMetadata);
 
       let changed = false;
       if (!hasColumn("enterprises", "name")) {
@@ -1192,6 +1182,88 @@ async function verifyRuntimeAuthBoundary() {
   });
 }
 
+export function supabaseManagementRecoveryConfig(env = process.env) {
+  const supabaseUrl = env.SUPABASE_URL;
+  const accessToken = env.SUPABASE_ACCESS_TOKEN;
+  if (!supabaseUrl) throw new Error("SUPABASE_URL is required for recovery readback.");
+  if (!accessToken) throw new Error("SUPABASE_ACCESS_TOKEN is required for recovery readback.");
+  const projectRef = projectRefFromSupabaseUrl(supabaseUrl);
+  assertConfirmedProject(projectRef, env.SUPABASE_CONFIRM_PROJECT);
+  return { projectRef, accessToken };
+}
+
+export function assertSupabaseRecoveryReadback(payload) {
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    Array.isArray(payload) ||
+    typeof payload.pitr_enabled !== "boolean" ||
+    typeof payload.walg_enabled !== "boolean" ||
+    !Array.isArray(payload.backups)
+  ) {
+    throw new Error("Supabase recovery readback returned an unexpected response.");
+  }
+
+  const completed = payload.backups
+    .filter(
+      (backup) =>
+        backup &&
+        typeof backup === "object" &&
+        backup.status === "COMPLETED" &&
+        typeof backup.inserted_at === "string" &&
+        Number.isFinite(Date.parse(backup.inserted_at)),
+    )
+    .map((backup) => ({
+      insertedAt: backup.inserted_at,
+      physical: backup.is_physical_backup === true,
+    }))
+    .sort((a, b) => Date.parse(b.insertedAt) - Date.parse(a.insertedAt));
+
+  const pitrReady = payload.pitr_enabled === true && payload.walg_enabled === true;
+  if (!pitrReady && completed.length === 0) {
+    throw new Error(
+      "Supabase provider recovery is unavailable: no PITR/WALG capability and no completed managed backup. Refusing destructive manual reconciliation.",
+    );
+  }
+
+  return {
+    provider: "supabase",
+    pitrEnabled: payload.pitr_enabled,
+    walgEnabled: payload.walg_enabled,
+    completedBackupCount: completed.length,
+    latestCompletedBackupAt: completed[0]?.insertedAt ?? null,
+    latestCompletedBackupPhysical: completed[0]?.physical ?? null,
+  };
+}
+
+export async function verifySupabaseRecoveryReadback(
+  config = supabaseManagementRecoveryConfig(),
+  fetchImpl = globalThis.fetch,
+) {
+  if (typeof fetchImpl !== "function") {
+    throw new Error("Supabase recovery readback requires a fetch implementation.");
+  }
+  const response = await fetchImpl(
+    `${managementApiBaseUrl}/projects/${config.projectRef}/database/backups`,
+    {
+      headers: { Authorization: `Bearer ${config.accessToken}` },
+      signal: AbortSignal.timeout(apiReadbackTimeoutMs),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Supabase recovery readback failed with HTTP ${response.status}; refusing destructive manual reconciliation.`,
+    );
+  }
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error("Supabase recovery readback did not return JSON.");
+  }
+  return { projectRef: config.projectRef, ...assertSupabaseRecoveryReadback(payload) };
+}
+
 export function supabaseApiReadbackConfig(env = process.env) {
   const supabaseUrl = env.SUPABASE_URL;
   const publishableKey = env.SUPABASE_PUBLISHABLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -1279,15 +1351,15 @@ async function verifyRemoteAcceptance() {
 
 export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
-  if (!["repair", "prepare", "plan", "sync", "verify"].includes(command)) {
+  if (!["repair", "prepare", "plan", "recovery", "sync", "verify"].includes(command)) {
     throw new Error(
-      "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-manual] [--api]",
+      "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--allow-manual] [--api]",
     );
   }
   for (const flag of flags) {
     if (!["--allow-manual", "--api"].includes(flag)) {
       throw new Error(
-        "Usage: schema:remote [repair|prepare|plan|sync|verify] [--allow-manual] [--api]",
+        "Usage: schema:remote [repair|prepare|plan|recovery|sync|verify] [--allow-manual] [--api]",
       );
     }
   }
@@ -1426,8 +1498,22 @@ async function runRemoteCommand({ projectRef, command, allowManual, api }) {
 
 export async function main(argv = process.argv.slice(2)) {
   loadRootEnv();
-  const { projectRef } = requireRemoteConfig();
   const { command, allowManual, api } = parseArgs(argv);
+
+  if (command === "recovery") {
+    mkdirSync(artifacts, { recursive: true });
+    const evidence = await verifySupabaseRecoveryReadback();
+    writeFileSync(
+      new URL("recovery-readback.json", artifacts),
+      `${JSON.stringify(evidence, null, 2)}\n`,
+    );
+    console.log(
+      `Supabase recovery PASS for ${evidence.projectRef}: PITR = ${evidence.pitrEnabled}; WALG = ${evidence.walgEnabled}; completed managed backups = ${evidence.completedBackupCount}.`,
+    );
+    return;
+  }
+
+  const { projectRef } = requireRemoteConfig();
   const execute = () => runRemoteCommand({ projectRef, command, allowManual, api });
 
   if (["repair", "prepare", "sync"].includes(command)) {

@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { repositoryIssueCreatePath, repositoryPath } from "./resource-navigation";
+import {
+  repositoryDiscussionsPath,
+  repositoryIssueCreatePath,
+  repositoryIssuesPath,
+  repositoryPath,
+} from "./resource-navigation";
 import { useRepositoryCollection } from "./use-repository-collection";
 
 export default function RepositoryList({
@@ -10,13 +15,20 @@ export default function RepositoryList({
   intent,
 }: {
   liffId: string;
-  intent?: "create-issue";
+  intent?: "create-issue" | "browse-issues" | "browse-discussions";
 }) {
   const { items, busy, error, load, clear } = useRepositoryCollection(liffId);
   const visibleItems =
     intent === "create-issue"
       ? items?.filter((item) => item.capability === "write" || item.capability === "admin")
       : items;
+
+  const targetPath = (ownerLogin: string, name: string) => {
+    if (intent === "create-issue") return repositoryIssueCreatePath(ownerLogin, name);
+    if (intent === "browse-issues") return repositoryIssuesPath(ownerLogin, name);
+    if (intent === "browse-discussions") return repositoryDiscussionsPath(ownerLogin, name);
+    return repositoryPath(ownerLogin, name);
+  };
 
   return (
     <div className="repository-list">
@@ -36,11 +48,7 @@ export default function RepositoryList({
             <Link
               className="action-row"
               key={item.id}
-              href={
-                intent === "create-issue"
-                  ? repositoryIssueCreatePath(item.ownerLogin, item.name)
-                  : repositoryPath(item.ownerLogin, item.name)
-              }
+              href={targetPath(item.ownerLogin, item.name)}
             >
               <span className="action-row-copy">
                 <strong>
@@ -49,7 +57,11 @@ export default function RepositoryList({
                 <small>
                   {intent === "create-issue"
                     ? `Create Issue · ${item.capability}`
-                    : item.capability}
+                    : intent === "browse-issues"
+                      ? `Issues · ${item.capability}`
+                      : intent === "browse-discussions"
+                        ? `Discussions · ${item.capability}`
+                        : item.capability}
                 </small>
               </span>
               <span className="action-chevron" aria-hidden="true">

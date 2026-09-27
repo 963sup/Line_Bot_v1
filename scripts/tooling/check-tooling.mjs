@@ -641,14 +641,15 @@ export function validate(root) {
         "CI: automatic Supabase release must repair additive runtime compatibility, then changed-safe-sync or unchanged-verify before evidence",
       );
     }
+    const automaticPrepareEnv = JSON.stringify(supabaseSteps[supabasePrepare]?.env ?? {});
     if (
-      !JSON.stringify(supabaseSteps[supabasePrepare]?.env ?? {}).includes(
-        "SUPABASE_ENTERPRISE_METADATA_BACKFILL",
-      )
-    )
+      automaticPrepareEnv.includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL") ||
+      automaticPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_")
+    ) {
       errors.push(
-        "CI: automatic Supabase release must scope Enterprise metadata backfill to prepare",
+        "CI: automatic Supabase release must not own explicit Enterprise business metadata",
       );
+    }
 
     const deploymentSteps = releaseDeployment?.steps ?? [];
     const deploymentCheckout = deploymentSteps.findIndex(
@@ -744,7 +745,12 @@ export function validate(root) {
       replaceInputs.operation?.type !== "choice" ||
       !Array.isArray(replaceInputs.operation?.options) ||
       !replaceInputs.operation.options.includes("prepare-plan") ||
-      !replaceInputs.operation.options.includes("apply")
+      !replaceInputs.operation.options.includes("apply") ||
+      replaceInputs.enterprise_owner_confirmed_name?.type !== "string" ||
+      replaceInputs.enterprise_owner_confirmed_slug?.type !== "string" ||
+      replaceInputs.confirm_enterprise_identity?.type !== "string" ||
+      replaceInputs.reviewed_plan_run_id?.type !== "string" ||
+      replaceInputs.reviewed_plan_sha256?.type !== "string"
     ) {
       errors.push(
         "CI: manual Supabase reconciliation must use workflow_dispatch with prepare-plan/apply modes",
@@ -757,8 +763,10 @@ export function validate(root) {
       typeof replaceJob.if !== "string" ||
       !replaceJob.if.includes("refs/heads/main") ||
       !replaceJob.if.includes("nmssogphayjymjpbnrxv") ||
+      !replaceJob.if.includes("confirm_enterprise_identity") ||
       !replaceJob.if.includes("confirm_recovery") ||
       !replaceJob.if.includes("confirm_apply") ||
+      replaceWorkflow.permissions?.actions !== "read" ||
       replaceJob?.concurrency?.group !== "supabase-production-nmssogphayjymjpbnrxv" ||
       replaceJob?.concurrency?.["cancel-in-progress"] !== false ||
       JSON.stringify(replaceJob?.env ?? {}).includes("secrets.")
@@ -775,11 +783,37 @@ export function validate(root) {
         step.run.includes("check-runs") &&
         step.run.includes('.name == "validate"'),
     );
-    const replaceFingerprint = replaceSteps.findIndex(
+    const replaceRecovery = replaceSteps.findIndex(
+      (step) =>
+        step.run === "pnpm schema:remote recovery" &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'apply'") &&
+        JSON.stringify(step.env ?? {}).includes("SUPABASE_ACCESS_TOKEN") &&
+        JSON.stringify(step.env ?? {}).includes("SUPABASE_CONFIRM_PROJECT"),
+    );
+    const replaceProvenance = replaceSteps.findIndex(
       (step) =>
         typeof step.run === "string" &&
+        step.run.includes("REVIEWED_PLAN_RUN_ID") &&
         step.run.includes("REVIEWED_PLAN_SHA256") &&
+        step.run.includes("ENTERPRISE_NAME") &&
+        step.run.includes("ENTERPRISE_SLUG") &&
+        step.run.includes("enterprise_identity_sha256") &&
+        step.run.includes("enterpriseIdentitySha256") &&
+        step.run.includes("actions/runs/$REVIEWED_PLAN_RUN_ID") &&
+        step.run.includes("supabase-manual-prepare-plan-$SHA") &&
+        step.run.includes("plan-provenance.json") &&
         step.run.includes("[0-9a-f]{64}") &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'apply'"),
+    );
+    const replaceAuthorization = replaceSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("manual-authorization.json") &&
+        step.run.includes("recoveryEvidenceSha256") &&
+        step.run.includes("enterpriseIdentitySha256") &&
+        step.run.includes("reviewedPlanRunId") &&
         typeof step.if === "string" &&
         step.if.includes("operation == 'apply'"),
     );
@@ -789,6 +823,16 @@ export function validate(root) {
     const replacePlan = replaceSteps.findIndex(
       (step) =>
         step.run === "pnpm schema:remote plan" &&
+        typeof step.if === "string" &&
+        step.if.includes("operation == 'prepare-plan'"),
+    );
+    const replacePlanProvenance = replaceSteps.findIndex(
+      (step) =>
+        typeof step.run === "string" &&
+        step.run.includes("plan-provenance.json") &&
+        step.run.includes("workflowRunId") &&
+        step.run.includes("planSha256") &&
+        step.run.includes("enterpriseIdentitySha256") &&
         typeof step.if === "string" &&
         step.if.includes("operation == 'prepare-plan'"),
     );
@@ -804,32 +848,39 @@ export function validate(root) {
         step.uses === "actions/upload-artifact@v4" &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sql") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/plan.sha256") &&
+        JSON.stringify(step.with ?? {}).includes("plan-provenance.json") &&
+        JSON.stringify(step.with ?? {}).includes("manual-authorization.json") &&
+        JSON.stringify(step.with ?? {}).includes("recovery-readback.json") &&
         JSON.stringify(step.with ?? {}).includes(".artifacts/supabase-remote/verification.sql") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
         JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
     );
     if (
       replaceValidate < 0 ||
-      replaceFingerprint <= replaceValidate ||
-      replacePrepare <= replaceFingerprint ||
+      replaceRecovery <= replaceValidate ||
+      replaceProvenance <= replaceRecovery ||
+      replaceAuthorization <= replaceProvenance ||
+      replacePrepare <= replaceAuthorization ||
       replacePlan <= replacePrepare ||
-      replaceSync <= replacePlan ||
+      replacePlanProvenance <= replacePlan ||
+      replaceSync <= replacePlanProvenance ||
       replaceEvidence <= replaceSync ||
       JSON.stringify(replaceSteps).includes("--allow-destructive") ||
       JSON.stringify(replaceSteps).includes("VERCEL_TOKEN") ||
       JSON.stringify(replaceSteps).includes("commits/$SHA/status")
     ) {
       errors.push(
-        "CI: manual Supabase reconciliation must validate, attest, prepare, plan/apply exact reviewed SQL, then preserve evidence without owning Web deployment",
+        "CI: manual Supabase reconciliation must verify provider recovery, bind apply to the same owner-confirmed Enterprise identity and successful same-source prepare-plan artifact, re-prepare, apply exact reviewed SQL, then preserve evidence without owning Web deployment",
       );
     }
+    const manualPrepareEnv = JSON.stringify(replaceSteps[replacePrepare]?.env ?? {});
     if (
-      !JSON.stringify(replaceSteps[replacePrepare]?.env ?? {}).includes(
-        "SUPABASE_ENTERPRISE_METADATA_BACKFILL",
-      )
+      !manualPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_NAME") ||
+      !manualPrepareEnv.includes("SUPABASE_LEGACY_ENTERPRISE_SLUG") ||
+      manualPrepareEnv.includes("SUPABASE_ENTERPRISE_METADATA_BACKFILL")
     ) {
       errors.push(
-        "CI: manual Supabase reconciliation must scope Enterprise metadata backfill to prepare",
+        "CI: manual Supabase reconciliation must scope owner-confirmed legacy Enterprise name/slug to prepare",
       );
     }
   } catch (error) {

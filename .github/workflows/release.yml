@@ -148,7 +148,6 @@ jobs:
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
-          SUPABASE_ENTERPRISE_METADATA_BACKFILL: ${{ secrets.SUPABASE_ENTERPRISE_METADATA_BACKFILL }}
 
       - name: Safely reconcile changed declarative schema
         if: needs.gate.outputs.schema_changed == 'true'
