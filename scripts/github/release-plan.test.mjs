@@ -4,10 +4,10 @@ import {
   findOwnerBaseline,
   githubOutputLines,
   planRelease,
+  publicationOnlyRichMenuSource,
   releaseSha,
   richMenuChanged,
   schemaChanged,
-  publicationOnlyRichMenuSource,
 } from "./release-plan.mjs";
 
 const SHA = "a".repeat(40);
