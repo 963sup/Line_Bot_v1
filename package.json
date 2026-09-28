@@ -29,6 +29,7 @@
     "schema:local": "node scripts/supabase/schema-local.mjs",
     "tooling:check": "node scripts/tooling/check-tooling.mjs",
     "tooling:rules": "node scripts/tooling/check-rules.mjs",
+    "tooling:doctor": "node scripts/tooling/doctor.mjs",
     "start": "pnpm --filter @line_bot_v1/web start",
     "boundaries": "node scripts/architecture/check-implementation-topology.mjs",
     "schema:remote": "node scripts/supabase/remote.mjs",
@@ -41,6 +42,10 @@
     "probe:redis": "node scripts/probes/check-redis.mjs --live",
     "semantic": "node scripts/architecture/semantic-cli.mjs",
     "patch:apply": "node scripts/changes/patch-apply.mjs",
+    "change:status": "node scripts/changes/status.mjs",
+    "change:impact": "pnpm semantic plan",
+    "change:preflight": "node scripts/changes/preflight.mjs",
+    "change:finalize": "node scripts/changes/finalize.mjs",
     "github:current-main": "node scripts/github/current-main.mjs",
     "github:release-plan": "node scripts/github/release-plan.mjs"
   },
