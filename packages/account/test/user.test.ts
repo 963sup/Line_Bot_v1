@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresUserStore } from "../src/adapters/postgres/user.js";
+import { PostgresUserStore } from "../src/postgres/user.js";
 import type {
   GoogleLinkRepository,
   UserRepository,
