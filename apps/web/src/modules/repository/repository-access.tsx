@@ -182,7 +182,7 @@ export default function RepositoryAccess({
 
   return (
     <div className="crud-manager">
-      <MiniAppRuntime liffId={liffId} onReady={() => void load()} onWait={clear} />
+      <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       {busy && <p role="status">處理中…</p>}
       {notice && <p role="status">{notice}</p>}
       {error && <p role="alert">{error}</p>}
