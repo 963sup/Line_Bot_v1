@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mock } from "node:test";
 import { PostgresUserStore } from "@line_bot_v1/account/postgres";
 import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
-import { PostgresAttendanceStore } from "@line_bot_v1/attendance/adapters/postgres";
+import { PostgresAttendanceStore } from "@line_bot_v1/attendance/postgres";
 import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
 import { PostgresExpenseStore } from "@line_bot_v1/expense/adapters/postgres";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
