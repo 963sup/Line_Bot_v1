@@ -2,6 +2,26 @@
 
 以 repository evidence 確認 current state；不要用 best practice、舊文件或猜測取代 code / manifest / schema / tests。
 
+## Mandatory governing set
+
+任何 repository analysis、design、implementation、refactor、debug、CI fix 前，必須先讀取 target ref 的 current version 並遵守：
+
+- `architecture/README.md`
+- `architecture/data-topology.json`
+- `architecture/implementation-topology.json`
+- `architecture/semantic-benchmark.json`
+- `architecture/semantic-model.json`
+- `.dependency-cruiser.mjs`
+- `biome.json`
+- `knip.jsonc`
+
+這些檔案是 architecture / topology / benchmark / dependency / formatting / reachability 的 governing inputs，不是為了讓 local implementation 或 CI 通過而可任意調整的 escape hatch。
+
+- 一般 feature、refactor、bug fix、CI fix：修 source、ownership、dependency、public export、placement 或真正 root cause；不得透過弱化 governing file、加 ignore、exception、alias、wrapper 或 compatibility surface 消除 violation。
+- 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
+- `architecture/semantic-benchmark.json` 只提供 pinned external benchmark evidence；不得取代 `architecture/semantic-model.json` 的 product authority。
+- Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
+
 ## Invariants
 
 - 先定義 business result，再沿 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth 找根因。

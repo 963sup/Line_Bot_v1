@@ -1,278 +1,311 @@
 # Packages scope
 
-`packages/<module>` 是正式 Module Boundary。所有 package 都依 DDD + Hexagonal Architecture 管理 responsibility、language、invariant、contract 與 adapter；但 **Package ≠ Bounded Context ≠ Data Boundary ≠ Consistency Boundary**，不得用資料夾名稱直接推導其他 boundary。
+`packages/<owner>` 是正式 Module Boundary。每個 package 都必須以 DDD + Hexagonal Architecture 分類責任、維持依賴方向，並能回答 Ownership、Source of Truth、Boundary / Dependency 與 Validation / Evidence。
 
-本檔是所有 `packages/*` 的共同 execution contract。Child `AGENTS.md` 只能增加 owner-local constraint，不得重寫或削弱本檔。
+## Authority
 
-## Governing authority
+修改任何 package 前，必須先讀取並遵守 root `AGENTS.md#Mandatory governing set`；不得把 governing files 當成修 local violation 的 escape hatch。依序確認：
 
-處理任何 package 前，依下列 authority 解出真實狀態，不得反向修改 governing source 來配合 implementation：
+1. `architecture/README.md`：architecture truth routing、authority hierarchy 與 evidence flow。
+2. `architecture/semantic-model.json`：product semantic owner、concept、relationship、capability、invariant、policy 與 integration mode。
+3. `architecture/implementation-topology.json`：module path、`moduleKind`、`semanticOwner`、`allowedWorkspaceDependencies`。
+4. `architecture/data-topology.json`：persisted relation owner、projection / reference 與 data boundary。
+5. `package.json#exports`：package public boundary。
+6. source / tests / `supabase/schemas/*.sql`：runtime behavior、database truth 與 enforcement evidence。
 
-1. `architecture/semantic-model.json`
-   - Product semantic authority。
-   - 解出 semantic owner、Bounded Context、concept、relationship、capability、invariant、policy、integration mode、truth registry。
-2. `architecture/implementation-topology.json`
-   - Module implementation authority。
-   - 解出 package path、`moduleKind`、`semanticOwner`、`allowedWorkspaceDependencies`。
-3. `architecture/data-topology.json`
-   - Persisted relation ownership authority。
-   - 解出 authoritative relation、projection/reference、schema file 與 semantic owner 對應。
-4. `package.json#exports`
-   - Package public source boundary。
-   - 只有明確 export 的 capability 才可被其他 workspace consumer 使用。
-5. Source / tests / declarative schema
-   - 實際 behavior、enforcement 與 evidence。
+`architecture/semantic-benchmark.json` 只提供 external semantic evidence；沒有 `semantic-model.json` 的 explicit adoption / mapping，不得成為 product authority。
 
-`architecture/semantic-benchmark.json` 只是 pinned external semantic evidence。它不是 Product authority；任何 GitHub-like concept 必須先在 `semantic-model.json` 有 explicit product mapping 才能進 package language 或 responsibility。
+`.dependency-cruiser.mjs`、`biome.json`、`knip.jsonc` 是 governing configs。一般 feature、refactor、CI fix 不得修改它們來消除 violation；應修正 source、dependency、export、placement 或真正的 architecture truth。
 
-`.dependency-cruiser.mjs`、`biome.json`、`knip.jsonc` 是 governing enforcement config。一般 feature / refactor / CI 修復 **不得修改它們來消除違規**；只有任務本身明確是「修改治理規則」且有新的 canonical requirement 時才可變更。
+Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以對齊，但不得視為同一概念。
 
-## Mandatory package resolution
+## Semantic / module reminders
 
-修改 `packages/<module>` 前，必須先從 machine-readable truth 解出以下欄位；任何欄位無唯一答案時先處理 architecture ambiguity：
+下列規則保留作為進入 package 前的 semantic routing / boundary reminder；它們不取代上述 machine-readable authority：
+
+- Business meaning / owner / relationship 以 `architecture/semantic-model.json` 為 structured authority。
+- 現有 module path、module kind 與 workspace dependency allowlist 以 `architecture/implementation-topology.json` 為 machine authority。
+- 新 responsibility 只有在現有 owner 無法正確承接，而且具有真實 language / lifecycle / invariant / consumer 時，才考慮新的 owner 或 package。
+- Application host（如 `apps/web`）只能依賴 `architecture/implementation-topology.json` 開放的 Workspace packages；底層一致性邊界（如 `ledger`）由 Aggregate Root（如 `wallet`、`daily-check-in`）封裝，禁止直接向 Web 暴露。
+- 預留或基礎模組（如 `audit`、`payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
+- Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
+- Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
+
+## Mandatory classification
+
+每個 production source 必須有且只有一個主要 architecture role。若無法唯一回答「這個檔案屬於哪一層、負責什麼」，先解 architecture ambiguity，再新增功能。
+
+Canonical roles：
 
 ```text
-Module
-├─ path
-├─ moduleKind
-├─ semanticOwner
-├─ owned concepts / capabilities / invariants
-├─ consumed relationship contracts
-├─ does-not-own responsibilities
-├─ allowedWorkspaceDependencies
-├─ authoritative persisted relations
-├─ projections / references
-├─ public package exports
-└─ validation evidence
+packages/<owner>/
+│
+├─ Domain
+│  ├─ Entity
+│  ├─ Value Object
+│  ├─ Aggregate / Aggregate Root
+│  ├─ Domain Service
+│  ├─ Domain Event
+│  ├─ Domain Policy / Specification
+│  └─ Business Invariant / Transition
+│
+├─ Contracts / Ports
+│  ├─ Inbound Port
+│  ├─ Outbound Port
+│  ├─ Published DTO
+│  └─ Stable cross-package Contract
+│
+├─ Application
+│  ├─ Use Case
+│  ├─ Command / Query
+│  ├─ Application Service
+│  └─ Orchestration
+│
+├─ Adapters
+│  ├─ Inbound Adapter
+│  └─ Outbound Adapter
+│
+├─ Composition / Public Entry
+│  └─ dependency wiring / named public capability
+│
+└─ Test / Evidence
+   ├─ Domain behavior
+   ├─ Application use case
+   ├─ Contract
+   └─ Adapter integration
 ```
 
-判斷順序固定：
+這是 responsibility taxonomy，不是空資料夾模板。沒有真實 responsibility 的 layer 不得為了對稱建立空 folder、interface、wrapper、service 或 facade；但已存在的 source 不得因為「檔案少」而省略分層判定或混合責任。
+
+常見實體 placement 可使用：
+
+- `src/domain.ts` 或 `src/domain/`
+- `src/contracts.ts` 或 `src/contracts/`
+- `src/application.ts` 或 `src/application/`
+- `src/adapters/`
+- named composition / public entry，例如 `src/postgres.ts`、`src/gemini.ts`
+- `src/testing/` 與 `test/`
+
+Folder name 不是 authority；source responsibility 與 dependency direction 才是。
+
+## Hexagonal dependency direction
+
+Inner layers 不知道 concrete infrastructure。依賴方向只能朝內：
 
 ```text
-Business intent
-→ Semantic owner
-→ Relationship / contract
-→ Module owner
-→ Data owner
-→ Public surface
-→ Adapter / runtime implementation
-→ Validation evidence
+Inbound Adapter
+      │
+      ▼
+Inbound Port / Application Use Case
+      │
+      ▼
+    Domain
+      ▲
+      │
+Outbound Port
+      ▲
+      │
+Outbound Adapter
 ```
 
-禁止從 `src/adapters`、table name、route、UI 名稱或現有 import 反推 owner。
-
-## Canonical Hexagonal template
-
-Package 依真實 responsibility 使用下列角色。沒有 responsibility 就不建立空 layer；一旦角色存在，就必須遵守 dependency direction。
+以 source dependency 表示：
 
 ```text
-packages/<module>/
-├─ AGENTS.md          # owner-local constraints only
-├─ README.md          # local routing only
-├─ package.json       # exact public exports
-├─ src/
-│  ├─ domain.ts | domain/
-│  │  └─ business truth, invariant, value, transition
-│  ├─ contracts.ts | contracts/
-│  │  └─ published DTO / stable contract where truly required
-│  ├─ application.ts | application/
-│  │  └─ use-case orchestration + consumer-owned ports
-│  ├─ adapters/
-│  │  └─ SQL / SDK / HTTP / provider implementations; package-private
-│  ├─ agents/
-│  │  └─ AI/provider mechanism only when owner responsibility requires it
-│  ├─ testing/
-│  │  └─ test-only capability; never runtime
-│  └─ <public-capability>.ts
-│     └─ named public composition entry when an adapter capability must be exposed
-└─ test/
-   └─ owner behavior / contract / integration evidence
+Composition
+   ├─> Inbound Adapter ─> Application ─> Contracts / Domain
+   └─> Outbound Adapter ───────────────> Contracts / Domain
+
+Domain       ─X─> Contracts / Application / Adapters
+Contracts    ─X─> Application / Adapters
+Application  ─X─> concrete Adapters
 ```
 
 ### Domain
 
-`domain.ts` / `domain/` owns business meaning、invariant、state transition 與 domain error semantics。
+Domain 是 business truth、invariant、state transition 與 domain language。
 
-Hard rules enforced by Dependency Cruiser：
+允許：
 
-- Domain 不得 import `contracts`、`application`、`adapters`、`agents`、`testing`、`database`、`migration`。
-- Domain 不得依賴 runtime/provider implementation。
-- Persisted shape 不得反向定義 Domain Model。
+- Entity、Value Object、Aggregate、Domain Service、Domain Event、Policy / Specification。
+- 純 business rule 與 deterministic transition。
+
+禁止：
+
+- Supabase / PostgreSQL / SQL / SDK / HTTP / LINE / Google / Next.js。
+- environment variable、runtime framework、migration、database client。
+- import Application、Adapter、testing-only implementation。
+- 用 persistence shape 或 provider DTO 取代 Domain model。
 
 ### Contracts / Ports
 
-`contracts` 表達 stable published language / DTO；Application port 表達 **consumer 真正需要的 capability**。
+Port 表達 consumer / Application 真正需要的 capability；Contract 表達穩定交換語意。
 
-- Contract 可依賴 Domain，但不得依賴 Application / Adapter implementation。
-- Port 不得只是 SQL client、SDK 或 foreign private API wrapper。
-- Cross-owner need 必須能追到 `semantic-model.json#relationships`；consumer need 不轉移 provider authority。
-- Integration mode 只能使用 semantic model 已定義的 stable identity、query、command、event、projection、snapshot、reference、external proof 等語意。
+Inbound Port 定義外部如何啟動 use case；Outbound Port 定義 Application 完成 use case 所需要、但不應知道其 concrete technology 的 capability。
+
+允許：
+
+- Port interface / callable contract。
+- Published DTO、跨 package stable contract。
+- 依賴 Domain types，前提是沒有暴露 private implementation。
+
+禁止：
+
+- concrete SQL / SDK / provider implementation。
+- Application orchestration。
+- 為包裝 private API 而存在的 pass-through interface。
+- 建立第二份 Domain truth。
+
+只有存在真實 consumer、variation、external technology boundary、policy boundary、transaction / recovery responsibility 或 isolation requirement，才新增 Port / abstraction。
 
 ### Application
 
-Application 只做 use-case orchestration：
+Application 負責 use-case orchestration，不擁有新的 business truth。
 
-- 可協調自己的 Domain / Contracts / Ports。
-- 不得 import 自己的 concrete Adapter。
-- 不得 import foreign package 的 `application/` source。
-- 跨 owner interaction 必須透過 topology 允許的 dependency + 對應 relationship contract。
-- Authorization、replay、transaction、version、tenant/data isolation 等 essential invariant 不得為了簡化 use case 被移除。
+允許：
+
+- Command / Query / Use Case。
+- transaction / workflow orchestration。
+- 呼叫 Domain behavior。
+- 透過 Port 取得外部 capability。
+
+禁止：
+
+- 直接依賴自己的 concrete Adapter。
+- 直接依賴其他 package 的 private Application / Adapter source。
+- 把 SQL、SDK、provider protocol 寫進 use case。
+- 複製 Domain invariant 到 orchestration。
 
 ### Adapters
 
-`src/adapters/**` 是 package-private implementation：
+Adapter 把外部世界轉換成 Port / Application 能理解的形狀。
 
-- 只負責 SQL / SDK / HTTP / provider translation 與 runtime mechanism。
-- 不擁有新的 business truth。
-- 不得被其他 package 或 app 直接 import。
-- 不得成為 `package.json#exports` 的直接 target。
-- 同 package 內可被 public composition entry 以 **具名 re-export** 暴露必要 constructor/capability。
+Inbound Adapter 例：HTTP handler、runtime handler、webhook transport adapter。  
+Outbound Adapter 例：PostgreSQL / Supabase repository、provider SDK、HTTP client、LINE / Google / Gemini implementation。
 
-當外部 composition root 必須建立 concrete adapter，使用：
+規則：
+
+- Adapter 可以依賴 Application / Contracts / Domain 所需的內層 contract。
+- Inner layer 不得反向依賴 Adapter。
+- `src/adapters/` 是 package-private implementation；外部 package / app 不得 direct import。
+- Consumer 不得藉由 Adapter 直接讀另一 owner 的 private schema / table，繞過 semantic relationship / public contract。
+- Integration owner 的 provider protocol 留在該 integration owner；只有沒有 business authority 的中立 runtime mechanism 才屬於 `platform`。
+
+### Composition / Public Entry
+
+Composition 是 concrete dependency wiring 的責任，不是 Domain / Application responsibility。
+
+若外部 composition root 必須取得 concrete capability，公開 surface 應使用 adapter 目錄之外的 named entry，而不是公開 `src/adapters/*`：
 
 ```ts
 // src/postgres.ts
 export { PostgresExampleStore } from "./adapters/postgres.js";
 ```
 
-搭配 exact export：
+`package.json#exports` 對應 named public entry：
 
 ```json
 {
   "exports": {
-    "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
-    }
+    "./postgres": "./dist/postgres.js"
   }
 }
 ```
 
 禁止：
 
-```ts
-export * from "./adapters/postgres.js";
-```
+- 外部直接 import `@line_bot_v1/<owner>/adapters/*`。
+- wildcard re-export 掩蓋 public contract。
+- 為相容舊 path 建 facade / alias / wrapper。
+- 讓 Composition 成為第二份 business truth。
 
-也禁止 consumer 使用：
+### Test / Evidence
+
+Test / Evidence 證明各層 contract 與 invariant，不是 runtime dependency。
+
+- Domain test 驗證 invariant / transition。
+- Application test 驗證 use case / Port interaction。
+- Contract test 驗證 stable exchange semantics。
+- Adapter integration test 驗證 SQL / provider / runtime boundary。
+- `src/testing/` 只能提供 test-only capability；production runtime 不得依賴。
+
+## Cross-package boundary
+
+跨 package 前先回答：
+
+1. Consumer 真正需要什麼 capability？
+2. `semantic-model.json` 中真正 semantic owner 是誰？
+3. 是否存在對應 relationship / integration contract？
+4. `implementation-topology.json` 是否允許 dependency direction？
+5. Owner 是否已提供足夠的 `package.json#exports` public contract？
+6. 是否正在依賴 private source、`dist`、testing-only surface 或另一 owner 的 private schema？
+
+跨 package 只能使用 exact public exports。Consumer need 不會轉移 provider authority。
+
+固定推理鏈：
 
 ```text
-@line_bot_v1/example/adapters/postgres
-packages/example/src/adapters/postgres.ts
-packages/example/dist/...
+Business intent
+  → Semantic owner
+  → Relationship / Contract
+  → Module owner
+  → Data owner
+  → Public surface
+  → Adapter / Runtime implementation
+  → Validation evidence
 ```
 
-Public entry 是 Module Boundary，不是第二個 implementation；不得加入 forwarding service、compatibility facade 或 alias layer。
+## Data / consistency invariants
 
-## Dependency contract
+- 每個 authoritative persisted relation 只能有一個 semantic owner。
+- relation owner 必須對齊 authoritative concept owner；projection / reference 不會取得 authority。
+- cross-owner mechanism 不得擁有 business truth。
+- 一個 transaction / consistency boundary 只在 invariant 必須 atomic 成立時存在；不得只因 package 或 folder 相同就假設一致性邊界相同。
+- authorization、tenant/data isolation、replay / idempotency、version、recovery、audit、transaction correctness 不得為了簡化 layer、CI 或 UI 而削弱。
+- pure placement / naming / dependency refactor 必須保持 [Invariant kernel](../docs/rules/system-invariants.md) 的既有 semantics。
+- **單一事務單一聚合**：一個資料庫事務原則上只修改一個聚合根；跨聚合協調一律透過 Domain Event 與 Transactional Outbox 達成最終一致性。
+- **錯誤處理**：業務失敗返回結構化 `Result<T, DomainError>`，不拋出未受控例外。
+- **冪等防重放**：寫入命令支援 Idempotency Key 或天然業務複合主鍵；事件 Consumer 強制去重。
+- **讀寫分離**：探索、統計與清單等唯讀查詢直接消費 Read Projections，不載入肥大 Domain Aggregate。
+- 新能力直接進真正 owner；不得用 alias、facade、compatibility package 或 pass-through service 掩蓋 responsibility 問題。
+- Generated / reference data 若存在，必須能追到 canonical source；generated output、history、target design 與 current business truth 不得互相取代。
 
-Dependency direction 同時受 `implementation-topology.json` 與 `.dependency-cruiser.mjs` 約束：
+## Child package docs
 
-- Workspace dependency 必須存在於 `allowedWorkspaceDependencies`。
-- `package.json` dependency 與 topology allowlist 必須一致；不得有 undeclared 或 stale dependency。
-- 跨 package 只能使用 exact `package.json#exports`。
-- 禁止跨 package relative import。
-- 禁止 package import app。
-- 禁止 cycle。
-- 禁止 source import `dist` / `.next`。
-- `testing` surface 不得進 runtime graph。
-- Consumer 不得直接讀 foreign owner table/private schema 取代 contract。
+每個 `packages/<owner>/` 保有 `AGENTS.md` 與 `README.md`：
 
-新增 dependency 前先回答：
+- Child `AGENTS.md` 只增加 owner-local constraint，不複製本檔。
+- Child `README.md` 只 routing，不建立第二份 owner、schema、export、capability 或 validation truth。
 
-```text
-Consumer 真正需要什麼？
-→ semantic relationship 是否存在？
-→ provider authority 是誰？
-→ consumer-owned port 是否需要？
-→ 現有 public contract 是否已足夠？
-→ topology 是否允許方向？
-```
+## Mandatory package resolution
 
-沒有明確 relationship / responsibility，不新增 dependency。
+修改前至少確認：
 
-## Data boundary
+`Responsibility / Owner / Consumer / Public Contract / Dependency Direction / Data Boundary / Existing Reuse / Validation`
 
-`data-topology.json` 與 `supabase/schemas/*.sql` 共同約束 persisted implementation：
+先追：
 
-- 每個 authoritative relation 只能有一個 semantic owner。
-- Relation owner 必須和 concept owner 一致。
-- Projection / reference 不得升格成第二份 business truth。
-- Cross-owner mechanism 不得擁有 business truth。
-- Adapter 只能操作 owner 合法持有或明確授權的 data surface。
-- Transaction / consistency boundary 由 invariant 決定，不由 package/table 數量決定。
+`Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger`
 
-Schema source of truth 永遠是 `supabase/schemas/*.sql`；package code 不得建立第二套 schema truth。
+確認 Root Cause 後，再依 responsibility 決定 Delete、Merge、Simplify、Reuse、Refactor、Move、Rename、Split 或 Add。Change size、folder count、layer count、CI 變綠速度都不是 architecture goal。
 
-## Public API contract
+若修法需要多個 exception、alias、wrapper、ignore、fallback 才成立，重新檢查 Owner / Truth / Boundary，而不是繼續堆 compatibility surface。
 
-`package.json#exports` 是唯一 package public surface。
-
-每個 export 必須：
-
-- exact path；禁止 wildcard export。
-- target `./dist/**` 的 build artifact，由 source mapping 對回 `src/**`。
-- 對應真實 consumer 或外部 technology boundary。
-- 以具名 export / re-export 明確列出 symbol。
-- 不暴露 private adapter source、internal generated file、testing-only surface 給 runtime consumer。
-
-刪除最後 consumer 後，同步評估刪除 export、source entry、dependency 與 dead code；不保留 compatibility surface。
-
-## Biome contract
-
-`biome.json` 是 formatting / import organization / selected lint rule authority：
-
-- 不手工保留違反 formatter 的 layout。
-- Import / export order 以 Biome organizeImports 為準。
-- 不留下 unused import、unreachable code、duplicate keys/cases、debugger。
-- 修改後先修 source，不修改 Biome config 逃避違規。
-
-## Knip contract
-
-`knip.jsonc` 是 reachability authority：
-
-- Package exports 與設定的 layer/test entries 都進 reachability analysis。
-- Unused file / export / exported type 必須先確認真實 consumer；無 consumer 就刪，不用 ignore 掩蓋。
-- Unresolved import 必須修 public contract / source placement，不新增 compatibility alias。
-- Duplicate implementation / superseded barrel 位於本次路徑時直接移除。
-- 不為「以後可能會用」保留 speculative entry。
-
-## Documentation contract
-
-每個 `packages/<module>`：
-
-- `AGENTS.md`：只寫 owner-local Owner / Boundary / Invariant / Change Rule / Validation delta。
-- `README.md`：只做 package-local navigation，指向 authoritative source；不複製 semantic model、topology、schema、exports inventory。
-- Global package template 只存在本檔與 `packages/README.md`；child 不複製 parent boilerplate。
-
-## Change procedure
-
-每次 package change 固定執行：
-
-1. 讀 semantic owner / relationship / invariant。
-2. 讀 implementation topology 的 moduleKind / allowed dependencies。
-3. 讀 data topology 的 owner / projection / relation mapping。
-4. 讀 package `package.json#exports` 與實際 consumer。
-5. 沿 dependency/runtime/data flow 找 root cause。
-6. 先修 owner / source of truth，再修 consumer。
-7. 移除本路徑內 duplicate、dead compatibility、stale export。
-8. 不修改 governing config 來讓錯誤消失。
-9. 重新檢查整條 execution path。
-
-若修法需要 alias、wrapper、ignore、fallback 或第二份 truth 才能成立，回到 Root Cause / Ownership / Boundary 重新判斷。
+- 新增、刪除或改變 workspace dependency 時，同 changeset 同步 owner `package.json`、`architecture/implementation-topology.json` 與 root `pnpm-lock.yaml`。
+- 不以目錄對稱、檔案數、FPT category、GitHub Mobile surface 或「看起來像 DDD」作 package existence evidence。
 
 ## Validation
 
-依 evidence class 分開描述，不互相冒充：
+依 root canonical commands：
 
-- Formatting / lint：`pnpm lint`
-- Module / dependency：`pnpm boundaries`
-- Semantic + architecture：`pnpm architecture`、`pnpm architecture:test`
-- Reachability：`pnpm deadcode`
-- Type：`pnpm typecheck`
-- Behavior：`pnpm test`
-- Build：`pnpm build`
-- 一般 repository gate：`pnpm check`
-- Merge / release full gate：`pnpm validate`
+- `pnpm lint`
+- `pnpm boundaries`
+- `pnpm architecture`
+- `pnpm architecture:test`
+- `pnpm deadcode`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+- 一般修改：`pnpm check`
+- merge / release 前：`pnpm validate`
 
-任何 CI failure 都讀實際 Job Log，修最早有效 failure；不得以修改 `.dependency-cruiser.mjs`、`biome.json`、`knip.jsonc` 降低標準。
+Evidence 必須精確描述實際執行內容；Lint、Typecheck、Test、Build、Architecture、Schema、Deployment、Provider Readback 與 Device Verification 不互相替代。
