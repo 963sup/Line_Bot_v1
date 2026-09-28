@@ -35,58 +35,129 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 
 每個 production source 必須有且只有一個主要 architecture role。若無法唯一回答「這個檔案屬於哪一層、負責什麼」，先解 architecture ambiguity，再新增功能。
 
-Canonical roles：
+### Canonical physical layout
+
+下列是 owner package 的 canonical physical vocabulary。它是 **maximum shape，不是空資料夾模板**；只有真實 responsibility 存在時才建立對應目錄或檔案。
 
 ```text
 packages/<owner>/
+├─ src/
+│  ├─ domain/
+│  │  ├─ entities/
+│  │  ├─ value-objects/
+│  │  ├─ aggregates/
+│  │  ├─ services/
+│  │  ├─ events/
+│  │  └─ policies/
+│  │
+│  ├─ contracts/
+│  │  ├─ input/
+│  │  ├─ output/
+│  │  │  └─ repositories/
+│  │  └─ dto/
+│  │
+│  ├─ application/
+│  │  ├─ use-cases/
+│  │  ├─ commands/
+│  │  ├─ queries/
+│  │  └─ services/
+│  │
+│  ├─ adapters/
+│  │  ├─ inbound/
+│  │  └─ outbound/
+│  │     ├─ persistence/
+│  │     ├─ cache/
+│  │     └─ external-api/
+│  │
+│  ├─ composition/          # 只有多個 concrete wiring unit 時建立
+│  └─ testing/              # test-only capability
 │
-├─ Domain
-│  ├─ Entity
-│  ├─ Value Object
-│  ├─ Aggregate / Aggregate Root
-│  ├─ Domain Service
-│  ├─ Domain Event
-│  ├─ Domain Policy / Specification
-│  └─ Business Invariant / Transition
-│
-├─ Contracts / Ports
-│  ├─ Inbound Port
-│  ├─ Outbound Port
-│  ├─ Published DTO
-│  └─ Stable cross-package Contract
-│
-├─ Application
-│  ├─ Use Case
-│  ├─ Command / Query
-│  ├─ Application Service
-│  └─ Orchestration
-│
-├─ Adapters
-│  ├─ Inbound Adapter
-│  └─ Outbound Adapter
-│
-├─ Composition / Public Entry
-│  └─ dependency wiring / named public capability
-│
-└─ Test / Evidence
-   ├─ Domain behavior
-   ├─ Application use case
-   ├─ Contract
-   └─ Adapter integration
+└─ test/
 ```
 
-這是 responsibility taxonomy，不是空資料夾模板。沒有真實 responsibility 的 layer 不得為了對稱建立空 folder、interface、wrapper、service 或 facade；但已存在的 source 不得因為「檔案少」而省略分層判定或混合責任。
+小 package 可以用單檔承載同一責任，例如 `src/domain.ts`、`src/contracts.ts`、`src/application.ts`、`src/postgres.ts`；source 數量或責任成長後再展開成目錄。Folder name 不是 authority；責任與 dependency direction 才是。
 
-常見實體 placement 可使用：
+### Single-owner placement rules
 
-- `src/domain.ts` 或 `src/domain/`
-- `src/contracts.ts` 或 `src/contracts/`
-- `src/application.ts` 或 `src/application/`
-- `src/adapters/`
-- named composition / public entry，例如 `src/postgres.ts`、`src/gemini.ts`
-- `src/testing/` 與 `test/`
+以下位置規則是為了消除 competing source of truth，不得同時維護第二個等價 abstraction：
 
-Folder name 不是 authority；source responsibility 與 dependency direction 才是。
+- **Repository abstraction 是 Outbound Port**：唯一 canonical location 為 `src/contracts/output/repositories/`（小 package 可放在 `src/contracts.ts` / `src/contracts/*.ts`）。不得再建立 `src/domain/repositories/` 或 `src/application/ports/output/` 的同義 Repository interface。
+- **Inbound / Outbound Port 都屬 Contracts**：Inbound Port → `src/contracts/input/`；Outbound Port → `src/contracts/output/`。Application 使用 Port，但不重新定義 Port。
+- **DTO 只有一個 owner**：跨 boundary / published exchange DTO → `src/contracts/dto/`；use-case private input/output type 可與 use case colocate，但不得再建立等價 Published DTO。
+- **Persistence implementation 只有一個 owner**：owner-specific PostgreSQL / Supabase / SQL implementation → `src/adapters/outbound/persistence/`。不得再建立平行 `src/infrastructure/database/` 來實作相同 Repository / Store。
+- **Neutral infrastructure 不屬 owner package**：connection pool、generic transaction runner、generic SQL/runtime primitive 等無 business authority 的 mechanism 由 `@line_bot_v1/platform` 擁有；owner package 不建立共用 infrastructure layer。
+- **Inbound transport 是 Adapter，不是 Application**：HTTP / webhook / queue consumer / CLI 只負責 transport、authentication/input parsing、request identity 等 boundary concern，再呼叫 Inbound Port / Application Use Case；不得擁有 business invariant。
+- **Composition 只 wiring**：concrete dependency wiring 可放 `src/composition/`；小 package 可使用 `src/postgres.ts`、`src/gemini.ts` 等 named public entry。不得用 composition 重寫 Domain/Application rule。
+- **Package 不使用 `main.ts` 作第二個 composition root**：application host / executable runtime 才有頂層 runtime entry；package 對外 surface 由 `package.json#exports` 定義。
+- **Adapter privacy**：`src/adapters/**` 是 private implementation；外部 consumer 只能經 exact `package.json#exports` named capability 取得需要的 public surface。
+
+若現況存在 legacy path，修正 owner / contract / exports；不得建立 alias、wrapper、facade 或雙路徑長期共存。
+
+### Correctness responsibility ownership
+
+Concurrency、idempotency、transaction、outbox 是 Essential Complexity，但每一項只有一個主要 responsibility owner：
+
+| Concern | Primary responsibility |
+| --- | --- |
+| Domain | 決定 invariant、合法 state transition、Aggregate consistency rule；不依賴 DB lock / HTTP / SDK |
+| Application | 控制 use-case orchestration，攜帶 request identity / expected version / command intent；不以「先查再判斷」作 concurrency correctness |
+| Repository Port | 定義 Aggregate load/save capability，以及 save 所需 expected-version / atomic persistence semantics；不實作 SQL |
+| Persistence Adapter | 把 Repository Port 映射成 transaction、conditional update / lock、state persistence、receipt / outbox persistence |
+| Database / Schema | 最終保證 atomicity、constraint、unique key、lock / optimistic concurrency predicate；不得取得 Domain authority |
+| Inbound Adapter | 接收並驗證 Idempotency Key / request identity、transport auth 與 payload；不能成為唯一 idempotency truth |
+| Durable Idempotency Store | 以 unique identity + fingerprint + durable receipt 保證同一 intent 不重複產生 effect |
+| Domain Event | 描述已成立的 Domain fact；不負責 transport retry |
+| Transactional Outbox | 與 Aggregate state 在同一 DB transaction 保存 publication intent，保證 state-event consistency |
+| Outbox Worker / Consumer Adapter | claim / retry / publish / downstream dedupe；不得反向改寫 producer Domain truth |
+| Saga / Process Manager | 只有跨 Aggregate / Bounded Context 的長流程確實需要 compensating / eventual coordination 時才存在 |
+
+Canonical write flow：
+
+```text
+Inbound Adapter
+    │
+    ├─ establish idempotency identity
+    ▼
+Application Use Case
+    │
+    ▼
+Repository.load()
+    │
+    ▼
+Aggregate
+    │
+    ├─ enforce invariant
+    ├─ produce Domain Event(s)
+    ▼
+Repository.save(expectedVersion, events)
+    │
+    ▼
+Persistence Adapter
+    │
+    ├─ conditional update / lock
+    ├─ persist Aggregate state
+    ├─ persist durable idempotency receipt
+    └─ persist Outbox records
+    ▼
+DB transaction commit
+    │
+    ▼
+Outbox Worker / Consumer Adapter
+    │
+    ▼
+Other Bounded Contexts
+```
+
+Mandatory correctness rules：
+
+- **禁止 check-then-act correctness**：`if (availableStock >= quantity)`、`if (!exists)` 等 pre-read 只能作 UX / optimization；若 race 會破壞 invariant，最終必須由 expected version、atomic conditional write、lock、constraint 或 unique key 保證。
+- **Optimistic concurrency 必須 fail closed**：`save(expectedVersion)` 若 affected rows = 0 / version 不符，必須回傳 conflict；不得 silent overwrite 或重新讀後偷偷覆蓋。
+- **Idempotency 必須 durable**：same request identity + same fingerprint → durable replay result；same identity + different fingerprint → conflict。只存在 memory / HTTP middleware 的去重不構成 correctness evidence。
+- **State + Outbox 同 transaction**：Domain state 成功但 outbox intent 遺失，或 outbox 成功但 state rollback，都屬不合法狀態。
+- **External publish 不放在 Aggregate transaction 內**：先 commit state + outbox，再由 worker retry publication；provider timeout 不回滾已成立的 Domain fact。
+- **Cross-boundary correctness 不直接共享 Aggregate**：跨 Bounded Context 預設透過 stable contract / event / projection；需要多步補償時才引入 Saga / Process Manager。
+- **Database mechanism 不取得 business ownership**：constraint / trigger / transaction 可以 enforce invariant，但 invariant 的 semantic owner 仍由 Domain 定義，schema 是 executable enforcement / persistence truth。
+- **Application 不複製 Domain invariant**：Application 可以檢查 precondition / authorization / orchestration state，但 Domain rule 的唯一決策來源仍是 Aggregate / Domain Policy。
 
 ## Hexagonal dependency direction
 
