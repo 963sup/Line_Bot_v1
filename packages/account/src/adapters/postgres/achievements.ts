@@ -1,4 +1,4 @@
-import { businessDatabase, type Database } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type {
   UserAchievement,
   UserAchievementStore,
