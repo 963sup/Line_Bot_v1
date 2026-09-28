@@ -36,10 +36,9 @@ export function collectChangeState({ cwd = repositoryRoot, git = gitAdapter(cwd)
   const branch =
     git.run(["symbolic-ref", "--quiet", "--short", "HEAD"], { optional: true }) ?? "DETACHED";
   const head = git.run(["rev-parse", "HEAD"]);
-  const upstream = git.run(
-    ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
-    { optional: true },
-  );
+  const upstream = git.run(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"], {
+    optional: true,
+  });
   const originMain = git.run(["rev-parse", "--verify", "origin/main"], { optional: true });
   const porcelain = git.run(["status", "--porcelain=v1", "--untracked-files=all"]);
   const conflicts = splitLines(
@@ -53,7 +52,9 @@ export function collectChangeState({ cwd = repositoryRoot, git = gitAdapter(cwd)
       )
     : [];
   const workspaceFiles = [
-    ...splitLines(git.run(["diff", "--name-only", "--diff-filter=ACMRD", "HEAD"], { optional: true })),
+    ...splitLines(
+      git.run(["diff", "--name-only", "--diff-filter=ACMRD", "HEAD"], { optional: true }),
+    ),
     ...splitLines(
       git.run(["diff", "--cached", "--name-only", "--diff-filter=ACMRD"], { optional: true }),
     ),
@@ -86,10 +87,16 @@ export function evaluatePreflight(state) {
   if (state.branch === "DETACHED") {
     issues.push({ code: "detached-head", message: "HEAD must be on a named feature branch." });
   } else if (state.branch === "main") {
-    issues.push({ code: "main-branch", message: "Preflight must run from the change branch, not main." });
+    issues.push({
+      code: "main-branch",
+      message: "Preflight must run from the change branch, not main.",
+    });
   }
   if (!state.upstream) {
-    issues.push({ code: "missing-upstream", message: "The change branch must have an upstream remote." });
+    issues.push({
+      code: "missing-upstream",
+      message: "The change branch must have an upstream remote.",
+    });
   }
   if (!state.originMain) {
     issues.push({
@@ -99,7 +106,10 @@ export function evaluatePreflight(state) {
   }
   if (state.behind === null) {
     if (state.originMain) {
-      issues.push({ code: "unknown-divergence", message: "Unable to compare the branch with origin/main." });
+      issues.push({
+        code: "unknown-divergence",
+        message: "Unable to compare the branch with origin/main.",
+      });
     }
   } else if (state.behind > 0) {
     issues.push({

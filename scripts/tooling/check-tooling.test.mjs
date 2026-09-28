@@ -36,6 +36,8 @@ function fixture(t) {
     ".codex/AGENTS.md",
   ])
     write(path, "# Scope\\n");
+  write("scripts/README.md", "# Scripts\\n");
+  write("scripts/tooling/README.md", "# Tooling scripts\\n");
   write("packages/demo/AGENTS.md", "# @line_bot_v1/demo\\n");
   write("packages/demo/README.md", "# @line_bot_v1/demo\\n");
   write(".node-version", `${exactNodeVersion}\n`);
