@@ -12,13 +12,25 @@
       "types": "./dist/application/notifications.d.ts",
       "default": "./dist/application/notifications.js"
     },
-    "./application/ports/notification-repository": {
-      "types": "./dist/application/ports/notification-repository.d.ts",
-      "default": "./dist/application/ports/notification-repository.js"
+    "./domain/entities/notification": {
+      "types": "./dist/domain/entities/notification.d.ts",
+      "default": "./dist/domain/entities/notification.js"
     },
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./domain/value-objects/notification-id": {
+      "types": "./dist/domain/value-objects/notification-id.d.ts",
+      "default": "./dist/domain/value-objects/notification-id.js"
+    },
+    "./domain/value-objects/notification-kind": {
+      "types": "./dist/domain/value-objects/notification-kind.d.ts",
+      "default": "./dist/domain/value-objects/notification-kind.js"
+    },
+    "./contracts/repositories/notification-repository": {
+      "types": "./dist/contracts/repositories/notification-repository.d.ts",
+      "default": "./dist/contracts/repositories/notification-repository.js"
     }
   },
   "files": [

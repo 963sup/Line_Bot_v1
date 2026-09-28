@@ -1,6 +1,6 @@
 "use client";
 
-import type { Notification } from "@line_bot_v1/notifications/domain";
+import type { Notification } from "@line_bot_v1/notifications/domain/entities/notification";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

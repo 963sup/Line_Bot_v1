@@ -1,5 +1,6 @@
-import { NotificationError, normalizeNotificationId } from "../domain.js";
-import type { NotificationRepository } from "./ports/notification-repository.js";
+import type { NotificationRepository } from "../contracts/repositories/notification-repository.js";
+import { NotificationError } from "../domain/error.js";
+import { normalizeNotificationId } from "../domain/value-objects/notification-id.js";
 
 export function createNotifications(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
