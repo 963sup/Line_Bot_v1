@@ -22,7 +22,6 @@ Current route inventory、Mobile app-shell 與 URL contract 由 [Web runtime](..
 | [(mobile)](%28mobile%29/AGENTS.md) | Authenticated Mobile / LINE MINI App delivery |
 | [(rich-menu)](%28rich-menu%29/AGENTS.md) | Rich Menu entry composition |
 | [(onboarding)](%28onboarding%29/AGENTS.md) | Registration / restore / completion |
-| [(admin)](%28admin%29/AGENTS.md) | Admin delivery |
 | [(system)](%28system%29/AGENTS.md) | Callback / continuation / unavailable results |
 | [api](api/AGENTS.md) | HTTP methods、input/scope translation、owner wiring |
 

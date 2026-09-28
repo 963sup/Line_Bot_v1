@@ -36,41 +36,18 @@ async function advancePermissionVersion(
   return next;
 }
 
-export async function hasPermission(
-  sql: Sql,
-  actor: string,
-  permission: Permission,
-  workplaceId: string | null = null,
-) {
+export async function hasPermission(sql: Sql, actor: string, permission: Permission) {
   const user = await readActiveUserQualification(sql, actor, "share");
   if (!user) return false;
   return Boolean(
     (
       await sql.query(
         `SELECT 1 FROM permission_grants
-         WHERE user_id=$1 AND user_version=$2 AND permission=$3
-           AND (workplace_id IS NULL OR workplace_id=$4::uuid)`,
-        [actor, user.statusVersion, permission, workplaceId],
+         WHERE user_id=$1 AND user_version=$2 AND permission=$3`,
+        [actor, user.statusVersion, permission],
       )
     ).rows.length,
   );
-}
-
-export async function workplacePermissionScope(sql: Sql, actor: string) {
-  const user = await readActiveUserQualification(sql, actor, "share");
-  if (!user) return { global: false, workplaceIds: [] as string[] };
-  const rows = (
-    await sql.query(
-      `SELECT workplace_id FROM permission_grants
-       WHERE user_id=$1 AND user_version=$2 AND permission='workplaces.manage'
-       ORDER BY workplace_id NULLS FIRST`,
-      [actor, user.statusVersion],
-    )
-  ).rows as Array<{ workplace_id: string | null }>;
-  return {
-    global: rows.some((row) => row.workplace_id === null),
-    workplaceIds: rows.flatMap((row) => (row.workplace_id ? [row.workplace_id] : [])),
-  };
 }
 
 async function manager(sql: Sql, actor: string) {
@@ -108,23 +85,12 @@ async function grants(sql: Sql, id: string): Promise<PermissionGrant[]> {
   const qualification = await readUserQualification(sql, id);
   const rows = (
     await sql.query(
-      `SELECT g.permission,g.workplace_id AS "workplaceId",w.name AS "workplaceName",g.user_version
-       FROM permission_grants g
-       LEFT JOIN permission_workplace_targets w ON w.id=g.workplace_id
-       WHERE g.user_id=$1
-       ORDER BY g.permission,g.workplace_id NULLS FIRST`,
+      "SELECT permission,user_version FROM permission_grants WHERE user_id=$1 ORDER BY permission",
       [id],
     )
-  ).rows as Array<{
-    permission: string;
-    workplaceId: string | null;
-    workplaceName: string | null;
-    user_version: number;
-  }>;
+  ).rows as Array<{ permission: string; user_version: number }>;
   return rows.map((row) => ({
     permission: row.permission,
-    workplaceId: row.workplaceId,
-    workplaceName: row.workplaceName,
     effective:
       qualification?.status === "active" &&
       Number(row.user_version) === qualification.statusVersion,
@@ -160,7 +126,6 @@ export class PostgresPermissionStore implements PermissionStore {
       const rows = (
         await sql.query(
           `SELECT request_id AS "requestId",actor,command->>'permission' AS permission,
-                  command->>'workplaceId' AS "workplaceId",
                   (command->>'enabled')::boolean AS enabled,
                   command->>'reason' AS reason,at
            FROM permission_commands
@@ -224,13 +189,6 @@ export class PostgresPermissionStore implements PermissionStore {
         throw new PermissionError(409, "只能授權有效使用者。");
       }
 
-      if (c.workplaceId) {
-        const workplace = (
-          await sql.query("SELECT 1 FROM permission_workplace_targets WHERE id=$1", [c.workplaceId])
-        ).rows[0];
-        if (!workplace) throw new PermissionError(400, "指定地點不存在。");
-      }
-
       if (
         c.enabled &&
         c.permission === "users.suspend" &&
@@ -252,21 +210,20 @@ export class PostgresPermissionStore implements PermissionStore {
       }
 
       const before = (
-        await sql.query(
-          "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
-          [c.target],
-        )
+        await sql.query("SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission", [
+          c.target,
+        ])
       ).rows;
-      await sql.query(
-        "DELETE FROM permission_grants WHERE user_id=$1 AND permission=$2 AND workplace_id IS NOT DISTINCT FROM $3::uuid",
-        [c.target, c.permission, c.workplaceId],
-      );
+      await sql.query("DELETE FROM permission_grants WHERE user_id=$1 AND permission=$2", [
+        c.target,
+        c.permission,
+      ]);
       if (c.enabled) {
         await sql.query(
           `INSERT INTO permission_grants(
-             user_id,permission,workplace_id,user_version,granted_by,granted_at
-           ) VALUES($1,$2,$3,$4,$5,$6)`,
-          [c.target, c.permission, c.workplaceId, target.statusVersion, actor, now],
+             user_id,permission,user_version,granted_by,granted_at
+           ) VALUES($1,$2,$3,$4,$5)`,
+          [c.target, c.permission, target.statusVersion, actor, now],
         );
       }
       const version = await advancePermissionVersion(sql, c.target, currentVersion);
@@ -282,7 +239,7 @@ export class PostgresPermissionStore implements PermissionStore {
           JSON.stringify(
             (
               await sql.query(
-                "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
+                "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission",
                 [c.target],
               )
             ).rows,

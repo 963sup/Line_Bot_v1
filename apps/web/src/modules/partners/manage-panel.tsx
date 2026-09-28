@@ -176,7 +176,7 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
     <>
       <PageHeading
         title="合作夥伴管理"
-        back="/admin"
+        back="/partners"
         description="維護合作夥伴、窗口與聯繫方式。"
       />
       <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />

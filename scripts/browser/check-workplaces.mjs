@@ -7,8 +7,8 @@ const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
   ? (name) => require(path.join(process.env.PLAYWRIGHT_PACKAGE_PATH, name))
   : require;
-const { chromium } = load("playwright"),
-  { expect } = load("playwright/test");
+const { chromium } = load("playwright");
+const { expect } = load("playwright/test");
 const target = new URL(process.env.NAVIGATION_BASE ?? "http://127.0.0.1:4117");
 if (
   target.protocol !== "http:" ||
@@ -16,10 +16,12 @@ if (
   target.pathname !== "/" ||
   target.search ||
   target.hash
-)
+) {
   throw new Error("Loopback origin required.");
+}
 const output = process.env.NAVIGATION_ARTIFACT_DIR;
 if (output) mkdirSync(output, { recursive: true });
+
 const browser = await chromium.launch({
   headless: true,
   channel: process.env.NAVIGATION_BROWSER_CHANNEL || undefined,
@@ -29,48 +31,80 @@ const context = await browser.newContext({
   serviceWorkers: "block",
 });
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
-const page = await context.newPage(),
-  errors = [],
-  posts = [],
-  receipts = new Map();
-let site = null,
-  members = [],
-  memberId = "manager-a",
-  deny = false,
-  lose = false;
-page.on("pageerror", (e) => errors.push(e.message));
+const page = await context.newPage();
+const errors = [];
+const posts = [];
+const receipts = new Map();
+const repositoryId = "11111111-1111-4111-8111-111111111111";
+let site = null;
+let userId = "manager-a";
+let capability = "admin";
+let lose = false;
+
+page.on("pageerror", (error) => errors.push(error.message));
 await context.route("**/*", async (route) => {
-  const req = route.request(),
-    url = new URL(req.url());
-  if (url.hostname === "static.line-scdn.net")
+  const request = route.request();
+  const url = new URL(request.url());
+  if (url.hostname === "static.line-scdn.net") {
     return route.fulfill({
       contentType: "text/javascript",
       body: "window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,login:()=>{}};",
     });
+  }
   if (url.origin !== target.origin) return route.abort();
+
+  if (url.pathname === "/api/repositories") {
+    return route.fulfill({
+      json: {
+        items: [
+          {
+            id: repositoryId,
+            ownerLogin: "acme",
+            name: "operations",
+            capability,
+          },
+        ],
+      },
+    });
+  }
+
   if (url.pathname === "/api/workplaces") {
-    if (deny) return route.fulfill({ status: 403, json: { error: "沒有工作地點管理權限。" } });
-    if (req.method() === "GET")
+    if (capability !== "admin") {
+      return route.fulfill({
+        status: 403,
+        json: { error: "需要此 Repository 的 admin 權限。" },
+      });
+    }
+    if (request.method() === "GET") {
+      assert.equal(url.searchParams.get("id"), repositoryId);
       return route.fulfill({
         json: {
-          memberId,
+          userId,
           canCreate: true,
           sites: site ? [site] : [],
-          members: url.searchParams.get("id") ? members : [],
           next: null,
         },
       });
-    const c = req.postDataJSON();
-    posts.push(c);
-    let result = receipts.get(c.requestId);
+    }
+
+    const command = request.postDataJSON();
+    posts.push(command);
+    assert.equal(command.action, "save");
+    assert.equal(command.id, repositoryId);
+    let result = receipts.get(command.requestId);
     if (!result) {
-      if (c.action === "save") site = { ...c, version: (site?.version ?? 0) + 1 };
-      else {
-        members = c.allowed ? [{ id: c.memberId, status: "active" }] : [];
-        site.version++;
-      }
-      result = { id: c.id, version: site.version };
-      receipts.set(c.requestId, result);
+      site = {
+        id: command.id,
+        name: command.name,
+        description: command.description,
+        latitude: command.latitude,
+        longitude: command.longitude,
+        radius: command.radius,
+        enabled: command.enabled,
+        version: command.expectedVersion + 1,
+      };
+      result = { id: command.id, version: site.version };
+      receipts.set(command.requestId, result);
     }
     if (lose) {
       lose = false;
@@ -78,59 +112,59 @@ await context.route("**/*", async (route) => {
     }
     return route.fulfill({ json: result });
   }
-  if (url.pathname.startsWith("/api/"))
+
+  if (url.pathname.startsWith("/api/")) {
     return route.fulfill({ status: 403, json: { error: "Synthetic denial" } });
+  }
   return route.continue();
 });
+
 try {
-  await page.goto(target.origin + "/admin/workplaces");
-  await expect(page.getByRole("button", { name: "新增地點" })).toBeEnabled();
-  await page.getByRole("button", { name: "新增地點" }).click();
-  await page.getByLabel("地點名稱").fill("測試工作室");
+  await page.goto(target.origin + "/acme/operations/settings/attendance");
+  await expect(page.getByRole("heading", { name: "Attendance Location" })).toBeVisible();
+  await page.getByLabel("地點名稱").fill("營運中心");
   await page.getByLabel("地址或位置說明").fill("一樓入口");
   await page.getByLabel("緯度", { exact: true }).fill("25");
   await page.getByLabel("經度", { exact: true }).fill("121");
-  await page.getByRole("button", { name: "儲存地點" }).click();
-  await expect(page.getByRole("heading", { name: "可以打卡的人員" })).toBeVisible();
-  assert.equal(posts.length, 1);
-  await page.getByLabel("會員編號").fill("synthetic-member");
+  await page.getByLabel("啟用打卡點").check();
+
   lose = true;
-  await page.getByRole("button", { name: "加入人員" }).click();
+  await page.getByRole("button", { name: "儲存打卡點" }).click();
   await expect(page.getByRole("button", { name: "重試原操作" })).toBeEnabled();
+  assert.equal(posts.length, 1);
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "重試原操作" })).toBeEnabled();
+  assert.equal(posts.length, 1);
   await page.getByRole("button", { name: "重試原操作" }).click();
-  await expect(page.getByRole("listitem")).toContainText("synthetic-member");
-  assert.deepEqual(posts[1], posts[2], "retry must preserve the original UUID and payload");
-  if (output) await page.screenshot({ path: path.join(output, "workplaces.png"), fullPage: true });
-  page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "移除人員" }).click();
-  await expect(page.getByText("尚未加入人員，此地點目前無人可以打卡。")).toBeVisible();
-  // A different account discovered at preflight cannot submit the previous account's form.
+  await expect(page.getByText("Repository 打卡點已更新。", { exact: true })).toBeVisible();
+  assert.equal(posts.length, 2);
+  assert.deepEqual(posts[0], posts[1], "retry must preserve request identity and payload");
+  assert.equal(receipts.size, 1);
+
+  userId = "manager-b";
   await page.getByLabel("地點名稱").fill("不得提交");
-  memberId = "manager-b";
-  const before = posts.length;
-  await page.getByRole("button", { name: "儲存地點" }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "帳號已變更" })).toBeVisible();
-  assert.equal(posts.length, before);
-  deny = true;
-  await page.getByRole("button", { name: "重新載入" }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "管理權限" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "新增地點" })).toHaveCount(0);
+  const beforeIdentityChange = posts.length;
+  await page.getByRole("button", { name: "儲存打卡點" }).click();
+  await expect(page.getByRole("alert")).toContainText("帳號或 Repository 權限已變更");
+  assert.equal(posts.length, beforeIdentityChange);
+
+  userId = "manager-a";
+  capability = "read";
+  await page.reload();
+  await expect(page.getByRole("alert")).toContainText("Repository 的 admin 權限");
+  await expect(page.getByRole("button", { name: "儲存打卡點" })).toHaveCount(0);
+
   assert.deepEqual(errors, []);
   if (output) {
+    await page.screenshot({ path: path.join(output, "workplaces.png"), fullPage: true });
     await context.tracing.stop({ path: path.join(output, "workplaces-trace.zip") });
     writeFileSync(
       path.join(output, "workplaces-results.json"),
       JSON.stringify(
         {
           status: "passed",
-          checks: [
-            "create",
-            "add member",
-            "identical retry",
-            "remove member",
-            "account change",
-            "permission denial",
-          ],
+          checks: ["repository scope", "identical retry", "account change", "access revocation"],
           posts: posts.length,
         },
         null,
@@ -138,7 +172,7 @@ try {
       ),
     );
   }
-  console.log("Workplaces browser checks passed.");
+  console.log("Repository Attendance Location browser checks passed.");
 } catch (error) {
   if (output) {
     await page.screenshot({ path: path.join(output, "workplaces-failure.png"), fullPage: true });

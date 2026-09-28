@@ -8,11 +8,9 @@
       "entry": [
         "scripts/attendance/worker.mjs",
         "scripts/browser/check-auto-clock.mjs",
-        "scripts/browser/check-member-management.mjs",
         "scripts/browser/check-membership.mjs",
         "scripts/browser/check-navigation.mjs",
         "scripts/browser/check-partner-management.mjs",
-        "scripts/browser/check-permissions.mjs",
         "scripts/browser/check-profile.mjs",
         "scripts/browser/check-repository-resources.mjs",
         "scripts/browser/check-workplaces.mjs",

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  repositoryAttendanceSettingsPath,
   repositoryDiscussionsPath,
   repositoryIssueCreatePath,
   repositoryIssuePath,
@@ -22,6 +23,10 @@ test("repository resource navigation builds canonical owner/name URLs", () => {
   assert.equal(repositoryDiscussionsPath("acme", "Operations"), "/acme/Operations/discussions");
   assert.equal(repositoryLabelsPath("acme", "Operations"), "/acme/Operations/labels");
   assert.equal(repositoryMilestonesPath("acme", "Operations"), "/acme/Operations/milestones");
+  assert.equal(
+    repositoryAttendanceSettingsPath("acme", "Operations"),
+    "/acme/Operations/settings/attendance",
+  );
 });
 
 test("repository resource navigation encodes path segments independently", () => {

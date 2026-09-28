@@ -75,11 +75,13 @@ export async function closeFixture() {
 export async function allowAttendance(memberId: string) {
   const id = randomUUID();
   await fixture.pg.query(
-    "INSERT INTO app_private.workplaces(id,name,description,latitude,longitude,radius,enabled,version) VALUES($1,'Test','',25,121,100,true,1)",
-    [id],
+    `INSERT INTO app_private.repositories(
+       id,owner_account_id,owner_account_kind,name,visibility,next_issue_number,version
+     ) VALUES($1,$2,'USER',$3,'private',1,1)`,
+    [id, memberId, `attendance-${id.slice(0, 8)}`],
   );
   await fixture.pg.query(
-    "INSERT INTO app_private.workplace_members(workplace_id,member_id) VALUES($1,$2)",
-    [id, memberId],
+    "INSERT INTO app_private.workplaces(id,name,description,latitude,longitude,radius,enabled,version) VALUES($1,'Test','',25,121,100,true,1)",
+    [id],
   );
 }

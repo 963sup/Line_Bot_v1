@@ -9,6 +9,23 @@ import { IssueError, type RepositoryCapability, type RepositorySummary } from ".
 
 export type RepositoryIdentity = { userId: string };
 
+export async function readEffectiveRepositoryAccess(
+  sql: Sql,
+  userId: string,
+  repositoryId?: string,
+): Promise<Array<{ repositoryId: string; capability: RepositoryCapability }>> {
+  return (
+    await sql.query(
+      `SELECT repository_id AS "repositoryId",capability
+       FROM repository_effective_access
+       WHERE user_id=$1
+         AND ($2::text IS NULL OR repository_id=$2)
+       ORDER BY repository_id`,
+      [userId, repositoryId ?? null],
+    )
+  ).rows as Array<{ repositoryId: string; capability: RepositoryCapability }>;
+}
+
 export async function accessibleRepositories(
   sql: Sql,
   userId: string,

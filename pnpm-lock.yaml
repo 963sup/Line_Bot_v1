@@ -267,15 +267,15 @@ importers:
       '@line_bot_v1/asset':
         specifier: workspace:*
         version: link:../asset
-      '@line_bot_v1/identity-access':
-        specifier: workspace:*
-        version: link:../identity-access
       '@line_bot_v1/ledger':
         specifier: workspace:*
         version: link:../ledger
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

@@ -252,15 +252,7 @@
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/841_workplace_memberships.sql",
-      "role": "authoritative"
-    },
-    {
       "path": "supabase/schemas/842_workplace_commands.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/843_workplace_chat.sql",
       "role": "authoritative"
     },
     {
@@ -883,33 +875,13 @@
       "path": "supabase/schemas/840_workplaces.sql",
       "authority": true,
       "semanticOwner": "attendance",
-      "concept": "workplace"
-    },
-    {
-      "name": "workplace_members",
-      "kind": "table",
-      "path": "supabase/schemas/841_workplace_memberships.sql",
-      "authority": true,
-      "semanticOwner": "attendance"
+      "concept": "workplace",
+      "note": "Workplace identity equals Repository id; Repository effective access owns clock participation."
     },
     {
       "name": "workplace_commands",
       "kind": "table",
       "path": "supabase/schemas/842_workplace_commands.sql",
-      "authority": true,
-      "semanticOwner": "attendance"
-    },
-    {
-      "name": "workplace_chat_drafts",
-      "kind": "table",
-      "path": "supabase/schemas/843_workplace_chat.sql",
-      "authority": true,
-      "semanticOwner": "attendance"
-    },
-    {
-      "name": "workplace_chat_events",
-      "kind": "table",
-      "path": "supabase/schemas/843_workplace_chat.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
@@ -995,14 +967,6 @@
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "attendance"]
-    },
-    {
-      "name": "permission_workplace_targets",
-      "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
-      "authority": false,
-      "role": "derived-projection",
-      "participants": ["attendance", "identity-access"]
     },
     {
       "name": "user_management_activity",

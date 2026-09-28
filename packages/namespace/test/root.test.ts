@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { isReservedRootNamespaceKey, ROOT_NAMESPACE_RESERVED_KEYS } from "../src/domain/root.js";
 
 const appRoot = new URL("../../../apps/web/src/app/", import.meta.url);
-const routeGroups = ["(admin)", "(mobile)", "(onboarding)", "(public)", "(resource)", "(system)"];
+const routeGroups = ["(mobile)", "(onboarding)", "(public)", "(resource)", "(system)"];
 
 function sqlReservedKeys(pattern: RegExp): string[] {
   const sql = readFileSync(

@@ -128,7 +128,6 @@ test("app root rejects unexpected folders, new root files and wrong entry kinds"
   const app = resolve(root, "apps/web/src/app");
   try {
     for (const folder of [
-      "(admin)",
       "(mobile)",
       "(onboarding)",
       "(public)",
@@ -268,7 +267,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       (await checkArchitecture(root)).errors.some((error) =>
         error.startsWith("route-group-does-not-borrow-mobile-shell:"),
       ),
-      "onboarding/public/rich-menu/system/admin must not borrow the authenticated mobile shell",
+      "onboarding/public/rich-menu/system must not borrow the authenticated mobile shell",
     );
     write(
       root,

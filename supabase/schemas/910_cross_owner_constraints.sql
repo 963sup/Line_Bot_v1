@@ -140,12 +140,6 @@ after insert or update or delete on app_private.organizations
 deferrable initially deferred for each row execute function app_private.enforce_account_facet();
 
 
--- Authorization owns the permission relation; Workplace owns its target relation.
-alter table app_private.permission_grants
-  add constraint "permission_grants_workplace_id_fkey"
-  foreign key (workplace_id) references app_private.workplaces(id);
-
-
 -- Enterprise owns attachment; Organization existence is a cross-owner invariant created after both roots exist.
 alter table app_private.enterprise_organizations
   add constraint enterprise_organizations_organization_account_id_fkey

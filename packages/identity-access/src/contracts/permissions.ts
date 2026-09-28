@@ -1,7 +1,5 @@
 export type PermissionGrant = {
   permission: string;
-  workplaceId: string | null;
-  workplaceName: string | null;
   effective: boolean;
 };
 export type PermissionView = {
@@ -13,7 +11,6 @@ export type PermissionView = {
     requestId: string;
     actor: string;
     permission: string;
-    workplaceId: string | null;
     enabled: boolean;
     reason: string;
     at: number;

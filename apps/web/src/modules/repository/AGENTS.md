@@ -1,6 +1,6 @@
 # Web repository module
 ## 現行 surface 與 invariant
-URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `issues`、`discussions`、`labels`、`milestones` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。
+URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `issues`、`discussions`、`labels`、`milestones`、`settings/attendance` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。
 
 FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承接。Issue.number、Milestone.number 是 Repository-local；Discussion 使用 opaque id；Label 目前只有 collection。不能為了模仿 GitHub URL 新增 Discussion number 或 Label detail identity。
 
@@ -17,3 +17,5 @@ FPT repos/issues/discussions 的分片在本產品共同由 Repository owner 承
 - `/explore` consumes the Repository discovery contract. Trending uses the owner-defined 7-day active-Star window with total Star/name/id tie-breaks；Activity 只投影 current-access-safe immutable Issue events；Awesome Lists links to the public Repository Star List discovery projection. My Lists management persists exact-retry pending command metadata in browser storage but server remains replay/version/authorization authority.
 
 - Home create intent supports Repository creation at `/repositories/new` plus Issue creation. Repository create owner options come from the owner contract, use stable Account IDs, persist an exact-retry requestId in browser storage for unknown outcomes, and redirect only after a committed create result. Issue create仍 must select a Repository with `write | admin` before entering canonical Issues with `create=1`.
+
+- Attendance Location settings 是 Repository-scoped presentation：current Repository `admin` access 授權 configuration，Attendance 擁有 geofence/fact semantics。Repository access—not a second Workplace membership list—授權 clock participation。

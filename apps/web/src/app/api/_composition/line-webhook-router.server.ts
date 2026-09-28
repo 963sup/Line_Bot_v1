@@ -1,4 +1,3 @@
-import type { WorkplaceChatInput } from "@line_bot_v1/attendance/domain";
 import type { LineWebhookEvent } from "@line_bot_v1/line-channel/messaging";
 import type { RedisIdempotencyStore } from "@line_bot_v1/platform/redis";
 import type { AssistantEvent } from "../../../modules/assistant/event-router.server";
@@ -30,14 +29,6 @@ export function createLineWebhookRouter(config: {
   replyAgent?: (replyToken: string, input: string) => Promise<unknown>;
   replyAssistant?: (replyToken: string, event: AssistantEvent) => Promise<unknown>;
   attendanceMenu?: (userId: string) => Promise<void>;
-  workplaceChat?: (
-    token: string,
-    subject: string,
-    eventId: string,
-    eventAt: number,
-    input: WorkplaceChatInput,
-  ) => Promise<unknown>;
-  workplaceInput?: (text?: string, postback?: string) => WorkplaceChatInput | undefined;
   report?: (outcome: LineWebhookRouterOutcome) => void;
 }) {
   return async (events: LineWebhookEvent[], idempotencyScope: string): Promise<number> => {
@@ -47,8 +38,6 @@ export function createLineWebhookRouter(config: {
     const { selected, senderMismatches, badRequest } = classifyLineWebhookEvents(events, {
       testUserId: config.testUserId,
       attendanceMenu: !!config.attendanceMenu,
-      workplaceChat: !!config.workplaceChat,
-      workplaceInput: config.workplaceInput,
       replyAiTest: !!config.replyAiTest,
       replyAgent: !!config.replyAgent,
       replyAssistant: !!config.replyAssistant,
@@ -64,8 +53,6 @@ export function createLineWebhookRouter(config: {
       agentInput,
       assistant,
       attendanceMenu,
-      workplace,
-      eventAt,
     }: (typeof selected)[number]) => {
       try {
         const store = config.idempotency();
@@ -85,12 +72,12 @@ export function createLineWebhookRouter(config: {
                 operation: "user-authorization",
                 status: 503,
               });
-              if (assistant?.imageId || workplace?.type === "location") return false;
+              if (assistant?.imageId) return false;
               if (config.replyUnavailable) return config.replyUnavailable(token, error);
               throw new Error("Authorization service unavailable", { cause: error });
             }
             if (!authorized) {
-              return assistant?.imageId || workplace?.type === "location"
+              return assistant?.imageId
                 ? false
                 : config.replyMembership
                   ? config.replyMembership(token, userId)
@@ -100,7 +87,6 @@ export function createLineWebhookRouter(config: {
               await config.attendanceMenu!(userId);
               return false;
             }
-            if (workplace) return config.workplaceChat!(token, userId, id, eventAt!, workplace);
             return assistant
               ? config.replyAssistant!(token, assistant)
               : agentInput !== undefined
@@ -132,16 +118,7 @@ export function createLineWebhookRouter(config: {
       }
     };
 
-    const turns = new Map<string, Promise<unknown>>();
-    const results = selected
-      .sort((a, b) => (a.eventAt ?? 0) - (b.eventAt ?? 0))
-      .map((event) => {
-        if (!event.workplace) return runEvent(event);
-        const previous = turns.get(event.userId) ?? Promise.resolve();
-        const result = previous.then(() => runEvent(event));
-        turns.set(event.userId, result);
-        return result;
-      });
+    const results = selected.map(runEvent);
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {

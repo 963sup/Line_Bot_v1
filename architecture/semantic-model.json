@@ -475,7 +475,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current",
-      "definition": "Actual attendance lifecycle, workplace eligibility, and attendance facts.",
+      "definition": "Actual attendance lifecycle, Repository-scoped geofence validation, and attendance facts. Repository access is participation authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -485,7 +485,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current",
-      "definition": "Attendance-owned place and eligibility context.",
+      "definition": "Attendance-owned geofence configuration identified by Repository id; Repository access determines who may clock there.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -827,13 +827,13 @@
       "consistency": "current-identity"
     },
     {
-      "id": "identity-access-attendance-workplace-authorization",
-      "provider": "identity-access",
+      "id": "repository-attendance-eligibility",
+      "provider": "repository",
       "consumer": "attendance",
-      "meaning": "Attendance consumes the current workplaces.manage permission decision for Workplace management.",
+      "meaning": "Attendance consumes current effective Repository access for clock participation and Repository admin for Workplace configuration.",
       "integrationMode": "query",
-      "authority": "identity-access",
-      "consistency": "current-state"
+      "authority": "repository",
+      "consistency": "transaction-recheck"
     },
     {
       "id": "asset-daily-check-in-reward-denomination",
@@ -1968,10 +1968,7 @@
           "./application/permissions/ports",
           "./domain/permission"
         ],
-        "entrypoints": [
-          "apps/web/src/app/(admin)/admin/permissions/page.tsx",
-          "apps/web/src/app/(mobile)/settings/permissions/page.tsx"
-        ],
+        "entrypoints": ["apps/web/src/app/(mobile)/settings/permissions/page.tsx"],
         "testPaths": [],
         "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
       }

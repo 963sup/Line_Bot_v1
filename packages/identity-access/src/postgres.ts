@@ -3,7 +3,6 @@ export {
   hasPermission,
   PostgresPermissionStore,
   protectPermissionAdministrator,
-  workplacePermissionScope,
 } from "./postgres/permissions.js";
 export {
   governanceFingerprint,

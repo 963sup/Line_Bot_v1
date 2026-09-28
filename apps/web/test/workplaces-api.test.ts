@@ -38,7 +38,7 @@ test("workplace HTTP preserves verified actor, rejects forged requests and suppo
     let calls = 0;
     mock.method(PostgresWorkplaceStore.prototype, "read", async (actor: string) => {
       assert.equal(actor, id);
-      return { canCreate: true, sites: [], members: [], next: null };
+      return { canCreate: true, sites: [], next: null };
     });
     mock.method(
       PostgresWorkplaceStore.prototype,
@@ -52,7 +52,7 @@ test("workplace HTTP preserves verified actor, rejects forged requests and suppo
     assert.equal((await GET(request(undefined, ""))).status, 401);
     const page = await GET(request());
     assert.equal(page.status, 200);
-    assert.equal((await page.json()).memberId, id);
+    assert.equal((await page.json()).userId, id);
     const command = {
       action: "save",
       id: randomUUID(),
@@ -72,7 +72,7 @@ test("workplace HTTP preserves verified actor, rejects forged requests and suppo
     assert.equal((await POST(request(command))).status, 200);
     assert.equal(calls, 1);
     mock.method(PostgresWorkplaceStore.prototype, "read", async () => {
-      throw new UserError(403, "沒有工作地點管理權限。");
+      throw new UserError(403, "需要此 Repository 的 admin 權限。");
     });
     assert.equal((await GET(request())).status, 403);
   } finally {

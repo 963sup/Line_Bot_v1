@@ -2,7 +2,6 @@ import { type EntryRoute, entryRoute } from "./entry-route";
 
 type Destination = Exclude<EntryRoute, "pending" | "invalid">;
 const paths: Record<Destination, string> = {
-  workplaces: "/admin/workplaces",
   home: "/home",
   planned: "/planned",
   team: "/team",

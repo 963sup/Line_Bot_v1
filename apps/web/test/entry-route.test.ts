@@ -9,7 +9,6 @@ import {
 
 test("every published operation survives LINE login and resolves to the canonical product page", () => {
   const destinations = {
-    workplaces: "/admin/workplaces",
     home: "/home",
     repositories: "/repositories",
     partners: "/partners",

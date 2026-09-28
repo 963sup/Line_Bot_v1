@@ -1,10 +1,7 @@
--- Workplace aggregate root.
-
--- 工作地點、允許人員與聊天建立流程。依賴：membership。
--- Current workplaces structure. Edit here; historical SQL is retained in Git (see supabase/README.md).
+-- Repository-scoped Attendance Workplace.
 
 create table app_private."workplaces" (
-  "id" uuid not null,
+  "id" text not null,
   "name" text not null,
   "description" text not null,
   "latitude" double precision not null,
@@ -13,6 +10,7 @@ create table app_private."workplaces" (
   "enabled" boolean not null,
   "version" integer not null,
   constraint "workplaces_pkey" PRIMARY KEY (id),
+  constraint "workplaces_repository_id_fkey" FOREIGN KEY (id) REFERENCES app_private.repositories(id),
   constraint "workplaces_description_check" CHECK ((length(description) <= 500)),
   constraint "workplaces_latitude_check" CHECK (((latitude >= ('-90'::integer)::double precision) AND (latitude <= (90)::double precision))),
   constraint "workplaces_longitude_check" CHECK (((longitude >= ('-180'::integer)::double precision) AND (longitude <= (180)::double precision))),

@@ -14,6 +14,10 @@ Repository owns:
 
 Project may reference Repository work but does not acquire Issue/Discussion authority. Notifications only stores delivery references and does not acquire source truth.
 
+## Attendance relationship
+
+Repository current effective access is the authority for whether a User may participate in that Repository's Attendance clock flow. Attendance owns the one-to-one Repository Workplace geofence and attendance facts；Repository does not own latitude/radius or Attendance session state.
+
 ## Invariants
 
 - Every Issue and Discussion belongs to exactly one Repository.

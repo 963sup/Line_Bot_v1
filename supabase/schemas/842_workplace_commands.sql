@@ -3,7 +3,7 @@
 create table app_private."workplace_commands" (
   "request_id" uuid not null,
   "actor" text not null,
-  "workplace_id" uuid not null,
+  "workplace_id" text not null,
   "command" jsonb not null,
   "result" jsonb not null,
   "at" bigint not null,

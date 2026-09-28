@@ -1,7 +1,4 @@
-import { randomUUID } from "node:crypto";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { createWorkplaceChat } from "@line_bot_v1/attendance/application/workplace-chat";
-import { PostgresWorkplaceChatStore } from "@line_bot_v1/attendance/postgres";
 import { createLineClient } from "@line_bot_v1/line-channel/messaging";
 import {
   createUpstashRedisRestTransport,
@@ -13,10 +10,6 @@ import { membershipFailureCode } from "../../../modules/account/failure-code.ser
 import { agentText, aiTestText, answer } from "../../../modules/assistant/answer.server";
 import { createAssistantReply } from "../../../modules/assistant/event-router.server";
 import { membershipMessage } from "../../../modules/assistant/response-presenter.server";
-import {
-  workplaceChatInput,
-  workplaceChatMessage,
-} from "../../../modules/attendance/workplace-chat.server";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { redisNamespace } from "../../../shared/server/runtime-environment";
 import { activeLineUser, findUser } from "./account.server";
@@ -38,12 +31,6 @@ function webhookRedisTransport() {
 export function createLineWebhookHandler(channelSecret: string) {
   const miniApp = lineMiniApp();
   const line = createLineClient({ channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN! });
-  const chat = createWorkplaceChat({
-    activeUser: activeLineUser,
-    store: () => new PostgresWorkplaceChatStore(),
-    now: Date.now,
-    uuid: randomUUID,
-  });
   const handleEvents = createLineWebhookRouter({
     idempotency: () => {
       try {
@@ -66,29 +53,6 @@ export function createLineWebhookHandler(channelSecret: string) {
       }
     },
     attendanceMenu: showAttendanceMenu,
-    workplaceInput: workplaceChatInput,
-    workplaceChat: async (token, subject, eventId, eventAt, input) => {
-      try {
-        const result = await chat(subject, eventId, eventAt, input);
-        if (
-          input.type === "location" &&
-          (!result.draft ||
-            result.draft.expiresAt <= Date.now() ||
-            ["saved", "cancelled"].includes(result.draft.phase))
-        ) {
-          return false;
-        }
-        const message = workplaceChatMessage(result, miniApp.url);
-        return message ? line.replyMessage({ replyToken: token, messages: [message] }) : false;
-      } catch (error) {
-        if (!(error instanceof UserError)) throw error;
-        if (input.type === "location") return false;
-        return line.replyMessage({
-          replyToken: token,
-          messages: [{ type: "text", text: error.message }],
-        });
-      }
-    },
     authorize: async (userId) => {
       try {
         await activeLineUser(userId);

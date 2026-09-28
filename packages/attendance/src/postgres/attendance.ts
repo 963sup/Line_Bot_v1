@@ -186,8 +186,7 @@ export class PostgresAttendanceStore implements AttendanceStore {
       if (version !== input.expectedVersion)
         throw new AttendanceError(409, "出勤狀態已變更，請重新整理後確認。");
       const sites = await workplaceSites(sql, id);
-      if (!sites.length)
-        throw new AttendanceError(403, "尚未加入任何啟用的打卡地點，請聯絡管理者。");
+      if (!sites.length) throw new AttendanceError(403, "目前沒有可存取 Repository 的啟用打卡點。");
       if (sites.every((s) => location.accuracy > s.radius)) {
         throw new AttendanceError(422, "定位精度不足，請移至訊號良好處再試。");
       }

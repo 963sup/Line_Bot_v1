@@ -45,3 +45,7 @@ export function repositoryStarListDiscoverPath() {
 export function repositoryStarListPath(listId: string) {
   return `${repositoryStarListsPath()}/${encodeURIComponent(listId)}`;
 }
+
+export function repositoryAttendanceSettingsPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/settings/attendance`;
+}

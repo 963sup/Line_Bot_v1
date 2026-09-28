@@ -39,7 +39,7 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
     mock.method(PostgresPermissionStore.prototype, "read", async (actor: string) => {
       assert.equal(actor, id);
       return {
-        memberId: actor,
+        userId: actor,
         canManage: true,
         own: [],
         target: null,
@@ -59,12 +59,11 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
     assert.equal((await GET(request(undefined, ""))).status, 401);
     const page = await GET(request());
     assert.equal(page.status, 200);
-    assert.equal((await page.json()).memberId, id);
+    assert.equal((await page.json()).userId, id);
     const command = {
       requestId: randomUUID(),
       target: "target",
-      permission: "workplaces.manage",
-      workplaceId: null,
+      permission: "partners.manage",
       enabled: true,
       expectedVersion: 0,
       reason: "授權",
@@ -76,12 +75,12 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
     assert.equal((await POST(request(command))).status, 200);
     assert.equal(calls, 1);
     mock.method(PostgresPermissionStore.prototype, "read", async () => {
-      throw new PermissionError(403, "沒有工作地點管理權限。");
+      throw new PermissionError(403, "沒有權限管理資格。");
     });
     const denied = await GET(request());
     assert.equal(denied.status, 403);
     assert.deepEqual(await denied.json(), {
-      error: "沒有工作地點管理權限。",
+      error: "沒有權限管理資格。",
       code: "membership_denied",
       retryable: false,
     });

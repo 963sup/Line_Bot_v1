@@ -9,4 +9,4 @@ Routing and module overview for `@line_bot_v1/attendance`.
 
 ## Scope
 
-Workplace definitions, member attendance sessions, clock in/out tracking, and shift verification.
+Repository-scoped Workplace geofence configuration, attendance sessions, clock in/out tracking, and shift verification. Repository owns current access eligibility；Attendance does not maintain a second Workplace membership list.

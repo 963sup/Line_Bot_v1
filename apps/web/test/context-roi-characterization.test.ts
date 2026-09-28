@@ -1,56 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PermissionCommand } from "@line_bot_v1/identity-access/domain/permission";
 import type { TeamView } from "@line_bot_v1/team/contracts";
-import {
-  clearPendingPermissionOperation,
-  restorePendingPermissionOperation,
-  savePendingPermissionOperation,
-} from "../src/modules/account/permission-operations";
 import {
   mergeRepositoryResourcePage,
   parseRepositoryResourcePage,
   repositoryResourcesEndpoint,
 } from "../src/modules/repository/resource-page-model";
 import { buildTeamCommand } from "../src/modules/team/team-command";
-
-function memoryStorage() {
-  const values = new Map<string, string>();
-  return {
-    getItem(key: string) {
-      return values.get(key) ?? null;
-    },
-    setItem(key: string, value: string) {
-      values.set(key, value);
-    },
-    removeItem(key: string) {
-      values.delete(key);
-    },
-  };
-}
-
-test("permission pending operation remains owner-scoped and mismatch clears storage", () => {
-  const storage = memoryStorage();
-  const command: PermissionCommand = {
-    requestId: "request-1",
-    target: "user-2",
-    permission: "workplaces.manage",
-    workplaceId: null,
-    enabled: true,
-    expectedVersion: 3,
-    reason: "characterization",
-  };
-  const operation = { owner: "user-1", command };
-
-  savePendingPermissionOperation(storage, operation);
-  assert.deepEqual(restorePendingPermissionOperation(storage, "user-1"), operation);
-  assert.equal(restorePendingPermissionOperation(storage, "user-other"), null);
-  assert.equal(storage.getItem("permission-operation"), null);
-
-  savePendingPermissionOperation(storage, operation);
-  clearPendingPermissionOperation(storage);
-  assert.equal(storage.getItem("permission-operation"), null);
-});
 
 test("repository resource endpoint preserves selector and cursor semantics", () => {
   assert.equal(

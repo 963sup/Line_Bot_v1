@@ -15,6 +15,7 @@ import {
 } from "./issue-pending-storage";
 import { postIssueCommand, requestIssueSnapshot } from "./issue-requests";
 import {
+  repositoryAttendanceSettingsPath,
   repositoryDiscussionsPath,
   repositoryIssuePath,
   repositoryIssuesPath,
@@ -255,6 +256,14 @@ export default function IssueBoard({
           >
             Milestones
           </Link>
+          {currentRepository?.capability === "admin" && (
+            <Link
+              className={styles.resourceLink}
+              href={repositoryAttendanceSettingsPath(ownerLogin, repositoryName)}
+            >
+              Attendance
+            </Link>
+          )}
         </nav>
       )}
       <MiniAppRuntime

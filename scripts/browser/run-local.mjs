@@ -141,16 +141,6 @@ try {
     root,
     "partner-management.log",
   );
-  await command(
-    [path.join(root, "scripts/browser/check-member-management.mjs")],
-    root,
-    "member-management.log",
-  );
-  await command(
-    [path.join(root, "scripts/browser/check-permissions.mjs")],
-    root,
-    "permissions.log",
-  );
   report.status = "passed";
 } catch (error) {
   report.error = error.message;

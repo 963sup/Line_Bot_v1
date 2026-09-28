@@ -18,12 +18,6 @@ export {
   taipeiDay,
 } from "./domain/sessions.js";
 export {
-  transitionWorkplaceChat,
-  type WorkplaceChatDraft,
-  type WorkplaceChatInput,
-  type WorkplaceChatResult,
-} from "./domain/workplace-chat.js";
-export {
   parseWorkplaceCommand,
   type Workplace,
   type WorkplaceCommand,

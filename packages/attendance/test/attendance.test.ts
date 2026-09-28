@@ -53,7 +53,7 @@ test("only two commands use verified actor, provider and server time/site; inact
   await assert.rejects(api.get("verified"), /inactive/);
 });
 
-test("workplace read resolves the active member once and returns its stable ID with the page", async () => {
+test("workplace read resolves the active user once and returns its stable ID with the page", async () => {
   let activeCalls = 0;
   const workplaces = createWorkplaces({
     activeUser: async (subject) => {
@@ -64,7 +64,7 @@ test("workplace read resolves the active member once and returns its stable ID w
     store: () => ({
       read: async (actor, id, after) => {
         assert.deepEqual([actor, id, after], ["member", "", ""]);
-        return { canCreate: true, sites: [], members: [], next: null };
+        return { canCreate: true, sites: [], next: null };
       },
       change: async () => ({ id: "unused", version: 1 }),
     }),
@@ -72,10 +72,9 @@ test("workplace read resolves the active member once and returns its stable ID w
   });
 
   assert.deepEqual(await workplaces.read("verified"), {
-    memberId: "member",
+    userId: "member",
     canCreate: true,
     sites: [],
-    members: [],
     next: null,
   });
   assert.equal(activeCalls, 1);
