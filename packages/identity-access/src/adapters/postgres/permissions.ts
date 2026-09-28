@@ -1,8 +1,5 @@
-import {
-  readActiveUserQualification,
-  readUserQualification,
-} from "@line_bot_v1/account/postgres";
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
 import type { PermissionStore } from "@line_bot_v1/identity-access/application/permissions/ports";
 import type {
   PermissionGrant,
