@@ -37,7 +37,9 @@ export async function repositoryAccessCommandRequest(
   identity: Identity,
 ) {
   try {
-    return jsonResponse(await access.execute(await identity(request), await repositoryBody(request)));
+    return jsonResponse(
+      await access.execute(await identity(request), await repositoryBody(request)),
+    );
   } catch (error) {
     return repositoryFailure(error);
   }
