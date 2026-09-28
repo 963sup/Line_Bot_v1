@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { qualifyActiveUser } from "@line_bot_v1/account/adapters/postgres";
+import { qualifyActiveUser } from "@line_bot_v1/account/postgres";
 import { readAssetDefinition } from "@line_bot_v1/asset/adapters/postgres";
 import { type AssetDefinition, assetAmount, COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { readLedgerCreditFact, recordLedgerCredit } from "@line_bot_v1/ledger/adapters/postgres";
