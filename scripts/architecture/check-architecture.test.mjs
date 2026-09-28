@@ -18,11 +18,22 @@ function write(root, path, text) {
   writeFileSync(file, text);
 }
 
-test("package public exports are explicit regardless of implementation folder name", () => {
+test("package public exports keep adapters private", () => {
   assert.deepEqual(
     validatePackageExports("@line_bot_v1/demo", {
       ".": { default: "./dist/index.js" },
+      "./postgres": { default: "./dist/postgres.js" },
+    }),
+    [],
+  );
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
       "./adapters/postgres": { default: "./dist/adapters/postgres.js" },
+    }),
+    ["@line_bot_v1/demo: private adapter must not be package export: ./adapters/postgres"],
+  );
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
       "./postgres": { default: "./dist/postgres.js" },
     }),
     [],
@@ -63,9 +74,9 @@ test("public package entries require named re-exports", async () => {
   }
 });
 
-test("exact package exports are public while private source paths stay closed", async () => {
+test("adapter privacy applies across workspace owners, not within one owner", async () => {
   mkdirSync(artifacts, { recursive: true });
-  const root = mkdtempSync(resolve(artifacts, "package-boundary-"));
+  const root = mkdtempSync(resolve(artifacts, "adapter-owner-"));
   try {
     for (const parent of ["apps", "packages"])
       mkdirSync(resolve(root, parent), { recursive: true });
@@ -75,14 +86,13 @@ test("exact package exports are public while private source paths stay closed", 
       "packages/demo/package.json",
       JSON.stringify({
         name: "@line_bot_v1/demo",
-        exports: {
-          "./adapters/public": { default: "./dist/adapters/public.js" },
-        },
+        exports: { ".": { default: "./dist/index.js" } },
       }),
     );
     write(root, "packages/demo/tsconfig.json", JSON.stringify({}));
-    write(root, "packages/demo/src/adapters/public.ts", "export const publicValue = 1;");
+    write(root, "packages/demo/src/index.ts", "export const value = 1;");
     write(root, "packages/demo/src/adapters/private.ts", "export const privateValue = 1;");
+    write(root, "packages/demo/src/adapters/peer.ts", importing("./private"));
 
     write(
       root,
@@ -90,15 +100,22 @@ test("exact package exports are public while private source paths stay closed", 
       JSON.stringify({ name: "@line_bot_v1/web", private: true }),
     );
     write(root, "apps/web/tsconfig.json", JSON.stringify({}));
-    write(root, "apps/web/src/index.ts", importing("@line_bot_v1/demo/adapters/public"));
-    assert.deepEqual((await checkArchitecture(root)).errors, []);
+    write(root, "apps/web/src/index.ts", "export const value = 1;");
+
+    assert.equal(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("adapters-are-private-implementations:"),
+      ),
+      false,
+      "same-owner adapter composition is package-private implementation detail",
+    );
 
     write(root, "apps/web/src/index.ts", importing("../../../packages/demo/src/adapters/private"));
     assert.ok(
       (await checkArchitecture(root)).errors.some((error) =>
-        error.startsWith("no-relative-imports-across-packages:"),
+        error.startsWith("adapters-are-private-implementations:"),
       ),
-      "external workspace must use an exact package export instead of private source",
+      "external workspace must not import a private adapter",
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
