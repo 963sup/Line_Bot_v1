@@ -5,7 +5,6 @@ import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { repositoryAttendanceSites } from "@line_bot_v1/repository/postgres/address";
 import type {
-  AttendanceInput,
   AttendanceMenuJob,
   AttendanceNotificationJob,
   AttendancePoint,
@@ -14,6 +13,7 @@ import type {
   AttendanceStore,
   NotificationOutcome,
 } from "../../contracts/clock.js";
+import type { AttendanceInput } from "../../contracts/input/attendance-command.js";
 import type { AttendanceSession } from "../../domain/aggregates/attendance-session.js";
 import { AttendanceError } from "../../domain/error.js";
 import { attendanceView } from "../../domain/policies/attendance-view.js";

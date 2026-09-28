@@ -71,7 +71,7 @@ packages/<owner>/src/
 └─ testing/
 ```
 
-只有 responsibility 真實存在時才建立 folder。不要為了對稱預建空 layer；也不要另外發明 `infrastructure/`、`gateways/`、`implementations/`、`application/services/` 等同義位置。
+只有 responsibility 真實存在時才建立 folder。Root role 一旦存在就使用對應 directory，不用 `domain.ts`、`application.ts`、`contracts.ts`、root `postgres.ts` 等 facade 重新聚合責任；也不要為了對稱預建空 layer 或另外發明 `infrastructure/`、`gateways/`、`implementations/`、`application/services/` 等同義位置。
 
 責任成長後可展開：
 
@@ -158,6 +158,8 @@ Composition
 ```
 
 Inner layer 永遠不知道 concrete technology。
+
+Application host 的 framework route 可以直接作 Inbound Adapter。只被單一 route family 使用的 `*.server.ts` transport wrapper 應由 route 吸收；可重用 input/business semantics 先回到 owner package 的 Contracts / Application。Next.js `Request` / `Response`、LIFF、browser API 與 URL ownership 留在 host，不因 semantic owner 是 package 就搬入 package。
 
 ### Correctness chain
 
