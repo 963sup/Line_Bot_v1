@@ -8,7 +8,7 @@ import {
   RedisIdempotencyStore,
   RedisUnavailableError,
   redisUnavailableCode,
-} from "@line_bot_v1/platform/adapters/redis";
+} from "@line_bot_v1/platform/redis";
 import { membershipFailureCode } from "../../../modules/account/failure-code.server";
 import { agentText, aiTestText, answer } from "../../../modules/assistant/answer.server";
 import { createAssistantReply } from "../../../modules/assistant/event-router.server";
