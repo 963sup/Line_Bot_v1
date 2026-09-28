@@ -79,34 +79,34 @@ function dependencyAvailability() {
 
 export function main() {
   try {
-  const manifest = JSON.parse(readFileSync(resolve(repositoryRoot, "package.json"), "utf8"));
-  const expectedNode = readFileSync(resolve(repositoryRoot, ".node-version"), "utf8").trim();
-  const expectedPnpm = String(manifest.packageManager ?? "").replace(/^pnpm@/, "");
-  const report = evaluateDoctor({
-    expectedNode,
-    actualNode: process.versions.node,
-    expectedPnpm,
-    actualPnpm: pnpmVersion(),
-    gitVersion: commandVersion("git", ["--version"]),
-    dependencies: dependencyAvailability(),
-  });
-  const envKeys = parseEnvKeys(readFileSync(resolve(repositoryRoot, ".env.example"), "utf8"));
-  console.log(
-    JSON.stringify(
-      {
-        ...report,
-        environment: {
-          declared: envKeys.length,
-          present: envKeys.filter((key) => Boolean(process.env[key])).length,
-          missingNames: envKeys.filter((key) => !process.env[key]),
-          note: "Missing declared variables are informational; provider-specific commands own their required secrets.",
+    const manifest = JSON.parse(readFileSync(resolve(repositoryRoot, "package.json"), "utf8"));
+    const expectedNode = readFileSync(resolve(repositoryRoot, ".node-version"), "utf8").trim();
+    const expectedPnpm = String(manifest.packageManager ?? "").replace(/^pnpm@/, "");
+    const report = evaluateDoctor({
+      expectedNode,
+      actualNode: process.versions.node,
+      expectedPnpm,
+      actualPnpm: pnpmVersion(),
+      gitVersion: commandVersion("git", ["--version"]),
+      dependencies: dependencyAvailability(),
+    });
+    const envKeys = parseEnvKeys(readFileSync(resolve(repositoryRoot, ".env.example"), "utf8"));
+    console.log(
+      JSON.stringify(
+        {
+          ...report,
+          environment: {
+            declared: envKeys.length,
+            present: envKeys.filter((key) => Boolean(process.env[key])).length,
+            missingNames: envKeys.filter((key) => !process.env[key]),
+            note: "Missing declared variables are informational; provider-specific commands own their required secrets.",
+          },
         },
-      },
-      null,
-      2,
-    ),
-  );
-  if (!report.ok) process.exitCode = 1;
+        null,
+        2,
+      ),
+    );
+    if (!report.ok) process.exitCode = 1;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
