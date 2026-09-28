@@ -59,49 +59,108 @@ validation evidence
 
 ## Canonical DDD + Hexagonal package model
 
-每個 production source 都必須能唯一分類到一個主要 role：
+實體 source tree 採下列 canonical vocabulary；它不是要求所有 package 長一樣，而是讓相同 responsibility 永遠只有一個可預測位置。
 
 ```text
 packages/<owner>/
+├─ src/
+│  ├─ domain/
+│  │  ├─ entities/
+│  │  ├─ value-objects/
+│  │  ├─ aggregates/
+│  │  ├─ services/
+│  │  ├─ events/
+│  │  └─ policies/
+│  │
+│  ├─ contracts/
+│  │  ├─ input/
+│  │  ├─ output/
+│  │  │  └─ repositories/
+│  │  └─ dto/
+│  │
+│  ├─ application/
+│  │  ├─ use-cases/
+│  │  ├─ commands/
+│  │  ├─ queries/
+│  │  └─ services/
+│  │
+│  ├─ adapters/
+│  │  ├─ inbound/
+│  │  └─ outbound/
+│  │     ├─ persistence/
+│  │     ├─ cache/
+│  │     └─ external-api/
+│  │
+│  ├─ composition/
+│  └─ testing/
 │
-├─ Domain
-│  ├─ Entity
-│  ├─ Value Object
-│  ├─ Aggregate / Aggregate Root
-│  ├─ Domain Service
-│  ├─ Domain Event
-│  ├─ Policy / Specification
-│  └─ Business Invariant / Transition
-│
-├─ Contracts / Ports
-│  ├─ Inbound Port
-│  ├─ Outbound Port
-│  ├─ Published DTO
-│  └─ Stable cross-package Contract
-│
-├─ Application
-│  ├─ Use Case
-│  ├─ Command / Query
-│  ├─ Application Service
-│  └─ Orchestration
-│
-├─ Adapters
-│  ├─ Inbound Adapter
-│  └─ Outbound Adapter
-│
-├─ Composition / Public Entry
-│  └─ concrete dependency wiring / named capability
-│
-└─ Test / Evidence
-   ├─ Domain behavior
-   ├─ Application use case
-   ├─ Contract
-   └─ Adapter integration
+└─ test/
 ```
 
-這是 responsibility template，不是要求每個 package 預建所有 folder。沒有責任的 layer 可以沒有實體目錄；但任何已存在 source 都不能因為沒有 folder 而失去 layer classification、dependency direction 或 boundary。
+目錄只在真實 responsibility 存在時建立；沒有責任就沒有空 folder / `.gitkeep`。小 package 可以先用 `domain.ts`、`contracts.ts`、`application.ts` 或 named public entry，責任成長後再展開。
 
-若一個檔案同時負責 business invariant、use-case orchestration、SQL / SDK 與 runtime wiring，應先拆 responsibility，而不是把它視為「小 package 所以可以不分層」。
+### Canonical ownership
+
+| Responsibility | Canonical placement | 不得重複到 |
+| --- | --- | --- |
+| Entity / Value Object / Aggregate / Domain Service / Event / Policy | `src/domain/**` | Application、Adapter、DB helper |
+| Inbound Port | `src/contracts/input/**` | `application/ports/**` |
+| Outbound Port / Repository Port | `src/contracts/output/**` | `domain/repositories/**`、`application/ports/**` |
+| Published DTO | `src/contracts/dto/**` | Domain persistence shape、duplicate application DTO |
+| Use Case / Command / Query / orchestration | `src/application/**` | Domain、Adapter |
+| HTTP / webhook / CLI / consumer transport | `src/adapters/inbound/**` | Application business rule |
+| PostgreSQL / Supabase / cache / provider implementation | `src/adapters/outbound/**` | `src/infrastructure/**` |
+| Concrete wiring | `src/composition/**` 或 named public entry | Domain / Application |
+| Neutral runtime / DB primitive | `@line_bot_v1/platform` | owner-specific `infrastructure/**` |
+| Test-only helper | `src/testing/**` | production runtime |
+
+Repository interface 在本 repository 一律視為 **Outbound Port**。Persistence Adapter 實作該 Port；Database / Schema 提供 atomicity、constraint、locking / expected-version enforcement。三者不互相取得對方責任。
+
+### Correctness chain
+
+```text
+DDD
+→ ownership / invariant / Aggregate boundary
+
+Hexagonal
+→ dependency boundary
+
+Database transaction / locking / conditional write
+→ concurrent correctness
+
+Durable idempotency
+→ repeated execution correctness
+
+Transactional Outbox / Saga
+→ cross-boundary consistency
+```
+
+Canonical mutation flow：
+
+```text
+Inbound Adapter
+    │ idempotency identity
+    ▼
+Application Use Case
+    ▼
+Repository.load()
+    ▼
+Aggregate
+    │ invariant + Domain Event
+    ▼
+Repository.save(expectedVersion, events)
+    ▼
+Persistence Adapter
+    │ conditional write + state + receipt + outbox
+    ▼
+DB transaction commit
+    ▼
+Outbox Worker
+    ▼
+Other Bounded Contexts
+```
+
+`check → if → update` 不構成 concurrency correctness。任何會受 race 影響的 invariant，最終必須由 expected version、atomic predicate、lock、constraint 或 unique key enforce；Application / API 的 pre-check 只能是輔助。完整 Must / Must Not 見 [packages/AGENTS.md](./AGENTS.md)。
 
 ## Dependency direction
 
