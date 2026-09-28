@@ -6,10 +6,7 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   return (
     <AppShell>
-      <PageHeading
-        title="Organizations"
-        back="/home"
-      />
+      <PageHeading title="Organizations" back="/home" />
       <OrganizationPanel liffId={lineMiniApp().liffId} />
     </AppShell>
   );
