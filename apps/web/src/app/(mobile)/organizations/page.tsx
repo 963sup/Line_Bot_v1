@@ -7,8 +7,7 @@ export default function Page() {
   return (
     <AppShell>
       <PageHeading
-        title="組織管理"
-        description="建立、查看與治理 Organization；成員、邀請與 Owner 責任集中在同一個詳情頁。"
+        title="Organizations"
         back="/home"
       />
       <OrganizationPanel liffId={lineMiniApp().liffId} />
