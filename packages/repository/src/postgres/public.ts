@@ -1,4 +1,4 @@
-import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { readOrganizationQualification } from "@line_bot_v1/organization/adapters/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
