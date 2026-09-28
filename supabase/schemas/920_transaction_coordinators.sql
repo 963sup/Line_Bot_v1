@@ -431,11 +431,13 @@ begin
      or length(trim(coalesce(p_repository_id, ''))) = 0
      or p_repository_id <> trim(p_repository_id)
      or length(p_repository_id) > 128
+     or p_subject_kind is null
      or p_subject_kind not in ('USER','TEAM')
      or length(trim(coalesce(p_subject_id, ''))) = 0
      or p_subject_id <> trim(p_subject_id)
      or length(p_subject_id) > 128
      or (p_capability is not null and p_capability not in ('read','triage','write','admin'))
+     or p_expected_version is null
      or p_expected_version < 0 then
     raise exception 'repository_access_input_invalid' using errcode = '22023';
   end if;
