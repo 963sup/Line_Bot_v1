@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/supabase-identity": {
-      "types": "./dist/adapters/supabase-identity.d.ts",
-      "default": "./dist/adapters/supabase-identity.js"
-    },
     "./application/manage-users": {
       "types": "./dist/application/manage-users.d.ts",
       "default": "./dist/application/manage-users.js"
@@ -67,6 +63,10 @@
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
+    },
+    "./supabase-identity": {
+      "types": "./dist/supabase-identity.d.ts",
+      "default": "./dist/supabase-identity.js"
     }
   },
   "files": [
