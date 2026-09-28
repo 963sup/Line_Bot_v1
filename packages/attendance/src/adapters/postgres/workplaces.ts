@@ -1,6 +1,6 @@
 import { readUserQualification } from "@line_bot_v1/account/adapters/postgres";
 import { workplacePermissionScope } from "@line_bot_v1/identity-access/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { WorkplaceStore } from "../../application/ports/workplaces.js";
 import { AttendanceError, type Workplace, type WorkplaceCommand } from "../../domain.js";
 
