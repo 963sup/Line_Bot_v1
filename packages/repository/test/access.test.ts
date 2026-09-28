@@ -217,7 +217,16 @@ test("Repository access management supports direct and Team grants with replay, 
   const commands = await pg.query(
     "select count(*)::int as count from app_private.repository_commands where actor='owner'",
   );
-  assert.equal(commands.rows[0]?.count, 5);
+  assert.equal(commands.rows[0]?.count, 6);
+
+  await assert.rejects(
+    db.transaction((sql) =>
+      sql.query(
+        "insert into repository_access(repository_id,principal_id,capability,version) values('repo','member','read',1)",
+      ),
+    ),
+    (error: unknown) => (error as { code?: string }).code === "42501",
+  );
 });
 
 test("User-owned Repository keeps owner implicit admin and rejects redundant owner grants", async (t) => {
