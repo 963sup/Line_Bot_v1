@@ -54,7 +54,6 @@ function privateAdapterRules() {
     });
 }
 
-
 export default {
   forbidden: [
     ...topologyDependencyRules(),
