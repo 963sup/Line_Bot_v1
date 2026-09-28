@@ -8,11 +8,7 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   return (
     <AppShell>
-      <PageHeading
-        title="Projects"
-        description="跨 Repository 的規劃空間；目前提供已授權 Project 的唯讀列表。"
-        back="/home"
-      />
+      <PageHeading title="Projects" back="/home" />
       <ProjectList liffId={lineMiniApp().liffId} />
     </AppShell>
   );

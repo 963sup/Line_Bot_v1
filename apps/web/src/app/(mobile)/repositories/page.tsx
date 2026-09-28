@@ -1,6 +1,7 @@
+import Link from "next/link";
 import RepositoryList from "../../../modules/repository/repository-list";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
-import { PageHeading, PrimaryLink } from "../../../shared/ui/page-layout";
+import { PageHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
@@ -29,16 +30,25 @@ export default async function Page({
                 ? "選擇 Repository，再進入該 Repository 的 canonical Issues surface。"
                 : browseResource === "discussions"
                   ? "選擇 Repository，再進入該 Repository 的 canonical Discussions surface。"
-                  : "目前登入者可存取的工作容器；進入後再查看該 Repository 的 Issues、Discussions、Labels 與 Milestones。"
+                  : undefined
         }
         actions={
           choosingRepository ? undefined : (
-            <>
-              <PrimaryLink href="/repositories/new">New Repository</PrimaryLink>
-              <PrimaryLink href="/repositories?intent=manage-access" tone="secondary">
-                Manage Access
-              </PrimaryLink>
-            </>
+            <div className="collection-heading-actions">
+              <Link href="/search" aria-label="Search repositories" title="Search repositories">
+                <span aria-hidden="true">⌕</span>
+              </Link>
+              <Link href="/repositories/new" aria-label="New Repository" title="New Repository">
+                <span aria-hidden="true">＋</span>
+              </Link>
+              <Link
+                href="/repositories?intent=manage-access"
+                aria-label="Manage repository access"
+                title="Manage repository access"
+              >
+                <span aria-hidden="true">⋯</span>
+              </Link>
+            </div>
           )
         }
         back={choosingRepository ? "/home" : undefined}
