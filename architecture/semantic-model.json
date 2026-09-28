@@ -1880,11 +1880,13 @@
         "sourcePaths": [
           "packages/attendance/src/application/clock.ts",
           "packages/attendance/src/contracts/clock.ts",
+          "packages/attendance/src/contracts/input/attendance-command.ts",
           "packages/attendance/src/domain/policies/session-transition.ts"
         ],
         "publicExports": [
           "./application/clock",
           "./contracts/clock",
+          "./contracts/input/attendance-command",
           "./domain/error",
           "./domain/policies/attendance-view",
           "./domain/value-objects/location"

@@ -1,4 +1,5 @@
-import type { AttendanceDependencies, AttendanceInput } from "../contracts/clock.js";
+import type { AttendanceDependencies } from "../contracts/clock.js";
+import type { AttendanceInput } from "../contracts/input/attendance-command.js";
 import type { AttendanceAction } from "../domain/value-objects/attendance-action.js";
 
 export function createClockAttendance(deps: AttendanceDependencies) {

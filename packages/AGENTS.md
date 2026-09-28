@@ -97,7 +97,7 @@ packages/<owner>/src/
 └─ testing/
 ```
 
-小 package 可以直接使用 `domain.ts`、`application.ts`、`contracts.ts`、`adapters/*.ts` 等單檔形式；責任成長後才展開。Folder 數量不是 architecture goal。
+Root role 一旦存在就使用對應 directory；不得以 `domain.ts`、`application.ts`、`contracts.ts`、root `postgres.ts` 等單檔 facade 聚合多個 responsibility。沒有真實 responsibility 則不建立該 directory。Folder 數量不是 architecture goal。
 
 ## Single-owner placement
 
@@ -237,6 +237,10 @@ HTTP / GraphQL / CLI / webhook / queue consumer 負責：
 - Result / DomainError → transport response。
 
 禁止 business invariant、SQL、cross-owner private-table query。
+
+Application host 的 framework route 可以直接扮演 Inbound Adapter。若 host-local `*.server.ts` 只服務單一 route family、只做 Request/Response parsing、error mapping 或 pass-through orchestration，先把可重用的 business/input contract 收回 owner package，再由 route 直接吸收該 transport responsibility；不得為減少 route 行數保留無獨立責任的中介 server wrapper。
+
+`Request` / `Response` / Next.js / LIFF / browser API 仍屬 host delivery，不搬進 package。只有第二個真實 transport consumer、獨立 protocol responsibility 或真實 variation 存在時，才建立 package-level `adapters/inbound/**`。
 
 ### outbound/
 

@@ -4,6 +4,7 @@ import type {
   MenuState,
 } from "../domain/policies/attendance-view.js";
 import type { AttendanceAction } from "../domain/value-objects/attendance-action.js";
+import type { AttendanceInput } from "./input/attendance-command.js";
 
 /** Immutable attendance projection of the Repository address used for this session. */
 export type AttendancePoint = {
@@ -16,7 +17,6 @@ export type AttendancePoint = {
   radius: number;
   version: number;
 };
-export type AttendanceInput = { requestId: string; expectedVersion: number; location: unknown };
 export type AttendanceSnapshot = {
   attendance: AttendanceView;
   version: number;

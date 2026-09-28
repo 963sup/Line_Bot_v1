@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
-import { POST as clockIn } from "../src/app/api/attendance/clock-in/route";
-import { POST as clockOut } from "../src/app/api/attendance/clock-out/route";
-import { GET } from "../src/app/api/attendance/route";
+import {
+  GET as attendanceRouteGet,
+  POST as attendanceRoutePost,
+} from "../src/app/api/attendance/[[...operation]]/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import {
   activateMember,
@@ -12,6 +13,17 @@ import {
   memberStore,
   mockSupabase,
 } from "./member-fixture";
+
+function attendanceRouteRequest(request: Request, operation?: "clock-in" | "clock-out") {
+  const url = new URL(request.url);
+  url.pathname = `/api/attendance${operation ? `/${operation}` : ""}`;
+  return new Request(url, request);
+}
+const GET = (request: Request) => attendanceRouteGet(attendanceRouteRequest(request));
+const clockIn = (request: Request) =>
+  attendanceRoutePost(attendanceRouteRequest(request, "clock-in"));
+const clockOut = (request: Request) =>
+  attendanceRoutePost(attendanceRouteRequest(request, "clock-out"));
 
 test("attendance APIs verify proof, geofence and cross-day records; private Bot receipts retry without duplicate clocks", async () => {
   await mockSupabase();

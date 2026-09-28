@@ -31,6 +31,10 @@
     "./domain/value-objects/location": {
       "types": "./dist/domain/value-objects/location.d.ts",
       "default": "./dist/domain/value-objects/location.js"
+    },
+    "./contracts/input/attendance-command": {
+      "types": "./dist/contracts/input/attendance-command.d.ts",
+      "default": "./dist/contracts/input/attendance-command.js"
     }
   },
   "files": [

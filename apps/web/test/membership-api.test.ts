@@ -3,9 +3,10 @@ import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
 import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
-import { POST as clockInPost } from "../src/app/api/attendance/clock-in/route";
-import { POST as clockOutPost } from "../src/app/api/attendance/clock-out/route";
-import { GET as attendanceGet } from "../src/app/api/attendance/route";
+import {
+  GET as attendanceRouteGet,
+  POST as attendanceRoutePost,
+} from "../src/app/api/attendance/[[...operation]]/route";
 import { POST as REGISTER } from "../src/app/api/membership/register/route";
 import { POST as RESTORE } from "../src/app/api/membership/restore/route";
 import { GET, POST } from "../src/app/api/membership/route";
@@ -18,6 +19,17 @@ import {
   mockSupabase,
   walletStore,
 } from "./member-fixture";
+
+function attendanceRouteRequest(request: Request, operation?: "clock-in" | "clock-out") {
+  const url = new URL(request.url);
+  url.pathname = `/api/attendance${operation ? `/${operation}` : ""}`;
+  return new Request(url, request);
+}
+const attendanceGet = (request: Request) => attendanceRouteGet(attendanceRouteRequest(request));
+const clockInPost = (request: Request) =>
+  attendanceRoutePost(attendanceRouteRequest(request, "clock-in"));
+const clockOutPost = (request: Request) =>
+  attendanceRoutePost(attendanceRouteRequest(request, "clock-out"));
 
 test("LINE-only membership preserves ownership and rewards; retired direct Google binding is rejected", async () => {
   await mockSupabase();
