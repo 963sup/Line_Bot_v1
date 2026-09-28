@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { PostgresWorkplaceChatStore } from "@line_bot_v1/attendance/adapters/postgres";
+import { PostgresWorkplaceChatStore } from "@line_bot_v1/attendance/postgres";
 import { createWorkplaceChat } from "@line_bot_v1/attendance/application/workplace-chat";
 import { createLineClient } from "@line_bot_v1/line-channel/messaging";
 import {
