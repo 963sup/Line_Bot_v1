@@ -884,7 +884,9 @@ export function validate(root) {
   }
   for (const file of files("scripts/**/*.mjs")) {
     // Parse actual module syntax so fixture strings and prose cannot masquerade as dependencies.
-    for (const specifier of literalModuleSpecifiers(file).filter((value) => value.startsWith("."))) {
+    for (const specifier of literalModuleSpecifiers(file).filter((value) =>
+      value.startsWith("."),
+    )) {
       let target = resolve(dirname(file), specifier);
       let ancestor = target;
       while (!existsSync(ancestor) && dirname(ancestor) !== ancestor) ancestor = dirname(ancestor);
