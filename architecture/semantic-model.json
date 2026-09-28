@@ -1892,7 +1892,7 @@
           "packages/daily-check-in/src/application.ts",
           "packages/daily-check-in/src/application/ports/daily-check-in-repository.ts",
           "packages/daily-check-in/src/domain.ts",
-          "packages/daily-check-in/src/adapters/postgres.ts"
+          "packages/daily-check-in/src/postgres.ts"
         ],
         "publicExports": [
           "./application",
@@ -1931,7 +1931,7 @@
         ],
         "publicExports": ["./adapters/postgres", "./domain"],
         "entrypoints": [
-          "packages/daily-check-in/src/adapters/postgres.ts",
+          "packages/daily-check-in/src/postgres.ts",
           "packages/attendance/src/adapters/postgres/attendance.ts"
         ],
         "testPaths": [
