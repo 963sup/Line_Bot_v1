@@ -5,7 +5,7 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { requireActiveTargetUser, resolveVerifiedLineActor } from "./actor.js";
 import { governanceFingerprint, readGovernanceReplay, recordGovernanceResult } from "./receipts.js";
 import {
