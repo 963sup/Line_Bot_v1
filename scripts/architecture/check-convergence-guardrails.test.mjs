@@ -15,12 +15,9 @@ test("context adapters, agents, testing and platform database mechanisms stay se
     assert.equal(isServerOnlyPackageSource(source), true, source);
   }
 
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/mini-app/browser.ts"), false);
   assert.equal(
-    isServerOnlyPackageSource("packages/line-channel/src/adapters/mini-app/browser.ts"),
-    false,
-  );
-  assert.equal(
-    isServerOnlyPackageSource("packages/line-channel/src/adapters/mini-app/browser/client.ts"),
+    isServerOnlyPackageSource("packages/line-channel/src/mini-app/browser/client.ts"),
     false,
   );
   assert.equal(isServerOnlyPackageSource("packages/account/src/domain/user.ts"), false);
