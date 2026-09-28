@@ -6,15 +6,20 @@ import { packageSemanticDocs } from "./semantic-projection.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 
-const compiled = await loadSemanticArchitecture();
-if (compiled.errors.length) {
-  throw new Error("Semantic architecture is invalid:\n" + compiled.errors.join("\n"));
+export async function writePackageSemanticDocs(compiled, root = repositoryRoot) {
+  if (compiled.errors.length) {
+    throw new Error("Semantic architecture is invalid:\n" + compiled.errors.join("\n"));
+  }
+
+  const docs = packageSemanticDocs(compiled);
+  for (const [path, content] of docs) {
+    const target = resolve(root, path);
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, content, "utf8");
+  }
+  return { written: docs.size };
 }
 
-for (const [path, content] of packageSemanticDocs(compiled)) {
-  const target = resolve(repositoryRoot, path);
-  await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, content, "utf8");
+if (import.meta.main) {
+  console.log(JSON.stringify(await writePackageSemanticDocs(await loadSemanticArchitecture()), null, 2));
 }
-
-console.log("Package semantics: " + packageSemanticDocs(compiled).size + " projections written.");
