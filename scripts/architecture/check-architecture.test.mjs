@@ -18,7 +18,6 @@ function write(root, path, text) {
   writeFileSync(file, text);
 }
 
-
 test("package public exports keep adapters private", () => {
   assert.deepEqual(
     validatePackageExports("@line_bot_v1/demo", {
@@ -31,9 +30,7 @@ test("package public exports keep adapters private", () => {
     validatePackageExports("@line_bot_v1/demo", {
       "./adapters/postgres": { default: "./dist/adapters/postgres.js" },
     }),
-    [
-      "@line_bot_v1/demo: private adapter must not be package export: ./adapters/postgres",
-    ],
+    ["@line_bot_v1/demo: private adapter must not be package export: ./adapters/postgres"],
   );
   assert.deepEqual(
     validatePackageExports("@line_bot_v1/demo", {
@@ -47,7 +44,8 @@ test("public package entries require named re-exports", async () => {
   mkdirSync(artifacts, { recursive: true });
   const root = mkdtempSync(resolve(artifacts, "named-exports-"));
   try {
-    for (const parent of ["apps", "packages"]) mkdirSync(resolve(root, parent), { recursive: true });
+    for (const parent of ["apps", "packages"])
+      mkdirSync(resolve(root, parent), { recursive: true });
     write(
       root,
       "packages/demo/package.json",
