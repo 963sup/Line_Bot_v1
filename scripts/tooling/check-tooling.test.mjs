@@ -610,7 +610,7 @@ test("parallel validation preserves complete coverage and an unconditional failu
   }
   for (const run of ['test "$RESULT" != failure', "echo success"]) {
     const data = YAML.parse(source);
-    data.jobs.validate.steps[0].run = run;
+    data.jobs.validate.steps.find((step) => step.env?.RESULT).run = run;
     write(".github/workflows/validate.yml", YAML.stringify(data));
     rejects(root, "reject failed, cancelled or skipped groups");
   }

@@ -35,3 +35,17 @@ pnpm change:finalize
 ```
 
 `change:impact` 只是 `pnpm semantic plan` 的 ergonomic alias；semantic impact authority 仍位於 architecture semantic system。正式 Rich Menu 圖片位於 `assets/line/rich-menu/`，不與 scripts 混放。
+
+## 發布工作流程
+
+1. `github/release-plan.mjs` 讀取 exact main SHA 與各 operation 最近成功的 ancestor job，產生 pending-source 判斷；不寫 provider。
+2. `tooling/validate.mjs` 執行相同 SHA 的完整驗證；CI 分 runner，本機依序執行，避免產物競爭。
+3. `github/current-main.mjs` 在 resource lock 內確認待發布 revision 仍是 main。
+4. LINE、Supabase、Vercel、Attendance 各自執行完整 operation 與 readback；只有真實 dependency 才等待。
+
+| 輸入 | 流程 | 成功條件 |
+| --- | --- | --- |
+| `assets/line/rich-menu/*` 與 publication code | `line:rich-menu publish all` → preflight → create/upload → aliases/default → readback | LINE definitions、aliases、default 與 desired state 一致；實機另驗。 |
+| `supabase/schemas/*.sql` | `schema:remote sync` → clean local desired DB → remote diff → transaction apply → second diff/readback | schema drift = 0、ownership/security PASS、migration history 不變。 |
+
+本機可用 `pnpm line:rich-menu preview all` 檢查素材；`schema:remote plan`／`verify` 是 read-only 遠端診斷，但會重建 disposable local Supabase database，需要 Docker。Production mutation 由 [GitHub workflow](../.github/README.md) 執行。

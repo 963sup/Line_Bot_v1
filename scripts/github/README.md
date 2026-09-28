@@ -9,5 +9,7 @@
 | `current-main.test.mjs` | 驗證 exact SHA/target/current-main failure semantics。 |
 | `release-plan.mjs` | `pnpm github:release-plan --sha <sha>`：從成功 Release evidence 找 owner baseline，分類 Supabase/Web/Rich Menu/Scheduler affected source。 |
 | `release-plan.test.mjs` | 驗證 source classification、baseline、affected build 與 release outputs。 |
+| `validation-result.mjs` | GitHub matrix aggregate gate，只接受 success；不載入套件或機密。 |
+| `validation-result.test.mjs` | 驗證 failure/cancelled/skipped/缺值一律拒絕發布。 |
 
 GitHub workflow 擁有 event、permissions、secrets、job routing；provider mutation 仍由 Supabase/Vercel/LINE operation owner 執行。

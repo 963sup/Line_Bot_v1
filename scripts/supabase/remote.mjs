@@ -293,6 +293,27 @@ export function classifyPlan(sql) {
   };
 }
 
+export function assertTransactionalPlan(sql) {
+  // Explicit CLI diff output is review SQL, not an execution-aware migration.
+  // This operator supports a single atomic transaction; never let a plan end it.
+  for (const statement of splitSqlStatements(sql)) {
+    const normalized = statement.replace(/\s+/g, " ").trim();
+    if (
+      /^(?:begin|start\s+transaction|commit|end|rollback|abort|prepare\s+transaction)\b/i.test(
+        normalized,
+      ) ||
+      /^(?:create\s+(?:unique\s+)?index|drop\s+index|reindex)\b.*\bconcurrently\b/i.test(
+        normalized,
+      ) ||
+      /^(?:vacuum|create\s+database|drop\s+database|alter\s+system)\b/i.test(normalized)
+    ) {
+      throw new Error(
+        "Schema diff requires execution outside the atomic reconciliation transaction.",
+      );
+    }
+  }
+}
+
 export function planFingerprint(sql) {
   return createHash("sha256").update(sql).digest("hex");
 }
@@ -521,6 +542,7 @@ function generatePlan(artifactName = "plan.sql") {
       "local",
       "--schema",
       "app_private",
+      "--strict-coverage",
       "--output",
       plan,
     ],
@@ -834,6 +856,7 @@ async function runRemoteCommand({ projectRef, command, api }) {
       return;
     }
 
+    assertTransactionalPlan(plan.sql);
     await applyRemoteSql(
       `BEGIN;\n${foundationSql}\n${classification.empty ? "" : plan.sql}\nCOMMIT;\n`,
       "apply.sql",

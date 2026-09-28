@@ -80,9 +80,17 @@ jobs:
     needs: full-validate
     if: always() && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'ready_for_review' && github.event.pull_request.draft == false))
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
       - name: Require every validation group to succeed
         env:
           RESULT: ${{ needs.full-validate.result }}
-        run: test "$RESULT" = success
+        run: node scripts/github/validation-result.mjs

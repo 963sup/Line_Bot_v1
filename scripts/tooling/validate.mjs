@@ -214,7 +214,12 @@ function main() {
     ],
     [
       "github:test",
-      ["--test", "scripts/github/current-main.test.mjs", "scripts/github/release-plan.test.mjs"],
+      [
+        "--test",
+        "scripts/github/current-main.test.mjs",
+        "scripts/github/release-plan.test.mjs",
+        "scripts/github/validation-result.test.mjs",
+      ],
     ],
     [
       "schema:remote:test",

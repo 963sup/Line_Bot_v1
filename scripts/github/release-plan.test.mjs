@@ -126,7 +126,7 @@ test("Web routing follows Turbo build inputs instead of a scripts denylist", asy
         jobs: [
           { name: "supabase", conclusion: "success" },
           { name: "deployment", conclusion: "success" },
-          { name: "rich_menu_direct", conclusion: "success" },
+          { name: "rich_menu", conclusion: "success" },
         ],
       });
     }
@@ -270,6 +270,25 @@ test("schema-only changes sync schema without publishing Rich Menu or deploying 
   assert.equal(plan.schema_changed, true);
   assert.equal(plan.web_affected, false);
   assert.equal(plan.rich_menu_changed, false);
+});
+
+test("each current Rich Menu asset triggers independent publication even when Turbo is affected", async () => {
+  for (const page of [
+    "attendance-in",
+    "attendance-out",
+    "forms",
+    "incident",
+    "notifications",
+    "team",
+  ]) {
+    const plan = await planRelease(
+      plannerFixture({ files: [`assets/line/rich-menu/line_bot_v1-${page}.png`], affected: true }),
+    );
+    assert.equal(plan.rich_menu_changed, true, page);
+    assert.equal(plan.web_affected, false, page);
+    assert.equal(plan.schema_changed, false, page);
+    assert.equal(plan.scheduler_changed, false, page);
+  }
 });
 
 test("unrelated docs and tests trigger no remote operations", async () => {

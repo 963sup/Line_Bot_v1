@@ -7,6 +7,7 @@ import {
   assertRemoteTarget,
   assertSupabaseRecoveryReadback,
   assertSupabaseRestReadback,
+  assertTransactionalPlan,
   classifyPlan,
   classifyRemoteFoundationState,
   parseArgs,
@@ -121,6 +122,28 @@ test("empty plan is recognized as a no-op", () => {
     empty: true,
     reasons: [],
   });
+});
+
+test("atomic reconciliation refuses transaction escapes and nontransactional diff units", () => {
+  for (const sql of [
+    "CREATE TABLE app_private.x(id bigint); COMMIT; DROP TABLE app_private.x;",
+    "END;",
+    "START TRANSACTION;",
+    "CREATE INDEX CONCURRENTLY x ON app_private.x(id);",
+    "DROP INDEX CONCURRENTLY app_private.x;",
+    "REINDEX INDEX CONCURRENTLY app_private.x;",
+    "VACUUM app_private.x;",
+  ])
+    assert.throws(() => assertTransactionalPlan(sql), /atomic reconciliation transaction/);
+  assert.doesNotThrow(() =>
+    assertTransactionalPlan(`
+    SET LOCAL lock_timeout = '5s';
+    CREATE TABLE app_private.x(id bigint);
+    CREATE FUNCTION app_private.example() RETURNS void LANGUAGE plpgsql AS $$
+    BEGIN RAISE NOTICE 'COMMIT'; END;
+    $$;
+  `),
+  );
 });
 
 test("plan fingerprint binds diagnostic evidence to exact SQL", () => {

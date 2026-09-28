@@ -587,7 +587,7 @@ export function validate(root) {
       !(validateJob?.steps ?? []).some(
         (step) =>
           step.env?.RESULT === "${{ needs.full-validate.result }}" &&
-          step.run === 'test "$RESULT" = success',
+          step.run === "node scripts/github/validation-result.mjs",
       )
     )
       errors.push("CI: aggregate validation must reject failed, cancelled or skipped groups");
