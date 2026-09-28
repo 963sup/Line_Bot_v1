@@ -1,7 +1,7 @@
 import {
   PostgresAttendanceStore,
   PostgresWorkplaceStore,
-} from "@line_bot_v1/attendance/adapters/postgres";
+} from "@line_bot_v1/attendance/postgres";
 import { createClockAttendance } from "@line_bot_v1/attendance/application/clock";
 import { createAttendanceMaintenance } from "@line_bot_v1/attendance/application/maintenance";
 import { createWorkplaces } from "@line_bot_v1/attendance/application/workplaces";
