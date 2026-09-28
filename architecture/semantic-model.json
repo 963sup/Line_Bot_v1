@@ -1414,23 +1414,39 @@
       "id": "manage-repository-access",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Preserve Repository-owned direct and Team access facts without asserting runtime grant-management commands.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "intent": "Manage Repository-owned direct User and Organization Team access grants with current qualification, replay safety and recoverable admin authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
         "schema",
+        "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "not-asserted",
+      "runtimeExpectation": "required",
       "implementation": {
-        "status": "data-only",
-        "scope": "Repository-owned direct User and Organization Team access relations consumed by current effective-access reads.",
-        "sourcePaths": [],
-        "publicExports": [],
-        "entrypoints": [],
-        "testPaths": [],
-        "note": "Access facts are current data authority, but Repository access grant mutation has no current application/Web consumer and remains runtime-inactive."
+        "status": "implemented",
+        "scope": "Repository-owned direct User and Organization Team access management with current effective admin authorization, OrganizationOwner recovery, expected-version mutation and exact replay.",
+        "sourcePaths": [
+          "packages/repository/src/application/access.ts",
+          "packages/repository/src/application/ports/access.ts",
+          "packages/repository/src/adapters/postgres/access-management.ts"
+        ],
+        "publicExports": [
+          "./application/access",
+          "./application/ports/access",
+          "./postgres/access-management"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-access/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/access/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/access.test.ts",
+          "apps/web/test/repository-access-http.test.ts"
+        ],
+        "note": "Direct User grants remain Repository-owned; Organization Team grants reference Team identity without copying TeamMembership. User/Team qualification is rechecked on every effective read, mutations require expectedVersion plus exact replay, and a current OrganizationOwner can recover an Organization-owned Repository that has lost effective admin access."
       }
     },
     {
