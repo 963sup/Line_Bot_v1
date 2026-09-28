@@ -286,7 +286,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       [
         "packages/platform/src/private-import.ts",
         importing("../../account/src/index"),
-        "cross-workspace-relative-import",
+        "no-relative-imports-across-packages",
       ],
       [
         "apps/web/src/features/entry.ts",
