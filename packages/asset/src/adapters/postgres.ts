@@ -1,5 +1,6 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
-import type { AssetCode, AssetDefinition } from "../domain.js";
+import type { AssetDefinition } from "../domain/entities/asset-definition.js";
+import type { AssetCode } from "../domain/value-objects/asset-code.js";
 
 export async function readAssetDefinition(
   sql: Sql,

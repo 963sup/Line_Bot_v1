@@ -1,13 +1,10 @@
-export type AssetCode = "coin";
+import type { AssetCode } from "../value-objects/asset-code.js";
 
 export type AssetDefinition = Readonly<{
   code: AssetCode;
   displayName: string;
   unitsPerWhole: number;
 }>;
-
-/** Stable identifier; denomination is persisted by the Asset Context. */
-export const COIN_ASSET_CODE: AssetCode = "coin";
 
 export function assetAmount(definition: AssetDefinition, units: number): number {
   if (!Number.isSafeInteger(units)) throw new Error("invalid_asset_units");

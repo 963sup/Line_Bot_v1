@@ -4,13 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
-    },
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
+    },
+    "./domain/entities/asset-definition": {
+      "types": "./dist/domain/entities/asset-definition.d.ts",
+      "default": "./dist/domain/entities/asset-definition.js"
+    },
+    "./domain/value-objects/asset-code": {
+      "types": "./dist/domain/value-objects/asset-code.d.ts",
+      "default": "./dist/domain/value-objects/asset-code.js"
     }
   },
   "files": [
