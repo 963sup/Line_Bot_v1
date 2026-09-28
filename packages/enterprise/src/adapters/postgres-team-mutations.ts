@@ -7,7 +7,7 @@ import {
   readOrganizationQualification,
   refreshOrganizationMembershipFromSources,
 } from "@line_bot_v1/organization/adapters/postgres";
-import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 import type { EnterpriseCommand, EnterpriseReceipt } from "../contracts/enterprise-governance.js";
 import { enterpriseTeamSlugFromName } from "../domain.js";
 import { makeEnterpriseReceipt } from "./postgres-receipt.js";
