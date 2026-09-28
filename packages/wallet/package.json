@@ -4,17 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/ports/wallet-repository": {
-      "types": "./dist/application/ports/wallet-repository.d.ts",
-      "default": "./dist/application/ports/wallet-repository.js"
-    },
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
-    },
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
+    },
+    "./domain/value-objects/wallet-balance": {
+      "types": "./dist/domain/value-objects/wallet-balance.d.ts",
+      "default": "./dist/domain/value-objects/wallet-balance.js"
+    },
+    "./contracts/repositories/wallet-repository": {
+      "types": "./dist/contracts/repositories/wallet-repository.d.ts",
+      "default": "./dist/contracts/repositories/wallet-repository.js"
     }
   },
   "files": [

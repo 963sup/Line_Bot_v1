@@ -5,8 +5,8 @@ import type { AssetCode } from "@line_bot_v1/asset/domain/value-objects/asset-co
 import { readAssetDefinition } from "@line_bot_v1/asset/postgres";
 import { sumLedgerUnits } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import type { WalletRepository } from "@line_bot_v1/wallet/application/ports/wallet-repository";
-import type { WalletBalance } from "@line_bot_v1/wallet/domain";
+import type { WalletRepository } from "./contracts/repositories/wallet-repository.js";
+import type { WalletBalance } from "./domain/value-objects/wallet-balance.js";
 
 export class PostgresWalletStore implements WalletRepository {
   constructor(private db: Database = businessDatabase()) {}
