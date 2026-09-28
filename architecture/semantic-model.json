@@ -1563,7 +1563,7 @@
           "apps/web/src/app/(mobile)/explore/page.tsx",
           "apps/web/src/app/api/repositories/lists/discover/route.ts",
           "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx",
-          "packages/explore/src/application.ts"
+          "packages/explore/src/application/queries/repository-discovery.ts"
         ],
         "testPaths": [
           "packages/repository/test/discovery.test.ts",

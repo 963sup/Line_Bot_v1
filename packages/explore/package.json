@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application": {
-      "types": "./dist/application.d.ts",
-      "default": "./dist/application.js"
+    "./application/queries/repository-discovery": {
+      "types": "./dist/application/queries/repository-discovery.d.ts",
+      "default": "./dist/application/queries/repository-discovery.js"
     }
   },
   "files": [

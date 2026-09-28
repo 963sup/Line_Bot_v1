@@ -4,7 +4,7 @@ import type {
   RepositoryDiscoveryOptions,
   RepositoryDiscoveryStore,
 } from "@line_bot_v1/repository/contracts/discovery";
-import { createRepositoryDiscovery } from "../src/application.js";
+import { createRepositoryDiscovery } from "../src/application/queries/repository-discovery.js";
 
 test("Repository discovery resolves the active User and applies one bounded trending window", async () => {
   let received:
