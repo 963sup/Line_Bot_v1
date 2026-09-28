@@ -1,11 +1,40 @@
+import { readFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSemanticArchitecture } from "./semantic-core.mjs";
+import { packageSemanticDocs } from "./semantic-projection.mjs";
+
+const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+
+async function validatePackageSemanticDocs(compiled) {
+  if (compiled.errors.length) return [];
+  const errors = [];
+  for (const [path, expected] of packageSemanticDocs(compiled)) {
+    try {
+      const actual = await readFile(resolve(repositoryRoot, path), "utf8");
+      if (actual !== expected) {
+        errors.push(
+          "Package semantics drift: " + path + " does not match canonical semantic projection; run pnpm semantic package-docs",
+        );
+      }
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        errors.push(
+          "Package semantics missing: " + path + "; run pnpm semantic package-docs",
+        );
+        continue;
+      }
+      throw error;
+    }
+  }
+  return errors;
+}
 
 export async function checkSemanticArchitecture() {
   const compiled = await loadSemanticArchitecture();
+  const packageSemanticErrors = await validatePackageSemanticDocs(compiled);
   return {
-    errors: compiled.errors,
+    errors: [...compiled.errors, ...packageSemanticErrors],
     ownerCount: compiled.owners.size,
     conceptCount: compiled.concepts.size,
     relationshipCount: compiled.relationships.size,
