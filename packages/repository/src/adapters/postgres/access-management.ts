@@ -190,6 +190,7 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
   ): Promise<RepositoryAccessReceipt> {
     const commandFingerprint = fingerprint(command);
     return this.db.transaction(async (sql) => {
+      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
       const actor = await readActiveUserQualification(sql, userId, "update");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能管理 Repository access。");
 
