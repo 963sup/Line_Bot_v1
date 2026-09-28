@@ -47,8 +47,7 @@
     "change:preflight": "node scripts/changes/preflight.mjs",
     "change:finalize": "node scripts/changes/finalize.mjs",
     "github:current-main": "node scripts/github/current-main.mjs",
-    "github:release-plan": "node scripts/github/release-plan.mjs",
-    "semantic:packages": "node scripts/architecture/write-package-semantics.mjs"
+    "github:release-plan": "node scripts/github/release-plan.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
