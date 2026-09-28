@@ -4,7 +4,7 @@ import { isServerOnlyPackageSource } from "./check-architecture.mjs";
 
 test("context adapters, agents, testing and platform database mechanisms stay server-only unless browser-owned", () => {
   for (const source of [
-    "packages/account/src/adapters/postgres/user-management.ts",
+    "packages/account/src/postgres/user-management.ts",
     "packages/assistant/src/adapters/gemini.ts",
     "packages/expense/src/agents/receipt.ts",
     "packages/platform/src/testing/postgres.ts",
