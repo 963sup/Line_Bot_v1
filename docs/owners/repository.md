@@ -6,7 +6,7 @@ Read this file for Repository ownership and invariants. Load [detailed reference
 
 Repository owns:
 
-- Repository identity、visibility、access and User → Repository Star；
+- Repository identity、visibility、Direct User / Organization Team access grants and User → Repository Star；
 - Repository Star List / List membership；
 - Issue lifecycle、assignment、Label、Repository Milestone、command receipt and event history；
 - Discussion / comment；
@@ -20,7 +20,10 @@ Project may reference Repository work but does not acquire Issue/Discussion auth
 - Issue、Discussion、Notification are distinct concepts; conversation does not change Issue lifecycle.
 - Star/unstar is idempotent and never grants Repository access.
 - Protected read/write and assignment always use current effective Repository access.
-- Organization-owned Repository access changes still require current Organization qualification.
+- Repository access grant is not OrganizationMembership or TeamMembership；Repository stores only its own User/Team grant facts and derives effective access from current upstream qualification.
+- Access mutation requires current effective Repository `admin`；for Organization-owned Repository, current `OrganizationOwner` is an explicit recovery authority but does not become Repository access merely by managing grants.
+- Organization-owned direct User grants require current Organization participation；Team grants must reference an Organization Team in the same owner scope.
+- Access mutation uses stable request identity + expected version, exact replay only, and must leave at least one current effective Repository admin.
 - Commands use stable request identity; conditional mutation uses expected version.
 - Event/history is durable evidence and is not rewritten by current snapshots.
 - Discovery/read models derive existing truth only and re-check current visibility/access before exposure.
