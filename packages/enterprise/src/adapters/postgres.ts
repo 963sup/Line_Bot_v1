@@ -19,7 +19,7 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { readOrganizationQualification } from "@line_bot_v1/organization/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { EnterpriseGovernancePort } from "../application/ports/enterprise-governance.js";
 import type {
   EnterpriseCommand,
