@@ -94,5 +94,5 @@ test("Repository access HTTP fails closed on malformed selectors and owner error
     access,
     identity,
   );
-  assert.equal(malformed.status, 503);
+  assert.equal(malformed.status, 400);
 });
