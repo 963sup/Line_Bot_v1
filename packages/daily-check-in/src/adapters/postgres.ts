@@ -3,7 +3,7 @@ import { qualifyActiveUser } from "@line_bot_v1/account/adapters/postgres";
 import { readAssetDefinition } from "@line_bot_v1/asset/adapters/postgres";
 import { type AssetDefinition, assetAmount, COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { readLedgerCreditFact, recordLedgerCredit } from "@line_bot_v1/ledger/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { DailyCheckInRepository } from "../application/ports/daily-check-in-repository.js";
 import {
   DAILY_CHECK_IN_LEDGER_SOURCE,
