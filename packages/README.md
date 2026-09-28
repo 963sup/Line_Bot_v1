@@ -230,7 +230,7 @@ Projection / reference 可以被其他 owner 消費，但不得變成第二份 a
 `packages/<owner>/README.md`：只作 owner-local routing。  
 `packages/<owner>/SEMANTICS.md`：generated owner-local semantic projection，讓進入 package 時直接看到 Domain、Bounded Context status、Ubiquitous Language、Capabilities 與 Context Relationships。
 
-`SEMANTICS.md` 不建立第二份 truth；canonical authority 仍是 `architecture/semantic-model.json` 與 `architecture/implementation-topology.json`。語意修改後執行 `pnpm semantic:packages`，`pnpm architecture` 會檢查 projection drift。
+`SEMANTICS.md` 不建立第二份 truth；canonical authority 仍是 `architecture/semantic-model.json` 與 `architecture/implementation-topology.json`。語意修改後執行 `pnpm semantic package-docs`，`pnpm architecture` 會檢查 projection drift。
 
 ## Validation routing
 
