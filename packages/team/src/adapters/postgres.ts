@@ -1,8 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import {
-  readActiveUserQualification,
-  readUserQualification,
-} from "@line_bot_v1/account/postgres";
+import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
 import {
   grantTeamMaintainer,
   isTeamMaintainer,
