@@ -6,9 +6,9 @@ Low-frequency Repository runtime, locator and discovery details. Ownership/invar
 
 Current reads include Repository owner/name resolution and accessible discovery, Issue list/detail, Discussion list/detail/comment, Label collection, Repository Milestone list/detail, Star List and Explore discovery.
 
-Current writes include Repository create, Issue create/transition, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete.
+Current writes include Repository create, Direct User / Organization Team access grant-update-revoke, Issue create/transition, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete.
 
-Not yet claimed as general runtime management: Repository rename/visibility, direct/Team access grants, Discussion/Label/Repository Milestone/IssueLabel general write management.
+Not yet claimed as general runtime management: Repository rename/visibility and Discussion/Label/Repository Milestone/IssueLabel general write management.
 
 Star List specifics:
 
@@ -40,6 +40,8 @@ Stable identity is `RepositoryId`. Repository owner is `User | Organization`, us
 
 `Issue.number` and `RepositoryMilestone.number` are Repository-local locators; their stable IDs remain internal identity. Discussion uses an opaque local `DiscussionId`. Locator never grants access.
 
+Repository access management uses `/{ownerLogin}/{repositoryName}/access` with `GET/POST /api/repository-access`. The URL only locates the Repository; every read/mutation re-checks current management authority.
+
 Current read transport includes `/api/issues`, `/api/discussions`, `/api/repository-labels`, `/api/repository-milestones` and corresponding detail routes.
 
 ## Create
@@ -52,3 +54,16 @@ Canonical create surface is `/repositories/new`; API is `POST /api/repositories`
 - `(owner_account_id, lower(name))` is unique within owner scope.
 - Create uses stable `requestId` + fingerprint + durable receipt; exact replay re-checks current authority before returning the same Repository.
 - The narrow database coordinator re-checks actor/OrganizationOwner and initial access in one transaction; `line_app` does not gain unrestricted insert.
+
+
+## Access management
+
+Repository access authority remains Repository-owned:
+
+- Direct User grants persist in `repository_access`; Organization Team grants persist in `repository_team_access`.
+- Effective access is derived from current User / OrganizationMembership / TeamMembership qualification; grant rows do not copy those upstream memberships.
+- User-owned Repository owner has implicit admin authority and cannot receive a redundant direct grant.
+- Organization-owned direct User grants require a current Organization participant; Team grants must reference a Team in the same Organization scope.
+- Current effective Repository `admin` can manage grants. Current `OrganizationOwner` is an explicit recovery authority for an Organization-owned Repository whose effective admin access has been lost.
+- Mutation uses stable `requestId`, fingerprint and `expectedVersion`; exact replay returns the durable receipt, stale/different content conflicts.
+- A successful mutation must leave at least one current effective Repository admin. Team membership can later invalidate a Team-derived admin; OrganizationOwner recovery exists for that cross-owner change.

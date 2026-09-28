@@ -2,6 +2,10 @@ export function repositoryPath(ownerLogin: string, repositoryName: string) {
   return `/${encodeURIComponent(ownerLogin)}/${encodeURIComponent(repositoryName)}`;
 }
 
+export function repositoryAccessPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/access`;
+}
+
 export function repositoryIssuesPath(ownerLogin: string, repositoryName: string) {
   return `${repositoryPath(ownerLogin, repositoryName)}/issues`;
 }

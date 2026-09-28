@@ -103,6 +103,18 @@
     "./postgres/star-lists": {
       "types": "./dist/postgres/star-lists.d.ts",
       "default": "./dist/postgres/star-lists.js"
+    },
+    "./application/access": {
+      "types": "./dist/application/access.d.ts",
+      "default": "./dist/application/access.js"
+    },
+    "./application/ports/access": {
+      "types": "./dist/application/ports/access.d.ts",
+      "default": "./dist/application/ports/access.js"
+    },
+    "./postgres/access-management": {
+      "types": "./dist/postgres/access-management.d.ts",
+      "default": "./dist/postgres/access-management.js"
     }
   },
   "files": [

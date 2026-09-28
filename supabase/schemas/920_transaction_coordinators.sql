@@ -402,3 +402,219 @@ begin
     where l.account_id=p_owner_account_id and l.account_kind=p_owner_account_kind;
 end
 $function$;
+
+
+-- Repository access mutation is a narrow privileged coordinator because line_app intentionally has
+-- read-only access to Repository grant tables. Authorization, current upstream qualification,
+-- expected-version mutation and last-effective-admin protection are rechecked atomically here.
+create function app_private.mutate_repository_access(
+  p_actor_user_id text,
+  p_repository_id text,
+  p_subject_kind text,
+  p_subject_id text,
+  p_capability text,
+  p_expected_version integer
+) returns table(result_capability text, result_version integer)
+language plpgsql
+security definer
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+declare
+  current_repository app_private.repositories%rowtype;
+  current_capability text;
+  current_version integer;
+  next_version integer;
+begin
+  if length(trim(coalesce(p_actor_user_id, ''))) = 0
+     or p_actor_user_id <> trim(p_actor_user_id)
+     or length(p_actor_user_id) > 128
+     or length(trim(coalesce(p_repository_id, ''))) = 0
+     or p_repository_id <> trim(p_repository_id)
+     or length(p_repository_id) > 128
+     or p_subject_kind is null
+     or p_subject_kind not in ('USER','TEAM')
+     or length(trim(coalesce(p_subject_id, ''))) = 0
+     or p_subject_id <> trim(p_subject_id)
+     or length(p_subject_id) > 128
+     or (p_capability is not null and p_capability not in ('read','triage','write','admin'))
+     or p_expected_version is null
+     or p_expected_version < 0 then
+    raise exception 'repository_access_input_invalid' using errcode = '22023';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(71020260912::bigint);
+
+  perform 1
+  from app_private.users
+  where id=p_actor_user_id and status='active'
+  for update;
+  if not found then
+    raise exception 'repository_access_actor_not_active' using errcode = '42501';
+  end if;
+
+  select *
+  into current_repository
+  from app_private.repositories
+  where id=p_repository_id
+  for update;
+  if not found then
+    raise exception 'repository_access_repository_missing' using errcode = 'P0002';
+  end if;
+
+  if not exists (
+    select 1
+    from app_private.repository_effective_access a
+    where a.repository_id=p_repository_id
+      and a.user_id=p_actor_user_id
+      and a.capability='admin'
+  ) and not (
+    current_repository.owner_account_kind='ORGANIZATION'
+    and exists (
+      select 1
+      from app_private.organizations o
+      join app_private.organization_memberships m
+        on m.organization_account_id=o.account_id
+       and m.user_id=p_actor_user_id
+       and m.status='active'
+      join app_private.organization_role_assignments r
+        on r.organization_account_id=o.account_id
+       and r.user_id=p_actor_user_id
+       and r.role='OrganizationOwner'
+       and r.status='active'
+      join app_private.users u
+        on u.id=p_actor_user_id
+       and u.status='active'
+      where o.account_id=current_repository.owner_account_id
+        and o.status='active'
+        and r.user_status_version=u.status_version
+        and r.membership_version=m.version
+    )
+  ) then
+    raise exception 'repository_access_actor_forbidden' using errcode = '42501';
+  end if;
+
+  if p_subject_kind='USER' then
+    if current_repository.owner_account_kind='USER'
+       and current_repository.owner_account_id=p_subject_id then
+      raise exception 'repository_access_user_owner_implicit_admin' using errcode = '23514';
+    end if;
+
+    select a.capability,a.version
+    into current_capability,current_version
+    from app_private.repository_access a
+    where a.repository_id=p_repository_id and a.principal_id=p_subject_id
+    for update;
+
+    if coalesce(current_version,0) <> p_expected_version then
+      raise exception 'repository_access_version_conflict' using errcode = '40001';
+    end if;
+
+    if p_capability is null then
+      if current_version is null then
+        raise exception 'repository_access_grant_missing' using errcode = '23514';
+      end if;
+      delete from app_private.repository_access
+      where repository_id=p_repository_id and principal_id=p_subject_id;
+      next_version := null;
+    else
+      perform 1
+      from app_private.users
+      where id=p_subject_id and status='active'
+      for share;
+      if not found then
+        raise exception 'repository_access_target_not_active' using errcode = '42501';
+      end if;
+
+      if current_repository.owner_account_kind='ORGANIZATION' then
+        perform 1
+        from app_private.organization_memberships
+        where organization_account_id=current_repository.owner_account_id
+          and user_id=p_subject_id
+          and status='active'
+        for share;
+        if not found then
+          raise exception 'repository_access_target_not_organization_member' using errcode = '42501';
+        end if;
+      end if;
+
+      if current_capability is not distinct from p_capability then
+        raise exception 'repository_access_unchanged' using errcode = '23514';
+      end if;
+
+      if current_version is null then
+        insert into app_private.repository_access(
+          repository_id,principal_id,capability,version
+        ) values(
+          p_repository_id,p_subject_id,p_capability,1
+        );
+        next_version := 1;
+      else
+        update app_private.repository_access
+        set capability=p_capability,version=version+1
+        where repository_id=p_repository_id and principal_id=p_subject_id
+        returning version into next_version;
+      end if;
+    end if;
+  else
+    if current_repository.owner_account_kind<>'ORGANIZATION' then
+      raise exception 'repository_access_team_requires_organization_owner' using errcode = '23514';
+    end if;
+
+    perform 1
+    from app_private.teams
+    where id=p_subject_id
+      and organization_account_id=current_repository.owner_account_id
+    for share;
+    if not found then
+      raise exception 'repository_access_team_scope_conflict' using errcode = '23503';
+    end if;
+
+    select a.capability,a.version
+    into current_capability,current_version
+    from app_private.repository_team_access a
+    where a.repository_id=p_repository_id and a.team_id=p_subject_id
+    for update;
+
+    if coalesce(current_version,0) <> p_expected_version then
+      raise exception 'repository_access_version_conflict' using errcode = '40001';
+    end if;
+
+    if p_capability is null then
+      if current_version is null then
+        raise exception 'repository_access_grant_missing' using errcode = '23514';
+      end if;
+      delete from app_private.repository_team_access
+      where repository_id=p_repository_id and team_id=p_subject_id;
+      next_version := null;
+    else
+      if current_capability is not distinct from p_capability then
+        raise exception 'repository_access_unchanged' using errcode = '23514';
+      end if;
+
+      if current_version is null then
+        insert into app_private.repository_team_access(
+          repository_id,organization_id,team_id,capability,version
+        ) values(
+          p_repository_id,current_repository.owner_account_id,p_subject_id,p_capability,1
+        );
+        next_version := 1;
+      else
+        update app_private.repository_team_access
+        set capability=p_capability,version=version+1
+        where repository_id=p_repository_id and team_id=p_subject_id
+        returning version into next_version;
+      end if;
+    end if;
+  end if;
+
+  if not exists (
+    select 1
+    from app_private.repository_effective_access a
+    where a.repository_id=p_repository_id and a.capability='admin'
+  ) then
+    raise exception 'repository_access_last_admin' using errcode = '23514';
+  end if;
+
+  return query select p_capability,next_version;
+end
+$function$;
