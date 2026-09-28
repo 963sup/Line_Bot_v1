@@ -371,13 +371,13 @@ test("architecture checks source exports, types, ports, browser reachability and
     );
     write(
       root,
-      "packages/line-channel/src/adapters/mini-app/browser/client.ts",
+      "packages/line-channel/src/mini-app/browser/client.ts",
       "export const client = 1;",
     );
     write(
       root,
       "packages/line-channel/src/mini-app/browser.ts",
-      `export { client } from ${JSON.stringify("../adapters/mini-app/browser/client")};`,
+      `export { client } from ${JSON.stringify("./browser/client")};`,
     );
     write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line-channel/mini-app/browser"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);
@@ -394,7 +394,7 @@ test("architecture checks source exports, types, ports, browser reachability and
     for (const target of ["node:fs", "../../messaging/private", "../server/private"]) {
       write(
         root,
-        "packages/line-channel/src/adapters/mini-app/browser/client.ts",
+        "packages/line-channel/src/mini-app/browser/client.ts",
         importing(target),
       );
       assert.ok(
@@ -406,7 +406,7 @@ test("architecture checks source exports, types, ports, browser reachability and
     }
     write(
       root,
-      "packages/line-channel/src/adapters/mini-app/browser/client.ts",
+      "packages/line-channel/src/mini-app/browser/client.ts",
       "export const client = 1;",
     );
     write(root, "packages/platform/dist/old.js", "export const old = 1;");
