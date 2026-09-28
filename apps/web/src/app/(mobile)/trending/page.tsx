@@ -8,10 +8,7 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   return (
     <AppShell activeHref="/explore">
-      <PageHeading
-        title="Top Repositories"
-        back="/explore"
-      />
+      <PageHeading title="Top Repositories" back="/explore" />
       <div className="trending-filters" aria-label="Trending filters">
         <span>最近 7 天</span>
         <span>目前可存取</span>
