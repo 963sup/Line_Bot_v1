@@ -21,5 +21,7 @@ export async function writePackageSemanticDocs(compiled, root = repositoryRoot) 
 }
 
 if (import.meta.main) {
-  console.log(JSON.stringify(await writePackageSemanticDocs(await loadSemanticArchitecture()), null, 2));
+  console.log(
+    JSON.stringify(await writePackageSemanticDocs(await loadSemanticArchitecture()), null, 2),
+  );
 }

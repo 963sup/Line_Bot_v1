@@ -67,7 +67,9 @@ export function routeFileToUrl(path) {
 }
 
 function markdownCell(value) {
-  return String(value ?? "").replaceAll("|", "\\|").replaceAll("\n", " ");
+  return String(value ?? "")
+    .replaceAll("|", "\\|")
+    .replaceAll("\n", " ");
 }
 
 function ownerContexts(compiled, ownerId) {
@@ -98,8 +100,7 @@ export function renderPackageSemanticDoc(compiled, moduleName) {
   const contexts = ownerContexts(compiled, ownerId).sort((a, b) => a.id.localeCompare(b.id));
   const relationships = [...compiled.relationships.values()]
     .filter(
-      (relationship) =>
-        relationship.provider === ownerId || relationship.consumer === ownerId,
+      (relationship) => relationship.provider === ownerId || relationship.consumer === ownerId,
     )
     .sort((a, b) => a.id.localeCompare(b.id));
 
