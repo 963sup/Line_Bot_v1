@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresPublicRepositoryStore } from "../src/adapters/postgres/public.js";
+import { PostgresPublicRepositoryStore } from "../src/postgres/public.js";
 import { createPublicRepositories } from "../src/application/public.js";
 
 test("public Repository list and popularity expose only public owner resources deterministically", async (t) => {
