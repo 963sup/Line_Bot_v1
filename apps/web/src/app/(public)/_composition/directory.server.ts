@@ -1,4 +1,4 @@
-import { PostgresOrganizationPublicStore } from "@line_bot_v1/organization/adapters/postgres/public";
+import { PostgresOrganizationPublicStore } from "@line_bot_v1/organization/postgres/public";
 import { createPublicOrganizations } from "@line_bot_v1/organization/application/public";
 
 const state = globalThis as typeof globalThis & {
