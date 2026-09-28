@@ -4,11 +4,38 @@ import { existsSync, globSync, readFileSync, realpathSync, statSync } from "node
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
+import ts from "typescript";
 import YAML from "yaml";
 import { validationGroups } from "./validate.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (file) => readFileSync(file, "utf8");
+
+function literalModuleSpecifiers(file) {
+  const source = read(file);
+  const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const specifiers = [];
+  const visit = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteralLike(node.moduleSpecifier)
+    ) {
+      specifiers.push(node.moduleSpecifier.text);
+    }
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments.length === 1 &&
+      ts.isStringLiteralLike(node.arguments[0])
+    ) {
+      specifiers.push(node.arguments[0].text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(ast);
+  return specifiers;
+}
 const repositoryTextPatterns = [
   "*.{md,json,jsonc,yml,yaml,toml,mjs,js,ts,tsx,sql,css,html,txt}",
   ".github/**/*.{md,yml,yaml}",
@@ -856,10 +883,8 @@ export function validate(root) {
     }
   }
   for (const file of files("scripts/**/*.mjs")) {
-    // Literal ESM imports only; generated dist cannot substitute for source.
-    for (const [, specifier] of read(file).matchAll(
-      /(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)["'](\.[^"']+)["']/g,
-    )) {
+    // Parse actual module syntax so fixture strings and prose cannot masquerade as dependencies.
+    for (const specifier of literalModuleSpecifiers(file).filter((value) => value.startsWith("."))) {
       let target = resolve(dirname(file), specifier);
       let ancestor = target;
       while (!existsSync(ancestor) && dirname(ancestor) !== ancestor) ancestor = dirname(ancestor);
