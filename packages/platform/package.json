@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./migration": {
-      "types": "./dist/migration.d.ts",
-      "default": "./dist/migration.js"
-    },
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
