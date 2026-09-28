@@ -14,13 +14,13 @@ async function validatePackageSemanticDocs(compiled) {
       const actual = await readFile(resolve(repositoryRoot, path), "utf8");
       if (actual !== expected) {
         errors.push(
-          "Package semantics drift: " + path + " does not match canonical semantic projection; run pnpm semantic:packages",
+          "Package semantics drift: " + path + " does not match canonical semantic projection; run pnpm semantic package-docs",
         );
       }
     } catch (error) {
       if (error?.code === "ENOENT") {
         errors.push(
-          "Package semantics missing: " + path + "; run pnpm semantic:packages",
+          "Package semantics missing: " + path + "; run pnpm semantic package-docs",
         );
         continue;
       }
