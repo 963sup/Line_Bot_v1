@@ -46,6 +46,9 @@ export function validatePackageExports(name, exportsMap = {}) {
       errors.push(name + ": export does not target dist: " + key);
       continue;
     }
+    if (/^\.\/dist\/adapters(?:\.js|\/)/.test(compiled)) {
+      errors.push(name + ": private adapter must not be package export: " + key);
+    }
   }
   return errors;
 }
