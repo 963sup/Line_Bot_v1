@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresNamespaceStore } from "../src/adapters/postgres.js";
+import { PostgresNamespaceStore } from "../src/postgres.js";
 import {
   claimNamespace,
   NamespaceError,
