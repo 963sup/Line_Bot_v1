@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { RedisTransport } from "../src/adapters/redis/redis-execution.js";
-import { RedisRateLimiter } from "../src/adapters/redis/redis-rate-limiter.js";
+import type { RedisTransport } from "../src/redis/redis-execution.js";
+import { RedisRateLimiter } from "../src/redis/redis-rate-limiter.js";
 
 test("rate limiter keeps namespace, atomic script arguments and hashed identity", async () => {
   const calls: Array<{ keys: string[]; args: string[] }> = [];
