@@ -3,6 +3,7 @@
 import Link from "next/link";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import {
+  repositoryAccessPath,
   repositoryDiscussionsPath,
   repositoryIssueCreatePath,
   repositoryIssuesPath,
@@ -15,18 +16,21 @@ export default function RepositoryList({
   intent,
 }: {
   liffId: string;
-  intent?: "create-issue" | "browse-issues" | "browse-discussions";
+  intent?: "create-issue" | "browse-issues" | "browse-discussions" | "manage-access";
 }) {
   const { items, busy, error, load, clear } = useRepositoryCollection(liffId);
   const visibleItems =
     intent === "create-issue"
       ? items?.filter((item) => item.capability === "write" || item.capability === "admin")
-      : items;
+      : intent === "manage-access"
+        ? items?.filter((item) => item.capability === "admin")
+        : items;
 
   const targetPath = (ownerLogin: string, name: string) => {
     if (intent === "create-issue") return repositoryIssueCreatePath(ownerLogin, name);
     if (intent === "browse-issues") return repositoryIssuesPath(ownerLogin, name);
     if (intent === "browse-discussions") return repositoryDiscussionsPath(ownerLogin, name);
+    if (intent === "manage-access") return repositoryAccessPath(ownerLogin, name);
     return repositoryPath(ownerLogin, name);
   };
 
@@ -39,7 +43,9 @@ export default function RepositoryList({
         <p className="empty-copy">
           {intent === "create-issue"
             ? "目前沒有可建立 Issue 的 Repository。"
-            : "目前沒有可存取的 Repository。"}
+            : intent === "manage-access"
+              ? "目前沒有可管理 Access 的 Repository。"
+              : "目前沒有可存取的 Repository。"}
         </p>
       )}
       {visibleItems && visibleItems.length > 0 && (
@@ -60,7 +66,9 @@ export default function RepositoryList({
                       ? "Create Issue"
                       : intent === "browse-issues"
                         ? "Issues"
-                        : "Discussions"}
+                        : intent === "browse-discussions"
+                          ? "Discussions"
+                          : "Manage Access"}
                   </small>
                 )}
               </span>
