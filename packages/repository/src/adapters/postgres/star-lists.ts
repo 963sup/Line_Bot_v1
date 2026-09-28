@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
