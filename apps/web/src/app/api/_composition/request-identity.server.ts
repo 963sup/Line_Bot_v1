@@ -8,7 +8,7 @@ import {
   RedisRateLimiter,
   RedisUnavailableError,
   redisUnavailableCode,
-} from "@line_bot_v1/platform/adapters/redis";
+} from "@line_bot_v1/platform/redis";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { RequestIdentityError } from "../../../shared/server/request-identity-error";
 import { redisNamespace } from "../../../shared/server/runtime-environment";
