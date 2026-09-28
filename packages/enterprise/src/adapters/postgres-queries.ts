@@ -3,7 +3,7 @@ import {
   readEnterpriseOwnerAssignments,
   readEnterpriseOwnerScopeIds,
   resolveVerifiedLineActor,
-} from "@line_bot_v1/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/postgres";
 import type {
   GovernanceQuery,
   VerifiedLineActor,
