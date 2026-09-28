@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { isOrganizationOwner } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
-import { activeOrganizationParticipantIds } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
   RepositoryAccessCommand,
@@ -20,8 +19,17 @@ type RepositoryRow = {
   name: string;
 };
 
-const fingerprint = (value: unknown) =>
-  createHash("sha256").update(JSON.stringify(value)).digest("hex");
+type Receipt = Readonly<{
+  receiptVersion: 1;
+  family: "repository-access";
+  action: RepositoryAccessCommand["action"];
+  result: RepositoryAccessReceipt;
+}>;
+
+const fingerprint = (command: RepositoryAccessCommand) =>
+  createHash("sha256")
+    .update(JSON.stringify({ family: "repository-access", command }))
+    .digest("hex");
 
 async function repositoryRow(
   sql: Sql,
@@ -119,43 +127,47 @@ async function snapshot(
   };
 }
 
-async function existingUserGrant(sql: Sql, repositoryId: string, userId: string) {
-  return (
-    await sql.query(
-      `SELECT capability,version FROM repository_access
-       WHERE repository_id=$1 AND principal_id=$2 FOR UPDATE`,
-      [repositoryId, userId],
-    )
-  ).rows[0] as { capability: RepositoryCapability; version: number } | undefined;
-}
-
-async function existingTeamGrant(sql: Sql, repositoryId: string, teamId: string) {
-  return (
-    await sql.query(
-      `SELECT capability,version FROM repository_team_access
-       WHERE repository_id=$1 AND team_id=$2 FOR UPDATE`,
-      [repositoryId, teamId],
-    )
-  ).rows[0] as { capability: RepositoryCapability; version: number } | undefined;
-}
-
-function requireExpectedVersion(current: { version: number } | undefined, expectedVersion: number) {
-  if ((current?.version ?? 0) !== expectedVersion) {
-    throw new RepositoryError(409, "Repository access 已更新，請重新載入。");
+function readReceipt(
+  previous: { fingerprint: string; result: unknown } | undefined,
+  commandFingerprint: string,
+): RepositoryAccessReceipt | null {
+  if (!previous) return null;
+  if (previous.fingerprint !== commandFingerprint) {
+    throw new RepositoryError(409, "此請求編號已用於不同 Repository 操作。");
   }
+  const receipt = previous.result as Partial<Receipt>;
+  const result = receipt.result as Partial<RepositoryAccessReceipt> | undefined;
+  if (
+    receipt.receiptVersion !== 1 ||
+    receipt.family !== "repository-access" ||
+    (receipt.action !== "grant" && receipt.action !== "revoke") ||
+    !result ||
+    typeof result.requestId !== "string" ||
+    typeof result.repositoryId !== "string" ||
+    (result.subjectKind !== "USER" && result.subjectKind !== "TEAM") ||
+    typeof result.subjectId !== "string" ||
+    (result.capability !== null &&
+      result.capability !== "read" &&
+      result.capability !== "triage" &&
+      result.capability !== "write" &&
+      result.capability !== "admin") ||
+    (result.version !== null && !Number.isSafeInteger(result.version)) ||
+    !Number.isSafeInteger(result.at)
+  ) {
+    throw new RepositoryError(503, "Repository access 回執無法讀取。");
+  }
+  return result as RepositoryAccessReceipt;
 }
 
-async function requireEffectiveAdmin(sql: Sql, repositoryId: string) {
-  const row = (
-    await sql.query(
-      `SELECT 1 FROM repository_effective_access
-       WHERE repository_id=$1 AND capability='admin' LIMIT 1`,
-      [repositoryId],
-    )
-  ).rows[0];
-  if (!row) {
-    throw new RepositoryError(409, "Repository 必須至少保留一個有效 admin access。");
+function accessMutationError(error: unknown): never {
+  const code = (error as { code?: string }).code;
+  if (code === "22023") throw new RepositoryError(400, "Repository access 操作格式不正確。");
+  if (code === "42501") throw new RepositoryError(403, "Repository access 資格不符。");
+  if (code === "P0002") throw new RepositoryError(404, "找不到 Repository。");
+  if (code === "40001" || code === "23503" || code === "23514") {
+    throw new RepositoryError(409, "Repository access 狀態已變更，請重新載入。");
   }
+  throw error;
 }
 
 export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
@@ -181,6 +193,9 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
       const actor = await readActiveUserQualification(sql, userId, "update");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能管理 Repository access。");
 
+      const repository = await repositoryRow(sql, { repositoryId: command.repositoryId });
+      await requireManagementAuthority(sql, repository, userId);
+
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `repository-command:${userId}:${command.requestId}`,
       ]);
@@ -190,137 +205,53 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
           [userId, command.requestId],
         )
       ).rows[0] as { fingerprint: string; result: unknown } | undefined;
-      if (previous) {
-        if (previous.fingerprint !== commandFingerprint) {
-          throw new RepositoryError(409, "此 Repository access 請求編號已用於不同內容。");
-        }
-        const receipt = previous.result as RepositoryAccessReceipt & { receiptVersion?: number };
-        if (receipt.receiptVersion !== 1 || receipt.requestId !== command.requestId) {
-          throw new RepositoryError(503, "Repository access 回執無法讀取。");
-        }
-        return receipt;
-      }
+      const replay = readReceipt(previous, commandFingerprint);
+      if (replay) return replay;
 
-      const repository = await repositoryRow(sql, { repositoryId: command.repositoryId }, true);
-      await requireManagementAuthority(sql, repository, userId);
-
-      let changedVersion: number | null = null;
-      if (command.subjectKind === "USER") {
-        if (
-          repository.owner_account_kind === "USER" &&
-          repository.owner_account_id === command.subjectId
-        ) {
-          throw new RepositoryError(
-            409,
-            "User-owned Repository owner 的 admin access 是固有權限。",
-          );
-        }
-        const target = await readActiveUserQualification(sql, command.subjectId, "share");
-        if (!target) throw new RepositoryError(400, "只能授權目前有效的 User。");
-        if (repository.owner_account_kind === "ORGANIZATION") {
-          const eligible = await activeOrganizationParticipantIds(
-            sql,
-            repository.owner_account_id,
-            [command.subjectId],
-          );
-          if (!eligible.has(command.subjectId)) {
-            throw new RepositoryError(403, "User 必須是此 Organization 的有效 member。");
-          }
-        }
-
-        const current = await existingUserGrant(sql, repository.id, command.subjectId);
-        requireExpectedVersion(current, command.expectedVersion);
-        if (command.action === "grant") {
-          if (current?.capability === command.capability) {
-            throw new RepositoryError(409, "Repository User access 沒有變更。");
-          }
-          if (current) {
-            const changed = (
-              await sql.query(
-                `UPDATE repository_access
-                 SET capability=$3,version=version+1
-                 WHERE repository_id=$1 AND principal_id=$2
-                 RETURNING version`,
-                [repository.id, command.subjectId, command.capability],
-              )
-            ).rows[0] as { version: number };
-            changedVersion = Number(changed.version);
-          } else {
-            await sql.query(
-              `INSERT INTO repository_access(repository_id,principal_id,capability,version)
-               VALUES($1,$2,$3,1)`,
-              [repository.id, command.subjectId, command.capability],
-            );
-            changedVersion = 1;
-          }
-        } else {
-          if (!current) throw new RepositoryError(409, "Repository User access 已不存在。");
+      let changed:
+        | { result_capability: RepositoryCapability | null; result_version: number | null }
+        | undefined;
+      try {
+        changed = (
           await sql.query(
-            "DELETE FROM repository_access WHERE repository_id=$1 AND principal_id=$2",
-            [repository.id, command.subjectId],
-          );
-        }
-      } else {
-        if (repository.owner_account_kind !== "ORGANIZATION") {
-          throw new RepositoryError(409, "只有 Organization-owned Repository 可授權 Team。");
-        }
-        const current = await existingTeamGrant(sql, repository.id, command.subjectId);
-        requireExpectedVersion(current, command.expectedVersion);
-        if (command.action === "grant") {
-          if (current?.capability === command.capability) {
-            throw new RepositoryError(409, "Repository Team access 沒有變更。");
-          }
-          try {
-            if (current) {
-              const changed = (
-                await sql.query(
-                  `UPDATE repository_team_access
-                   SET capability=$3,version=version+1
-                   WHERE repository_id=$1 AND team_id=$2
-                   RETURNING version`,
-                  [repository.id, command.subjectId, command.capability],
-                )
-              ).rows[0] as { version: number };
-              changedVersion = Number(changed.version);
-            } else {
-              await sql.query(
-                `INSERT INTO repository_team_access(
-                   repository_id,organization_id,team_id,capability,version
-                 ) VALUES($1,$2,$3,$4,1)`,
-                [repository.id, repository.owner_account_id, command.subjectId, command.capability],
-              );
-              changedVersion = 1;
-            }
-          } catch (error) {
-            if ((error as { code?: string }).code === "23503") {
-              throw new RepositoryError(409, "Team 不屬於此 Repository 的 Organization scope。");
-            }
-            throw error;
-          }
-        } else {
-          if (!current) throw new RepositoryError(409, "Repository Team access 已不存在。");
-          await sql.query(
-            "DELETE FROM repository_team_access WHERE repository_id=$1 AND team_id=$2",
-            [repository.id, command.subjectId],
-          );
-        }
+            `SELECT result_capability,result_version
+             FROM app_private.mutate_repository_access($1,$2,$3,$4,$5,$6)`,
+            [
+              userId,
+              repository.id,
+              command.subjectKind,
+              command.subjectId,
+              command.action === "grant" ? command.capability : null,
+              command.expectedVersion,
+            ],
+          )
+        ).rows[0] as
+          | { result_capability: RepositoryCapability | null; result_version: number | null }
+          | undefined;
+      } catch (error) {
+        accessMutationError(error);
       }
+      if (!changed) throw new RepositoryError(503, "Repository access 更新結果不完整。");
 
-      await requireEffectiveAdmin(sql, repository.id);
-      const result = {
-        receiptVersion: 1,
+      const result: RepositoryAccessReceipt = {
         requestId: command.requestId,
         repositoryId: repository.id,
         subjectKind: command.subjectKind,
         subjectId: command.subjectId,
-        capability: command.action === "grant" ? command.capability : null,
-        version: changedVersion,
+        capability: changed.result_capability,
+        version: changed.result_version,
         at: now,
-      } as const;
+      };
+      const receipt: Receipt = {
+        receiptVersion: 1,
+        family: "repository-access",
+        action: command.action,
+        result,
+      };
       await sql.query(
         `INSERT INTO repository_commands(actor,request_id,fingerprint,result,at)
          VALUES($1,$2,$3,$4::jsonb,$5)`,
-        [userId, command.requestId, commandFingerprint, JSON.stringify(result), now],
+        [userId, command.requestId, commandFingerprint, JSON.stringify(receipt), now],
       );
       return result;
     });
