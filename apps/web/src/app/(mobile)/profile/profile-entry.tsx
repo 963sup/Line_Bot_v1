@@ -2,9 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ProfileAccount,
+  resolveProfileDestination,
+} from "../../../modules/account/profile-destination";
 import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
-import { type ProfileAccount, resolveProfileDestination } from "./profile-resolver";
 
 type AccountProjection = { member?: ProfileAccount | null; error?: string };
 type State = "loading" | "waiting" | "integrity-unavailable" | "suspended" | "unavailable";
@@ -12,15 +15,20 @@ type State = "loading" | "waiting" | "integrity-unavailable" | "suspended" | "un
 export default function ProfileEntry({ liffId }: { liffId: string }) {
   const router = useRouter();
   const generation = useRef(0);
+  const request = useRef<AbortController | null>(null);
   const [state, setState] = useState<State>("loading");
 
   const wait = useCallback(() => {
     generation.current++;
+    request.current?.abort();
     setState("waiting");
   }, []);
 
   const resolve = useCallback(async () => {
     const ticket = ++generation.current;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     setState("loading");
     try {
       const token = await liffClient.session(liffId);
@@ -28,6 +36,7 @@ export default function ProfileEntry({ liffId }: { liffId: string }) {
       const response = await fetch("/api/membership?view=account", {
         headers: { "x-line-token": token },
         cache: "no-store",
+        signal: controller.signal,
       });
       const value = (await response.json()) as AccountProjection;
       if (ticket !== generation.current) return;
@@ -49,6 +58,7 @@ export default function ProfileEntry({ liffId }: { liffId: string }) {
   useEffect(
     () => () => {
       generation.current++;
+      request.current?.abort();
     },
     [],
   );

@@ -1,22 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { type ProfileAccount, resolveProfileDestination } from "./profile-destination";
 
 export default function MemberAvatar({ liffId }: { liffId: string }) {
   const [picture, setPicture] = useState<string>();
+  const [href, setHref] = useState("/profile");
+  const [unavailable, setUnavailable] = useState(false);
   const generation = useRef(0);
+  const request = useRef<AbortController | null>(null);
 
   const clear = useCallback(() => {
     generation.current++;
+    request.current?.abort();
     setPicture(undefined);
+    setHref("/profile");
+    setUnavailable(false);
   }, []);
 
   const load = useCallback(async () => {
     const ticket = ++generation.current;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     setPicture(undefined);
+    setHref("/profile");
+    setUnavailable(false);
     const token = await liffClient.session(liffId);
     if (!token || ticket !== generation.current) return;
 
@@ -29,14 +41,40 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
         if (ticket === generation.current) setPicture(undefined);
       },
     );
+    // Resolve navigation while Home is visible, independently of the optional LINE photo.
+    // This locator is never reused as authorization for the destination's private data.
+    try {
+      const response = await fetch("/api/membership?view=account", {
+        headers: { "x-line-token": token },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!response.ok) return;
+      const value = (await response.json()) as { member?: ProfileAccount | null };
+      if (ticket !== generation.current || controller.signal.aborted || value.member === undefined)
+        return;
+      const destination = resolveProfileDestination(value.member);
+      if (destination.kind === "redirect") setHref(destination.href);
+      else setUnavailable(true);
+    } catch {
+      // Keep the explicit entry resolver available when the background lookup fails.
+    }
   }, [liffId]);
 
-  useEffect(
-    () => () => {
+  const onVisibilityChange = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") clear();
+    else void load().catch(clear);
+  });
+
+  useEffect(() => {
+    const visibility = () => onVisibilityChange();
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
       generation.current++;
-    },
-    [],
-  );
+      request.current?.abort();
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, []);
 
   const avatar = picture ? (
     // LINE hosts the profile photo; avoid proxying private profile images through Next.
@@ -67,9 +105,15 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
   return (
     <>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
-      <Link href="/profile" className="member-avatar" aria-label="個人檔案" title="個人檔案">
-        {avatar}
-      </Link>
+      {unavailable ? (
+        <span className="member-avatar" aria-label="個人檔案目前不可用" title="個人檔案目前不可用">
+          {avatar}
+        </span>
+      ) : (
+        <Link href={href} className="member-avatar" aria-label="個人檔案" title="個人檔案">
+          {avatar}
+        </Link>
+      )}
     </>
   );
 }

@@ -17,7 +17,7 @@ pnpm test:browser
 | 腳本 | 主要範圍 |
 | --- | --- |
 | [check-navigation](check-navigation.mjs) | 列表／詳情、query、前進返回、直接開啟、初始化前接續、讀寫途中導覽 |
-| [check-profile](check-profile.mjs) | 真實 Profile client 元件：單一身分區塊、本人／訪客／Organization 隔離、局部失敗及遲到回應；只替換 Next delivery adapters，不宣稱驗證 SSR 或正式 DB |
+| [check-profile](check-profile.mjs) | 真實 Profile client 元件：頭像直達 namespace、生命週期、換帳號與遲到回應；另以合成 owner query 驗證 server page 不等待 Popular、共用數量查詢與局部失敗。替換 Next delivery adapters，不宣稱正式 DB／遠端延遲驗收 |
 | [check-repository-resources](check-repository-resources.mjs) | Repository Discussions／Labels／Milestones canonical URL、詳情、分頁、錯誤分類與換帳號清除 |
 | [check-membership](check-membership.mjs) | 註冊／恢復、Google 外部交接不載入 LIFF、原會員確認／取消、每日簽到轉盤、讀回與遲到 profile |
 | [check-member-management](check-member-management.mjs) | 搜尋／分頁、停權、原命令重試與撤權 |

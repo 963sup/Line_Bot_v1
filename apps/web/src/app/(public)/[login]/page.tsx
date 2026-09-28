@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { profiles, publicUserById } from "../../api/_composition/account.server";
@@ -12,14 +13,27 @@ import styles from "./profile.module.css";
 export const dynamic = "force-dynamic";
 
 async function popularRepositoryProjection(login: string) {
-  return publicRepositories().popularByOwner(login, 6);
+  try {
+    return await publicRepositories().popularByOwner(login, 6);
+  } catch {
+    return null;
+  }
 }
 
-function PopularRepositories({
+async function PublicRepositoryCount({
   repositories,
 }: {
-  repositories: Awaited<ReturnType<typeof popularRepositoryProjection>>;
+  repositories: ReturnType<typeof popularRepositoryProjection>;
 }) {
+  return (await repositories)?.totalCount ?? null;
+}
+
+async function PopularRepositories({
+  repositories,
+}: {
+  repositories: ReturnType<typeof popularRepositoryProjection>;
+}) {
+  const result = await repositories;
   return (
     <section id="popular-repositories" className={styles.section}>
       <h2 className={styles.sectionHeading}>
@@ -38,11 +52,13 @@ function PopularRepositories({
         </svg>
         Popular
       </h2>
-      {repositories.totalCount === 0 ? (
+      {result === null ? (
+        <p role="status">公開 Repository 目前不可用，請稍後重試。</p>
+      ) : result.totalCount === 0 ? (
         <p className={styles.emptyRepositories}>目前沒有公開 Repository。</p>
       ) : (
         <div className={styles.repositoryRail}>
-          {repositories.items.map((repository) => (
+          {result.items.map((repository) => (
             <Link
               className={styles.repositoryCard}
               key={repository.id}
@@ -71,12 +87,11 @@ export default async function Page({ params }: { params: Promise<{ login: string
   if (!owner) notFound();
 
   const liffId = lineMiniApp().liffId;
+  // Start the independent projection now, but never gate Profile identity on it.
+  const repositories = popularRepositoryProjection(owner.login);
 
   if (owner.kind === "ORGANIZATION") {
-    const [organization, repositories] = await Promise.all([
-      publicOrganizations().byLogin(owner.login),
-      popularRepositoryProjection(owner.login),
-    ]);
+    const organization = await publicOrganizations().byLogin(owner.login);
     if (!organization) notFound();
     return (
       <ProfileViewerShell
@@ -85,17 +100,22 @@ export default async function Page({ params }: { params: Promise<{ login: string
         profileKind="ORGANIZATION"
         profileLogin={owner.login}
         profileTitle={organization.name}
-        publicRepositoryCount={repositories.totalCount}
+        publicRepositoryCount={
+          <Suspense fallback={null}>
+            <PublicRepositoryCount repositories={repositories} />
+          </Suspense>
+        }
       >
-        <PopularRepositories repositories={repositories} />
+        <Suspense fallback={<p role="status">正在讀取公開 Repository…</p>}>
+          <PopularRepositories repositories={repositories} />
+        </Suspense>
       </ProfileViewerShell>
     );
   }
 
-  const [user, profile, repositories] = await Promise.all([
+  const [user, profile] = await Promise.all([
     publicUserById(owner.id),
     profiles.publicByUserId(owner.id),
-    popularRepositoryProjection(owner.login),
   ]);
   if (!user || user.login !== owner.login) notFound();
   return (
@@ -107,9 +127,15 @@ export default async function Page({ params }: { params: Promise<{ login: string
       profileLogin={owner.login}
       profileTitle={profile?.displayName ?? user.login}
       profileUserId={owner.id}
-      publicRepositoryCount={repositories.totalCount}
+      publicRepositoryCount={
+        <Suspense fallback={null}>
+          <PublicRepositoryCount repositories={repositories} />
+        </Suspense>
+      }
     >
-      <PopularRepositories repositories={repositories} />
+      <Suspense fallback={<p role="status">正在讀取公開 Repository…</p>}>
+        <PopularRepositories repositories={repositories} />
+      </Suspense>
     </ProfileViewerShell>
   );
 }

@@ -34,11 +34,13 @@ await build({
       import {createRoot} from 'react-dom/client';
       import ProfileViewerShell from '../../apps/web/src/app/(public)/_components/profile-viewer-shell.tsx';
       import ProfileEntry from '../../apps/web/src/app/(mobile)/profile/profile-entry.tsx';
+      import MemberAvatar from '../../apps/web/src/modules/account/member-avatar.tsx';
       import '../../apps/web/src/app/globals.css';
       const root = createRoot(document.getElementById('root'));
-      window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>true,getProfile:async()=>({displayName:'LINE Viewer',statusMessage:'Ready to work'}),login:()=>{}};
+      window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>true,getProfile:async()=>window.holdProvider ? new Promise(()=>{}) : ({displayName:'LINE Viewer',statusMessage:'Ready to work'}),login:()=>{}};
       window.renderProfile=(props)=>root.render(<ProfileViewerShell key={props.instance} liffId="test" profileKind="USER" profileLogin="viewer" profileUserId="user-1" profileTitle="Public viewer" {...props}><h2>Popular</h2><p>Public repositories</p></ProfileViewerShell>);
       window.renderEntry=(instance)=>{window.resolvedTarget=null;root.render(<ProfileEntry key={instance} liffId="test"/>)};
+      window.renderAvatar=(instance)=>root.render(<MemberAvatar key={instance} liffId="test"/>);
       window.renderProfile({instance:0});`,
     resolveDir: fileURLToPath(new URL(".", import.meta.url)),
     loader: "tsx",
@@ -96,6 +98,89 @@ const base = `http://127.0.0.1:${server.address().port}`;
 let browser;
 let context;
 const results = [];
+// Exercise the real server page with held owner queries, without a database or credentials.
+await build({
+  entryPoints: [path.join(web, "src/app/(public)/[login]/page.tsx")],
+  outfile: path.join(output, "profile-page.cjs"),
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  jsx: "automatic",
+  packages: "external",
+  plugins: [
+    {
+      name: "profile-owner-queries",
+      setup(builder) {
+        const stubs = {
+          "next/link": "exports.default = () => null;",
+          "next/navigation": "exports.notFound = () => { throw Error('not-found'); };",
+          "resource-navigation": "exports.repositoryPath = () => '/repository';",
+          "line-mini-app": "exports.lineMiniApp = () => ({liffId:'test'});",
+          "account.server":
+            "exports.publicUserById = async () => ({login:'viewer'}); exports.profiles = {publicByUserId:async()=>null};",
+          "namespace.server":
+            "exports.resolveAccountNamespace = async () => ({id:'user-1',login:'viewer',kind:'USER'});",
+          "directory.server":
+            "exports.publicOrganizations = () => ({byLogin:async()=>({name:'Organization'})});",
+          "repository.server":
+            "exports.publicRepositories = () => ({popularByOwner:()=>{globalThis.repositoryReads++;return globalThis.profileRepositories;}});",
+          "profile-viewer-shell": "exports.default = () => null;",
+          "profile.module.css": "exports.default = {};",
+        };
+        builder.onResolve({ filter: /.*/ }, ({ path: specifier }) => {
+          if (specifier === "react" || specifier.startsWith("react/"))
+            return { path: require.resolve(specifier), external: true };
+          const key = Object.keys(stubs).find(
+            (key) => specifier === key || specifier.endsWith("/" + key),
+          );
+          return key ? { path: key, namespace: "profile-owner-queries" } : undefined;
+        });
+        builder.onLoad({ filter: /.*/, namespace: "profile-owner-queries" }, ({ path: key }) => ({
+          contents: stubs[key],
+          loader: "js",
+        }));
+      },
+    },
+  ],
+});
+const ProfilePage = require(path.join(output, "profile-page.cjs")).default;
+let releaseRepositories;
+globalThis.profileRepositories = new Promise((resolve) => {
+  releaseRepositories = resolve;
+});
+globalThis.repositoryReads = 0;
+let pageReady = false;
+const pendingPage = ProfilePage({ params: Promise.resolve({ login: "viewer" }) }).then((value) => {
+  pageReady = true;
+  return value;
+});
+await new Promise((resolve) => setImmediate(resolve));
+const pageWasBlocked = !pageReady;
+releaseRepositories({ items: [], totalCount: 7 });
+const serverPage = await pendingPage;
+const countBoundary = serverPage.props.publicRepositoryCount;
+assert.equal(countBoundary.type, Symbol.for("react.suspense"));
+assert.equal(serverPage.props.children.type, Symbol.for("react.suspense"));
+assert.equal(await countBoundary.props.children.type(countBoundary.props.children.props), 7);
+assert.equal(globalThis.repositoryReads, 1, "count and Popular share one owner query");
+globalThis.profileRepositories = Promise.resolve().then(() => {
+  throw Error("synthetic unavailable");
+});
+const failedPage = await ProfilePage({ params: Promise.resolve({ login: "viewer" }) });
+const failedPopular = failedPage.props.children.props.children;
+const failedContent = await failedPopular.type(failedPopular.props);
+assert.equal(
+  failedContent.props.children[1].props.children,
+  "公開 Repository 目前不可用，請稍後重試。",
+);
+delete globalThis.profileRepositories;
+delete globalThis.repositoryReads;
+assert.equal(
+  pageWasBlocked,
+  false,
+  "Profile identity must render before Popular repositories resolve",
+);
+results.push("server Profile identity does not wait for Popular repositories");
 try {
   browser = await chromium.launch({ channel: process.env.NAVIGATION_BROWSER_CHANNEL || undefined });
   context = await browser.newContext({
@@ -111,6 +196,9 @@ try {
   let heldProfile;
   let holdProfile = false;
   let membershipReads = 0;
+  let membershipStatus = 200;
+  let holdMembership = false;
+  let heldMembership;
   const privateReads = [];
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
@@ -118,7 +206,11 @@ try {
     if (url.pathname === "/api/membership") {
       membershipReads++;
       assert.equal(url.search, "?view=account");
-      return route.fulfill({ json: { member } });
+      if (holdMembership) {
+        heldMembership = route;
+        return;
+      }
+      return route.fulfill({ status: membershipStatus, json: { member } });
     }
     if (url.pathname === "/api/profile") {
       privateReads.push(url.pathname);
@@ -220,6 +312,75 @@ try {
   await page.evaluate(() => window.renderEntry(8));
   await expect.poll(() => page.evaluate(() => window.resolvedTarget)).toBe("/membership/register");
   results.push("real entry component replaces with canonical login or lifecycle destination");
+  member = { id: "user-1", login: "viewer", status: "active" };
+  const beforeAvatar = membershipReads;
+  await page.evaluate(() => {
+    window.holdProvider = true;
+    window.renderAvatar(9);
+  });
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/viewer",
+  );
+  assert.equal(membershipReads - beforeAvatar, 1);
+  results.push(
+    "Home avatar goes directly to the verified namespace without the Profile resolver hop",
+  );
+  await page.screenshot({ path: path.join(output, "profile-avatar-direct.png") });
+
+  member = { id: "user-1", login: "viewer", status: "paused" };
+  await page.evaluate(() => window.renderAvatar(10));
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/membership/restore",
+  );
+  member = null;
+  await page.evaluate(() => window.renderAvatar(11));
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/membership/register",
+  );
+  membershipStatus = 503;
+  const beforeFailure = membershipReads;
+  await page.evaluate(() => window.renderAvatar(12));
+  await expect.poll(() => membershipReads).toBeGreaterThan(beforeFailure);
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/profile",
+  );
+
+  membershipStatus = 200;
+  holdMembership = true;
+  await page.evaluate(() => window.renderAvatar(13));
+  await expect.poll(() => Boolean(heldMembership)).toBe(true);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/profile",
+  );
+  holdMembership = false;
+  member = { id: "other", login: "other", status: "active" };
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/other",
+  );
+  await heldMembership
+    .fulfill({ json: { member: { id: "user-1", login: "viewer", status: "active" } } })
+    .catch(() => {});
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+    "href",
+    "/other",
+  );
+  results.push(
+    "slow provider photo never gates navigation; lifecycle, failed lookup, resume and stale responses stay isolated",
+  );
   assert.deepEqual(errors, []);
   console.log(`PASS: ${results.join("; ")}`);
 } finally {

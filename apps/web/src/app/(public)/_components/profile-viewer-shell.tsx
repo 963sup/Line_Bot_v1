@@ -36,7 +36,7 @@ export default function ProfileViewerShell({
   profileLogin: string;
   profileTitle: string;
   profileUserId?: string;
-  publicRepositoryCount?: number;
+  publicRepositoryCount?: ReactNode;
 }) {
   const [viewer, setViewer] = useState<{
     profileKind: "USER";

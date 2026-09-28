@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveProfileDestination } from "../src/app/(mobile)/profile/profile-resolver";
 import {
   isOwnProfileLogin,
   isVerifiedSelfUser,
 } from "../src/app/(public)/_components/profile-viewer";
+import { resolveProfileDestination } from "../src/modules/account/profile-destination";
 
 test("Profile Settings gear is scoped to the current viewer login", () => {
   assert.equal(isOwnProfileLogin("viewer", "viewer"), true);

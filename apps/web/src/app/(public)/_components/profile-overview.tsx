@@ -23,7 +23,7 @@ type ProfileResource = Readonly<{
   href: string;
   kind: ResourceKind;
   label: string;
-  count?: number;
+  count?: ReactNode;
 }>;
 
 async function readJson<T>(path: string, token: string, signal: AbortSignal): Promise<T> {
@@ -78,7 +78,7 @@ export default function ProfileOverview({
   profileBio?: string | null;
   profileLogin: string;
   profileTitle: string;
-  publicRepositoryCount?: number;
+  publicRepositoryCount?: ReactNode;
   token?: string;
 }) {
   const [provider, setProvider] = useState<Loadable<ProviderProfile>>({ state: "idle" });

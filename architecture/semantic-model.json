@@ -1009,7 +1009,7 @@
         "sourcePaths": ["packages/namespace/src/domain/routes.ts"],
         "publicExports": ["."],
         "entrypoints": [
-          "apps/web/src/app/(mobile)/profile/profile-resolver.ts",
+          "apps/web/src/modules/account/profile-destination.ts",
           "apps/web/src/modules/account/member-avatar.tsx",
           "apps/web/src/modules/team/panel.tsx"
         ],
