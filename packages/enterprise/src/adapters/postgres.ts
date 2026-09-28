@@ -1,4 +1,9 @@
 import { randomUUID } from "node:crypto";
+import type {
+  GovernanceQuery,
+  VerifiedLineActor,
+} from "@line_bot_v1/identity-access/contracts/governance";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
   governanceFingerprint,
   hasEnterpriseOwnerAssignment,
@@ -13,11 +18,6 @@ import {
   resolveVerifiedLineActor,
   revokeEnterpriseOwnerForAffiliationRemoval,
 } from "@line_bot_v1/identity-access/postgres";
-import type {
-  GovernanceQuery,
-  VerifiedLineActor,
-} from "@line_bot_v1/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { readOrganizationQualification } from "@line_bot_v1/organization/adapters/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { EnterpriseGovernancePort } from "../application/ports/enterprise-governance.js";
