@@ -182,10 +182,10 @@ export default function EnterprisePanel({
     detail?.teams.filter((team) => !canonicalTeam || team.id === routedTeamId.current) ?? [];
 
   return (
-    <div className="crud-manager">
+    <div className="crud-manager resource-workspace">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <div className="crud-toolbar">
-        <p>Enterprise 的建立、選擇與治理都在這個畫面。</p>
+        <p>管理你的企業與所屬組織。</p>
         <button
           className="secondary crud-refresh"
           disabled={busy || !!pending}
@@ -209,42 +209,51 @@ export default function EnterprisePanel({
           <div className="crud-section-head">
             <div>
               <h2>企業</h2>
-              <p>選擇一個 Enterprise 進入詳情；建立新企業也從這裡開始。</p>
+              <p>你參與的企業與待處理邀請。</p>
             </div>
-            <div className="inline-actions">
-              <input
-                aria-label="Enterprise name"
-                maxLength={120}
-                value={newName}
-                onChange={(event) => setNewName(event.target.value)}
-                placeholder="Acme Enterprise"
-              />
-              <input
-                aria-label="Enterprise slug"
-                autoCapitalize="none"
-                autoCorrect="off"
-                maxLength={39}
-                pattern="[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
-                value={newSlug}
-                onChange={(event) => setNewSlug(event.target.value)}
-                placeholder="acme-enterprise"
-              />
-              <button
-                className="crud-create"
-                disabled={busy || !!pending || !newSlug.trim() || !newName.trim()}
-                onClick={() =>
-                  void execute({
-                    action: "create-enterprise",
-                    requestId: crypto.randomUUID(),
-                    slug: newSlug,
-                    name: newName,
-                    reason: "由已啟用會員建立 Enterprise",
-                  })
-                }
-              >
-                ＋ 建立企業
-              </button>
-            </div>
+            <details className="resource-create">
+              <summary>新增企業</summary>
+              <div className="resource-create-fields">
+                <label>
+                  企業名稱
+                  <input
+                    aria-label="Enterprise name"
+                    maxLength={120}
+                    value={newName}
+                    onChange={(event) => setNewName(event.target.value)}
+                    placeholder="Acme Enterprise"
+                  />
+                </label>
+                <label>
+                  企業網址名稱
+                  <input
+                    aria-label="Enterprise slug"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    maxLength={39}
+                    pattern="[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+                    value={newSlug}
+                    onChange={(event) => setNewSlug(event.target.value)}
+                    placeholder="acme-enterprise"
+                  />
+                </label>
+                <button
+                  className="crud-create"
+                  disabled={busy || !!pending || !newSlug.trim() || !newName.trim()}
+                  onClick={() =>
+                    void execute({
+                      action: "create-enterprise",
+                      requestId: crypto.randomUUID(),
+                      slug: newSlug,
+                      name: newName,
+                      reason: "由已啟用會員建立 Enterprise",
+                    })
+                  }
+                >
+                  建立企業
+                </button>
+              </div>
+            </details>
           </div>
           {list.items.length === 0 ? (
             <p className="empty-copy">目前沒有可使用的企業或待處理邀請。</p>

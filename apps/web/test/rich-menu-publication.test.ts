@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { MENU_PAGES, SUBMENU_PAGES } from "../src/modules/assistant/rich-menu/definition";
 import {
   activateRichMenuBatch,
   createRichMenuBatch,
@@ -24,6 +25,38 @@ const config = (page: RichMenuPublicationConfig["page"]): RichMenuPublicationCon
     chatBarText: page,
     areas: [],
   },
+});
+
+test("all six aliases survive publication and submenu targets activate before main entries", async () => {
+  const configs = MENU_PAGES.map(config);
+  const created = configs.map(({ page }) => ({ page, richMenuId: `new-${page}` }));
+  const aliases = new Map<string, string>(
+    MENU_PAGES.map((page) => [`line_bot_v1-${page}`, `old-${page}`]),
+  );
+  const updates: string[] = [];
+  let defaultId: string | null = "old-attendance-in";
+  const client = {
+    get: async (id: string) => configs.find(({ page }) => id === `new-${page}`)!.menu,
+    getAlias: async (alias: string) => aliases.get(alias) ?? null,
+    updateAlias: async (alias: string, id: string) => {
+      aliases.set(alias, id);
+      updates.push(alias);
+    },
+    deleteAlias: async (alias: string) => {
+      aliases.delete(alias);
+    },
+    getDefault: async () => defaultId,
+    activate: async (id: string) => {
+      defaultId = id;
+    },
+  } as unknown as PublicationClient;
+  await activateRichMenuBatch(client, configs, created);
+  for (const page of MENU_PAGES) assert.equal(aliases.get(`line_bot_v1-${page}`), `new-${page}`);
+  assert.deepEqual(
+    updates.slice(0, 4),
+    SUBMENU_PAGES.map((page) => `line_bot_v1-${page}`),
+  );
+  assert.equal(defaultId, "new-attendance-in");
 });
 
 test("create batch removes every known menu created in a failed operation", async () => {
@@ -109,13 +142,9 @@ test("publish keeps preflight before creation and activation in one process", as
   let defaultId: string | null = null;
   const retiredAliases = [
     "line_bot_v1-home",
-    "line_bot_v1-team",
     "line_bot_v1-team-out",
-    "line_bot_v1-forms",
     "line_bot_v1-forms-out",
-    "line_bot_v1-notifications",
     "line_bot_v1-notifications-out",
-    "line_bot_v1-incident",
     "line_bot_v1-incident-out",
   ];
   const aliases = new Map<string, string>(

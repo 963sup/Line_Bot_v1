@@ -10,44 +10,66 @@ import { attendanceOperationLabels } from "../src/modules/attendance/operation-l
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-route";
 
-test("only two attendance menus remain, with direct links and no unfinished feature targets", () => {
-  assert.deepEqual(MENU_PAGES, ["attendance-in", "attendance-out"]);
-  for (const retired of [
-    "home",
-    "team",
+test("six menus expose four native switches and only Back on each submenu", () => {
+  assert.deepEqual(MENU_PAGES, [
+    "attendance-in",
+    "attendance-out",
     "forms",
-    "notifications",
     "incident",
-    "team-out",
-    "forms-out",
-    "notifications-out",
-    "incident-out",
-  ]) {
+    "notifications",
+    "team",
+  ]);
+  for (const retired of ["home", "team-out", "forms-out", "notifications-out", "incident-out"]) {
     assert.equal(isMenuPage(retired), false);
   }
-  const destinations = ["/repositories", "/partners", "/profile", "/notifications"];
   for (const page of MENU_PAGES) {
-    assert.equal(menuAlias(page), `line_bot_v1-${page}`);
     const menu = lineBotV1RichMenu(
       "https://miniapp.line.me/123-test",
       { width: 1536, height: 1024 },
       page,
     );
-    assert.equal(menu.areas.length, 5);
-    assert.equal(menu.areas[0]!.action.label, page === "attendance-out" ? "下班" : "上班");
-    assert.deepEqual(
-      menu.areas.slice(1).map((a) => a.action.label),
-      ["儲存庫", "團隊協作", "個人", "通知中心"],
-    );
-    for (const [index, area] of menu.areas.slice(1).entries()) {
-      assert.equal(area.action.type, "uri");
-      if (area.action.type === "uri") {
-        assert.equal(entryDestination(area.action.uri), destinations[index]);
-        assert.equal(entryDestination(loginReturnUrl(area.action.uri)), destinations[index]);
+    if (page === "attendance-in" || page === "attendance-out") {
+      assert.equal(menu.areas.length, 7);
+      const links = menu.areas.filter((area) => area.action.type === "uri");
+      assert.equal(links[0]!.action.label, page === "attendance-out" ? "下班" : "上班");
+      const destinations = [
+        page === "attendance-out" ? "/attendance/clock-out" : "/attendance/clock-in",
+        "/repositories",
+        "/profile",
+      ];
+      for (const [index, { action }] of links.entries()) {
+        if (action.type !== "uri") throw new Error("Expected URI");
+        assert.equal(entryDestination(action.uri), destinations[index]);
+        assert.equal(entryDestination(loginReturnUrl(action.uri)), destinations[index]);
       }
+      const switches = menu.areas.filter((area) => area.action.type === "richmenuswitch");
+      assert.deepEqual(
+        switches.map(({ action }) => action.type === "richmenuswitch" && action.richMenuAliasId),
+        [
+          "line_bot_v1-forms",
+          "line_bot_v1-incident",
+          "line_bot_v1-notifications",
+          "line_bot_v1-team",
+        ],
+      );
+      for (const { action } of switches) {
+        if (action.type !== "richmenuswitch") throw new Error("Expected switch");
+        assert.notEqual(action.data, "attendance-menu");
+        assert.ok(MENU_PAGES.some((target) => menuAlias(target) === action.richMenuAliasId));
+      }
+    } else {
+      assert.equal(menu.areas.length, 1, "Unimplemented submenu buttons must stay inactive");
+      assert.deepEqual(menu.areas[0]!.action, {
+        type: "postback",
+        label: "返回出勤選單",
+        data: "attendance-menu",
+      });
+      const back = menu.areas[0]!.bounds;
+      assert.ok(
+        back.x <= 160 && back.x + back.width >= 160 && back.y <= 110 && back.y + back.height >= 110,
+      );
     }
-    for (const [index, { bounds: a, action }] of menu.areas.entries()) {
-      assert.equal(action.type, "uri");
+    for (const [index, { bounds: a }] of menu.areas.entries()) {
       assert.ok(
         a.x >= 0 &&
           a.y >= 0 &&

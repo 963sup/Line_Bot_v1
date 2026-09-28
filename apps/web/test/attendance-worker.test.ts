@@ -71,7 +71,7 @@ test("private menu navigation refreshes authoritative state, delivers only menus
     LINE_CHANNEL_ACCESS_TOKEN: "test-token",
   });
   const lineCalls: Array<{ method: string; path: string }> = [];
-  let linkedId = "";
+  let linkedId = "richmenu-f0"; // The member starts on a submenu.
   let missingAlias = false;
   globalThis.fetch = (async (input, init) => {
     const url = new URL(String(input));
@@ -125,24 +125,24 @@ test("private menu navigation refreshes authoritative state, delivers only menus
     assert.equal(claims, 3);
     assert.deepEqual(completed, [true, true, true]);
     assert.deepEqual(lineCalls, [
-      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-in" },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
+      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-in" },
       { method: "POST", path: `/v2/bot/user/${subject}/richmenu/richmenu-a1` },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
-      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-out" },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
+      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-out" },
       { method: "POST", path: `/v2/bot/user/${subject}/richmenu/richmenu-b2` },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
-      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-out" },
       { method: "GET", path: `/v2/bot/user/${subject}/richmenu` },
+      { method: "GET", path: "/v2/bot/richmenu/alias/line_bot_v1-attendance-out" },
     ]);
     missingAlias = true;
     await assert.rejects(showAttendanceMenu(subject), /attendance_menu_sync_pending/);
-    assert.equal(lineCalls.length, 11, "a missing alias must not link a menu");
+    assert.equal(lineCalls.length, 12, "a missing alias must not link a menu");
     assert.deepEqual(completed, [true, true, true, false]);
     failRefresh = true;
     await assert.rejects(showAttendanceMenu(subject), /authoritative refresh failed/);
-    assert.equal(lineCalls.length, 11, "a failed refresh must not link a menu");
+    assert.equal(lineCalls.length, 12, "a failed refresh must not link a menu");
     assert.equal(claims, 4);
   } finally {
     globalThis.fetch = previous.fetch;

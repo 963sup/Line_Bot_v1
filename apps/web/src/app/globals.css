@@ -2719,3 +2719,95 @@ summary:focus-visible {
 .app-shell .explore-section .discovery-actions button.secondary {
   background: #21262d;
 }
+
+/* Resource collection controls; Home keeps its existing layout. */
+.app-shell .resource-workspace .crud-toolbar {
+  padding: 0;
+  background: transparent;
+}
+.app-content
+  .resource-workspace
+  :is(.crud-collection, .crud-scope-picker, .crud-detail, .crud-guidance) {
+  border-radius: 6px;
+  box-shadow: none;
+}
+.resource-workspace .crud-section-head {
+  flex-wrap: wrap;
+  align-items: start;
+}
+.resource-create {
+  width: min(100%, 320px);
+  margin-left: auto;
+}
+.resource-create > summary {
+  width: fit-content;
+  margin-left: auto;
+  padding: 8px 14px;
+  border: 1px solid #3fb950;
+  border-radius: 6px;
+  background: #238636;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.resource-create > summary:focus-visible {
+  outline: 2px solid var(--green-strong);
+  outline-offset: 3px;
+}
+.resource-create-fields {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.resource-create-fields input {
+  min-width: 0;
+  margin: 0;
+}
+.app-content .resource-workspace .crud-create {
+  width: auto;
+  border: 1px solid #3fb950;
+  border-radius: 6px;
+  background: #238636;
+  color: #fff;
+}
+.resource-workspace .crud-entity-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.app-content .resource-workspace .crud-entity-item {
+  border: 0;
+  border-radius: 0;
+  text-decoration: none;
+}
+.resource-workspace .crud-entity-list li + li {
+  border-top: 1px solid var(--line);
+}
+.app-content .resource-workspace .crud-entity-item:is(:hover, [aria-current="true"]) {
+  background: var(--surface-muted);
+}
+.resource-workspace .crud-entity-item strong {
+  color: var(--green-strong);
+}
+.resource-project-list {
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.resource-project-list .action-row {
+  border-radius: 0;
+}
+@media (max-width: 430px) {
+  .resource-workspace .crud-section-head {
+    flex-direction: row;
+  }
+  .resource-create {
+    width: 100%;
+  }
+}

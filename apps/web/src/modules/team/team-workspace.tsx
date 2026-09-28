@@ -34,8 +34,8 @@ export function TeamWorkspace({
         <section className="crud-scope-picker">
           <div className="crud-section-head">
             <div>
-              <h2>選擇 Organization 與 Team</h2>
-              <p>Organization 決定 Team 的工作範圍；建立 Team 前必須先選 Organization。</p>
+              <h2>團隊</h2>
+              <p>選擇組織，查看或建立團隊。</p>
             </div>
             <button
               type="button"
@@ -43,7 +43,7 @@ export function TeamWorkspace({
               disabled={!data.organizationAccountId}
               onClick={() => setDraft({ action: "create-team", name: "" })}
             >
-              ＋ 建立團隊
+              新增團隊
             </button>
           </div>
           <label>
@@ -69,26 +69,31 @@ export function TeamWorkspace({
           </label>
 
           {data.organizationAccountId && (
-            <label>
-              團隊
-              <select
-                aria-label="團隊"
-                value={data.team?.id ?? ""}
-                onChange={(event) => {
-                  setDraft(null);
-                  selectTeam(data.organizationAccountId ?? "", event.target.value);
-                }}
-              >
-                <option value="">選擇團隊</option>
-                {data.teams
-                  .filter((team) => team.membershipStatus === "active")
-                  .map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
+            <ul className="crud-entity-list" aria-label="團隊列表">
+              {data.teams
+                .filter((team) => team.membershipStatus === "active")
+                .map((team) => (
+                  <li key={team.id}>
+                    <button
+                      type="button"
+                      className="crud-entity-item"
+                      aria-current={data.team?.id === team.id ? "true" : undefined}
+                      onClick={() => {
+                        setDraft(null);
+                        selectTeam(data.organizationAccountId ?? "", team.id);
+                      }}
+                    >
+                      <span>
+                        <strong>{team.name}</strong>
+                      </span>
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </li>
+                ))}
+              {data.teams.every((team) => team.membershipStatus !== "active") && (
+                <li className="empty-copy">目前沒有已加入的團隊。</li>
+              )}
+            </ul>
           )}
 
           {data.organizationAccountId && (
@@ -106,8 +111,8 @@ export function TeamWorkspace({
 
         {data.organizationAccountId && !data.team && (
           <section className="crud-guidance">
-            <h2>尚未選擇 Team</h2>
-            <p>你可以從上方選擇既有 Team、建立新 Team，或用 Team ID 申請加入。</p>
+            <h2>選擇一個團隊</h2>
+            <p>從列表開啟團隊，或建立新團隊、申請加入既有團隊。</p>
             {data.teams
               .filter((team) => team.membershipStatus === "pending")
               .map((team) => (

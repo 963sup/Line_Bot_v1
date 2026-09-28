@@ -241,10 +241,10 @@ export default function TeamPanel({
   }
 
   return (
-    <div className={`${styles.panel} crud-manager`}>
+    <div className={`${styles.panel} crud-manager resource-workspace`}>
       <MiniAppRuntime liffId={liffId} onReady={async () => load()} onWait={clear} />
       <div className="crud-toolbar">
-        <p>Team 一定屬於 Organization；先選 Organization，再建立或管理 Team。</p>
+        <p>管理組織內的團隊與成員。</p>
         <button
           className="secondary crud-refresh"
           disabled={busy || !!pending}

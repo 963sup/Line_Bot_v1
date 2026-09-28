@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { createRichMenuClient, type RichMenuDefinition } from "@line_bot_v1/line-channel/messaging";
-import { MENU_PAGES, type MenuPage, menuAlias } from "./definition";
+import { MENU_PAGES, type MenuPage, menuAlias, SUBMENU_PAGES } from "./definition";
 import type { DesiredRichMenu } from "./desired-state.server";
 
 export type RichMenuPublicationConfig = DesiredRichMenu;
@@ -8,17 +8,7 @@ type RichMenuClient = ReturnType<typeof createRichMenuClient>;
 type CreatedMenu = { page: MenuPage; richMenuId: string };
 
 const legacyAliasPrefix = ["work", "assistant"].join("-");
-const retiredPages = [
-  "home",
-  "team",
-  "forms",
-  "notifications",
-  "incident",
-  "team-out",
-  "forms-out",
-  "notifications-out",
-  "incident-out",
-];
+const retiredPages = ["home", "team-out", "forms-out", "notifications-out", "incident-out"];
 const deprecatedAliases = [
   ...retiredPages.map((page) => `line_bot_v1-${page}`),
   ...retiredPages.map((page) => `${legacyAliasPrefix}-${page}`),
@@ -165,7 +155,12 @@ export async function activateRichMenuBatch(
 
   let mutated = false;
   try {
-    for (const menu of created)
+    const activationOrder = [...created].sort(
+      (a, b) =>
+        Number(SUBMENU_PAGES.some((page) => page === b.page)) -
+        Number(SUBMENU_PAGES.some((page) => page === a.page)),
+    );
+    for (const menu of activationOrder)
       mutated = (await setAlias(client, menuAlias(menu.page), menu.richMenuId)) || mutated;
 
     mutated = true;

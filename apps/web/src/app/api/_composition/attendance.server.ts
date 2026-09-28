@@ -4,7 +4,7 @@ import { createWorkplaces } from "@line_bot_v1/attendance/application/workplaces
 import { PostgresAttendanceStore, PostgresWorkplaceStore } from "@line_bot_v1/attendance/postgres";
 import { createRichMenuClient, pushLineText } from "@line_bot_v1/line-channel/messaging";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
-import { menuAlias } from "../../../modules/assistant/rich-menu/definition";
+import { syncUserRichMenu } from "../../../modules/assistant/rich-menu/user-menu.server";
 import { attendanceNotificationText } from "../../../modules/attendance/format";
 import { activeLineUser } from "./account.server";
 
@@ -20,31 +20,29 @@ export const clockAttendance = createClockAttendance({
   provider: () => LINE_PROVIDER_NAMESPACE,
 });
 
-const runMaintenance = createAttendanceMaintenance({
-  store: attendanceStore,
-  now: () => Date.now(),
-  provider: () => LINE_PROVIDER_NAMESPACE,
-  link: async (subject, state) => {
-    const client = createRichMenuClient(process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "");
-    const id = await client.getAlias(
-      menuAlias(state === "working" ? "attendance-out" : "attendance-in"),
-    );
-    if (!id) throw new Error("attendance_menu_not_configured");
-    const current = await client.getUserMenu(subject);
-    if (current !== id) {
-      await client.linkUser(subject, id);
-      if ((await client.getUserMenu(subject)) !== id)
-        throw new Error("attendance_menu_readback_mismatch");
-    }
-  },
-  notify: (job) =>
-    pushLineText(
-      process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
-      job.subject,
-      attendanceNotificationText(job.payload),
-      job.id,
-    ),
-});
+function runMaintenance(subject?: string, returnToAttendance = false) {
+  return createAttendanceMaintenance({
+    store: attendanceStore,
+    now: () => Date.now(),
+    provider: () => LINE_PROVIDER_NAMESPACE,
+    link: async (subject, state) => {
+      const client = createRichMenuClient(process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "");
+      await syncUserRichMenu(
+        client,
+        subject,
+        state === "working" ? "attendance-out" : "attendance-in",
+        returnToAttendance,
+      );
+    },
+    notify: (job) =>
+      pushLineText(
+        process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
+        job.subject,
+        attendanceNotificationText(job.payload),
+        job.id,
+      ),
+  })(subject, !returnToAttendance);
+}
 
 export async function attendanceMaintenance(subject?: string) {
   if (!process.env.LINE_CHANNEL_ACCESS_TOKEN) throw new Error("line_not_configured");
@@ -59,7 +57,7 @@ export async function syncMemberAttendance(subject: string) {
 /** Private-chat menu navigation re-reads the member's authoritative state. */
 export async function showAttendanceMenu(subject: string) {
   await attendanceStore().refreshMenu(LINE_PROVIDER_NAMESPACE, subject, Date.now());
-  const result = await runMaintenance(subject, false);
+  const result = await runMaintenance(subject, true);
   if (!result.synced) throw new Error("attendance_menu_sync_pending");
 }
 

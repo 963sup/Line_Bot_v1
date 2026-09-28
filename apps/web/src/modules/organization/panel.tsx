@@ -133,10 +133,10 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
   }, []);
 
   return (
-    <div className="crud-manager">
+    <div className="crud-manager resource-workspace">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <div className="crud-toolbar">
-        <p>Organization 的建立、選擇、成員與治理操作都在這個畫面。</p>
+        <p>管理你的組織與成員。</p>
         <button
           className="secondary crud-refresh"
           disabled={busy || !!pending}
@@ -160,42 +160,51 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
           <div className="crud-section-head">
             <div>
               <h2>組織</h2>
-              <p>選擇一個 Organization 進入詳情；建立新組織也從這裡開始。</p>
+              <p>你參與的組織與待處理邀請。</p>
             </div>
-            <div className="inline-actions">
-              <input
-                aria-label="Organization name"
-                maxLength={120}
-                value={newName}
-                onChange={(event) => setNewName(event.target.value)}
-                placeholder="Acme Team"
-              />
-              <input
-                aria-label="Organization login"
-                autoCapitalize="none"
-                autoCorrect="off"
-                maxLength={39}
-                pattern="[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
-                value={newLogin}
-                onChange={(event) => setNewLogin(event.target.value)}
-                placeholder="acme-team"
-              />
-              <button
-                className="crud-create"
-                disabled={busy || !!pending || !newLogin.trim() || !newName.trim()}
-                onClick={() =>
-                  void execute({
-                    action: "create-organization",
-                    requestId: crypto.randomUUID(),
-                    login: newLogin,
-                    name: newName,
-                    reason: "由已啟用會員建立 Organization",
-                  })
-                }
-              >
-                ＋ 建立組織
-              </button>
-            </div>
+            <details className="resource-create">
+              <summary>新增組織</summary>
+              <div className="resource-create-fields">
+                <label>
+                  組織名稱
+                  <input
+                    aria-label="Organization name"
+                    maxLength={120}
+                    value={newName}
+                    onChange={(event) => setNewName(event.target.value)}
+                    placeholder="Acme Team"
+                  />
+                </label>
+                <label>
+                  組織網址名稱
+                  <input
+                    aria-label="Organization login"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    maxLength={39}
+                    pattern="[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+                    value={newLogin}
+                    onChange={(event) => setNewLogin(event.target.value)}
+                    placeholder="acme-team"
+                  />
+                </label>
+                <button
+                  className="crud-create"
+                  disabled={busy || !!pending || !newLogin.trim() || !newName.trim()}
+                  onClick={() =>
+                    void execute({
+                      action: "create-organization",
+                      requestId: crypto.randomUUID(),
+                      login: newLogin,
+                      name: newName,
+                      reason: "由已啟用會員建立 Organization",
+                    })
+                  }
+                >
+                  建立組織
+                </button>
+              </div>
+            </details>
           </div>
           {list.items.length === 0 ? (
             <p className="empty-copy">目前沒有可使用的組織或待處理邀請。</p>
