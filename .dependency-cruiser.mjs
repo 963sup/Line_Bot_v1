@@ -141,6 +141,7 @@ export default {
         "Packages must not import internal files of other packages via relative paths; use public workspace specifiers",
       from: { path: "^packages/([^/]+)/src/" },
       to: {
+        dependencyTypes: ["local", "localmodule"],
         path: "^packages/[^/]+/src/",
         pathNot: "^packages/$1/src/",
       },
