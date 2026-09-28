@@ -134,10 +134,9 @@ function workspaceSources(root) {
           );
         }
         const source = compiled.replace("./dist/", "./src/").replace(/\.js$/, ".ts");
-        const publicSource = `${directory}/${source.slice(2)}`;
-        for (const reExport of wildcardReExports(root, publicSource)) {
+        for (const target of wildcardReExports(root, `${directory}/${source.slice(2)}`)) {
           errors.push(
-            `public-exports-are-named: ${manifest.name}${subpath === "." ? "" : subpath.slice(1)} -> ${reExport}`,
+            `public-exports-are-named: ${manifest.name}${subpath === "." ? "" : subpath.slice(1)} -> ${target}`,
           );
         }
         // Exact aliases preserve package exports: no wildcard that permits private deep imports.
