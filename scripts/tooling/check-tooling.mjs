@@ -92,7 +92,9 @@ export function validate(root) {
       .sort();
     for (const directory of scriptDirectories) {
       if (!existsSync(resolve(root, directory, "README.md"))) {
-        errors.push(`${directory}/README.md: every scripts directory requires a local script index`);
+        errors.push(
+          `${directory}/README.md: every scripts directory requires a local script index`,
+        );
       }
     }
 
@@ -161,7 +163,9 @@ export function validate(root) {
     if (manifest.scripts?.["change:preflight"] !== "node scripts/changes/preflight.mjs")
       errors.push("package.json: change:preflight must own local merge-readiness checks");
     if (manifest.scripts?.["change:finalize"] !== "node scripts/changes/finalize.mjs")
-      errors.push("package.json: change:finalize must own preflight plus canonical full validation");
+      errors.push(
+        "package.json: change:finalize must own preflight plus canonical full validation",
+      );
     if (manifest.scripts?.["tooling:doctor"] !== "node scripts/tooling/doctor.mjs")
       errors.push("package.json: tooling:doctor must own developer toolchain diagnosis");
     if (
