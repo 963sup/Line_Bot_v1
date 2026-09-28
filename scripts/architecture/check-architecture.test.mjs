@@ -74,6 +74,58 @@ test("public package entries require named re-exports", async () => {
   }
 });
 
+test("adapter privacy applies across workspace owners, not within one owner", async () => {
+  mkdirSync(artifacts, { recursive: true });
+  const root = mkdtempSync(resolve(artifacts, "adapter-owner-"));
+  try {
+    for (const parent of ["apps", "packages"])
+      mkdirSync(resolve(root, parent), { recursive: true });
+
+    write(
+      root,
+      "packages/demo/package.json",
+      JSON.stringify({
+        name: "@line_bot_v1/demo",
+        exports: { ".": { default: "./dist/index.js" } },
+      }),
+    );
+    write(root, "packages/demo/tsconfig.json", JSON.stringify({}));
+    write(root, "packages/demo/src/index.ts", "export const value = 1;");
+    write(root, "packages/demo/src/adapters/private.ts", "export const privateValue = 1;");
+    write(root, "packages/demo/src/adapters/peer.ts", importing("./private"));
+
+    write(
+      root,
+      "apps/web/package.json",
+      JSON.stringify({ name: "@line_bot_v1/web", private: true }),
+    );
+    write(root, "apps/web/tsconfig.json", JSON.stringify({}));
+    write(root, "apps/web/src/index.ts", "export const value = 1;");
+
+    assert.equal(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("adapters-are-private-implementations:"),
+      ),
+      false,
+      "same-owner adapter composition is package-private implementation detail",
+    );
+
+    write(
+      root,
+      "apps/web/src/index.ts",
+      importing("../../../packages/demo/src/adapters/private"),
+    );
+    assert.ok(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("adapters-are-private-implementations:"),
+      ),
+      "external workspace must not import a private adapter",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("app root rejects unexpected folders, new root files and wrong entry kinds", () => {
   mkdirSync(artifacts, { recursive: true });
   const root = mkdtempSync(resolve(artifacts, "app-root-"));
