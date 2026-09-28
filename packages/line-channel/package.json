@@ -16,9 +16,9 @@
       "types": "./dist/adapters/messaging.d.ts",
       "default": "./dist/adapters/messaging.js"
     },
-    "./adapters/mini-app/browser": {
-      "types": "./dist/adapters/mini-app/browser.d.ts",
-      "default": "./dist/adapters/mini-app/browser.js"
+    "./mini-app/browser": {
+      "types": "./dist/mini-app/browser.d.ts",
+      "default": "./dist/mini-app/browser.js"
     },
     "./provider": {
       "types": "./dist/provider.d.ts",
