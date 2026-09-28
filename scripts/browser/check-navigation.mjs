@@ -423,7 +423,9 @@ async function run() {
     await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute("href", "/stars");
     await page.getByRole("link", { name: /Starred/ }).click();
     await expect(page).toHaveURL(`${base}/stars`);
-    await expect(page.getByRole("heading", { name: "Starred Repositories", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Starred Repositories", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
       "href",
       "/acme/Operations",
