@@ -672,6 +672,17 @@ test("required AGENTS scopes exist and root routes to each owner", (t) => {
   rejects(root, "root must route to scripts/AGENTS.md");
 });
 
+test("every scripts directory requires an index and passes after repair", (t) => {
+  const { root, write } = fixture(t);
+  assert.deepEqual(validate(root), []);
+  write("scripts/example/nested/check.mjs", "export const result = true;\n");
+  for (const directory of ["scripts/example", "scripts/example/nested"]) {
+    rejects(root, `${directory}/README.md: every scripts directory requires a local script index`);
+    write(`${directory}/README.md`, "# Scripts\n");
+  }
+  assert.deepEqual(validate(root), []);
+});
+
 test("every package scope has AGENTS and README entrypoints", (t) => {
   const { root, write } = fixture(t);
   write("packages/missing-readme/AGENTS.md", "# missing-readme\\n");

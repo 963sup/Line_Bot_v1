@@ -89,6 +89,7 @@ export function validate(root) {
 
     const scriptDirectories = globSync("scripts/**", { cwd: root })
       .filter((entry) => statSync(resolve(root, entry)).isDirectory())
+      .map((entry) => entry.split(sep).join("/"))
       .sort();
     for (const directory of scriptDirectories) {
       if (!existsSync(resolve(root, directory, "README.md"))) {
