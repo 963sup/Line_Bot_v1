@@ -1,15 +1,16 @@
 import { createClockAttendance } from "@line_bot_v1/attendance/application/clock";
 import { createAttendanceMaintenance } from "@line_bot_v1/attendance/application/maintenance";
-import { PostgresAttendanceStore } from "@line_bot_v1/attendance/postgres";
+import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { createRichMenuClient, pushLineText } from "@line_bot_v1/line-channel/messaging";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { syncUserRichMenu } from "../../../modules/assistant/rich-menu/user-menu.server";
 import { attendanceNotificationText } from "../../../modules/attendance/format";
 import { activeLineUser } from "./account.server";
 
-const state = globalThis as typeof globalThis & { attendanceStore?: PostgresAttendanceStore };
+type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
+const state = globalThis as typeof globalThis & { attendanceStore?: AttendancePersistence };
 function attendanceStore() {
-  return (state.attendanceStore ??= new PostgresAttendanceStore());
+  return (state.attendanceStore ??= createPostgresAttendanceStore());
 }
 
 export const clockAttendance = createClockAttendance({

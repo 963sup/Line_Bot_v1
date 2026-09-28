@@ -1962,7 +1962,7 @@
         "publicExports": ["./postgres", "./domain"],
         "entrypoints": [
           "packages/daily-check-in/src/postgres.ts",
-          "packages/attendance/src/adapters/postgres/attendance.ts"
+          "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
         ],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",

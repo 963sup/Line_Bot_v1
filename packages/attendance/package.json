@@ -16,10 +16,6 @@
       "types": "./dist/contracts/clock.d.ts",
       "default": "./dist/contracts/clock.js"
     },
-    "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
-    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
@@ -31,6 +27,10 @@
     "./domain/value-objects/location": {
       "types": "./dist/domain/value-objects/location.d.ts",
       "default": "./dist/domain/value-objects/location.js"
+    },
+    "./composition/bootstrap/postgres-attendance-store": {
+      "types": "./dist/composition/bootstrap/postgres-attendance-store.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-attendance-store.js"
     }
   },
   "files": [

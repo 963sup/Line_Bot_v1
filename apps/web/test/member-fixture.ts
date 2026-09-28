@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mock } from "node:test";
 import { PostgresUserStore } from "@line_bot_v1/account/postgres";
 import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
-import { PostgresAttendanceStore } from "@line_bot_v1/attendance/postgres";
+import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
 import { PostgresExpenseStore } from "@line_bot_v1/expense/postgres";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
@@ -12,12 +12,13 @@ import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";
 import { idempotencyFixture } from "./idempotency-fixture";
 
+type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
 let fixture: Awaited<ReturnType<typeof postgresFixture>>;
 const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;
   dailyCheckInStore?: PostgresDailyCheckInStore;
   walletStore?: PostgresWalletStore;
-  attendanceStore?: PostgresAttendanceStore;
+  attendanceStore?: AttendancePersistence;
   expenseStore?: PostgresExpenseStore;
   lineIdempotency?: WebhookIdempotencyStore;
 };
@@ -38,7 +39,7 @@ export async function mockSupabase() {
   });
   state.dailyCheckInStore = new PostgresDailyCheckInStore(fixture.db);
   state.walletStore = new PostgresWalletStore(fixture.db);
-  state.attendanceStore = new PostgresAttendanceStore(fixture.db);
+  state.attendanceStore = createPostgresAttendanceStore(fixture.db);
   state.expenseStore = new PostgresExpenseStore(fixture.db);
   mock.method(supabaseIdentity(), "verify", async (token: string) => {
     const response = await fetch("https://api.line.me/v2/profile", {

@@ -5,7 +5,11 @@ function escapeRegExp(value) {
 function isRuntimePostgresAdapter(path, modulePath) {
   if (!path.startsWith(modulePath + "/src/")) return false;
   const relative = path.slice((modulePath + "/src/").length);
-  return relative === "adapters/postgres.ts" || relative.startsWith("adapters/postgres/");
+  return (
+    relative === "adapters/postgres.ts" ||
+    relative.startsWith("adapters/postgres/") ||
+    relative.startsWith("adapters/outbound/persistence/")
+  );
 }
 
 function relationPattern(relation, operations) {
