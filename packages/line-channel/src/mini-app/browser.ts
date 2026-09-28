@@ -1,1 +1,1 @@
-export { createLiffClient } from "../adapters/mini-app/browser/client.js";
+export { createLiffClient } from "./browser/client.js";
