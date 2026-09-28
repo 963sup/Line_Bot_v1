@@ -13,7 +13,7 @@ import {
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application";
 import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
-import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/adapters/postgres";
+import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/adapters/postgres";
 
