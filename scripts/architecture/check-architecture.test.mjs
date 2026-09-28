@@ -9,6 +9,9 @@ import { validatePackageExports } from "./check-implementation-topology.mjs";
 const artifacts = fileURLToPath(new URL("../../.artifacts/", import.meta.url));
 // Keep generated fixture imports out of the tooling checker's literal script-import scan.
 const importing = (specifier) => `import ${JSON.stringify(specifier)};`;
+const wildcardReExporting = (specifier) => `export * from ${JSON.stringify(specifier)};`;
+const namedReExporting = (name, specifier) =>
+  `export { ${name} } from ${JSON.stringify(specifier)};`;
 function write(root, path, text) {
   const file = resolve(root, path);
   mkdirSync(resolve(file, ".."), { recursive: true });
@@ -55,13 +58,13 @@ test("public package entries require named re-exports", async () => {
     );
     write(root, "packages/demo/tsconfig.json", JSON.stringify({}));
     write(root, "packages/demo/src/value.ts", "export const value = 1;");
-    write(root, "packages/demo/src/index.ts", 'export * from "./value.js";');
+    write(root, "packages/demo/src/index.ts", wildcardReExporting("./value.js"));
     assert.ok(
       (await checkArchitecture(root)).errors.some((error) =>
         error.startsWith("public-exports-are-named: @line_bot_v1/demo -> ./value.js"),
       ),
     );
-    write(root, "packages/demo/src/index.ts", 'export { value } from "./value.js";');
+    write(root, "packages/demo/src/index.ts", namedReExporting("value", "./value.js"));
     assert.equal(
       (await checkArchitecture(root)).errors.some((error) =>
         error.startsWith("public-exports-are-named:"),
