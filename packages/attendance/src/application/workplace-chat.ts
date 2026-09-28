@@ -1,5 +1,5 @@
+import type { WorkplaceChatStore } from "../contracts/workplace-chat.js";
 import { transitionWorkplaceChat, type WorkplaceChatInput } from "../domain.js";
-import type { WorkplaceChatStore } from "./ports/workplace-chat.js";
 
 export function createWorkplaceChat(deps: {
   activeUser(subject: string): Promise<{ id: string }>;

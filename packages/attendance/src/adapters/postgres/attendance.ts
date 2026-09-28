@@ -11,7 +11,7 @@ import type {
   AttendanceSnapshot,
   AttendanceStore,
   NotificationOutcome,
-} from "../application/ports/clock.js";
+} from "../../contracts/clock.js";
 import {
   ATTENDANCE_COIN_REWARD,
   type AttendanceAction,
@@ -22,7 +22,7 @@ import {
   distanceMeters,
   parseLocation,
   planAttendance,
-} from "../domain.js";
+} from "../../domain.js";
 import { workplaceSites } from "./workplaces.js";
 
 const session = (r: Record<string, any>): AttendanceSession => ({

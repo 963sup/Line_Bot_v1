@@ -12,17 +12,17 @@
       "types": "./dist/application/maintenance.d.ts",
       "default": "./dist/application/maintenance.js"
     },
-    "./application/ports/clock": {
-      "types": "./dist/application/ports/clock.d.ts",
-      "default": "./dist/application/ports/clock.js"
+    "./contracts/clock": {
+      "types": "./dist/contracts/clock.d.ts",
+      "default": "./dist/contracts/clock.js"
     },
-    "./application/ports/workplace-chat": {
-      "types": "./dist/application/ports/workplace-chat.d.ts",
-      "default": "./dist/application/ports/workplace-chat.js"
+    "./contracts/workplace-chat": {
+      "types": "./dist/contracts/workplace-chat.d.ts",
+      "default": "./dist/contracts/workplace-chat.js"
     },
-    "./application/ports/workplaces": {
-      "types": "./dist/application/ports/workplaces.d.ts",
-      "default": "./dist/application/ports/workplaces.js"
+    "./contracts/workplaces": {
+      "types": "./dist/contracts/workplaces.d.ts",
+      "default": "./dist/contracts/workplaces.js"
     },
     "./application/workplace-chat": {
       "types": "./dist/application/workplace-chat.d.ts",

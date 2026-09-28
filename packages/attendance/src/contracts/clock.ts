@@ -4,7 +4,7 @@ import type {
   AttendanceView,
   MenuState,
   Workplace,
-} from "../../domain.js";
+} from "../domain.js";
 
 export type AttendanceInput = { requestId: string; expectedVersion: number; location: unknown };
 export type AttendanceSnapshot = {

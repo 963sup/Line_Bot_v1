@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createAttendanceMaintenance } from "../src/application/maintenance.js";
-import type {
-  AttendanceMenuJob,
-  AttendanceNotificationJob,
-} from "../src/application/ports/clock.js";
+import type { AttendanceMenuJob, AttendanceNotificationJob } from "../src/contracts/clock.js";
 
 test("notification delivery remains independent of menu failure, with durable retry result", async () => {
   let index = 0,

@@ -1,4 +1,4 @@
-import type { Workplace, WorkplaceCommand } from "../../domain.js";
+import type { Workplace, WorkplaceCommand } from "../domain.js";
 
 type WorkplacePage = {
   canCreate: boolean;

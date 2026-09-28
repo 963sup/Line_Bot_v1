@@ -1,5 +1,5 @@
+import type { WorkplaceStore } from "../contracts/workplaces.js";
 import { AttendanceError, parseWorkplaceCommand } from "../domain.js";
-import type { WorkplaceStore } from "./ports/workplaces.js";
 export function createWorkplaces(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   store(): WorkplaceStore;

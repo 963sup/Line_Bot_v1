@@ -1,4 +1,4 @@
-import type { AttendanceMaintenanceDependencies, NotificationOutcome } from "./ports/clock.js";
+import type { AttendanceMaintenanceDependencies, NotificationOutcome } from "../contracts/clock.js";
 
 /** Independent durable delivery; no clock-boundary writes or external calls inside transactions. */
 export function createAttendanceMaintenance(deps: AttendanceMaintenanceDependencies) {

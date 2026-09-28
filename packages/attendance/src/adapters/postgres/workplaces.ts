@@ -1,8 +1,8 @@
 import { readUserQualification } from "@line_bot_v1/account/postgres";
 import { workplacePermissionScope } from "@line_bot_v1/identity-access/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { WorkplaceStore } from "../application/ports/workplaces.js";
-import { AttendanceError, type Workplace, type WorkplaceCommand } from "../domain.js";
+import type { WorkplaceStore } from "../../contracts/workplaces.js";
+import { AttendanceError, type Workplace, type WorkplaceCommand } from "../../domain.js";
 
 export async function workplaceSites(sql: Sql, memberId: string): Promise<Workplace[]> {
   await sql.query("SELECT pg_advisory_xact_lock_shared(71020260910::bigint)");

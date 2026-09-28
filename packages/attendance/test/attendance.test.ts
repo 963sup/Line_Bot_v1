@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClockAttendance } from "../src/application/clock.js";
-import type { AttendanceDependencies } from "../src/application/ports/clock.js";
 import { createWorkplaces } from "../src/application/workplaces.js";
+import type { AttendanceDependencies } from "../src/contracts/clock.js";
 
 test("only two commands use verified actor, provider and server time/site; inactive is rejected", async () => {
   const calls: unknown[][] = [];
