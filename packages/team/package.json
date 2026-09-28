@@ -1,0 +1,48 @@
+{
+  "name": "@line_bot_v1/team",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    },
+    "./application/collaboration": {
+      "types": "./dist/application/collaboration.d.ts",
+      "default": "./dist/application/collaboration.js"
+    },
+    "./application/ports": {
+      "types": "./dist/application/ports.d.ts",
+      "default": "./dist/application/ports.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/identity-access": "workspace:*",
+    "@line_bot_v1/organization": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,75 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { liffClient } from "../../shared/browser/liff-client";
+import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+
+export default function MemberAvatar({ liffId }: { liffId: string }) {
+  const [picture, setPicture] = useState<string>();
+  const generation = useRef(0);
+
+  const clear = useCallback(() => {
+    generation.current++;
+    setPicture(undefined);
+  }, []);
+
+  const load = useCallback(async () => {
+    const ticket = ++generation.current;
+    setPicture(undefined);
+    const token = await liffClient.session(liffId);
+    if (!token || ticket !== generation.current) return;
+
+    void liffClient.profile().then(
+      (profile) => {
+        if (ticket !== generation.current) return;
+        setPicture(profile.pictureUrl?.startsWith("https://") ? profile.pictureUrl : undefined);
+      },
+      () => {
+        if (ticket === generation.current) setPicture(undefined);
+      },
+    );
+  }, [liffId]);
+
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    [],
+  );
+
+  const avatar = picture ? (
+    // LINE hosts the profile photo; avoid proxying private profile images through Next.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={picture}
+      alt=""
+      width={44}
+      height={44}
+      referrerPolicy="no-referrer"
+      onError={() => setPicture((current) => (current === picture ? undefined : current))}
+    />
+  ) : (
+    <svg
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 22v-2a8 8 0 0 1 16 0v2" />
+    </svg>
+  );
+
+  return (
+    <>
+      <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
+      <Link href="/profile" className="member-avatar" aria-label="個人檔案" title="個人檔案">
+        {avatar}
+      </Link>
+    </>
+  );
+}

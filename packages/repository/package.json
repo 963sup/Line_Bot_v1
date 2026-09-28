@@ -1,0 +1,128 @@
+{
+  "name": "@line_bot_v1/repository",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./adapters/postgres": {
+      "types": "./dist/adapters/postgres.d.ts",
+      "default": "./dist/adapters/postgres.js"
+    },
+    "./application/issues": {
+      "types": "./dist/application/issues.d.ts",
+      "default": "./dist/application/issues.js"
+    },
+    "./application/ports/issues": {
+      "types": "./dist/application/ports/issues.d.ts",
+      "default": "./dist/application/ports/issues.js"
+    },
+    "./application/resources": {
+      "types": "./dist/application/resources.d.ts",
+      "default": "./dist/application/resources.js"
+    },
+    "./application/ports/resources": {
+      "types": "./dist/application/ports/resources.d.ts",
+      "default": "./dist/application/ports/resources.js"
+    },
+    "./application/ports/selectors": {
+      "types": "./dist/application/ports/selectors.d.ts",
+      "default": "./dist/application/ports/selectors.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./application/stars": {
+      "types": "./dist/application/stars.d.ts",
+      "default": "./dist/application/stars.js"
+    },
+    "./application/ports/stars": {
+      "types": "./dist/application/ports/stars.d.ts",
+      "default": "./dist/application/ports/stars.js"
+    },
+    "./application/public": {
+      "types": "./dist/application/public.d.ts",
+      "default": "./dist/application/public.js"
+    },
+    "./application/ports/public": {
+      "types": "./dist/application/ports/public.d.ts",
+      "default": "./dist/application/ports/public.js"
+    },
+    "./adapters/postgres/resources": {
+      "types": "./dist/adapters/postgres/resources.d.ts",
+      "default": "./dist/adapters/postgres/resources.js"
+    },
+    "./application/collection": {
+      "types": "./dist/application/collection.d.ts",
+      "default": "./dist/application/collection.js"
+    },
+    "./application/ports/collection": {
+      "types": "./dist/application/ports/collection.d.ts",
+      "default": "./dist/application/ports/collection.js"
+    },
+    "./adapters/postgres/collection": {
+      "types": "./dist/adapters/postgres/collection.d.ts",
+      "default": "./dist/adapters/postgres/collection.js"
+    },
+    "./application/creation": {
+      "types": "./dist/application/creation.d.ts",
+      "default": "./dist/application/creation.js"
+    },
+    "./application/ports/creation": {
+      "types": "./dist/application/ports/creation.d.ts",
+      "default": "./dist/application/ports/creation.js"
+    },
+    "./adapters/postgres/creation": {
+      "types": "./dist/adapters/postgres/creation.d.ts",
+      "default": "./dist/adapters/postgres/creation.js"
+    },
+    "./application/discovery": {
+      "types": "./dist/application/discovery.d.ts",
+      "default": "./dist/application/discovery.js"
+    },
+    "./application/ports/discovery": {
+      "types": "./dist/application/ports/discovery.d.ts",
+      "default": "./dist/application/ports/discovery.js"
+    },
+    "./adapters/postgres/discovery": {
+      "types": "./dist/adapters/postgres/discovery.d.ts",
+      "default": "./dist/adapters/postgres/discovery.js"
+    },
+    "./application/star-lists": {
+      "types": "./dist/application/star-lists.d.ts",
+      "default": "./dist/application/star-lists.js"
+    },
+    "./application/ports/star-lists": {
+      "types": "./dist/application/ports/star-lists.d.ts",
+      "default": "./dist/application/ports/star-lists.js"
+    },
+    "./adapters/postgres/star-lists": {
+      "types": "./dist/adapters/postgres/star-lists.d.ts",
+      "default": "./dist/adapters/postgres/star-lists.js"
+    },
+    "./postgres/public": {
+      "types": "./dist/postgres/public.d.ts",
+      "default": "./dist/postgres/public.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/organization": "workspace:*",
+    "@line_bot_v1/identity-access": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsx": "catalog:"
+  }
+}

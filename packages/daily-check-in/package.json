@@ -1,0 +1,43 @@
+{
+  "name": "@line_bot_v1/daily-check-in",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application": {
+      "types": "./dist/application.d.ts",
+      "default": "./dist/application.js"
+    },
+    "./application/ports/daily-check-in-repository": {
+      "types": "./dist/application/ports/daily-check-in-repository.d.ts",
+      "default": "./dist/application/ports/daily-check-in-repository.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/asset": "workspace:*",
+    "@line_bot_v1/ledger": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

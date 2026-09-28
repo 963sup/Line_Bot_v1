@@ -1,0 +1,59 @@
+{
+  "name": "@line_bot_v1/organization",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application/organization-governance": {
+      "types": "./dist/application/organization-governance.d.ts",
+      "default": "./dist/application/organization-governance.js"
+    },
+    "./application/ports/organization-governance": {
+      "types": "./dist/application/ports/organization-governance.d.ts",
+      "default": "./dist/application/ports/organization-governance.js"
+    },
+    "./contracts/organization-governance": {
+      "types": "./dist/contracts/organization-governance.d.ts",
+      "default": "./dist/contracts/organization-governance.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./application/public": {
+      "types": "./dist/application/public.d.ts",
+      "default": "./dist/application/public.js"
+    },
+    "./application/ports/public": {
+      "types": "./dist/application/ports/public.d.ts",
+      "default": "./dist/application/ports/public.js"
+    },
+    "./postgres/public": {
+      "types": "./dist/postgres/public.d.ts",
+      "default": "./dist/postgres/public.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/identity-access": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

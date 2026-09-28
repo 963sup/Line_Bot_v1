@@ -1,0 +1,41 @@
+.resourceNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -12px 0 22px;
+}
+
+.resourceLink {
+  display: inline-flex;
+  flex: 1 1 118px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.resourceLink[aria-current="page"] {
+  border-color: #b9d8c4;
+  background: var(--green-soft);
+  color: var(--green-strong);
+}
+
+@media (max-width: 360px) {
+  .resourceNav {
+    gap: 6px;
+  }
+
+  .resourceLink {
+    flex-basis: calc(50% - 3px);
+    min-height: 42px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+}

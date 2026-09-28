@@ -1,0 +1,104 @@
+.section {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.sectionHeading svg {
+  color: var(--muted);
+}
+
+.repositoryRail {
+  display: grid;
+  grid-auto-columns: minmax(230px, 78%);
+  grid-auto-flow: column;
+  gap: 12px;
+  margin-inline: -16px;
+  padding: 0 16px 4px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: none;
+}
+
+.repositoryRail::-webkit-scrollbar {
+  display: none;
+}
+
+.repositoryCard {
+  display: grid;
+  min-height: 152px;
+  align-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  scroll-snap-align: start;
+}
+
+.repositoryCard:hover,
+.repositoryCard:focus-visible {
+  border-color: #6e7681;
+  background: var(--surface-muted);
+}
+
+.repositoryCard:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+.repositoryOwner {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.repositoryName {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.repositoryMeta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.emptyRepositories {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  line-height: 1.55;
+}
+
+@media (max-width: 390px) {
+  .repositoryRail {
+    grid-auto-columns: minmax(220px, 88%);
+  }
+}

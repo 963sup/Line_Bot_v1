@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: workforce
+-- scope: Employment lifecycle and period-scoped UserId + OrganizationAccountId work relationship.
+-- canonical target: docs/owners/workforce.md
+-- migration gate: docs/change/migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices
+-- activation: remove reserved status only with current authority, participation/overlap policy, replay/version contract, data-topology relations, tests, and validation evidence.

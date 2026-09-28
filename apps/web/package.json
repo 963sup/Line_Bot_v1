@@ -1,0 +1,48 @@
+{
+  "name": "@line_bot_v1/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ../../scripts/runtime/load-env.test.mjs && tsx --test test/*.test.ts",
+    "dev": "node ../../scripts/runtime/next.mjs dev --hostname 127.0.0.1",
+    "build": "node ../../scripts/runtime/next.mjs build",
+    "typecheck": "node ../../scripts/runtime/next.mjs typegen && tsc --noEmit",
+    "start": "node ../../scripts/runtime/next.mjs start --hostname 127.0.0.1"
+  },
+  "dependencies": {
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/namespace": "workspace:*",
+    "@line_bot_v1/notifications": "workspace:*",
+    "@line_bot_v1/asset": "workspace:*",
+    "@line_bot_v1/assistant": "workspace:*",
+    "@line_bot_v1/attendance": "workspace:*",
+    "@line_bot_v1/daily-check-in": "workspace:*",
+    "@line_bot_v1/enterprise": "workspace:*",
+    "@line_bot_v1/expense": "workspace:*",
+    "@line_bot_v1/identity-access": "workspace:*",
+    "@line_bot_v1/line-channel": "workspace:*",
+    "@line_bot_v1/organization": "workspace:*",
+    "@line_bot_v1/partners": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/project": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/team": "workspace:*",
+    "@line_bot_v1/wallet": "workspace:*",
+    "@sentry/nextjs": "catalog:",
+    "@supabase/supabase-js": "catalog:",
+    "@vercel/analytics": "catalog:",
+    "@vercel/speed-insights": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@line/liff-mock": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

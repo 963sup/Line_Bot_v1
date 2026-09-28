@@ -1,0 +1,47 @@
+.panel {
+  color: var(--ink);
+}
+.panel > p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.panel h2 {
+  font-size: 21px;
+}
+.panel h3 {
+  margin: 6px 0 12px;
+}
+.panel section {
+  box-shadow: 0 8px 24px #16332b05;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.panel .actions button {
+  width: auto;
+  flex: 1;
+  min-width: 90px;
+}
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.panel .editor {
+  border: 2px solid #087f55;
+}
+.recovery {
+  border-left: 3px solid #b57619;
+  padding: 8px 14px;
+}
+.panel button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.panel :is(button, input, select):focus-visible {
+  outline: 3px solid #b57619;
+  outline-offset: 3px;
+}

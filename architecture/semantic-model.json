@@ -1,0 +1,2994 @@
+{
+  "version": 1,
+  "role": "canonical-product-semantic-architecture",
+  "system": {
+    "id": "line_bot_v1",
+    "domain": "enterprise-workforce-operations-management",
+    "objective": "Minimize understanding, decision, change, verification, coordination, and drift-recovery cost while preserving correctness, security, authorization, data integrity, business invariants, consistency, recoverability, and traceability.",
+    "changeFlow": [
+      "meaning",
+      "owner",
+      "source-of-truth",
+      "boundary",
+      "dependency",
+      "impact",
+      "change-surface",
+      "validation",
+      "evidence"
+    ]
+  },
+  "sources": {
+    "externalBenchmark": "architecture/semantic-benchmark.json",
+    "implementationTopology": "architecture/implementation-topology.json",
+    "businessOwnerDocs": "docs/owners/",
+    "runtimeBehavior": "source-code-and-tests",
+    "persistenceCurrentState": "supabase/schemas/",
+    "historicalChange": "docs/change/",
+    "dataTopology": "architecture/data-topology.json"
+  },
+  "semanticOwners": [
+    {
+      "id": "account",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/account.md"
+    },
+    {
+      "id": "enterprise",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/enterprise.md"
+    },
+    {
+      "id": "organization",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/organization.md"
+    },
+    {
+      "id": "workforce",
+      "kind": "business-owner",
+      "lifecycle": "current-foundation",
+      "doc": "docs/owners/workforce.md"
+    },
+    {
+      "id": "attendance",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/attendance.md"
+    },
+    {
+      "id": "payroll",
+      "kind": "business-owner",
+      "lifecycle": "current-foundation",
+      "doc": "docs/owners/payroll.md"
+    },
+    {
+      "id": "team",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/team.md"
+    },
+    {
+      "id": "repository",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/repository.md"
+    },
+    {
+      "id": "notifications",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/notifications.md"
+    },
+    {
+      "id": "expense",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/expense.md"
+    },
+    {
+      "id": "audit",
+      "kind": "business-owner",
+      "lifecycle": "current-foundation",
+      "doc": "docs/owners/audit.md"
+    },
+    {
+      "id": "partner-directory",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/partners.md"
+    },
+    {
+      "id": "assistant",
+      "kind": "application-capability-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/assistant.md"
+    },
+    {
+      "id": "asset",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/asset.md"
+    },
+    {
+      "id": "wallet",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/wallet.md"
+    },
+    {
+      "id": "ledger",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/ledger.md"
+    },
+    {
+      "id": "daily-check-in",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/daily-check-in.md"
+    },
+    {
+      "id": "project",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/project.md"
+    },
+    {
+      "id": "identity-access",
+      "kind": "policy-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/identity-access.md"
+    },
+    {
+      "id": "line-integration",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/line-integration.md"
+    },
+    {
+      "id": "google-workspace",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/google-workspace.md"
+    },
+    {
+      "id": "namespace",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/namespace.md"
+    },
+    {
+      "id": "platform",
+      "kind": "support-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/platform.md"
+    }
+  ],
+  "boundedContexts": [
+    {
+      "id": "daily-check-in",
+      "owner": "daily-check-in",
+      "status": "selected"
+    },
+    {
+      "id": "asset",
+      "owner": "asset",
+      "status": "selected"
+    },
+    {
+      "id": "wallet",
+      "owner": "wallet",
+      "status": "selected"
+    },
+    {
+      "id": "ledger",
+      "owner": "ledger",
+      "status": "selected"
+    },
+    {
+      "id": "account",
+      "owner": "account",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "attendance",
+      "owner": "attendance",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "expense",
+      "owner": "expense",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "partner-directory",
+      "owner": "partner-directory",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "notifications",
+      "owner": "notifications",
+      "status": "strong-candidate"
+    },
+    {
+      "id": "work-collaboration",
+      "owners": ["team", "repository"],
+      "status": "candidate",
+      "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners."
+    }
+  ],
+  "concepts": [
+    {
+      "id": "user",
+      "canonicalName": "User",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "definition": "Provider-independent human product identity and lifecycle.",
+      "benchmark": {
+        "node": "user",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise",
+      "canonicalName": "Enterprise",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Cross-Organization governance scope.",
+      "benchmark": {
+        "node": "enterprise",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise-invitation",
+      "canonicalName": "Enterprise Invitation",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Pending Enterprise participation intent; invitation is not active membership or affiliation.",
+      "benchmark": {
+        "node": "enterprise-member-invitation",
+        "adoption": "pending-intent-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "organization",
+      "canonicalName": "Organization",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "definition": "Business/data scope and participation authority.",
+      "benchmark": {
+        "node": "organization",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "organization-invitation",
+      "canonicalName": "Organization Invitation",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "definition": "Pending Organization participation intent; invitation is not active membership or authorization.",
+      "benchmark": {
+        "node": "organization-invitation",
+        "adoption": "pending-intent-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "team",
+      "canonicalName": "Team",
+      "kind": "authoritative",
+      "owner": "team",
+      "lifecycle": "current",
+      "definition": "Organization-scoped collaboration responsibility.",
+      "benchmark": {
+        "node": "organization-team",
+        "adoption": "concept-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository",
+      "canonicalName": "Repository",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Independently owned work container with content, access, state, and lifecycle.",
+      "benchmark": {
+        "node": "repository",
+        "adoption": "container-semantics-only"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-star-list",
+      "canonicalName": "Repository Star List",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "User-owned curated List whose membership references that User's current Repository stars; List membership never grants Repository access.",
+      "benchmark": {
+        "node": "user-list",
+        "adoption": "curated-list-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-star-list-item",
+      "canonicalName": "Repository Star List Item",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-owned List membership that references one Repository through the List owner's current Star relationship.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "issue",
+      "canonicalName": "Issue",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-scoped work item with its own lifecycle and responsibility chain.",
+      "benchmark": {
+        "node": "work-item",
+        "adoption": "neutral-work-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "discussion",
+      "canonicalName": "Discussion",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-scoped conversation distinct from Issue and Notification.",
+      "benchmark": {
+        "node": "discussion",
+        "adoption": "conversation-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "discussion-comment",
+      "canonicalName": "Discussion Comment",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-owned comment that belongs to a Discussion and preserves conversation history without driving Issue lifecycle.",
+      "benchmark": {
+        "node": "discussion-comment",
+        "adoption": "conversation-comment-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-label",
+      "canonicalName": "Label",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-owned classification metadata.",
+      "benchmark": {
+        "node": "label",
+        "adoption": "classification-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-milestone",
+      "canonicalName": "Milestone",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "definition": "Repository-scoped goal or checkpoint for work.",
+      "benchmark": {
+        "node": "milestone",
+        "adoption": "goal-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project",
+      "canonicalName": "Project",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "definition": "Account-owned (User or Organization) planning boundary that references work across one or more Repositories without taking work authority.",
+      "benchmark": {
+        "node": "project",
+        "adoption": "planning-boundary"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project-item",
+      "canonicalName": "Project Item",
+      "kind": "reference",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Project-local planning reference to underlying work.",
+      "benchmark": {
+        "node": "project-item",
+        "adoption": "reference-semantics"
+      },
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs",
+      "canonicalName": "WBS",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Project-owned work breakdown structure. Project is not WBS.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project-milestone",
+      "canonicalName": "Milestone",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "definition": "Project-scoped goal or checkpoint, distinct from WBS structure and Repository milestone.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "employment",
+      "canonicalName": "Employment",
+      "kind": "authoritative",
+      "owner": "workforce",
+      "lifecycle": "selected-target",
+      "definition": "Time-bounded working relationship between User and Organization.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "attendance",
+      "canonicalName": "Attendance",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "Actual attendance lifecycle, workplace eligibility, and attendance facts.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "workplace",
+      "canonicalName": "Workplace",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "Attendance-owned place and eligibility context.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "payroll-readiness",
+      "canonicalName": "Payroll Readiness",
+      "kind": "authoritative",
+      "owner": "payroll",
+      "lifecycle": "current-foundation",
+      "definition": "Current foundation for determining whether payroll inputs are ready; not formal payroll finalization.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "daily-check-in",
+      "canonicalName": "DailyCheckIn",
+      "kind": "authoritative",
+      "owner": "daily-check-in",
+      "lifecycle": "current",
+      "definition": "Business-day check-in and reward decision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "asset",
+      "canonicalName": "Asset",
+      "kind": "authoritative",
+      "owner": "asset",
+      "lifecycle": "current",
+      "definition": "System-recognized value definition and denomination.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "ledger-entry",
+      "canonicalName": "Ledger Entry",
+      "kind": "authoritative",
+      "owner": "ledger",
+      "lifecycle": "current",
+      "definition": "Append-only value fact with stable posting identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wallet-holding",
+      "canonicalName": "Wallet Holding",
+      "kind": "authoritative",
+      "owner": "wallet",
+      "lifecycle": "current",
+      "definition": "Holder and Asset holding identity.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "wallet-balance",
+      "canonicalName": "Wallet Balance",
+      "kind": "derived-projection",
+      "owner": "wallet",
+      "lifecycle": "current",
+      "definition": "Derived balance projection over authoritative value facts.",
+      "derivedFrom": ["ledger-entry"],
+      "authorityMode": "derived",
+      "persistenceExpectation": "derived"
+    },
+    {
+      "id": "expense",
+      "canonicalName": "Expense",
+      "kind": "authoritative",
+      "owner": "expense",
+      "lifecycle": "current",
+      "definition": "Expense intake lifecycle through draft, confirm, or cancel; confirmation is not approval/payment/accounting.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "notification",
+      "canonicalName": "Notification",
+      "kind": "authoritative",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Recipient-addressed notification fact that references source identity/version and carries recipient read state without taking source authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "notification-inbox",
+      "canonicalName": "Inbox",
+      "kind": "derived-projection",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Recipient-scoped read projection over Notifications for navigation and presentation. Inbox is not a second notification authority or package owner.",
+      "derivedFrom": ["notification"],
+      "authorityMode": "derived",
+      "persistenceExpectation": "derived"
+    },
+    {
+      "id": "partner",
+      "canonicalName": "Partner",
+      "kind": "authoritative",
+      "owner": "partner-directory",
+      "lifecycle": "current",
+      "definition": "Partner/contact directory identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "permission",
+      "canonicalName": "Permission",
+      "kind": "policy-decision",
+      "owner": "identity-access",
+      "lifecycle": "current",
+      "definition": "Explicit sensitive capability authorization decision; not provider role or membership.",
+      "authorityMode": "policy-decision",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "line-identity-proof",
+      "canonicalName": "LINE Identity Proof",
+      "kind": "external-proof",
+      "owner": "line-integration",
+      "lifecycle": "current",
+      "definition": "Verified external provider identity proof; never business authorization.",
+      "authorityMode": "external-evidence-only"
+    },
+    {
+      "id": "user-follow",
+      "canonicalName": "User Follow",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "definition": "Directional User-to-User follow fact. Followers and Following are inbound and outbound projections of the same relationship.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise-team",
+      "canonicalName": "Enterprise Team",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Enterprise-owned collaboration group distinct from Organization Team.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "benchmark": {
+        "node": "enterprise-team",
+        "adoption": "concept-boundary"
+      }
+    },
+    {
+      "id": "enterprise-team-membership",
+      "canonicalName": "Enterprise Team Membership",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "User participation state inside an Enterprise Team.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "enterprise-team-organization-assignment",
+      "canonicalName": "Enterprise Team Organization Assignment",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Enterprise-owned assignment from an Enterprise Team to an attached Organization.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "account-namespace-binding",
+      "canonicalName": "Account Namespace Binding",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Unique global login bound to a stable User or Organization Account, independently of qualification and resource authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "namespace-account-root-reservation",
+      "provider": "namespace",
+      "consumer": "account",
+      "meaning": "Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-policy"
+    },
+    {
+      "id": "account-team-qualification",
+      "provider": "account",
+      "consumer": "team",
+      "meaning": "Current User qualification and participation identity.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-attendance-qualification",
+      "provider": "account",
+      "consumer": "attendance",
+      "meaning": "Qualified User/current subject.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-daily-check-in-qualification",
+      "provider": "account",
+      "consumer": "daily-check-in",
+      "meaning": "User identity and transaction-time qualification.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "organization-team-scope",
+      "provider": "organization",
+      "consumer": "team",
+      "meaning": "Organization scope and participation.",
+      "integrationMode": "stable-identity+query",
+      "authority": "organization",
+      "consistency": "current-state"
+    },
+    {
+      "id": "daily-check-in-ledger-posting",
+      "provider": "daily-check-in",
+      "consumer": "ledger",
+      "meaning": "Authorized reward decision committed with required transaction semantics.",
+      "integrationMode": "command",
+      "authority": "daily-check-in",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "attendance-ledger-posting",
+      "provider": "attendance",
+      "consumer": "ledger",
+      "meaning": "Authorized attendance reward decision.",
+      "integrationMode": "command",
+      "authority": "attendance",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "asset-wallet-denomination",
+      "provider": "asset",
+      "consumer": "wallet",
+      "meaning": "AssetCode and denomination.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "asset-ledger-denomination",
+      "provider": "asset",
+      "consumer": "ledger",
+      "meaning": "AssetCode and denomination.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "ledger-wallet-projection",
+      "provider": "ledger",
+      "consumer": "wallet",
+      "meaning": "Immutable value facts projected into wallet balance.",
+      "integrationMode": "projection",
+      "authority": "ledger",
+      "consistency": "derived"
+    },
+    {
+      "id": "project-owner-account",
+      "provider": "account",
+      "consumer": "project",
+      "meaning": "Project owner identity is an Account constrained to User or Organization.",
+      "integrationMode": "stable-identity",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "identity-access-project-owner-authorization",
+      "provider": "identity-access",
+      "consumer": "project",
+      "meaning": "Project authorized read consumes current OrganizationOwner scope for Organization-owned Projects; personal Projects remain User-owned.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-project-owner-locator",
+      "provider": "namespace",
+      "consumer": "project",
+      "meaning": "Project presentation resolves the current canonical owner login without treating the locator as authorization.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "project-repository-reference",
+      "provider": "repository",
+      "consumer": "project",
+      "meaning": "Project references Repository without acquiring Repository authority.",
+      "integrationMode": "reference",
+      "authority": "repository",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "project-issue-reference",
+      "provider": "repository",
+      "consumer": "project",
+      "meaning": "Project Item references Repository-owned Issue; Project metadata cannot rewrite Issue state.",
+      "integrationMode": "reference",
+      "authority": "repository",
+      "consistency": "current-access-and-identity"
+    },
+    {
+      "id": "line-account-proof",
+      "provider": "line-integration",
+      "consumer": "account",
+      "meaning": "Verified LINE identity proof consumed for account mapping/qualification.",
+      "integrationMode": "external-proof",
+      "authority": "line-integration",
+      "consistency": "verified-request"
+    },
+    {
+      "id": "enterprise-organization-membership-source",
+      "provider": "enterprise",
+      "consumer": "organization",
+      "meaning": "Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority.",
+      "integrationMode": "projection",
+      "authority": "enterprise",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "asset-attendance-reward-identity",
+      "provider": "asset",
+      "consumer": "attendance",
+      "meaning": "Attendance references the Asset-owned reward identity when posting attendance rewards.",
+      "integrationMode": "stable-identity",
+      "authority": "asset",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "identity-access-attendance-workplace-authorization",
+      "provider": "identity-access",
+      "consumer": "attendance",
+      "meaning": "Attendance consumes the current workplaces.manage permission decision for Workplace management.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "asset-daily-check-in-reward-denomination",
+      "provider": "asset",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn consumes Asset-owned reward identity and denomination when deciding and reconstructing rewards.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-enterprise-identity",
+      "provider": "account",
+      "consumer": "enterprise",
+      "meaning": "Enterprise affiliations, invitations, and Team membership reference Account-owned stable User and Account identities.",
+      "integrationMode": "stable-identity",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "identity-access-enterprise-authorization",
+      "provider": "identity-access",
+      "consumer": "enterprise",
+      "meaning": "Enterprise governance consumes current EnterpriseOwner authorization and verified governance actor decisions.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-expense-qualification",
+      "provider": "account",
+      "consumer": "expense",
+      "meaning": "Expense consumes current User identity and qualification, including transaction-time mutation rechecks.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-identity-access-qualification",
+      "provider": "account",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current User identity, qualification and status version when evaluating permissions and RoleAssignments.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-ledger-holder-identity",
+      "provider": "account",
+      "consumer": "ledger",
+      "meaning": "Ledger value facts reference the Account-owned stable holder identity without taking Account lifecycle authority.",
+      "integrationMode": "reference",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "account-organization-identity",
+      "provider": "account",
+      "consumer": "organization",
+      "meaning": "Organization participation and public locator behavior reference Account-owned User and Account identity contracts.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "identity-access-organization-authorization",
+      "provider": "identity-access",
+      "consumer": "organization",
+      "meaning": "Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-partner-qualification",
+      "provider": "account",
+      "consumer": "partner-directory",
+      "meaning": "PartnerDirectory management consumes current User identity and qualification before protected operations.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-repository-owner-principal",
+      "provider": "account",
+      "consumer": "repository",
+      "meaning": "Repository owner locators and User principals reference Account-owned identity and current User qualification.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "organization-repository-owner-scope",
+      "provider": "organization",
+      "consumer": "repository",
+      "meaning": "Organization-owned Repositories consume current Organization scope and effective participation when resolving access.",
+      "integrationMode": "stable-identity+query",
+      "authority": "organization",
+      "consistency": "current-state"
+    },
+    {
+      "id": "identity-access-repository-owner-authorization",
+      "provider": "identity-access",
+      "consumer": "repository",
+      "meaning": "Repository creation under an Organization consumes current effective OrganizationOwner authorization.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "identity-access-team-authorization",
+      "provider": "identity-access",
+      "consumer": "team",
+      "meaning": "Team collaboration consumes current TeamMaintainer RoleAssignment authorization.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-wallet-holder-qualification",
+      "provider": "account",
+      "consumer": "wallet",
+      "meaning": "Wallet balance projection consumes current User holder qualification and stable Account identity.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-organization-locator",
+      "provider": "namespace",
+      "consumer": "organization",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-repository-locator",
+      "provider": "namespace",
+      "consumer": "repository",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-team-locator",
+      "provider": "namespace",
+      "consumer": "team",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "construct-namespace-paths",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Describe cross-owner resource path scopes and construct only active canonical paths from owner-validated locator values.",
+      "preserves": ["K1", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "structured active/planned route contract and pure path construction consumed by Web Account and Team navigation",
+        "sourcePaths": ["packages/namespace/src/domain/routes.ts"],
+        "publicExports": ["."],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/profile/profile-resolver.ts",
+          "apps/web/src/modules/account/member-avatar.tsx",
+          "apps/web/src/modules/team/panel.tsx"
+        ],
+        "testPaths": [
+          "packages/namespace/test/routes.test.ts",
+          "apps/web/test/profile-settings-navigation.test.ts"
+        ],
+        "note": "Path construction is not resource lookup, normalization, number allocation, or authorization. Planned routes remain unbuildable and do not activate their business capabilities."
+      }
+    },
+    {
+      "id": "govern-root-namespace",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Define and evaluate shared global-root reservations so product root routes cannot be claimed as Account login locators.",
+      "preserves": ["K1", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current shared global-root reservation policy consumed by Account login validation",
+        "sourcePaths": ["packages/namespace/src/domain/root.ts"],
+        "publicExports": ["."],
+        "entrypoints": ["packages/namespace/src/domain/namespace.ts"],
+        "testPaths": ["packages/namespace/test/root.test.ts", "packages/account/test/user.test.ts"],
+        "note": "Namespace owns root collision and global Account login naming. Qualification stays with Account."
+      }
+    },
+    {
+      "id": "qualify-user",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Determine current User qualification for a consumer operation.",
+      "preserves": ["K2", "K5"],
+      "validationProfiles": ["semantic-architecture", "architecture-tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current account qualification use case and login identity surface",
+        "sourcePaths": [
+          "packages/account/src/application/user.ts",
+          "packages/account/src/application/ports/user-repository.ts"
+        ],
+        "publicExports": ["./application/user", "./application/ports/user-repository"],
+        "entrypoints": [],
+        "testPaths": ["packages/account/test/user.test.ts"],
+        "note": "Static source/export evidence only; runtime success still requires executed tests or runtime evidence."
+      }
+    },
+    {
+      "id": "manage-user-profile",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read and update User profile metadata without changing User identity or login authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User profile application surface",
+        "sourcePaths": [
+          "packages/account/src/application/profile.ts",
+          "packages/account/src/application/ports/profile.ts"
+        ],
+        "publicExports": ["./application/profile", "./application/ports/profile"],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/route.ts",
+          "apps/web/src/app/(mobile)/settings/profile/page.tsx"
+        ],
+        "testPaths": ["packages/account/test/profile.test.ts"],
+        "note": "Profile source and public exports exist; tests are evidence locations, not proof unless executed."
+      }
+    },
+    {
+      "id": "read-user-achievements",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read the current User's earned Achievement facts without turning recognition into identity or authorization.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authenticated self Achievement read projection for Profile",
+        "sourcePaths": [
+          "packages/account/src/application/achievements.ts",
+          "packages/account/src/application/ports/achievements.ts",
+          "packages/account/src/adapters/postgres/achievements.ts"
+        ],
+        "publicExports": ["./application/achievements", "./application/ports/achievements"],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/achievements/route.ts",
+          "apps/web/src/app/(public)/[login]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/account/test/achievements.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Read-only Account-owned recognition; source evidence remains durable and no Achievement mutation is implied."
+      }
+    },
+    {
+      "id": "manage-user-follow",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Manage directional User follow relationships and their follower/following read projections.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User follow application surface",
+        "sourcePaths": [
+          "packages/account/src/application/follows.ts",
+          "packages/account/src/application/ports/follows.ts"
+        ],
+        "publicExports": ["./application/follows", "./application/ports/follows"],
+        "entrypoints": [
+          "apps/web/src/app/api/follows/route.ts",
+          "apps/web/src/app/(mobile)/settings/network/page.tsx"
+        ],
+        "testPaths": ["packages/account/test/follows.test.ts"],
+        "note": "Follow source/export evidence is current; runtime availability is separately validated."
+      }
+    },
+    {
+      "id": "manage-enterprise-governance",
+      "owner": "enterprise",
+      "kind": "leaf",
+      "intent": "Manage Enterprise governance scope without treating Enterprise slug as Repository owner login.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Enterprise governance application surface",
+        "sourcePaths": [
+          "packages/enterprise/src/application/enterprise-governance.ts",
+          "packages/enterprise/src/application/ports/enterprise-governance.ts",
+          "packages/enterprise/src/domain.ts"
+        ],
+        "publicExports": [
+          "./application/enterprise-governance",
+          "./application/ports/enterprise-governance",
+          "./domain"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/enterprises/page.tsx",
+          "apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"
+        ],
+        "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
+        "note": "Enterprise source/export evidence exists; slug locator stability is distinct from authorization."
+      }
+    },
+    {
+      "id": "manage-enterprise-teams",
+      "owner": "enterprise",
+      "kind": "leaf",
+      "intent": "Manage Enterprise-owned teams, memberships, and Organization assignments.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Enterprise Team domain and governance surface",
+        "sourcePaths": [
+          "packages/enterprise/src/application/enterprise-governance.ts",
+          "packages/enterprise/src/domain.ts"
+        ],
+        "publicExports": ["./application/enterprise-governance", "./domain"],
+        "entrypoints": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
+        "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
+        "note": "Enterprise Team is current domain behavior; route locator does not grant access by itself."
+      }
+    },
+    {
+      "id": "manage-organization-governance",
+      "owner": "organization",
+      "kind": "leaf",
+      "intent": "Manage Organization governance scope, membership state, and public Organization lookup.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Organization governance application surface",
+        "sourcePaths": [
+          "packages/organization/src/application/organization-governance.ts",
+          "packages/organization/src/application/ports/organization-governance.ts",
+          "packages/organization/src/domain.ts"
+        ],
+        "publicExports": [
+          "./application/organization-governance",
+          "./application/ports/organization-governance",
+          "./domain"
+        ],
+        "entrypoints": ["apps/web/src/app/(mobile)/organizations/page.tsx"],
+        "testPaths": [],
+        "note": "Organization source/export evidence exists; no test result is implied by this metadata."
+      }
+    },
+    {
+      "id": "manage-organization-invitations",
+      "owner": "organization",
+      "kind": "leaf",
+      "intent": "Manage pending Organization invitations as intent, not active membership or authorization.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Organization invitation domain and governance surface",
+        "sourcePaths": [
+          "packages/organization/src/domain.ts",
+          "packages/organization/src/application/organization-governance.ts"
+        ],
+        "publicExports": ["./domain", "./application/organization-governance"],
+        "entrypoints": [
+          "apps/web/src/app/api/organization/route.ts",
+          "apps/web/src/app/(mobile)/organizations/page.tsx",
+          "apps/web/src/modules/organization/panel.tsx"
+        ],
+        "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
+        "note": "Invitation behavior has domain/application source, web/API consumers, and existing governance tests; execution evidence is still separate from metadata."
+      }
+    },
+    {
+      "id": "manage-team-collaboration",
+      "owner": "team",
+      "kind": "leaf",
+      "intent": "Manage Organization-scoped Team collaboration, membership, maintainer state, and team locator access.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Team collaboration application surface",
+        "sourcePaths": [
+          "packages/team/src/application/collaboration.ts",
+          "packages/team/src/application/ports.ts",
+          "packages/team/src/domain.ts"
+        ],
+        "publicExports": ["./application/collaboration", "./application/ports", "./domain"],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/team/page.tsx",
+          "apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"
+        ],
+        "testPaths": ["packages/team/test/team.test.ts"],
+        "note": "Team collaboration is Organization-scoped; route files are locator evidence only."
+      }
+    },
+    {
+      "id": "manage-repository",
+      "owner": "repository",
+      "kind": "aggregate",
+      "intent": "Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "members": [
+        "read-repository",
+        "create-repository",
+        "manage-repository-access",
+        "manage-repository-stars",
+        "manage-repository-star-lists",
+        "read-repository-discovery",
+        "manage-issues",
+        "manage-discussions",
+        "manage-repository-labels",
+        "manage-repository-milestones",
+        "read-discussions",
+        "read-repository-labels",
+        "read-repository-milestones"
+      ]
+    },
+    {
+      "id": "create-repository",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Create a private User- or Organization-owned Repository with replay-safe owner authorization and immediate creator access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current private Repository creation for self User owner or current effective OrganizationOwner",
+        "sourcePaths": [
+          "packages/repository/src/application/creation.ts",
+          "packages/repository/src/application/ports/creation.ts",
+          "packages/repository/src/adapters/postgres/creation.ts"
+        ],
+        "publicExports": [
+          "./application/creation",
+          "./application/ports/creation",
+          "./adapters/postgres/creation"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/route.ts",
+          "apps/web/src/app/api/repositories/owners/route.ts",
+          "apps/web/src/app/(mobile)/repositories/new/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/creation.test.ts",
+          "apps/web/test/repository-creation-http.test.ts"
+        ],
+        "note": "Create is private-only. User owner is self; Organization owner requires effective OrganizationOwner. Exact replay rechecks current authority before returning the receipt."
+      }
+    },
+    {
+      "id": "read-repository",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read Repository identity and public Repository locator data.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Repository read and public lookup surface",
+        "sourcePaths": [
+          "packages/repository/src/application/public.ts",
+          "packages/repository/src/application/ports/public.ts"
+        ],
+        "publicExports": ["./application/public", "./application/ports/public"],
+        "entrypoints": [
+          "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/page.tsx"
+        ],
+        "testPaths": ["packages/repository/test/stars.test.ts"],
+        "note": "Public Repository lookup resolves owner login plus repository name; URL does not become authorization."
+      }
+    },
+    {
+      "id": "manage-repository-access",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Preserve Repository-owned direct and Team access facts without asserting runtime grant-management commands.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "implementation": {
+        "status": "data-only",
+        "scope": "Repository-owned direct User and Organization Team access relations consumed by current effective-access reads.",
+        "sourcePaths": [],
+        "publicExports": [],
+        "entrypoints": [],
+        "testPaths": [],
+        "note": "Access facts are current data authority, but Repository access grant mutation has no current application/Web consumer and remains runtime-inactive."
+      }
+    },
+    {
+      "id": "manage-repository-stars",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage User star/unstar interaction over Repository resources.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Repository star application surface",
+        "sourcePaths": [
+          "packages/repository/src/application/stars.ts",
+          "packages/repository/src/application/ports/stars.ts"
+        ],
+        "publicExports": ["./application/stars", "./application/ports/stars"],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/api/repositories/starred/route.ts",
+          "apps/web/src/app/(mobile)/stars/page.tsx",
+          "apps/web/src/app/(mobile)/explore/page.tsx",
+          "apps/web/src/app/(mobile)/home/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/stars.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Star is an interaction signal; it does not imply repository authority."
+      }
+    },
+    {
+      "id": "manage-repository-star-lists",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage replay-safe User curated Lists over the User's current Repository stars.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User-owned private/public Repository Star List lifecycle and Star-backed membership",
+        "sourcePaths": [
+          "packages/repository/src/application/star-lists.ts",
+          "packages/repository/src/application/ports/star-lists.ts",
+          "packages/repository/src/adapters/postgres/star-lists.ts"
+        ],
+        "publicExports": [
+          "./application/star-lists",
+          "./application/ports/star-lists",
+          "./adapters/postgres/star-lists"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/lists/route.ts",
+          "apps/web/src/app/api/repositories/lists/[listId]/route.ts",
+          "apps/web/src/app/(mobile)/repositories/lists/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/lists/new/page.tsx",
+          "apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/star-lists.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts"
+        ],
+        "note": "Create is private by default; publish is explicit. Items require the owner Star and current access when added. Unstar removes matching memberships through the declared Star foreign-key invariant. List visibility never grants Repository access."
+      }
+    },
+    {
+      "id": "read-repository-discovery",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Trending, recent Issue activity and published Repository Star List projections without creating a new Explore authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-owned discovery read model over current access, active Star timing/counts, immutable Issue event evidence and published Star Lists",
+        "sourcePaths": [
+          "packages/repository/src/application/discovery.ts",
+          "packages/repository/src/application/ports/discovery.ts"
+        ],
+        "publicExports": [
+          "./application/discovery",
+          "./application/ports/discovery",
+          "./adapters/postgres/discovery"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/(mobile)/explore/page.tsx",
+          "apps/web/src/app/api/repositories/lists/discover/route.ts",
+          "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/discovery.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts"
+        ],
+        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity projects Issue events only. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only."
+      }
+    },
+    {
+      "id": "manage-issues",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage Repository-scoped Issue lifecycle and commands.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Issue application surface",
+        "sourcePaths": [
+          "packages/repository/src/application/issues.ts",
+          "packages/repository/src/application/ports/issues.ts"
+        ],
+        "publicExports": ["./application/issues", "./application/ports/issues"],
+        "entrypoints": [
+          "apps/web/src/app/api/issues/route.ts",
+          "apps/web/src/app/api/issues/[issueNumber]/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/page.tsx",
+          "apps/web/src/app/(mobile)/issues/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/issues.test.ts",
+          "apps/web/test/repository-navigation.test.ts",
+          "apps/web/test/repository-pending-storage.test.ts"
+        ],
+        "note": "Issue source/export evidence exists; command replay and version checks still need executed tests for proof."
+      }
+    },
+    {
+      "id": "read-discussions",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Discussion lists, a Discussion body, and its comments without asserting Discussion write management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Discussion read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/application/ports/resources.ts",
+          "packages/repository/src/adapters/postgres/resources.ts",
+          "packages/repository/src/adapters/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./application/ports/resources",
+          "./adapters/postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/discussions/route.ts",
+          "apps/web/src/app/api/discussions/[discussionId]/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Read uses owner/name selector plus current user access through repository_effective_access; local Discussion id is opaque and is not the GitHub Discussion number. No write/manage Discussion use case is asserted."
+      }
+    },
+    {
+      "id": "read-repository-labels",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Label collections without asserting label create/update/delete management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Label read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/application/ports/resources.ts",
+          "packages/repository/src/adapters/postgres/resources.ts",
+          "packages/repository/src/adapters/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./application/ports/resources",
+          "./adapters/postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-labels/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/labels/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Labels are read as Repository-owned classification metadata after current repository access resolution; collection URLs do not create an independent label locator identity."
+      }
+    },
+    {
+      "id": "read-repository-milestones",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Milestone lists and detail by repository-local number without asserting milestone write management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Milestone read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/application/ports/resources.ts",
+          "packages/repository/src/adapters/postgres/resources.ts",
+          "packages/repository/src/adapters/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./application/ports/resources",
+          "./adapters/postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-milestones/route.ts",
+          "apps/web/src/app/api/repository-milestones/[milestoneNumber]/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Milestone number is repository-local and verified in schema/application input; write management remains separate and unasserted."
+      }
+    },
+    {
+      "id": "manage-discussions",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Preserve Repository Discussion create/update/close/comment write semantics as current data without asserting runtime management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "implementation": {
+        "status": "data-only",
+        "scope": "Repository-owned Discussion tables and semantic concept",
+        "sourcePaths": [],
+        "publicExports": [],
+        "entrypoints": [],
+        "testPaths": [],
+        "note": "Discussion schema/topology evidence exists and authorized read runtime is modeled by read-discussions; create/update/comment/close management is not asserted."
+      }
+    },
+    {
+      "id": "manage-repository-labels",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Preserve Repository Label create/update/delete semantics as current data without asserting runtime management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "implementation": {
+        "status": "data-only",
+        "scope": "Repository-owned Label table and semantic concept",
+        "sourcePaths": [],
+        "publicExports": [],
+        "entrypoints": [],
+        "testPaths": [],
+        "note": "Repository Label schema/topology evidence exists and authorized read runtime is modeled by read-repository-labels; create/update/delete management is not asserted."
+      }
+    },
+    {
+      "id": "manage-repository-milestones",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "implementation": {
+        "status": "data-only",
+        "scope": "Repository-owned Milestone table and semantic concept",
+        "sourcePaths": [],
+        "publicExports": [],
+        "entrypoints": [],
+        "testPaths": [],
+        "note": "Repository Milestone schema/topology evidence exists and authorized read runtime is modeled by read-repository-milestones; create/update/close management is not asserted."
+      }
+    },
+    {
+      "id": "read-projects",
+      "owner": "project",
+      "kind": "leaf",
+      "intent": "Read authorized Project summaries without asserting Project planning writes or underlying Repository work authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project aggregate-root authorized collection read",
+        "sourcePaths": [
+          "packages/project/src/application/collection.ts",
+          "packages/project/src/application/ports/collection.ts",
+          "packages/project/src/adapters/postgres/collection.ts"
+        ],
+        "publicExports": [
+          "./application/collection",
+          "./application/ports/collection",
+          "./adapters/postgres/collection",
+          "./contracts/project-collection"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/projects/route.ts",
+          "apps/web/src/app/(mobile)/projects/page.tsx"
+        ],
+        "testPaths": ["packages/project/test/collection.test.ts"],
+        "note": "Personal Projects require current User ownership; Organization Projects are exposed only to current OrganizationOwner scopes until a distinct Project access policy exists. Planning writes remain inactive."
+      }
+    },
+    {
+      "id": "manage-project-planning",
+      "owner": "project",
+      "kind": "leaf",
+      "intent": "Manage Project planning, WBS, Project-local milestones, and references without taking underlying work authority.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "implementation": {
+        "status": "data-only",
+        "scope": "Project planning mutations remain data-only",
+        "sourcePaths": [],
+        "publicExports": [],
+        "entrypoints": [],
+        "testPaths": [],
+        "note": "Authorized Project collection read is modeled separately by read-projects; create/update/WBS/Item/Milestone management is not asserted."
+      }
+    },
+    {
+      "id": "record-attendance",
+      "owner": "attendance",
+      "kind": "leaf",
+      "intent": "Record valid attendance while preserving eligibility, replay, version, and isolation semantics.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Attendance clock application surface",
+        "sourcePaths": [
+          "packages/attendance/src/application/clock.ts",
+          "packages/attendance/src/application/ports/clock.ts",
+          "packages/attendance/src/domain/sessions.ts"
+        ],
+        "publicExports": ["./application/clock", "./application/ports/clock", "./domain"],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/attendance/page.tsx",
+          "apps/web/src/app/(mobile)/attendance/clock-in/page.tsx",
+          "apps/web/src/app/(mobile)/attendance/clock-out/page.tsx"
+        ],
+        "testPaths": [
+          "packages/attendance/test/attendance.test.ts",
+          "packages/attendance/test/attendance-shifts.test.ts"
+        ],
+        "note": "Attendance implementation evidence is static; remote/device acceptance is separate."
+      }
+    },
+    {
+      "id": "claim-daily-check-in",
+      "owner": "daily-check-in",
+      "kind": "leaf",
+      "intent": "Create at most one authorized business-day check-in effect.",
+      "preserves": ["K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current DailyCheckIn application surface",
+        "sourcePaths": [
+          "packages/daily-check-in/src/application.ts",
+          "packages/daily-check-in/src/application/ports/daily-check-in-repository.ts",
+          "packages/daily-check-in/src/domain.ts",
+          "packages/daily-check-in/src/adapters/postgres.ts"
+        ],
+        "publicExports": [
+          "./application",
+          "./application/ports/daily-check-in-repository",
+          "./domain"
+        ],
+        "entrypoints": ["apps/web/src/app/(mobile)/home/page.tsx"],
+        "testPaths": [
+          "packages/daily-check-in/test/daily-check-in.test.ts",
+          "packages/daily-check-in/test/daily-check-in-policy.test.ts",
+          "packages/daily-check-in/test/daily-check-in-postgres.test.ts"
+        ],
+        "note": "Source/export evidence exists; one-per-day behavior requires test evidence."
+      }
+    },
+    {
+      "id": "post-value-fact",
+      "owner": "ledger",
+      "kind": "leaf",
+      "intent": "Append an immutable value fact with stable identity.",
+      "preserves": ["K1", "K3", "K4"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Ledger domain and repository port",
+        "sourcePaths": [
+          "packages/ledger/src/adapters/postgres.ts",
+          "packages/ledger/src/domain.ts"
+        ],
+        "publicExports": ["./adapters/postgres", "./domain"],
+        "entrypoints": [
+          "packages/daily-check-in/src/adapters/postgres.ts",
+          "packages/attendance/src/adapters/postgres/attendance.ts"
+        ],
+        "testPaths": [
+          "packages/daily-check-in/test/daily-check-in.test.ts",
+          "packages/attendance/test/attendance.test.ts"
+        ],
+        "note": "Ledger value facts are written through recordLedgerCredit in the Postgres adapter and consumed by DailyCheckIn and Attendance adapters; tests are evidence locations only until executed."
+      }
+    },
+    {
+      "id": "authorize-feature",
+      "owner": "identity-access",
+      "kind": "leaf",
+      "intent": "Decide current scoped feature permission without treating identity or membership as authorization.",
+      "preserves": ["K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Identity Access permission application surface",
+        "sourcePaths": [
+          "packages/identity-access/src/application/permissions.ts",
+          "packages/identity-access/src/application/permissions/ports.ts",
+          "packages/identity-access/src/domain/permission.ts"
+        ],
+        "publicExports": [
+          "./application/permissions",
+          "./application/permissions/ports",
+          "./domain/permission"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(admin)/admin/permissions/page.tsx",
+          "apps/web/src/app/(mobile)/settings/permissions/page.tsx"
+        ],
+        "testPaths": [],
+        "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
+      }
+    },
+    {
+      "id": "manage-account-namespace",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Claim, resolve and compare-and-set rename the shared User/Organization global login without changing stable identity or authorization.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Global User/Organization Account naming in existing caller transactions",
+        "sourcePaths": [
+          "packages/namespace/src/domain/namespace.ts",
+          "packages/namespace/src/application/claim-namespace.ts",
+          "packages/namespace/src/application/rename-namespace.ts",
+          "packages/namespace/src/application/resolve-namespace.ts",
+          "packages/namespace/src/adapters/postgres.ts"
+        ],
+        "publicExports": [".", "./adapters/postgres"],
+        "entrypoints": [
+          "packages/account/src/adapters/postgres/user.ts",
+          "apps/web/src/app/api/_composition/namespace.server.ts"
+        ],
+        "testPaths": [
+          "packages/namespace/test/namespace.test.ts",
+          "packages/account/test/user.test.ts"
+        ],
+        "note": "Existing account_logins rows retained; no duplicate registry and no release capability. Scoped entity-owned locators are not claimed to have moved persistence."
+      }
+    }
+  ],
+  "invariants": [
+    {
+      "id": "K1",
+      "scope": "system",
+      "statement": "Each durable business fact has exactly one authoritative owner; cache/projection loss cannot change correctness.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": ["ownership", "data-authority"]
+    },
+    {
+      "id": "K2",
+      "scope": "system",
+      "statement": "Identity proof is not business authorization; protected transitions re-evaluate actor, scope, and owning policy.",
+      "severity": "error",
+      "enforcement": ["application", "authorization-tests", "schema-policy"],
+      "tags": ["security", "authorization", "trust"]
+    },
+    {
+      "id": "K3",
+      "scope": "system",
+      "statement": "Mutable conditional state does not silently use last-write-wins; replay-sensitive effects use stable request identity.",
+      "severity": "error",
+      "enforcement": ["application", "database", "tests"],
+      "tags": ["concurrency", "replay"]
+    },
+    {
+      "id": "K4",
+      "scope": "system",
+      "statement": "Effects that jointly maintain an invariant commit atomically or use durable idempotent recovery.",
+      "severity": "error",
+      "enforcement": ["transaction", "outbox-or-recovery", "tests"],
+      "tags": ["transaction", "recovery"]
+    },
+    {
+      "id": "K5",
+      "scope": "system",
+      "statement": "Each responsibility has one owner and consumers use explicit public contracts with directional dependencies.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "manifest", "package-exports", "architecture-check"],
+      "tags": ["architecture", "dependency", "contract"]
+    },
+    {
+      "id": "K6",
+      "scope": "system",
+      "statement": "Static, test, build, schema, deployment, API, and device evidence only prove their actual scopes.",
+      "severity": "error",
+      "enforcement": ["validation-pipeline", "acceptance-evidence"],
+      "tags": ["evidence", "validation"]
+    },
+    {
+      "id": "SA1",
+      "scope": "semantic-architecture",
+      "statement": "Bounded Context, Module Boundary, Data Boundary, Consistency Boundary, Trust Boundary, and Runtime Boundary are distinct dimensions.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "manifest"],
+      "tags": ["architecture", "boundary"]
+    },
+    {
+      "id": "SA2",
+      "scope": "semantic-architecture",
+      "statement": "External benchmark evidence never becomes product authority without an explicit product concept mapping.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "benchmark-check"],
+      "tags": ["benchmark", "authority"]
+    },
+    {
+      "id": "SA3",
+      "scope": "semantic-architecture",
+      "statement": "Derived projections and references cannot become writable authoritative truth.",
+      "severity": "error",
+      "enforcement": ["semantic-policy"],
+      "tags": ["projection", "authority"]
+    },
+    {
+      "id": "SA4",
+      "scope": "semantic-architecture",
+      "statement": "Selected-target semantics cannot be reported as current runtime capability solely because they exist in the semantic model.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "governance"],
+      "tags": ["lifecycle", "evidence"]
+    },
+    {
+      "id": "SA5",
+      "scope": "semantic-architecture",
+      "statement": "Runtime, provider, deployment, device, and human observations are evidence only; they may produce a revision proposal but never auto-modify canonical semantic authority.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "runtime-feedback"]
+    },
+    {
+      "id": "SA6",
+      "scope": "semantic-architecture",
+      "statement": "Every persisted app_private relation has exactly one relation-level data authority; relation ownership must agree with semantic concept ownership, and every concept that requires relation persistence must resolve to at least one authoritative relation.",
+      "severity": "error",
+      "enforcement": ["data-topology", "architecture-check"],
+      "tags": ["data", "ownership", "boundary"]
+    }
+  ],
+  "truthRegistry": [
+    {
+      "id": "business-definition",
+      "authority": "architecture/semantic-model.json",
+      "scope": "cross-context structured semantics"
+    },
+    {
+      "id": "owner-local-business-rules",
+      "authority": "docs/owners/* + source + tests",
+      "scope": "owner-local current semantics"
+    },
+    {
+      "id": "external-semantic-benchmark",
+      "authority": "architecture/semantic-benchmark.json",
+      "scope": "pinned external evidence only"
+    },
+    {
+      "id": "module-topology",
+      "authority": "architecture/implementation-topology.json",
+      "scope": "workspace paths and allowed workspace dependencies"
+    },
+    {
+      "id": "public-contract",
+      "authority": "package.json#exports",
+      "scope": "cross-module source contract"
+    },
+    {
+      "id": "runtime-behavior",
+      "authority": "source-code + tests",
+      "scope": "implemented behavior"
+    },
+    {
+      "id": "persistence-current-state",
+      "authority": "supabase/schemas/",
+      "scope": "database current structure"
+    },
+    {
+      "id": "repository-command-surface",
+      "authority": "package.json#scripts",
+      "scope": "canonical repository commands"
+    },
+    {
+      "id": "historical-change",
+      "authority": "docs/change/",
+      "scope": "proposal/migration/history/acceptance evidence"
+    },
+    {
+      "id": "external-current-state",
+      "authority": "provider/API/device readback",
+      "scope": "dated remote/runtime truth"
+    },
+    {
+      "id": "data-topology",
+      "authority": "architecture/data-topology.json",
+      "scope": "schema surface ownership, role and cross-owner participation"
+    }
+  ],
+  "implementationMappings": [
+    {
+      "semanticOwner": "account",
+      "module": "@line_bot_v1/account"
+    },
+    {
+      "semanticOwner": "enterprise",
+      "module": "@line_bot_v1/enterprise"
+    },
+    {
+      "semanticOwner": "organization",
+      "module": "@line_bot_v1/organization"
+    },
+    {
+      "semanticOwner": "team",
+      "module": "@line_bot_v1/team"
+    },
+    {
+      "semanticOwner": "repository",
+      "module": "@line_bot_v1/repository"
+    },
+    {
+      "semanticOwner": "project",
+      "module": "@line_bot_v1/project",
+      "note": "Project workspace/module ownership is registered; runtime Project capability remains inactive."
+    },
+    {
+      "semanticOwner": "notifications",
+      "module": "@line_bot_v1/notifications"
+    },
+    {
+      "semanticOwner": "attendance",
+      "module": "@line_bot_v1/attendance"
+    },
+    {
+      "semanticOwner": "daily-check-in",
+      "module": "@line_bot_v1/daily-check-in"
+    },
+    {
+      "semanticOwner": "expense",
+      "module": "@line_bot_v1/expense"
+    },
+    {
+      "semanticOwner": "audit",
+      "module": "@line_bot_v1/audit",
+      "note": "Audit module ownership is reserved as a workspace foundation; executable capability remains inactive until a real audit consumer and contract exist."
+    },
+    {
+      "semanticOwner": "partner-directory",
+      "module": "@line_bot_v1/partners"
+    },
+    {
+      "semanticOwner": "asset",
+      "module": "@line_bot_v1/asset"
+    },
+    {
+      "semanticOwner": "wallet",
+      "module": "@line_bot_v1/wallet"
+    },
+    {
+      "semanticOwner": "ledger",
+      "module": "@line_bot_v1/ledger"
+    },
+    {
+      "semanticOwner": "payroll",
+      "module": "@line_bot_v1/payroll"
+    },
+    {
+      "semanticOwner": "workforce",
+      "module": "@line_bot_v1/workforce",
+      "note": "Workforce workspace/module ownership is registered; target business capability remains unimplemented."
+    },
+    {
+      "semanticOwner": "identity-access",
+      "module": "@line_bot_v1/identity-access"
+    },
+    {
+      "semanticOwner": "assistant",
+      "module": "@line_bot_v1/assistant"
+    },
+    {
+      "semanticOwner": "line-integration",
+      "module": "@line_bot_v1/line-channel"
+    },
+    {
+      "semanticOwner": "google-workspace",
+      "module": "@line_bot_v1/google-workspace"
+    },
+    {
+      "semanticOwner": "namespace",
+      "module": "@line_bot_v1/namespace",
+      "note": "Namespace owns global Account login lifecycle plus structured path contracts; scoped entity locators retain their existing persistence authority."
+    },
+    {
+      "semanticOwner": "platform",
+      "module": "@line_bot_v1/platform"
+    }
+  ],
+  "policies": [
+    {
+      "id": "SEM-001",
+      "kind": "single-concept-owner",
+      "severity": "error",
+      "rationale": "Authoritative business truth needs one decision owner.",
+      "remediation": "Choose one semantic owner; make other representations references, snapshots or projections."
+    },
+    {
+      "id": "SEM-002",
+      "kind": "relationship-endpoints-exist",
+      "severity": "error",
+      "rationale": "Cross-owner contracts cannot target invented responsibilities.",
+      "remediation": "Declare the real owner or remove the relationship."
+    },
+    {
+      "id": "SEM-003",
+      "kind": "benchmark-mapping-must-exist",
+      "severity": "error",
+      "rationale": "External benchmark evidence cannot silently become product semantics.",
+      "remediation": "Map to a pinned benchmark node explicitly or remove the benchmark claim."
+    },
+    {
+      "id": "SEM-004",
+      "kind": "derived-concept-cannot-be-authoritative",
+      "severity": "error",
+      "rationale": "Derived state is rebuildable and cannot replace its source authority.",
+      "remediation": "Point the projection to authoritative sources and keep writes with the source owner."
+    },
+    {
+      "id": "SEM-005",
+      "kind": "implementation-mapping-must-resolve",
+      "severity": "error",
+      "rationale": "Semantic responsibility must map explicitly to implementation when implementation exists.",
+      "remediation": "Fix the mapping or explicitly keep the owner data-only/target-only."
+    },
+    {
+      "id": "SEM-006",
+      "kind": "module-owner-must-resolve",
+      "severity": "error",
+      "rationale": "A module cannot exist without a semantic responsibility owner.",
+      "remediation": "Assign the real semantic owner or remove the module."
+    },
+    {
+      "id": "SEM-007",
+      "kind": "selected-target-module-not-required",
+      "severity": "error",
+      "rationale": "Target semantics must not imply runtime implementation.",
+      "remediation": "Keep target-only owners unmapped until an implementation boundary actually exists."
+    },
+    {
+      "id": "SEM-008",
+      "kind": "workspace-dependency-must-resolve",
+      "severity": "error",
+      "rationale": "Declared dependencies must be directional and point to real public modules.",
+      "remediation": "Fix or remove the stale dependency."
+    },
+    {
+      "id": "SEM-009",
+      "kind": "consumer-contract",
+      "severity": "error",
+      "rationale": "Cross-owner module dependencies and business effects require an explicit relationship contract; implementation dependency alone is not semantic authority.",
+      "remediation": "Declare the real provider/consumer relationship or remove the stale cross-owner dependency; do not add a dependency merely to satisfy a stale semantic edge."
+    },
+    {
+      "id": "SEM-010",
+      "kind": "evidence-scope-integrity",
+      "severity": "error",
+      "rationale": "Validation evidence cannot prove a stronger scope than it executed.",
+      "remediation": "Use the validation profile whose evidence class matches the claim."
+    },
+    {
+      "id": "SEM-011",
+      "kind": "runtime-feedback-derived-proposal",
+      "severity": "error",
+      "rationale": "Observed reality is evidence and must not silently rewrite design authority.",
+      "remediation": "Produce a derived revision proposal, review the affected owner and evidence, then change canonical semantics explicitly if justified."
+    },
+    {
+      "id": "SEM-012",
+      "kind": "data-topology-integrity",
+      "severity": "error",
+      "rationale": "Persistence authority belongs to database objects/relationships, not schema filenames; file grouping must never hide mixed semantic ownership.",
+      "remediation": "Assign every persisted relation exactly one semantic owner, group only same-owner authoritative relations in object-shaped schema files, and keep cross-owner projections/enforcement/coordinators non-authoritative."
+    }
+  ],
+  "language": {
+    "canonicalNamePolicy": "One business concept has one canonical name inside its semantic boundary.",
+    "ambiguityPolicy": "The same display name may exist in different semantic boundaries only when the concept ids and owners remain explicit.",
+    "aliasPolicy": "Aliases are lookup metadata only; aliases never create a second concept or owner.",
+    "globalVocabularyProjection": "Derived from concepts; human glossaries are projections or owner-local detail."
+  },
+  "conceptTypes": [
+    {
+      "id": "authoritative",
+      "authorityMode": "authoritative",
+      "meaning": "Owner-controlled business truth."
+    },
+    {
+      "id": "reference",
+      "authorityMode": "reference-only",
+      "meaning": "Pointer to truth owned elsewhere; cannot rewrite provider truth."
+    },
+    {
+      "id": "derived-projection",
+      "authorityMode": "derived",
+      "meaning": "Rebuildable view derived from authoritative sources."
+    },
+    {
+      "id": "policy-decision",
+      "authorityMode": "policy-decision",
+      "meaning": "Decision produced by the explicit policy owner."
+    },
+    {
+      "id": "external-proof",
+      "authorityMode": "external-evidence-only",
+      "meaning": "Verified external evidence that never implies business authorization."
+    }
+  ],
+  "boundaryTypes": [
+    {
+      "id": "semantic",
+      "meaning": "Where a domain model and Ubiquitous Language are coherent.",
+      "source": "boundedContexts"
+    },
+    {
+      "id": "module",
+      "meaning": "Source-code responsibility and public surface.",
+      "source": "architecture/implementation-topology.json#modules"
+    },
+    {
+      "id": "data",
+      "meaning": "Persisted facts, access and isolation ownership.",
+      "source": "implementationMappings.data + supabase/schemas"
+    },
+    {
+      "id": "consistency",
+      "meaning": "Facts and invariants that must be kept mutually valid.",
+      "source": "invariants + capabilities"
+    },
+    {
+      "id": "transaction",
+      "meaning": "Effects that must commit atomically or use durable recovery.",
+      "source": "relationships.consistency + invariants"
+    },
+    {
+      "id": "trust",
+      "meaning": "Where untrusted/external input becomes verified evidence.",
+      "source": "external-proof concepts + integration relationships"
+    },
+    {
+      "id": "runtime",
+      "meaning": "Execution environment that owns lifecycle.",
+      "source": "architecture/implementation-topology.json#applications"
+    }
+  ],
+  "integrationModes": [
+    {
+      "id": "stable-identity",
+      "authorityTransfer": false
+    },
+    {
+      "id": "query",
+      "authorityTransfer": false
+    },
+    {
+      "id": "command",
+      "authorityTransfer": false
+    },
+    {
+      "id": "event",
+      "authorityTransfer": false
+    },
+    {
+      "id": "projection",
+      "authorityTransfer": false
+    },
+    {
+      "id": "snapshot",
+      "authorityTransfer": false
+    },
+    {
+      "id": "reference",
+      "authorityTransfer": false
+    },
+    {
+      "id": "external-proof",
+      "authorityTransfer": false
+    },
+    {
+      "id": "stable-identity+query",
+      "authorityTransfer": false
+    }
+  ],
+  "contractModel": {
+    "authority": "relationships",
+    "requiredRelationshipFields": [
+      "id",
+      "provider",
+      "consumer",
+      "meaning",
+      "integrationMode",
+      "authority",
+      "consistency"
+    ],
+    "rule": "A cross-owner dependency exists only through an explicit relationship contract. Consumer need does not transfer provider authority."
+  },
+  "evidenceModel": {
+    "scopeRule": "Evidence proves only the scope actually exercised; stronger claims require stronger evidence.",
+    "classes": [
+      {
+        "id": "static",
+        "meaning": "Static source/configuration analysis."
+      },
+      {
+        "id": "type",
+        "meaning": "Type-system verification."
+      },
+      {
+        "id": "unit-test",
+        "meaning": "Isolated behavior verification."
+      },
+      {
+        "id": "integration-test",
+        "meaning": "Cross-component behavior verification."
+      },
+      {
+        "id": "architecture",
+        "meaning": "Architecture/model invariant verification."
+      },
+      {
+        "id": "database",
+        "meaning": "Database/schema/constraint verification."
+      },
+      {
+        "id": "security",
+        "meaning": "Authorization, isolation and trust-boundary verification."
+      },
+      {
+        "id": "build",
+        "meaning": "Artifact build verification."
+      },
+      {
+        "id": "deployment",
+        "meaning": "Deployment state verification."
+      },
+      {
+        "id": "provider-readback",
+        "meaning": "External provider current-state readback."
+      },
+      {
+        "id": "runtime",
+        "meaning": "Observed runtime behavior."
+      },
+      {
+        "id": "device",
+        "meaning": "Real device/WebView behavior."
+      },
+      {
+        "id": "human-acceptance",
+        "meaning": "Explicit human acceptance evidence."
+      }
+    ],
+    "validationProfiles": [
+      {
+        "id": "semantic-architecture",
+        "evidenceClass": "architecture",
+        "proves": ["semantic ownership, type, contract and mapping consistency"],
+        "doesNotProve": ["runtime behavior", "deployment", "device behavior"],
+        "command": "pnpm semantic check"
+      },
+      {
+        "id": "architecture",
+        "evidenceClass": "architecture",
+        "proves": ["semantic + implementation topology and dependency invariants"],
+        "doesNotProve": ["deployment", "provider current state"],
+        "command": "pnpm architecture"
+      },
+      {
+        "id": "architecture-tests",
+        "evidenceClass": "integration-test",
+        "proves": ["legal, violating and repaired architecture cases"],
+        "doesNotProve": ["production behavior"],
+        "command": "pnpm architecture:test"
+      },
+      {
+        "id": "docs",
+        "evidenceClass": "static",
+        "proves": ["documentation structure and local-link integrity"],
+        "doesNotProve": ["business behavior"],
+        "command": "pnpm docs:check"
+      },
+      {
+        "id": "schema",
+        "evidenceClass": "database",
+        "proves": [
+          "declarative database contract and security constraints exercised by schema tests"
+        ],
+        "doesNotProve": ["remote database equality"],
+        "command": "pnpm schema:check"
+      },
+      {
+        "id": "typecheck",
+        "evidenceClass": "type",
+        "proves": ["TypeScript type correctness"],
+        "doesNotProve": ["tests", "build", "deployment"],
+        "command": "pnpm typecheck"
+      },
+      {
+        "id": "tests",
+        "evidenceClass": "integration-test",
+        "proves": ["repository test behavior in executed scope"],
+        "doesNotProve": ["deployment", "device behavior"],
+        "command": "pnpm test"
+      },
+      {
+        "id": "build",
+        "evidenceClass": "build",
+        "proves": ["repository build succeeds"],
+        "doesNotProve": ["deployment", "runtime correctness"],
+        "command": "pnpm build"
+      },
+      {
+        "id": "fast-repository",
+        "evidenceClass": "static",
+        "proves": ["affected fast repository validation selected by canonical planner"],
+        "doesNotProve": ["full merge validation", "deployment"],
+        "command": "pnpm check"
+      },
+      {
+        "id": "full-repository",
+        "evidenceClass": "integration-test",
+        "proves": ["full repository validation pipeline"],
+        "doesNotProve": ["deployment", "provider readback", "device verification"],
+        "command": "pnpm validate"
+      }
+    ],
+    "feedback": {
+      "observationsEmbeddedInSemanticModel": false,
+      "observationAuthority": "external-current-state",
+      "channels": [
+        {
+          "id": "deployment",
+          "evidenceClass": "deployment",
+          "mayRevise": ["implementation mapping", "runtime assumptions"]
+        },
+        {
+          "id": "provider-readback",
+          "evidenceClass": "provider-readback",
+          "mayRevise": ["external integration assumptions", "drift status"]
+        },
+        {
+          "id": "runtime",
+          "evidenceClass": "runtime",
+          "mayRevise": ["capability assumptions", "failure semantics", "quality attributes"]
+        },
+        {
+          "id": "device",
+          "evidenceClass": "device",
+          "mayRevise": ["browser/WebView assumptions"]
+        },
+        {
+          "id": "human-acceptance",
+          "evidenceClass": "human-acceptance",
+          "mayRevise": ["business semantics", "acceptance criteria"]
+        }
+      ],
+      "bundleVersion": 1,
+      "claimSubject": "capability",
+      "statuses": ["pass", "fail", "unknown"],
+      "comparisonPrecedence": ["drift", "review", "inconclusive", "aligned"],
+      "revisionProposal": {
+        "derived": true,
+        "autoApply": false,
+        "rule": "Observed reality may propose semantic revision but never mutates canonical semantics automatically."
+      }
+    }
+  },
+  "locators": [
+    {
+      "id": "user-login",
+      "concept": "user",
+      "status": "active",
+      "fields": ["login"],
+      "scope": "shared-account-login-namespace",
+      "scopeAuthority": "namespace",
+      "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
+      "note": "User and Organization share the login namespace. URL/resourcePath is locator evidence, not authorization or stable database identity.",
+      "benchmark": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "login"
+      }
+    },
+    {
+      "id": "organization-login",
+      "concept": "organization",
+      "status": "active",
+      "fields": ["login"],
+      "scope": "shared-account-login-namespace",
+      "scopeAuthority": "namespace",
+      "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
+      "note": "Organization login shares the account login namespace and is resolved by the public owner page. Rename/display concerns stay separate from stable account identity.",
+      "benchmark": {
+        "file": "schema-orgs.json",
+        "category": "orgs",
+        "symbol": "Organization",
+        "field": "login"
+      }
+    },
+    {
+      "id": "enterprise-slug",
+      "concept": "enterprise",
+      "status": "active",
+      "fields": ["slug"],
+      "scope": "enterprise-slug-namespace",
+      "scopeAuthority": "enterprise",
+      "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"],
+      "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
+      "benchmark": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "Enterprise",
+        "field": "slug"
+      }
+    },
+    {
+      "id": "repository-owner-name",
+      "concept": "repository",
+      "status": "active",
+      "fields": ["ownerLogin", "name"],
+      "scope": "repository-owner-login-and-name",
+      "scopeAuthority": "repository",
+      "routeFiles": ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
+      "note": "Repository URL derives from owner login plus Repository name; access still comes from authorization checks.",
+      "benchmark": {
+        "file": "schema-repos.json",
+        "category": "repos",
+        "symbol": "Repository",
+        "field": "resourcePath"
+      }
+    },
+    {
+      "id": "repository-star-list-id",
+      "concept": "repository-star-list",
+      "status": "active",
+      "fields": ["listId"],
+      "scope": "repository-star-list-global-id",
+      "scopeAuthority": "repository",
+      "routeFiles": ["apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"],
+      "note": "Repository Star List uses its opaque stable ListId as the detail locator under the already-reserved /repositories root; the locator never grants Repository or List authority."
+    },
+    {
+      "id": "issue-number",
+      "concept": "issue",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "number"],
+      "scope": "repository-scoped-issue-number",
+      "scopeAuthority": "repository",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+      ],
+      "note": "Issue number is scoped to Repository and is not a global stable identifier.",
+      "benchmark": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Issue",
+        "field": "number"
+      }
+    },
+    {
+      "id": "discussion-opaque-id",
+      "concept": "discussion",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "discussionId"],
+      "scope": "repository-scoped-local-discussion-id",
+      "scopeAuthority": "repository",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+      ],
+      "note": "Discussion detail URL uses the local opaque DiscussionId. GitHub Discussion.number exists in FPT, but this product does not adopt it as the local Discussion locator."
+    },
+    {
+      "id": "repository-milestone-number",
+      "concept": "repository-milestone",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
+      "scope": "repository-scoped-milestone-number",
+      "scopeAuthority": "repository",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+      ],
+      "note": "Repository Milestone number is scoped to Repository and remains separate from Project Milestone identity.",
+      "benchmark": {
+        "file": "schema-issues.json",
+        "category": "issues",
+        "symbol": "Milestone",
+        "field": "number"
+      }
+    },
+    {
+      "id": "organization-team-slug",
+      "concept": "team",
+      "status": "active",
+      "fields": ["organizationLogin", "teamSlug"],
+      "scope": "organization-scoped-team-slug",
+      "scopeAuthority": "team",
+      "routeFiles": ["apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"],
+      "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
+      "benchmark": {
+        "file": "schema-teams.json",
+        "category": "teams",
+        "symbol": "Team",
+        "field": "slug"
+      }
+    },
+    {
+      "id": "enterprise-team-slug",
+      "concept": "enterprise-team",
+      "status": "active",
+      "fields": ["enterpriseSlug", "teamSlug"],
+      "scope": "enterprise-scoped-team-slug",
+      "scopeAuthority": "enterprise",
+      "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
+      "note": "Enterprise Team slug is scoped to Enterprise and is independent from Organization Team slug.",
+      "benchmark": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseTeam",
+        "field": "slug"
+      }
+    }
+  ],
+  "benchmarkDecisions": [
+    {
+      "id": "discussion-category",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "contributions-collection",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "repository-contribution",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "joined-user-contribution",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "contribution",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "work-item-contribution",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "enterprise-member-invitation",
+      "kind": "node",
+      "status": "adopted",
+      "concepts": ["enterprise-invitation"],
+      "capabilities": ["manage-enterprise-governance"],
+      "reason": "Enterprise invitation represents pending participation intent, adopted as pending-intent semantics distinct from active affiliation."
+    },
+    {
+      "id": "organization-invitation",
+      "kind": "node",
+      "status": "adopted",
+      "concepts": ["organization-invitation"],
+      "capabilities": ["manage-organization-invitations"],
+      "reason": "Organization invitation represents pending participation intent, adopted as pending-intent semantics distinct from active membership."
+    },
+    {
+      "id": "user-list",
+      "kind": "node",
+      "status": "adopted",
+      "concepts": ["repository-star-list"],
+      "capabilities": ["manage-repository-star-lists"],
+      "locators": ["repository-star-list-id"],
+      "reason": "Adopted as User-owned curated list over starred repositories; list membership does not grant repository access."
+    },
+    {
+      "id": "repository-invitation",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "reaction",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "work-item-comment",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "work-item-type",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "project-field",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "project-status-update",
+      "kind": "node",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "user-profile",
+      "kind": "projection",
+      "status": "adopted",
+      "concepts": ["user"],
+      "capabilities": ["manage-user-profile"],
+      "locators": ["user-login"],
+      "reason": "Product has current User profile source and a public User login locator; benchmark projection is adopted as read/profile semantics only."
+    },
+    {
+      "id": "user-following",
+      "kind": "projection",
+      "status": "adopted",
+      "concepts": ["user-follow"],
+      "capabilities": ["manage-user-follow"],
+      "reason": "Product has a directional User follow capability; following is the outbound projection of the owned relationship."
+    },
+    {
+      "id": "user-followers",
+      "kind": "projection",
+      "status": "adopted",
+      "concepts": ["user-follow"],
+      "capabilities": ["manage-user-follow"],
+      "reason": "Product has a directional User follow capability; followers is the inbound projection of the owned relationship."
+    },
+    {
+      "id": "user-repositories",
+      "kind": "projection",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "project-view",
+      "kind": "projection",
+      "status": "deferred",
+      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+    },
+    {
+      "id": "achievement",
+      "kind": "derived-result",
+      "status": "adopted",
+      "capabilities": ["read-user-achievements"],
+      "reason": "Product now has a real authenticated Profile consumer for Account-owned earned Achievement facts; only the read projection is adopted, not speculative grant/progress workflow."
+    },
+    {
+      "id": "star-signal",
+      "kind": "reference-contract",
+      "status": "adopted",
+      "capabilities": ["manage-repository-stars"],
+      "reason": "Repository stars are current interaction behavior, adopted as a signal rather than Repository authority."
+    },
+    {
+      "id": "subscription-signal",
+      "kind": "reference-contract",
+      "status": "deferred",
+      "reason": "Useful reference contract, but no current owner capability asserts this runtime behavior."
+    },
+    {
+      "id": "node-identity",
+      "kind": "reference-contract",
+      "status": "not-applicable",
+      "reason": "Product uses owner-specific stable identities and does not adopt the FPT opaque Node lookup contract as a product interface."
+    },
+    {
+      "id": "resource-locator",
+      "kind": "reference-contract",
+      "status": "adopted",
+      "locators": [
+        "user-login",
+        "organization-login",
+        "enterprise-slug",
+        "repository-owner-name",
+        "repository-star-list-id",
+        "issue-number",
+        "discussion-opaque-id",
+        "repository-milestone-number",
+        "organization-team-slug",
+        "enterprise-team-slug"
+      ],
+      "reason": "Product has explicit locator records tied to route files; collection URLs live on capability entrypoints, while detail locators remain separate from authorization and stable database identity."
+    },
+    {
+      "id": "search-projection",
+      "kind": "reference-contract",
+      "status": "deferred",
+      "reason": "Useful reference contract, but no current owner capability asserts this runtime behavior."
+    },
+    {
+      "id": "pagination-connection",
+      "kind": "reference-contract",
+      "status": "deferred",
+      "reason": "Useful reference contract, but no current owner capability asserts this runtime behavior."
+    }
+  ]
+}

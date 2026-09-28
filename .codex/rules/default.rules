@@ -1,0 +1,739 @@
+```python
+git_commands = [
+    "git",
+    "git.exe",
+    "C:\\Users\\963su\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\git\\cmd\\git.exe",
+]
+
+github_commands = ["gh", "gh.exe"]
+
+package_commands = [
+    "pnpm",
+    "pnpm.exe",
+    "pnpm.cmd",
+    "npm",
+    "npm.cmd",
+    "npm.exe",
+]
+
+supabase_commands = ["supabase", "supabase.exe"]
+
+vercel_commands = ["vercel", "vercel.exe", "vercel.cmd"]
+
+destructive_push_options = [
+    "--force",
+    "-f",
+    "--force-with-lease",
+    "--mirror",
+    "--delete",
+    "-d",
+]
+
+
+# ============================================================
+# Git: safe inspection
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, [
+        "status",
+        "diff",
+        "log",
+        "show",
+        "branch",
+        "rev-parse",
+        "remote",
+        "tag",
+        "describe",
+        "ls-files",
+        "ls-tree",
+        "merge-base",
+        "name-rev",
+        "shortlog",
+        "blame",
+    ]],
+    decision = "allow",
+    justification = "Read-only Git inspection is safe and required for normal development.",
+    match = [
+        "git status",
+        "git status --short",
+        "git diff",
+        "git diff --cached",
+        "git log --oneline --decorate -20",
+        "git show HEAD",
+        "git branch -vv",
+        "git rev-parse HEAD",
+        "git remote -v",
+    ],
+    not_match = [
+        "git reset --hard HEAD",
+        "git clean -fd",
+        "git push --force origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: remote synchronization
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "fetch"],
+    decision = "allow",
+    justification = "Fetching remote refs does not modify working-tree files or remote history.",
+    match = [
+        "git fetch origin",
+        "git fetch --prune origin",
+        "git fetch origin main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git reset --hard origin/main",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "pull", "--ff-only"],
+    decision = "allow",
+    justification = "Fast-forward-only pull prevents implicit merge commits and history rewrites.",
+    match = [
+        "git pull --ff-only",
+        "git pull --ff-only origin main",
+    ],
+    not_match = [
+        "git pull --rebase",
+        "git pull --force",
+    ],
+)
+
+
+# ============================================================
+# Git: branch navigation and creation
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, ["switch", "checkout"]],
+    decision = "allow",
+    justification = "Normal branch switching and branch creation are standard development operations.",
+    match = [
+        "git switch main",
+        "git switch feature/example",
+        "git switch -c feature/example",
+        "git checkout main",
+        "git checkout -b feature/example",
+    ],
+    not_match = [
+        "git checkout -- .",
+        "git checkout HEAD -- .",
+    ],
+)
+
+
+# ============================================================
+# Git: staging and commits
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "add"],
+    decision = "allow",
+    justification = "Staging changes is reversible and part of normal development.",
+    match = [
+        "git add .",
+        "git add -A",
+        "git add packages/example/index.ts",
+    ],
+    not_match = [
+        "git clean -fd",
+        "git reset --hard HEAD",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "commit"],
+    decision = "allow",
+    justification = "Local commits are recoverable and are part of ordinary development.",
+    match = [
+        'git commit -m "fix: resolve namespace lookup"',
+        "git commit --amend --no-edit",
+    ],
+    not_match = [
+        "git push --force origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: normal push
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "push", "origin"],
+    decision = "allow",
+    justification = "Normal non-destructive pushes are allowed for ordinary development.",
+    match = [
+        "git push origin main",
+        "git push origin feature/example",
+        "git push origin HEAD",
+        "git push origin HEAD:refs/heads/main",
+        "git push -u origin feature/example",
+    ],
+    not_match = [
+        "git push origin --force main",
+        "git push origin -d main",
+        "git push origin --delete main",
+    ],
+)
+
+
+# ============================================================
+# Git: destructive push protection
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "push", destructive_push_options],
+    decision = "prompt",
+    justification = "Do not rewrite or delete remote history during ordinary development. Use a normal push or prepare a separately reviewed recovery operation.",
+    match = [
+        "git push --force origin main",
+        "git.exe push --mirror origin",
+        "git push --delete origin main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git fetch origin",
+        "git pull --ff-only",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "push", "origin", destructive_push_options],
+    decision = "prompt",
+    justification = "Remote-first force and deletion options are destructive too. Use a normal push.",
+    match = [
+        "git push origin --force main",
+        "git push origin -d main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git push origin HEAD:refs/heads/main",
+    ],
+)
+
+prefix_rule(
+    pattern = [
+        git_commands,
+        "push",
+        "origin",
+        ["main", "HEAD:refs/heads/main"],
+        destructive_push_options,
+    ],
+    decision = "prompt",
+    justification = "Do not append force or deletion options to the normal main push.",
+    match = [
+        "git push origin main --force",
+        "git push origin HEAD:refs/heads/main --force-with-lease",
+    ],
+    not_match = [
+        "git push origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: rebase
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "rebase", "--autostash", "origin/main"],
+    decision = "allow",
+    justification = "Allow the narrow non-fast-forward recovery path that preserves worktree edits while replaying local main on origin/main.",
+    match = [
+        "git rebase --autostash origin/main",
+        "git.exe rebase --autostash origin/main",
+    ],
+    not_match = [
+        "git rebase --abort",
+        "git rebase --interactive origin/main",
+        "git push --force origin main",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "rebase", "--continue"],
+    decision = "allow",
+    justification = "Allow continuing a reviewed rebase after conflicts are resolved without granting destructive history rewrites.",
+    match = [
+        "git rebase --continue",
+        "git.exe rebase --continue",
+    ],
+    not_match = [
+        "git rebase --abort",
+        "git reset --hard HEAD",
+        "git push --force origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: restore / reset
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "restore", "--staged"],
+    decision = "allow",
+    justification = "Unstaging files does not discard working-tree changes.",
+    match = [
+        "git restore --staged package.json",
+        "git restore --staged .",
+    ],
+    not_match = [
+        "git restore .",
+        "git restore --source=HEAD .",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "restore"],
+    decision = "prompt",
+    justification = "Restoring working-tree files can discard uncommitted changes. Review the exact paths first.",
+    match = [
+        "git restore package.json",
+        "git restore .",
+        "git restore --source=HEAD .",
+    ],
+    not_match = [
+        "git restore --staged package.json",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "reset", "--soft"],
+    decision = "allow",
+    justification = "Soft reset changes commit pointers while preserving index and working-tree content.",
+    match = [
+        "git reset --soft HEAD~1",
+    ],
+    not_match = [
+        "git reset --hard HEAD",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "reset", "--hard"],
+    decision = "prompt",
+    justification = "Hard reset can discard existing work. Inspect the diff and preserve changes before preparing targeted recovery.",
+    match = [
+        "git reset --hard HEAD",
+        "git.exe reset --hard",
+    ],
+    not_match = [
+        "git reset --soft HEAD~1",
+        "git status",
+    ],
+)
+
+
+# ============================================================
+# Git: clean
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "clean", ["-n", "-nd", "-dn", "--dry-run"]],
+    decision = "allow",
+    justification = "Dry-run clean only previews files that would be removed.",
+    match = [
+        "git clean -n",
+        "git clean -nd",
+        "git clean --dry-run",
+    ],
+    not_match = [
+        "git clean -fd",
+        "git clean -fdx",
+    ],
+)
+
+prefix_rule(
+    pattern = [
+        git_commands,
+        "clean",
+        [
+            "-f",
+            "-fd",
+            "-df",
+            "-fx",
+            "-xf",
+            "-fdx",
+            "-xdf",
+            "-dxf",
+            "-ffdx",
+            "--force",
+        ],
+    ],
+    decision = "prompt",
+    justification = "Do not bulk-delete untracked work. Use git clean -n to inspect and review exact paths first.",
+    match = [
+        "git clean -fdx",
+        "git clean -f -d",
+        "git.exe clean --force",
+    ],
+    not_match = [
+        "git clean -nd",
+        "git clean --dry-run",
+    ],
+)
+
+
+# ============================================================
+# GitHub CLI: inspection
+# ============================================================
+
+prefix_rule(
+    pattern = [github_commands, [
+        "status",
+        "repo",
+        "run",
+        "workflow",
+        "pr",
+        "issue",
+    ]],
+    decision = "allow",
+    justification = "GitHub inspection commands are required for reviewing repository, PR and workflow state.",
+    match = [
+        "gh status",
+        "gh repo view",
+        "gh run list",
+        "gh run view 123456",
+        "gh run view 123456 --log",
+        "gh workflow list",
+        "gh pr list",
+        "gh pr view 123",
+        "gh issue list",
+        "gh issue view 123",
+    ],
+    not_match = [
+        "gh repo delete owner/repository",
+        "gh pr merge 123",
+    ],
+)
+
+
+# ============================================================
+# GitHub CLI: workflow execution / merge / deletion
+# ============================================================
+
+prefix_rule(
+    pattern = [github_commands, "workflow", "run"],
+    decision = "allow",
+    justification = "Manually triggering an existing development workflow is permitted; workflow permissions still govern its effects.",
+    match = [
+        "gh workflow run validate.yml",
+        "gh workflow run deploy.yml --ref main",
+    ],
+    not_match = [
+        "gh repo delete owner/repository",
+    ],
+)
+
+prefix_rule(
+    pattern = [github_commands, "pr", "merge"],
+    decision = "prompt",
+    justification = "Merging changes affects the shared repository and must only occur after validation and review requirements are satisfied.",
+    match = [
+        "gh pr merge 123 --squash",
+        "gh pr merge 123 --merge",
+    ],
+    not_match = [
+        "gh pr view 123",
+        "gh pr checks 123",
+    ],
+)
+
+prefix_rule(
+    pattern = [github_commands, "repo", "delete"],
+    decision = "prompt",
+    justification = "Repository deletion is destructive and requires explicit review.",
+    match = [
+        "gh repo delete owner/repository",
+    ],
+    not_match = [
+        "gh repo view owner/repository",
+    ],
+)
+
+
+# ============================================================
+# Package managers: install and validation
+# ============================================================
+
+prefix_rule(
+    pattern = [package_commands, [
+        "install",
+        "i",
+        "lint",
+        "test",
+        "build",
+        "typecheck",
+        "check",
+        "validate",
+    ]],
+    decision = "allow",
+    justification = "Dependency installation and local validation/build commands are ordinary development operations.",
+    match = [
+        "pnpm install",
+        "pnpm lint",
+        "pnpm test",
+        "pnpm build",
+        "pnpm typecheck",
+        "pnpm validate",
+        "npm install",
+        "npm test",
+        "npm run build",
+    ],
+    not_match = [
+        "npm publish",
+        "pnpm publish",
+    ],
+)
+
+prefix_rule(
+    pattern = [package_commands, ["run", "exec", "dlx"]],
+    decision = "allow",
+    justification = "Running project-defined scripts and development tools is part of normal local development.",
+    match = [
+        "pnpm run validate",
+        "pnpm run lint",
+        "pnpm exec biome check .",
+        "pnpm exec tsc --noEmit",
+        "npm run test",
+    ],
+    not_match = [
+        "npm publish",
+        "pnpm publish",
+    ],
+)
+
+
+# ============================================================
+# Package publishing
+# ============================================================
+
+prefix_rule(
+    pattern = [package_commands, "publish"],
+    decision = "prompt",
+    justification = "Package publishing creates externally visible releases and requires explicit review.",
+    match = [
+        "npm publish",
+        "pnpm publish",
+    ],
+    not_match = [
+        "npm run build",
+        "pnpm test",
+    ],
+)
+
+
+# ============================================================
+# Supabase: inspection and validation
+# ============================================================
+
+prefix_rule(
+    pattern = [supabase_commands, [
+        "status",
+        "projects",
+        "migration",
+        "inspect",
+        "gen",
+    ]],
+    decision = "allow",
+    justification = "Supabase inspection and code-generation commands are non-destructive development operations.",
+    match = [
+        "supabase status",
+        "supabase projects list",
+        "supabase migration list",
+        "supabase inspect db table-stats",
+        "supabase gen types typescript",
+    ],
+    not_match = [
+        "supabase db reset",
+    ],
+)
+
+prefix_rule(
+    pattern = [supabase_commands, "db", ["diff", "lint"]],
+    decision = "allow",
+    justification = "Schema diff and lint operations inspect or validate database state without intentionally deleting data.",
+    match = [
+        "supabase db diff",
+        "supabase db lint",
+    ],
+    not_match = [
+        "supabase db reset",
+    ],
+)
+
+
+# ============================================================
+# Supabase: destructive operations
+# ============================================================
+
+prefix_rule(
+    pattern = [supabase_commands, "db", "reset"],
+    decision = "prompt",
+    justification = "Database reset deletes data. Inspect schemas and prepare a separately reviewed recovery plan.",
+    match = [
+        "supabase db reset",
+        "supabase.exe db reset --linked",
+    ],
+    not_match = [
+        "supabase db diff",
+        "supabase migration list",
+    ],
+)
+
+
+# ============================================================
+# Vercel: inspection and preview development
+# ============================================================
+
+prefix_rule(
+    pattern = [vercel_commands, [
+        "whoami",
+        "inspect",
+        "list",
+        "ls",
+        "logs",
+        "env",
+    ]],
+    decision = "allow",
+    justification = "Vercel inspection commands are needed for development and deployment diagnosis.",
+    match = [
+        "vercel whoami",
+        "vercel inspect example.vercel.app",
+        "vercel ls",
+        "vercel logs example.vercel.app",
+        "vercel env ls",
+    ],
+    not_match = [
+        "vercel remove project-name",
+        "vercel --prod",
+    ],
+)
+
+prefix_rule(
+    pattern = [vercel_commands],
+    decision = "allow",
+    justification = "Normal Vercel preview deployments are acceptable during development.",
+    match = [
+        "vercel",
+        "vercel deploy",
+    ],
+    not_match = [
+        "vercel --prod",
+        "vercel deploy --prod",
+        "vercel remove project-name",
+    ],
+)
+
+
+# ============================================================
+# Vercel: production deployment and deletion
+# ============================================================
+
+prefix_rule(
+    pattern = [vercel_commands, ["--prod", "--production"]],
+    decision = "prompt",
+    justification = "Production deployments modify the live service and require explicit deployment review.",
+    match = [
+        "vercel --prod",
+        "vercel --production",
+    ],
+    not_match = [
+        "vercel",
+        "vercel inspect example.vercel.app",
+    ],
+)
+
+prefix_rule(
+    pattern = [vercel_commands, "deploy", ["--prod", "--production"]],
+    decision = "prompt",
+    justification = "Production deployments modify the live service and require explicit deployment review.",
+    match = [
+        "vercel deploy --prod",
+        "vercel deploy --production",
+    ],
+    not_match = [
+        "vercel deploy",
+    ],
+)
+
+prefix_rule(
+    pattern = [vercel_commands, ["remove", "rm"]],
+    decision = "prompt",
+    justification = "Removing Vercel projects or deployments is destructive and requires explicit review.",
+    match = [
+        "vercel remove project-name",
+        "vercel rm project-name",
+    ],
+    not_match = [
+        "vercel ls",
+        "vercel inspect example.vercel.app",
+    ],
+)
+
+
+# ============================================================
+# GCP
+# ============================================================
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "iam", "service-accounts", "keys", "create"],
+    decision = "prompt",
+    justification = "Do not create long-lived service-account keys. If GCP is explicitly needed, use restricted ADC per AGENTS.md.",
+    match = [
+        "gcloud iam service-accounts keys create example.json --iam-account=example",
+        "gcloud.cmd iam service-accounts keys create example.json",
+    ],
+    not_match = [
+        "gcloud iam service-accounts list",
+    ],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "run", "deploy"],
+    decision = "prompt",
+    justification = "Confirm the exact project, service, image digest and existing deployment authorization.",
+    match = [
+        "gcloud run deploy line-bot-v1-web --project=example",
+        "gcloud.cmd run deploy line-bot-v1-web",
+    ],
+    not_match = [
+        "gcloud run services describe line-bot-v1-web",
+    ],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "sql", "instances", "delete"],
+    decision = "prompt",
+    justification = "Database deletion requires an exact target and explicit destructive-action authorization.",
+    match = [
+        "gcloud sql instances delete line-bot-v1-db",
+        "gcloud.cmd sql instances delete line-bot-v1-db",
+    ],
+    not_match = [
+        "gcloud sql instances describe line-bot-v1-db",
+    ],
+)
+
+prefix_rule(
+    pattern = [["gcloud", "gcloud.cmd"], "secrets", "versions", "destroy"],
+    decision = "prompt",
+    justification = "Confirm the secret, version and authorization before destroying a secret version.",
+    match = [
+        "gcloud secrets versions destroy 1 --secret=example",
+        "gcloud.cmd secrets versions destroy 1 --secret=example",
+    ],
+    not_match = [
+        "gcloud secrets versions list example",
+    ],
+)
+```
