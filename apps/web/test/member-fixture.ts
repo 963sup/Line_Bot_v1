@@ -8,7 +8,7 @@ import { PostgresExpenseStore } from "@line_bot_v1/expense/adapters/postgres";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresWalletStore } from "@line_bot_v1/wallet/adapters/postgres";
+import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";
 import { idempotencyFixture } from "./idempotency-fixture";
 
