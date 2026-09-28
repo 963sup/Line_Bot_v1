@@ -1,0 +1,88 @@
+name: Validate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.action != 'ready_for_review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: pr-check-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+
+  full-validate:
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'ready_for_review' && github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [tooling, docs, lint, architecture, schema, deadcode, typecheck-test, build]
+    concurrency:
+      group: validation-${{ github.event_name }}-${{ github.ref }}-${{ matrix.group }}
+      cancel-in-progress: true
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Restore group validation cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            .turbo
+            apps/web/.next/cache
+          key: validation-${{ runner.os }}-${{ runner.arch }}-${{ matrix.group }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'turbo.json') }}-${{ github.event.pull_request.head.sha || github.sha }}
+          restore-keys: |
+            validation-${{ runner.os }}-${{ runner.arch }}-${{ matrix.group }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'turbo.json') }}-
+      - name: Validate group
+        env:
+          VALIDATION_GROUP: ${{ matrix.group }}
+        run: pnpm validate --group "$VALIDATION_GROUP"
+
+  validate:
+    needs: full-validate
+    if: always() && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'ready_for_review' && github.event.pull_request.draft == false))
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every validation group to succeed
+        env:
+          RESULT: ${{ needs.full-validate.result }}
+        run: test "$RESULT" = success
