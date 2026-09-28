@@ -13,7 +13,7 @@ import {
   type PermissionCommand,
   PermissionError,
 } from "@line_bot_v1/identity-access/domain/permission";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 
 async function permissionVersion(sql: Sql, userId: string, lock = false): Promise<number> {
   const row = (
