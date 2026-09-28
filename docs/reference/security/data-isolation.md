@@ -10,7 +10,7 @@ Data Boundary 是資料存取與隔離邊界，不等於 Bounded Context 或 Cod
 - Enterprise/Organization governance participation 與 scoped admin relation；remote governance schema 已有指定環境 readback，完整 release/business acceptance 仍另驗。
 - Enterprise Team／EnterpriseTeamMembership／Team → Organization assignment；Organization membership source/provenance 可區分 `direct` 與 `enterprise-team`。
 - Organization Team / TeamMembership / `organization-team`-scoped TeamMaintainer。
-- Attendance current Member-compatible working stream + Workplace eligibility/management scope。
+- Attendance current User stream + Repository member/address eligibility and original session snapshots。
 - Partner directory management/review permissions。
 - Announcement active-human audience + publish permission。
 - Expense owner / stored scope。

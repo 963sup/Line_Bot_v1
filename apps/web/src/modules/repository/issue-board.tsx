@@ -20,6 +20,7 @@ import {
   repositoryIssuesPath,
   repositoryLabelsPath,
   repositoryMilestonesPath,
+  repositorySettingsPath,
 } from "./resource-navigation";
 import styles from "./resource-navigation.module.css";
 
@@ -254,6 +255,12 @@ export default function IssueBoard({
             href={repositoryMilestonesPath(ownerLogin, repositoryName)}
           >
             Milestones
+          </Link>
+          <Link
+            className={styles.resourceLink}
+            href={repositorySettingsPath(ownerLogin, repositoryName)}
+          >
+            Settings
           </Link>
         </nav>
       )}

@@ -1,4 +1,3 @@
-import type { WorkplaceChatInput } from "@line_bot_v1/attendance/domain";
 import {
   type LineWebhookEvent,
   parseLineMessage,
@@ -14,8 +13,6 @@ export type SelectedLineWebhookEvent = {
   agentInput?: string;
   assistant?: AssistantEvent;
   attendanceMenu?: boolean;
-  workplace?: WorkplaceChatInput;
-  eventAt?: number;
 };
 
 export function classifyLineWebhookEvents(
@@ -23,8 +20,6 @@ export function classifyLineWebhookEvents(
   config: {
     testUserId?: string;
     attendanceMenu: boolean;
-    workplaceChat: boolean;
-    workplaceInput?: (text?: string, postback?: string) => WorkplaceChatInput | undefined;
     replyAiTest: boolean;
     replyAgent: boolean;
     replyAssistant: boolean;
@@ -48,43 +43,6 @@ export function classifyLineWebhookEvents(
       "data" in event.postback &&
       event.postback.data === "attendance-menu";
     const { text, imageId, mentionedText, mentioned } = parseLineMessage(event);
-    const postback =
-      event.type === "postback" &&
-      event.postback &&
-      typeof event.postback === "object" &&
-      "data" in event.postback &&
-      typeof event.postback.data === "string"
-        ? event.postback.data
-        : undefined;
-    let workplace =
-      source?.type === "user" && config.workplaceChat
-        ? config.workplaceInput?.(text, postback)
-        : undefined;
-    const message =
-      event.type === "message" && event.message && typeof event.message === "object"
-        ? event.message
-        : undefined;
-    if (
-      source?.type === "user" &&
-      config.workplaceChat &&
-      message &&
-      "type" in message &&
-      message.type === "location" &&
-      "latitude" in message &&
-      "longitude" in message &&
-      typeof message.latitude === "number" &&
-      typeof message.longitude === "number"
-    ) {
-      workplace = {
-        type: "location",
-        latitude: message.latitude,
-        longitude: message.longitude,
-        address: "address" in message && typeof message.address === "string" ? message.address : "",
-      };
-    }
-    if (workplace && (!Number.isSafeInteger(event.timestamp) || Number(event.timestamp) < 0)) {
-      return { selected, senderMismatches, badRequest: true };
-    }
     const ai = text === "/ai-test" && config.replyAiTest;
     const agent = !!text && /^\/agent(?:\s|$)/.test(text) && config.replyAgent;
 
@@ -95,11 +53,10 @@ export function classifyLineWebhookEvents(
       text !== "/ping" &&
       !ai &&
       !agent &&
-      !attendanceMenu &&
-      !workplace;
+      !attendanceMenu;
     const assistant = config.replyAssistant && (!!imageId || mentioned || privateAssistantText);
 
-    if (text !== "/ping" && !ai && !agent && !assistant && !attendanceMenu && !workplace) continue;
+    if (text !== "/ping" && !ai && !agent && !assistant && !attendanceMenu) continue;
 
     if (!source || (config.testUserId && source.userId !== config.testUserId)) {
       senderMismatches++;
@@ -123,8 +80,6 @@ export function classifyLineWebhookEvents(
       userId: source.userId,
       ai,
       attendanceMenu,
-      workplace,
-      eventAt: workplace ? Number(event.timestamp) : undefined,
       agentInput: agent ? text!.slice(6).trim() : undefined,
       assistant: assistant
         ? {

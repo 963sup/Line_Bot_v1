@@ -11,7 +11,6 @@ export class PermissionError extends Error {
 export const permissions = {
   "users.read": "使用者查詢",
   "users.suspend": "使用者停權與解除",
-  "workplaces.manage": "工作地點管理",
   "partners.manage": "合作夥伴管理",
   "partners.review": "推薦審核",
 } as const;
@@ -20,7 +19,6 @@ export type PermissionCommand = {
   requestId: string;
   target: string;
   permission: Permission;
-  workplaceId: string | null;
   enabled: boolean;
   expectedVersion: number;
   reason: string;
@@ -34,15 +32,7 @@ export function parsePermissionCommand(raw: unknown): PermissionCommand {
     Array.isArray(c) ||
     Object.keys(c).some(
       (k) =>
-        ![
-          "requestId",
-          "target",
-          "permission",
-          "workplaceId",
-          "enabled",
-          "expectedVersion",
-          "reason",
-        ].includes(k),
+        !["requestId", "target", "permission", "enabled", "expectedVersion", "reason"].includes(k),
     ) ||
     typeof c.requestId !== "string" ||
     !uuid.test(c.requestId) ||
@@ -51,12 +41,6 @@ export function parsePermissionCommand(raw: unknown): PermissionCommand {
     c.target.length > 128 ||
     typeof c.permission !== "string" ||
     !Object.hasOwn(permissions, c.permission) ||
-    !(
-      c.workplaceId === null ||
-      (c.permission === "workplaces.manage" &&
-        typeof c.workplaceId === "string" &&
-        uuid.test(c.workplaceId))
-    ) ||
     typeof c.enabled !== "boolean" ||
     !Number.isSafeInteger(c.expectedVersion) ||
     c.expectedVersion! < 0 ||

@@ -411,6 +411,8 @@ async function run() {
     await page.goto(`${base}/home`);
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Popular", exact: true })).toBeVisible();
+    await page.getByText("More", { exact: true }).click();
+    await expect(page.getByRole("link", { name: /Admin/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute("href", "/issues");
     await expect(page.getByRole("link", { name: /Discussions/ })).toHaveAttribute(
       "href",

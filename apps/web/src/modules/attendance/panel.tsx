@@ -1,5 +1,6 @@
 "use client";
-import type { AttendanceView, Workplace } from "@line_bot_v1/attendance/domain";
+import type { AttendancePoint } from "@line_bot_v1/attendance/contracts/clock";
+import type { AttendanceView } from "@line_bot_v1/attendance/domain";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -17,7 +18,7 @@ import { attendanceOperationLabels } from "./operation-labels";
 type ResponseData = {
   attendance: AttendanceView;
   version: number;
-  sites: Workplace[];
+  sites: AttendancePoint[];
   replayed?: boolean;
 };
 type Pending = {
@@ -241,7 +242,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
                 {data.sites.map((s) => `${s.name}（${s.radius} 公尺）`).join("、")}。
               </p>
             ) : (
-              <p>打卡地點尚未設定，請聯絡管理者。</p>
+              <p>尚未加入已設定地址的儲存庫，請聯絡儲存庫管理者。</p>
             )}
             <button
               className="attendance-primary"

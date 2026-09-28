@@ -5,7 +5,10 @@ export { transitionIssue } from "./domain/issue/policies/issue-transition.js";
 export { normalizeIssueNumber } from "./domain/issue/value-objects/issue-number.js";
 export { issueText } from "./domain/issue/value-objects/issue-text.js";
 export { normalizeRepositoryMilestoneNumber } from "./domain/milestone/value-objects/milestone-number.js";
-export type { RepositorySummary } from "./domain/repository/entities/repository.js";
+export type {
+  RepositoryAddress,
+  RepositorySummary,
+} from "./domain/repository/entities/repository.js";
 export { RepositoryError } from "./domain/repository/errors/repository-error.js";
 export type { RepositoryCapability } from "./domain/repository/value-objects/repository-capability.js";
 export { normalizeRepositoryName } from "./domain/repository/value-objects/repository-name.js";

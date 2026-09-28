@@ -231,6 +231,48 @@ test("private text is conversational while group text requires a native self men
   assert.deepEqual(inputs, [`user:${tester}|今天幾號`, `group:${groupId}|今天幾號`]);
 });
 
+test("retired workplace chat inputs no longer dispatch location or postback work", async () => {
+  const inputs: string[] = [];
+  let claims = 0;
+  const fixture = idempotencyFixture();
+  const handle = createTestWebhook({
+    idempotency: () => ({
+      claim: async (scope, id) => {
+        claims++;
+        return fixture.claim(scope, id);
+      },
+      complete: fixture.complete,
+    }),
+    channelSecret: secret,
+    testUserId: tester,
+    reply: async () => {},
+    replyAssistant: async (_, assistant) => {
+      inputs.push(assistant.text ?? "");
+    },
+  });
+  await handle(
+    request({
+      events: [
+        { ...event("location"), message: { type: "location", latitude: 25, longitude: 121 } },
+        {
+          ...event("workplace-postback"),
+          type: "postback",
+          postback: { data: "workplace:cancel:old" },
+        },
+      ],
+    }),
+  );
+  assert.equal(claims, 0);
+  await handle(
+    request({
+      events: [
+        { ...event("old-command"), message: { type: "text", text: "新增打卡地點 台北辦公室" } },
+      ],
+    }),
+  );
+  assert.deepEqual(inputs, ["新增打卡地點 台北辦公室"]);
+});
+
 test("raw signature, malformed envelope, signed destination metadata, ignored events and body limit", async () => {
   let calls = 0;
   const idempotency = idempotencyFixture();

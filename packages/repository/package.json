@@ -108,9 +108,21 @@
       "types": "./dist/application/ports/access.d.ts",
       "default": "./dist/application/ports/access.js"
     },
+    "./application/address": {
+      "types": "./dist/application/address.d.ts",
+      "default": "./dist/application/address.js"
+    },
+    "./application/ports/address": {
+      "types": "./dist/application/ports/address.d.ts",
+      "default": "./dist/application/ports/address.js"
+    },
     "./postgres/access-management": {
       "types": "./dist/postgres/access-management.d.ts",
       "default": "./dist/postgres/access-management.js"
+    },
+    "./postgres/address": {
+      "types": "./dist/postgres/address.d.ts",
+      "default": "./dist/postgres/address.js"
     }
   },
   "files": [

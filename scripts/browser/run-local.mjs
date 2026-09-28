@@ -135,7 +135,11 @@ try {
   );
   await command([path.join(root, "scripts/browser/check-membership.mjs")], root, "membership.log");
   await command([path.join(root, "scripts/browser/check-auto-clock.mjs")], root, "auto-clock.log");
-  await command([path.join(root, "scripts/browser/check-workplaces.mjs")], root, "workplaces.log");
+  await command(
+    [path.join(root, "scripts/browser/check-repository-address.mjs")],
+    root,
+    "repository-address.log",
+  );
   await command(
     [path.join(root, "scripts/browser/check-partner-management.mjs")],
     root,

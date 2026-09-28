@@ -42,6 +42,13 @@ export default function SettingsPage() {
           title="Permissions"
           description="查看自己的功能與管理範圍"
         />
+        <ActionRow
+          href="/settings/users"
+          icon="♙"
+          tone="orange"
+          title="User Management"
+          description="查詢 User 狀態與處理停權"
+        />
       </div>
     </AppShell>
   );

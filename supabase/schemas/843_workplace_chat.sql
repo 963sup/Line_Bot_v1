@@ -1,3 +1,4 @@
+-- Retired operational surface. Retained data only; no runtime read/write grants.
 -- Workplace chat draft/event state.
 
 create table app_private."workplace_chat_drafts" (
@@ -8,7 +9,6 @@ create table app_private."workplace_chat_drafts" (
 );
 alter table app_private."workplace_chat_drafts" enable row level security;
 revoke all on app_private."workplace_chat_drafts" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private."workplace_chat_drafts" to line_app;
 create policy "backend" on app_private."workplace_chat_drafts" as permissive for all to "line_app" using (true) with check (true);
 
 create table app_private."workplace_chat_events" (
@@ -21,5 +21,4 @@ create table app_private."workplace_chat_events" (
 );
 alter table app_private."workplace_chat_events" enable row level security;
 revoke all on app_private."workplace_chat_events" from public, anon, authenticated, line_app;
-grant insert, select on app_private."workplace_chat_events" to line_app;
 create policy "backend" on app_private."workplace_chat_events" as permissive for all to "line_app" using (true) with check (true);

@@ -12,6 +12,7 @@ import {
   repositoryLabelsPath,
   repositoryMilestonesPath,
   repositoryPath,
+  repositorySettingsPath,
 } from "./resource-navigation";
 import styles from "./resource-navigation.module.css";
 import {
@@ -52,6 +53,7 @@ export default function RepositoryResourcesPanel({
   const discussionsHref = repositoryDiscussionsPath(ownerLogin, repositoryName);
   const labelsHref = repositoryLabelsPath(ownerLogin, repositoryName);
   const milestonesHref = repositoryMilestonesPath(ownerLogin, repositoryName);
+  const settingsHref = repositorySettingsPath(ownerLogin, repositoryName);
 
   const clear = useCallback(() => {
     generation.current++;
@@ -185,6 +187,9 @@ export default function RepositoryResourcesPanel({
           aria-current={kind.startsWith("milestone") ? "page" : undefined}
         >
           Milestones
+        </Link>
+        <Link className={styles.resourceLink} href={settingsHref}>
+          Settings
         </Link>
       </nav>
       <MiniAppRuntime

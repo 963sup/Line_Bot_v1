@@ -36,18 +36,16 @@ Attendance 決定：
 
 Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只投影 balance。[DailyCheckIn](../../owners/daily-check-in.md) 是獨立的每日簽到 owner；既有 source context/type 的相容與保留規則由該 owner 維護，不因更名重寫 persisted literal。Attendance reward 與薪資無關。
 
-## Workplace eligibility
+## Repository address eligibility
 
-Clock command 需要目前 active Member、可用 Workplace membership 與定位證據。
+儲存庫可設定一個地址屬性（地址文字、經緯度、打卡半徑）；該屬性就是打卡點，不另外建立地點或地點人員名單。
 
-- Workplace 可有多位 Member；Member 可有多個允許地點。
-- 上／下班都可在本人任一獲准且 active 的 Workplace 完成。
-- Server 以 Haversine distance + reported accuracy 驗證半徑；多個符合地點取最近者，同距離按 stable ID。
-- 沒有獲准地點、定位失敗或越界時拒絕寫入。
+- 上班需要 active User、current effective Repository access 與有效地址。Direct User 或同 owner scope Team grant 沿用 Repository 現行資格投影；公開可見、Star 不算成員。
+- 上班符合多個地址時取最近者，同距離依 stable Repository ID；distance + accuracy 必須在 radius 內。
+- 下班只驗本人 open session 的原始地址快照；移除成員或變更地址不阻擋正常下班，仍保留定位與半徑核驗。
+- 新 session 保存 Repository ID 與 immutable point snapshot；地址修改或移除不改寫歷史。
+- 切換前 open session 沿用其既有 clock-in event 的 site evidence，不猜測 Repository 對應、不回填成員權限。缺少原始證據時明確回報資料問題。
 - 只在明確 attendance intent 後取得定位，不背景追蹤。
-- 成功事件保存當時 workplace ID/version/name/geometry/radius evidence；目前地點設定不能改寫歷史證據。
-
-Workplace management permission 不等於本人打卡資格；WorkGroup role、LINE groupId 也不授予 workplace access。
 
 ## Lightweight clock entry
 
@@ -75,30 +73,6 @@ LINE alias、Messaging API retry 技術細節由 LINE integration / operations o
 
 目前保存真實起訖與分鐘級資料，但尚未具備完整排班、休息、例假、加班核定、可稽核更正與 production retention/recovery 證據，因此不能宣稱為完整法定工時／算薪系統。Workforce 方向與缺口見 [Workforce gaps](../../change/gaps/workforce.md)。
 
-## Workplace chat flow
+## Retained pre-cutover data
 
-本流程讓具全域 `workplaces.manage` 權限的管理者透過 LINE 私聊建立打卡地點。它是 Attendance / Workplace 業務流程；LINE adapter 只提供訊息、location event 與 reply transport。
-
-## Flow
-
-1. 管理者以明確指令開始新增地點並提供名稱。
-2. 使用 LINE 原生 location action 選擇位置。
-3. 選擇 50 / 100 / 200 公尺或輸入合法半徑。
-4. 顯示確認內容。
-5. 只有明確確認時才建立正式 Workplace。
-
-新增成功不自動讓任何 human subject 取得可打卡資格；Workplace eligibility 必須另行配置。
-
-## Lifecycle
-
-同一 current human actor 同時最多一個進行中 flow。Flow 約 15 分鐘有效，可以取消、重新選點，或透過明確恢復指令回到最新合法步驟。15 分鐘是操作有效期，不是 audit/event retention policy。
-
-## Durable behavior
-
-Draft/event state 位於 private persistence。Versioned interaction 拒絕舊 button/stale step；event receipt 支援 transport replay protection。
-
-最終確認沿用正式 Workplace command，Workplace 建立與 flow result 在同一 authoritative transaction 提交。LINE reply 在 transaction 外：reply failure 不回滾已建立的 Workplace，也不自動改用另一種 side effect。
-
-## Location semantics
-
-LINE location event 只代表管理者選擇 Workplace 座標，不是某員工實際到場的 GPS attendance evidence。Attendance clock operation 仍須在本人明確打卡時取得並驗證定位。
+原 workplaces、workplace_members、workplace_commands、workplace_chat_drafts、workplace_chat_events 保留資料，但撤銷 runtime 存取權。新流程不讀寫這些表，不接受原工作地點管理 API 或 LINE 建點指令。資料處置及舊地點對應儲存庫需獨立、明確的資料授權，不能由 schema deployment 猜測。

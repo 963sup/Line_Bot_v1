@@ -24,8 +24,8 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Attendance | attendance | authoritative | current | Actual attendance lifecycle, workplace eligibility, and attendance facts. |
-| Workplace | workplace | authoritative | current | Attendance-owned place and eligibility context. |
+| Attendance | attendance | authoritative | current | Actual attendance lifecycle, Repository-member clock eligibility, immutable address snapshots and attendance facts. |
+| Workplace | workplace | authoritative | current-data-only | Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository address properties. |
 
 ## Capabilities
 
@@ -40,7 +40,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | consumes | account | stable-identity+query | account | current-state | Qualified User/current subject. |
 | consumes | asset | stable-identity | asset | current-identity | Attendance references the Asset-owned reward identity when posting attendance rewards. |
 | provides | ledger | command | attendance | atomic-where-required | Authorized attendance reward decision. |
-| consumes | identity-access | query | identity-access | current-state | Attendance consumes the current workplaces.manage permission decision for Workplace management. |
+| consumes | repository | query | repository | current-state | Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal. |
 
 ## Tactical Model Boundary
 

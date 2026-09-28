@@ -4,7 +4,6 @@ export type EntryRoute =
   | "team"
   | "organizations"
   | "enterprises"
-  | "workplaces"
   | "notifications"
   | "register"
   | "restore"
@@ -35,7 +34,6 @@ export function entryRoute(href: string): EntryRoute {
   )
     return "invalid";
   const names = [
-    "workplaces",
     "planned",
     "team",
     "organizations",
@@ -70,7 +68,6 @@ export function entryRoute(href: string): EntryRoute {
   if (url.searchParams.has("profile"))
     return url.searchParams.get("profile") === "1" ? "profile" : "invalid";
   for (const page of [
-    "workplaces",
     "planned",
     "team",
     "organizations",
@@ -117,7 +114,6 @@ export function entryReturnUrl(href: string) {
   )
     target.searchParams.set("partnerView", partnerView);
   for (const key of [
-    "workplaces",
     "planned",
     "team",
     "organizations",

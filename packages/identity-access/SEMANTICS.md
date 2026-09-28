@@ -35,7 +35,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | IdentityAccess consumes current User identity, qualification and status version when evaluating permissions and RoleAssignments. |
-| provides | attendance | query | identity-access | current-state | Attendance consumes the current workplaces.manage permission decision for Workplace management. |
 | provides | audit | query | identity-access | current-state | Audit reads a minimal governance event projection for an exact active Enterprise or Organization scope after current owner authorization; no private history access or source-object authority transfers. |
 | provides | enterprise | query | identity-access | current-state | Enterprise governance consumes current EnterpriseOwner authorization and verified governance actor decisions. |
 | provides | organization | query | identity-access | current-state | Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions. |

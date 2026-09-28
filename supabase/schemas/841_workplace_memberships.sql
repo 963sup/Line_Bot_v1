@@ -1,3 +1,4 @@
+-- Retired operational surface. Retained data only; no runtime read/write grants.
 -- Workplace membership relationship.
 
 create table app_private."workplace_members" (
@@ -10,5 +11,4 @@ create table app_private."workplace_members" (
 CREATE INDEX workplace_members_member ON app_private.workplace_members USING btree (member_id, workplace_id);
 alter table app_private."workplace_members" enable row level security;
 revoke all on app_private."workplace_members" from public, anon, authenticated, line_app;
-grant delete, insert, select on app_private."workplace_members" to line_app;
 create policy "backend" on app_private."workplace_members" as permissive for all to "line_app" using (true) with check (true);

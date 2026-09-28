@@ -1,3 +1,4 @@
+-- Retired operational surface. Retained data only; no runtime read/write grants.
 -- Workplace aggregate root.
 
 -- 工作地點、允許人員與聊天建立流程。依賴：membership。
@@ -22,5 +23,4 @@ create table app_private."workplaces" (
 );
 alter table app_private."workplaces" enable row level security;
 revoke all on app_private."workplaces" from public, anon, authenticated, line_app;
-grant insert, select, update on app_private."workplaces" to line_app;
 create policy "backend" on app_private."workplaces" as permissive for all to "line_app" using (true) with check (true);

@@ -34,8 +34,7 @@ test("permission pending operation remains owner-scoped and mismatch clears stor
   const command: PermissionCommand = {
     requestId: "request-1",
     target: "user-2",
-    permission: "workplaces.manage",
-    workplaceId: null,
+    permission: "users.read",
     enabled: true,
     expectedVersion: 3,
     reason: "characterization",

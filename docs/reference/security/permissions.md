@@ -10,21 +10,22 @@
 | --- | --- |
 | `users.read` | User 管理查詢 |
 | `users.suspend` | User 管理停權與解除 |
-| `workplaces.manage` | 工作地點管理 |
 | `partners.manage` | 合作夥伴管理 |
 | `partners.review` | 推薦審核 |
 
 `members.read`／`members.suspend` 已退出 current contract，且 persistence 不再接受 legacy alias。`permission_grants` 與 `permission_administrators` 使用 `user_id` / `user_version`，Permission source、public contract 與 database constraint 使用同一組名稱，不設 dual-write、compatibility view 或 adapter mapping。
 
+`workplaces.manage` 已退出 runtime catalog；舊 enum/grant scope 僅為保留資料，RLS 不允許 runtime 讀寫舊授權。Repository 地址由 effective Repository admin 管理。
+
 沒有列在 current catalog 的能力，不因頁面、選單或 target 文件存在而自動成為 feature permission。
 ## 授權來源
 `permission_grants` 是上述已實作 feature permissions 的授權來源。有效 grant 綁定 current User status version；User state 變更後舊 grant 不能在恢復 active 時自動復活。
 
-`permission_administrators` 保存受控 permission administrator。TeamMaintainer、OrganizationAdmin、Workplace manager、Partner reviewer 等角色／能力彼此不互推。
+`permission_administrators` 保存受控 permission administrator。TeamMaintainer、OrganizationAdmin、Partner reviewer 等角色／能力彼此不互推。
 ## 權限變更命令
-正式 permission mutation 包含 `requestId`、target UserId、permission、可空 workplace scope、enable/disable、`expectedVersion` 與必填 reason。Public projection 使用 `userId`，不以 `memberId` 表示登入主體。
+正式 permission mutation 包含 `requestId`、target UserId、permission、enable/disable、`expectedVersion` 與必填 reason。Public projection 使用 `userId`，不以 `memberId` 表示登入主體。
 
-只有 `workplaces.manage` 可以帶 workplace scope；permission mutation 保留 version conflict、防重與 reason，不能用 client role／按鈕／URL 判定授權。Permission administrator 不能透過此流程修改自己的業務權限。
+permission mutation 保留 version conflict、防重與 reason，不能用 client role／按鈕／URL 判定授權。Permission administrator 不能透過此流程修改自己的業務權限。
 ## 使用原則
 - 頁面可見不等於 API 可用；每個受保護 read/write 仍獨立驗證。
 - `users.read` 不自動包含 `users.suspend`；`partners.manage` 與 `partners.review` 分開。
@@ -45,7 +46,7 @@ Authorization 是每個受保護 request / command 的 server-side 決策，不�
 1. verified actor identity
 2. current User qualification
 3. required business role / permission
-4. owner / team / project / workplace 等資料 scope
+4. owner / team / project / repository 等資料 scope
 5. command-specific state / version requirements
 
 不同 lifecycle 有不同 qualification。例如 registration、pending restore、active daily operation、admin operation 不應被一個通用 active gate 偷換語意。

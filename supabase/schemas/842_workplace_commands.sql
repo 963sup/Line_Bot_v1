@@ -1,3 +1,4 @@
+-- Retired operational surface. Retained data only; no runtime read/write grants.
 -- Workplace command receipts.
 
 create table app_private."workplace_commands" (
@@ -14,5 +15,4 @@ create table app_private."workplace_commands" (
 CREATE INDEX workplace_commands_site ON app_private.workplace_commands USING btree (workplace_id, at);
 alter table app_private."workplace_commands" enable row level security;
 revoke all on app_private."workplace_commands" from public, anon, authenticated, line_app;
-grant insert, select on app_private."workplace_commands" to line_app;
 create policy "backend" on app_private."workplace_commands" as permissive for all to "line_app" using (true) with check (true);

@@ -6,6 +6,10 @@ export function repositoryAccessPath(ownerLogin: string, repositoryName: string)
   return `${repositoryPath(ownerLogin, repositoryName)}/access`;
 }
 
+export function repositorySettingsPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/settings`;
+}
+
 export function repositoryIssuesPath(ownerLogin: string, repositoryName: string) {
   return `${repositoryPath(ownerLogin, repositoryName)}/issues`;
 }

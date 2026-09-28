@@ -3,21 +3,31 @@ import type {
   AttendanceRecordView,
   AttendanceView,
   MenuState,
-  Workplace,
 } from "../domain.js";
 
+/** Immutable attendance projection of the Repository address used for this session. */
+export type AttendancePoint = {
+  id: string;
+  repositoryId: string | null;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  version: number;
+};
 export type AttendanceInput = { requestId: string; expectedVersion: number; location: unknown };
 export type AttendanceSnapshot = {
   attendance: AttendanceView;
   version: number;
-  sites: Workplace[];
+  sites: AttendancePoint[];
 };
 export type AttendanceResult = AttendanceSnapshot & { credited: number; replayed: boolean };
 export interface AttendanceStore {
   prepare(
     memberId: string,
     now: number,
-  ): Promise<{ version: number; working: boolean; sites: Workplace[] }>;
+  ): Promise<{ version: number; working: boolean; sites: AttendancePoint[] }>;
   snapshot(memberId: string, now: number): Promise<AttendanceSnapshot>;
   execute(
     memberId: string,

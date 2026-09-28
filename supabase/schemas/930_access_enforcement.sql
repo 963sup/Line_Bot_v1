@@ -127,9 +127,6 @@ revoke all on app_private.attendance_identity_bindings from public, anon, authen
 grant select on app_private.attendance_identity_bindings to line_app;
 
 
-revoke all on app_private.permission_workplace_targets
-  from public, anon, authenticated, line_app;
-grant select on app_private.permission_workplace_targets to line_app;
 
 
 revoke all on app_private.user_management_activity

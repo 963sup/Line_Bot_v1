@@ -59,8 +59,6 @@ await context.route("**/*", async (route) => {
           ? [
               {
                 permission: c.permission,
-                workplaceId: c.workplaceId,
-                workplaceName: c.workplaceId ? "A 工地" : null,
                 effective: true,
               },
             ]
@@ -93,12 +91,11 @@ await context.route("**/*", async (route) => {
   return route.continue();
 });
 try {
-  await page.goto(new URL("/admin/permissions", target).href);
+  await page.goto(new URL("/settings/permissions", target).href);
   await page.getByLabel("使用者 ID", { exact: true }).fill("worker");
   await page.getByRole("button", { name: "查詢使用者權限" }).click();
   await expect(page.getByRole("heading", { name: "使用者 worker", exact: true })).toBeVisible();
-  await page.getByLabel("指定地點編號").fill("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-  await page.getByLabel("原因", { exact: true }).fill("負責 A 工地人員與地點");
+  await page.getByLabel("原因", { exact: true }).fill("負責使用者查詢");
   await expect(page.getByRole("button", { name: "確認變更" })).toBeDisabled();
   await page.getByLabel("我已核對使用者、功能與範圍").check();
   lose = true;
@@ -111,11 +108,15 @@ try {
   assert.equal(posts.length, 2);
   assert.deepEqual(posts[0], posts[1]);
   assert.equal(receipts.size, 1);
-  await expect(page.getByRole("listitem").filter({ hasText: "A 工地" })).toBeVisible();
+  await expect(
+    page
+      .getByRole("heading", { name: "使用者 worker", exact: true })
+      .locator("..")
+      .getByRole("listitem"),
+  ).toHaveCount(1);
   if (output) await page.screenshot({ path: path.join(output, "permissions.png"), fullPage: true });
-  await page.getByLabel("指定地點編號").fill("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
   await page.getByLabel("操作", { exact: true }).selectOption("revoke");
-  await page.getByLabel("原因", { exact: true }).fill("調離地點");
+  await page.getByLabel("原因", { exact: true }).fill("調整管理責任");
   await page.getByLabel("我已核對使用者、功能與範圍").check();
   await page.getByRole("button", { name: "確認變更" }).click();
   await expect(page.getByText("尚無業務管理權限。", { exact: true })).toBeVisible();
@@ -131,10 +132,10 @@ try {
   await page.getByRole("button", { name: "重新載入", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("沒有權限管理資格");
   await expect(page.getByRole("heading", { name: "使用者 admin", exact: true })).toHaveCount(0);
-  await page.goto(new URL("/admin", target).href);
-  await expect(page.getByRole("link", { name: "我的權限" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^權限管理/ })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /^工作地點/ })).toHaveCount(0);
+  await page.goto(new URL("/settings/permissions", target).href);
+  await expect(page.getByRole("heading", { name: "權限", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "使用者 admin", exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("我的權限")).toBeVisible();
   assert.equal(posts.length, before);
   assert.deepEqual(errors, []);
   if (output) {
@@ -146,12 +147,12 @@ try {
           status: "passed",
           checks: [
             "explicit confirmation",
-            "scoped grant",
+            "grant",
             "persistent identical retry",
             "revoke",
             "self change denied",
             "account change clears data",
-            "navigation by permission",
+            "integrated own permission view",
           ],
           posts: posts.length,
         },

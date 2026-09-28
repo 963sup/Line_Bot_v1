@@ -997,14 +997,6 @@
       "participants": ["account", "attendance"]
     },
     {
-      "name": "permission_workplace_targets",
-      "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
-      "authority": false,
-      "role": "derived-projection",
-      "participants": ["attendance", "identity-access"]
-    },
-    {
       "name": "user_management_activity",
       "kind": "view",
       "path": "supabase/schemas/900_cross_owner_projections.sql",

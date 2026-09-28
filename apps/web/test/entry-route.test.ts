@@ -9,7 +9,6 @@ import {
 
 test("every published operation survives LINE login and resolves to the canonical product page", () => {
   const destinations = {
-    workplaces: "/admin/workplaces",
     home: "/home",
     repositories: "/repositories",
     partners: "/partners",
@@ -46,6 +45,8 @@ test("primary LIFF redirect waits; restored intent selects only explicit operati
   assert.equal(entryRoute("https://example.com/expenses"), "home");
   assert.equal(entryRoute("https://example.com/expenses?membership=1"), "membership");
   assert.equal(entryRoute("https://example.com/?attendance=1"), "attendance");
+  assert.equal(entryRoute("https://example.com/?workplaces=1"), "home");
+  assert.equal(loginReturnUrl("https://example.com/?workplaces=1"), "https://example.com/");
   for (const route of [
     "repositories",
     "partners",

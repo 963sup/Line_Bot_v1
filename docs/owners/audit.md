@@ -28,4 +28,4 @@ Audit 並非自動永久保存。期限、撤銷、備份與 recovery 行為由 
 
 `limit` defaults to 50 (1–100); `before` uses the previous response `next` cursor. Ordering is server time then bigint event identity, descending. Events expose actor/target identifiers, action, request identity, time and structured outcome/version; free-text reason, request fingerprint and raw result payload remain private. The request identity links existing immutable command evidence without duplicating it.
 
-The API is read-only; `/admin/audit` remains unavailable. Source events remain Identity/Access-owned; Audit does not gain persistence or source-object authorization. Deployment and device acceptance require separate evidence.
+The API is read-only; the retired Admin audit placeholder has been removed; no global audit UI is asserted. Source events remain Identity/Access-owned; Audit does not gain persistence or source-object authorization. Deployment and device acceptance require separate evidence.

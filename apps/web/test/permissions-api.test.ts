@@ -63,8 +63,7 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
     const command = {
       requestId: randomUUID(),
       target: "target",
-      permission: "workplaces.manage",
-      workplaceId: null,
+      permission: "users.read",
       enabled: true,
       expectedVersion: 0,
       reason: "授權",

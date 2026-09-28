@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClockAttendance } from "../src/application/clock.js";
-import { createWorkplaces } from "../src/application/workplaces.js";
 import type { AttendanceDependencies } from "../src/contracts/clock.js";
 
 test("only two commands use verified actor, provider and server time/site; inactive is rejected", async () => {
@@ -51,32 +50,4 @@ test("only two commands use verified actor, provider and server time/site; inact
   for (const action of ["clockIn", "clockOut"] as const)
     await assert.rejects(api[action]("verified", input), /inactive/);
   await assert.rejects(api.get("verified"), /inactive/);
-});
-
-test("workplace read resolves the active member once and returns its stable ID with the page", async () => {
-  let activeCalls = 0;
-  const workplaces = createWorkplaces({
-    activeUser: async (subject) => {
-      assert.equal(subject, "verified");
-      activeCalls++;
-      return { id: "member" };
-    },
-    store: () => ({
-      read: async (actor, id, after) => {
-        assert.deepEqual([actor, id, after], ["member", "", ""]);
-        return { canCreate: true, sites: [], members: [], next: null };
-      },
-      change: async () => ({ id: "unused", version: 1 }),
-    }),
-    now: () => 0,
-  });
-
-  assert.deepEqual(await workplaces.read("verified"), {
-    memberId: "member",
-    canCreate: true,
-    sites: [],
-    members: [],
-    next: null,
-  });
-  assert.equal(activeCalls, 1);
 });

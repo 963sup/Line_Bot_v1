@@ -5,7 +5,7 @@
 
 Current URL：`/expenses`；API `/api/expenses/{id}`。FPT 無本產品 Expense 直接等價 owner；不要映射為 GitHub billing。
 
-`/admin/expenses` 是未開放頁面，不宣稱已具備 Expense 管理查詢。保留 receipt intent、revision/conflict 與 unknown result；confirmed Expense 不等於付款、核准或正式會計入帳。
+Expense 跨使用者管理查詢尚未實作；原 Admin 空頁已移除。保留 receipt intent、revision/conflict 與 unknown result；confirmed Expense 不等於付款、核准或正式會計入帳。
 
 - Owns expense and receipt presentation; Expense owner controls receipt intent, recognition confidence, revision and final command.
 - AI recognition is a draft/read result; UI confirmation must still invoke owner authorization and transactional revision checks.

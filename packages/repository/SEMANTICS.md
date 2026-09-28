@@ -29,7 +29,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Issue | issue | authoritative | current | Repository-scoped work item with its own lifecycle and responsibility chain. |
 | Label | repository-label | authoritative | current | Repository-owned classification metadata. |
 | Milestone | repository-milestone | authoritative | current | Repository-scoped goal or checkpoint for work. |
-| Repository | repository | authoritative | current | Independently owned work container with content, access, state, and lifecycle. |
+| Repository | repository | authoritative | current | Independently owned work container with content, access, state, and lifecycle. Its optional address property is the clock point for current effective members. |
 | Repository Star List | repository-star-list | authoritative | current | User-owned curated List whose membership references that User's current Repository stars; List membership never grants Repository access. |
 | Repository Star List Item | repository-star-list-item | authoritative | current | Repository-owned List membership that references one Repository through the List owner's current Star relationship. |
 
@@ -42,6 +42,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | manage-issues | required | implemented | Manage Repository-scoped Issue lifecycle and commands. |
 | manage-repository | not-asserted |  | Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management. |
 | manage-repository-access | required | implemented | Manage Repository-owned direct User and Organization Team access grants with current qualification, replay safety and recoverable admin authority. |
+| manage-repository-address | required | implemented | Maintain the Repository address property used as the attendance clock point for current effective members. |
 | manage-repository-labels | not-asserted | data-only | Preserve Repository Label create/update/delete semantics as current data without asserting runtime management. |
 | manage-repository-milestones | not-asserted | data-only | Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management. |
 | manage-repository-star-lists | required | implemented | Manage replay-safe User curated Lists over the User's current Repository stars. |
@@ -62,6 +63,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | consumes | organization | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and effective participation when resolving access. |
 | provides | project | reference | repository | current-access-and-identity | Project Item references Repository-owned Issue; Project metadata cannot rewrite Issue state. |
 | provides | project | reference | repository | current-identity | Project references Repository without acquiring Repository authority. |
+| provides | attendance | query | repository | current-state | Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal. |
 
 ## Tactical Model Boundary
 

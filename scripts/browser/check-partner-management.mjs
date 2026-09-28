@@ -77,6 +77,11 @@ await context.route("**/*", async (route) => {
       }
       return route.fulfill({ json: result });
     }
+    if (url.searchParams.get("view") === "directory") {
+      return route.fulfill({
+        json: { userId, canReview: false, news: [], referrals: [], partners: [], next: null },
+      });
+    }
     assert.equal(url.searchParams.get("view"), "manage");
     if (pending) {
       const resolve = pending;
@@ -125,7 +130,7 @@ await context.route("**/*", async (route) => {
   return route.continue();
 });
 try {
-  await page.goto(target.origin + "/admin/groups");
+  await page.goto(target.origin + "/partners/manage");
   await expect(page.getByRole("heading", { name: "測試合作夥伴（已下架）" })).toBeVisible();
   await page.getByText("窗口與聯繫方式（1）", { exact: true }).click();
   await expect(page.getByText("test-contact", { exact: true })).toBeVisible();
@@ -226,8 +231,9 @@ try {
       path: path.join(output, "partner-management-desktop.png"),
       fullPage: true,
     });
-  await page.getByRole("link", { name: "← 返回", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "管理後台" })).toBeVisible();
+  await page.getByRole("link", { name: /返回$/ }).click();
+  await expect(page.getByRole("heading", { name: "合作夥伴", exact: true })).toBeVisible();
+  await expect(page.getByText("目前沒有已發布的合作夥伴。", { exact: true })).toBeVisible();
   assert.deepEqual(errors, []);
   console.log(
     "Partner management browser: details, pagination, denial, retry, changed identity and return passed.",

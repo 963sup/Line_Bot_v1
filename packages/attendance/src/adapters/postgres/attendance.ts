@@ -3,10 +3,12 @@ import { hasUserIdentity, readUserQualification } from "@line_bot_v1/account/pos
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { repositoryAttendanceSites } from "@line_bot_v1/repository/postgres/address";
 import type {
   AttendanceInput,
   AttendanceMenuJob,
   AttendanceNotificationJob,
+  AttendancePoint,
   AttendanceResult,
   AttendanceSnapshot,
   AttendanceStore,
@@ -23,7 +25,6 @@ import {
   parseLocation,
   planAttendance,
 } from "../../domain.js";
-import { workplaceSites } from "./workplaces.js";
 
 const session = (r: Record<string, any>): AttendanceSession => ({
   id: r.id,
@@ -86,6 +87,8 @@ export class PostgresAttendanceStore implements AttendanceStore {
   }
 
   private async lock(sql: Sql, id: string, now: number) {
+    // Acquire before the User row, matching membership/access and address writers.
+    await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
     const m = await readUserQualification(sql, id, "update");
     if (!m || m.status !== "active") {
       throw new AttendanceError(
@@ -117,6 +120,36 @@ export class PostgresAttendanceStore implements AttendanceStore {
     ).rows.map(session);
   }
 
+  private async sites(sql: Sql, id: string): Promise<AttendancePoint[]> {
+    const active = (
+      await sql.query(
+        `SELECT s.id,s.point_snapshot,e.details->'site' AS historical_point
+       FROM attendance_sessions s
+       LEFT JOIN LATERAL (
+         SELECT details FROM attendance_events
+         WHERE uid=s.uid AND command='clockIn' AND details->>'recordId'=s.id::text
+         ORDER BY at,id LIMIT 1
+       ) e ON true
+       WHERE s.uid=$1 AND s.ended_at IS NULL`,
+        [id],
+      )
+    ).rows[0];
+    if (active) {
+      if (active.point_snapshot) return [active.point_snapshot as AttendancePoint];
+      // Pre-cutover sessions already own their original location in their clock-in event.
+      // Read that evidence, never infer a Repository or current membership from old names.
+      const point = active.historical_point;
+      if (!point) throw new AttendanceError(409, "此筆出勤缺少原始打卡點紀錄，請聯絡服務維護者。");
+      return [
+        { ...point, repositoryId: null, address: point.description ?? "" } as AttendancePoint,
+      ];
+    }
+    return (await repositoryAttendanceSites(sql, id)).map((point) => ({
+      ...point,
+      repositoryId: point.id,
+    }));
+  }
+
   private async view(sql: Sql, id: string, now: number): Promise<AttendanceSnapshot> {
     const attendance = attendanceView(await this.records(sql, id, now), now);
     const version = Number(
@@ -128,7 +161,7 @@ export class PostgresAttendanceStore implements AttendanceStore {
        WHERE attendance_menu_outbox.state<>EXCLUDED.state`,
       [id, attendance.menuState, version, now],
     );
-    return { attendance, version, sites: await workplaceSites(sql, id) };
+    return { attendance, version, sites: await this.sites(sql, id) };
   }
 
   snapshot(id: string, now: number) {
@@ -145,7 +178,7 @@ export class PostgresAttendanceStore implements AttendanceStore {
         "SELECT id FROM attendance_sessions WHERE uid=$1 AND ended_at IS NULL",
         [id],
       );
-      return { version, working: active.rows.length > 0, sites: await workplaceSites(sql, id) };
+      return { version, working: active.rows.length > 0, sites: await this.sites(sql, id) };
     });
   }
 
@@ -181,13 +214,23 @@ export class PostgresAttendanceStore implements AttendanceStore {
       if (old) {
         if (old.fingerprint !== fingerprint)
           throw new AttendanceError(409, "請求編號已用於不同操作。");
-        return { ...old.result, credited: 0, replayed: true } as AttendanceResult;
+        return {
+          ...old.result,
+          sites: old.result.sites.map((point: AttendancePoint & { description?: string }) => ({
+            ...point,
+            repositoryId: point.repositoryId ?? null,
+            address: point.address ?? point.description ?? "",
+          })),
+          credited: 0,
+          replayed: true,
+        } as AttendanceResult;
       }
       if (version !== input.expectedVersion)
         throw new AttendanceError(409, "出勤狀態已變更，請重新整理後確認。");
-      const sites = await workplaceSites(sql, id);
+      const plan = planAttendance(await this.records(sql, id, now), action, now);
+      const sites = await this.sites(sql, id);
       if (!sites.length)
-        throw new AttendanceError(403, "尚未加入任何啟用的打卡地點，請聯絡管理者。");
+        throw new AttendanceError(403, "尚未加入已設定地址的儲存庫，請聯絡儲存庫管理者。");
       if (sites.every((s) => location.accuracy > s.radius)) {
         throw new AttendanceError(422, "定位精度不足，請移至訊號良好處再試。");
       }
@@ -199,15 +242,14 @@ export class PostgresAttendanceStore implements AttendanceStore {
         )[0];
       if (!site) throw new AttendanceError(422, "目前位置或定位誤差超出獲准地點的打卡範圍。");
       const distance = attendanceDistance(location, site);
-      const plan = planAttendance(await this.records(sql, id, now), action, now);
       let recordId: string;
       let day: string;
       if (plan.start) {
         recordId = randomUUID();
         day = plan.start.day;
         await sql.query(
-          "INSERT INTO attendance_sessions(id,uid,day,started_at,rule_version) VALUES($1,$2,$3,$4,$5)",
-          [recordId, id, day, now, plan.start.ruleVersion],
+          "INSERT INTO attendance_sessions(id,uid,day,started_at,rule_version,repository_id,point_snapshot) VALUES($1,$2,$3,$4,$5,$6,$7)",
+          [recordId, id, day, now, plan.start.ruleVersion, site.repositoryId, JSON.stringify(site)],
         );
       } else {
         recordId = plan.end.id;

@@ -58,9 +58,9 @@
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/account",
         "@line_bot_v1/asset",
-        "@line_bot_v1/identity-access",
         "@line_bot_v1/ledger",
-        "@line_bot_v1/platform"
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository"
       ]
     },
     "@line_bot_v1/daily-check-in": {

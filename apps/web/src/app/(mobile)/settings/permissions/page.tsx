@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   return (
     <AppShell navigation="secondary">
-      <PermissionsPanel liffId={lineMiniApp().liffId} />
+      <PermissionsPanel liffId={lineMiniApp().liffId} manage />
     </AppShell>
   );
 }

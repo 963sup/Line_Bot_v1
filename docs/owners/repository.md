@@ -6,6 +6,7 @@ Read this file for Repository ownership and invariants. Load [detailed reference
 
 Repository owns:
 
+- Optional address property (address text, coordinates, radius), also the clock point for effective members;
 - Repository identity、visibility、Direct User / Organization Team access grants and User → Repository Star；
 - Repository Star List / List membership；
 - Issue lifecycle、assignment、Label、Repository Milestone、command receipt and event history；
@@ -15,6 +16,8 @@ Repository owns:
 Project may reference Repository work but does not acquire Issue/Discussion authority. Notifications only stores delivery references and does not acquire source truth.
 
 ## Invariants
+
+- Address mutation requires current effective Repository `admin`, expected version and exact replay. Public visibility and Star do not grant clock eligibility. Address deletion does not rewrite Attendance snapshots.
 
 - Every Issue and Discussion belongs to exactly one Repository.
 - Issue、Discussion、Notification are distinct concepts; conversation does not change Issue lifecycle.

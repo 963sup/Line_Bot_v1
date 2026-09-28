@@ -174,9 +174,9 @@ export default function UserManagement({ liffId }: { liffId: string }) {
   return (
     <>
       <PageHeading
-        title="會員管理"
-        back="/admin"
-        description="查詢會員資格，記錄停權與解除原因。"
+        title="User 管理"
+        back="/settings"
+        description="查詢 User 狀態，記錄停權與解除原因。"
       />
       <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />
       <button type="button" disabled={busy} onClick={() => void load(query)}>

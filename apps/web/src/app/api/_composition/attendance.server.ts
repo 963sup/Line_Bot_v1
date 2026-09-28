@@ -1,7 +1,6 @@
 import { createClockAttendance } from "@line_bot_v1/attendance/application/clock";
 import { createAttendanceMaintenance } from "@line_bot_v1/attendance/application/maintenance";
-import { createWorkplaces } from "@line_bot_v1/attendance/application/workplaces";
-import { PostgresAttendanceStore, PostgresWorkplaceStore } from "@line_bot_v1/attendance/postgres";
+import { PostgresAttendanceStore } from "@line_bot_v1/attendance/postgres";
 import { createRichMenuClient, pushLineText } from "@line_bot_v1/line-channel/messaging";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { syncUserRichMenu } from "../../../modules/assistant/rich-menu/user-menu.server";
@@ -60,9 +59,3 @@ export async function showAttendanceMenu(subject: string) {
   const result = await runMaintenance(subject, true);
   if (!result.synced) throw new Error("attendance_menu_sync_pending");
 }
-
-export const workplaces = createWorkplaces({
-  activeUser: activeLineUser,
-  store: () => new PostgresWorkplaceStore(),
-  now: () => Date.now(),
-});

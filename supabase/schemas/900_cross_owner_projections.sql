@@ -190,13 +190,6 @@ join app_private.user_identities i on i.user_id=u.id
 where u.status='active';
 
 
--- Identity/Access may display and validate Workplace-scoped permission targets,
--- but Attendance keeps Workplace authority.
-create view app_private.permission_workplace_targets
-with (security_invoker = true)
-as
-select id,name
-from app_private.workplaces;
 
 
 -- Account management displays operational blockers without acquiring Attendance or Repository authority.

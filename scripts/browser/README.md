@@ -23,9 +23,9 @@ pnpm test:browser
 | `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
 | `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |
 | `check-partner-management.mjs` | Partner 名錄/管理、版本衝突、換帳號與 unknown-result handling。 |
-| `check-workplaces.mjs` | Workplace 地點/人員、管理資格與原命令重試。 |
+| `check-repository-address.mjs` | Repository 地址設定／移除、有效成員讀取、撤權與原命令重試。 |
 | `check-auto-clock.mjs` | 自動打卡、定位拒絕、unknown-result resend、首次成功/重播刷新。 |
-| `check-permissions.mjs` | 權限確認、scope、重試、撤銷、禁止自改與管理入口隔離。 |
+| `check-permissions.mjs` | 權限確認、重試、撤銷、禁止自改與功能授權隔離。 |
 | `measure-loading.mjs` | 在相同 build/browser 下量測 script 解壓 bytes 與 request counts；不是 Web Vitals。 |
 
 每次產物位於 `.artifacts/browser/<時間>/`：report.json、各案例結果、建置／服務日誌、截圖與 trace。失敗保留證據並回非零；可用所選 Playwright 的 show-trace 查看。操作約束見 [AGENTS](AGENTS.md)。
@@ -37,4 +37,4 @@ pnpm test:browser
 已有相符的本機正式服務時，設定 `NAVIGATION_BASE=http://127.0.0.1:4117`，用上述 Playwright 環境執行 `node scripts/browser/<腳本>.mjs`；只接受 loopback origin。標準入口優先於手動建置／啟動。
 
 [measure-loading.mjs](measure-loading.mjs) 在相同建置、Node／瀏覽器下，以新 context 統計 script 解壓 bytes、script 與 document 次數。它使用合成 SDK、拒絕的業務 API 及停用 HTTP cache 的攔截，不能當作壓縮傳輸量、成功操作延遲或 LCP／INP／CLS。具日期歷史結果由 [Acceptance evidence](../../docs/change/evidence/acceptance-evidence.md) 導覽。
-權限流程由 `check-permissions.mjs` 驗證明確確認、指定範圍、原命令跨重新整理重試、撤銷、禁止自改與管理入口隔離，保存 `permissions.png`、`permissions-trace.zip` 及 `permissions-results.json`。
+權限流程由 `check-permissions.mjs` 驗證明確確認、原命令跨重新整理重試、撤銷、禁止自改與管理入口隔離，保存 `permissions.png`、`permissions-trace.zip` 及 `permissions-results.json`。

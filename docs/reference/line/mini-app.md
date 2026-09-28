@@ -35,7 +35,7 @@ MINI App URL 使用固定白名單 intent 接續 Web surface。入口只決定�
 
 目前白名單包含：
 
-`workplaces`、`planned`、`team`、`notifications`、`repositories`、`partners`、`feedback`、`clockIn`、`clockOut`、`membership`、`attendance`、`expense`、`records`、`register`、`restore`。
+`planned`、`team`、`notifications`、`repositories`、`partners`、`feedback`、`clockIn`、`clockOut`、`membership`、`attendance`、`expense`、`records`、`register`、`restore`。
 
 一般 boolean intent 必須只有一個值且為 `1`；`expense` 需要合法 UUID；`attendance` 可另帶白名單 operation。重複 intent、多個主要 intent 或非法 operation 應視為 invalid，而不是猜測目的地。
 

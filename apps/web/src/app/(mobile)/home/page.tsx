@@ -53,7 +53,6 @@ export default function Page() {
             description="合作夥伴、消息與推薦"
           />
           <ActionRow href="/feedback" icon="!" title="Feedback" description="即時回饋入口" />
-          <ActionRow href="/admin" icon="⌁" title="Admin" description="具管理責任時使用" />
         </div>
       </details>
     </AppShell>

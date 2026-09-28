@@ -125,7 +125,7 @@ async function confirm(label) {
   await page.getByRole("button", { name: label, exact: true }).click();
 }
 try {
-  await page.goto(`${target.origin}/admin/members`);
+  await page.goto(`${target.origin}/settings/users`);
   await expect(page.getByRole("heading", { name: "會員列表" })).toBeVisible();
   await page.getByLabel("會員編號", { exact: true }).fill("missing-member");
   await page.getByRole("button", { name: "查詢", exact: true }).click();
@@ -200,8 +200,8 @@ try {
       path: path.join(output, "member-management-desktop.png"),
       fullPage: true,
     });
-  await page.getByRole("link", { name: "← 返回", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "管理後台" })).toBeVisible();
+  await page.getByRole("link", { name: /返回$/ }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   assert.deepEqual(errors, []);
   console.log(
     "Member management browser passed: lookup, paging, suspension, recovery, original retry, role and identity rejection.",

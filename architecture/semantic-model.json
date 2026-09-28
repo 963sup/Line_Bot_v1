@@ -310,7 +310,7 @@
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Independently owned work container with content, access, state, and lifecycle.",
+      "definition": "Independently owned work container with content, access, state, and lifecycle. Its optional address property is the clock point for current effective members.",
       "benchmark": {
         "node": "repository",
         "adoption": "container-semantics-only"
@@ -475,7 +475,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current",
-      "definition": "Actual attendance lifecycle, workplace eligibility, and attendance facts.",
+      "definition": "Actual attendance lifecycle, Repository-member clock eligibility, immutable address snapshots and attendance facts.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -484,8 +484,8 @@
       "canonicalName": "Workplace",
       "kind": "authoritative",
       "owner": "attendance",
-      "lifecycle": "current",
-      "definition": "Attendance-owned place and eligibility context.",
+      "lifecycle": "current-data-only",
+      "definition": "Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository address properties.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -827,15 +827,6 @@
       "consistency": "current-identity"
     },
     {
-      "id": "identity-access-attendance-workplace-authorization",
-      "provider": "identity-access",
-      "consumer": "attendance",
-      "meaning": "Attendance consumes the current workplaces.manage permission decision for Workplace management.",
-      "integrationMode": "query",
-      "authority": "identity-access",
-      "consistency": "current-state"
-    },
-    {
       "id": "asset-daily-check-in-reward-denomination",
       "provider": "asset",
       "consumer": "daily-check-in",
@@ -995,6 +986,15 @@
       "meaning": "Audit reads a minimal governance event projection for an exact active Enterprise or Organization scope after current owner authorization; no private history access or source-object authority transfers.",
       "integrationMode": "query",
       "authority": "identity-access",
+      "consistency": "current-state"
+    },
+    {
+      "id": "repository-attendance-address-eligibility",
+      "provider": "repository",
+      "consumer": "attendance",
+      "meaning": "Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal.",
+      "integrationMode": "query",
+      "authority": "repository",
       "consistency": "current-state"
     }
   ],
@@ -1347,7 +1347,8 @@
         "manage-repository-milestones",
         "read-discussions",
         "read-repository-labels",
-        "read-repository-milestones"
+        "read-repository-milestones",
+        "manage-repository-address"
       ]
     },
     {
@@ -1875,7 +1876,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Attendance clock application surface",
+        "scope": "Repository address clock-in for effective members; clock-out uses original session point snapshot even after member removal.",
         "sourcePaths": [
           "packages/attendance/src/application/clock.ts",
           "packages/attendance/src/contracts/clock.ts",
@@ -1991,10 +1992,7 @@
           "./application/permissions/ports",
           "./domain/permission"
         ],
-        "entrypoints": [
-          "apps/web/src/app/(admin)/admin/permissions/page.tsx",
-          "apps/web/src/app/(mobile)/settings/permissions/page.tsx"
-        ],
+        "entrypoints": ["apps/web/src/app/(mobile)/settings/permissions/page.tsx"],
         "testPaths": [],
         "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
       }
@@ -2060,6 +2058,44 @@
           "apps/web/test/audit-api.test.ts"
         ],
         "note": "API only; admin page, Team history, bootstrap receipts and global search remain unavailable. Deployment is separate evidence."
+      }
+    },
+    {
+      "id": "manage-repository-address",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Maintain the Repository address property used as the attendance clock point for current effective members.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Optional single Repository address; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
+        "sourcePaths": [
+          "packages/repository/src/application/address.ts",
+          "packages/repository/src/application/ports/address.ts",
+          "packages/repository/src/adapters/postgres/address.ts"
+        ],
+        "publicExports": [
+          "./application/address",
+          "./application/ports/address",
+          "./postgres/address"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-address/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/settings/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/address.test.ts",
+          "packages/attendance/test/repository-attendance.test.ts"
+        ],
+        "note": "Source and local tests do not prove remote data cutover or deployment."
       }
     }
   ],

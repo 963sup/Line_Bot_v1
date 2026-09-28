@@ -8,6 +8,7 @@ import {
   repositoryIssueCreatePath,
   repositoryIssuesPath,
   repositoryPath,
+  repositorySettingsPath,
 } from "./resource-navigation";
 import { useRepositoryCollection } from "./use-repository-collection";
 
@@ -16,13 +17,18 @@ export default function RepositoryList({
   intent,
 }: {
   liffId: string;
-  intent?: "create-issue" | "browse-issues" | "browse-discussions" | "manage-access";
+  intent?:
+    | "create-issue"
+    | "browse-issues"
+    | "browse-discussions"
+    | "manage-access"
+    | "manage-settings";
 }) {
   const { items, busy, error, load, clear } = useRepositoryCollection(liffId);
   const visibleItems =
     intent === "create-issue"
       ? items?.filter((item) => item.capability === "write" || item.capability === "admin")
-      : intent === "manage-access"
+      : intent === "manage-access" || intent === "manage-settings"
         ? items?.filter((item) => item.capability === "admin")
         : items;
 
@@ -31,6 +37,7 @@ export default function RepositoryList({
     if (intent === "browse-issues") return repositoryIssuesPath(ownerLogin, name);
     if (intent === "browse-discussions") return repositoryDiscussionsPath(ownerLogin, name);
     if (intent === "manage-access") return repositoryAccessPath(ownerLogin, name);
+    if (intent === "manage-settings") return repositorySettingsPath(ownerLogin, name);
     return repositoryPath(ownerLogin, name);
   };
 
@@ -43,8 +50,8 @@ export default function RepositoryList({
         <p className="empty-copy">
           {intent === "create-issue"
             ? "目前沒有可建立 Issue 的 Repository。"
-            : intent === "manage-access"
-              ? "目前沒有可管理 Access 的 Repository。"
+            : intent === "manage-access" || intent === "manage-settings"
+              ? "目前沒有可管理的 Repository。"
               : "目前沒有可存取的 Repository。"}
         </p>
       )}
@@ -68,7 +75,9 @@ export default function RepositoryList({
                         ? "Issues"
                         : intent === "browse-discussions"
                           ? "Discussions"
-                          : "Manage Access"}
+                          : intent === "manage-access"
+                            ? "Manage Access"
+                            : "Manage Settings"}
                   </small>
                 )}
               </span>

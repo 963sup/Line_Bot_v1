@@ -43,6 +43,17 @@ create table app_private."attendance_sessions" (
   "started_at" bigint not null,
   "ended_at" bigint,
   "rule_version" text not null,
+  "repository_id" text,
+  "point_snapshot" jsonb,
+  constraint "attendance_sessions_repository_fkey" FOREIGN KEY (repository_id) REFERENCES app_private.repositories(id),
+  constraint "attendance_sessions_point_check" CHECK (
+    (repository_id IS NULL AND point_snapshot IS NULL) OR
+    (repository_id IS NOT NULL AND point_snapshot IS NOT NULL
+      AND jsonb_typeof(point_snapshot)='object'
+      AND point_snapshot ?& array['repositoryId','id','name','address','latitude','longitude','radius','version']
+      AND (point_snapshot->>'repositoryId') IS NOT DISTINCT FROM repository_id
+      AND (point_snapshot->>'id') IS NOT DISTINCT FROM repository_id)
+  ),
   constraint "attendance_sessions_pkey" PRIMARY KEY (id),
   constraint "attendance_sessions_check" CHECK (((ended_at IS NULL) OR (ended_at >= started_at))),
   constraint "attendance_sessions_day_check" CHECK ((day ~ '^\d{4}-\d{2}-\d{2}$'::text)),
@@ -81,6 +92,8 @@ begin
  perform id from users where id=new.uid for update;
  if tg_op='UPDATE' and (old.id<>new.id or old.uid<>new.uid or old.day<>new.day
    or old.started_at<>new.started_at or old.rule_version<>new.rule_version
+   or old.repository_id is distinct from new.repository_id
+   or old.point_snapshot is distinct from new.point_snapshot
    or old.ended_at is not null or new.ended_at is null) then
    raise exception 'attendance_source_immutable' using errcode='23514';
  end if;

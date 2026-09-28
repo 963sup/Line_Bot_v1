@@ -4,7 +4,7 @@ import { type Permission, permissions } from "@line_bot_v1/identity-access/domai
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { ActionRow, PageHeading } from "../../shared/ui/page-layout";
+import { PageHeading } from "../../shared/ui/page-layout";
 import {
   clearPendingPermissionOperation,
   type PendingPermissionOperation,
@@ -14,26 +14,16 @@ import {
 } from "./permission-operations";
 
 const label = (p: string) => permissions[p as Permission] ?? p;
-const entries = [
-  ["users.read", "/admin/members", "使用者管理"],
-  ["workplaces.manage", "/admin/workplaces", "工作地點"],
-  ["partners.manage", "/admin/groups", "合作夥伴管理"],
-  ["partners.review", "/partners/referrals", "推薦審核"],
-] as const;
 export default function PermissionsPanel({
   liffId,
   manage = false,
-  navigation = false,
 }: {
   liffId: string;
   manage?: boolean;
-  navigation?: boolean;
 }) {
   const [data, setData] = useState<PermissionView | null>(null);
   const [target, setTarget] = useState("");
-  const [permission, setPermission] = useState<Permission>("workplaces.manage");
-  const [workplaceId, setWorkplaceId] = useState("");
-  const [allSites, setAllSites] = useState(false);
+  const [permission, setPermission] = useState<Permission>("users.read");
   const [enabled, setEnabled] = useState(true);
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
@@ -53,7 +43,6 @@ export default function PermissionsPanel({
     setNotice("");
     setReason("");
     setTarget("");
-    setWorkplaceId("");
     setConfirmed(false);
   }
   reload.current = () => {
@@ -95,7 +84,6 @@ export default function PermissionsPanel({
       if (!changed) setTarget(id);
       if (changed) {
         setTarget("");
-        setWorkplaceId("");
         setReason("");
         setNotice("");
       }
@@ -164,8 +152,8 @@ export default function PermissionsPanel({
   return (
     <>
       <PageHeading
-        title={navigation ? "管理後台" : manage ? "權限管理" : "我的權限"}
-        back={manage ? "/admin" : "/settings"}
+        title={manage ? "權限" : "我的權限"}
+        back="/settings"
         description="權限按功能與範圍授予，所有操作由後端核驗。"
       />
       <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />
@@ -177,43 +165,20 @@ export default function PermissionsPanel({
       </button>
       {data && (
         <>
-          {navigation && (
-            <nav className="menu-group" aria-label="管理功能">
-              {data.canManage && (
-                <ActionRow
-                  href="/admin/permissions"
-                  title="權限管理"
-                  description="授予與撤銷業務權限"
-                />
-              )}
-              {entries
-                .filter(([p]) => data.own.some((g) => g.permission === p && g.effective))
-                .map(([p, href, title]) => (
-                  <ActionRow key={p} href={href} title={title} description="依授權範圍管理" />
-                ))}
-              <ActionRow
-                href="/settings/permissions"
-                title="我的權限"
-                description="查看功能與管理範圍"
-              />
-            </nav>
-          )}
-          {!navigation && (
-            <section aria-label="我的權限">
-              {data.canManage && (
-                <p>權限管理員：可管理其他使用者的業務權限；任命權限管理員由可信操作者處理。</p>
-              )}
-              {!data.own.length && <p>目前沒有額外業務管理權限。</p>}
-              <ul>
-                {data.own.map((g) => (
-                  <li key={g.permission + (g.workplaceId ?? "")}>
-                    {label(g.permission)} · {g.workplaceName ?? "全部範圍"}
-                    {!g.effective && " · 已失效，需重新授予"}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          <section aria-label="我的權限">
+            {data.canManage && (
+              <p>權限管理員：可管理其他使用者的業務權限；任命權限管理員由可信操作者處理。</p>
+            )}
+            {!data.own.length && <p>目前沒有額外業務管理權限。</p>}
+            <ul>
+              {data.own.map((g) => (
+                <li key={g.permission}>
+                  {label(g.permission)}
+                  {!g.effective && " · 已失效，需重新授予"}
+                </li>
+              ))}
+            </ul>
+          </section>
           {manage && !data.canManage && (
             <p>你沒有權限管理資格。請由既有權限管理員處理；首次設定由可信操作者完成。</p>
           )}
@@ -243,9 +208,8 @@ export default function PermissionsPanel({
                   <p>狀態：{data.target.status}</p>
                   <ul>
                     {data.target.grants.map((g) => (
-                      <li key={g.permission + (g.workplaceId ?? "")}>
-                        {label(g.permission)} · {g.workplaceName ?? "全部範圍"}
-                        {g.workplaceId && `（${g.workplaceId}）`}
+                      <li key={g.permission}>
+                        {label(g.permission)}
                         {!g.effective && " · 已失效"}
                       </li>
                     ))}
@@ -264,10 +228,6 @@ export default function PermissionsPanel({
                             requestId: crypto.randomUUID(),
                             target: data.target.id,
                             permission,
-                            workplaceId:
-                              permission === "workplaces.manage" && !allSites
-                                ? workplaceId.trim()
-                                : null,
                             enabled,
                             expectedVersion: data.target.version,
                             reason,
@@ -289,28 +249,6 @@ export default function PermissionsPanel({
                             </option>
                           ))}
                         </select>
-                        {permission === "workplaces.manage" && (
-                          <>
-                            <label>
-                              <input
-                                type="checkbox"
-                                checked={allSites}
-                                onChange={(e) => setAllSites(e.target.checked)}
-                              />
-                              全部地點（包含新增地點）
-                            </label>
-                            {!allSites && (
-                              <label>
-                                指定地點編號
-                                <input
-                                  value={workplaceId}
-                                  onChange={(e) => setWorkplaceId(e.target.value)}
-                                  required
-                                />
-                              </label>
-                            )}
-                          </>
-                        )}
                         <label htmlFor="permission-operation">操作</label>
                         <select
                           id="permission-operation"
@@ -332,11 +270,7 @@ export default function PermissionsPanel({
                       </fieldset>
                       <p>
                         {enabled ? "授予" : "撤銷"} {data.target.id} 的「{label(permission)}
-                        」；範圍：
-                        {permission === "workplaces.manage" && !allSites
-                          ? workplaceId || "尚未指定"
-                          : "全部範圍"}
-                        。授權持續至撤銷或使用者狀態變更。
+                        」。授權持續至撤銷或使用者狀態變更。
                       </p>
                       <label>
                         <input
@@ -355,8 +289,7 @@ export default function PermissionsPanel({
                     {data.history.map((h) => (
                       <li key={h.actor + h.requestId}>
                         {new Date(h.at).toLocaleString()} · {h.enabled ? "授予" : "撤銷"}{" "}
-                        {label(h.permission)} · {h.workplaceId ?? "全部範圍"} · {h.reason} · 操作者{" "}
-                        {h.actor}
+                        {label(h.permission)} · {h.reason} · 操作者 {h.actor}
                       </li>
                     ))}
                   </ul>

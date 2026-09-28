@@ -16,4 +16,4 @@ CREATE INDEX permission_workplaces ON app_private.permission_grants USING btree 
 alter table app_private."permission_grants" enable row level security;
 revoke all on app_private."permission_grants" from public, anon, authenticated, line_app;
 grant delete, insert, select on app_private."permission_grants" to line_app;
-create policy "backend" on app_private."permission_grants" as permissive for all to "line_app" using (true) with check (true);
+create policy "backend" on app_private."permission_grants" as permissive for all to "line_app" using (permission <> 'workplaces.manage' AND workplace_id IS NULL) with check (permission <> 'workplaces.manage' AND workplace_id IS NULL);

@@ -149,7 +149,7 @@ export default function AutoClock({
               : "目前尚未上班，無法下班打卡。",
           );
         if (!Array.isArray(data.sites) || !data.sites.length)
-          throw new Error("打卡地點尚未設定，請聯絡管理者。");
+          throw new Error("尚未加入已設定地址的儲存庫，請聯絡儲存庫管理者。");
         if (!liffClient.inClient() && !explicit) {
           saveAttempt({ owner: data.memberId, operation, phase: "started" });
           setStatus("請確認後定位打卡。");
