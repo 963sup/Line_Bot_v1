@@ -73,6 +73,10 @@ export async function checkImplementationTopology() {
       const compiled = typeof target === "string" ? target : target.default;
       if (typeof compiled !== "string" || !compiled.startsWith("./dist/")) {
         errors.push(name + ": export does not target dist: " + key);
+        continue;
+      }
+      if (/^\.\/dist\/adapters(?:\.js|\/)/.test(compiled)) {
+        errors.push(name + ": private adapter must not be package export: " + key);
       }
     }
   }
