@@ -5,7 +5,7 @@ import {
   createLineClient,
   parseLineWebhook,
   verifyLineSignature,
-} from "../src/adapters/messaging/index.js";
+} from "../src/messaging.js";
 
 test("LINE signature covers the original bytes, including whitespace and Unicode", () => {
   const secret = "offline-test-secret";
