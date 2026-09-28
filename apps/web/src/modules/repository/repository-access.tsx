@@ -219,11 +219,11 @@ export default function RepositoryAccess({
               </p>
             )}
             {!data.directUserGrants.length && <p className="empty-copy">目前沒有 direct User grant。</p>}
-            {data.directUserGrants.map((grant) => (
-              <article key={grant.userId}>
-                <strong>{grant.userId}</strong>
+            {data.directUserGrants.map((item) => (
+              <article key={item.userId}>
+                <strong>{item.userId}</strong>
                 <p>
-                  {grant.capability} · v{grant.version}
+                  {item.capability} · v{item.version}
                 </p>
                 <form
                   onSubmit={(event) => {
@@ -231,12 +231,12 @@ export default function RepositoryAccess({
                     const capability = new FormData(event.currentTarget).get(
                       "capability",
                     ) as RepositoryCapability;
-                    grant("USER", grant.userId, capability, grant.version);
+                    grant("USER", item.userId, capability, item.version);
                   }}
                 >
                   <label>
                     Capability
-                    <select name="capability" defaultValue={grant.capability}>
+                    <select name="capability" defaultValue={item.capability}>
                       {capabilities.map((capability) => (
                         <option key={capability} value={capability}>
                           {capability}
@@ -248,7 +248,7 @@ export default function RepositoryAccess({
                   <button
                     type="button"
                     className="secondary"
-                    onClick={() => revoke("USER", grant.userId, grant.version)}
+                    onClick={() => revoke("USER", item.userId, item.version)}
                   >
                     撤銷
                   </button>
@@ -293,11 +293,11 @@ export default function RepositoryAccess({
                 Team 必須屬於 Repository owner Organization；TeamMembership 仍由 Team owner 管理。
               </p>
               {!data.teamGrants.length && <p className="empty-copy">目前沒有 Team grant。</p>}
-              {data.teamGrants.map((grant) => (
-                <article key={grant.teamId}>
-                  <strong>{grant.teamId}</strong>
+              {data.teamGrants.map((item) => (
+                <article key={item.teamId}>
+                  <strong>{item.teamId}</strong>
                   <p>
-                    {grant.capability} · v{grant.version}
+                    {item.capability} · v{item.version}
                   </p>
                   <form
                     onSubmit={(event) => {
@@ -305,12 +305,12 @@ export default function RepositoryAccess({
                       const capability = new FormData(event.currentTarget).get(
                         "capability",
                       ) as RepositoryCapability;
-                      grant("TEAM", grant.teamId, capability, grant.version);
+                      grant("TEAM", item.teamId, capability, item.version);
                     }}
                   >
                     <label>
                       Capability
-                      <select name="capability" defaultValue={grant.capability}>
+                      <select name="capability" defaultValue={item.capability}>
                         {capabilities.map((capability) => (
                           <option key={capability} value={capability}>
                             {capability}
@@ -322,7 +322,7 @@ export default function RepositoryAccess({
                     <button
                       type="button"
                       className="secondary"
-                      onClick={() => revoke("TEAM", grant.teamId, grant.version)}
+                      onClick={() => revoke("TEAM", item.teamId, item.version)}
                     >
                       撤銷
                     </button>
