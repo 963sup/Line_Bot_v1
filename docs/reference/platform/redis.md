@@ -1,7 +1,7 @@
 # Redis
 Redis 只承接有限 TTL 的協調責任，例如 rate limiting 與 Webhook claim。PostgreSQL 仍是 business idempotency、ledger、Member qualification 與 durable record authority。
 ## Implementation ownership
-`@line_bot_v1/platform` 擁有 Redis coordination implementation 與 `@line_bot_v1/platform/adapters/redis` public surface。這個 Module Boundary 不改變 PostgreSQL 的 durable business authority、Redis key/TTL 語意或任何 Supabase Data Boundary。
+`@line_bot_v1/platform` 擁有 Redis coordination implementation 與 `@line_bot_v1/platform/redis` public surface。這個 Module Boundary 不改變 PostgreSQL 的 durable business authority、Redis key/TTL 語意或任何 Supabase Data Boundary。
 ## Data boundary
 Redis key 使用 scope + hashed identifier；不保存 raw token、完整聊天內容、Member private data、Coin ledger 或 receipt body。正式 key 必須有 TTL，並以 environment-specific prefix 隔離測試與正式用途。
 
