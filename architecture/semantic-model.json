@@ -1114,7 +1114,7 @@
         "sourcePaths": [
           "packages/account/src/application/achievements.ts",
           "packages/account/src/application/ports/achievements.ts",
-          "packages/account/src/adapters/postgres/achievements.ts"
+          "packages/account/src/postgres/achievements.ts"
         ],
         "publicExports": ["./application/achievements", "./application/ports/achievements"],
         "entrypoints": [
@@ -1929,7 +1929,7 @@
           "packages/ledger/src/adapters/postgres.ts",
           "packages/ledger/src/domain.ts"
         ],
-        "publicExports": ["./adapters/postgres", "./domain"],
+        "publicExports": ["./postgres", "./domain"],
         "entrypoints": [
           "packages/daily-check-in/src/adapters/postgres.ts",
           "packages/attendance/src/adapters/postgres/attendance.ts"
@@ -2002,7 +2002,7 @@
         ],
         "publicExports": [".", "./postgres"],
         "entrypoints": [
-          "packages/account/src/adapters/postgres/user.ts",
+          "packages/account/src/postgres/user.ts",
           "apps/web/src/app/api/_composition/namespace.server.ts"
         ],
         "testPaths": [
