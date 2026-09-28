@@ -1,9 +1,6 @@
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import type {
-  OrganizationPublicStore,
-  PublicOrganization,
-} from "../application/ports/public.js";
+import type { OrganizationPublicStore, PublicOrganization } from "../application/ports/public.js";
 
 export class PostgresOrganizationPublicStore implements OrganizationPublicStore {
   constructor(private db: Database = businessDatabase()) {}
