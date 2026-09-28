@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: workforce
+-- scope: Workforce Calendar, CalendarEvent, and HolidayArrangement source facts.
+-- canonical target: docs/change/proposals/domain-target.md
+-- migration gate: docs/change/gaps/workforce.md
+-- activation: remove reserved status only after calendar source ownership, effective dates, publication rules, and consumer needs are current and validated.

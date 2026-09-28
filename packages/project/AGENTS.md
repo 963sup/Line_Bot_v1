@@ -1,4 +1,4 @@
-# @line_bot_v1/project
+# Project
 
 Owner: cross-Repository planning, WBS, Project Milestones, and references to Repository work. Canonical semantics: [Project](../../docs/owners/project.md).
 

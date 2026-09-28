@@ -291,10 +291,4 @@ export class PostgresIssueStore implements IssueStore {
   }
 }
 
-export { PostgresRepositoryCollectionStore } from "./postgres/collection.js";
-export { PostgresRepositoryCreationStore } from "./postgres/creation.js";
-export { PostgresRepositoryDiscoveryStore } from "./postgres/discovery.js";
-export { PostgresPublicRepositoryStore } from "./postgres/public.js";
-export { PostgresRepositoryResourceStore } from "./postgres/resources.js";
-export { PostgresRepositoryStarListStore } from "./postgres/star-lists.js";
 export { PostgresRepositoryStarStore } from "./postgres/stars.js";

@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: payroll
+-- scope: explicit PayPeriod identity used by PayrollRun and PayStatement lifecycle.
+-- canonical target: docs/owners/payroll.md
+-- migration gate: docs/change/gaps/payroll.md
+-- activation: remove reserved status only after pay period validation, organization scope, authorization, data-topology relations, tests, and validation evidence are current.

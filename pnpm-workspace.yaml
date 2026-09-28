@@ -1,0 +1,28 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  '@firebase/util': false
+  '@google/genai': false
+  '@sentry/cli': true
+  esbuild: true
+  protobufjs: false
+  re2: false
+
+engineStrict: true
+saveExact: true
+verifyDepsBeforeRun: error
+enableGlobalVirtualStore: false
+
+catalog:
+  'typescript': '5.9.3'
+  '@types/node': '24.13.3'
+  '@types/react': '19.2.18'
+  '@types/react-dom': '19.2.7'
+  'tsx': '4.23.13'
+  '@google/genai': '2.21.0'
+  '@supabase/supabase-js': '2.115.0'
+  'pg': '8.23.0'
+  '@electric-sql/pglite': '0.5.8'
+  '@types/pg': '8.23.1'

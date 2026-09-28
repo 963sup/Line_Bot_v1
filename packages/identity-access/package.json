@@ -49,11 +49,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@line_bot_v1/account": "*",
-    "@line_bot_v1/platform": "*"
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.13.0",
-    "typescript": "^5.7.3"
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

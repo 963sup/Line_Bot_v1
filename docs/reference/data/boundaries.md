@@ -15,7 +15,7 @@ supabase/schemas/*.sql
 
 This document explains the cross-owner data invariants only. Physical object inventory belongs to
 [Data topology](../../../architecture/data-topology.json) and the
-[Schema reference](schema.md).
+[Schema tree](../../../supabase/schemas/README.md).
 
 ## Account identity
 

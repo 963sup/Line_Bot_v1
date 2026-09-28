@@ -67,7 +67,7 @@ Schema與runtime需要協調切換時，由 [Release](../operations/release.md) 
 
 Current repository schema verification只證明 declarative source、clean build與安全 boundary；remote parity、deployment與business acceptance是不同 evidence。
 
-- 資料邊界：[Data boundaries](boundaries.md)
+- 開發入口：[Supabase README](../../../supabase/README.md)
 - Supabase platform：[Supabase](../platform/supabase.md)
 - Release：[Release](../operations/release.md)
 - Recovery：[Recovery](../operations/recovery.md)

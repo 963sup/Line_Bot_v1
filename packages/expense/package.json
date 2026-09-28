@@ -54,16 +54,17 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@google/genai": "*",
-    "@line_bot_v1/account": "*",
-    "@line_bot_v1/platform": "*"
+    "@google/genai": "catalog:",
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
-    "@types/node": "^22.13.0",
-    "tsx": "^4.19.0"
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
   }
 }

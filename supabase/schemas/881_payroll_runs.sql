@@ -1,0 +1,6 @@
+-- status: reserved
+-- owner: payroll
+-- scope: PayrollRun batch lifecycle for OrganizationAccountId + PayPeriod calculation/finalization.
+-- canonical target: docs/owners/payroll.md
+-- migration gate: docs/change/migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices
+-- activation: remove reserved status only after lifecycle, replay/version, required input, approval, correction, audit, and authorization contracts are implemented and validated.
