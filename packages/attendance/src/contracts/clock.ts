@@ -1,9 +1,9 @@
 import type {
-  AttendanceAction,
   AttendanceRecordView,
   AttendanceView,
   MenuState,
-} from "../domain.js";
+} from "../domain/policies/attendance-view.js";
+import type { AttendanceAction } from "../domain/value-objects/attendance-action.js";
 
 /** Immutable attendance projection of the Repository address used for this session. */
 export type AttendancePoint = {

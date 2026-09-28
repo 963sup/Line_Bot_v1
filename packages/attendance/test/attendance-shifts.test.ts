@@ -3,11 +3,11 @@ import { test } from "node:test";
 import {
   ATTENDANCE_RULE_VERSION,
   type AttendanceSession,
-  attendanceView,
-  planAttendance,
-  summarizeAttendance,
-  taipeiDay,
-} from "../src/domain.js";
+} from "../src/domain/aggregates/attendance-session.js";
+import { attendanceView } from "../src/domain/policies/attendance-view.js";
+import { planAttendance } from "../src/domain/policies/session-transition.js";
+import { summarizeAttendance } from "../src/domain/policies/time-classification.js";
+import { taipeiDay } from "../src/domain/value-objects/attendance-time.js";
 
 const at = (v: string) => Date.parse(v);
 const session = (start: string, end: string | null): AttendanceSession => ({
