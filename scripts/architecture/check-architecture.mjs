@@ -199,7 +199,15 @@ export async function checkArchitecture(root = repository) {
     const errors = [
       ...publicExportErrors,
       ...graph.summary.violations
-        .filter((item) => item.rule.name !== "no-relative-imports-across-packages")
+        .filter((item) => {
+          if (item.rule.name === "no-relative-imports-across-packages") return false;
+          if (item.rule.name === "adapters-are-private-implementations") {
+            const fromOwner = workspaceRoot(item.from);
+            const toOwner = workspaceRoot(item.to);
+            if (fromOwner && fromOwner === toOwner) return false;
+          }
+          return true;
+        })
         .map((item) => `${item.rule.name}: ${item.from} -> ${item.to}`),
     ];
     errors.push(...checkAppRoot(root));
