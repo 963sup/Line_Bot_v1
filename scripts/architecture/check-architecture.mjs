@@ -51,7 +51,7 @@ function checkCrossWorkspaceRelativeImports(root, source) {
     const target = normalize(relative(root, resolve(root, source, "..", specifier)));
     const targetOwner = workspaceRoot(target);
     if (targetOwner && targetOwner !== owner)
-      errors.push(`cross-workspace-relative-import: ${source} -> ${specifier}`);
+      errors.push(`no-relative-imports-across-packages: ${source} -> ${specifier}`);
   }
   return errors;
 }
@@ -169,9 +169,12 @@ export async function checkArchitecture(root = repository) {
       },
     );
     const graph = typeof result.output === "string" ? JSON.parse(result.output) : result.output;
-    const errors = graph.summary.violations.map(
-      (item) => `${item.rule.name}: ${item.from} -> ${item.to}`,
-    );
+    // Package export aliases intentionally resolve public workspace specifiers to source files
+    // so architecture can validate without dist. The original specifier, not the resolved path,
+    // determines whether a cross-package import is relative; enforce that invariant below from AST.
+    const errors = graph.summary.violations
+      .filter((item) => item.rule.name !== "no-relative-imports-across-packages")
+      .map((item) => `${item.rule.name}: ${item.from} -> ${item.to}`);
     errors.push(...checkAppRoot(root));
     const modules = new Map(graph.modules.map((module) => [normalize(module.source), module]));
     const isolatedFromMobileShell =
