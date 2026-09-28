@@ -16,7 +16,7 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { readAccountLogin } from "@line_bot_v1/namespace/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { OrganizationGovernancePort } from "../application/ports/organization-governance.js";
 import type {
   OrganizationCommand,
