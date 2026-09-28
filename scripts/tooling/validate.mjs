@@ -12,12 +12,14 @@ const biome = fileURLToPath(
 const fastTasks = new Set([
   "lockfile",
   "tooling:check",
+  "tooling:test",
   "docs:test",
   "docs:check",
   "lint",
   "schema:check",
   "schema:remote:test",
   "github:test",
+  "change:test",
   "attendance:scheduler:test",
   "architecture:test",
   "architecture",
@@ -29,7 +31,8 @@ export const validationGroups = Object.freeze({
   tooling: [
     "lockfile",
     "tooling:check",
-    "patch:apply:test",
+    "tooling:test",
+    "change:test",
     "github:test",
     "attendance:scheduler:test",
   ],
@@ -141,7 +144,8 @@ export function shouldRunFast(task, scope) {
   if (!fastTasks.has(task)) return false;
   if (task === "lockfile") return true;
   if (!scope) return true;
-  if (task === "tooling:check") return scope.toolingAffected;
+  if (task === "tooling:check" || task === "tooling:test") return scope.toolingAffected;
+  if (task === "change:test") return scope.codeAffected || scope.toolingAffected;
   if (task === "docs:test" || task === "docs:check") return scope.docsAffected;
   if (task === "schema:check" || task === "schema:remote:test") return scope.schemaAffected;
   if (task === "github:test") return scope.toolingAffected;
@@ -188,6 +192,7 @@ function main() {
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
     ],
     ["tooling:check", ["scripts/tooling/check-tooling.mjs"]],
+    ["tooling:test", ["--test", "scripts/tooling/doctor.test.mjs"]],
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
     ["lint", [biome, "check", "."]],
@@ -203,7 +208,10 @@ function main() {
         "scripts/architecture/check-data-access.test.mjs",
       ],
     ],
-    ["patch:apply:test", ["--test", "scripts/changes/patch-apply.test.mjs"]],
+    [
+      "change:test",
+      ["--test", "scripts/changes/patch-apply.test.mjs", "scripts/changes/state.test.mjs"],
+    ],
     [
       "github:test",
       ["--test", "scripts/github/current-main.test.mjs", "scripts/github/release-plan.test.mjs"],

@@ -87,6 +87,15 @@ export function validate(root) {
       }
     }
 
+    const scriptDirectories = globSync("scripts/**", { cwd: root })
+      .filter((entry) => statSync(resolve(root, entry)).isDirectory())
+      .sort();
+    for (const directory of scriptDirectories) {
+      if (!existsSync(resolve(root, directory, "README.md"))) {
+        errors.push(`${directory}/README.md: every scripts directory requires a local script index`);
+      }
+    }
+
     const manifest = JSON.parse(read(resolve(root, "package.json")));
     const workspace = YAML.parse(read(resolve(root, "pnpm-workspace.yaml")));
     const exact = /^\d+\.\d+\.\d+$/;
@@ -145,6 +154,16 @@ export function validate(root) {
       errors.push("package.json: semantic:* aliases are forbidden; use pnpm semantic <verb>");
     if (manifest.scripts?.["patch:apply"] !== "node scripts/changes/patch-apply.mjs")
       errors.push("package.json: patch:apply must own deterministic repository patch execution");
+    if (manifest.scripts?.["change:status"] !== "node scripts/changes/status.mjs")
+      errors.push("package.json: change:status must own read-only local change state");
+    if (manifest.scripts?.["change:impact"] !== "pnpm semantic plan")
+      errors.push("package.json: change:impact must delegate to the semantic planning authority");
+    if (manifest.scripts?.["change:preflight"] !== "node scripts/changes/preflight.mjs")
+      errors.push("package.json: change:preflight must own local merge-readiness checks");
+    if (manifest.scripts?.["change:finalize"] !== "node scripts/changes/finalize.mjs")
+      errors.push("package.json: change:finalize must own preflight plus canonical full validation");
+    if (manifest.scripts?.["tooling:doctor"] !== "node scripts/tooling/doctor.mjs")
+      errors.push("package.json: tooling:doctor must own developer toolchain diagnosis");
     if (
       manifest.scripts?.["vercel:deploy:production"] !== "node scripts/vercel/deploy-production.mjs"
     )

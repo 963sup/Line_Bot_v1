@@ -16,14 +16,17 @@ pnpm test:browser
 
 | 腳本 | 主要範圍 |
 | --- | --- |
-| [check-navigation](check-navigation.mjs) | 列表／詳情、query、前進返回、直接開啟、初始化前接續、讀寫途中導覽 |
-| [check-profile](check-profile.mjs) | 真實 Profile client 元件：頭像直達 namespace、生命週期、換帳號與遲到回應；另以合成 owner query 驗證 server page 不等待 Popular、共用數量查詢與局部失敗。替換 Next delivery adapters，不宣稱正式 DB／遠端延遲驗收 |
-| [check-repository-resources](check-repository-resources.mjs) | Repository Discussions／Labels／Milestones canonical URL、詳情、分頁、錯誤分類與換帳號清除 |
-| [check-membership](check-membership.mjs) | 註冊／恢復、Google 外部交接不載入 LIFF、原會員確認／取消、每日簽到轉盤、讀回與遲到 profile |
-| [check-member-management](check-member-management.mjs) | 搜尋／分頁、停權、原命令重試與撤權 |
-| [check-partner-management](check-partner-management.mjs) | 名錄、管理、版本衝突、換帳號與未知結果 |
-| [check-workplaces](check-workplaces.mjs) | 地點、人員、管理資格與原命令重試 |
-| [check-auto-clock](check-auto-clock.mjs) | 自動打卡、定位拒絕、未知結果重送；面板首次成功不重讀、重播刷新 |
+| `run-local.mjs` | 標準本機 browser suite 入口：build 一次、啟動 loopback production Web、依序執行案例、保存 evidence 並關閉服務。 |
+| `check-navigation.mjs` | 列表/詳情、query、前進返回、直接開啟與讀寫途中導覽。 |
+| `check-profile.mjs` | Profile client lifecycle、換帳號、遲到回應與 server-page composition。 |
+| `check-repository-resources.mjs` | Repository Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類與換帳號清除。 |
+| `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
+| `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |
+| `check-partner-management.mjs` | Partner 名錄/管理、版本衝突、換帳號與 unknown-result handling。 |
+| `check-workplaces.mjs` | Workplace 地點/人員、管理資格與原命令重試。 |
+| `check-auto-clock.mjs` | 自動打卡、定位拒絕、unknown-result resend、首次成功/重播刷新。 |
+| `check-permissions.mjs` | 權限確認、scope、重試、撤銷、禁止自改與管理入口隔離。 |
+| `measure-loading.mjs` | 在相同 build/browser 下量測 script 解壓 bytes 與 request counts；不是 Web Vitals。 |
 
 每次產物位於 `.artifacts/browser/<時間>/`：report.json、各案例結果、建置／服務日誌、截圖與 trace。失敗保留證據並回非零；可用所選 Playwright 的 show-trace 查看。操作約束見 [AGENTS](AGENTS.md)。
 
