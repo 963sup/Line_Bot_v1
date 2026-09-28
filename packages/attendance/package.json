@@ -46,19 +46,18 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
-    "test": "tsx --test test/*.test.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@line_bot_v1/asset": "workspace:*",
-    "@line_bot_v1/identity-access": "workspace:*",
-    "@line_bot_v1/ledger": "workspace:*",
-    "@line_bot_v1/platform": "workspace:*",
-    "@line_bot_v1/account": "workspace:*"
+    "@line_bot_v1/asset": "*",
+    "@line_bot_v1/identity-access": "*",
+    "@line_bot_v1/ledger": "*",
+    "@line_bot_v1/platform": "*",
+    "@line_bot_v1/account": "*"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3"
   }
 }

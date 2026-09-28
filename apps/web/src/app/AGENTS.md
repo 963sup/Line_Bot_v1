@@ -17,13 +17,13 @@ Current route inventory、Mobile app-shell 與 URL contract 由 [Web runtime](..
 
 | Scope | Responsibility |
 | --- | --- |
-| [(public)](%28public%29/AGENTS.md) | Public entry 與 public locator delivery |
-| [(resource)](%28resource%29/AGENTS.md) | Canonical resource URL / projection |
-| [(mobile)](%28mobile%29/AGENTS.md) | Authenticated Mobile / LINE MINI App delivery |
-| [(rich-menu)](%28rich-menu%29/AGENTS.md) | Rich Menu entry composition |
-| [(onboarding)](%28onboarding%29/AGENTS.md) | Registration / restore / completion |
-| [(admin)](%28admin%29/AGENTS.md) | Admin delivery |
-| [(system)](%28system%29/AGENTS.md) | Callback / continuation / unavailable results |
+| [(public)](<(public)/AGENTS.md>) | Public entry 與 public locator delivery |
+| [(resource)](<(resource)/AGENTS.md>) | Canonical resource URL / projection |
+| [(mobile)](<(mobile)/AGENTS.md>) | Authenticated Mobile / LINE MINI App delivery |
+| [(rich-menu)](<(rich-menu)/AGENTS.md>) | Rich Menu entry composition |
+| [(onboarding)](<(onboarding)/AGENTS.md>) | Registration / restore / completion |
+| [(admin)](<(admin)/AGENTS.md>) | Admin delivery |
+| [(system)](<(system)/AGENTS.md>) | Callback / continuation / unavailable results |
 | [api](api/AGENTS.md) | HTTP methods、input/scope translation、owner wiring |
 
 FPT / Mobile benchmark usage 繼承 [apps scope](../../../AGENTS.md)。Locator 語意以本地 semantic owner 為準，不從 GitHub URL 形狀推導。

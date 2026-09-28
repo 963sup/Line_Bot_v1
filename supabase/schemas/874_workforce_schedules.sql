@@ -1,6 +1,0 @@
--- status: reserved
--- owner: workforce
--- scope: published Schedule and ScheduledDay planned work/rest facts.
--- canonical target: docs/owners/workforce.md
--- migration gate: docs/change/gaps/workforce.md
--- activation: remove reserved status only after schedule publication/version, authorization, and consumer contracts are current and tested.

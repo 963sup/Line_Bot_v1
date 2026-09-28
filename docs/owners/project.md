@@ -25,5 +25,4 @@ Project 是 Account-owned（User 或 Organization）的跨 Repository planning b
 Canonical machine truth：
 [`architecture/semantic-model.json`](../../architecture/semantic-model.json) ·
 [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json) ·
-[`architecture/data-topology.json`](../../architecture/data-topology.json) ·
-[`supabase/schemas/700_projects.sql`](../../supabase/schemas/700_projects.sql)
+[`architecture/data-topology.json`](../../architecture/data-topology.json)

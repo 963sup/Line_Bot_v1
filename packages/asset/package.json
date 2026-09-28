@@ -21,9 +21,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@line_bot_v1/platform": "workspace:*"
+    "@line_bot_v1/platform": "*"
   }
 }
