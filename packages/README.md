@@ -59,62 +59,105 @@ validation evidence
 
 ## Canonical DDD + Hexagonal package model
 
-實體 source tree 採下列 canonical vocabulary；它不是要求所有 package 長一樣，而是讓相同 responsibility 永遠只有一個可預測位置。
+所有 owner package 使用同一套穩定 root vocabulary：
 
 ```text
-packages/<owner>/
-├─ src/
-│  ├─ domain/
-│  │  ├─ entities/
-│  │  ├─ value-objects/
-│  │  ├─ aggregates/
-│  │  ├─ services/
-│  │  ├─ events/
-│  │  └─ policies/
-│  │
-│  ├─ contracts/
-│  │  ├─ input/
-│  │  ├─ output/
-│  │  │  └─ repositories/
-│  │  └─ dto/
-│  │
-│  ├─ application/
-│  │  ├─ use-cases/
-│  │  ├─ commands/
-│  │  ├─ queries/
-│  │  └─ services/
-│  │
-│  ├─ adapters/
-│  │  ├─ inbound/
-│  │  └─ outbound/
-│  │     ├─ persistence/
-│  │     ├─ cache/
-│  │     └─ external-api/
-│  │
-│  ├─ composition/
-│  └─ testing/
-│
-└─ test/
+packages/<owner>/src/
+├─ domain/
+├─ application/
+├─ contracts/
+├─ adapters/
+├─ composition/
+└─ testing/
 ```
 
-目錄只在真實 responsibility 存在時建立；沒有責任就沒有空 folder / `.gitkeep`。小 package 可以先用 `domain.ts`、`contracts.ts`、`application.ts` 或 named public entry，責任成長後再展開。
+只有 responsibility 真實存在時才建立 folder。不要為了對稱預建空 layer；也不要另外發明 `infrastructure/`、`gateways/`、`implementations/`、`application/services/` 等同義位置。
 
-### Canonical ownership
+責任成長後可展開：
 
-| Responsibility | Canonical placement | 不得重複到 |
-| --- | --- | --- |
-| Entity / Value Object / Aggregate / Domain Service / Event / Policy | `src/domain/**` | Application、Adapter、DB helper |
-| Inbound Port | `src/contracts/input/**` | `application/ports/**` |
-| Outbound Port / Repository Port | `src/contracts/output/**` | `domain/repositories/**`、`application/ports/**` |
-| Published DTO | `src/contracts/dto/**` | Domain persistence shape、duplicate application DTO |
-| Use Case / Command / Query / orchestration | `src/application/**` | Domain、Adapter |
-| HTTP / webhook / CLI / consumer transport | `src/adapters/inbound/**` | Application business rule |
-| PostgreSQL / Supabase / cache / provider implementation | `src/adapters/outbound/**` | `src/infrastructure/**` |
-| Concrete wiring | `src/composition/**` 或 named public entry | Domain / Application |
-| Neutral runtime / DB primitive | `@line_bot_v1/platform` | owner-specific `infrastructure/**` |
-| Test-only helper | `src/testing/**` | production runtime |
+```text
+packages/<owner>/src/
+├─ domain/
+│  ├─ entities/
+│  ├─ value-objects/
+│  ├─ aggregates/
+│  ├─ services/
+│  ├─ events/
+│  └─ policies/
+│
+├─ application/
+│  ├─ use-cases/
+│  ├─ commands/
+│  └─ queries/
+│
+├─ contracts/
+│  ├─ repositories/
+│  ├─ input/
+│  ├─ output/
+│  └─ dto/
+│
+├─ adapters/
+│  ├─ inbound/
+│  │  ├─ http/
+│  │  ├─ graphql/
+│  │  ├─ cli/
+│  │  └─ consumers/
+│  └─ outbound/
+│     ├─ persistence/
+│     ├─ email/
+│     ├─ payment/
+│     ├─ cache/
+│     └─ external-api/
+│
+├─ composition/
+│  └─ bootstrap/
+│
+└─ testing/
+```
 
-Repository interface 在本 repository 一律視為 **Outbound Port**。Persistence Adapter 實作該 Port；Database / Schema 提供 atomicity、constraint、locking / expected-version enforcement。三者不互相取得對方責任。
+### One responsibility → one place
+
+| Responsibility | Canonical location |
+| --- | --- |
+| Entity / Value Object / Aggregate / Domain Event / Policy | `domain/**` |
+| Domain Service | `domain/services/**` |
+| Use Case | `application/use-cases/**` |
+| Command / Query | `application/commands/**` / `application/queries/**` |
+| Aggregate Repository contract | `contracts/repositories/**` |
+| Inbound Port | `contracts/input/**` |
+| Outbound Port | `contracts/output/**` |
+| Published / boundary DTO | `contracts/dto/**` |
+| HTTP / GraphQL / CLI / consumer | `adapters/inbound/**` |
+| PostgreSQL / Supabase / provider implementation | `adapters/outbound/**` |
+| Concrete dependency wiring | `composition/bootstrap/**` |
+| Test-only capability | `testing/**` |
+
+Application 不設 `services/`。Aggregate Repository 不放 `domain/repositories/` 或 `application/ports/`。Owner package 不設 `infrastructure/`；neutral runtime / database mechanism 由 `@line_bot_v1/platform` 擁有。
+
+### Dependency direction
+
+```text
+Inbound Adapter
+      │
+      ▼
+Input Port / Use Case
+      │
+      ▼
+ Application
+      │
+      ├──────────────► Domain
+      │
+      ├──────────────► Repository Contract
+      └──────────────► Output Port
+                          ▲
+                          │
+                  Outbound Adapter
+
+Composition
+  └─ wires Use Cases + Adapters
+```
+
+Inner layer 永遠不知道 concrete technology。
 
 ### Correctness chain
 
@@ -132,117 +175,12 @@ Durable idempotency
 → repeated execution correctness
 
 Transactional Outbox / Saga
-→ cross-boundary consistency
+→ cross-boundary correctness
 ```
 
-Canonical mutation flow：
+`check → if → update` 不是 concurrency guarantee。任何 race-sensitive invariant，最終必須由 expected version、atomic predicate、lock、constraint 或 unique key enforce。
 
-```text
-Inbound Adapter
-    │ idempotency identity
-    ▼
-Application Use Case
-    ▼
-Repository.load()
-    ▼
-Aggregate
-    │ invariant + Domain Event
-    ▼
-Repository.save(expectedVersion, events)
-    ▼
-Persistence Adapter
-    │ conditional write + state + receipt + outbox
-    ▼
-DB transaction commit
-    ▼
-Outbox Worker
-    ▼
-Other Bounded Contexts
-```
-
-`check → if → update` 不構成 concurrency correctness。任何會受 race 影響的 invariant，最終必須由 expected version、atomic predicate、lock、constraint 或 unique key enforce；Application / API 的 pre-check 只能是輔助。完整 Must / Must Not 見 [packages/AGENTS.md](./AGENTS.md)。
-
-## Dependency direction
-
-```text
-Inbound Adapter
-      │
-      ▼
-Inbound Port / Application Use Case
-      │
-      ▼
-    Domain
-      ▲
-      │
-Outbound Port
-      ▲
-      │
-Outbound Adapter
-```
-
-Source dependency 只能朝內：
-
-```text
-Domain
-  ↑
-Contracts / Ports
-  ↑
-Application
-  ↑
-Adapters
-
-Composition → Application / Ports + concrete Adapters
-```
-
-禁止反向：
-
-- Domain → Contracts / Application / Adapters
-- Contracts → Application / Adapters
-- Application → concrete Adapters
-- inner layers → provider SDK / SQL implementation
-- package → another package private source / `dist` / testing-only surface
-
-## Layer responsibilities
-
-| Layer | Owns | Must not own |
-| --- | --- | --- |
-| Domain | business truth、Entity、Value Object、Aggregate、Invariant、Transition、Domain Event / Policy | SQL、SDK、HTTP、framework、environment、runtime wiring |
-| Contracts / Ports | Inbound / Outbound Port、Published DTO、stable exchange contract | concrete implementation、orchestration、second Domain truth |
-| Application | Use Case、Command / Query、workflow / transaction orchestration | concrete Adapter、provider protocol、duplicated Domain invariant |
-| Inbound Adapter | HTTP / webhook / runtime transport → Inbound Port | business authority |
-| Outbound Adapter | Port → PostgreSQL / Supabase / SDK / HTTP / provider | business authority |
-| Composition / Public Entry | concrete dependency wiring、named public capability | Domain invariant、hidden compatibility facade |
-| Test / Evidence | layer-specific behavior / integration proof | production runtime dependency |
-
-## Ports
-
-Port 不是「為了 DDD 看起來完整」而加的 interface。
-
-Inbound Port 表達外部如何啟動 use case。  
-Outbound Port 表達 Application 真正需要的外部 capability。
-
-只有存在真實 consumer、第二個 implementation / variation、external technology boundary、policy boundary、transaction / recovery responsibility 或 isolation requirement時，才建立 abstraction。
-
-## Adapter privacy and public capability
-
-`src/adapters/` 是 package-private implementation。外部 consumer 不得直接 import Adapter path。
-
-若 composition root 必須使用 concrete implementation，package 以 adapter 目錄之外的 named public entry 發布 capability：
-
-```ts
-// src/postgres.ts
-export { PostgresExampleStore } from "./adapters/postgres.js";
-```
-
-```json
-{
-  "exports": {
-    "./postgres": "./dist/postgres.js"
-  }
-}
-```
-
-這個 entry 是 package boundary，不是第二份 implementation，也不是 pass-through compatibility facade。不要使用 wildcard export、alias 或舊 path wrapper 掩蓋 ownership / boundary 問題。
+完整 placement、Must / Must Not、idempotency、outbox、service 與 composition 規則見 [packages/AGENTS.md](./AGENTS.md)。
 
 ## Cross-owner relationship
 
