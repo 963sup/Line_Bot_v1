@@ -2,7 +2,7 @@ import {
   hasOrganizationOwnerAssignment,
   hasReplacementOrganizationOwner,
   revokeOrganizationOwnerForMembershipRemoval,
-} from "@line_bot_v1/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/postgres";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 
