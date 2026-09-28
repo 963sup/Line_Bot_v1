@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { requireActiveTargetUser } from "@line_bot_v1/identity-access/postgres";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { requireActiveTargetUser } from "@line_bot_v1/identity-access/postgres";
 import {
   assertOrganizationMembershipSourceRemovable,
   cancelPendingOrganizationInvitation,
