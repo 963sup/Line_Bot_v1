@@ -1,3 +1,3 @@
-export { PostgresAttendanceStore } from "./postgres/attendance.js";
-export { PostgresWorkplaceChatStore } from "./postgres/workplace-chat.js";
-export { PostgresWorkplaceStore } from "./postgres/workplaces.js";
+export { PostgresAttendanceStore } from "./adapters/postgres/attendance.js";
+export { PostgresWorkplaceChatStore } from "./adapters/postgres/workplace-chat.js";
+export { PostgresWorkplaceStore } from "./adapters/postgres/workplaces.js";

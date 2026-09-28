@@ -1,4 +1,4 @@
-import type { WorkplaceChatDraft, WorkplaceChatResult, WorkplaceCommand } from "../../domain.js";
+import type { WorkplaceChatDraft, WorkplaceChatResult, WorkplaceCommand } from "../domain.js";
 
 export interface WorkplaceChatStore {
   transact(

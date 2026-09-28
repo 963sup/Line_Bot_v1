@@ -1878,10 +1878,10 @@
         "scope": "current Attendance clock application surface",
         "sourcePaths": [
           "packages/attendance/src/application/clock.ts",
-          "packages/attendance/src/application/ports/clock.ts",
+          "packages/attendance/src/contracts/clock.ts",
           "packages/attendance/src/domain/sessions.ts"
         ],
-        "publicExports": ["./application/clock", "./application/ports/clock", "./domain"],
+        "publicExports": ["./application/clock", "./contracts/clock", "./domain"],
         "entrypoints": [
           "apps/web/src/app/(mobile)/attendance/page.tsx",
           "apps/web/src/app/(mobile)/attendance/clock-in/page.tsx",
@@ -1955,7 +1955,7 @@
         "publicExports": ["./postgres", "./domain"],
         "entrypoints": [
           "packages/daily-check-in/src/postgres.ts",
-          "packages/attendance/src/postgres/attendance.ts"
+          "packages/attendance/src/adapters/postgres/attendance.ts"
         ],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",

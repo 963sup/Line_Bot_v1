@@ -1,5 +1,5 @@
+import type { AttendanceDependencies, AttendanceInput } from "../contracts/clock.js";
 import type { AttendanceAction } from "../domain.js";
-import type { AttendanceDependencies, AttendanceInput } from "./ports/clock.js";
 
 export function createClockAttendance(deps: AttendanceDependencies) {
   async function run(subject: string, action: AttendanceAction, input: AttendanceInput) {

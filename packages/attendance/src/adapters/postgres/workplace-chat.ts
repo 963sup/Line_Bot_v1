@@ -1,8 +1,12 @@
 import { readUserQualification } from "@line_bot_v1/account/postgres";
 import { hasPermission } from "@line_bot_v1/identity-access/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import type { WorkplaceChatStore } from "../application/ports/workplace-chat.js";
-import { AttendanceError, type WorkplaceChatDraft, type WorkplaceChatResult } from "../domain.js";
+import type { WorkplaceChatStore } from "../../contracts/workplace-chat.js";
+import {
+  AttendanceError,
+  type WorkplaceChatDraft,
+  type WorkplaceChatResult,
+} from "../../domain.js";
 import { PostgresWorkplaceStore } from "./workplaces.js";
 
 export class PostgresWorkplaceChatStore implements WorkplaceChatStore {
