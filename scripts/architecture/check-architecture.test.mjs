@@ -379,11 +379,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       "packages/line-channel/src/mini-app/browser.ts",
       `export { client } from ${JSON.stringify("../adapters/mini-app/browser/client")};`,
     );
-    write(
-      root,
-      "apps/web/src/helper.ts",
-      importing("@line_bot_v1/line-channel/mini-app/browser"),
-    );
+    write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line-channel/mini-app/browser"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(
       root,
