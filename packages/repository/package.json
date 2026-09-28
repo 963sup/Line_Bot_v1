@@ -48,10 +48,6 @@
       "types": "./dist/application/ports/public.d.ts",
       "default": "./dist/application/ports/public.js"
     },
-    "./adapters/postgres/public": {
-      "types": "./dist/adapters/postgres/public.d.ts",
-      "default": "./dist/adapters/postgres/public.js"
-    },
     "./adapters/postgres/resources": {
       "types": "./dist/adapters/postgres/resources.d.ts",
       "default": "./dist/adapters/postgres/resources.js"
@@ -103,6 +99,10 @@
     "./adapters/postgres/star-lists": {
       "types": "./dist/adapters/postgres/star-lists.d.ts",
       "default": "./dist/adapters/postgres/star-lists.js"
+    },
+    "./postgres/public": {
+      "types": "./dist/postgres/public.d.ts",
+      "default": "./dist/postgres/public.js"
     }
   },
   "files": [
