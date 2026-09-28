@@ -139,9 +139,7 @@ export default function RepositoryAccess({
       await load();
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(
-          cause instanceof Error ? cause.message : "結果尚未確認，請重試原 access 操作。",
-        );
+        setError(cause instanceof Error ? cause.message : "結果尚未確認，請重試原 access 操作。");
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -206,8 +204,8 @@ export default function RepositoryAccess({
               Current capability：{data.repository.actorCapability ?? "OrganizationOwner recovery"}
             </p>
             <p className="crud-lifecycle-note">
-              Repository owns access grants；Organization/Team membership remains owned by those scopes.
-              Grant 不會建立 Organization 或 Team membership。
+              Repository owns access grants；Organization/Team membership remains owned by those
+              scopes. Grant 不會建立 Organization 或 Team membership。
             </p>
           </section>
 
@@ -218,7 +216,9 @@ export default function RepositoryAccess({
                 User owner 的 admin access 為固有權限，不建立重複 direct grant。
               </p>
             )}
-            {!data.directUserGrants.length && <p className="empty-copy">目前沒有 direct User grant。</p>}
+            {!data.directUserGrants.length && (
+              <p className="empty-copy">目前沒有 direct User grant。</p>
+            )}
             {data.directUserGrants.map((item) => (
               <article key={item.userId}>
                 <strong>{item.userId}</strong>
