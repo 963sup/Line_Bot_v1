@@ -2,7 +2,7 @@ import {
   LineIdentityError,
   LineIdentityUnavailableError,
   verifyLiffUser,
-} from "@line_bot_v1/line-channel/adapters/identity";
+} from "@line_bot_v1/line-channel/identity";
 import {
   createUpstashRedisRestTransport,
   RedisRateLimiter,
