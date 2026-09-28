@@ -1,7 +1,11 @@
-# @line_bot_v1/daily-check-in
-Owner: DailyCheckIn policy/application contract. Semantics: [DailyCheckIn](../../docs/owners/daily-check-in.md).
+# Daily Check-in package constraints
 
-- Keep DailyCheckIn separate from Attendance, Payroll, identity, and generic user events.
-- Preserve qualification/scope recheck, one-command replay, durable claim authority, and distinct failure outcomes.
-- Client organization/time/amount are inputs only; server policy owns subject and business day.
-- Preserve the Ledger source tuple until a verified one-to-one migration prevents double credit.
+Local constraints for `@line_bot_v1/daily-check-in`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Exactly one check-in claim per user per UTC/timezone business day.
+- Replay commands with identical request fingerprint are idempotent no-ops.
+- Reward distribution triggers atomic credit entries via Ledger/Wallet.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

@@ -1,7 +1,11 @@
-# @line_bot_v1/organization
-Owner: Organization lifecycle, invitations, direct membership sources, and effective membership. Semantics: [Organization](../../docs/owners/organization.md).
+# Organization package constraints
 
-- Team owns Organization Team state/commands; Identity/Access owns scoped role assignment.
-- Direct, Enterprise-Team-derived, and effective membership are distinct facts; removing one source must not erase another valid source.
-- Scope is explicit. Membership, UI, URL, Enterprise, or Team presence is not authorization.
-- Preserve version/replay safety, last-effective-owner protection, audit/receipt, cross-context transaction ordering, and RLS/data isolation.
+Local constraints for `@line_bot_v1/organization`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- OrganizationInvitation represents pending intent; it does not grant membership or authorization.
+- Active membership requires verified direct membership or active Enterprise Team assignment.
+- Organization login shares the global login namespace governed by @line_bot_v1/namespace.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

@@ -1,7 +1,12 @@
-# @line_bot_v1/explore
+# Explore package
 
-- Existing discovery owner: [Repository](../../docs/owners/repository.md)
-- Local scaffold constraints: [AGENTS.md](AGENTS.md)
-- Public surface and commands: [package.json](package.json)
-- Source entry: [src/index.ts](src/index.ts)
-- Parent package rules: [../AGENTS.md](../AGENTS.md)
+Routing and module overview for `@line_bot_v1/explore`.
+
+- Semantic Owner: `repository`
+- Authority document: [`docs/owners/repository.md`](../../docs/owners/repository.md)
+- Machine boundaries: [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
+- Persistence mapping: [`architecture/data-topology.json`](../../architecture/data-topology.json)
+
+## Scope
+
+Application-level projection for repository discovery, trending activity, and awesome/curated lists.

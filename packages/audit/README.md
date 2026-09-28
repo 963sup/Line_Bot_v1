@@ -1,6 +1,12 @@
-# @line_bot_v1/audit
-- Owner contract: [audit](../../docs/owners/audit.md)
-- Local constraints: [AGENTS.md](AGENTS.md)
-- Public surface: [package.json](package.json)
-- Scaffold entry: [src/index.ts](src/index.ts)
-- Parent package rules: [../AGENTS.md](../AGENTS.md)
+# Audit package
+
+Routing and module overview for `@line_bot_v1/audit`.
+
+- Semantic Owner: `audit`
+- Authority document: [`docs/owners/audit.md`](../../docs/owners/audit.md)
+- Machine boundaries: [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
+- Persistence mapping: [`architecture/data-topology.json`](../../architecture/data-topology.json)
+
+## Scope
+
+Foundation workspace for system-wide governance audit events and immutable action receipts.

@@ -1,8 +1,11 @@
-# @line_bot_v1/line-channel
-Owner: LINE protocol, user-proof verification, Messaging/Webhook clients, and browser-safe MINI App integration. Semantics: [LINE](../../docs/owners/line-integration.md).
+# LINE Channel package constraints
 
-- Business qualification, authorization, navigation policy, and domain state stay with their owners.
-- Keep browser LIFF separate from server credentials/SDKs. `source.userId` is a human external subject; signed `destination` is receiving-bot metadata, not product authority.
-- Rich Menu definition/publication policy stays outside this package.
-- Preserve signature/raw-body checks, replay identity, payload bounds, credential redaction, Rich Menu readback, and LIFF continuation.
-- Provider acceptance never proves business authorization or commit. Remote mutation requires target, request identity, precondition, readback, and evidence.
+Local constraints for `@line_bot_v1/line-channel`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- All inbound webhook requests must verify the LINE signature before parsing.
+- LINE User ID is a provider facet; must be bound to canonical Account identity.
+- Webhook processing is idempotent to handle redeliveries gracefully.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

@@ -91,14 +91,18 @@ export default {
     {
       name: "context-domain-does-not-import-outer-layers",
       severity: "error",
+      comment:
+        "Domain layer must be pure and never depend on contracts, application, adapters, or infrastructure",
       from: { path: "^packages/([^/]+)/src/domain(?:\\.ts|/)" },
       to: {
-        path: "^packages/$1/src/(application|adapters|agents|testing|database|migration)(?:\\.ts|/)",
+        path: "^packages/$1/src/(contracts|application|adapters|agents|testing|database|migration)(?:\\.ts|/)",
       },
     },
     {
       name: "context-contracts-do-not-import-implementation",
       severity: "error",
+      comment:
+        "Contracts layer (Ports & DTOs) may depend on domain, but must not depend on application or adapters",
       from: { path: "^packages/([^/]+)/src/contracts(?:\\.ts|/)" },
       to: {
         path: "^packages/$1/src/(application|adapters|agents|testing|database|migration)(?:\\.ts|/)",
@@ -116,9 +120,40 @@ export default {
     {
       name: "context-application-does-not-import-adapters",
       severity: "error",
+      comment:
+        "Application use cases must interact via contracts/ports and never depend directly on concrete adapters",
       from: { path: "^packages/([^/]+)/src/application(?:\\.ts|/)" },
       to: {
         path: "^packages/$1/src/(adapters|agents|testing|database|migration)(?:\\.ts|/)",
+      },
+    },
+    {
+      name: "context-inner-layers-do-not-import-adapters",
+      severity: "error",
+      comment: "Domain, contracts, and application layers must never depend on concrete adapters",
+      from: { path: "^packages/[^/]+/src/(domain|contracts|application)(?:\\.ts|/)" },
+      to: { path: "^packages/[^/]+/src/adapters(?:\\.ts|/)" },
+    },
+    {
+      name: "no-relative-imports-across-packages",
+      severity: "error",
+      comment:
+        "Packages must not import internal files of other packages via relative paths; use public workspace specifiers",
+      from: { path: "^packages/([^/]+)/src/" },
+      to: {
+        path: "^packages/[^/]+/src/",
+        pathNot: "^packages/$1/src/",
+      },
+    },
+    {
+      name: "adapters-are-private-implementations",
+      severity: "error",
+      comment:
+        "Adapters are package-private implementations and must not be imported from outside the owning package",
+      from: { path: "^(packages|apps)/" },
+      to: {
+        path: "^packages/([^/]+)/src/adapters(?:\\.ts|/)",
+        pathNot: "^packages/$1/",
       },
     },
     {

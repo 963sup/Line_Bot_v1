@@ -1,5 +1,12 @@
-# @line_bot_v1/assistant
-- Owner contract: [assistant](../../docs/owners/assistant.md)
-- Local constraints: [AGENTS.md](AGENTS.md)
-- Public surface: [package.json](package.json)
-- Parent package rules: [../AGENTS.md](../AGENTS.md)
+# Assistant package
+
+Routing and module overview for `@line_bot_v1/assistant`.
+
+- Semantic Owner: `assistant`
+- Authority document: [`docs/owners/assistant.md`](../../docs/owners/assistant.md)
+- Machine boundaries: [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
+- Persistence mapping: [`architecture/data-topology.json`](../../architecture/data-topology.json)
+
+## Scope
+
+AI Assistant workflows, conversation orchestration, and tool execution boundaries.

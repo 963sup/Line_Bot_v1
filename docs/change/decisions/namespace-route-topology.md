@@ -4,7 +4,7 @@
 
 ## Activation decisions
 
-完整 selected path、scope、locator owner 與 active/planned 狀態以 [routes.ts](../../../packages/namespace/src/domain/routes.ts) 為 executable truth。本文件只保留尚未解決的業務啟用條件，不維護第二份 route registry。
+完整 selected path、scope、locator owner 與 active/planned 狀態以 [`architecture/semantic-model.json#locators`](../../../architecture/semantic-model.json)（及規劃中的 `packages/namespace/src/domain/routes.ts`）為 executable truth。本文件只保留尚未解決的業務啟用條件，不維護第二份 route registry。
 
 | Capability | Required decision / implementation |
 | --- | --- |

@@ -1,7 +1,11 @@
-# @line_bot_v1/partners
-Owner: partner directory, referral/contact lifecycle, and publication visibility. Semantics: [Partners](../../docs/owners/partners.md).
+# Partners package constraints
 
-- External contact data is not identity proof, authorization, or trusted business relation.
-- Preserve scope authorization, lifecycle/version, visibility filtering, audit evidence, and distinct not-found/forbidden/unavailable outcomes.
-- Management writes keep requestId/fingerprint, expected version, reason, and consent in one transaction; mismatched replay fails.
-- Provider adapters transport data only and must not create authority or bypass current qualification.
+Local constraints for `@line_bot_v1/partners`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Partner entity lifecycle is independent of internal organization accounts.
+- Referral tracking records must preserve immutable submission timestamps.
+- Partner contact mutations require expected version checks.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

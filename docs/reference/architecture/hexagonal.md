@@ -1,6 +1,6 @@
 # Hexagonal architecture
 
-DDD Strategic Design 先由 [Domain map](../../facts/ownership.md) 與 [Repository map](../../facts/sources-of-truth.md) 確定 Language、Owner、Boundary、Relationship 與 Invariant；Hexagonal Architecture 只負責在既定責任內維持 dependency direction，不替系統發明新的 Bounded Context。
+DDD Strategic Design 先由 [Strategic Design 戰略設計手冊](strategic-design.md)、[Domain map](../../facts/ownership.md) 與 [Repository map](../../facts/sources-of-truth.md) 確定 Language、Owner、Boundary、Relationship 與 Invariant；Hexagonal Architecture 只負責在既定責任內維持 dependency direction，不替系統發明新的 Bounded Context。
 
 ```text
 Business Reality

@@ -1,7 +1,11 @@
-# @line_bot_v1/notifications
-Owner: Notification facts, recipient read state, and delivery attempts. Semantics: [Notifications](../../docs/owners/notifications.md).
+# Notifications package constraints
 
-- Inbox is a derived recipient projection, not a second owner.
-- Notifications reference source facts but never own source lifecycle/content.
-- Preserve recipient authorization, source identity/version, delivery idempotency, retry status, and distinct unavailable/missing-source failures.
-- Read state is recipient-scoped and must not mutate source facts, delivery receipts, or another recipient.
+Local constraints for `@line_bot_v1/notifications`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Notifications stores delivery references only; it does not acquire source truth of the triggering event.
+- Delivered messages reference stable source entity locators.
+- Dispatch state mutation must be idempotent and replay-safe.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

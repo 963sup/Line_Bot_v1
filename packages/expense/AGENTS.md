@@ -1,8 +1,11 @@
-# @line_bot_v1/expense
-Owner: Expense state, commands, receipt intent, and recognition boundary. Semantics: [Expense](../../docs/owners/expense.md).
+# Expense package constraints
 
-- Preserve revision OCC, terminal idempotency, owner/scope isolation, receipt-intent atomicity, final transaction recheck, and audit/event persistence.
-- Receipt recognition returns untrusted draft data only; never authorize, post value, persist image bytes by default, or guess uncertain fields.
-- Keep image/schema/timeout/cancellation/no-retry safeguards when moving adapters or providers.
-- Legacy `body.project` is compatibility-only history, not current Project authority; new commands must not write or require it.
-- Account supplies current User qualification; Expense maps failures into its own error contract.
+Local constraints for `@line_bot_v1/expense`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Expense claim mutation uses expected version checks to avoid concurrent overwrite.
+- Approval transitions require verified authority from Identity & Access.
+- Receipt image intake requires verified upload intent before final claim attachment.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

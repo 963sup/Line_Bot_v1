@@ -1,10 +1,11 @@
-# @line_bot_v1/account
-Owner: User/Account lifecycle, qualification, profile/follow, external identity links, and earned Achievement facts. Semantics: [Account](../../docs/owners/account.md).
+# Account package constraints
 
-- Employment, Organization membership, and authorization remain separate owners; external proof never invents qualification.
-- Preserve lifecycle/version checks, replay safety, tenant isolation, and public contracts.
-- Stable UserId is identity; login/profile/display/provider data are mutable locators/projections. Namespace owns global login normalization, binding, claim, resolution and rename. Account calls its public contract within the existing lifecycle transaction.
-- Profile visibility applies only to Account-authored profile fields; it never grants or suppresses another owner's authorization.
-- Follow edges are social relations, not membership/access/authorization evidence.
-- External links are explicit, one-time/version/expiry-bound; never merge Users by email or transfer history on unlink.
-- Achievement runtime is read-only earned facts; do not invent grant/progress/revocation policy without a real rule and consumer.
+Local constraints for `@line_bot_v1/account`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Account is identity and kind authority; User is human product identity facet.
+- Global login namespace is claimed and resolved via @line_bot_v1/namespace; do not maintain a second login lifecycle.
+- External identity links (LINE, Google) verify proof before binding to Account.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

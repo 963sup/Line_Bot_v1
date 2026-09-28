@@ -13,13 +13,20 @@
 
 - 跨 package consumer 只能使用 `package.json#exports` 公開 surface；產品 source 不依賴其他 package 的 internal、`dist` 或 testing-only path。
 - `domain / application / contracts / adapters / agents / testing` 只在責任真實存在時建立；不為目錄對稱預建空 layer。
+- 各層單向依賴規則：`domain/`（純 TypeScript，零外部依賴）← `contracts/`（Ports 與 DTOs）← `application/`（Use Cases，只面向 Ports 協調）← `adapters/`（實體資料庫/外部通訊）。內層嚴禁反向 import 外層。
 - Port / Contract 表達 consumer/application 真正需要的 capability；不得只是 SDK、SQL client 或另一 package private API 的 wrapper。
 - Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
 - Consumer 不得直接讀另一 owner 的 private schema/table 來繞過 public contract。
+- Application host（如 `apps/web`）只能依賴 `architecture/implementation-topology.json` 開放的 Workspace packages；底層一致性邊界（如 `ledger`）由 Aggregate Root（如 `wallet`、`daily-check-in`）封裝，禁止直接向 Web 暴露。
+- 預留或基礎模組（如 `audit`、`payroll`、`workforce`）在有真實可執行之 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
 
 ## Invariants
 
 - 純 placement、naming、dependency 或 boundary refactor 必須保持 [Invariant kernel](../docs/rules/system-invariants.md) 的 authority、authorization/isolation、concurrency/replay、atomicity/recovery、ownership/dependency 與 evidence semantics。
+- **單一事務單一聚合**：一個資料庫事務原則上只修改一個聚合根；跨聚合協調一律透過領域事件與 Transactional Outbox 達成最終一致性。
+- **錯誤處理**：業務失敗返回結構化 `Result<T, DomainError>`，不拋出未受控例外。
+- **冪等防重放**：寫入命令支援 Idempotency Key 或天然業務複合主鍵；事件消費者強制去重。
+- **讀寫分離**：探索、統計與清單等唯讀查詢直接消費 Read Projections，不載入肥大 Domain 聚合。
 - 新能力直接進真正 owner；不得用 alias、facade、compatibility package 或 pass-through service 掩蓋 responsibility 問題。
 - Generated/reference data 若存在，必須能追到 canonical source；generated output、history、target design 與 current business truth 不得互相取代。
 

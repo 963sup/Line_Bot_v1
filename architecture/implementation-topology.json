@@ -206,6 +206,7 @@
       "moduleKind": "application-host",
       "semanticOwner": null,
       "allowedWorkspaceDependencies": [
+        "@line_bot_v1/explore",
         "@line_bot_v1/account",
         "@line_bot_v1/namespace",
         "@line_bot_v1/notifications",

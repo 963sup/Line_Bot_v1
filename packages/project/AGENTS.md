@@ -1,8 +1,11 @@
-# Project
+# Project package constraints
 
-Owner: cross-Repository planning, WBS, Project Milestones, and references to Repository work. Canonical semantics: [Project](../../docs/owners/project.md).
+Local constraints for `@line_bot_v1/project`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
 
-- Project owner is Account: `USER | ORGANIZATION`; Project ≠ WBS and Project Items never copy Repository work truth.
-- Authorized collection read is active. Personal Projects require the owner User; Organization Projects currently require current `OrganizationOwner`. Do not derive Project access from Organization membership or Repository access.
-- Planning writes remain inactive. Do not add create/update/WBS/Item/Milestone mutation until expected version, replay identity, Repository reference authorization, and consistency boundaries are defined.
-- Cross-owner dependencies use only public exports; owner login is a locator, never permission.
+## Local Invariants
+
+- Project references work items (issues) but does not acquire Issue or Repository source authority.
+- Project field value changes must not mutate the underlying issue truth.
+- Project items can be draft items or references to external work items.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

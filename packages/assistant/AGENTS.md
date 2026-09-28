@@ -1,7 +1,11 @@
-# @line_bot_v1/assistant
-Owner: Assistant answer orchestration, Gemini adapter, and Issue-draft intake. Semantics: [Assistant](../../docs/owners/assistant.md).
+# Assistant package constraints
 
-- Accept only trusted delivery text; cross-owner writes require that owner's public contract and authorization.
-- Intake may draft only: no assign, persist, authorize, or notify.
-- Preserve injected `now()`, 500-char input, 2000-char output, general cooldown, and distinct empty/unavailable results. Issue drafts do not consume the general cooldown.
-- Gemini stays on Developer API (`vertexai: false`); keep provider guards package-private.
+Local constraints for `@line_bot_v1/assistant`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Assistant is an orchestration consumer; it acquires no business domain authority.
+- Tool invocations must pass through target domain public contracts and re-check caller authorization.
+- LLM outputs are untrusted until validated against domain schemas.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

@@ -1,5 +1,12 @@
-# @line_bot_v1/wallet
-- Owner contract: [wallet](../../docs/owners/wallet.md)
-- Local constraints: [AGENTS.md](AGENTS.md)
-- Public surface: [package.json](package.json)
-- Parent package rules: [../AGENTS.md](../AGENTS.md)
+# Wallet package
+
+Routing and module overview for `@line_bot_v1/wallet`.
+
+- Semantic Owner: `wallet`
+- Authority document: [`docs/owners/wallet.md`](../../docs/owners/wallet.md)
+- Machine boundaries: [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
+- Persistence mapping: [`architecture/data-topology.json`](../../architecture/data-topology.json)
+
+## Scope
+
+User wallet holding aggregates, balance presentations, and balance transaction views.

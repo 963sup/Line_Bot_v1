@@ -27,7 +27,7 @@ Project may reference Repository work but does not acquire Issue/Discussion auth
 
 ## Mapping
 
-Runtime owner: `packages/repository`. Web presentation: `apps/web/src/modules/repository`.
+Runtime owner: `packages/repository`. Discovery projection: `packages/explore`. Web presentation: `apps/web/src/modules/repository`.
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
 

@@ -1,5 +1,12 @@
-# @line_bot_v1/account
-- Owner contract: [account](../../docs/owners/account.md)
-- Local constraints: [AGENTS.md](AGENTS.md)
-- Public surface: [package.json](package.json)
-- Parent package rules: [../AGENTS.md](../AGENTS.md)
+# Account package
+
+Routing and module overview for `@line_bot_v1/account`.
+
+- Semantic Owner: `account`
+- Authority document: [`docs/owners/account.md`](../../docs/owners/account.md)
+- Machine boundaries: [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
+- Persistence mapping: [`architecture/data-topology.json`](../../architecture/data-topology.json)
+
+## Scope
+
+User and Account identity records, profile facts, external identity link states, and achievement records.

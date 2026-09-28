@@ -1,7 +1,11 @@
-# @line_bot_v1/payroll
-Owner: Payroll readiness and future payroll lifecycle. Semantics: [Payroll](../../docs/owners/payroll.md).
+# Payroll package constraints
 
-- Readiness aggregates versioned Workforce, AttendancePeriod, and rule inputs; missing/duplicate/invalid required inputs fail closed.
-- Validate PayPeriod before upstream reads.
-- Readiness is read-only and does not create PayrollRun/PayStatement, calculate pay, publish results, or grant permission.
-- Do not activate calculation/lifecycle/persistence/publication by shrinking required inputs or inventing formulas; satisfy the explicit owner/gap contracts first.
+Local constraints for `@line_bot_v1/payroll`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Module remains inactive until explicit payroll consumer contracts and calculation engines are deployed.
+- Payroll readiness consumes Attendance and Expense approved facts via query.
+- Settlement entries require dual authorization and emit atomic Ledger records.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

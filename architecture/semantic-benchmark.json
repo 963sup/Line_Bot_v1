@@ -742,6 +742,16 @@
         "category": "projects",
         "symbol": "ProjectV2StatusUpdate"
       }
+    },
+    {
+      "id": "user-list",
+      "kind": "curation",
+      "meaning": "A user-curated list of repositories.",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "UserList"
+      }
     }
   ],
   "edges": [
@@ -787,6 +797,17 @@
         "category": "enterprise-admin",
         "symbol": "EnterpriseTeam",
         "field": "assignedOrganizations"
+      }
+    },
+    {
+      "from": "enterprise-team",
+      "type": "has-member",
+      "to": "user",
+      "source": {
+        "file": "schema-enterprise-admin.json",
+        "category": "enterprise-admin",
+        "symbol": "EnterpriseTeam",
+        "field": "enterpriseTeamMembers"
       }
     },
     {
@@ -1600,6 +1621,40 @@
         "category": "projects",
         "symbol": "ProjectV2StatusUpdate",
         "field": "project"
+      }
+    },
+    {
+      "from": "user",
+      "type": "contains",
+      "to": "user-list",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "User",
+        "field": "lists"
+      }
+    },
+    {
+      "from": "user-list",
+      "type": "belongs-to",
+      "to": "user",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "UserList",
+        "field": "user"
+      }
+    },
+    {
+      "from": "user-list",
+      "type": "references",
+      "to": "repository",
+      "source": {
+        "file": "schema-users.json",
+        "category": "users",
+        "symbol": "UserList",
+        "field": "items",
+        "note": "UserList.items yields UserListItemsConnection containing Repository items."
       }
     }
   ],

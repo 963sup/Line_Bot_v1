@@ -1,7 +1,11 @@
-# @line_bot_v1/enterprise
-Owner: Enterprise lifecycle, direct affiliation, Organization attachment, invitations, Enterprise Teams, memberships, and Team→Organization assignment. Semantics: [Enterprise](../../docs/owners/enterprise.md).
+# Enterprise package constraints
 
-- Enterprise Team ≠ Organization Team; Organization membership/invitation remain Organization authority.
-- Identity/Access is the RoleAssignment writer; Enterprise consumes authorization and never duplicates role authority.
-- Preserve effective-user qualification, membership-source provenance, expected-version/replay, owner protection, audit, and recovery.
-- Legacy Enterprise name/slug recovery is one-time Enterprise-owned behavior for a current EnterpriseOwner; never derive it from provider metadata or Supabase reconciliation.
+Local constraints for `@line_bot_v1/enterprise`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- EnterpriseInvitation is a pending intent, not active affiliation or membership.
+- An Organization can belong to at most one active Enterprise governance scope.
+- Enterprise Team to Organization assignment does not transfer OrganizationOwner authority.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

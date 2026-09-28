@@ -503,7 +503,8 @@
       "kind": "table",
       "path": "supabase/schemas/220_enterprise_invitations.sql",
       "authority": true,
-      "semanticOwner": "enterprise"
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-invitation"
     },
     {
       "name": "organizations",
@@ -532,7 +533,8 @@
       "kind": "table",
       "path": "supabase/schemas/302_organization_invitations.sql",
       "authority": true,
-      "semanticOwner": "organization"
+      "semanticOwner": "organization",
+      "concept": "organization-invitation"
     },
     {
       "name": "teams",

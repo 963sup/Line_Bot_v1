@@ -1,7 +1,11 @@
-# @line_bot_v1/google-workspace
-Owner: Google Workspace/Maps provider protocol and adapters. Semantics: [Google Workspace](../../docs/owners/google-workspace.md).
+# Google Workspace package constraints
 
-- Server-only. Caller establishes identity, scope, resource owner, and operation intent before provider access.
-- Do not own Account identity links, business authorization, browser token caches, or arbitrary URL proxying.
-- Preserve complete pagination, timeout/cancel/partial-failure and unknown-write semantics, plus credential redaction.
-- Keep Workspace OAuth separate from Maps credentials; address resolution is not Attendance geofence proof.
+Local constraints for `@line_bot_v1/google-workspace`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Integration adapter owns external protocol mapping only; holds no internal business truth.
+- OAuth tokens must be passed client-side via Bearer headers; no client secrets in code.
+- API failures are translated into structured, recoverable domain error representations.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

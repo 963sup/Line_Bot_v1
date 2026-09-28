@@ -249,6 +249,20 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "enterprise-invitation",
+      "canonicalName": "Enterprise Invitation",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "definition": "Pending Enterprise participation intent; invitation is not active membership or affiliation.",
+      "benchmark": {
+        "node": "enterprise-member-invitation",
+        "adoption": "pending-intent-semantics"
+      },
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "organization",
       "canonicalName": "Organization",
       "kind": "authoritative",
@@ -273,7 +287,8 @@
         "node": "organization-invitation",
         "adoption": "pending-intent-semantics"
       },
-      "authorityMode": "authoritative"
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     },
     {
       "id": "team",
@@ -310,6 +325,10 @@
       "owner": "repository",
       "lifecycle": "current",
       "definition": "User-owned curated List whose membership references that User's current Repository stars; List membership never grants Repository access.",
+      "benchmark": {
+        "node": "user-list",
+        "adoption": "curated-list-semantics"
+      },
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -829,7 +848,7 @@
       "id": "account-enterprise-identity",
       "provider": "account",
       "consumer": "enterprise",
-      "meaning": "Enterprise affiliations and Team membership reference Account-owned stable User and Account identities.",
+      "meaning": "Enterprise affiliations, invitations, and Team membership reference Account-owned stable User and Account identities.",
       "integrationMode": "stable-identity",
       "authority": "account",
       "consistency": "current-identity"
@@ -2820,8 +2839,27 @@
     {
       "id": "enterprise-member-invitation",
       "kind": "node",
-      "status": "deferred",
-      "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
+      "status": "adopted",
+      "concepts": ["enterprise-invitation"],
+      "capabilities": ["manage-enterprise-governance"],
+      "reason": "Enterprise invitation represents pending participation intent, adopted as pending-intent semantics distinct from active affiliation."
+    },
+    {
+      "id": "organization-invitation",
+      "kind": "node",
+      "status": "adopted",
+      "concepts": ["organization-invitation"],
+      "capabilities": ["manage-organization-invitations"],
+      "reason": "Organization invitation represents pending participation intent, adopted as pending-intent semantics distinct from active membership."
+    },
+    {
+      "id": "user-list",
+      "kind": "node",
+      "status": "adopted",
+      "concepts": ["repository-star-list"],
+      "capabilities": ["manage-repository-star-lists"],
+      "locators": ["repository-star-list-id"],
+      "reason": "Adopted as User-owned curated list over starred repositories; list membership does not grant repository access."
     },
     {
       "id": "repository-invitation",

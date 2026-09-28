@@ -1,7 +1,11 @@
-# @line_bot_v1/team
-Owner: Organization Team lifecycle and TeamMembership. Semantics: [Team](../../docs/owners/team.md).
+# Team package constraints
 
-- Team membership is participation, not authorization; TeamMaintainer authority is Identity/Access RoleAssignment.
-- Preserve Organization scope, qualification, last-effective-maintainer protection, expected version, replay, and transaction/lock ordering.
-- Nested Organization Teams are not current capability; Enterprise Team is a different owner/model.
-- Team locator changes must not re-scope membership, RoleAssignment, Repository access, or Enterprise Team assignment.
+Local constraints for `@line_bot_v1/team`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Team belongs to exactly one Organization; team slug is unique within that Organization.
+- Parent and child teams must belong to the same Organization (no cross-org hierarchy).
+- Team maintainer authority is scoped to the specific team.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.

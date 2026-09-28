@@ -1,7 +1,11 @@
-# @line_bot_v1/wallet
-Owner: holder eligibility and derived balance projection. Semantics: [Wallet](../../docs/owners/wallet.md).
+# Wallet package constraints
 
-- Balance is reconstructed from Ledger facts + Asset denomination; do not create writable/cached balance authority.
-- Holder qualification comes from Account; current Coin eligibility is USER-only unless the owner contract explicitly changes it.
-- Preserve zero balance ≠ missing/ineligible holder.
-- Wallet adapters do not query or mutate upstream private persistence, and Wallet existence never grants posting authority.
+Local constraints for `@line_bot_v1/wallet`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+
+## Local Invariants
+
+- Wallet acts as the application gateway for user balance queries and credit/debit intents.
+- Wallet delegates atomic balance mutations to @line_bot_v1/ledger; does not bypass ledger invariants.
+- Wallet balance view is a real-time aggregate of verified ledger entries.
+- Public API surface is defined exclusively in `package.json#exports`.
+- Private implementations in `src/` must not be imported via relative paths by external packages.
