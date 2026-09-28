@@ -410,9 +410,7 @@ async function run() {
 
     await page.goto(`${base}/home`);
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
-    for (const section of ["My Work", "Favorites", "Shortcuts", "Recent"]) {
-      await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
-    }
+    await expect(page.getByRole("heading", { name: "Popular", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute("href", "/issues");
     await expect(page.getByRole("link", { name: /Discussions/ })).toHaveAttribute(
       "href",
@@ -425,7 +423,9 @@ async function run() {
     await expect(page.getByRole("link", { name: /Starred/ })).toHaveAttribute("href", "/stars");
     await page.getByRole("link", { name: /Starred/ }).click();
     await expect(page).toHaveURL(`${base}/stars`);
-    await expect(page.getByRole("heading", { name: "Stars", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Starred Repositories", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
       "href",
       "/acme/Operations",
@@ -477,7 +477,7 @@ async function run() {
     );
 
     await page.goto(`${base}/trending`);
-    await page.getByRole("heading", { name: "Trending", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Top Repositories", exact: true }).waitFor();
     await expect(page.getByText("最近 7 天", { exact: true })).toBeVisible();
     await expect(page.getByText("目前可存取", { exact: true })).toBeVisible();
     await expect(
