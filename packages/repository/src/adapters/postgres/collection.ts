@@ -1,4 +1,4 @@
-import { businessDatabase, type Database } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { RepositoryCollectionStore } from "../../application/ports/collection.js";
 import type { RepositorySummary } from "../../domain.js";
 import { accessibleRepositories } from "./access.js";
