@@ -3,7 +3,7 @@ import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { ProjectCollectionStore } from "../../application/ports/collection.js";
 import type { ProjectSummary } from "../../contracts/project-collection.js";
-import type { ProjectOwnerKind } from "../../domain/entities/project.js";
+import type { ProjectOwnerKind } from "../../domain/value-objects/project-owner-kind.js";
 
 export class PostgresProjectCollectionStore implements ProjectCollectionStore {
   constructor(private readonly db: Database = businessDatabase()) {}
