@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { DailyCheckInError } from "@line_bot_v1/daily-check-in/domain";
+import { DailyCheckInError } from "@line_bot_v1/daily-check-in/domain/error";
 import { apiError } from "../src/modules/account/http.server";
 
 test("DailyCheckIn keeps the existing HTTP invalid-request contract", async () => {

@@ -1,4 +1,4 @@
-import type { DailyCheckInClaim } from "../../domain.js";
+import type { DailyCheckInClaim } from "../../domain/value-objects/daily-check-in-claim.js";
 
 type DailyCheckInClaimResult = Readonly<{
   claim: DailyCheckInClaim;

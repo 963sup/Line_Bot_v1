@@ -6,7 +6,8 @@ import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createDailyCheckIn } from "../src/application.js";
-import { DAILY_CHECK_IN_LEDGER_SOURCE, DailyCheckInError } from "../src/domain.js";
+import { DailyCheckInError } from "../src/domain/error.js";
+import { DAILY_CHECK_IN_LEDGER_SOURCE } from "../src/domain/value-objects/ledger-source.js";
 import { PostgresDailyCheckInStore } from "../src/postgres.js";
 
 async function activeUser(db: Database, id: string) {

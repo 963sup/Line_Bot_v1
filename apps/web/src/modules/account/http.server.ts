@@ -1,5 +1,5 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { DailyCheckInError } from "@line_bot_v1/daily-check-in/domain";
+import { DailyCheckInError } from "@line_bot_v1/daily-check-in/domain/error";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

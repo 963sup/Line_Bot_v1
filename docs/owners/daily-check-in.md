@@ -13,7 +13,7 @@ Read this file for the DailyCheckIn owner boundary and invariants. Load [detaile
 - Retry 不建立第二筆 credit；provider、cache、Personal Center、Rich Menu 都不是獎勵 authority。
 - Attendance clock reward 仍由 Attendance 決定，不因同樣發 Coin 而合併規則。
 
-Policy source 是 `packages/daily-check-in/src/domain.ts`。`dailyCheckInDay` 只接受既有有效範圍內的整數 epoch milliseconds；無效時間／日期產生獨立 `DailyCheckInError`，HTTP 為 400 / `invalid_request`。日期過期且無原結果為 409 / `operation_conflict`，不依賴 Account/User error 繼承或 alias。
+Reward policy source 是 `packages/daily-check-in/src/domain/policies/reward-policy.ts`；Taipei business-day source 是 `packages/daily-check-in/src/domain/value-objects/daily-check-in-day.ts`。`dailyCheckInDay` 只接受既有有效範圍內的整數 epoch milliseconds；無效時間／日期產生獨立 `DailyCheckInError`，HTTP 為 400 / `invalid_request`。日期過期且無原結果為 409 / `operation_conflict`，不依賴 Account/User error 繼承或 alias。
 
 ## Command / query / failure
 

@@ -1921,13 +1921,16 @@
         "sourcePaths": [
           "packages/daily-check-in/src/application.ts",
           "packages/daily-check-in/src/application/ports/daily-check-in-repository.ts",
-          "packages/daily-check-in/src/domain.ts",
+          "packages/daily-check-in/src/domain/policies/reward-policy.ts",
+          "packages/daily-check-in/src/domain/value-objects/daily-check-in-claim.ts",
+          "packages/daily-check-in/src/domain/value-objects/daily-check-in-day.ts",
+          "packages/daily-check-in/src/domain/value-objects/ledger-source.ts",
           "packages/daily-check-in/src/postgres.ts"
         ],
         "publicExports": [
           "./application",
           "./application/ports/daily-check-in-repository",
-          "./domain"
+          "./domain/error"
         ],
         "entrypoints": ["apps/web/src/app/(mobile)/home/page.tsx"],
         "testPaths": [

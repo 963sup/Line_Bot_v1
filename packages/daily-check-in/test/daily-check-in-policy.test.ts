@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { DailyCheckInError } from "../src/domain/error.js";
 import {
   DAILY_CHECK_IN_POLICY,
-  DailyCheckInError,
+  selectDailyCheckInPrize,
+} from "../src/domain/policies/reward-policy.js";
+import {
   dailyCheckInDay,
   parseDailyCheckInDay,
-  selectDailyCheckInPrize,
-} from "../src/domain.js";
+} from "../src/domain/value-objects/daily-check-in-day.js";
 
 test("DailyCheckIn publishes the wheel policy and exact Taipei day boundary", () => {
   assert.deepEqual(DAILY_CHECK_IN_POLICY, {
