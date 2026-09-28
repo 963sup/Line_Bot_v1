@@ -1998,9 +1998,9 @@
           "packages/namespace/src/application/claim-namespace.ts",
           "packages/namespace/src/application/rename-namespace.ts",
           "packages/namespace/src/application/resolve-namespace.ts",
-          "packages/namespace/src/adapters/postgres.ts"
+          "packages/namespace/src/postgres.ts"
         ],
-        "publicExports": [".", "./adapters/postgres"],
+        "publicExports": [".", "./postgres"],
         "entrypoints": [
           "packages/account/src/adapters/postgres/user.ts",
           "apps/web/src/app/api/_composition/namespace.server.ts"
