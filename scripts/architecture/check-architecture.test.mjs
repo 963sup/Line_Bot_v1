@@ -387,7 +387,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       "packages/line-channel/src/adapters/mini-app/server/private.ts",
       "export const value = 1;",
     );
-    for (const target of ["node:fs", "../../messaging/private", "../server/private"]) {
+    for (const target of ["node:fs", "../../adapters/messaging/private", "../../adapters/mini-app/server/private"]) {
       write(root, "packages/line-channel/src/mini-app/browser/client.ts", importing(target));
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) =>
