@@ -2909,6 +2909,28 @@ summary:focus-visible {
   font-weight: 500;
 }
 
+.app-shell .home-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin-inline: -16px;
+  padding: 10px 16px;
+  background: var(--canvas);
+}
+
+.app-shell .home-toolbar .page-heading {
+  margin-bottom: 0;
+}
+
+.app-shell .app-content .home-work {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .app-shell .home-work h2,
 .app-shell .home-section > h2 {
   margin: 0 0 16px;
@@ -2940,10 +2962,14 @@ summary:focus-visible {
   font-weight: 500;
 }
 
-.app-shell .home-section {
+.app-shell .app-content .home-section {
   margin: 0 -16px;
   padding: 22px 16px;
+  border: 0;
   border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .app-shell .home-shortcuts {
@@ -2996,7 +3022,7 @@ summary:focus-visible {
   scroll-snap-type: inline proximity;
 }
 
-.app-shell .home-starred .starred-repositories .action-row {
+.app-shell .home-starred .starred-repositories .menu-group .action-row {
   min-height: 112px;
   padding: 16px;
   border: 1px solid var(--line);

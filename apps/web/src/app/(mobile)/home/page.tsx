@@ -10,7 +10,9 @@ export default function Page() {
 
   return (
     <AppShell>
-      <PageHeading title="Home" actions={<HomeActions liffId={liffId} />} />
+      <header className="home-toolbar">
+        <PageHeading title="Home" actions={<HomeActions liffId={liffId} />} />
+      </header>
 
       <section className="home-work" aria-labelledby="my-work-heading">
         <h2 id="my-work-heading">My Work</h2>

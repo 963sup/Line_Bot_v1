@@ -1,6 +1,6 @@
 "use client";
 import Script from "next/script";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { liffClient } from "./liff-client";
 
 async function installLocalMock() {
@@ -26,6 +26,8 @@ export default function MiniAppRuntime({
   silent?: boolean;
 }) {
   const [error, setError] = useState("");
+  const scriptId = useId();
+  const started = useRef(false);
   async function initialize() {
     setError("");
     try {
@@ -40,14 +42,21 @@ export default function MiniAppRuntime({
       onWait();
     }
   }
+  function onSdkReady() {
+    if (started.current) return;
+    started.current = true;
+    void initialize();
+  }
   return (
     <>
       <Script
+        id={`line-sdk-${scriptId}`}
         src="https://static.line-scdn.net/liff/edge/2/sdk.js"
         strategy="afterInteractive"
-        onReady={() => {
-          void initialize();
-        }}
+        // Next deduplicates the download by src, but concurrent consumers receive onLoad.
+        // A distinct id keeps another consumer's pending cache entry from firing onReady early.
+        onLoad={onSdkReady}
+        onReady={onSdkReady}
         onError={() => {
           setError("LINE 元件載入失敗，請重新開啟。");
           onWait();

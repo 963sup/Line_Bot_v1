@@ -93,7 +93,7 @@ async function run() {
     if (url.hostname === "static.line-scdn.net") {
       return route.fulfill({
         contentType: "text/javascript",
-        body: "window.liff={init:async()=>{const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({userId:'U11111111111111111111111111111111',displayName:'測試使用者',statusMessage:'Ready to work'}),login:()=>{}};",
+        body: "window.liff={init:async()=>{window.liffInitializations=(window.liffInitializations??0)+1;const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({userId:'U11111111111111111111111111111111',displayName:'測試使用者',statusMessage:'Ready to work'}),login:()=>{}};",
       });
     }
     if (url.origin !== base) return route.abort();
@@ -414,10 +414,19 @@ async function run() {
     await expect(page.getByRole("heading", { name: "Shortcuts", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recent", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Popular", exact: true })).toHaveCount(0);
+    await expect(
+      page
+        .getByRole("region", { name: "Starred repositories", exact: true })
+        .getByRole("link", { name: /acme\/Operations/ }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: new RegExp(issue.title) })).toHaveAttribute(
       "href",
       "/acme/Operations/issues/1",
     );
+    assert.equal(await page.evaluate(() => window.liffInitializations), 1);
+    await expect(
+      page.locator('script[src="https://static.line-scdn.net/liff/edge/2/sdk.js"]'),
+    ).toHaveCount(1);
     for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 844 });
       assert.equal(
@@ -427,9 +436,44 @@ async function run() {
       );
     }
     await page.setViewportSize({ width: 390, height: 844 });
-    if (artifactDir) {
-      await page.screenshot({ path: path.join(artifactDir, "home.png"), fullPage: true });
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const position of ["top", "scrolled"]) {
+        await page.evaluate((position) => {
+          window.scrollTo({
+            top: position === "top" ? 0 : document.documentElement.scrollHeight,
+            behavior: "instant",
+          });
+        }, position);
+        await expect(page.getByRole("navigation", { name: "主要導覽", exact: true })).toHaveCount(
+          1,
+        );
+        const layout = await page.evaluate(() => {
+          const navigation = document.querySelector(".work-navigation");
+          const toolbar = document.querySelector(".home-toolbar");
+          return {
+            position: getComputedStyle(navigation).position,
+            bottom: navigation.getBoundingClientRect().bottom,
+            viewportHeight: window.innerHeight,
+            toolbarTop: toolbar.getBoundingClientRect().top,
+            scrollY: window.scrollY,
+          };
+        });
+        assert.equal(layout.position, "fixed");
+        assert.ok(
+          Math.abs(layout.bottom - layout.viewportHeight) <= 1,
+          `navigation stays at viewport bottom: ${width}px ${position}`,
+        );
+        if (position === "scrolled") {
+          assert.ok(layout.scrollY > 0);
+          assert.ok(Math.abs(layout.toolbarTop) <= 1, "Home toolbar stays at viewport top");
+        }
+        if (artifactDir && width === 390) {
+          await page.screenshot({ path: path.join(artifactDir, `home-${position}.png`) });
+        }
+      }
     }
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await page.getByText("More", { exact: true }).click();
     await expect(page.getByRole("link", { name: /Admin/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute("href", "/issues");

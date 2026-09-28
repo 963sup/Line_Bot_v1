@@ -68,11 +68,15 @@
   box-shadow: 0 10px 28px #0008;
 }
 
-.identity {
+.shell .content .identity {
   display: grid;
   gap: 18px;
   margin-bottom: 28px;
   padding: 4px 0 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .identityRow {
@@ -86,7 +90,7 @@
   min-width: 0;
 }
 
-.identityCopy h1 {
+.shell .identity .identityCopy h1 {
   margin: 0;
   color: var(--ink);
   font-size: 23px;
@@ -145,12 +149,16 @@
   color: var(--muted);
 }
 
-.selfAchievements {
+.shell .content .selfAchievements {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 0 0 28px;
   padding: 0 0 20px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .selfAchievements h2,
@@ -276,7 +284,7 @@
     height: 82px;
   }
 
-  .identityCopy h1 {
+  .shell .identity .identityCopy h1 {
     font-size: 22px;
   }
 }

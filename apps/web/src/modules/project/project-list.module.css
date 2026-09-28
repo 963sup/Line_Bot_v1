@@ -17,6 +17,7 @@
 .collection .filters .filter,
 .collection .filters .activeFilter,
 .collection .filters .refresh {
+  width: auto;
   min-height: 44px;
   flex: 0 0 auto;
   padding: 7px 14px;
