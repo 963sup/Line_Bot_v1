@@ -6,7 +6,7 @@ import { PostgresUserManagement } from "@line_bot_v1/account/postgres";
 import {
   hasPermission,
   protectPermissionAdministrator,
-} from "@line_bot_v1/identity-access/adapters/postgres";
+} from "@line_bot_v1/identity-access/postgres";
 import { jsonResponse } from "../../shared/server/http";
 import { apiError, readJsonBody } from "./http.server";
 
