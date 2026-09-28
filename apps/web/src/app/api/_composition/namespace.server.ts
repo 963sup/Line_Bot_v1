@@ -1,6 +1,6 @@
 import { resolveNamespace } from "@line_bot_v1/namespace";
 import { PostgresNamespaceStore } from "@line_bot_v1/namespace/adapters/postgres";
-import { businessDatabase } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase } from "@line_bot_v1/platform/postgres";
 
 export function resolveAccountNamespace(login: string) {
   return businessDatabase().transaction((sql) =>
