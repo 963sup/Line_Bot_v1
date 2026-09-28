@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { checkAppRoot, checkArchitecture } from "./check-architecture.mjs";
+import { validatePackageExports } from "./check-implementation-topology.mjs";
 
 const artifacts = fileURLToPath(new URL("../../.artifacts/", import.meta.url));
 // Keep generated fixture imports out of the tooling checker's literal script-import scan.
@@ -13,6 +14,64 @@ function write(root, path, text) {
   mkdirSync(resolve(file, ".."), { recursive: true });
   writeFileSync(file, text);
 }
+
+
+test("package public exports keep adapters private", () => {
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
+      ".": { default: "./dist/index.js" },
+      "./postgres": { default: "./dist/postgres.js" },
+    }),
+    [],
+  );
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
+      "./adapters/postgres": { default: "./dist/adapters/postgres.js" },
+    }),
+    [
+      "@line_bot_v1/demo: private adapter must not be package export: ./adapters/postgres",
+    ],
+  );
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
+      "./postgres": { default: "./dist/postgres.js" },
+    }),
+    [],
+  );
+});
+
+test("public package entries require named re-exports", async () => {
+  mkdirSync(artifacts, { recursive: true });
+  const root = mkdtempSync(resolve(artifacts, "named-exports-"));
+  try {
+    for (const parent of ["apps", "packages"]) mkdirSync(resolve(root, parent), { recursive: true });
+    write(
+      root,
+      "packages/demo/package.json",
+      JSON.stringify({
+        name: "@line_bot_v1/demo",
+        exports: { ".": { default: "./dist/index.js" } },
+      }),
+    );
+    write(root, "packages/demo/tsconfig.json", JSON.stringify({}));
+    write(root, "packages/demo/src/value.ts", "export const value = 1;");
+    write(root, "packages/demo/src/index.ts", 'export * from "./value.js";');
+    assert.ok(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("public-exports-are-named: @line_bot_v1/demo -> ./value.js"),
+      ),
+    );
+    write(root, "packages/demo/src/index.ts", 'export { value } from "./value.js";');
+    assert.equal(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("public-exports-are-named:"),
+      ),
+      false,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("app root rejects unexpected folders, new root files and wrong entry kinds", () => {
   mkdirSync(artifacts, { recursive: true });
