@@ -4,7 +4,7 @@ import {
   revokeOrganizationOwnerForMembershipRemoval,
 } from "@line_bot_v1/identity-access/adapters/postgres";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 
 export async function assertOrganizationMembershipSourceRemovable(
   sql: Sql,
