@@ -1,4 +1,4 @@
-import { type GoogleRequestOptions, requestJson, resourceId } from "./request.js";
+import { type GoogleRequestOptions, requestJson, resourceId } from "./adapters/request.js";
 
 const base = "https://sheets.googleapis.com/v4/spreadsheets";
 /** @public Public Sheets adapter listed in packages/google-workspace/README.md. */

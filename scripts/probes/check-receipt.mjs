@@ -13,9 +13,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 } else {
   try {
     const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
-    const { createGeminiClient } = await import(
-      require.resolve("@line_bot_v1/assistant/adapters/gemini")
-    );
+    const { createGeminiClient } = await import(require.resolve("@line_bot_v1/assistant/gemini"));
     const { runReceiptAgent } = await import(
       require.resolve("@line_bot_v1/expense/agents/receipt")
     );

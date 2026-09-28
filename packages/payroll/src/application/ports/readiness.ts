@@ -1,4 +1,4 @@
-import type { PayrollRuleKey, PayrollRuleVersion } from "../../domain/readiness.js";
+import type { PayrollRuleKey, PayrollRuleVersion } from "../../domain.js";
 
 type PayPeriod = Readonly<{
   startDate: string;

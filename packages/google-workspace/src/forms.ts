@@ -1,4 +1,9 @@
-import { type GoogleRequestOptions, readPages, requestJson, resourceId } from "./request.js";
+import {
+  type GoogleRequestOptions,
+  readPages,
+  requestJson,
+  resourceId,
+} from "./adapters/request.js";
 
 const base = "https://forms.googleapis.com/v1/forms";
 /** @public Public Forms adapter listed in packages/google-workspace/README.md. */

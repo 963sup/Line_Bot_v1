@@ -1114,7 +1114,7 @@
         "sourcePaths": [
           "packages/account/src/application/achievements.ts",
           "packages/account/src/application/ports/achievements.ts",
-          "packages/account/src/adapters/postgres/achievements.ts"
+          "packages/account/src/postgres/achievements.ts"
         ],
         "publicExports": ["./application/achievements", "./application/ports/achievements"],
         "entrypoints": [
@@ -1366,7 +1366,7 @@
         "publicExports": [
           "./application/creation",
           "./application/ports/creation",
-          "./adapters/postgres/creation"
+          "./postgres/creation"
         ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/route.ts",
@@ -1494,7 +1494,7 @@
         "publicExports": [
           "./application/star-lists",
           "./application/ports/star-lists",
-          "./adapters/postgres/star-lists"
+          "./postgres/star-lists"
         ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/lists/route.ts",
@@ -1534,7 +1534,7 @@
         "publicExports": [
           "./application/discovery",
           "./application/ports/discovery",
-          "./adapters/postgres/discovery"
+          "./postgres/discovery"
         ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
@@ -1613,7 +1613,7 @@
         "publicExports": [
           "./application/resources",
           "./application/ports/resources",
-          "./adapters/postgres/resources"
+          "./postgres/resources"
         ],
         "entrypoints": [
           "apps/web/src/app/api/discussions/route.ts",
@@ -1654,7 +1654,7 @@
         "publicExports": [
           "./application/resources",
           "./application/ports/resources",
-          "./adapters/postgres/resources"
+          "./postgres/resources"
         ],
         "entrypoints": [
           "apps/web/src/app/api/repository-labels/route.ts",
@@ -1693,7 +1693,7 @@
         "publicExports": [
           "./application/resources",
           "./application/ports/resources",
-          "./adapters/postgres/resources"
+          "./postgres/resources"
         ],
         "entrypoints": [
           "apps/web/src/app/api/repository-milestones/route.ts",
@@ -1802,7 +1802,7 @@
         "publicExports": [
           "./application/collection",
           "./application/ports/collection",
-          "./adapters/postgres/collection",
+          "./postgres/collection",
           "./contracts/project-collection"
         ],
         "entrypoints": [
@@ -1892,7 +1892,7 @@
           "packages/daily-check-in/src/application.ts",
           "packages/daily-check-in/src/application/ports/daily-check-in-repository.ts",
           "packages/daily-check-in/src/domain.ts",
-          "packages/daily-check-in/src/adapters/postgres.ts"
+          "packages/daily-check-in/src/postgres.ts"
         ],
         "publicExports": [
           "./application",
@@ -1929,10 +1929,10 @@
           "packages/ledger/src/adapters/postgres.ts",
           "packages/ledger/src/domain.ts"
         ],
-        "publicExports": ["./adapters/postgres", "./domain"],
+        "publicExports": ["./postgres", "./domain"],
         "entrypoints": [
-          "packages/daily-check-in/src/adapters/postgres.ts",
-          "packages/attendance/src/adapters/postgres/attendance.ts"
+          "packages/daily-check-in/src/postgres.ts",
+          "packages/attendance/src/postgres/attendance.ts"
         ],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",
@@ -1998,11 +1998,11 @@
           "packages/namespace/src/application/claim-namespace.ts",
           "packages/namespace/src/application/rename-namespace.ts",
           "packages/namespace/src/application/resolve-namespace.ts",
-          "packages/namespace/src/adapters/postgres.ts"
+          "packages/namespace/src/postgres.ts"
         ],
-        "publicExports": [".", "./adapters/postgres"],
+        "publicExports": [".", "./postgres"],
         "entrypoints": [
-          "packages/account/src/adapters/postgres/user.ts",
+          "packages/account/src/postgres/user.ts",
           "apps/web/src/app/api/_composition/namespace.server.ts"
         ],
         "testPaths": [
@@ -2835,31 +2835,6 @@
       "kind": "node",
       "status": "deferred",
       "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
-    },
-    {
-      "id": "enterprise-member-invitation",
-      "kind": "node",
-      "status": "adopted",
-      "concepts": ["enterprise-invitation"],
-      "capabilities": ["manage-enterprise-governance"],
-      "reason": "Enterprise invitation represents pending participation intent, adopted as pending-intent semantics distinct from active affiliation."
-    },
-    {
-      "id": "organization-invitation",
-      "kind": "node",
-      "status": "adopted",
-      "concepts": ["organization-invitation"],
-      "capabilities": ["manage-organization-invitations"],
-      "reason": "Organization invitation represents pending participation intent, adopted as pending-intent semantics distinct from active membership."
-    },
-    {
-      "id": "user-list",
-      "kind": "node",
-      "status": "adopted",
-      "concepts": ["repository-star-list"],
-      "capabilities": ["manage-repository-star-lists"],
-      "locators": ["repository-star-list-id"],
-      "reason": "Adopted as User-owned curated list over starred repositories; list membership does not grant repository access."
     },
     {
       "id": "repository-invitation",

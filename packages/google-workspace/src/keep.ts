@@ -1,4 +1,9 @@
-import { type GoogleRequestOptions, readPages, requestJson, resourceId } from "./request.js";
+import {
+  type GoogleRequestOptions,
+  readPages,
+  requestJson,
+  resourceId,
+} from "./adapters/request.js";
 
 const base = "https://keep.googleapis.com/v1/notes";
 export function listNotes(options: GoogleRequestOptions, request: typeof fetch = fetch) {

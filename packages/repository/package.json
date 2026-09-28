@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/postgres": {
-      "types": "./dist/adapters/postgres.d.ts",
-      "default": "./dist/adapters/postgres.js"
-    },
     "./application/issues": {
       "types": "./dist/application/issues.d.ts",
       "default": "./dist/application/issues.js"
@@ -48,10 +44,6 @@
       "types": "./dist/application/ports/public.d.ts",
       "default": "./dist/application/ports/public.js"
     },
-    "./adapters/postgres/resources": {
-      "types": "./dist/adapters/postgres/resources.d.ts",
-      "default": "./dist/adapters/postgres/resources.js"
-    },
     "./application/collection": {
       "types": "./dist/application/collection.d.ts",
       "default": "./dist/application/collection.js"
@@ -59,10 +51,6 @@
     "./application/ports/collection": {
       "types": "./dist/application/ports/collection.d.ts",
       "default": "./dist/application/ports/collection.js"
-    },
-    "./adapters/postgres/collection": {
-      "types": "./dist/adapters/postgres/collection.d.ts",
-      "default": "./dist/adapters/postgres/collection.js"
     },
     "./application/creation": {
       "types": "./dist/application/creation.d.ts",
@@ -72,10 +60,6 @@
       "types": "./dist/application/ports/creation.d.ts",
       "default": "./dist/application/ports/creation.js"
     },
-    "./adapters/postgres/creation": {
-      "types": "./dist/adapters/postgres/creation.d.ts",
-      "default": "./dist/adapters/postgres/creation.js"
-    },
     "./application/discovery": {
       "types": "./dist/application/discovery.d.ts",
       "default": "./dist/application/discovery.js"
@@ -83,10 +67,6 @@
     "./application/ports/discovery": {
       "types": "./dist/application/ports/discovery.d.ts",
       "default": "./dist/application/ports/discovery.js"
-    },
-    "./adapters/postgres/discovery": {
-      "types": "./dist/adapters/postgres/discovery.d.ts",
-      "default": "./dist/adapters/postgres/discovery.js"
     },
     "./application/star-lists": {
       "types": "./dist/application/star-lists.d.ts",
@@ -96,13 +76,33 @@
       "types": "./dist/application/ports/star-lists.d.ts",
       "default": "./dist/application/ports/star-lists.js"
     },
-    "./adapters/postgres/star-lists": {
-      "types": "./dist/adapters/postgres/star-lists.d.ts",
-      "default": "./dist/adapters/postgres/star-lists.js"
-    },
     "./postgres/public": {
       "types": "./dist/postgres/public.d.ts",
       "default": "./dist/postgres/public.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    },
+    "./postgres/resources": {
+      "types": "./dist/postgres/resources.d.ts",
+      "default": "./dist/postgres/resources.js"
+    },
+    "./postgres/collection": {
+      "types": "./dist/postgres/collection.d.ts",
+      "default": "./dist/postgres/collection.js"
+    },
+    "./postgres/creation": {
+      "types": "./dist/postgres/creation.d.ts",
+      "default": "./dist/postgres/creation.js"
+    },
+    "./postgres/discovery": {
+      "types": "./dist/postgres/discovery.d.ts",
+      "default": "./dist/postgres/discovery.js"
+    },
+    "./postgres/star-lists": {
+      "types": "./dist/postgres/star-lists.d.ts",
+      "default": "./dist/postgres/star-lists.js"
     }
   },
   "files": [

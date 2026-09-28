@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
-import { recordLedgerCredit } from "@line_bot_v1/ledger/adapters/postgres";
+import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createDailyCheckIn } from "../src/application.js";

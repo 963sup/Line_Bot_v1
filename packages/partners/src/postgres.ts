@@ -1,1 +1,1 @@
-export { PostgresPartnerRepository, type PartnerPermissionCheck } from "./adapters/postgres.js";
+export { PostgresPartnerRepository } from "./adapters/postgres.js";

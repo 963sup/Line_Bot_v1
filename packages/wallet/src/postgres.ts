@@ -1,8 +1,8 @@
 import type { AccountId } from "@line_bot_v1/account/domain";
 import { readUserQualification } from "@line_bot_v1/account/postgres";
-import { readAssetDefinition } from "@line_bot_v1/asset/adapters/postgres";
 import { type AssetCode, assetAmount } from "@line_bot_v1/asset/domain";
-import { sumLedgerUnits } from "@line_bot_v1/ledger/adapters/postgres";
+import { readAssetDefinition } from "@line_bot_v1/asset/postgres";
+import { sumLedgerUnits } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { WalletRepository } from "@line_bot_v1/wallet/application/ports/wallet-repository";
 import type { WalletBalance } from "@line_bot_v1/wallet/domain";

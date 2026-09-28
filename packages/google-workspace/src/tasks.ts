@@ -1,4 +1,9 @@
-import { type GoogleRequestOptions, readPages, requestJson, resourceId } from "./request.js";
+import {
+  type GoogleRequestOptions,
+  readPages,
+  requestJson,
+  resourceId,
+} from "./adapters/request.js";
 
 const base = "https://tasks.googleapis.com/tasks/v1";
 export function listTaskLists(options: GoogleRequestOptions, request: typeof fetch = fetch) {

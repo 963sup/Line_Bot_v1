@@ -13,7 +13,7 @@ import type {
 import type { PartnerCommand } from "../domain.js";
 import { normalizePartnerContact, partnerAssert } from "../domain.js";
 
-export type PartnerPermissionCheck = (
+type PartnerPermissionCheck = (
   sql: Sql,
   actor: string,
   permission: "partners.manage" | "partners.review",

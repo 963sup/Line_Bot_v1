@@ -1,4 +1,9 @@
-import { type GoogleRequestOptions, readPages, requestJson, resourceId } from "./request.js";
+import {
+  type GoogleRequestOptions,
+  readPages,
+  requestJson,
+  resourceId,
+} from "./adapters/request.js";
 
 const base = "https://www.googleapis.com/drive/v3/files";
 export function listFiles(

@@ -1,11 +1,11 @@
-import { createGeminiClient } from "@line_bot_v1/assistant/adapters/gemini";
-import { PostgresExpenseStore } from "@line_bot_v1/expense/adapters/postgres";
+import { createGeminiClient } from "@line_bot_v1/assistant/gemini";
 import { runReceiptAgent } from "@line_bot_v1/expense/agents/receipt";
 import { createCommandExpense } from "@line_bot_v1/expense/application/command-expense";
 import { createGetExpense } from "@line_bot_v1/expense/application/get-expense";
 import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-intake";
 import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
 import type { Expense } from "@line_bot_v1/expense/domain";
+import { PostgresExpenseStore } from "@line_bot_v1/expense/postgres";
 import { downloadLineImage } from "@line_bot_v1/line-channel/messaging";
 import { activeLineUser } from "./account.server";
 

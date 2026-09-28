@@ -12,13 +12,13 @@
       "types": "./dist/application/ports/collection.d.ts",
       "default": "./dist/application/ports/collection.js"
     },
-    "./adapters/postgres/collection": {
-      "types": "./dist/adapters/postgres/collection.d.ts",
-      "default": "./dist/adapters/postgres/collection.js"
-    },
     "./contracts/project-collection": {
       "types": "./dist/contracts/project-collection.d.ts",
       "default": "./dist/contracts/project-collection.js"
+    },
+    "./postgres/collection": {
+      "types": "./dist/postgres/collection.d.ts",
+      "default": "./dist/postgres/collection.js"
     }
   },
   "files": [

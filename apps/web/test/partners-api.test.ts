@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
-import { PostgresPartnerRepository } from "@line_bot_v1/partners/adapters/postgres";
 import { PartnerError } from "@line_bot_v1/partners/domain";
+import { PostgresPartnerRepository } from "@line_bot_v1/partners/postgres";
 import { GET, POST } from "../src/app/api/partners/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";

@@ -1,5 +1,5 @@
-import { PostgresRepositoryStarListStore } from "@line_bot_v1/repository/adapters/postgres/star-lists";
 import { createRepositoryStarLists } from "@line_bot_v1/repository/application/star-lists";
+import { PostgresRepositoryStarListStore } from "@line_bot_v1/repository/postgres/star-lists";
 import { activeLineUser } from "./account.server";
 
 let store: PostgresRepositoryStarListStore | undefined;

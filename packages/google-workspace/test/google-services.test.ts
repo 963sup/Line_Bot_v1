@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getDocument } from "../src/adapters/docs.js";
-import { listFiles, trashFile } from "../src/adapters/drive.js";
-import { createForm, listFormResponses } from "../src/adapters/forms.js";
-import { getMessage, sendMessage } from "../src/adapters/gmail.js";
-import { createNote, listNotes } from "../src/adapters/keep.js";
-import { geocodeAddress } from "../src/adapters/maps.js";
-import { appendSheetValues } from "../src/adapters/sheets.js";
-import { createTask, listTaskLists, listTasks } from "../src/adapters/tasks.js";
+import { getDocument } from "../src/docs.js";
+import { listFiles, trashFile } from "../src/drive.js";
+import { createForm, listFormResponses } from "../src/forms.js";
+import { getMessage, sendMessage } from "../src/gmail.js";
+import { createNote, listNotes } from "../src/keep.js";
+import { geocodeAddress } from "../src/maps.js";
+import { appendSheetValues } from "../src/sheets.js";
+import { createTask, listTaskLists, listTasks } from "../src/tasks.js";
 
 const auth = { accessToken: "synthetic-token" };
 

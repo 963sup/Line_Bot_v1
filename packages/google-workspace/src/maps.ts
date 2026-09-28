@@ -1,4 +1,4 @@
-import { GoogleApiError, operationSignal, requestJson } from "./request.js";
+import { GoogleApiError, operationSignal, requestJson } from "./adapters/request.js";
 /** Server-restricted Maps key, separate from Workspace OAuth. */
 export async function geocodeAddress(
   options: { apiKey: string; address: string; signal?: AbortSignal },

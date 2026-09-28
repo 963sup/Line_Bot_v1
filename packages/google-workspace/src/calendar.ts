@@ -1,4 +1,4 @@
-import { GoogleApiError, readPages, resourceId } from "./request.js";
+import { GoogleApiError, readPages, resourceId } from "./adapters/request.js";
 
 /** Server adapter. Callers must authorize the connection and calendar before calling. */
 export interface CalendarEvent {

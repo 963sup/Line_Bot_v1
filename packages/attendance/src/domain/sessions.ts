@@ -17,7 +17,7 @@ type AttendanceDay = {
   afterMs: number;
   elapsedMs: number;
 };
-export type AttendanceSummary = {
+type AttendanceSummary = {
   elapsedMs: number;
   beforeMs: number;
   scheduledMs: number;

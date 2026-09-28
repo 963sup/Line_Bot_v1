@@ -4,41 +4,41 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/calendar": {
-      "types": "./dist/adapters/calendar.d.ts",
-      "default": "./dist/adapters/calendar.js"
+    "./calendar": {
+      "types": "./dist/calendar.d.ts",
+      "default": "./dist/calendar.js"
     },
-    "./adapters/docs": {
-      "types": "./dist/adapters/docs.d.ts",
-      "default": "./dist/adapters/docs.js"
+    "./docs": {
+      "types": "./dist/docs.d.ts",
+      "default": "./dist/docs.js"
     },
-    "./adapters/drive": {
-      "types": "./dist/adapters/drive.d.ts",
-      "default": "./dist/adapters/drive.js"
+    "./drive": {
+      "types": "./dist/drive.d.ts",
+      "default": "./dist/drive.js"
     },
-    "./adapters/forms": {
-      "types": "./dist/adapters/forms.d.ts",
-      "default": "./dist/adapters/forms.js"
+    "./forms": {
+      "types": "./dist/forms.d.ts",
+      "default": "./dist/forms.js"
     },
-    "./adapters/gmail": {
-      "types": "./dist/adapters/gmail.d.ts",
-      "default": "./dist/adapters/gmail.js"
+    "./gmail": {
+      "types": "./dist/gmail.d.ts",
+      "default": "./dist/gmail.js"
     },
-    "./adapters/keep": {
-      "types": "./dist/adapters/keep.d.ts",
-      "default": "./dist/adapters/keep.js"
+    "./keep": {
+      "types": "./dist/keep.d.ts",
+      "default": "./dist/keep.js"
     },
-    "./adapters/maps": {
-      "types": "./dist/adapters/maps.d.ts",
-      "default": "./dist/adapters/maps.js"
+    "./maps": {
+      "types": "./dist/maps.d.ts",
+      "default": "./dist/maps.js"
     },
-    "./adapters/sheets": {
-      "types": "./dist/adapters/sheets.d.ts",
-      "default": "./dist/adapters/sheets.js"
+    "./sheets": {
+      "types": "./dist/sheets.d.ts",
+      "default": "./dist/sheets.js"
     },
-    "./adapters/tasks": {
-      "types": "./dist/adapters/tasks.d.ts",
-      "default": "./dist/adapters/tasks.js"
+    "./tasks": {
+      "types": "./dist/tasks.d.ts",
+      "default": "./dist/tasks.js"
     }
   },
   "files": [

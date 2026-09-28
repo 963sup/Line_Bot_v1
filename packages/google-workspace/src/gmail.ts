@@ -4,7 +4,7 @@ import {
   readPages,
   requestJson,
   resourceId,
-} from "./request.js";
+} from "./adapters/request.js";
 
 const base = "https://gmail.googleapis.com/gmail/v1/users/me/messages";
 /** @public Public Gmail adapter listed in packages/google-workspace/README.md. */

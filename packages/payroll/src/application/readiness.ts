@@ -1,4 +1,4 @@
-import { assessPayrollReadiness, PayrollFoundationError } from "../domain/readiness.js";
+import { assessPayrollReadiness, PayrollFoundationError } from "../domain.js";
 import type { PayrollReadinessQuery, PayrollReadinessSources } from "./ports/readiness.js";
 
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;

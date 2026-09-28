@@ -1,4 +1,4 @@
-import { type GoogleRequestOptions, requestJson, resourceId } from "./request.js";
+import { type GoogleRequestOptions, requestJson, resourceId } from "./adapters/request.js";
 
 const base = "https://docs.googleapis.com/v1/documents";
 export function getDocument(

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GoogleCalendarError, readCalendarEvents } from "../src/adapters/calendar.js";
+import { GoogleCalendarError, readCalendarEvents } from "../src/calendar.js";
 
 const input = {
   accessToken: "synthetic-token",

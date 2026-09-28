@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { hasUserIdentity, readUserQualification } from "@line_bot_v1/account/postgres";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
-import { recordLedgerCredit } from "@line_bot_v1/ledger/adapters/postgres";
+import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
   AttendanceInput,
