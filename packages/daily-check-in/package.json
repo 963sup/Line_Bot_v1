@@ -12,13 +12,13 @@
       "types": "./dist/application/ports/daily-check-in-repository.d.ts",
       "default": "./dist/application/ports/daily-check-in-repository.js"
     },
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
-    },
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
+    },
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
     }
   },
   "files": [

@@ -1,5 +1,9 @@
 import type { DailyCheckInRepository } from "./application/ports/daily-check-in-repository.js";
-import { DAILY_CHECK_IN_POLICY, dailyCheckInDay, parseDailyCheckInDay } from "./domain.js";
+import { DAILY_CHECK_IN_POLICY } from "./domain/policies/reward-policy.js";
+import {
+  dailyCheckInDay,
+  parseDailyCheckInDay,
+} from "./domain/value-objects/daily-check-in-day.js";
 
 export interface DailyCheckInDependencies {
   /** Delivery-verified subjects are resolved by the Account owner before DailyCheckIn acts. */
