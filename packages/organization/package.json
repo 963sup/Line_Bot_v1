@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/postgres": {
-      "types": "./dist/adapters/postgres.d.ts",
-      "default": "./dist/adapters/postgres.js"
-    },
     "./application/organization-governance": {
       "types": "./dist/application/organization-governance.d.ts",
       "default": "./dist/application/organization-governance.js"
@@ -35,6 +31,10 @@
     "./postgres/public": {
       "types": "./dist/postgres/public.d.ts",
       "default": "./dist/postgres/public.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
     }
   },
   "files": [
