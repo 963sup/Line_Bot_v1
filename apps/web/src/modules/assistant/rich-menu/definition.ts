@@ -1,4 +1,4 @@
-import type { RichMenuDefinition } from "@line_bot_v1/line-channel/adapters/messaging";
+import type { RichMenuDefinition } from "@line_bot_v1/line-channel/messaging";
 import { miniAppEntryUrl } from "../../../shared/presentation/entry-route";
 
 // Publication uses the same page keys for menu definitions, assets and aliases.
