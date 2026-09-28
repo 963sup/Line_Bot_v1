@@ -1,5 +1,5 @@
 "use client";
-import { parseLocation } from "@line_bot_v1/attendance/domain";
+import { parseLocation } from "@line_bot_v1/attendance/domain/value-objects/location";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
