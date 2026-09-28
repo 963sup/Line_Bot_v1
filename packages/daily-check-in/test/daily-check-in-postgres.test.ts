@@ -5,9 +5,9 @@ import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { recordLedgerCredit } from "@line_bot_v1/ledger/adapters/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresDailyCheckInStore } from "../src/postgres.js";
 import { createDailyCheckIn } from "../src/application.js";
 import { DAILY_CHECK_IN_LEDGER_SOURCE, DailyCheckInError } from "../src/domain.js";
+import { PostgresDailyCheckInStore } from "../src/postgres.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
