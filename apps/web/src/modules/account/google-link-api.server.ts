@@ -1,4 +1,4 @@
-import { supabaseIdentity } from "@line_bot_v1/account/adapters/supabase-identity";
+import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import type { createGoogleLink } from "@line_bot_v1/account/application/user";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { jsonResponse } from "../../shared/server/http";
