@@ -3,7 +3,7 @@ import {
   type LineWebhookEvent,
   parseLineMessage,
   parseLineSource,
-} from "@line_bot_v1/line-channel/adapters/messaging";
+} from "@line_bot_v1/line-channel/messaging";
 import type { AssistantEvent } from "../../../modules/assistant/event-router.server";
 
 export type SelectedLineWebhookEvent = {
