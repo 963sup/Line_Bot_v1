@@ -1,4 +1,4 @@
-import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 import { requireActiveUser, type User, UserError } from "../../domain/user.js";
 
 export type UserQualification = Readonly<{
