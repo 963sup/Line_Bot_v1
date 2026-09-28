@@ -32,27 +32,6 @@ function topologyDependencyRules() {
     ];
   });
 }
-function privateAdapterRules() {
-  return [...workspaces]
-    .filter(([, entry]) => entry.path.startsWith("packages/"))
-    .map(([, entry]) => {
-      const ownerPath = escapeRegex(entry.path);
-      const ownerName = entry.path.split("/").at(-1);
-      return {
-        name: `adapters-${ownerName}-are-private`,
-        severity: "error",
-        comment:
-          "Adapters are package-private implementations and must not be imported from outside the owning package",
-        from: {
-          path: "^(?:packages|apps)/",
-          pathNot: `^${ownerPath}/`,
-        },
-        to: {
-          path: `^${ownerPath}/src/adapters(?:\\.ts|/)`,
-        },
-      };
-    });
-}
 
 export default {
   forbidden: [
@@ -162,12 +141,21 @@ export default {
         "Packages must not import internal files of other packages via relative paths; use public workspace specifiers",
       from: { path: "^packages/([^/]+)/src/" },
       to: {
-        dependencyTypes: ["local", "localmodule"],
         path: "^packages/[^/]+/src/",
         pathNot: "^packages/$1/src/",
       },
     },
-    ...privateAdapterRules(),
+    {
+      name: "adapters-are-private-implementations",
+      severity: "error",
+      comment:
+        "Adapters are package-private implementations and must not be imported from outside the owning package",
+      from: { path: "^(packages|apps)/" },
+      to: {
+        path: "^packages/([^/]+)/src/adapters(?:\\.ts|/)",
+        pathNot: "^packages/$1/",
+      },
+    },
     {
       name: "packages-do-not-import-apps",
       severity: "error",
