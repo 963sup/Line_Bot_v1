@@ -7,6 +7,7 @@ import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
 import { renderSemanticView } from "./semantic-projection.mjs";
 import { querySemanticArchitecture } from "./semantic-query.mjs";
+import { writePackageSemanticDocs } from "./write-package-semantics.mjs";
 
 const queryVerbs = new Set([
   "owner",
@@ -30,7 +31,7 @@ const queryVerbs = new Set([
 ]);
 
 const usage =
-  "Usage: pnpm semantic <check|owner|concept|capability|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|benchmark-coverage|explain|plan|context|diff|drift|feedback|view> ...";
+  "Usage: pnpm semantic <check|owner|concept|capability|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|benchmark-coverage|explain|plan|context|diff|drift|feedback|view|package-docs> ...";
 
 async function readJson(path) {
   return JSON.parse(await readFile(resolve(path), "utf8"));
@@ -106,6 +107,11 @@ export async function runSemanticCommand(args) {
 
   if (verb === "view") {
     return renderSemanticView(compiled, rest[0] ?? "ownership");
+  }
+
+  if (verb === "package-docs") {
+    if (rest.length) throw new Error("Usage: pnpm semantic package-docs");
+    return writePackageSemanticDocs(compiled);
   }
 
   throw new Error(usage);

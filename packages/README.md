@@ -227,9 +227,10 @@ Projection / reference 可以被其他 owner 消費，但不得變成第二份 a
 ## Child package docs
 
 `packages/<owner>/AGENTS.md`：只補 owner-local constraints。  
-`packages/<owner>/README.md`：只作 owner-local routing。
+`packages/<owner>/README.md`：只作 owner-local routing。  
+`packages/<owner>/SEMANTICS.md`：generated owner-local semantic projection，讓進入 package 時直接看到 Domain、Bounded Context status、Ubiquitous Language、Capabilities 與 Context Relationships。
 
-兩者都不得複製 `semantic-model.json`、`implementation-topology.json`、`data-topology.json`、schema、exports 或 validation truth。
+`SEMANTICS.md` 不建立第二份 truth；canonical authority 仍是 `architecture/semantic-model.json` 與 `architecture/implementation-topology.json`。語意修改後執行 `pnpm semantic package-docs`，`pnpm architecture` 會檢查 projection drift。
 
 ## Validation routing
 
