@@ -217,6 +217,28 @@ test("Repository runtime privileges match only activated write capabilities", as
     })),
   );
 
+  const accessCoordinator = await pg.query(
+    `select
+      has_function_privilege(
+        'line_app',
+        'app_private.mutate_repository_access(text,text,text,text,text,integer)',
+        'EXECUTE'
+      ) as runtime_execute,
+      has_function_privilege(
+        'anon',
+        'app_private.mutate_repository_access(text,text,text,text,text,integer)',
+        'EXECUTE'
+      ) as anon_execute,
+      has_function_privilege(
+        'authenticated',
+        'app_private.mutate_repository_access(text,text,text,text,text,integer)',
+        'EXECUTE'
+      ) as authenticated_execute`,
+  );
+  assert.deepEqual(accessCoordinator.rows, [
+    { runtime_execute: true, anon_execute: false, authenticated_execute: false },
+  ]);
+
   const inactiveIssueLabels = await pg.query(
     `select
       has_table_privilege('line_app','app_private.issue_labels','SELECT') as can_select,
