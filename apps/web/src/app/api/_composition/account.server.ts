@@ -4,7 +4,7 @@ import {
   PostgresUserAchievementStore,
   PostgresUserProfileStore,
   PostgresUserStore,
-} from "@line_bot_v1/account/adapters/postgres";
+} from "@line_bot_v1/account/postgres";
 import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
 import { createFollows } from "@line_bot_v1/account/application/follows";
 import { createUserProfiles } from "@line_bot_v1/account/application/profile";
