@@ -3,13 +3,13 @@ import type { RepositorySelector } from "./selectors.js";
 
 export type RepositoryAccessSubjectKind = "USER" | "TEAM";
 
-export type RepositoryDirectUserGrant = Readonly<{
+type RepositoryDirectUserGrant = Readonly<{
   userId: string;
   capability: RepositoryCapability;
   version: number;
 }>;
 
-export type RepositoryTeamGrant = Readonly<{
+type RepositoryTeamGrant = Readonly<{
   teamId: string;
   capability: RepositoryCapability;
   version: number;
