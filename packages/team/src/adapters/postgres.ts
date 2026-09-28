@@ -14,7 +14,7 @@ import {
   listOrganizationTeamScopes,
   qualifyOrganizationTeamScope,
 } from "@line_bot_v1/organization/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { TeamActor, TeamRepository } from "../application/ports.js";
 import type {
   TeamCommandReceipt,
