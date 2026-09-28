@@ -1,4 +1,4 @@
-import { readUserQualification } from "@line_bot_v1/account/adapters/postgres";
+import { readUserQualification } from "@line_bot_v1/account/postgres";
 import type { AccountId } from "@line_bot_v1/account/domain";
 import { readAssetDefinition } from "@line_bot_v1/asset/adapters/postgres";
 import { type AssetCode, assetAmount } from "@line_bot_v1/asset/domain";
