@@ -3,7 +3,7 @@ import {
   readAccountLogins,
   resolveAccountLogin,
 } from "@line_bot_v1/namespace/adapters/postgres";
-import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "../../application/ports/selectors.js";
 import { IssueError, type RepositoryCapability, type RepositorySummary } from "../../domain.js";
 
