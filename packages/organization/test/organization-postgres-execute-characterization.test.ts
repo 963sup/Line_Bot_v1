@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { governanceFingerprint } from "@line_bot_v1/identity-access/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
-import { PostgresOrganizationGovernance } from "../src/postgres.js";
 import type {
   OrganizationCommand,
   OrganizationReceipt,
 } from "../src/contracts/organization-governance.js";
+import { PostgresOrganizationGovernance } from "../src/postgres.js";
 
 type QueryRecord = { text: string; values?: unknown[] };
 
