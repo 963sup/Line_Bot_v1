@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/gemini": {
-      "types": "./dist/adapters/gemini.d.ts",
-      "default": "./dist/adapters/gemini.js"
+    "./gemini": {
+      "types": "./dist/gemini.d.ts",
+      "default": "./dist/gemini.js"
     },
     "./agents/intake": {
       "types": "./dist/agents/intake.d.ts",

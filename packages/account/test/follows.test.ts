@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresFollowStore } from "../src/adapters/postgres/follows.js";
 import { createFollows } from "../src/application/follows.js";
 import type { FollowStore } from "../src/application/ports/follows.js";
 import { UserError } from "../src/domain/user.js";
+import { PostgresFollowStore } from "../src/postgres/follows.js";
 
 function service(store: Partial<FollowStore>, userId = "user-a") {
   return createFollows({

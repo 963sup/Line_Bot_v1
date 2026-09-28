@@ -1,21 +1,21 @@
+import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
+import { createFollows } from "@line_bot_v1/account/application/follows";
+import { createUserProfiles } from "@line_bot_v1/account/application/profile";
+import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
+import { requireActiveUser } from "@line_bot_v1/account/domain/user";
 import {
   PostgresFollowStore,
   PostgresGoogleLinkStore,
   PostgresUserAchievementStore,
   PostgresUserProfileStore,
   PostgresUserStore,
-} from "@line_bot_v1/account/adapters/postgres";
-import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
-import { createFollows } from "@line_bot_v1/account/application/follows";
-import { createUserProfiles } from "@line_bot_v1/account/application/profile";
-import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
-import { requireActiveUser } from "@line_bot_v1/account/domain/user";
+} from "@line_bot_v1/account/postgres";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
-import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
 import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application";
-import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/adapters/postgres";
+import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
+import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
-import { PostgresWalletStore } from "@line_bot_v1/wallet/adapters/postgres";
+import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 
 const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;

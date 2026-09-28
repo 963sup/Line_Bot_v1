@@ -1,6 +1,6 @@
-import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
-import { readAccountLogins } from "@line_bot_v1/namespace/adapters/postgres";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
+import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type {
   RepositoryActivityItem,
   RepositoryDiscoveryOptions,

@@ -1,4 +1,4 @@
-import type { messagingApi } from "@line_bot_v1/line-channel/adapters/messaging";
+import type { messagingApi } from "@line_bot_v1/line-channel/messaging";
 /**
  * ============================================================================
  * 第一性原理分析：LINE 支出通知卡片渲染器 (Expense Flex Message Renderer)

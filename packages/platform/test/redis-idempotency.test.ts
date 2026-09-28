@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import type { RedisTransport } from "../src/adapters/redis/redis-execution.js";
+import type { RedisTransport } from "../src/redis/redis-execution.js";
 import {
   IDEMPOTENCY_CLAIM_SCRIPT,
   IDEMPOTENCY_COMPLETE_SCRIPT,
   IDEMPOTENCY_TTL_SECONDS,
   RedisIdempotencyStore,
-} from "../src/adapters/redis/redis-idempotency-store.js";
+} from "../src/redis/redis-idempotency-store.js";
 
 test("idempotency claim hashes external identifiers and maps Lua states", async () => {
   const calls: Array<{ script: string; keys: string[]; args: string[] }> = [];

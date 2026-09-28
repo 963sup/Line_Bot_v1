@@ -4,7 +4,7 @@ import { isServerOnlyPackageSource } from "./check-architecture.mjs";
 
 test("context adapters, agents, testing and platform database mechanisms stay server-only unless browser-owned", () => {
   for (const source of [
-    "packages/account/src/adapters/postgres/user-management.ts",
+    "packages/account/src/postgres/user-management.ts",
     "packages/assistant/src/adapters/gemini.ts",
     "packages/expense/src/agents/receipt.ts",
     "packages/platform/src/testing/postgres.ts",
@@ -15,12 +15,9 @@ test("context adapters, agents, testing and platform database mechanisms stay se
     assert.equal(isServerOnlyPackageSource(source), true, source);
   }
 
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/mini-app/browser.ts"), false);
   assert.equal(
-    isServerOnlyPackageSource("packages/line-channel/src/adapters/mini-app/browser.ts"),
-    false,
-  );
-  assert.equal(
-    isServerOnlyPackageSource("packages/line-channel/src/adapters/mini-app/browser/client.ts"),
+    isServerOnlyPackageSource("packages/line-channel/src/mini-app/browser/client.ts"),
     false,
   );
   assert.equal(isServerOnlyPackageSource("packages/account/src/domain/user.ts"), false);

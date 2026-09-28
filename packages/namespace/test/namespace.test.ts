@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresNamespaceStore } from "../src/adapters/postgres.js";
 import {
   claimNamespace,
   NamespaceError,
@@ -9,6 +8,7 @@ import {
   renameNamespace,
   resolveNamespace,
 } from "../src/index.js";
+import { PostgresNamespaceStore } from "../src/postgres.js";
 
 test("global Account login normalization is owned by Namespace", async () => {
   assert.equal(normalizeAccountLogin(" Alice-2 "), "alice-2");

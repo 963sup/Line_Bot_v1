@@ -1,6 +1,6 @@
 import type { WorkplaceChatInput } from "@line_bot_v1/attendance/domain";
-import type { LineWebhookEvent } from "@line_bot_v1/line-channel/adapters/messaging";
-import type { RedisIdempotencyStore } from "@line_bot_v1/platform/adapters/redis";
+import type { LineWebhookEvent } from "@line_bot_v1/line-channel/messaging";
+import type { RedisIdempotencyStore } from "@line_bot_v1/platform/redis";
 import type { AssistantEvent } from "../../../modules/assistant/event-router.server";
 import { captureHandledServerError } from "../../../shared/observability/server-error";
 import { classifyLineWebhookEvents } from "./line-webhook-intent.server";

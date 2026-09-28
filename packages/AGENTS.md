@@ -276,7 +276,7 @@ Business intent
 - Child `AGENTS.md` 只增加 owner-local constraint，不複製本檔。
 - Child `README.md` 只 routing，不建立第二份 owner、schema、export、capability 或 validation truth。
 
-## Change rules
+## Mandatory package resolution
 
 修改前至少確認：
 

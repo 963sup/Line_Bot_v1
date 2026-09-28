@@ -1,5 +1,5 @@
 import type { WorkplaceChatInput, WorkplaceChatResult } from "@line_bot_v1/attendance/domain";
-import type { messagingApi } from "@line_bot_v1/line-channel/adapters/messaging";
+import type { messagingApi } from "@line_bot_v1/line-channel/messaging";
 import { miniAppEntryUrl } from "../../shared/presentation/entry-route";
 
 export function workplaceChatInput(

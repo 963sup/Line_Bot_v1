@@ -4,15 +4,123 @@ import { resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { checkAppRoot, checkArchitecture } from "./check-architecture.mjs";
+import { validatePackageExports } from "./check-implementation-topology.mjs";
 
 const artifacts = fileURLToPath(new URL("../../.artifacts/", import.meta.url));
 // Keep generated fixture imports out of the tooling checker's literal script-import scan.
 const importing = (specifier) => `import ${JSON.stringify(specifier)};`;
+const wildcardReExporting = (specifier) => `export * from ${JSON.stringify(specifier)};`;
+const namedReExporting = (name, specifier) =>
+  `export { ${name} } from ${JSON.stringify(specifier)};`;
 function write(root, path, text) {
   const file = resolve(root, path);
   mkdirSync(resolve(file, ".."), { recursive: true });
   writeFileSync(file, text);
 }
+
+test("package public exports keep adapters private", () => {
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
+      ".": { default: "./dist/index.js" },
+      "./postgres": { default: "./dist/postgres.js" },
+    }),
+    [],
+  );
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
+      "./adapters/postgres": { default: "./dist/adapters/postgres.js" },
+    }),
+    ["@line_bot_v1/demo: private adapter must not be package export: ./adapters/postgres"],
+  );
+  assert.deepEqual(
+    validatePackageExports("@line_bot_v1/demo", {
+      "./postgres": { default: "./dist/postgres.js" },
+    }),
+    [],
+  );
+});
+
+test("public package entries require named re-exports", async () => {
+  mkdirSync(artifacts, { recursive: true });
+  const root = mkdtempSync(resolve(artifacts, "named-exports-"));
+  try {
+    for (const parent of ["apps", "packages"])
+      mkdirSync(resolve(root, parent), { recursive: true });
+    write(
+      root,
+      "packages/demo/package.json",
+      JSON.stringify({
+        name: "@line_bot_v1/demo",
+        exports: { ".": { default: "./dist/index.js" } },
+      }),
+    );
+    write(root, "packages/demo/tsconfig.json", JSON.stringify({}));
+    write(root, "packages/demo/src/value.ts", "export const value = 1;");
+    write(root, "packages/demo/src/index.ts", wildcardReExporting("./value.js"));
+    assert.ok(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("public-exports-are-named: @line_bot_v1/demo -> ./value.js"),
+      ),
+    );
+    write(root, "packages/demo/src/index.ts", namedReExporting("value", "./value.js"));
+    assert.equal(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("public-exports-are-named:"),
+      ),
+      false,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("adapter privacy applies across workspace owners, not within one owner", async () => {
+  mkdirSync(artifacts, { recursive: true });
+  const root = mkdtempSync(resolve(artifacts, "adapter-owner-"));
+  try {
+    for (const parent of ["apps", "packages"])
+      mkdirSync(resolve(root, parent), { recursive: true });
+
+    write(
+      root,
+      "packages/demo/package.json",
+      JSON.stringify({
+        name: "@line_bot_v1/demo",
+        exports: { ".": { default: "./dist/index.js" } },
+      }),
+    );
+    write(root, "packages/demo/tsconfig.json", JSON.stringify({}));
+    write(root, "packages/demo/src/index.ts", "export const value = 1;");
+    write(root, "packages/demo/src/adapters/private.ts", "export const privateValue = 1;");
+    write(root, "packages/demo/src/adapters/peer.ts", importing("./private"));
+
+    write(
+      root,
+      "apps/web/package.json",
+      JSON.stringify({ name: "@line_bot_v1/web", private: true }),
+    );
+    write(root, "apps/web/tsconfig.json", JSON.stringify({}));
+    write(root, "apps/web/src/index.ts", "export const value = 1;");
+
+    assert.equal(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("adapters-are-private-implementations:"),
+      ),
+      false,
+      "same-owner adapter composition is package-private implementation detail",
+    );
+
+    write(root, "apps/web/src/index.ts", importing("../../../packages/demo/src/adapters/private"));
+    assert.ok(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("adapters-are-private-implementations:"),
+      ),
+      "external workspace must not import a private adapter",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("app root rejects unexpected folders, new root files and wrong entry kinds", () => {
   mkdirSync(artifacts, { recursive: true });
@@ -71,8 +179,8 @@ test("architecture checks source exports, types, ports, browser reachability and
             "./ports/repository": { default: "./dist/ports/repository.js" },
             ...(name === "line-channel"
               ? {
-                  "./adapters/mini-app/browser": {
-                    default: "./dist/adapters/mini-app/browser.js",
+                  "./mini-app/browser": {
+                    default: "./dist/mini-app/browser.js",
                   },
                 }
               : {}),
@@ -286,7 +394,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       [
         "packages/platform/src/private-import.ts",
         importing("../../account/src/index"),
-        "cross-workspace-relative-import",
+        "no-relative-imports-across-packages",
       ],
       [
         "apps/web/src/features/entry.ts",
@@ -369,21 +477,13 @@ test("architecture checks source exports, types, ports, browser reachability and
       ),
       "type-only imports do not bypass module server isolation",
     );
+    write(root, "packages/line-channel/src/mini-app/browser/client.ts", "export const client = 1;");
     write(
       root,
-      "packages/line-channel/src/adapters/mini-app/browser/client.ts",
-      "export const client = 1;",
-    );
-    write(
-      root,
-      "packages/line-channel/src/adapters/mini-app/browser.ts",
+      "packages/line-channel/src/mini-app/browser.ts",
       `export { client } from ${JSON.stringify("./browser/client")};`,
     );
-    write(
-      root,
-      "apps/web/src/helper.ts",
-      importing("@line_bot_v1/line-channel/adapters/mini-app/browser"),
-    );
+    write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line-channel/mini-app/browser"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(
       root,
@@ -395,12 +495,12 @@ test("architecture checks source exports, types, ports, browser reachability and
       "packages/line-channel/src/adapters/mini-app/server/private.ts",
       "export const value = 1;",
     );
-    for (const target of ["node:fs", "../../messaging/private", "../server/private"]) {
-      write(
-        root,
-        "packages/line-channel/src/adapters/mini-app/browser/client.ts",
-        importing(target),
-      );
+    for (const target of [
+      "node:fs",
+      "../../adapters/messaging/private",
+      "../../adapters/mini-app/server/private",
+    ]) {
+      write(root, "packages/line-channel/src/mini-app/browser/client.ts", importing(target));
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) =>
           error.startsWith("client-cannot-reach-server:"),
@@ -408,11 +508,7 @@ test("architecture checks source exports, types, ports, browser reachability and
         target,
       );
     }
-    write(
-      root,
-      "packages/line-channel/src/adapters/mini-app/browser/client.ts",
-      "export const client = 1;",
-    );
+    write(root, "packages/line-channel/src/mini-app/browser/client.ts", "export const client = 1;");
     write(root, "packages/platform/dist/old.js", "export const old = 1;");
     write(root, "apps/web/src/helper.ts", importing("../../../packages/platform/dist/old.js"));
     assert.ok(

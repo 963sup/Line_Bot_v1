@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { ExpenseRepository } from "../application/ports/expense-repository.js";
 import type { ReceiptIntakeStore } from "../application/ports/receipt-intake.js";
 import type { ReceiptReading } from "../contracts/receipt-reading.js";

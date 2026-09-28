@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/postgres": {
-      "types": "./dist/adapters/postgres.d.ts",
-      "default": "./dist/adapters/postgres.js"
-    },
     "./application": {
       "types": "./dist/application.d.ts",
       "default": "./dist/application.js"
@@ -19,6 +15,10 @@
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
     }
   },
   "files": [

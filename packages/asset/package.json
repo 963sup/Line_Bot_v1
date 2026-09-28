@@ -8,9 +8,9 @@
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
     },
-    "./adapters/postgres": {
-      "types": "./dist/adapters/postgres.d.ts",
-      "default": "./dist/adapters/postgres.js"
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
     }
   },
   "files": [

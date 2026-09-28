@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Sql } from "@line_bot_v1/platform/adapters/postgres";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 import {
   executeEnterpriseTeamMutation,
   isEnterpriseTeamCommand,

@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { mock } from "node:test";
-import { PostgresUserStore } from "@line_bot_v1/account/adapters/postgres";
-import { supabaseIdentity } from "@line_bot_v1/account/adapters/supabase-identity";
-import { PostgresAttendanceStore } from "@line_bot_v1/attendance/adapters/postgres";
+import { PostgresUserStore } from "@line_bot_v1/account/postgres";
+import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
+import { PostgresAttendanceStore } from "@line_bot_v1/attendance/postgres";
 import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
 import { PostgresExpenseStore } from "@line_bot_v1/expense/adapters/postgres";
-import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/adapters/postgres";
+import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresWalletStore } from "@line_bot_v1/wallet/adapters/postgres";
+import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";
 import { idempotencyFixture } from "./idempotency-fixture";
 

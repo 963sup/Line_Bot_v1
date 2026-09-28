@@ -16,7 +16,7 @@ verifyDepsBeforeRun: error
 enableGlobalVirtualStore: false
 
 catalog:
-  '@biomejs/biome': '2.5.12'
+  '@biomejs/biome': '2.5.14'
   '@electric-sql/pglite': '0.5.8'
   '@google/genai': '2.21.0'
   '@line/bot-sdk': '11.2.0'

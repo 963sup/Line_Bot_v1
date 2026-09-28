@@ -40,6 +40,24 @@ function workspaceRoot(source) {
   return normalize(source).match(/^(?:apps|packages)\/[^/]+/)?.[0] ?? null;
 }
 
+function wildcardReExports(root, source) {
+  if (!existsSync(resolve(root, source))) return [];
+  const ast = ts.createSourceFile(
+    source,
+    readFileSync(resolve(root, source), "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  return ast.statements
+    .filter(
+      (statement) =>
+        ts.isExportDeclaration(statement) &&
+        statement.moduleSpecifier &&
+        (!statement.exportClause || ts.isNamespaceExport(statement.exportClause)),
+    )
+    .map((statement) => statement.moduleSpecifier.text);
+}
+
 /** Workspace boundaries are crossed through package exports, never relative private source paths. */
 function checkCrossWorkspaceRelativeImports(root, source) {
   if (!/\.[cm]?[jt]sx?$/.test(source)) return [];
@@ -51,7 +69,7 @@ function checkCrossWorkspaceRelativeImports(root, source) {
     const target = normalize(relative(root, resolve(root, source, "..", specifier)));
     const targetOwner = workspaceRoot(target);
     if (targetOwner && targetOwner !== owner)
-      errors.push(`cross-workspace-relative-import: ${source} -> ${specifier}`);
+      errors.push(`no-relative-imports-across-packages: ${source} -> ${specifier}`);
   }
   return errors;
 }
@@ -91,6 +109,7 @@ export function checkAppRoot(root = repository) {
 function workspaceSources(root) {
   const entries = [];
   const alias = {};
+  const errors = [];
   for (const parent of ["apps", "packages"]) {
     for (const entry of readdirSync(resolve(root, parent), { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
@@ -115,6 +134,11 @@ function workspaceSources(root) {
           );
         }
         const source = compiled.replace("./dist/", "./src/").replace(/\.js$/, ".ts");
+        for (const target of wildcardReExports(root, `${directory}/${source.slice(2)}`)) {
+          errors.push(
+            `public-exports-are-named: ${manifest.name}${subpath === "." ? "" : subpath.slice(1)} -> ${target}`,
+          );
+        }
         // Exact aliases preserve package exports: no wildcard that permits private deep imports.
         alias[`${manifest.name}${subpath === "." ? "" : subpath.slice(1)}$`] = resolve(
           root,
@@ -124,7 +148,7 @@ function workspaceSources(root) {
       }
     }
   }
-  return { entries, alias };
+  return { entries, alias, errors };
 }
 
 function isClientModule(root, source) {
@@ -145,7 +169,7 @@ function isClientModule(root, source) {
 export function isServerOnlyPackageSource(source) {
   const target = normalize(source);
   if (
-    !/^packages\/[^/]+\/src\/(?:adapters(?:\.ts|\/)|agents(?:\.ts|\/)|testing(?:\.ts|\/)|database(?:\.ts|\/)|migration(?:\.ts|\/))/.test(
+    !/^packages\/[^/]+\/src\/(?:adapters(?:\.ts|\/)|agents(?:\.ts|\/)|testing(?:\.ts|\/)|database(?:\.ts|\/)|migration(?:\.ts|\/)|postgres(?:\.ts|\/))/.test(
       target,
     )
   )
@@ -157,7 +181,7 @@ export async function checkArchitecture(root = repository) {
   const previous = process.cwd();
   process.chdir(root);
   try {
-    const { entries, alias } = workspaceSources(root);
+    const { entries, alias, errors: publicExportErrors } = workspaceSources(root);
     const result = await cruise(
       entries,
       { ...config.options, validate: true, ruleSet: config, outputType: "json" },
@@ -169,9 +193,23 @@ export async function checkArchitecture(root = repository) {
       },
     );
     const graph = typeof result.output === "string" ? JSON.parse(result.output) : result.output;
-    const errors = graph.summary.violations.map(
-      (item) => `${item.rule.name}: ${item.from} -> ${item.to}`,
-    );
+    // Package export aliases intentionally resolve public workspace specifiers to source files
+    // so architecture can validate without dist. The original specifier, not the resolved path,
+    // determines whether a cross-package import is relative; enforce that invariant below from AST.
+    const errors = [
+      ...publicExportErrors,
+      ...graph.summary.violations
+        .filter((item) => {
+          if (item.rule.name === "no-relative-imports-across-packages") return false;
+          if (item.rule.name === "adapters-are-private-implementations") {
+            const fromOwner = workspaceRoot(item.from);
+            const toOwner = workspaceRoot(item.to);
+            if (fromOwner && fromOwner === toOwner) return false;
+          }
+          return true;
+        })
+        .map((item) => `${item.rule.name}: ${item.from} -> ${item.to}`),
+    ];
     errors.push(...checkAppRoot(root));
     const modules = new Map(graph.modules.map((module) => [normalize(module.source), module]));
     const isolatedFromMobileShell =

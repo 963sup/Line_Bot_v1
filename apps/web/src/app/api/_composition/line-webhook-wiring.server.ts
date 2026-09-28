@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { PostgresWorkplaceChatStore } from "@line_bot_v1/attendance/adapters/postgres";
 import { createWorkplaceChat } from "@line_bot_v1/attendance/application/workplace-chat";
-import { createLineClient } from "@line_bot_v1/line-channel/adapters/messaging";
+import { PostgresWorkplaceChatStore } from "@line_bot_v1/attendance/postgres";
+import { createLineClient } from "@line_bot_v1/line-channel/messaging";
 import {
   createUpstashRedisRestTransport,
   RedisIdempotencyStore,
   RedisUnavailableError,
   redisUnavailableCode,
-} from "@line_bot_v1/platform/adapters/redis";
+} from "@line_bot_v1/platform/redis";
 import { membershipFailureCode } from "../../../modules/account/failure-code.server";
 import { agentText, aiTestText, answer } from "../../../modules/assistant/answer.server";
 import { createAssistantReply } from "../../../modules/assistant/event-router.server";

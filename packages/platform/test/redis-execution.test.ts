@@ -4,8 +4,8 @@ import {
   createRedisExecution,
   type RedisTransport,
   RedisUnavailableError,
-} from "../src/adapters/redis/redis-execution.js";
-import { createUpstashRedisRestTransport } from "../src/adapters/redis/upstash-redis-rest.js";
+} from "../src/redis/redis-execution.js";
+import { createUpstashRedisRestTransport } from "../src/redis/upstash-redis-rest.js";
 
 test("Upstash REST transport requires HTTPS and sends EVAL without exposing credentials", async () => {
   assert.throws(

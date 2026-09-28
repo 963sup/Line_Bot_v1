@@ -4,17 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./adapters/migration": {
-      "types": "./dist/adapters/migration.d.ts",
-      "default": "./dist/adapters/migration.js"
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
     },
-    "./adapters/postgres": {
-      "types": "./dist/adapters/postgres.d.ts",
-      "default": "./dist/adapters/postgres.js"
-    },
-    "./adapters/redis": {
-      "types": "./dist/adapters/redis.d.ts",
-      "default": "./dist/adapters/redis.js"
+    "./redis": {
+      "types": "./dist/redis.d.ts",
+      "default": "./dist/redis.js"
     },
     "./testing/postgres": {
       "types": "./dist/testing/postgres.d.ts",

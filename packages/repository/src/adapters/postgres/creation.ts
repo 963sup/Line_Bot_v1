@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import {
   isOrganizationOwner,
   readOrganizationOwnerScopeIds,
-} from "@line_bot_v1/identity-access/adapters/postgres";
-import { readAccountLogin } from "@line_bot_v1/namespace/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+} from "@line_bot_v1/identity-access/postgres";
+import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationResult,

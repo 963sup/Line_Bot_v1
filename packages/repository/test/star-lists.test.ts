@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Database } from "@line_bot_v1/platform/adapters/postgres";
+import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryStarListStore } from "../src/adapters/postgres/star-lists.js";
 import { PostgresRepositoryStarStore } from "../src/adapters/postgres/stars.js";

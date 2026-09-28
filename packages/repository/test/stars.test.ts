@@ -130,7 +130,7 @@ test("public Repository lookup resolves Organization login plus Repository name"
     ["public-repository", "public-organization", "Payroll"],
   );
 
-  const { PostgresPublicRepositoryStore } = await import("../src/adapters/postgres/public.js");
+  const { PostgresPublicRepositoryStore } = await import("../src/postgres/public.js");
   const store = new PostgresPublicRepositoryStore(db);
   assert.deepEqual(await store.byOwnerAndName("acme", "payroll"), {
     id: "public-repository",
