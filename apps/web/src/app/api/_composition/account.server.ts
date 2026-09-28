@@ -11,7 +11,7 @@ import { createUserProfiles } from "@line_bot_v1/account/application/profile";
 import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
 import { requireActiveUser } from "@line_bot_v1/account/domain/user";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
-import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
+import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
 import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/adapters/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
