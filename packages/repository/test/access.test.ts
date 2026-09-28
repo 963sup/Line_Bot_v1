@@ -100,7 +100,7 @@ test("Repository access management supports direct and Team grants with replay, 
     "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4)",
     ["repo", "owner", "org", "Shared"],
   );
-  assert.equal(created.rows[0]?.repository_id, "repo");
+  assert.equal((created.rows[0] as { repository_id?: string } | undefined)?.repository_id, "repo");
 
   const store = new PostgresRepositoryAccessStore(db);
   const initial = await store.view("owner", { ownerLogin: "octo", repositoryName: "shared" });
@@ -217,7 +217,7 @@ test("Repository access management supports direct and Team grants with replay, 
   const commands = await pg.query(
     "select count(*)::int as count from app_private.repository_commands where actor='owner'",
   );
-  assert.equal(commands.rows[0]?.count, 6);
+  assert.equal((commands.rows[0] as { count?: number } | undefined)?.count, 6);
 
   await assert.rejects(
     db.transaction((sql) =>
