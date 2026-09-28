@@ -10,7 +10,7 @@ import { attendanceOperationLabels } from "../src/modules/attendance/operation-l
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-route";
 
-test("six menus expose four native switches and only Back on each submenu", () => {
+test("six menus expose native switches, Back, and only configured form actions", () => {
   assert.deepEqual(MENU_PAGES, [
     "attendance-in",
     "attendance-out",
@@ -58,7 +58,11 @@ test("six menus expose four native switches and only Back on each submenu", () =
         assert.ok(MENU_PAGES.some((target) => menuAlias(target) === action.richMenuAliasId));
       }
     } else {
-      assert.equal(menu.areas.length, 1, "Unimplemented submenu buttons must stay inactive");
+      assert.equal(
+        menu.areas.length,
+        page === "forms" ? 5 : 1,
+        "Only configured buttons are active",
+      );
       assert.deepEqual(menu.areas[0]!.action, {
         type: "postback",
         label: "返回出勤選單",
@@ -68,6 +72,21 @@ test("six menus expose four native switches and only Back on each submenu", () =
       assert.ok(
         back.x <= 160 && back.x + back.width >= 160 && back.y <= 110 && back.y + back.height >= 110,
       );
+      if (page === "forms") {
+        const expected = [
+          { label: "日誌", uri: "https://forms.gle/VKqVpTZtr8K3oL8a8", x: 500, y: 320 },
+          { label: "報銷", uri: "https://forms.gle/PXgs7RFYZtCZENd7A", x: 1030, y: 320 },
+          { label: "請假", uri: "https://forms.gle/C2D5zQNEgVYD4i5B6", x: 500, y: 720 },
+          { label: "即時", uri: "https://forms.gle/nqcQfGh92NfBkXbL7", x: 1030, y: 720 },
+        ];
+        for (const { label, uri, x, y } of expected) {
+          const hits = menu.areas.filter(
+            ({ bounds: b }) => x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height,
+          );
+          assert.equal(hits.length, 1);
+          assert.deepEqual(hits[0]!.action, { type: "uri", label, uri });
+        }
+      }
     }
     for (const [index, { bounds: a }] of menu.areas.entries()) {
       assert.ok(

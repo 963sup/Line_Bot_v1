@@ -2,7 +2,7 @@
 ## 現行結構
 發布六張 1536 × 1024 PNG：`attendance-in`、`attendance-out`、`forms`、`incident`、`notifications`、`team`，檔名皆為 `line_bot_v1-<page>.png`。default 使用上班選單。
 
-主選單中央保留上班／下班操作，儲存庫與個人保留直接 URI。外圈表單、異常通報、公告通知、團隊協作使用原生 `richmenuswitch` 切到對應子選單。四個子選單只設定左上角返回箭頭，其餘圖示不配置動作、不建立佔位頁。點擊範圍按實際圖片尺寸等比例計算。
+主選單中央保留上班／下班操作，儲存庫與個人保留直接 URI。外圈表單、異常通報、公告通知、團隊協作使用原生 `richmenuswitch` 切到對應子選單。四個子選單皆有左上角返回箭頭；表單頁另有左上日誌、右上報銷、左下請假、右下即時四個外部 Google Forms URI，精確連結由 `definition.ts` 保存。開啟或提交外部表單不代表本系統建立日誌、報銷、請假或出勤紀錄。其餘三個子選單內部圖示不配置動作、不建立佔位頁。點擊範圍按實際圖片尺寸等比例計算。
 
 ## 出勤 menu state
 出勤主選單區分 `attendance-in` 與 `attendance-out`，子選單共用一份，不按出勤狀態複製。中央按鈕帶 `clock-in`／`clock-out` intent 進入出勤流程。後端 Attendance state 才是 authority；過時 menu 不得反轉操作；menu sync／notification failure 不回滾合法完成的出勤交易。

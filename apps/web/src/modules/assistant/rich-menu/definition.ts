@@ -38,6 +38,31 @@ export function lineBotV1RichMenu(
     team: "團隊協作",
   };
   if (page !== "attendance-in" && page !== "attendance-out") {
+    const forms: Array<{ bounds: Rectangle; label: string; uri: string }> =
+      page === "forms"
+        ? [
+            {
+              bounds: [16.5, 12.5, 32.5, 37],
+              label: "日誌",
+              uri: "https://forms.gle/VKqVpTZtr8K3oL8a8",
+            },
+            {
+              bounds: [51, 12.5, 32.5, 37],
+              label: "報銷",
+              uri: "https://forms.gle/PXgs7RFYZtCZENd7A",
+            },
+            {
+              bounds: [16.5, 52, 32.5, 37],
+              label: "請假",
+              uri: "https://forms.gle/C2D5zQNEgVYD4i5B6",
+            },
+            {
+              bounds: [51, 52, 32.5, 37],
+              label: "即時",
+              uri: "https://forms.gle/nqcQfGh92NfBkXbL7",
+            },
+          ]
+        : [];
     return {
       size,
       selected: true,
@@ -48,6 +73,10 @@ export function lineBotV1RichMenu(
           bounds: pixels([4, 3, 12, 16]),
           action: { type: "postback", label: "返回出勤選單", data: "attendance-menu" },
         },
+        ...forms.map(({ bounds, label, uri }) => ({
+          bounds: pixels(bounds),
+          action: { type: "uri" as const, label, uri },
+        })),
       ],
     };
   }
