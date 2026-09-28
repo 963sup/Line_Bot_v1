@@ -8,11 +8,7 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   return (
     <AppShell>
-      <PageHeading
-        title="Issues"
-        description="選擇 Repository，再查看該範圍的 Issues。"
-        back="/home"
-      />
+      <PageHeading title="Issues" back="/home" />
       <RepositoryList liffId={lineMiniApp().liffId} intent="browse-issues" />
     </AppShell>
   );
