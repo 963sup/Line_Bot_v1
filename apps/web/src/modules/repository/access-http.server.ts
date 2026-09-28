@@ -1,4 +1,5 @@
 import type { createRepositoryAccess } from "@line_bot_v1/repository/application/access";
+import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryBody, repositoryFailure, repositoryPathSelector } from "./http.server";
 
@@ -13,7 +14,7 @@ function selector(request: Request) {
     search.getAll("owner").length !== 1 ||
     search.getAll("name").length !== 1
   ) {
-    throw new Error("Repository access 查詢參數不正確。");
+    throw new RepositoryError(400, "Repository access 查詢參數不正確。");
   }
   return repositoryPathSelector(search.get("owner") ?? "", search.get("name") ?? "");
 }
