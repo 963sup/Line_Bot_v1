@@ -1,5 +1,13 @@
 # Current schema source
 
+## Governing files
+
+本 scope 修改前仍必須遵守 root `AGENTS.md#Mandatory governing set`，尤其是以下 current authority / guard：
+
+`architecture/README.md` · `architecture/data-topology.json` · `architecture/implementation-topology.json` · `architecture/semantic-benchmark.json` · `architecture/semantic-model.json` · `.dependency-cruiser.mjs` · `biome.json` · `knip.jsonc`
+
+Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
+
 - 本目錄的可執行 SQL 只擁有 current declarative PostgreSQL structure；`870–891` reserved target files 只保留純註解 namespace，不是 current relation。歷史／migration／proposal 不得回流成第二套 current SQL。
 - 物件切分以 [README](README.md) 的 Object / Relationship tree 為導航；真正 owner 由 `architecture/data-topology.json#relations` 機械判定。
 - 檔名數字只是 lexical dependency/navigation，不是 owner。新增或搬移 relation 時先用 semantic concept、consumer contract、data-topology mapping 與 package owner 證明 authority，再選最接近的既有區段；不要為了美觀重排號碼。

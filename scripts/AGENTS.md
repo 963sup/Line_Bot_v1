@@ -2,6 +2,14 @@
 
 Root `package.json#scripts` is the shared public command surface; `scripts/` implements repository operations. Each command has one observable result, real consumer and side-effect boundary. Product rules and persistence authority remain with their existing owners.
 
+## Governing files
+
+本 scope 修改前仍必須遵守 root `AGENTS.md#Mandatory governing set`，尤其是以下 current authority / guard：
+
+`architecture/README.md` · `architecture/data-topology.json` · `architecture/implementation-topology.json` · `architecture/semantic-benchmark.json` · `architecture/semantic-model.json` · `.dependency-cruiser.mjs` · `biome.json` · `knip.jsonc`
+
+Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
+
 ## Ownership
 
 Before adding or moving code, identify its consumer, command, owner, source of truth and failure/recovery boundary. Reuse existing capabilities. Do not create generic wrappers, managers or abstractions to shorten YAML or reduce file counts.

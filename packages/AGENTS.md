@@ -4,13 +4,14 @@
 
 ## Authority
 
-修改任何 package 前，依序確認：
+修改任何 package 前，必須先讀取並遵守 root `AGENTS.md#Mandatory governing set`；不得把 governing files 當成修 local violation 的 escape hatch。依序確認：
 
-1. `architecture/semantic-model.json`：product semantic owner、concept、relationship、capability、invariant、policy 與 integration mode。
-2. `architecture/implementation-topology.json`：module path、`moduleKind`、`semanticOwner`、`allowedWorkspaceDependencies`。
-3. `architecture/data-topology.json`：persisted relation owner、projection / reference 與 data boundary。
-4. `package.json#exports`：package public boundary。
-5. source / tests / `supabase/schemas/*.sql`：runtime behavior、database truth 與 enforcement evidence。
+1. `architecture/README.md`：architecture truth routing、authority hierarchy 與 evidence flow。
+2. `architecture/semantic-model.json`：product semantic owner、concept、relationship、capability、invariant、policy 與 integration mode。
+3. `architecture/implementation-topology.json`：module path、`moduleKind`、`semanticOwner`、`allowedWorkspaceDependencies`。
+4. `architecture/data-topology.json`：persisted relation owner、projection / reference 與 data boundary。
+5. `package.json#exports`：package public boundary。
+6. source / tests / `supabase/schemas/*.sql`：runtime behavior、database truth 與 enforcement evidence。
 
 `architecture/semantic-benchmark.json` 只提供 external semantic evidence；沒有 `semantic-model.json` 的 explicit adoption / mapping，不得成為 product authority。
 

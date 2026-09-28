@@ -2,6 +2,14 @@
 
 `.github/` owns triggers, permissions, concurrency, checkout/setup, job dependencies, step-scoped secrets and GitHub artifacts. Executable operation logic belongs in `scripts/`; product/provider behavior stays with its owner.
 
+## Governing files
+
+本 scope 修改前仍必須遵守 root `AGENTS.md#Mandatory governing set`，尤其是以下 current authority / guard：
+
+`architecture/README.md` · `architecture/data-topology.json` · `architecture/implementation-topology.json` · `architecture/semantic-benchmark.json` · `architecture/semantic-model.json` · `.dependency-cruiser.mjs` · `biome.json` · `knip.jsonc`
+
+Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
+
 ## Release
 
 - Main push starts read-only release planning and reusable full validation in parallel. Every external operation requires both to succeed for the same SHA; checkout that exact SHA and guard current main before external writes.
