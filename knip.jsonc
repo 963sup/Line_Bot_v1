@@ -36,9 +36,6 @@
     "packages/*": {
       "entry": [
         "src/index.ts!",
-        "src/contracts/index.ts!",
-        "src/domain/index.ts!",
-        "src/application/index.ts!",
         "test/**/*.test.ts"
       ],
       "includeEntryExports": true,

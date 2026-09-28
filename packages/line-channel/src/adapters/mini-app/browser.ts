@@ -1,1 +1,1 @@
-export * from "./browser/client.js";
+export { createLiffClient } from "./browser/client.js";

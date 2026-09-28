@@ -40,6 +40,30 @@ function workspaceRoot(source) {
   return normalize(source).match(/^(?:apps|packages)\/[^/]+/)?.[0] ?? null;
 }
 
+/** Public and internal package barrels must name every exported symbol explicitly. */
+function checkNamedReExports(root, source) {
+  if (!/^packages\/[^/]+\/src\/.*\.[cm]?[jt]sx?$/.test(source)) return [];
+  const ast = ts.createSourceFile(
+    source,
+    readFileSync(resolve(root, source), "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  return ast.statements
+    .filter(
+      (statement) =>
+        ts.isExportDeclaration(statement) &&
+        statement.moduleSpecifier &&
+        statement.exportClause === undefined,
+    )
+    .map((statement) => {
+      const specifier = ts.isStringLiteralLike(statement.moduleSpecifier)
+        ? statement.moduleSpecifier.text
+        : "<unknown>";
+      return `named-reexports-only: ${source} -> ${specifier}`;
+    });
+}
+
 /** Workspace boundaries are crossed through package exports, never relative private source paths. */
 function checkCrossWorkspaceRelativeImports(root, source) {
   if (!/\.[cm]?[jt]sx?$/.test(source)) return [];
@@ -178,6 +202,7 @@ export async function checkArchitecture(root = repository) {
       /^apps\/web\/src\/app\/\((?:admin|onboarding|public|rich-menu|system)\)\//;
     for (const source of modules.keys()) {
       errors.push(...checkCrossWorkspaceRelativeImports(root, source));
+      errors.push(...checkNamedReExports(root, source));
       if (isolatedFromMobileShell.test(source)) {
         for (const dependency of modules.get(source).dependencies ?? []) {
           const target = normalize(dependency.resolved);

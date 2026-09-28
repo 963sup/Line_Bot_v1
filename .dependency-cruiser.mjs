@@ -135,17 +135,6 @@ export default {
       to: { path: "^packages/[^/]+/src/adapters(?:\\.ts|/)" },
     },
     {
-      name: "no-relative-imports-across-packages",
-      severity: "error",
-      comment:
-        "Packages must not import internal files of other packages via relative paths; use public workspace specifiers",
-      from: { path: "^packages/([^/]+)/src/" },
-      to: {
-        path: "^packages/[^/]+/src/",
-        pathNot: "^packages/$1/src/",
-      },
-    },
-    {
       name: "adapters-are-private-implementations",
       severity: "error",
       comment:

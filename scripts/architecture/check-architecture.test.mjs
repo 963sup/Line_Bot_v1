@@ -120,6 +120,16 @@ test("architecture checks source exports, types, ports, browser reachability and
       [],
       "allowed imports must resolve to source before any build",
     );
+    write(root, "packages/attendance/src/value.ts", "export const value = 1;");
+    write(root, "packages/attendance/src/barrel.ts", 'export * from "./value.js";');
+    assert.ok(
+      (await checkArchitecture(root)).errors.some((error) =>
+        error.startsWith("named-reexports-only:"),
+      ),
+      "package barrels must use named exports",
+    );
+    write(root, "packages/attendance/src/barrel.ts", 'export { value } from "./value.js";');
+    assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(root, "packages/config/AGENTS.md", "# Rules alone are not a workspace");
     await assert.rejects(checkArchitecture(root), /source workspace requires package.json/);
     rmSync(resolve(root, "packages/config"), { recursive: true });
