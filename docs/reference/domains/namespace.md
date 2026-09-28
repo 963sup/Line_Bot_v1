@@ -14,7 +14,7 @@ Owner 與不變量見 [Namespace](../../owners/namespace.md)。
 | adapters | PostgreSQL persistence；沿用 caller 的 Sql transaction |
 | index.ts | 實際跨 package 使用的公開能力；server adapter 使用獨立 export |
 
-`@line_bot_v1/namespace` 提供 `normalizeAccountLogin`、`claimNamespace`、`resolveNamespace`、`renameNamespace`、`NamespaceError` 與 `buildNamespacePath`。Server consumer 使用 `@line_bot_v1/namespace/adapters/postgres`；不透過 Account 轉接。
+`@line_bot_v1/namespace` 提供 `normalizeAccountLogin`、`claimNamespace`、`resolveNamespace`、`renameNamespace`、`NamespaceError` 與 `buildNamespacePath`。Server consumer 使用 `@line_bot_v1/namespace/postgres`；不透過 Account 轉接。
 
 ## Persistence and transactions
 
