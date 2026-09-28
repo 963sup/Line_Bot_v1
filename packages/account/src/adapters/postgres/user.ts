@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { claimNamespace, NamespaceError, renameNamespace } from "@line_bot_v1/namespace";
 import { PostgresNamespaceStore, readAccountLogin } from "@line_bot_v1/namespace/adapters/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/adapters/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { VerifiedGoogleIdentity } from "../../application/ports/identity-provider.js";
 import type { UserRepository } from "../../application/ports/user-repository.js";
 import { type User, UserError } from "../../domain/user.js";
