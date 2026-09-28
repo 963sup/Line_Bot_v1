@@ -1,4 +1,3 @@
-import type { TeamView } from "@line_bot_v1/team/contracts";
 import type { TeamCommand } from "@line_bot_v1/team/domain";
 
 export type TeamDraft =
@@ -20,40 +19,3 @@ export const teamActionLabels: Record<TeamCommand["action"], string> = {
   membership: "確認成員變更",
   maintainer: "確認維護者變更",
 };
-
-export function buildTeamCommand(data: TeamView | null, value: TeamDraft): TeamCommand {
-  const context = {
-    requestId: crypto.randomUUID(),
-    organizationAccountId: data?.organizationAccountId ?? "",
-  };
-  if (value.action === "create-team") {
-    return { ...context, action: value.action, name: value.name };
-  }
-  const existing = {
-    ...context,
-    teamId: value.action === "join" ? value.teamId : (data?.team?.id ?? ""),
-    expectedVersion:
-      value.action === "rename-team" ||
-      value.action === "membership" ||
-      value.action === "maintainer"
-        ? (data?.team?.version ?? 0)
-        : 0,
-  };
-  if (value.action === "rename-team" || value.action === "join") {
-    return { ...existing, action: value.action, name: value.name };
-  }
-  if (value.action === "membership") {
-    return {
-      ...existing,
-      action: value.action,
-      targetUserId: value.targetUserId,
-      status: value.status,
-    };
-  }
-  return {
-    ...existing,
-    action: value.action,
-    targetUserId: value.targetUserId,
-    enabled: value.enabled,
-  };
-}

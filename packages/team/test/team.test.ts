@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { buildTeamCommand } from "../src/application/build-command.js";
 import { createTeamCollaboration } from "../src/application/collaboration.js";
 import { normalizeTeamSlug, parseTeamCommand, TeamError, teamSlugFromName } from "../src/domain.js";
 
@@ -85,5 +86,84 @@ test("create-team command does not expose server-generated TeamId", () => {
         name: "Platform",
       }),
     TeamError,
+  );
+});
+
+test("buildTeamCommand keeps Team command context and version semantics", () => {
+  const requestId = "11111111-1111-4111-8111-111111111111";
+  const view = {
+    userId: "user",
+    organizations: [],
+    organizationAccountId: "organization",
+    organizationLogin: "org",
+    teams: [],
+    team: {
+      id: "team",
+      organizationAccountId: "organization",
+      name: "Platform",
+      slug: "platform",
+      version: 7,
+      membershipStatus: "active" as const,
+      isMaintainer: true,
+    },
+    members: [],
+  };
+
+  assert.deepEqual(buildTeamCommand(view, { action: "create-team", name: "SRE" }, requestId), {
+    action: "create-team",
+    requestId,
+    organizationAccountId: "organization",
+    name: "SRE",
+  });
+  assert.deepEqual(buildTeamCommand(view, { action: "rename-team", name: "SRE" }, requestId), {
+    action: "rename-team",
+    requestId,
+    organizationAccountId: "organization",
+    teamId: "team",
+    expectedVersion: 7,
+    name: "SRE",
+  });
+  assert.deepEqual(
+    buildTeamCommand(view, { action: "join", name: "Platform", teamId: "other-team" }, requestId),
+    {
+      action: "join",
+      requestId,
+      organizationAccountId: "organization",
+      teamId: "other-team",
+      expectedVersion: 0,
+      name: "Platform",
+    },
+  );
+  assert.deepEqual(
+    buildTeamCommand(
+      view,
+      { action: "membership", targetUserId: "member", status: "removed" },
+      requestId,
+    ),
+    {
+      action: "membership",
+      requestId,
+      organizationAccountId: "organization",
+      teamId: "team",
+      expectedVersion: 7,
+      targetUserId: "member",
+      status: "removed",
+    },
+  );
+  assert.deepEqual(
+    buildTeamCommand(
+      view,
+      { action: "maintainer", targetUserId: "member", enabled: true },
+      requestId,
+    ),
+    {
+      action: "maintainer",
+      requestId,
+      organizationAccountId: "organization",
+      teamId: "team",
+      expectedVersion: 7,
+      targetUserId: "member",
+      enabled: true,
+    },
   );
 });

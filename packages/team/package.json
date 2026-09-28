@@ -8,6 +8,10 @@
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
     },
+    "./application/build-command": {
+      "types": "./dist/application/build-command.d.ts",
+      "default": "./dist/application/build-command.js"
+    },
     "./application/collaboration": {
       "types": "./dist/application/collaboration.d.ts",
       "default": "./dist/application/collaboration.js"

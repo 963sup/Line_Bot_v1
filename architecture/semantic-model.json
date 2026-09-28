@@ -1299,11 +1299,17 @@
         "status": "implemented",
         "scope": "current Team collaboration application surface",
         "sourcePaths": [
+          "packages/team/src/application/build-command.ts",
           "packages/team/src/application/collaboration.ts",
           "packages/team/src/application/ports.ts",
           "packages/team/src/domain.ts"
         ],
-        "publicExports": ["./application/collaboration", "./application/ports", "./domain"],
+        "publicExports": [
+          "./application/build-command",
+          "./application/collaboration",
+          "./application/ports",
+          "./domain"
+        ],
         "entrypoints": [
           "apps/web/src/app/(mobile)/team/page.tsx",
           "apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"
