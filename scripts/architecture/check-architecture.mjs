@@ -58,7 +58,6 @@ function wildcardReExports(root, source) {
     .map((statement) => statement.moduleSpecifier.text);
 }
 
-
 /** Workspace boundaries are crossed through package exports, never relative private source paths. */
 function checkCrossWorkspaceRelativeImports(root, source) {
   if (!/\.[cm]?[jt]sx?$/.test(source)) return [];
@@ -135,149 +134,14 @@ function workspaceSources(root) {
           );
         }
         const source = compiled.replace("./dist/", "./src/").replace(/\.js$/, ".ts");
-        for (const target of wildcardReExports(root, `${directory}/${source.slice(2)}`)) {
+        const publicSource = `${directory}/${source.slice(2)}`;
+        for (const reExport of wildcardReExports(root, publicSource)) {
           errors.push(
-            `public-exports-are-named: ${manifest.name}${subpath === "." ? "" : subpath.slice(1)} -> ${target}`,
+            `public-exports-are-named: ${manifest.name}${subpath === "." ? "" : subpath.slice(1)} -> ${reExport}`,
           );
         }
         // Exact aliases preserve package exports: no wildcard that permits private deep imports.
-        alias[`${manifest.name}${subpath === "." ? "" : subpath.slice(1)}import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { cruise } from "dependency-cruiser";
-import ts from "typescript";
-import config from "../../.dependency-cruiser.mjs";
-
-const repository = fileURLToPath(new URL("../../", import.meta.url));
-const normalize = (path) => path.replaceAll("\\", "/");
-
-function moduleSpecifiers(root, source) {
-  const ast = ts.createSourceFile(
-    source,
-    readFileSync(resolve(root, source), "utf8"),
-    ts.ScriptTarget.Latest,
-    true,
-  );
-  const specifiers = [];
-  const visit = (node) => {
-    if (
-      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-      node.moduleSpecifier &&
-      ts.isStringLiteralLike(node.moduleSpecifier)
-    )
-      specifiers.push(node.moduleSpecifier.text);
-    if (
-      ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments.length === 1 &&
-      ts.isStringLiteralLike(node.arguments[0])
-    )
-      specifiers.push(node.arguments[0].text);
-    ts.forEachChild(node, visit);
-  };
-  visit(ast);
-  return specifiers;
-}
-
-function workspaceRoot(source) {
-  return normalize(source).match(/^(?:apps|packages)\/[^/]+/)?.[0] ?? null;
-}
-
-function wildcardReExports(root, source) {
-  if (!existsSync(resolve(root, source))) return [];
-  const ast = ts.createSourceFile(
-    source,
-    readFileSync(resolve(root, source), "utf8"),
-    ts.ScriptTarget.Latest,
-    true,
-  );
-  return ast.statements
-    .filter(
-      (statement) =>
-        ts.isExportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        (!statement.exportClause || ts.isNamespaceExport(statement.exportClause)),
-    )
-    .map((statement) => statement.moduleSpecifier.text);
-}
-
-
-/** Workspace boundaries are crossed through package exports, never relative private source paths. */
-function checkCrossWorkspaceRelativeImports(root, source) {
-  if (!/\.[cm]?[jt]sx?$/.test(source)) return [];
-  const owner = workspaceRoot(source);
-  if (!owner) return [];
-  const errors = [];
-  for (const specifier of moduleSpecifiers(root, source)) {
-    if (!specifier.startsWith(".")) continue;
-    const target = normalize(relative(root, resolve(root, source, "..", specifier)));
-    const targetOwner = workspaceRoot(target);
-    if (targetOwner && targetOwner !== owner)
-      errors.push(`no-relative-imports-across-packages: ${source} -> ${specifier}`);
-  }
-  return errors;
-}
-
-// Public feature responsibilities. Cross-feature composition is deliberately absent.
-const moduleDependencies = {
-  assistant: ["diary/form.ts", "expense/notice.server.ts"],
-};
-
-/** Inspect directory entries too: unused or empty route folders must not bypass the graph. */
-export function checkAppRoot(root = repository) {
-  const directory = resolve(root, "apps/web/src/app");
-  if (!existsSync(directory)) return [];
-  const folders = new Set([
-    "(admin)",
-    "(mobile)",
-    "(onboarding)",
-    "(public)",
-    "(resource)",
-    "(rich-menu)",
-    "(system)",
-    "_shell",
-    "api",
-  ]);
-  const files = new Set(["layout.tsx", "global-error.tsx", "globals.css", "AGENTS.md"]);
-  return readdirSync(directory, { withFileTypes: true })
-    .filter(
-      (entry) =>
-        !(
-          (entry.isDirectory() && folders.has(entry.name)) ||
-          (entry.isFile() && files.has(entry.name))
-        ),
-    )
-    .map((entry) => `app-root-allowlist: apps/web/src/app/${entry.name}`);
-}
-
-function workspaceSources(root) {
-  const entries = [];
-  const alias = {};
-  const errors = [];
-  for (const parent of ["apps", "packages"]) {
-    for (const entry of readdirSync(resolve(root, parent), { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const directory = `${parent}/${entry.name}`;
-      if (!existsSync(resolve(root, directory, "package.json"))) {
-        throw new Error(`${directory}: source workspace requires package.json`);
-      }
-      if (!existsSync(resolve(root, directory, "tsconfig.json"))) {
-        throw new Error(`${directory}: source workspace requires tsconfig.json`);
-      }
-      if (existsSync(resolve(root, directory, "src"))) entries.push(`${directory}/src`);
-      const manifest = JSON.parse(readFileSync(resolve(root, directory, "package.json"), "utf8"));
-      for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
-        const compiled = typeof target === "string" ? target : target.default;
-        if (
-          typeof compiled !== "string" ||
-          !compiled.startsWith("./dist/") ||
-          subpath.includes("*")
-        ) {
-          throw new Error(
-            `${directory}: unsupported export ${subpath}; define its source mapping before validation`,
-          );
-        }
-] = resolve(
+        alias[`${manifest.name}${subpath === "." ? "" : subpath.slice(1)}$`] = resolve(
           root,
           directory,
           source,
