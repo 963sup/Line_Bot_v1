@@ -6,7 +6,7 @@ import { createGetExpense } from "@line_bot_v1/expense/application/get-expense";
 import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-intake";
 import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
 import type { Expense } from "@line_bot_v1/expense/domain";
-import { downloadLineImage } from "@line_bot_v1/line-channel/adapters/messaging";
+import { downloadLineImage } from "@line_bot_v1/line-channel/messaging";
 import { activeLineUser } from "./account.server";
 
 /** Global state is retained across Next.js hot reloads and remains process-local. */
