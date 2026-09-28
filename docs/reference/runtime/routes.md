@@ -38,6 +38,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/repositories/lists/{listId}` | Repository Star List detail/manage；stable ListId只定位，private/public read與 mutation仍由 Repository owner重驗 |
 | `/repositories/lists/discover` | Awesome Lists presentation：public Repository Star List discovery，只顯示 viewer 可見 Repository/count |
 | `/{ownerLogin}/{repositoryName}` | Repository canonical locator；owner 是 User 或 Organization login；public 直接讀 public projection，private/internal 重新驗目前 User access |
+| `/{ownerLogin}/{repositoryName}/access` | Repository access management；管理 Direct User / Organization Team grants，owner/name 只定位，每次讀寫重新驗 Repository admin 或 OrganizationOwner recovery authority |
 | `/{ownerLogin}/{repositoryName}/issues` | Repository-scoped Issue collection；owner/name 只定位 Repository，read API 重新驗 current User access |
 | `/{ownerLogin}/{repositoryName}/issues/{issueNumber}` | Repository-scoped Issue detail；`issueNumber` 是 Repository-local locator，stable IssueId 仍只作 internal identity/command reference；重新解析 owner/name 並驗目前 access |
 | `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；只讀 authorized conversations，不宣稱 Discussion write management |
@@ -75,6 +76,7 @@ Current Repository resource read API：
 | `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
+| `/api/repository-access` | GET access grant projection；POST expected-version + exact-replay Direct User / Organization Team grant mutation；不建立 Organization/Team membership |
 | `/api/projects` | Authorized Project collection read；每次 request 重驗 current User，Organization-owned Project 只接受 current `OrganizationOwner` scope |
 
 新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability。Project aggregate-root read 已 active；Project planning create/update、WBS/Item/Milestone mutation 仍是 data-only。
