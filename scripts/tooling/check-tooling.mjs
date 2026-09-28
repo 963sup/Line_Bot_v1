@@ -403,7 +403,6 @@ export function validate(root) {
       "packages/AGENTS.md",
       "scripts/AGENTS.md",
       ".github/AGENTS.md",
-      ".agents/AGENTS.md",
       ".codex/AGENTS.md",
     ];
     const rootAgentsSource = existsSync(rootAgentsFile) ? read(rootAgentsFile) : "";
