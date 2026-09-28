@@ -2837,31 +2837,6 @@
       "reason": "Not adopted as current product runtime; needs an explicit owner and consumer decision before becoming product semantics."
     },
     {
-      "id": "enterprise-member-invitation",
-      "kind": "node",
-      "status": "adopted",
-      "concepts": ["enterprise-invitation"],
-      "capabilities": ["manage-enterprise-governance"],
-      "reason": "Enterprise invitation represents pending participation intent, adopted as pending-intent semantics distinct from active affiliation."
-    },
-    {
-      "id": "organization-invitation",
-      "kind": "node",
-      "status": "adopted",
-      "concepts": ["organization-invitation"],
-      "capabilities": ["manage-organization-invitations"],
-      "reason": "Organization invitation represents pending participation intent, adopted as pending-intent semantics distinct from active membership."
-    },
-    {
-      "id": "user-list",
-      "kind": "node",
-      "status": "adopted",
-      "concepts": ["repository-star-list"],
-      "capabilities": ["manage-repository-star-lists"],
-      "locators": ["repository-star-list-id"],
-      "reason": "Adopted as User-owned curated list over starred repositories; list membership does not grant repository access."
-    },
-    {
       "id": "repository-invitation",
       "kind": "node",
       "status": "deferred",
