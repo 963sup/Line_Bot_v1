@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from "node:util";
 import {
   createRichMenuClient,
   type RichMenuDefinition,
-} from "@line_bot_v1/line-channel/adapters/messaging";
+} from "@line_bot_v1/line-channel/messaging";
 import { MENU_PAGES, type MenuPage, menuAlias } from "./definition";
 import type { DesiredRichMenu } from "./desired-state.server";
 
