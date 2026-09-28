@@ -31,16 +31,10 @@
       ],
       "project": ["src/**/*.{ts,tsx}", "test/**/*.ts"]
     },
-    // Private workspace exports are checked against repository consumers.
-    // Production entries come from package exports and hexagonal layer entry points; tsx discovers test entries.
+    // Package manifests own production entry points; tests are additional executable entries.
+    // Do not invent layer entry files that a package does not actually expose.
     "packages/*": {
-      "entry": [
-        "src/index.ts!",
-        "src/contracts/index.ts!",
-        "src/domain/index.ts!",
-        "src/application/index.ts!",
-        "test/**/*.test.ts"
-      ],
+      "entry": ["test/**/*.test.ts"],
       "includeEntryExports": true,
       "project": ["{src,test}/**/*.{ts,tsx}"]
     }
