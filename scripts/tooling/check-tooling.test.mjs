@@ -26,13 +26,12 @@ function fixture(t) {
   write(".codex/config.toml", "[agents]\nenabled = true\n");
   write(
     "AGENTS.md",
-    "[Packages](packages/AGENTS.md) [Scripts](scripts/AGENTS.md) [GitHub](.github/AGENTS.md) [Skills](.agents/AGENTS.md) [Codex](.codex/AGENTS.md)\\n",
+    "[Packages](packages/AGENTS.md) [Scripts](scripts/AGENTS.md) [GitHub](.github/AGENTS.md) [Codex](.codex/AGENTS.md)\\n",
   );
   for (const path of [
     "packages/AGENTS.md",
     "scripts/AGENTS.md",
     ".github/AGENTS.md",
-    ".agents/AGENTS.md",
     ".codex/AGENTS.md",
   ])
     write(path, "# Scope\\n");
@@ -667,7 +666,7 @@ test("required AGENTS scopes exist and root routes to each owner", (t) => {
   const { root, write } = fixture(t);
   write(
     "AGENTS.md",
-    "[Packages](packages/AGENTS.md) [GitHub](.github/AGENTS.md) [Skills](.agents/AGENTS.md) [Codex](.codex/AGENTS.md)\n",
+    "[Packages](packages/AGENTS.md) [GitHub](.github/AGENTS.md) [Codex](.codex/AGENTS.md)\n",
   );
   rejects(root, "root must route to scripts/AGENTS.md");
 });
