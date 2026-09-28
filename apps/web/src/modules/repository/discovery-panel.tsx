@@ -46,9 +46,11 @@ function relativeAge(at: number) {
 export default function DiscoveryPanel({
   liffId,
   sections = "all",
+  variant = "default",
 }: {
   liffId: string;
   sections?: "all" | "trending" | "activity";
+  variant?: "default" | "home";
 }) {
   const [snapshot, setSnapshot] = useState<DiscoverySnapshot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -151,11 +153,17 @@ export default function DiscoveryPanel({
   const activity = snapshot?.activity;
 
   return (
-    <div className="discovery-panel">
+    <div
+      className={
+        variant === "home" ? "discovery-panel discovery-panel-home" : "discovery-panel"
+      }
+    >
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
-      <p className="discovery-boundary">
-        只顯示目前有權存取的 Repository；Star 是個人關注訊號，不會增加 Repository 權限。
-      </p>
+      {variant !== "home" && (
+        <p className="discovery-boundary">
+          只顯示目前有權存取的 Repository；Star 是個人關注訊號，不會增加 Repository 權限。
+        </p>
+      )}
       {busy && <p role="status">正在更新 Explore…</p>}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
@@ -163,8 +171,12 @@ export default function DiscoveryPanel({
       {sections !== "activity" && (
         <div id="trending" className="explore-section">
           <SectionHeading
-            title="Trending Repositories"
-            description="最近 7 天仍有效的 Star 優先；沒有近期訊號時再以總 Star 數排序。"
+            title={variant === "home" ? "Popular" : "Trending Repositories"}
+            description={
+              variant === "home"
+                ? undefined
+                : "最近 7 天仍有效的 Star 優先；沒有近期訊號時再以總 Star 數排序。"
+            }
           />
           {items?.length === 0 && (
             <p className="empty-copy">目前沒有可探索的 Repository。取得存取權後會出現在這裡。</p>
@@ -186,16 +198,18 @@ export default function DiscoveryPanel({
                       <span>{item.starCount} Stars</span>
                     </div>
                   </div>
-                  <div className="discovery-actions">
-                    <button
-                      type="button"
-                      className={item.starred ? "secondary" : undefined}
-                      disabled={busy}
-                      onClick={() => void toggle(item)}
-                    >
-                      {item.starred ? "Starred" : "Star"}
-                    </button>
-                  </div>
+                  {variant !== "home" && (
+                    <div className="discovery-actions">
+                      <button
+                        type="button"
+                        className={item.starred ? "secondary" : undefined}
+                        disabled={busy}
+                        onClick={() => void toggle(item)}
+                      >
+                        {item.starred ? "Starred" : "Star"}
+                      </button>
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
