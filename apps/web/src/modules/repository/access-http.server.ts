@@ -16,7 +16,11 @@ function selector(request: Request) {
   ) {
     throw new RepositoryError(400, "Repository access 查詢參數不正確。");
   }
-  return repositoryPathSelector(search.get("owner") ?? "", search.get("name") ?? "");
+  try {
+    return repositoryPathSelector(search.get("owner") ?? "", search.get("name") ?? "");
+  } catch {
+    throw new RepositoryError(400, "Repository access 路徑不正確。");
+  }
 }
 
 export async function repositoryAccessViewRequest(
