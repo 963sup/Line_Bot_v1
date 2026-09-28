@@ -110,11 +110,7 @@ test("adapter privacy applies across workspace owners, not within one owner", as
       "same-owner adapter composition is package-private implementation detail",
     );
 
-    write(
-      root,
-      "apps/web/src/index.ts",
-      importing("../../../packages/demo/src/adapters/private"),
-    );
+    write(root, "apps/web/src/index.ts", importing("../../../packages/demo/src/adapters/private"));
     assert.ok(
       (await checkArchitecture(root)).errors.some((error) =>
         error.startsWith("adapters-are-private-implementations:"),
