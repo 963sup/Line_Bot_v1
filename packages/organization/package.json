@@ -32,9 +32,9 @@
       "types": "./dist/application/ports/public.d.ts",
       "default": "./dist/application/ports/public.js"
     },
-    "./adapters/postgres/public": {
-      "types": "./dist/adapters/postgres/public.d.ts",
-      "default": "./dist/adapters/postgres/public.js"
+    "./postgres/public": {
+      "types": "./dist/postgres/public.d.ts",
+      "default": "./dist/postgres/public.js"
     }
   },
   "files": [
