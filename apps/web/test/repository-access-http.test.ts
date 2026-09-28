@@ -91,4 +91,11 @@ test("Repository access HTTP fails closed on malformed selectors and owner error
     identity,
   );
   assert.equal(malformed.status, 400);
+
+  const invalidPath = await repositoryAccessViewRequest(
+    new Request("https://example.com/api/repository-access?owner=bad%20owner&name=Shared"),
+    access,
+    identity,
+  );
+  assert.equal(invalidPath.status, 400);
 });
