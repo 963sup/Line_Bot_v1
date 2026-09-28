@@ -36,7 +36,15 @@ function parseCommand(raw: unknown): RepositoryAccessCommand {
   }
   const allowed =
     value.action === "grant"
-      ? ["action", "requestId", "repositoryId", "subjectKind", "subjectId", "capability", "expectedVersion"]
+      ? [
+          "action",
+          "requestId",
+          "repositoryId",
+          "subjectKind",
+          "subjectId",
+          "capability",
+          "expectedVersion",
+        ]
       : ["action", "requestId", "repositoryId", "subjectKind", "subjectId", "expectedVersion"];
   if (Object.keys(value).some((key) => !allowed.includes(key))) {
     throw new RepositoryError(400, "Repository access 操作包含不支援的欄位。");
