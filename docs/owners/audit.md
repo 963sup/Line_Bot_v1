@@ -21,3 +21,11 @@ Audit / command history 只保存追溯需要的 actor、scope、action、target
 ## Retention
 
 Audit 並非自動永久保存。期限、撤銷、備份與 recovery 行為由 [Retention and lifecycle](../reference/data/retention.md) 與對應 module contract 決定。
+
+## Governance history query
+
+`GET /api/audit?scopeKind=enterprise|organization&scopeId=<id>` consumes the Identity/Access public evidence projection. Each page requires a current active User and effective owner of the exact active scope. Scope inheritance and Team history are not implied.
+
+`limit` defaults to 50 (1–100); `before` uses the previous response `next` cursor. Ordering is server time then bigint event identity, descending. Events expose actor/target identifiers, action, request identity, time and structured outcome/version; free-text reason, request fingerprint and raw result payload remain private. The request identity links existing immutable command evidence without duplicating it.
+
+The API is read-only; `/admin/audit` remains unavailable. Source events remain Identity/Access-owned; Audit does not gain persistence or source-object authorization. Deployment and device acceptance require separate evidence.

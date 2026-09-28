@@ -1,4 +1,4 @@
-import type { RepositoryCapability } from "../../domain.js";
+import type { RepositoryCapability } from "../domain.js";
 
 export type TrendingRepository = Readonly<{
   id: string;

@@ -13,7 +13,7 @@
       "path": "packages/explore",
       "moduleKind": "application-module",
       "semanticOwner": "repository",
-      "allowedWorkspaceDependencies": []
+      "allowedWorkspaceDependencies": ["@line_bot_v1/repository"]
     },
     "@line_bot_v1/account": {
       "path": "packages/account",
@@ -49,7 +49,7 @@
       "path": "packages/audit",
       "moduleKind": "domain-module",
       "semanticOwner": "audit",
-      "allowedWorkspaceDependencies": []
+      "allowedWorkspaceDependencies": ["@line_bot_v1/identity-access"]
     },
     "@line_bot_v1/attendance": {
       "path": "packages/attendance",
@@ -223,7 +223,9 @@
         "@line_bot_v1/project",
         "@line_bot_v1/repository",
         "@line_bot_v1/team",
-        "@line_bot_v1/wallet"
+        "@line_bot_v1/wallet",
+        "@line_bot_v1/explore",
+        "@line_bot_v1/audit"
       ]
     }
   }

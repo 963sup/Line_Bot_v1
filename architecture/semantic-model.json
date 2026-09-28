@@ -90,7 +90,7 @@
     {
       "id": "audit",
       "kind": "business-owner",
-      "lifecycle": "current-foundation",
+      "lifecycle": "current",
       "doc": "docs/owners/audit.md"
     },
     {
@@ -987,6 +987,15 @@
       "integrationMode": "query",
       "authority": "namespace",
       "consistency": "current-state"
+    },
+    {
+      "id": "identity-access-audit-evidence",
+      "provider": "identity-access",
+      "consumer": "audit",
+      "meaning": "Audit reads a minimal governance event projection for an exact active Enterprise or Organization scope after current owner authorization; no private history access or source-object authority transfers.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
     }
   ],
   "capabilities": [
@@ -1542,26 +1551,24 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository-owned discovery read model over current access, active Star timing/counts, immutable Issue event evidence and published Star Lists",
+        "scope": "Explore application query over Repository-owned discovery projections and current access",
         "sourcePaths": [
-          "packages/repository/src/application/discovery.ts",
-          "packages/repository/src/application/ports/discovery.ts"
+          "packages/repository/src/adapters/postgres/discovery.ts",
+          "packages/repository/src/contracts/discovery.ts"
         ],
-        "publicExports": [
-          "./application/discovery",
-          "./application/ports/discovery",
-          "./postgres/discovery"
-        ],
+        "publicExports": ["./contracts/discovery", "./postgres/discovery"],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/(mobile)/explore/page.tsx",
           "apps/web/src/app/api/repositories/lists/discover/route.ts",
-          "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx"
+          "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx",
+          "packages/explore/src/application.ts"
         ],
         "testPaths": [
           "packages/repository/test/discovery.test.ts",
           "apps/web/test/profile-discovery-api.test.ts",
-          "apps/web/test/repository-star-lists-api.test.ts"
+          "apps/web/test/repository-star-lists-api.test.ts",
+          "packages/explore/test/discovery.test.ts"
         ],
         "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity projects Issue events only. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only."
       }
@@ -2027,6 +2034,33 @@
         ],
         "note": "Existing account_logins rows retained; no duplicate registry and no release capability. Scoped entity-owned locators are not claimed to have moved persistence."
       }
+    },
+    {
+      "id": "read-governance-audit",
+      "owner": "audit",
+      "kind": "leaf",
+      "intent": "Read bounded governance event history for an exact currently authorized Enterprise or Organization scope.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Readonly keyset-paginated governance evidence; current effective owner required on every page; no raw result or reason text",
+        "sourcePaths": ["packages/audit/src/application.ts"],
+        "publicExports": ["./application"],
+        "entrypoints": ["apps/web/src/app/api/audit/route.ts"],
+        "testPaths": [
+          "packages/audit/test/query.test.ts",
+          "packages/identity-access/test/audit.test.ts",
+          "apps/web/test/audit-api.test.ts"
+        ],
+        "note": "API only; admin page, Team history, bootstrap receipts and global search remain unavailable. Deployment is separate evidence."
+      }
     }
   ],
   "invariants": [
@@ -2228,7 +2262,7 @@
     {
       "semanticOwner": "audit",
       "module": "@line_bot_v1/audit",
-      "note": "Audit module ownership is reserved as a workspace foundation; executable capability remains inactive until a real audit consumer and contract exist."
+      "note": "Audit query application consumes the IdentityAccess-owned authorized governance evidence projection; source history ownership remains IdentityAccess."
     },
     {
       "semanticOwner": "partner-directory",

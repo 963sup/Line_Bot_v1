@@ -27,7 +27,7 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 - 現有 module path、module kind 與 workspace dependency allowlist 以 `architecture/implementation-topology.json` 為 machine authority。
 - 新 responsibility 只有在現有 owner 無法正確承接，而且具有真實 language / lifecycle / invariant / consumer 時，才考慮新的 owner 或 package。
 - Application host（如 `apps/web`）只能依賴 `architecture/implementation-topology.json` 開放的 Workspace packages；底層一致性邊界（如 `ledger`）由 Aggregate Root（如 `wallet`、`daily-check-in`）封裝，禁止直接向 Web 暴露。
-- 預留或基礎模組（如 `audit`、`payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
+- 預留或基礎模組（如 `payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
 - Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
 - Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
 

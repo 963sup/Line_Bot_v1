@@ -3,7 +3,7 @@
 import type {
   RepositoryActivityItem,
   TrendingRepository,
-} from "@line_bot_v1/repository/application/ports/discovery";
+} from "@line_bot_v1/repository/contracts/discovery";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

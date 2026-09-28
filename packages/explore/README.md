@@ -10,3 +10,5 @@ Routing and module overview for `@line_bot_v1/explore`.
 ## Scope
 
 Application-level projection for repository discovery, trending activity, and awesome/curated lists.
+
+Query orchestration: `src/application.ts`. Repository supplies the public discovery read contract and PostgreSQL capability; source facts and access remain Repository-owned.

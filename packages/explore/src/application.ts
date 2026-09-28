@@ -1,4 +1,4 @@
-import type { RepositoryDiscoveryStore } from "./ports/discovery.js";
+import type { RepositoryDiscoveryStore } from "@line_bot_v1/repository/contracts/discovery";
 
 const TRENDING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const TRENDING_LIMIT = 20;

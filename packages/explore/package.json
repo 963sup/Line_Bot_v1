@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "./application": {
+      "types": "./dist/application.d.ts",
+      "default": "./dist/application.js"
     }
   },
   "files": [
@@ -14,9 +14,15 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  },
+  "dependencies": {
+    "@line_bot_v1/repository": "workspace:*"
   }
 }

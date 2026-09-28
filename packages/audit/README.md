@@ -9,4 +9,4 @@ Routing and module overview for `@line_bot_v1/audit`.
 
 ## Scope
 
-Foundation workspace for system-wide governance audit events and immutable action receipts.
+Read-query entry: `src/application.ts`; authorization and source projection are provided by the Identity/Access public contract. See the owner document for API scope.

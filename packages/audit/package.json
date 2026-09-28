@@ -8,9 +8,21 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  },
+  "exports": {
+    "./application": {
+      "types": "./dist/application.d.ts",
+      "default": "./dist/application.js"
+    }
+  },
+  "dependencies": {
+    "@line_bot_v1/identity-access": "workspace:*"
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { RepositoryStarListDiscovery } from "@line_bot_v1/repository/application/ports/discovery";
+import type { RepositoryStarListDiscovery } from "@line_bot_v1/repository/contracts/discovery";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

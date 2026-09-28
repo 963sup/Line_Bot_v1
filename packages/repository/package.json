@@ -60,13 +60,9 @@
       "types": "./dist/application/ports/creation.d.ts",
       "default": "./dist/application/ports/creation.js"
     },
-    "./application/discovery": {
-      "types": "./dist/application/discovery.d.ts",
-      "default": "./dist/application/discovery.js"
-    },
-    "./application/ports/discovery": {
-      "types": "./dist/application/ports/discovery.d.ts",
-      "default": "./dist/application/ports/discovery.js"
+    "./contracts/discovery": {
+      "types": "./dist/contracts/discovery.d.ts",
+      "default": "./dist/contracts/discovery.js"
     },
     "./application/star-lists": {
       "types": "./dist/application/star-lists.d.ts",

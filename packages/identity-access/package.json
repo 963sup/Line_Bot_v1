@@ -39,6 +39,14 @@
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
+    },
+    "./contracts/audit": {
+      "types": "./dist/contracts/audit.d.ts",
+      "default": "./dist/contracts/audit.js"
+    },
+    "./postgres/audit": {
+      "types": "./dist/postgres/audit.d.ts",
+      "default": "./dist/postgres/audit.js"
     }
   },
   "files": [
@@ -46,7 +54,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@line_bot_v1/account": "workspace:*",
@@ -54,6 +63,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "tsx": "catalog:"
   }
 }

@@ -35,7 +35,9 @@
     "@vercel/speed-insights": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "@line_bot_v1/explore": "workspace:*",
+    "@line_bot_v1/audit": "workspace:*"
   },
   "devDependencies": {
     "@line/liff-mock": "catalog:",

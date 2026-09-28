@@ -8,7 +8,7 @@ import type {
   RepositoryDiscoveryStore,
   RepositoryStarListDiscovery,
   TrendingRepository,
-} from "../../application/ports/discovery.js";
+} from "../../contracts/discovery.js";
 import { IssueError, type RepositoryCapability } from "../../domain.js";
 import {
   readVisibleStarListRepositoryRows,
