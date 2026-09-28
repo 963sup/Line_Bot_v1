@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mock } from "node:test";
-import { PostgresUserStore } from "@line_bot_v1/account/adapters/postgres";
+import { PostgresUserStore } from "@line_bot_v1/account/postgres";
 import { supabaseIdentity } from "@line_bot_v1/account/adapters/supabase-identity";
 import { PostgresAttendanceStore } from "@line_bot_v1/attendance/adapters/postgres";
 import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/adapters/postgres";
