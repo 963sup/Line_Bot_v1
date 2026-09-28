@@ -17,9 +17,9 @@
     "tsx": "catalog:"
   },
   "exports": {
-    "./application": {
-      "types": "./dist/application.d.ts",
-      "default": "./dist/application.js"
+    "./application/queries/governance-audit": {
+      "types": "./dist/application/queries/governance-audit.d.ts",
+      "default": "./dist/application/queries/governance-audit.js"
     }
   },
   "dependencies": {

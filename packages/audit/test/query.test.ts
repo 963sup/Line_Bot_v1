@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { GovernanceAuditEvent } from "@line_bot_v1/identity-access/contracts/audit";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import { createAuditQuery } from "../src/application.js";
+import { createAuditQuery } from "../src/application/queries/governance-audit.js";
 
 const actor = { provider: "line:test", subject: "viewer" };
 const scope = { scopeKind: "organization", scopeId: "org" };

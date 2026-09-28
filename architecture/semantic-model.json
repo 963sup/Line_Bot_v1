@@ -2060,8 +2060,8 @@
       "implementation": {
         "status": "implemented",
         "scope": "Readonly keyset-paginated governance evidence; current effective owner required on every page; no raw result or reason text",
-        "sourcePaths": ["packages/audit/src/application.ts"],
-        "publicExports": ["./application"],
+        "sourcePaths": ["packages/audit/src/application/queries/governance-audit.ts"],
+        "publicExports": ["./application/queries/governance-audit"],
         "entrypoints": ["apps/web/src/app/api/audit/route.ts"],
         "testPaths": [
           "packages/audit/test/query.test.ts",

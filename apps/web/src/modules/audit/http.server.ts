@@ -1,4 +1,4 @@
-import type { createAuditQuery } from "@line_bot_v1/audit/application";
+import type { createAuditQuery } from "@line_bot_v1/audit/application/queries/governance-audit";
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { jsonResponse } from "../../shared/server/http";
