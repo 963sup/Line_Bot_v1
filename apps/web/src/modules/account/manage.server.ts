@@ -1,4 +1,4 @@
-import { PostgresUserManagement } from "@line_bot_v1/account/adapters/postgres";
+import { PostgresUserManagement } from "@line_bot_v1/account/postgres";
 import { createUserManagement } from "@line_bot_v1/account/application/manage-users";
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import type { UserManagementQuery } from "@line_bot_v1/account/contracts/user-management";
