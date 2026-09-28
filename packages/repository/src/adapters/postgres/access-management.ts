@@ -105,14 +105,22 @@ async function snapshot(
        FROM repository_access WHERE repository_id=$1 ORDER BY principal_id`,
       [repository.id],
     )
-  ).rows as RepositoryAccessSnapshot["directUserGrants"];
+  ).rows.map((row) => ({
+    userId: String(row.userId),
+    capability: row.capability as RepositoryCapability,
+    version: Number(row.version),
+  }));
   const teamGrants = (
     await sql.query(
       `SELECT team_id AS "teamId",capability,version
        FROM repository_team_access WHERE repository_id=$1 ORDER BY team_id`,
       [repository.id],
     )
-  ).rows as RepositoryAccessSnapshot["teamGrants"];
+  ).rows.map((row) => ({
+    teamId: String(row.teamId),
+    capability: row.capability as RepositoryCapability,
+    version: Number(row.version),
+  }));
   return {
     repository: {
       id: repository.id,
