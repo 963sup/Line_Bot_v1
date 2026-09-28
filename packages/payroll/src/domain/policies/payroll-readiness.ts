@@ -1,20 +1,9 @@
-export const payrollRuleKeys = [
-  "minimum-wage",
-  "working-time",
-  "overtime",
-  "labor-pension",
-  "labor-insurance",
-  "health-insurance",
-] as const;
-
-export type PayrollRuleKey = (typeof payrollRuleKeys)[number];
-
-export type PayrollRuleVersion = Readonly<{
-  key: PayrollRuleKey;
-  version: string;
-  effectiveFrom: string;
-  sourceId: string;
-}>;
+import { PayrollFoundationError } from "../error.js";
+import {
+  type PayrollRuleKey,
+  type PayrollRuleVersion,
+  payrollRuleKeys,
+} from "../value-objects/payroll-rule.js";
 
 type PayrollReadinessInput = Readonly<{
   workforceVersion: string | null;
@@ -37,8 +26,6 @@ type PayrollInputVersion = Readonly<{
 type PayrollReadiness =
   | Readonly<{ ready: true; inputVersion: PayrollInputVersion }>
   | Readonly<{ ready: false; missing: readonly PayrollMissingInput[] }>;
-
-export class PayrollFoundationError extends Error {}
 
 function requiredText(value: string, field: string) {
   const normalized = value.trim();

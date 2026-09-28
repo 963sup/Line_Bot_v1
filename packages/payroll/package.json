@@ -4,17 +4,29 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
-    },
     "./application/readiness": {
       "types": "./dist/application/readiness.d.ts",
       "default": "./dist/application/readiness.js"
     },
-    "./application/ports/readiness": {
-      "types": "./dist/application/ports/readiness.d.ts",
-      "default": "./dist/application/ports/readiness.js"
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./domain/value-objects/payroll-rule": {
+      "types": "./dist/domain/value-objects/payroll-rule.d.ts",
+      "default": "./dist/domain/value-objects/payroll-rule.js"
+    },
+    "./domain/policies/payroll-readiness": {
+      "types": "./dist/domain/policies/payroll-readiness.d.ts",
+      "default": "./dist/domain/policies/payroll-readiness.js"
+    },
+    "./contracts/input/payroll-readiness-query": {
+      "types": "./dist/contracts/input/payroll-readiness-query.d.ts",
+      "default": "./dist/contracts/input/payroll-readiness-query.js"
+    },
+    "./contracts/output/payroll-readiness-sources": {
+      "types": "./dist/contracts/output/payroll-readiness-sources.d.ts",
+      "default": "./dist/contracts/output/payroll-readiness-sources.js"
     }
   },
   "files": [

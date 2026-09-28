@@ -13,7 +13,7 @@ PayrollRunSummary使用 OrganizationAccountId；PayStatementSelfProjection透過
 - 每個正式 calculation rule 必須有 stable `sourceId`、rule version、effective period 與正反案例。
 - 外部來源更新不得原地改寫舊 Payroll result；新規則建立新 version。
 - 表格式制度（投保級距、負擔比率、職災費率等）使用 versioned table source，不把某一個數字硬寫成全員通用常數。
-- 本 registry 與 `@line_bot_v1/payroll/domain` 的 rule key 對齊，但 code 目前只做 readiness validation，不執行法規公式。
+- 本 registry 與 `@line_bot_v1/payroll/domain/value-objects/payroll-rule` 的 rule key 對齊，但 code 目前只做 readiness validation，不執行法規公式。
 ## 2026 baseline
 | Rule key | Source version | Effective from | Verified official basis | Foundation status |
 | --- | --- | --- | --- | --- |

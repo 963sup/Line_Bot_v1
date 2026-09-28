@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createPayrollReadiness } from "../src/application/readiness.js";
-import { payrollRuleKeys } from "../src/domain.js";
+import { payrollRuleKeys } from "../src/domain/value-objects/payroll-rule.js";
 
 const query = {
   organizationId: "org-1",
