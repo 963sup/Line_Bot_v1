@@ -29,16 +29,16 @@
     "@line_bot_v1/repository": "workspace:*",
     "@line_bot_v1/team": "workspace:*",
     "@line_bot_v1/wallet": "workspace:*",
-    "@sentry/nextjs": "10.75.0",
+    "@sentry/nextjs": "catalog:",
     "@supabase/supabase-js": "catalog:",
-    "@vercel/analytics": "2.0.1",
-    "@vercel/speed-insights": "2.0.0",
-    "next": "16.3.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "@vercel/analytics": "catalog:",
+    "@vercel/speed-insights": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@line/liff-mock": "1.0.4",
+    "@line/liff-mock": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

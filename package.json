@@ -45,14 +45,14 @@
     "github:release-plan": "node scripts/github/release-plan.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
-    "dependency-cruiser": "18.2.0",
-    "knip": "6.34.0",
-    "smol-toml": "1.8.0",
-    "supabase": "2.116.0",
-    "turbo": "2.10.12",
+    "@biomejs/biome": "catalog:",
+    "dependency-cruiser": "catalog:",
+    "knip": "catalog:",
+    "smol-toml": "catalog:",
+    "supabase": "catalog:",
+    "turbo": "catalog:",
     "typescript": "catalog:",
-    "yaml": "2.9.0",
+    "yaml": "catalog:",
     "pg": "catalog:"
   }
 }

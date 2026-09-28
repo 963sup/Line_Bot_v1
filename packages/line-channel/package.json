@@ -34,7 +34,7 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line/bot-sdk": "11.2.0"
+    "@line/bot-sdk": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
