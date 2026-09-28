@@ -1,4 +1,4 @@
-import { resolveAccountLogin } from "@line_bot_v1/namespace/adapters/postgres";
+import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type {
   OrganizationPublicStore,
