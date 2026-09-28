@@ -154,9 +154,7 @@ export default function DiscoveryPanel({
 
   return (
     <div
-      className={
-        variant === "home" ? "discovery-panel discovery-panel-home" : "discovery-panel"
-      }
+      className={variant === "home" ? "discovery-panel discovery-panel-home" : "discovery-panel"}
     >
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       {variant !== "home" && (
