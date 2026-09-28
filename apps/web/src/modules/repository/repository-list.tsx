@@ -15,7 +15,8 @@ import { useRepositoryCollection } from "./use-repository-collection";
 
 function ownerInitials(ownerLogin: string) {
   const segments = ownerLogin.split(/[-_.]+/).filter(Boolean);
-  const initials = segments.length > 1 ? segments.map((segment) => segment[0]).join("") : ownerLogin;
+  const initials =
+    segments.length > 1 ? segments.map((segment) => segment[0]).join("") : ownerLogin;
   return initials.slice(0, 2).toLocaleUpperCase();
 }
 
@@ -89,6 +90,7 @@ export default function RepositoryList({
               className={styles.row}
               key={item.id}
               href={targetPath(item.ownerLogin, item.name)}
+              aria-label={`${item.ownerLogin}/${item.name}`}
             >
               <span className={styles.ownerMark} aria-hidden="true">
                 {ownerInitials(item.ownerLogin)}

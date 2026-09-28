@@ -414,6 +414,19 @@ async function run() {
     await expect(page.getByRole("heading", { name: "Shortcuts", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recent", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Popular", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: new RegExp(issue.title) })).toHaveAttribute(
+      "href",
+      "/acme/Operations/issues/1",
+    );
+    for (const width of [320, 390, 768]) {
+      await page.setViewportSize({ width, height: 844 });
+      assert.equal(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        true,
+        `Home fits ${width}px`,
+      );
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     if (artifactDir) {
       await page.screenshot({ path: path.join(artifactDir, "home.png"), fullPage: true });
     }
@@ -449,6 +462,14 @@ async function run() {
     await expect(page).toHaveURL(`${base}/projects`);
     await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
     await expect(page.getByText("Operations Plan", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Organization", exact: true }).click();
+    await expect(page.getByText("Operations Plan", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("此擁有者類型目前沒有可存取的 Project。", { exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Personal", exact: true }).click();
+    await expect(page.getByText("Operations Plan", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "All projects", exact: true }).click();
     if (artifactDir) {
       await page.screenshot({ path: path.join(artifactDir, "projects.png"), fullPage: true });
     }
@@ -595,6 +616,16 @@ async function run() {
     await expect(page.locator(".member-avatar")).toHaveCount(0);
     const repositoryLink = page.getByRole("link", { name: /acme\/Operations/ });
     await expect(repositoryLink).toHaveAttribute("href", "/acme/Operations");
+    await page.locator('summary[aria-label="Repository actions"]').click();
+    await expect(page.getByRole("link", { name: "Manage Settings", exact: true })).toHaveAttribute(
+      "href",
+      "/repositories?intent=manage-settings",
+    );
+    await expect(page.getByRole("link", { name: "New Repository", exact: true })).toHaveAttribute(
+      "href",
+      "/repositories/new",
+    );
+    await page.locator('summary[aria-label="Repository actions"]').click();
     await expect(page.getByText("admin", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Explore", exact: true })).toHaveCount(1);
     if (artifactDir) {

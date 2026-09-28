@@ -14,10 +14,10 @@
   display: none;
 }
 
-.filter,
-.activeFilter,
-.refresh {
-  min-height: 38px;
+.collection .filters .filter,
+.collection .filters .activeFilter,
+.collection .filters .refresh {
+  min-height: 44px;
   flex: 0 0 auto;
   padding: 7px 14px;
   border: 1px solid var(--line);
@@ -36,14 +36,14 @@
   cursor: pointer;
 }
 
-.activeFilter {
+.collection .filters .activeFilter {
   border-color: var(--green-strong);
   background: color-mix(in srgb, var(--green-strong) 16%, var(--surface-muted));
   color: var(--green-strong);
 }
 
-.refresh {
-  width: 38px;
+.collection .filters .refresh {
+  width: 44px;
   padding: 0;
   font-size: 19px;
 }
