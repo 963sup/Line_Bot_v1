@@ -369,11 +369,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       ),
       "type-only imports do not bypass module server isolation",
     );
-    write(
-      root,
-      "packages/line-channel/src/mini-app/browser/client.ts",
-      "export const client = 1;",
-    );
+    write(root, "packages/line-channel/src/mini-app/browser/client.ts", "export const client = 1;");
     write(
       root,
       "packages/line-channel/src/mini-app/browser.ts",
@@ -392,11 +388,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       "export const value = 1;",
     );
     for (const target of ["node:fs", "../../messaging/private", "../server/private"]) {
-      write(
-        root,
-        "packages/line-channel/src/mini-app/browser/client.ts",
-        importing(target),
-      );
+      write(root, "packages/line-channel/src/mini-app/browser/client.ts", importing(target));
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) =>
           error.startsWith("client-cannot-reach-server:"),
@@ -404,11 +396,7 @@ test("architecture checks source exports, types, ports, browser reachability and
         target,
       );
     }
-    write(
-      root,
-      "packages/line-channel/src/mini-app/browser/client.ts",
-      "export const client = 1;",
-    );
+    write(root, "packages/line-channel/src/mini-app/browser/client.ts", "export const client = 1;");
     write(root, "packages/platform/dist/old.js", "export const old = 1;");
     write(root, "apps/web/src/helper.ts", importing("../../../packages/platform/dist/old.js"));
     assert.ok(
