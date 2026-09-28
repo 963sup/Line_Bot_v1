@@ -271,10 +271,12 @@ Business intent
 
 ## Child package docs
 
-每個 `packages/<owner>/` 保有 `AGENTS.md` 與 `README.md`：
+每個 `packages/<owner>/` 保有 `AGENTS.md`、`README.md` 與 generated `SEMANTICS.md`：
 
 - Child `AGENTS.md` 只增加 owner-local constraint，不複製本檔。
 - Child `README.md` 只 routing，不建立第二份 owner、schema、export、capability 或 validation truth。
+- Child `SEMANTICS.md` 是 `architecture/semantic-model.json` + `architecture/implementation-topology.json` 的 owner-local generated projection；不得手工作為 semantic authority。
+- 語意變更先修改 canonical model，再執行 `pnpm semantic:packages`。Architecture validation 會拒絕缺失或 drift 的 package semantic projection。
 
 ## Mandatory package resolution
 
