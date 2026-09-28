@@ -1,6 +1,6 @@
 import type { AccountId } from "@line_bot_v1/account/domain";
 import type { AssetCode } from "@line_bot_v1/asset/domain/value-objects/asset-code";
-import type { WalletBalance } from "../../domain.js";
+import type { WalletBalance } from "../../domain/value-objects/wallet-balance.js";
 
 export interface WalletRepository {
   balance(holderAccountId: AccountId, asset: AssetCode): Promise<WalletBalance>;
