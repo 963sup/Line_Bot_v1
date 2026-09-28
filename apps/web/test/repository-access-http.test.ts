@@ -40,11 +40,7 @@ test("Repository access HTTP translates owner/name and authenticated command tra
     identity,
   );
   assert.equal(view.status, 200);
-  assert.deepEqual(calls[0], [
-    "view",
-    "subject",
-    { ownerLogin: "octo", repositoryName: "Shared" },
-  ]);
+  assert.deepEqual(calls[0], ["view", "subject", { ownerLogin: "octo", repositoryName: "Shared" }]);
 
   const previous = process.env.APP_ORIGIN;
   process.env.APP_ORIGIN = "https://example.com";
