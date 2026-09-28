@@ -18,6 +18,18 @@
 
 Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以對齊，但不得視為同一概念。
 
+## Semantic / module reminders
+
+下列規則保留作為進入 package 前的 semantic routing / boundary reminder；它們不取代上述 machine-readable authority：
+
+- Business meaning / owner / relationship 以 `architecture/semantic-model.json` 為 structured authority。
+- 現有 module path、module kind 與 workspace dependency allowlist 以 `architecture/implementation-topology.json` 為 machine authority。
+- 新 responsibility 只有在現有 owner 無法正確承接，而且具有真實 language / lifecycle / invariant / consumer 時，才考慮新的 owner 或 package。
+- Application host（如 `apps/web`）只能依賴 `architecture/implementation-topology.json` 開放的 Workspace packages；底層一致性邊界（如 `ledger`）由 Aggregate Root（如 `wallet`、`daily-check-in`）封裝，禁止直接向 Web 暴露。
+- 預留或基礎模組（如 `audit`、`payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
+- Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
+- Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
+
 ## Mandatory classification
 
 每個 production source 必須有且只有一個主要 architecture role。若無法唯一回答「這個檔案屬於哪一層、負責什麼」，先解 architecture ambiguity，再新增功能。
@@ -249,6 +261,12 @@ Business intent
 - 一個 transaction / consistency boundary 只在 invariant 必須 atomic 成立時存在；不得只因 package 或 folder 相同就假設一致性邊界相同。
 - authorization、tenant/data isolation、replay / idempotency、version、recovery、audit、transaction correctness 不得為了簡化 layer、CI 或 UI 而削弱。
 - pure placement / naming / dependency refactor 必須保持 [Invariant kernel](../docs/rules/system-invariants.md) 的既有 semantics。
+- **單一事務單一聚合**：一個資料庫事務原則上只修改一個聚合根；跨聚合協調一律透過 Domain Event 與 Transactional Outbox 達成最終一致性。
+- **錯誤處理**：業務失敗返回結構化 `Result<T, DomainError>`，不拋出未受控例外。
+- **冪等防重放**：寫入命令支援 Idempotency Key 或天然業務複合主鍵；事件 Consumer 強制去重。
+- **讀寫分離**：探索、統計與清單等唯讀查詢直接消費 Read Projections，不載入肥大 Domain Aggregate。
+- 新能力直接進真正 owner；不得用 alias、facade、compatibility package 或 pass-through service 掩蓋 responsibility 問題。
+- Generated / reference data 若存在，必須能追到 canonical source；generated output、history、target design 與 current business truth 不得互相取代。
 
 ## Child package docs
 
@@ -270,6 +288,9 @@ Business intent
 確認 Root Cause 後，再依 responsibility 決定 Delete、Merge、Simplify、Reuse、Refactor、Move、Rename、Split 或 Add。Change size、folder count、layer count、CI 變綠速度都不是 architecture goal。
 
 若修法需要多個 exception、alias、wrapper、ignore、fallback 才成立，重新檢查 Owner / Truth / Boundary，而不是繼續堆 compatibility surface。
+
+- 新增、刪除或改變 workspace dependency 時，同 changeset 同步 owner `package.json`、`architecture/implementation-topology.json` 與 root `pnpm-lock.yaml`。
+- 不以目錄對稱、檔案數、FPT category、GitHub Mobile surface 或「看起來像 DDD」作 package existence evidence。
 
 ## Validation
 
