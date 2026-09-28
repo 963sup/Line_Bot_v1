@@ -246,6 +246,10 @@ try {
   await expect(page.getByText("Private biography")).toBeVisible();
   await expect(page.getByLabel("First achievement", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Projects", exact: true })).toHaveAttribute(
+    "href",
+    "/projects",
+  );
   assert.deepEqual(privateReads.sort(), ["/api/profile", "/api/profile/achievements"]);
   await page.screenshot({ path: path.join(output, "profile-self.png"), fullPage: true });
   results.push("self identity, achievements, settings; only two private section requests");
@@ -265,6 +269,7 @@ try {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Public viewer");
   await expect(page.getByText("Private biography")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Projects", exact: true })).toHaveCount(0);
   assert.equal(privateReads.length, beforeVisitor);
   results.push("other viewer cannot load or retain private sections");
 

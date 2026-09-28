@@ -410,7 +410,13 @@ async function run() {
 
     await page.goto(`${base}/home`);
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Popular", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My Work", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Shortcuts", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recent", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Popular", exact: true })).toHaveCount(0);
+    if (artifactDir) {
+      await page.screenshot({ path: path.join(artifactDir, "home.png"), fullPage: true });
+    }
     await page.getByText("More", { exact: true }).click();
     await expect(page.getByRole("link", { name: /Admin/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Issues/ })).toHaveAttribute("href", "/issues");
@@ -443,6 +449,9 @@ async function run() {
     await expect(page).toHaveURL(`${base}/projects`);
     await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
     await expect(page.getByText("Operations Plan", { exact: true })).toBeVisible();
+    if (artifactDir) {
+      await page.screenshot({ path: path.join(artifactDir, "projects.png"), fullPage: true });
+    }
     await page.goto(`${base}/home`);
     await expect(page.getByRole("link", { name: /Settings/ })).toHaveCount(0);
     await page.locator('summary[aria-label="Create"]').click();
@@ -588,6 +597,9 @@ async function run() {
     await expect(repositoryLink).toHaveAttribute("href", "/acme/Operations");
     await expect(page.getByText("admin", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Explore", exact: true })).toHaveCount(1);
+    if (artifactDir) {
+      await page.screenshot({ path: path.join(artifactDir, "repositories.png"), fullPage: true });
+    }
 
     await page.goto(`${base}/acme/Operations/issues/${issueNumber}`);
     await page.getByRole("heading", { name: "Issue", exact: true }).waitFor();

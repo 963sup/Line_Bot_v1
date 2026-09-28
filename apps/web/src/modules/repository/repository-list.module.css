@@ -1,0 +1,136 @@
+.collection {
+  min-width: 0;
+}
+
+.list {
+  display: grid;
+}
+
+.row {
+  display: grid;
+  min-height: 88px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.row:hover .name,
+.row:focus-visible .name {
+  color: var(--green-strong);
+}
+
+.ownerMark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.owner,
+.intent,
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.owner {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.intent {
+  color: var(--green-strong);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.actionMenu {
+  position: relative;
+}
+
+.actionMenu summary {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  list-style: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--green-strong);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.actionMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.actionMenu summary:hover,
+.actionMenu summary:focus-visible {
+  background: var(--surface-muted);
+}
+
+.actionMenu nav {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  width: max-content;
+  min-width: 180px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+}
+
+.actionMenu[open] nav {
+  display: grid;
+}
+
+.actionMenu nav a {
+  display: flex;
+  width: auto;
+  height: auto;
+  min-height: 44px;
+  justify-content: flex-start;
+  padding: 11px 14px;
+  border-radius: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.actionMenu nav a + a {
+  border-top: 1px solid var(--line);
+}

@@ -218,8 +218,12 @@ export default function DiscoveryPanel({
       {sections !== "trending" && (
         <div className="explore-section">
           <SectionHeading
-            title="Activity"
-            description="目前只投影仍可存取 Repository 的 durable Issue lifecycle evidence。"
+            title={variant === "home" ? "Recent" : "Activity"}
+            description={
+              variant === "home"
+                ? undefined
+                : "目前只投影仍可存取 Repository 的 durable Issue lifecycle evidence。"
+            }
           />
           {activity?.length === 0 && (
             <p className="empty-copy">目前沒有可顯示的 Repository activity。</p>

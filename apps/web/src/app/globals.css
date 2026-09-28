@@ -2909,91 +2909,109 @@ summary:focus-visible {
   font-weight: 500;
 }
 
-.app-shell .home-popular {
-  margin-bottom: 26px;
-}
-
-.app-shell .home-popular .explore-section .section-heading {
-  margin-top: 0;
-}
-
-.app-shell .home-popular .discovery-list {
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(244px, 78%);
-  grid-template-columns: none;
-  gap: 12px;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  padding: 2px 0 8px;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-
-.app-shell .home-popular .discovery-list::-webkit-scrollbar {
-  display: none;
-}
-
-.app-shell .home-popular .explore-section .discovery-item {
-  min-height: 168px;
-  scroll-snap-align: start;
-  align-content: start;
-  padding: 18px;
-  border-radius: 8px;
-}
-
-.app-shell .home-popular .discovery-repository-link {
-  display: block;
-  min-height: 48px;
-  font-size: 19px;
-  line-height: 1.35;
-}
-
-.app-shell .home-popular .discovery-meta {
-  gap: 8px 12px;
-  margin-top: 18px;
-}
-
-.app-shell .home-popular .discovery-meta span {
-  padding: 0;
-  background: transparent;
-  font-size: 12px;
-  font-weight: 500;
+.app-shell .home-work h2,
+.app-shell .home-section > h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 650;
 }
 
 .app-shell .home-resource-list {
-  margin: 0 -16px;
-  padding: 18px 16px;
-  border-top: 16px solid #010409;
-  border-bottom: 16px solid #010409;
+  margin: 0;
+  padding: 0 0 12px;
+  border: 0;
 }
 
 .app-shell .home-resource-list .action-row {
-  min-height: 88px;
+  min-height: 64px;
+  gap: 16px;
 }
 
 .app-shell .home-resource-list .action-row-icon {
-  width: 54px;
-  height: 54px;
-  flex-basis: 54px;
-  border-radius: 7px;
-  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 5px;
+  font-size: 22px;
 }
 
 .app-shell .home-resource-list .action-row strong {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 500;
 }
 
+.app-shell .home-section {
+  margin: 0 -16px;
+  padding: 22px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.app-shell .home-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.app-shell .home-shortcuts .action-row {
+  min-height: 64px;
+  padding: 8px;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.app-shell .home-shortcuts .action-row-icon {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  font-size: 18px;
+}
+
+.app-shell .home-shortcuts .action-row strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.app-shell .home-shortcuts .action-chevron {
+  display: none;
+}
+
 .app-shell .home-more-tools {
-  margin-top: 0;
-  border-top: 0;
+  margin-top: 12px;
+  border: 0;
 }
 
 .app-shell .home-more-tools summary {
-  min-height: 64px;
+  min-height: 44px;
   color: var(--muted);
 }
 
+.app-shell .home-starred .menu-group {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(230px, 80%);
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+}
+
+.app-shell .home-starred .starred-repositories .action-row {
+  min-height: 112px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  scroll-snap-align: start;
+}
+
+.app-shell .home-starred .action-row strong {
+  overflow-wrap: anywhere;
+}
+
+.app-shell .home-recent .section-heading {
+  margin-top: 0;
+}
 .app-shell .repository-list > .menu-group .action-row,
 .app-shell .starred-repositories > .menu-group .action-row {
   min-height: 104px;

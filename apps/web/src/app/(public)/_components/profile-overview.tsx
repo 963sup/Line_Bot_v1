@@ -18,7 +18,7 @@ type Loadable<T> =
   | { state: "loading" }
   | { state: "ready"; value: T }
   | { state: "error" };
-type ResourceKind = "repositories" | "organizations" | "starred";
+type ResourceKind = "repositories" | "organizations" | "starred" | "projects";
 type ProfileResource = Readonly<{
   href: string;
   kind: ResourceKind;
@@ -48,6 +48,7 @@ function ResourceIcon({ kind }: { kind: ResourceKind }) {
     organizations:
       "M4 20V8h6v12M14 20V4h6v16M2 20h20M6.5 11h1M6.5 14h1M16.5 8h1M16.5 11h1M16.5 14h1",
     starred: "m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z",
+    projects: "M4 4h16v16H4V4ZM4 9h16M9 9v11",
   } as const;
   return (
     <svg
@@ -145,6 +146,7 @@ export default function ProfileOverview({
     },
     { href: "/organizations", kind: "organizations", label: "Organizations" },
     { href: "/stars", kind: "starred", label: "Starred" },
+    { href: "/projects", kind: "projects", label: "Projects" },
   ];
 
   return (
@@ -197,7 +199,20 @@ export default function ProfileOverview({
 
       {token ? (
         <section className={styles.selfAchievements} aria-labelledby="profile-achievements">
-          <h2 id="profile-achievements">Achievements</h2>
+          <h2 id="profile-achievements" title="Achievements">
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              aria-hidden="true"
+            >
+              <path d="M8 3h8v5a4 4 0 0 1-8 0V3ZM8 5H4v2a4 4 0 0 0 5 4m7-6h4v2a4 4 0 0 1-5 4M12 12v6m-4 3h8m-6-3h4v3" />
+            </svg>
+            <span className={styles.srOnly}>Achievements</span>
+          </h2>
           {achievements.state === "loading" ? (
             <p role="status">正在載入 Achievements…</p>
           ) : achievements.state === "error" ? (

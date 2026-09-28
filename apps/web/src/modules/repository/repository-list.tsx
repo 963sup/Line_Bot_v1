@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import styles from "./repository-list.module.css";
 import {
   repositoryAccessPath,
   repositoryDiscussionsPath,
@@ -11,6 +12,32 @@ import {
   repositorySettingsPath,
 } from "./resource-navigation";
 import { useRepositoryCollection } from "./use-repository-collection";
+
+function ownerInitials(ownerLogin: string) {
+  const segments = ownerLogin.split(/[-_.]+/).filter(Boolean);
+  const initials = segments.length > 1 ? segments.map((segment) => segment[0]).join("") : ownerLogin;
+  return initials.slice(0, 2).toLocaleUpperCase();
+}
+
+export function RepositoryCollectionActions() {
+  return (
+    <>
+      <Link href="/search" aria-label="Search repositories" title="Search repositories">
+        <span aria-hidden="true">⌕</span>
+      </Link>
+      <details className={styles.actionMenu}>
+        <summary aria-label="Repository actions" title="Repository actions">
+          <span aria-hidden="true">⋯</span>
+        </summary>
+        <nav aria-label="Repository actions">
+          <Link href="/repositories/new">New Repository</Link>
+          <Link href="/repositories?intent=manage-access">Manage Access</Link>
+          <Link href="/repositories?intent=manage-settings">Manage Settings</Link>
+        </nav>
+      </details>
+    </>
+  );
+}
 
 export default function RepositoryList({
   liffId,
@@ -42,7 +69,7 @@ export default function RepositoryList({
   };
 
   return (
-    <div className="repository-list">
+    <div className={`repository-list ${styles.collection}`}>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       {busy && <p role="status">正在讀取 Repository…</p>}
       {error && <p role="alert">{error}</p>}
@@ -56,19 +83,21 @@ export default function RepositoryList({
         </p>
       )}
       {visibleItems && visibleItems.length > 0 && (
-        <div className="menu-group">
+        <div className={styles.list}>
           {visibleItems.map((item) => (
             <Link
-              className="action-row"
+              className={styles.row}
               key={item.id}
               href={targetPath(item.ownerLogin, item.name)}
             >
-              <span className="action-row-copy">
-                <strong>
-                  {item.ownerLogin}/{item.name}
-                </strong>
+              <span className={styles.ownerMark} aria-hidden="true">
+                {ownerInitials(item.ownerLogin)}
+              </span>
+              <span className={styles.copy}>
+                <small className={styles.owner}>{item.ownerLogin}</small>
+                <strong className={styles.name}>{item.name}</strong>
                 {intent && (
-                  <small>
+                  <small className={styles.intent}>
                     {intent === "create-issue"
                       ? "Create Issue"
                       : intent === "browse-issues"
@@ -80,9 +109,6 @@ export default function RepositoryList({
                             : "Manage Settings"}
                   </small>
                 )}
-              </span>
-              <span className="action-chevron" aria-hidden="true">
-                ›
               </span>
             </Link>
           ))}

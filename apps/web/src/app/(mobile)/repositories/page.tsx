@@ -1,7 +1,8 @@
-import Link from "next/link";
-import RepositoryList from "../../../modules/repository/repository-list";
+import RepositoryList, {
+  RepositoryCollectionActions,
+} from "../../../modules/repository/repository-list";
 import { lineMiniApp } from "../../../shared/server/line-mini-app";
-import { PageHeading, PrimaryLink } from "../../../shared/ui/page-layout";
+import { PageHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
@@ -39,31 +40,12 @@ export default async function Page({
         actions={
           choosingRepository ? undefined : (
             <div className="collection-heading-actions">
-              <Link href="/search" aria-label="Search repositories" title="Search repositories">
-                <span aria-hidden="true">⌕</span>
-              </Link>
-              <Link href="/repositories/new" aria-label="New Repository" title="New Repository">
-                <span aria-hidden="true">＋</span>
-              </Link>
-              <Link
-                href="/repositories?intent=manage-access"
-                aria-label="Manage repository access"
-                title="Manage repository access"
-              >
-                <span aria-hidden="true">⋯</span>
-              </Link>
+              <RepositoryCollectionActions />
             </div>
           )
         }
-        back={choosingRepository ? "/home" : undefined}
+        back="/home"
       />
-      {!choosingRepository && (
-        <nav className="inline-actions" aria-label="Repository settings">
-          <PrimaryLink href="/repositories?intent=manage-settings" tone="secondary">
-            Manage Settings
-          </PrimaryLink>
-        </nav>
-      )}
       <RepositoryList
         liffId={lineMiniApp().liffId}
         intent={
