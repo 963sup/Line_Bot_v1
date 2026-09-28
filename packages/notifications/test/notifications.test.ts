@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createNotifications } from "../src/application/notifications.js";
-import type { NotificationRepository } from "../src/application/ports/notification-repository.js";
-import { type Notification, normalizeNotificationId } from "../src/domain.js";
+import type { NotificationRepository } from "../src/contracts/repositories/notification-repository.js";
+import type { Notification } from "../src/domain/entities/notification.js";
+import { normalizeNotificationId } from "../src/domain/value-objects/notification-id.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const item: Notification = {

@@ -1,6 +1,6 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createNotifications } from "@line_bot_v1/notifications/application/notifications";
-import { NotificationError } from "@line_bot_v1/notifications/domain";
+import { NotificationError } from "@line_bot_v1/notifications/domain/error";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
