@@ -1,29 +1,261 @@
 # Packages router
 
-`packages/` 保存此 repository 的正式 Module Boundaries。
+`packages/` 保存 repository 的正式 Module Boundaries。每個 package 都用 DDD + Hexagonal Architecture 管理自己的 semantic responsibility，但 package 本身不自動等於 Bounded Context、Data Boundary 或 Consistency Boundary。
 
-業務語意與所有權以 [Semantic model](../architecture/semantic-model.json) 為權威；實作路徑與依賴許可邊界以 [Implementation topology](../architecture/implementation-topology.json) 為機器真理。
+本頁只負責 routing 與 package template；不維護 package inventory、owner 清單、dependency 清單或 schema 清單。
 
-## Package 分類與職責
+## Authority routing
 
-| 分類 | Packages | 角色與邊界原則 |
-| --- | --- | --- |
-| **Application Host** | `apps/web` | 頂層 Presentation / App Router 宿主。只允許依賴開放之 Application 與 Domain packages，不直接碰觸封裝帳本或未啟用領域。 |
-| **Application Module** | `@line_bot_v1/explore` | 跨領域聚合視圖（Trending / Activity / Lists）。無獨立資料權威，由 Repository 概念派生。 |
-| **Identity & Access** | `@line_bot_v1/account`<br>`@line_bot_v1/namespace`<br>`@line_bot_v1/identity-access` | 全域 User / Organization Login 命名空間、身分憑證與 Enterprise/Org/Team 角色授權。 |
-| **Governance & Team** | `@line_bot_v1/enterprise`<br>`@line_bot_v1/organization`<br>`@line_bot_v1/team` | 企業治理、組織成員資格、組織團隊結構與指派。 |
-| **Work & Planning** | `@line_bot_v1/repository`<br>`@line_bot_v1/project`<br>`@line_bot_v1/notifications` | 儲存庫容器、Issue / Discussion、ProjectV2 企劃清單與通知遞送參考。 |
-| **Operations & Assets** | `@line_bot_v1/attendance`<br>`@line_bot_v1/daily-check-in`<br>`@line_bot_v1/expense`<br>`@line_bot_v1/partners`<br>`@line_bot_v1/asset`<br>`@line_bot_v1/wallet` | 打卡出勤、每日簽到、費用報銷、外部合作夥伴、資產定義與使用者錢包餘額。 |
-| **Encapsulated Ledger** | `@line_bot_v1/ledger` | **內部一致性邊界**。複式記帳底層帳本，僅供 `wallet`、`attendance`、`daily-check-in` 內部依賴；**禁止 Web 直接依賴**。 |
-| **Integration & Adapters** | `@line_bot_v1/assistant`<br>`@line_bot_v1/line-channel`<br>`@line_bot_v1/google-workspace`<br>`@line_bot_v1/platform` | 外部通道（LINE Channel、Google Workspace）通訊協定適配與中立平台運行機制。 |
-| **Reserved / Foundation** | `@line_bot_v1/audit`<br>`@line_bot_v1/payroll`<br>`@line_bot_v1/workforce` | 架構保留模組。在真實業務契約與 Consumer 建立前維持 inactive，不提早引入 Web 耦合。 |
+| 要回答的問題 | Canonical source |
+| --- | --- |
+| 產品概念、語言、owner、relationship、capability、invariant 是什麼？ | [semantic-model.json](../architecture/semantic-model.json) |
+| GitHub-like benchmark 真正提供什麼？ | [semantic-benchmark.json](../architecture/semantic-benchmark.json) |
+| 哪個 package 實作 owner？允許依賴誰？ | [implementation-topology.json](../architecture/implementation-topology.json) |
+| 哪個 owner 擁有 persisted relation？ | [data-topology.json](../architecture/data-topology.json) |
+| 實際 SQL / constraint / RLS？ | [supabase/schemas](../supabase/schemas/README.md) |
+| Package public API？ | 各 package `package.json#exports` |
+| Dependency enforcement？ | [Dependency Cruiser](../.dependency-cruiser.mjs) |
+| Formatting / import organization？ | [Biome](../biome.json) |
+| Reachability / dead code？ | [Knip](../knip.jsonc) |
+| Package-wide Agent rules？ | [packages/AGENTS.md](AGENTS.md) |
 
-## 開發與修改契約
+External benchmark 只有 evidence authority；Product adoption 必須由 `semantic-model.json` explicit mapping 決定。
 
-1. **依賴單向性**：跨 Package 呼叫必須列於 `architecture/implementation-topology.json#allowedWorkspaceDependencies`，並由 Dependency Cruiser 自動守門。
-2. **公開介面**：跨 Package 只能使用各 Package 的 `package.json#exports`；禁止透過相對路徑穿透私有內部檔案。
-3. **無第二套真理**：子目錄 `packages/<owner>/AGENTS.md` 僅能增加該 Owner 本地約束；`packages/<owner>/README.md` 僅負責該模組內部導引。
-4. **驗證指令**：
-   - 邊界檢查：`pnpm boundaries`
-   - 型別與語意：`pnpm check`
-   - 完整交付：`pnpm validate`
+## Resolve one package
+
+處理 `packages/<module>` 時，先建立這個 mental model：
+
+```text
+semantic-model
+├─ semantic owner
+├─ concepts / language
+├─ relationships
+├─ capabilities
+└─ invariants
+        ↓
+implementation-topology
+├─ module path
+├─ moduleKind
+└─ allowedWorkspaceDependencies
+        ↓
+data-topology
+├─ authoritative relations
+└─ projections / references
+        ↓
+package.json#exports
+└─ exact public capabilities
+        ↓
+src / tests / schemas
+└─ implementation + evidence
+```
+
+不要反向從現有 adapter、route 或 table 猜 owner。
+
+## Canonical package template
+
+```text
+packages/<module>/
+├─ AGENTS.md
+├─ README.md
+├─ package.json
+├─ src/
+│  ├─ domain.ts | domain/
+│  ├─ contracts.ts | contracts/
+│  ├─ application.ts | application/
+│  │  └─ ports/
+│  ├─ adapters/
+│  ├─ agents/
+│  ├─ testing/
+│  └─ <named-public-capability>.ts
+└─ test/
+```
+
+這是 responsibility template，不是空資料夾模板：只有真實責任存在才建立對應 layer。
+
+### Dependency direction
+
+```text
+External / Runtime
+        ↓
+public package capability
+        ↓
+Adapter ─────→ Application Port
+                    ↓
+               Application
+                    ↓
+                 Domain
+
+Contracts → Domain
+```
+
+Hard boundary：
+
+```text
+Domain
+✗ Contracts
+✗ Application
+✗ Adapters
+✗ Runtime infrastructure
+
+Contracts
+✓ Domain
+✗ Application
+✗ Adapters
+
+Application
+✓ own Domain / Contracts / Ports
+✗ own Adapters
+✗ foreign Application source
+
+Adapters
+✓ implement owner/application ports
+✓ use runtime/provider mechanisms
+✗ become foreign public implementation path
+```
+
+## Public adapter capability pattern
+
+Concrete adapter implementation 保持 private：
+
+```text
+src/adapters/postgres.ts
+```
+
+若 Web 或另一合法 consumer 必須建構它，建立 owner 的 named public composition entry：
+
+```ts
+// src/postgres.ts
+export { PostgresExampleStore } from "./adapters/postgres.js";
+```
+
+再由 package export 暴露：
+
+```json
+{
+  "exports": {
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    }
+  }
+}
+```
+
+Consumer：
+
+```ts
+import { PostgresExampleStore } from "@line_bot_v1/example/postgres";
+```
+
+禁止：
+
+```ts
+import { PostgresExampleStore } from "@line_bot_v1/example/adapters/postgres";
+export * from "./adapters/postgres.js";
+```
+
+也禁止直接 import foreign `src/**`、`dist/**` 或 runtime `testing/**`。
+
+## Cross-owner interaction
+
+Cross-owner dependency 先查 `semantic-model.json#relationships`。
+
+合法 relationship 必須能回答：
+
+```text
+Provider
+Consumer
+Meaning
+Integration mode
+Authority
+Consistency
+```
+
+再由 consumer 真正需要的 capability 決定 Port / Contract；不得把 provider aggregate、private adapter 或 table 當 contract。
+
+## Data mapping
+
+Persisted fact 先查 `data-topology.json`：
+
+```text
+Concept authority
+→ Semantic owner
+→ Relation owner
+→ Schema source
+→ Owner adapter
+→ Public capability / relationship contract
+→ Consumer
+```
+
+Projection / reference 只能 derive / reference authority，不得成為第二個 business truth。
+
+## Tool-enforced rules
+
+三份 config 是 package implementation 的 governing constraints，不是一般 CI 修復目標：
+
+- `.dependency-cruiser.mjs`
+  - topology dependency allowlist
+  - no unresolved / cycle
+  - inner layer purity
+  - adapter privacy
+  - no cross-package relative import
+  - no package → app
+  - no runtime testing dependency
+- `biome.json`
+  - canonical formatter
+  - organize imports/exports
+  - selected correctness / suspicious lint rules
+- `knip.jsonc`
+  - package/test reachability
+  - exported-surface reachability
+  - unused / unresolved detection
+
+若 source 違反規則，修 source / dependency / export / placement；不要改 config 讓違規消失。
+
+## Package-local docs
+
+每個 package 的文件只回答 local delta：
+
+```text
+AGENTS.md
+├─ Owner-local constraints
+├─ Local invariants
+├─ Local boundary exceptions required by real responsibility
+├─ Change rules
+└─ Local validation
+
+README.md
+├─ Purpose
+├─ Source navigation
+├─ Public capability navigation
+├─ Test navigation
+└─ Links to canonical architecture/data truth
+```
+
+Child 文件不得複製 global owner inventory、topology、schema 或 export truth。
+
+## Validation routing
+
+| Evidence | Command |
+| --- | --- |
+| Biome formatting / lint | `pnpm lint` |
+| Package dependency boundaries | `pnpm boundaries` |
+| Architecture model + guards | `pnpm architecture` / `pnpm architecture:test` |
+| Reachability | `pnpm deadcode` |
+| Type correctness | `pnpm typecheck` |
+| Behavior | `pnpm test` |
+| Build | `pnpm build` |
+| General affected validation | `pnpm check` |
+| Full merge validation | `pnpm validate` |
+
+實作前與 CI failure 後都回到同一條鏈：
+
+```text
+Owner
+→ Truth
+→ Boundary
+→ Dependency
+→ Correct change
+→ Validation
+→ Evidence
+```
