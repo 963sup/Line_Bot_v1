@@ -1929,7 +1929,7 @@
           "packages/ledger/src/adapters/postgres.ts",
           "packages/ledger/src/domain.ts"
         ],
-        "publicExports": ["./postgres", "./domain"],
+        "publicExports": ["./adapters/postgres", "./domain"],
         "entrypoints": [
           "packages/daily-check-in/src/adapters/postgres.ts",
           "packages/attendance/src/adapters/postgres/attendance.ts"
