@@ -11,7 +11,7 @@ import type {
   RepositoryAccessStore,
 } from "../../application/ports/access.js";
 import type { RepositorySelector } from "../../application/ports/selectors.js";
-import { RepositoryError, type RepositoryCapability } from "../../domain.js";
+import { type RepositoryCapability, RepositoryError } from "../../domain.js";
 
 type RepositoryRow = {
   id: string;
@@ -201,11 +201,7 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
         return receipt;
       }
 
-      const repository = await repositoryRow(
-        sql,
-        { repositoryId: command.repositoryId },
-        true,
-      );
+      const repository = await repositoryRow(sql, { repositoryId: command.repositoryId }, true);
       await requireManagementAuthority(sql, repository, userId);
 
       let changedVersion: number | null = null;
@@ -214,14 +210,19 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
           repository.owner_account_kind === "USER" &&
           repository.owner_account_id === command.subjectId
         ) {
-          throw new RepositoryError(409, "User-owned Repository owner 的 admin access 是固有權限。");
+          throw new RepositoryError(
+            409,
+            "User-owned Repository owner 的 admin access 是固有權限。",
+          );
         }
         const target = await readActiveUserQualification(sql, command.subjectId, "share");
         if (!target) throw new RepositoryError(400, "只能授權目前有效的 User。");
         if (repository.owner_account_kind === "ORGANIZATION") {
-          const eligible = await activeOrganizationParticipantIds(sql, repository.owner_account_id, [
-            command.subjectId,
-          ]);
+          const eligible = await activeOrganizationParticipantIds(
+            sql,
+            repository.owner_account_id,
+            [command.subjectId],
+          );
           if (!eligible.has(command.subjectId)) {
             throw new RepositoryError(403, "User 必須是此 Organization 的有效 member。");
           }
@@ -286,12 +287,7 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
                 `INSERT INTO repository_team_access(
                    repository_id,organization_id,team_id,capability,version
                  ) VALUES($1,$2,$3,$4,1)`,
-                [
-                  repository.id,
-                  repository.owner_account_id,
-                  command.subjectId,
-                  command.capability,
-                ],
+                [repository.id, repository.owner_account_id, command.subjectId, command.capability],
               );
               changedVersion = 1;
             }
