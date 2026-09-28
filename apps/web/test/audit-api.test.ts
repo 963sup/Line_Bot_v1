@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { createAuditQuery } from "@line_bot_v1/audit/application";
+import { createAuditQuery } from "@line_bot_v1/audit/application/queries/governance-audit";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { auditQuery } from "../src/app/api/_composition/audit.server";

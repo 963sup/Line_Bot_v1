@@ -9,4 +9,4 @@ Routing and module overview for `@line_bot_v1/audit`.
 
 ## Scope
 
-Read-query entry: `src/application.ts`; authorization and source projection are provided by the Identity/Access public contract. See the owner document for API scope.
+Read-query entry: `src/application/queries/governance-audit.ts`; authorization and source projection are provided by the Identity/Access public contract. See the owner document for API scope.
