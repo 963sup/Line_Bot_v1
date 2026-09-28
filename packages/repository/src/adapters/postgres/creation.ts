@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readActiveUserQualification } from "@line_bot_v1/account/adapters/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import {
   isOrganizationOwner,
   readOrganizationOwnerScopeIds,
