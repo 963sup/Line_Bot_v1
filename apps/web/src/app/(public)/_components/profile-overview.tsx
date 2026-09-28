@@ -171,7 +171,7 @@ export default function ProfileOverview({
           )}
           <div className={styles.identityCopy}>
             <h1>{title || `@${profileLogin}`}</h1>
-            <p>@{profileLogin}</p>
+            {title !== profileLogin && <p>@{profileLogin}</p>}
           </div>
         </div>
         {bio ? <p className={styles.bio}>{bio}</p> : null}
@@ -191,7 +191,19 @@ export default function ProfileOverview({
             </p>
           ) : (
             <p className={styles.providerStatus}>
-              {providerValue?.statusMessage?.trim() || "尚未設定 LINE 狀態。"}
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M8 14a4.5 4.5 0 0 0 8 0M8 9h1m6 0h1" />
+              </svg>
+              <span>{providerValue?.statusMessage?.trim() || "尚未設定 LINE 狀態。"}</span>
             </p>
           )
         ) : null}

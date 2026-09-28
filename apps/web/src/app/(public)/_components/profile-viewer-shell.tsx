@@ -96,7 +96,7 @@ export default function ProfileViewerShell({
         <header className={styles.toolbar}>
           {ownProfile ? (
             <Link
-              className={styles.toolbarAction}
+              className={`${styles.toolbarAction} ${styles.toolbarBack}`}
               href="/home"
               aria-label="返回 Home"
               title="返回 Home"
@@ -112,7 +112,7 @@ export default function ProfileViewerShell({
                 strokeLinejoin="round"
                 aria-hidden="true"
               >
-                <path d="m15 18-6-6 6-6" />
+                <path d="M20 12H4m7-7-7 7 7 7" />
               </svg>
             </Link>
           ) : (
@@ -122,15 +122,15 @@ export default function ProfileViewerShell({
             <ProfileShare />
             {ownProfile && (
               <Link
-                className="profile-settings-action"
+                className={styles.toolbarAction}
                 href="/settings"
                 aria-label="Settings"
                 title="Settings"
               >
                 <svg
                   viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
+                  width="26"
+                  height="26"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"

@@ -551,23 +551,6 @@ footer {
   object-fit: cover;
 }
 
-.profile-settings-action {
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: var(--ink);
-  background: var(--surface);
-  text-decoration: none;
-}
-
-.profile-settings-action:focus-visible {
-  outline: 3px solid var(--green);
-  outline-offset: 3px;
-}
-
 .app-shell .app-content {
   max-width: 640px;
   margin: 0 auto;

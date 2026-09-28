@@ -26,19 +26,25 @@ mkdirSync(output, { recursive: true });
 const adapters = {
   "next/link": `import React from 'react'; export default function Link({children,href,...props}) { return <a href={href} {...props}>{children}</a>; }`,
   "next/script": `import {useEffect} from 'react'; export default function Script({onReady}) { useEffect(()=>{onReady()},[]); return null; }`,
-  "next/navigation": `const router={replace:(href)=>{window.resolvedTarget=href}}; export function usePathname(){return '/viewer'} export function useRouter(){return router}`,
+  "next/navigation": `const router={replace:(href)=>{window.resolvedTarget=href}}; export function usePathname(){return '/viewer'} export function useRouter(){return router} export function notFound(){throw Error('not-found')}`,
 };
 await build({
   stdin: {
     contents: `import React from 'react';
       import {createRoot} from 'react-dom/client';
       import ProfileViewerShell from '../../apps/web/src/app/(public)/_components/profile-viewer-shell.tsx';
+      import ProfilePage from '../../apps/web/src/app/(public)/[login]/page.tsx';
       import ProfileEntry from '../../apps/web/src/app/(mobile)/profile/profile-entry.tsx';
       import MemberAvatar from '../../apps/web/src/modules/account/member-avatar.tsx';
       import '../../apps/web/src/app/globals.css';
       const root = createRoot(document.getElementById('root'));
       window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>true,getProfile:async()=>window.holdProvider ? new Promise(()=>{}) : ({displayName:'LINE Viewer',statusMessage:'Ready to work'}),login:()=>{}};
-      window.renderProfile=(props)=>root.render(<ProfileViewerShell key={props.instance} liffId="test" profileKind="USER" profileLogin="viewer" profileUserId="user-1" profileTitle="Public viewer" {...props}><h2>Popular</h2><p>Public repositories</p></ProfileViewerShell>);
+      window.renderProfile=async(props)=>{
+        const page=await ProfilePage({params:Promise.resolve({login:'viewer'})});
+        const popular=page.props.children.props.children;
+        const content=await popular.type(popular.props);
+        root.render(<ProfileViewerShell key={props.instance} liffId="test" profileKind="USER" profileLogin="viewer" profileUserId="user-1" profileTitle="Public viewer" {...props}>{content}</ProfileViewerShell>);
+      };
       window.renderEntry=(instance)=>{window.resolvedTarget=null;root.render(<ProfileEntry key={instance} liffId="test"/>)};
       window.renderAvatar=(instance)=>root.render(<MemberAvatar key={instance} liffId="test"/>);
       window.renderProfile({instance:0});`,
@@ -56,6 +62,31 @@ await build({
     {
       name: "next-test-delivery",
       setup(builder) {
+        const publicQueries = {
+          "line-mini-app": "export const lineMiniApp=()=>({liffId:'test'});",
+          "account.server":
+            "export const publicUserById=async()=>({login:'viewer'}); export const profiles={publicByUserId:async()=>null};",
+          "namespace.server":
+            "export const resolveAccountNamespace=async()=>({id:'user-1',login:'viewer',kind:'USER'});",
+          "directory.server":
+            "export const publicOrganizations=()=>({byLogin:async()=>({name:'Organization'})});",
+          "repository.server":
+            "export const publicRepositories=()=>({popularByOwner:async()=>({totalCount:2,items:[{id:'repo-1',ownerLogin:'viewer',name:'Operations',starCount:3},{id:'repo-2',ownerLogin:'viewer',name:'Field work',starCount:1}]})});",
+        };
+        builder.onResolve(
+          {
+            filter:
+              /(?:line-mini-app|account\.server|namespace\.server|directory\.server|repository\.server)$/,
+          },
+          ({ path: specifier }) => ({
+            path: specifier.split("/").at(-1),
+            namespace: "profile-public-queries",
+          }),
+        );
+        builder.onLoad({ filter: /.*/, namespace: "profile-public-queries" }, ({ path: key }) => ({
+          contents: publicQueries[key],
+          loader: "js",
+        }));
         builder.onLoad({ filter: /\.module\.css$/ }, (args) => ({
           contents: readFileSync(args.path, "utf8"),
           loader: "local-css",
@@ -251,14 +282,84 @@ try {
     "/projects",
   );
   assert.deepEqual(privateReads.sort(), ["/api/profile", "/api/profile/achievements"]);
-  await page.screenshot({ path: path.join(output, "profile-self.png"), fullPage: true });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const share = page.getByRole("button", { name: "分享 Profile", exact: true });
+    const settings = page.getByRole("link", { name: "Settings", exact: true });
+    const shareBox = await share.boundingBox();
+    const settingsBox = await settings.boundingBox();
+    assert.equal(shareBox.width, 44);
+    assert.equal(shareBox.height, 44);
+    assert.equal(settingsBox.width, 44);
+    assert.equal(settingsBox.height, 44);
+    assert.ok(Math.abs(shareBox.y - settingsBox.y) <= 1, "toolbar controls share one baseline");
+    assert.ok(settingsBox.x > shareBox.x + shareBox.width, "toolbar controls have a visible gap");
+    for (const control of [share, settings]) {
+      assert.deepEqual(
+        await control.evaluate((element) => {
+          const style = getComputedStyle(element);
+          return {
+            background: style.backgroundColor,
+            border: style.borderTopWidth,
+            padding: style.padding,
+            margin: style.marginTop,
+          };
+        }),
+        { background: "rgba(0, 0, 0, 0)", border: "0px", padding: "0px", margin: "0px" },
+      );
+    }
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      true,
+    );
+    const popularCard = await page.getByRole("link", { name: /Operations/ }).boundingBox();
+    assert.ok(popularCard.x >= 15, "Popular card keeps the page inset after resizing");
+  }
+  await page.screenshot({ path: path.join(output, "profile-self.png") });
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (value) => {
+        window.sharedProfile = value;
+      },
+    }),
+  );
+  await page.getByRole("button", { name: "分享 Profile", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.sharedProfile.url), base + "/");
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async () => {
+        throw new DOMException("Cancelled", "AbortError");
+      },
+    }),
+  );
+  await page.getByRole("button", { name: "分享 Profile", exact: true }).click();
+  await expect(page.getByText("目前無法分享這個連結。", { exact: true })).toHaveCount(0);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value) => {
+          window.copiedProfile = value;
+        },
+      },
+    });
+  });
+  await page.getByRole("button", { name: "分享 Profile", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("已複製個人頁連結。");
+  assert.equal(await page.evaluate(() => window.copiedProfile), base + "/");
+  results.push(
+    "320/390px Profile toolbar alignment, real Popular cards, native share, cancellation and clipboard fallback",
+  );
   results.push("self identity, achievements, settings; only two private section requests");
 
   failAchievements = true;
   await page.evaluate(() => window.renderProfile({ instance: 1 }));
   await expect(page.getByText("Achievements 目前不可用。")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Private viewer");
-  await expect(page.getByText("Public repositories")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Popular", exact: true })).toBeVisible();
   results.push("failed achievement request preserves identity and public content");
 
   const beforeVisitor = privateReads.length;
