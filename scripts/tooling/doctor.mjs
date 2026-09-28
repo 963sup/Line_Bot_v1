@@ -77,7 +77,8 @@ function dependencyAvailability() {
   );
 }
 
-try {
+export function main() {
+  try {
   const manifest = JSON.parse(readFileSync(resolve(repositoryRoot, "package.json"), "utf8"));
   const expectedNode = readFileSync(resolve(repositoryRoot, ".node-version"), "utf8").trim();
   const expectedPnpm = String(manifest.packageManager ?? "").replace(/^pnpm@/, "");
@@ -106,7 +107,10 @@ try {
     ),
   );
   if (!report.ok) process.exitCode = 1;
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
 }
+
+if (import.meta.main) main();
