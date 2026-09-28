@@ -145,7 +145,7 @@ function isClientModule(root, source) {
 export function isServerOnlyPackageSource(source) {
   const target = normalize(source);
   if (
-    !/^packages\/[^/]+\/src\/(?:adapters(?:\.ts|\/)|agents(?:\.ts|\/)|testing(?:\.ts|\/)|database(?:\.ts|\/)|migration(?:\.ts|\/))/.test(
+    !/^packages\/[^/]+\/src\/(?:adapters(?:\.ts|\/)|agents(?:\.ts|\/)|testing(?:\.ts|\/)|database(?:\.ts|\/)|migration(?:\.ts|\/)|postgres(?:\.ts|\/))/.test(
       target,
     )
   )
