@@ -1,3 +1,8 @@
+import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
+import { createFollows } from "@line_bot_v1/account/application/follows";
+import { createUserProfiles } from "@line_bot_v1/account/application/profile";
+import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
+import { requireActiveUser } from "@line_bot_v1/account/domain/user";
 import {
   PostgresFollowStore,
   PostgresGoogleLinkStore,
@@ -5,11 +10,6 @@ import {
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line_bot_v1/account/postgres";
-import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
-import { createFollows } from "@line_bot_v1/account/application/follows";
-import { createUserProfiles } from "@line_bot_v1/account/application/profile";
-import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
-import { requireActiveUser } from "@line_bot_v1/account/domain/user";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain";
 import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
 import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application";
