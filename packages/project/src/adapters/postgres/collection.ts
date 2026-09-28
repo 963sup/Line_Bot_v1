@@ -1,5 +1,5 @@
 import { readOrganizationOwnerScopeIds } from "@line_bot_v1/identity-access/adapters/postgres";
-import { readAccountLogins } from "@line_bot_v1/namespace/adapters/postgres";
+import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { ProjectCollectionStore } from "../../application/ports/collection.js";
 import type { ProjectSummary } from "../../contracts/project-collection.js";
