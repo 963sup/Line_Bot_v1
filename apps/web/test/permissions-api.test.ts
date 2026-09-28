@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
-import { PostgresPermissionStore } from "@line_bot_v1/identity-access/adapters/postgres";
+import { PostgresPermissionStore } from "@line_bot_v1/identity-access/postgres";
 import { PermissionError } from "@line_bot_v1/identity-access/domain/permission";
 import { GET, POST } from "../src/app/api/permissions/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
