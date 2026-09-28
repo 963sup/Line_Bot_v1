@@ -1,16 +1,9 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
-import type { PermissionStore } from "@line_bot_v1/identity-access/application/permissions/ports";
-import type {
-  PermissionGrant,
-  PermissionView,
-} from "@line_bot_v1/identity-access/contracts/permissions";
-import {
-  type Permission,
-  type PermissionCommand,
-  PermissionError,
-} from "@line_bot_v1/identity-access/domain/permission";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import type { PermissionStore } from "../application/permissions/ports.js";
+import type { PermissionGrant, PermissionView } from "../contracts/permissions.js";
+import { type Permission, type PermissionCommand, PermissionError } from "../domain/permission.js";
 
 async function permissionVersion(sql: Sql, userId: string, lock = false): Promise<number> {
   const row = (

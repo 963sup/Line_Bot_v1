@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
-import type {
-  GovernanceReceipt,
-  GovernanceSubjectKind,
-} from "@line_bot_v1/identity-access/contracts/governance";
-import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { GovernanceReceipt, GovernanceSubjectKind } from "../contracts/governance.js";
+import { GovernanceAccessError } from "../domain/role-assignment.js";
 
 export function governanceFingerprint(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
