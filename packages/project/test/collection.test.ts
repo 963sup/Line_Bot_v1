@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Database } from "@line_bot_v1/platform/adapters/postgres";
+import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresProjectCollectionStore } from "../src/adapters/postgres/collection.js";
 import { createProjectCollection } from "../src/application/collection.js";
