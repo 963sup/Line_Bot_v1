@@ -71,8 +71,8 @@ test("architecture checks source exports, types, ports, browser reachability and
             "./ports/repository": { default: "./dist/ports/repository.js" },
             ...(name === "line-channel"
               ? {
-                  "./adapters/mini-app/browser": {
-                    default: "./dist/adapters/mini-app/browser.js",
+                  "./mini-app/browser": {
+                    default: "./dist/mini-app/browser.js",
                   },
                 }
               : {}),
@@ -376,13 +376,13 @@ test("architecture checks source exports, types, ports, browser reachability and
     );
     write(
       root,
-      "packages/line-channel/src/adapters/mini-app/browser.ts",
-      `export { client } from ${JSON.stringify("./browser/client")};`,
+      "packages/line-channel/src/mini-app/browser.ts",
+      `export { client } from ${JSON.stringify("../adapters/mini-app/browser/client")};`,
     );
     write(
       root,
       "apps/web/src/helper.ts",
-      importing("@line_bot_v1/line-channel/adapters/mini-app/browser"),
+      importing("@line_bot_v1/line-channel/mini-app/browser"),
     );
     assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(
