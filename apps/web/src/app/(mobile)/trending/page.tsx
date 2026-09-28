@@ -9,8 +9,7 @@ export default function Page() {
   return (
     <AppShell activeHref="/explore">
       <PageHeading
-        title="Trending"
-        description="依最近 7 天有效 Star 訊號排序目前登入者仍可存取的 Repository。"
+        title="Top Repositories"
         back="/explore"
       />
       <div className="trending-filters" aria-label="Trending filters">
