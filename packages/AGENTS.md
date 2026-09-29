@@ -6,14 +6,14 @@
 
 修改任何 package 前，必須先讀取並遵守 root `AGENTS.md#Mandatory governing set`；不得把 governing files 當成修 local violation 的 escape hatch。依序確認：
 
-1. `architecture/README.md`：architecture truth routing、authority hierarchy 與 evidence flow。
-2. `architecture/semantic-model.json`：product semantic owner、concept、relationship、capability、invariant、policy 與 integration mode。
+1. `architecture/domain/fpt/*.json`：GitHub GraphQL domain truth；由 pinned github/docs FPT JSON 原樣 vendoring，禁止本地改寫。
+2. `architecture/semantic-model.json`：Line_Bot_v1 semantic owner、relationship、capability、invariant、policy 與 implementation expectation overlay。
 3. `architecture/implementation-topology.json`：module path、`moduleKind`、`semanticOwner`、`allowedWorkspaceDependencies`。
 4. `architecture/data-topology.json`：persisted relation owner、projection / reference 與 data boundary。
 5. `package.json#exports`：package public boundary。
 6. source / tests / `supabase/schemas/*.sql`：runtime behavior、database truth 與 enforcement evidence。
 
-`architecture/semantic-benchmark.json` 只提供 external semantic evidence；沒有 `semantic-model.json` 的 explicit adoption / mapping，不得成為 product authority。
+任何 GitHub-derived concept/locator claim 必須直接引用 FPT file/symbol/field；不得另外維護 benchmark/adoption summary 來覆蓋 FPT。未實作 code/SCM capability 只代表 product scope，不改變 domain truth。
 
 `.dependency-cruiser.mjs`、`biome.json`、`knip.jsonc` 是 governing configs。一般 feature、refactor、CI fix 不得修改它們來消除 violation；應修正 source、dependency、export、placement 或真正的 architecture truth。
 

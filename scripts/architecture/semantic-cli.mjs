@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadSemanticArchitecture } from "./semantic-core.mjs";
 import { diffSemanticModels } from "./semantic-diff.mjs";
-import { diffSemanticBenchmark } from "./semantic-drift.mjs";
+import { diffFptDomainTruth } from "./semantic-drift.mjs";
 import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
 import { renderSemanticView } from "./semantic-projection.mjs";
@@ -13,7 +13,7 @@ const queryVerbs = new Set([
   "owner",
   "concept",
   "capability",
-  "benchmark",
+  "fpt",
   "resolve",
   "neighbors",
   "path",
@@ -26,12 +26,12 @@ const queryVerbs = new Set([
   "evidence",
   "truth",
   "locators",
-  "benchmark-coverage",
+  "fpt-references",
   "explain",
 ]);
 
 const usage =
-  "Usage: pnpm semantic <check|owner|concept|capability|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|benchmark-coverage|explain|plan|context|diff|drift|feedback|view|package-docs> ...";
+  "Usage: pnpm semantic <check|owner|concept|capability|fpt|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|fpt-references|explain|plan|context|diff|drift|feedback|view|package-docs> ...";
 
 async function readJson(path) {
   return JSON.parse(await readFile(resolve(path), "utf8"));
@@ -90,12 +90,12 @@ export async function runSemanticCommand(args) {
   if (verb === "drift") {
     if (rest.length < 2 || rest.length > 3) {
       throw new Error(
-        "Usage: pnpm semantic drift <before-benchmark.json> <after-benchmark.json> [semantic-model.json]",
+        "Usage: pnpm semantic drift <before-fpt-source.json> <after-fpt-source.json> [semantic-model.json]",
       );
     }
     const [before, after] = await Promise.all(rest.slice(0, 2).map(readJson));
     const semanticModel = rest[2] ? await readJson(rest[2]) : compiled.model;
-    return diffSemanticBenchmark(before, after, semanticModel);
+    return diffFptDomainTruth(before, after, semanticModel);
   }
 
   if (verb === "feedback") {

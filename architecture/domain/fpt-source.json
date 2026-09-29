@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "role": "github-fpt-domain-truth-provenance",
+  "domainTruth": "architecture/domain/fpt/*.json",
+  "upstream": {
+    "repository": "github/docs",
+    "revision": "f4e8afc6979acd8de6b5da035066281b9a5f4025",
+    "path": "src/graphql/data/fpt"
+  },
+  "contract": {
+    "mirror": "exact-json-content",
+    "semantics": "The vendored FPT JSON is the canonical GitHub-derived domain truth. This manifest records provenance and integrity only; it does not redefine domain semantics.",
+    "scope": "Line_Bot_v1 implements GitHub-like non-code semantics; code/SCM capabilities may remain unimplemented without editing the FPT truth.",
+    "update": "Replace the mirrored JSON from one reviewed github/docs revision, update these blob SHAs, then run the architecture validation."
+  },
+  "files": [
+    {
+      "name": "category-map.json",
+      "gitBlobSha": "707c648eb014f4f33495f417b2954a81c2f4ab2b"
+    },
+    {
+      "name": "changelog.json",
+      "gitBlobSha": "79dd889433dfe60d60ab9ff5239e8903e5e3372a"
+    },
+    {
+      "name": "previews.json",
+      "gitBlobSha": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc"
+    },
+    {
+      "name": "schema-actions.json",
+      "gitBlobSha": "2a7e17586ad3cb77c040203ff6aebfb6eed40fce"
+    },
+    {
+      "name": "schema-activity.json",
+      "gitBlobSha": "c7b414b880a0044ce0746940167e655bec34979e"
+    },
+    {
+      "name": "schema-apps.json",
+      "gitBlobSha": "e49ccb185f13681b5f510e87c3979fa0b99f9372"
+    },
+    {
+      "name": "schema-audit-log.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-billing.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-branches.json",
+      "gitBlobSha": "fe997c5e64b977ebf80d6c498fdcfb77143553b9"
+    },
+    {
+      "name": "schema-checks.json",
+      "gitBlobSha": "4abec62bfea38fe24969c9aea0d3b7d59ac25978"
+    },
+    {
+      "name": "schema-code-scanning.json",
+      "gitBlobSha": "e1502a01422c8d451b215bb8ff2e2d4c623b906b"
+    },
+    {
+      "name": "schema-code-security.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-codespaces.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-collaborators.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-commits.json",
+      "gitBlobSha": "c517be6cb3bcbf590a27021289e30f4e33f827db"
+    },
+    {
+      "name": "schema-copilot.json",
+      "gitBlobSha": "a7ca98c81be69e0e8c42012c2dd5e47c24c94dfe"
+    },
+    {
+      "name": "schema-dependabot.json",
+      "gitBlobSha": "39cf78054649457d693acce4ddafb9887d8dd88b"
+    },
+    {
+      "name": "schema-dependency-graph.json",
+      "gitBlobSha": "2549abe2c52f7c1743abc0dcb1b8a4e7bde4fc2a"
+    },
+    {
+      "name": "schema-deploy-keys.json",
+      "gitBlobSha": "6be1d5474a6dba1fe49bb21e84b66dfa2fd97fe6"
+    },
+    {
+      "name": "schema-deployments.json",
+      "gitBlobSha": "c6a8836db4adcc95e0e409c60eab2b7f086d60aa"
+    },
+    {
+      "name": "schema-discussions.json",
+      "gitBlobSha": "008909b2d427f3de84fce86055d46732b181fc61"
+    },
+    {
+      "name": "schema-enterprise-admin.json",
+      "gitBlobSha": "2df44d085839e67aa988a81cb17ca34c164eddc7"
+    },
+    {
+      "name": "schema-gists.json",
+      "gitBlobSha": "0814a9d7a0b0f0afe2b657243978f58e2da7d402"
+    },
+    {
+      "name": "schema-git.json",
+      "gitBlobSha": "546a3f92b287c1cbc1b22dedbffb28eb93c28154"
+    },
+    {
+      "name": "schema-interactions.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-issues.json",
+      "gitBlobSha": "071f422db6558daa1c3d83b23897f08a2c599954"
+    },
+    {
+      "name": "schema-licenses.json",
+      "gitBlobSha": "3e18b17fde98f3d0c606c774e2b3c5d201af42a3"
+    },
+    {
+      "name": "schema-meta.json",
+      "gitBlobSha": "10fc92eadf89452079c0a96d26b7a516eeb275b3"
+    },
+    {
+      "name": "schema-migrations.json",
+      "gitBlobSha": "3a408ef68c41e067108dfeaf96e50a96c13e11e2"
+    },
+    {
+      "name": "schema-orgs.json",
+      "gitBlobSha": "2b3f7fca351b4c1aed96eeb09245b758b6403576"
+    },
+    {
+      "name": "schema-other.json",
+      "gitBlobSha": "d369c78d2a1266487a96d67e31a5578b92c139f7"
+    },
+    {
+      "name": "schema-packages.json",
+      "gitBlobSha": "05d1f325eb1becd69ee5dbd09a1e0a164e18bb9d"
+    },
+    {
+      "name": "schema-pages.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-projects-classic.json",
+      "gitBlobSha": "d5fed054db23da6a4058924b76c2e2c48aef063b"
+    },
+    {
+      "name": "schema-projects.json",
+      "gitBlobSha": "2bffcb251b28e49d8c3f6040d2dedf92971b8164"
+    },
+    {
+      "name": "schema-pulls.json",
+      "gitBlobSha": "ca30aa2fcee64d07fb068cc036d1eb30626d1529"
+    },
+    {
+      "name": "schema-reactions.json",
+      "gitBlobSha": "4fafa1e329e73366eaa3232321bac3977f8178a3"
+    },
+    {
+      "name": "schema-releases.json",
+      "gitBlobSha": "3a0de419f17fe901c46c618ff97e098138e29483"
+    },
+    {
+      "name": "schema-repos.json",
+      "gitBlobSha": "8b445a6b2b5c67f9d129eba1129f788f5bbe1688"
+    },
+    {
+      "name": "schema-scim.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-search.json",
+      "gitBlobSha": "8ff84a0f982ad4b9c04f6581fafaf02890188122"
+    },
+    {
+      "name": "schema-secret-scanning.json",
+      "gitBlobSha": "9e26dfeeb6e641a33dae4961196235bdb965b21b"
+    },
+    {
+      "name": "schema-security-advisories.json",
+      "gitBlobSha": "73adc4fed1ef15483dcff089f46856cc3c0978d9"
+    },
+    {
+      "name": "schema-sponsors.json",
+      "gitBlobSha": "ea8a37a9e980b4f9f346eb9761c03f0e470c8e62"
+    },
+    {
+      "name": "schema-teams.json",
+      "gitBlobSha": "7cbd92ae338f7a39c9785baf04c1b6a446d95c41"
+    },
+    {
+      "name": "schema-users.json",
+      "gitBlobSha": "20b7c5244865ecd3abe5ff63de181d7b054def98"
+    },
+    {
+      "name": "upcoming-changes.json",
+      "gitBlobSha": "8968e57a98ff68780d40afbbcebfb3827ddf9ef2"
+    }
+  ]
+}

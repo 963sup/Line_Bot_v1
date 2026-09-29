@@ -13,16 +13,16 @@
 | `check-data-topology.mjs` | 驗證 data topology 與 declarative schema current state 一致。 |
 | `check-data-topology.test.mjs` | 驗證 schema file/relation/owner topology。 |
 | `check-implementation-topology.mjs` | 驗證 module path/kind/semantic owner/allowed dependencies。 |
-| `check-semantic-architecture.mjs` | 驗證 product semantic model 與 benchmark/topology/data/command mapping。 |
+| `check-semantic-architecture.mjs` | 驗證 product overlay 與 FPT/topology/data/command mapping。 |
 | `check-semantic-architecture.test.mjs` | 驗證 semantic ownership/relationship/capability/evidence contracts。 |
-| `check-semantic-benchmark.mjs` | 驗證 pinned external GitHub-like benchmark provenance/graph contract。 |
-| `check-semantic-benchmark.test.mjs` | 驗證 benchmark projection/reference guardrails。 |
+| `check-fpt-domain-truth.mjs` | 驗證 vendored GitHub FPT JSON file set、blob integrity 與 provenance。 |
+| `check-fpt-domain-truth.test.mjs` | 驗證 exact FPT mirror、tamper detection 與 direct symbol/field resolution。 |
 | `data-access-core.mjs` | 純函式 data-access policy engine。 |
 | `data-topology-core.mjs` | 載入/解析 declarative SQL，編譯 relation-level data topology。 |
 | `semantic-cli.mjs` | `pnpm semantic` 唯一 CLI namespace。 |
-| `semantic-core.mjs` | 編譯 semantic model、benchmark、implementation/data topology 與 indexes。 |
+| `semantic-core.mjs` | 編譯 FPT domain truth、product overlay、implementation/data topology 與 indexes。 |
 | `semantic-diff.mjs` | 比較兩版 product semantic model，分類 breaking semantic changes。 |
-| `semantic-drift.mjs` | 比較兩版 external benchmark，指出 adopted benchmark drift。 |
+| `semantic-drift.mjs` | 比較兩版 FPT provenance，標示被本地 overlay 直接引用之 truth file drift。 |
 | `semantic-feedback.mjs` | 將 runtime observation bundle 與 capability expectation 對照。 |
 | `semantic-planning.mjs` | 將 change intent resolve 到 owner/concept，建立 impact/boundary/context。 |
 | `semantic-projection.mjs` | 產生 ownership/glossary/context/implementation projections。 |

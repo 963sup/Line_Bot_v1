@@ -6,8 +6,8 @@
 
 | 問題 | Authority |
 | --- | --- |
-| Product meaning、semantic owner、relationship、capability、invariant | [Semantic model](../architecture/semantic-model.json) |
-| External GitHub-like semantic evidence | [Semantic benchmark](../architecture/semantic-benchmark.json) |
+| GitHub GraphQL domain semantics | [Vendored FPT JSON](../architecture/domain/fpt/) |
+| Line_Bot_v1 owner、relationship、capability、invariant、implementation expectation | [Product domain overlay](../architecture/semantic-model.json) |
 | Package path、module kind、workspace dependency allowlist | [Implementation topology](../architecture/implementation-topology.json) |
 | Persisted relation owner、projection / reference | [Data topology](../architecture/data-topology.json) |
 | Actual SQL / constraints / RLS | [Supabase schemas](../supabase/schemas/README.md) |
@@ -20,6 +20,8 @@
 Mental model：
 
 ```text
+architecture/domain/fpt/*.json
+        ↓ direct references
 semantic-model.json
         ↓
 implementation-topology.json
@@ -35,7 +37,7 @@ validation evidence
 
 ## Package 分類與職責
 
-這張表是開發時的 semantic reminder / routing context；權威仍是 `semantic-model.json` 與 `implementation-topology.json`。若表格與 machine-readable truth 發生差異，先查明 drift / architecture violation，不得直接忽略任一方。
+這張表是開發時的 routing context；GitHub-derived語意權威在 FPT，產品 ownership / invariant overlay 在 `semantic-model.json`，module truth 在 `implementation-topology.json`。若表格與 machine-readable truth 發生差異，先查明 drift / architecture violation，不得直接忽略任一方。
 
 | 分類 | Packages | 角色與邊界原則 |
 | --- | --- | --- |

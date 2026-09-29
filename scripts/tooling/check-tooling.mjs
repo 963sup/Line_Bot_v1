@@ -68,7 +68,8 @@ export function validate(root) {
   root = realpathSync(root);
   const errors = [];
   const files = (pattern) =>
-    globSync(pattern, { cwd: root })
+    // CLI-managed external skills are not repository-owned source or governance.
+    globSync(pattern, { cwd: root, exclude: [".agents/skills", ".agents/skills/**"] })
       .sort()
       .map((file) => resolve(root, file));
   try {
@@ -346,7 +347,7 @@ export function validate(root) {
       "i",
     );
     const retiredHumanAccountPath = ["user", "account"].join("-");
-    const externalSemanticBenchmarkArtifacts = new Set(["architecture/semantic-benchmark.json"]);
+    const externalDomainTruthPrefix = "architecture/domain/fpt/";
     const historicalUserVocabularyDocuments = new Set([
       "docs/change/evidence/schema-history-extraction.md",
       "docs/change/evidence/account-expansion-extraction.md",
@@ -379,7 +380,7 @@ export function validate(root) {
     ];
     for (const file of new Set(currentUserVocabularySources)) {
       const relativePath = relative(root, file).split(sep).join("/");
-      if (externalSemanticBenchmarkArtifacts.has(relativePath)) continue;
+      if (relativePath.startsWith(externalDomainTruthPrefix)) continue;
       const source = read(file);
       if (
         retiredUserVocabulary.test(source) ||
@@ -435,9 +436,7 @@ export function validate(root) {
 
     const hotPathTargetHeading =
       /^#{1,6}\s+.*(?:target|proposal|future|planned|remaining target|後續實作|未來目標|目標設計).*$/im;
-    for (const file of files("**/AGENTS.md").filter(
-      (file) => !relative(root, file).split(sep).join("/").startsWith(".agents/skills/"),
-    )) {
+    for (const file of files("**/AGENTS.md")) {
       const source = read(file);
       if (hotPathTargetHeading.test(source))
         errors.push(
@@ -524,12 +523,11 @@ export function validate(root) {
       errors.push("CI: validate workflow must not consume repository secrets");
     if (/^\s*VERCEL:\s*["']?1["']?\s*$/m.test(validateWorkflowSource))
       errors.push("CI: GitHub validation must not impersonate the Vercel runtime");
-    const checkJob = workflow.jobs?.check;
     const fullValidateJob = workflow.jobs?.["full-validate"];
     const validateJob = workflow.jobs?.validate;
-    if (!checkJob || !fullValidateJob || !validateJob)
+    if (!fullValidateJob || !validateJob || workflow.jobs?.check)
       errors.push(
-        "CI: validation workflow must define PR check, parallel full validation and aggregate gate",
+        "CI: validation workflow must have one parallel full validation owner plus its aggregate gate",
       );
     if (!Object.hasOwn(workflow.on ?? {}, "workflow_call") || workflow.on?.push)
       errors.push(
@@ -551,20 +549,12 @@ export function validate(root) {
     }
     const pullRequestTypes = workflow.on?.pull_request?.types;
     if (
-      !pullRequestTypes?.includes("ready_for_review") ||
-      !pullRequestTypes?.includes("synchronize")
+      !pullRequestTypes?.includes("synchronize") ||
+      !pullRequestTypes?.includes("ready_for_review")
     )
-      errors.push("CI: PR validation must distinguish draft iteration from review-ready updates");
-    if (
-      !checkJob?.if?.includes("pull_request.draft == false") ||
-      !checkJob?.if?.includes("github.event.action != 'ready_for_review'") ||
-      !(checkJob?.steps ?? []).some((step) => step.run === "pnpm check")
-    )
-      errors.push(
-        "CI: ready pull requests must run affected pnpm check without duplicating full validation",
-      );
+      errors.push("CI: PR validation must cover every review-ready head update");
     const fullCondition =
-      "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'ready_for_review' && github.event.pull_request.draft == false)";
+      "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)";
     if (
       fullValidateJob?.if !== fullCondition ||
       fullValidateJob?.needs ||
@@ -578,7 +568,7 @@ export function validate(root) {
       )
     )
       errors.push(
-        "CI: main and ready-for-review must run every canonical validation group in parallel",
+        "CI: main and every non-draft pull-request head must run every canonical validation group in parallel",
       );
     if (
       validateJob?.needs !== "full-validate" ||
@@ -830,28 +820,6 @@ export function validate(root) {
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }
-  const names = new Set();
-  for (const file of files(".agents/skills/*/SKILL.md")) {
-    try {
-      const match = read(file).match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-      if (!match) throw new Error("missing YAML frontmatter");
-      const data = YAML.parse(match[1]);
-      const name = data?.name;
-      if (typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 64)
-        throw new Error("invalid skill name");
-      if (name !== basename(dirname(file)) || names.has(name))
-        throw new Error("duplicate name or folder/name mismatch");
-      names.add(name);
-      if (typeof data.description !== "string" || !data.description.trim())
-        throw new Error("missing description");
-      if (data.source !== "repository")
-        throw new Error(
-          "Project skills must declare source: repository; use runtime skills for external guides",
-        );
-    } catch (error) {
-      errors.push(`${relative(root, file)}: ${error.message}`);
-    }
-  }
   const agents = new Set();
   for (const file of [resolve(root, ".codex/config.toml"), ...files(".codex/agents/*.toml")]) {
     try {
@@ -967,6 +935,6 @@ if (import.meta.main) {
     if (result.error || result.status !== 0) process.exit(result.status ?? 1);
   }
   console.log(
-    "Tooling OK: versions, environment contract, script syntax, literal imports, AGENTS governance, skill metadata and agent TOML. Rules require tooling:rules.",
+    "Tooling OK: versions, environment contract, script syntax, literal imports, AGENTS governance and agent TOML. Rules require tooling:rules.",
   );
 }

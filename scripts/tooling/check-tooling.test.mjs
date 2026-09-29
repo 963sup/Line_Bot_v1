@@ -424,21 +424,18 @@ test("current repository surfaces reject retired User vocabulary", (t) => {
   rejects(root, "retired User vocabulary");
 });
 
-test("external semantic benchmark may preserve upstream vocabulary without weakening product vocabulary guard", (t) => {
+test("vendored FPT domain truth may preserve upstream vocabulary without weakening product vocabulary guard", (t) => {
   const { root, write } = fixture(t);
   const retiredType = ["User", "Account"].join("");
   write(
-    "architecture/semantic-benchmark.json",
-    JSON.stringify({
-      role: "derived-general-management-semantic-benchmark",
-      upstreamSymbol: retiredType,
-    }),
+    "architecture/domain/fpt/schema-users.json",
+    JSON.stringify({ objects: [{ name: retiredType }] }),
   );
   assert.deepEqual(validate(root), []);
 
   write(
     "architecture/semantic-model.json",
-    JSON.stringify({ role: "canonical-product-semantic-architecture", term: retiredType }),
+    JSON.stringify({ role: "product-domain-overlay", term: retiredType }),
   );
   rejects(root, "retired User vocabulary");
 });
@@ -463,15 +460,18 @@ test("GitHub validation cannot impersonate Vercel", (t) => {
   rejects(root, "must not impersonate the Vercel runtime");
 });
 
-test("validation workflow keeps PR affected and main full gates separate", (t) => {
+test("validation workflow rejects split fast/full PR truth", (t) => {
   const { root, write } = fixture(t);
   write(
     ".github/workflows/validate.yml",
     "permissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm validate\n  validate:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm check\n",
   );
   rejects(root, "full Git history");
-  rejects(root, "pull requests must run affected pnpm check");
-  rejects(root, "main and ready-for-review must run every canonical validation group in parallel");
+  rejects(root, "one parallel full validation owner");
+  rejects(
+    root,
+    "main and every non-draft pull-request head must run every canonical validation group in parallel",
+  );
 });
 
 test("validate workflow remains read-only, secret-free, and credential-free", (t) => {
@@ -739,20 +739,18 @@ test("runtime compatibility range must match the exact repository Node major and
   write(".node-version", "24.x\n");
   rejects(root, ".node-version");
 });
-test("skill frontmatter rejects wrong folder", (t) => {
+test("external skills are outside repository checks; adjacent governance remains checked", (t) => {
   const { root, write } = fixture(t);
-  write(".agents/skills/demo/SKILL.md", "---\nname: other\ndescription: example\n---\n");
-  rejects(root, "mismatch");
-});
-test("project skills declare repository ownership", (t) => {
-  const { root, write } = fixture(t);
-  write(".agents/skills/demo/SKILL.md", "---\nname: demo\ndescription: example\n---\n");
-  rejects(root, "Project skills must declare source: repository");
-
-  write(
-    ".agents/skills/demo/SKILL.md",
-    "---\nname: demo\ndescription: example\nsource: repository\n---\n",
-  );
+  write(".agents/skills/demo/SKILL.md", "\uFEFF---\r\nname: other\r\n---\r\n");
+  write(".agents/skills/demo/AGENTS.md", "# Future target\n");
+  write(".agents/skills/demo/package.json", "{invalid upstream example\r\n");
+  assert.deepEqual(validate(root), []);
+  write(".agents/AGENTS.md", "\uFEFF# Skills management\r\n");
+  rejects(root, ".agents/AGENTS.md: repository text must be UTF-8 without BOM");
+  write(".agents/AGENTS.md", "# Skills management\n");
+  write(".agents/skills-local/README.md", "\uFEFF# Repository content\n");
+  rejects(root, ".agents/skills-local/README.md: repository text must be UTF-8 without BOM");
+  write(".agents/skills-local/README.md", "# Repository content\n");
   assert.deepEqual(validate(root), []);
 });
 for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {

@@ -1,3 +1,4 @@
+import { resolveFptReference } from "./fpt-domain-core.mjs";
 import { boundarySnapshot, buildOwnerImpact, resolveSemanticIntent } from "./semantic-planning.mjs";
 
 function bfsPath(adjacency, from, to) {
@@ -62,12 +63,12 @@ function evidenceFor(compiled, id) {
   const concepts = concept
     ? [concept]
     : [...compiled.concepts.values()].filter((candidate) => candidate.owner === ownerId);
-  const benchmark = concepts
-    .filter((candidate) => candidate.benchmark?.node)
+  const fpt = concepts
+    .filter((candidate) => candidate.fpt)
     .map((candidate) => ({
       concept: candidate.id,
-      adoption: candidate.benchmark.adoption,
-      benchmark: compiled.benchmarkNodes.get(candidate.benchmark.node) ?? null,
+      reference: candidate.fpt,
+      resolved: resolveFptReference(compiled.fpt, candidate.fpt),
     }));
   const profiles = new Map();
   for (const capability of ownerCapabilities(compiled, ownerId)) {
@@ -81,7 +82,7 @@ function evidenceFor(compiled, id) {
     capabilities: ownerCapabilities(compiled, ownerId).map((capability) =>
       capabilityEvidence(compiled, capability),
     ),
-    benchmark,
+    fpt,
     validation: [...profiles.values()],
     evidenceRule: compiled.model.evidenceModel?.scopeRule ?? null,
     truthRegistry: compiled.model.truthRegistry,
@@ -126,7 +127,10 @@ export function querySemanticArchitecture(compiled, command, args) {
   if (command === "owner") return compiled.owners.get(id) ?? null;
   if (command === "concept") return compiled.concepts.get(id) ?? null;
   if (command === "capability") return compiled.capabilities.get(id) ?? null;
-  if (command === "benchmark") return compiled.benchmarkNodes.get(id) ?? null;
+  if (command === "fpt") {
+    const [file, symbol, field] = args;
+    return resolveFptReference(compiled.fpt, { file, symbol, ...(field ? { field } : {}) });
+  }
   if (command === "resolve") return resolveSemanticIntent(compiled, args.join(" "));
   if (command === "neighbors") {
     if (!compiled.owners.has(id)) return null;
@@ -168,17 +172,20 @@ export function querySemanticArchitecture(compiled, command, args) {
     return (compiled.model.truthRegistry ?? []).find((entry) => entry.id === id) ?? null;
   }
   if (command === "locators") return [...compiled.locators.values()];
-  if (command === "benchmark-coverage") {
+  if (command === "fpt-references") {
     return {
-      mappedNodes: [...compiled.concepts.values()]
-        .filter((concept) => concept.benchmark?.node)
-        .map((concept) => ({ node: concept.benchmark.node, concept: concept.id })),
-      decisions: compiled.model.benchmarkDecisions ?? [],
+      revision: compiled.fpt.manifest.upstream.revision,
+      concepts: [...compiled.concepts.values()]
+        .filter((concept) => concept.fpt)
+        .map((concept) => ({ concept: concept.id, fpt: concept.fpt })),
+      locators: [...compiled.locators.values()]
+        .filter((locator) => locator.fpt)
+        .map((locator) => ({ locator: locator.id, fpt: locator.fpt })),
     };
   }
   if (command === "explain") return explain(compiled, id);
 
   throw new Error(
-    "Usage: pnpm semantic <owner|concept|capability|benchmark|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|benchmark-coverage|explain> <id|intent> [to]",
+    "Usage: pnpm semantic <owner|concept|capability|fpt|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|fpt-references|explain> <id|intent> [to]",
   );
 }

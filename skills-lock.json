@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "skills": {
+    "21st-ui-review": {
+      "source": "21st-dev/skill",
+      "sourceType": "github",
+      "skillPath": "skills/21st-ui-review/SKILL.md",
+      "computedHash": "ce7470a4777379716282b5a410a8a3211ac51a763786f6b81c3abcd282c220ab"
+    },
+    "a11y-testing": {
+      "source": "pedronauck/skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/community/a11y-testing/SKILL.md",
+      "computedHash": "79bb57e51467c4954b3c2ba6d286350b7772ab970b48a42afbb064fe22dba3e3"
+    },
+    "agentic-actions-auditor": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/agentic-actions-auditor/skills/agentic-actions-auditor/SKILL.md",
+      "computedHash": "b9c3db17aca372155f398cd4a28e7ee2f25bbf7f997258747d6e5d0cc80e56df"
+    },
+    "allocating-effort": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "allocating-effort/SKILL.md",
+      "computedHash": "ae0fb220bcecc473120470d758e1a57029e70c54d447f579d7739dcca0993ac6"
+    },
+    "architecture": {
+      "source": "v1r3n/first-principles-skills",
+      "sourceType": "github",
+      "skillPath": "skills/architecture/SKILL.md",
+      "computedHash": "092f4f250d067316a2c8ca554728846e439aeae4d2b5c034657c493d5c98438e"
+    },
+    "code": {
+      "source": "v1r3n/first-principles-skills",
+      "sourceType": "github",
+      "skillPath": "skills/code/SKILL.md",
+      "computedHash": "ab17bb8bad9af41c4269f719b1a02da7b6980ce0a3e4056893132bb3389a8d45"
+    },
+    "codebase-design": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/codebase-design/SKILL.md",
+      "computedHash": "caea3cb8a8281ff829fd1a2b985044e77601b62f301adf43f689ccfc74c15f6f"
+    },
+    "ddd-best-practices": {
+      "source": "luckys/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ddd-best-practices/SKILL.md",
+      "computedHash": "03c2f0d81e916049c5e1a6e9038d53bc12dd7e2df90fc757549b76f72a1baa10"
+    },
+    "deployments-cicd": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/deployments-cicd/SKILL.md",
+      "computedHash": "156836d31baf72c2468e3b6cd769cebddb50628f079b07d6363fe3ce3766f640"
+    },
+    "design": {
+      "source": "v1r3n/first-principles-skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/SKILL.md",
+      "computedHash": "9c19d6221760152640033a62a5584bd01b05c760349fd1cdef20b2fa047f48cc"
+    },
+    "design-taste-frontend": {
+      "source": "leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "899b84384f74f540ea5284d9b2e9234e050998b42eacc805410b518d4226c0b3"
+    },
+    "differential-review": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/differential-review/skills/differential-review/SKILL.md",
+      "computedHash": "9f254dc8193c5720ff54f0848619713d3cc1093d5d9b606de64d4dee55416b98"
+    },
+    "domain-modeling": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/domain-modeling/SKILL.md",
+      "computedHash": "336547f3ff285e822fc70b69b170dc58bceef9c8ed5fad18de0046287d6be837"
+    },
+    "env-vars": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/env-vars/SKILL.md",
+      "computedHash": "b491c62dd8f8b9d9df3c717f8db0cc06d24eb50ad35e01e57127e2f6812d63e7"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "first-principles-thinking": {
+      "source": "RavenlionX/first-principles-thinking",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "c7b981ef71a02fdae6924a9ce0433b3e6887ecd8137386f1c8f94c0b8e3aaafc"
+    },
+    "fpt-decompose": {
+      "source": "leoalord/first-principles-thinking-skills",
+      "sourceType": "github",
+      "skillPath": "fpt-decompose/SKILL.md",
+      "computedHash": "7dcf0e7dbf6a69fe6d6c123fe15ef19b9e75c0f33a73ea03ccd79f1c60673b92"
+    },
+    "fpt-evaluate": {
+      "source": "leoalord/first-principles-thinking-skills",
+      "sourceType": "github",
+      "skillPath": "fpt-evaluate/SKILL.md",
+      "computedHash": "d00669d999962a59cf32e76e1b064150b09ef72233ed0bd39a45e65cd9fcfc33"
+    },
+    "fpt-reconstruct": {
+      "source": "leoalord/first-principles-thinking-skills",
+      "sourceType": "github",
+      "skillPath": "fpt-reconstruct/SKILL.md",
+      "computedHash": "3080ba2e8870a162d2071b31c1e8e3b8ff06b83a790974e3be6ee8527199e5f0"
+    },
+    "framing-decisions": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "framing-decisions/SKILL.md",
+      "computedHash": "997b02ec2bd135c4f122c8dbb8d1b6119f7ee73680ab6f89d3e95f4bafedbb1a"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
+    },
+    "learning-from-outcomes": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "learning-from-outcomes/SKILL.md",
+      "computedHash": "c50516e9a2959132dd5d72fe2f9f7eb318604c3ec19b53a708668d83042824a5"
+    },
+    "line-liff": {
+      "source": "abgne/line-dev",
+      "sourceType": "github",
+      "skillPath": "skills/line-liff/SKILL.md",
+      "computedHash": "231b54cc77053112d8dd117e0d3292a98ec70b39be3ec75eb71048e8707d6829"
+    },
+    "line-login": {
+      "source": "abgne/line-dev",
+      "sourceType": "github",
+      "skillPath": "skills/line-login/SKILL.md",
+      "computedHash": "322b77dda305d8fe1a4a26fd22e4173a43f06bfacec9c97df05e6a6d96aa07f9"
+    },
+    "line-mini-app": {
+      "source": "abgne/line-dev",
+      "sourceType": "github",
+      "skillPath": "skills/line-mini-app/SKILL.md",
+      "computedHash": "1d617def23a5a0eebf394cda3ec9b901e8170193686f0c6157c74ac1490d9402"
+    },
+    "mermaid-diagrams": {
+      "source": "softaworks/agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/mermaid-diagrams/SKILL.md",
+      "computedHash": "b6c206a3cab0333a1d3d3cf27114099d0d5f25eb07d86c8f12472b7aa7d59a4c"
+    },
+    "messaging-api": {
+      "source": "abgne/line-dev",
+      "sourceType": "github",
+      "skillPath": "skills/messaging-api/SKILL.md",
+      "computedHash": "30b576a7b7a462b94dfc4740a3c505ad81b306d8b1756cee5f6102cc7fd63be3"
+    },
+    "mutation-testing": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/mutation-testing/skills/mutation-testing/SKILL.md",
+      "computedHash": "4b18f4e1b2165759b2bf1decd4f57743d66c1b4516e4623f05d0738a078a5475"
+    },
+    "next-dev-loop": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-dev-loop/SKILL.md",
+      "computedHash": "c305c83b726212e0284930c65cded2c4a4ab85f9bfccfa83b62274247fe3580e"
+    },
+    "plan": {
+      "source": "v1r3n/first-principles-skills",
+      "sourceType": "github",
+      "skillPath": "skills/plan/SKILL.md",
+      "computedHash": "120c25fe1b8658d2133e162fdcf9abcbdc7769261acd6a4ad42f0f5143ab88d9"
+    },
+    "planning-horizons": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "planning-horizons/SKILL.md",
+      "computedHash": "7a3519b6e392ffe422ca2bb158cdc0846e6c0ea555d3319c456519ccd5c31728"
+    },
+    "post-patch-validation": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/post-patch-validation/skills/post-patch-validation/SKILL.md",
+      "computedHash": "305ecf0d36e4e39ad41b052bc704534f958696171b2069578f6a9321cc68429d"
+    },
+    "property-based-testing": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/property-based-testing/skills/property-based-testing/SKILL.md",
+      "computedHash": "47a3aa897f836b327698a900d4bc38bed802406b902db1301f64a3e76c6e87d2"
+    },
+    "react-best-practices": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "e2499caca18f4d16edbb287462473f41ec2739ce1b0cd018f6f110dd36e95248"
+    },
+    "reading-rivals": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "reading-rivals/SKILL.md",
+      "computedHash": "1dc63f6bda0a27b92db76af8492cd82c9457ebdae949ce5ade11d904e491a17a"
+    },
+    "resolving-merge-conflicts": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
+      "computedHash": "436698459190d8e9f03dc32ada08401b56e352fb6a19bf71a2227fad8b80d98f"
+    },
+    "shadcn": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "9813c703e4a997168eb96f96fe12e5e256934b5032d553bce3ec434fc90760c5"
+    },
+    "sharp-edges": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/sharp-edges/skills/sharp-edges/SKILL.md",
+      "computedHash": "4f66a4f2edbb3e196a2a1a09393320d98eddbf2e6561754d4361a31b6286319f"
+    },
+    "spec-to-code-compliance": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/spec-to-code-compliance/skills/spec-to-code-compliance/SKILL.md",
+      "computedHash": "92b36a27ccaf00b20fa1682131b42b43c5df329f0c638180eeb0bdc13c5111ce"
+    },
+    "stress-testing-plans": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "stress-testing-plans/SKILL.md",
+      "computedHash": "1df7a7f1d3f9515908a4b99633783ac96b444f3521ac243a78a631c7708f9d1e"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "2efca3570897e9c22c0788f3a0372a649797c8bd973e4ba5fc1ed1a1c5ef39d5"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "128fac78002d916c8ca908245d398e634f540d8bcf20915b2b2359aeb18eba59"
+    },
+    "supply-chain-risk-auditor": {
+      "source": "trailofbits/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md",
+      "computedHash": "e6d82cea342371dfd421021d6ef97e6cf498c12fca0430d75c350f07d7405570"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "c1ed8cd854c64d4d226097255d3fa662dae4a758a1462fadd63cc10e413d88d7"
+    },
+    "tracking-beliefs": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "tracking-beliefs/SKILL.md",
+      "computedHash": "d212a135a916cb73f6181a91f4a0516b522f0bfba13afad2f1a914ed0cad0559"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "computedHash": "9681d8dfeb5e6cdff767f1bcaba5d7ac55732a9d6c02ee120f44229f8ec25e7e"
+    },
+    "valuing-information": {
+      "source": "romainsimon/skills-for-decision-making",
+      "sourceType": "github",
+      "skillPath": "valuing-information/SKILL.md",
+      "computedHash": "edff62f031bb7b4b7965c4efb0293b09cc9798b81175a10b4d47b10285d42452"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": "10eb4ec94577b79ae98c63ce3e7f35f8a6a06436a4011bff083b397de6960eeb"
+    },
+    "vercel-optimize": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-optimize/SKILL.md",
+      "computedHash": "fb87d3a135fef30748f772200a9f161f780b5a16830e8e70a3a126195cb16963"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "6b526d013e28073246a36f99b529bc43745d30832ecfa8217b359c34f260ca6b"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "d8e7d3afe37dcc8a97b99ffb5afdb4d0919ae0092ea8b68f44eb201f035e33ac"
+    },
+    "web-perf": {
+      "source": "cloudflare/skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-perf/SKILL.md",
+      "computedHash": "603b94fca24096cc1d3063c3e70eca8d0cc3eb63467bcf7ddc0a95d21133d128"
+    }
+  }
+}

@@ -1,9 +1,6 @@
 function keyed(items, label) {
   return new Map(
-    (items ?? []).map((item) => [
-      label === "benchmarkDecisions" ? `${item.kind}:${item.id}` : (item.id ?? item.semanticOwner),
-      item,
-    ]),
+    (items ?? []).map((item) => [item.id ?? item.semanticOwner, item]),
   );
 }
 
@@ -26,6 +23,9 @@ function classifyChanged(label, before, after) {
       breaking = true;
     } else if (properties.includes("canonicalName")) {
       classification = "vocabulary-rename";
+      breaking = true;
+    } else if (properties.includes("fpt")) {
+      classification = "domain-reference-change";
       breaking = true;
     } else if (properties.includes("definition")) {
       classification = "definition-change";
@@ -69,12 +69,7 @@ function classifyChanged(label, before, after) {
   } else if (label === "locators") {
     classification = "locator-change";
     breaking = properties.some((property) =>
-      ["concept", "fields", "scope", "scopeAuthority", "status", "routeFiles"].includes(property),
-    );
-  } else if (label === "benchmarkDecisions") {
-    classification = "benchmark-decision-change";
-    breaking = properties.some((property) =>
-      ["status", "concepts", "capabilities", "locators"].includes(property),
+      ["concept", "fields", "scope", "scopeAuthority", "status", "routeFiles", "fpt"].includes(property),
     );
   }
 
@@ -150,7 +145,6 @@ export function diffSemanticModels(before, after) {
     ...diffCollection(before.relationships, after.relationships, "relationships"),
     ...diffCollection(before.capabilities, after.capabilities, "capabilities"),
     ...diffCollection(before.locators, after.locators, "locators"),
-    ...diffCollection(before.benchmarkDecisions, after.benchmarkDecisions, "benchmarkDecisions"),
     ...diffCollection(before.invariants, after.invariants, "invariants"),
     ...diffCollection(before.policies, after.policies, "policies"),
     ...diffCollection(before.truthRegistry, after.truthRegistry, "truthRegistry"),

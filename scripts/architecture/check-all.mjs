@@ -3,7 +3,7 @@ import { checkDataAccess } from "./check-data-access.mjs";
 import { checkDataTopology } from "./check-data-topology.mjs";
 import { checkImplementationTopology } from "./check-implementation-topology.mjs";
 import { checkSemanticArchitecture } from "./check-semantic-architecture.mjs";
-import { checkSemanticBenchmark } from "./check-semantic-benchmark.mjs";
+import { checkFptDomainTruth } from "./check-fpt-domain-truth.mjs";
 
 const architecture = await checkArchitecture();
 for (const error of architecture.errors) console.error(error);
@@ -25,15 +25,15 @@ console.log(
     " violations.",
 );
 
-const benchmark = await checkSemanticBenchmark();
-for (const error of benchmark.errors) console.error(error);
+const fpt = await checkFptDomainTruth();
+for (const error of fpt.errors) console.error(error);
 console.log(
-  "Semantic benchmark: " +
-    benchmark.nodeCount +
-    " nodes, " +
-    benchmark.edgeCount +
-    " edges, " +
-    benchmark.errors.length +
+  "FPT domain truth: " +
+    fpt.fileCount +
+    " JSON files, " +
+    fpt.symbolCount +
+    " indexed symbols, " +
+    fpt.errors.length +
     " violations.",
 );
 
@@ -77,7 +77,7 @@ if (
   architecture.errors.length ||
   dataAccess.errors.length ||
   topology.errors.length ||
-  benchmark.errors.length ||
+  fpt.errors.length ||
   dataTopology.errors.length ||
   semantic.errors.length
 ) {
