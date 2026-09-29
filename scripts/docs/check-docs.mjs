@@ -21,6 +21,8 @@ async function collect(directory) {
   for (const entry of await readdir(path.join(root, directory), { withFileTypes: true })) {
     const relative = path.join(directory, entry.name);
     const normalized = relative.split(path.sep).join("/");
+    // External skill documents belong to their upstream package.
+    if (normalized === ".agents/skills") continue;
     if (entry.isFile() && normalized.startsWith("docs/change/history/")) {
       errors.push(
         `${normalized}: raw governance history must live in Git history, not the current tree`,

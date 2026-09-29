@@ -44,6 +44,24 @@ test("frontmatter regex is not a link; prose links and incomplete metadata still
     }
     await writeFile(fixture, "# Valid\n");
 
+    const externalSkill = path.join(root, ".agents/skills/vendor/nested");
+    await mkdir(externalSkill, { recursive: true });
+    await writeFile(path.join(externalSkill, "SKILL.md"), "---\ninvalid metadata\n");
+    await writeFile(path.join(externalSkill, "AGENTS.md"), "[upstream]({baseDir}/missing.md)\n");
+    const externalResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(externalResult.status, 0, externalResult.stderr);
+    for (const file of [".agents/AGENTS.md", ".agents/skills-local/README.md"]) {
+      const ownDocument = path.join(root, file);
+      await mkdir(path.dirname(ownDocument), { recursive: true });
+      await writeFile(ownDocument, "[broken](missing.md)\n");
+      const invalid = spawnSync(process.execPath, [script], { encoding: "utf8" });
+      assert.equal(invalid.status, 1);
+      assert.match(invalid.stderr, /missing local link missing.md/);
+      await writeFile(ownDocument, "# Repository document\n");
+      const repaired = spawnSync(process.execPath, [script], { encoding: "utf8" });
+      assert.equal(repaired.status, 0, repaired.stderr);
+    }
+
     const semanticName = path.join(root, "docs/bug-fix.md");
     await writeFile(semanticName, "# Bug fix\n");
     const semanticNameResult = spawnSync(process.execPath, [script], { encoding: "utf8" });

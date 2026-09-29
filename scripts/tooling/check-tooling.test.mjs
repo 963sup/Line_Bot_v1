@@ -739,20 +739,18 @@ test("runtime compatibility range must match the exact repository Node major and
   write(".node-version", "24.x\n");
   rejects(root, ".node-version");
 });
-test("skill frontmatter rejects wrong folder", (t) => {
+test("external skills are outside repository checks; adjacent governance remains checked", (t) => {
   const { root, write } = fixture(t);
-  write(".agents/skills/demo/SKILL.md", "---\nname: other\ndescription: example\n---\n");
-  rejects(root, "mismatch");
-});
-test("project skills declare repository ownership", (t) => {
-  const { root, write } = fixture(t);
-  write(".agents/skills/demo/SKILL.md", "---\nname: demo\ndescription: example\n---\n");
-  rejects(root, "Project skills must declare source: repository");
-
-  write(
-    ".agents/skills/demo/SKILL.md",
-    "---\nname: demo\ndescription: example\nsource: repository\n---\n",
-  );
+  write(".agents/skills/demo/SKILL.md", "\uFEFF---\r\nname: other\r\n---\r\n");
+  write(".agents/skills/demo/AGENTS.md", "# Future target\n");
+  write(".agents/skills/demo/package.json", "{invalid upstream example\r\n");
+  assert.deepEqual(validate(root), []);
+  write(".agents/AGENTS.md", "\uFEFF# Skills management\r\n");
+  rejects(root, ".agents/AGENTS.md: repository text must be UTF-8 without BOM");
+  write(".agents/AGENTS.md", "# Skills management\n");
+  write(".agents/skills-local/README.md", "\uFEFF# Repository content\n");
+  rejects(root, ".agents/skills-local/README.md: repository text must be UTF-8 without BOM");
+  write(".agents/skills-local/README.md", "# Repository content\n");
   assert.deepEqual(validate(root), []);
 });
 for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {

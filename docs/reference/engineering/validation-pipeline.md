@@ -1,5 +1,7 @@
 # Validation
 Repository validation 使用既有 scripts 作單一入口；不要把 typecheck、test、build、deployment、API probe 或手機驗收混成同一種證據。
+`tooling:check` 與 `docs:check` 只檢查專案自有內容。`.agents/skills/` 是由 `npx skills` 與 `skills-lock.json` 管理的第三方套件，其編碼、metadata、範例與內部文件連結不套用專案內容規則；`.agents/AGENTS.md` 等專案治理文件仍須通過檢查。此邊界不代表外部技能已通過安全審查或可正常執行。
+
 ## Main commands
 | Command | Responsibility |
 | --- | --- |
@@ -12,7 +14,7 @@ Repository validation 使用既有 scripts 作單一入口；不要把 typecheck
 | `typecheck` | TypeScript contract |
 | `test` | 適用 unit/integration/runtime tests |
 | `build` | production build / framework compile |
-| `tooling:check` | scripts、AGENTS hierarchy、skills、TOML、tooling metadata 與 GitHub workflow least-privilege / publication-order guard |
+| `tooling:check` | scripts、repository-owned AGENTS hierarchy、TOML、tooling metadata 與 GitHub workflow least-privilege / publication-order guard |
 | `tooling:rules` | 需要既有 `CODEX_CLI` 的 Codex execpolicy semantic check；不納入一般 offline CI，也不執行被描述的業務操作 |
 | `check` | 日常 fast feedback，含 lint、architecture 與 affected type/test |
 | `validate` | merge/release 前完整 tooling/docs/lint/architecture/deadcode/type/test/build |
