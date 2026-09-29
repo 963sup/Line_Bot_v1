@@ -32,9 +32,8 @@
       "project": ["src/**/*.{ts,tsx}", "test/**/*.ts"]
     },
     // Private workspace exports are checked against repository consumers.
-    // Production entries come from package exports; tests remain explicit analysis roots.
+    // Production entries come from package exports; tsx scripts discover test entries.
     "packages/*": {
-      "entry": ["test/**/*.test.ts"],
       "includeEntryExports": true,
       "project": ["{src,test}/**/*.{ts,tsx}"]
     }
