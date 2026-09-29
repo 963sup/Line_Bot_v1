@@ -4,7 +4,7 @@ Status: target design. This file does not describe current runtime completion an
 
 ## Purpose
 
-Use GitHub/FPT and GitHub Mobile only as interaction and information-architecture benchmarks. Preserve Line_Bot_v1 ownership, authorization, identity, replay/version, error, and evidence semantics. Do not introduce GitHub code-hosting semantics or infer a capability from visual similarity.
+Use the vendored GitHub FPT JSON as domain truth for GitHub GraphQL semantics, and use GitHub Mobile only as an interaction and information-architecture benchmark. Preserve Line_Bot_v1 ownership, authorization, identity, replay/version, error, and evidence semantics. Code/SCM capabilities may remain unimplemented, but visual similarity or implementation status never rewrites FPT truth.
 
 ## Target principles
 

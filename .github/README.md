@@ -5,7 +5,7 @@ YAML 只設定 event、runner、權限、checkout/setup、job 相依、resource 
 
 | Workflow | 觸發 | 工作 |
 | --- | --- | --- |
-| `workflows/validate.yml` | PR / Release reusable call | 呼叫 `pnpm check` 或 `pnpm validate --group`，最後呼叫 scripts 中的 aggregate gate。 |
+| `workflows/validate.yml` | non-draft PR 每個 current head（含 synchronize）/ Release reusable call | 平行執行完整 validation groups；architecture group 會驗 exact vendored FPT domain truth、semantic overlay、implementation/data topology，最後由 aggregate gate 要求全部成功。 |
 | `workflows/release.yml` | push 到 `main` | 同時啟動 validation 與 `pnpm github:release-plan`；依 operation 自己尚未發布的 source 執行。 |
 
 ```text
@@ -23,5 +23,7 @@ main push (exact SHA)
 失敗不推進該 operation 的 successful baseline；後續 main push 仍會帶上尚未成功發布的內容。每次寫入前重新確認 current main，同一 provider resource 不並行寫入，也不取消已開始的 mutation。
 
 Supabase 直接比較 `supabase/schemas/` 建出的 desired database 與遠端 application schema。同步不建立、replay、repair 或清除 migration history；驗收包含 second diff = 0、權限 readback 與 history fingerprint 不變。
+
+GitHub GraphQL domain truth 不由 workflow YAML 重新定義：`architecture/domain/fpt/*.json` 是 exact pinned local authority，`architecture/domain/fpt-source.json` 只保存 upstream revision/blob integrity；任何 drift 由 `pnpm architecture` 在 validation 的 architecture group 阻擋。
 
 命令、責任與本機操作見 [scripts](../scripts/README.md)；完整流程與證據邊界見 [Release](../docs/reference/operations/release.md)。

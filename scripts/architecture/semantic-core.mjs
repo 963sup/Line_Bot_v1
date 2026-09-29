@@ -38,6 +38,20 @@ function unique(values) {
   return new Set(values).size === values.length;
 }
 
+const DIRECT_FPT_REFERENCE_KEYS = new Set(["file", "symbol", "field"]);
+
+function validateDirectFptReference(reference, label, errors) {
+  if (!reference || typeof reference !== "object") return;
+  const unsupported = Object.keys(reference).filter((key) => !DIRECT_FPT_REFERENCE_KEYS.has(key));
+  if (unsupported.length) {
+    errors.push(
+      label +
+        ": FPT reference must contain only file, symbol and optional field; unsupported metadata " +
+        unsupported.join(", "),
+    );
+  }
+}
+
 function implementationStatus(capability) {
   return capability.implementation?.status ?? "missing";
 }
@@ -46,6 +60,14 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
   const errors = [];
   if (model?.version !== 2 || model?.role !== "product-domain-overlay") {
     errors.push("Semantic model: expected version 2 product-domain-overlay");
+  }
+  if (
+    model?.sources?.githubFptDomainTruth !== "architecture/domain/fpt/*.json" ||
+    model?.sources?.githubFptProvenance !== "architecture/domain/fpt-source.json"
+  ) {
+    errors.push(
+      "Semantic model: GitHub semantics must route directly to architecture/domain/fpt/*.json with fpt-source.json provenance",
+    );
   }
   if (
     fpt?.manifest?.version !== 1 ||
@@ -142,6 +164,9 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
           " for " +
           concept.kind,
       );
+    }
+    if (concept.fpt) {
+      validateDirectFptReference(concept.fpt, "Concept " + concept.id, errors);
     }
     if (concept.fpt && !resolveFptReference(fpt, concept.fpt)) {
       errors.push(
@@ -420,6 +445,9 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
       );
     }
     const source = locator.fpt;
+    if (source) {
+      validateDirectFptReference(source, "Locator " + locator.id, errors);
+    }
     if (source && !resolveFptReference(fpt, source)) {
       errors.push(
         "Locator " +

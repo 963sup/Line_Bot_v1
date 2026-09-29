@@ -21,7 +21,7 @@ Direct affiliation／Organization-derived affiliation 只表示 Enterprise user 
 
 ## Enterprise Team / provenance
 
-GitHub current benchmark 把 Enterprise Team 與 Organization Team 視為不同能力：Enterprise Team 可以被加入 Organizations，成員因此取得該 Organization participation；Enterprise Team 本身不提供 Organization Team 的 nested hierarchy 或 maintainer model。
+Vendored GitHub FPT domain truth 將 Enterprise Team 與 Organization Team 定義為不同語意：Enterprise Team 可以被加入 Organizations，成員因此取得該 Organization participation；Enterprise Team 本身不提供 Organization Team 的 nested hierarchy 或 maintainer model。Current runtime 是否實作這些能力是獨立狀態，不得反向改寫 FPT truth。
 
 本專案 current slice 收斂為：
 

@@ -20,4 +20,4 @@ Conflicting answers use the authority below; do not load more background first.
 | Deployment/provider/device reality | dated readback |
 | Historical acceptance/recovery evidence | `docs/change/evidence/` |
 
-Markdown explains meaning/constraints/decisions/operations; machine facts are not maintained twice.
+Markdown explains meaning/constraints/decisions/operations; machine facts are not maintained twice. GitHub-derived domain semantics apply directly from the vendored FPT truth whether or not a capability is implemented locally; `semantic-model.json` may add Line_Bot_v1 ownership/invariants/implementation state but cannot redefine or gate that FPT truth.

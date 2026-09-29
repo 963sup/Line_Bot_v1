@@ -9,9 +9,10 @@
   },
   "contract": {
     "mirror": "exact-json-content",
-    "semantics": "The vendored FPT JSON is the canonical GitHub-derived domain truth. This manifest records provenance and integrity only; it does not redefine domain semantics.",
+    "semantics": "The vendored FPT JSON is canonical local domain truth for GitHub GraphQL semantics. This manifest records provenance and integrity only; it does not redefine or summarize domain semantics.",
     "scope": "Line_Bot_v1 implements GitHub-like non-code semantics; code/SCM capabilities may remain unimplemented without editing the FPT truth.",
-    "update": "Replace the mirrored JSON from one reviewed github/docs revision, update these blob SHAs, then run the architecture validation."
+    "update": "Replace the mirrored JSON from one reviewed github/docs revision, update these blob SHAs, then run the architecture validation.",
+    "authority": "canonical-local-domain-truth"
   },
   "files": [
     {

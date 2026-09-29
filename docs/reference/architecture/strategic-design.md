@@ -1,10 +1,10 @@
 # Domain-Driven Design (DDD) Strategic Design
 
-本文件是此 Repository 的 **DDD 戰略設計（Strategic Design）權威對照手冊**。
+本文件是此 Repository 的 DDD 戰略設計解說與 routing reference，不建立第二份 machine authority。
 
 戰略設計的核心目標是：**在寫第一行 code 前，釐清業務邊界、劃分子域優先級、統一定義通用語言，並以 Context Map 規範跨界限上下文的整合模式**。
 
-本文件與機器真理 [`architecture/semantic-model.json`](../../../architecture/semantic-model.json) 100% 雙向對照。
+GitHub GraphQL semantics 的 authority 是 [vendored FPT JSON](../../../architecture/domain/fpt/)；Line_Bot_v1 owner / invariant / relationship / capability overlay 是 [`architecture/semantic-model.json`](../../../architecture/semantic-model.json)。若本文件與 machine truth 不一致，以 machine truth 為準並修正文檔。
 
 ---
 

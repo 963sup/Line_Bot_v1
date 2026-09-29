@@ -6,7 +6,8 @@
 
 <!-- 只填實際受影響的邊界；無影響填「無」。不要用 package/folder 名稱取代 Domain / Data 判斷。 -->
 
-- Domain / Bounded Context：
+- GitHub FPT domain truth：<!-- 無影響；或列 exact file/symbol/field。若更新 vendored FPT，列 pinned github/docs revision。 -->
+- Line_Bot_v1 Domain / Bounded Context overlay：
 - Module / public contract：
 - Data / schema / isolation：
 - External integration / provider：

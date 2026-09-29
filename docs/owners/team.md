@@ -8,7 +8,7 @@ Organization Team 是單一 Organization 內的任務協作責任範圍。每個
 
 TeamMembership 只回答某個 User 在 Organization Team 內是 `pending`、`active` 或 `removed`。它不保存 role，也不直接授權。TeamMaintainer 是 `organization-team` scope 的 RoleAssignment；一般成員沒有一個虛構的 `Member` role assignment。
 
-Current runtime 尚未支援 nested Organization Team。GitHub benchmark 中 Organization Team 可有 parent/child hierarchy，但這是獨立 target gap；不得用 EnterpriseTeam 或 generic Team alias 代替。EnterpriseTeam 是 Enterprise-level 的不同 current entity，由 Enterprise owner 維護其 membership 與 Organization assignment。
+Current runtime 尚未支援 nested Organization Team。Vendored GitHub FPT domain truth 中 Organization Team 存在 parent/child hierarchy semantics，但本產品仍可把 runtime capability 保持未實作；不得用 EnterpriseTeam 或 generic Team alias 代替，也不得因尚未實作而改寫 FPT。EnterpriseTeam 是 Enterprise-level 的不同 current entity，由 Enterprise owner 維護其 membership 與 Organization assignment。
 
 ## TeamMaintainer 責任
 

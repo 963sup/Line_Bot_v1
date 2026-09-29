@@ -19,9 +19,9 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 
 Current URL、route partition、app-shell 與 runtime contract 以 [Web runtime](../docs/reference/runtime/routes.md) 加實際 `apps/web/src/app` source 為準；本檔不複製 route inventory。
 
-## External benchmarks
+## GitHub domain truth and external benchmarks
 
-Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub-derived domain truth；[provenance](../architecture/domain/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/semantic-model.json) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。GitHub Mobile 仍只可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
+Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL semantics 的本地 domain truth，不是 benchmark；[provenance](../architecture/domain/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/semantic-model.json) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。只有 GitHub Mobile / visual interaction 可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
 
 ## Nested routing
 

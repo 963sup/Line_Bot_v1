@@ -26,6 +26,6 @@ source / package exports / supabase schemas / tests
 evidence
 ```
 
-FPT category 不等於 package 或 Bounded Context；但 FPT 中的 GitHub GraphQL resource、field、query、mutation、interface、enum、union 與 input object 不得由本地摘要重新定義。Code/SCM capability 可以依產品 scope 維持未實作，不能因此刪改 FPT truth。
+FPT category 不等於 package 或 Bounded Context；但 FPT 中的 GitHub GraphQL resource、field、query、mutation、interface、enum、union、input object 與 scalar 不得由本地摘要重新定義。Product overlay 的 FPT reference 只保存 exact `file` / `symbol` / optional `field`；category/adoption 都由 FPT 或產品狀態推導，不另存第二份。Code/SCM capability 可以依產品 scope 維持未實作，不能因此刪改 FPT truth。
 
 可讀 projection 使用 `pnpm semantic view docs`，change impact 使用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。不要手工保存第二套 FPT node、edge、adoption 或 category 清單。

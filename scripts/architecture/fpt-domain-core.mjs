@@ -80,6 +80,14 @@ export function validateFptDomainTruth(fpt) {
   if (manifest?.domainTruth !== "architecture/domain/fpt/*.json") {
     errors.push("FPT domain truth: manifest must name the canonical local JSON mirror");
   }
+  if (
+    manifest?.contract?.mirror !== "exact-json-content" ||
+    manifest?.contract?.authority !== "canonical-local-domain-truth"
+  ) {
+    errors.push(
+      "FPT domain truth: provenance contract must preserve exact-json-content canonical-local-domain-truth authority",
+    );
+  }
 
   const entries = Array.isArray(manifest?.files) ? manifest.files : [];
   const names = entries.map((entry) => entry?.name);

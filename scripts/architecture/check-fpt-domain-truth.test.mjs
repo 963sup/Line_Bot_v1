@@ -41,12 +41,22 @@ function fixture() {
       revision: "0123456789abcdef0123456789abcdef01234567",
       path: "src/graphql/data/fpt",
     },
+    contract: {
+      mirror: "exact-json-content",
+      authority: "canonical-local-domain-truth",
+    },
     files: names.map((name) => ({ name, gitBlobSha: blobSha(raw[name]) })),
   };
   return { manifest, raw, files, symbols: indexFptDocuments(files) };
 }
 test("accepts an exact pinned FPT JSON mirror", () =>
   assert.deepEqual(validateFptDomainTruth(fixture()), []));
+
+test("rejects provenance that demotes FPT from canonical local domain truth", () => {
+  const fpt = fixture();
+  fpt.manifest.contract.authority = "benchmark-only";
+  assert.match(validateFptDomainTruth(fpt).join("\n"), /canonical-local-domain-truth authority/);
+});
 test("rejects local FPT mutation instead of accepting a second domain truth", () => {
   const fpt = fixture();
   fpt.raw["schema-repos.json"] = JSON.stringify({ objects: [] });
