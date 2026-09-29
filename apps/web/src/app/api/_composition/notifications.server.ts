@@ -1,11 +1,11 @@
 import { createNotifications } from "@line_bot_v1/notifications/application/notifications";
-import { PostgresNotificationRepository } from "@line_bot_v1/notifications/postgres";
+import { createPostgresNotificationRepository } from "@line_bot_v1/notifications/composition/bootstrap/postgres-notification-repository";
 import { activeLineUser } from "./account.server";
 
-let repository: PostgresNotificationRepository | undefined;
+let repository: ReturnType<typeof createPostgresNotificationRepository> | undefined;
 
 export const notifications = createNotifications({
   activeUser: activeLineUser,
-  repository: () => (repository ??= new PostgresNotificationRepository()),
+  repository: () => (repository ??= createPostgresNotificationRepository()),
   now: () => Date.now(),
 });

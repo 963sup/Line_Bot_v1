@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
-    },
     "./application/notifications": {
       "types": "./dist/application/notifications.d.ts",
       "default": "./dist/application/notifications.js"
@@ -31,6 +27,10 @@
     "./contracts/repositories/notification-repository": {
       "types": "./dist/contracts/repositories/notification-repository.d.ts",
       "default": "./dist/contracts/repositories/notification-repository.js"
+    },
+    "./composition/bootstrap/postgres-notification-repository": {
+      "types": "./dist/composition/bootstrap/postgres-notification-repository.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-notification-repository.js"
     }
   },
   "files": [

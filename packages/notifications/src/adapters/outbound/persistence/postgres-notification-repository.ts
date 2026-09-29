@@ -2,10 +2,10 @@ import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres"
 import type {
   NotificationQuery,
   NotificationRepository,
-} from "../contracts/repositories/notification-repository.js";
-import type { Notification } from "../domain/entities/notification.js";
-import { NotificationError } from "../domain/error.js";
-import type { NotificationKind } from "../domain/value-objects/notification-kind.js";
+} from "../../../contracts/repositories/notification-repository.js";
+import type { Notification } from "../../../domain/entities/notification.js";
+import { NotificationError } from "../../../domain/error.js";
+import type { NotificationKind } from "../../../domain/value-objects/notification-kind.js";
 
 type NotificationRow = {
   id: string;
