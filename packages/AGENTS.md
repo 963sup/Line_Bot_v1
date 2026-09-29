@@ -30,7 +30,7 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 - 預留或基礎模組（如 `payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
 - Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
 - Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
-
+- .gitkeep 做為保留結構使用 不需要刻意清除
 ## Canonical DDD + Hexagonal structure
 
 每個 production source 必須有且只有一個 primary architecture role。若一個檔案無法唯一回答「誰負責、真相在哪、依賴方向是什麼」，先解 ambiguity，再新增功能。
