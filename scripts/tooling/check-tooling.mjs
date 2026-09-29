@@ -468,7 +468,9 @@ export function validate(root) {
       );
     const webBuild = turbo.tasks?.["@line_bot_v1/web#build"] ?? {};
     if (webBuild.cache !== false)
-      errors.push("turbo.json: Web build must execute Sentry upload side effects instead of replaying cached output");
+      errors.push(
+        "turbo.json: Web build must execute Sentry upload side effects instead of replaying cached output",
+      );
     const webBuildEnv = webBuild.env ?? [];
     const webBuildInputs = webBuild.inputs ?? [];
     const webBuildPassThroughEnv = webBuild.passThroughEnv ?? [];

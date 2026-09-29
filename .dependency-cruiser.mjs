@@ -102,7 +102,9 @@ export default {
       name: "context-domain-does-not-import-runtime",
       severity: "error",
       from: { path: "^packages/[^/]+/src/domain(?:\\.ts|/)" },
-      to: { dependencyTypes: ["core", "npm", "npm-dev", "npm-optional", "npm-peer", "npm-bundled"] },
+      to: {
+        dependencyTypes: ["core", "npm", "npm-dev", "npm-optional", "npm-peer", "npm-bundled"],
+      },
     },
     {
       name: "context-contracts-do-not-import-implementation",
@@ -138,7 +140,9 @@ export default {
       severity: "error",
       comment: "Domain, contracts, and application layers must never depend on concrete adapters",
       from: { path: "^packages/[^/]+/src/(domain|contracts|application)(?:\\.ts|/)" },
-      to: { path: "^packages/[^/]+/src/(adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)" },
+      to: {
+        path: "^packages/[^/]+/src/(adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)",
+      },
     },
     {
       name: "no-relative-imports-across-packages",

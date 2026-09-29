@@ -29,16 +29,36 @@ test("inner layers reject composition, persistence, Node, SDK and environment de
     write(root, "packages/demo/src/adapters/private.ts", importing("node:fs"));
     write(root, "packages/demo/src/composition/bootstrap.ts", importing("../adapters/private.js"));
     write(root, "packages/demo/src/postgres.ts", importing("./adapters/private.js"));
-    write(root, "node_modules/provider-sdk/package.json", JSON.stringify({ name: "provider-sdk", main: "index.js" }));
+    write(
+      root,
+      "node_modules/provider-sdk/package.json",
+      JSON.stringify({ name: "provider-sdk", main: "index.js" }),
+    );
     write(root, "node_modules/provider-sdk/index.js", "exports.client = {};");
-    assert.deepEqual((await checkArchitecture(root)).errors, [], "outer layers may own runtime dependencies");
+    assert.deepEqual(
+      (await checkArchitecture(root)).errors,
+      [],
+      "outer layers may own runtime dependencies",
+    );
     const scenarios = [
       ["domain", importing("node:fs"), "context-domain-does-not-import-runtime"],
       ["domain", importing("provider-sdk"), "context-domain-does-not-import-runtime"],
-      ["domain", importing("../composition/bootstrap.js"), "context-domain-does-not-import-outer-layers"],
+      [
+        "domain",
+        importing("../composition/bootstrap.js"),
+        "context-domain-does-not-import-outer-layers",
+      ],
       ["domain", importing("../postgres.js"), "context-domain-does-not-import-outer-layers"],
-      ["contracts", importing("../composition/bootstrap.js"), "context-contracts-do-not-import-implementation"],
-      ["application", importing("../composition/bootstrap.js"), "context-application-does-not-import-adapters"],
+      [
+        "contracts",
+        importing("../composition/bootstrap.js"),
+        "context-contracts-do-not-import-implementation",
+      ],
+      [
+        "application",
+        importing("../composition/bootstrap.js"),
+        "context-application-does-not-import-adapters",
+      ],
       ["application", importing("../postgres.js"), "context-application-does-not-import-adapters"],
       ...[
         "export const value = process.env.MODE;",
@@ -51,9 +71,16 @@ test("inner layers reject composition, persistence, Node, SDK and environment de
     for (const [layer, content, rule] of scenarios) {
       const file = `packages/demo/src/${layer}/probe.ts`;
       write(root, file, content);
-      assert.ok((await checkArchitecture(root)).errors.some((error) => error.startsWith(`${rule}:`)), content);
+      assert.ok(
+        (await checkArchitecture(root)).errors.some((error) => error.startsWith(`${rule}:`)),
+        content,
+      );
       write(root, file, "export const value = 1;");
-      assert.deepEqual((await checkArchitecture(root)).errors, [], "repair restores the legal boundary");
+      assert.deepEqual(
+        (await checkArchitecture(root)).errors,
+        [],
+        "repair restores the legal boundary",
+      );
     }
   } finally {
     assert.equal(resolve(root, ".."), resolve(artifacts));

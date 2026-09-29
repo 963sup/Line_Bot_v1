@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { ReceiptIntakeStore } from "../src/contracts/ports/receipt-intake.js";
 import {
   createReceiptIntake,
   type ReceiptIntakeCommand,
 } from "../src/application/receipt-intake.js";
+import type { ReceiptIntakeStore } from "../src/contracts/ports/receipt-intake.js";
 import type { Expense } from "../src/domain/aggregates/expense.js";
 
 test("receipt intake authenticates every operation before accessing storage", async () => {

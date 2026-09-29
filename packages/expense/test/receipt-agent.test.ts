@@ -19,7 +19,10 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { recognizeReceiptImage, validateReceiptReading } from "../src/adapters/outbound/recognition/gemini-receipt-recognizer.js";
+import {
+  recognizeReceiptImage,
+  validateReceiptReading,
+} from "../src/adapters/outbound/recognition/gemini-receipt-recognizer.js";
 
 const reading = {
   isReceipt: true,

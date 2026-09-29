@@ -365,7 +365,10 @@ test("Web builds cannot cache away Sentry uploads", (t) => {
   const { root, write } = fixture(t);
   const turbo = JSON.parse(readFileSync(resolve(root, "turbo.json"), "utf8"));
   const webBuild = turbo.tasks["@line_bot_v1/web#build"];
-  assert.equal(validate(root).some((error) => error.includes("Sentry upload side effects")), false);
+  assert.equal(
+    validate(root).some((error) => error.includes("Sentry upload side effects")),
+    false,
+  );
   for (const cache of [true, undefined]) {
     webBuild.cache = cache;
     write("turbo.json", JSON.stringify(turbo));
@@ -373,7 +376,10 @@ test("Web builds cannot cache away Sentry uploads", (t) => {
   }
   webBuild.cache = false;
   write("turbo.json", JSON.stringify(turbo));
-  assert.equal(validate(root).some((error) => error.includes("Sentry upload side effects")), false);
+  assert.equal(
+    validate(root).some((error) => error.includes("Sentry upload side effects")),
+    false,
+  );
 });
 
 test("remote Supabase migration history cannot become an executable repository path", (t) => {

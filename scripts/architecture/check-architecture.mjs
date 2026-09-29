@@ -43,21 +43,45 @@ function workspaceRoot(source) {
 /** Environment reads are global expressions, so they do not appear in the import graph. */
 function checkDomainEnvironment(root, source) {
   if (!/^packages\/[^/]+\/src\/domain(?:\.ts$|\/.*\.ts$)/.test(source)) return [];
-  const ast = ts.createSourceFile(source, readFileSync(resolve(root, source), "utf8"), ts.ScriptTarget.Latest, true);
+  const ast = ts.createSourceFile(
+    source,
+    readFileSync(resolve(root, source), "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
   function accessPath(node) {
     if (ts.isIdentifier(node)) return node.text;
     if (ts.isMetaProperty(node)) return node.getText(ast);
-    if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isNonNullExpression(node)) return accessPath(node.expression);
-    if (ts.isPropertyAccessExpression(node)) return `${accessPath(node.expression)}.${node.name.text}`;
-    if (ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression)) return `${accessPath(node.expression)}.${node.argumentExpression.text}`;
+    if (
+      ts.isParenthesizedExpression(node) ||
+      ts.isAsExpression(node) ||
+      ts.isNonNullExpression(node)
+    )
+      return accessPath(node.expression);
+    if (ts.isPropertyAccessExpression(node))
+      return `${accessPath(node.expression)}.${node.name.text}`;
+    if (ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression))
+      return `${accessPath(node.expression)}.${node.argumentExpression.text}`;
     return "";
   }
   let found = false;
   function visit(node) {
     const path = accessPath(node);
-    if (/^(?:(?:globalThis|global)\.)?process\.env(?:\.|$)/.test(path) || /^import\.meta\.env(?:\.|$)/.test(path)) found = true;
-    if (ts.isVariableDeclaration(node) && ts.isObjectBindingPattern(node.name) && node.initializer && /^(?:(?:globalThis|global)\.)?process$/.test(accessPath(node.initializer))) {
-      found ||= node.name.elements.some((element) => (element.propertyName ?? element.name).getText(ast).replaceAll(/['"]/g, "") === "env");
+    if (
+      /^(?:(?:globalThis|global)\.)?process\.env(?:\.|$)/.test(path) ||
+      /^import\.meta\.env(?:\.|$)/.test(path)
+    )
+      found = true;
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isObjectBindingPattern(node.name) &&
+      node.initializer &&
+      /^(?:(?:globalThis|global)\.)?process$/.test(accessPath(node.initializer))
+    ) {
+      found ||= node.name.elements.some(
+        (element) =>
+          (element.propertyName ?? element.name).getText(ast).replaceAll(/['"]/g, "") === "env",
+      );
     }
     ts.forEachChild(node, visit);
   }
