@@ -1,11 +1,11 @@
 import { randomInt } from "node:crypto";
 import { qualifyActiveUser } from "@line_bot_v1/account/postgres";
+import { createPostgresAssetDefinitionQuery } from "@line_bot_v1/asset/composition/bootstrap/postgres-asset-definition-query";
 import {
   type AssetDefinition,
   assetAmount,
 } from "@line_bot_v1/asset/domain/entities/asset-definition";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
-import { readAssetDefinition } from "@line_bot_v1/asset/postgres";
 import { readLedgerCreditFact, recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { DailyCheckInStore } from "../../../contracts/daily-check-in.js";
@@ -107,7 +107,7 @@ async function readClaim(
       }
     | undefined;
   if (!row) return null;
-  const definition = await readAssetDefinition(sql, COIN_ASSET_CODE);
+  const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
   if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
   return mapClaim(row, definition);
 }
@@ -125,7 +125,7 @@ async function hasLedgerFact(sql: Sql, memberId: string, day: string) {
 }
 
 async function ensureLedgerParity(sql: Sql, memberId: string, claim: DailyCheckInClaim) {
-  const definition = await readAssetDefinition(sql, COIN_ASSET_CODE);
+  const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
   if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
   const expectedUnits = toAssetUnits(claim.reward, definition.unitsPerWhole);
   const fact = await readLedgerCreditFact(
@@ -141,7 +141,7 @@ async function ensureLedgerParity(sql: Sql, memberId: string, claim: DailyCheckI
 }
 
 async function prizeUnits(sql: Sql, reward: number) {
-  const definition = await readAssetDefinition(sql, COIN_ASSET_CODE);
+  const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
   if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
   return { amountUnits: toAssetUnits(reward, definition.unitsPerWhole), definition };
 }
