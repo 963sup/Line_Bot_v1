@@ -23,6 +23,12 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 
 下列規則保留作為進入 package 前的 semantic routing / boundary reminder；它們不取代上述 machine-readable authority：
 
+- \packages\attendance = reference implementation
+- packages/* = = * capability 的唯一 implementation owner
+- packages/attendance = = Attendance capability 的唯一 implementation owner
+- apps/web = host / delivery
+- API = host / delivery
+- LINE = external adapter
 - Business meaning / owner / relationship 以 `architecture/semantic-model.json` 為 structured authority。
 - 現有 module path、module kind 與 workspace dependency allowlist 以 `architecture/implementation-topology.json` 為 machine authority。
 - 新 responsibility 只有在現有 owner 無法正確承接，而且具有真實 language / lifecycle / invariant / consumer 時，才考慮新的 owner 或 package。
@@ -31,6 +37,7 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 - Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
 - Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
 - .gitkeep 做為保留結構使用 不需要刻意清除
+
 ## Canonical DDD + Hexagonal structure
 
 每個 production source 必須有且只有一個 primary architecture role。若一個檔案無法唯一回答「誰負責、真相在哪、依賴方向是什麼」，先解 ambiguity，再新增功能。
