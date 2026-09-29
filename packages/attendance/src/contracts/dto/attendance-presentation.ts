@@ -1,4 +1,5 @@
-import type { AttendanceNotification } from "@line_bot_v1/attendance/contracts/clock";
+import { attendanceActionLabel } from "../../domain/value-objects/attendance-action.js";
+import type { AttendanceNotification } from "../clock.js";
 
 export function attendanceTime(value: number) {
   return new Intl.DateTimeFormat("zh-TW", {
@@ -11,23 +12,26 @@ export function attendanceTime(value: number) {
     hourCycle: "h23",
   }).format(value);
 }
+
 export function attendanceDuration(ms: number) {
   const minutes = Math.floor(ms / 60000);
   return `${Math.floor(minutes / 60)} 小時 ${minutes % 60} 分`;
 }
-/** v1 receipt text: keep stable for persisted retries. */
+
+/** Stable Attendance receipt projection used by retryable delivery adapters. */
 export function attendanceNotificationText({ action, record }: AttendanceNotification) {
+  const label = attendanceActionLabel(action);
   if (action === "clockIn")
-    return `上班已記錄\n${attendanceTime(record.startedAt)}\n結束工作時按「下班」，其餘時段自動計算。`;
-  const s = record.summary;
+    return `${label}已記錄\n${attendanceTime(record.startedAt)}\n結束工作時按「下班」，其餘時段自動計算。`;
+  const summary = record.summary;
   return [
-    "下班已記錄",
+    `${label}已記錄`,
     `上班：${attendanceTime(record.startedAt)}`,
     `下班：${attendanceTime(record.endedAt!)}`,
-    `記錄經過：${attendanceDuration(s.elapsedMs)}${s.crossesMidnight ? "（跨日）" : ""}`,
-    `08:00 前：${attendanceDuration(s.beforeMs)}`,
-    `08:00–17:00：${attendanceDuration(s.scheduledMs)}`,
-    `17:00 後：${attendanceDuration(s.afterMs)}`,
+    `記錄經過：${attendanceDuration(summary.elapsedMs)}${summary.crossesMidnight ? "（跨日）" : ""}`,
+    `08:00 前：${attendanceDuration(summary.beforeMs)}`,
+    `08:00–17:00：${attendanceDuration(summary.scheduledMs)}`,
+    `17:00 後：${attendanceDuration(summary.afterMs)}`,
     "未自動扣除休息；時段分類不等於法定加班或薪資工時。",
   ].join("\n");
 }

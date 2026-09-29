@@ -58,12 +58,12 @@ function panelSnapshot(state) {
     sites: [
       {
         id: "site",
+        repositoryId: "repo",
         name: "測試地點",
-        description: "",
+        address: "測試地址",
         latitude: 25,
         longitude: 121,
         radius: 100,
-        enabled: true,
         version: 1,
       },
     ],
@@ -139,7 +139,18 @@ async function fixture(options = {}) {
           version: state.version,
           sites: options.noSite
             ? []
-            : [{ id: "site", name: "測試地點", latitude: 25, longitude: 121, radius: 100 }],
+            : [
+                {
+                  id: "site",
+                  repositoryId: "repo",
+                  name: "測試地點",
+                  address: "測試地址",
+                  latitude: 25,
+                  longitude: 121,
+                  radius: 100,
+                  version: 1,
+                },
+              ],
         },
       });
     }

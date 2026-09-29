@@ -1,6 +1,11 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { attendanceClockReceipt } from "@line_bot_v1/attendance/contracts/dto/attendance-client";
 import { parseAttendanceInput } from "@line_bot_v1/attendance/contracts/input/attendance-command";
 import { AttendanceError } from "@line_bot_v1/attendance/domain/error";
+import {
+  type AttendanceAction,
+  attendanceActionFromOperation,
+} from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
 import { captureHandledServerError } from "../../../../shared/observability/server-error";
 import { infrastructureFailureCode } from "../../../../shared/server/failure-code";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../../../shared/server/http";
@@ -11,16 +16,14 @@ import { requestLineIdentity } from "../../_composition/request-identity.server"
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type AttendanceRoute = "root" | "clockIn" | "clockOut" | "unknown";
+type AttendanceRoute = "root" | AttendanceAction | "unknown";
 
 function attendanceRoute(request: Request): AttendanceRoute {
   const segments = new URL(request.url).pathname.split("/").filter(Boolean);
   if (segments[0] !== "api" || segments[1] !== "attendance") return "unknown";
   if (segments.length === 2) return "root";
   if (segments.length !== 3) return "unknown";
-  if (segments[2] === "clock-in") return "clockIn";
-  if (segments[2] === "clock-out") return "clockOut";
-  return "unknown";
+  return attendanceActionFromOperation(segments[2]) ?? "unknown";
 }
 
 function methodNotAllowed(allow: "GET" | "POST") {
@@ -40,10 +43,7 @@ function appOrigin() {
   return configured;
 }
 
-async function readAttendanceJsonBody(
-  request: Request,
-  maxBytes = 2048,
-): Promise<Record<string, unknown>> {
+async function readAttendanceJsonBody(request: Request, maxBytes = 2048): Promise<unknown> {
   if (request.headers.get("origin") !== appOrigin())
     throw new AttendanceError(403, "來源不符，請重新開啟會員頁。");
   if (!request.headers.get("content-type")?.startsWith("application/json"))
@@ -58,9 +58,7 @@ async function readAttendanceJsonBody(
   }
 
   try {
-    const data: unknown = JSON.parse(text);
-    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
-    return data as Record<string, unknown>;
+    return JSON.parse(text) as unknown;
   } catch {
     throw new AttendanceError(400, "資料格式不正確。");
   }
@@ -127,18 +125,10 @@ export async function POST(request: Request) {
   try {
     const input = parseAttendanceInput(await readAttendanceJsonBody(request));
     const subject = await requestLineIdentity(request);
-    const command = route === "clockIn" ? clockAttendance.clockIn : clockAttendance.clockOut;
-    const result = await command(subject, input);
+    const result = await clockAttendance.execute(subject, route, input);
     await syncMemberAttendance(subject).catch(() => {});
-    if (new URL(request.url).searchParams.get("view") === "clock") {
-      const record = result.attendance.active ?? result.attendance.records.at(-1);
-      return jsonResponse({
-        version: result.version,
-        at: record?.endedAt ?? record?.startedAt,
-        credited: result.credited,
-        replayed: result.replayed,
-      });
-    }
+    if (new URL(request.url).searchParams.get("view") === "clock")
+      return jsonResponse(attendanceClockReceipt(result));
     return jsonResponse(result);
   } catch (error) {
     return attendanceApiError(error);

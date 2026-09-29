@@ -3,7 +3,7 @@ import type { AttendanceInput } from "../contracts/input/attendance-command.js";
 import type { AttendanceAction } from "../domain/value-objects/attendance-action.js";
 
 export function createClockAttendance(deps: AttendanceDependencies) {
-  async function run(subject: string, action: AttendanceAction, input: AttendanceInput) {
+  async function execute(subject: string, action: AttendanceAction, input: AttendanceInput) {
     const member = await deps.activeUser(subject);
     return deps
       .store()
@@ -18,7 +18,6 @@ export function createClockAttendance(deps: AttendanceDependencies) {
       const member = await deps.activeUser(subject);
       return deps.store().snapshot(member.id, deps.now());
     },
-    clockIn: (subject: string, input: AttendanceInput) => run(subject, "clockIn", input),
-    clockOut: (subject: string, input: AttendanceInput) => run(subject, "clockOut", input),
+    execute,
   };
 }

@@ -16,6 +16,18 @@
       "types": "./dist/contracts/clock.d.ts",
       "default": "./dist/contracts/clock.js"
     },
+    "./contracts/dto/attendance-client": {
+      "types": "./dist/contracts/dto/attendance-client.d.ts",
+      "default": "./dist/contracts/dto/attendance-client.js"
+    },
+    "./contracts/dto/attendance-presentation": {
+      "types": "./dist/contracts/dto/attendance-presentation.d.ts",
+      "default": "./dist/contracts/dto/attendance-presentation.js"
+    },
+    "./contracts/input/attendance-command": {
+      "types": "./dist/contracts/input/attendance-command.d.ts",
+      "default": "./dist/contracts/input/attendance-command.js"
+    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
@@ -24,6 +36,10 @@
       "types": "./dist/domain/policies/attendance-view.d.ts",
       "default": "./dist/domain/policies/attendance-view.js"
     },
+    "./domain/value-objects/attendance-action": {
+      "types": "./dist/domain/value-objects/attendance-action.d.ts",
+      "default": "./dist/domain/value-objects/attendance-action.js"
+    },
     "./domain/value-objects/location": {
       "types": "./dist/domain/value-objects/location.d.ts",
       "default": "./dist/domain/value-objects/location.js"
@@ -31,10 +47,6 @@
     "./composition/bootstrap/postgres-attendance-store": {
       "types": "./dist/composition/bootstrap/postgres-attendance-store.d.ts",
       "default": "./dist/composition/bootstrap/postgres-attendance-store.js"
-    },
-    "./contracts/input/attendance-command": {
-      "types": "./dist/contracts/input/attendance-command.d.ts",
-      "default": "./dist/contracts/input/attendance-command.js"
     }
   },
   "files": [

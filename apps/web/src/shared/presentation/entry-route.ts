@@ -1,4 +1,5 @@
-import { isAttendanceOperation } from "./attendance-operation";
+import { isAttendanceOperation } from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
+
 export type EntryRoute =
   | "planned"
   | "team"
@@ -145,7 +146,7 @@ export function loginReturnUrl(href: string) {
   return entryReturnUrl(href).href;
 }
 
-/** The Web product owns the operation names shared by menus, messages and entry continuation. */
+/** The Web host owns entry routing; domain-specific operation values come from their owner contracts. */
 export function miniAppEntryUrl(
   miniAppUrl: string,
   intent: Exclude<EntryRoute, "pending" | "invalid">,

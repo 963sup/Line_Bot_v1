@@ -1,3 +1,8 @@
+import {
+  attendanceActionForWorking,
+  attendanceActionLabel,
+  attendanceOperation,
+} from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
 import type { RichMenuDefinition } from "@line_bot_v1/line-channel/messaging";
 import { miniAppEntryUrl } from "../../../shared/presentation/entry-route";
 
@@ -80,11 +85,12 @@ export function lineBotV1RichMenu(
       ],
     };
   }
+  const action = attendanceActionForWorking(page === "attendance-out");
   const entries: Array<{ bounds: Rectangle; label: string; uri: string }> = [
     {
       bounds: [36.5, 25, 28.5, 48],
-      label: page === "attendance-out" ? "下班" : "上班",
-      uri: `${link("attendance")}&operation=${page === "attendance-out" ? "clock-out" : "clock-in"}`,
+      label: attendanceActionLabel(action),
+      uri: `${link("attendance")}&operation=${attendanceOperation(action)}`,
     },
     { bounds: [19.5, 20, 17, 23.5], label: "儲存庫", uri: link("repositories") },
     { bounds: [42, 73.5, 17, 23], label: "個人", uri: link("profile") },

@@ -1,64 +1,38 @@
 "use client";
-import type { AttendancePoint } from "@line_bot_v1/attendance/contracts/clock";
-import type { AttendanceView } from "@line_bot_v1/attendance/domain/policies/attendance-view";
+import type { AttendanceSnapshot } from "@line_bot_v1/attendance/contracts/clock";
+import {
+  parseAttendanceResult,
+  parseAttendanceSnapshot,
+} from "@line_bot_v1/attendance/contracts/dto/attendance-client";
+import {
+  attendanceDuration,
+  attendanceTime,
+} from "@line_bot_v1/attendance/contracts/dto/attendance-presentation";
+import type { AttendanceInput } from "@line_bot_v1/attendance/contracts/input/attendance-command";
+import { attendanceActionForMenuState } from "@line_bot_v1/attendance/domain/policies/attendance-view";
+import {
+  type AttendanceOperation,
+  attendanceOperation,
+  attendanceOperationLabel,
+  isAttendanceOperation,
+} from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { authHeaders } from "../../shared/browser/supabase-session";
-import {
-  type AttendanceOperation,
-  isAttendanceOperation,
-} from "../../shared/presentation/attendance-operation";
 import { PageHeading } from "../../shared/ui/page-layout";
-import { attendanceDuration, attendanceTime } from "./format";
 import { locateAttendance } from "./location";
-import { attendanceOperationLabels } from "./operation-labels";
 
-type ResponseData = {
-  attendance: AttendanceView;
-  version: number;
-  sites: AttendancePoint[];
-  replayed?: boolean;
-};
 type Pending = {
   operation: AttendanceOperation;
-  body: {
-    requestId: string;
-    expectedVersion: number;
-    location: { latitude: number; longitude: number; accuracy: number };
-  };
+  body: AttendanceInput;
 };
-function valid(value: unknown): value is ResponseData {
-  if (!value || typeof value !== "object") return false;
-  const d = value as ResponseData;
-  return (
-    Number.isSafeInteger(d.version) &&
-    d.version >= 0 &&
-    !!d.attendance &&
-    Number.isFinite(d.attendance.computedAt) &&
-    ["ready", "working"].includes(d.attendance.menuState) &&
-    Array.isArray(d.attendance.records) &&
-    d.attendance.records.every(
-      (r) =>
-        typeof r.id === "string" &&
-        Number.isFinite(r.startedAt) &&
-        (r.endedAt === null || Number.isFinite(r.endedAt)) &&
-        !!r.summary &&
-        Number.isFinite(r.summary.elapsedMs) &&
-        Array.isArray(r.summary.days),
-    ) &&
-    (d.attendance.active === null ||
-      d.attendance.records.some((r) => r.id === d.attendance.active?.id && r.endedAt === null)) &&
-    Array.isArray(d.sites) &&
-    d.sites.every((s) => Number.isFinite(s.radius) && s.radius > 0) &&
-    (d.replayed === undefined || typeof d.replayed === "boolean")
-  );
-}
+
 const message = (e: unknown) => (e instanceof Error ? e.message : "出勤結果尚未確認，請稍後再試。");
 
 export default function AttendancePanel({ liffId }: { liffId: string }) {
-  const [data, setData] = useState<ResponseData | null>(null);
+  const [data, setData] = useState<AttendanceSnapshot | null>(null);
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -68,18 +42,21 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
   const [intent, setIntent] = useState<AttendanceOperation | null>(null);
   const generation = useRef(0);
   const locked = useRef(false);
+
   useEffect(
     () => () => {
       generation.current++;
     },
     [],
   );
+
   function clearPrivate() {
     setData(null);
     setToken("");
     setPending(null);
     setNotice("");
   }
+
   async function read(access: string) {
     const response = await fetch("/api/attendance", {
       headers: await authHeaders(access),
@@ -91,9 +68,9 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (response.status === 401 || response.status === 403) error.name = "AttendanceAccessError";
       throw error;
     }
-    if (!valid(value)) throw new Error("出勤回應不完整，請重新整理。");
-    return value;
+    return parseAttendanceSnapshot(value);
   }
+
   async function initialize() {
     if (locked.current) return;
     const ticket = ++generation.current;
@@ -115,6 +92,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (ticket === generation.current) setLoading(false);
     }
   }
+
   async function refresh() {
     if (!token || locked.current) return;
     const ticket = ++generation.current;
@@ -143,6 +121,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (ticket === generation.current) setLoading(false);
     }
   }
+
   useEffect(() => {
     const visible = () => {
       if (document.visibilityState === "visible" && !pending) void refresh();
@@ -150,6 +129,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     document.addEventListener("visibilitychange", visible);
     return () => document.removeEventListener("visibilitychange", visible);
   });
+
   async function send(request: Pending, ticket: number) {
     setPending(request);
     setNotice("正在記錄…");
@@ -166,15 +146,15 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (response.status === 409) setData(null);
       throw new Error(value.error || "結果尚未確認，請重送同一筆。");
     }
-    if (!valid(value)) throw new Error("回應不完整，請重送同一筆確認。");
-    if (typeof value.replayed !== "boolean") throw new Error("回應不完整，請重送同一筆確認。");
-    const latest = value.replayed ? await read(token) : value;
+    const result = parseAttendanceResult(value);
+    const latest = result.replayed ? await read(token) : result;
     if (ticket !== generation.current) return;
     setData(latest);
     setPending(null);
     setIntent(null);
-    setNotice(`${attendanceOperationLabels[request.operation]}已記錄。`);
+    setNotice(`${attendanceOperationLabel(request.operation)}已記錄。`);
   }
+
   async function operate(operation: AttendanceOperation, retry?: Pending) {
     if (locked.current || !token || (!retry && (!data?.sites.length || pending || loading))) return;
     locked.current = true;
@@ -183,14 +163,16 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     setNotice(retry ? "正在確認原操作…" : "正在取得本次定位…");
     const ticket = ++generation.current;
     try {
-      const request = retry ?? {
-        operation,
-        body: {
-          requestId: crypto.randomUUID(),
-          expectedVersion: data!.version,
-          location: await locateAttendance(),
-        },
-      };
+      const request =
+        retry ??
+        ({
+          operation,
+          body: {
+            requestId: crypto.randomUUID(),
+            expectedVersion: data!.version,
+            location: await locateAttendance(),
+          },
+        } satisfies Pending);
       if (ticket === generation.current) await send(request, ticket);
     } catch (e) {
       if (ticket === generation.current) {
@@ -203,9 +185,13 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (ticket === generation.current) setBusy(false);
     }
   }
+
   const active = data?.attendance.active;
-  const operation: AttendanceOperation = active ? "clock-out" : "clock-in";
-  const stale = !!intent && intent !== operation;
+  const operation = data
+    ? attendanceOperation(attendanceActionForMenuState(data.attendance.menuState))
+    : null;
+  const stale = !!intent && !!operation && intent !== operation;
+
   return (
     <>
       <MiniAppRuntime liffId={liffId} onReady={initialize} onWait={() => setLoading(false)} />
@@ -219,20 +205,20 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       {!token && !loading && <button onClick={() => void initialize()}>重新確認 LINE 登入</button>}
       {pending && (
         <section aria-label="待確認操作">
-          <p>「{attendanceOperationLabels[pending.operation]}」結果尚未確認，請重送同一筆。</p>
+          <p>「{attendanceOperationLabel(pending.operation)}」結果尚未確認，請重送同一筆。</p>
           <button disabled={busy} onClick={() => void operate(pending.operation, pending)}>
             重送同一筆
           </button>
         </section>
       )}
-      {data && (
+      {data && operation && (
         <>
           <section className="attendance-current" aria-labelledby="attendance-status">
             <h2 id="attendance-status">{active ? "上班中" : "尚未上班"}</h2>
             {active && <p>上班時間：{attendanceTime(active.startedAt)}</p>}
-            {stale && (
+            {stale && intent && (
               <p role="status">
-                你開啟的是「{attendanceOperationLabels[intent!]}
+                你開啟的是「{attendanceOperationLabel(intent)}
                 」，目前狀態已不同。請確認下方狀態，再選擇操作。
               </p>
             )}
@@ -249,7 +235,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
               disabled={busy || loading || !!pending || !data.sites.length || stale}
               onClick={() => void operate(operation)}
             >
-              {attendanceOperationLabels[operation]}
+              {attendanceOperationLabel(operation)}
             </button>
             {stale && (
               <button
