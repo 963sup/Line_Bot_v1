@@ -1,5 +1,18 @@
 const fence = String.fromCharCode(96).repeat(3);
 
+function conceptName(concept) {
+  return concept.fpt?.symbol ?? concept.canonicalName ?? concept.id;
+}
+
+function conceptMeaning(concept) {
+  if (concept.fpt) {
+    return `GitHub FPT: ${[concept.fpt.file, concept.fpt.symbol, concept.fpt.field]
+      .filter(Boolean)
+      .join("#")}`;
+  }
+  return concept.definition ?? "";
+}
+
 function contextMap(compiled) {
   const lines = ["flowchart LR"];
   for (const relationship of compiled.relationships.values()) {
@@ -40,7 +53,7 @@ function implementationMap(compiled) {
 function ownership(compiled) {
   return [...compiled.concepts.values()]
     .map((concept) => ({
-      concept: concept.canonicalName,
+      concept: conceptName(concept),
       id: concept.id,
       owner: concept.owner,
       kind: concept.kind,
@@ -93,7 +106,7 @@ function renderPackageSemanticDoc(compiled, moduleName) {
 
   const concepts = [...compiled.concepts.values()]
     .filter((concept) => concept.owner === ownerId)
-    .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName) || a.id.localeCompare(b.id));
+    .sort((a, b) => conceptName(a).localeCompare(conceptName(b)) || a.id.localeCompare(b.id));
   const capabilities = [...compiled.capabilities.values()]
     .filter((capability) => capability.owner === ownerId)
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -124,11 +137,11 @@ function renderPackageSemanticDoc(compiled, moduleName) {
     ? markdownTable(
         ["Term", "Concept ID", "Kind", "Lifecycle", "Definition"],
         concepts.map((concept) => [
-          markdownCell(concept.canonicalName),
+          markdownCell(conceptName(concept)),
           markdownCell(concept.id),
           markdownCell(concept.kind),
           markdownCell(concept.lifecycle),
-          markdownCell(concept.definition),
+          markdownCell(conceptMeaning(concept)),
         ]),
       )
     : "No canonical business concept is currently declared for this owner.";
@@ -222,14 +235,14 @@ function glossary(compiled) {
     markdownTable(
       ["Concept", "ID", "Owner", "Kind", "Lifecycle", "Definition"],
       [...compiled.concepts.values()]
-        .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName) || a.id.localeCompare(b.id))
+        .sort((a, b) => conceptName(a).localeCompare(conceptName(b)) || a.id.localeCompare(b.id))
         .map((concept) => [
-          concept.canonicalName,
+          conceptName(concept),
           concept.id,
           concept.owner,
           concept.kind,
           concept.lifecycle,
-          concept.definition.replaceAll("|", "\\|"),
+          conceptMeaning(concept).replaceAll("|", "\\|"),
         ]),
     ),
   ].join("\n");

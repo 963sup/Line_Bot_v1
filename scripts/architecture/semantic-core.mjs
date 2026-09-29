@@ -39,6 +39,15 @@ function unique(values) {
 }
 
 const DIRECT_FPT_REFERENCE_KEYS = new Set(["file", "symbol", "field"]);
+const FPT_BACKED_CONCEPT_KEYS = new Set([
+  "id",
+  "kind",
+  "owner",
+  "lifecycle",
+  "authorityMode",
+  "persistenceExpectation",
+  "fpt",
+]);
 
 function validateDirectFptReference(reference, label, errors) {
   if (!reference || typeof reference !== "object") return;
@@ -167,6 +176,24 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
     }
     if (concept.fpt) {
       validateDirectFptReference(concept.fpt, "Concept " + concept.id, errors);
+      const semanticShadowKeys = Object.keys(concept).filter(
+        (key) => !FPT_BACKED_CONCEPT_KEYS.has(key),
+      );
+      if (semanticShadowKeys.length) {
+        errors.push(
+          "Concept " +
+            concept.id +
+            ": FPT-backed concept semantic shadow fields are not allowed: " +
+            semanticShadowKeys.join(", "),
+        );
+      }
+    } else {
+      if (typeof concept.canonicalName !== "string" || !concept.canonicalName.trim()) {
+        errors.push("Concept " + concept.id + ": local concept canonicalName is required");
+      }
+      if (typeof concept.definition !== "string" || !concept.definition.trim()) {
+        errors.push("Concept " + concept.id + ": local concept definition is required");
+      }
     }
     if (concept.fpt && !resolveFptReference(fpt, concept.fpt)) {
       errors.push(

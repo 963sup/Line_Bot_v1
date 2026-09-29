@@ -3,7 +3,7 @@
 
 ## FPT 對照與 URL 邊界
 
-FPT 的 meta/common 型別只提供共通契約的參考；本層不是 `schema-other` 收納區。User、Repository、Team、permission 或 business state machine 都有 owner，不能因跨頁使用就搬到 shared。
+FPT 的 meta/common 型別仍是 GitHub GraphQL domain truth；shared layer 只能消費其共通 semantics，不能把它們重新定義成 shared authority。本層不是 `schema-other` 收納區。User、Repository、Team、permission 或 business state machine 都有 owner，不能因跨頁使用就搬到 shared。
 
 本層不擁有產品 URL；正式路徑依 [app](../app/AGENTS.md)。`entry-route`、`entry-destination`、`entry-navigation` 只解析白名單意圖與接續：新增／改名路由時，核對 LIFF state、login return、無效／重複參數、秘密清除與直接開啟，不能自動接受任意新路徑。
 

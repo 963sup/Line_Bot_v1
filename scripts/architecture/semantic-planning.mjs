@@ -13,7 +13,7 @@ function uniqueById(items) {
 
 function conceptSearchTerms(concept) {
   return uniqueById(
-    [concept.id, concept.canonicalName, ...(concept.aliases ?? [])]
+    [concept.id, concept.fpt?.symbol ?? concept.canonicalName, ...(concept.aliases ?? [])]
       .filter(Boolean)
       .map((value) => ({ id: normalize(value), value: normalize(value) })),
   ).map((entry) => entry.value);
@@ -42,7 +42,7 @@ export function resolveSemanticIntent(compiled, intent) {
   const owners = uniqueById(matchedOwners);
   const byCanonicalName = new Map();
   for (const concept of concepts) {
-    const key = normalize(concept.canonicalName);
+    const key = normalize(concept.fpt?.symbol ?? concept.canonicalName ?? concept.id);
     if (!byCanonicalName.has(key)) byCanonicalName.set(key, []);
     byCanonicalName.get(key).push(concept.id);
   }

@@ -129,7 +129,6 @@ function fixture() {
     concepts: [
       {
         id: "repository",
-        canonicalName: "Repository",
         kind: "authoritative",
         authorityMode: "authoritative",
         owner: "repository",
@@ -139,6 +138,7 @@ function fixture() {
       {
         id: "project",
         canonicalName: "Project",
+        definition: "Fixture-local planning concept.",
         kind: "authoritative",
         authorityMode: "authoritative",
         owner: "project",
@@ -422,6 +422,26 @@ test("rejects local category or adoption metadata beside a direct FPT reference"
     validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /unsupported metadata category, adoption/,
   );
+});
+
+test("rejects any local semantic shadow on an FPT-backed concept", () => {
+  const { model, fpt, topology } = fixture();
+  model.concepts[0].canonicalName = "Local Repository";
+  model.concepts[0].definition = "A second GitHub semantic definition.";
+  model.concepts[0].description = "Alternative shadow field.";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /semantic shadow fields are not allowed: canonicalName, definition, description/,
+  );
+});
+
+test("requires local-only concepts to own their local name and definition", () => {
+  const { model, fpt, topology } = fixture();
+  delete model.concepts[1].canonicalName;
+  delete model.concepts[1].definition;
+  const errors = validateSemanticArchitecture(model, fpt, topology).join("\n");
+  assert.match(errors, /local concept canonicalName is required/);
+  assert.match(errors, /local concept definition is required/);
 });
 
 test("rejects rerouting GitHub domain truth through another semantic source", () => {
