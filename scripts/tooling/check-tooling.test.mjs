@@ -468,7 +468,10 @@ test("validation workflow rejects split fast/full PR truth", (t) => {
   );
   rejects(root, "full Git history");
   rejects(root, "one parallel full validation owner");
-  rejects(root, "main and every non-draft pull-request head must run every canonical validation group in parallel");
+  rejects(
+    root,
+    "main and every non-draft pull-request head must run every canonical validation group in parallel",
+  );
 });
 
 test("validate workflow remains read-only, secret-free, and credential-free", (t) => {

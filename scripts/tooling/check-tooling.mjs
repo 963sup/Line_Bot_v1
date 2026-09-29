@@ -549,7 +549,10 @@ export function validate(root) {
         errors.push("CI: validation must check out the exact PR or main SHA");
     }
     const pullRequestTypes = workflow.on?.pull_request?.types;
-    if (!pullRequestTypes?.includes("synchronize") || !pullRequestTypes?.includes("ready_for_review"))
+    if (
+      !pullRequestTypes?.includes("synchronize") ||
+      !pullRequestTypes?.includes("ready_for_review")
+    )
       errors.push("CI: PR validation must cover every review-ready head update");
     const fullCondition =
       "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)";
