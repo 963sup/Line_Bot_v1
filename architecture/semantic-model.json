@@ -213,11 +213,9 @@
   "concepts": [
     {
       "id": "user",
-      "canonicalName": "User",
       "kind": "authoritative",
       "owner": "account",
       "lifecycle": "current",
-      "definition": "Provider-independent human product identity and lifecycle.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -227,11 +225,9 @@
     },
     {
       "id": "enterprise",
-      "canonicalName": "Enterprise",
       "kind": "authoritative",
       "owner": "enterprise",
       "lifecycle": "current",
-      "definition": "Cross-Organization governance scope.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -241,11 +237,9 @@
     },
     {
       "id": "enterprise-invitation",
-      "canonicalName": "Enterprise Invitation",
       "kind": "authoritative",
       "owner": "enterprise",
       "lifecycle": "current",
-      "definition": "Pending Enterprise participation intent; invitation is not active membership or affiliation.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -255,11 +249,9 @@
     },
     {
       "id": "organization",
-      "canonicalName": "Organization",
       "kind": "authoritative",
       "owner": "organization",
       "lifecycle": "current",
-      "definition": "Business/data scope and participation authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -269,11 +261,9 @@
     },
     {
       "id": "organization-invitation",
-      "canonicalName": "Organization Invitation",
       "kind": "authoritative",
       "owner": "organization",
       "lifecycle": "current",
-      "definition": "Pending Organization participation intent; invitation is not active membership or authorization.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -283,11 +273,9 @@
     },
     {
       "id": "team",
-      "canonicalName": "Team",
       "kind": "authoritative",
       "owner": "team",
       "lifecycle": "current",
-      "definition": "Organization-scoped collaboration responsibility.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -297,11 +285,9 @@
     },
     {
       "id": "repository",
-      "canonicalName": "Repository",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Independently owned work container with content, access, state, and lifecycle. Its optional address property is the clock point for current effective members.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -311,11 +297,9 @@
     },
     {
       "id": "repository-star-list",
-      "canonicalName": "Repository Star List",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "User-owned curated List whose membership references that User's current Repository stars; List membership never grants Repository access.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -335,11 +319,9 @@
     },
     {
       "id": "issue",
-      "canonicalName": "Issue",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Repository-scoped work item with its own lifecycle and responsibility chain.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -349,11 +331,9 @@
     },
     {
       "id": "discussion",
-      "canonicalName": "Discussion",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Repository-scoped conversation distinct from Issue and Notification.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -363,11 +343,9 @@
     },
     {
       "id": "discussion-comment",
-      "canonicalName": "Discussion Comment",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Repository-owned comment that belongs to a Discussion and preserves conversation history without driving Issue lifecycle.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -377,11 +355,9 @@
     },
     {
       "id": "repository-label",
-      "canonicalName": "Label",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Repository-owned classification metadata.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -391,11 +367,9 @@
     },
     {
       "id": "repository-milestone",
-      "canonicalName": "Milestone",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Repository-scoped goal or checkpoint for work.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -405,11 +379,9 @@
     },
     {
       "id": "project",
-      "canonicalName": "Project",
       "kind": "authoritative",
       "owner": "project",
       "lifecycle": "current",
-      "definition": "Account-owned (User or Organization) planning boundary that references work across one or more Repositories without taking work authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -419,11 +391,9 @@
     },
     {
       "id": "project-item",
-      "canonicalName": "Project Item",
       "kind": "reference",
       "owner": "project",
       "lifecycle": "current-data-only",
-      "definition": "Project-local planning reference to underlying work.",
       "authorityMode": "reference-only",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -611,11 +581,9 @@
     },
     {
       "id": "enterprise-team",
-      "canonicalName": "Enterprise Team",
       "kind": "authoritative",
       "owner": "enterprise",
       "lifecycle": "current",
-      "definition": "Enterprise-owned collaboration group distinct from Organization Team.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {

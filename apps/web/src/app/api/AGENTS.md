@@ -32,7 +32,7 @@
 | `/api/internal/attendance-maintenance` | Attendance 內部維護；不是一般使用者入口 |
 | `/api/health` | 技術健康狀態；不證明所有 business capability 可用 |
 
-FPT queries/mutations 是語意參考，不要求 GraphQL transport 或每個 entity 一個 API。URL 改名需明確 consumer migration；不能為目錄一致新增平行 writer、改歷史 payload 或繞過原 replay。
+FPT queries/mutations 是 GitHub GraphQL domain truth；它們定義 GitHub semantics，但不要求 Line_Bot_v1 使用 GraphQL transport 或每個 entity 一個 API。URL 改名需明確 consumer migration；不能為目錄一致新增平行 writer、改歷史 payload 或繞過原 replay。
 
 `_composition/*.server.ts` 組裝 concrete adapters，module 接收明確 dependency；不把 `_composition` 變成下層任意查找服務的 registry。新增 route 時同步所屬 module AGENTS、上層 URL 契約與對應 HTTP/browser tests。
 

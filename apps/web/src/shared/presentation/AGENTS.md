@@ -6,7 +6,7 @@ URL helpers 只擁有白名單 parsing/normalization：`entry-route`、`entry-de
 
 Shared presentation 不擁有任何 business capability vocabulary。Attendance operation validation 直接消費 `@line_bot_v1/attendance` public contract；不得在 shared 維護第二份 action / operation / label 清單。
 
-FPT Node/locator 只能參考 identity 與關係；本層不建立通用 entity model。UI query/view state 與 backend cursor/input 是不同契約，不將 provider state 或私人 payload 傳入 URL。
+FPT Node/locator identity 與關係 semantics 是 GitHub GraphQL domain truth；presentation 只能消費它們，不能在本層建立第二份 entity model。UI query/view state 與 backend cursor/input 是不同契約，不將 provider state 或私人 payload 傳入 URL。
 
 - Shared presentation helpers may model navigation, access state and operation display; they do not decide business permission or success.
 - Route/view state must distinguish loading, empty, forbidden, unavailable, not-implemented and unknown result.

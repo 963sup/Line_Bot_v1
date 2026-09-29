@@ -22,11 +22,11 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Enterprise | enterprise | authoritative | current | Cross-Organization governance scope. |
-| Enterprise Invitation | enterprise-invitation | authoritative | current | Pending Enterprise participation intent; invitation is not active membership or affiliation. |
-| Enterprise Team | enterprise-team | authoritative | current | Enterprise-owned collaboration group distinct from Organization Team. |
+| Enterprise | enterprise | authoritative | current | GitHub FPT: schema-enterprise-admin.json#Enterprise |
 | Enterprise Team Membership | enterprise-team-membership | authoritative | current | User participation state inside an Enterprise Team. |
 | Enterprise Team Organization Assignment | enterprise-team-organization-assignment | authoritative | current | Enterprise-owned assignment from an Enterprise Team to an attached Organization. |
+| EnterpriseMemberInvitation | enterprise-invitation | authoritative | current | GitHub FPT: schema-enterprise-admin.json#EnterpriseMemberInvitation |
+| EnterpriseTeam | enterprise-team | authoritative | current | GitHub FPT: schema-enterprise-admin.json#EnterpriseTeam |
 
 ## Capabilities
 

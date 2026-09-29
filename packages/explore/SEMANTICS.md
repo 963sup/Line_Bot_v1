@@ -24,14 +24,14 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Discussion | discussion | authoritative | current | Repository-scoped conversation distinct from Issue and Notification. |
-| Discussion Comment | discussion-comment | authoritative | current | Repository-owned comment that belongs to a Discussion and preserves conversation history without driving Issue lifecycle. |
-| Issue | issue | authoritative | current | Repository-scoped work item with its own lifecycle and responsibility chain. |
-| Label | repository-label | authoritative | current | Repository-owned classification metadata. |
-| Milestone | repository-milestone | authoritative | current | Repository-scoped goal or checkpoint for work. |
-| Repository | repository | authoritative | current | Independently owned work container with content, access, state, and lifecycle. Its optional address property is the clock point for current effective members. |
-| Repository Star List | repository-star-list | authoritative | current | User-owned curated List whose membership references that User's current Repository stars; List membership never grants Repository access. |
+| Discussion | discussion | authoritative | current | GitHub FPT: schema-discussions.json#Discussion |
+| DiscussionComment | discussion-comment | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionComment |
+| Issue | issue | authoritative | current | GitHub FPT: schema-issues.json#Issue |
+| Label | repository-label | authoritative | current | GitHub FPT: schema-issues.json#Label |
+| Milestone | repository-milestone | authoritative | current | GitHub FPT: schema-issues.json#Milestone |
+| Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
 | Repository Star List Item | repository-star-list-item | authoritative | current | Repository-owned List membership that references one Repository through the List owner's current Star relationship. |
+| UserList | repository-star-list | authoritative | current | GitHub FPT: schema-users.json#UserList |
 
 ## Capabilities
 

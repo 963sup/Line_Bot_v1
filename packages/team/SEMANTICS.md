@@ -24,7 +24,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Team | team | authoritative | current | Organization-scoped collaboration responsibility. |
+| Team | team | authoritative | current | GitHub FPT: schema-teams.json#Team |
 
 ## Capabilities
 

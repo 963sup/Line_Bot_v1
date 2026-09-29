@@ -22,8 +22,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Organization | organization | authoritative | current | Business/data scope and participation authority. |
-| Organization Invitation | organization-invitation | authoritative | current | Pending Organization participation intent; invitation is not active membership or authorization. |
+| Organization | organization | authoritative | current | GitHub FPT: schema-orgs.json#Organization |
+| OrganizationInvitation | organization-invitation | authoritative | current | GitHub FPT: schema-orgs.json#OrganizationInvitation |
 
 ## Capabilities
 
