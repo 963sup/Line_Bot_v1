@@ -1,5 +1,9 @@
 import type { AttendanceSession } from "../aggregates/attendance-session.js";
 import { AttendanceError } from "../error.js";
+import {
+  type AttendanceAction,
+  attendanceActionForWorking,
+} from "../value-objects/attendance-action.js";
 import type { AttendanceSummary } from "../value-objects/attendance-summary.js";
 import { requireAttendanceTime } from "../value-objects/attendance-time.js";
 import { summarizeAttendance } from "./time-classification.js";
@@ -12,6 +16,10 @@ export type AttendanceView = {
   menuState: MenuState;
   computedAt: number;
 };
+
+export function attendanceActionForMenuState(state: MenuState): AttendanceAction {
+  return attendanceActionForWorking(state === "working");
+}
 
 export function attendanceView(records: AttendanceSession[], now: number): AttendanceView {
   requireAttendanceTime(now);

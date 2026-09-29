@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  attendanceActionForWorking,
+  attendanceOperation,
+} from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
+import {
   isMenuPage,
   lineBotV1RichMenu,
   MENU_PAGES,
   menuAlias,
 } from "../src/modules/assistant/rich-menu/definition";
-import { attendanceOperationLabels } from "../src/modules/attendance/operation-labels";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { entryRoute, loginReturnUrl } from "../src/shared/presentation/entry-route";
 
@@ -110,6 +113,7 @@ test("six menus expose native switches, Back, and only configured form actions",
     }
   }
 });
+
 test("only explicit start/end survive LIFF and login; removed overtime and duplicate intents are rejected", () => {
   const found = new Set<string>();
   for (const page of ["attendance-in", "attendance-out"] as const) {
@@ -129,7 +133,10 @@ test("only explicit start/end survive LIFF and login; removed overtime and dupli
       assert.ok(!loginReturnUrl(url.href + "&access_token=secret#secret").includes("secret"));
     }
   }
-  assert.deepEqual([...found].sort(), Object.keys(attendanceOperationLabels).sort());
+  const expected = [false, true]
+    .map((working) => attendanceOperation(attendanceActionForWorking(working)))
+    .sort();
+  assert.deepEqual([...found].sort(), expected);
   for (const query of [
     "attendance=1&operation=early-overtime/start",
     "attendance=1&operation=delete",
