@@ -1,6 +1,6 @@
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application";
+import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { jsonResponse } from "../../shared/server/http";
 import { apiError, readJsonBody } from "./http.server";

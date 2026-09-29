@@ -3,7 +3,7 @@ import { mock } from "node:test";
 import { PostgresUserStore } from "@line_bot_v1/account/postgres";
 import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
-import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
+import { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
 import { PostgresExpenseStore } from "@line_bot_v1/expense/postgres";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
@@ -16,7 +16,7 @@ type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
 let fixture: Awaited<ReturnType<typeof postgresFixture>>;
 const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;
-  dailyCheckInStore?: PostgresDailyCheckInStore;
+  dailyCheckInStore?: ReturnType<typeof createPostgresDailyCheckInStore>;
   walletStore?: PostgresWalletStore;
   attendanceStore?: AttendancePersistence;
   expenseStore?: PostgresExpenseStore;
@@ -37,7 +37,7 @@ export async function mockSupabase() {
   state.userStore = new PostgresUserStore(fixture.db, {
     protectPermissionAdministrator,
   });
-  state.dailyCheckInStore = new PostgresDailyCheckInStore(fixture.db);
+  state.dailyCheckInStore = createPostgresDailyCheckInStore(fixture.db);
   state.walletStore = new PostgresWalletStore(fixture.db);
   state.attendanceStore = createPostgresAttendanceStore(fixture.db);
   state.expenseStore = new PostgresExpenseStore(fixture.db);

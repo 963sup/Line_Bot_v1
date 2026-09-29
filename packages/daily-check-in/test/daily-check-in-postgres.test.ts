@@ -5,10 +5,10 @@ import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-c
 import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { createDailyCheckIn } from "../src/application.js";
+import { PostgresDailyCheckInStore } from "../src/adapters/outbound/persistence/postgres-daily-check-in-store.js";
+import { createDailyCheckIn } from "../src/application/daily-check-in.js";
 import { DailyCheckInError } from "../src/domain/error.js";
 import { DAILY_CHECK_IN_LEDGER_SOURCE } from "../src/domain/value-objects/ledger-source.js";
-import { PostgresDailyCheckInStore } from "../src/postgres.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
@@ -148,7 +148,7 @@ test("DailyCheckIn qualification is rechecked in the transaction and claims are 
       );
       return { id: memberId };
     },
-    repository: () => store,
+    store: () => store,
     now: () => Date.parse("2026-09-24T15:59:59Z"),
   });
   await assert.rejects(

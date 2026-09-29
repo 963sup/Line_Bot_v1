@@ -1931,17 +1931,18 @@
         "status": "implemented",
         "scope": "current DailyCheckIn application surface",
         "sourcePaths": [
-          "packages/daily-check-in/src/application.ts",
-          "packages/daily-check-in/src/application/ports/daily-check-in-repository.ts",
+          "packages/daily-check-in/src/application/daily-check-in.ts",
+          "packages/daily-check-in/src/contracts/daily-check-in.ts",
           "packages/daily-check-in/src/domain/policies/reward-policy.ts",
           "packages/daily-check-in/src/domain/value-objects/daily-check-in-claim.ts",
           "packages/daily-check-in/src/domain/value-objects/daily-check-in-day.ts",
           "packages/daily-check-in/src/domain/value-objects/ledger-source.ts",
-          "packages/daily-check-in/src/postgres.ts"
+          "packages/daily-check-in/src/adapters/outbound/persistence/postgres-daily-check-in-store.ts",
+          "packages/daily-check-in/src/composition/bootstrap/postgres-daily-check-in-store.ts"
         ],
         "publicExports": [
-          "./application",
-          "./application/ports/daily-check-in-repository",
+          "./application/daily-check-in",
+          "./composition/bootstrap/postgres-daily-check-in-store",
           "./domain/error"
         ],
         "entrypoints": ["apps/web/src/app/(mobile)/home/page.tsx"],
@@ -1976,7 +1977,7 @@
         ],
         "publicExports": ["./postgres", "./domain/value-objects/ledger-credit"],
         "entrypoints": [
-          "packages/daily-check-in/src/postgres.ts",
+          "packages/daily-check-in/src/adapters/outbound/persistence/postgres-daily-check-in-store.ts",
           "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
         ],
         "testPaths": [

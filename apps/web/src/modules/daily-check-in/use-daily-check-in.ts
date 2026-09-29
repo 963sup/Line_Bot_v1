@@ -1,7 +1,7 @@
 "use client";
 
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
-import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application";
+import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import { authHeaders } from "../../shared/browser/supabase-session";

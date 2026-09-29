@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { createDailyCheckIn, type DailyCheckInDependencies } from "../src/application.js";
+import { createDailyCheckIn } from "../src/application/daily-check-in.js";
+import type { DailyCheckInDependencies } from "../src/contracts/daily-check-in.js";
 import { DailyCheckInError } from "../src/domain/error.js";
 import { DAILY_CHECK_IN_POLICY } from "../src/domain/policies/reward-policy.js";
 import type { DailyCheckInClaim } from "../src/domain/value-objects/daily-check-in-claim.js";
@@ -19,7 +20,7 @@ const claim: DailyCheckInClaim = {
 function dependencies(overrides: Partial<DailyCheckInDependencies> = {}): DailyCheckInDependencies {
   return {
     activeUser: async () => ({ id: userId }),
-    repository: () => ({
+    store: () => ({
       claim: async () => ({ claim, credited: 1, replayed: false }),
       read: async () => claim,
     }),
@@ -37,7 +38,7 @@ test("DailyCheckIn command returns only its owner result and uses one trusted ti
         calls.push(["activeUser", ...args]);
         return { id: userId };
       },
-      repository: () => ({
+      store: () => ({
         claim: async (...args) => {
           calls.push(["claim", ...args]);
           return { claim, credited: 1, replayed: false };
@@ -66,19 +67,19 @@ test("DailyCheckIn command returns only its owner result and uses one trusted ti
 
 test("DailyCheckIn rejects failed active-user qualification before day validation or mutation", async () => {
   for (const message of ["missing", "paused", "suspended"]) {
-    let repositoryCalls = 0;
+    let storeCalls = 0;
     const app = createDailyCheckIn(
       dependencies({
         activeUser: async () => {
           throw new UserError(403, message);
         },
-        repository: () => ({
+        store: () => ({
           claim: async () => {
-            repositoryCalls++;
+            storeCalls++;
             throw new Error("unexpected claim");
           },
           read: async () => {
-            repositoryCalls++;
+            storeCalls++;
             return null;
           },
         }),
@@ -89,7 +90,7 @@ test("DailyCheckIn rejects failed active-user qualification before day validatio
       app.checkIn("subject", "not-a-day"),
       (error) => error instanceof UserError && error.status === 403,
     );
-    assert.equal(repositoryCalls, 0);
+    assert.equal(storeCalls, 0);
   }
 });
 
@@ -97,7 +98,7 @@ test("DailyCheckIn rejects an invalid expected day before claim", async () => {
   let claims = 0;
   const app = createDailyCheckIn(
     dependencies({
-      repository: () => ({
+      store: () => ({
         claim: async () => {
           claims++;
           throw new Error("unexpected claim");
@@ -115,7 +116,7 @@ test("DailyCheckIn claim failure is not hidden by a presentation projection", as
   const failure = new Error("ledger unavailable");
   const app = createDailyCheckIn(
     dependencies({
-      repository: () => ({
+      store: () => ({
         claim: async () => {
           throw failure;
         },
@@ -133,7 +134,7 @@ test("DailyCheckIn current view owns day, claim and policy without Account or Wa
   const reads: unknown[][] = [];
   const app = createDailyCheckIn(
     dependencies({
-      repository: () => ({
+      store: () => ({
         claim: async () => ({ claim, credited: 1, replayed: false }),
         read: async (...args) => {
           reads.push(args);
@@ -157,7 +158,7 @@ test("DailyCheckIn current view validates trusted time before persistence reads"
   const app = createDailyCheckIn(
     dependencies({
       now: () => Number.NaN,
-      repository: () => ({
+      store: () => ({
         claim: async () => ({ claim, credited: 1, replayed: false }),
         read: async () => {
           reads++;
@@ -179,7 +180,7 @@ test("DailyCheckIn recovery validates subject before reading a claim", async () 
         reads.push(["activeUser", ...args]);
         return { id: userId };
       },
-      repository: () => ({
+      store: () => ({
         claim: async () => ({ claim, credited: 1, replayed: false }),
         read: async (...args) => {
           reads.push(["read", ...args]);
