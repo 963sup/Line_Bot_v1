@@ -306,13 +306,13 @@ test("architecture checks source exports, types, ports, browser reachability and
       "packages/config/package.json",
       JSON.stringify({ name: "@line_bot_v1/config", private: true }),
     );
-    await assert.rejects(checkArchitecture(root), /source workspace requires tsconfig.json/);
-    rmSync(resolve(root, "packages/config"), { recursive: true });
-    write(
-      root,
-      "packages/config/package.json",
-      JSON.stringify({ name: "@line_bot_v1/config", private: true }),
+    assert.deepEqual(
+      (await checkArchitecture(root)).errors,
+      [],
+      "metadata-only workspace does not require source tooling",
     );
+    write(root, "packages/config/src/index.ts", "export const value = 1;");
+    await assert.rejects(checkArchitecture(root), /source workspace requires tsconfig.json/);
     write(
       root,
       "packages/config/tsconfig.json",

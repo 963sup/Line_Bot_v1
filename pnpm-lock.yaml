@@ -664,11 +664,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/workforce:
-    devDependencies:
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
+  packages/workforce: {}
 
 packages:
 
