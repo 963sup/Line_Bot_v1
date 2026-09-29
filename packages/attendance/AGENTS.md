@@ -23,3 +23,5 @@ Attendance-specific recovery semantics
 
 全部
 → packages/attendance
+
+Web 不應再維護另一份 Attendance knowledge。
