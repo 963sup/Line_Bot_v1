@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresAttendanceStore } from "../src/adapters/postgres/attendance.js";
+import { PostgresAttendanceStore } from "../src/adapters/outbound/persistence/postgres-attendance-store.js";
 
 const now = Date.parse("2026-09-28T08:00:00+08:00");
 const address = { address: "Test address", latitude: 25, longitude: 121, radius: 100 };

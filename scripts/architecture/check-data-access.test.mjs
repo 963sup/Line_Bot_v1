@@ -30,7 +30,7 @@ test("owner adapter may read and mutate its authoritative relation", () => {
   const f = fixture();
   assert.deepEqual(
     validateRuntimeDataAccess(f.semanticModel, f.implementationTopology, f.dataTopology, {
-      "packages/attendance/src/adapters/postgres/attendance.ts":
+      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts":
         "SELECT * FROM attendance_sessions; UPDATE attendance_sessions SET ended_at=$1 WHERE id=$2",
     }),
     [],
@@ -44,7 +44,7 @@ test("foreign authoritative mutation is rejected", () => {
     f.implementationTopology,
     f.dataTopology,
     {
-      "packages/attendance/src/adapters/postgres/attendance.ts":
+      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts":
         "UPDATE users SET status='active' WHERE id=$1",
     },
   );
@@ -58,7 +58,8 @@ test("foreign authoritative read is rejected", () => {
     f.implementationTopology,
     f.dataTopology,
     {
-      "packages/attendance/src/adapters/postgres/attendance.ts": "SELECT * FROM users",
+      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts":
+        "SELECT * FROM users",
     },
   );
   assert.match(errors.join("\n"), /reads users owned by account/);
@@ -68,7 +69,7 @@ test("declared derived projection read is allowed", () => {
   const f = fixture();
   assert.deepEqual(
     validateRuntimeDataAccess(f.semanticModel, f.implementationTopology, f.dataTopology, {
-      "packages/attendance/src/adapters/postgres/attendance.ts":
+      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts":
         "SELECT * FROM attendance_identity_bindings",
     }),
     [],
@@ -83,7 +84,7 @@ test("undeclared derived projection consumer is rejected", () => {
     f.implementationTopology,
     f.dataTopology,
     {
-      "packages/attendance/src/adapters/postgres/attendance.ts":
+      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts":
         "SELECT * FROM attendance_identity_bindings",
     },
   );

@@ -12,16 +12,19 @@ import type {
   AttendanceSnapshot,
   AttendanceStore,
   NotificationOutcome,
-} from "../../contracts/clock.js";
-import type { AttendanceInput } from "../../contracts/input/attendance-command.js";
-import type { AttendanceSession } from "../../domain/aggregates/attendance-session.js";
-import { AttendanceError } from "../../domain/error.js";
-import { attendanceView } from "../../domain/policies/attendance-view.js";
-import { attendanceDistance, distanceMeters } from "../../domain/policies/location-eligibility.js";
-import { ATTENDANCE_COIN_REWARD } from "../../domain/policies/reward.js";
-import { planAttendance } from "../../domain/policies/session-transition.js";
-import type { AttendanceAction } from "../../domain/value-objects/attendance-action.js";
-import { parseLocation } from "../../domain/value-objects/location.js";
+} from "../../../contracts/clock.js";
+import type { AttendanceInput } from "../../../contracts/input/attendance-command.js";
+import type { AttendanceSession } from "../../../domain/aggregates/attendance-session.js";
+import { AttendanceError } from "../../../domain/error.js";
+import { attendanceView } from "../../../domain/policies/attendance-view.js";
+import {
+  attendanceDistance,
+  distanceMeters,
+} from "../../../domain/policies/location-eligibility.js";
+import { ATTENDANCE_COIN_REWARD } from "../../../domain/policies/reward.js";
+import { planAttendance } from "../../../domain/policies/session-transition.js";
+import type { AttendanceAction } from "../../../domain/value-objects/attendance-action.js";
+import { parseLocation } from "../../../domain/value-objects/location.js";
 
 const session = (r: Record<string, any>): AttendanceSession => ({
   id: r.id,

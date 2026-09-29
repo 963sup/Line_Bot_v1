@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mock, test } from "node:test";
-import { PostgresAttendanceStore } from "@line_bot_v1/attendance/postgres";
+import type { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { showAttendanceMenu } from "../src/app/api/_composition/attendance.server";
 import { GET, POST } from "../src/app/api/internal/attendance-maintenance/route";
 import { closeFixture, mockSupabase } from "./member-fixture";
@@ -62,6 +62,10 @@ test("attendance worker redacts provider failures and preserves queued-work reco
 
 test("private menu navigation refreshes authoritative state, delivers only menus, and reads back each target", async () => {
   await mockSupabase();
+  type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
+  const store = (globalThis as typeof globalThis & { attendanceStore?: AttendancePersistence })
+    .attendanceStore;
+  assert.ok(store);
   const previous = {
     fetch: globalThis.fetch,
     token: process.env.LINE_CHANNEL_ACCESS_TOKEN,
@@ -95,26 +99,26 @@ test("private menu navigation refreshes authoritative state, delivers only menus
   let claims = 0;
   const completed: boolean[] = [];
   let failRefresh = false;
-  mock.method(PostgresAttendanceStore.prototype, "refreshMenu", async (provider, actor) => {
+  mock.method(store, "refreshMenu", async (provider, actor) => {
     assert.equal(provider, "line:primary");
     assert.equal(actor, subject);
     refreshes++;
     if (failRefresh) throw Error("authoritative refresh failed");
   });
-  mock.method(PostgresAttendanceStore.prototype, "snapshot", async () => {
+  mock.method(store, "snapshot", async () => {
     assert.fail("menu navigation must not read an attendance snapshot");
   });
-  mock.method(PostgresAttendanceStore.prototype, "claimMenu", async (_now, provider, actor) => {
+  mock.method(store, "claimMenu", async (_now, provider, actor) => {
     assert.equal(provider, "line:primary");
     assert.equal(actor, subject);
     const state = states[claims++];
     return { uid: "member", subject, state, revision: claims, token: `lease-${claims}` };
   });
-  mock.method(PostgresAttendanceStore.prototype, "completeMenu", async (_job, success) => {
+  mock.method(store, "completeMenu", async (_job, success) => {
     completed.push(success);
     return success;
   });
-  mock.method(PostgresAttendanceStore.prototype, "claimNotification", async () => {
+  mock.method(store, "claimNotification", async () => {
     assert.fail("menu navigation must not claim notifications");
   });
   try {

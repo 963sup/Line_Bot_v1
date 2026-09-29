@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { isServerOnlyPackageSource } from "./check-architecture.mjs";
 
-test("context adapters, agents, testing and platform database mechanisms stay server-only unless browser-owned", () => {
+test("context adapters, composition, agents, testing and platform database mechanisms stay server-only unless browser-owned", () => {
   for (const source of [
     "packages/account/src/postgres/user-management.ts",
     "packages/assistant/src/adapters/gemini.ts",
+    "packages/attendance/src/composition/bootstrap/postgres-attendance-store.ts",
     "packages/expense/src/agents/receipt.ts",
     "packages/platform/src/testing/postgres.ts",
     "packages/platform/src/database/postgres/database.ts",
