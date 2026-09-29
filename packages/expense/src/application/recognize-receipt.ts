@@ -1,6 +1,9 @@
-import { type Expense, ExpenseError } from "../domain/aggregates/expense.js";
-import type { ActiveExpenseUser, ExpenseRepository } from "../contracts/repositories/expense-repository.js";
 import type { ReceiptRecognizer } from "../contracts/ports/receipt-recognizer.js";
+import type {
+  ActiveExpenseUser,
+  ExpenseRepository,
+} from "../contracts/repositories/expense-repository.js";
+import { type Expense, ExpenseError } from "../domain/aggregates/expense.js";
 
 export interface ReceiptRecognitionDependencies {
   activeUser: ActiveExpenseUser;

@@ -1,5 +1,5 @@
-import type { Expense } from "../domain/aggregates/expense.js";
 import type { ReceiptIntakeDependencies } from "../contracts/ports/receipt-intake.js";
+import type { Expense } from "../domain/aggregates/expense.js";
 
 export type ReceiptIntakeCommand =
   | { type: "start" }

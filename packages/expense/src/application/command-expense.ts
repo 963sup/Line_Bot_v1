@@ -1,5 +1,8 @@
+import type {
+  ActiveExpenseUser,
+  ExpenseRepository,
+} from "../contracts/repositories/expense-repository.js";
 import type { Expense, ExpenseCommand } from "../domain/aggregates/expense.js";
-import type { ActiveExpenseUser, ExpenseRepository } from "../contracts/repositories/expense-repository.js";
 
 export interface CommandExpenseDependencies {
   activeUser: ActiveExpenseUser;
