@@ -3,13 +3,13 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { indexFptDocuments } from "./fpt-domain-core.mjs";
 import {
   compileSemanticArchitecture,
   validateSemanticArchitecture,
   validateSemanticFilesystem,
 } from "./semantic-core.mjs";
 import { diffSemanticModels } from "./semantic-diff.mjs";
-import { indexFptDocuments } from "./fpt-domain-core.mjs";
 import { diffFptDomainTruth } from "./semantic-drift.mjs";
 import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
@@ -21,7 +21,9 @@ function fixture() {
     "schema-repos.json": {
       queries: [],
       mutations: [],
-      objects: [{ name: "Repository", fields: [{ name: "name", type: "String!" }], category: "repos" }],
+      objects: [
+        { name: "Repository", fields: [{ name: "name", type: "String!" }], category: "repos" },
+      ],
       interfaces: [],
       enums: [],
       unions: [],
@@ -30,7 +32,9 @@ function fixture() {
     "schema-projects.json": {
       queries: [],
       mutations: [],
-      objects: [{ name: "ProjectV2", fields: [{ name: "number", type: "Int!" }], category: "projects" }],
+      objects: [
+        { name: "ProjectV2", fields: [{ name: "number", type: "Int!" }], category: "projects" },
+      ],
       interfaces: [],
       enums: [],
       unions: [],
@@ -795,10 +799,7 @@ test("locator view derives URLs from route files without storing a second patter
       routeFiles: ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
     },
   ];
-  const view = renderSemanticView(
-    compileSemanticArchitecture(model, fpt, topology),
-    "locators",
-  );
+  const view = renderSemanticView(compileSemanticArchitecture(model, fpt, topology), "locators");
   assert.match(view, /\/\{login\}\/\{repository\}/);
 });
 

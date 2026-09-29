@@ -1,9 +1,9 @@
 import { checkArchitecture } from "./check-architecture.mjs";
 import { checkDataAccess } from "./check-data-access.mjs";
 import { checkDataTopology } from "./check-data-topology.mjs";
+import { checkFptDomainTruth } from "./check-fpt-domain-truth.mjs";
 import { checkImplementationTopology } from "./check-implementation-topology.mjs";
 import { checkSemanticArchitecture } from "./check-semantic-architecture.mjs";
-import { checkFptDomainTruth } from "./check-fpt-domain-truth.mjs";
 
 const architecture = await checkArchitecture();
 for (const error of architecture.errors) console.error(error);

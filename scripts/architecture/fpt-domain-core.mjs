@@ -48,11 +48,7 @@ function memberExists(item, field) {
 }
 
 export function resolveFptReference(fpt, reference) {
-  if (
-    !reference ||
-    typeof reference.file !== "string" ||
-    typeof reference.symbol !== "string"
-  ) {
+  if (!reference || typeof reference.file !== "string" || typeof reference.symbol !== "string") {
     return null;
   }
   const entries = fpt?.symbols?.get(`${reference.file}:${reference.symbol}`) ?? [];
@@ -90,16 +86,13 @@ export function validateFptDomainTruth(fpt) {
   if (!entries.length || new Set(names).size !== names.length) {
     errors.push("FPT domain truth: provenance files must be a non-empty unique list");
   }
-  if (
-    JSON.stringify(names) !== JSON.stringify([...names].sort((a, b) => a.localeCompare(b)))
-  ) {
+  if (JSON.stringify(names) !== JSON.stringify([...names].sort((a, b) => a.localeCompare(b)))) {
     errors.push("FPT domain truth: provenance files must be sorted");
   }
 
   const localNames = Object.keys(fpt?.raw ?? {}).sort((a, b) => a.localeCompare(b));
   if (
-    JSON.stringify(localNames) !==
-    JSON.stringify([...names].sort((a, b) => a.localeCompare(b)))
+    JSON.stringify(localNames) !== JSON.stringify([...names].sort((a, b) => a.localeCompare(b)))
   ) {
     errors.push("FPT domain truth: local JSON mirror must exactly match the provenance file set");
   }

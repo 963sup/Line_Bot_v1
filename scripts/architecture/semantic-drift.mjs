@@ -25,7 +25,13 @@ export function diffFptDomainTruth(before, after, semanticModel) {
 
   const reviewRequired = [
     ...(before?.upstream?.revision !== after?.upstream?.revision
-      ? [{ type: "fpt-revision-changed", id: `${before?.upstream?.revision ?? "unknown"}..${after?.upstream?.revision ?? "unknown"}`, breaking: false }]
+      ? [
+          {
+            type: "fpt-revision-changed",
+            id: `${before?.upstream?.revision ?? "unknown"}..${after?.upstream?.revision ?? "unknown"}`,
+            breaking: false,
+          },
+        ]
       : []),
     ...removed.map((id) => ({ type: "fpt-file-removed", id, breaking: referenced.has(id) })),
     ...changed.map((id) => ({ type: "fpt-file-changed", id, breaking: referenced.has(id) })),

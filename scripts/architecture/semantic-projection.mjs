@@ -335,9 +335,7 @@ function locators(compiled) {
         (locator.routeFiles ?? []).join(", "),
         (locator.routeFiles ?? []).map(routeFileToUrl).filter(Boolean).join(", "),
         locator.fpt
-          ? [locator.fpt.file, locator.fpt.symbol, locator.fpt.field]
-              .filter(Boolean)
-              .join("#")
+          ? [locator.fpt.file, locator.fpt.symbol, locator.fpt.field].filter(Boolean).join("#")
           : "",
       ]),
     ),
@@ -348,10 +346,18 @@ function fptReferences(compiled) {
   const rows = [
     ...[...compiled.concepts.values()]
       .filter((concept) => concept.fpt)
-      .map((concept) => ["concept", concept.id, [concept.fpt.file, concept.fpt.symbol, concept.fpt.field].filter(Boolean).join("#")]),
+      .map((concept) => [
+        "concept",
+        concept.id,
+        [concept.fpt.file, concept.fpt.symbol, concept.fpt.field].filter(Boolean).join("#"),
+      ]),
     ...[...compiled.locators.values()]
       .filter((locator) => locator.fpt)
-      .map((locator) => ["locator", locator.id, [locator.fpt.file, locator.fpt.symbol, locator.fpt.field].filter(Boolean).join("#")]),
+      .map((locator) => [
+        "locator",
+        locator.id,
+        [locator.fpt.file, locator.fpt.symbol, locator.fpt.field].filter(Boolean).join("#"),
+      ]),
   ];
   return [
     "# GitHub FPT Domain Truth",

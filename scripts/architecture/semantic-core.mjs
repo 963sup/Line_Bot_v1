@@ -1,8 +1,12 @@
 import { readFile, stat } from "node:fs/promises";
 import { posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadFptDomainTruth, resolveFptReference, validateFptDomainTruth } from "./fpt-domain-core.mjs";
 import { compileDataTopology, loadDataTopologySources } from "./data-topology-core.mjs";
+import {
+  loadFptDomainTruth,
+  resolveFptReference,
+  validateFptDomainTruth,
+} from "./fpt-domain-core.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 

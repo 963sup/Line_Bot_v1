@@ -1,7 +1,5 @@
 function keyed(items, label) {
-  return new Map(
-    (items ?? []).map((item) => [item.id ?? item.semanticOwner, item]),
-  );
+  return new Map((items ?? []).map((item) => [item.id ?? item.semanticOwner, item]));
 }
 
 function propertyChanges(before, after) {
@@ -69,7 +67,9 @@ function classifyChanged(label, before, after) {
   } else if (label === "locators") {
     classification = "locator-change";
     breaking = properties.some((property) =>
-      ["concept", "fields", "scope", "scopeAuthority", "status", "routeFiles", "fpt"].includes(property),
+      ["concept", "fields", "scope", "scopeAuthority", "status", "routeFiles", "fpt"].includes(
+        property,
+      ),
     );
   }
 
