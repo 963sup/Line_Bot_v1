@@ -202,7 +202,7 @@ function main() {
         "--test",
         "scripts/architecture/check-architecture.test.mjs",
         "scripts/architecture/check-convergence-guardrails.test.mjs",
-        "scripts/architecture/check-semantic-benchmark.test.mjs",
+        "scripts/architecture/check-fpt-domain-truth.test.mjs",
         "scripts/architecture/check-semantic-architecture.test.mjs",
         "scripts/architecture/check-data-topology.test.mjs",
         "scripts/architecture/check-data-access.test.mjs",

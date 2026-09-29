@@ -9,18 +9,50 @@ import {
   validateSemanticFilesystem,
 } from "./semantic-core.mjs";
 import { diffSemanticModels } from "./semantic-diff.mjs";
-import { diffSemanticBenchmark } from "./semantic-drift.mjs";
+import { indexFptDocuments } from "./fpt-domain-core.mjs";
+import { diffFptDomainTruth } from "./semantic-drift.mjs";
 import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
 import { renderSemanticView, routeFileToUrl } from "./semantic-projection.mjs";
 import { querySemanticArchitecture } from "./semantic-query.mjs";
 
 function fixture() {
-  const benchmark = {
-    version: 2,
-    role: "derived-general-management-semantic-benchmark",
-    contract: { productAuthority: false },
-    nodes: [{ id: "repository" }],
+  const fptFiles = {
+    "schema-repos.json": {
+      queries: [],
+      mutations: [],
+      objects: [{ name: "Repository", fields: [{ name: "name", type: "String!" }], category: "repos" }],
+      interfaces: [],
+      enums: [],
+      unions: [],
+      inputObjects: [],
+    },
+    "schema-projects.json": {
+      queries: [],
+      mutations: [],
+      objects: [{ name: "ProjectV2", fields: [{ name: "number", type: "Int!" }], category: "projects" }],
+      interfaces: [],
+      enums: [],
+      unions: [],
+      inputObjects: [],
+    },
+  };
+  const fpt = {
+    manifest: {
+      version: 1,
+      role: "github-fpt-domain-truth-provenance",
+      upstream: {
+        repository: "github/docs",
+        revision: "0123456789abcdef0123456789abcdef01234567",
+        path: "src/graphql/data/fpt",
+      },
+      files: [
+        { name: "schema-projects.json", gitBlobSha: "1111111111111111111111111111111111111111" },
+        { name: "schema-repos.json", gitBlobSha: "2222222222222222222222222222222222222222" },
+      ],
+    },
+    files: fptFiles,
+    symbols: indexFptDocuments(fptFiles),
   };
   const topology = {
     version: 2,
@@ -37,8 +69,8 @@ function fixture() {
     applications: {},
   };
   const model = {
-    version: 1,
-    role: "canonical-product-semantic-architecture",
+    version: 2,
+    role: "product-domain-overlay",
     conceptTypes: [{ id: "authoritative", authorityMode: "authoritative" }],
     boundaryTypes: [
       { id: "semantic" },
@@ -94,7 +126,7 @@ function fixture() {
         authorityMode: "authoritative",
         owner: "repository",
         lifecycle: "current",
-        benchmark: { node: "repository" },
+        fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository" },
       },
       {
         id: "project",
@@ -168,7 +200,7 @@ function fixture() {
         id: "SEM-003",
         rationale: "fixture",
         remediation: "fixture",
-        kind: "benchmark-mapping-must-exist",
+        kind: "fpt-reference-must-resolve",
       },
       {
         id: "SEM-004",
@@ -219,25 +251,25 @@ function fixture() {
       { semanticOwner: "project", module: null },
     ],
   };
-  return { model, benchmark, topology };
+  return { model, fpt, topology };
 }
 
-test("accepts separated semantic, implementation and benchmark authority", () => {
-  const { model, benchmark, topology } = fixture();
-  assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
+test("accepts separated semantic, implementation and fpt authority", () => {
+  const { model, fpt, topology } = fixture();
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 });
 
 test("rejects required runtime capability without implemented source and export evidence", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.capabilities[0].implementation.sourcePaths = [];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /required runtime expectation needs implemented sourcePaths and publicExports evidence/,
   );
 });
 
 test("rejects aggregate capabilities with cross-owner or non-leaf members", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.capabilities.push({
     id: "repository-family",
     owner: "repository",
@@ -249,29 +281,24 @@ test("rejects aggregate capabilities with cross-owner or non-leaf members", () =
     members: ["manage-repository", "manage-project-planning"],
   });
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /has different owner/,
   );
 });
 
-test("rejects benchmark items without explicit concept mapping or product decision", () => {
-  const { model, benchmark, topology } = fixture();
-  benchmark.nodes.push({ id: "discussion" });
-  assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
-    /Benchmark decision missing explicit disposition for node:discussion/,
-  );
-  model.benchmarkDecisions = [
-    { id: "repository", kind: "node", status: "adopted", concepts: ["repository"], reason: "x" },
-  ];
-  assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
-    /mapped benchmark nodes must not be duplicated/,
-  );
+test("FPT may contain unused GitHub symbols without a second adoption ledger", () => {
+  const { model, fpt, topology } = fixture();
+  fpt.files["schema-repos.json"].objects.push({
+    name: "RepositoryInvitation",
+    fields: [],
+    category: "repos",
+  });
+  fpt.symbols = indexFptDocuments(fpt.files);
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 });
 
 test("rejects active locators for data-only or target concepts", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.locators = [
     {
       id: "project-url",
@@ -281,20 +308,17 @@ test("rejects active locators for data-only or target concepts", () => {
       scope: "fixture",
       scopeAuthority: "repository",
       routeFiles: ["apps/web/src/app/(mobile)/projects/[number]/page.tsx"],
-      benchmark: { file: "schema-projects.json", category: "projects", symbol: "ProjectV2" },
+      fpt: { file: "schema-projects.json", category: "projects", symbol: "ProjectV2" },
     },
   ];
-  benchmark.sourceInventory = [
-    { file: "schema-projects.json", category: "projects", disposition: "included" },
-  ];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /inactive concept lifecycle cannot claim active locator/,
   );
 });
 
 test("rejects active current locators without route evidence", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.locators = [
     {
       id: "repository-url",
@@ -307,13 +331,13 @@ test("rejects active current locators without route evidence", () => {
     },
   ];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /active locator requires routeFiles/,
   );
 });
 
 test("locator scopes require an explicit semantic authority", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.locators = [
     {
       id: "repository-url",
@@ -325,18 +349,18 @@ test("locator scopes require an explicit semantic authority", () => {
     },
   ];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /scopeAuthority is required/,
   );
   model.locators[0].scopeAuthority = "missing";
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /unknown scopeAuthority missing/,
   );
 });
 
 test("all locators in one namespace scope must agree on authority", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.locators = [
     {
       id: "repository-url",
@@ -358,45 +382,36 @@ test("all locators in one namespace scope must agree on authority", () => {
     },
   ];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /conflicting authorities repository and project/,
   );
 });
 
 test("rejects lifecycle typos before lifecycle-dependent guards run", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.semanticOwners[0].lifecycle = "selected-targte";
   model.concepts[0].lifecycle = "current-dtaa-only";
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /unsupported lifecycle/,
   );
 });
 
-test("rejects deferred benchmark decisions that still carry product basis", () => {
-  const { model, benchmark, topology } = fixture();
-  benchmark.nodes.push({ id: "discussion" });
-  model.benchmarkDecisions = [
-    {
-      id: "discussion",
-      kind: "node",
-      status: "deferred",
-      concepts: ["repository"],
-      reason: "fixture",
-    },
-  ];
+test("rejects unresolved direct FPT concept references", () => {
+  const { model, fpt, topology } = fixture();
+  model.concepts[0].fpt.symbol = "MissingRepository";
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
-    /only adopted decisions may carry product basis/,
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unresolved FPT reference/,
   );
 });
 
 test("rejects and repairs mixed leaf and aggregate evidence shapes", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   const leaf = model.capabilities[0];
   leaf.members = [model.capabilities[1].id];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /leaf must not declare aggregate members/,
   );
   delete leaf.members;
@@ -413,33 +428,44 @@ test("rejects and repairs mixed leaf and aggregate evidence shapes", () => {
   };
   model.capabilities.push(aggregate);
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /aggregate must not declare leaf implementation/,
   );
   delete aggregate.implementation;
-  assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 });
 
 test("rejects a module pretending to be a bounded context", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   topology.modules["@line_bot_v1/repository"].moduleKind = "bounded-context";
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /must not masquerade/,
   );
 });
 
-test("rejects unknown benchmark adoption", () => {
-  const { model, benchmark, topology } = fixture();
-  model.concepts[0].benchmark.node = "missing";
+test("rejects unresolved direct FPT locator fields", () => {
+  const { model, fpt, topology } = fixture();
+  model.locators = [
+    {
+      id: "repository-url",
+      concept: "repository",
+      status: "reference-only",
+      fields: ["name"],
+      scope: "fixture",
+      scopeAuthority: "repository",
+      routeFiles: [],
+      fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository", field: "missing" },
+    },
+  ];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
-    /missing benchmark node/,
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unresolved FPT reference/,
   );
 });
 
 test("cross-owner workspace dependencies require an explicit semantic relationship contract", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   topology.modules["@line_bot_v1/project"] = {
     path: "packages/project",
     moduleKind: "domain-module",
@@ -452,7 +478,7 @@ test("cross-owner workspace dependencies require an explicit semantic relationsh
   model.implementationMappings.find((mapping) => mapping.semanticOwner === "project").module =
     "@line_bot_v1/project";
 
-  assert.deepEqual(validateSemanticArchitecture(model, benchmark, topology), []);
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 
   model.relationships = [
     {
@@ -466,23 +492,23 @@ test("cross-owner workspace dependencies require an explicit semantic relationsh
     },
   ];
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /cross-owner dependency @line_bot_v1\/project .* lacks explicit semantic relationship contract/,
   );
 });
 
 test("rejects topology semantic owners that do not resolve", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   topology.modules["@line_bot_v1/repository"].semanticOwner = "missing";
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
     /semanticOwner must resolve/,
   );
 });
 
 test("query path and impact are derived from compiled relationships", () => {
-  const { model, benchmark, topology } = fixture();
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   assert.deepEqual(querySemanticArchitecture(compiled, "path", ["repository", "project"]), [
     "repository",
     "project",
@@ -542,28 +568,31 @@ test("semantic diff treats locator route changes as breaking", () => {
   );
 });
 
-test("semantic diff preserves benchmark decision identity across item kinds", () => {
+test("semantic diff treats direct FPT reference changes as breaking", () => {
   const before = {
-    benchmarkDecisions: [
-      { kind: "node", id: "shared", status: "deferred", reason: "Pending owner decision." },
-      { kind: "projection", id: "shared", status: "deferred", reason: "Pending consumer." },
+    concepts: [
+      {
+        id: "repository",
+        fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository" },
+      },
     ],
   };
   const after = structuredClone(before);
-  after.benchmarkDecisions[0].status = "not-applicable";
-  after.benchmarkDecisions.pop();
-  const changes = diffSemanticModels(before, after);
-  assert.deepEqual(
-    changes.map(({ id, type }) => ({ id, type })),
-    [
-      { id: "node:shared", type: "changed" },
-      { id: "projection:shared", type: "removed" },
-    ],
-  );
+  after.concepts[0].fpt.symbol = "RepositoryInvitation";
+  assert.deepEqual(diffSemanticModels(before, after), [
+    {
+      type: "changed",
+      collection: "concepts",
+      id: "repository",
+      breaking: true,
+      classification: "domain-reference-change",
+      properties: ["fpt"],
+    },
+  ]);
   assert.deepEqual(diffSemanticModels(before, structuredClone(before)), []);
 });
 
-test("semantic diff flags aggregate and adopted mapping changes as breaking", () => {
+test("semantic diff flags aggregate and FPT mapping changes as breaking", () => {
   const before = {
     capabilities: [
       {
@@ -574,7 +603,12 @@ test("semantic diff flags aggregate and adopted mapping changes as breaking", ()
         validationProfiles: ["tests", "architecture"],
       },
     ],
-    benchmarkDecisions: [{ kind: "node", id: "work", status: "adopted", capabilities: ["write"] }],
+    concepts: [
+      {
+        id: "repository",
+        fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository" },
+      },
+    ],
   };
   for (const property of ["members", "preserves", "validationProfiles"]) {
     const after = structuredClone(before);
@@ -584,28 +618,28 @@ test("semantic diff flags aggregate and adopted mapping changes as breaking", ()
     assert.equal(changes[0].breaking, true, property);
   }
   const remapped = structuredClone(before);
-  remapped.benchmarkDecisions[0].capabilities = ["read"];
+  remapped.concepts[0].fpt.symbol = "RepositoryInvitation";
   assert.equal(diffSemanticModels(before, remapped)[0].breaking, true);
   assert.deepEqual(diffSemanticModels(before, structuredClone(before)), []);
 });
 
 test("validation profiles resolve the canonical package command surface", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   assert.deepEqual(
-    validateSemanticArchitecture(model, benchmark, topology, {
+    validateSemanticArchitecture(model, fpt, topology, {
       scripts: { semantic: "node semantic-cli.mjs" },
     }),
     [],
   );
   assert.match(
-    validateSemanticArchitecture(model, benchmark, topology, { scripts: {} }).join("\n"),
+    validateSemanticArchitecture(model, fpt, topology, { scripts: {} }).join("\n"),
     /unknown package.json command pnpm semantic check/,
   );
 });
 
 test("semantic planner resolves intent into owners, contracts and bounded change surfaces", () => {
-  const { model, benchmark, topology } = fixture();
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   const plan = planSemanticChange(compiled, "Change Repository Project relationship");
   assert.deepEqual(plan.primaryOwners.sort(), ["project", "repository"]);
   assert.equal(plan.contracts[0].id, "project-repository");
@@ -616,7 +650,7 @@ test("semantic planner resolves intent into owners, contracts and bounded change
 });
 
 test("semantic planner keeps owner capability coverage after leaf split", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.evidenceModel.validationProfiles.push({
     id: "tests",
     command: "pnpm test",
@@ -642,7 +676,7 @@ test("semantic planner keeps owner capability coverage after leaf split", () => 
     },
   });
   const plan = planSemanticChange(
-    compileSemanticArchitecture(model, benchmark, topology),
+    compileSemanticArchitecture(model, fpt, topology),
     "Repository stars",
   );
   assert.equal(
@@ -660,8 +694,8 @@ test("semantic planner keeps owner capability coverage after leaf split", () => 
 });
 
 test("agent context is a derived task slice, not a second semantic authority", () => {
-  const { model, benchmark, topology } = fixture();
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   const context = compileAgentContext(compiled, "Repository");
   assert.equal(
     context.owners.some((owner) => owner.id === "repository"),
@@ -674,19 +708,21 @@ test("agent context is a derived task slice, not a second semantic authority", (
   assert.equal(context.evidenceRule, null);
 });
 
-test("benchmark drift flags removal of an adopted concept for review", () => {
-  const { model, benchmark } = fixture();
-  const next = structuredClone(benchmark);
-  next.nodes = [];
-  const drift = diffSemanticBenchmark(benchmark, next, model);
-  assert.deepEqual(drift.reviewRequired, [
-    { type: "adopted-node-removed", id: "repository", breaking: true },
-  ]);
+test("FPT drift flags removal of a referenced truth file for review", () => {
+  const { model, fpt } = fixture();
+  const before = structuredClone(fpt.manifest);
+  const next = structuredClone(before);
+  next.files = next.files.filter((entry) => entry.name !== "schema-repos.json");
+  const drift = diffFptDomainTruth(before, next, model);
+  assert.deepEqual(
+    drift.reviewRequired.find((entry) => entry.id === "schema-repos.json"),
+    { type: "fpt-file-removed", id: "schema-repos.json", breaking: true },
+  );
 });
 
 test("query surface exposes contracts and boundaries from canonical semantic data", () => {
-  const { model, benchmark, topology } = fixture();
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   assert.equal(
     querySemanticArchitecture(compiled, "contracts", ["repository"])[0].id,
     "project-repository",
@@ -699,7 +735,7 @@ test("query surface exposes contracts and boundaries from canonical semantic dat
 
 test("filesystem guard rejects fake source, public export and route evidence", async () => {
   const root = await mkdtemp(join(tmpdir(), "semantic-fs-"));
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.locators = [
     {
       id: "repository-route",
@@ -719,7 +755,7 @@ test("filesystem guard rejects fake source, public export and route evidence", a
     join(root, "packages/repository/package.json"),
     JSON.stringify({ exports: { "./application/issues": "./dist/application/issues.js" } }),
   );
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   const errors = await validateSemanticFilesystem(compiled, root);
   assert.match(errors.join("\n"), /missing sourcePath packages\/repository\/src\/application/);
   assert.match(errors.join("\n"), /unknown public export \.\/application\/missing/);
@@ -737,7 +773,7 @@ test("filesystem guard rejects fake source, public export and route evidence", a
     "export {};\n",
   );
   assert.deepEqual(
-    await validateSemanticFilesystem(compileSemanticArchitecture(model, benchmark, topology), root),
+    await validateSemanticFilesystem(compileSemanticArchitecture(model, fpt, topology), root),
     [],
   );
 });
@@ -747,7 +783,7 @@ test("locator view derives URLs from route files without storing a second patter
     routeFileToUrl("apps/web/src/app/(resource)/[login]/[repository]/page.tsx"),
     "/{login}/{repository}",
   );
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   model.locators = [
     {
       id: "repository-route",
@@ -760,15 +796,15 @@ test("locator view derives URLs from route files without storing a second patter
     },
   ];
   const view = renderSemanticView(
-    compileSemanticArchitecture(model, benchmark, topology),
+    compileSemanticArchitecture(model, fpt, topology),
     "locators",
   );
   assert.match(view, /\/\{login\}\/\{repository\}/);
 });
 
 test("runtime feedback detects drift without mutating semantic authority", () => {
-  const { model, benchmark, topology } = fixture();
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   const feedback = compareSemanticFeedback(compiled, {
     version: 1,
     observedAt: "2026-09-24T00:00:00Z",
@@ -789,8 +825,8 @@ test("runtime feedback detects drift without mutating semantic authority", () =>
 });
 
 test("observed target capability produces review, never automatic activation", () => {
-  const { model, benchmark, topology } = fixture();
-  const compiled = compileSemanticArchitecture(model, benchmark, topology);
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
   const feedback = compareSemanticFeedback(compiled, {
     version: 1,
     observedAt: "2026-09-24T00:00:00Z",
@@ -809,7 +845,7 @@ test("observed target capability produces review, never automatic activation", (
 });
 
 test("semantic plan derives authoritative and cross-context data surfaces from data topology", () => {
-  const { model, benchmark, topology } = fixture();
+  const { model, fpt, topology } = fixture();
   const dataTopology = {
     version: 2,
     role: "relation-data-topology",
@@ -848,7 +884,7 @@ test("semantic plan derives authoritative and cross-context data surfaces from d
   ]);
   const compiled = compileSemanticArchitecture(
     model,
-    benchmark,
+    fpt,
     topology,
     null,
     dataTopology,

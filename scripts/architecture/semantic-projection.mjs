@@ -323,7 +323,7 @@ function locators(compiled) {
         "Fields",
         "Route files",
         "Derived URL",
-        "Benchmark",
+        "FPT",
       ],
       [...compiled.locators.values()].map((locator) => [
         locator.id,
@@ -334,8 +334,8 @@ function locators(compiled) {
         locator.fields.join(", "),
         (locator.routeFiles ?? []).join(", "),
         (locator.routeFiles ?? []).map(routeFileToUrl).filter(Boolean).join(", "),
-        locator.benchmark
-          ? [locator.benchmark.file, locator.benchmark.symbol, locator.benchmark.field]
+        locator.fpt
+          ? [locator.fpt.file, locator.fpt.symbol, locator.fpt.field]
               .filter(Boolean)
               .join("#")
           : "",
@@ -344,37 +344,24 @@ function locators(compiled) {
   ].join("\n");
 }
 
-function benchmarkCoverage(compiled) {
-  const mappedNodes = [...compiled.concepts.values()]
-    .filter((concept) => concept.benchmark?.node)
-    .map((concept) => [concept.benchmark.node, "node", "mapped", concept.id]);
-  const decisions = (compiled.model.benchmarkDecisions ?? []).map((decision) => [
-    decision.id,
-    decision.kind,
-    decision.status,
-    decision.reason.replaceAll("|", "\\|"),
-  ]);
+function fptReferences(compiled) {
+  const rows = [
+    ...[...compiled.concepts.values()]
+      .filter((concept) => concept.fpt)
+      .map((concept) => ["concept", concept.id, [concept.fpt.file, concept.fpt.symbol, concept.fpt.field].filter(Boolean).join("#")]),
+    ...[...compiled.locators.values()]
+      .filter((locator) => locator.fpt)
+      .map((locator) => ["locator", locator.id, [locator.fpt.file, locator.fpt.symbol, locator.fpt.field].filter(Boolean).join("#")]),
+  ];
   return [
-    "# Benchmark Coverage",
+    "# GitHub FPT Domain Truth",
     "",
-    "> Generated projection. Benchmark coverage is concept mapping plus explicit product decisions.",
+    "> GitHub-derived domain semantics resolve directly against the exact vendored FPT JSON. This view contains references only and does not redefine the FPT.",
     "",
-    "## Product items",
+    "- Revision: `" + compiled.fpt.manifest.upstream.revision + "`",
+    "- Local truth: `" + compiled.fpt.manifest.domainTruth + "`",
     "",
-    markdownTable(["External ID", "Kind", "Disposition", "Basis"], [...mappedNodes, ...decisions]),
-    "",
-    "## Source inventory",
-    "",
-    markdownTable(
-      ["File", "Role", "Category", "Disposition", "Reason"],
-      (compiled.benchmark.sourceInventory ?? []).map((source) => [
-        source.file,
-        source.role,
-        source.category ?? "",
-        source.disposition ?? "",
-        source.reason.replaceAll("|", "\\|"),
-      ]),
-    ),
+    markdownTable(["Local overlay", "ID", "FPT reference"], rows),
   ].join("\n");
 }
 
@@ -414,7 +401,7 @@ function docs(compiled) {
   return [
     "# Executable Semantic Architecture",
     "",
-    "> Generated read model. Canonical authority remains the semantic model, implementation topology, data topology, declarative schemas, and pinned external benchmark.",
+    "> Generated read model. GitHub-derived domain semantics remain authoritative in the vendored FPT JSON; this projection adds only Line_Bot_v1 ownership, invariants, implementation and evidence.",
     "",
     "## Ownership",
     "",
@@ -432,7 +419,7 @@ function docs(compiled) {
     "",
     locators(compiled),
     "",
-    benchmarkCoverage(compiled),
+    fptReferences(compiled),
     "",
     evidence(compiled),
     "",
@@ -463,10 +450,10 @@ export function renderSemanticView(compiled, view = "ownership") {
   if (view === "invariants") return invariants(compiled);
   if (view === "capabilities") return capabilities(compiled);
   if (view === "locators") return locators(compiled);
-  if (view === "benchmark-coverage") return benchmarkCoverage(compiled);
+  if (view === "fpt-references") return fptReferences(compiled);
   if (view === "evidence") return evidence(compiled);
   if (view === "docs") return docs(compiled);
   throw new Error(
-    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, locators, benchmark-coverage, evidence, or docs.",
+    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, locators, fpt-references, evidence, or docs.",
   );
 }

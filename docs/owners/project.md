@@ -2,7 +2,7 @@
 
 狀態：**Project identity/read current；planning write data-only**。
 
-Project 是 Account-owned（User 或 Organization）的跨 Repository planning boundary。它擁有 planning facts，但不取得被參照 work 的 authority。GitHub-like ownership benchmark 由 `architecture/semantic-benchmark.json` 的 `ProjectV2.owner` 提供；產品採用結果以 `architecture/semantic-model.json` 為準。
+Project 是 Account-owned（User 或 Organization）的跨 Repository planning boundary。它擁有 planning facts，但不取得被參照 work 的 authority。GitHub-like ownership benchmark 由 `architecture/domain/fpt/*.json` + `architecture/domain/fpt-source.json` 的 `ProjectV2.owner` 提供；產品採用結果以 `architecture/semantic-model.json` 為準。
 
 ## Authority / runtime
 

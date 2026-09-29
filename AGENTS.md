@@ -9,17 +9,18 @@
 - `architecture/README.md`
 - `architecture/data-topology.json`
 - `architecture/implementation-topology.json`
-- `architecture/semantic-benchmark.json`
+- `architecture/domain/fpt/*.json`
+- `architecture/domain/fpt-source.json`
 - `architecture/semantic-model.json`
 - `.dependency-cruiser.mjs`
 - `biome.json`
 - `knip.jsonc`
 
-這些檔案是 architecture / topology / benchmark / dependency / formatting / reachability 的 governing inputs，不是為了讓 local implementation 或 CI 通過而可任意調整的 escape hatch。
+這些檔案是 domain truth / architecture / topology / dependency / formatting / reachability 的 governing inputs，不是為了讓 local implementation 或 CI 通過而可任意調整的 escape hatch。
 
 - 一般 feature、refactor、bug fix、CI fix：修 source、ownership、dependency、public export、placement 或真正 root cause；不得透過弱化 governing file、加 ignore、exception、alias、wrapper 或 compatibility surface 消除 violation。
 - 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
-- `architecture/semantic-benchmark.json` 只提供 pinned external benchmark evidence；不得取代 `architecture/semantic-model.json` 的 product authority。
+- `architecture/domain/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由 `semantic-model.json` 覆蓋。`semantic-model.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
 - Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
 
 ## Invariants
