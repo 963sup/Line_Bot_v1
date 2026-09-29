@@ -25,7 +25,7 @@ Current route inventory、Mobile app-shell 與 URL contract 由 [Web runtime](..
 | [(system)](%28system%29/AGENTS.md) | Callback / continuation / unavailable results |
 | [api](api/AGENTS.md) | HTTP methods、input/scope translation、owner wiring |
 
-FPT / Mobile benchmark usage 繼承 [apps scope](../../../AGENTS.md)。Locator 語意以本地 semantic owner 為準，不從 GitHub URL 形狀推導。
+FPT domain-truth / GitHub Mobile benchmark usage 繼承 [apps scope](../../../AGENTS.md)。GitHub-derived locator field semantics 必須直接引用 FPT；實際 route ownership、authorization 與 activation 仍由本地 semantic owner/runtime contract 決定，不從 GitHub URL 形狀推導。
 
 ## Change rules
 

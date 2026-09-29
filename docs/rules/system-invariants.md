@@ -8,6 +8,7 @@
 4. **Atomicity / recovery**：共同維持 invariant 的 authoritative effects一起成立；跨 transaction side effect需要 durable identity、idempotent retry與 recovery/readback。
 5. **Ownership / dependency**：一個 responsibility一個 owner；consumer只用 owner public contract。
 6. **Evidence integrity**：static、test、build、schema、deployment、provider/API、device evidence只證明各自範圍。
+7. **GitHub domain truth**：vendored `architecture/domain/fpt/*.json` 是 GitHub GraphQL domain semantics 的本地 authority；product overlay、Markdown、UI、runtime absence 都不得重新定義或降級這份 truth。
 
 另外：
 - page、URL、button、provider session不授權；

@@ -35,9 +35,9 @@ Account
 | Force all existing IDs to UUID | 破壞既有 FK/receipt/replay/history continuity |
 | PostgreSQL table inheritance | 不符合明確 typed facet/FK/integrity strategy |
 
-## GitHub semantic calibration
+## GitHub domain-truth calibration
 
-GitHub 只作 concept boundary benchmark，不是 schema／permission inheritance authority。
+Vendored GitHub FPT JSON 是 User / Organization / Enterprise / Team / invitation 等 GitHub GraphQL semantics 的 domain truth；它不是 Line_Bot_v1 SQL schema、permission inheritance 或 runtime activation authority。本地 overlay 只能決定 owner、invariant、policy、persistence 與 implementation state，不能重新定義 FPT。
 
 - User / Organization / Enterprise separation：採 Account root + typed facets。
 - Organization teams：採 Organization-scoped Team；Team role 不等於 Organization-wide admin。

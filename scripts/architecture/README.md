@@ -28,4 +28,4 @@
 | `semantic-projection.mjs` | 產生 ownership/glossary/context/implementation projections。 |
 | `semantic-query.mjs` | 執行 owner/concept/path/contracts/consumers/invariants/evidence 查詢。 |
 
-一般入口使用 `pnpm architecture`、`pnpm boundaries`、`pnpm semantic <verb>`；修改前遵守同層 `AGENTS.md`。
+一般入口使用 `pnpm architecture`、`pnpm boundaries`、`pnpm semantic <verb>`；FPT references 只允許 exact `file` / `symbol` / optional `field`，不得在 overlay 再保存 category/adoption 摘要。修改前遵守同層 `AGENTS.md`。

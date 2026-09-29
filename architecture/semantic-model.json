@@ -222,9 +222,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-users.json",
-        "category": "users",
-        "symbol": "User",
-        "adoption": "concept-boundary"
+        "symbol": "User"
       }
     },
     {
@@ -238,9 +236,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-enterprise-admin.json",
-        "category": "enterprise-admin",
-        "symbol": "Enterprise",
-        "adoption": "concept-boundary"
+        "symbol": "Enterprise"
       }
     },
     {
@@ -254,9 +250,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-enterprise-admin.json",
-        "category": "enterprise-admin",
-        "symbol": "EnterpriseMemberInvitation",
-        "adoption": "pending-intent-semantics"
+        "symbol": "EnterpriseMemberInvitation"
       }
     },
     {
@@ -270,9 +264,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-orgs.json",
-        "category": "orgs",
-        "symbol": "Organization",
-        "adoption": "concept-boundary"
+        "symbol": "Organization"
       }
     },
     {
@@ -286,9 +278,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-orgs.json",
-        "category": "orgs",
-        "symbol": "OrganizationInvitation",
-        "adoption": "pending-intent-semantics"
+        "symbol": "OrganizationInvitation"
       }
     },
     {
@@ -302,9 +292,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-teams.json",
-        "category": "teams",
-        "symbol": "Team",
-        "adoption": "concept-boundary"
+        "symbol": "Team"
       }
     },
     {
@@ -318,9 +306,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-repos.json",
-        "category": "repos",
-        "symbol": "Repository",
-        "adoption": "container-semantics-only"
+        "symbol": "Repository"
       }
     },
     {
@@ -334,9 +320,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-users.json",
-        "category": "users",
-        "symbol": "UserList",
-        "adoption": "curated-list-semantics"
+        "symbol": "UserList"
       }
     },
     {
@@ -360,9 +344,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-issues.json",
-        "category": "issues",
-        "symbol": "Issue",
-        "adoption": "neutral-work-semantics"
+        "symbol": "Issue"
       }
     },
     {
@@ -376,9 +358,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-discussions.json",
-        "category": "discussions",
-        "symbol": "Discussion",
-        "adoption": "conversation-semantics"
+        "symbol": "Discussion"
       }
     },
     {
@@ -392,9 +372,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-discussions.json",
-        "category": "discussions",
-        "symbol": "DiscussionComment",
-        "adoption": "conversation-comment-semantics"
+        "symbol": "DiscussionComment"
       }
     },
     {
@@ -408,9 +386,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-issues.json",
-        "category": "issues",
-        "symbol": "Label",
-        "adoption": "classification-semantics"
+        "symbol": "Label"
       }
     },
     {
@@ -424,9 +400,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-issues.json",
-        "category": "issues",
-        "symbol": "Milestone",
-        "adoption": "goal-semantics"
+        "symbol": "Milestone"
       }
     },
     {
@@ -440,9 +414,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-projects.json",
-        "category": "projects",
-        "symbol": "ProjectV2",
-        "adoption": "planning-boundary"
+        "symbol": "ProjectV2"
       }
     },
     {
@@ -456,9 +428,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-projects.json",
-        "category": "projects",
-        "symbol": "ProjectV2Item",
-        "adoption": "reference-semantics"
+        "symbol": "ProjectV2Item"
       }
     },
     {
@@ -650,9 +620,7 @@
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-enterprise-admin.json",
-        "category": "enterprise-admin",
-        "symbol": "EnterpriseTeam",
-        "adoption": "concept-boundary"
+        "symbol": "EnterpriseTeam"
       }
     },
     {
@@ -2204,10 +2172,10 @@
     {
       "id": "SA2",
       "scope": "semantic-architecture",
-      "statement": "External benchmark evidence never becomes product authority without an explicit product concept mapping.",
+      "statement": "Vendored GitHub FPT JSON is canonical local domain truth for GitHub GraphQL semantics; the product overlay may add Line_Bot_v1 ownership, invariants, lifecycle, capability, persistence, and implementation mappings but must not redefine FPT semantics.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "benchmark-check"],
-      "tags": ["benchmark", "authority"]
+      "enforcement": ["semantic-policy", "fpt-domain-truth"],
+      "tags": ["fpt", "domain-truth", "authority"]
     },
     {
       "id": "SA3",
@@ -2415,8 +2383,8 @@
       "id": "SEM-003",
       "kind": "fpt-reference-must-resolve",
       "severity": "error",
-      "rationale": "Any product concept or locator claiming GitHub semantics must resolve directly to the canonical vendored FPT JSON.",
-      "remediation": "Reference the exact FPT file, symbol and optional field, or remove the unsupported GitHub-semantic claim."
+      "rationale": "GitHub-derived semantics are read directly from the canonical vendored FPT JSON; local overlay references identify the exact upstream symbol or field without duplicating category or adoption metadata.",
+      "remediation": "Reference only the exact FPT file, symbol and optional field; remove local category/adoption summaries or unsupported GitHub-semantic claims."
     },
     {
       "id": "SEM-004",
@@ -2786,7 +2754,6 @@
       "note": "User and Organization share the login namespace. URL/resourcePath is locator evidence, not authorization or stable database identity.",
       "fpt": {
         "file": "schema-users.json",
-        "category": "users",
         "symbol": "User",
         "field": "login"
       }
@@ -2802,7 +2769,6 @@
       "note": "Organization login shares the account login namespace and is resolved by the public owner page. Rename/display concerns stay separate from stable account identity.",
       "fpt": {
         "file": "schema-orgs.json",
-        "category": "orgs",
         "symbol": "Organization",
         "field": "login"
       }
@@ -2818,7 +2784,6 @@
       "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
       "fpt": {
         "file": "schema-enterprise-admin.json",
-        "category": "enterprise-admin",
         "symbol": "Enterprise",
         "field": "slug"
       }
@@ -2834,7 +2799,6 @@
       "note": "Repository URL derives from owner login plus Repository name; access still comes from authorization checks.",
       "fpt": {
         "file": "schema-repos.json",
-        "category": "repos",
         "symbol": "Repository",
         "field": "resourcePath"
       }
@@ -2862,7 +2826,6 @@
       "note": "Issue number is scoped to Repository and is not a global stable identifier.",
       "fpt": {
         "file": "schema-issues.json",
-        "category": "issues",
         "symbol": "Issue",
         "field": "number"
       }
@@ -2892,7 +2855,6 @@
       "note": "Repository Milestone number is scoped to Repository and remains separate from Project Milestone identity.",
       "fpt": {
         "file": "schema-issues.json",
-        "category": "issues",
         "symbol": "Milestone",
         "field": "number"
       }
@@ -2908,7 +2870,6 @@
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "fpt": {
         "file": "schema-teams.json",
-        "category": "teams",
         "symbol": "Team",
         "field": "slug"
       }
@@ -2924,7 +2885,6 @@
       "note": "Enterprise Team slug is scoped to Enterprise and is independent from Organization Team slug.",
       "fpt": {
         "file": "schema-enterprise-admin.json",
-        "category": "enterprise-admin",
         "symbol": "EnterpriseTeam",
         "field": "slug"
       }

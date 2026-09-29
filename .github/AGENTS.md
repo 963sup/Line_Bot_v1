@@ -8,7 +8,7 @@
 
 `architecture/README.md` · `architecture/data-topology.json` · `architecture/implementation-topology.json` · `architecture/domain/fpt/*.json` + `architecture/domain/fpt-source.json` · `architecture/semantic-model.json` · `.dependency-cruiser.mjs` · `biome.json` · `knip.jsonc`
 
-Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
+Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。`.github` prompt / agent / template 不得把 `architecture/domain/fpt/*.json` 描述為 benchmark 或 optional adoption source；它是 GitHub GraphQL domain truth，只有 `fpt-source.json` 是 provenance evidence。
 
 ## Release
 

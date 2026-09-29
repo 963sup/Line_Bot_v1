@@ -1,7 +1,7 @@
 # Architecture guard scripts
 
 - These scripts are executable checks over canonical machine truth; they do not become a second architecture authority.
-- architecture/semantic-model.json owns cross-context structured product semantics, architecture/implementation-topology.json owns implementation topology, architecture/data-topology.json owns relation-level persistence authority/Data Boundary mapping, supabase/schemas owns actual database structure, and architecture/domain/fpt/*.json owns pinned GitHub FPT domain truth evidence only.
+- architecture/semantic-model.json owns cross-context structured product semantics, architecture/implementation-topology.json owns implementation topology, architecture/data-topology.json owns relation-level persistence authority/Data Boundary mapping, supabase/schemas owns actual database structure, and architecture/domain/fpt/*.json owns pinned GitHub FPT domain truth; architecture/domain/fpt-source.json is provenance/integrity evidence only.
 - Every guard change needs a legal case, a deliberate violating case and a repaired case; broad ignores or path exceptions are not convergence.
 - Guard output must distinguish source/config failure from a real architecture violation and must not infer runtime, deployment or business acceptance from static success.
 - Bounded Context, Module Boundary, Data Boundary, Consistency Boundary, Trust Boundary, and Runtime Boundary are separate dimensions. Never infer one from a folder, package, table, or provider name.

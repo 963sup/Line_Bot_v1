@@ -75,6 +75,10 @@ function fixture() {
   const model = {
     version: 2,
     role: "product-domain-overlay",
+    sources: {
+      githubFptDomainTruth: "architecture/domain/fpt/*.json",
+      githubFptProvenance: "architecture/domain/fpt-source.json",
+    },
     conceptTypes: [{ id: "authoritative", authorityMode: "authoritative" }],
     boundaryTypes: [
       { id: "semantic" },
@@ -130,7 +134,7 @@ function fixture() {
         authorityMode: "authoritative",
         owner: "repository",
         lifecycle: "current",
-        fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository" },
+        fpt: { file: "schema-repos.json", symbol: "Repository" },
       },
       {
         id: "project",
@@ -312,7 +316,7 @@ test("rejects active locators for data-only or target concepts", () => {
       scope: "fixture",
       scopeAuthority: "repository",
       routeFiles: ["apps/web/src/app/(mobile)/projects/[number]/page.tsx"],
-      fpt: { file: "schema-projects.json", category: "projects", symbol: "ProjectV2" },
+      fpt: { file: "schema-projects.json", symbol: "ProjectV2" },
     },
   ];
   assert.match(
@@ -410,6 +414,25 @@ test("rejects unresolved direct FPT concept references", () => {
   );
 });
 
+test("rejects local category or adoption metadata beside a direct FPT reference", () => {
+  const { model, fpt, topology } = fixture();
+  model.concepts[0].fpt.category = "repos";
+  model.concepts[0].fpt.adoption = "concept-boundary";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unsupported metadata category, adoption/,
+  );
+});
+
+test("rejects rerouting GitHub domain truth through another semantic source", () => {
+  const { model, fpt, topology } = fixture();
+  model.sources.githubFptDomainTruth = "architecture/semantic-model.json";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /GitHub semantics must route directly/,
+  );
+});
+
 test("rejects and repairs mixed leaf and aggregate evidence shapes", () => {
   const { model, fpt, topology } = fixture();
   const leaf = model.capabilities[0];
@@ -459,7 +482,7 @@ test("rejects unresolved direct FPT locator fields", () => {
       scope: "fixture",
       scopeAuthority: "repository",
       routeFiles: [],
-      fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository", field: "missing" },
+      fpt: { file: "schema-repos.json", symbol: "Repository", field: "missing" },
     },
   ];
   assert.match(
@@ -577,7 +600,7 @@ test("semantic diff treats direct FPT reference changes as breaking", () => {
     concepts: [
       {
         id: "repository",
-        fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository" },
+        fpt: { file: "schema-repos.json", symbol: "Repository" },
       },
     ],
   };
@@ -610,7 +633,7 @@ test("semantic diff flags aggregate and FPT mapping changes as breaking", () => 
     concepts: [
       {
         id: "repository",
-        fpt: { file: "schema-repos.json", category: "repos", symbol: "Repository" },
+        fpt: { file: "schema-repos.json", symbol: "Repository" },
       },
     ],
   };
