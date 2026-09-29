@@ -19,4 +19,10 @@ The current executable slice is recipient-scoped inbox reading and marking a not
 - [Composition](src/composition/bootstrap/postgres-notification-repository.ts): concrete wiring returning the public Repository contract.
 - [HTTP route](../../apps/web/src/app/api/notifications/route.ts): authentication context, origin/body checks and HTTP projection; Request/Response and LINE identity remain in the host.
 
-[Package tests](test/notifications.test.ts) and [HTTP tests](../../apps/web/test/notifications-route.test.ts) cover this slice. Delivery attempts and other persisted concepts remain governed by the owner document and data topology; this routing page does not claim an unimplemented dispatch worker or preference capability.
+## Validation routing
+
+[Package tests](test/notifications.test.ts) exercise domain transitions and use cases. [Persistence contract tests](test/postgres-notification-repository.test.ts) check recipient-scoped SQL, row-lock ordering and replay behavior with an injected database; they do not replace real PostgreSQL concurrency acceptance.
+
+[Actual-route tests](../../apps/web/test/notifications-route.test.ts) execute the route with controlled host composition and real Notifications use cases. The separate [HTTP integration regression](../../apps/web/test/notifications-api.test.ts) retains the actual host imports and LINE verification adapter, replacing external fetch and owner operations. Its owner-operation fixture uses the application Result contract, while assertions keep the public JSON unwrapped, authenticated subject forwarding, admission-before-mutation and failure redaction covered.
+
+Run the relevant suites through `pnpm validate --group typecheck-test`, format checks through `pnpm validate --group lint`, and the complete `pnpm validate` merge gate. Delivery attempts and other persisted concepts remain governed by the owner document and data topology; this routing page does not claim an unimplemented dispatch worker or preference capability.

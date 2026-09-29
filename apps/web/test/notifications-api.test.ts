@@ -8,7 +8,11 @@ test("notification HTTP verifies LINE, bounds JSON and does not leak failures", 
   const previousOrigin = process.env.APP_ORIGIN;
   process.env.APP_ORIGIN = "https://app.example";
   const user = `U${"1".repeat(32)}`;
-  const read = mock.method(notifications, "read", async () => ({ items: [] }));
+  const read = mock.method(
+    notifications,
+    "read",
+    async (): ReturnType<typeof notifications.read> => ({ ok: true, value: { items: [] } }),
+  );
   const markRead = mock.method(notifications, "markRead", async () => {
     throw new Error("secret database details");
   });
@@ -39,10 +43,20 @@ test("notification HTTP verifies LINE, bounds JSON and does not leak failures", 
     assert.equal((await POST(request("{}", "https://evil.example"))).status, 403);
     assert.equal((await POST(request("{"))).status, 400);
     assert.equal((await POST(request("x".repeat(4097)))).status, 413);
-    assert.equal((await GET(request())).status, 200);
-    const failed = await POST(request('{"id":"11111111-1111-4111-8111-111111111111"}'));
+    assert.equal(read.mock.callCount(), 0);
+    assert.equal(markRead.mock.callCount(), 0);
+    const inbox = await GET(request());
+    assert.equal(inbox.status, 200);
+    assert.equal(inbox.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await inbox.json(), { items: [] });
+    assert.equal(read.mock.callCount(), 1);
+    assert.deepEqual(read.mock.calls[0].arguments, [user, { id: undefined, unreadOnly: false }]);
+    const id = "11111111-1111-4111-8111-111111111111";
+    const failed = await POST(request(JSON.stringify({ id, recipient: "forged-user" })));
     assert.equal(failed.status, 503);
     assert.equal((await failed.text()).includes("secret"), false);
+    assert.equal(markRead.mock.callCount(), 1);
+    assert.deepEqual(markRead.mock.calls[0].arguments, [user, { id }]);
   } finally {
     fetch.mock.restore();
     read.mock.restore();

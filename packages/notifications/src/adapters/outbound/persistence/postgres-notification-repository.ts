@@ -3,7 +3,10 @@ import type {
   NotificationQuery,
   NotificationRepository,
 } from "../../../contracts/repositories/notification-repository.js";
-import { markNotificationRead, type Notification } from "../../../domain/aggregates/notification.js";
+import {
+  markNotificationRead,
+  type Notification,
+} from "../../../domain/aggregates/notification.js";
 import type { NotificationKind } from "../../../domain/value-objects/notification-kind.js";
 
 type NotificationRow = {

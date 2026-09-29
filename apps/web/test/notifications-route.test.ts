@@ -33,25 +33,28 @@ type Route = {
 
 // Execute the actual route source, replacing only its host composition imports.
 // No production factory/export or single-route server wrapper exists for testing.
-function loadRoute(options: {
-  origin?: string;
-  identity?: () => Promise<string>;
-  activeUser?: Dependencies["activeUser"];
-  repository?: ReturnType<Dependencies["repository"]>;
-} = {}) {
+function loadRoute(
+  options: {
+    origin?: string;
+    identity?: () => Promise<string>;
+    activeUser?: Dependencies["activeUser"];
+    repository?: ReturnType<Dependencies["repository"]>;
+  } = {},
+) {
   const calls: unknown[][] = [];
   const notifications = createNotifications({
     activeUser: options.activeUser ?? (async () => ({ id: "user-1" })),
-    repository: () => options.repository ?? {
-      async read(recipient, query) {
-        calls.push(["read", recipient, query]);
-        return { items: [item] };
+    repository: () =>
+      options.repository ?? {
+        async read(recipient, query) {
+          calls.push(["read", recipient, query]);
+          return { items: [item] };
+        },
+        async markRead(recipient, notificationId, now) {
+          calls.push(["mark", recipient, notificationId, now]);
+          return { ...item, readAt: now, version: 2 };
+        },
       },
-      async markRead(recipient, notificationId, now) {
-        calls.push(["mark", recipient, notificationId, now]);
-        return { ...item, readAt: now, version: 2 };
-      },
-    },
     now: () => 10,
   });
   const modules: Record<string, unknown> = {
@@ -64,7 +67,10 @@ function loadRoute(options: {
       requestLineIdentity: options.identity ?? (async () => "verified-subject"),
     },
   };
-  const source = readFileSync(new URL("../src/app/api/notifications/route.ts", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("../src/app/api/notifications/route.ts", import.meta.url),
+    "utf8",
+  );
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
@@ -94,7 +100,9 @@ test("actual route preserves GET/POST wire contracts and published framework exp
   assert.deepEqual(Object.keys(route).sort(), ["GET", "POST", "dynamic", "runtime"]);
   assert.equal(route.runtime, "nodejs");
   assert.equal(route.dynamic, "force-dynamic");
-  const read = await route.GET(new Request(`https://example.test/api/notifications?id=${id}&unread=1`));
+  const read = await route.GET(
+    new Request(`https://example.test/api/notifications?id=${id}&unread=1`),
+  );
   assert.equal(read.status, 200);
   assert.equal(read.headers.get("cache-control"), "no-store");
   assert.deepEqual(await read.json(), { items: [item] });
@@ -153,7 +161,10 @@ test("business Result is translated to existing 400 and 404 HTTP failures", asyn
   const absent = await route.POST(post(JSON.stringify({ id })));
   assert.equal(absent.status, 404);
   assert.deepEqual(await absent.json(), { error: "通知不存在或不可閱讀。" });
-  assert.equal((await route.GET(new Request(`https://example.test/api/notifications?id=${id}`))).status, 404);
+  assert.equal(
+    (await route.GET(new Request(`https://example.test/api/notifications?id=${id}`))).status,
+    404,
+  );
   const empty = await route.GET(new Request("https://example.test/api/notifications"));
   assert.equal(empty.status, 200);
   assert.deepEqual(await empty.json(), { items: [] });
