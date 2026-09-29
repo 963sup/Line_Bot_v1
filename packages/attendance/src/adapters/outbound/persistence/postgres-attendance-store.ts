@@ -17,7 +17,10 @@ import type { AttendanceInput } from "../../../contracts/input/attendance-comman
 import type { AttendanceSession } from "../../../domain/aggregates/attendance-session.js";
 import { AttendanceError } from "../../../domain/error.js";
 import { attendanceView } from "../../../domain/policies/attendance-view.js";
-import { attendanceDistance, distanceMeters } from "../../../domain/policies/location-eligibility.js";
+import {
+  attendanceDistance,
+  distanceMeters,
+} from "../../../domain/policies/location-eligibility.js";
 import { ATTENDANCE_COIN_REWARD } from "../../../domain/policies/reward.js";
 import { planAttendance } from "../../../domain/policies/session-transition.js";
 import type { AttendanceAction } from "../../../domain/value-objects/attendance-action.js";
