@@ -42,7 +42,7 @@ test("inner layers reject composition, persistence, Node, SDK and environment de
     );
     const scenarios = [
       ["domain", importing("node:fs"), "context-domain-does-not-import-runtime"],
-      ["domain", importing("provider-sdk"), "context-domain-does-not-import-runtime"],
+      ["domain", importing("provider-sdk"), "context-domain-does-not-import-external-packages"],
       [
         "domain",
         importing("../composition/bootstrap.js"),

@@ -102,9 +102,13 @@ export default {
       name: "context-domain-does-not-import-runtime",
       severity: "error",
       from: { path: "^packages/[^/]+/src/domain(?:\\.ts|/)" },
-      to: {
-        dependencyTypes: ["core", "npm", "npm-dev", "npm-optional", "npm-peer", "npm-bundled"],
-      },
+      to: { dependencyTypes: ["core"] },
+    },
+    {
+      name: "context-domain-does-not-import-external-packages",
+      severity: "error",
+      from: { path: "^packages/[^/]+/src/domain(?:\\.ts|/)" },
+      to: { path: "(^|/)node_modules/" },
     },
     {
       name: "context-contracts-do-not-import-implementation",

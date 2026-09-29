@@ -38,6 +38,9 @@ Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Pro
 - Release Supabase success才證明該 validated revision的 database contract已完成對應 remote readback。
 - Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
 ## Concurrency
+
+Web build 同時承擔 Sentry sourcemap 上傳，因此 `@line_bot_v1/web#build` 停用 Turbo 快取，避免重播產物而跳過上傳；其他 package build 仍可使用快取。`SENTRY_AUTH_TOKEN` 保留 passthrough，不納入 cache hash。未提供 Sentry 配置的本機 build 不證明上傳成功。
+
 Type generation、test/build artifact 與 dependency install 在同一 checkout 可能競爭。驗證流程預設按 repository runner 順序執行；不要同時手動跑另一套會寫相同產物的 command。
 ## External-effect tools
 以下可能需要明確環境／授權，不屬一般 offline validate：
