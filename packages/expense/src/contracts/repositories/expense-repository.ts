@@ -1,5 +1,5 @@
-import type { ReceiptReading } from "../../contracts/receipt-reading.js";
-import type { Expense, ExpenseCommand } from "../../domain.js";
+import type { ReceiptReading } from "../receipt-reading.js";
+import type { Expense, ExpenseCommand } from "../../domain/aggregates/expense.js";
 
 /** Storage owns transactionality and repeats the active User check when it changes data. */
 export interface ExpenseRepository {

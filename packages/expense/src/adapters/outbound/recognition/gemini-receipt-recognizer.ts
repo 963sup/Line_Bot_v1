@@ -24,7 +24,7 @@
  */
 
 import type { GenerateContentParameters } from "@google/genai";
-import type { ReceiptReading } from "../contracts/receipt-reading.js";
+import type { ReceiptReading } from "../../../contracts/receipt-reading.js";
 
 const fields = ["merchant", "date", "amount", "currency", "invoiceNumber"] as const;
 
@@ -105,7 +105,7 @@ export function validateReceiptReading(value: unknown): ReceiptReading {
  * 3. 注入反提示詞注入與提取原則（不以找零、小計替代總額、不推算稅額）。
  * 4. 12 秒硬逾時中斷賽跑。
  */
-export async function runReceiptAgent(config: {
+export async function recognizeReceiptImage(config: {
   models: {
     generateContent: (parameters: GenerateContentParameters) => Promise<{ text?: string }>;
   };

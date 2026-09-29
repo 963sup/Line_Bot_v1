@@ -4,14 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
-    },
-    "./agents/receipt": {
-      "types": "./dist/agents/receipt.d.ts",
-      "default": "./dist/agents/receipt.js"
-    },
     "./application/command-expense": {
       "types": "./dist/application/command-expense.d.ts",
       "default": "./dist/application/command-expense.js"
@@ -19,18 +11,6 @@
     "./application/get-expense": {
       "types": "./dist/application/get-expense.d.ts",
       "default": "./dist/application/get-expense.js"
-    },
-    "./application/ports/expense-repository": {
-      "types": "./dist/application/ports/expense-repository.d.ts",
-      "default": "./dist/application/ports/expense-repository.js"
-    },
-    "./application/ports/receipt-intake": {
-      "types": "./dist/application/ports/receipt-intake.d.ts",
-      "default": "./dist/application/ports/receipt-intake.js"
-    },
-    "./application/ports/receipt-recognizer": {
-      "types": "./dist/application/ports/receipt-recognizer.d.ts",
-      "default": "./dist/application/ports/receipt-recognizer.js"
     },
     "./application/receipt-intake": {
       "types": "./dist/application/receipt-intake.d.ts",
@@ -40,13 +20,17 @@
       "types": "./dist/application/recognize-receipt.d.ts",
       "default": "./dist/application/recognize-receipt.js"
     },
-    "./contracts/receipt-reading": {
-      "types": "./dist/contracts/receipt-reading.d.ts",
-      "default": "./dist/contracts/receipt-reading.js"
+    "./domain/aggregates/expense": {
+      "types": "./dist/domain/aggregates/expense.d.ts",
+      "default": "./dist/domain/aggregates/expense.js"
     },
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
+    "./composition/bootstrap/postgres-expense-store": {
+      "types": "./dist/composition/bootstrap/postgres-expense-store.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-expense-store.js"
+    },
+    "./composition/bootstrap/gemini-receipt-recognizer": {
+      "types": "./dist/composition/bootstrap/gemini-receipt-recognizer.d.ts",
+      "default": "./dist/composition/bootstrap/gemini-receipt-recognizer.js"
     }
   },
   "files": [

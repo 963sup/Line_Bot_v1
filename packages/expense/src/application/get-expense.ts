@@ -1,5 +1,5 @@
-import type { Expense } from "../domain.js";
-import type { ActiveExpenseUser, ExpenseRepository } from "./ports/expense-repository.js";
+import type { Expense } from "../domain/aggregates/expense.js";
+import type { ActiveExpenseUser, ExpenseRepository } from "../contracts/repositories/expense-repository.js";
 
 export interface GetExpenseDependencies {
   activeUser: ActiveExpenseUser;

@@ -1,4 +1,4 @@
-import type { Expense } from "../../domain.js";
+import type { Expense } from "../../domain/aggregates/expense.js";
 
 /** Resolves a verified subject to a currently active member; rejects otherwise. */
 type ActiveUser = (subject: string) => Promise<{ id: string }>;
