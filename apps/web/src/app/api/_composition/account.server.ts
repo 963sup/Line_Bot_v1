@@ -11,8 +11,8 @@ import {
   PostgresUserStore,
 } from "@line_bot_v1/account/postgres";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
-import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application";
-import { PostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/postgres";
+import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
+import { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
@@ -20,7 +20,7 @@ import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 const state = globalThis as typeof globalThis & {
   userStore?: PostgresUserStore;
   walletStore?: PostgresWalletStore;
-  dailyCheckInStore?: PostgresDailyCheckInStore;
+  dailyCheckInStore?: ReturnType<typeof createPostgresDailyCheckInStore>;
   followStore?: PostgresFollowStore;
   achievementStore?: PostgresUserAchievementStore;
   profileStore?: PostgresUserProfileStore;
@@ -35,7 +35,7 @@ function walletStore() {
   return (state.walletStore ??= new PostgresWalletStore());
 }
 function dailyCheckInStore() {
-  return (state.dailyCheckInStore ??= new PostgresDailyCheckInStore());
+  return (state.dailyCheckInStore ??= createPostgresDailyCheckInStore());
 }
 function followStore() {
   return (state.followStore ??= new PostgresFollowStore());
@@ -50,7 +50,7 @@ function profileStore() {
 const dailyCheckIn = createDailyCheckIn({
   activeUser: async (subject) =>
     requireActiveUser(await userStore().find(LINE_PROVIDER_NAMESPACE, subject)),
-  repository: dailyCheckInStore,
+  store: dailyCheckInStore,
   now: () => Date.now(),
 });
 const user = createUser({

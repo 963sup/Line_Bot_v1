@@ -8,18 +8,18 @@ import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-c
 import { readAssetDefinition } from "@line_bot_v1/asset/postgres";
 import { readLedgerCreditFact, recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { DailyCheckInRepository } from "./application/ports/daily-check-in-repository.js";
-import { DailyCheckInError } from "./domain/error.js";
+import type { DailyCheckInStore } from "../../../contracts/daily-check-in.js";
+import { DailyCheckInError } from "../../../domain/error.js";
 import {
   DAILY_CHECK_IN_POLICY,
   type DailyCheckInPrizeCode,
   selectDailyCheckInPrize,
-} from "./domain/policies/reward-policy.js";
-import type { DailyCheckInClaim } from "./domain/value-objects/daily-check-in-claim.js";
-import { dailyCheckInDay } from "./domain/value-objects/daily-check-in-day.js";
-import { DAILY_CHECK_IN_LEDGER_SOURCE } from "./domain/value-objects/ledger-source.js";
+} from "../../../domain/policies/reward-policy.js";
+import type { DailyCheckInClaim } from "../../../domain/value-objects/daily-check-in-claim.js";
+import { dailyCheckInDay } from "../../../domain/value-objects/daily-check-in-day.js";
+import { DAILY_CHECK_IN_LEDGER_SOURCE } from "../../../domain/value-objects/ledger-source.js";
 
-export class PostgresDailyCheckInStore implements DailyCheckInRepository {
+export class PostgresDailyCheckInStore implements DailyCheckInStore {
   constructor(
     private db: Database = businessDatabase(),
     private randomTicket: (exclusiveMax: number) => number = randomInt,

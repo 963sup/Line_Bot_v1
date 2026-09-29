@@ -4,17 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application": {
-      "types": "./dist/application.d.ts",
-      "default": "./dist/application.js"
+    "./application/daily-check-in": {
+      "types": "./dist/application/daily-check-in.d.ts",
+      "default": "./dist/application/daily-check-in.js"
     },
-    "./application/ports/daily-check-in-repository": {
-      "types": "./dist/application/ports/daily-check-in-repository.d.ts",
-      "default": "./dist/application/ports/daily-check-in-repository.js"
-    },
-    "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
+    "./composition/bootstrap/postgres-daily-check-in-store": {
+      "types": "./dist/composition/bootstrap/postgres-daily-check-in-store.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-daily-check-in-store.js"
     },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
