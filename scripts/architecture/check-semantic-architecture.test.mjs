@@ -435,6 +435,15 @@ test("rejects any local semantic shadow on an FPT-backed concept", () => {
   );
 });
 
+test("renders field-backed FPT concepts from canonical field references", () => {
+  const { model, fpt, topology } = fixture();
+  model.concepts[0].fpt.field = "name";
+  const ownership = JSON.parse(
+    renderSemanticView(compileSemanticArchitecture(model, fpt, topology), "ownership"),
+  );
+  assert.equal(ownership.find((entry) => entry.id === "repository")?.concept, "Repository.name");
+});
+
 test("requires local-only concepts to own their local name and definition", () => {
   const { model, fpt, topology } = fixture();
   delete model.concepts[1].canonicalName;

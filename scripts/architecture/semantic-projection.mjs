@@ -1,6 +1,9 @@
 const fence = String.fromCharCode(96).repeat(3);
 
 function conceptName(concept) {
+  if (concept.fpt?.symbol && concept.fpt.field) {
+    return concept.fpt.symbol + "." + concept.fpt.field;
+  }
   return concept.fpt?.symbol ?? concept.canonicalName ?? concept.id;
 }
 

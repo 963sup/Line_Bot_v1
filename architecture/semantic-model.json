@@ -571,13 +571,16 @@
     },
     {
       "id": "user-follow",
-      "canonicalName": "User Follow",
       "kind": "authoritative",
       "owner": "account",
       "lifecycle": "current",
-      "definition": "Directional User-to-User follow fact. Followers and Following are inbound and outbound projections of the same relationship.",
       "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "User",
+        "field": "following"
+      }
     },
     {
       "id": "enterprise-team",
@@ -2806,7 +2809,7 @@
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
       ],
-      "note": "Discussion detail URL uses the local opaque DiscussionId. GitHub Discussion.number exists in FPT, but this product does not adopt it as the local Discussion locator."
+      "note": "Current runtime Discussion detail route still uses the local opaque DiscussionId as implementation evidence. Canonical GitHub FPT Discussion.number remains authoritative; this locator records current drift and does not redefine the FPT semantic."
     },
     {
       "id": "repository-milestone-number",
