@@ -6,7 +6,7 @@
 
 本 scope 修改前仍必須遵守 root `AGENTS.md#Mandatory governing set`，尤其是以下 current authority / guard：
 
-`architecture/README.md` · `architecture/data-topology.json` · `architecture/implementation-topology.json` · `architecture/semantic-benchmark.json` · `architecture/semantic-model.json` · `.dependency-cruiser.mjs` · `biome.json` · `knip.jsonc`
+`architecture/README.md` · `architecture/data-topology.json` · `architecture/implementation-topology.json` · `architecture/domain/fpt/*.json` · `architecture/domain/fpt-source.json` · `architecture/semantic-model.json` · `.dependency-cruiser.mjs` · `biome.json` · `knip.jsonc`
 
 Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
 
@@ -21,7 +21,7 @@ Current URL、route partition、app-shell 與 runtime contract 以 [Web runtime]
 
 ## External benchmarks
 
-GitHub-like FPT 只提供 resource / relationship / locator / lifecycle 的 semantic benchmark；pinned provenance 與採用狀態分別由 [Semantic benchmark](../architecture/semantic-benchmark.json) 與 [Semantic model](../architecture/semantic-model.json) 擁有。GitHub Mobile 只可作 UX / information hierarchy benchmark，不能從上游畫面推導本產品的 owner、permission、route 或已啟用 capability。
+Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub-derived domain truth；[provenance](../architecture/domain/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/semantic-model.json) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。GitHub Mobile 仍只可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
 
 ## Nested routing
 

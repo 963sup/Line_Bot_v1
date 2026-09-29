@@ -236,7 +236,7 @@ export function planSemanticChange(compiled, intent) {
         "public-contract",
         "persistence-current-state",
         "data-topology",
-        "external-semantic-benchmark",
+        "github-fpt-domain-truth",
       ].includes(entry.id),
     ),
     requiredValidation: validationProfiles(compiled, capabilities),
@@ -248,17 +248,13 @@ export function compileAgentContext(compiled, intent) {
   const plan = planSemanticChange(compiled, intent);
   const ownerSet = new Set([...plan.primaryOwners, ...plan.directImpactOwners]);
   const concepts = [...compiled.concepts.values()].filter((concept) => ownerSet.has(concept.owner));
-  const benchmarkEvidence = concepts
-    .filter((concept) => concept.benchmark?.node)
-    .map((concept) => {
-      const node = compiled.benchmarkNodes.get(concept.benchmark.node);
-      return {
-        concept: concept.id,
-        benchmarkNode: concept.benchmark.node,
-        adoption: concept.benchmark.adoption,
-        source: node?.source ?? null,
-      };
-    });
+  const fptEvidence = concepts
+    .filter((concept) => concept.fpt)
+    .map((concept) => ({
+      concept: concept.id,
+      reference: concept.fpt,
+      revision: compiled.fpt.manifest.upstream.revision,
+    }));
 
   return {
     intent,
@@ -279,6 +275,6 @@ export function compileAgentContext(compiled, intent) {
       })),
     validation: plan.requiredValidation,
     evidenceRule: plan.expectedEvidenceRule,
-    benchmarkEvidence,
+    fptEvidence,
   };
 }

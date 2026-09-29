@@ -347,7 +347,7 @@ export function validate(root) {
       "i",
     );
     const retiredHumanAccountPath = ["user", "account"].join("-");
-    const externalSemanticBenchmarkArtifacts = new Set(["architecture/semantic-benchmark.json"]);
+    const externalDomainTruthPrefix = "architecture/domain/fpt/";
     const historicalUserVocabularyDocuments = new Set([
       "docs/change/evidence/schema-history-extraction.md",
       "docs/change/evidence/account-expansion-extraction.md",
@@ -380,7 +380,7 @@ export function validate(root) {
     ];
     for (const file of new Set(currentUserVocabularySources)) {
       const relativePath = relative(root, file).split(sep).join("/");
-      if (externalSemanticBenchmarkArtifacts.has(relativePath)) continue;
+      if (relativePath.startsWith(externalDomainTruthPrefix)) continue;
       const source = read(file);
       if (
         retiredUserVocabulary.test(source) ||
@@ -523,12 +523,11 @@ export function validate(root) {
       errors.push("CI: validate workflow must not consume repository secrets");
     if (/^\s*VERCEL:\s*["']?1["']?\s*$/m.test(validateWorkflowSource))
       errors.push("CI: GitHub validation must not impersonate the Vercel runtime");
-    const checkJob = workflow.jobs?.check;
     const fullValidateJob = workflow.jobs?.["full-validate"];
     const validateJob = workflow.jobs?.validate;
-    if (!checkJob || !fullValidateJob || !validateJob)
+    if (!fullValidateJob || !validateJob || workflow.jobs?.check)
       errors.push(
-        "CI: validation workflow must define PR check, parallel full validation and aggregate gate",
+        "CI: validation workflow must have one parallel full validation owner plus its aggregate gate",
       );
     if (!Object.hasOwn(workflow.on ?? {}, "workflow_call") || workflow.on?.push)
       errors.push(
@@ -550,20 +549,12 @@ export function validate(root) {
     }
     const pullRequestTypes = workflow.on?.pull_request?.types;
     if (
-      !pullRequestTypes?.includes("ready_for_review") ||
-      !pullRequestTypes?.includes("synchronize")
+      !pullRequestTypes?.includes("synchronize") ||
+      !pullRequestTypes?.includes("ready_for_review")
     )
-      errors.push("CI: PR validation must distinguish draft iteration from review-ready updates");
-    if (
-      !checkJob?.if?.includes("pull_request.draft == false") ||
-      !checkJob?.if?.includes("github.event.action != 'ready_for_review'") ||
-      !(checkJob?.steps ?? []).some((step) => step.run === "pnpm check")
-    )
-      errors.push(
-        "CI: ready pull requests must run affected pnpm check without duplicating full validation",
-      );
+      errors.push("CI: PR validation must cover every review-ready head update");
     const fullCondition =
-      "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'ready_for_review' && github.event.pull_request.draft == false)";
+      "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)";
     if (
       fullValidateJob?.if !== fullCondition ||
       fullValidateJob?.needs ||
@@ -577,7 +568,7 @@ export function validate(root) {
       )
     )
       errors.push(
-        "CI: main and ready-for-review must run every canonical validation group in parallel",
+        "CI: main and every non-draft pull-request head must run every canonical validation group in parallel",
       );
     if (
       validateJob?.needs !== "full-validate" ||

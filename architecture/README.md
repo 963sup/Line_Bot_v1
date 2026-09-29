@@ -4,8 +4,8 @@
 
 | 問題 | Authority | Validation / query |
 | --- | --- | --- |
-| GitHub-like external benchmark 真正提供什麼？ | [Semantic benchmark](semantic-benchmark.json) + JSON 內 pinned upstream provenance | `pnpm architecture` |
-| 產品採用什麼語意、owner、relationship、invariant、locator、status？ | [Semantic model](semantic-model.json) | `pnpm semantic check`、`pnpm semantic explain <concept>` |
+| GitHub GraphQL domain 真正定義什麼？ | [Vendored FPT JSON](domain/fpt/)；[provenance](domain/fpt-source.json) 只記錄 pinned upstream revision/blob integrity | `pnpm architecture` |
+| Line_Bot_v1 如何擁有、約束或實作這些語意，以及有哪些本地 extension？ | [Product domain overlay](semantic-model.json) | `pnpm semantic check`、`pnpm semantic explain <concept>` |
 | 哪個 module 實作 owner、允許依賴誰？ | [Implementation topology](implementation-topology.json) | `pnpm boundaries` |
 | 哪個 owner 擁有 persisted relation、誰只 projection/reference？ | [Data topology](data-topology.json) | `pnpm architecture` |
 | 實際 SQL / constraint / RLS 是什麼？ | [Declarative schemas](../supabase/schemas/README.md) | `pnpm schema:check` |
@@ -13,10 +13,12 @@
 | Dated release / remote / device evidence 在哪？ | [Acceptance](../docs/change/evidence/README.md) | evidence 自己的日期 / revision / environment |
 
 ```text
-External benchmark
-        ↓ explicit product adoption
+github/docs FPT JSON
+        ↓ exact vendored mirror; no semantic rewrite
+architecture/domain/fpt/*.json
+        ↓ direct file/symbol/field references
 semantic-model.json
-        ↓ explicit mapping
+        ↓ owner/invariant/capability/implementation overlay only
 implementation-topology.json / data-topology.json
         ↓
 source / package exports / supabase schemas / tests
@@ -24,6 +26,6 @@ source / package exports / supabase schemas / tests
 evidence
 ```
 
-Benchmark category 不等於 product owner；Semantic owner 不等於 package；package 不等於 Data Boundary；schema relation 不等於 runtime acceptance。
+FPT category 不等於 package 或 Bounded Context；但 FPT 中的 GitHub GraphQL resource、field、query、mutation、interface、enum、union 與 input object 不得由本地摘要重新定義。Code/SCM capability 可以依產品 scope 維持未實作，不能因此刪改 FPT truth。
 
-可讀 projection 使用 `pnpm semantic view docs`，change impact 使用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。不要手工保存第二套 owner/capability/benchmark 清單。
+可讀 projection 使用 `pnpm semantic view docs`，change impact 使用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。不要手工保存第二套 FPT node、edge、adoption 或 category 清單。

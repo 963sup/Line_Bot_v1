@@ -1,6 +1,6 @@
 # Architecture authority scope
 
-`architecture/` 保存 machine-readable architecture truth 與 pinned external semantic evidence。本目錄的變更是 authority / topology / benchmark contract 變更，不是一般 implementation shortcut。
+`architecture/` 保存 machine-readable architecture truth 與 pinned GitHub FPT domain truth。本目錄的變更是 authority / topology / domain-truth contract 變更，不是一般 implementation shortcut。
 
 ## Governing files
 
@@ -9,7 +9,8 @@
 - `architecture/README.md`
 - `architecture/data-topology.json`
 - `architecture/implementation-topology.json`
-- `architecture/semantic-benchmark.json`
+- `architecture/domain/fpt/*.json`
+- `architecture/domain/fpt-source.json`
 - `architecture/semantic-model.json`
 - `.dependency-cruiser.mjs`
 - `biome.json`
@@ -18,10 +19,10 @@
 ## Local constraints
 
 - `architecture/README.md` 只 routing / explanation；不得建立第二套 machine truth。
-- `semantic-model.json` 是 adopted product semantics、semantic owner、relationship、capability、invariant、policy 與 integration mode 的 authority。
+- `domain/fpt/*.json` 是 GitHub-derived domain semantics 的 authority；只能由單一 reviewed upstream revision 原樣更新。`semantic-model.json` 只擁有 Line_Bot_v1 本地 semantic owner、relationship、capability、invariant、policy、integration mode 與 implementation expectation，不得重寫 FPT。
 - `implementation-topology.json` 是 module path、module kind、semantic owner mapping 與 workspace dependency allowlist 的 authority。
 - `data-topology.json` 是 persisted relation ownership、projection / reference 與 physical schema mapping 的 authority。
-- `semantic-benchmark.json` 只保存 pinned external benchmark evidence；不得直接成為 product authority。
+- `domain/fpt-source.json` 只保存 upstream provenance / blob integrity，不建立第二套 domain semantics。
 - `.dependency-cruiser.mjs`、`biome.json`、`knip.jsonc` 是 implementation/tooling guards；不得因 local source 或 CI violation 而放寬。
 - Architecture change 必須先證明 Root Cause、Owner、Source of Truth、Boundary / Dependency，再同步 consumer、exports、schemas、guards、tests 與 evidence。
 - Guard / implementation 與 authority 不一致時，先判定是 implementation violation、guard drift 或 authority change；不得直接選擇改規則讓錯誤消失。

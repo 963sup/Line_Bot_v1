@@ -1,7 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import { posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateSemanticBenchmark } from "./check-semantic-benchmark.mjs";
+import { loadFptDomainTruth, resolveFptReference, validateFptDomainTruth } from "./fpt-domain-core.mjs";
 import { compileDataTopology, loadDataTopologySources } from "./data-topology-core.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -34,40 +34,20 @@ function unique(values) {
   return new Set(values).size === values.length;
 }
 
-function benchmarkItems(benchmark) {
-  return [
-    ...(benchmark?.nodes ?? []).map((item) => ({ kind: "node", id: item.id })),
-    ...(benchmark?.projections ?? []).map((item) => ({ kind: "projection", id: item.id })),
-    ...(benchmark?.derivedResults ?? []).map((item) => ({
-      kind: "derived-result",
-      id: item.id,
-    })),
-    ...(benchmark?.referenceContracts ?? []).map((item) => ({
-      kind: "reference-contract",
-      id: item.id,
-    })),
-  ];
-}
-
 function implementationStatus(capability) {
   return capability.implementation?.status ?? "missing";
 }
 
-export function validateSemanticArchitecture(model, benchmark, topology, commandManifest = null) {
+export function validateSemanticArchitecture(model, fpt, topology, commandManifest = null) {
   const errors = [];
-  if (model?.version !== 1 || model?.role !== "canonical-product-semantic-architecture") {
-    errors.push("Semantic model: expected version 1 canonical-product-semantic-architecture");
+  if (model?.version !== 2 || model?.role !== "product-domain-overlay") {
+    errors.push("Semantic model: expected version 2 product-domain-overlay");
   }
   if (
-    benchmark?.version !== 2 ||
-    benchmark?.role !== "derived-general-management-semantic-benchmark"
+    fpt?.manifest?.version !== 1 ||
+    fpt?.manifest?.role !== "github-fpt-domain-truth-provenance"
   ) {
-    errors.push(
-      "Semantic model: external benchmark must be version 2 derived-general-management-semantic-benchmark",
-    );
-  }
-  if (benchmark?.contract?.productAuthority !== false) {
-    errors.push("Semantic model: benchmark must explicitly deny product authority");
+    errors.push("Semantic model: canonical GitHub domain truth must be the vendored FPT JSON");
   }
   if (topology?.version !== 2 || topology?.role !== "implementation-topology") {
     errors.push("Semantic model: manifest must be version 2 implementation-topology");
@@ -139,10 +119,6 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
     }
   }
 
-  const benchmarkNodes = new Set((benchmark?.nodes ?? []).map((node) => node.id));
-  const benchmarkInventory = new Map(
-    (benchmark?.sourceInventory ?? []).map((source) => [source.file, source]),
-  );
   for (const concept of concepts.values()) {
     if (!owners.has(concept.owner)) {
       errors.push("Concept " + concept.id + ": unknown owner " + concept.owner);
@@ -163,8 +139,13 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
           concept.kind,
       );
     }
-    if (concept.benchmark?.node && !benchmarkNodes.has(concept.benchmark.node)) {
-      errors.push("Concept " + concept.id + ": missing benchmark node " + concept.benchmark.node);
+    if (concept.fpt && !resolveFptReference(fpt, concept.fpt)) {
+      errors.push(
+        "Concept " +
+          concept.id +
+          ": unresolved FPT reference " +
+          [concept.fpt.file, concept.fpt.symbol, concept.fpt.field].filter(Boolean).join("#"),
+      );
     }
     if (concept.kind === "derived-projection" && !(concept.derivedFrom ?? []).length) {
       errors.push("Concept " + concept.id + ": derived projection requires derivedFrom");
@@ -434,80 +415,15 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
         "Locator " + locator.id + ": inactive concept lifecycle cannot claim active locator",
       );
     }
-    const source = locator.benchmark;
-    if (source) {
-      const inventory = benchmarkInventory.get(source.file);
-      if (!inventory) {
-        errors.push("Locator " + locator.id + ": unknown benchmark source " + source.file);
-      } else if (!["included", "reference-only"].includes(inventory.disposition)) {
-        errors.push(
-          "Locator " + locator.id + ": benchmark source must be included or reference-only",
-        );
-      }
-    }
-  }
-
-  const mappedNodes = new Set(
-    [...concepts.values()].map((concept) => concept.benchmark?.node).filter(Boolean),
-  );
-  const externalItems = benchmarkItems(benchmark);
-  const externalItemKeys = new Set(externalItems.map((item) => item.kind + ":" + item.id));
-  const decisionKeys = new Set();
-  for (const decision of model?.benchmarkDecisions ?? []) {
-    const key = decision.kind + ":" + decision.id;
-    if (decisionKeys.has(key)) errors.push("Benchmark decision: duplicate " + key);
-    decisionKeys.add(key);
-    if (!externalItemKeys.has(key)) {
-      errors.push("Benchmark decision " + key + ": unknown external item");
-    }
-    if (decision.kind === "node" && mappedNodes.has(decision.id)) {
-      errors.push("Benchmark decision " + key + ": mapped benchmark nodes must not be duplicated");
-    }
-    if (!["adopted", "deferred", "not-applicable"].includes(decision.status)) {
-      errors.push("Benchmark decision " + key + ": unsupported status " + decision.status);
-    }
-    if (typeof decision.reason !== "string" || !decision.reason.trim()) {
-      errors.push("Benchmark decision " + key + ": reason is required");
-    }
-    for (const conceptId of decision.concepts ?? []) {
-      if (!concepts.has(conceptId))
-        errors.push("Benchmark decision " + key + ": unknown concept " + conceptId);
-    }
-    for (const capabilityId of decision.capabilities ?? []) {
-      if (!capabilities.has(capabilityId)) {
-        errors.push("Benchmark decision " + key + ": unknown capability " + capabilityId);
-      }
-    }
-    for (const locatorId of decision.locators ?? []) {
-      if (!locators.has(locatorId))
-        errors.push("Benchmark decision " + key + ": unknown locator " + locatorId);
-    }
-    if (
-      decision.status !== "adopted" &&
-      ((decision.concepts ?? []).length ||
-        (decision.capabilities ?? []).length ||
-        (decision.locators ?? []).length)
-    ) {
-      errors.push("Benchmark decision " + key + ": only adopted decisions may carry product basis");
-    }
-    if (
-      decision.status === "adopted" &&
-      !(
-        (decision.concepts ?? []).length ||
-        (decision.capabilities ?? []).length ||
-        (decision.locators ?? []).length
-      )
-    ) {
+    const source = locator.fpt;
+    if (source && !resolveFptReference(fpt, source)) {
       errors.push(
-        "Benchmark decision " + key + ": adopted requires concept, capability, or locator basis",
+        "Locator " +
+          locator.id +
+          ": unresolved FPT reference " +
+          [source.file, source.symbol, source.field].filter(Boolean).join("#"),
       );
     }
-  }
-  for (const item of externalItems) {
-    if (item.kind === "node" && mappedNodes.has(item.id)) continue;
-    const key = item.kind + ":" + item.id;
-    if (!decisionKeys.has(key))
-      errors.push("Benchmark decision missing explicit disposition for " + key);
   }
 
   const modules = topology?.modules ?? {};
@@ -629,7 +545,7 @@ export function validateSemanticArchitecture(model, benchmark, topology, command
   const policyKinds = new Set([
     "single-concept-owner",
     "relationship-endpoints-exist",
-    "benchmark-mapping-must-exist",
+    "fpt-reference-must-resolve",
     "derived-concept-cannot-be-authoritative",
     "implementation-mapping-must-resolve",
     "module-owner-must-resolve",
@@ -751,14 +667,14 @@ export async function validateSemanticFilesystem(compiled, root) {
 
 export function compileSemanticArchitecture(
   model,
-  benchmark,
+  fpt,
   topology,
   commandManifest = null,
   dataTopology = null,
   schemaFiles = [],
   relationsByFile = new Map(),
 ) {
-  const errors = validateSemanticArchitecture(model, benchmark, topology, commandManifest);
+  const errors = validateSemanticArchitecture(model, fpt, topology, commandManifest);
   const data = dataTopology
     ? compileDataTopology(model, dataTopology, schemaFiles, relationsByFile)
     : { errors: [], dataTopology: null, surfaces: new Map(), byOwner: new Map(), schemaFiles: [] };
@@ -772,7 +688,6 @@ export function compileSemanticArchitecture(
   const mappings = new Map(
     (model.implementationMappings ?? []).map((item) => [item.semanticOwner, item]),
   );
-  const benchmarkNodes = new Map((benchmark.nodes ?? []).map((item) => [item.id, item]));
   const validationProfiles = new Map(
     (model.evidenceModel?.validationProfiles ?? []).map((item) => [item.id, item]),
   );
@@ -787,7 +702,7 @@ export function compileSemanticArchitecture(
   return {
     errors,
     model,
-    benchmark,
+    fpt,
     topology,
     commandManifest,
     owners,
@@ -797,7 +712,6 @@ export function compileSemanticArchitecture(
     locators,
     invariants,
     mappings,
-    benchmarkNodes,
     validationProfiles,
     dataTopology: data.dataTopology,
     dataSurfaces: data.surfaces,
@@ -809,23 +723,23 @@ export function compileSemanticArchitecture(
 
 export async function loadSemanticArchitecture(root = repositoryRoot) {
   const readJson = async (path) => JSON.parse(await readFile(resolve(root, path), "utf8"));
-  const [model, benchmark, topology, commandManifest, dataSources] = await Promise.all([
+  const [model, fpt, topology, commandManifest, dataSources] = await Promise.all([
     readJson("architecture/semantic-model.json"),
-    readJson("architecture/semantic-benchmark.json"),
+    loadFptDomainTruth(root),
     readJson("architecture/implementation-topology.json"),
     readJson("package.json"),
     loadDataTopologySources(root),
   ]);
   const compiled = compileSemanticArchitecture(
     model,
-    benchmark,
+    fpt,
     topology,
     commandManifest,
     dataSources.dataTopology,
     dataSources.schemaFiles,
     dataSources.relationsByFile,
   );
-  compiled.errors.push(...validateSemanticBenchmark(benchmark));
+  compiled.errors.push(...validateFptDomainTruth(fpt));
   compiled.errors.push(...(await validateSemanticFilesystem(compiled, root)));
   return compiled;
 }
