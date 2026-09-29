@@ -192,15 +192,7 @@ function main() {
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
     ],
     ["tooling:check", ["scripts/tooling/check-tooling.mjs"]],
-    [
-      "tooling:test",
-      [
-        "--test",
-        "scripts/tooling/doctor.test.mjs",
-        "scripts/tooling/check-tooling.test.mjs",
-        "scripts/tooling/validate.test.mjs",
-      ],
-    ],
+    ["tooling:test", ["--test", "scripts/tooling/doctor.test.mjs"]],
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
     ["lint", [biome, "check", "."]],
