@@ -1,0 +1,129 @@
+{
+  "description": "Schema for entries in evals/eval-log.json. Each entry represents one FPT cycle evaluation.",
+  "entry_schema": {
+    "eval_id": {
+      "type": "string",
+      "format": "fpt-NNN",
+      "description": "Unique identifier, auto-incremented"
+    },
+    "project": {
+      "type": "string",
+      "description": "Short project identifier (kebab-case)"
+    },
+    "date_cycle_completed": {
+      "type": "string",
+      "format": "YYYY-MM-DD"
+    },
+    "date_self_eval": {
+      "type": "string",
+      "format": "YYYY-MM-DD"
+    },
+    "date_human_eval": {
+      "type": "string|null",
+      "format": "YYYY-MM-DD",
+      "description": "Null if human eval not yet completed"
+    },
+    "evaluator": {
+      "type": "string"
+    },
+    "evaluator_role": {
+      "type": "string",
+      "enum": ["author", "stakeholder", "domain-expert", "manager", "end-user"]
+    },
+    "problem_summary": {
+      "type": "string",
+      "description": "One-sentence summary of the problem addressed"
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["technology", "business", "science", "engineering", "organizational", "other"]
+    },
+    "decomposition_pattern": {
+      "type": "string",
+      "enum": ["material", "functional", "empirical", "substitution", "recombination", "mixed"]
+    },
+    "fpt_depth": {
+      "type": "string",
+      "enum": ["quick-check", "specific-assumption", "full-cycle", "multi-problem"]
+    },
+    "artifact_paths": {
+      "type": "object",
+      "properties": {
+        "problem_statement": { "type": "string" },
+        "assumptions_map": { "type": "string" },
+        "challenge_log": { "type": "string" },
+        "first_principles_foundation": { "type": "string" },
+        "reconstructed_solution": { "type": "string" },
+        "decision_brief": { "type": "string" },
+        "self_eval": { "type": "string" },
+        "human_eval": { "type": "string|null" }
+      }
+    },
+    "self_eval": {
+      "type": "object",
+      "properties": {
+        "problem_statement_score": { "type": "integer", "min": 0, "max": 5 },
+        "assumptions_map_score": { "type": "integer", "min": 0, "max": 5 },
+        "challenge_log_score": { "type": "integer", "min": 0, "max": 5 },
+        "foundation_score": { "type": "integer", "min": 0, "max": 5 },
+        "reconstruction_score": { "type": "integer", "min": 0, "max": 5 },
+        "total_score": { "type": "integer", "max": 25 },
+        "weakest_artifact": { "type": "string" },
+        "strongest_artifact": { "type": "string" },
+        "primary_gap": { "type": "string" }
+      }
+    },
+    "human_eval": {
+      "type": "object|null",
+      "properties": {
+        "implementation_status": {
+          "type": "string",
+          "enum": ["not_implemented", "partially_implemented", "fully_implemented", "implemented_then_abandoned", "modified_significantly"]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["fully", "partially", "no", "too_early"]
+        },
+        "principles_correct": {
+          "type": "string",
+          "enum": ["all_correct", "mostly_correct", "some_were_wrong", "fundamentally_flawed"]
+        },
+        "invalidated_stayed_invalid": { "type": "boolean" },
+        "ratings": {
+          "type": "object",
+          "properties": {
+            "decomposition_thoroughness": { "type": "integer", "min": 1, "max": 5 },
+            "challenge_rigor": { "type": "integer", "min": 1, "max": 5 },
+            "principle_validity": { "type": "integer", "min": 1, "max": 5 },
+            "reconstruction_quality": { "type": "integer", "min": 1, "max": 5 },
+            "practical_usefulness": { "type": "integer", "min": 1, "max": 5 },
+            "time_justified": { "type": "integer", "min": 1, "max": 5 }
+          }
+        },
+        "total_rating": { "type": "integer", "max": 30 },
+        "what_worked": { "type": "string" },
+        "what_fell_short": { "type": "string" },
+        "process_changes": { "type": "string" },
+        "artifact_feedback": { "type": "string" }
+      }
+    },
+    "lessons_learned": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "time_invested_hours": { "type": "number" },
+        "assumptions_count": { "type": "integer" },
+        "principles_validated": { "type": "integer" },
+        "principles_rejected": { "type": "integer" },
+        "research_gaps_found": { "type": "integer" }
+      }
+    }
+  }
+}
