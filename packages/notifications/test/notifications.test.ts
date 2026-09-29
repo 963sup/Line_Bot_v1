@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createNotifications } from "../src/application/notifications.js";
+import { createNotifications } from "../src/application/use-cases/notifications.js";
 import type { NotificationRepository } from "../src/contracts/repositories/notification-repository.js";
-import type { Notification } from "../src/domain/entities/notification.js";
+import { markNotificationRead, type Notification } from "../src/domain/aggregates/notification.js";
 import { normalizeNotificationId } from "../src/domain/value-objects/notification-id.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
-const item: Notification = {
+const item: Notification = Object.freeze({
   id,
   recipient: "user-1",
   sourceType: "issue",
@@ -18,9 +18,9 @@ const item: Notification = {
   createdAt: 1,
   readAt: null,
   version: 1,
-};
+});
 
-test("notification application scopes reads and read state to the active user", async () => {
+function fixture(overrides: Partial<NotificationRepository> = {}) {
   const calls: string[] = [];
   const repository: NotificationRepository = {
     async read(recipient, query) {
@@ -28,43 +28,131 @@ test("notification application scopes reads and read state to the active user", 
       return { items: [item] };
     },
     async markRead(recipient, notificationId, now) {
-      calls.push(`read-state:${recipient}:${notificationId}:${now}`);
-      return { ...item, readAt: now, version: 2 };
+      calls.push(`mark:${recipient}:${notificationId}:${now}`);
+      return markNotificationRead(item, now);
     },
+    ...overrides,
   };
-  const notifications = createNotifications({
-    activeUser: async () => ({ id: "user-1" }),
+  const deps = {
+    async activeUser(subject: string) {
+      calls.push(`qualify:${subject}`);
+      return { id: "user-1" };
+    },
     repository: () => repository,
     now: () => 10,
-  });
+  };
+  return { calls, deps, notifications: createNotifications(deps) };
+}
 
-  assert.deepEqual(await notifications.read("line-user", { id, unreadOnly: true }), {
-    items: [item],
-  });
-  assert.equal((await notifications.markRead("line-user", id)).readAt, 10);
-  assert.deepEqual(calls, [`read:user-1:${id}:true`, `read-state:user-1:${id}:10`]);
+test("Notification Aggregate owns the first-read transition without changing source truth", () => {
+  const read = markNotificationRead(item, 10);
+  assert.deepEqual(read, { ...item, readAt: 10, version: 2 });
+  assert.equal(item.readAt, null);
+  assert.equal(item.version, 1);
+  assert.equal(markNotificationRead(read, 20), read);
+  const atEpoch = markNotificationRead(item, 0);
+  assert.equal(markNotificationRead(atEpoch, 20), atEpoch);
 });
 
-test("Notification owner canonicalizes locator identity before persistence", async () => {
-  const mixedCaseId = "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA";
-  assert.equal(normalizeNotificationId(mixedCaseId), "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-  assert.equal(normalizeNotificationId("not-a-notification"), null);
-
-  const calls: string[] = [];
-  const notifications = createNotifications({
-    activeUser: async () => ({ id: "user-1" }),
-    repository: () => ({
-      async read(recipient, query) {
-        calls.push(`${recipient}:${query.id ?? ""}`);
-        return { items: [] };
-      },
-      async markRead() {
-        throw new Error("not used");
-      },
-    }),
-    now: () => 10,
+test("use cases scope both operations to the qualified user", async () => {
+  const { notifications, calls } = fixture();
+  assert.deepEqual(await notifications.read("verified-subject", { id, unreadOnly: true }), {
+    ok: true,
+    value: { items: [item] },
   });
+  assert.deepEqual(await notifications.markRead("verified-subject", { id }), {
+    ok: true,
+    value: { ...item, readAt: 10, version: 2 },
+  });
+  assert.deepEqual(calls, [
+    "qualify:verified-subject",
+    `read:user-1:${id}:true`,
+    "qualify:verified-subject",
+    `mark:user-1:${id}:10`,
+  ]);
+});
 
-  await notifications.read("line-user", { id: mixedCaseId });
-  assert.deepEqual(calls, ["user-1:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"]);
+test("Notification owner canonicalizes both query and command locators", async () => {
+  const mixedCaseId = "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA";
+  const normalizedId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  assert.equal(normalizeNotificationId(mixedCaseId), normalizedId);
+  assert.equal(normalizeNotificationId("not-a-notification"), null);
+  const { notifications, calls } = fixture();
+  await notifications.read("subject", { id: mixedCaseId });
+  await notifications.markRead("subject", { id: mixedCaseId });
+  assert.deepEqual(calls, [
+    "qualify:subject",
+    `read:user-1:${normalizedId}:false`,
+    "qualify:subject",
+    `mark:user-1:${normalizedId}:10`,
+  ]);
+});
+
+test("invalid locators are structured business failures without persistence effects", async () => {
+  const { notifications, calls } = fixture();
+  const expected = {
+    ok: false,
+    error: { code: "invalid-notification-id", message: "通知識別碼不正確。" },
+  };
+  assert.deepEqual(await notifications.read("subject", { id: "bad" }), expected);
+  assert.deepEqual(await notifications.markRead("subject", { id: "bad" }), expected);
+  assert.deepEqual(calls, []);
+});
+
+test("an empty inbox differs from an unavailable notification", async () => {
+  const { notifications } = fixture({
+    read: async () => ({ items: [] }),
+    markRead: async () => null,
+  });
+  assert.deepEqual(await notifications.read("subject"), { ok: true, value: { items: [] } });
+  const unavailable = {
+    ok: false,
+    error: { code: "notification-not-found", message: "通知不存在或不可閱讀。" },
+  };
+  assert.deepEqual(await notifications.read("subject", { id }), unavailable);
+  assert.deepEqual(await notifications.markRead("subject", { id }), unavailable);
+});
+
+test("qualification failure cannot reach a repository or the clock", async () => {
+  const rejected = new Error("qualification unavailable");
+  const notifications = createNotifications({
+    activeUser: async () => {
+      throw rejected;
+    },
+    repository: () => assert.fail("must not resolve persistence"),
+    now: () => assert.fail("must not obtain a mutation timestamp"),
+  });
+  await assert.rejects(notifications.read("subject"), (error) => error === rejected);
+  await assert.rejects(notifications.markRead("subject", { id }), (error) => error === rejected);
+});
+
+test("storage failures propagate instead of becoming empty data or not-found results", async () => {
+  const unavailable = new Error("database unavailable");
+  const { notifications } = fixture({
+    read: async () => {
+      throw unavailable;
+    },
+    markRead: async () => {
+      throw unavailable;
+    },
+  });
+  await assert.rejects(notifications.read("subject"), (error) => error === unavailable);
+  await assert.rejects(notifications.markRead("subject", { id }), (error) => error === unavailable);
+});
+
+test("published DTOs whitelist fields and do not expose Aggregate object identity", async () => {
+  const internal = { ...item, internalDeliveryState: "not a published field" };
+  const { notifications } = fixture({
+    read: async () => ({ items: [internal] }),
+    markRead: async () => internal,
+  });
+  const read = await notifications.read("subject");
+  const marked = await notifications.markRead("subject", { id });
+  assert.equal(read.ok, true);
+  assert.equal(marked.ok, true);
+  if (!read.ok || !marked.ok) assert.fail("expected successful projections");
+  assert.deepEqual(read.value.items, [item]);
+  assert.deepEqual(marked.value, item);
+  assert.notEqual(read.value.items[0], internal);
+  assert.notEqual(marked.value, internal);
 });

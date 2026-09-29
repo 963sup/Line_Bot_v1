@@ -3,8 +3,7 @@ import type {
   NotificationQuery,
   NotificationRepository,
 } from "../../../contracts/repositories/notification-repository.js";
-import type { Notification } from "../../../domain/entities/notification.js";
-import { NotificationError } from "../../../domain/error.js";
+import { markNotificationRead, type Notification } from "../../../domain/aggregates/notification.js";
 import type { NotificationKind } from "../../../domain/value-objects/notification-kind.js";
 
 type NotificationRow = {
@@ -54,7 +53,6 @@ export class PostgresNotificationRepository implements NotificationRepository {
           [recipient, query.id ?? null, query.unreadOnly === true],
         )
       ).rows as NotificationRow[];
-      if (query.id && !rows.length) throw new NotificationError(404, "通知不存在或不可閱讀。");
       return { items: rows.map(notification) };
     });
   }
@@ -70,15 +68,17 @@ export class PostgresNotificationRepository implements NotificationRepository {
           [id, recipient],
         )
       ).rows[0] as NotificationRow | undefined;
-      if (!current) throw new NotificationError(404, "通知不存在或不可閱讀。");
-      if (current.read_at !== null) return notification(current);
+      if (!current) return null;
+      const original = notification(current);
+      const next = markNotificationRead(original, now);
+      if (next === original) return original;
       const updated = (
         await sql.query(
           `UPDATE notifications
            SET read_at=$3,version=version+1
            WHERE id=$1::uuid AND recipient=$2
            RETURNING id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version`,
-          [id, recipient, now],
+          [id, recipient, next.readAt],
         )
       ).rows[0] as NotificationRow;
       return notification(updated);

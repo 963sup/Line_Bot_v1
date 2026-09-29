@@ -1,4 +1,4 @@
-import { createNotifications } from "@line_bot_v1/notifications/application/notifications";
+import { createNotifications } from "@line_bot_v1/notifications/application/use-cases/notifications";
 import { createPostgresNotificationRepository } from "@line_bot_v1/notifications/composition/bootstrap/postgres-notification-repository";
 import { activeLineUser } from "./account.server";
 

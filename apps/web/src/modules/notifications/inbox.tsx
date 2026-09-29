@@ -1,13 +1,14 @@
 "use client";
 
-import type { Notification } from "@line_bot_v1/notifications/domain/entities/notification";
+import type {
+  NotificationDto,
+  NotificationPage,
+} from "@line_bot_v1/notifications/contracts/dto/notification";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState } from "../../shared/ui/page-layout";
-
-type NotificationPage = { items: Notification[] };
 
 export default function Inbox({
   liffId,
@@ -72,7 +73,7 @@ export default function Inbox({
           current
             ? {
                 items: current.items.map((item) =>
-                  item.id === id ? (value.notification as Notification) : item,
+                  item.id === id ? (value.notification as NotificationDto) : item,
                 ),
               }
             : current,
