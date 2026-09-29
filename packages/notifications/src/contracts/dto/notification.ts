@@ -1,7 +1,7 @@
 import type { NotificationError } from "../../domain/error.js";
 import {
-  notificationKind,
   type NotificationKind,
+  notificationKind,
 } from "../../domain/value-objects/notification-kind.js";
 
 /** Published recipient projection; not a persistence row or an Aggregate alias. */

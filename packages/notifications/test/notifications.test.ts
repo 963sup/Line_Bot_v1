@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createNotifications } from "../src/application/use-cases/notifications.js";
-import {
-  parseNotificationDto,
-  parseNotificationPage,
-} from "../src/contracts/dto/notification.js";
+import { parseNotificationDto, parseNotificationPage } from "../src/contracts/dto/notification.js";
 import type { NotificationRepository } from "../src/contracts/repositories/notification-repository.js";
 import { markNotificationRead, type Notification } from "../src/domain/aggregates/notification.js";
 import { normalizeNotificationId } from "../src/domain/value-objects/notification-id.js";

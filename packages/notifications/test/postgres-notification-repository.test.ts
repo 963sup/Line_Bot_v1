@@ -97,7 +97,7 @@ test("missing or foreign recipients never reach a write", async () => {
 
 test("invalid provider rows fail closed instead of entering the domain", async () => {
   const repository = new PostgresNotificationRepository(
-    database(async () => ({ rows: [{ ...row, version: "1" }] })),
+    database(async () => ({ rows: [{ ...row, kind: "unknown" }] })),
   );
   await assert.rejects(repository.read("user-1", {}), /invalid data/);
 });

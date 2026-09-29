@@ -7,11 +7,7 @@ import { createNotifications } from "@line_bot_v1/notifications/application/use-
 import type { NotificationDto } from "@line_bot_v1/notifications/contracts/dto/notification";
 import type { NotificationQuery } from "@line_bot_v1/notifications/contracts/repositories/notification-repository";
 import ts from "typescript";
-import {
-  BodyTooLargeError,
-  jsonResponse,
-  readBodyText,
-} from "../src/shared/server/http.js";
+import { BodyTooLargeError, jsonResponse, readBodyText } from "../src/shared/server/http.js";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -36,9 +32,7 @@ type Route = {
   runtime: string;
   dynamic: string;
 };
-type RepositoryCall =
-  | ["read", string, NotificationQuery]
-  | ["mark", string, string, number];
+type RepositoryCall = ["read", string, NotificationQuery] | ["mark", string, string, number];
 
 function isRoute(value: unknown): value is Route {
   if (value === null || typeof value !== "object") return false;
@@ -173,17 +167,11 @@ test("transport rejects origin, type, malformed input and oversized bodies befor
     { origin: "", request: post(JSON.stringify({ id })), status: 503 },
     { origin: "https://example.test/path", request: post(JSON.stringify({ id })), status: 503 },
     {
-      request: post(
-        JSON.stringify({ id }),
-        new Headers({ origin: "https://other.test" }),
-      ),
+      request: post(JSON.stringify({ id }), new Headers({ origin: "https://other.test" })),
       status: 403,
     },
     {
-      request: post(
-        JSON.stringify({ id }),
-        new Headers({ "content-type": "text/plain" }),
-      ),
+      request: post(JSON.stringify({ id }), new Headers({ "content-type": "text/plain" })),
       status: 415,
     },
     { request: post("{"), status: 400 },

@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  type NotificationPage,
   parseNotificationDto,
   parseNotificationPage,
-  type NotificationPage,
 } from "@line_bot_v1/notifications/contracts/dto/notification";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
