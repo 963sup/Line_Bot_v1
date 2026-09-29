@@ -58,7 +58,8 @@ test("foreign authoritative read is rejected", () => {
     f.implementationTopology,
     f.dataTopology,
     {
-      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts": "SELECT * FROM users",
+      "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts":
+        "SELECT * FROM users",
     },
   );
   assert.match(errors.join("\n"), /reads users owned by account/);
