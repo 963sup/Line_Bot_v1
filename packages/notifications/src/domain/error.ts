@@ -1,8 +1,4 @@
-export class NotificationError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+export type NotificationError = {
+  code: "invalid-notification-id" | "notification-not-found";
+  message: string;
+};

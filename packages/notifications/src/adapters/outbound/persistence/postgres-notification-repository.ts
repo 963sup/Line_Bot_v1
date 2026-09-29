@@ -3,37 +3,70 @@ import type {
   NotificationQuery,
   NotificationRepository,
 } from "../../../contracts/repositories/notification-repository.js";
-import type { Notification } from "../../../domain/entities/notification.js";
-import { NotificationError } from "../../../domain/error.js";
-import type { NotificationKind } from "../../../domain/value-objects/notification-kind.js";
+import {
+  markNotificationRead,
+  type Notification,
+} from "../../../domain/aggregates/notification.js";
+import { notificationKind } from "../../../domain/value-objects/notification-kind.js";
 
-type NotificationRow = {
-  id: string;
-  recipient: string;
-  source_type: string;
-  source_id: string;
-  source_version: string;
-  kind: NotificationKind;
-  title: string;
-  body: string;
-  created_at: number | string;
-  read_at: number | string | null;
-  version: number;
-};
+function invalidRow() {
+  return new Error("Notification persistence returned invalid data.");
+}
 
-function notification(row: NotificationRow): Notification {
+function rowObject(value: unknown): object {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) throw invalidRow();
+  return value;
+}
+
+function rowField(row: object, key: string): unknown {
+  const value: unknown = Reflect.get(row, key);
+  return value;
+}
+
+function stringField(row: object, key: string): string {
+  const value = rowField(row, key);
+  if (typeof value !== "string") throw invalidRow();
+  return value;
+}
+
+function integerValue(value: unknown): number {
+  if (typeof value === "number" && Number.isSafeInteger(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isSafeInteger(parsed)) return parsed;
+  }
+  throw invalidRow();
+}
+
+function integerField(row: object, key: string): number {
+  return integerValue(rowField(row, key));
+}
+
+function nullableIntegerField(row: object, key: string): number | null {
+  const value = rowField(row, key);
+  return value === null ? null : integerValue(value);
+}
+
+function notification(value: unknown): Notification {
+  const row = rowObject(value);
+  const kind = notificationKind(rowField(row, "kind"));
+  if (kind === null) throw invalidRow();
+
+  const version = integerField(row, "version");
+  if (version < 1) throw invalidRow();
+
   return {
-    id: row.id,
-    recipient: row.recipient,
-    sourceType: row.source_type,
-    sourceId: row.source_id,
-    sourceVersion: row.source_version,
-    kind: row.kind,
-    title: row.title,
-    body: row.body,
-    createdAt: Number(row.created_at),
-    readAt: row.read_at === null ? null : Number(row.read_at),
-    version: row.version,
+    id: stringField(row, "id"),
+    recipient: stringField(row, "recipient"),
+    sourceType: stringField(row, "source_type"),
+    sourceId: stringField(row, "source_id"),
+    sourceVersion: stringField(row, "source_version"),
+    kind,
+    title: stringField(row, "title"),
+    body: stringField(row, "body"),
+    createdAt: integerField(row, "created_at"),
+    readAt: nullableIntegerField(row, "read_at"),
+    version,
   };
 }
 
@@ -42,45 +75,48 @@ export class PostgresNotificationRepository implements NotificationRepository {
 
   read(recipient: string, query: NotificationQuery) {
     return this.db.transaction(async (sql) => {
-      const rows = (
-        await sql.query(
-          `SELECT id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version
-           FROM notifications
-           WHERE recipient=$1
-             AND ($2::uuid IS NULL OR id=$2::uuid)
-             AND ($3::boolean IS FALSE OR read_at IS NULL)
-           ORDER BY created_at DESC,id
-           LIMIT 100`,
-          [recipient, query.id ?? null, query.unreadOnly === true],
-        )
-      ).rows as NotificationRow[];
-      if (query.id && !rows.length) throw new NotificationError(404, "通知不存在或不可閱讀。");
+      const result = await sql.query(
+        `SELECT id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version
+         FROM notifications
+         WHERE recipient=$1
+           AND ($2::uuid IS NULL OR id=$2::uuid)
+           AND ($3::boolean IS FALSE OR read_at IS NULL)
+         ORDER BY created_at DESC,id
+         LIMIT 100`,
+        [recipient, query.id ?? null, query.unreadOnly === true],
+      );
+      const rows: unknown[] = result.rows;
       return { items: rows.map(notification) };
     });
   }
 
   markRead(recipient: string, id: string, now: number) {
     return this.db.transaction(async (sql) => {
-      const current = (
-        await sql.query(
-          `SELECT id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version
-           FROM notifications
-           WHERE id=$1::uuid AND recipient=$2
-           FOR UPDATE`,
-          [id, recipient],
-        )
-      ).rows[0] as NotificationRow | undefined;
-      if (!current) throw new NotificationError(404, "通知不存在或不可閱讀。");
-      if (current.read_at !== null) return notification(current);
-      const updated = (
-        await sql.query(
-          `UPDATE notifications
-           SET read_at=$3,version=version+1
-           WHERE id=$1::uuid AND recipient=$2
-           RETURNING id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version`,
-          [id, recipient, now],
-        )
-      ).rows[0] as NotificationRow;
+      const currentResult = await sql.query(
+        `SELECT id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version
+         FROM notifications
+         WHERE id=$1::uuid AND recipient=$2
+         FOR UPDATE`,
+        [id, recipient],
+      );
+      const currentRows: unknown[] = currentResult.rows;
+      const current = currentRows[0];
+      if (current === undefined) return null;
+
+      const original = notification(current);
+      const next = markNotificationRead(original, now);
+      if (next === original) return original;
+
+      const updatedResult = await sql.query(
+        `UPDATE notifications
+         SET read_at=$3,version=version+1
+         WHERE id=$1::uuid AND recipient=$2
+         RETURNING id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version`,
+        [id, recipient, next.readAt],
+      );
+      const updatedRows: unknown[] = updatedResult.rows;
+      const updated = updatedRows[0];
+      if (updated === undefined) throw invalidRow();
       return notification(updated);
     });
   }

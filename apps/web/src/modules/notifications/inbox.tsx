@@ -1,13 +1,26 @@
 "use client";
 
-import type { Notification } from "@line_bot_v1/notifications/domain/entities/notification";
+import {
+  type NotificationPage,
+  parseNotificationDto,
+  parseNotificationPage,
+} from "@line_bot_v1/notifications/contracts/dto/notification";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState } from "../../shared/ui/page-layout";
 
-type NotificationPage = { items: Notification[] };
+function responseField(value: unknown, key: string): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const result: unknown = Reflect.get(value, key);
+  return result;
+}
+
+function responseError(value: unknown, fallback: string) {
+  const error = responseField(value, "error");
+  return typeof error === "string" && error ? error : fallback;
+}
 
 export default function Inbox({
   liffId,
@@ -37,9 +50,11 @@ export default function Inbox({
         headers: { "x-line-token": token },
         cache: "no-store",
       });
-      const value = await response.json();
-      if (!response.ok) throw new Error(value.error || "通知讀取失敗。");
-      if (ticket === generation.current) setPage(value as NotificationPage);
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(responseError(value, "通知讀取失敗。"));
+      const nextPage = parseNotificationPage(value);
+      if (nextPage === null) throw new Error("通知回應格式不正確。");
+      if (ticket === generation.current) setPage(nextPage);
     } catch (cause) {
       if (ticket === generation.current) {
         setPage(null);
@@ -65,15 +80,15 @@ export default function Inbox({
         },
         body: JSON.stringify({ id }),
       });
-      const value = await response.json();
-      if (!response.ok) throw new Error(value.error || "通知狀態更新失敗。");
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(responseError(value, "通知狀態更新失敗。"));
+      const notification = parseNotificationDto(responseField(value, "notification"));
+      if (notification === null) throw new Error("通知狀態回應格式不正確。");
       if (ticket === generation.current) {
         setPage((current) =>
           current
             ? {
-                items: current.items.map((item) =>
-                  item.id === id ? (value.notification as Notification) : item,
-                ),
+                items: current.items.map((item) => (item.id === id ? notification : item)),
               }
             : current,
         );
