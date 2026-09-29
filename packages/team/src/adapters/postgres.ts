@@ -12,6 +12,7 @@ import {
   qualifyOrganizationTeamScope,
 } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import type { TeamCommand } from "../application/commands/team-command.js";
 import type { TeamActor, TeamRepository } from "../application/ports.js";
 import type {
   TeamCommandReceipt,
@@ -19,15 +20,13 @@ import type {
   TeamSummary,
   TeamView,
 } from "../contracts.js";
+import { TeamError, teamAssert } from "../domain/errors/team-error.js";
 import {
   requireAnotherEffectiveMaintainer,
   requireTeamMaintainer,
-  type TeamCommand,
-  TeamError,
-  teamAssert,
-  teamSlugFromName,
-  teamVersion,
-} from "../domain.js";
+} from "../domain/policies/team-maintenance.js";
+import { teamVersion } from "../domain/policies/team-version.js";
+import { teamSlugFromName } from "../domain/value-objects/team-slug.js";
 
 type TeamRow = {
   id: string;
