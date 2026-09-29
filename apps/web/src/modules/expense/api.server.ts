@@ -17,9 +17,6 @@ const json = (data: unknown, status = 200) =>
     headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
   });
 
-/**
- * 脫敏投影：過濾內部敏感屬性 (owner, scope, imageId)
- */
 const publicExpense = (d: Expense) => {
   const view = { ...d } as Record<string, unknown>;
   for (const key of ["owner", "scope", "imageId", "project"]) delete view[key];
@@ -33,9 +30,6 @@ type ExpenseRequests = {
   requestIdentity: (request: Request) => Promise<string>;
 };
 
-/**
- * 核心請求調度管線
- */
 async function run(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -43,21 +37,15 @@ async function run(
   expense: ExpenseRequests,
 ) {
   try {
-    // 1. 同源檢查（防範 CSRF 攻擊）
     if (mutate && request.headers.get("origin") !== process.env.APP_ORIGIN) {
       throw new ExpenseError(403, "來源不符，請重新開啟操作頁。");
     }
 
-    // 2. 密碼學身分驗證；各用例在持久化邊界前查核 active membership。
     const subject = await expense.requestIdentity(request);
-
-    // 3. 實體 ID 格式正規化白名單檢查
     const { id } = await context.params;
     if (!/^[a-f0-9-]{36}$/.test(id)) throw new ExpenseError(404, "資料不存在。");
-    // 4. 唯讀查詢路徑 (GET)
     if (!mutate) return json(publicExpense(await expense.getExpense(subject, id)));
 
-    // 5. 變更操作路徑 (POST) - 酬載尺寸嚴格限制 (<=8KB)
     if (!request.headers.get("content-type")?.startsWith("application/json")) {
       throw new ExpenseError(415, "資料格式不正確。");
     }
@@ -79,13 +67,12 @@ async function run(
       throw new ExpenseError(400, "缺少資料版本。");
     }
 
-    // 6. 狀態躍遷執行：AI 辨識或實體命令推進
-    const d =
-      command.type === "recognize"
-        ? ((await expense.recognizeReceipt(subject, id, command.revision)) as Expense)
-        : await expense.commandExpense(subject, id, command);
+    if (command.type === "recognize") {
+      const reading = await expense.recognizeReceipt(subject, id, command.revision);
+      return json({ reading });
+    }
 
-    // 核心約定：靜默操作，不觸發任何 LINE 群聊廣播訊息
+    const d = await expense.commandExpense(subject, id, command);
     return json(publicExpense(d));
   } catch (error) {
     const known =
@@ -100,7 +87,7 @@ async function run(
     });
     return known
       ? json({ error: error.message }, status)
-      : json({ error: "服務暫不可用，請稍後重試。" }, 503);
+      : json({ error: "服務暫不可用，請稍後重試。" }, status);
   }
 }
 

@@ -2,14 +2,12 @@ import { randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { ReceiptIntakeStore } from "../../../contracts/ports/receipt-intake.js";
-import type { ReceiptReading } from "../../../contracts/receipt-reading.js";
 import type { ExpenseRepository } from "../../../contracts/repositories/expense-repository.js";
 import {
   applyExpenseCommand,
   type Expense,
   type ExpenseCommand,
   ExpenseError,
-  validateExpenseFields,
 } from "../../../domain/aggregates/expense.js";
 
 export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseRepository {
@@ -123,27 +121,6 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
         await this.write(sql, next);
         await this.event(sql, next, command.type);
       }
-      return next;
-    });
-  }
-  recognized(id: string, owner: string, revision: number, reading: ReceiptReading) {
-    return this.db.transaction(async (sql) => {
-      await this.activeOwner(sql, owner);
-      const d = await this.getFrom(sql, id, owner, true);
-      if (d.revision !== revision || d.status !== "pending")
-        throw new ExpenseError(409, "資料已更新，請重新載入。");
-      if (!reading.isReceipt) throw new ExpenseError(422, "無法確認為收據，請重新傳送清晰圖片。");
-      const fields = validateExpenseFields({
-        merchant: reading.merchant ?? "",
-        amount: reading.amount ?? "",
-        currency: reading.currency ?? "",
-        date: reading.date ?? "",
-        invoiceNumber: reading.invoiceNumber ?? "",
-        payment: "",
-      });
-      const next: Expense = { ...d, ...fields, status: "draft", revision: d.revision + 1 };
-      await this.write(sql, next);
-      await this.event(sql, next, "recognized");
       return next;
     });
   }

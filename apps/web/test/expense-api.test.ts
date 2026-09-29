@@ -68,20 +68,13 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
     await store.arm("group:B", otherOwner);
     const other = (await store.receive("group:B", otherOwner, "2"))!;
     assert.equal((await GET(request(), { params: Promise.resolve({ id: other.id }) })).status, 404);
-    const draft = await store.recognized(d.id, owner, 1, {
-      isReceipt: true,
-      merchant: "Demo",
-      amount: "1260",
-      currency: "TWD",
-      date: "2026-09-06",
-      invoiceNumber: null,
-      uncertainFields: [],
-    });
+
     assert.equal(
-      (await POST(request({ type: "confirm", revision: draft.revision, fields: {} }), context))
-        .status,
+      (await POST(request({ type: "confirm", revision: d.revision, fields: {} }), context)).status,
       400,
     );
+    assert.equal((await store.get(d.id, owner)).status, "pending");
+
     const fields = {
       merchant: "Demo",
       amount: "1260",
@@ -90,7 +83,7 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
       invoiceNumber: "",
       payment: "advance",
     };
-    const cmd = { type: "confirm", revision: draft.revision, fields };
+    const cmd = { type: "confirm", revision: d.revision, fields };
     assert.equal((await POST(request(cmd), context)).status, 200);
     assert.equal((await POST(request(cmd), context)).status, 200);
     assert.equal((await store.get(d.id, owner)).status, "confirmed");

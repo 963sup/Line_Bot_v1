@@ -10,12 +10,12 @@
  * 2. 核心公理與不變量 (Core Invariants):
  *    - 【精確度公理】：金額以字串表示而非 IEEE 754 浮點數，消除二進位浮點捨入誤差（如 0.1 + 0.2 != 0.3）。
  *    - 【純淨性公理】：Domain 層不依賴任何外部 I/O、SDK 或儲存驅動，所有規則均為確定性純函數 (Pure Functions)。
+ *    - 【AI 非權威公理】：OCR / LLM 辨識只產生 transient reading，不修改 Expense；只有使用者 command 能建立正式 state transition。
  *    - 【不可篡改狀態機】：
- *        [pending] --(OCR辨識成功)--> [draft] --(使用者儲存)--> [draft]
- *                                        |         |
- *                                   (使用者確認)  (使用者取消)
- *                                        v         v
- *                                   [confirmed] [cancelled]
+ *        [pending] --(使用者儲存)--> [draft] --(使用者儲存)--> [draft]
+ *            |                           |
+ *            +----(使用者確認)----------> [confirmed]
+ *            +----(使用者取消)----------> [cancelled]
  *    - 【樂觀並發控制 (OCC)】：透過遞增整數 `revision` 實現 CAS (Compare-And-Swap) 語意，防範網路延遲導致覆蓋寫入。
  *    - 【終態等冪 (Terminal Idempotency)】：已進入 confirmed 或 cancelled 狀態時，重複的終端指令視為安全等冪，不拋出衝突。
  * ============================================================================
@@ -36,7 +36,7 @@ export type ExpenseFields = {
 
 /**
  * 支出聚合根實體 (Expense Aggregate Root)
- * 結合領域欄位與分散式追蹤屬性（UUID id、流水號 number、擁有者 owner、群組 scope、圖片關聯 imageId、狀態 status、版號 revision）。
+ * 結合領域欄位與分散式追蹤屬性（UUID id、流水號 number、擁有者 owner、群組 scope、圖片關聯imageId、狀態 status、版號 revision）。
  */
 export type Expense = ExpenseFields & {
   id: string;
@@ -178,11 +178,7 @@ export function applyExpenseCommand(expense: Expense, command: ExpenseCommand): 
     return { ...expense, status: "cancelled", revision: expense.revision + 1 };
   }
 
-  // 儲存與確認轉移：必須處於 draft 狀態（即已完成收據辨識或初步填寫）
-  if (expense.status !== "draft") {
-    throw new ExpenseError(409, "請先辨識收據。");
-  }
-
+  // AI 辨識不改狀態；只有使用者明確 save / confirm 才把欄位寫入 authoritative Expense。
   return {
     ...expense,
     ...validateExpenseFields(command.fields, command.type === "confirm"),

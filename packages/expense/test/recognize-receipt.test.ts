@@ -50,10 +50,6 @@ function repository(expense = pending()) {
       calls.push(["command", ...args]);
       return expense;
     },
-    recognized: async (...args) => {
-      calls.push(["recognized", ...args]);
-      return { ...expense, status: "draft", revision: expense.revision + 1 };
-    },
   };
   return { store, calls };
 }
@@ -96,13 +92,12 @@ test("expense use cases reject before storage when the verified subject has no a
   );
 });
 
-test("recognition preserves pending shortcut and rejects a stale revision before model work", async () => {
-  const completed = pending({ status: "draft", revision: 3 });
-  const ready = repository(completed);
+test("recognition only accepts the exact pending revision before model work", async () => {
+  const completed = repository(pending({ status: "draft", revision: 3 }));
   let runs = 0;
   const recognize = createRecognizeReceipt({
     activeUser: async () => ({ id: "stable-owner" }),
-    store: () => ready.store,
+    store: () => completed.store,
     recognize: async () => {
       runs++;
       return reading;
@@ -113,7 +108,9 @@ test("recognition preserves pending shortcut and rejects a stale revision before
     now: () => 1,
     cooldownMs: 30_000,
   });
-  assert.equal(await recognize("subject", "expense-id", 1), completed);
+  await assert.rejects(recognize("subject", "expense-id", 3), (error: unknown) => {
+    return error instanceof ExpenseError && error.status === 409;
+  });
   assert.equal(runs, 0);
 
   const stale = repository(pending({ revision: 2 }));
@@ -132,8 +129,26 @@ test("recognition preserves pending shortcut and rejects a stale revision before
   });
 });
 
-test("recognition merges concurrent calls, enforces cooldown, wraps failures, and allows retry", async () => {
+test("recognition returns transient reading without an Expense mutation", async () => {
   const { store, calls } = repository();
+  const recognize = createRecognizeReceipt({
+    activeUser: async () => ({ id: "stable-owner" }),
+    store: () => store,
+    recognize: async () => reading,
+    recognition: new Map(),
+    nextReceiptAt: () => undefined,
+    setNextReceiptAt: () => {},
+    now: () => 1,
+    cooldownMs: 30_000,
+  });
+
+  assert.deepEqual(await recognize("subject", "expense-id", 1), reading);
+  assert.equal(calls.filter(([name]) => name === "command").length, 0);
+  assert.deepEqual(await store.get("expense-id", "stable-owner"), pending());
+});
+
+test("recognition merges concurrent calls, enforces cooldown, wraps failures, and allows retry", async () => {
+  const { store } = repository();
   let release!: () => void;
   const blocked = new Promise<void>((resolve) => {
     release = resolve;
@@ -144,7 +159,7 @@ test("recognition merges concurrent calls, enforces cooldown, wraps failures, an
   });
   let runs = 0;
   let nextReceiptAt: number | undefined;
-  const recognition = new Map<string, Promise<Expense>>();
+  const recognition = new Map<string, Promise<ReceiptReading>>();
   const recognize = createRecognizeReceipt({
     activeUser: async () => ({ id: "stable-owner" }),
     store: () => store,
@@ -167,11 +182,7 @@ test("recognition merges concurrent calls, enforces cooldown, wraps failures, an
   await started;
   assert.equal(runs, 1);
   release();
-  assert.deepEqual(await Promise.all([first, second]), [
-    pending({ status: "draft", revision: 2 }),
-    pending({ status: "draft", revision: 2 }),
-  ]);
-  assert.equal(calls.filter(([name]) => name === "recognized").length, 1);
+  assert.deepEqual(await Promise.all([first, second]), [reading, reading]);
   assert.equal(recognition.size, 0);
 
   await assert.rejects(recognize("subject", "another-id", 1), (error: unknown) => {
@@ -197,5 +208,24 @@ test("recognition merges concurrent calls, enforces cooldown, wraps failures, an
   await assert.rejects(retry("subject", "expense-id", 1), (error: unknown) => {
     return error instanceof ExpenseError && error.status === 503;
   });
-  assert.equal((await retry("subject", "expense-id", 1)).status, "draft");
+  assert.deepEqual(await retry("subject", "expense-id", 1), reading);
+});
+
+test("recognition rejects non-receipt model output without mutating Expense", async () => {
+  const { store, calls } = repository();
+  const recognize = createRecognizeReceipt({
+    activeUser: async () => ({ id: "stable-owner" }),
+    store: () => store,
+    recognize: async () => ({ ...reading, isReceipt: false }),
+    recognition: new Map(),
+    nextReceiptAt: () => undefined,
+    setNextReceiptAt: () => {},
+    now: () => 1,
+    cooldownMs: 30_000,
+  });
+
+  await assert.rejects(recognize("subject", "expense-id", 1), (error: unknown) => {
+    return error instanceof ExpenseError && error.status === 422;
+  });
+  assert.equal(calls.filter(([name]) => name === "command").length, 0);
 });

@@ -7,6 +7,14 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { authHeaders } from "../../shared/browser/supabase-session";
 
 type View = Omit<Expense, "owner" | "scope" | "imageId">;
+type ReceiptReadingView = {
+  merchant: string | null;
+  amount: string | null;
+  currency: string | null;
+  date: string | null;
+  invoiceNumber: string | null;
+};
+
 const labels = {
   merchant: "商家",
   amount: "金額",
@@ -17,22 +25,19 @@ const labels = {
 
 export default function ExpensePanel({ liffId }: { liffId: string }) {
   const [expense, setExpense] = useState<View>();
+  const [hasRecognition, setHasRecognition] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
   const [notice, setNotice] = useState("");
   const [token, setToken] = useState("");
   const [id, setId] = useState("");
 
-  // 確認完成後自動關閉 LIFF 視窗返回原生聊天室
   useEffect(() => {
     if (expense?.status !== "confirmed" || !liffClient.inClient()) return;
     const timer = setTimeout(() => liffClient.close(), 1500);
     return () => clearTimeout(timer);
   }, [expense?.status]);
 
-  /**
-   * 載入特定支出資料（攜帶 LIFF Bearer Token）
-   */
   async function load(access: string, expenseId: string) {
     const result = await fetch(`/api/expenses/${encodeURIComponent(expenseId)}`, {
       headers: await authHeaders(access),
@@ -40,14 +45,13 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
     });
     const data = await result.json();
     if (!result.ok) throw new Error(data.error);
+    setHasRecognition(false);
     setExpense(data);
   }
 
-  /**
-   * 初始化 LIFF 客戶端環境並核驗登入
-   */
   async function initialize() {
     setExpense(undefined);
+    setHasRecognition(false);
     setToken("");
     try {
       if (!liffId) throw new Error("操作頁尚未設定。");
@@ -65,9 +69,6 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
     }
   }
 
-  /**
-   * 派發支出狀態機指令 (辨識、儲存、確認、取消)
-   */
   async function command(type: "recognize" | "save" | "confirm" | "cancel") {
     if (!expense || busy) return;
     setBusy(true);
@@ -91,6 +92,22 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       });
       const data = await result.json();
       if (!result.ok) throw new Error(data.error);
+
+      if (type === "recognize") {
+        const reading = data.reading as ReceiptReadingView;
+        setExpense({
+          ...expense,
+          merchant: reading.merchant ?? "",
+          amount: reading.amount ?? "",
+          currency: reading.currency ?? "",
+          date: reading.date ?? "",
+          invoiceNumber: reading.invoiceNumber ?? "",
+        });
+        setHasRecognition(true);
+        return;
+      }
+
+      setHasRecognition(false);
       setExpense(data);
       if (type === "save") setNotice("已儲存修改。");
     } catch (e) {
@@ -147,7 +164,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
             完成，返回聊天
           </button>
         </section>
-      ) : expense?.status === "pending" ? (
+      ) : expense?.status === "pending" && !hasRecognition ? (
         <section>
           <p>辨識後，在這裡核對收據與補齊資料。</p>
           <p className="expense-hint">
