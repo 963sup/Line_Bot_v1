@@ -1,6 +1,4 @@
-import type { UserStatus } from "@line_bot_v1/account/domain/user";
-
-type TeamMembershipStatus = "pending" | "active" | "removed";
+import { teamAssert } from "../../domain/errors/team-error.js";
 
 type TeamCommandContext = Readonly<{
   requestId: string;
@@ -41,74 +39,6 @@ export type TeamCommand =
         targetUserId: string;
         enabled: boolean;
       }>);
-
-export type TeamMemberState = Readonly<{
-  userId: string;
-  userStatus: UserStatus;
-  membershipStatus: TeamMembershipStatus;
-  isMaintainer: boolean;
-}>;
-
-export class TeamError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = "TeamError";
-  }
-}
-
-export function teamAssert(condition: unknown, status: number, message: string): asserts condition {
-  if (!condition) throw new TeamError(status, message);
-}
-
-export function teamVersion(actual: number, expected: number) {
-  teamAssert(actual === expected, 409, "團隊資料已更新，請重新載入後再確認。");
-}
-
-const teamSlugPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
-
-export function normalizeTeamSlug(value: string): string {
-  const slug = value.normalize("NFKC").trim().toLowerCase();
-  teamAssert(
-    slug.length >= 1 && slug.length <= 80 && teamSlugPattern.test(slug),
-    400,
-    "Team slug 不正確。",
-  );
-  return slug;
-}
-
-export function teamSlugFromName(value: string): string {
-  const slug = value
-    .normalize("NFKC")
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
-  return normalizeTeamSlug(slug);
-}
-
-export function requireTeamMaintainer(isMaintainer: boolean) {
-  teamAssert(isMaintainer, 403, "需要團隊維護者權限。");
-}
-
-export function requireAnotherEffectiveMaintainer(
-  members: readonly TeamMemberState[],
-  targetUserId: string,
-) {
-  teamAssert(
-    members.some(
-      (member) =>
-        member.userId !== targetUserId &&
-        member.userStatus === "active" &&
-        member.membershipStatus === "active" &&
-        member.isMaintainer,
-    ),
-    409,
-    "不能移除或降權最後一位有效團隊維護者。",
-  );
-}
 
 const stableId = /^[\w-]{1,128}$/;
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

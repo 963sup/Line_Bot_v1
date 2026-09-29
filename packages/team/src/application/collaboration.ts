@@ -1,5 +1,7 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeTeamSlug, parseTeamCommand, TeamError, teamAssert } from "../domain.js";
+import { TeamError, teamAssert } from "../domain/errors/team-error.js";
+import { normalizeTeamSlug } from "../domain/value-objects/team-slug.js";
+import { parseTeamCommand } from "./commands/team-command.js";
 import type { TeamActor, TeamRepository } from "./ports.js";
 
 const stableId = /^[\w-]{1,128}$/;

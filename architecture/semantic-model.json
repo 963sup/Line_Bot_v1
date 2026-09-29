@@ -1309,10 +1309,20 @@
         "scope": "current Team collaboration application surface",
         "sourcePaths": [
           "packages/team/src/application/collaboration.ts",
+          "packages/team/src/application/commands/team-command.ts",
           "packages/team/src/application/ports.ts",
-          "packages/team/src/domain.ts"
+          "packages/team/src/domain/errors/team-error.ts",
+          "packages/team/src/domain/policies/team-maintenance.ts",
+          "packages/team/src/domain/policies/team-version.ts",
+          "packages/team/src/domain/value-objects/team-slug.ts"
         ],
-        "publicExports": ["./application/collaboration", "./application/ports", "./domain"],
+        "publicExports": [
+          "./application/collaboration",
+          "./application/commands/team-command",
+          "./application/ports",
+          "./domain/errors/team-error",
+          "./domain/value-objects/team-slug"
+        ],
         "entrypoints": [
           "apps/web/src/app/(mobile)/team/page.tsx",
           "apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"

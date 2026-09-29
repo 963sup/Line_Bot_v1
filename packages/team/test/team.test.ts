@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createTeamCollaboration } from "../src/application/collaboration.js";
-import { normalizeTeamSlug, parseTeamCommand, TeamError, teamSlugFromName } from "../src/domain.js";
+import { parseTeamCommand } from "../src/application/commands/team-command.js";
+import { TeamError } from "../src/domain/errors/team-error.js";
+import { normalizeTeamSlug, teamSlugFromName } from "../src/domain/value-objects/team-slug.js";
 
 test("invalid and retired Team operations fail before constructing the repository", () => {
   const service = createTeamCollaboration(

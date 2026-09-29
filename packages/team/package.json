@@ -20,9 +20,17 @@
       "types": "./dist/contracts.d.ts",
       "default": "./dist/contracts.js"
     },
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
+    "./application/commands/team-command": {
+      "types": "./dist/application/commands/team-command.d.ts",
+      "default": "./dist/application/commands/team-command.js"
+    },
+    "./domain/errors/team-error": {
+      "types": "./dist/domain/errors/team-error.d.ts",
+      "default": "./dist/domain/errors/team-error.js"
+    },
+    "./domain/value-objects/team-slug": {
+      "types": "./dist/domain/value-objects/team-slug.d.ts",
+      "default": "./dist/domain/value-objects/team-slug.js"
     }
   },
   "files": [
