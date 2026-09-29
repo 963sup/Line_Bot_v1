@@ -19,7 +19,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { runReceiptAgent, validateReceiptReading } from "../src/agents/receipt.js";
+import { recognizeReceiptImage, validateReceiptReading } from "../src/adapters/outbound/recognition/gemini-receipt-recognizer.js";
 
 const reading = {
   isReceipt: true,
@@ -37,7 +37,7 @@ test("uncertain money and invalid dates become missing fields instead of guesses
   assert.throws(() => validateReceiptReading({ ...reading, uncertainFields: ["execute"] }));
 });
 test("receipt agent sends bounded image with schema and no tools", async () => {
-  const result = await runReceiptAgent({
+  const result = await recognizeReceiptImage({
     model: "offline",
     mimeType: "image/png",
     image: new Uint8Array([1, 2, 3]),

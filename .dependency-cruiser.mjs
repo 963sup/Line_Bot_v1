@@ -95,8 +95,14 @@ export default {
         "Domain layer must be pure and never depend on contracts, application, adapters, or infrastructure",
       from: { path: "^packages/([^/]+)/src/domain(?:\\.ts|/)" },
       to: {
-        path: "^packages/$1/src/(contracts|application|adapters|agents|testing|database|migration)(?:\\.ts|/)",
+        path: "^packages/$1/src/(contracts|application|adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)",
       },
+    },
+    {
+      name: "context-domain-does-not-import-runtime",
+      severity: "error",
+      from: { path: "^packages/[^/]+/src/domain(?:\\.ts|/)" },
+      to: { dependencyTypes: ["core", "npm", "npm-dev", "npm-optional", "npm-peer", "npm-bundled"] },
     },
     {
       name: "context-contracts-do-not-import-implementation",
@@ -105,7 +111,7 @@ export default {
         "Contracts layer (Ports & DTOs) may depend on domain, but must not depend on application or adapters",
       from: { path: "^packages/([^/]+)/src/contracts(?:\\.ts|/)" },
       to: {
-        path: "^packages/$1/src/(application|adapters|agents|testing|database|migration)(?:\\.ts|/)",
+        path: "^packages/$1/src/(application|adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)",
       },
     },
     {
@@ -124,7 +130,7 @@ export default {
         "Application use cases must interact via contracts/ports and never depend directly on concrete adapters",
       from: { path: "^packages/([^/]+)/src/application(?:\\.ts|/)" },
       to: {
-        path: "^packages/$1/src/(adapters|agents|testing|database|migration)(?:\\.ts|/)",
+        path: "^packages/$1/src/(adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)",
       },
     },
     {
@@ -132,7 +138,7 @@ export default {
       severity: "error",
       comment: "Domain, contracts, and application layers must never depend on concrete adapters",
       from: { path: "^packages/[^/]+/src/(domain|contracts|application)(?:\\.ts|/)" },
-      to: { path: "^packages/[^/]+/src/adapters(?:\\.ts|/)" },
+      to: { path: "^packages/[^/]+/src/(adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)" },
     },
     {
       name: "no-relative-imports-across-packages",

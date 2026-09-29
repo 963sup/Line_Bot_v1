@@ -4,7 +4,7 @@ import { PostgresUserStore } from "@line_bot_v1/account/postgres";
 import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
-import { PostgresExpenseStore } from "@line_bot_v1/expense/postgres";
+import { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
@@ -19,7 +19,7 @@ const state = globalThis as typeof globalThis & {
   dailyCheckInStore?: ReturnType<typeof createPostgresDailyCheckInStore>;
   walletStore?: PostgresWalletStore;
   attendanceStore?: AttendancePersistence;
-  expenseStore?: PostgresExpenseStore;
+  expenseStore?: ReturnType<typeof createPostgresExpenseStore>;
   lineIdempotency?: WebhookIdempotencyStore;
 };
 const identities = new Map<string, { id: string; sub: string; email: string }>();
@@ -40,7 +40,7 @@ export async function mockSupabase() {
   state.dailyCheckInStore = createPostgresDailyCheckInStore(fixture.db);
   state.walletStore = new PostgresWalletStore(fixture.db);
   state.attendanceStore = createPostgresAttendanceStore(fixture.db);
-  state.expenseStore = new PostgresExpenseStore(fixture.db);
+  state.expenseStore = createPostgresExpenseStore(fixture.db);
   mock.method(supabaseIdentity(), "verify", async (token: string) => {
     const response = await fetch("https://api.line.me/v2/profile", {
       headers: { Authorization: `Bearer ${token}` },

@@ -5,7 +5,7 @@ import {
   type Expense,
   ExpenseError,
   validateExpenseFields,
-} from "../src/domain.js";
+} from "../src/domain/aggregates/expense.js";
 
 const draft = (overrides: Partial<Expense> = {}): Expense => ({
   id: "expense-id",

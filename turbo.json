@@ -28,6 +28,7 @@
       "persistent": true
     },
     "@line_bot_v1/web#build": {
+      "cache": false,
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
       "env": ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],

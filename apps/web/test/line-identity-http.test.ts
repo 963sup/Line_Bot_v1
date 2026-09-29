@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { PostgresExpenseStore } from "@line_bot_v1/expense/postgres";
 import { GET as expense } from "../src/app/api/expenses/[id]/route";
 import { GET as membership } from "../src/app/api/membership/route";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
-import { closeFixture, mockSupabase } from "./member-fixture";
+import { closeFixture, expenseStore, mockSupabase } from "./member-fixture";
 
 test("technology identity failures retain the membership and expense HTTP 401 contracts", async () => {
   const previous = {
@@ -99,7 +98,7 @@ test("expense rejects missing proof, inactive membership and malformed IDs befor
       return Response.json({ userId: `U${"3".repeat(32)}` });
     throw Error("Unexpected outbound request");
   }) as typeof fetch;
-  mock.method(PostgresExpenseStore.prototype, "get", async () => {
+  mock.method(expenseStore(), "get", async () => {
     assert.fail("rejected requests must not read an expense");
   });
   const request = (id: string, proof = true) =>

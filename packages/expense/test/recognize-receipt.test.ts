@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createCommandExpense } from "../src/application/command-expense.js";
 import { createGetExpense } from "../src/application/get-expense.js";
-import type { ExpenseRepository } from "../src/application/ports/expense-repository.js";
+import type { ExpenseRepository } from "../src/contracts/repositories/expense-repository.js";
 import { createRecognizeReceipt } from "../src/application/recognize-receipt.js";
 import type { ReceiptReading } from "../src/contracts/receipt-reading.js";
-import { type Expense, type ExpenseCommand, ExpenseError } from "../src/domain.js";
+import { type Expense, type ExpenseCommand, ExpenseError } from "../src/domain/aggregates/expense.js";
 
 const pending = (overrides: Partial<Expense> = {}): Expense => ({
   id: "expense-id",
