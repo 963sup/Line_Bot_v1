@@ -1788,15 +1788,13 @@
         "status": "implemented",
         "scope": "Project aggregate-root authorized collection read",
         "sourcePaths": [
-          "packages/project/src/application/collection.ts",
-          "packages/project/src/application/ports/collection.ts",
-          "packages/project/src/adapters/postgres/collection.ts"
+          "packages/project/src/application/queries/project-collection.ts",
+          "packages/project/src/contracts/dto/project-collection.ts",
+          "packages/project/src/contracts/repositories/project-collection-store.ts"
         ],
         "publicExports": [
-          "./application/collection",
-          "./application/ports/collection",
-          "./postgres/collection",
-          "./contracts/project-collection"
+          "./application/queries/project-collection",
+          "./contracts/dto/project-collection"
         ],
         "entrypoints": [
           "apps/web/src/app/api/projects/route.ts",
