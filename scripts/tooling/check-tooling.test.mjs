@@ -114,6 +114,7 @@ function fixture(t) {
           inputs: ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"],
         },
         "@line_bot_v1/web#build": {
+          cache: false,
           env: ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
           passThroughEnv: ["SENTRY_AUTH_TOKEN"],
           inputs: ["$TURBO_ROOT$/.env.local"],
@@ -314,6 +315,7 @@ test("environment contract keeps secrets out of global build hashing", (t) => {
       globalDependencies: [".env.local"],
       tasks: {
         "@line_bot_v1/web#build": {
+          cache: false,
           env: ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
           passThroughEnv: ["SENTRY_AUTH_TOKEN"],
           inputs: ["$TURBO_ROOT$/.env.local"],
@@ -357,6 +359,21 @@ test("Sentry build credentials pass through without entering the cache hash", (t
   write("turbo.json", JSON.stringify(turbo));
   rejects(root, "must pass through SENTRY_AUTH_TOKEN");
   rejects(root, "must not hash SENTRY_AUTH_TOKEN");
+});
+
+test("Web builds cannot cache away Sentry uploads", (t) => {
+  const { root, write } = fixture(t);
+  const turbo = JSON.parse(readFileSync(resolve(root, "turbo.json"), "utf8"));
+  const webBuild = turbo.tasks["@line_bot_v1/web#build"];
+  assert.equal(validate(root).some((error) => error.includes("Sentry upload side effects")), false);
+  for (const cache of [true, undefined]) {
+    webBuild.cache = cache;
+    write("turbo.json", JSON.stringify(turbo));
+    rejects(root, "Sentry upload side effects");
+  }
+  webBuild.cache = false;
+  write("turbo.json", JSON.stringify(turbo));
+  assert.equal(validate(root).some((error) => error.includes("Sentry upload side effects")), false);
 });
 
 test("remote Supabase migration history cannot become an executable repository path", (t) => {
