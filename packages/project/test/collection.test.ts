@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresProjectCollectionStore } from "../src/adapters/postgres/collection.js";
-import { createProjectCollection } from "../src/application/collection.js";
-import type { ProjectCollectionStore } from "../src/application/ports/collection.js";
+import { PostgresProjectCollectionStore } from "../src/adapters/outbound/persistence/postgres-project-collection-store.js";
+import { createProjectCollection } from "../src/application/queries/project-collection.js";
+import type { ProjectCollectionStore } from "../src/contracts/repositories/project-collection-store.js";
 
 test("Project collection resolves the active User before reading authorized Projects", async () => {
   const calls: string[] = [];

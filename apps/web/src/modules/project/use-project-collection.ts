@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProjectSummary } from "@line_bot_v1/project/contracts/project-collection";
+import type { ProjectSummary } from "@line_bot_v1/project/contracts/dto/project-collection";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 

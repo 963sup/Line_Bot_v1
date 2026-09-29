@@ -1,4 +1,4 @@
-import type { ProjectSummary } from "../../contracts/project-collection.js";
+import type { ProjectSummary } from "../dto/project-collection.js";
 
 export interface ProjectCollectionStore {
   accessible(userId: string): Promise<readonly ProjectSummary[]>;

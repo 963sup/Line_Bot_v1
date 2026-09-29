@@ -4,21 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/collection": {
-      "types": "./dist/application/collection.d.ts",
-      "default": "./dist/application/collection.js"
+    "./application/queries/project-collection": {
+      "types": "./dist/application/queries/project-collection.d.ts",
+      "default": "./dist/application/queries/project-collection.js"
     },
-    "./application/ports/collection": {
-      "types": "./dist/application/ports/collection.d.ts",
-      "default": "./dist/application/ports/collection.js"
+    "./contracts/dto/project-collection": {
+      "types": "./dist/contracts/dto/project-collection.d.ts",
+      "default": "./dist/contracts/dto/project-collection.js"
     },
-    "./contracts/project-collection": {
-      "types": "./dist/contracts/project-collection.d.ts",
-      "default": "./dist/contracts/project-collection.js"
-    },
-    "./postgres/collection": {
-      "types": "./dist/postgres/collection.d.ts",
-      "default": "./dist/postgres/collection.js"
+    "./composition/bootstrap/postgres-project-collection-store": {
+      "types": "./dist/composition/bootstrap/postgres-project-collection-store.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-project-collection-store.js"
     }
   },
   "files": [
