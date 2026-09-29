@@ -7,8 +7,7 @@
       "**": false,
       "main": false,
       "preview": true,
-      "preview/**": true,
-      "ops/bootstrap-supabase-nmssogphayjymjpbnrxv-20260920": true
+      "preview/**": true
     }
   }
 }

@@ -25,7 +25,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | User | user | authoritative | current | GitHub FPT: schema-users.json#User |
-| User Follow | user-follow | authoritative | current | Directional User-to-User follow fact. Followers and Following are inbound and outbound projections of the same relationship. |
+| User.following | user-follow | authoritative | current | GitHub FPT: schema-users.json#User#following |
 
 ## Capabilities
 
