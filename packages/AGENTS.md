@@ -26,6 +26,9 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 - \packages\attendance = reference implementation
 - packages/* = = * capability 的唯一 implementation owner
 - packages/attendance = = Attendance capability 的唯一 implementation owner
+- apps/web = host / delivery
+- API = host / delivery
+- LINE = external adapter
 - Business meaning / owner / relationship 以 `architecture/semantic-model.json` 為 structured authority。
 - 現有 module path、module kind 與 workspace dependency allowlist 以 `architecture/implementation-topology.json` 為 machine authority。
 - 新 responsibility 只有在現有 owner 無法正確承接，而且具有真實 language / lifecycle / invariant / consumer 時，才考慮新的 owner 或 package。
