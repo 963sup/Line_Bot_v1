@@ -5,20 +5,8 @@ import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-in
 import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
 import { createGeminiReceiptRecognizer } from "@line_bot_v1/expense/composition/bootstrap/gemini-receipt-recognizer";
 import { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
-import type { Expense } from "@line_bot_v1/expense/domain/aggregates/expense";
 import { downloadLineImage } from "@line_bot_v1/line-channel/messaging";
 import { activeLineUser } from "./account.server";
-
-/** Global state is retained across Next.js hot reloads and remains process-local. */
-const state = globalThis as typeof globalThis & {
-  expenseStore?: ReturnType<typeof createPostgresExpenseStore>;
-  expenseRecognition?: Map<string, Promise<Expense>>;
-  nextReceiptAt?: number;
-};
-
-function expenseStore() {
-  return (state.expenseStore ??= createPostgresExpenseStore());
-}
 
 const recognizeImage = async (imageId: string) => {
   return createGeminiReceiptRecognizer({
@@ -27,6 +15,17 @@ const recognizeImage = async (imageId: string) => {
     model: process.env.GEMINI_MODEL ?? "",
   })(imageId);
 };
+
+/** Global state is retained across Next.js hot reloads and remains process-local. */
+const state = globalThis as typeof globalThis & {
+  expenseStore?: ReturnType<typeof createPostgresExpenseStore>;
+  expenseRecognition?: Map<string, ReturnType<typeof recognizeImage>>;
+  nextReceiptAt?: number;
+};
+
+function expenseStore() {
+  return (state.expenseStore ??= createPostgresExpenseStore());
+}
 
 const dependencies = {
   activeUser: activeLineUser,

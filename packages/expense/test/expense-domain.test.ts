@@ -55,3 +55,30 @@ test("legacy persisted project text survives unrelated Expense updates without b
   assert.equal((next as Expense & { project?: string }).project, "historical-project-label");
   assert.equal(next.merchant, "Updated");
 });
+
+test("explicit owner commands, not AI recognition, move pending Expense state", () => {
+  const pending = draft({
+    status: "pending",
+    merchant: "",
+    amount: "",
+    currency: "",
+    date: "",
+    invoiceNumber: "",
+    payment: "",
+  });
+  const saved = applyExpenseCommand(pending, {
+    type: "save",
+    revision: pending.revision,
+    fields: editable,
+  });
+  assert.equal(saved.status, "draft");
+  assert.equal(saved.revision, 2);
+  assert.equal(saved.amount, "120");
+
+  const confirmed = applyExpenseCommand(
+    { ...pending, revision: 7 },
+    { type: "confirm", revision: 7, fields: editable },
+  );
+  assert.equal(confirmed.status, "confirmed");
+  assert.equal(confirmed.revision, 8);
+});

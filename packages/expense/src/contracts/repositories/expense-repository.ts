@@ -1,16 +1,9 @@
 import type { Expense, ExpenseCommand } from "../../domain/aggregates/expense.js";
-import type { ReceiptReading } from "../receipt-reading.js";
 
 /** Storage owns transactionality and repeats the active User check when it changes data. */
 export interface ExpenseRepository {
   get(id: string, owner: string): Promise<Expense>;
   command(id: string, owner: string, command: ExpenseCommand): Promise<Expense>;
-  recognized(
-    id: string,
-    owner: string,
-    revision: number,
-    reading: ReceiptReading,
-  ): Promise<Expense>;
 }
 
 /** Resolves a cryptographically verified LINE subject to its active stable User ID. */
