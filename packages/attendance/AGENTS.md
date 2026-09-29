@@ -9,3 +9,17 @@ Local constraints for `@line_bot_v1/attendance`. Parent rules: [`packages/AGENTS
 - Attendance reward grants emit idempotency keys to Ledger/Wallet.
 - Public API surface is defined exclusively in `package.json#exports`.
 - Private implementations in `src/` must not be imported via relative paths by external packages.
+Attendance semantics
+Attendance vocabulary
+Attendance state
+Attendance commands
+Attendance validation
+Attendance use cases
+Attendance read model
+Attendance operation metadata
+Attendance persistence
+Attendance-specific input/output contracts
+Attendance-specific recovery semantics
+
+全部
+→ packages/attendance
