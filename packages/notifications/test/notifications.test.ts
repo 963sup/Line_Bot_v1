@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createNotifications } from "../src/application/use-cases/notifications.js";
+import {
+  parseNotificationDto,
+  parseNotificationPage,
+} from "../src/contracts/dto/notification.js";
 import type { NotificationRepository } from "../src/contracts/repositories/notification-repository.js";
 import { markNotificationRead, type Notification } from "../src/domain/aggregates/notification.js";
 import { normalizeNotificationId } from "../src/domain/value-objects/notification-id.js";
@@ -20,18 +24,24 @@ const item: Notification = Object.freeze({
   version: 1,
 });
 
-function fixture(overrides: Partial<NotificationRepository> = {}) {
+type RepositoryOverrides = {
+  read?: NotificationRepository["read"];
+  markRead?: NotificationRepository["markRead"];
+};
+
+function fixture(overrides: RepositoryOverrides = {}) {
   const calls: string[] = [];
   const repository: NotificationRepository = {
     async read(recipient, query) {
+      if (overrides.read) return overrides.read(recipient, query);
       calls.push(`read:${recipient}:${query.id ?? ""}:${query.unreadOnly === true}`);
       return { items: [item] };
     },
     async markRead(recipient, notificationId, now) {
+      if (overrides.markRead) return overrides.markRead(recipient, notificationId, now);
       calls.push(`mark:${recipient}:${notificationId}:${now}`);
       return markNotificationRead(item, now);
     },
-    ...overrides,
   };
   const deps = {
     async activeUser(subject: string) {
@@ -41,7 +51,7 @@ function fixture(overrides: Partial<NotificationRepository> = {}) {
     repository: () => repository,
     now: () => 10,
   };
-  return { calls, deps, notifications: createNotifications(deps) };
+  return { calls, notifications: createNotifications(deps) };
 }
 
 test("Notification Aggregate owns the first-read transition without changing source truth", () => {
@@ -155,4 +165,12 @@ test("published DTOs whitelist fields and do not expose Aggregate object identit
   assert.deepEqual(marked.value, item);
   assert.notEqual(read.value.items[0], internal);
   assert.notEqual(marked.value, internal);
+});
+
+test("published DTO parsers narrow untrusted wire values without casts", () => {
+  assert.deepEqual(parseNotificationPage({ items: [item] }), { items: [item] });
+  assert.deepEqual(parseNotificationDto({ ...item, ignored: "not published" }), item);
+  assert.equal(parseNotificationPage({ items: [{ ...item, version: "1" }] }), null);
+  assert.equal(parseNotificationDto({ ...item, kind: "unknown" }), null);
+  assert.equal(parseNotificationDto({ ...item, readAt: "10" }), null);
 });

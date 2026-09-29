@@ -4,18 +4,24 @@ import { test } from "node:test";
 import { compileFunction } from "node:vm";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { createNotifications } from "@line_bot_v1/notifications/application/use-cases/notifications";
+import type { NotificationDto } from "@line_bot_v1/notifications/contracts/dto/notification";
+import type { NotificationQuery } from "@line_bot_v1/notifications/contracts/repositories/notification-repository";
 import ts from "typescript";
-import * as http from "../src/shared/server/http.js";
+import {
+  BodyTooLargeError,
+  jsonResponse,
+  readBodyText,
+} from "../src/shared/server/http.js";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
-const item = {
+const item: NotificationDto = {
   id,
   recipient: "user-1",
   sourceType: "issue",
   sourceId: "issue-1",
   sourceVersion: "3",
-  kind: "issue" as const,
+  kind: "issue",
   title: "Issue updated",
   body: "A referenced issue changed.",
   createdAt: 1,
@@ -30,6 +36,23 @@ type Route = {
   runtime: string;
   dynamic: string;
 };
+type RepositoryCall =
+  | ["read", string, NotificationQuery]
+  | ["mark", string, string, number];
+
+function isRoute(value: unknown): value is Route {
+  if (value === null || typeof value !== "object") return false;
+  return (
+    "GET" in value &&
+    typeof value.GET === "function" &&
+    "POST" in value &&
+    typeof value.POST === "function" &&
+    "runtime" in value &&
+    typeof value.runtime === "string" &&
+    "dynamic" in value &&
+    typeof value.dynamic === "string"
+  );
+}
 
 // Execute the actual route source, replacing only its host composition imports.
 // No production factory/export or single-route server wrapper exists for testing.
@@ -41,7 +64,7 @@ function loadRoute(
     repository?: ReturnType<Dependencies["repository"]>;
   } = {},
 ) {
-  const calls: unknown[][] = [];
+  const calls: RepositoryCall[] = [];
   const notifications = createNotifications({
     activeUser: options.activeUser ?? (async () => ({ id: "user-1" })),
     repository: () =>
@@ -57,16 +80,23 @@ function loadRoute(
       },
     now: () => 10,
   });
-  const modules: Record<string, unknown> = {
-    "@line_bot_v1/account/domain/user": { UserError },
-    "../../../shared/observability/server-error": { captureHandledServerError: () => undefined },
-    "../../../shared/server/http": http,
-    "../../../shared/server/request-identity-error": { RequestIdentityError },
-    "../_composition/notifications.server": { notifications },
-    "../_composition/request-identity.server": {
-      requestLineIdentity: options.identity ?? (async () => "verified-subject"),
-    },
-  };
+
+  const modules = new Map<string, unknown>();
+  modules.set("@line_bot_v1/account/domain/user", { UserError });
+  modules.set("../../../shared/observability/server-error", {
+    captureHandledServerError: () => undefined,
+  });
+  modules.set("../../../shared/server/http", {
+    BodyTooLargeError,
+    jsonResponse,
+    readBodyText,
+  });
+  modules.set("../../../shared/server/request-identity-error", { RequestIdentityError });
+  modules.set("../_composition/notifications.server", { notifications });
+  modules.set("../_composition/request-identity.server", {
+    requestLineIdentity: options.identity ?? (async () => "verified-subject"),
+  });
+
   const source = readFileSync(
     new URL("../src/app/api/notifications/route.ts", import.meta.url),
     "utf8",
@@ -74,23 +104,29 @@ function loadRoute(
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
-  const module = { exports: {} as Route };
+  const loadedModule: { exports: unknown } = { exports: {} };
   compileFunction(outputText, ["require", "module", "exports", "process"])(
     (name: string) => {
-      if (!(name in modules)) throw new Error(`Unexpected route dependency: ${name}`);
-      return modules[name];
+      if (!modules.has(name)) throw new Error(`Unexpected route dependency: ${name}`);
+      return modules.get(name);
     },
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
     { env: { APP_ORIGIN: options.origin ?? "https://example.test" } },
   );
-  return { route: module.exports, calls };
+  if (!isRoute(loadedModule.exports)) throw new Error("Route exports are incomplete.");
+  return { route: loadedModule.exports, calls };
 }
 
-function post(body: string, headers: Record<string, string> = {}) {
+function post(body: string, overrides?: Headers) {
+  const headers = new Headers({
+    origin: "https://example.test",
+    "content-type": "application/json",
+  });
+  overrides?.forEach((value, key) => headers.set(key, value));
   return new Request("https://example.test/api/notifications", {
     method: "POST",
-    headers: { origin: "https://example.test", "content-type": "application/json", ...headers },
+    headers,
     body,
   });
 }
@@ -136,8 +172,20 @@ test("transport rejects origin, type, malformed input and oversized bodies befor
   const cases = [
     { origin: "", request: post(JSON.stringify({ id })), status: 503 },
     { origin: "https://example.test/path", request: post(JSON.stringify({ id })), status: 503 },
-    { request: post(JSON.stringify({ id }), { origin: "https://other.test" }), status: 403 },
-    { request: post(JSON.stringify({ id }), { "content-type": "text/plain" }), status: 415 },
+    {
+      request: post(
+        JSON.stringify({ id }),
+        new Headers({ origin: "https://other.test" }),
+      ),
+      status: 403,
+    },
+    {
+      request: post(
+        JSON.stringify({ id }),
+        new Headers({ "content-type": "text/plain" }),
+      ),
+      status: 415,
+    },
     { request: post("{"), status: 400 },
     { request: post("[]"), status: 400 },
     { request: post("null"), status: 400 },

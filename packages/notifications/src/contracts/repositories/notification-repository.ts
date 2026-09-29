@@ -2,7 +2,7 @@ import type { Notification } from "../../domain/aggregates/notification.js";
 
 export type NotificationQuery = { id?: string; unreadOnly?: boolean };
 
-export interface NotificationRepository {
+export type NotificationRepository = {
   read(recipient: string, query: NotificationQuery): Promise<{ items: Notification[] }>;
   /**
    * Apply the Aggregate transition atomically within recipient scope.
@@ -10,4 +10,4 @@ export interface NotificationRepository {
    * notifications return null; infrastructure failures must not look like absence.
    */
   markRead(recipient: string, id: string, now: number): Promise<Notification | null>;
-}
+};

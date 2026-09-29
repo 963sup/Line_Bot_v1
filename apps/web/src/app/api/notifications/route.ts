@@ -31,6 +31,11 @@ function notificationFailure(error: NotificationError) {
   return jsonResponse({ error: error.message }, status);
 }
 
+function notificationId(body: unknown): string | null {
+  if (!body || typeof body !== "object" || Array.isArray(body) || !("id" in body)) return null;
+  return typeof body.id === "string" ? body.id : null;
+}
+
 async function notificationRequest(request: Request) {
   try {
     const subject = await requestLineIdentity(request);
@@ -64,15 +69,11 @@ async function notificationRequest(request: Request) {
     } catch {
       throw new NotificationRequestError(400, "通知資料格式不正確。");
     }
-    if (
-      !body ||
-      typeof body !== "object" ||
-      Array.isArray(body) ||
-      typeof (body as { id?: unknown }).id !== "string"
-    ) {
+    const id = notificationId(body);
+    if (id === null) {
       throw new NotificationRequestError(400, "通知資料格式不正確。");
     }
-    const result = await notifications.markRead(subject, { id: (body as { id: string }).id });
+    const result = await notifications.markRead(subject, { id });
     return result.ok
       ? jsonResponse({ notification: result.value })
       : notificationFailure(result.error);

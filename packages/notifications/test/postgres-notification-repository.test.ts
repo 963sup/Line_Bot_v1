@@ -4,7 +4,22 @@ import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { PostgresNotificationRepository } from "../src/adapters/outbound/persistence/postgres-notification-repository.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
-const row = {
+
+type TestNotificationRow = {
+  id: string;
+  recipient: string;
+  source_type: string;
+  source_id: string;
+  source_version: string;
+  kind: "issue";
+  title: string;
+  body: string;
+  created_at: string;
+  read_at: number | null;
+  version: number;
+};
+
+const row: TestNotificationRow = {
   id,
   recipient: "user-1",
   source_type: "issue",
@@ -14,7 +29,7 @@ const row = {
   title: "Issue updated",
   body: "A referenced issue changed.",
   created_at: "1",
-  read_at: null as number | null,
+  read_at: null,
   version: 1,
 };
 
@@ -78,6 +93,13 @@ test("missing or foreign recipients never reach a write", async () => {
   );
   assert.equal(await repository.markRead("other-user", id, 10), null);
   assert.equal(queries, 1);
+});
+
+test("invalid provider rows fail closed instead of entering the domain", async () => {
+  const repository = new PostgresNotificationRepository(
+    database(async () => ({ rows: [{ ...row, version: "1" }] })),
+  );
+  await assert.rejects(repository.read("user-1", {}), /invalid data/);
 });
 
 test("transaction failure is propagated, not converted to missing data", async () => {
