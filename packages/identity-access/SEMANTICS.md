@@ -22,7 +22,10 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
+| EnterpriseAdministratorEdge.role | enterprise-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#EnterpriseAdministratorEdge#role |
+| OrganizationMemberEdge.role | organization-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#OrganizationMemberEdge#role |
 | Permission | permission | policy-decision | current | Explicit sensitive capability authorization decision; not provider role or membership. |
+| TeamMemberEdge.role | team-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#TeamMemberEdge#role |
 
 ## Capabilities
 

@@ -27,11 +27,15 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Discussion | discussion | authoritative | current | GitHub FPT: schema-discussions.json#Discussion |
 | DiscussionComment | discussion-comment | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionComment |
 | Issue | issue | authoritative | current | GitHub FPT: schema-issues.json#Issue |
+| Issue.labels | issue-label-link | authoritative | current-data-only | GitHub FPT: schema-issues.json#Issue#labels |
 | Label | repository-label | authoritative | current | GitHub FPT: schema-issues.json#Label |
 | Milestone | repository-milestone | authoritative | current | GitHub FPT: schema-issues.json#Milestone |
 | Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
-| Repository Star List Item | repository-star-list-item | authoritative | current | Repository-owned List membership that references one Repository through the List owner's current Star relationship. |
+| RepositoryCollaboratorEdge | repository-user-access | authoritative | current | GitHub FPT: schema-users.json#RepositoryCollaboratorEdge |
+| StargazerEdge | repository-star | authoritative | current | GitHub FPT: schema-users.json#StargazerEdge |
+| TeamRepositoryEdge | repository-team-access | authoritative | current | GitHub FPT: schema-repos.json#TeamRepositoryEdge |
 | UserList | repository-star-list | authoritative | current | GitHub FPT: schema-users.json#UserList |
+| UserList.items | repository-star-list-item | authoritative | current | GitHub FPT: schema-users.json#UserList#items |
 
 ## Capabilities
 

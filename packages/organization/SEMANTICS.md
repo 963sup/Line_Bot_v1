@@ -24,6 +24,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- |
 | Organization | organization | authoritative | current | GitHub FPT: schema-orgs.json#Organization |
 | OrganizationInvitation | organization-invitation | authoritative | current | GitHub FPT: schema-orgs.json#OrganizationInvitation |
+| OrganizationMemberEdge | organization-membership | authoritative | current | GitHub FPT: schema-users.json#OrganizationMemberEdge |
 
 ## Capabilities
 
