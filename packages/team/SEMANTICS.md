@@ -25,6 +25,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Team | team | authoritative | current | GitHub FPT: schema-teams.json#Team |
+| TeamMemberEdge | team-membership | authoritative | current | GitHub FPT: schema-users.json#TeamMemberEdge |
 
 ## Capabilities
 

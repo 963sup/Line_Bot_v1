@@ -412,7 +412,8 @@
       "kind": "table",
       "path": "supabase/schemas/202_enterprise_organizations.sql",
       "authority": true,
-      "semanticOwner": "enterprise"
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-organization-link"
     },
     {
       "name": "enterprise_teams",
@@ -459,7 +460,8 @@
       "kind": "table",
       "path": "supabase/schemas/301_organization_memberships.sql",
       "authority": true,
-      "semanticOwner": "organization"
+      "semanticOwner": "organization",
+      "concept": "organization-membership"
     },
     {
       "name": "organization_direct_memberships",
@@ -489,7 +491,8 @@
       "kind": "table",
       "path": "supabase/schemas/401_team_memberships.sql",
       "authority": true,
-      "semanticOwner": "team"
+      "semanticOwner": "team",
+      "concept": "team-membership"
     },
     {
       "name": "team_commands",
@@ -503,21 +506,24 @@
       "kind": "table",
       "path": "supabase/schemas/500_enterprise_role_assignments.sql",
       "authority": true,
-      "semanticOwner": "identity-access"
+      "semanticOwner": "identity-access",
+      "concept": "enterprise-role-assignment"
     },
     {
       "name": "organization_role_assignments",
       "kind": "table",
       "path": "supabase/schemas/501_organization_role_assignments.sql",
       "authority": true,
-      "semanticOwner": "identity-access"
+      "semanticOwner": "identity-access",
+      "concept": "organization-role-assignment"
     },
     {
       "name": "team_role_assignments",
       "kind": "table",
       "path": "supabase/schemas/502_team_role_assignments.sql",
       "authority": true,
-      "semanticOwner": "identity-access"
+      "semanticOwner": "identity-access",
+      "concept": "team-role-assignment"
     },
     {
       "name": "permission_grants",
@@ -582,21 +588,24 @@
       "kind": "table",
       "path": "supabase/schemas/601_repository_user_access.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "repository",
+      "concept": "repository-user-access"
     },
     {
       "name": "repository_team_access",
       "kind": "table",
       "path": "supabase/schemas/602_repository_team_access.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "repository",
+      "concept": "repository-team-access"
     },
     {
       "name": "repository_stars",
       "kind": "table",
       "path": "supabase/schemas/603_repository_stars.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "repository",
+      "concept": "repository-star"
     },
     {
       "name": "repository_commands",
@@ -664,7 +673,8 @@
       "kind": "table",
       "path": "supabase/schemas/623_issue_labels.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "repository",
+      "concept": "issue-label-link"
     },
     {
       "name": "discussions",
@@ -719,7 +729,8 @@
       "kind": "table",
       "path": "supabase/schemas/704_project_repository_references.sql",
       "authority": true,
-      "semanticOwner": "project"
+      "semanticOwner": "project",
+      "concept": "project-repository-link"
     },
     {
       "name": "asset_definitions",

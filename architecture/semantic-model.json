@@ -248,6 +248,19 @@
       }
     },
     {
+      "id": "enterprise-organization-link",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "Enterprise",
+        "field": "organizations"
+      }
+    },
+    {
       "id": "organization",
       "kind": "authoritative",
       "owner": "organization",
@@ -272,6 +285,18 @@
       }
     },
     {
+      "id": "organization-membership",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "OrganizationMemberEdge"
+      }
+    },
+    {
       "id": "team",
       "kind": "authoritative",
       "owner": "team",
@@ -284,6 +309,18 @@
       }
     },
     {
+      "id": "team-membership",
+      "kind": "authoritative",
+      "owner": "team",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "TeamMemberEdge"
+      }
+    },
+    {
       "id": "repository",
       "kind": "authoritative",
       "owner": "repository",
@@ -293,6 +330,42 @@
       "fpt": {
         "file": "schema-repos.json",
         "symbol": "Repository"
+      }
+    },
+    {
+      "id": "repository-user-access",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "RepositoryCollaboratorEdge"
+      }
+    },
+    {
+      "id": "repository-team-access",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-repos.json",
+        "symbol": "TeamRepositoryEdge"
+      }
+    },
+    {
+      "id": "repository-star",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "StargazerEdge"
       }
     },
     {
@@ -309,13 +382,16 @@
     },
     {
       "id": "repository-star-list-item",
-      "canonicalName": "Repository Star List Item",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "Repository-owned List membership that references one Repository through the List owner's current Star relationship.",
       "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "UserList",
+        "field": "items"
+      }
     },
     {
       "id": "issue",
@@ -366,6 +442,19 @@
       }
     },
     {
+      "id": "issue-label-link",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current-data-only",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "labels"
+      }
+    },
+    {
       "id": "repository-milestone",
       "kind": "authoritative",
       "owner": "repository",
@@ -399,6 +488,19 @@
       "fpt": {
         "file": "schema-projects.json",
         "symbol": "ProjectV2Item"
+      }
+    },
+    {
+      "id": "project-repository-link",
+      "kind": "reference",
+      "owner": "project",
+      "lifecycle": "current-data-only",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2",
+        "field": "repositories"
       }
     },
     {
@@ -551,6 +653,45 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "enterprise-role-assignment",
+      "kind": "policy-decision",
+      "owner": "identity-access",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "EnterpriseAdministratorEdge",
+        "field": "role"
+      }
+    },
+    {
+      "id": "organization-role-assignment",
+      "kind": "policy-decision",
+      "owner": "identity-access",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "OrganizationMemberEdge",
+        "field": "role"
+      }
+    },
+    {
+      "id": "team-role-assignment",
+      "kind": "policy-decision",
+      "owner": "identity-access",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "TeamMemberEdge",
+        "field": "role"
+      }
+    },
+    {
       "id": "permission",
       "canonicalName": "Permission",
       "kind": "policy-decision",
@@ -596,23 +737,28 @@
     },
     {
       "id": "enterprise-team-membership",
-      "canonicalName": "Enterprise Team Membership",
       "kind": "authoritative",
       "owner": "enterprise",
       "lifecycle": "current",
-      "definition": "User participation state inside an Enterprise Team.",
       "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "EnterpriseTeamMemberEdge"
+      }
     },
     {
       "id": "enterprise-team-organization-assignment",
-      "canonicalName": "Enterprise Team Organization Assignment",
       "kind": "authoritative",
       "owner": "enterprise",
       "lifecycle": "current",
-      "definition": "Enterprise-owned assignment from an Enterprise Team to an attached Organization.",
       "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "EnterpriseTeam",
+        "field": "assignedOrganizations"
+      }
     },
     {
       "id": "account-namespace-binding",

@@ -24,6 +24,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- |
 | Milestone | project-milestone | authoritative | current-data-only | Project-scoped goal or checkpoint, distinct from WBS structure and Repository milestone. |
 | ProjectV2 | project | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2 |
+| ProjectV2.repositories | project-repository-link | reference | current-data-only | GitHub FPT: schema-projects.json#ProjectV2#repositories |
 | ProjectV2Item | project-item | reference | current-data-only | GitHub FPT: schema-projects.json#ProjectV2Item |
 | WBS | wbs | authoritative | current-data-only | Project-owned work breakdown structure. Project is not WBS. |
 
