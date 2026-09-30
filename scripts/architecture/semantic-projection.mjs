@@ -323,6 +323,30 @@ function capabilities(compiled) {
   ].join("\n");
 }
 
+function modules(compiled) {
+  const entries = [
+    ...Object.entries(compiled.topology.modules ?? {}),
+    ...Object.entries(compiled.topology.applications ?? {}),
+  ].sort(([, left], [, right]) => left.path.localeCompare(right.path));
+
+  return [
+    "# Module Inventory",
+    "",
+    "> Derived projection of architecture/implementation-topology.json. Do not maintain a second package inventory in prose.",
+    "",
+    markdownTable(
+      ["Module", "Path", "Kind", "Semantic owner", "Workspace dependencies"],
+      entries.map(([name, entry]) => [
+        markdownCell(name),
+        markdownCell(entry.path),
+        markdownCell(entry.moduleKind),
+        markdownCell(entry.semanticOwner ?? ""),
+        markdownCell((entry.allowedWorkspaceDependencies ?? []).join(", ")),
+      ]),
+    ),
+  ].join("\n");
+}
+
 function locators(compiled) {
   return [
     "# Resource Locators",
@@ -439,6 +463,8 @@ function docs(compiled) {
     "",
     capabilities(compiled),
     "",
+    modules(compiled),
+    "",
     locators(compiled),
     "",
     fptReferences(compiled),
@@ -471,11 +497,12 @@ export function renderSemanticView(compiled, view = "ownership") {
   if (view === "contracts") return contracts(compiled);
   if (view === "invariants") return invariants(compiled);
   if (view === "capabilities") return capabilities(compiled);
+  if (view === "modules") return modules(compiled);
   if (view === "locators") return locators(compiled);
   if (view === "fpt-references") return fptReferences(compiled);
   if (view === "evidence") return evidence(compiled);
   if (view === "docs") return docs(compiled);
   throw new Error(
-    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, locators, fpt-references, evidence, or docs.",
+    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, modules, locators, fpt-references, evidence, or docs.",
   );
 }
