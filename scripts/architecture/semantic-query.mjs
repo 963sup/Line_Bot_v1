@@ -118,6 +118,54 @@ function explain(compiled, id) {
   };
 }
 
+function fptCoverage(compiled) {
+  const referencesByFile = new Map();
+  const addReference = (type, id, fpt) => {
+    const references = referencesByFile.get(fpt.file) ?? [];
+    references.push({
+      type,
+      id,
+      symbol: fpt.symbol,
+      ...(fpt.field ? { field: fpt.field } : {}),
+    });
+    referencesByFile.set(fpt.file, references);
+  };
+
+  for (const concept of compiled.concepts.values()) {
+    if (concept.fpt) addReference("concept", concept.id, concept.fpt);
+  }
+  for (const locator of compiled.locators.values()) {
+    if (locator.fpt) addReference("locator", locator.id, locator.fpt);
+  }
+
+  const schemaFiles = (compiled.fpt.manifest.files ?? [])
+    .map((entry) => entry.name)
+    .filter((name) => name.startsWith("schema-") && name.endsWith(".json"))
+    .map((file) => {
+      const prefix = file + ":";
+      const references = (referencesByFile.get(file) ?? []).sort(
+        (left, right) => left.type.localeCompare(right.type) || left.id.localeCompare(right.id),
+      );
+      return {
+        file,
+        symbolCount: [...compiled.fpt.symbols.keys()].filter((key) => key.startsWith(prefix))
+          .length,
+        references,
+      };
+    });
+
+  return {
+    revision: compiled.fpt.manifest.upstream.revision,
+    schemaFiles,
+    referencedSchemaFiles: schemaFiles
+      .filter((entry) => entry.references.length > 0)
+      .map((entry) => entry.file),
+    unreferencedSchemaFiles: schemaFiles
+      .filter((entry) => entry.references.length === 0)
+      .map((entry) => entry.file),
+  };
+}
+
 export function querySemanticArchitecture(compiled, command, args) {
   if (compiled.errors.length) {
     throw new Error("Semantic architecture is invalid:\n" + compiled.errors.join("\n"));
@@ -183,9 +231,10 @@ export function querySemanticArchitecture(compiled, command, args) {
         .map((locator) => ({ locator: locator.id, fpt: locator.fpt })),
     };
   }
+  if (command === "fpt-coverage") return fptCoverage(compiled);
   if (command === "explain") return explain(compiled, id);
 
   throw new Error(
-    "Usage: pnpm semantic <owner|concept|capability|fpt|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|fpt-references|explain> <id|intent> [to]",
+    "Usage: pnpm semantic <owner|concept|capability|fpt|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|fpt-references|fpt-coverage|explain> <id|intent> [to]",
   );
 }

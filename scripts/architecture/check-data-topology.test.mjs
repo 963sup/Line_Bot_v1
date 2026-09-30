@@ -100,6 +100,26 @@ test("rejects mixed semantic owners in one authoritative file", () => {
     /mixes semantic owners/,
   );
 });
+
+test("rejects persisted relations mapped to unknown concepts", () => {
+  const f = fixture();
+  f.dataTopology.relations[0].concept = "missing";
+  assert.match(
+    validateDataTopology(f.model, f.dataTopology, f.schemaFiles, f.relationsByFile).join("\n"),
+    /unknown concept missing/,
+  );
+});
+
+test("rejects persisted relation owner drift from its semantic concept", () => {
+  const f = fixture();
+  f.model.semanticOwners.push({ id: "organization", lifecycle: "current" });
+  f.dataTopology.relations[0].semanticOwner = "organization";
+  assert.match(
+    validateDataTopology(f.model, f.dataTopology, f.schemaFiles, f.relationsByFile).join("\n"),
+    /semanticOwner disagrees with concept repository/,
+  );
+});
+
 test("rejects required semantic persistence with no relation", () => {
   const f = fixture();
   f.dataTopology.relations[0].concept = undefined;
