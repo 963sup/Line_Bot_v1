@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   extractSchemaRelations,
+  hasExecutableSchemaContent,
   validateDataTopology,
-  validateReservedSchema,
 } from "./data-topology-core.mjs";
 
 function fixture() {
@@ -34,77 +34,30 @@ function fixture() {
   return { model, dataTopology, schemaFiles, relationsByFile };
 }
 
-test("reserved schema names allow comments but reject executable SQL until activated", () => {
-  const file = {
-    path: "supabase/schemas/870_employments.sql",
-    role: "reserved",
-    targetOwner: "workforce",
-  };
-  const comments = "-- status: reserved\n-- owner: workforce\n-- Employment target only.\n";
-  assert.deepEqual(validateReservedSchema(file, comments), []);
-  for (const sql of [
-    "create table app_private.employments(id text);",
-    "select 1;",
-    "grant usage on schema app_private to line_app;",
-    "/* block comment */",
-  ])
-    assert.match(validateReservedSchema(file, comments + sql).join("\n"), /only line comments/);
-  assert.match(validateReservedSchema(file, "-- owner: workforce\n").join("\n"), /status marker/);
-  assert.match(
-    validateReservedSchema(file, comments.replace("workforce", "audit")).join("\n"),
-    /owner marker/,
-  );
-  assert.match(
-    validateReservedSchema({ ...file, role: "authoritative" }, comments).join("\n"),
-    /requires reserved file role/,
-  );
-  assert.deepEqual(
-    validateReservedSchema(
-      { ...file, role: "authoritative" },
-      "create table app_private.employments(id text);",
-    ),
-    [],
-  );
-  assert.deepEqual(validateReservedSchema(file, comments), []);
-});
-
-test("reserved files register a target owner without claiming current persistence", () => {
+test("future schema placeholders are rejected by the current-state topology", () => {
   const f = fixture();
-  const file = {
-    path: "supabase/schemas/870_employments.sql",
-    role: "reserved",
-    targetOwner: "workforce",
-  };
-  f.dataTopology.files.push(file);
-  f.schemaFiles.push(file.path);
-  f.relationsByFile.set(file.path, []);
-  assert.deepEqual(
-    validateDataTopology(f.model, f.dataTopology, f.schemaFiles, f.relationsByFile),
-    [],
-  );
-  file.targetOwner = "unknown";
+  const path = "supabase/schemas/870_employments.sql";
+  f.dataTopology.files.push({ path, role: "reserved", targetOwner: "workforce" });
+  f.schemaFiles.push(path);
+  f.relationsByFile.set(path, []);
   assert.match(
     validateDataTopology(f.model, f.dataTopology, f.schemaFiles, f.relationsByFile).join("\n"),
-    /known targetOwner/,
-  );
-  file.targetOwner = "workforce";
-  f.dataTopology.relations.push({
-    name: "employments",
-    path: file.path,
-    kind: "table",
-    authority: false,
-  });
-  assert.match(
-    validateDataTopology(f.model, f.dataTopology, f.schemaFiles, f.relationsByFile).join("\n"),
-    /cannot map current relations/,
-  );
-  f.dataTopology.relations.pop();
-  assert.deepEqual(
-    validateDataTopology(f.model, f.dataTopology, f.schemaFiles, f.relationsByFile),
-    [],
+    /unsupported current schema file role reserved/,
   );
 });
 
+test("current schema files must contain executable SQL", () => {
+  assert.equal(
+    hasExecutableSchemaContent("-- future target only\n-- no current database object\n"),
+    false,
+  );
+  assert.equal(
+    hasExecutableSchemaContent(
+      "/* explanation */\n-- comment\ncreate table app_private.example(id text);",
+    ),
+    true,
+  );
+});
 test("extracts app_private tables and views from declarative SQL", () => {
   assert.deepEqual(
     extractSchemaRelations(

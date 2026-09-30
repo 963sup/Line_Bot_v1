@@ -4,22 +4,22 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 
-export function validateReservedSchema(file, sql) {
-  if (file.role !== "reserved") {
-    return /^-- status: reserved\s*$/m.test(sql)
-      ? [`Data topology ${file.path}: reserved marker requires reserved file role`]
-      : [];
-  }
-  const errors = [];
-  if (!sql.split(/\r?\n/).every((line) => !line.trim() || line.trimStart().startsWith("--")))
-    errors.push(`Data topology ${file.path}: reserved schema must contain only line comments`);
-  if (!/^-- status: reserved\s*$/m.test(sql))
-    errors.push(`Data topology ${file.path}: reserved status marker is required`);
-  if (!sql.split(/\r?\n/).includes(`-- owner: ${file.targetOwner}`))
-    errors.push(`Data topology ${file.path}: reserved owner marker must match targetOwner`);
-  return errors;
-}
+const currentSchemaFileRoles = new Set([
+  "access-enforcement",
+  "authoritative",
+  "authoritative-definition",
+  "derived-projection",
+  "foundation",
+  "invariant-enforcement",
+  "transaction-coordinator",
+]);
 
+export function hasExecutableSchemaContent(sql) {
+  const withoutBlockComments = sql.replace(/\/\*[\s\S]*?\*\//g, "");
+  return withoutBlockComments
+    .split(/\r?\n/)
+    .some((line) => line.replace(/--.*$/, "").trim().length > 0);
+}
 export function extractSchemaRelations(sql) {
   return [
     ...sql.matchAll(
@@ -44,8 +44,13 @@ export function validateDataTopology(
     if (!file?.path) continue;
     if (files.has(file.path)) errors.push("Data topology: duplicate file " + file.path);
     files.set(file.path, file);
-    if (file.role === "reserved" && !owners.has(file.targetOwner))
-      errors.push("Data topology " + file.path + ": reserved file requires known targetOwner");
+    if (!currentSchemaFileRoles.has(file.role))
+      errors.push(
+        "Data topology " +
+          file.path +
+          ": unsupported current schema file role " +
+          String(file.role),
+      );
     if (file.mechanismOwner && !owners.has(file.mechanismOwner))
       errors.push("Data topology " + file.path + ": unknown mechanismOwner " + file.mechanismOwner);
   }
@@ -68,10 +73,6 @@ export function validateDataTopology(
       continue;
     }
     relations.set(relation.name, relation);
-    if (files.get(relation.path)?.role === "reserved")
-      errors.push(
-        "Data topology " + relation.name + ": reserved file cannot map current relations",
-      );
     if (!files.has(relation.path))
       errors.push("Data topology " + relation.name + ": unknown file " + relation.path);
     if (relation.authority === true) {
@@ -210,9 +211,13 @@ export async function loadDataTopologySources(root = repositoryRoot) {
   const relationsByFile = new Map();
   for (const path of schemaFiles) {
     const sql = await readFile(resolve(root, path), "utf8");
-    const file = dataTopology.files.find((entry) => entry.path === path);
-    const errors = validateReservedSchema(file ?? { path }, sql);
-    if (errors.length) throw new Error(errors.join("\n"));
+    if (!hasExecutableSchemaContent(sql)) {
+      throw new Error(
+        "Data topology " +
+          path +
+          ": current schema files must contain executable SQL; keep future targets in docs/change",
+      );
+    }
     relationsByFile.set(path, extractSchemaRelations(sql));
   }
   return { dataTopology, schemaFiles, relationsByFile };

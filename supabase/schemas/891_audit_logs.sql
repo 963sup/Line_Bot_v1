@@ -1,6 +1,0 @@
--- status: reserved
--- owner: audit
--- scope: authorized AuditLog/query projection over owner-approved audit evidence.
--- canonical target: docs/change/proposals/security-target.md
--- migration gate: docs/change/gaps/admin-workspace.md
--- activation: remove reserved status only when read scopes, minimum disclosure, authorization, retention, projection source, data-topology relations, tests, and validation evidence are current.

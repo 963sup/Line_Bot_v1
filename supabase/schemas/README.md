@@ -28,13 +28,9 @@ Lexical prefix 用來表達可重建的 dependency order，不是第二套 Domai
 000
 → neutral foundation
 
-100–863
+100–899
 → current owner-authoritative object / relationship definitions
-  （精確 mapping 查 data-topology.json）
-
-870–891
-→ selected reserved target namespaces only
-  （pure comments；不定義 current relation）
+  （精確 mapping 查 data-topology.json；未使用的 prefix 直接留空）
 
 900–930
 → late cross-owner mechanisms
@@ -55,11 +51,11 @@ Cross-owner mechanism 只允許：
 
 它們不得創造新的 business truth。
 
-## Reserved target files
+## Future targets stay outside the schema SSOT
 
-`870–891` 只保留已選定 target 的命名空間，且必須是符合 `data-topology.json` reserved declaration 的純 line-comment file。Reserved file 不代表 table、view、function、policy、runtime capability、remote state 或 acceptance 已存在。
+沒有 current executable database object，就不建立 `.sql` placeholder，也不在 `architecture/data-topology.json#files` 預留 future filename。未使用的 lexical prefix 直接留空；Workforce、Payroll、Audit 等 target rationale / migration state 留在 `docs/change/` 與 owner docs。
 
-啟用 reserved target 時，同一 changeset 必須建立真實 SQL / relation mapping、current owner contract、consumer、authorization/transaction semantics、tests 與適用 evidence；再移除 reserved role。Target rationale / migration state 留在 `docs/change/`。
+啟用新的 persisted fact 時，同一 changeset 才建立 actual SQL、relation mapping、current owner contract、consumer、authorization / transaction semantics、tests 與適用 evidence。這讓 `supabase/schemas/*.sql` 永遠只回答「現在的 database desired state 是什麼」。
 
 ## Navigation
 
