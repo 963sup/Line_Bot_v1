@@ -84,8 +84,8 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
   ) {
     errors.push("Semantic model: canonical GitHub domain truth must be the vendored FPT JSON");
   }
-  if (topology?.version !== 2 || topology?.role !== "implementation-topology") {
-    errors.push("Semantic model: manifest must be version 2 implementation-topology");
+  if (topology?.version !== 3 || topology?.role !== "implementation-topology") {
+    errors.push("Semantic model: manifest must be version 3 implementation-topology");
   }
   if (topology?.semanticModel !== "architecture/semantic-model.json") {
     errors.push("Semantic model: manifest must point to architecture/semantic-model.json");
@@ -486,8 +486,11 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
   }
 
   const modules = topology?.modules ?? {};
+  const targetModules = topology?.targetModules ?? {};
   const applications = topology?.applications ?? {};
   const allWorkspace = new Set([...Object.keys(modules), ...Object.keys(applications)]);
+  const targetDependencies = new Set([...Object.keys(modules), ...Object.keys(targetModules)]);
+  const fptFileNames = new Set((fpt?.manifest?.files ?? []).map((entry) => entry.name));
   for (const [name, entry] of Object.entries(modules)) {
     if (!entry.semanticOwner || !owners.has(entry.semanticOwner)) {
       errors.push("Implementation topology module " + name + ": semanticOwner must resolve");
@@ -511,6 +514,81 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
     for (const dependency of entry.allowedWorkspaceDependencies ?? []) {
       if (!allWorkspace.has(dependency)) {
         errors.push("Manifest application " + name + ": unknown allowed dependency " + dependency);
+      }
+    }
+  }
+
+  for (const [name, entry] of Object.entries(targetModules)) {
+    const owner = owners.get(entry.semanticOwner);
+    if (!entry.semanticOwner || !owner) {
+      errors.push("Target module " + name + ": semanticOwner must resolve");
+    } else if (owner.lifecycle !== "selected-target") {
+      errors.push("Target module " + name + ": semanticOwner must be selected-target");
+    }
+    if (allWorkspace.has(name)) {
+      errors.push("Target module " + name + ": name collides with a current workspace");
+    }
+    if (entry.moduleKind === "bounded-context") {
+      errors.push(
+        "Target module " + name + ": moduleKind must not masquerade as a Bounded Context",
+      );
+    }
+    if (!Array.isArray(entry.fptFiles) || entry.fptFiles.length === 0) {
+      errors.push("Target module " + name + ": fptFiles must be non-empty");
+    } else {
+      if (!unique(entry.fptFiles))
+        errors.push("Target module " + name + ": fptFiles must be unique");
+      for (const file of entry.fptFiles) {
+        if (!fptFileNames.has(file)) {
+          errors.push("Target module " + name + ": unknown FPT file " + file);
+        }
+      }
+    }
+    const declaredFptFiles = new Set(entry.fptFiles ?? []);
+    if (!Array.isArray(entry.fptRoots) || entry.fptRoots.length === 0) {
+      errors.push("Target module " + name + ": fptRoots must be non-empty");
+    } else {
+      const rootKeys = new Set();
+      for (const root of entry.fptRoots) {
+        if (!root || typeof root !== "object") {
+          errors.push("Target module " + name + ": every fptRoot must be an object");
+          continue;
+        }
+        validateDirectFptReference(root, "Target module " + name + " FPT root", errors);
+        if (root.field !== undefined) {
+          errors.push("Target module " + name + ": fptRoot must resolve a symbol, not a field");
+        }
+        const rootKey = [root.file, root.symbol].join("#");
+        if (rootKeys.has(rootKey)) {
+          errors.push("Target module " + name + ": duplicate fptRoot " + rootKey);
+        }
+        rootKeys.add(rootKey);
+        if (!declaredFptFiles.has(root.file)) {
+          errors.push(
+            "Target module " +
+              name +
+              ": fptRoot " +
+              rootKey +
+              " must use a file declared in fptFiles",
+          );
+        }
+        if (!resolveFptReference(fpt, root)) {
+          errors.push("Target module " + name + ": unresolved FPT root " + rootKey);
+        }
+      }
+    }
+    if (!Array.isArray(entry.dependsOn)) {
+      errors.push("Target module " + name + ": dependsOn must be an array");
+    } else {
+      if (!unique(entry.dependsOn)) {
+        errors.push("Target module " + name + ": dependsOn must be unique");
+      }
+      for (const dependency of entry.dependsOn) {
+        if (dependency === name) {
+          errors.push("Target module " + name + ": must not depend on itself");
+        } else if (!targetDependencies.has(dependency)) {
+          errors.push("Target module " + name + ": unknown target dependency " + dependency);
+        }
       }
     }
   }
@@ -568,6 +646,30 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
         );
       }
     }
+    if (mapping.targetModule !== null && mapping.targetModule !== undefined) {
+      if (mapping.module !== null && mapping.module !== undefined) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": current module and targetModule are mutually exclusive",
+        );
+      }
+      if (!targetModules[mapping.targetModule]) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": unknown target module " +
+            mapping.targetModule,
+        );
+      } else if (targetModules[mapping.targetModule].semanticOwner !== mapping.semanticOwner) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": target module owner disagrees for " +
+            mapping.targetModule,
+        );
+      }
+    }
   }
   for (const [name, entry] of Object.entries(modules)) {
     if (!mappedOwners.has(entry.semanticOwner)) {
@@ -576,10 +678,30 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
       );
     }
   }
-  for (const owner of owners.values()) {
-    if (owner.lifecycle === "selected-target" && mappingByOwner.get(owner.id)?.module != null) {
+  for (const [name, entry] of Object.entries(targetModules)) {
+    const mapping = mappingByOwner.get(entry.semanticOwner);
+    if (!mapping || mapping.targetModule !== name) {
       errors.push(
-        "Semantic owner " + owner.id + ": selected-target must not assert a runtime module",
+        "Target module " + name + ": semantic owner lacks matching target implementation mapping",
+      );
+    }
+  }
+  for (const owner of owners.values()) {
+    const mapping = mappingByOwner.get(owner.id);
+    if (owner.lifecycle === "selected-target") {
+      if (mapping?.module != null) {
+        errors.push(
+          "Semantic owner " + owner.id + ": selected-target must not assert a runtime module",
+        );
+      }
+      if (!mapping?.targetModule) {
+        errors.push(
+          "Semantic owner " + owner.id + ": selected-target requires a target module mapping",
+        );
+      }
+    } else if (mapping?.targetModule != null) {
+      errors.push(
+        "Semantic owner " + owner.id + ": current owner must not assert a selected target module",
       );
     }
   }

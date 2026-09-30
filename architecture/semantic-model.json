@@ -155,6 +155,86 @@
       "kind": "support-owner",
       "lifecycle": "current",
       "doc": "docs/owners/platform.md"
+    },
+    {
+      "id": "activity",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "app",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "check",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "deployment",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "discussion",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "gist",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "issue",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "migration",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "package-registry",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "pull-request",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "release",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "security",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "source-control",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "sponsorship",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "workflow",
+      "kind": "business-owner",
+      "lifecycle": "selected-target"
+    },
+    {
+      "id": "search",
+      "kind": "application-capability-owner",
+      "lifecycle": "selected-target"
     }
   ],
   "boundedContexts": [
@@ -2477,6 +2557,86 @@
     {
       "semanticOwner": "platform",
       "module": "@line_bot_v1/platform"
+    },
+    {
+      "semanticOwner": "activity",
+      "targetModule": "@line_bot_v1/activity",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "app",
+      "targetModule": "@line_bot_v1/app",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "check",
+      "targetModule": "@line_bot_v1/check",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "deployment",
+      "targetModule": "@line_bot_v1/deployment",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "discussion",
+      "targetModule": "@line_bot_v1/discussion",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "gist",
+      "targetModule": "@line_bot_v1/gist",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "issue",
+      "targetModule": "@line_bot_v1/issue",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "migration",
+      "targetModule": "@line_bot_v1/migration",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "package-registry",
+      "targetModule": "@line_bot_v1/package-registry",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "pull-request",
+      "targetModule": "@line_bot_v1/pull-request",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "release",
+      "targetModule": "@line_bot_v1/release",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "security",
+      "targetModule": "@line_bot_v1/security",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "source-control",
+      "targetModule": "@line_bot_v1/source-control",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "sponsorship",
+      "targetModule": "@line_bot_v1/sponsorship",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "workflow",
+      "targetModule": "@line_bot_v1/workflow",
+      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+    },
+    {
+      "semanticOwner": "search",
+      "targetModule": "@line_bot_v1/search",
+      "note": "Selected FPT target application boundary only; Search composes provider-owned resources without acquiring their authority."
     }
   ],
   "policies": [
