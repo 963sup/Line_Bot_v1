@@ -288,66 +288,6 @@
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/870_employments.sql",
-      "role": "reserved",
-      "targetOwner": "workforce"
-    },
-    {
-      "path": "supabase/schemas/871_employment_terms.sql",
-      "role": "reserved",
-      "targetOwner": "workforce"
-    },
-    {
-      "path": "supabase/schemas/872_work_policy_versions.sql",
-      "role": "reserved",
-      "targetOwner": "workforce"
-    },
-    {
-      "path": "supabase/schemas/873_workforce_calendars.sql",
-      "role": "reserved",
-      "targetOwner": "workforce"
-    },
-    {
-      "path": "supabase/schemas/874_workforce_schedules.sql",
-      "role": "reserved",
-      "targetOwner": "workforce"
-    },
-    {
-      "path": "supabase/schemas/875_scheduled_intervals.sql",
-      "role": "reserved",
-      "targetOwner": "workforce"
-    },
-    {
-      "path": "supabase/schemas/880_pay_periods.sql",
-      "role": "reserved",
-      "targetOwner": "payroll"
-    },
-    {
-      "path": "supabase/schemas/881_payroll_runs.sql",
-      "role": "reserved",
-      "targetOwner": "payroll"
-    },
-    {
-      "path": "supabase/schemas/882_pay_statements.sql",
-      "role": "reserved",
-      "targetOwner": "payroll"
-    },
-    {
-      "path": "supabase/schemas/883_payroll_input_versions.sql",
-      "role": "reserved",
-      "targetOwner": "payroll"
-    },
-    {
-      "path": "supabase/schemas/890_audit_events.sql",
-      "role": "reserved",
-      "targetOwner": "audit"
-    },
-    {
-      "path": "supabase/schemas/891_audit_logs.sql",
-      "role": "reserved",
-      "targetOwner": "audit"
-    },
-    {
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "role": "derived-projection"
     },

@@ -1,6 +1,0 @@
--- status: reserved
--- owner: audit
--- scope: immutable AuditEvent preservation for activated high-impact operations.
--- canonical target: docs/change/proposals/security-target.md
--- migration gate: docs/change/gaps/admin-workspace.md
--- activation: remove reserved status only when an Audit capability has a current consumer, minimum evidence fields, retention policy, data-topology relations, tests, and validation evidence.

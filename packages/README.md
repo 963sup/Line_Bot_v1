@@ -59,132 +59,13 @@ validation evidence
 3. **無第二套真理**：子目錄 `packages/<owner>/AGENTS.md` 僅能增加該 Owner 本地約束；`packages/<owner>/README.md` 僅負責該模組內部導引。
 4. **驗證指令**：`pnpm boundaries`、`pnpm check`、merge / release 前 `pnpm validate`。
 
-## Canonical DDD + Hexagonal package model
+## DDD + Hexagonal responsibility routing
 
-所有 owner package 使用同一套穩定 root vocabulary：
+精確 change rules 只由 [packages/AGENTS.md](./AGENTS.md) 擁有；本 README 不維護第二份 physical template。
 
-```text
-packages/<owner>/src/
-├─ domain/
-├─ application/
-├─ contracts/
-├─ adapters/
-├─ composition/
-└─ testing/
-```
+`Domain / Application / Contracts / Adapters / Composition / Testing` 是 source responsibility vocabulary，不是所有 package 的 mandatory folders。先查 `architecture/implementation-topology.json#moduleKind`，再依真實 responsibility 決定最小充分結構：單一 responsibility 可以維持單一 source；責任成長或混合時才拆 directory。Application Module、Integration Adapter、Support Module 不為了外觀建立不存在的 Domain layer。
 
-只有 responsibility 真實存在時才建立 folder。Root role 一旦存在就使用對應 directory，不用 `domain.ts`、`application.ts`、`contracts.ts`、root `postgres.ts` 等 facade 重新聚合責任；也不要為了對稱預建空 layer 或另外發明 `infrastructure/`、`gateways/`、`implementations/`、`application/services/` 等同義位置。
-
-責任成長後可展開：
-
-```text
-packages/<owner>/src/
-├─ domain/
-│  ├─ entities/
-│  ├─ value-objects/
-│  ├─ aggregates/
-│  ├─ services/
-│  ├─ events/
-│  └─ policies/
-│
-├─ application/
-│  ├─ use-cases/
-│  ├─ commands/
-│  └─ queries/
-│
-├─ contracts/
-│  ├─ repositories/
-│  ├─ input/
-│  ├─ output/
-│  └─ dto/
-│
-├─ adapters/
-│  ├─ inbound/
-│  │  ├─ http/
-│  │  ├─ graphql/
-│  │  ├─ cli/
-│  │  └─ consumers/
-│  └─ outbound/
-│     ├─ persistence/
-│     ├─ email/
-│     ├─ payment/
-│     ├─ cache/
-│     └─ external-api/
-│
-├─ composition/
-│  └─ bootstrap/
-│
-└─ testing/
-```
-
-### One responsibility → one place
-
-| Responsibility | Canonical location |
-| --- | --- |
-| Entity / Value Object / Aggregate / Domain Event / Policy | `domain/**` |
-| Domain Service | `domain/services/**` |
-| Use Case | `application/use-cases/**` |
-| Command / Query | `application/commands/**` / `application/queries/**` |
-| Aggregate Repository contract | `contracts/repositories/**` |
-| Inbound Port | `contracts/input/**` |
-| Outbound Port | `contracts/output/**` |
-| Published / boundary DTO | `contracts/dto/**` |
-| HTTP / GraphQL / CLI / consumer | `adapters/inbound/**` |
-| PostgreSQL / Supabase / provider implementation | `adapters/outbound/**` |
-| Concrete dependency wiring | `composition/bootstrap/**` |
-| Test-only capability | `testing/**` |
-
-Application 不設 `services/`。Aggregate Repository 不放 `domain/repositories/` 或 `application/ports/`。Owner package 不設 `infrastructure/`；neutral runtime / database mechanism 由 `@line_bot_v1/platform` 擁有。
-
-### Dependency direction
-
-```text
-Inbound Adapter
-      │
-      ▼
-Input Port / Use Case
-      │
-      ▼
- Application
-      │
-      ├──────────────► Domain
-      │
-      ├──────────────► Repository Contract
-      └──────────────► Output Port
-                          ▲
-                          │
-                  Outbound Adapter
-
-Composition
-  └─ wires Use Cases + Adapters
-```
-
-Inner layer 永遠不知道 concrete technology。
-
-Application host 的 framework route 可以直接作 Inbound Adapter。只被單一 route family 使用的 `*.server.ts` transport wrapper 應由 route 吸收；可重用 input/business semantics 先回到 owner package 的 Contracts / Application。Next.js `Request` / `Response`、LIFF、browser API 與 URL ownership 留在 host，不因 semantic owner 是 package 就搬入 package。
-
-### Correctness chain
-
-```text
-DDD
-→ ownership / invariant / Aggregate boundary
-
-Hexagonal
-→ dependency boundary
-
-Database transaction / locking / conditional write
-→ concurrent correctness
-
-Durable idempotency
-→ repeated execution correctness
-
-Transactional Outbox / Saga
-→ cross-boundary correctness
-```
-
-`check → if → update` 不是 concurrency guarantee。任何 race-sensitive invariant，最終必須由 expected version、atomic predicate、lock、constraint 或 unique key enforce。
-
-完整 placement、Must / Must Not、idempotency、outbox、service 與 composition 規則見 [packages/AGENTS.md](./AGENTS.md)。
+判斷順序固定為：`semantic owner → moduleKind → consumer / public contract → dependency direction → data / consistency boundary → physical placement`。Folder shape 是這些決策的結果，不是上游 authority。
 
 ## Cross-owner relationship
 

@@ -36,29 +36,24 @@ Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以�
 - 預留或基礎模組（如 `payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
 - Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
 - Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
-- .gitkeep 做為保留結構使用 不需要刻意清除
 
 ## Canonical DDD + Hexagonal structure
 
 每個 production source 必須有且只有一個 primary architecture role。若一個檔案無法唯一回答「誰負責、真相在哪、依賴方向是什麼」，先解 ambiguity，再新增功能。
 
-### Stable root vocabulary
+### Architecture roles are semantic, not mandatory folders
 
-Owner package 的 `src/` 只使用這 6 個根角色：
+Canonical production roles are `Domain / Application / Contracts / Adapters / Composition / Testing`.
 
-```text
-packages/<owner>/src/
-├─ domain/
-├─ application/
-├─ contracts/
-├─ adapters/
-├─ composition/
-└─ testing/
-```
+它們是 responsibility taxonomy，不是所有 `moduleKind` 都必須具備的 physical template。先由 `architecture/implementation-topology.json#moduleKind` 與實際 source responsibility 判斷角色，再決定最小充分的檔案結構。
 
-禁止新增同義根層，例如 `infrastructure/`、`infra/`、`gateways/`、`implementations/`、`repositories/`、`services/`、`shared/` 來承擔已存在角色。新的 root role 必須先證明上述 6 類無法正確承接，並同步 architecture truth 與 validation。
+- `domain-module`：只有一個單一責任時可保留直接檔案（例如單一 domain model / contract / named provider entry）；責任成長到多個 source 或子責任時才展開對應 directory。
+- `application-module`：只擁有 orchestration / read composition，不因 DDD 外觀建立自己的 business Domain truth。
+- `integration-adapter`：本身就是 external technology boundary；不建立假的 `domain/`。Provider protocol source 可依真實責任直接存在，或在責任成長後分組。
+- `support-module`：只擁有 neutral runtime mechanism，可使用能直接表達 technology / mechanism responsibility 的結構（例如 `database/`、`redis/`），不得吸收 owner-specific business adapter。
+- `adapters/`、`composition/`、`testing/` 只在真實 responsibility 存在時建立；沒有責任就不建立 folder、interface、wrapper、facade 或 `.gitkeep`。
 
-這是 stable vocabulary，不是空資料夾模板。沒有真實 responsibility 就不建立 folder、interface、service、wrapper、facade 或 `.gitkeep`。
+Physical path 只是 responsibility 的 projection，不是 architecture authority。不得為了資料夾對稱搬動本來責任清楚的 source；也不得以 root file / directory 名稱替代 Owner、Contract、Dependency 與 tests 的判斷。
 
 ### Canonical maximum shape
 
@@ -104,11 +99,11 @@ packages/<owner>/src/
 └─ testing/
 ```
 
-Root role 一旦存在就使用對應 directory；不得以 `domain.ts`、`application.ts`、`contracts.ts`、root `postgres.ts` 等單檔 facade 聚合多個 responsibility。沒有真實 responsibility 則不建立該 directory。Folder 數量不是 architecture goal。
+這是責任成長後可採用的 maximum shape，不是 target template。單一責任不因「已有 role 名稱」就必須展開 directory；只有當同一 role 已出現多個 source / 子責任、或單檔開始混合責任時才拆分。Root named entry 若只是為舊路徑 forwarding、沒有自己的 public / composition contract，就刪除；若它本身是刻意的 narrow public entry，則以 consumer contract 與 `package.json#exports` 證明其存在。Folder 數量不是 architecture goal。
 
-## Single-owner placement
+## Single-owner placement when a role is expanded
 
-同一 responsibility 只能存在一個 canonical location：
+同一 responsibility 只能有一個 canonical location。下表是 role 已展開為 directory 時的 placement；單一 source 不必為了表格形式先拆 folder：
 
 | Responsibility | Canonical placement | 禁止平行位置 |
 | --- | --- | --- |
@@ -125,7 +120,7 @@ Root role 一旦存在就使用對應 directory；不得以 `domain.ts`、`appli
 | Dependency wiring | `composition/bootstrap/**` | service locator / hidden registry |
 | Test-only helper | `testing/**` | production runtime |
 
-現有 legacy path 在 package convergence 時直接搬到 canonical placement；不得使用 alias、barrel facade、compatibility wrapper 或雙路徑長期共存。
+只有在 evidence 證明 source 混合 responsibility、public contract 錯置或同一 responsibility 已需要拆分時才做 physical convergence；不得只為目錄對稱搬檔。真正需要搬移時直接更新 consumer 與 public contract，不使用 alias、barrel facade、compatibility wrapper 或雙路徑長期共存。
 
 ## Domain
 
@@ -425,8 +420,8 @@ Business intent
 - 一個 transaction / consistency boundary 只在 invariant 必須 atomic 成立時存在；不得只因 package 或 folder 相同就假設一致性邊界相同。
 - authorization、tenant/data isolation、replay / idempotency、version、recovery、audit、transaction correctness 不得為了簡化 layer、CI 或 UI 而削弱。
 - pure placement / naming / dependency refactor 必須保持 [Invariant kernel](../docs/rules/system-invariants.md) 的既有 semantics。
-- **單一事務單一聚合**：一個資料庫事務原則上只修改一個聚合根；跨聚合協調一律透過 Domain Event 與 Transactional Outbox 達成最終一致性。
-- **錯誤處理**：業務失敗返回結構化 `Result<T, DomainError>`，不拋出未受控例外。
+- **Consistency boundary first**：預設讓單一 Aggregate 擁有自己的 consistency boundary；跨 Aggregate / owner 優先以 Domain Event + Transactional Outbox 解耦。只有 business invariant 必須 atomic 成立、拆開會降低 correctness 時，才使用明確 owner 的 cross-owner transaction coordinator / DB transaction，並以 schema constraint / transaction tests 證明必要性。不得為了「一律 eventual consistency」拆壞 atomic invariant。
+- **錯誤處理**：business failure semantics 必須 explicit、typed 且由真正 owner 定義；可使用既有 `Result<T, DomainError>` 或 owner-defined typed / domain error。Provider / infrastructure 的 uncontrolled exception 不得直接成為 public business contract；「一定使用 Result」不是 architecture invariant。
 - **冪等防重放**：寫入命令支援 Idempotency Key 或天然業務複合主鍵；事件 Consumer 強制去重。
 - **讀寫分離**：探索、統計與清單等唯讀查詢直接消費 Read Projections，不載入肥大 Domain Aggregate。
 - 新能力直接進真正 owner；不得用 alias、facade、compatibility package 或 pass-through service 掩蓋 responsibility 問題。
