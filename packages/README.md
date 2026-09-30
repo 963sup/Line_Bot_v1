@@ -8,7 +8,7 @@
 | --- | --- |
 | GitHub GraphQL domain semantics | [Vendored FPT JSON](../architecture/domain/fpt/) |
 | Line_Bot_v1 owner、relationship、capability、invariant、implementation expectation | [Product domain overlay](../architecture/semantic-model.json) |
-| Package path、module kind、workspace dependency allowlist | [Implementation topology](../architecture/implementation-topology.json) |
+| Current package path / module kind / workspace dependency allowlist，以及 selected-target FPT package boundary | [Implementation topology](../architecture/implementation-topology.json) |
 | Persisted relation owner、projection / reference | [Data topology](../architecture/data-topology.json) |
 | Actual SQL / constraints / RLS | [Supabase schemas](../supabase/schemas/README.md) |
 | Package public surface | each `package.json#exports` |
@@ -35,22 +35,28 @@ src / tests / supabase schemas
 validation evidence
 ```
 
-## Package 分類與職責
+## Module inventory
 
-這張表是開發時的 routing context；GitHub-derived語意權威在 FPT，產品 ownership / invariant overlay 在 `semantic-model.json`，module truth 在 `implementation-topology.json`。若表格與 machine-readable truth 發生差異，先查明 drift / architecture violation，不得直接忽略任一方。
+Package / application module 的完整清單不在本 README 手工維護。唯一 machine authority 是
+`architecture/implementation-topology.json`；可讀清單由它即時計算：
 
-| 分類 | Packages | 角色與邊界原則 |
-| --- | --- | --- |
-| **Application Host** | `apps/web` | 頂層 Presentation / App Router 宿主。只允許依賴開放之 Application 與 Domain packages，不直接碰觸封裝帳本或未啟用領域。 |
-| **Application Module** | `@line_bot_v1/explore` | 跨領域聚合視圖（Trending / Activity / Lists）。無獨立資料權威，由 Repository 概念派生。 |
-| **Identity & Access** | `@line_bot_v1/account`<br>`@line_bot_v1/namespace`<br>`@line_bot_v1/identity-access` | 全域 User / Organization Login 命名空間、身分憑證與 Enterprise / Organization / Team 角色授權。 |
-| **Governance & Team** | `@line_bot_v1/enterprise`<br>`@line_bot_v1/organization`<br>`@line_bot_v1/team` | 企業治理、組織成員資格、組織團隊結構與指派。 |
-| **Work & Planning** | `@line_bot_v1/repository`<br>`@line_bot_v1/project`<br>`@line_bot_v1/notifications` | Repository 容器、Issue / Discussion、ProjectV2 企劃清單與通知遞送參考。 |
-| **Operations & Assets** | `@line_bot_v1/attendance`<br>`@line_bot_v1/daily-check-in`<br>`@line_bot_v1/expense`<br>`@line_bot_v1/partners`<br>`@line_bot_v1/asset`<br>`@line_bot_v1/wallet` | 打卡出勤、每日簽到、費用報銷、外部合作夥伴、資產定義與使用者錢包餘額。 |
-| **Encapsulated Ledger** | `@line_bot_v1/ledger` | **內部一致性邊界**。複式記帳底層帳本，僅供 `wallet`、`attendance`、`daily-check-in` 內部依賴；**禁止 Web 直接依賴**。 |
-| **Integration & Adapters** | `@line_bot_v1/assistant`<br>`@line_bot_v1/line-channel`<br>`@line_bot_v1/google-workspace`<br>`@line_bot_v1/platform` | 外部通道（LINE Channel、Google Workspace）通訊協定適配與中立平台運行機制。 |
-| **Audit queries** | `@line_bot_v1/audit` | 透過來源 owner 的公開授權投影查詢治理事件。 |
-| **Reserved / Foundation** | `@line_bot_v1/payroll`<br>`@line_bot_v1/workforce` | 架構保留模組。在真實業務契約與 Consumer 建立前維持 inactive，不提早引入 Web 耦合。 |
+```bash
+pnpm semantic view modules
+```
+
+此 view 會同時列出 current executable modules 與 selected-target modules，包含 path、status、`moduleKind`、semantic owner、FPT files、exact FPT roots 與 dependency direction。Target root 必須直接 resolve 到 vendored FPT symbol；清單不保存第二份 GitHub domain 定義。
+
+Current row 的 dependencies 是實際 workspace allowlist；selected-target row 的 dependencies 只描述目標方向，不是目前 manifest/import 關係，且 target graph 必須無 cycle。Selected-target 不建立 `package.json` 或 source，也不會進入 pnpm workspace、Web application allowlist 或 Dependency Cruiser current graph；若提前變成 workspace，`pnpm boundaries` / `pnpm architecture` 會直接失敗。
+
+### Module kind semantics
+
+| `moduleKind` | 角色與邊界原則 |
+| --- | --- |
+| `application-host` | 頂層 delivery / presentation 宿主；只依賴 topology 明確開放的 workspace modules，不取得 business authority。 |
+| `application-module` | orchestration / read composition；不因聚合多個 owner 的資料而建立自己的 business truth。 |
+| `domain-module` | 實作 semantic owner 的 domain/application responsibility；跨 owner 依賴必須有明確 relationship contract。 |
+| `integration-adapter` | 外部 provider / protocol boundary；不建立假的 domain layer。 |
+| `support-module` | 無 business authority 的中立技術機制；不得吸收 owner-specific business logic。 |
 
 ## 開發與修改契約
 

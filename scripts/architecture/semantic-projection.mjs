@@ -323,6 +323,59 @@ function capabilities(compiled) {
   ].join("\n");
 }
 
+function modules(compiled) {
+  const entries = [
+    ...Object.entries(compiled.topology.modules ?? {}).map(([name, entry]) => ({
+      name,
+      entry,
+      status: "current",
+      dependencies: entry.allowedWorkspaceDependencies ?? [],
+    })),
+    ...Object.entries(compiled.topology.targetModules ?? {}).map(([name, entry]) => ({
+      name,
+      entry,
+      status: "selected-target",
+      dependencies: entry.dependsOn ?? [],
+    })),
+    ...Object.entries(compiled.topology.applications ?? {}).map(([name, entry]) => ({
+      name,
+      entry,
+      status: "current",
+      dependencies: entry.allowedWorkspaceDependencies ?? [],
+    })),
+  ].sort((left, right) => left.entry.path.localeCompare(right.entry.path));
+
+  return [
+    "# Module Inventory",
+    "",
+    "> Derived projection of architecture/implementation-topology.json. Current executable workspaces and selected non-runtime target modules are intentionally distinct; do not maintain a second package inventory in prose.",
+    "",
+    markdownTable(
+      [
+        "Module",
+        "Path",
+        "Status",
+        "Kind",
+        "Semantic owner",
+        "FPT files",
+        "FPT roots",
+        "Dependencies",
+      ],
+      entries.map(({ name, entry, status, dependencies }) => [
+        markdownCell(name),
+        markdownCell(entry.path),
+        markdownCell(status),
+        markdownCell(entry.moduleKind),
+        markdownCell(entry.semanticOwner ?? ""),
+        markdownCell((entry.fptFiles ?? []).join(", ")),
+        markdownCell(
+          (entry.fptRoots ?? []).map((root) => root.file + "#" + root.symbol).join(", "),
+        ),
+        markdownCell(dependencies.join(", ")),
+      ]),
+    ),
+  ].join("\n");
+}
 function locators(compiled) {
   return [
     "# Resource Locators",
@@ -439,6 +492,8 @@ function docs(compiled) {
     "",
     capabilities(compiled),
     "",
+    modules(compiled),
+    "",
     locators(compiled),
     "",
     fptReferences(compiled),
@@ -471,11 +526,12 @@ export function renderSemanticView(compiled, view = "ownership") {
   if (view === "contracts") return contracts(compiled);
   if (view === "invariants") return invariants(compiled);
   if (view === "capabilities") return capabilities(compiled);
+  if (view === "modules") return modules(compiled);
   if (view === "locators") return locators(compiled);
   if (view === "fpt-references") return fptReferences(compiled);
   if (view === "evidence") return evidence(compiled);
   if (view === "docs") return docs(compiled);
   throw new Error(
-    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, locators, fpt-references, evidence, or docs.",
+    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, modules, locators, fpt-references, evidence, or docs.",
   );
 }

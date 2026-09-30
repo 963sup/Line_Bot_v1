@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { checkAppRoot, checkArchitecture } from "./check-architecture.mjs";
-import { validatePackageExports } from "./check-implementation-topology.mjs";
+import { validatePackageExports, validateTargetModules } from "./check-implementation-topology.mjs";
 
 const artifacts = fileURLToPath(new URL("../../.artifacts/", import.meta.url));
 // Keep generated fixture imports out of the tooling checker's literal script-import scan.
@@ -108,6 +108,44 @@ test("package public exports keep adapters private", () => {
     }),
     [],
   );
+});
+
+test("selected target modules stay outside current workspace topology", () => {
+  const topology = {
+    modules: {
+      "@line_bot_v1/repository": {
+        path: "packages/repository",
+        semanticOwner: "repository",
+      },
+    },
+    applications: {},
+    targetModules: {
+      "@line_bot_v1/issue": {
+        path: "packages/issue",
+        moduleKind: "domain-module",
+        semanticOwner: "issue",
+        fptFiles: ["schema-issues.json"],
+        fptRoots: [{ file: "schema-issues.json", symbol: "Issue" }],
+        dependsOn: ["@line_bot_v1/repository"],
+      },
+    },
+  };
+  assert.deepEqual(validateTargetModules(topology), []);
+
+  topology.targetModules["@line_bot_v1/issue"].dependsOn = ["@line_bot_v1/missing"];
+  assert.match(validateTargetModules(topology).join("\n"), /unknown target dependency/);
+
+  topology.targetModules["@line_bot_v1/issue"].dependsOn = ["@line_bot_v1/repository"];
+  topology.targetModules["@line_bot_v1/discussion"] = {
+    path: "packages/discussion",
+    moduleKind: "domain-module",
+    semanticOwner: "discussion",
+    fptFiles: ["schema-discussions.json"],
+    fptRoots: [{ file: "schema-discussions.json", symbol: "Discussion" }],
+    dependsOn: ["@line_bot_v1/issue"],
+  };
+  topology.targetModules["@line_bot_v1/issue"].dependsOn = ["@line_bot_v1/discussion"];
+  assert.match(validateTargetModules(topology).join("\n"), /target dependency cycle/);
 });
 
 test("public package entries require named re-exports", async () => {

@@ -59,7 +59,7 @@ function fixture() {
     symbols: indexFptDocuments(fptFiles),
   };
   const topology = {
-    version: 2,
+    version: 3,
     role: "implementation-topology",
     semanticModel: "architecture/semantic-model.json",
     modules: {
@@ -70,6 +70,7 @@ function fixture() {
         allowedWorkspaceDependencies: [],
       },
     },
+    targetModules: {},
     applications: {},
   };
   const model = {
@@ -852,6 +853,99 @@ test("filesystem guard rejects fake source, public export and route evidence", a
   assert.deepEqual(
     await validateSemanticFilesystem(compileSemanticArchitecture(model, fpt, topology), root),
     [],
+  );
+});
+
+test("module inventory derives current and selected-target modules from one topology", () => {
+  const { model, fpt, topology } = fixture();
+  topology.applications["@line_bot_v1/web"] = {
+    path: "apps/web",
+    moduleKind: "application-host",
+    semanticOwner: null,
+    allowedWorkspaceDependencies: ["@line_bot_v1/repository"],
+  };
+  model.semanticOwners.push({ id: "issue", lifecycle: "selected-target" });
+  model.implementationMappings.push({
+    semanticOwner: "issue",
+    targetModule: "@line_bot_v1/issue",
+  });
+  topology.targetModules["@line_bot_v1/issue"] = {
+    path: "packages/issue",
+    moduleKind: "domain-module",
+    semanticOwner: "issue",
+    fptFiles: ["schema-repos.json"],
+    fptRoots: [{ file: "schema-repos.json", symbol: "Repository" }],
+    dependsOn: ["@line_bot_v1/repository"],
+  };
+
+  const view = renderSemanticView(compileSemanticArchitecture(model, fpt, topology), "modules");
+  assert.match(
+    view,
+    /\| @line_bot_v1\/repository \| packages\/repository \| current \| domain-module \| repository \|  \|  \|  \|/,
+  );
+  assert.match(
+    view,
+    /\| @line_bot_v1\/issue \| packages\/issue \| selected-target \| domain-module \| issue \| schema-repos\.json \| schema-repos\.json#Repository \| @line_bot_v1\/repository \|/,
+  );
+  assert.match(
+    view,
+    /\| @line_bot_v1\/web \| apps\/web \| current \| application-host \|  \|  \|  \| @line_bot_v1\/repository \|/,
+  );
+});
+
+test("selected-target owner requires a target module and cannot claim current runtime", () => {
+  const { model, fpt, topology } = fixture();
+  model.semanticOwners.push({ id: "issue", lifecycle: "selected-target" });
+  model.implementationMappings.push({
+    semanticOwner: "issue",
+    targetModule: "@line_bot_v1/issue",
+  });
+  topology.targetModules["@line_bot_v1/issue"] = {
+    path: "packages/issue",
+    moduleKind: "domain-module",
+    semanticOwner: "issue",
+    fptFiles: ["schema-repos.json"],
+    fptRoots: [{ file: "schema-repos.json", symbol: "Repository" }],
+    dependsOn: ["@line_bot_v1/repository"],
+  };
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+
+  model.implementationMappings.at(-1).module = "@line_bot_v1/repository";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /current module and targetModule are mutually exclusive|selected-target must not assert a runtime module/,
+  );
+});
+
+test("selected-target FPT roots resolve directly and stay inside declared FPT files", () => {
+  const { model, fpt, topology } = fixture();
+  model.semanticOwners.push({ id: "issue", lifecycle: "selected-target" });
+  model.implementationMappings.push({
+    semanticOwner: "issue",
+    targetModule: "@line_bot_v1/issue",
+  });
+  topology.targetModules["@line_bot_v1/issue"] = {
+    path: "packages/issue",
+    moduleKind: "domain-module",
+    semanticOwner: "issue",
+    fptFiles: ["schema-repos.json"],
+    fptRoots: [{ file: "schema-repos.json", symbol: "Repository" }],
+    dependsOn: ["@line_bot_v1/repository"],
+  };
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+
+  topology.targetModules["@line_bot_v1/issue"].fptRoots[0].symbol = "Missing";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unresolved FPT root/,
+  );
+
+  topology.targetModules["@line_bot_v1/issue"].fptRoots = [
+    { file: "schema-projects.json", symbol: "ProjectV2" },
+  ];
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /must use a file declared in fptFiles/,
   );
 });
 

@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "role": "implementation-topology",
   "architecture": "context-first-modular-monolith",
   "semanticModel": "architecture/semantic-model.json",
@@ -198,6 +198,387 @@
       "moduleKind": "domain-module",
       "semanticOwner": "workforce",
       "allowedWorkspaceDependencies": []
+    }
+  },
+  "targetModules": {
+    "@line_bot_v1/activity": {
+      "path": "packages/activity",
+      "moduleKind": "domain-module",
+      "semanticOwner": "activity",
+      "fptFiles": ["schema-activity.json", "schema-reactions.json"],
+      "fptRoots": [
+        {
+          "file": "schema-activity.json",
+          "symbol": "Starrable"
+        },
+        {
+          "file": "schema-activity.json",
+          "symbol": "Subscribable"
+        },
+        {
+          "file": "schema-reactions.json",
+          "symbol": "Reactable"
+        },
+        {
+          "file": "schema-reactions.json",
+          "symbol": "Reaction"
+        }
+      ],
+      "dependsOn": [
+        "@line_bot_v1/account",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/issue",
+        "@line_bot_v1/discussion",
+        "@line_bot_v1/pull-request"
+      ]
+    },
+    "@line_bot_v1/app": {
+      "path": "packages/app",
+      "moduleKind": "domain-module",
+      "semanticOwner": "app",
+      "fptFiles": ["schema-apps.json"],
+      "fptRoots": [
+        {
+          "file": "schema-apps.json",
+          "symbol": "App"
+        },
+        {
+          "file": "schema-apps.json",
+          "symbol": "Bot"
+        },
+        {
+          "file": "schema-apps.json",
+          "symbol": "MarketplaceListing"
+        }
+      ],
+      "dependsOn": []
+    },
+    "@line_bot_v1/check": {
+      "path": "packages/check",
+      "moduleKind": "domain-module",
+      "semanticOwner": "check",
+      "fptFiles": ["schema-checks.json"],
+      "fptRoots": [
+        {
+          "file": "schema-checks.json",
+          "symbol": "CheckSuite"
+        },
+        {
+          "file": "schema-checks.json",
+          "symbol": "CheckRun"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/app", "@line_bot_v1/repository", "@line_bot_v1/source-control"]
+    },
+    "@line_bot_v1/deployment": {
+      "path": "packages/deployment",
+      "moduleKind": "domain-module",
+      "semanticOwner": "deployment",
+      "fptFiles": ["schema-deployments.json"],
+      "fptRoots": [
+        {
+          "file": "schema-deployments.json",
+          "symbol": "Deployment"
+        },
+        {
+          "file": "schema-deployments.json",
+          "symbol": "DeploymentStatus"
+        },
+        {
+          "file": "schema-deployments.json",
+          "symbol": "Environment"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/repository", "@line_bot_v1/source-control"]
+    },
+    "@line_bot_v1/discussion": {
+      "path": "packages/discussion",
+      "moduleKind": "domain-module",
+      "semanticOwner": "discussion",
+      "fptFiles": ["schema-discussions.json"],
+      "fptRoots": [
+        {
+          "file": "schema-discussions.json",
+          "symbol": "Discussion"
+        },
+        {
+          "file": "schema-discussions.json",
+          "symbol": "DiscussionComment"
+        },
+        {
+          "file": "schema-discussions.json",
+          "symbol": "DiscussionCategory"
+        },
+        {
+          "file": "schema-discussions.json",
+          "symbol": "DiscussionPoll"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/account", "@line_bot_v1/repository"]
+    },
+    "@line_bot_v1/gist": {
+      "path": "packages/gist",
+      "moduleKind": "domain-module",
+      "semanticOwner": "gist",
+      "fptFiles": ["schema-gists.json"],
+      "fptRoots": [
+        {
+          "file": "schema-gists.json",
+          "symbol": "Gist"
+        },
+        {
+          "file": "schema-gists.json",
+          "symbol": "GistComment"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/account"]
+    },
+    "@line_bot_v1/issue": {
+      "path": "packages/issue",
+      "moduleKind": "domain-module",
+      "semanticOwner": "issue",
+      "fptFiles": ["schema-issues.json"],
+      "fptRoots": [
+        {
+          "file": "schema-issues.json",
+          "symbol": "Issue"
+        },
+        {
+          "file": "schema-issues.json",
+          "symbol": "IssueComment"
+        },
+        {
+          "file": "schema-issues.json",
+          "symbol": "IssueType"
+        }
+      ],
+      "dependsOn": [
+        "@line_bot_v1/account",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/source-control"
+      ]
+    },
+    "@line_bot_v1/migration": {
+      "path": "packages/migration",
+      "moduleKind": "domain-module",
+      "semanticOwner": "migration",
+      "fptFiles": ["schema-migrations.json"],
+      "fptRoots": [
+        {
+          "file": "schema-migrations.json",
+          "symbol": "Migration"
+        },
+        {
+          "file": "schema-migrations.json",
+          "symbol": "MigrationSource"
+        },
+        {
+          "file": "schema-migrations.json",
+          "symbol": "OrganizationMigration"
+        },
+        {
+          "file": "schema-migrations.json",
+          "symbol": "RepositoryMigration"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/account", "@line_bot_v1/organization", "@line_bot_v1/repository"]
+    },
+    "@line_bot_v1/package-registry": {
+      "path": "packages/package-registry",
+      "moduleKind": "domain-module",
+      "semanticOwner": "package-registry",
+      "fptFiles": ["schema-packages.json"],
+      "fptRoots": [
+        {
+          "file": "schema-packages.json",
+          "symbol": "Package"
+        },
+        {
+          "file": "schema-packages.json",
+          "symbol": "PackageVersion"
+        },
+        {
+          "file": "schema-packages.json",
+          "symbol": "PackageOwner"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/account", "@line_bot_v1/organization", "@line_bot_v1/repository"]
+    },
+    "@line_bot_v1/pull-request": {
+      "path": "packages/pull-request",
+      "moduleKind": "domain-module",
+      "semanticOwner": "pull-request",
+      "fptFiles": ["schema-pulls.json"],
+      "fptRoots": [
+        {
+          "file": "schema-pulls.json",
+          "symbol": "PullRequest"
+        },
+        {
+          "file": "schema-pulls.json",
+          "symbol": "PullRequestReview"
+        },
+        {
+          "file": "schema-pulls.json",
+          "symbol": "PullRequestReviewThread"
+        },
+        {
+          "file": "schema-pulls.json",
+          "symbol": "MergeQueue"
+        }
+      ],
+      "dependsOn": [
+        "@line_bot_v1/account",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/source-control"
+      ]
+    },
+    "@line_bot_v1/release": {
+      "path": "packages/release",
+      "moduleKind": "domain-module",
+      "semanticOwner": "release",
+      "fptFiles": ["schema-releases.json"],
+      "fptRoots": [
+        {
+          "file": "schema-releases.json",
+          "symbol": "Release"
+        },
+        {
+          "file": "schema-releases.json",
+          "symbol": "ReleaseAsset"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/repository", "@line_bot_v1/source-control"]
+    },
+    "@line_bot_v1/search": {
+      "path": "packages/search",
+      "moduleKind": "application-module",
+      "semanticOwner": "search",
+      "fptFiles": ["schema-search.json"],
+      "fptRoots": [
+        {
+          "file": "schema-search.json",
+          "symbol": "search"
+        },
+        {
+          "file": "schema-search.json",
+          "symbol": "SearchResultItem"
+        },
+        {
+          "file": "schema-search.json",
+          "symbol": "SearchType"
+        }
+      ],
+      "dependsOn": [
+        "@line_bot_v1/account",
+        "@line_bot_v1/organization",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/issue",
+        "@line_bot_v1/discussion",
+        "@line_bot_v1/pull-request",
+        "@line_bot_v1/app"
+      ]
+    },
+    "@line_bot_v1/security": {
+      "path": "packages/security",
+      "moduleKind": "domain-module",
+      "semanticOwner": "security",
+      "fptFiles": [
+        "schema-code-scanning.json",
+        "schema-dependabot.json",
+        "schema-dependency-graph.json",
+        "schema-security-advisories.json"
+      ],
+      "fptRoots": [
+        {
+          "file": "schema-code-scanning.json",
+          "symbol": "CodeQualityParameters"
+        },
+        {
+          "file": "schema-dependabot.json",
+          "symbol": "RepositoryVulnerabilityAlert"
+        },
+        {
+          "file": "schema-dependency-graph.json",
+          "symbol": "DependencyGraphManifest"
+        },
+        {
+          "file": "schema-security-advisories.json",
+          "symbol": "SecurityAdvisory"
+        },
+        {
+          "file": "schema-security-advisories.json",
+          "symbol": "SecurityVulnerability"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/repository", "@line_bot_v1/source-control"]
+    },
+    "@line_bot_v1/source-control": {
+      "path": "packages/source-control",
+      "moduleKind": "domain-module",
+      "semanticOwner": "source-control",
+      "fptFiles": ["schema-branches.json", "schema-commits.json", "schema-git.json"],
+      "fptRoots": [
+        {
+          "file": "schema-git.json",
+          "symbol": "GitObject"
+        },
+        {
+          "file": "schema-git.json",
+          "symbol": "Ref"
+        },
+        {
+          "file": "schema-commits.json",
+          "symbol": "Commit"
+        },
+        {
+          "file": "schema-branches.json",
+          "symbol": "BranchProtectionRule"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/repository"]
+    },
+    "@line_bot_v1/sponsorship": {
+      "path": "packages/sponsorship",
+      "moduleKind": "domain-module",
+      "semanticOwner": "sponsorship",
+      "fptFiles": ["schema-sponsors.json"],
+      "fptRoots": [
+        {
+          "file": "schema-sponsors.json",
+          "symbol": "Sponsorship"
+        },
+        {
+          "file": "schema-sponsors.json",
+          "symbol": "SponsorsListing"
+        },
+        {
+          "file": "schema-sponsors.json",
+          "symbol": "SponsorsTier"
+        },
+        {
+          "file": "schema-sponsors.json",
+          "symbol": "Sponsorable"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/account", "@line_bot_v1/organization"]
+    },
+    "@line_bot_v1/workflow": {
+      "path": "packages/workflow",
+      "moduleKind": "domain-module",
+      "semanticOwner": "workflow",
+      "fptFiles": ["schema-actions.json"],
+      "fptRoots": [
+        {
+          "file": "schema-actions.json",
+          "symbol": "Workflow"
+        },
+        {
+          "file": "schema-actions.json",
+          "symbol": "WorkflowRun"
+        }
+      ],
+      "dependsOn": ["@line_bot_v1/repository", "@line_bot_v1/source-control"]
     }
   },
   "applications": {
