@@ -305,6 +305,27 @@ test("FPT may contain unused GitHub symbols without a second adoption ledger", (
   assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 });
 
+test("FPT coverage is derived from canonical files and overlay references without adoption state", () => {
+  const { model, fpt, topology } = fixture();
+  const coverage = querySemanticArchitecture(
+    compileSemanticArchitecture(model, fpt, topology),
+    "fpt-coverage",
+    [],
+  );
+  assert.equal(coverage.revision, fpt.manifest.upstream.revision);
+  assert.deepEqual(coverage.referencedSchemaFiles, ["schema-repos.json"]);
+  assert.deepEqual(coverage.unreferencedSchemaFiles, ["schema-projects.json"]);
+  assert.deepEqual(
+    coverage.schemaFiles.find((entry) => entry.file === "schema-repos.json"),
+    {
+      file: "schema-repos.json",
+      symbolCount: 1,
+      references: [{ type: "concept", id: "repository", symbol: "Repository" }],
+    },
+  );
+  assert.equal(Object.hasOwn(coverage, "adoption"), false);
+});
+
 test("rejects active locators for data-only or target concepts", () => {
   const { model, fpt, topology } = fixture();
   model.locators = [

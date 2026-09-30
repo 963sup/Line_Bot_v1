@@ -27,11 +27,12 @@ const queryVerbs = new Set([
   "truth",
   "locators",
   "fpt-references",
+  "fpt-coverage",
   "explain",
 ]);
 
 const usage =
-  "Usage: pnpm semantic <check|owner|concept|capability|fpt|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|fpt-references|explain|plan|context|diff|drift|feedback|view|package-docs> ...";
+  "Usage: pnpm semantic <check|owner|concept|capability|fpt|resolve|neighbors|path|impact|contracts|consumers|dependencies|invariants|boundaries|evidence|truth|locators|fpt-references|fpt-coverage|explain|plan|context|diff|drift|feedback|view|package-docs> ...";
 
 async function readJson(path) {
   return JSON.parse(await readFile(resolve(path), "utf8"));
