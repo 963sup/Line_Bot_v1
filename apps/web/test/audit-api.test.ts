@@ -1,22 +1,16 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { createAuditQuery } from "@line_bot_v1/audit/application/queries/governance-audit";
+import { createAuditQuery } from "@line_bot_v1/audit/application/use-cases/read-governance-audit";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { auditQuery } from "../src/app/api/_composition/audit.server";
 import { GET } from "../src/app/api/audit/route";
-import { auditRequest } from "../src/modules/audit/http.server";
 import { lineMiniApp } from "../src/shared/server/line-mini-app";
-import { RequestIdentityError } from "../src/shared/server/request-identity-error";
 
-test("audit route verifies LINE identity before forwarding the exact scope to Audit", async () => {
-  const subject = `U${"8".repeat(32)}`;
-  const list = mock.method(auditQuery, "list", async () => ({
-    ok: true as const,
-    events: [],
-    next: null,
-  }));
-  const fetch = mock.method(globalThis, "fetch", async (input: unknown) => {
+const subject = `U${"8".repeat(32)}`;
+
+function mockLineIdentity() {
+  return mock.method(globalThis, "fetch", async (input: unknown) => {
     const url = String(input);
     if (url.startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
@@ -27,6 +21,19 @@ test("audit route verifies LINE identity before forwarding the exact scope to Au
     if (url === "https://api.line.me/v2/profile") return Response.json({ userId: subject });
     throw new Error("Unexpected network request");
   });
+}
+
+test("audit route verifies LINE identity before forwarding the exact scope to Audit", async () => {
+  const list = mock.method(
+    auditQuery,
+    "list",
+    async (): Promise<Awaited<ReturnType<typeof auditQuery.list>>> => ({
+      ok: true,
+      events: [],
+      next: null,
+    }),
+  );
+  const fetch = mockLineIdentity();
   try {
     const url = "https://app.example/api/audit?scopeKind=organization&scopeId=org&limit=5";
     assert.equal((await GET(new Request(url))).status, 401);
@@ -43,53 +50,53 @@ test("audit route verifies LINE identity before forwarding the exact scope to Au
   }
 });
 
-test("audit HTTP separates unauthenticated, invalid, forbidden, empty and unavailable results", async () => {
-  const request = new Request("https://app.example/api/audit?scopeKind=organization&scopeId=org");
-  const identity = async () => ({ provider: "line:test", subject: "owner" });
+test("audit route separates uncached unauthenticated, invalid, forbidden, empty and unavailable results", async () => {
+  const url = "https://app.example/api/audit?scopeKind=organization&scopeId=org";
+  const headers = { "x-line-token": "offline-audit" };
   let reads = 0;
+  let sourceError: Error | undefined;
   const query = createAuditQuery({
     read: async () => {
       reads++;
+      if (sourceError) throw sourceError;
       return [];
     },
   });
-  const unauthorized = await auditRequest(
-    request,
-    async () => {
-      throw new RequestIdentityError(401, "denied");
-    },
-    query,
-  );
-  assert.equal(unauthorized.status, 401);
-  assert.equal(reads, 0);
-  assert.equal(
-    (await auditRequest(new Request("https://app.example/api/audit"), identity, query)).status,
-    400,
-  );
-  assert.equal(reads, 0);
-  const ok = await auditRequest(request, identity, query);
-  assert.equal(ok.status, 200);
-  assert.equal(ok.headers.get("cache-control"), "no-store");
-  assert.deepEqual(await ok.json(), { ok: true, events: [], next: null });
-  const denied = await auditRequest(
-    request,
-    identity,
-    createAuditQuery({
-      read: async () => {
-        throw new GovernanceAccessError(403, "forbidden", "private detail");
-      },
-    }),
-  );
-  assert.equal(denied.status, 403);
-  const failed = await auditRequest(
-    request,
-    identity,
-    createAuditQuery({
-      read: async () => {
-        throw new Error("private database detail");
-      },
-    }),
-  );
-  assert.equal(failed.status, 503);
-  assert.equal((await failed.text()).includes("private database detail"), false);
+  const list = mock.method(auditQuery, "list", query.list);
+  const fetch = mockLineIdentity();
+  try {
+    const unauthorized = await GET(new Request(url));
+    assert.equal(unauthorized.status, 401);
+    assert.equal(unauthorized.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await unauthorized.json(), { error: "unauthorized", retryable: false });
+    assert.equal(reads, 0);
+    assert.equal(list.mock.callCount(), 0);
+
+    const invalid = await GET(new Request("https://app.example/api/audit", { headers }));
+    assert.equal(invalid.status, 400);
+    assert.equal(invalid.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await invalid.json(), { ok: false, error: "invalid-input" });
+    assert.equal(reads, 0);
+
+    const ok = await GET(new Request(url, { headers }));
+    assert.equal(ok.status, 200);
+    assert.equal(ok.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await ok.json(), { ok: true, events: [], next: null });
+
+    sourceError = new GovernanceAccessError(403, "forbidden", "private authority detail");
+    const denied = await GET(new Request(url, { headers }));
+    assert.equal(denied.status, 403);
+    assert.equal(denied.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await denied.json(), { ok: false, error: "forbidden" });
+
+    sourceError = new Error("private database detail");
+    const failed = await GET(new Request(url, { headers }));
+    assert.equal(failed.status, 503);
+    assert.equal(failed.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await failed.json(), { error: "unavailable", retryable: true });
+    assert.equal(reads, 3);
+  } finally {
+    list.mock.restore();
+    fetch.mock.restore();
+  }
 });

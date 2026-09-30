@@ -1,13 +1,7 @@
-import type {
-  GovernanceAuditEvent,
-  GovernanceAuditReader,
-} from "@line_bot_v1/identity-access/contracts/audit";
+import type { GovernanceAuditReader } from "@line_bot_v1/identity-access/contracts/audit";
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-
-type AuditResult =
-  | { ok: true; events: GovernanceAuditEvent[]; next: string | null }
-  | { ok: false; error: "invalid-input" | "forbidden" };
+import { type AuditResult, parseAuditCursor } from "../../contracts/dto/governance-audit.js";
 
 export function createAuditQuery(reader: GovernanceAuditReader) {
   return {
@@ -33,15 +27,11 @@ export function createAuditQuery(reader: GovernanceAuditReader) {
       }
       let before: { at: number; id: string } | undefined;
       if (input.before !== undefined) {
-        const match = /^(0|[1-9]\d{0,15}):([1-9]\d{0,18})$/.exec(input.before);
-        if (
-          !match ||
-          !Number.isSafeInteger(Number(match[1])) ||
-          BigInt(match[2]!) > 9223372036854775807n
-        ) {
+        const cursor = parseAuditCursor(input.before);
+        if (cursor === null) {
           return { ok: false, error: "invalid-input" };
         }
-        before = { at: Number(match[1]), id: match[2]! };
+        before = cursor;
       }
       try {
         const rows = await reader.read(actor, {
