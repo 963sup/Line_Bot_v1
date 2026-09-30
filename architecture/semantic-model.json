@@ -189,7 +189,8 @@
     {
       "id": "issue",
       "kind": "business-owner",
-      "lifecycle": "selected-target"
+      "lifecycle": "current",
+      "doc": "docs/owners/issue.md"
     },
     {
       "id": "migration",
@@ -476,7 +477,7 @@
     {
       "id": "issue",
       "kind": "authoritative",
-      "owner": "repository",
+      "owner": "issue",
       "lifecycle": "current",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
@@ -524,7 +525,7 @@
     {
       "id": "issue-label-link",
       "kind": "authoritative",
-      "owner": "repository",
+      "owner": "issue",
       "lifecycle": "current-data-only",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
@@ -980,12 +981,21 @@
     },
     {
       "id": "project-issue-reference",
-      "provider": "repository",
+      "provider": "issue",
       "consumer": "project",
-      "meaning": "Project Item references Repository-owned Issue; Project metadata cannot rewrite Issue state.",
+      "meaning": "Project Item references Issue-owned work; Project metadata cannot rewrite Issue state.",
       "integrationMode": "reference",
-      "authority": "repository",
+      "authority": "issue",
       "consistency": "current-access-and-identity"
+    },
+    {
+      "id": "repository-issue-scope",
+      "provider": "repository",
+      "consumer": "issue",
+      "meaning": "Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
     },
     {
       "id": "line-account-proof",
@@ -1154,6 +1164,15 @@
       "provider": "namespace",
       "consumer": "repository",
       "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-issue-locator",
+      "provider": "namespace",
+      "consumer": "issue",
+      "meaning": "Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority.",
       "integrationMode": "query",
       "authority": "namespace",
       "consistency": "current-state"
@@ -1539,7 +1558,6 @@
         "manage-repository-stars",
         "manage-repository-star-lists",
         "read-repository-discovery",
-        "manage-issues",
         "manage-discussions",
         "manage-repository-labels",
         "manage-repository-milestones",
@@ -1738,7 +1756,7 @@
       "id": "read-repository-discovery",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Read authorized Repository Trending, recent Issue activity and published Repository Star List projections without creating a new Explore authority.",
+      "intent": "Read authorized Repository Trending and published Repository Star List projections without creating a new Explore authority.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1769,12 +1787,12 @@
           "apps/web/test/repository-star-lists-api.test.ts",
           "packages/explore/test/discovery.test.ts"
         ],
-        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Activity projects Issue events only. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only."
+        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only. Explore delivery composes Issue-owned activity separately."
       }
     },
     {
       "id": "manage-issues",
-      "owner": "repository",
+      "owner": "issue",
       "kind": "leaf",
       "intent": "Manage Repository-scoped Issue lifecycle and commands.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
@@ -1788,10 +1806,10 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Issue application surface",
+        "scope": "Issue-owned lifecycle and commands consuming Repository-owned scope, access and numbering contracts",
         "sourcePaths": [
-          "packages/repository/src/application/issues.ts",
-          "packages/repository/src/application/ports/issues.ts"
+          "packages/issue/src/application/issues.ts",
+          "packages/issue/src/application/ports/issues.ts"
         ],
         "publicExports": ["./application/issues", "./application/ports/issues"],
         "entrypoints": [
@@ -1802,11 +1820,45 @@
           "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
         ],
         "testPaths": [
-          "packages/repository/test/issues.test.ts",
+          "packages/issue/test/issues.test.ts",
           "apps/web/test/repository-navigation.test.ts",
           "apps/web/test/repository-pending-storage.test.ts"
         ],
-        "note": "Issue source/export evidence exists; command replay and version checks still need executed tests for proof."
+        "note": "Issue owns lifecycle, replay and version invariants. Repository authority is consumed through explicit public contracts for current access, participant scope and repository-scoped Issue numbering."
+      }
+    },
+    {
+      "id": "read-issue-activity",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned activity projection filtered by current Repository access",
+        "sourcePaths": [
+          "packages/issue/src/application/activity.ts",
+          "packages/issue/src/contracts/activity.ts",
+          "packages/issue/src/adapters/postgres/activity.ts"
+        ],
+        "publicExports": ["./application/activity", "./contracts/activity", "./postgres/activity"],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/api/_composition/issue-activity.server.ts"
+        ],
+        "testPaths": [
+          "packages/issue/test/activity.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Activity reads Issue-owned lifecycle evidence and consumes Repository-owned current access plus Namespace-owned actor locators; Web composes it with Repository discovery without moving authority."
       }
     },
     {
@@ -2590,8 +2642,7 @@
     },
     {
       "semanticOwner": "issue",
-      "targetModule": "@line_bot_v1/issue",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+      "module": "@line_bot_v1/issue"
     },
     {
       "semanticOwner": "migration",

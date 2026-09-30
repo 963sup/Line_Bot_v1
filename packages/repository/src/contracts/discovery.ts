@@ -27,31 +27,13 @@ export type RepositoryStarListDiscovery = Readonly<{
   >;
 }>;
 
-export type RepositoryActivityItem = Readonly<{
-  id: string;
-  occurredAt: number;
-  actorLogin: string;
-  action: string;
-  repository: Readonly<{
-    id: string;
-    ownerLogin: string;
-    name: string;
-  }>;
-  issue: Readonly<{
-    number: number;
-    title: string;
-  }>;
-}>;
-
 export type RepositoryDiscoverySnapshot = Readonly<{
   trending: TrendingRepository[];
-  activity: RepositoryActivityItem[];
 }>;
 
 export type RepositoryDiscoveryOptions = Readonly<{
   recentSince: number;
   trendingLimit: number;
-  activityLimit: number;
 }>;
 
 export interface RepositoryDiscoveryStore {

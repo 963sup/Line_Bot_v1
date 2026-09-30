@@ -4,31 +4,27 @@ import {
   resolveAccountLogin,
 } from "@line_bot_v1/namespace/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
-import type { RepositorySelector } from "../../application/ports/selectors.js";
-import { IssueError, type RepositoryCapability, type RepositorySummary } from "../../domain.js";
+import type { RepositorySelector } from "../../contracts/selectors.js";
+import {
+  type RepositoryCapability,
+  RepositoryError,
+  type RepositorySummary,
+} from "../../domain.js";
 
 export type RepositoryIdentity = { userId: string };
 
-export async function accessibleRepositories(
+type RepositoryAccessRow = {
+  id: string;
+  owner_account_id: string;
+  owner_account_kind: "USER" | "ORGANIZATION";
+  name: string;
+  capability: RepositoryCapability;
+};
+
+async function repositorySummaries(
   sql: Sql,
-  userId: string,
+  rows: RepositoryAccessRow[],
 ): Promise<RepositorySummary[]> {
-  const rows = (
-    await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
-       FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE a.user_id=$1
-       ORDER BY lower(r.name),r.id`,
-      [userId],
-    )
-  ).rows as Array<{
-    id: string;
-    owner_account_id: string;
-    owner_account_kind: "USER" | "ORGANIZATION";
-    name: string;
-    capability: RepositoryCapability;
-  }>;
   const owners = await readAccountLogins(
     sql,
     rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),
@@ -47,6 +43,43 @@ export async function accessibleRepositories(
         ]
       : [];
   });
+}
+
+export async function accessibleRepositories(
+  sql: Sql,
+  userId: string,
+): Promise<RepositorySummary[]> {
+  const rows = (
+    await sql.query(
+      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
+       FROM repositories r
+       JOIN repository_effective_access a ON a.repository_id=r.id
+       WHERE a.user_id=$1
+       ORDER BY lower(r.name),r.id`,
+      [userId],
+    )
+  ).rows as RepositoryAccessRow[];
+  return repositorySummaries(sql, rows);
+}
+
+export async function accessibleRepositoriesByIds(
+  sql: Sql,
+  userId: string,
+  repositoryIds: string[],
+): Promise<RepositorySummary[]> {
+  if (!repositoryIds.length) return [];
+  const rows = (
+    await sql.query(
+      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
+       FROM repositories r
+       JOIN repository_effective_access a ON a.repository_id=r.id
+       WHERE a.user_id=$1
+         AND r.id = ANY($2::text[])
+       ORDER BY r.id`,
+      [userId, repositoryIds],
+    )
+  ).rows as RepositoryAccessRow[];
+  return repositorySummaries(sql, rows);
 }
 
 export async function repositoryScope(
@@ -95,9 +128,9 @@ async function repositoryAccess(
         capability: RepositoryCapability;
       }
     | undefined;
-  if (!row) throw new IssueError(403, "沒有此 Repository 的存取權限。");
+  if (!row) throw new RepositoryError(403, "沒有此 Repository 的存取權限。");
   const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
-  if (!owner) throw new IssueError(409, "Repository owner locator 不可用。");
+  if (!owner) throw new RepositoryError(409, "Repository owner locator 不可用。");
   const access: RepositorySummary = {
     id: row.id,
     ownerLogin: owner.login,
@@ -114,7 +147,7 @@ export async function resolveAuthorizedRepositoryId(
 ): Promise<string> {
   if ("repositoryId" in selector) return selector.repositoryId;
   const owner = await resolveAccountLogin(sql, selector.ownerLogin);
-  if (!owner) throw new IssueError(404, "找不到可存取的 Repository。");
+  if (!owner) throw new RepositoryError(404, "找不到可存取的 Repository。");
   const row = (
     await sql.query(
       `SELECT r.id
@@ -127,7 +160,7 @@ export async function resolveAuthorizedRepositoryId(
       [owner.id, owner.kind, selector.repositoryName, identity.userId],
     )
   ).rows[0] as { id: string } | undefined;
-  if (!row) throw new IssueError(404, "找不到可存取的 Repository。");
+  if (!row) throw new RepositoryError(404, "找不到可存取的 Repository。");
   return row.id;
 }
 

@@ -26,6 +26,6 @@ Organization Team 必須至少保有一位 effective TeamMaintainer。最後一�
 - Organization owner 提供 active Organization／OrganizationMembership scope qualification；Team 不查寫 Organization private state。
 - Identity/Access 是 TeamMaintainer RoleAssignment 的唯一 writer；TeamMembership 不複製 role 欄位。
 - Enterprise owner 擁有 EnterpriseTeam、EnterpriseTeamMembership 與 EnterpriseTeam → Organization assignment；Organization Team 不讀寫其 private state，也不共用 TeamMaintainer／nested hierarchy。
-- Repository 擁有 Repository access 與 Issue lifecycle；Team 不提供 Repository access，也不替 Issue 保存 scope 或 responsibility truth。
+- Repository 擁有 Repository access；Issue 擁有 Issue lifecycle。Team 不提供 Repository access，也不替 Issue 保存 scope 或 responsibility truth。
 - Partners、Attendance／Workplace、Repository 與 Notifications 各自保留授權與資料責任；TeamMaintainer 不自動取得其權限。
 - LINE integration 只驗證 provider proof，不把 LINE group 轉成產品 Team。

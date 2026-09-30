@@ -9,7 +9,7 @@ import type {
   RepositoryAccessSnapshot,
   RepositoryAccessStore,
 } from "../../application/ports/access.js";
-import type { RepositorySelector } from "../../application/ports/selectors.js";
+import type { RepositorySelector } from "../../contracts/selectors.js";
 import { type RepositoryCapability, RepositoryError } from "../../domain.js";
 
 type RepositoryRow = {

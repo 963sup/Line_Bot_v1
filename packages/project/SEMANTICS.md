@@ -41,7 +41,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | consumes | identity-access | query | identity-access | current-state | Project authorized read consumes current OrganizationOwner scope for Organization-owned Projects; personal Projects remain User-owned. |
 | consumes | namespace | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
-| consumes | repository | reference | repository | current-access-and-identity | Project Item references Repository-owned Issue; Project metadata cannot rewrite Issue state. |
+| consumes | issue | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
 | consumes | account | stable-identity | account | current-identity | Project owner identity is an Account constrained to User or Organization. |
 | consumes | repository | reference | repository | current-identity | Project references Repository without acquiring Repository authority. |
 

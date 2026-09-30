@@ -42,7 +42,7 @@ OrganizationMembership 與 Employment 分離。Membership active 不直接授予
 
 ## Team / Workforce / Enterprise boundaries
 
-Organization Team 不是 Account。Organization 提供 OrganizationAccountId、status、OrganizationMembership qualification；Team 保存 immutable scope 並擁有 TeamMembership、TeamMaintainer 與 last-maintainer rules。Repository access 與 Issue responsibility 由 Repository owner 獨立維護。
+Organization Team 不是 Account。Organization 提供 OrganizationAccountId、status、OrganizationMembership qualification；Team 保存 immutable scope 並擁有 TeamMembership、TeamMaintainer 與 last-maintainer rules。Repository access 由 Repository owner 維護；Issue responsibility 由 Issue owner 維護。
 
 Enterprise Team 是 Enterprise-owned group。其 Organization assignment 只提供 `enterprise-team` Organization membership source；不取得 Organization Team identity、TeamMaintainer 或 OrganizationOwner。
 

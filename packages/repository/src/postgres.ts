@@ -1,1 +1,1 @@
-export { PostgresIssueStore, PostgresRepositoryStarStore } from "./adapters/postgres.js";
+export { PostgresRepositoryStarStore } from "./adapters/postgres/stars.js";

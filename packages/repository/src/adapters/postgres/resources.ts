@@ -16,8 +16,8 @@ import type {
   RepositoryResourceIdentity,
   RepositoryResourceStore,
 } from "../../application/ports/resources.js";
-import type { RepositorySelector } from "../../application/ports/selectors.js";
-import { IssueError } from "../../domain.js";
+import type { RepositorySelector } from "../../contracts/selectors.js";
+import { RepositoryError } from "../../domain.js";
 import { authorizedRepository } from "./access.js";
 
 type DiscussionRow = {
@@ -150,8 +150,8 @@ async function resourceRepository(
   try {
     return await authorizedRepository(sql, who, selector);
   } catch (error) {
-    if (error instanceof IssueError && (error.status === 403 || error.status === 404)) {
-      throw new IssueError(404, "找不到可存取的 Repository。");
+    if (error instanceof RepositoryError && (error.status === 403 || error.status === 404)) {
+      throw new RepositoryError(404, "找不到可存取的 Repository。");
     }
     throw error;
   }
@@ -203,7 +203,7 @@ export class PostgresRepositoryResourceStore implements RepositoryResourceStore 
           discussionId,
         ])
       ).rows[0] as DiscussionRow | undefined;
-      if (!row) throw new IssueError(404, "找不到 Discussion。");
+      if (!row) throw new RepositoryError(404, "找不到 Discussion。");
       const rows = (
         await sql.query(
           `SELECT *
@@ -296,7 +296,7 @@ export class PostgresRepositoryResourceStore implements RepositoryResourceStore 
           [repository.id, number],
         )
       ).rows[0] as MilestoneRow | undefined;
-      if (!row) throw new IssueError(404, "找不到 Milestone。");
+      if (!row) throw new RepositoryError(404, "找不到 Milestone。");
       return { repository, milestone: milestone(row) };
     });
   }

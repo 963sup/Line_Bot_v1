@@ -1,10 +1,7 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { IssueError } from "@line_bot_v1/issue/domain";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import {
-  IssueError,
-  normalizeRepositoryName,
-  RepositoryError,
-} from "@line_bot_v1/repository/domain";
+import { normalizeRepositoryName, RepositoryError } from "@line_bot_v1/repository/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
@@ -14,10 +11,10 @@ export function repositoryPathSelector(owner: string, repository: string) {
   try {
     ownerLogin = normalizeAccountLogin(owner);
   } catch {
-    throw new IssueError(400, "Repository owner login 不正確。");
+    throw new RepositoryError(400, "Repository owner login 不正確。");
   }
   const repositoryName = normalizeRepositoryName(repository);
-  if (!repositoryName) throw new IssueError(400, "Repository name 不正確。");
+  if (!repositoryName) throw new RepositoryError(400, "Repository name 不正確。");
   return { ownerLogin, repositoryName };
 }
 
@@ -66,6 +63,7 @@ export function repositoryBody(request: Request): Promise<Record<string, unknown
 export function issueFailure(error: unknown) {
   const known =
     error instanceof IssueError ||
+    error instanceof RepositoryError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 503;
@@ -82,6 +80,7 @@ export function issueFailure(error: unknown) {
 
 export function repositoryFailure(error: unknown) {
   const known =
+    error instanceof IssueError ||
     error instanceof RepositoryError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;

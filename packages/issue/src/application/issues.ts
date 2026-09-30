@@ -1,6 +1,15 @@
-import { IssueError, issueText, normalizeIssueNumber, normalizeRepositoryName } from "../domain.js";
-import { accountLoginForRepositoryLocator } from "./owner-locator.js";
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
+import { normalizeRepositoryName } from "@line_bot_v1/repository/domain";
+import { IssueError, issueText, normalizeIssueNumber } from "../domain.js";
 import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
+
+function accountLoginForRepositoryLocator(value: string): string | null {
+  try {
+    return normalizeAccountLogin(value);
+  } catch {
+    return null;
+  }
+}
 
 function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
   const { requestId, repositoryId, action } = value;

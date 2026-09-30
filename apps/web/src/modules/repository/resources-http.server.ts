@@ -1,5 +1,8 @@
 import type { createRepositoryResources } from "@line_bot_v1/repository/application/resources";
-import { IssueError, normalizeRepositoryMilestoneNumber } from "@line_bot_v1/repository/domain";
+import {
+  normalizeRepositoryMilestoneNumber,
+  RepositoryError,
+} from "@line_bot_v1/repository/domain";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
 
@@ -8,14 +11,14 @@ type RequestIdentity = (request: Request) => Promise<string>;
 
 function single(params: URLSearchParams, name: string) {
   const values = params.getAll(name);
-  if (values.length > 1) throw new IssueError(400, "Repository 查詢參數不正確。");
+  if (values.length > 1) throw new RepositoryError(400, "Repository 查詢參數不正確。");
   return values[0];
 }
 
 function selector(params: URLSearchParams) {
   const owner = single(params, "owner");
   const name = single(params, "name");
-  if (!owner || !name) throw new IssueError(400, "Repository 路徑不正確。");
+  if (!owner || !name) throw new RepositoryError(400, "Repository 路徑不正確。");
   return repositoryPathSelector(owner, name);
 }
 
@@ -107,7 +110,7 @@ export async function repositoryMilestoneRequest(
   try {
     const params = new URL(request.url).searchParams;
     const number = normalizeRepositoryMilestoneNumber(milestoneNumber);
-    if (number === null) throw new IssueError(400, "Milestone number 不正確。");
+    if (number === null) throw new RepositoryError(400, "Milestone number 不正確。");
     return jsonResponse(
       await resources.milestone(await requestIdentity(request), selector(params), number),
     );

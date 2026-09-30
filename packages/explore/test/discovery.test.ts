@@ -16,7 +16,7 @@ test("Repository discovery resolves the active User and applies one bounded tren
   const store: RepositoryDiscoveryStore = {
     snapshot: async (userId, options) => {
       received = { userId, options };
-      return { trending: [], activity: [] };
+      return { trending: [] };
     },
     publishedStarLists: async (userId, limit) => {
       assert.equal(userId, "user-a");
@@ -31,13 +31,12 @@ test("Repository discovery resolves the active User and applies one bounded tren
     now: () => week + 100,
   });
 
-  assert.deepEqual(await discovery.discover("line-subject"), { trending: [], activity: [] });
+  assert.deepEqual(await discovery.discover("line-subject"), { trending: [] });
   assert.deepEqual(received, {
     userId: "user-a",
     options: {
       recentSince: 100,
       trendingLimit: 20,
-      activityLimit: 20,
     },
   });
   assert.deepEqual(await discovery.publishedStarLists("line-subject"), []);

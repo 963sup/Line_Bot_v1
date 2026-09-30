@@ -1,4 +1,4 @@
-import { IssueError } from "@line_bot_v1/repository/domain";
+import { IssueError } from "@line_bot_v1/issue/domain";
 import {
   issueBody,
   issueFailure,

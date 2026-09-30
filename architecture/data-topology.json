@@ -651,7 +651,7 @@
       "kind": "table",
       "path": "supabase/schemas/620_issues.sql",
       "authority": true,
-      "semanticOwner": "repository",
+      "semanticOwner": "issue",
       "concept": "issue"
     },
     {
@@ -659,21 +659,21 @@
       "kind": "table",
       "path": "supabase/schemas/621_issue_commands.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "issue"
     },
     {
       "name": "issue_events",
       "kind": "table",
       "path": "supabase/schemas/622_issue_events.sql",
       "authority": true,
-      "semanticOwner": "repository"
+      "semanticOwner": "issue"
     },
     {
       "name": "issue_labels",
       "kind": "table",
       "path": "supabase/schemas/623_issue_labels.sql",
       "authority": true,
-      "semanticOwner": "repository",
+      "semanticOwner": "issue",
       "concept": "issue-label-link"
     },
     {
@@ -937,7 +937,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": ["account", "organization", "team", "repository"]
+      "participants": ["account", "issue", "organization", "team", "repository"]
     },
     {
       "name": "attendance_identity_bindings",

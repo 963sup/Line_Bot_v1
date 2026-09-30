@@ -1,9 +1,7 @@
 "use client";
 
-import type {
-  RepositoryActivityItem,
-  TrendingRepository,
-} from "@line_bot_v1/repository/contracts/discovery";
+import type { IssueActivityItem } from "@line_bot_v1/issue/contracts/activity";
+import type { TrendingRepository } from "@line_bot_v1/repository/contracts/discovery";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -13,7 +11,7 @@ import { repositoryIssuePath, repositoryPath } from "./resource-navigation";
 
 type DiscoverySnapshot = {
   items: TrendingRepository[];
-  activity: RepositoryActivityItem[];
+  activity: IssueActivityItem[];
 };
 
 function activityVerb(action: string) {
@@ -73,7 +71,7 @@ export default function DiscoveryPanel({
     });
     const value = (await response.json()) as {
       items?: TrendingRepository[];
-      activity?: RepositoryActivityItem[];
+      activity?: IssueActivityItem[];
       error?: string;
     };
     if (!response.ok || !Array.isArray(value.items) || !Array.isArray(value.activity)) {

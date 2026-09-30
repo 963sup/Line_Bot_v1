@@ -1,5 +1,5 @@
+import type { RepositorySelector } from "../../contracts/selectors.js";
 import type { RepositoryAddress, RepositoryCapability } from "../../domain.js";
-import type { RepositorySelector } from "./selectors.js";
 
 export type RepositoryAddressSnapshot = Readonly<{
   repository: {

@@ -8,7 +8,7 @@ import type {
   RepositoryAddressSnapshot,
   RepositoryAddressStore,
 } from "../../application/ports/address.js";
-import type { RepositorySelector } from "../../application/ports/selectors.js";
+import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
   type RepositoryAddress,
   type RepositoryCapability,

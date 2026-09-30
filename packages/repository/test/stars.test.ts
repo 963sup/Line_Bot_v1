@@ -4,7 +4,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryStarStore } from "../src/adapters/postgres/stars.js";
 import type { RepositoryStarStore } from "../src/application/ports/stars.js";
 import { createRepositoryStars } from "../src/application/stars.js";
-import { IssueError } from "../src/domain.js";
+import { RepositoryError } from "../src/domain.js";
 
 function service(store: Partial<RepositoryStarStore>) {
   return createRepositoryStars({
@@ -43,7 +43,7 @@ test("star rejects an empty Repository identity before touching persistence", as
 
   await assert.rejects(
     stars.star("line-subject", " "),
-    (error) => error instanceof IssueError && error.status === 400,
+    (error) => error instanceof RepositoryError && error.status === 400,
   );
   assert.equal(touched, false);
 });
@@ -98,7 +98,7 @@ test("Postgres stars require current Repository access and star remains idempote
 
   await assert.rejects(
     store.star("outsider", "repository-a", 30),
-    (error) => error instanceof IssueError && error.status === 403,
+    (error) => error instanceof RepositoryError && error.status === 403,
   );
 });
 

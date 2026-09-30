@@ -1,4 +1,4 @@
--- Project-owned planning item referencing Repository-owned Issue content.
+-- Project-owned planning item referencing Issue-owned work within its Repository scope.
 
 create table app_private.project_items (
   id text primary key,

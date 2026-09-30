@@ -26,8 +26,6 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | --- | --- | --- | --- | --- |
 | Discussion | discussion | authoritative | current | GitHub FPT: schema-discussions.json#Discussion |
 | DiscussionComment | discussion-comment | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionComment |
-| Issue | issue | authoritative | current | GitHub FPT: schema-issues.json#Issue |
-| Issue.labels | issue-label-link | authoritative | current-data-only | GitHub FPT: schema-issues.json#Issue#labels |
 | Label | repository-label | authoritative | current | GitHub FPT: schema-issues.json#Label |
 | Milestone | repository-milestone | authoritative | current | GitHub FPT: schema-issues.json#Milestone |
 | Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
@@ -43,7 +41,6 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | --- | --- | --- | --- |
 | create-repository | required | implemented | Create a private User- or Organization-owned Repository with replay-safe owner authorization and immediate creator access. |
 | manage-discussions | not-asserted | data-only | Preserve Repository Discussion create/update/close/comment write semantics as current data without asserting runtime management. |
-| manage-issues | required | implemented | Manage Repository-scoped Issue lifecycle and commands. |
 | manage-repository | not-asserted |  | Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management. |
 | manage-repository-access | required | implemented | Manage Repository-owned direct User and Organization Team access grants with current qualification, replay safety and recoverable admin authority. |
 | manage-repository-address | required | implemented | Maintain the Repository address property used as the attendance clock point for current effective members. |
@@ -53,7 +50,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | manage-repository-stars | required | implemented | Manage User star/unstar interaction over Repository resources. |
 | read-discussions | required | implemented | Read authorized Repository Discussion lists, a Discussion body, and its comments without asserting Discussion write management. |
 | read-repository | required | implemented | Read Repository identity and public Repository locator data. |
-| read-repository-discovery | required | implemented | Read authorized Repository Trending, recent Issue activity and published Repository Star List projections without creating a new Explore authority. |
+| read-repository-discovery | required | implemented | Read authorized Repository Trending and published Repository Star List projections without creating a new Explore authority. |
 | read-repository-labels | required | implemented | Read authorized Repository Label collections without asserting label create/update/delete management. |
 | read-repository-milestones | required | implemented | Read authorized Repository Milestone lists and detail by repository-local number without asserting milestone write management. |
 
@@ -65,9 +62,9 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | consumes | identity-access | query | identity-access | transaction-recheck | Repository creation under an Organization consumes current effective OrganizationOwner authorization. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
 | consumes | organization | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and effective participation when resolving access. |
-| provides | project | reference | repository | current-access-and-identity | Project Item references Repository-owned Issue; Project metadata cannot rewrite Issue state. |
 | provides | project | reference | repository | current-identity | Project references Repository without acquiring Repository authority. |
 | provides | attendance | query | repository | current-state | Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal. |
+| provides | issue | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
 
 ## Tactical Model Boundary
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { achievements, follows, profiles } from "../src/app/api/_composition/account.server";
+import { issueActivity } from "../src/app/api/_composition/issue-activity.server";
 import { repositoryCollection } from "../src/app/api/_composition/repository-collection.server";
 import { repositoryDiscovery } from "../src/app/api/_composition/repository-discovery.server";
 import { repositoryStars } from "../src/app/api/_composition/repository-stars.server";
@@ -55,8 +56,8 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
         starred: false,
       },
     ],
-    activity: [],
   }));
+  const activity = mock.method(issueActivity, "read", async () => []);
   const star = mock.method(repositoryStars, "star", async () => {});
   const starred = mock.method(repositoryStars, "starred", async () => [
     {
@@ -163,6 +164,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(follow.mock.callCount(), 1);
     assert.equal(accessible.mock.callCount(), 1);
     assert.equal(discover.mock.callCount(), 1);
+    assert.equal(activity.mock.callCount(), 1);
     assert.equal(starred.mock.callCount(), 1);
     assert.equal(star.mock.callCount(), 1);
   } finally {
@@ -175,6 +177,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     follow.mock.restore();
     accessible.mock.restore();
     discover.mock.restore();
+    activity.mock.restore();
     starred.mock.restore();
     star.mock.restore();
     if (previousOrigin === undefined) delete process.env.APP_ORIGIN;

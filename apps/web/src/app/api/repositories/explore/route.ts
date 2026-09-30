@@ -1,6 +1,7 @@
-import { IssueError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { issueBody, repositoryFailure } from "../../../../modules/repository/http.server";
 import { jsonResponse } from "../../../../shared/server/http";
+import { issueActivity } from "../../_composition/issue-activity.server";
 import { repositoryDiscovery } from "../../_composition/repository-discovery.server";
 import { repositoryStars } from "../../_composition/repository-stars.server";
 import { requestLineIdentity } from "../../_composition/request-identity.server";
@@ -10,10 +11,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const snapshot = await repositoryDiscovery.discover(await requestLineIdentity(request));
+    const subject = await requestLineIdentity(request);
+    const [snapshot, activity] = await Promise.all([
+      repositoryDiscovery.discover(subject),
+      issueActivity.read(subject),
+    ]);
     return jsonResponse({
       items: snapshot.trending,
-      activity: snapshot.activity,
+      activity,
     });
   } catch (error) {
     return repositoryFailure(error);
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
       keys.some((key) => key !== "action" && key !== "repositoryId") ||
       typeof body.repositoryId !== "string"
     ) {
-      throw new IssueError(400, "Repository 操作格式不正確。");
+      throw new RepositoryError(400, "Repository 操作格式不正確。");
     }
     const subject = await requestLineIdentity(request);
     if (body.action === "star") {
@@ -36,7 +41,7 @@ export async function POST(request: Request) {
     } else if (body.action === "unstar") {
       await repositoryStars.unstar(subject, body.repositoryId);
     } else {
-      throw new IssueError(400, "不支援的 Repository 操作。");
+      throw new RepositoryError(400, "不支援的 Repository 操作。");
     }
     return jsonResponse({ ok: true });
   } catch (error) {

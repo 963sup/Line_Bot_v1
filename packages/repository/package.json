@@ -4,14 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/issues": {
-      "types": "./dist/application/issues.d.ts",
-      "default": "./dist/application/issues.js"
-    },
-    "./application/ports/issues": {
-      "types": "./dist/application/ports/issues.d.ts",
-      "default": "./dist/application/ports/issues.js"
-    },
     "./application/resources": {
       "types": "./dist/application/resources.d.ts",
       "default": "./dist/application/resources.js"
@@ -19,10 +11,6 @@
     "./application/ports/resources": {
       "types": "./dist/application/ports/resources.d.ts",
       "default": "./dist/application/ports/resources.js"
-    },
-    "./application/ports/selectors": {
-      "types": "./dist/application/ports/selectors.d.ts",
-      "default": "./dist/application/ports/selectors.js"
     },
     "./domain": {
       "types": "./dist/domain.d.ts",
@@ -123,6 +111,18 @@
     "./postgres/address": {
       "types": "./dist/postgres/address.d.ts",
       "default": "./dist/postgres/address.js"
+    },
+    "./contracts/selectors": {
+      "types": "./dist/contracts/selectors.d.ts",
+      "default": "./dist/contracts/selectors.js"
+    },
+    "./postgres/access": {
+      "types": "./dist/postgres/access.d.ts",
+      "default": "./dist/postgres/access.js"
+    },
+    "./postgres/issue-number": {
+      "types": "./dist/postgres/issue-number.d.ts",
+      "default": "./dist/postgres/issue-number.js"
     }
   },
   "files": [

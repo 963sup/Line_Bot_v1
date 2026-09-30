@@ -37,7 +37,8 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "@line_bot_v1/explore": "workspace:*",
-    "@line_bot_v1/audit": "workspace:*"
+    "@line_bot_v1/audit": "workspace:*",
+    "@line_bot_v1/issue": "workspace:*"
   },
   "devDependencies": {
     "@line/liff-mock": "catalog:",
