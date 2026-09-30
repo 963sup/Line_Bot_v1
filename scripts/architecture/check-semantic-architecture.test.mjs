@@ -855,6 +855,22 @@ test("filesystem guard rejects fake source, public export and route evidence", a
   );
 });
 
+test("module inventory is derived from implementation topology", () => {
+  const { model, fpt, topology } = fixture();
+  topology.applications["@line_bot_v1/web"] = {
+    path: "apps/web",
+    moduleKind: "application-host",
+    semanticOwner: null,
+    allowedWorkspaceDependencies: ["@line_bot_v1/repository"],
+  };
+  const view = renderSemanticView(compileSemanticArchitecture(model, fpt, topology), "modules");
+  assert.match(view, /@line_bot_v1\/repository \| packages\/repository \| domain-module/);
+  assert.match(
+    view,
+    /\| @line_bot_v1\/web \| apps\/web \| application-host \|  \| @line_bot_v1\/repository \|/,
+  );
+});
+
 test("locator view derives URLs from route files without storing a second pattern", () => {
   assert.equal(
     routeFileToUrl("apps/web/src/app/(resource)/[login]/[repository]/page.tsx"),
