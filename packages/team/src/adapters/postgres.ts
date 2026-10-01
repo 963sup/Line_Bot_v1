@@ -191,6 +191,7 @@ async function readTeamView(
       organizationLogin: null,
       teams: [],
       team: null,
+      childTeams: [],
       members: [],
     };
   }
@@ -204,14 +205,30 @@ async function readTeamView(
     organizationLogin: actor.organizationLogin,
     teams,
     team: null,
+    childTeams: [],
     members: [],
   };
   if (!teamId) return empty;
 
   const team = await lockTeam(sql, organizationAccountId, teamId);
-  const members = await teamMembers(sql, teamId);
-  const me = members.find((member) => member.userId === actor.userId && member.status === "active");
-  teamAssert(me, 403, "你沒有此團隊的存取權。");
+  const directMembers = await directTeamMembers(sql, teamId);
+  const effectiveMembers = await effectiveTeamMembers(sql, teamId);
+  const me = effectiveMembers.find((member) => member.userId === actor.userId);
+  teamAssert(
+    team.privacy === "VISIBLE" || me,
+    404,
+    "找不到可存取的 Organization Team。",
+  );
+  const directMe = directMembers.find((member) => member.userId === actor.userId);
+  const maintainer = await isTeamMaintainer(sql, teamId, actor.userId);
+  const inactiveDirect = directMembers.filter(
+    (member) =>
+      member.status !== "active" &&
+      !effectiveMembers.some((effective) => effective.userId === member.userId),
+  );
+  const members = maintainer
+    ? [...effectiveMembers, ...inactiveDirect].sort((a, b) => a.userId.localeCompare(b.userId))
+    : effectiveMembers;
   return {
     ...empty,
     team: {
@@ -219,11 +236,16 @@ async function readTeamView(
       organizationAccountId: team.organization_account_id,
       name: team.name,
       slug: team.slug,
+      parentTeamId: team.parent_team_id,
+      privacy: team.privacy,
+      notificationSetting: team.notification_setting,
       version: team.version,
-      membershipStatus: me.status,
-      isMaintainer: me.isMaintainer,
+      membershipStatus: me ? "active" : (directMe?.status ?? "none"),
+      membershipType: me?.membershipType ?? null,
+      isMaintainer: maintainer,
     },
-    members: me.isMaintainer ? members : members.filter((member) => member.status === "active"),
+    childTeams: teams.filter((item) => item.parentTeamId === teamId),
+    members,
   };
 }
 
