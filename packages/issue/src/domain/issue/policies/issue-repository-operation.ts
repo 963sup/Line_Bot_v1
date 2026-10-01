@@ -1,6 +1,6 @@
 import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
 
-export type IssueRepositoryOperation =
+type IssueRepositoryOperation =
   | "read"
   | "open"
   | "comment"
@@ -23,7 +23,7 @@ const issueManagementPermissions: readonly RepositoryPermission[] = [
 
 const deferredPermissions: readonly RepositoryPermission[] = [];
 
-export const issueRepositoryOperationPermissions: Readonly<
+const issueRepositoryOperationPermissions: Readonly<
   Record<IssueRepositoryOperation, readonly RepositoryPermission[]>
 > = {
   read: allRepositoryPermissions,
