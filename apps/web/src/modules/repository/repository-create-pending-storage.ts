@@ -2,23 +2,34 @@ import type { RepositoryCreateCommand } from "@line_bot_v1/repository/applicatio
 
 const key = "repository-create-pending:v1";
 
-function valid(value: unknown): value is RepositoryCreateCommand {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+function normalize(value: unknown): RepositoryCreateCommand | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const command = value as Record<string, unknown>;
-  return (
-    typeof command.requestId === "string" &&
-    typeof command.ownerAccountId === "string" &&
-    (command.ownerKind === "USER" || command.ownerKind === "ORGANIZATION") &&
-    typeof command.name === "string"
-  );
+  const visibility = command.visibility ?? "private";
+  if (
+    typeof command.requestId !== "string" ||
+    typeof command.ownerAccountId !== "string" ||
+    (command.ownerKind !== "USER" && command.ownerKind !== "ORGANIZATION") ||
+    typeof command.name !== "string" ||
+    (visibility !== "private" && visibility !== "internal" && visibility !== "public")
+  ) {
+    return null;
+  }
+  return {
+    requestId: command.requestId,
+    ownerAccountId: command.ownerAccountId,
+    ownerKind: command.ownerKind,
+    name: command.name,
+    visibility,
+  };
 }
 
 export function readPendingRepositoryCreate(storage: Storage): RepositoryCreateCommand | null {
   try {
     const raw = storage.getItem(key);
     if (!raw) return null;
-    const value: unknown = JSON.parse(raw);
-    if (!valid(value)) {
+    const value = normalize(JSON.parse(raw));
+    if (!value) {
       storage.removeItem(key);
       return null;
     }
