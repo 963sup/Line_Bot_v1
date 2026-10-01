@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
-import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
+import { authorizeTeamMaintainer, resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
@@ -221,7 +221,7 @@ export class PostgresTeamRepository implements TeamRepository {
           (command.action === "membership" && !selfRemoval) ||
           command.action === "maintainer"
         ) {
-          requireTeamMaintainer(await isTeamMaintainer(sql, old.team_id, actor.userId));
+          requireTeamMaintainer(await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)));
         }
         return old.result as TeamCommandReceipt;
       }
