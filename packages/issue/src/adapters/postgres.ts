@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/domain";
 import {
   accessibleRepositories,
   repositoryScope,
@@ -14,7 +14,12 @@ import type {
   IssueSnapshot,
   IssueStore,
 } from "../application/ports/issues.js";
-import { type Issue, IssueError, transitionIssue } from "../domain.js";
+import {
+  canIssueRepositoryOperation,
+  type Issue,
+  IssueError,
+  transitionIssue,
+} from "../domain.js";
 
 async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -59,11 +64,6 @@ function issue(row: IssueRow): Issue {
 
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
-
-// #152 owns the operation matrix. Until then, preserve the current Issue gate exactly and
-// fail closed for MAINTAIN/TRIAGE/TRIAGE_PLUS instead of inventing permission semantics here.
-const writable = (permissions: readonly RepositoryPermission[]) =>
-  permissions.includes("write") || permissions.includes("admin");
 
 export class PostgresIssueStore implements IssueStore {
   constructor(private db: Database = businessDatabase()) {}
@@ -186,8 +186,9 @@ export class PostgresIssueStore implements IssueStore {
       const selected = await repositoryOperation(() =>
         repositoryScope(sql, who, command.repositoryId),
       );
-      if (!writable(selected.repository.permissions)) {
-        throw new IssueError(403, "需要 Repository write 或 admin 權限。");
+      const operation = command.action === "create" ? "open" : "triage";
+      if (!canIssueRepositoryOperation(selected.repository.permissions, operation)) {
+        throw new IssueError(403, "此 Issue 操作需要可管理 Issue 的 Repository permission。");
       }
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `issue:${who.userId}:${command.requestId}`,
