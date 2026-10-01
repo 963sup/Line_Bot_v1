@@ -110,7 +110,9 @@ export default function RepositorySubscriptionControl({
       const snapshot = await requestView(token);
       if (ticket !== generation.current || (await liffClient.session(liffId)) !== token) return;
       setData(snapshot);
-      setPending(readPending(key, token, snapshot.repository.id));
+      setPending(
+        readPending(key, snapshot.repository.actorUserId, snapshot.repository.id),
+      );
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
@@ -134,6 +136,7 @@ export default function RepositorySubscriptionControl({
       const fresh = await requestView(token);
       if (
         ticket !== generation.current ||
+        fresh.repository.actorUserId !== operation.owner ||
         fresh.repository.id !== operation.command.repositoryId ||
         (await liffClient.session(liffId)) !== token
       ) {
@@ -143,9 +146,8 @@ export default function RepositorySubscriptionControl({
           status: 403,
         });
       }
-      const owned = { ...operation, owner: token };
-      sessionStorage.setItem(key, JSON.stringify(owned));
-      setPending(owned);
+      sessionStorage.setItem(key, JSON.stringify(operation));
+      setPending(operation);
       const response = await fetch("/api/repository-subscription", {
         method: "POST",
         cache: "no-store",
@@ -218,7 +220,7 @@ export default function RepositorySubscriptionControl({
   function setState(state: RepositorySubscriptionState) {
     if (!data || state === data.state) return;
     void execute({
-      owner: "",
+      owner: data.repository.actorUserId,
       command: {
         action: "set",
         requestId: crypto.randomUUID(),
