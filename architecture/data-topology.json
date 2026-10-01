@@ -156,6 +156,18 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/606_repository_name_history.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/607_repository_subscriptions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/608_repository_events.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/610_repository_labels.sql",
       "role": "authoritative"
     },
@@ -1019,6 +1031,7 @@
         "enterprise",
         "organization",
         "team",
+        "issue",
         "repository"
       ]
     },
