@@ -77,9 +77,7 @@ async function repositoryResult(
     | undefined;
   if (
     !row ||
-    (row.visibility !== "private" &&
-      row.visibility !== "internal" &&
-      row.visibility !== "public")
+    (row.visibility !== "private" && row.visibility !== "internal" && row.visibility !== "public")
   ) {
     throw new RepositoryError(503, "Repository 建立回執無法讀取。");
   }
