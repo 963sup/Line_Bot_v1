@@ -1,9 +1,5 @@
 import type { TeamCommand } from "@line_bot_v1/team/application/commands/team-command";
-import type {
-  TeamNotificationSetting,
-  TeamPrivacy,
-  TeamView,
-} from "@line_bot_v1/team/contracts";
+import type { TeamNotificationSetting, TeamPrivacy, TeamView } from "@line_bot_v1/team/contracts";
 
 export type TeamDraft =
   | { action: "create-team"; name: string }
