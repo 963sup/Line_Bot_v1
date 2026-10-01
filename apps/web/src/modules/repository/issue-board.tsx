@@ -205,7 +205,8 @@ export default function IssueBoard({
   const current = detailMode ? data?.issues[0] : undefined;
   const currentRepository = data?.repositories.find((item) => item.id === selectedRepository);
   const canWrite =
-    currentRepository?.capability === "write" || currentRepository?.capability === "admin";
+    currentRepository?.permissions.includes("write") ||
+    currentRepository?.permissions.includes("admin");
   const headingActions = !detailMode ? (
     <PrimaryLink href="/explore">探索儲存庫</PrimaryLink>
   ) : undefined;
@@ -298,7 +299,7 @@ export default function IssueBoard({
             <>
               {canonicalRepository ? (
                 <p>
-                  儲存庫：{currentRepository?.name} · {currentRepository?.capability}
+                  儲存庫：{currentRepository?.name} · {currentRepository?.permissions.join(", ")}
                 </p>
               ) : (
                 <label>
@@ -351,7 +352,7 @@ export default function IssueBoard({
               )}
               {initialCreating && currentRepository && !canWrite && (
                 <p className="empty-copy">
-                  你目前只有 {currentRepository.capability} capability，不能在此 Repository 建立
+                  你目前只有 {currentRepository.permissions.join(", ")} capability，不能在此 Repository 建立
                   Issue。
                 </p>
               )}

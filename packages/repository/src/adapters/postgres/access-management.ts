@@ -10,7 +10,11 @@ import type {
   RepositoryAccessStore,
 } from "../../application/ports/access.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
-import { type RepositoryCapability, RepositoryError } from "../../domain.js";
+import {
+  hasRepositoryPermission,
+  type RepositoryPermission,
+  RepositoryError,
+} from "../../domain.js";
 
 type RepositoryRow = {
   id: string;
@@ -62,28 +66,28 @@ async function repositoryRow(
   return row;
 }
 
-async function actorCapability(
+async function actorPermissions(
   sql: Sql,
   repositoryId: string,
   userId: string,
-): Promise<RepositoryCapability | null> {
+): Promise<RepositoryPermission[] | null> {
   const row = (
     await sql.query(
-      "SELECT capability FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
+      "SELECT permissions FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
       [repositoryId, userId],
     )
-  ).rows[0] as { capability: RepositoryCapability } | undefined;
-  return row?.capability ?? null;
+  ).rows[0] as { permissions: RepositoryPermission[] } | undefined;
+  return row?.permissions ?? null;
 }
 
 async function requireManagementAuthority(sql: Sql, repository: RepositoryRow, userId: string) {
-  const capability = await actorCapability(sql, repository.id, userId);
-  if (capability === "admin") return capability;
+  const permissions = await actorPermissions(sql, repository.id, userId);
+  if (permissions && hasRepositoryPermission(permissions, "admin")) return permissions;
   if (
     repository.owner_account_kind === "ORGANIZATION" &&
     (await isOrganizationOwner(sql, repository.owner_account_id, userId))
   ) {
-    return capability;
+    return permissions ?? [];
   }
   throw new RepositoryError(403, "沒有此 Repository 的 access 管理權限。");
 }
@@ -120,7 +124,7 @@ async function snapshot(
     )
   ).rows.map((row) => ({
     userId: String(row.userId),
-    capability: row.capability as RepositoryCapability,
+    capability: row.capability as RepositoryPermission,
     version: Number(row.version),
     isOutsideCollaborator: Boolean(row.isOutsideCollaborator),
   }));
@@ -132,7 +136,7 @@ async function snapshot(
     )
   ).rows.map((row) => ({
     teamId: String(row.teamId),
-    capability: row.capability as RepositoryCapability,
+    capability: row.capability as RepositoryPermission,
     version: Number(row.version),
   }));
   return {
@@ -142,7 +146,7 @@ async function snapshot(
       ownerKind: repository.owner_account_kind,
       ownerLogin: owner.login,
       name: repository.name,
-      actorCapability: await actorCapability(sql, repository.id, userId),
+      actorPermissions: (await actorPermissions(sql, repository.id, userId)) ?? [],
     },
     directUserGrants,
     teamGrants,
@@ -171,7 +175,9 @@ function readReceipt(
     (result.capability !== null &&
       result.capability !== "read" &&
       result.capability !== "triage" &&
+      result.capability !== "triage_plus" &&
       result.capability !== "write" &&
+      result.capability !== "maintain" &&
       result.capability !== "admin") ||
     (result.version !== null && !Number.isSafeInteger(result.version)) ||
     !Number.isSafeInteger(result.at)
@@ -232,7 +238,7 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
       if (replay) return replay;
 
       let changed:
-        | { result_capability: RepositoryCapability | null; result_version: number | null }
+        | { result_capability: RepositoryPermission | null; result_version: number | null }
         | undefined;
       try {
         changed = (
@@ -249,7 +255,7 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
             ],
           )
         ).rows[0] as
-          | { result_capability: RepositoryCapability | null; result_version: number | null }
+          | { result_capability: RepositoryPermission | null; result_version: number | null }
           | undefined;
       } catch (error) {
         accessMutationError(error);

@@ -6,7 +6,7 @@ import {
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
-  type RepositoryCapability,
+  type RepositoryPermission,
   RepositoryError,
   type RepositorySummary,
 } from "../../domain.js";
@@ -18,7 +18,7 @@ type RepositoryAccessRow = {
   owner_account_id: string;
   owner_account_kind: "USER" | "ORGANIZATION";
   name: string;
-  capability: RepositoryCapability;
+  permissions: RepositoryPermission[];
 };
 
 async function repositorySummaries(
@@ -38,7 +38,7 @@ async function repositorySummaries(
             id: row.id,
             ownerLogin,
             name: row.name,
-            capability: row.capability,
+            permissions: row.permissions,
           },
         ]
       : [];
@@ -51,7 +51,7 @@ export async function accessibleRepositories(
 ): Promise<RepositorySummary[]> {
   const rows = (
     await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
+      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.permissions
        FROM repositories r
        JOIN repository_effective_access a ON a.repository_id=r.id
        WHERE a.user_id=$1
@@ -70,7 +70,7 @@ export async function accessibleRepositoriesByIds(
   if (!repositoryIds.length) return [];
   const rows = (
     await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
+      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.permissions
        FROM repositories r
        JOIN repository_effective_access a ON a.repository_id=r.id
        WHERE a.user_id=$1
@@ -113,7 +113,7 @@ async function repositoryAccess(
 ): Promise<RepositorySummary> {
   const row = (
     await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.capability
+      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.permissions
        FROM repositories r
        JOIN repository_effective_access a ON a.repository_id=r.id
        WHERE r.id=$1 AND a.user_id=$2`,
@@ -125,7 +125,7 @@ async function repositoryAccess(
         owner_account_id: string;
         owner_account_kind: "USER" | "ORGANIZATION";
         name: string;
-        capability: RepositoryCapability;
+        permissions: RepositoryPermission[];
       }
     | undefined;
   if (!row) throw new RepositoryError(403, "沒有此 Repository 的存取權限。");
@@ -135,7 +135,7 @@ async function repositoryAccess(
     id: row.id,
     ownerLogin: owner.login,
     name: row.name,
-    capability: row.capability,
+    permissions: row.permissions,
   };
   return access;
 }

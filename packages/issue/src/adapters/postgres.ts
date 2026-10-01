@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import { type RepositoryCapability, RepositoryError } from "@line_bot_v1/repository/domain";
+import { type RepositoryPermission, RepositoryError } from "@line_bot_v1/repository/domain";
 import {
   accessibleRepositories,
   repositoryScope,
@@ -60,8 +60,10 @@ function issue(row: IssueRow): Issue {
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-const writable = (capability: RepositoryCapability) =>
-  capability === "write" || capability === "admin";
+// #152 owns the operation matrix. Until then, preserve the current Issue gate exactly and
+// fail closed for MAINTAIN/TRIAGE/TRIAGE_PLUS instead of inventing permission semantics here.
+const writable = (permissions: readonly RepositoryPermission[]) =>
+  permissions.includes("write") || permissions.includes("admin");
 
 export class PostgresIssueStore implements IssueStore {
   constructor(private db: Database = businessDatabase()) {}
@@ -184,7 +186,7 @@ export class PostgresIssueStore implements IssueStore {
       const selected = await repositoryOperation(() =>
         repositoryScope(sql, who, command.repositoryId),
       );
-      if (!writable(selected.repository.capability)) {
+      if (!writable(selected.repository.permissions)) {
         throw new IssueError(403, "需要 Repository write 或 admin 權限。");
       }
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [

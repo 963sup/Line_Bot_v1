@@ -5,12 +5,15 @@ import type {
   RepositoryAccessSnapshot,
   RepositoryAccessSubjectKind,
 } from "@line_bot_v1/repository/application/ports/access";
-import type { RepositoryCapability } from "@line_bot_v1/repository/domain";
+import {
+  repositoryPermissions,
+  type RepositoryPermission,
+} from "@line_bot_v1/repository/domain";
 import { useCallback, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
-const capabilities: RepositoryCapability[] = ["read", "triage", "write", "admin"];
+const permissions: readonly RepositoryPermission[] = repositoryPermissions;
 
 function pendingKey(ownerLogin: string, repositoryName: string) {
   return `repository-access:${ownerLogin.toLowerCase()}/${repositoryName.toLowerCase()}`;
@@ -149,7 +152,7 @@ export default function RepositoryAccess({
   function grant(
     subjectKind: RepositoryAccessSubjectKind,
     subjectId: string,
-    capability: RepositoryCapability,
+    capability: RepositoryPermission,
     expectedVersion: number,
   ) {
     if (!data || !subjectId.trim()) return;
@@ -201,7 +204,10 @@ export default function RepositoryAccess({
               {data.repository.ownerLogin}/{data.repository.name}
             </h2>
             <p>
-              Current capability：{data.repository.actorCapability ?? "OrganizationOwner recovery"}
+              Current permissions：
+              {data.repository.actorPermissions.length
+                ? data.repository.actorPermissions.join(", ")
+                : "OrganizationOwner recovery only"}
             </p>
             <p className="crud-lifecycle-note">
               Repository owns access grants；Organization/Team membership remains owned by those
@@ -238,14 +244,14 @@ export default function RepositoryAccess({
                     event.preventDefault();
                     const capability = new FormData(event.currentTarget).get(
                       "capability",
-                    ) as RepositoryCapability;
+                    ) as RepositoryPermission;
                     grant("USER", item.userId, capability, item.version);
                   }}
                 >
                   <label>
                     Capability
                     <select name="capability" defaultValue={item.capability}>
-                      {capabilities.map((capability) => (
+                      {permissions.map((capability) => (
                         <option key={capability} value={capability}>
                           {capability}
                         </option>
@@ -270,7 +276,7 @@ export default function RepositoryAccess({
                 grant(
                   "USER",
                   String(form.get("subjectId") ?? ""),
-                  String(form.get("capability") ?? "read") as RepositoryCapability,
+                  String(form.get("capability") ?? "read") as RepositoryPermission,
                   0,
                 );
               }}
@@ -283,7 +289,7 @@ export default function RepositoryAccess({
               <label>
                 Capability
                 <select name="capability" defaultValue="read">
-                  {capabilities.map((capability) => (
+                  {permissions.map((capability) => (
                     <option key={capability} value={capability}>
                       {capability}
                     </option>
@@ -312,14 +318,14 @@ export default function RepositoryAccess({
                       event.preventDefault();
                       const capability = new FormData(event.currentTarget).get(
                         "capability",
-                      ) as RepositoryCapability;
+                      ) as RepositoryPermission;
                       grant("TEAM", item.teamId, capability, item.version);
                     }}
                   >
                     <label>
                       Capability
                       <select name="capability" defaultValue={item.capability}>
-                        {capabilities.map((capability) => (
+                        {permissions.map((capability) => (
                           <option key={capability} value={capability}>
                             {capability}
                           </option>
@@ -344,7 +350,7 @@ export default function RepositoryAccess({
                   grant(
                     "TEAM",
                     String(form.get("subjectId") ?? ""),
-                    String(form.get("capability") ?? "read") as RepositoryCapability,
+                    String(form.get("capability") ?? "read") as RepositoryPermission,
                     0,
                   );
                 }}
@@ -357,7 +363,7 @@ export default function RepositoryAccess({
                 <label>
                   Capability
                   <select name="capability" defaultValue="read">
-                    {capabilities.map((capability) => (
+                    {permissions.map((capability) => (
                       <option key={capability} value={capability}>
                         {capability}
                       </option>

@@ -11,7 +11,8 @@ import type {
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
   type RepositoryAddress,
-  type RepositoryCapability,
+  hasRepositoryPermission,
+  type RepositoryPermission,
   RepositoryError,
 } from "../../domain.js";
 
@@ -95,31 +96,31 @@ async function repositoryRow(
   return row;
 }
 
-async function actorCapability(
+async function actorPermissions(
   sql: Sql,
   repositoryId: string,
   userId: string,
-): Promise<RepositoryCapability | null> {
+): Promise<RepositoryPermission[] | null> {
   const row = (
     await sql.query(
-      "SELECT capability FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
+      "SELECT permissions FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
       [repositoryId, userId],
     )
-  ).rows[0] as { capability: RepositoryCapability } | undefined;
-  return row?.capability ?? null;
+  ).rows[0] as { permissions: RepositoryPermission[] } | undefined;
+  return row?.permissions ?? null;
 }
 
 async function requireMember(sql: Sql, repositoryId: string, userId: string) {
-  const capability = await actorCapability(sql, repositoryId, userId);
-  if (!capability) throw new RepositoryError(403, "目前不是此 Repository 的有效成員。");
-  return capability;
+  const permissions = await actorPermissions(sql, repositoryId, userId);
+  if (!permissions?.length) throw new RepositoryError(403, "目前不是此 Repository 的有效成員。");
+  return permissions;
 }
 
 async function snapshot(
   sql: Sql,
   repository: RepositoryRow,
   userId: string,
-  capability: RepositoryCapability,
+  permissions: readonly RepositoryPermission[],
 ): Promise<RepositoryAddressSnapshot> {
   const owner = await readAccountLogin(
     sql,
@@ -134,7 +135,7 @@ async function snapshot(
       ownerLogin: owner.login,
       name: repository.name,
       version: Number(repository.version),
-      actorCapability: capability,
+      actorPermissions: permissions,
     },
     address: addressFromRow(repository),
   };
@@ -217,8 +218,8 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
       const actor = await readActiveUserQualification(sql, userId, "share");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能讀取 Repository 地址。");
       const repository = await repositoryRow(sql, selector);
-      const capability = await requireMember(sql, repository.id, userId);
-      return snapshot(sql, repository, userId, capability);
+      const permissions = await requireMember(sql, repository.id, userId);
+      return snapshot(sql, repository, userId, permissions);
     });
   }
 
@@ -233,7 +234,7 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
       const actor = await readActiveUserQualification(sql, userId, "update");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能管理 Repository 地址。");
       const repository = await repositoryRow(sql, { repositoryId: command.repositoryId }, true);
-      if ((await requireMember(sql, repository.id, userId)) !== "admin") {
+      if (!hasRepositoryPermission(await requireMember(sql, repository.id, userId), "admin")) {
         throw new RepositoryError(403, "需要 Repository admin 才能管理地址。");
       }
 

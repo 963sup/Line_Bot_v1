@@ -154,7 +154,7 @@ export default function RepositorySettings({
       if (
         fresh.repository.actorUserId !== operation.owner ||
         fresh.repository.id !== operation.command.repositoryId ||
-        fresh.repository.actorCapability !== "admin" ||
+        !fresh.repository.actorPermissions.includes("admin") ||
         (await liffClient.session(liffId)) !== token
       ) {
         sessionStorage.removeItem(storageKey);
@@ -263,9 +263,9 @@ export default function RepositorySettings({
           </h2>
           <p>
             Repository 地址就是打卡點；你目前是
-            {data.repository.actorCapability === "admin" ? "管理員" : "成員"}。
+            {data.repository.actorPermissions.includes("admin") ? "管理員" : "成員"}。
           </p>
-          {data.repository.actorCapability === "admin" ? (
+          {data.repository.actorPermissions.includes("admin") ? (
             <form
               key={data.repository.version}
               onSubmit={(event) => {
