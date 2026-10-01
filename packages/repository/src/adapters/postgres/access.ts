@@ -62,26 +62,6 @@ export async function accessibleRepositories(
   return repositorySummaries(sql, rows);
 }
 
-export async function accessibleRepositoriesByIds(
-  sql: Sql,
-  userId: string,
-  repositoryIds: string[],
-): Promise<RepositorySummary[]> {
-  if (!repositoryIds.length) return [];
-  const rows = (
-    await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.permissions
-       FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE a.user_id=$1
-         AND r.id = ANY($2::text[])
-       ORDER BY r.id`,
-      [userId, repositoryIds],
-    )
-  ).rows as RepositoryAccessRow[];
-  return repositorySummaries(sql, rows);
-}
-
 export async function readableRepositoriesByIds(
   sql: Sql,
   userId: string,
