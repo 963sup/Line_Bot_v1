@@ -9,11 +9,7 @@ import type {
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
-const states = new Set<RepositorySubscriptionState>([
-  "SUBSCRIBED",
-  "UNSUBSCRIBED",
-  "IGNORED",
-]);
+const states = new Set<RepositorySubscriptionState>(["SUBSCRIBED", "UNSUBSCRIBED", "IGNORED"]);
 
 function repositorySelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
