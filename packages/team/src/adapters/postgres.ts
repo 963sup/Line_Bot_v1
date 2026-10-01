@@ -22,7 +22,11 @@ import {
 } from "../domain/policies/team-maintenance.js";
 import { teamVersion } from "../domain/policies/team-version.js";
 import { teamSlugFromName } from "../domain/value-objects/team-slug.js";
-import { grantTeamMaintainer, isTeamMaintainer, revokeTeamMaintainer } from "./postgres-maintainer.js";
+import {
+  grantTeamMaintainer,
+  isTeamMaintainer,
+  revokeTeamMaintainer,
+} from "./postgres-maintainer.js";
 
 type TeamRow = {
   id: string;
