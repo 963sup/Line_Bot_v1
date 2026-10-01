@@ -15,7 +15,11 @@ export type PopularPublicRepositoryList = Readonly<{
 }>;
 
 export interface PublicRepositoryStore {
-  byOwnerAndName(ownerLogin: string, name: string): Promise<PublicRepository | null>;
+  byOwnerAndName(
+    ownerLogin: string,
+    name: string,
+    followRenames?: boolean,
+  ): Promise<PublicRepository | null>;
   listByOwner(ownerLogin: string, limit: number): Promise<PublicRepositoryList>;
   popularByOwner(ownerLogin: string, limit: number): Promise<PopularPublicRepositoryList>;
 }
