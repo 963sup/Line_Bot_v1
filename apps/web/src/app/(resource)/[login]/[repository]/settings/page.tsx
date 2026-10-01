@@ -29,6 +29,7 @@ export default async function Page({
       />
       <RepositorySettings
         liffId={lineMiniApp().liffId}
+        mapsApiKey={process.env.GOOGLE_MAPS_API_KEY?.trim() ?? ""}
         ownerLogin={ownerLogin}
         repositoryName={repository}
       />

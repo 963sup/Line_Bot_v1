@@ -5,9 +5,10 @@ import type {
   RepositoryAddressReceipt,
   RepositoryAddressSnapshot,
 } from "@line_bot_v1/repository/application/ports/address";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import GoogleMapPicker, { type MapPoint } from "./google-map-picker";
 
 type PendingAddressOperation = Readonly<{
   owner: string;
@@ -63,10 +64,12 @@ function sameAddress(
 
 export default function RepositorySettings({
   liffId,
+  mapsApiKey,
   ownerLogin,
   repositoryName,
 }: {
   liffId: string;
+  mapsApiKey: string;
   ownerLogin: string;
   repositoryName: string;
 }) {
@@ -75,6 +78,10 @@ export default function RepositorySettings({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [point, setPoint] = useState<MapPoint | null>(null);
+  const [address, setAddress] = useState("");
+  const [radius, setRadius] = useState(100);
+  const addressEdited = useRef(false);
   const generation = useRef(0);
   const locked = useRef(false);
   const storageKey = pendingKey(ownerLogin, repositoryName);
@@ -86,6 +93,10 @@ export default function RepositorySettings({
     setBusy(false);
     setError("");
     setNotice("");
+    setPoint(null);
+    setAddress("");
+    setRadius(100);
+    addressEdited.current = false;
   }
 
   async function session() {
@@ -127,6 +138,14 @@ export default function RepositorySettings({
       }
       if (ticket !== generation.current) return;
       setData(payload);
+      setPoint(
+        payload.address
+          ? { latitude: payload.address.latitude, longitude: payload.address.longitude }
+          : null,
+      );
+      setAddress(payload.address?.address ?? "");
+      setRadius(payload.address?.radius ?? 100);
+      addressEdited.current = false;
       setPending(restorePending(storageKey, payload.repository.actorUserId, payload.repository.id));
     } catch (cause) {
       if (ticket === generation.current) {
@@ -138,6 +157,11 @@ export default function RepositorySettings({
       if (ticket === generation.current) setBusy(false);
     }
   }
+
+  const selectPoint = useCallback((next: MapPoint, suggestedAddress: string | null) => {
+    setPoint(next);
+    if (!addressEdited.current) setAddress(suggestedAddress ?? "");
+  }, []);
 
   async function execute(operation: PendingAddressOperation) {
     if (locked.current) return;
@@ -270,7 +294,10 @@ export default function RepositorySettings({
               key={data.repository.version}
               onSubmit={(event) => {
                 event.preventDefault();
-                const form = new FormData(event.currentTarget);
+                if (!point) {
+                  setError("請先在地圖選擇打卡位置。");
+                  return;
+                }
                 void execute({
                   owner: data.repository.actorUserId,
                   command: {
@@ -279,46 +306,37 @@ export default function RepositorySettings({
                     repositoryId: data.repository.id,
                     expectedVersion: data.repository.version,
                     address: {
-                      address: String(form.get("address") ?? "").trim(),
-                      latitude: Number(form.get("latitude")),
-                      longitude: Number(form.get("longitude")),
-                      radius: Number(form.get("radius")),
+                      address: address.trim(),
+                      latitude: point.latitude,
+                      longitude: point.longitude,
+                      radius,
                     },
                   },
                 });
               }}
             >
+              {mapsApiKey ? (
+                <GoogleMapPicker
+                  apiKey={mapsApiKey}
+                  point={point}
+                  radius={radius}
+                  disabled={busy || Boolean(pending)}
+                  onChange={selectPoint}
+                />
+              ) : (
+                <p role="alert">Google Maps 尚未設定，暫時無法選擇新的打卡位置。</p>
+              )}
               <label>
                 地址
                 <input
                   name="address"
                   required
                   maxLength={500}
-                  defaultValue={data.address?.address ?? ""}
-                />
-              </label>
-              <label>
-                緯度
-                <input
-                  name="latitude"
-                  type="number"
-                  required
-                  min={-90}
-                  max={90}
-                  step="any"
-                  defaultValue={data.address?.latitude}
-                />
-              </label>
-              <label>
-                經度
-                <input
-                  name="longitude"
-                  type="number"
-                  required
-                  min={-180}
-                  max={180}
-                  step="any"
-                  defaultValue={data.address?.longitude}
+                  value={address}
+                  onChange={(event) => {
+                    addressEdited.current = true;
+                    setAddress(event.currentTarget.value);
+                  }}
                 />
               </label>
               <label>
@@ -330,10 +348,27 @@ export default function RepositorySettings({
                   min={1}
                   max={10000}
                   step="any"
-                  defaultValue={data.address?.radius}
+                  value={radius}
+                  onChange={(event) => setRadius(Number(event.currentTarget.value))}
                 />
               </label>
-              <button type="submit" disabled={busy || Boolean(pending)}>
+              <div className="repository-radius-choices" aria-label="常用打卡半徑">
+                {[50, 100, 200].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="secondary"
+                    disabled={busy || Boolean(pending)}
+                    onClick={() => setRadius(value)}
+                  >
+                    {value} 公尺
+                  </button>
+                ))}
+              </div>
+              <button
+                type="submit"
+                disabled={busy || Boolean(pending) || !point || !address.trim()}
+              >
                 儲存打卡點
               </button>
               {data.address && (
