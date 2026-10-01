@@ -29,7 +29,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
 | RepositoryCollaboratorEdge | repository-user-access | authoritative | current | GitHub FPT: schema-users.json#RepositoryCollaboratorEdge |
 | RepositoryPermission | repository-permission | authoritative | current | GitHub FPT: schema-repos.json#RepositoryPermission |
-| Repository Subscription | repository-subscription | authoritative | current | User-to-Repository Subscribable state. SUBSCRIBED, UNSUBSCRIBED and IGNORED are distinct from Star, Follow, Team notification settings, Notification facts and delivery attempts. |
+| SubscriptionState | repository-subscription | authoritative | current | GitHub FPT: schema-activity.json#SubscriptionState |
 | StargazerEdge | repository-star | authoritative | current | GitHub FPT: schema-users.json#StargazerEdge |
 | TeamRepositoryEdge | repository-team-access | authoritative | current | GitHub FPT: schema-repos.json#TeamRepositoryEdge |
 | UserList | repository-star-list | authoritative | current | GitHub FPT: schema-users.json#UserList |
