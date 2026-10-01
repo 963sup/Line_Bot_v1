@@ -43,6 +43,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | consumes | identity-access | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
 | provides | identity-access | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
+| provides | project | query | organization | current-state | Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned. |
 | provides | repository | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and effective participation when resolving access. |
 | provides | team | stable-identity+query | organization | current-state | Organization scope and participation. |
 

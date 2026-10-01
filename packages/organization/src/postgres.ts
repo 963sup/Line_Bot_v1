@@ -634,3 +634,4 @@ export {
   qualifyOrganizationTeamScope,
   readOrganizationQualification,
 } from "./postgres/qualification.js";
+export { readOrganizationOwnerScopeIds } from "./postgres/owner-roles.js";

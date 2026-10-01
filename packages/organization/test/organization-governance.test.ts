@@ -17,8 +17,7 @@ test("OrganizationOwner mutation is owned by the Organization command contract",
       return {
         requestId: command.requestId,
         action: command.action,
-        scopeId:
-          "organizationAccountId" in command ? command.organizationAccountId : command.login,
+        scopeId: "organizationAccountId" in command ? command.organizationAccountId : command.login,
         subjectKind: "targetUserId" in command ? "user" : null,
         subjectId: "targetUserId" in command ? command.targetUserId : null,
         status: "active",

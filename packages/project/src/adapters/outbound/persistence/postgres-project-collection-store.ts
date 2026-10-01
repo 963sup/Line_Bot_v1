@@ -1,4 +1,4 @@
-import { readOrganizationOwnerScopeIds } from "@line_bot_v1/identity-access/postgres";
+import { readOrganizationOwnerScopeIds } from "@line_bot_v1/organization/postgres";
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import type { ProjectSummary } from "../../../contracts/dto/project-collection.js";

@@ -33,8 +33,7 @@ export function normalizeOrganizationWireCommand(raw: unknown): unknown {
     return raw;
   }
   return {
-    action:
-      value.action === "grant" ? "grant-organization-owner" : "revoke-organization-owner",
+    action: value.action === "grant" ? "grant-organization-owner" : "revoke-organization-owner",
     requestId: value.requestId,
     organizationAccountId: value.scopeId,
     targetUserId: principal.id,

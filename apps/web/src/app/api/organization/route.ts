@@ -20,8 +20,7 @@ export async function POST(request: Request) {
     request,
     () => LINE_PROVIDER_NAMESPACE,
     () => requestLineIdentity(request),
-    (actor, body) =>
-      organizationService().execute(actor, normalizeOrganizationWireCommand(body)),
+    (actor, body) => organizationService().execute(actor, normalizeOrganizationWireCommand(body)),
     (actor, id) =>
       id ? organizationService().detail(actor, id) : organizationService().list(actor, {}),
   );

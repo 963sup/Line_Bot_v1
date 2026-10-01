@@ -318,10 +318,7 @@ test("OrganizationOwner revoke preserves the last-effective-owner invariant", as
         ],
       };
     }
-    if (
-      text.includes("JOIN organization_memberships") &&
-      text.includes("r.user_id<>$2")
-    ) {
+    if (text.includes("JOIN organization_memberships") && text.includes("r.user_id<>$2")) {
       return { rows: [] };
     }
     if (text.includes("JOIN organization_memberships")) {

@@ -954,12 +954,12 @@
       "consistency": "current-identity"
     },
     {
-      "id": "identity-access-project-owner-authorization",
-      "provider": "identity-access",
+      "id": "organization-project-owner-scope",
+      "provider": "organization",
       "consumer": "project",
-      "meaning": "Project authorized read consumes current OrganizationOwner scope for Organization-owned Projects; personal Projects remain User-owned.",
+      "meaning": "Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned.",
       "integrationMode": "query",
-      "authority": "identity-access",
+      "authority": "organization",
       "consistency": "current-state"
     },
     {

@@ -9,7 +9,6 @@ export {
   readGovernanceReplay,
   recordGovernanceResult,
 } from "./postgres/receipts.js";
-export { PostgresRoleAssignments } from "./postgres/role-assignments.js";
 export {
   grantTeamMaintainer,
   hasOrganizationOwnerAssignment,

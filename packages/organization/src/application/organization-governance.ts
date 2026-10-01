@@ -90,10 +90,7 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
   }
   const organizationAccountId = parseId(base.organizationAccountId, "Organization");
 
-  if (
-    base.action === "grant-organization-owner" ||
-    base.action === "revoke-organization-owner"
-  ) {
+  if (base.action === "grant-organization-owner" || base.action === "revoke-organization-owner") {
     requireExactGovernanceKeys(base, [
       "action",
       "requestId",
