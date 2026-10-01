@@ -29,15 +29,11 @@ export function normalizeEnterpriseWireCommand(raw: unknown): unknown {
     return raw;
   }
   const principal = value.principal as Record<string, unknown>;
-  if (
-    !hasExactKeys(principal, ["kind", "id"]) ||
-    principal.kind !== "user"
-  ) {
+  if (!hasExactKeys(principal, ["kind", "id"]) || principal.kind !== "user") {
     return raw;
   }
   return {
-    action:
-      value.action === "grant" ? "grant-enterprise-owner" : "revoke-enterprise-owner",
+    action: value.action === "grant" ? "grant-enterprise-owner" : "revoke-enterprise-owner",
     requestId: value.requestId,
     enterpriseAccountId: value.scopeId,
     targetUserId: principal.id,
