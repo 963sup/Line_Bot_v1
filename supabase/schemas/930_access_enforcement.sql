@@ -107,6 +107,9 @@ grant select on app_private.repository_team_effective_access_sources to line_app
 revoke all on app_private.repository_effective_access from public, anon, authenticated, line_app;
 grant select on app_private.repository_effective_access to line_app;
 
+revoke all on app_private.repository_visibility_access from public, anon, authenticated, line_app;
+grant select on app_private.repository_visibility_access to line_app;
+
 revoke all on app_private.organization_repository_collaborators from public, anon, authenticated, line_app;
 grant select on app_private.organization_repository_collaborators to line_app;
 
