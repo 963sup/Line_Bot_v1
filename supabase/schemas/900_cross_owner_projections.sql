@@ -211,6 +211,24 @@ from candidate_permissions
 group by repository_id, user_id;
 
 
+-- INTERNAL Repository visibility consumes the one active Enterprise attachment of the owner
+-- Organization without transferring Enterprise authority into Repository.
+create view app_private.repository_internal_scopes
+with (security_invoker = true)
+as
+select
+  eo.organization_account_id,
+  eo.enterprise_account_id
+from app_private.enterprise_organizations eo
+join app_private.organizations o
+  on o.account_id=eo.organization_account_id
+ and o.status='active'
+join app_private.enterprises e
+  on e.account_id=eo.enterprise_account_id
+ and e.status='active'
+where eo.status='active';
+
+
 -- Visibility is read authority, not RepositoryPermission. PUBLIC contributes one anonymous row;
 -- INTERNAL contributes current active Users in the active Enterprise attached to the owner
 -- Organization; EXPLICIT preserves existing grant-derived users. Consumers use EXISTS so
@@ -251,18 +269,11 @@ select distinct
   a.user_id,
   'INTERNAL'::text as source_kind
 from app_private.repositories r
-join app_private.organizations o
+join app_private.repository_internal_scopes scope
   on r.owner_account_kind='ORGANIZATION'
- and o.account_id=r.owner_account_id
- and o.status='active'
-join app_private.enterprise_organizations eo
-  on eo.organization_account_id=r.owner_account_id
- and eo.status='active'
-join app_private.enterprises e
-  on e.account_id=eo.enterprise_account_id
- and e.status='active'
+ and scope.organization_account_id=r.owner_account_id
 join app_private.enterprise_user_affiliations a
-  on a.enterprise_account_id=eo.enterprise_account_id
+  on a.enterprise_account_id=scope.enterprise_account_id
 join app_private.users u
   on u.id=a.user_id
  and u.status='active'
