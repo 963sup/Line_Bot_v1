@@ -29,8 +29,8 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
 | RepositoryCollaboratorEdge | repository-user-access | authoritative | current | GitHub FPT: schema-users.json#RepositoryCollaboratorEdge |
 | RepositoryPermission | repository-permission | authoritative | current | GitHub FPT: schema-repos.json#RepositoryPermission |
-| SubscriptionState | repository-subscription | authoritative | current | GitHub FPT: schema-activity.json#SubscriptionState |
 | StargazerEdge | repository-star | authoritative | current | GitHub FPT: schema-users.json#StargazerEdge |
+| SubscriptionState | repository-subscription | authoritative | current | GitHub FPT: schema-activity.json#SubscriptionState |
 | TeamRepositoryEdge | repository-team-access | authoritative | current | GitHub FPT: schema-repos.json#TeamRepositoryEdge |
 | UserList | repository-star-list | authoritative | current | GitHub FPT: schema-users.json#UserList |
 | UserList.items | repository-star-list-item | authoritative | current | GitHub FPT: schema-users.json#UserList#items |
@@ -65,9 +65,9 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | provides | project | reference | repository | current-access-and-identity | Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access. |
 | provides | attendance | query | repository | current-state | Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal. |
 | provides | discussion | stable-identity+query | repository | transaction-recheck | Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads without acquiring Repository authority. |
-| provides | notifications | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
 | provides | enterprise | query | repository | current-state | Enterprise governance consumes a read-only outside-collaborator projection derived from Repository-owned direct grants and current attached Organization scope; Enterprise receives no Repository grant writer or Collaborator identity authority. |
 | provides | issue | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
+| provides | notifications | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
 
 ## Tactical Model Boundary
 
