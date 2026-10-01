@@ -203,12 +203,10 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
     "Octo",
     20,
   ]);
-  await pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4)", [
-    "org-repo",
-    "owner",
-    "org",
-    "Shared",
-  ]);
+  await pg.query(
+    "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)",
+    ["org-repo", "owner", "org", "Shared", "private"],
+  );
   const organizationAdminView = await store.view("owner", { repositoryId: "org-repo" });
   assert.equal(organizationAdminView.repository.actorIsOwner, false);
   assert.deepEqual(organizationAdminView.repository.actorPermissions, ["admin"]);
