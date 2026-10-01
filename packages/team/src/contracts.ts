@@ -1,6 +1,6 @@
 export type TeamPrivacy = "SECRET" | "VISIBLE";
 export type TeamNotificationSetting = "NOTIFICATIONS_DISABLED" | "NOTIFICATIONS_ENABLED";
-export type TeamMembershipType = "IMMEDIATE" | "CHILD_TEAM";
+type TeamMembershipType = "IMMEDIATE" | "CHILD_TEAM";
 
 export type TeamMembershipView = {
   userId: string;
