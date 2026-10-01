@@ -114,4 +114,3 @@ export async function requireOrganizationLifecycleOwner(
     throw new GovernanceAccessError(403, "forbidden", "你沒有此 Organization 的生命週期權限。");
   }
 }
-
