@@ -19,6 +19,8 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
   const [owners, setOwners] = useState<readonly RepositoryOwnerOption[] | null>(null);
   const [ownerAccountId, setOwnerAccountId] = useState("");
   const [name, setName] = useState("");
+  const [visibility, setVisibility] =
+    useState<RepositoryCreateCommand["visibility"]>("private");
   const [pending, setPending] = useState<RepositoryCreateCommand | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -61,6 +63,7 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
         setPending(stored);
         setName(stored.name);
         setOwnerAccountId(stored.ownerAccountId);
+        setVisibility(stored.visibility);
       }
     } catch (cause) {
       const status = (cause as { status?: number }).status;
@@ -140,6 +143,7 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
                 ownerAccountId: selectedOwner.id,
                 ownerKind: selectedOwner.kind,
                 name,
+                visibility,
               });
             }}
           >
@@ -147,7 +151,14 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
               Owner
               <select
                 value={ownerAccountId}
-                onChange={(event) => setOwnerAccountId(event.target.value)}
+                onChange={(event) => {
+                  const nextOwnerId = event.target.value;
+                  setOwnerAccountId(nextOwnerId);
+                  const nextOwner = owners.find((owner) => owner.id === nextOwnerId);
+                  if (visibility === "internal" && !nextOwner?.internalEligible) {
+                    setVisibility("private");
+                  }
+                }}
                 disabled={busy}
               >
                 {owners.map((owner) => (
@@ -170,8 +181,25 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
                 placeholder="work-notes"
               />
             </label>
+            <label>
+              Visibility
+              <select
+                value={visibility}
+                disabled={busy}
+                onChange={(event) =>
+                  setVisibility(event.target.value as RepositoryCreateCommand["visibility"])
+                }
+              >
+                <option value="private">PRIVATE · explicit access only</option>
+                <option value="public">PUBLIC · visible to everyone</option>
+                <option value="internal" disabled={!selectedOwner?.internalEligible}>
+                  INTERNAL · same active Enterprise only
+                </option>
+              </select>
+            </label>
             <p className="crud-lifecycle-note">
-              新 Repository 目前固定建立為 private。Visibility 管理尚未啟用。
+              INTERNAL 只適用於目前連結 active Enterprise 的 Organization owner；visibility
+              不會建立 RepositoryPermission grant。
             </p>
             <button disabled={busy || !selectedOwner || !name.trim()}>建立 Repository</button>
           </form>
