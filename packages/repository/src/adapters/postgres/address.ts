@@ -194,7 +194,7 @@ export async function repositoryAttendanceSites(
       `SELECT r.id,r.name,r.address,r.version
        FROM repository_effective_access a
        JOIN repositories r ON r.id=a.repository_id
-       WHERE a.user_id=$1 AND r.address IS NOT NULL
+       WHERE a.user_id=$1 AND r.address IS NOT NULL AND NOT r.is_archived
        ORDER BY r.id`,
       [userId],
     )
