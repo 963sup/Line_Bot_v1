@@ -17,11 +17,31 @@ Repository remains authoritative for Repository identity, current effective acce
 
 - Every Issue belongs to exactly one Repository.
 - Issue number is unique only within its Repository scope.
-- Create/transition operations re-check current Repository write/admin capability and eligible participants.
-- Publisher and assignee responsibilities govern valid state transitions; conditional mutation requires the expected Issue version.
+- Issue reads and commands first re-check current Repository access; public Repository visibility never substitutes for current collaborator access.
+- Issue creation adopts FPT `schema-issues.json#IssueCreationPolicy = COLLABORATORS_ONLY`: after current collaborator access is established, every exact RepositoryPermission may open an Issue.
+- Current workflow transitions use the manage-Issue permission set `triage | triage_plus | write | maintain | admin`; `read` cannot transition Issue state.
+- Publisher and assignee responsibilities are a separate Issue business policy layered after Repository permission; they do not define general Repository authorization. Conditional mutation requires the expected Issue version.
 - Commands use stable request identity. Exact replay returns the prior result; conflicting reuse is rejected.
 - Event/history is durable evidence and is not rewritten by current snapshots.
 - Project references do not transfer Issue authority.
+
+## Repository operation matrix
+
+The permission matrix follows the exact FPT `schema-repos.json#RepositoryPermission` descriptions without imposing a synthetic rank.
+
+| Operation | Accepted RepositoryPermission | Current runtime |
+| --- | --- | --- |
+| read | read, triage, triage_plus, write, maintain, admin | Implemented through current Repository access |
+| open | read, triage, triage_plus, write, maintain, admin | Implemented; creation policy is collaborators-only |
+| comment | read, triage, triage_plus, write, maintain, admin | Deferred to IssueComment adoption |
+| triage | triage, triage_plus, write, maintain, admin | Implemented as the Repository gate for the local workflow transitions |
+| edit | triage, triage_plus, write, maintain, admin | Deferred to general Issue content editing |
+| close | triage, triage_plus, write, maintain, admin | Deferred to FPT IssueState adoption |
+| assign | triage, triage_plus, write, maintain, admin | Deferred to Assignable collection adoption |
+| manage-resource | none in Issue | Repository Label/Milestone definition management remains Repository-owned and deferred |
+| lock-conversation | none in current runtime | Deferred to the separate conversation-lock capability |
+
+The matrix classifies permission only. Actor qualification/current access, the fixed collaborators-only creation policy, local publisher/assignee workflow responsibility, and any future conversation lock are evaluated as separate policies. Unsupported operations stay fail-closed rather than inheriting capabilities from another row.
 
 ## Mapping
 
