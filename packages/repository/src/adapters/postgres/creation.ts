@@ -138,14 +138,17 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
     now: number,
   ): Promise<RepositoryCreationResult> {
     const commandFingerprint = fingerprint(command);
+    const legacyPrivateFingerprint =
+      command.visibility === "private"
+        ? fingerprint({
+            requestId: command.requestId,
+            ownerAccountId: command.ownerAccountId,
+            ownerKind: command.ownerKind,
+            name: command.name,
+          })
+        : null;
     return this.db.transaction(async (sql) => {
       const owner = await currentOwner(sql, userId, command);
-      if (command.visibility === "internal" && !owner.internalEligible) {
-        throw new RepositoryError(
-          409,
-          "INTERNAL Repository 需要 active Enterprise scope 的 Organization owner。",
-        );
-      }
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `repository-command:${userId}:${command.requestId}`,
       ]);
@@ -157,7 +160,10 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
         )
       ).rows[0] as { fingerprint: string; result: unknown } | undefined;
       if (previous) {
-        if (previous.fingerprint !== commandFingerprint) {
+        if (
+          previous.fingerprint !== commandFingerprint &&
+          previous.fingerprint !== legacyPrivateFingerprint
+        ) {
           throw new RepositoryError(409, "此 Repository 建立請求編號已用於不同內容。");
         }
         const receipt = previous.result as { receiptVersion?: number; repositoryId?: string };
@@ -165,6 +171,13 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
           throw new RepositoryError(503, "Repository 建立回執無法讀取。");
         }
         return repositoryResult(sql, receipt.repositoryId, owner.login);
+      }
+
+      if (command.visibility === "internal" && !owner.internalEligible) {
+        throw new RepositoryError(
+          409,
+          "INTERNAL Repository 需要 active Enterprise scope 的 Organization owner。",
+        );
       }
 
       const repositoryId = randomUUID();
