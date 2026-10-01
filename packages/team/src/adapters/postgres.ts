@@ -36,13 +36,16 @@ type TeamRow = {
   organization_account_id: string;
   name: string;
   slug: string;
+  parent_team_id: string | null;
+  privacy: "SECRET" | "VISIBLE";
+  notification_setting: "NOTIFICATIONS_DISABLED" | "NOTIFICATIONS_ENABLED";
   version: number;
 };
 
 async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string): Promise<TeamRow> {
   const row = (
     await sql.query(
-      `SELECT id,organization_account_id,name,slug,version FROM teams
+      `SELECT id,organization_account_id,name,slug,parent_team_id,privacy,notification_setting,version FROM teams
        WHERE id=$1 AND organization_account_id=$2 FOR UPDATE`,
       [teamId, organizationAccountId],
     )
@@ -51,7 +54,7 @@ async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string)
   return row;
 }
 
-async function teamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView[]> {
+async function directTeamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView[]> {
   const rows = (
     await sql.query(
       `SELECT user_id AS "userId",name,status
@@ -61,12 +64,52 @@ async function teamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView
        FOR SHARE`,
       [teamId],
     )
-  ).rows as Array<Omit<TeamMembershipView, "isMaintainer" | "userStatus">>;
+  ).rows as Array<
+    Omit<TeamMembershipView, "isMaintainer" | "userStatus" | "membershipType" | "sourceTeamId">
+  >;
   const members: TeamMembershipView[] = [];
   for (const row of rows) {
     const user = await readUserQualification(sql, row.userId);
     members.push({
       ...row,
+      userStatus: user?.status ?? "suspended",
+      isMaintainer: await isTeamMaintainer(sql, teamId, row.userId),
+      membershipType: row.status === "active" ? "IMMEDIATE" : null,
+      sourceTeamId: row.status === "active" ? teamId : null,
+    });
+  }
+  return members;
+}
+
+async function effectiveTeamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView[]> {
+  const rows = (
+    await sql.query(
+      `SELECT DISTINCT ON (em.user_id)
+              em.user_id AS "userId",
+              source_membership.name,
+              em.membership_type AS "membershipType",
+              em.source_team_id AS "sourceTeamId"
+       FROM team_effective_memberships em
+       JOIN team_memberships source_membership
+         ON source_membership.team_id=em.source_team_id
+        AND source_membership.user_id=em.user_id
+        AND source_membership.status='active'
+       WHERE em.team_id=$1
+       ORDER BY em.user_id,
+                CASE WHEN em.membership_type='IMMEDIATE' THEN 0 ELSE 1 END,
+                em.depth,
+                em.source_team_id`,
+      [teamId],
+    )
+  ).rows as Array<
+    Pick<TeamMembershipView, "userId" | "name" | "membershipType" | "sourceTeamId">
+  >;
+  const members: TeamMembershipView[] = [];
+  for (const row of rows) {
+    const user = await readUserQualification(sql, row.userId);
+    members.push({
+      ...row,
+      status: "active",
       userStatus: user?.status ?? "suspended",
       isMaintainer: await isTeamMaintainer(sql, teamId, row.userId),
     });
@@ -81,11 +124,36 @@ async function teamSummaries(
 ): Promise<TeamSummary[]> {
   const rows = (
     await sql.query(
-      `SELECT t.id,t.organization_account_id AS "organizationAccountId",t.name,t.slug,t.version,
-              m.status AS "membershipStatus"
+      `SELECT
+         t.id,
+         t.organization_account_id AS "organizationAccountId",
+         t.name,
+         t.slug,
+         t.parent_team_id AS "parentTeamId",
+         t.privacy,
+         t.notification_setting AS "notificationSetting",
+         t.version,
+         CASE
+           WHEN em.user_id IS NOT NULL THEN 'active'
+           ELSE COALESCE(direct_membership.status,'none')
+         END AS "membershipStatus",
+         em.membership_type AS "membershipType"
        FROM teams t
-       JOIN team_memberships m ON m.team_id=t.id
-       WHERE t.organization_account_id=$1 AND m.user_id=$2 AND m.status<>'removed'
+       LEFT JOIN team_memberships direct_membership
+         ON direct_membership.team_id=t.id
+        AND direct_membership.user_id=$2
+       LEFT JOIN LATERAL (
+         SELECT m.user_id,m.membership_type
+         FROM team_effective_memberships m
+         WHERE m.team_id=t.id AND m.user_id=$2
+         ORDER BY
+           CASE WHEN m.membership_type='IMMEDIATE' THEN 0 ELSE 1 END,
+           m.depth,
+           m.source_team_id
+         LIMIT 1
+       ) em ON true
+       WHERE t.organization_account_id=$1
+         AND (t.privacy='VISIBLE' OR em.user_id IS NOT NULL)
        ORDER BY t.created_at,t.id`,
       [organizationAccountId, userId],
     )
