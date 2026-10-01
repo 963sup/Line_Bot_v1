@@ -97,7 +97,9 @@ with candidate_access as (
 
   union all
 
-  -- Direct grants remain valid only while the principal and owning scope are current.
+  -- A direct User grant is a Repository-owned authorization fact. For an
+  -- Organization-owned Repository, OrganizationMembership classifies the collaborator as
+  -- member/outside but does not qualify or revoke the direct Repository grant.
   select
     a.repository_id,
     a.principal_id as user_id,
@@ -119,18 +121,12 @@ with candidate_access as (
   left join app_private.organizations owner_organization
     on r.owner_account_kind = 'ORGANIZATION'
       and owner_organization.account_id = r.owner_account_id
-  left join app_private.organization_memberships om
-    on r.owner_account_kind = 'ORGANIZATION'
-      and om.organization_account_id = r.owner_account_id
-      and om.user_id = a.principal_id
-      and om.status = 'active'
   where
     (r.owner_account_kind = 'USER' and owner_user.status = 'active')
     or
     (
       r.owner_account_kind = 'ORGANIZATION'
       and owner_organization.status = 'active'
-      and om.user_id is not null
     )
 
   union all
@@ -178,6 +174,60 @@ select
   end as capability
 from candidate_access
 group by repository_id, user_id;
+
+
+-- Organization collaborator affiliation is a rebuildable projection over Repository-owned direct
+-- grants plus current Account/Organization qualification. Every row has DIRECT grant provenance;
+-- is_outside is the current membership classification, not a second authorization fact.
+create view app_private.organization_repository_collaborators
+with (security_invoker = true)
+as
+select
+  r.owner_account_id as organization_account_id,
+  a.repository_id,
+  a.principal_id as user_id,
+  'DIRECT'::text as grant_affiliation,
+  (om.user_id is null) as is_outside,
+  om.version as organization_membership_version,
+  a.capability,
+  a.version as grant_version
+from app_private.repository_access a
+join app_private.repositories r
+  on r.id = a.repository_id
+ and r.owner_account_kind = 'ORGANIZATION'
+join app_private.organizations o
+  on o.account_id = r.owner_account_id
+ and o.status = 'active'
+join app_private.users u
+  on u.id = a.principal_id
+ and u.status = 'active'
+left join app_private.organization_memberships om
+  on om.organization_account_id = r.owner_account_id
+ and om.user_id = a.principal_id
+ and om.status = 'active';
+
+
+-- Enterprise outside-collaborator visibility is derived from active Enterprise→Organization
+-- attachment plus the traceable Repository direct grant. It creates no Collaborator identity.
+create view app_private.enterprise_repository_outside_collaborators
+with (security_invoker = true)
+as
+select
+  eo.enterprise_account_id,
+  c.organization_account_id,
+  c.repository_id,
+  c.user_id,
+  'OUTSIDE'::text as collaborator_affiliation,
+  c.capability,
+  c.grant_version
+from app_private.organization_repository_collaborators c
+join app_private.enterprise_organizations eo
+  on eo.organization_account_id = c.organization_account_id
+ and eo.status = 'active'
+join app_private.enterprises e
+  on e.account_id = eo.enterprise_account_id
+ and e.status = 'active'
+where c.is_outside;
 
 
 -- Attendance consumes current Account qualification through an explicit read-only projection.

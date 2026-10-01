@@ -26,7 +26,7 @@ Vendored GitHub FPT domain truth 將 Enterprise Team 與 Organization Team 定�
 本專案 current slice 收斂為：
 
 - EnterpriseTeam 不使用 `TeamMaintainer`、不使用 Organization Team nested hierarchy，也不共用 Organization Team storage。
-- Current `add-enterprise-team-member` 要求目標是 active effective Enterprise user；direct-affiliated unaffiliated user 與 Organization-derived Enterprise user 都可加入。GitHub outside collaborator 仍待 resource/access model，不放寬資格檢查假裝完成。
+- Current `add-enterprise-team-member` 要求目標是 active effective Enterprise user；direct-affiliated unaffiliated user 與 Organization-derived Enterprise user 都可加入。Repository outside collaborator 已由 Repository-owned direct grant 與 attached Organization projection 承載，不放寬 EnterpriseTeam qualification，也不把 outside collaborator 變成 Enterprise affiliation。
 - EnterpriseTeam 只能 assign 到同一 Enterprise 的 active `EnterpriseOrganization` relation；Organization detach 前必須先解除其 active Enterprise Team assignments。
 - Team assignment 對每個 active Team member建立 `enterprise-team` Organization membership source；若存在 pending Organization invitation，runtime 將其取消，避免同一 participation 同時保留無意義 pending request。
 - `organization_direct_memberships` 保存 direct source；`organization_membership_sources` projection 聚合 direct 與 Enterprise Team sources。

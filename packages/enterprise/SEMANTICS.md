@@ -45,6 +45,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | provides | identity-access | query | enterprise | current-state | IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | organization | projection | enterprise | atomic-where-required | Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority. |
 | consumes | identity-access | query | identity-access | current-state | Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
+| consumes | repository | query | repository | current-state | Enterprise governance consumes a read-only outside-collaborator projection derived from Repository-owned direct grants and current attached Organization scope; Enterprise receives no Repository grant writer or Collaborator identity authority. |
 
 ## Tactical Model Boundary
 

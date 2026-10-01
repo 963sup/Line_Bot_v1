@@ -61,9 +61,9 @@ Canonical create surface is `/repositories/new`; API is `POST /api/repositories`
 Repository access authority remains Repository-owned:
 
 - Direct User grants persist in `repository_access`; Organization Team grants persist in `repository_team_access`.
-- Effective access is derived from current User / OrganizationMembership / TeamMembership qualification; grant rows do not copy those upstream memberships.
+- Direct User effective access re-checks current User and owner-scope qualification without requiring OrganizationMembership. Team-derived access continues to re-check OrganizationMembership / TeamMembership; grant rows never copy those upstream facts.
 - User-owned Repository owner has implicit admin authority and cannot receive a redundant direct grant.
-- Organization-owned direct User grants require a current Organization participant; Team grants must reference a Team in the same Organization scope.
+- Organization-owned direct User grants may target any current active User. All such rows are direct Repository grants; a User with no current owner-Organization membership is projected as an outside collaborator. Membership removal flips affiliation to outside without rewriting the grant, rejoin flips it back without a new grant, and explicit revoke removes access.
 - Current effective Repository `admin` can manage grants. Current `OrganizationOwner` is an explicit recovery authority for an Organization-owned Repository whose effective admin access has been lost.
-- Mutation uses stable `requestId`, fingerprint and `expectedVersion`; exact replay returns the durable receipt, stale/different content conflicts.
+- Current runtime uses immediate explicit Repository-admin grant/revoke. It does not model a pending collaborator invitation/acceptance handshake and never substitutes Organization membership for consent; a future invitation lifecycle, if added, must be a separate Repository-owned intent. Mutation uses stable `requestId`, fingerprint and `expectedVersion`; exact replay returns the durable receipt, stale/different content conflicts.
 - A successful mutation must leave at least one current effective Repository admin. Team membership can later invalidate a Team-derived admin; OrganizationOwner recovery exists for that cross-owner change.

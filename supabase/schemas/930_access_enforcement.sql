@@ -101,6 +101,12 @@ grant select on app_private.enterprise_user_affiliations to line_app;
 revoke all on app_private.repository_effective_access from public, anon, authenticated, line_app;
 grant select on app_private.repository_effective_access to line_app;
 
+revoke all on app_private.organization_repository_collaborators from public, anon, authenticated, line_app;
+grant select on app_private.organization_repository_collaborators to line_app;
+
+revoke all on app_private.enterprise_repository_outside_collaborators from public, anon, authenticated, line_app;
+grant select on app_private.enterprise_repository_outside_collaborators to line_app;
+
 
 revoke all on function app_private.reject_governance_history_mutation() from public, anon, authenticated, line_app;
 revoke all on function app_private.protect_governance_account_identity() from public, anon, authenticated, line_app;

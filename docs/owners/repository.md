@@ -22,9 +22,9 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 - Issue、Discussion、Notification are distinct concepts; Repository does not own Issue or Discussion lifecycle.
 - Star/unstar is idempotent and never grants Repository access.
 - Protected read/write and assignment always use current effective Repository access.
-- Repository access grant is not OrganizationMembership or TeamMembership；Repository stores only its own User/Team grant facts and derives effective access from current upstream qualification.
+- Repository access grant is not OrganizationMembership or TeamMembership；Repository stores only its own User/Team grant facts. Direct User grants require a current active User and owner scope but do not require Organization membership；Team grants continue to consume current Organization/Team qualification.
 - Access mutation requires current effective Repository `admin`；for Organization-owned Repository, current `OrganizationOwner` is an explicit recovery authority but does not become Repository access merely by managing grants.
-- Organization-owned direct User grants require current Organization participation；Team grants must reference an Organization Team in the same owner scope.
+- An Organization-owned direct User grant can target an active User outside the owner Organization. Active membership only classifies that direct collaborator as member/outside；removing membership does not silently revoke the Repository grant, while explicit Repository revoke does. Team grants must reference an Organization Team in the same owner scope and lose effectiveness with Team/Organization participation.
 - Access mutation uses stable request identity + expected version, exact replay only, and must leave at least one current effective Repository admin.
 - Commands use stable request identity; conditional mutation uses expected version.
 - Event/history is durable evidence and is not rewritten by current snapshots.

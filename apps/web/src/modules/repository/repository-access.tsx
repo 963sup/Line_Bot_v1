@@ -211,9 +211,15 @@ export default function RepositoryAccess({
 
           <section className="crud-detail">
             <h2>Direct User access</h2>
-            {data.repository.ownerKind === "USER" && (
+            {data.repository.ownerKind === "USER" ? (
               <p className="crud-lifecycle-note">
                 User owner 的 admin access 為固有權限，不建立重複 direct grant。
+              </p>
+            ) : (
+              <p className="crud-lifecycle-note">
+                Direct User grant 可授權 active User，不要求先加入 owner Organization；未加入者是
+                outside collaborator。Current flow 是 Repository admin 的立即 direct grant，沒有用
+                Organization membership 模擬 invitation/acceptance。
               </p>
             )}
             {!data.directUserGrants.length && (
@@ -224,6 +230,8 @@ export default function RepositoryAccess({
                 <strong>{item.userId}</strong>
                 <p>
                   {item.capability} · v{item.version}
+                  {data.repository.ownerKind === "ORGANIZATION" &&
+                    ` · ${item.isOutsideCollaborator ? "outside collaborator" : "organization member"}`}
                 </p>
                 <form
                   onSubmit={(event) => {

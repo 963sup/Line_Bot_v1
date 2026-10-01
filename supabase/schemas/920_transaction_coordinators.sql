@@ -525,18 +525,9 @@ begin
         raise exception 'repository_access_target_not_active' using errcode = '42501';
       end if;
 
-      if current_repository.owner_account_kind='ORGANIZATION' then
-        perform 1
-        from app_private.organization_memberships
-        where organization_account_id=current_repository.owner_account_id
-          and user_id=p_subject_id
-          and status='active'
-        for share;
-        if not found then
-          raise exception 'repository_access_target_not_organization_member' using errcode = '42501';
-        end if;
-      end if;
-
+      -- Direct User grants are Repository-owned. Organization membership is intentionally
+      -- not required: an active User without current membership is an outside collaborator.
+      -- Membership changes classification, while explicit Repository revoke changes the grant.
       if current_capability is not distinct from p_capability then
         raise exception 'repository_access_unchanged' using errcode = '23514';
       end if;

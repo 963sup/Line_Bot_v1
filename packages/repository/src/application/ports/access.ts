@@ -7,6 +7,7 @@ type RepositoryDirectUserGrant = Readonly<{
   userId: string;
   capability: RepositoryCapability;
   version: number;
+  isOutsideCollaborator: boolean;
 }>;
 
 type RepositoryTeamGrant = Readonly<{

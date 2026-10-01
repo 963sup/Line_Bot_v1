@@ -50,7 +50,7 @@ OrganizationMembership source
 
 ## Deferred
 
-Historical resource ownership backfill、outside collaborator/resource access、Employment qualification policy、Bot entry、離職後 self-read、nested Organization Team、generic tenant/plugin framework 都回各自 owner，由真實 use case 決定。
+Repository outside collaborator 已回 Repository owner：direct grant 不以 OrganizationMembership 為必要條件，Organization 只提供 member/outside classification。Historical resource ownership backfill、其他 resource 的 outside access、Employment qualification policy、Bot entry、離職後 self-read、nested Organization Team、generic tenant/plugin framework 都回各自 owner，由真實 use case 決定。
 
 ## Current-state routing
 

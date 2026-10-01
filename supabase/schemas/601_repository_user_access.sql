@@ -13,7 +13,9 @@ create table app_private."repository_access" (
 );
 alter table app_private."repository_access" enable row level security;
 revoke all on app_private."repository_access" from public, anon, authenticated, line_app;
--- Access facts are current data authority; grant-management runtime is not active.
+-- Access facts are current Repository authority. An Organization-owned direct grant may target
+-- any active User; current OrganizationMembership classifies member/outside but is not copied here.
+-- Runtime writes remain confined to the privileged Repository access coordinator.
 grant select on app_private.repository_access to line_app;
 create policy "backend_read" on app_private.repository_access
   for select to line_app using (true);

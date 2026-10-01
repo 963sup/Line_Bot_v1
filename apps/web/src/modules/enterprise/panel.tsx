@@ -98,6 +98,7 @@ export default function EnterprisePanel({
           !Array.isArray(payload.directAffiliations) ||
           !Array.isArray(payload.invitations) ||
           !Array.isArray(payload.organizations) ||
+          !Array.isArray(payload.outsideRepositoryCollaborators) ||
           !Array.isArray(payload.teams)
         ) {
           throw new Error("回應不完整，請重新載入。");
@@ -608,6 +609,27 @@ export default function EnterprisePanel({
               {organization.version}
             </p>
           ))}
+          {detail.actorIsOwner && (
+            <>
+              <h3>Repository 外部協作者</h3>
+              {detail.outsideRepositoryCollaborators.length === 0 ? (
+                <p>目前沒有 attached Organization 的 outside Repository collaborator。</p>
+              ) : (
+                detail.outsideRepositoryCollaborators.map((collaborator) => (
+                  <article
+                    key={`${collaborator.organizationAccountId}:${collaborator.repositoryId}:${collaborator.userId}`}
+                  >
+                    <strong>{collaborator.userId}</strong>
+                    <p>
+                      Organization {collaborator.organizationAccountId} · Repository{" "}
+                      {collaborator.repositoryId} · {collaborator.capability} · grant v
+                      {collaborator.grantVersion}
+                    </p>
+                  </article>
+                ))
+              )}
+            </>
+          )}
           {detail.actorIsOwner && (
             <form
               onSubmit={(event) => {

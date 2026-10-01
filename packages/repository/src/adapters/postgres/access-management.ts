@@ -101,14 +101,28 @@ async function snapshot(
   if (!owner) throw new RepositoryError(409, "Repository owner locator 不可用。");
   const directUserGrants = (
     await sql.query(
-      `SELECT principal_id AS "userId",capability,version
-       FROM repository_access WHERE repository_id=$1 ORDER BY principal_id`,
-      [repository.id],
+      `SELECT
+         a.principal_id AS "userId",
+         a.capability,
+         a.version,
+         CASE
+           WHEN $2='ORGANIZATION' THEN COALESCE(c.is_outside, false)
+           ELSE false
+         END AS "isOutsideCollaborator"
+       FROM repository_access a
+       LEFT JOIN organization_repository_collaborators c
+         ON $2='ORGANIZATION'
+        AND c.repository_id=a.repository_id
+        AND c.user_id=a.principal_id
+       WHERE a.repository_id=$1
+       ORDER BY a.principal_id`,
+      [repository.id, repository.owner_account_kind],
     )
   ).rows.map((row) => ({
     userId: String(row.userId),
     capability: row.capability as RepositoryCapability,
     version: Number(row.version),
+    isOutsideCollaborator: Boolean(row.isOutsideCollaborator),
   }));
   const teamGrants = (
     await sql.query(

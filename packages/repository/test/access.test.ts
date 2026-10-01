@@ -72,7 +72,7 @@ test("Repository access management supports direct and Team grants with replay, 
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const id of ["owner", "member", "team-member"]) await activeUser(db, id);
+  for (const id of ["owner", "member", "team-member", "outside"]) await activeUser(db, id);
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "org",
     "owner",
@@ -90,8 +90,18 @@ test("Repository access management supports direct and Team grants with replay, 
       [id],
     );
   }
+  await pg.query("select * from app_private.provision_enterprise_scope($1,$2,$3,$4,$5)", [
+    "enterprise",
+    "owner",
+    "enterprise",
+    "Enterprise",
+    4,
+  ]);
   await pg.query(
-    "insert into app_private.teams(id,organization_account_id,name,slug,version,created_by_user_id,created_at) values('team-a','org','Team A','team-a',1,'owner',4)",
+    "insert into app_private.enterprise_organizations(enterprise_account_id,organization_account_id,status,version,attached_at) values('enterprise','org','active',1,5)",
+  );
+  await pg.query(
+    "insert into app_private.teams(id,organization_account_id,name,slug,version,created_by_user_id,created_at) values('team-a','org','Team A','team-a',1,'owner',6)",
   );
   await pg.query(
     "insert into app_private.team_memberships(team_id,user_id,name,status,version) values('team-a','team-member','Team Member','active',1)",
@@ -106,7 +116,7 @@ test("Repository access management supports direct and Team grants with replay, 
   const initial = await store.view("owner", { ownerLogin: "octo", repositoryName: "shared" });
   assert.equal(initial.repository.actorCapability, "admin");
   assert.deepEqual(initial.directUserGrants, [
-    { userId: "owner", capability: "admin", version: 1 },
+    { userId: "owner", capability: "admin", version: 1, isOutsideCollaborator: false },
   ]);
 
   const userGrant = {
@@ -136,6 +146,31 @@ test("Repository access management supports direct and Team grants with replay, 
     13,
   );
   assert.equal(updated.version, 2);
+
+  // Organization membership is affiliation, not qualification for a direct Repository grant.
+  await pg.query(
+    "update app_private.organization_memberships set status='removed',version=version+1 where organization_account_id='org' and user_id='member'",
+  );
+  const afterOrganizationRemoval = await pg.query(
+    "select capability from app_private.repository_effective_access where repository_id='repo' and user_id='member'",
+  );
+  assert.deepEqual(afterOrganizationRemoval.rows, [{ capability: "write" }]);
+  const outsideAfterRemoval = await pg.query(
+    "select grant_affiliation,is_outside,grant_version from app_private.organization_repository_collaborators where repository_id='repo' and user_id='member'",
+  );
+  assert.deepEqual(outsideAfterRemoval.rows, [
+    { grant_affiliation: "DIRECT", is_outside: true, grant_version: 2 },
+  ]);
+
+  await pg.query(
+    "update app_private.organization_memberships set status='active',version=version+1 where organization_account_id='org' and user_id='member'",
+  );
+  const afterRejoin = await store.view("owner", { repositoryId: "repo" });
+  assert.deepEqual(
+    afterRejoin.directUserGrants.find((grant) => grant.userId === "member"),
+    { userId: "member", capability: "write", version: 2, isOutsideCollaborator: false },
+  );
+
   await store.execute(
     "owner",
     {
@@ -148,6 +183,80 @@ test("Repository access management supports direct and Team grants with replay, 
     },
     14,
   );
+
+  // A never-member active User can receive an explicit direct grant as an outside collaborator.
+  const outsideGrant = await store.execute(
+    "owner",
+    {
+      action: "grant",
+      requestId: "99999999-9999-4999-8999-999999999999",
+      repositoryId: "repo",
+      subjectKind: "USER",
+      subjectId: "outside",
+      capability: "triage",
+      expectedVersion: 0,
+    },
+    14,
+  );
+  assert.equal(outsideGrant.version, 1);
+  const outsideEffective = await pg.query(
+    "select capability from app_private.repository_effective_access where repository_id='repo' and user_id='outside'",
+  );
+  assert.deepEqual(outsideEffective.rows, [{ capability: "triage" }]);
+  const organizationOutside = await pg.query(
+    "select organization_account_id,repository_id,user_id,grant_affiliation,is_outside,capability,grant_version from app_private.organization_repository_collaborators where repository_id='repo' and user_id='outside'",
+  );
+  assert.deepEqual(organizationOutside.rows, [
+    {
+      organization_account_id: "org",
+      repository_id: "repo",
+      user_id: "outside",
+      grant_affiliation: "DIRECT",
+      is_outside: true,
+      capability: "triage",
+      grant_version: 1,
+    },
+  ]);
+  const enterpriseOutside = await pg.query(
+    "select enterprise_account_id,organization_account_id,repository_id,user_id,collaborator_affiliation,capability,grant_version from app_private.enterprise_repository_outside_collaborators where repository_id='repo' and user_id='outside'",
+  );
+  assert.deepEqual(enterpriseOutside.rows, [
+    {
+      enterprise_account_id: "enterprise",
+      organization_account_id: "org",
+      repository_id: "repo",
+      user_id: "outside",
+      collaborator_affiliation: "OUTSIDE",
+      capability: "triage",
+      grant_version: 1,
+    },
+  ]);
+  const outsideView = await store.view("owner", { repositoryId: "repo" });
+  assert.deepEqual(
+    outsideView.directUserGrants.find((grant) => grant.userId === "outside"),
+    { userId: "outside", capability: "triage", version: 1, isOutsideCollaborator: true },
+  );
+
+  await store.execute(
+    "owner",
+    {
+      action: "revoke",
+      requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      repositoryId: "repo",
+      subjectKind: "USER",
+      subjectId: "outside",
+      expectedVersion: 1,
+    },
+    14,
+  );
+  const revokedOutside = await pg.query(
+    "select user_id from app_private.repository_effective_access where repository_id='repo' and user_id='outside'",
+  );
+  assert.deepEqual(revokedOutside.rows, []);
+  const revokedEnterpriseOutside = await pg.query(
+    "select user_id from app_private.enterprise_repository_outside_collaborators where repository_id='repo' and user_id='outside'",
+  );
+  assert.deepEqual(revokedEnterpriseOutside.rows, []);
 
   await store.execute(
     "owner",
@@ -217,7 +326,7 @@ test("Repository access management supports direct and Team grants with replay, 
   const commands = await pg.query(
     "select count(*)::int as count from app_private.repository_commands where actor='owner'",
   );
-  assert.equal((commands.rows[0] as { count?: number } | undefined)?.count, 6);
+  assert.equal((commands.rows[0] as { count?: number } | undefined)?.count, 8);
 
   await assert.rejects(
     db.transaction((sql) =>
