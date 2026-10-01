@@ -101,9 +101,7 @@ async function effectiveTeamMembers(sql: Sql, teamId: string): Promise<TeamMembe
                 em.source_team_id`,
       [teamId],
     )
-  ).rows as Array<
-    Pick<TeamMembershipView, "userId" | "name" | "membershipType" | "sourceTeamId">
-  >;
+  ).rows as Array<Pick<TeamMembershipView, "userId" | "name" | "membershipType" | "sourceTeamId">>;
   const members: TeamMembershipView[] = [];
   for (const row of rows) {
     const user = await readUserQualification(sql, row.userId);
@@ -214,11 +212,7 @@ async function readTeamView(
   const directMembers = await directTeamMembers(sql, teamId);
   const effectiveMembers = await effectiveTeamMembers(sql, teamId);
   const me = effectiveMembers.find((member) => member.userId === actor.userId);
-  teamAssert(
-    team.privacy === "VISIBLE" || me,
-    404,
-    "找不到可存取的 Organization Team。",
-  );
+  teamAssert(team.privacy === "VISIBLE" || me, 404, "找不到可存取的 Organization Team。");
   const directMe = directMembers.find((member) => member.userId === actor.userId);
   const maintainer = await isTeamMaintainer(sql, teamId, actor.userId);
   const inactiveDirect = directMembers.filter(
@@ -418,10 +412,11 @@ export class PostgresTeamRepository implements TeamRepository {
             409,
             "Team 設定沒有變更。",
           );
-          await sql.query(
-            "UPDATE teams SET privacy=$2,notification_setting=$3 WHERE id=$1",
-            [teamId, command.privacy, command.notificationSetting],
-          );
+          await sql.query("UPDATE teams SET privacy=$2,notification_setting=$3 WHERE id=$1", [
+            teamId,
+            command.privacy,
+            command.notificationSetting,
+          ]);
           details = {
             previousPrivacy: team.privacy,
             privacy: command.privacy,
@@ -433,21 +428,11 @@ export class PostgresTeamRepository implements TeamRepository {
             await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
           );
           teamVersion(team.version, command.expectedVersion);
-          teamAssert(
-            team.parent_team_id !== command.parentTeamId,
-            409,
-            "Team parent 沒有變更。",
-          );
+          teamAssert(team.parent_team_id !== command.parentTeamId, 409, "Team parent 沒有變更。");
           if (command.parentTeamId) {
-            const parent = await lockTeam(
-              sql,
-              command.organizationAccountId,
-              command.parentTeamId,
-            );
+            const parent = await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
             requireTeamMaintainer(
-              await authorizeTeamMaintainer(() =>
-                isTeamMaintainer(sql, parent.id, actor.userId),
-              ),
+              await authorizeTeamMaintainer(() => isTeamMaintainer(sql, parent.id, actor.userId)),
             );
           }
           try {
