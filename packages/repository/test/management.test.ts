@@ -225,7 +225,7 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
     "select action from app_private.repository_events where repository_id='repo' order by id",
   );
   assert.deepEqual(
-    events.rows.map((row) => row.action),
+    (events.rows as Array<{ action: string }>).map((row) => row.action),
     ["rename", "rename", "visibility", "visibility", "archive", "unarchive"],
   );
 });
