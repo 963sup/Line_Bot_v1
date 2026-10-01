@@ -181,9 +181,9 @@ export class PostgresIssueStore implements IssueStore {
       const selected = await repositoryOperation(() =>
         repositoryScope(sql, who, command.repositoryId),
       );
-      const operation = command.action === "create" ? "open" : "triage";
+      const operation = command.action === "create" ? "open" : "workflow";
       if (!canIssueRepositoryOperation(selected.repository.permissions, operation)) {
-        throw new IssueError(403, "此 Issue 操作需要可管理 Issue 的 Repository permission。");
+        throw new IssueError(403, "目前的 Repository access 不允許此 Issue 操作。");
       }
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `issue:${who.userId}:${command.requestId}`,
