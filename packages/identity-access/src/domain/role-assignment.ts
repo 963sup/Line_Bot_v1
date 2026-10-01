@@ -1,4 +1,4 @@
-type GovernanceScopeKind = "enterprise" | "organization" | "organization-team";
+type GovernanceScopeKind = "organization" | "organization-team";
 type GovernancePrincipalKind = "user" | "organization-team";
 
 type GovernancePrincipal = Readonly<{
@@ -7,17 +7,6 @@ type GovernancePrincipal = Readonly<{
 }>;
 
 const governanceRoleDefinitions = {
-  EnterpriseOwner: {
-    scopeKind: "enterprise",
-    principalKinds: ["user"],
-    permissions: [
-      "enterprise.read",
-      "enterprise.manage-members",
-      "enterprise.manage-owners",
-      "enterprise.manage-organizations",
-      "enterprise.deactivate",
-    ],
-  },
   OrganizationOwner: {
     scopeKind: "organization",
     principalKinds: ["user"],
@@ -108,9 +97,7 @@ export function parseScopedRoleCommand(raw: unknown): ScopedRoleCommand {
     (value.action !== "grant" && value.action !== "revoke") ||
     typeof value.requestId !== "string" ||
     !uuid.test(value.requestId) ||
-    (value.scopeKind !== "enterprise" &&
-      value.scopeKind !== "organization" &&
-      value.scopeKind !== "organization-team") ||
+    (value.scopeKind !== "organization" && value.scopeKind !== "organization-team") ||
     typeof value.scopeId !== "string" ||
     !stableId.test(value.scopeId) ||
     !principal ||

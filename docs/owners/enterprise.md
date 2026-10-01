@@ -12,7 +12,7 @@ Current owned model：
 - EnterpriseDirectAffiliation：User 與 Enterprise 的 direct participation relation；可形成尚未加入任何 Organization 的 unaffiliated Enterprise user。
 - EnterpriseInvitation：pending invitation；接受後才建立 direct affiliation，Invitation 不等於 Affiliation。
 - EnterpriseUser projection：由 active direct affiliation 與 attached Organization 的 active OrganizationMembership 聚合出的 effective population。
-- EnterpriseOwner：Identity/Access 對指定 Enterprise 的 scoped Role；current root authority 只由 active direct affiliation + active User + current RoleAssignment 形成，不把 Organization-derived affiliation 自動升格為 Owner。
+- EnterpriseOwner：Enterprise-owned scoped governance role；current root authority 只由 active direct affiliation + active User + current EnterpriseOwner role fact 形成，不把 Organization-derived affiliation 自動升格為 Owner。
 - EnterpriseOrganization：active/historical governance relation。
 - EnterpriseTeam：Enterprise-owned collaboration group，與 Organization Team 分離。
 - EnterpriseTeamMembership：User 與 EnterpriseTeam 的 active/removed participation relation。
@@ -27,7 +27,7 @@ EnterpriseAccountId 是同一 AccountId 值的 ENTERPRISE identity facet，不�
 - 同一 Organization 同一時點最多一個 active Enterprise governance relation。
 - Invitation 不授予 authority，也不計為 effective Enterprise user affiliation。
 - Direct affiliation 或 Organization-derived affiliation 本身不授予 EnterpriseOwner、Organization Team、Workforce 或 Payroll capability。
-- EnterpriseOwner 是 Identity/Access 的 Enterprise-scoped Role；RoleAssignment 是 authority writer，current qualification 另要求 active direct Enterprise affiliation。
+- EnterpriseOwner lifecycle 與 RoleAssignment fact 由 Enterprise 唯一寫入；Identity/Access 只讀取目前有效的 EnterpriseOwner fact 與 qualification 來做 authorization decision。
 - Enterprise Team membership 不等於 EnterpriseOwner；Team → Organization assignment 不等於 OrganizationOwner。
 - Organization membership 可同時有 direct 與多個 Enterprise Team sources；撤銷一個 source 不能破壞其他 source。
 - Enterprise Team assignment 只可指向同 Enterprise 的 active attached Organization；跨 Enterprise reference fail closed。

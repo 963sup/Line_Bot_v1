@@ -6,9 +6,7 @@ import type {
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
   governanceFingerprint,
-  hasEnterpriseOwnerAssignment,
   hasOrganizationOwnerAssignment,
-  hasReplacementEnterpriseOwner,
   isOrganizationOwner,
   readGovernanceReplay,
   recordGovernanceResult,
@@ -16,7 +14,6 @@ import {
   requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
   resolveVerifiedLineActor,
-  revokeEnterpriseOwnerForAffiliationRemoval,
 } from "@line_bot_v1/identity-access/postgres";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
@@ -27,6 +24,12 @@ import type {
   EnterpriseList,
   EnterpriseReceipt,
 } from "../contracts/enterprise-governance.js";
+import {
+  hasEnterpriseOwnerAssignment,
+  hasReplacementEnterpriseOwner,
+  mutateEnterpriseOwnerAssignment,
+  revokeEnterpriseOwnerForAffiliationRemoval,
+} from "./postgres-owner-roles.js";
 import { detailEnterprise, detailEnterpriseBySlug, listEnterprises } from "./postgres-queries.js";
 import { makeEnterpriseReceipt } from "./postgres-receipt.js";
 import {
@@ -270,7 +273,16 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
       if (replay) return replay;
 
       let result: EnterpriseReceipt;
-      if (command.action === "deactivate" || command.action === "reactivate") {
+      if (
+        command.action === "grant-enterprise-owner" ||
+        command.action === "revoke-enterprise-owner"
+      ) {
+        if (enterprise.status !== "active") {
+          throw new GovernanceAccessError(409, "inactive", "停用的 Enterprise 不能變更 owner role。");
+        }
+        const changed = await mutateEnterpriseOwnerAssignment(sql, command, now);
+        result = makeEnterpriseReceipt(command, changed.status, changed.version, now);
+      } else if (command.action === "deactivate" || command.action === "reactivate") {
         if (enterprise.version !== command.expectedVersion)
           throw new GovernanceAccessError(409, "conflict", "Enterprise 版本已更新。");
         const from = command.action === "deactivate" ? "active" : "inactive";

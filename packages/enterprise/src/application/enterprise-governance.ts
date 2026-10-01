@@ -137,6 +137,30 @@ function parseEnterpriseCommand(raw: unknown): EnterpriseCommand {
       throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 不正確。");
     }
   }
+  if (
+    base.action === "grant-enterprise-owner" ||
+    base.action === "revoke-enterprise-owner"
+  ) {
+    requireExactGovernanceKeys(base, [
+      "action",
+      "requestId",
+      "enterpriseAccountId",
+      "targetUserId",
+      "expectedVersion",
+      "reason",
+    ]);
+    return {
+      ...evidence,
+      action: base.action,
+      enterpriseAccountId,
+      targetUserId: parseId(base.targetUserId, "使用者"),
+      expectedVersion: parseVersion(
+        base.expectedVersion,
+        "EnterpriseOwner",
+        base.action === "grant-enterprise-owner",
+      ),
+    };
+  }
   if (base.action === "deactivate" || base.action === "reactivate") {
     requireExactGovernanceKeys(base, [
       "action",

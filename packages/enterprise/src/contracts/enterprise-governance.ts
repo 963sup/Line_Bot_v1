@@ -94,6 +94,14 @@ export type EnterpriseCommand =
       reason: string;
     }>
   | Readonly<{
+      action: "grant-enterprise-owner" | "revoke-enterprise-owner";
+      requestId: string;
+      enterpriseAccountId: string;
+      targetUserId: string;
+      expectedVersion: number;
+      reason: string;
+    }>
+  | Readonly<{
       action: "deactivate" | "reactivate";
       requestId: string;
       enterpriseAccountId: string;

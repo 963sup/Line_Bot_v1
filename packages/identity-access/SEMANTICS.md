@@ -22,7 +22,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| EnterpriseAdministratorEdge.role | enterprise-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#EnterpriseAdministratorEdge#role |
 | OrganizationMemberEdge.role | organization-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#OrganizationMemberEdge#role |
 | Permission | permission | policy-decision | current | Explicit sensitive capability authorization decision; not provider role or membership. |
 | TeamMemberEdge.role | team-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#TeamMemberEdge#role |
@@ -38,8 +37,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | IdentityAccess consumes current User identity, qualification and status version when evaluating permissions and RoleAssignments. |
+| consumes | enterprise | query | enterprise | current-state | IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | audit | query | identity-access | current-state | Audit reads a minimal governance event projection for an exact active Enterprise or Organization scope after current owner authorization; no private history access or source-object authority transfers. |
-| provides | enterprise | query | identity-access | current-state | Enterprise governance consumes current EnterpriseOwner authorization and verified governance actor decisions. |
+| provides | enterprise | query | identity-access | current-state | Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
 | provides | organization | query | identity-access | current-state | Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions. |
 | provides | project | query | identity-access | current-state | Project authorized read consumes current OrganizationOwner scope for Organization-owned Projects; personal Projects remain User-owned. |
 | provides | repository | query | identity-access | transaction-recheck | Repository creation under an Organization consumes current effective OrganizationOwner authorization. |

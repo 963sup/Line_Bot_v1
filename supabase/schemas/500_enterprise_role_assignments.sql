@@ -1,4 +1,4 @@
--- Identity/Access-owned Enterprise RoleAssignment.
+-- Enterprise-owned EnterpriseOwner relationship facts.
 
 create table app_private.enterprise_role_assignments (
   enterprise_account_id text not null references app_private.enterprises(account_id),
