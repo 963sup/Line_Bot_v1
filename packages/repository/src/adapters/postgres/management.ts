@@ -38,8 +38,7 @@ const fingerprint = (command: RepositoryManagementCommand) =>
     .update(JSON.stringify({ family: "repository-management", command }))
     .digest("hex");
 
-const columns =
-  "id,owner_account_id,owner_account_kind,name,visibility,is_archived,version";
+const columns = "id,owner_account_id,owner_account_kind,name,visibility,is_archived,version";
 
 async function repositoryBySelector(
   sql: Sql,
@@ -216,12 +215,7 @@ async function nameReserved(sql: Sql, repository: RepositoryRow, name: string): 
          AND id<>$3
          AND lower(name)=lower($4)
        LIMIT 1`,
-      [
-        repository.owner_account_id,
-        repository.owner_account_kind,
-        repository.id,
-        name,
-      ],
+      [repository.owner_account_id, repository.owner_account_kind, repository.id, name],
     )
   ).rows[0];
   if (current) return true;
@@ -237,12 +231,7 @@ async function nameReserved(sql: Sql, repository: RepositoryRow, name: string): 
            AND historical_repository.id<>$3
            AND lower(h.old_name)=lower($4)
          LIMIT 1`,
-        [
-          repository.owner_account_id,
-          repository.owner_account_kind,
-          repository.id,
-          name,
-        ],
+        [repository.owner_account_id, repository.owner_account_kind, repository.id, name],
       )
     ).rows[0],
   );
