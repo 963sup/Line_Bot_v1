@@ -1,81 +1,40 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
+import { isTeamMaintainer } from "@line_bot_v1/identity-access/postgres";
+import { activeOrganizationParticipantIds } from "@line_bot_v1/organization/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { TeamError } from "../domain/errors/team-error.js";
 
-async function isEffectiveTeamMaintainer(sql: Sql, teamId: string, userId: string) {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1
-         FROM team_role_assignments r
-         JOIN team_memberships m ON m.team_id=r.team_id AND m.user_id=r.user_id
-         JOIN teams t ON t.id=r.team_id
-         JOIN organizations o ON o.account_id=t.organization_account_id
-         JOIN organization_memberships om
-           ON om.organization_account_id=t.organization_account_id AND om.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
-         WHERE r.team_id=$1 AND r.user_id=$2
-           AND r.role='TeamMaintainer' AND r.status='active'
-           AND m.status='active' AND o.status='active' AND om.status='active' AND u.status='active'
-           AND r.user_status_version=u.status_version
-           AND r.membership_version=m.version`,
-        [teamId, userId],
-      )
-    ).rows[0],
-  );
-}
-
-async function hasReplacementTeamMaintainer(
-  sql: Sql,
-  teamId: string,
-  excludedUserId: string,
-) {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1
-         FROM team_role_assignments r
-         JOIN team_memberships m ON m.team_id=r.team_id AND m.user_id=r.user_id
-         JOIN teams t ON t.id=r.team_id
-         JOIN organizations o ON o.account_id=t.organization_account_id
-         JOIN organization_memberships om
-           ON om.organization_account_id=t.organization_account_id AND om.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
-         WHERE r.team_id=$1 AND r.user_id<>$2
-           AND r.role='TeamMaintainer' AND r.status='active'
-           AND m.status='active' AND o.status='active' AND om.status='active' AND u.status='active'
-           AND r.user_status_version=u.status_version
-           AND r.membership_version=m.version
-         LIMIT 1`,
-        [teamId, excludedUserId],
-      )
-    ).rows[0],
-  );
-}
-
 export async function grantTeamMaintainer(
   sql: Sql,
-  input: { teamId: string; targetUserId: string; userStatusVersion: number; now: number },
+  input: {
+    teamId: string;
+    organizationAccountId: string;
+    targetUserId: string;
+    userStatusVersion: number;
+    now: number;
+  },
 ): Promise<void> {
   const target = await readActiveUserQualification(sql, input.targetUserId, "share");
   if (!target || target.statusVersion !== input.userStatusVersion) {
     throw new TeamError(409, "使用者資格版本已更新。");
   }
+  const participants = await activeOrganizationParticipantIds(
+    sql,
+    input.organizationAccountId,
+    [input.targetUserId],
+  );
+  if (!participants.has(input.targetUserId)) {
+    throw new TeamError(403, "TeamMaintainer 必須是有效 Organization member。");
+  }
   const membership = (
     await sql.query(
-      `SELECT m.version
-       FROM team_memberships m
-       JOIN teams t ON t.id=m.team_id
-       JOIN organizations o ON o.account_id=t.organization_account_id
-       JOIN organization_memberships om
-         ON om.organization_account_id=t.organization_account_id AND om.user_id=m.user_id
-       WHERE m.team_id=$1 AND m.user_id=$2
-         AND m.status='active' AND o.status='active' AND om.status='active'`,
+      `SELECT version FROM team_memberships
+       WHERE team_id=$1 AND user_id=$2 AND status='active'`,
       [input.teamId, input.targetUserId],
     )
   ).rows[0];
   if (!membership) {
-    throw new TeamError(403, "TeamMaintainer 必須是有效 Team 成員。");
+    throw new TeamError(403, "TeamMaintainer 必須是有效 Team member。");
   }
   const assignment = (
     await sql.query(
@@ -125,11 +84,26 @@ export async function revokeTeamMaintainer(
   if (assignment.status !== "active") {
     throw new TeamError(409, "TeamMaintainer 已撤銷。");
   }
-  if (
-    (await isEffectiveTeamMaintainer(sql, input.teamId, input.targetUserId)) &&
-    !(await hasReplacementTeamMaintainer(sql, input.teamId, input.targetUserId))
-  ) {
-    throw new TeamError(409, "不能撤銷最後一位有效 TeamMaintainer。");
+  if (await isTeamMaintainer(sql, input.teamId, input.targetUserId)) {
+    const candidates = (
+      await sql.query(
+        `SELECT user_id FROM team_role_assignments
+         WHERE team_id=$1 AND user_id<>$2
+           AND role='TeamMaintainer' AND status='active'
+         ORDER BY user_id`,
+        [input.teamId, input.targetUserId],
+      )
+    ).rows as Array<{ user_id: string }>;
+    let replacement = false;
+    for (const candidate of candidates) {
+      if (await isTeamMaintainer(sql, input.teamId, candidate.user_id)) {
+        replacement = true;
+        break;
+      }
+    }
+    if (!replacement) {
+      throw new TeamError(409, "不能撤銷最後一位有效 TeamMaintainer。");
+    }
   }
   await sql.query(
     `UPDATE team_role_assignments SET status='revoked',version=version+1

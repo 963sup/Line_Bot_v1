@@ -251,6 +251,7 @@ export class PostgresTeamRepository implements TeamRepository {
         );
         await grantTeamMaintainer(sql, {
           teamId,
+          organizationAccountId: command.organizationAccountId,
           targetUserId: actor.userId,
           userStatusVersion: actor.userStatusVersion,
           now,
@@ -366,6 +367,7 @@ export class PostgresTeamRepository implements TeamRepository {
             if (command.enabled) {
               await grantTeamMaintainer(sql, {
                 teamId,
+                organizationAccountId: command.organizationAccountId,
                 targetUserId: command.targetUserId,
                 userStatusVersion: targetUser.statusVersion,
                 now,
