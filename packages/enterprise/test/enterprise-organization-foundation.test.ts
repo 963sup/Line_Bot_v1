@@ -175,6 +175,7 @@ test("enterprise canonical slug lookup normalizes locator before governance look
     directAffiliations: [],
     invitations: [],
     organizations: [],
+    outsideRepositoryCollaborators: [],
     teams: [],
   };
   let observedSlug = "";
