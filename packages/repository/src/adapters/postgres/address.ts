@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import { resolveAuthorizedRepositoryId } from "./access.js";
 import type {
   RepositoryAddressCommand,
   RepositoryAddressReceipt,
@@ -16,6 +15,7 @@ import {
   RepositoryError,
   type RepositoryPermission,
 } from "../../domain.js";
+import { resolveAuthorizedRepositoryId } from "./access.js";
 
 type RepositoryRow = {
   id: string;
