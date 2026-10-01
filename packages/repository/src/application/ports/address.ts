@@ -8,6 +8,7 @@ export type RepositoryAddressSnapshot = Readonly<{
     ownerLogin: string;
     name: string;
     version: number;
+    actorIsOwner: boolean;
     actorPermissions: readonly RepositoryPermission[];
   };
   address: RepositoryAddress | null;

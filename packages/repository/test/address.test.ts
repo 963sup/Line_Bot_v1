@@ -112,6 +112,9 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
   const changed = await store.execute("owner", command, 10);
   assert.equal(changed.version, 2);
   assert.deepEqual(await store.execute("owner", command, 11), changed);
+  const ownerView = await store.view("owner", { repositoryId: "repo" });
+  assert.equal(ownerView.repository.actorIsOwner, true);
+  assert.deepEqual(ownerView.repository.actorPermissions, ["admin"]);
   await assert.rejects(
     store.execute(
       "owner",
@@ -155,6 +158,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
     repositoryName: "operations",
   });
   assert.equal(memberView.repository.actorUserId, "member");
+  assert.equal(memberView.repository.actorIsOwner, false);
   assert.deepEqual(memberView.repository.actorPermissions, ["read"]);
   assert.deepEqual(memberView.address, command.address);
   await assert.rejects(
@@ -191,4 +195,21 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
   assert.equal(removed.version, 3);
   assert.equal(removed.address, null);
   assert.deepEqual(await db.transaction((sql) => repositoryAttendanceSites(sql, "owner")), []);
+
+  await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
+    "org",
+    "owner",
+    "octo",
+    "Octo",
+    20,
+  ]);
+  await pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4)", [
+    "org-repo",
+    "owner",
+    "org",
+    "Shared",
+  ]);
+  const organizationAdminView = await store.view("owner", { repositoryId: "org-repo" });
+  assert.equal(organizationAdminView.repository.actorIsOwner, false);
+  assert.deepEqual(organizationAdminView.repository.actorPermissions, ["admin"]);
 });

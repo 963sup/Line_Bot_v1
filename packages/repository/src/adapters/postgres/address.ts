@@ -135,6 +135,8 @@ async function snapshot(
       ownerLogin: owner.login,
       name: repository.name,
       version: Number(repository.version),
+      actorIsOwner:
+        repository.owner_account_kind === "USER" && repository.owner_account_id === userId,
       actorPermissions: permissions,
     },
     address: addressFromRow(repository),
