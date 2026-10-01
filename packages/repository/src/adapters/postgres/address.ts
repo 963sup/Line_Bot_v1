@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { resolveAuthorizedRepositoryId } from "./access.js";
 import type {
   RepositoryAddressCommand,
   RepositoryAddressReceipt,
@@ -219,7 +220,8 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
     return this.db.transaction(async (sql) => {
       const actor = await readActiveUserQualification(sql, userId, "share");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能讀取 Repository 地址。");
-      const repository = await repositoryRow(sql, selector);
+      const repositoryId = await resolveAuthorizedRepositoryId(sql, { userId }, selector);
+      const repository = await repositoryRow(sql, { repositoryId });
       const permissions = await requireMember(sql, repository.id, userId);
       return snapshot(sql, repository, userId, permissions);
     });
