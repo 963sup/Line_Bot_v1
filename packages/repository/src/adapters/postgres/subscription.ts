@@ -75,6 +75,7 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
       return {
         repository: {
           id: repository.id,
+          actorUserId: userId,
           ownerLogin: repository.ownerLogin,
           name: repository.name,
         },
