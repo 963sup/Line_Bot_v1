@@ -295,7 +295,7 @@ export class PostgresTeamRepository implements TeamRepository {
       if (old) {
         teamAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
         await lockTeam(sql, command.organizationAccountId, old.team_id);
-        const current = (await teamMembers(sql, old.team_id)).find(
+        const current = (await directTeamMembers(sql, old.team_id)).find(
           (member) => member.userId === actor.userId,
         );
         const selfRemoval =
@@ -311,11 +311,21 @@ export class PostgresTeamRepository implements TeamRepository {
         );
         if (
           command.action === "rename-team" ||
+          command.action === "parent-team" ||
+          command.action === "settings" ||
           (command.action === "membership" && !selfRemoval) ||
           command.action === "maintainer"
         ) {
           requireTeamMaintainer(
             await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)),
+          );
+        }
+        if (command.action === "parent-team" && command.parentTeamId) {
+          await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(() =>
+              isTeamMaintainer(sql, command.parentTeamId!, actor.userId),
+            ),
           );
         }
         return old.result as TeamCommandReceipt;
@@ -332,9 +342,20 @@ export class PostgresTeamRepository implements TeamRepository {
         const slug = teamSlugFromName(command.name);
         try {
           await sql.query(
-            `INSERT INTO teams(id,organization_account_id,name,slug,created_by_user_id,created_at)
-             VALUES($1,$2,$3,$4,$5,$6)`,
-            [teamId, command.organizationAccountId, command.name, slug, actor.userId, now],
+            `INSERT INTO teams(
+               id,organization_account_id,name,slug,privacy,notification_setting,
+               created_by_user_id,created_at
+             ) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [
+              teamId,
+              command.organizationAccountId,
+              command.name,
+              slug,
+              command.privacy,
+              command.notificationSetting,
+              actor.userId,
+              now,
+            ],
           );
         } catch (error) {
           const postgres = error as { code?: string; constraint?: string };
@@ -357,7 +378,7 @@ export class PostgresTeamRepository implements TeamRepository {
         });
       } else {
         const team = await lockTeam(sql, command.organizationAccountId, teamId);
-        const members = await teamMembers(sql, teamId);
+        const members = await directTeamMembers(sql, teamId);
         const me = members.find((member) => member.userId === actor.userId);
 
         if (command.action === "rename-team") {
@@ -385,6 +406,69 @@ export class PostgresTeamRepository implements TeamRepository {
             previousSlug: team.slug,
             name: command.name,
             slug,
+          };
+        } else if (command.action === "settings") {
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
+          );
+          teamVersion(team.version, command.expectedVersion);
+          teamAssert(
+            team.privacy !== command.privacy ||
+              team.notification_setting !== command.notificationSetting,
+            409,
+            "Team 設定沒有變更。",
+          );
+          await sql.query(
+            "UPDATE teams SET privacy=$2,notification_setting=$3 WHERE id=$1",
+            [teamId, command.privacy, command.notificationSetting],
+          );
+          details = {
+            previousPrivacy: team.privacy,
+            privacy: command.privacy,
+            previousNotificationSetting: team.notification_setting,
+            notificationSetting: command.notificationSetting,
+          };
+        } else if (command.action === "parent-team") {
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
+          );
+          teamVersion(team.version, command.expectedVersion);
+          teamAssert(
+            team.parent_team_id !== command.parentTeamId,
+            409,
+            "Team parent 沒有變更。",
+          );
+          if (command.parentTeamId) {
+            const parent = await lockTeam(
+              sql,
+              command.organizationAccountId,
+              command.parentTeamId,
+            );
+            requireTeamMaintainer(
+              await authorizeTeamMaintainer(() =>
+                isTeamMaintainer(sql, parent.id, actor.userId),
+              ),
+            );
+          }
+          try {
+            await sql.query("UPDATE teams SET parent_team_id=$2 WHERE id=$1", [
+              teamId,
+              command.parentTeamId,
+            ]);
+          } catch (error) {
+            const postgres = error as { code?: string; constraint?: string; message?: string };
+            if (
+              postgres.code === "23514" ||
+              postgres.constraint === "teams_parent_scope_fkey" ||
+              postgres.message?.includes("team_hierarchy_cycle")
+            ) {
+              throw new TeamError(409, "Team hierarchy 無效或形成 cycle。");
+            }
+            throw error;
+          }
+          details = {
+            previousParentTeamId: team.parent_team_id,
+            parentTeamId: command.parentTeamId,
           };
         } else if (command.action === "join") {
           teamAssert(!me || me.status === "pending", 403, "你已加入或曾被移除，請聯絡維護者。");
