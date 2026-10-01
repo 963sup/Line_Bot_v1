@@ -18,11 +18,9 @@ export async function grantTeamMaintainer(
   if (!target || target.statusVersion !== input.userStatusVersion) {
     throw new TeamError(409, "使用者資格版本已更新。");
   }
-  const participants = await activeOrganizationParticipantIds(
-    sql,
-    input.organizationAccountId,
-    [input.targetUserId],
-  );
+  const participants = await activeOrganizationParticipantIds(sql, input.organizationAccountId, [
+    input.targetUserId,
+  ]);
   if (!participants.has(input.targetUserId)) {
     throw new TeamError(403, "TeamMaintainer 必須是有效 Organization member。");
   }

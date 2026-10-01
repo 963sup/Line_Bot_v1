@@ -34,7 +34,7 @@ function activeUser() {
 test("TeamMaintainer grant binds the current User and TeamMembership versions", async () => {
   const queries: QueryRecord[] = [];
   const sql = sqlWith(async (text) => {
-    if (text.includes('FROM users WHERE id=$1')) return { rows: [activeUser()] };
+    if (text.includes("FROM users WHERE id=$1")) return { rows: [activeUser()] };
     if (text.includes("SELECT m.user_id FROM organizations o")) {
       return { rows: [{ user_id: "user-2" }] };
     }
@@ -74,7 +74,7 @@ test("TeamMaintainer grant binds the current User and TeamMembership versions", 
 test("TeamMaintainer grant fails closed without current Organization participation", async () => {
   const queries: QueryRecord[] = [];
   const sql = sqlWith(async (text) => {
-    if (text.includes('FROM users WHERE id=$1')) return { rows: [activeUser()] };
+    if (text.includes("FROM users WHERE id=$1")) return { rows: [activeUser()] };
     if (text.includes("SELECT m.user_id FROM organizations o")) return { rows: [] };
     throw new Error(`unexpected query: ${text}`);
   }, queries);
@@ -117,7 +117,9 @@ test("TeamMaintainer revoke preserves the last-effective-maintainer invariant", 
     (error: unknown) => error instanceof TeamError && error.status === 409,
   );
   assert.equal(
-    queries.some((query) => query.text.includes("UPDATE team_role_assignments SET status='revoked'")),
+    queries.some((query) =>
+      query.text.includes("UPDATE team_role_assignments SET status='revoked'"),
+    ),
     false,
   );
 });
