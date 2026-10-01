@@ -5,8 +5,21 @@ import { PostgresIssueStore } from "../src/adapters/postgres.js";
 import { canIssueRepositoryOperation } from "../src/domain.js";
 
 test("Issue RepositoryPermission policy keeps open/read separate from manage-issue operations", () => {
-  const allPermissions = ["read", "triage", "triage_plus", "write", "maintain", "admin"] as const;
-  const managementPermissions = ["triage", "triage_plus", "write", "maintain", "admin"] as const;
+  const allPermissions = [
+    "read",
+    "triage",
+    "triage_plus",
+    "write",
+    "maintain",
+    "admin",
+  ] as const;
+  const managementPermissions = [
+    "triage",
+    "triage_plus",
+    "write",
+    "maintain",
+    "admin",
+  ] as const;
 
   for (const operation of ["read", "open", "comment"] as const) {
     for (const permission of allPermissions) {
@@ -117,7 +130,6 @@ test("Issue number is monotonic within each Repository and independent across Re
     { id: "repository-user", next_issue_number: 2 },
   ]);
 });
-
 
 test("READ can open an Issue while workflow transitions require manage permission and local responsibility", async (t) => {
   const { pg, db } = await postgresFixture();
