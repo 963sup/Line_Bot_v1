@@ -234,9 +234,15 @@ async function nameReserved(sql: Sql, repository: RepositoryRow, name: string): 
            ON historical_repository.id=h.repository_id
          WHERE historical_repository.owner_account_id=$1
            AND historical_repository.owner_account_kind=$2
-           AND lower(h.old_name)=lower($3)
+           AND historical_repository.id<>$3
+           AND lower(h.old_name)=lower($4)
          LIMIT 1`,
-        [repository.owner_account_id, repository.owner_account_kind, name],
+        [
+          repository.owner_account_id,
+          repository.owner_account_kind,
+          repository.id,
+          name,
+        ],
       )
     ).rows[0],
   );
