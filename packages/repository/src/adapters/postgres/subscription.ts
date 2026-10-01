@@ -114,6 +114,10 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
+      await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        `repository-subscription:${repository.id}:${userId}`,
+      ]);
+
       const current = (
         await sql.query(
           `SELECT state,version
