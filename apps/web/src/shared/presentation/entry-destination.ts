@@ -1,4 +1,4 @@
-import { type EntryRoute, entryRoute } from "./entry-route";
+import { ENTRY_INTENT_KEYS, type EntryRoute, entryRoute } from "./entry-route";
 
 type Destination = Exclude<EntryRoute, "pending" | "invalid">;
 const paths: Record<Destination, string> = {
@@ -71,15 +71,30 @@ export function entryDestination(href: string, fallback: Destination = "home") {
   return target.pathname + target.search;
 }
 
+const entryContinuationKeys = new Set([
+  ...ENTRY_INTENT_KEYS,
+  "operation",
+  "handovers",
+  "meetings",
+  "liffClientId",
+  "liffRedirectUri",
+]);
+
+/**
+ * Detects whether the root request must start LIFF. This only inspects parameter names;
+ * LIFF still owns decoding/rewriting liff.state and SDK callback parameters.
+ */
+export function hasEntryContinuationKeys(keys: Iterable<string>) {
+  for (const key of keys) {
+    if (entryContinuationKeys.has(key) || key.startsWith("liff.")) return true;
+  }
+  return false;
+}
+
 export function hasEntryContinuation(href: string) {
   const url = new URL(href);
   // LINE 外部登入也會帶回 camelCase 參數，不只有 liff.*。
   // 根入口必須啟動 SDK，讓它驗證登入回應並接續 google=link；
   // 這裡只辨識初始化需求，不讀取身分，也不自行導向 liffRedirectUri。
-  return (
-    entryRoute(href) !== "home" ||
-    url.searchParams.has("liffClientId") ||
-    url.searchParams.has("liffRedirectUri") ||
-    [...url.searchParams.keys()].some((key) => key.startsWith("liff."))
-  );
+  return entryRoute(href) !== "home" || hasEntryContinuationKeys(url.searchParams.keys());
 }

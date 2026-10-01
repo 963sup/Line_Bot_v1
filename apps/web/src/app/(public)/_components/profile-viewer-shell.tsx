@@ -3,6 +3,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  clearVerifiedProfileEntry,
+  readVerifiedProfileEntry,
+} from "../../../modules/account/profile-entry-handoff";
 import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 import WorkNavigation from "../../_shell/work-navigation";
@@ -53,11 +57,26 @@ export default function ProfileViewerShell({
 
   const clear = useCallback(() => {
     generation.current++;
+    clearVerifiedProfileEntry();
     setViewer(null);
   }, []);
 
   const load = useCallback(async () => {
     const ticket = ++generation.current;
+    const handoff =
+      profileKind === "USER" && profileUserId
+        ? readVerifiedProfileEntry(profileUserId, profileLogin)
+        : null;
+    if (handoff) {
+      clearVerifiedProfileEntry();
+      setViewer({
+        profileKind: "USER",
+        profileLogin: handoff.login,
+        profileUserId: handoff.userId,
+        token: handoff.token,
+      });
+      return;
+    }
     setViewer(null);
     try {
       const token = await liffClient.session(liffId);
@@ -82,6 +101,7 @@ export default function ProfileViewerShell({
   useEffect(
     () => () => {
       generation.current++;
+      clearVerifiedProfileEntry();
     },
     [],
   );

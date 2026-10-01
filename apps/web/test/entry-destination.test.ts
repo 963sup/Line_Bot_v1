@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   entryDestination,
   hasEntryContinuation,
+  hasEntryContinuationKeys,
 } from "../src/shared/presentation/entry-destination";
 import { entryNavigation } from "../src/shared/presentation/entry-navigation";
 import { loginReturnUrl } from "../src/shared/presentation/entry-route";
@@ -23,6 +24,14 @@ test("public entry is passive unless LINE carries an intent or SDK continuation"
   assert.equal(hasEntryContinuation("https://example.com/?utm_source=test"), false);
   assert.equal(hasEntryContinuation("https://example.com/?liff.state=%3Frepositories%3D1"), true);
   assert.equal(hasEntryContinuation("https://example.com/?membership=1"), true);
+});
+
+test("server entry detection can preload LIFF without reading callback values", () => {
+  assert.equal(hasEntryContinuationKeys(["profile"]), true);
+  assert.equal(hasEntryContinuationKeys(["liff.state"]), true);
+  assert.equal(hasEntryContinuationKeys(["liffClientId", "code", "state"]), true);
+  assert.equal(hasEntryContinuationKeys(["utm_source"]), false);
+  assert.equal(hasEntryContinuationKeys([]), false);
 });
 
 test("external LINE login responses activate the SDK without interpreting its redirect", () => {

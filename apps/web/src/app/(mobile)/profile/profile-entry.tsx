@@ -2,14 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  type ProfileAccount,
-  resolveProfileDestination,
-} from "../../../modules/account/profile-destination";
-import { liffClient } from "../../../shared/browser/liff-client";
+import { resolveVerifiedProfileEntry } from "../../../modules/account/profile-entry-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 
-type AccountProjection = { member?: ProfileAccount | null; error?: string };
 type State = "loading" | "waiting" | "integrity-unavailable" | "suspended" | "unavailable";
 
 export default function ProfileEntry({ liffId }: { liffId: string }) {
@@ -31,20 +26,12 @@ export default function ProfileEntry({ liffId }: { liffId: string }) {
     request.current = controller;
     setState("loading");
     try {
-      const token = await liffClient.session(liffId);
-      if (!token || ticket !== generation.current) return;
-      const response = await fetch("/api/membership?view=account", {
-        headers: { "x-line-token": token },
-        cache: "no-store",
-        signal: controller.signal,
-      });
-      const value = (await response.json()) as AccountProjection;
+      const result = await resolveVerifiedProfileEntry(liffId, controller.signal);
       if (ticket !== generation.current) return;
-      if (!response.ok) {
-        setState("unavailable");
+      if (result.kind === "waiting") {
+        setState("waiting");
         return;
       }
-      const result = resolveProfileDestination(value.member ?? null);
       if (result.kind === "redirect") {
         router.replace(result.href);
         return;

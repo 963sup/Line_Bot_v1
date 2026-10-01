@@ -13,6 +13,7 @@ type PublicUser = Readonly<{
 
 export interface UserRepository {
   find(provider: string, subject: string): Promise<User | null>;
+  viewByIdentity(provider: string, subject: string): Promise<UserView | null>;
   view(userId: string): Promise<UserView>;
   publicById(userId: string): Promise<PublicUser | null>;
   updateLogin(userId: string, login: string, expectedLogin: string, now: number): Promise<UserView>;
