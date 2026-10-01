@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/domain";
 import {
   accessibleRepositories,
+  lockRepositoryGovernanceRead,
   repositoryScope,
   resolveAuthorizedRepositoryId,
 } from "@line_bot_v1/repository/postgres/access";
@@ -14,7 +15,7 @@ import type {
   IssueSnapshot,
   IssueStore,
 } from "../application/ports/issues.js";
-import { type Issue, IssueError, transitionIssue } from "../domain.js";
+import { canManageIssueWork, type Issue, IssueError, transitionIssue } from "../domain.js";
 
 async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -60,10 +61,13 @@ function issue(row: IssueRow): Issue {
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-// #152 owns the operation matrix. Until then, preserve the current Issue gate exactly and
-// fail closed for MAINTAIN/TRIAGE/TRIAGE_PLUS instead of inventing permission semantics here.
-const writable = (permissions: readonly RepositoryPermission[]) =>
-  permissions.includes("write") || permissions.includes("admin");
+function eligibleAssignees(
+  participants: Awaited<ReturnType<typeof repositoryScope>>["participants"],
+) {
+  return participants
+    .filter((participant) => canManageIssueWork(participant.permissions))
+    .map(({ userId, name }) => ({ userId, name }));
+}
 
 export class PostgresIssueStore implements IssueStore {
   constructor(private db: Database = businessDatabase()) {}
@@ -130,7 +134,7 @@ export class PostgresIssueStore implements IssueStore {
       return {
         userId: who.userId,
         repositories: available,
-        participants: selected.participants,
+        participants: eligibleAssignees(selected.participants),
         issues: mapped,
         events,
         ...(list
@@ -173,7 +177,7 @@ export class PostgresIssueStore implements IssueStore {
       return {
         userId: who.userId,
         repositories: available,
-        participants: selected.participants,
+        participants: eligibleAssignees(selected.participants),
         issues: [issue(row)],
         events,
       };
@@ -183,11 +187,12 @@ export class PostgresIssueStore implements IssueStore {
   execute(who: IssueIdentity, command: IssueCommand, now: number): Promise<Issue> {
     const commandFingerprint = fingerprint(command);
     return this.db.transaction(async (sql) => {
+      await lockRepositoryGovernanceRead(sql);
       const selected = await repositoryOperation(() =>
         repositoryScope(sql, who, command.repositoryId),
       );
-      if (!writable(selected.repository.permissions)) {
-        throw new IssueError(403, "需要 Repository write 或 admin 權限。");
+      if (!canManageIssueWork(selected.repository.permissions)) {
+        throw new IssueError(403, "需要 Repository Issue 管理權限。");
       }
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `issue:${who.userId}:${command.requestId}`,
@@ -214,8 +219,14 @@ export class PostgresIssueStore implements IssueStore {
         if (command.assignee === who.userId) {
           throw new IssueError(400, "建立者與承接人必須不同。");
         }
-        if (!selected.participants.some((participant) => participant.userId === command.assignee)) {
-          throw new IssueError(403, "承接人沒有此 Repository 的存取權限。");
+        if (
+          !selected.participants.some(
+            (participant) =>
+              participant.userId === command.assignee &&
+              canManageIssueWork(participant.permissions),
+          )
+        ) {
+          throw new IssueError(403, "承接人沒有此 Repository 的 Issue 管理權限。");
         }
         const issueId = randomUUID();
         const number = await repositoryOperation(() =>

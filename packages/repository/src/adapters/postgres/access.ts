@@ -13,6 +13,10 @@ import {
 
 export type RepositoryIdentity = { userId: string };
 
+export async function lockRepositoryGovernanceRead(sql: Sql): Promise<void> {
+  await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+}
+
 type RepositoryAccessRow = {
   id: string;
   owner_account_id: string;
@@ -90,18 +94,19 @@ export async function repositoryScope(
   const access = await repositoryAccess(sql, identity, repositoryId);
   const participants = (
     await sql.query(
-      `SELECT user_id
+      `SELECT user_id,permissions
        FROM repository_effective_access
        WHERE repository_id=$1
        ORDER BY user_id`,
       [repositoryId],
     )
-  ).rows as Array<{ user_id: string }>;
+  ).rows as Array<{ user_id: string; permissions: RepositoryPermission[] }>;
   return {
     repository: access,
     participants: participants.map((row) => ({
       userId: row.user_id,
       name: row.user_id,
+      permissions: row.permissions,
     })),
   };
 }

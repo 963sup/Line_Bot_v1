@@ -1,5 +1,6 @@
 "use client";
 
+import { canManageIssueWork } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import styles from "./repository-list.module.css";
@@ -55,9 +56,7 @@ export default function RepositoryList({
   const { items, busy, error, load, clear } = useRepositoryCollection(liffId);
   const visibleItems =
     intent === "create-issue"
-      ? items?.filter(
-          (item) => item.permissions.includes("write") || item.permissions.includes("admin"),
-        )
+      ? items?.filter((item) => canManageIssueWork(item.permissions))
       : intent === "manage-access" || intent === "manage-settings"
         ? items?.filter((item) => item.permissions.includes("admin"))
         : items;

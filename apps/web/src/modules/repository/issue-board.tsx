@@ -1,7 +1,7 @@
 "use client";
 
 import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/issue/application/ports/issues";
-import type { IssueAction, IssueStatus } from "@line_bot_v1/issue/domain";
+import { canManageIssueWork, type IssueAction, type IssueStatus } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -204,9 +204,7 @@ export default function IssueBoard({
 
   const current = detailMode ? data?.issues[0] : undefined;
   const currentRepository = data?.repositories.find((item) => item.id === selectedRepository);
-  const canWrite =
-    currentRepository?.permissions.includes("write") ||
-    currentRepository?.permissions.includes("admin");
+  const canWrite = canManageIssueWork(currentRepository?.permissions ?? []);
   const headingActions = !detailMode ? (
     <PrimaryLink href="/explore">探索儲存庫</PrimaryLink>
   ) : undefined;
@@ -433,28 +431,29 @@ export default function IssueBoard({
           <p>
             建立者：{current.publisher}；承接人：{current.assignee}
           </p>
-          {((current.assignee === data.userId && current.status === "active") ||
-            (current.publisher === data.userId && current.status === "review")) && (
-            <label>
-              說明
-              <textarea
-                maxLength={1000}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-              />
-            </label>
-          )}
-          {current.assignee === data.userId && current.status === "pending" && (
+          {canWrite &&
+            ((current.assignee === data.userId && current.status === "active") ||
+              (current.publisher === data.userId && current.status === "review")) && (
+              <label>
+                說明
+                <textarea
+                  maxLength={1000}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              </label>
+            )}
+          {canWrite && current.assignee === data.userId && current.status === "pending" && (
             <button type="button" onClick={() => operate("accept")}>
               {actionLabel.accept}
             </button>
           )}
-          {current.assignee === data.userId && current.status === "active" && (
+          {canWrite && current.assignee === data.userId && current.status === "active" && (
             <button type="button" disabled={!note.trim()} onClick={() => operate("report")}>
               {actionLabel.report}
             </button>
           )}
-          {current.publisher === data.userId && current.status === "review" && (
+          {canWrite && current.publisher === data.userId && current.status === "review" && (
             <>
               <button type="button" onClick={() => operate("approve")}>
                 {actionLabel.approve}
