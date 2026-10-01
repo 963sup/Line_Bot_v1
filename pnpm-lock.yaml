@@ -134,6 +134,9 @@ importers:
       '@line_bot_v1/daily-check-in':
         specifier: workspace:*
         version: link:../../packages/daily-check-in
+      '@line_bot_v1/discussion':
+        specifier: workspace:*
+        version: link:../../packages/discussion
       '@line_bot_v1/enterprise':
         specifier: workspace:*
         version: link:../../packages/enterprise
@@ -326,6 +329,28 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/discussion:
+    dependencies:
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

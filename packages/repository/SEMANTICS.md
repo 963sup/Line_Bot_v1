@@ -24,8 +24,6 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Discussion | discussion | authoritative | current | GitHub FPT: schema-discussions.json#Discussion |
-| DiscussionComment | discussion-comment | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionComment |
 | Label | repository-label | authoritative | current | GitHub FPT: schema-issues.json#Label |
 | Milestone | repository-milestone | authoritative | current | GitHub FPT: schema-issues.json#Milestone |
 | Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
@@ -40,7 +38,6 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | create-repository | required | implemented | Create a private User- or Organization-owned Repository with replay-safe owner authorization and immediate creator access. |
-| manage-discussions | not-asserted | data-only | Preserve Repository Discussion create/update/close/comment write semantics as current data without asserting runtime management. |
 | manage-repository | not-asserted |  | Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management. |
 | manage-repository-access | required | implemented | Manage Repository-owned direct User and Organization Team access grants with current qualification, replay safety and recoverable admin authority. |
 | manage-repository-address | required | implemented | Maintain the Repository address property used as the attendance clock point for current effective members. |
@@ -48,7 +45,6 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | manage-repository-milestones | not-asserted | data-only | Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management. |
 | manage-repository-star-lists | required | implemented | Manage replay-safe User curated Lists over the User's current Repository stars. |
 | manage-repository-stars | required | implemented | Manage User star/unstar interaction over Repository resources. |
-| read-discussions | required | implemented | Read authorized Repository Discussion lists, a Discussion body, and its comments without asserting Discussion write management. |
 | read-repository | required | implemented | Read Repository identity and public Repository locator data. |
 | read-repository-discovery | required | implemented | Read authorized Repository Trending and published Repository Star List projections without creating a new Explore authority. |
 | read-repository-labels | required | implemented | Read authorized Repository Label collections without asserting label create/update/delete management. |
@@ -64,6 +60,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | consumes | organization | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and effective participation when resolving access. |
 | provides | project | reference | repository | current-identity | Project references Repository without acquiring Repository authority. |
 | provides | attendance | query | repository | current-state | Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal. |
+| provides | discussion | stable-identity+query | repository | transaction-recheck | Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads without acquiring Repository authority. |
 | provides | issue | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
 
 ## Tactical Model Boundary

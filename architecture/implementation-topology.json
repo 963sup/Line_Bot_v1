@@ -74,6 +74,16 @@
         "@line_bot_v1/platform"
       ]
     },
+    "@line_bot_v1/discussion": {
+      "path": "packages/discussion",
+      "moduleKind": "domain-module",
+      "semanticOwner": "discussion",
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/namespace",
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository"
+      ]
+    },
     "@line_bot_v1/enterprise": {
       "path": "packages/enterprise",
       "moduleKind": "domain-module",
@@ -300,31 +310,6 @@
         }
       ],
       "dependsOn": ["@line_bot_v1/repository", "@line_bot_v1/source-control"]
-    },
-    "@line_bot_v1/discussion": {
-      "path": "packages/discussion",
-      "moduleKind": "domain-module",
-      "semanticOwner": "discussion",
-      "fptFiles": ["schema-discussions.json"],
-      "fptRoots": [
-        {
-          "file": "schema-discussions.json",
-          "symbol": "Discussion"
-        },
-        {
-          "file": "schema-discussions.json",
-          "symbol": "DiscussionComment"
-        },
-        {
-          "file": "schema-discussions.json",
-          "symbol": "DiscussionCategory"
-        },
-        {
-          "file": "schema-discussions.json",
-          "symbol": "DiscussionPoll"
-        }
-      ],
-      "dependsOn": ["@line_bot_v1/account", "@line_bot_v1/repository"]
     },
     "@line_bot_v1/gist": {
       "path": "packages/gist",
@@ -579,6 +564,7 @@
         "@line_bot_v1/assistant",
         "@line_bot_v1/attendance",
         "@line_bot_v1/daily-check-in",
+        "@line_bot_v1/discussion",
         "@line_bot_v1/enterprise",
         "@line_bot_v1/expense",
         "@line_bot_v1/identity-access",

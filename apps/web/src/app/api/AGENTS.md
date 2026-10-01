@@ -14,7 +14,7 @@
 | `/api/permissions` | Identity/Access；不能因 Web presenter 在 account 目錄就歸為 Account domain |
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
 | `/api/issues`、`/api/issues/{issueNumber}` | Issue owner transport；保留 Repository-scoped workbench/default、repository ID、owner/name selector 契約 |
-| `/api/discussions`、`/api/discussions/{discussionId}` | Repository Discussion/comment authorized GET；必須提供 `owner` + `name` |
+| `/api/discussions`、`/api/discussions/{discussionId}` | Discussion owner transport；Repository-scoped authorized GET，必須提供 `owner` + `name` |
 | `/api/repository-labels` | Repository Label authorized GET；必須提供 `owner` + `name` |
 | `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | Repository Milestone authorized GET；必須提供 `owner` + `name` |
 | `/api/repositories` | GET：Current User 的 authorized Repository collection；POST：Repository owner contract 的 replay-safe private Repository create |

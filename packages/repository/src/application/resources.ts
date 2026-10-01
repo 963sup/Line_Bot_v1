@@ -1,6 +1,5 @@
 import type { RepositorySelector } from "../contracts/selectors.js";
 import {
-  normalizeDiscussionId,
   normalizeRepositoryMilestoneNumber,
   normalizeRepositoryName,
   RepositoryError,
@@ -10,7 +9,6 @@ import type {
   RepositoryLabelCursor,
   RepositoryMilestoneCursor,
   RepositoryMilestoneStatus,
-  RepositoryResourceCursor,
   RepositoryResourceStore,
 } from "./ports/resources.js";
 
@@ -41,20 +39,6 @@ function parseJsonCursor(after: string | undefined): Record<string, unknown> | u
   } catch {
     throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
   }
-}
-
-function resourceCursor(after: string | undefined): RepositoryResourceCursor | undefined {
-  const value = parseJsonCursor(after);
-  if (!value) return undefined;
-  if (
-    !Number.isSafeInteger(value.at) ||
-    Number(value.at) < 0 ||
-    typeof value.id !== "string" ||
-    !value.id
-  ) {
-    throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
-  }
-  return { at: Number(value.at), id: value.id };
 }
 
 function labelCursor(after: string | undefined): RepositoryLabelCursor | undefined {
@@ -96,27 +80,6 @@ export function createRepositoryResources(deps: {
     return { userId: (await deps.activeUser(subject)).id };
   }
   return {
-    discussions: async (subject: string, selector: RepositorySelector, after?: string) => {
-      const selected = repositorySelector(selector);
-      const cursor = resourceCursor(after);
-      const actor = await identity(subject);
-      return deps.store().discussions(actor, selected, cursor);
-    },
-    discussion: async (
-      subject: string,
-      selector: RepositorySelector,
-      id: string,
-      commentsAfter?: string,
-    ) => {
-      const selected = repositorySelector(selector);
-      const selectedDiscussionId = normalizeDiscussionId(id);
-      if (selectedDiscussionId === null) {
-        throw new RepositoryError(400, "Discussion 識別碼不正確。");
-      }
-      const cursor = resourceCursor(commentsAfter);
-      const actor = await identity(subject);
-      return deps.store().discussion(actor, selected, selectedDiscussionId, cursor);
-    },
     labels: async (subject: string, selector: RepositorySelector, after?: string) => {
       const selected = repositorySelector(selector);
       const cursor = labelCursor(after);

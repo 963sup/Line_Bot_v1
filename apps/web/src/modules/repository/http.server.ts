@@ -1,4 +1,5 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { DiscussionError } from "@line_bot_v1/discussion/domain";
 import { IssueError } from "@line_bot_v1/issue/domain";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { normalizeRepositoryName, RepositoryError } from "@line_bot_v1/repository/domain";
@@ -81,6 +82,7 @@ export function issueFailure(error: unknown) {
 export function repositoryFailure(error: unknown) {
   const known =
     error instanceof IssueError ||
+    error instanceof DiscussionError ||
     error instanceof RepositoryError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;

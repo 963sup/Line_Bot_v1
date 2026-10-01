@@ -10,17 +10,16 @@ Repository owns:
 - Repository identity、visibility、Direct User / Organization Team access grants and User → Repository Star；
 - Repository Star List / List membership；
 - Repository Label、Repository Milestone and repository-scoped Issue number allocation；
-- Discussion / comment；
 - discovery projections derived from Repository / Star / immutable Issue event facts。
 
-Issue consumes Repository scope/access and repository-scoped number allocation without acquiring Repository authority. Project may reference Repository/Issue work but does not acquire either authority. Notifications only stores delivery references and does not acquire source truth.
+Issue consumes Repository scope/access and repository-scoped number allocation without acquiring Repository authority. Discussion consumes Repository scope/access without acquiring Repository authority. Project may reference Repository/Issue work but does not acquire either authority. Notifications only stores delivery references and does not acquire source truth.
 
 ## Invariants
 
 - Address mutation requires current effective Repository `admin`, expected version and exact replay. Public visibility and Star do not grant clock eligibility. Address deletion does not rewrite Attendance snapshots.
 
-- Every Discussion belongs to exactly one Repository.
-- Issue、Discussion、Notification are distinct concepts; Repository does not own Issue lifecycle.
+- Every Issue and Discussion belongs to exactly one Repository, but each lifecycle remains with its own semantic owner.
+- Issue、Discussion、Notification are distinct concepts; Repository does not own Issue or Discussion lifecycle.
 - Star/unstar is idempotent and never grants Repository access.
 - Protected read/write and assignment always use current effective Repository access.
 - Repository access grant is not OrganizationMembership or TeamMembership；Repository stores only its own User/Team grant facts and derives effective access from current upstream qualification.
@@ -37,4 +36,4 @@ Runtime owner: `packages/repository`. Discovery projection: `packages/explore`. 
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
 
-Adjacent owners: [Issue](issue.md) · [Project](project.md) · [Notifications](notifications.md) · [Organization](organization.md) · [Authorization](../reference/security/permissions.md)
+Adjacent owners: [Issue](issue.md) · [Discussion](discussion.md) · [Project](project.md) · [Notifications](notifications.md) · [Organization](organization.md) · [Authorization](../reference/security/permissions.md)

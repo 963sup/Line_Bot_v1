@@ -18,6 +18,7 @@
     "@line_bot_v1/assistant": "workspace:*",
     "@line_bot_v1/attendance": "workspace:*",
     "@line_bot_v1/daily-check-in": "workspace:*",
+    "@line_bot_v1/discussion": "workspace:*",
     "@line_bot_v1/enterprise": "workspace:*",
     "@line_bot_v1/expense": "workspace:*",
     "@line_bot_v1/identity-access": "workspace:*",

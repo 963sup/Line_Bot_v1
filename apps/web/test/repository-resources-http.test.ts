@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { createRepositoryResources } from "@line_bot_v1/repository/application/resources";
+import type { createDiscussions } from "@line_bot_v1/discussion/application/discussions";
 import {
-  repositoryDiscussionRequest,
-  repositoryDiscussionsRequest,
+  discussionDetailRequest,
+  discussionListRequest,
   repositoryLabelsRequest,
   repositoryMilestoneRequest,
   repositoryMilestonesRequest,
@@ -11,7 +11,7 @@ import {
 import { loginReturnUrl } from "../src/shared/presentation/entry-route";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error";
 
-type RepositoryResources = ReturnType<typeof createRepositoryResources>;
+type Discussions = ReturnType<typeof createDiscussions>;
 
 const repository = {
   id: "repo-1",
@@ -20,7 +20,7 @@ const repository = {
   capability: "read" as const,
 };
 
-test("repository resources HTTP reads path selector and cursor from query", async () => {
+test("Discussion HTTP reads Repository path selector and cursor from query", async () => {
   let received:
     | {
         subject: string;
@@ -28,16 +28,16 @@ test("repository resources HTTP reads path selector and cursor from query", asyn
         after?: string;
       }
     | undefined;
-  const resources: Pick<RepositoryResources, "discussions"> = {
-    discussions: async (subject, selector, after) => {
+  const discussions: Pick<Discussions, "list"> = {
+    list: async (subject, selector, after) => {
       received = { subject, selector, after };
       return { repository, discussions: [], next: null };
     },
   };
 
-  const response = await repositoryDiscussionsRequest(
+  const response = await discussionListRequest(
     new Request("https://example.com/api/discussions?owner=Octo&name=Hello-World&after=abc"),
-    resources,
+    discussions,
     async () => "line-user",
   );
 
@@ -50,17 +50,17 @@ test("repository resources HTTP reads path selector and cursor from query", asyn
   });
 });
 
-test("repository resources HTTP rejects duplicate query and ambiguous milestone numbers", async () => {
-  const discussions = await repositoryDiscussionsRequest(
+test("Repository-scoped HTTP rejects duplicate query and ambiguous milestone numbers", async () => {
+  const discussion = await discussionListRequest(
     new Request("https://example.com/api/discussions?owner=octo&owner=evil&name=repo"),
     {
-      discussions: async () => {
+      list: async () => {
         throw new Error("not reached");
       },
     },
     async () => "line-user",
   );
-  assert.equal(discussions.status, 400);
+  assert.equal(discussion.status, 400);
 
   const milestone = await repositoryMilestoneRequest(
     new Request("https://example.com/api/repository-milestones/1e2?owner=octo&name=repo"),
@@ -75,7 +75,7 @@ test("repository resources HTTP rejects duplicate query and ambiguous milestone 
   assert.equal(milestone.status, 400);
 });
 
-test("repository resources HTTP maps missing identity and unavailable source", async () => {
+test("Repository resource HTTP maps missing identity and unavailable source", async () => {
   const noIdentity = await repositoryLabelsRequest(
     new Request("https://example.com/api/repository-labels?owner=octo&name=repo"),
     {
@@ -105,12 +105,12 @@ test("repository resources HTTP maps missing identity and unavailable source", a
   });
 });
 
-test("repository resources HTTP exposes detail resources through owner contract", async () => {
-  const discussion = await repositoryDiscussionRequest(
+test("Repository-scoped HTTP exposes Discussion and Milestone detail contracts", async () => {
+  const discussion = await discussionDetailRequest(
     new Request("https://example.com/api/discussions/d1?owner=octo&name=repo&commentsAfter=c1"),
     "d1",
     {
-      discussion: async (subject, selector, id, commentsAfter) => ({
+      detail: async (subject, selector, id, commentsAfter) => ({
         repository,
         discussion: {
           id,
@@ -158,7 +158,7 @@ test("repository resources HTTP exposes detail resources through owner contract"
   assert.equal(((await milestone.json()) as { milestone: { number: number } }).milestone.number, 2);
 });
 
-test("repository resource login continuation keeps resource paths and drops unrelated state", () => {
+test("Repository resource login continuation keeps resource paths and drops unrelated state", () => {
   for (const path of [
     "/octo/hello-world/discussions",
     "/octo/hello-world/discussions/D_kwDOA1",

@@ -1,4 +1,4 @@
--- Repository-owned Discussion objects.
+-- Discussion-owned objects scoped to one Repository.
 
 -- Repository conversations. Discussion is distinct from notification delivery.
 

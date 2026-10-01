@@ -1,3 +1,4 @@
+import type { createDiscussions } from "@line_bot_v1/discussion/application/discussions";
 import type { createRepositoryResources } from "@line_bot_v1/repository/application/resources";
 import {
   normalizeRepositoryMilestoneNumber,
@@ -6,6 +7,7 @@ import {
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
 
+type Discussions = ReturnType<typeof createDiscussions>;
 type RepositoryResources = ReturnType<typeof createRepositoryResources>;
 type RequestIdentity = (request: Request) => Promise<string>;
 
@@ -26,35 +28,31 @@ function listCursor(params: URLSearchParams, name = "after") {
   return single(params, name);
 }
 
-export async function repositoryDiscussionsRequest(
+export async function discussionListRequest(
   request: Request,
-  resources: Pick<RepositoryResources, "discussions">,
+  discussions: Pick<Discussions, "list">,
   requestIdentity: RequestIdentity,
 ) {
   try {
     const params = new URL(request.url).searchParams;
     return jsonResponse(
-      await resources.discussions(
-        await requestIdentity(request),
-        selector(params),
-        listCursor(params),
-      ),
+      await discussions.list(await requestIdentity(request), selector(params), listCursor(params)),
     );
   } catch (error) {
     return repositoryFailure(error);
   }
 }
 
-export async function repositoryDiscussionRequest(
+export async function discussionDetailRequest(
   request: Request,
   discussionId: string,
-  resources: Pick<RepositoryResources, "discussion">,
+  discussions: Pick<Discussions, "detail">,
   requestIdentity: RequestIdentity,
 ) {
   try {
     const params = new URL(request.url).searchParams;
     return jsonResponse(
-      await resources.discussion(
+      await discussions.detail(
         await requestIdentity(request),
         selector(params),
         discussionId,

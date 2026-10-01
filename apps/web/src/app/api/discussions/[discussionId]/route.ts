@@ -1,5 +1,5 @@
-import { repositoryDiscussionRequest } from "../../../../modules/repository/resources-http.server";
-import { repositoryResources } from "../../_composition/repository-resources.server";
+import { discussionDetailRequest } from "../../../../modules/repository/resources-http.server";
+import { discussions } from "../../_composition/discussions.server";
 import { requestLineIdentity } from "../../_composition/request-identity.server";
 
 export const runtime = "nodejs";
@@ -10,10 +10,5 @@ export async function GET(
   context: { params: Promise<{ discussionId: string }> },
 ) {
   const { discussionId } = await context.params;
-  return repositoryDiscussionRequest(
-    request,
-    discussionId,
-    repositoryResources,
-    requestLineIdentity,
-  );
+  return discussionDetailRequest(request, discussionId, discussions, requestLineIdentity);
 }

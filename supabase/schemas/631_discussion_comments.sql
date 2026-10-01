@@ -1,4 +1,4 @@
--- Repository-owned Discussion comment objects.
+-- Discussion-owned comment objects.
 
 create table app_private."discussion_comments" (
   "id" text not null,
