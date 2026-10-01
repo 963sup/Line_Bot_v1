@@ -2,6 +2,7 @@ export { normalizeRepositoryMilestoneNumber } from "./domain/milestone/value-obj
 export type {
   RepositoryAddress,
   RepositorySummary,
+  RepositoryVisibility,
 } from "./domain/repository/entities/repository.js";
 export { RepositoryError } from "./domain/repository/errors/repository-error.js";
 export {
