@@ -19,8 +19,7 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
   const [owners, setOwners] = useState<readonly RepositoryOwnerOption[] | null>(null);
   const [ownerAccountId, setOwnerAccountId] = useState("");
   const [name, setName] = useState("");
-  const [visibility, setVisibility] =
-    useState<RepositoryCreateCommand["visibility"]>("private");
+  const [visibility, setVisibility] = useState<RepositoryCreateCommand["visibility"]>("private");
   const [pending, setPending] = useState<RepositoryCreateCommand | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -198,8 +197,8 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
               </select>
             </label>
             <p className="crud-lifecycle-note">
-              INTERNAL 只適用於目前連結 active Enterprise 的 Organization owner；visibility
-              不會建立 RepositoryPermission grant。
+              INTERNAL 只適用於目前連結 active Enterprise 的 Organization owner；visibility 不會建立
+              RepositoryPermission grant。
             </p>
             <button disabled={busy || !selectedOwner || !name.trim()}>建立 Repository</button>
           </form>
