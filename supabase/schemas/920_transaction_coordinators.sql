@@ -337,6 +337,8 @@ begin
     raise exception 'provision_repository_input_invalid' using errcode = '22023';
   end if;
 
+  perform pg_catalog.pg_advisory_xact_lock(71020260912::bigint);
+
   perform 1 from app_private.users
     where id=p_actor_user_id and status='active'
     for update;
@@ -383,6 +385,19 @@ begin
     for share;
   if not found then
     raise exception 'provision_repository_owner_login_missing' using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+    from app_private.repository_name_history h
+    join app_private.repositories existing_repository
+      on existing_repository.id=h.repository_id
+    where existing_repository.owner_account_id=p_owner_account_id
+      and existing_repository.owner_account_kind=p_owner_account_kind
+      and lower(h.old_name)=lower(p_name)
+  ) then
+    raise exception 'repository_name_history_reserved'
+      using errcode='23505', constraint='repository_name_history_reserved';
   end if;
 
   insert into app_private.repositories(
