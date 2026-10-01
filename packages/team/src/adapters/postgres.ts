@@ -266,7 +266,7 @@ export class PostgresTeamRepository implements TeamRepository {
         const me = members.find((member) => member.userId === actor.userId);
 
         if (command.action === "rename-team") {
-          requireTeamMaintainer(Boolean(me?.isMaintainer));
+          requireTeamMaintainer(await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)));
           teamVersion(team.version, command.expectedVersion);
           teamAssert(team.name !== command.name, 409, "團隊名稱沒有變更。");
           const slug = teamSlugFromName(command.name);
@@ -306,7 +306,9 @@ export class PostgresTeamRepository implements TeamRepository {
           if (command.action === "membership") {
             const selfRemoval =
               command.targetUserId === actor.userId && command.status === "removed";
-            if (!selfRemoval) requireTeamMaintainer(me.isMaintainer);
+            if (!selfRemoval) {
+              requireTeamMaintainer(await authorizeTeamMaintainer(async () => me.isMaintainer));
+            }
             if (command.status === "active") {
               const eligible = await activeOrganizationParticipantIds(
                 sql,
@@ -340,7 +342,7 @@ export class PostgresTeamRepository implements TeamRepository {
               [teamId, command.targetUserId, command.status],
             );
           } else {
-            requireTeamMaintainer(me.isMaintainer);
+            requireTeamMaintainer(await authorizeTeamMaintainer(async () => me.isMaintainer));
             teamAssert(
               target.status === "active",
               409,
