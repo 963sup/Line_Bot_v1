@@ -71,33 +71,33 @@ export function TeamWorkspace({
           {data.organizationAccountId && (
             <ul className="crud-entity-list" aria-label="團隊列表">
               {data.teams.map((team) => (
-                  <li key={team.id}>
-                    <button
-                      type="button"
-                      className="crud-entity-item"
-                      aria-current={data.team?.id === team.id ? "true" : undefined}
-                      onClick={() => {
-                        setDraft(null);
-                        selectTeam(data.organizationAccountId ?? "", team.id);
-                      }}
-                    >
-                      <span>
-                        <strong>{team.name}</strong>
-                        <small>
-                          {team.privacy === "SECRET" ? "Secret" : "Visible"} ·{" "}
-                          {team.membershipStatus === "active"
-                            ? team.membershipType === "CHILD_TEAM"
-                              ? "Child-team member"
-                              : "Member"
-                            : team.membershipStatus === "pending"
-                              ? "Pending"
-                              : "Discoverable"}
-                        </small>
-                      </span>
-                      <span aria-hidden="true">›</span>
-                    </button>
-                  </li>
-                ))}
+                <li key={team.id}>
+                  <button
+                    type="button"
+                    className="crud-entity-item"
+                    aria-current={data.team?.id === team.id ? "true" : undefined}
+                    onClick={() => {
+                      setDraft(null);
+                      selectTeam(data.organizationAccountId ?? "", team.id);
+                    }}
+                  >
+                    <span>
+                      <strong>{team.name}</strong>
+                      <small>
+                        {team.privacy === "SECRET" ? "Secret" : "Visible"} ·{" "}
+                        {team.membershipStatus === "active"
+                          ? team.membershipType === "CHILD_TEAM"
+                            ? "Child-team member"
+                            : "Member"
+                          : team.membershipStatus === "pending"
+                            ? "Pending"
+                            : "Discoverable"}
+                      </small>
+                    </span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </li>
+              ))}
               {data.teams.length === 0 && <li className="empty-copy">目前沒有可查看的團隊。</li>}
             </ul>
           )}
@@ -344,8 +344,7 @@ export function TeamWorkspace({
                     onChange={(event) =>
                       setDraft({
                         ...draft,
-                        notificationSetting:
-                          event.target.value as typeof draft.notificationSetting,
+                        notificationSetting: event.target.value as typeof draft.notificationSetting,
                       })
                     }
                   >
