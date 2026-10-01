@@ -7,7 +7,6 @@ export {
   canOpenIssue,
   canReadIssueScope,
   canUseIssueOperation,
-  type IssueCreationPolicy,
   type IssueRepositoryOperation,
 } from "./domain/issue/policies/repository-issue-operation.js";
 export { normalizeIssueNumber } from "./domain/issue/value-objects/issue-number.js";
