@@ -77,6 +77,76 @@ join app_private.organization_memberships om
 where eo.status = 'active';
 
 
+-- Team hierarchy derives effective membership without copying TeamMembership truth.
+-- A direct membership is IMMEDIATE in its source Team and CHILD_TEAM in every ancestor Team.
+-- source_team_id/depth preserve provenance when one User reaches an ancestor through multiple paths.
+create view app_private.team_effective_memberships
+with (security_invoker = true)
+as
+with recursive hierarchy(team_id, source_team_id, organization_account_id, depth) as (
+  select t.id, t.id, t.organization_account_id, 0
+  from app_private.teams t
+  union all
+  select parent.id, h.source_team_id, h.organization_account_id, h.depth + 1
+  from hierarchy h
+  join app_private.teams current_team
+    on current_team.id = h.team_id
+      and current_team.organization_account_id = h.organization_account_id
+  join app_private.teams parent
+    on parent.id = current_team.parent_team_id
+      and parent.organization_account_id = h.organization_account_id
+)
+select
+  h.team_id,
+  tm.user_id,
+  case when h.depth = 0 then 'IMMEDIATE'::text else 'CHILD_TEAM'::text end as membership_type,
+  h.source_team_id,
+  tm.version as source_membership_version,
+  h.depth
+from hierarchy h
+join app_private.team_memberships tm
+  on tm.team_id = h.source_team_id
+    and tm.status = 'active';
+
+
+-- Repository Team grants consume effective Team membership but retain both the grant Team and
+-- the direct membership source. Revoking one hierarchy/membership source therefore removes only
+-- that source row; any independent source remains available to the aggregate access projection.
+create view app_private.repository_team_effective_access_sources
+with (security_invoker = true)
+as
+select
+  a.repository_id,
+  em.user_id,
+  a.team_id as grant_team_id,
+  em.source_team_id,
+  em.membership_type,
+  em.depth,
+  a.capability as permission,
+  a.version as grant_version,
+  em.source_membership_version
+from app_private.repository_team_access a
+join app_private.repositories r
+  on r.id = a.repository_id
+    and r.owner_account_kind = 'ORGANIZATION'
+    and r.owner_account_id = a.organization_id
+join app_private.organizations o
+  on o.account_id = a.organization_id
+    and o.status = 'active'
+join app_private.teams grant_team
+  on grant_team.id = a.team_id
+    and grant_team.organization_account_id = a.organization_id
+join app_private.team_effective_memberships em
+  on em.team_id = a.team_id
+join app_private.organization_memberships om
+  on om.organization_account_id = a.organization_id
+    and om.user_id = em.user_id
+    and om.status = 'active'
+join app_private.users u
+  on u.id = em.user_id
+    and u.status = 'active';
+
+
 -- Repository grants remain owner-local facts. This projection resolves current effective
 -- User access from a User-owned Repository, explicit User grants and Organization Team grants
 -- without transferring TeamMembership authority into Repository.
@@ -125,32 +195,13 @@ with candidate_permissions as (
 
   union all
 
-  -- Team grants retain their exact permission while Team/Organization qualification remains current.
+  -- Team grants consume traceable effective membership sources; hierarchy alone never grants
+  -- Repository access unless the ancestor Team itself has an explicit Repository grant.
   select
-    a.repository_id,
-    tm.user_id,
-    a.capability as permission
-  from app_private.repository_team_access a
-  join app_private.repositories r
-    on r.id = a.repository_id
-      and r.owner_account_kind = 'ORGANIZATION'
-      and r.owner_account_id = a.organization_id
-  join app_private.organizations o
-    on o.account_id = a.organization_id
-      and o.status = 'active'
-  join app_private.teams t
-    on t.id = a.team_id
-      and t.organization_account_id = a.organization_id
-  join app_private.team_memberships tm
-    on tm.team_id = a.team_id
-      and tm.status = 'active'
-  join app_private.organization_memberships om
-    on om.organization_account_id = a.organization_id
-      and om.user_id = tm.user_id
-      and om.status = 'active'
-  join app_private.users u
-    on u.id = tm.user_id
-      and u.status = 'active'
+    s.repository_id,
+    s.user_id,
+    s.permission
+  from app_private.repository_team_effective_access_sources s
 )
 select
   repository_id,
