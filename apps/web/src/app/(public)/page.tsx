@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { hasEntryContinuationKeys } from "../../shared/presentation/entry-destination";
 import { lineMiniApp } from "../../shared/server/line-mini-app";
 import PublicEntry from "./_entry/public-entry";
 
 export const dynamic = "force-dynamic";
 
-export default function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const initialContinuing = hasEntryContinuationKeys(Object.keys(params));
   return (
     <main className="public-gateway">
       <div className="public-gateway-brand">
@@ -16,7 +23,7 @@ export default function Page() {
       </div>
 
       <div className="public-gateway-actions">
-        <PublicEntry liffId={lineMiniApp().liffId} />
+        <PublicEntry initialContinuing={initialContinuing} liffId={lineMiniApp().liffId} />
         <Link className="public-gateway-primary" href="/home">
           使用 LINE 進入
         </Link>
