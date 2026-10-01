@@ -12,8 +12,8 @@ import type {
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
   hasRepositoryPermission,
-  type RepositoryPermission,
   RepositoryError,
+  type RepositoryPermission,
 } from "../../domain.js";
 
 type RepositoryRow = {

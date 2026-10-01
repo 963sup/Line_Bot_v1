@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import { type RepositoryPermission, RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
 import {
   accessibleRepositories,
   repositoryScope,

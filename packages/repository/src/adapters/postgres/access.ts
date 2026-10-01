@@ -6,8 +6,8 @@ import {
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
-  type RepositoryPermission,
   RepositoryError,
+  type RepositoryPermission,
   type RepositorySummary,
 } from "../../domain.js";
 

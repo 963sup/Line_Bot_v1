@@ -10,10 +10,10 @@ import type {
 } from "../../application/ports/address.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
-  type RepositoryAddress,
   hasRepositoryPermission,
-  type RepositoryPermission,
+  type RepositoryAddress,
   RepositoryError,
+  type RepositoryPermission,
 } from "../../domain.js";
 
 type RepositoryRow = {

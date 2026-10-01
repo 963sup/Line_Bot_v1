@@ -1,4 +1,5 @@
 import type { GovernanceReceipt } from "@line_bot_v1/identity-access/contracts/governance";
+import type { RepositoryPermission } from "@line_bot_v1/repository/domain";
 
 export type EnterpriseAffiliationSource = Readonly<{
   kind: "direct" | "organization";
@@ -50,7 +51,7 @@ type EnterpriseOutsideRepositoryCollaboratorProjection = Readonly<{
   organizationAccountId: string;
   repositoryId: string;
   userId: string;
-  capability: "read" | "triage" | "write" | "admin";
+  capability: RepositoryPermission;
   grantVersion: number;
 }>;
 

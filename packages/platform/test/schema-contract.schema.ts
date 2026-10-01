@@ -373,7 +373,7 @@ test("repository effective access combines direct and active same-organization T
   assert.deepEqual(effective.rows, [
     { user_id: "removed-team-user", permissions: ["write"] },
     { user_id: "repository-owner", permissions: ["read"] },
-    { user_id: "team-user", permissions: ["write"] },
+    { user_id: "team-user", permissions: ["triage", "write"] },
   ]);
 
   await pg.query(
@@ -386,7 +386,7 @@ test("repository effective access combines direct and active same-organization T
   );
   assert.deepEqual(afterRemoval.rows, [
     { user_id: "repository-owner", permissions: ["read"] },
-    { user_id: "team-user", permissions: ["write"] },
+    { user_id: "team-user", permissions: ["triage", "write"] },
   ]);
 
   await assert.rejects(

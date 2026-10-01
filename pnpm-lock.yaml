@@ -376,6 +376,9 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

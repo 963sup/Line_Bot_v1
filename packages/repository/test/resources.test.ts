@@ -47,7 +47,7 @@ test("Repository resources validate selectors and typed cursors before persisten
     labels: async (...args: Parameters<RepositoryResourceStore["labels"]>) => {
       calls.push(args);
       return {
-        repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", capability: "read" },
+        repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", permissions: ["read"] },
         labels: [],
         next: null,
       };
@@ -177,7 +177,7 @@ test("Labels and milestones map canonical Repository-owned data", async (t) => {
     [3, 2],
   );
   assert.deepEqual(await store.milestone({ userId: "reader" }, { repositoryId: "repo-a" }, 2), {
-    repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", capability: "read" },
+    repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", permissions: ["read"] },
     milestone: {
       id: "milestone-two",
       repositoryId: "repo-a",

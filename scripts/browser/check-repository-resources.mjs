@@ -57,13 +57,13 @@ const repository = {
   id: "repo-operations",
   ownerLogin: "acme",
   name: "Operations",
-  capability: "admin",
+  permissions: ["admin"],
 };
 const otherRepository = {
   id: "repo-operations-private",
   ownerLogin: "private",
   name: "Operations",
-  capability: "read",
+  permissions: ["read"],
 };
 const firstDiscussion = {
   id: "discussion-alpha",

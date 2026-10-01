@@ -6,8 +6,8 @@ export type {
 export { RepositoryError } from "./domain/repository/errors/repository-error.js";
 export {
   hasRepositoryPermission,
-  repositoryPermissions,
   type RepositoryPermission,
+  repositoryPermissions,
 } from "./domain/repository/value-objects/repository-capability.js";
 export { normalizeRepositoryName } from "./domain/repository/value-objects/repository-name.js";
 export { normalizeRepositoryStarListDescription } from "./domain/star-list/value-objects/star-list-description.js";

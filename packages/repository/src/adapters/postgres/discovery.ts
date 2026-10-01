@@ -8,7 +8,7 @@ import type {
   RepositoryStarListDiscovery,
   TrendingRepository,
 } from "../../contracts/discovery.js";
-import { type RepositoryPermission, RepositoryError } from "../../domain.js";
+import { RepositoryError, type RepositoryPermission } from "../../domain.js";
 import {
   readVisibleStarListRepositoryRows,
   type VisibleStarListRepositoryRow,

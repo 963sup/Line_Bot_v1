@@ -1,9 +1,9 @@
 import type { RepositorySelector } from "../contracts/selectors.js";
 import {
   normalizeRepositoryName,
-  repositoryPermissions,
-  type RepositoryPermission,
   RepositoryError,
+  type RepositoryPermission,
+  repositoryPermissions,
 } from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type {
