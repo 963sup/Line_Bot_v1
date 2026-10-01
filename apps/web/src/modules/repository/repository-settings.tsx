@@ -287,7 +287,12 @@ export default function RepositorySettings({
           </h2>
           <p>
             Repository 地址就是打卡點；你目前是
-            {data.repository.actorPermissions.includes("admin") ? "管理員" : "成員"}。
+            {data.repository.actorIsOwner
+              ? "擁有者"
+              : data.repository.actorPermissions.includes("admin")
+                ? "管理員"
+                : "成員"}
+            。
           </p>
           {data.repository.actorPermissions.includes("admin") ? (
             <form
