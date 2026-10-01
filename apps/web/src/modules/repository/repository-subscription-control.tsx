@@ -241,9 +241,9 @@ export default function RepositorySubscriptionControl({
               disabled={busy || Boolean(pending)}
               onChange={(event) => setState(event.target.value as RepositorySubscriptionState)}
             >
-              <option value="SUBSCRIBED">SUBSCRIBED · 所有對話通知</option>
-              <option value="UNSUBSCRIBED">UNSUBSCRIBED · 只保留參與／@mention 通知</option>
-              <option value="IGNORED">IGNORED · 不通知</option>
+              <option value="SUBSCRIBED">SUBSCRIBED · 儲存「訂閱」偏好</option>
+              <option value="UNSUBSCRIBED">UNSUBSCRIBED · 儲存「一般未訂閱」偏好</option>
+              <option value="IGNORED">IGNORED · 儲存「忽略」偏好</option>
             </select>
           </label>
           <p className="crud-lifecycle-note">
