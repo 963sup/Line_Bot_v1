@@ -1,18 +1,31 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
+import { type RepositoryCapability, RepositoryError } from "@line_bot_v1/repository/domain";
+import {
+  accessibleRepositories,
+  repositoryScope,
+  resolveAuthorizedRepositoryId,
+} from "@line_bot_v1/repository/postgres/access";
+import { allocateRepositoryIssueNumber } from "@line_bot_v1/repository/postgres/issue-number";
 import type {
   IssueCommand,
   IssueIdentity,
   IssueSnapshot,
   IssueStore,
 } from "../application/ports/issues.js";
-import type { RepositorySelector } from "../application/ports/selectors.js";
-import { type Issue, IssueError, type RepositoryCapability, transitionIssue } from "../domain.js";
-import {
-  accessibleRepositories,
-  repositoryScope,
-  resolveAuthorizedRepositoryId,
-} from "./postgres/access.js";
+import { type Issue, IssueError, transitionIssue } from "../domain.js";
+
+async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof RepositoryError) {
+      throw new IssueError(error.status, error.message);
+    }
+    throw error;
+  }
+}
 
 type IssueRow = {
   id: string;
@@ -61,14 +74,14 @@ export class PostgresIssueStore implements IssueStore {
     page?: { after?: { at: number; id: string }; status?: string },
   ): Promise<IssueSnapshot> {
     return this.db.transaction(async (sql) => {
-      const available = await accessibleRepositories(sql, who.userId);
+      const available = await repositoryOperation(() => accessibleRepositories(sql, who.userId));
       const selectedId = selector
-        ? await resolveAuthorizedRepositoryId(sql, who, selector)
+        ? await repositoryOperation(() => resolveAuthorizedRepositoryId(sql, who, selector))
         : available[0]?.id;
       if (!selectedId) {
         return { userId: who.userId, repositories: [], participants: [], issues: [], events: [] };
       }
-      const selected = await repositoryScope(sql, who, selectedId);
+      const selected = await repositoryOperation(() => repositoryScope(sql, who, selectedId));
       const rows = (
         await sql.query(
           `SELECT * FROM issues
@@ -131,9 +144,11 @@ export class PostgresIssueStore implements IssueStore {
     selector: RepositorySelector,
   ): Promise<IssueSnapshot> {
     return this.db.transaction(async (sql) => {
-      const repositoryId = await resolveAuthorizedRepositoryId(sql, who, selector);
-      const selected = await repositoryScope(sql, who, repositoryId);
-      const available = await accessibleRepositories(sql, who.userId);
+      const repositoryId = await repositoryOperation(() =>
+        resolveAuthorizedRepositoryId(sql, who, selector),
+      );
+      const selected = await repositoryOperation(() => repositoryScope(sql, who, repositoryId));
+      const available = await repositoryOperation(() => accessibleRepositories(sql, who.userId));
       const row = (
         await sql.query("SELECT * FROM issues WHERE repository_id=$1 AND number=$2", [
           repositoryId,
@@ -166,7 +181,9 @@ export class PostgresIssueStore implements IssueStore {
   execute(who: IssueIdentity, command: IssueCommand, now: number): Promise<Issue> {
     const commandFingerprint = fingerprint(command);
     return this.db.transaction(async (sql) => {
-      const selected = await repositoryScope(sql, who, command.repositoryId);
+      const selected = await repositoryOperation(() =>
+        repositoryScope(sql, who, command.repositoryId),
+      );
       if (!writable(selected.repository.capability)) {
         throw new IssueError(403, "需要 Repository write 或 admin 權限。");
       }
@@ -199,17 +216,9 @@ export class PostgresIssueStore implements IssueStore {
           throw new IssueError(403, "承接人沒有此 Repository 的存取權限。");
         }
         const issueId = randomUUID();
-        const numbered = (
-          await sql.query(
-            `UPDATE repositories
-             SET next_issue_number=next_issue_number+1
-             WHERE id=$1
-             RETURNING next_issue_number-1 AS number`,
-            [command.repositoryId],
-          )
-        ).rows[0] as { number: number | string } | undefined;
-        if (!numbered) throw new IssueError(404, "找不到 Repository。");
-        const number = Number(numbered.number);
+        const number = await repositoryOperation(() =>
+          allocateRepositoryIssueNumber(sql, command.repositoryId),
+        );
         await sql.query(
           `INSERT INTO issues(
              id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
@@ -290,5 +299,3 @@ export class PostgresIssueStore implements IssueStore {
     });
   }
 }
-
-export { PostgresRepositoryStarStore } from "./postgres/stars.js";

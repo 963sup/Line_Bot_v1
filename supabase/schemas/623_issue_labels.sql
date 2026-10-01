@@ -1,4 +1,4 @@
--- Issue → Repository Label relationship. Both objects remain Repository-owned and scope cannot cross Repository.
+-- Issue → Repository Label relationship. Issue remains Issue-owned; Label remains Repository-owned; scope cannot cross Repository.
 
 create table app_private.issue_labels (
   repository_id text not null,

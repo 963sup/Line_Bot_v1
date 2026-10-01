@@ -2,14 +2,13 @@ import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type {
-  RepositoryActivityItem,
   RepositoryDiscoveryOptions,
   RepositoryDiscoverySnapshot,
   RepositoryDiscoveryStore,
   RepositoryStarListDiscovery,
   TrendingRepository,
 } from "../../contracts/discovery.js";
-import { IssueError, type RepositoryCapability } from "../../domain.js";
+import { type RepositoryCapability, RepositoryError } from "../../domain.js";
 import {
   readVisibleStarListRepositoryRows,
   type VisibleStarListRepositoryRow,
@@ -33,20 +32,6 @@ type PublishedListRow = {
   name: string;
   description: string;
   updated_at: number | string;
-};
-
-type ActivityRow = {
-  issue_id: string;
-  version: number;
-  actor: string;
-  action: string;
-  at: number | string;
-  number: number | string;
-  title: string;
-  repository_id: string;
-  owner_account_id: string;
-  owner_account_kind: "USER" | "ORGANIZATION";
-  repository_name: string;
 };
 
 const accountKey = (id: string, kind: "USER" | "ORGANIZATION") => `${id}:\0:${kind}`;
@@ -120,7 +105,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
 
       return selected.map((row) => {
         const ownerLogin = loginByAccount.get(accountKey(row.owner_user_id, "USER"));
-        if (!ownerLogin) throw new IssueError(409, "List owner locator 不可用。");
+        if (!ownerLogin) throw new RepositoryError(409, "List owner locator 不可用。");
         const repositories = visibleByList.get(row.id) ?? [];
         return {
           id: row.id,
@@ -134,7 +119,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
               accountKey(repository.owner_account_id, repository.owner_account_kind),
             );
             if (!repositoryOwnerLogin) {
-              throw new IssueError(409, "Repository owner locator 不可用。");
+              throw new RepositoryError(409, "Repository owner locator 不可用。");
             }
             return {
               id: repository.repository_id,
@@ -173,33 +158,13 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
         )
       ).rows as TrendingRow[];
 
-      const activityRows = (
-        await sql.query(
-          `SELECT e.issue_id,e.version,e.actor,e.action,e.at,
-                  i.number,i.title,
-                  r.id AS repository_id,r.owner_account_id,r.owner_account_kind,
-                  r.name AS repository_name
-           FROM issue_events e
-           JOIN issues i ON i.id=e.issue_id
-           JOIN repositories r ON r.id=i.repository_id
-           JOIN repository_effective_access a
-             ON a.repository_id=r.id AND a.user_id=$1
-           ORDER BY e.at DESC,e.issue_id,e.version DESC
-           LIMIT $2`,
-          [userId, options.activityLimit],
-        )
-      ).rows as ActivityRow[];
-
-      const logins = await readAccountLogins(sql, [
-        ...trendingRows.map((row) => ({
+      const logins = await readAccountLogins(
+        sql,
+        trendingRows.map((row) => ({
           id: row.owner_account_id,
           kind: row.owner_account_kind,
         })),
-        ...activityRows.flatMap((row) => [
-          { id: row.owner_account_id, kind: row.owner_account_kind },
-          { id: row.actor, kind: "USER" as const },
-        ]),
-      ]);
+      );
       const loginByAccount = new Map(
         logins.map((login) => [accountKey(login.id, login.kind), login.login]),
       );
@@ -208,7 +173,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
         const ownerLogin = loginByAccount.get(
           accountKey(row.owner_account_id, row.owner_account_kind),
         );
-        if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
+        if (!ownerLogin) throw new RepositoryError(409, "Repository owner locator 不可用。");
         return {
           id: row.id,
           ownerLogin,
@@ -221,31 +186,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
         };
       });
 
-      const activity: RepositoryActivityItem[] = activityRows.map((row) => {
-        const ownerLogin = loginByAccount.get(
-          accountKey(row.owner_account_id, row.owner_account_kind),
-        );
-        if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
-        const actorLogin = loginByAccount.get(accountKey(row.actor, "USER"));
-        if (!actorLogin) throw new IssueError(409, "Repository activity actor locator 不可用。");
-        return {
-          id: `${row.issue_id}:${row.version}`,
-          occurredAt: Number(row.at),
-          actorLogin,
-          action: row.action,
-          repository: {
-            id: row.repository_id,
-            ownerLogin,
-            name: row.repository_name,
-          },
-          issue: {
-            number: Number(row.number),
-            title: row.title,
-          },
-        };
-      });
-
-      return { trending, activity };
+      return { trending };
     });
   }
 }

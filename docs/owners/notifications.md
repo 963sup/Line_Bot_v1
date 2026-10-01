@@ -10,7 +10,7 @@ Notifications owns user-facing Notification facts, recipient read state, and del
 
 ## Does not own
 
-- Issue lifecycle or discussion content; those remain in [Repository](repository.md).
+- Issue lifecycle remains in [Issue](issue.md); discussion content remains in [Repository](repository.md).
 - Announcement publishing; a broadcast message is not silently reclassified as a notification.
 - User identity, membership, or source authorization.
 

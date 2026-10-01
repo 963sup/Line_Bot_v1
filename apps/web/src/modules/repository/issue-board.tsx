@@ -1,7 +1,7 @@
 "use client";
 
-import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/repository/application/ports/issues";
-import type { IssueAction, IssueStatus } from "@line_bot_v1/repository/domain";
+import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/issue/application/ports/issues";
+import type { IssueAction, IssueStatus } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -226,7 +226,7 @@ export default function IssueBoard({
     <>
       <PageHeading
         title={detailMode ? "Issue" : canonicalRepository ? "Issues" : "儲存庫"}
-        description="儲存庫擁有 Issue；Project 只引用工作，不改寫 Issue truth。"
+        description="Issue 擁有工作生命週期；儲存庫提供範圍與存取，Project 只引用工作。"
         actions={headingActions}
       />
       {canonicalRepository && ownerLogin && repositoryName && (

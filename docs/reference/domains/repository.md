@@ -4,9 +4,9 @@ Low-frequency Repository runtime, locator and discovery details. Ownership/invar
 
 ## Runtime capability status
 
-Current reads include Repository owner/name resolution and accessible discovery, Issue list/detail, Discussion list/detail/comment, Label collection, Repository Milestone list/detail, Star List and Explore discovery.
+Current Repository-owned reads include owner/name resolution and accessible discovery, Discussion list/detail/comment, Label collection, Repository Milestone list/detail, Star List and Explore discovery. Issue list/detail is delivered on Repository-scoped routes but owned by [Issue](../../owners/issue.md).
 
-Current writes include Repository create, Direct User / Organization Team access grant-update-revoke, Issue create/transition, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete.
+Current Repository-owned writes include Repository create, Direct User / Organization Team access grant-update-revoke, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete. Issue create/transition is Issue-owned and consumes Repository access/numbering contracts.
 
 Not yet claimed as general runtime management: Repository rename/visibility and Discussion/Label/Repository Milestone/IssueLabel general write management.
 

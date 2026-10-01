@@ -1,4 +1,4 @@
-import { normalizeIssueNumber } from "@line_bot_v1/repository/domain";
+import { normalizeIssueNumber } from "@line_bot_v1/issue/domain";
 import { issueFailure, repositoryPathSelector } from "../../../../modules/repository/http.server";
 import { jsonResponse } from "../../../../shared/server/http";
 import { issues } from "../../_composition/issues.server";

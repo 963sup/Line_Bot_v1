@@ -1,7 +1,7 @@
+import type { RepositorySelector } from "../contracts/selectors.js";
 import { normalizeRepositoryName, RepositoryError } from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type { RepositoryAddressCommand, RepositoryAddressStore } from "./ports/address.js";
-import type { RepositorySelector } from "./ports/selectors.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;

@@ -1,7 +1,7 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { RepositoryStarStore, StarredRepository } from "../../application/ports/stars.js";
-import { IssueError } from "../../domain.js";
+import { RepositoryError } from "../../domain.js";
 
 async function requireAccess(sql: Sql, userId: string, repositoryId: string): Promise<void> {
   const row = (
@@ -10,7 +10,7 @@ async function requireAccess(sql: Sql, userId: string, repositoryId: string): Pr
       [repositoryId, userId],
     )
   ).rows[0];
-  if (!row) throw new IssueError(403, "沒有此 Repository 的存取權限。");
+  if (!row) throw new RepositoryError(403, "沒有此 Repository 的存取權限。");
 }
 
 export class PostgresRepositoryStarStore implements RepositoryStarStore {
@@ -67,7 +67,7 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
       );
       return rows.map((row) => {
         const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
-        if (!ownerLogin) throw new IssueError(409, "Repository owner locator 不可用。");
+        if (!ownerLogin) throw new RepositoryError(409, "Repository owner locator 不可用。");
         return {
           id: row.id,
           ownerLogin,

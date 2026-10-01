@@ -1,9 +1,9 @@
-import { IssueError } from "../domain.js";
+import { RepositoryError } from "../domain.js";
 import type { RepositoryStarStore } from "./ports/stars.js";
 
 function repositoryId(value: string): string {
   const id = value.trim();
-  if (!id || id.length > 120) throw new IssueError(400, "Repository 識別碼不正確。");
+  if (!id || id.length > 120) throw new RepositoryError(400, "Repository 識別碼不正確。");
   return id;
 }
 

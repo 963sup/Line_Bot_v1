@@ -160,6 +160,16 @@
         "@line_bot_v1/namespace"
       ]
     },
+    "@line_bot_v1/issue": {
+      "path": "packages/issue",
+      "moduleKind": "domain-module",
+      "semanticOwner": "issue",
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/namespace",
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository"
+      ]
+    },
     "@line_bot_v1/team": {
       "path": "packages/team",
       "moduleKind": "domain-module",
@@ -332,31 +342,6 @@
         }
       ],
       "dependsOn": ["@line_bot_v1/account"]
-    },
-    "@line_bot_v1/issue": {
-      "path": "packages/issue",
-      "moduleKind": "domain-module",
-      "semanticOwner": "issue",
-      "fptFiles": ["schema-issues.json"],
-      "fptRoots": [
-        {
-          "file": "schema-issues.json",
-          "symbol": "Issue"
-        },
-        {
-          "file": "schema-issues.json",
-          "symbol": "IssueComment"
-        },
-        {
-          "file": "schema-issues.json",
-          "symbol": "IssueType"
-        }
-      ],
-      "dependsOn": [
-        "@line_bot_v1/account",
-        "@line_bot_v1/repository",
-        "@line_bot_v1/source-control"
-      ]
     },
     "@line_bot_v1/migration": {
       "path": "packages/migration",
@@ -597,6 +582,7 @@
         "@line_bot_v1/enterprise",
         "@line_bot_v1/expense",
         "@line_bot_v1/identity-access",
+        "@line_bot_v1/issue",
         "@line_bot_v1/line-channel",
         "@line_bot_v1/organization",
         "@line_bot_v1/partners",

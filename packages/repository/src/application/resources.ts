@@ -1,8 +1,9 @@
+import type { RepositorySelector } from "../contracts/selectors.js";
 import {
-  IssueError,
   normalizeDiscussionId,
   normalizeRepositoryMilestoneNumber,
   normalizeRepositoryName,
+  RepositoryError,
 } from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type {
@@ -12,21 +13,20 @@ import type {
   RepositoryResourceCursor,
   RepositoryResourceStore,
 } from "./ports/resources.js";
-import type { RepositorySelector } from "./ports/selectors.js";
 
 const maxCursorLength = 240;
 
 function repositorySelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
     if (!value.repositoryId || value.repositoryId.length > 120) {
-      throw new IssueError(400, "Repository 識別碼不正確。");
+      throw new RepositoryError(400, "Repository 識別碼不正確。");
     }
     return value;
   }
   const ownerLogin = accountLoginForRepositoryLocator(value.ownerLogin);
   const repositoryName = normalizeRepositoryName(value.repositoryName);
   if (!ownerLogin || !repositoryName) {
-    throw new IssueError(400, "Repository 路徑不正確。");
+    throw new RepositoryError(400, "Repository 路徑不正確。");
   }
   return { ownerLogin, repositoryName };
 }
@@ -39,7 +39,7 @@ function parseJsonCursor(after: string | undefined): Record<string, unknown> | u
     if (!value || typeof value !== "object") throw new Error();
     return value;
   } catch {
-    throw new IssueError(400, "Repository 分頁不正確，請重新讀取。");
+    throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
   }
 }
 
@@ -52,7 +52,7 @@ function resourceCursor(after: string | undefined): RepositoryResourceCursor | u
     typeof value.id !== "string" ||
     !value.id
   ) {
-    throw new IssueError(400, "Repository 分頁不正確，請重新讀取。");
+    throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
   }
   return { at: Number(value.at), id: value.id };
 }
@@ -61,7 +61,7 @@ function labelCursor(after: string | undefined): RepositoryLabelCursor | undefin
   const value = parseJsonCursor(after);
   if (!value) return undefined;
   if (typeof value.name !== "string" || !value.name || typeof value.id !== "string" || !value.id) {
-    throw new IssueError(400, "Repository 分頁不正確，請重新讀取。");
+    throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
   }
   return { name: value.name, id: value.id };
 }
@@ -75,7 +75,7 @@ function milestoneCursor(after: string | undefined): RepositoryMilestoneCursor |
     typeof value.id !== "string" ||
     !value.id
   ) {
-    throw new IssueError(400, "Repository 分頁不正確，請重新讀取。");
+    throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
   }
   return { number: Number(value.number), id: value.id };
 }
@@ -83,7 +83,7 @@ function milestoneCursor(after: string | undefined): RepositoryMilestoneCursor |
 function milestoneStatus(value?: string): RepositoryMilestoneStatus | undefined {
   if (value === undefined) return undefined;
   if (value !== "open" && value !== "closed") {
-    throw new IssueError(400, "Milestone 狀態不正確。");
+    throw new RepositoryError(400, "Milestone 狀態不正確。");
   }
   return value;
 }
@@ -111,7 +111,7 @@ export function createRepositoryResources(deps: {
       const selected = repositorySelector(selector);
       const selectedDiscussionId = normalizeDiscussionId(id);
       if (selectedDiscussionId === null) {
-        throw new IssueError(400, "Discussion 識別碼不正確。");
+        throw new RepositoryError(400, "Discussion 識別碼不正確。");
       }
       const cursor = resourceCursor(commentsAfter);
       const actor = await identity(subject);
@@ -138,7 +138,7 @@ export function createRepositoryResources(deps: {
     milestone: async (subject: string, selector: RepositorySelector, number: number) => {
       const selected = repositorySelector(selector);
       const selectedNumber = normalizeRepositoryMilestoneNumber(number);
-      if (selectedNumber === null) throw new IssueError(400, "Milestone number 不正確。");
+      if (selectedNumber === null) throw new RepositoryError(400, "Milestone number 不正確。");
       const actor = await identity(subject);
       return deps.store().milestone(actor, selected, selectedNumber);
     },

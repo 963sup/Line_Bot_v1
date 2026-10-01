@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryDiscoveryStore } from "../src/adapters/postgres/discovery.js";
 
-test("Repository discovery ranks current Stars and rechecks access for recent Issue activity", async (t) => {
+test("Repository discovery ranks current Stars and rechecks Repository access", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -36,16 +36,6 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
     "insert into app_private.repository_stars(repository_id,user_id,created_at) values($1,$2,$3),($1,$4,$5),($1,$6,$7)",
     ["repository-a", "viewer", 90, "owner", 95, "peer", 70],
   );
-  await pg.query(
-    `insert into app_private.issues(
-       id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
-     ) values($1,$2,1,$3,$4,$5,$6,'pending',1,90,90)`,
-    ["issue-a", "repository-a", "owner", "viewer", "Prepare payroll", "Complete review"],
-  );
-  await pg.query(
-    "insert into app_private.issue_events(issue_id,version,actor,action,note,at) values($1,1,$2,'create','',96)",
-    ["issue-a", "owner"],
-  );
 
   await pg.query(
     "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
@@ -71,7 +61,6 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
     await store.snapshot("viewer", {
       recentSince: 80,
       trendingLimit: 20,
-      activityLimit: 20,
     }),
     {
       trending: [
@@ -84,23 +73,6 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
           recentStarCount: 2,
           starCount: 3,
           starred: true,
-        },
-      ],
-      activity: [
-        {
-          id: "issue-a:1",
-          occurredAt: 96,
-          actorLogin: "acme",
-          action: "create",
-          repository: {
-            id: "repository-a",
-            ownerLogin: "acme",
-            name: "Operations",
-          },
-          issue: {
-            number: 1,
-            title: "Prepare payroll",
-          },
         },
       ],
     },
@@ -132,9 +104,8 @@ test("Repository discovery ranks current Stars and rechecks access for recent Is
     await store.snapshot("viewer", {
       recentSince: 80,
       trendingLimit: 20,
-      activityLimit: 20,
     }),
-    { trending: [], activity: [] },
+    { trending: [] },
   );
   assert.deepEqual(await store.publishedStarLists("viewer", 20), []);
 });

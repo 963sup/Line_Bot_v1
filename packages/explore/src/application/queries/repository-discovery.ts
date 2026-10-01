@@ -2,7 +2,6 @@ import type { RepositoryDiscoveryStore } from "@line_bot_v1/repository/contracts
 
 const TRENDING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const TRENDING_LIMIT = 20;
-const ACTIVITY_LIMIT = 20;
 const PUBLISHED_STAR_LIST_LIMIT = 20;
 
 export function createRepositoryDiscovery(deps: {
@@ -17,7 +16,6 @@ export function createRepositoryDiscovery(deps: {
       return deps.store().snapshot(userId, {
         recentSince: Math.max(0, now - TRENDING_WINDOW_MS),
         trendingLimit: TRENDING_LIMIT,
-        activityLimit: ACTIVITY_LIMIT,
       });
     },
     publishedStarLists: async (subject: string) =>

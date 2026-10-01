@@ -1,6 +1,6 @@
--- Repository-owned Issue objects.
+-- Issue-owned objects scoped to a Repository.
 
--- Repository issue lifecycle, commands and immutable history.
+-- Issue lifecycle, commands and immutable history; Repository remains scope/access authority.
 -- Depends on 52_repository.sql; table names and constraints preserve the issue contract.
 
 create table app_private."issues" (

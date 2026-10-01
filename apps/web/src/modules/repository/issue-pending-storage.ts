@@ -1,4 +1,4 @@
-import type { IssueCommand } from "@line_bot_v1/repository/application/ports/issues";
+import type { IssueCommand } from "@line_bot_v1/issue/application/ports/issues";
 
 export type PendingIssueCommand = { owner: string; command: IssueCommand };
 

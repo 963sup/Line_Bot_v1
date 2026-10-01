@@ -5,7 +5,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryResourceStore } from "../src/adapters/postgres/resources.js";
 import type { RepositoryResourceStore } from "../src/application/ports/resources.js";
 import { createRepositoryResources } from "../src/application/resources.js";
-import { IssueError } from "../src/domain.js";
+import { RepositoryError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string, login = id) {
   await db.transaction(async (sql) => {
@@ -85,14 +85,14 @@ test("Repository resources validate subject, selector and typed cursors before t
       { ownerLogin: "owner-a", repositoryName: "Alpha" },
       JSON.stringify({ at: 1, id: "wrong-cursor" }),
     ),
-    (error) => error instanceof IssueError && error.status === 400,
+    (error) => error instanceof RepositoryError && error.status === 400,
   );
   assert.equal(storeFactories, 0);
   assert.equal(calls.length, 0);
 
   const rejecting = createRepositoryResources({
     activeUser: async () => {
-      throw new IssueError(401, "not signed in");
+      throw new RepositoryError(401, "not signed in");
     },
     store: () => {
       storeFactories += 1;
@@ -101,7 +101,7 @@ test("Repository resources validate subject, selector and typed cursors before t
   });
   await assert.rejects(
     rejecting.labels("line-subject", { ownerLogin: "owner-a", repositoryName: "Alpha" }),
-    (error) => error instanceof IssueError && error.status === 401,
+    (error) => error instanceof RepositoryError && error.status === 401,
   );
   assert.equal(storeFactories, 0);
 });
@@ -141,7 +141,7 @@ test("Repository resource reads require current effective access and never publi
       { ownerLogin: "owner-a", repositoryName: "alpha" },
       "discussion-a",
     ),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
   await pg.query("update app_private.users set status='suspended' where id='writer'");
   await assert.rejects(
@@ -150,7 +150,7 @@ test("Repository resource reads require current effective access and never publi
       { ownerLogin: "owner-a", repositoryName: "alpha" },
       "discussion-a",
     ),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
 
   await assert.rejects(
@@ -159,7 +159,7 @@ test("Repository resource reads require current effective access and never publi
       { ownerLogin: "owner-a", repositoryName: "alpha" },
       "discussion-a",
     ),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
   await assert.rejects(
     store.discussion(
@@ -167,7 +167,7 @@ test("Repository resource reads require current effective access and never publi
       { ownerLogin: "owner-a", repositoryName: "public-notes" },
       "discussion-public",
     ),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
 });
 
@@ -255,7 +255,7 @@ test("Repository resource reads recheck Organization Team access qualification o
   );
   await assert.rejects(
     store.labels({ userId: "team-reader" }, { ownerLogin: "octo-org", repositoryName: "shared" }),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
 
   await pg.query(
@@ -266,7 +266,7 @@ test("Repository resource reads recheck Organization Team access qualification o
   );
   await assert.rejects(
     store.labels({ userId: "team-reader" }, { ownerLogin: "octo-org", repositoryName: "shared" }),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
 });
 
@@ -297,7 +297,7 @@ test("Discussion detail is repository-scoped and comment pagination cannot cross
   const store = new PostgresRepositoryResourceStore(db);
   await assert.rejects(
     store.discussion({ userId: "reader" }, { repositoryId: "repo-a" }, "discussion-b"),
-    (error) => error instanceof IssueError && error.status === 404,
+    (error) => error instanceof RepositoryError && error.status === 404,
   );
 
   const first = await store.discussion(

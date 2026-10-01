@@ -1,5 +1,5 @@
+import { normalizeIssueNumber } from "@line_bot_v1/issue/domain";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeIssueNumber } from "@line_bot_v1/repository/domain";
 import { notFound } from "next/navigation";
 import IssueBoard from "../../../../../../modules/repository/issue-board";
 import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
