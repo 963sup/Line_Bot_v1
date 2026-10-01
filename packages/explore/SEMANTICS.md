@@ -28,6 +28,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Milestone | repository-milestone | authoritative | current | GitHub FPT: schema-issues.json#Milestone |
 | Repository | repository | authoritative | current | GitHub FPT: schema-repos.json#Repository |
 | RepositoryCollaboratorEdge | repository-user-access | authoritative | current | GitHub FPT: schema-users.json#RepositoryCollaboratorEdge |
+| RepositoryPermission | repository-permission | authoritative | current | GitHub FPT: schema-repos.json#RepositoryPermission |
 | StargazerEdge | repository-star | authoritative | current | GitHub FPT: schema-users.json#StargazerEdge |
 | TeamRepositoryEdge | repository-team-access | authoritative | current | GitHub FPT: schema-repos.json#TeamRepositoryEdge |
 | UserList | repository-star-list | authoritative | current | GitHub FPT: schema-users.json#UserList |
@@ -39,7 +40,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | --- | --- | --- | --- |
 | create-repository | required | implemented | Create a private User- or Organization-owned Repository with replay-safe owner authorization and immediate creator access. |
 | manage-repository | not-asserted |  | Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management. |
-| manage-repository-access | required | implemented | Manage Repository-owned direct User grants, including outside collaborators, and Organization Team grants with independent current qualification, replay safety and recoverable admin authority. |
+| manage-repository-access | required | implemented | Manage Repository-owned direct User and Organization Team grants over the exact six-value FPT RepositoryPermission domain, preserving permission identity without a synthetic total order while retaining replay safety and recoverable admin authority. |
 | manage-repository-address | required | implemented | Maintain the Repository address property used as the attendance clock point for current effective members. |
 | manage-repository-labels | not-asserted | data-only | Preserve Repository Label create/update/delete semantics as current data without asserting runtime management. |
 | manage-repository-milestones | not-asserted | data-only | Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management. |

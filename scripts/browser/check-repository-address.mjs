@@ -121,7 +121,7 @@ await context.route("**/*", async (route) => {
             ownerLogin: "alice",
             name: "Operations",
             version,
-            actorCapability: capability,
+            actorPermissions: [capability],
           },
           address,
         },

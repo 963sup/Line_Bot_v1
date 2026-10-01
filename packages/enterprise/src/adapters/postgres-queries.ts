@@ -266,7 +266,8 @@ export function detailEnterprise(
             organizationAccountId: String(row.organizationAccountId),
             repositoryId: String(row.repositoryId),
             userId: String(row.userId),
-            capability: row.capability as "read" | "triage" | "write" | "admin",
+            capability:
+              row.capability as EnterpriseDetail["outsideRepositoryCollaborators"][number]["capability"],
             grantVersion: Number(row.grantVersion),
           }))
         : [];

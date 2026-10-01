@@ -55,9 +55,11 @@ export default function RepositoryList({
   const { items, busy, error, load, clear } = useRepositoryCollection(liffId);
   const visibleItems =
     intent === "create-issue"
-      ? items?.filter((item) => item.capability === "write" || item.capability === "admin")
+      ? items?.filter(
+          (item) => item.permissions.includes("write") || item.permissions.includes("admin"),
+        )
       : intent === "manage-access" || intent === "manage-settings"
-        ? items?.filter((item) => item.capability === "admin")
+        ? items?.filter((item) => item.permissions.includes("admin"))
         : items;
 
   const targetPath = (ownerLogin: string, name: string) => {

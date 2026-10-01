@@ -63,7 +63,7 @@ export default function RepositorySearch({ liffId }: { liffId: string }) {
                 <strong>
                   {item.ownerLogin}/{item.name}
                 </strong>
-                <small>{item.capability}</small>
+                <small>{item.permissions.join(", ")}</small>
               </span>
               <span className="action-chevron" aria-hidden="true">
                 ›

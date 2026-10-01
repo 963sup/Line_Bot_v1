@@ -23,7 +23,7 @@ test("Enterprise owner reads outside Repository collaborators from the derived R
       id,owner_account_id,owner_account_kind,name,visibility,version
     ) VALUES ('repo','org','ORGANIZATION','Repository','private',1);
     INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version)
-      VALUES ('repo','outside','triage',1);
+      VALUES ('repo','outside','maintain',1);
     COMMIT;
   `);
 
@@ -36,7 +36,7 @@ test("Enterprise owner reads outside Repository collaborators from the derived R
       organizationAccountId: "org",
       repositoryId: "repo",
       userId: "outside",
-      capability: "triage",
+      capability: "maintain",
       grantVersion: 1,
     },
   ]);

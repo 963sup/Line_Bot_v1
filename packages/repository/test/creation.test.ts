@@ -108,10 +108,10 @@ test("Repository creation lists only effective owner scopes and preserves exact 
   );
   assert.deepEqual(receipts.rows, [{ count: 1 }]);
   const access = await pg.query(
-    "select capability from app_private.repository_effective_access where repository_id=$1 and user_id='creator'",
+    "select permissions from app_private.repository_effective_access where repository_id=$1 and user_id='creator'",
     [created.id],
   );
-  assert.deepEqual(access.rows, [{ capability: "admin" }]);
+  assert.deepEqual(access.rows, [{ permissions: ["admin"] }]);
 
   await assert.rejects(
     store.create("creator", { ...command, name: "Different" }, 12),

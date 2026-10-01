@@ -1,4 +1,4 @@
-import type { RepositoryCapability } from "../value-objects/repository-capability.js";
+import type { RepositoryPermission } from "../value-objects/repository-capability.js";
 
 export type RepositoryAddress = Readonly<{
   address: string;
@@ -11,5 +11,5 @@ export type RepositorySummary = {
   id: string;
   ownerLogin: string;
   name: string;
-  capability: RepositoryCapability;
+  permissions: readonly RepositoryPermission[];
 };
