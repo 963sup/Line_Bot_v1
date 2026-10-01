@@ -5,10 +5,7 @@ import type {
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
   governanceFingerprint,
-  hasOrganizationOwnerAssignment,
   readGovernanceReplay,
-  readOrganizationOwnerAssignments,
-  readOrganizationOwnerScopeIds,
   recordGovernanceResult,
   requireActiveTargetUser,
   requireOrganizationLifecycleOwner,
@@ -31,6 +28,12 @@ import {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
+import {
+  hasOrganizationOwnerAssignment,
+  mutateOrganizationOwnerAssignment,
+  readOrganizationOwnerAssignments,
+  readOrganizationOwnerScopeIds,
+} from "./postgres/owner-roles.js";
 
 function receipt(
   command: OrganizationCommand,
@@ -328,7 +331,20 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
       if (replay) return replay;
 
       let result: OrganizationReceipt;
-      if (command.action === "deactivate" || command.action === "reactivate") {
+      if (
+        command.action === "grant-organization-owner" ||
+        command.action === "revoke-organization-owner"
+      ) {
+        if (organization.status !== "active") {
+          throw new GovernanceAccessError(
+            409,
+            "inactive",
+            "停用的 Organization 不能變更 owner role。",
+          );
+        }
+        const changed = await mutateOrganizationOwnerAssignment(sql, command, now);
+        result = receipt(command, changed.status, changed.version, now);
+      } else if (command.action === "deactivate" || command.action === "reactivate") {
         if (organization.version !== command.expectedVersion) {
           throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
         }

@@ -1,4 +1,4 @@
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import type { RoleAssignmentPort } from "../application/ports/role-assignments.js";
 import type { GovernanceReceipt, VerifiedLineActor } from "../contracts/governance.js";
 import type { ScopedRoleCommand } from "../domain/role-assignment.js";
@@ -7,111 +7,11 @@ import { requireActiveTargetUser, resolveVerifiedLineActor } from "./actor.js";
 import { governanceFingerprint, readGovernanceReplay, recordGovernanceResult } from "./receipts.js";
 import {
   grantTeamMaintainer,
-  hasReplacementOrganizationOwner,
-  isOrganizationOwner,
   isTeamMaintainer,
-  requireOrganizationOwner,
   revokeTeamMaintainer,
 } from "./typed-role-assignments.js";
 
 type AssignmentResult = { status: "active" | "revoked"; version: number };
-
-async function mutateOrganizationUserAssignment(
-  sql: Sql,
-  command: ScopedRoleCommand,
-  now: number,
-): Promise<AssignmentResult> {
-  const userId = command.principal.id;
-  const scope = (
-    await sql.query("SELECT status FROM identity_access_organization_scopes WHERE account_id=$1", [
-      command.scopeId,
-    ])
-  ).rows[0];
-  if (!scope) throw new GovernanceAccessError(404, "not-found", "找不到角色範圍。");
-  if (scope.status !== "active")
-    throw new GovernanceAccessError(409, "inactive", "停用的範圍不能變更角色。");
-  const membership = (
-    await sql.query(
-      `SELECT membership_status AS status,membership_version AS version
-       FROM identity_access_organization_subjects
-       WHERE organization_account_id=$1 AND user_id=$2`,
-      [command.scopeId, userId],
-    )
-  ).rows[0];
-  const assignment = (
-    await sql.query(
-      `SELECT status,version,user_status_version,membership_version FROM organization_role_assignments
-       WHERE organization_account_id=$1 AND user_id=$2 AND role=$3 FOR UPDATE`,
-      [command.scopeId, userId, command.role],
-    )
-  ).rows[0];
-  if (command.action === "grant") {
-    if (!membership || membership.status !== "active")
-      throw new GovernanceAccessError(403, "forbidden", "Organization role 對象必須是有效成員。");
-    const target = await requireActiveTargetUser(sql, userId);
-    if (
-      (!assignment && command.expectedVersion !== 0) ||
-      (assignment && assignment.version !== command.expectedVersion)
-    ) {
-      throw new GovernanceAccessError(409, "conflict", "角色指派版本已更新。");
-    }
-    if (
-      assignment?.status === "active" &&
-      assignment.user_status_version === target.userStatusVersion &&
-      assignment.membership_version === membership.version
-    ) {
-      throw new GovernanceAccessError(409, "invalid-transition", "角色已生效。");
-    }
-    if (assignment) {
-      const changed = (
-        await sql.query(
-          `UPDATE organization_role_assignments SET status='active',version=version+1,
-             user_status_version=$4,membership_version=$5,granted_at=$6
-           WHERE organization_account_id=$1 AND user_id=$2 AND role=$3 RETURNING version`,
-          [
-            command.scopeId,
-            userId,
-            command.role,
-            target.userStatusVersion,
-            membership.version,
-            now,
-          ],
-        )
-      ).rows[0]!;
-      return { status: "active", version: changed.version };
-    }
-    await sql.query(
-      `INSERT INTO organization_role_assignments(
-         organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at
-       ) VALUES($1,$2,$3,'active',1,$4,$5,$6)`,
-      [command.scopeId, userId, command.role, target.userStatusVersion, membership.version, now],
-    );
-    return { status: "active", version: 1 };
-  }
-  if (!assignment) throw new GovernanceAccessError(404, "not-found", "找不到角色指派。");
-  if (assignment.version !== command.expectedVersion)
-    throw new GovernanceAccessError(409, "conflict", "角色指派版本已更新。");
-  if (assignment.status !== "active")
-    throw new GovernanceAccessError(409, "invalid-transition", "角色已撤銷。");
-  if (
-    (await isOrganizationOwner(sql, command.scopeId, userId)) &&
-    !(await hasReplacementOrganizationOwner(sql, command.scopeId, userId))
-  ) {
-    throw new GovernanceAccessError(
-      409,
-      "last-effective-role-holder",
-      "不能撤銷最後一位有效 OrganizationOwner。",
-    );
-  }
-  const changed = (
-    await sql.query(
-      `UPDATE organization_role_assignments SET status='revoked',version=version+1
-       WHERE organization_account_id=$1 AND user_id=$2 AND role=$3 RETURNING version`,
-      [command.scopeId, userId, command.role],
-    )
-  ).rows[0]!;
-  return { status: "revoked", version: changed.version };
-}
 
 export class PostgresRoleAssignments implements RoleAssignmentPort {
   constructor(private readonly db: Database = businessDatabase()) {}
@@ -127,9 +27,7 @@ export class PostgresRoleAssignments implements RoleAssignmentPort {
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `${actorPrincipal.userId}:${command.requestId}`,
       ]);
-      if (command.scopeKind === "organization") {
-        await requireOrganizationOwner(sql, command.scopeId, actorPrincipal.userId);
-      } else if (!(await isTeamMaintainer(sql, command.scopeId, actorPrincipal.userId))) {
+      if (!(await isTeamMaintainer(sql, command.scopeId, actorPrincipal.userId))) {
         throw new GovernanceAccessError(
           403,
           "forbidden",
@@ -146,9 +44,7 @@ export class PostgresRoleAssignments implements RoleAssignmentPort {
       if (replay) return replay;
 
       let changed: AssignmentResult;
-      if (command.scopeKind === "organization") {
-        changed = await mutateOrganizationUserAssignment(sql, command, now);
-      } else {
+      {
         const userId = command.principal.id;
         const current = (
           await sql.query(

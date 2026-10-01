@@ -25,6 +25,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Organization | organization | authoritative | current | GitHub FPT: schema-orgs.json#Organization |
 | OrganizationInvitation | organization-invitation | authoritative | current | GitHub FPT: schema-orgs.json#OrganizationInvitation |
 | OrganizationMemberEdge | organization-membership | authoritative | current | GitHub FPT: schema-users.json#OrganizationMemberEdge |
+| OrganizationMemberEdge.role | organization-role-assignment | authoritative | current | GitHub FPT: schema-users.json#OrganizationMemberEdge#role |
 
 ## Capabilities
 
@@ -39,8 +40,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | Organization participation and public locator behavior reference Account-owned User and Account identity contracts. |
 | consumes | enterprise | projection | enterprise | atomic-where-required | Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority. |
-| consumes | identity-access | query | identity-access | current-state | Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions. |
+| consumes | identity-access | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| provides | identity-access | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | repository | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and effective participation when resolving access. |
 | provides | team | stable-identity+query | organization | current-state | Organization scope and participation. |
 

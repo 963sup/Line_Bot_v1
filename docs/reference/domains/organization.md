@@ -22,7 +22,7 @@ Current runtime 支援：
 - `create-organization`：active User 以唯一 `login` 與獨立 `name` 建立新的 Organization；`login` 是 locator、`name` 是 display identity。Account identity、shared RepositoryOwner login、Organization name、direct/effective membership 與初始 OrganizationOwner 在同一 transaction 成立。
 - Organization lifecycle：`deactivate` / `reactivate`。
 - People：`invite-member`、受邀者本人 `accept-invitation` / `decline-invitation`、Owner `cancel-invitation` / `remove-direct-membership`、本人 `leave-organization`。
-- Owner role：Identity/Access scoped `grant/revoke OrganizationOwner`。
+- Owner role：Organization-owned `grant-organization-owner` / `revoke-organization-owner`；active OrganizationMembership 表示 FPT MEMBER，OrganizationOwner fact 表示 ADMIN 語意，Identity/Access 只做 authorization evaluation。
 - Enterprise Team-derived membership：由 Enterprise owner 的 Team membership / Team → Organization commands 在同一 transaction 內建立、移除 source 並刷新 effective OrganizationMembership；Organization 不直接寫 Enterprise Team private state。
 
 一般產品建立走 active User 的 `create-organization`，同 transaction 建立 Account identity、Organization、creator 的 active `OrganizationDirectMembership`、active effective OrganizationMembership 與初始 OrganizationOwner。受控 operator bootstrap 保留 recovery／administrative provisioning，且與 runtime create 共用唯一 DB provisioning coordinator。Organization 可獨立存在，不要求先有 Enterprise。

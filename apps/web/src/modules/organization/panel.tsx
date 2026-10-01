@@ -1,6 +1,5 @@
 "use client";
 
-import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type {
   OrganizationCommand,
   OrganizationDetail,
@@ -11,7 +10,7 @@ import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { OrganizationDetailSection } from "./organization-detail-section";
 
-type Pending = OrganizationCommand | ScopedRoleCommand;
+type Pending = OrganizationCommand;
 
 export default function OrganizationPanel({ liffId }: { liffId: string }) {
   const [list, setList] = useState<OrganizationList | null>(null);
@@ -101,13 +100,11 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       setNotice("組織變更已保存。");
       locked.current = false;
       await load(
-        "scopeKind" in command
-          ? selected.current
-          : command.action === "create-organization"
-            ? String(result.scopeId)
-            : command.action === "leave-organization" || command.action === "decline-invitation"
-              ? ""
-              : command.organizationAccountId,
+        command.action === "create-organization"
+          ? String(result.scopeId)
+          : command.action === "leave-organization" || command.action === "decline-invitation"
+            ? ""
+            : command.organizationAccountId,
       );
     } catch (cause) {
       if (ticket === epoch.current) {

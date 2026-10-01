@@ -80,74 +80,6 @@ export async function isOrganizationOwner(sql: Sql, organizationAccountId: strin
   return hasDirectOrganizationOwnerAssignment(sql, organizationAccountId, userId, true);
 }
 
-export async function hasReplacementOrganizationOwner(
-  sql: Sql,
-  organizationAccountId: string,
-  excludedUserId: string,
-) {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1
-         FROM organization_role_assignments r
-         JOIN identity_access_organization_subjects s
-           ON s.organization_account_id=r.organization_account_id AND s.user_id=r.user_id
-         WHERE r.organization_account_id=$1 AND r.user_id<>$2
-           AND r.role='OrganizationOwner' AND r.status='active'
-           AND s.membership_status='active' AND s.user_status='active'
-           AND r.user_status_version=s.user_status_version
-           AND r.membership_version=s.membership_version
-         LIMIT 1`,
-        [organizationAccountId, excludedUserId],
-      )
-    ).rows[0],
-  );
-}
-
-export async function readOrganizationOwnerScopeIds(sql: Sql, userId: string): Promise<string[]> {
-  const rows = (
-    await sql.query(
-      `SELECT r.organization_account_id AS id
-       FROM organization_role_assignments r
-       JOIN identity_access_organization_subjects s
-         ON s.organization_account_id=r.organization_account_id AND s.user_id=r.user_id
-       WHERE r.user_id=$1
-         AND r.role='OrganizationOwner' AND r.status='active'
-         AND s.membership_status='active' AND s.user_status='active'
-         AND r.user_status_version=s.user_status_version
-         AND r.membership_version=s.membership_version
-       ORDER BY r.organization_account_id`,
-      [userId],
-    )
-  ).rows as Array<{ id: string }>;
-  return rows.map((row) => row.id);
-}
-
-export async function readOrganizationOwnerAssignments(
-  sql: Sql,
-  organizationAccountId: string,
-  userIds?: string[],
-): Promise<Array<{ userId: string; version: number }>> {
-  if (userIds && userIds.length === 0) return [];
-  const rows = (
-    await sql.query(
-      `SELECT r.user_id AS "userId",r.version
-       FROM organization_role_assignments r
-       JOIN identity_access_organization_subjects s
-         ON s.organization_account_id=r.organization_account_id AND s.user_id=r.user_id
-       WHERE r.organization_account_id=$1
-         AND r.role='OrganizationOwner' AND r.status='active'
-         AND s.membership_status='active' AND s.user_status='active'
-         AND r.user_status_version=s.user_status_version
-         AND r.membership_version=s.membership_version
-         AND ($2::text[] IS NULL OR r.user_id=ANY($2::text[]))
-       ORDER BY r.user_id`,
-      [organizationAccountId, userIds ?? null],
-    )
-  ).rows as Array<{ userId: string; version: number }>;
-  return rows.map((row) => ({ userId: row.userId, version: Number(row.version) }));
-}
-
 export async function requireEnterpriseOwner(sql: Sql, enterpriseId: string, userId: string) {
   if (!(await isEnterpriseOwner(sql, enterpriseId, userId))) {
     throw new GovernanceAccessError(403, "forbidden", "你沒有此 Enterprise 的 owner 權限。");
@@ -182,19 +114,6 @@ export async function requireOrganizationLifecycleOwner(
   if (!(await hasOrganizationOwnerAssignment(sql, organizationAccountId, userId))) {
     throw new GovernanceAccessError(403, "forbidden", "你沒有此 Organization 的生命週期權限。");
   }
-}
-
-export async function revokeOrganizationOwnerForMembershipRemoval(
-  sql: Sql,
-  organizationAccountId: string,
-  userId: string,
-) {
-  await sql.query(
-    `UPDATE organization_role_assignments SET status='revoked',version=version+1
-     WHERE organization_account_id=$1 AND user_id=$2
-       AND role='OrganizationOwner' AND status='active'`,
-    [organizationAccountId, userId],
-  );
 }
 
 export async function isTeamMaintainer(sql: Sql, teamId: string, userId: string) {

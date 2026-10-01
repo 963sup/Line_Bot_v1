@@ -55,6 +55,14 @@ export type OrganizationCommand =
       reason: string;
     }>
   | Readonly<{
+      action: "grant-organization-owner" | "revoke-organization-owner";
+      requestId: string;
+      organizationAccountId: string;
+      targetUserId: string;
+      expectedVersion: number;
+      reason: string;
+    }>
+  | Readonly<{
       action: "deactivate" | "reactivate";
       requestId: string;
       organizationAccountId: string;

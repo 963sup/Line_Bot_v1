@@ -90,6 +90,31 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
   }
   const organizationAccountId = parseId(base.organizationAccountId, "Organization");
 
+  if (
+    base.action === "grant-organization-owner" ||
+    base.action === "revoke-organization-owner"
+  ) {
+    requireExactGovernanceKeys(base, [
+      "action",
+      "requestId",
+      "organizationAccountId",
+      "targetUserId",
+      "expectedVersion",
+      "reason",
+    ]);
+    return {
+      ...evidence,
+      action: base.action,
+      organizationAccountId,
+      targetUserId: parseId(base.targetUserId, "使用者"),
+      expectedVersion: parseVersion(
+        base.expectedVersion,
+        "OrganizationOwner",
+        base.action === "grant-organization-owner",
+      ),
+    };
+  }
+
   if (base.action === "deactivate" || base.action === "reactivate") {
     requireExactGovernanceKeys(base, [
       "action",

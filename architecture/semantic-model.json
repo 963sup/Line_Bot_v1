@@ -749,10 +749,10 @@
     },
     {
       "id": "organization-role-assignment",
-      "kind": "policy-decision",
-      "owner": "identity-access",
+      "kind": "authoritative",
+      "owner": "organization",
       "lifecycle": "current",
-      "authorityMode": "policy-decision",
+      "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-users.json",
@@ -1116,10 +1116,19 @@
       "consistency": "current-state"
     },
     {
+      "id": "organization-identity-access-owner-facts",
+      "provider": "organization",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle.",
+      "integrationMode": "query",
+      "authority": "organization",
+      "consistency": "current-state"
+    },
+    {
       "id": "identity-access-organization-authorization",
       "provider": "identity-access",
       "consumer": "organization",
-      "meaning": "Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions.",
+      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle.",
       "integrationMode": "query",
       "authority": "identity-access",
       "consistency": "current-state"

@@ -1,4 +1,4 @@
--- Identity/Access-owned Organization RoleAssignment.
+-- Organization-owned ADMIN/OrganizationOwner role facts; MEMBER derives from active OrganizationMembership.
 
 create table app_private.organization_role_assignments (
   organization_account_id text not null references app_private.organizations(account_id),
