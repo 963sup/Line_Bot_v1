@@ -1567,7 +1567,7 @@
       "id": "manage-team-collaboration",
       "owner": "team",
       "kind": "leaf",
-      "intent": "Manage Organization-scoped Team collaboration, membership, maintainer state, and team locator access.",
+      "intent": "Manage Organization-scoped Team collaboration, direct/effective membership, hierarchy, privacy, notification setting, maintainer state, and locator access.",
       "preserves": ["K1", "K2", "K3", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1579,11 +1579,13 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Team collaboration application surface",
+        "scope": "current Organization Team aggregate including FPT parent/child membership semantics, TeamPrivacy and TeamNotificationSetting",
         "sourcePaths": [
           "packages/team/src/application/collaboration.ts",
           "packages/team/src/application/commands/team-command.ts",
           "packages/team/src/application/ports.ts",
+          "packages/team/src/contracts.ts",
+          "packages/team/src/adapters/postgres.ts",
           "packages/team/src/domain/errors/team-error.ts",
           "packages/team/src/domain/policies/team-maintenance.ts",
           "packages/team/src/domain/policies/team-version.ts",
@@ -1593,6 +1595,7 @@
           "./application/collaboration",
           "./application/commands/team-command",
           "./application/ports",
+          "./contracts",
           "./domain/errors/team-error",
           "./domain/value-objects/team-slug"
         ],
@@ -1600,8 +1603,11 @@
           "apps/web/src/app/(mobile)/team/page.tsx",
           "apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"
         ],
-        "testPaths": ["packages/team/test/team.test.ts"],
-        "note": "Team collaboration is Organization-scoped; route files are locator evidence only."
+        "testPaths": [
+          "packages/team/test/team.test.ts",
+          "packages/team/test/team-hierarchy-postgres.test.ts"
+        ],
+        "note": "Organization Team keeps direct membership authoritative and derives FPT CHILD_TEAM/ALL semantics with source provenance. TeamPrivacy is SECRET/VISIBLE and TeamNotificationSetting is NOTIFICATIONS_DISABLED/NOTIFICATIONS_ENABLED. Hierarchy never grants Repository access without an explicit Repository Team grant; EnterpriseTeam remains a separate Enterprise-owned identity. Team notification setting is distinct from User subscription, recipient Notification and delivery attempts."
       }
     },
     {
