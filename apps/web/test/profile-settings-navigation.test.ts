@@ -5,6 +5,11 @@ import {
   isVerifiedSelfUser,
 } from "../src/app/(public)/_components/profile-viewer";
 import { resolveProfileDestination } from "../src/modules/account/profile-destination";
+import {
+  clearVerifiedProfileEntry,
+  readVerifiedProfileEntry,
+  rememberVerifiedProfileEntry,
+} from "../src/modules/account/profile-entry-handoff";
 
 test("Profile Settings gear is scoped to the current viewer login", () => {
   assert.equal(isOwnProfileLogin("viewer", "viewer"), true);
@@ -47,4 +52,20 @@ test("Profile entry resolves lifecycle before the canonical User URL", () => {
     kind: "redirect",
     href: "/viewer",
   });
+});
+
+test("verified Profile entry handoff is isolated by User and login and expires quickly", () => {
+  clearVerifiedProfileEntry();
+  rememberVerifiedProfileEntry({ userId: "user-1", login: "viewer", token: "token-1" }, 1_000);
+  assert.equal(readVerifiedProfileEntry("user-1", "viewer", 1_001)?.token, "token-1");
+
+  assert.equal(readVerifiedProfileEntry("user-2", "other", 1_002), null);
+  assert.equal(readVerifiedProfileEntry("user-1", "viewer", 1_003), null);
+
+  rememberVerifiedProfileEntry({ userId: "user-1", login: "viewer", token: "token-2" }, 2_000);
+  assert.equal(readVerifiedProfileEntry("user-1", "viewer", 32_001), null);
+
+  rememberVerifiedProfileEntry({ userId: "user-1", login: "viewer", token: "token-3" }, 40_000);
+  assert.equal(readVerifiedProfileEntry("user-1", "viewer", 39_999), null);
+  clearVerifiedProfileEntry();
 });

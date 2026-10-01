@@ -1,5 +1,25 @@
 import { isAttendanceOperation } from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
 
+export const ENTRY_INTENT_KEYS = [
+  "planned",
+  "team",
+  "organizations",
+  "enterprises",
+  "notifications",
+  "repositories",
+  "partners",
+  "feedback",
+  "clockIn",
+  "clockOut",
+  "membership",
+  "profile",
+  "attendance",
+  "expense",
+  "records",
+  "register",
+  "restore",
+] as const;
+
 export type EntryRoute =
   | "planned"
   | "team"
@@ -34,25 +54,7 @@ export function entryRoute(href: string): EntryRoute {
       !isAttendanceOperation(url.searchParams.get("operation")))
   )
     return "invalid";
-  const names = [
-    "planned",
-    "team",
-    "organizations",
-    "enterprises",
-    "notifications",
-    "repositories",
-    "partners",
-    "feedback",
-    "clockIn",
-    "clockOut",
-    "membership",
-    "profile",
-    "attendance",
-    "expense",
-    "records",
-    "register",
-    "restore",
-  ];
+  const names = ENTRY_INTENT_KEYS;
   if (names.some((name) => url.searchParams.getAll(name).length > 1)) return "invalid";
   const supplied = names.filter((name) => url.searchParams.has(name));
   if (supplied.length > 1) return "invalid";

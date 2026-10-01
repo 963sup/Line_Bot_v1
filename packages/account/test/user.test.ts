@@ -56,11 +56,18 @@ test("registration returns only the Account-owned committed projection", async (
   assert.deepEqual(calls, [["register", "line:provider", "subject", "alice"]]);
 });
 
-test("membership queries stay lazy and do not expand an unknown provider subject", async () => {
+test("membership queries stay lazy and use one identity-qualified projection read", async () => {
   let repositories = 0;
+  let projectionReads = 0;
   let views = 0;
   const deps = dependencies({
     find: async (provider, subject) => {
+      assert.equal(provider, "line:provider");
+      assert.equal(subject, "unknown");
+      return null;
+    },
+    viewByIdentity: async (provider, subject) => {
+      projectionReads++;
       assert.equal(provider, "line:provider");
       assert.equal(subject, "unknown");
       return null;
@@ -80,6 +87,7 @@ test("membership queries stay lazy and do not expand an unknown provider subject
   assert.equal(repositories, 0);
   assert.equal(await membership.findUser("unknown"), null);
   assert.equal(await membership.getUser("unknown"), null);
+  assert.equal(projectionReads, 1);
   assert.equal(views, 0);
 });
 
@@ -240,6 +248,65 @@ test("a User and login commit atomically while incomplete creation and login rem
     "select login from app_private.account_logins where account_id='complete-user'",
   );
   assert.deepEqual(renamed.rows, [{ login: "renamed-user" }]);
+});
+
+test("Account identity projection resolves in one transaction and one query", async () => {
+  let transactions = 0;
+  let queries = 0;
+  const store = new PostgresUserStore({
+    transaction: async (
+      work: (sql: { query: (text: string, values?: unknown[]) => Promise<unknown> }) => unknown,
+    ) => {
+      transactions++;
+      return work({
+        query: async (text: string, values?: unknown[]) => {
+          queries++;
+          assert.match(text, /FROM user_identities i/);
+          assert.match(text, /LEFT JOIN user_namespace_projection p/);
+          assert.deepEqual(values, ["line:test", "subject"]);
+          return {
+            rows: [
+              {
+                identity_user_id: "member-1",
+                id: "member-1",
+                status: "active",
+                createdAt: 1,
+                login: "alice",
+                google_email: null,
+              },
+            ],
+          };
+        },
+      });
+    },
+  } as never);
+
+  assert.deepEqual(await store.viewByIdentity("line:test", "subject"), memberView);
+  assert.equal(transactions, 1);
+  assert.equal(queries, 1);
+});
+
+test("Account identity projection distinguishes unknown identity from broken projection", async () => {
+  for (const [rows, expected] of [
+    [[], null],
+    [[{ identity_user_id: "member-1" }], "integrity"],
+  ] as const) {
+    const store = new PostgresUserStore({
+      transaction: async (work: (sql: { query: () => Promise<unknown> }) => unknown) =>
+        work({ query: async () => ({ rows }) }),
+    } as never);
+    if (expected === null) {
+      assert.equal(await store.viewByIdentity("line:test", "subject"), null);
+    } else {
+      await assert.rejects(
+        store.viewByIdentity("line:test", "subject"),
+        (error) =>
+          error instanceof UserError &&
+          error.status === 500 &&
+          error.message === "User 帳號識別資料不完整。",
+      );
+    }
+  }
 });
 
 test("Account projection uses one joined read and reports missing login as integrity failure", async () => {

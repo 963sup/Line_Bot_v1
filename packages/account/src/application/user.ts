@@ -13,11 +13,8 @@ export function createUser(deps: UserDependencies) {
     /** Finds the User for a delivery-verified provider subject without expanding it. */
     findUser: (subject: string) => deps.repository().find(deps.lineProvider(), subject),
 
-    /** Looks up the Account-owned User projection only. */
-    getUser: async (subject: string) => {
-      const account = await deps.repository().find(deps.lineProvider(), subject);
-      return account ? deps.repository().view(account.id) : null;
-    },
+    /** Looks up the Account-owned User projection in one provider-qualified read. */
+    getUser: (subject: string) => deps.repository().viewByIdentity(deps.lineProvider(), subject),
 
     /** Resolves a trusted provider subject to the stable ID needed by protected operations. */
     activeLineUser: async (subject: string) =>

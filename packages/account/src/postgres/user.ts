@@ -9,8 +9,26 @@ import { type AccountAdministrationGuard, unavailableAccountAuthorization } from
 import { qualifyActiveUser } from "./qualification.js";
 
 type StoredUser = User & { auth_user_id: string | null };
+type UserViewRow = {
+  id: string;
+  status: User["status"];
+  createdAt: number | string;
+  login: string | null;
+  google_email: string | null;
+};
+type IdentityUserViewRow = Partial<UserViewRow> & { identity_user_id: string };
 const user = (row: Record<string, any>): StoredUser =>
   ({ ...row, createdAt: Number(row.createdAt) }) as StoredUser;
+const userView = (row: UserViewRow) => {
+  if (!row.login) throw new UserError(500, "User 登入名稱資料不完整。");
+  return {
+    id: row.id,
+    status: row.status,
+    createdAt: Number(row.createdAt),
+    login: row.login,
+    googleEmail: row.google_email,
+  };
+};
 
 export class PostgresUserStore implements UserRepository {
   constructor(
@@ -74,6 +92,32 @@ export class PostgresUserStore implements UserRepository {
         )
       ).rows[0];
       return row ? user(row) : null;
+    });
+  }
+
+  viewByIdentity(provider: string, subject: string) {
+    return this.db.transaction(async (sql) => {
+      const row = (
+        await sql.query(
+          `SELECT i.user_id AS identity_user_id,
+                  p.id,p.status,p."createdAt",p.login,p.google_email
+           FROM user_identities i
+           LEFT JOIN user_namespace_projection p ON p.id=i.user_id
+           WHERE i.provider=$1 AND i.subject=$2`,
+          [provider, subject],
+        )
+      ).rows[0] as IdentityUserViewRow | undefined;
+      if (!row) return null;
+      if (
+        !row.id ||
+        !row.status ||
+        row.createdAt === undefined ||
+        row.login === undefined ||
+        row.google_email === undefined
+      ) {
+        throw new UserError(500, "User 帳號識別資料不完整。");
+      }
+      return userView(row as UserViewRow);
     });
   }
 
@@ -248,24 +292,9 @@ export class PostgresUserStore implements UserRepository {
          FROM user_namespace_projection WHERE id=$1`,
         [id],
       )
-    ).rows[0] as
-      | {
-          id: string;
-          status: User["status"];
-          createdAt: number | string;
-          login: string | null;
-          google_email: string | null;
-        }
-      | undefined;
+    ).rows[0] as UserViewRow | undefined;
     if (!row) throw new UserError(404, "會員不存在。");
-    if (!row.login) throw new UserError(500, "User 登入名稱資料不完整。");
-    return {
-      id: row.id,
-      status: row.status,
-      createdAt: Number(row.createdAt),
-      login: row.login,
-      googleEmail: row.google_email,
-    };
+    return userView(row);
   }
 
   view(id: string) {
