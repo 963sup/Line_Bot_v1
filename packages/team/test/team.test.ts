@@ -50,6 +50,8 @@ test("rename-team is an explicit versioned command", () => {
       teamId: "team",
       expectedVersion: 2,
       name: "Platform",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
     },
   );
 });
@@ -75,6 +77,8 @@ test("create-team command does not expose server-generated TeamId", () => {
       requestId: "22222222-2222-4222-8222-222222222222",
       organizationAccountId: "organization",
       name: "Platform",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
     },
   );
   assert.throws(
@@ -85,6 +89,60 @@ test("create-team command does not expose server-generated TeamId", () => {
         organizationAccountId: "organization",
         teamId: "caller-owned",
         name: "Platform",
+      }),
+    TeamError,
+  );
+});
+
+
+test("Team hierarchy and settings commands preserve exact FPT values", () => {
+  assert.deepEqual(
+    parseTeamCommand({
+      action: "parent-team",
+      requestId: "33333333-3333-4333-8333-333333333333",
+      organizationAccountId: "organization",
+      teamId: "child",
+      expectedVersion: 3,
+      parentTeamId: "parent",
+    }),
+    {
+      action: "parent-team",
+      requestId: "33333333-3333-4333-8333-333333333333",
+      organizationAccountId: "organization",
+      teamId: "child",
+      expectedVersion: 3,
+      parentTeamId: "parent",
+    },
+  );
+  assert.deepEqual(
+    parseTeamCommand({
+      action: "settings",
+      requestId: "44444444-4444-4444-8444-444444444444",
+      organizationAccountId: "organization",
+      teamId: "team",
+      expectedVersion: 4,
+      privacy: "VISIBLE",
+      notificationSetting: "NOTIFICATIONS_ENABLED",
+    }),
+    {
+      action: "settings",
+      requestId: "44444444-4444-4444-8444-444444444444",
+      organizationAccountId: "organization",
+      teamId: "team",
+      expectedVersion: 4,
+      privacy: "VISIBLE",
+      notificationSetting: "NOTIFICATIONS_ENABLED",
+    },
+  );
+  assert.throws(
+    () =>
+      parseTeamCommand({
+        action: "parent-team",
+        requestId: "55555555-5555-4555-8555-555555555555",
+        organizationAccountId: "organization",
+        teamId: "team",
+        expectedVersion: 4,
+        parentTeamId: "team",
       }),
     TeamError,
   );
