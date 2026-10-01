@@ -14,7 +14,11 @@ test("Repository subscription HTTP maps canonical selector and authenticated com
   const subscription = {
     view: async (...args: unknown[]) => {
       calls.push(["view", ...args]);
-      return { repository: { id: "repo", actorUserId: "actor" }, state: "UNSUBSCRIBED", version: 0 };
+      return {
+        repository: { id: "repo", actorUserId: "actor" },
+        state: "UNSUBSCRIBED",
+        version: 0,
+      };
     },
     execute: async (...args: unknown[]) => {
       calls.push(["execute", ...args]);
