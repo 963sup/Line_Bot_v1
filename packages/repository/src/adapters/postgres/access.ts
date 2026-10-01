@@ -241,9 +241,8 @@ export async function authorizedRepository(
 }
 
 export async function repositoryArchived(sql: Sql, repositoryId: string): Promise<boolean> {
-  const row = (
-    await sql.query("SELECT is_archived FROM repositories WHERE id=$1", [repositoryId])
-  ).rows[0] as { is_archived: boolean } | undefined;
+  const row = (await sql.query("SELECT is_archived FROM repositories WHERE id=$1", [repositoryId]))
+    .rows[0] as { is_archived: boolean } | undefined;
   if (!row) throw new RepositoryError(404, "找不到 Repository。");
   return Boolean(row.is_archived);
 }
