@@ -15,19 +15,10 @@ type PendingSubscription = Readonly<{
 }>;
 
 function storageKey(ownerLogin: string, repositoryName: string) {
-  return (
-    "repository-subscription:" +
-    ownerLogin.toLowerCase() +
-    "/" +
-    repositoryName.toLowerCase()
-  );
+  return "repository-subscription:" + ownerLogin.toLowerCase() + "/" + repositoryName.toLowerCase();
 }
 
-function readPending(
-  key: string,
-  owner: string,
-  repositoryId: string,
-): PendingSubscription | null {
+function readPending(key: string, owner: string, repositoryId: string): PendingSubscription | null {
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
@@ -110,9 +101,7 @@ export default function RepositorySubscriptionControl({
       const snapshot = await requestView(token);
       if (ticket !== generation.current || (await liffClient.session(liffId)) !== token) return;
       setData(snapshot);
-      setPending(
-        readPending(key, snapshot.repository.actorUserId, snapshot.repository.id),
-      );
+      setPending(readPending(key, snapshot.repository.actorUserId, snapshot.repository.id));
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
@@ -258,8 +247,9 @@ export default function RepositorySubscriptionControl({
             </select>
           </label>
           <p className="crud-lifecycle-note">
-            Watch 不授予 Repository access，也不是 Star、Team notification setting 或 Notification delivery。Watch
-            狀態現在會持久化；Repository conversation 的 subscription fan-out producer 尚未啟用。
+            Watch 不授予 Repository access，也不是 Star、Team notification setting 或 Notification
+            delivery。Watch 狀態現在會持久化；Repository conversation 的 subscription fan-out
+            producer 尚未啟用。
           </p>
         </>
       )}
