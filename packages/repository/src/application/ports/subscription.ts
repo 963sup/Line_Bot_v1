@@ -5,6 +5,7 @@ export type RepositorySubscriptionState = "SUBSCRIBED" | "UNSUBSCRIBED" | "IGNOR
 export type RepositorySubscriptionSnapshot = Readonly<{
   repository: {
     id: string;
+    actorUserId: string;
     ownerLogin: string;
     name: string;
   };
