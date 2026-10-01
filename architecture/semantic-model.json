@@ -1889,7 +1889,7 @@
           "apps/web/test/repository-navigation.test.ts",
           "apps/web/test/repository-pending-storage.test.ts"
         ],
-        "note": "Issue keeps Repository permission separate from local workflow responsibility. Current create adopts schema-issues.json#IssueCreationPolicy COLLABORATORS_ONLY through Repository current-access resolution; READ can open, while current workflow transitions require an exact RepositoryPermission whose FPT description includes manage-issue ability (TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN or ADMIN) before publisher/assignee responsibility is evaluated. Public visibility does not grant Issue access, and unsupported comment/edit/close/assign/resource/lock operations remain deferred to their own capability slices."
+        "note": "Issue keeps Repository permission separate from local workflow responsibility. Current create adopts schema-issues.json#IssueCreationPolicy COLLABORATORS_ONLY through Repository current-access resolution; READ can open and can complete the required local publisher/assignee workflow while current access remains valid; that local workflow is not reclassified as generic FPT manage-issue authority. Generic triage/edit/close/assign classification remains limited to TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN or ADMIN. Public visibility does not grant Issue access, and unsupported comment/edit/close/assign/resource/lock operations remain deferred to their own capability slices."
       }
     },
     {
