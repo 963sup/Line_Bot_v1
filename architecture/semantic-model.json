@@ -762,10 +762,10 @@
     },
     {
       "id": "team-role-assignment",
-      "kind": "policy-decision",
-      "owner": "identity-access",
+      "kind": "authoritative",
+      "owner": "team",
       "lifecycle": "current",
-      "authorityMode": "policy-decision",
+      "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-users.json",
@@ -1170,10 +1170,19 @@
       "consistency": "transaction-recheck"
     },
     {
+      "id": "team-identity-access-maintainer-facts",
+      "provider": "team",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current Team-owned TeamMaintainer relationship facts plus current User, Organization, and TeamMembership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle.",
+      "integrationMode": "query",
+      "authority": "team",
+      "consistency": "current-state"
+    },
+    {
       "id": "identity-access-team-authorization",
       "provider": "identity-access",
       "consumer": "team",
-      "meaning": "Team collaboration consumes current TeamMaintainer RoleAssignment authorization.",
+      "meaning": "Team collaboration consumes current authorization decisions evaluated by IdentityAccess from Team-owned TeamMaintainer facts and current qualification; IdentityAccess does not write the TeamMaintainer lifecycle.",
       "integrationMode": "query",
       "authority": "identity-access",
       "consistency": "current-state"

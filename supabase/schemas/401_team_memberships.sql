@@ -22,5 +22,5 @@ grant insert, select, update on app_private.team_memberships to line_app;
 create policy backend on app_private.team_memberships
   for all to line_app using (true) with check (true);
 
--- Identity/Access is the sole writer of TeamMaintainer assignments.
--- TeamMembership remains a separate participation fact and never grants authority by itself.
+-- Team owns TeamMaintainer relationship facts.
+-- Active TeamMembership represents ordinary MEMBER participation; it remains distinct from MAINTAINER authority.

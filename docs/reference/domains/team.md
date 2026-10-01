@@ -30,7 +30,7 @@ User 暫停／停權、OrganizationMembership 失效或 TeamMembership 離開／
 - `create-team`：只能在 actor 已有 active OrganizationMembership 的明確 Organization scope 建立 Team、creator membership 與 TeamMaintainer assignment；沒有 Organization 不存在可建立 Organization Team 的 global path。
 - `rename-team`：只有 effective TeamMaintainer 可在 expectedVersion 一致時修改 Team name；Team id、Organization scope、creator identity 保持 immutable。
 - `join`：建立或更新本人在該 Organization Team 的 pending 申請。
-- `member`：調整 TeamMembership status，並在同一交易協調 Identity/Access 授予或撤銷 TeamMaintainer；本人退出是受限情況。
+- `member`：調整 TeamMembership status，並在同一 Team transaction 授予或撤銷 Team-owned TeamMaintainer fact；本人退出是受限情況。Identity/Access 只評估 current authorization。
 
 每個寫入命令必須：
 

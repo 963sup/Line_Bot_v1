@@ -1,11 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
-import {
-  grantTeamMaintainer,
-  isTeamMaintainer,
-  resolveVerifiedLineActor,
-  revokeTeamMaintainer,
-} from "@line_bot_v1/identity-access/postgres";
+import { isTeamMaintainer, resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
@@ -27,6 +22,7 @@ import {
 } from "../domain/policies/team-maintenance.js";
 import { teamVersion } from "../domain/policies/team-version.js";
 import { teamSlugFromName } from "../domain/value-objects/team-slug.js";
+import { grantTeamMaintainer, revokeTeamMaintainer } from "./postgres-maintainer.js";
 
 type TeamRow = {
   id: string;
@@ -330,8 +326,6 @@ export class PostgresTeamRepository implements TeamRepository {
               await revokeTeamMaintainer(sql, {
                 teamId,
                 targetUserId: command.targetUserId,
-                userStatusVersion: targetUser.statusVersion,
-                now,
               });
             }
             await sql.query(
@@ -381,8 +375,6 @@ export class PostgresTeamRepository implements TeamRepository {
               await revokeTeamMaintainer(sql, {
                 teamId,
                 targetUserId: command.targetUserId,
-                userStatusVersion: targetUser.statusVersion,
-                now,
               });
             }
           }
