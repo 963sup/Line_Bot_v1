@@ -932,6 +932,22 @@
       "participants": ["enterprise", "organization"]
     },
     {
+      "name": "team_effective_memberships",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["team"]
+    },
+    {
+      "name": "repository_team_effective_access_sources",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "team", "repository"]
+    },
+    {
       "name": "repository_effective_access",
       "kind": "view",
       "path": "supabase/schemas/900_cross_owner_projections.sql",
