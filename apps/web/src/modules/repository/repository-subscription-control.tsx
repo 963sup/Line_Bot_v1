@@ -258,7 +258,8 @@ export default function RepositorySubscriptionControl({
             </select>
           </label>
           <p className="crud-lifecycle-note">
-            Watch 不授予 Repository access，也不是 Star、Team notification setting 或 Notification delivery。
+            Watch 不授予 Repository access，也不是 Star、Team notification setting 或 Notification delivery。Watch
+            狀態現在會持久化；Repository conversation 的 subscription fan-out producer 尚未啟用。
           </p>
         </>
       )}
