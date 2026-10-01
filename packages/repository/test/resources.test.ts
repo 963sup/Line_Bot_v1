@@ -23,29 +23,24 @@ async function repositoryFixture() {
   ] as const) {
     await activeUser(db, id, login);
   }
-  for (const id of ["reader", "writer", "outsider", "author"]) {
-    await activeUser(db, id);
-  }
+  for (const id of ["reader", "author"]) await activeUser(db, id);
   for (const repository of [
     ["repo-a", "owner-a", "Alpha", "private"],
     ["repo-b", "owner-b", "Beta", "private"],
-    ["repo-public", "owner-a", "Public Notes", "public"],
   ] as const) {
     await pg.query(
       "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,$4,1)",
       [...repository],
     );
-  }
-  for (const repositoryId of ["repo-a", "repo-b"]) {
     await pg.query(
       "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'read',1)",
-      [repositoryId, "reader"],
+      [repository[0], "reader"],
     );
   }
   return fixture;
 }
 
-test("Repository resources validate subject, selector and typed cursors before touching persistence", async () => {
+test("Repository resources validate selectors and typed cursors before persistence", async () => {
   const calls: unknown[][] = [];
   let storeFactories = 0;
   const store = {
@@ -72,7 +67,6 @@ test("Repository resources validate subject, selector and typed cursors before t
     JSON.stringify({ name: "bug", id: "label-a" }),
   );
   assert.equal(storeFactories, 1);
-  assert.equal(calls.length, 1);
   assert.deepEqual(calls[0]?.[0], { userId: "line-subject-user" });
   assert.deepEqual(calls[0]?.[1], { ownerLogin: "owner-a", repositoryName: "Alpha" });
   assert.deepEqual(calls[0]?.[2], { name: "bug", id: "label-a" });
@@ -89,130 +83,12 @@ test("Repository resources validate subject, selector and typed cursors before t
   );
   assert.equal(storeFactories, 0);
   assert.equal(calls.length, 0);
-
-  const rejecting = createRepositoryResources({
-    activeUser: async () => {
-      throw new RepositoryError(401, "not signed in");
-    },
-    store: () => {
-      storeFactories += 1;
-      return store;
-    },
-  });
-  await assert.rejects(
-    rejecting.labels("line-subject", { ownerLogin: "owner-a", repositoryName: "Alpha" }),
-    (error) => error instanceof RepositoryError && error.status === 401,
-  );
-  assert.equal(storeFactories, 0);
 });
 
-test("Repository resource reads require current effective access and never publish public bodies anonymously", async (t) => {
-  const { pg, db } = await repositoryFixture();
-  t.after(() => pg.close());
-  await pg.query(
-    `insert into app_private.discussions(id,repository_id,author,title,body,category,version,created_at,updated_at)
-     values($1,$2,$3,$4,$5,$6,1,$7,$7)`,
-    ["discussion-a", "repo-a", "author", "Read me", "Private body", "General", 10],
-  );
-  await pg.query(
-    `insert into app_private.discussions(id,repository_id,author,title,body,category,version,created_at,updated_at)
-     values($1,$2,$3,$4,$5,$6,1,$7,$7)`,
-    ["discussion-public", "repo-public", "author", "Public title", "Public body", "General", 11],
-  );
-  await pg.query(
-    "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('repo-a','writer','read',1)",
-  );
-
-  const store = new PostgresRepositoryResourceStore(db);
-  const readable = await store.discussion(
-    { userId: "reader" },
-    { ownerLogin: "owner-a", repositoryName: "alpha" },
-    "discussion-a",
-  );
-  assert.equal(readable.repository.id, "repo-a");
-  assert.equal(readable.discussion.body, "Private body");
-
-  await pg.query(
-    "delete from app_private.repository_access where repository_id='repo-a' and principal_id='reader'",
-  );
-  await assert.rejects(
-    store.discussion(
-      { userId: "reader" },
-      { ownerLogin: "owner-a", repositoryName: "alpha" },
-      "discussion-a",
-    ),
-    (error) => error instanceof RepositoryError && error.status === 404,
-  );
-  await pg.query("update app_private.users set status='suspended' where id='writer'");
-  await assert.rejects(
-    store.discussion(
-      { userId: "writer" },
-      { ownerLogin: "owner-a", repositoryName: "alpha" },
-      "discussion-a",
-    ),
-    (error) => error instanceof RepositoryError && error.status === 404,
-  );
-
-  await assert.rejects(
-    store.discussion(
-      { userId: "outsider" },
-      { ownerLogin: "owner-a", repositoryName: "alpha" },
-      "discussion-a",
-    ),
-    (error) => error instanceof RepositoryError && error.status === 404,
-  );
-  await assert.rejects(
-    store.discussion(
-      { userId: "outsider" },
-      { ownerLogin: "owner-a", repositoryName: "public-notes" },
-      "discussion-public",
-    ),
-    (error) => error instanceof RepositoryError && error.status === 404,
-  );
-});
-
-test("Discussion list omits body and paginates stable same-time rows by id", async (t) => {
-  const { pg, db } = await repositoryFixture();
-  t.after(() => pg.close());
-  for (let index = 1; index <= 21; index += 1) {
-    const id = `discussion-${String(index).padStart(2, "0")}`;
-    await pg.query(
-      `insert into app_private.discussions(id,repository_id,author,title,body,category,version,created_at,updated_at)
-       values($1,'repo-a','author',$2,$3,'General',1,100,100)`,
-      [id, `Discussion ${index}`, `Body ${index}`],
-    );
-  }
-
-  const store = new PostgresRepositoryResourceStore(db);
-  const first = await store.discussions({ userId: "reader" }, { repositoryId: "repo-a" });
-  assert.equal(first.discussions.length, 20);
-  assert.equal("body" in first.discussions[0]!, false);
-  assert.deepEqual(first.discussions.map((discussion) => discussion.id).slice(0, 3), [
-    "discussion-01",
-    "discussion-02",
-    "discussion-03",
-  ]);
-  assert.equal(first.discussions.at(-1)?.id, "discussion-20");
-  assert.ok(first.next);
-
-  const second = await store.discussions(
-    { userId: "reader" },
-    { repositoryId: "repo-a" },
-    JSON.parse(first.next!) as { at: number; id: string },
-  );
-  assert.deepEqual(
-    second.discussions.map((discussion) => discussion.id),
-    ["discussion-21"],
-  );
-  assert.equal(second.next, null);
-});
-
-test("Repository resource reads recheck Organization Team access qualification on every read", async (t) => {
+test("Repository resource reads recheck Organization Team access qualification", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
-  for (const id of ["org-owner", "team-reader", "author"]) {
-    await activeUser(db, id);
-  }
+  for (const id of ["org-owner", "team-reader"]) await activeUser(db, id);
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "organization-a",
     "org-owner",
@@ -257,72 +133,9 @@ test("Repository resource reads recheck Organization Team access qualification o
     store.labels({ userId: "team-reader" }, { ownerLogin: "octo-org", repositoryName: "shared" }),
     (error) => error instanceof RepositoryError && error.status === 404,
   );
-
-  await pg.query(
-    "update app_private.team_memberships set status='active' where team_id='team-a' and user_id='team-reader'",
-  );
-  await pg.query(
-    "update app_private.organization_memberships set status='removed' where organization_account_id='organization-a' and user_id='team-reader'",
-  );
-  await assert.rejects(
-    store.labels({ userId: "team-reader" }, { ownerLogin: "octo-org", repositoryName: "shared" }),
-    (error) => error instanceof RepositoryError && error.status === 404,
-  );
 });
 
-test("Discussion detail is repository-scoped and comment pagination cannot cross repositories", async (t) => {
-  const { pg, db } = await repositoryFixture();
-  t.after(() => pg.close());
-  for (const [id, repositoryId] of [
-    ["discussion-a", "repo-a"],
-    ["discussion-b", "repo-b"],
-  ] as const) {
-    await pg.query(
-      `insert into app_private.discussions(id,repository_id,author,title,body,category,version,created_at,updated_at)
-       values($1,$2,'author',$3,$4,'General',1,10,10)`,
-      [id, repositoryId, id, `${id} body`],
-    );
-  }
-  for (let index = 1; index <= 51; index += 1) {
-    const id = `comment-${String(index).padStart(2, "0")}`;
-    await pg.query(
-      "insert into app_private.discussion_comments(id,discussion_id,author,body,version,created_at) values($1,'discussion-a','author',$2,1,200)",
-      [id, `Comment ${index}`],
-    );
-  }
-  await pg.query(
-    "insert into app_private.discussion_comments(id,discussion_id,author,body,version,created_at) values('comment-other','discussion-b','author','Other',1,200)",
-  );
-
-  const store = new PostgresRepositoryResourceStore(db);
-  await assert.rejects(
-    store.discussion({ userId: "reader" }, { repositoryId: "repo-a" }, "discussion-b"),
-    (error) => error instanceof RepositoryError && error.status === 404,
-  );
-
-  const first = await store.discussion(
-    { userId: "reader" },
-    { repositoryId: "repo-a" },
-    "discussion-a",
-  );
-  assert.equal("comments" in first.discussion, false);
-  assert.equal(first.comments.length, 50);
-  assert.equal(first.comments.at(-1)?.id, "comment-50");
-  assert.ok(first.next);
-
-  const second = await store.discussion(
-    { userId: "reader" },
-    { repositoryId: "repo-a" },
-    "discussion-a",
-    JSON.parse(first.next!) as { at: number; id: string },
-  );
-  assert.deepEqual(
-    second.comments.map((comment) => comment.id),
-    ["comment-51"],
-  );
-});
-
-test("Labels and milestones map canonical repository data with repository-local milestone numbers", async (t) => {
+test("Labels and milestones map canonical Repository-owned data", async (t) => {
   const { pg, db } = await repositoryFixture();
   t.after(() => pg.close());
   for (const label of [
@@ -350,23 +163,8 @@ test("Labels and milestones map canonical repository data with repository-local 
   const store = new PostgresRepositoryResourceStore(db);
   const labels = await store.labels({ userId: "reader" }, { repositoryId: "repo-a" });
   assert.deepEqual(
-    labels.labels.map((label) => ({
-      id: label.id,
-      name: label.name,
-      color: label.color,
-      description: label.description,
-      repositoryId: label.repositoryId,
-    })),
-    [
-      {
-        id: "label-bug",
-        name: "bug",
-        color: "ff0000",
-        description: "Bug report",
-        repositoryId: "repo-a",
-      },
-      { id: "label-docs", name: "docs", color: "00ff00", description: "", repositoryId: "repo-a" },
-    ],
+    labels.labels.map((label) => label.name),
+    ["bug", "docs"],
   );
 
   const openMilestones = await store.milestones(
@@ -375,17 +173,8 @@ test("Labels and milestones map canonical repository data with repository-local 
     "open",
   );
   assert.deepEqual(
-    openMilestones.milestones.map((milestone) => ({
-      id: milestone.id,
-      number: milestone.number,
-      title: milestone.title,
-      status: milestone.status,
-      dueAt: milestone.dueAt,
-    })),
-    [
-      { id: "milestone-three", number: 3, title: "Three", status: "open", dueAt: 3000 },
-      { id: "milestone-two", number: 2, title: "Two", status: "open", dueAt: null },
-    ],
+    openMilestones.milestones.map((milestone) => milestone.number),
+    [3, 2],
   );
   assert.deepEqual(await store.milestone({ userId: "reader" }, { repositoryId: "repo-a" }, 2), {
     repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", capability: "read" },

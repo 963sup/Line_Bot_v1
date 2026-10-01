@@ -1,6 +1,8 @@
 import type {
-  RepositoryDiscussionResult,
-  RepositoryDiscussionsResult,
+  DiscussionResult,
+  DiscussionsResult,
+} from "@line_bot_v1/discussion/contracts/discussions";
+import type {
   RepositoryLabelsResult,
   RepositoryMilestoneResult,
   RepositoryMilestonesResult,
@@ -10,8 +12,8 @@ export type ResourcesKind = "discussions" | "discussion" | "labels" | "milestone
 export type MilestoneStatus = "open" | "closed";
 
 export type PageData =
-  | ({ kind: "discussions" } & RepositoryDiscussionsResult)
-  | ({ kind: "discussion" } & RepositoryDiscussionResult)
+  | ({ kind: "discussions" } & DiscussionsResult)
+  | ({ kind: "discussion" } & DiscussionResult)
   | ({ kind: "labels" } & RepositoryLabelsResult)
   | ({ kind: "milestones" } & RepositoryMilestonesResult)
   | ({ kind: "milestone" } & RepositoryMilestoneResult);
@@ -27,10 +29,10 @@ export function parseRepositoryResourcePage(kind: ResourcesKind, value: unknown)
     throw { status: 503, message: "Repository 資源回應格式不正確。" };
   }
   if (kind === "discussions" && Array.isArray(value.discussions)) {
-    return { ...(value as RepositoryDiscussionsResult), kind };
+    return { ...(value as DiscussionsResult), kind };
   }
   if (kind === "discussion" && isRecord(value.discussion) && Array.isArray(value.comments)) {
-    return { ...(value as RepositoryDiscussionResult), kind };
+    return { ...(value as DiscussionResult), kind };
   }
   if (kind === "labels" && Array.isArray(value.labels)) {
     return { ...(value as RepositoryLabelsResult), kind };

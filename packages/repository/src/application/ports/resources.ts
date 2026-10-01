@@ -3,31 +3,8 @@ import type { RepositorySummary } from "../../domain.js";
 
 export type RepositoryResourceIdentity = { userId: string };
 
-export type RepositoryResourceCursor = { at: number; id: string };
 export type RepositoryLabelCursor = { name: string; id: string };
 export type RepositoryMilestoneCursor = { number: number; id: string };
-
-type RepositoryDiscussionSummary = {
-  id: string;
-  repositoryId: string;
-  author: string;
-  title: string;
-  category: string;
-  version: number;
-  createdAt: number;
-  updatedAt: number;
-};
-
-export type RepositoryDiscussion = RepositoryDiscussionSummary & { body: string };
-
-export type RepositoryDiscussionComment = {
-  id: string;
-  discussionId: string;
-  author: string;
-  body: string;
-  version: number;
-  createdAt: number;
-};
 
 export type RepositoryLabel = {
   id: string;
@@ -53,19 +30,6 @@ export type RepositoryMilestone = {
   updatedAt: number;
 };
 
-export type RepositoryDiscussionsResult = {
-  repository: RepositorySummary;
-  discussions: RepositoryDiscussionSummary[];
-  next: string | null;
-};
-
-export type RepositoryDiscussionResult = {
-  repository: RepositorySummary;
-  discussion: RepositoryDiscussion;
-  comments: RepositoryDiscussionComment[];
-  next: string | null;
-};
-
 export type RepositoryLabelsResult = {
   repository: RepositorySummary;
   labels: RepositoryLabel[];
@@ -84,17 +48,6 @@ export type RepositoryMilestoneResult = {
 };
 
 export interface RepositoryResourceStore {
-  discussions(
-    identity: RepositoryResourceIdentity,
-    selector: RepositorySelector,
-    after?: RepositoryResourceCursor,
-  ): Promise<RepositoryDiscussionsResult>;
-  discussion(
-    identity: RepositoryResourceIdentity,
-    selector: RepositorySelector,
-    discussionId: string,
-    commentsAfter?: RepositoryResourceCursor,
-  ): Promise<RepositoryDiscussionResult>;
   labels(
     identity: RepositoryResourceIdentity,
     selector: RepositorySelector,

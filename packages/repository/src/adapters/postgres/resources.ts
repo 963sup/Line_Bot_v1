@@ -1,9 +1,5 @@
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
-  RepositoryDiscussion,
-  RepositoryDiscussionComment,
-  RepositoryDiscussionResult,
-  RepositoryDiscussionsResult,
   RepositoryLabel,
   RepositoryLabelCursor,
   RepositoryLabelsResult,
@@ -12,34 +8,12 @@ import type {
   RepositoryMilestoneResult,
   RepositoryMilestoneStatus,
   RepositoryMilestonesResult,
-  RepositoryResourceCursor,
   RepositoryResourceIdentity,
   RepositoryResourceStore,
 } from "../../application/ports/resources.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import { RepositoryError } from "../../domain.js";
 import { authorizedRepository } from "./access.js";
-
-type DiscussionRow = {
-  id: string;
-  repository_id: string;
-  author: string;
-  title: string;
-  body: string;
-  category: string;
-  version: number;
-  created_at: number | string;
-  updated_at: number | string;
-};
-
-type CommentRow = {
-  id: string;
-  discussion_id: string;
-  author: string;
-  body: string;
-  version: number;
-  created_at: number | string;
-};
 
 type LabelRow = {
   id: string;
@@ -62,44 +36,6 @@ type MilestoneRow = {
   created_at: number | string;
   updated_at: number | string;
 };
-
-function discussion(row: DiscussionRow): RepositoryDiscussion {
-  return {
-    id: row.id,
-    repositoryId: row.repository_id,
-    author: row.author,
-    title: row.title,
-    body: row.body,
-    category: row.category,
-    version: row.version,
-    createdAt: Number(row.created_at),
-    updatedAt: Number(row.updated_at),
-  };
-}
-
-function discussionSummary(row: DiscussionRow) {
-  return {
-    id: row.id,
-    repositoryId: row.repository_id,
-    author: row.author,
-    title: row.title,
-    category: row.category,
-    version: row.version,
-    createdAt: Number(row.created_at),
-    updatedAt: Number(row.updated_at),
-  };
-}
-
-function comment(row: CommentRow): RepositoryDiscussionComment {
-  return {
-    id: row.id,
-    discussionId: row.discussion_id,
-    author: row.author,
-    body: row.body,
-    version: row.version,
-    createdAt: Number(row.created_at),
-  };
-}
 
 function label(row: LabelRow): RepositoryLabel {
   return {
@@ -125,11 +61,6 @@ function milestone(row: MilestoneRow): RepositoryMilestone {
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
   };
-}
-
-function nextResource(items: { id: string; createdAt: number }[], hasMore: boolean) {
-  const last = items.at(-1);
-  return hasMore && last ? JSON.stringify({ at: last.createdAt, id: last.id }) : null;
 }
 
 function nextLabel(items: RepositoryLabel[], hasMore: boolean) {
@@ -159,73 +90,6 @@ async function resourceRepository(
 
 export class PostgresRepositoryResourceStore implements RepositoryResourceStore {
   constructor(private db: Database = businessDatabase()) {}
-
-  discussions(
-    who: RepositoryResourceIdentity,
-    selector: RepositorySelector,
-    after?: RepositoryResourceCursor,
-  ): Promise<RepositoryDiscussionsResult> {
-    return this.db.transaction(async (sql) => {
-      const repository = await resourceRepository(sql, who, selector);
-      const rows = (
-        await sql.query(
-          `SELECT *
-           FROM discussions
-           WHERE repository_id=$1
-             AND ($2::bigint IS NULL OR created_at<$2 OR (created_at=$2 AND id>$3))
-           ORDER BY created_at DESC,id ASC
-           LIMIT 21`,
-          [repository.id, after?.at ?? null, after?.id ?? null],
-        )
-      ).rows as DiscussionRow[];
-      const mapped = rows.map(discussionSummary);
-      const hasMore = mapped.length > 20;
-      if (hasMore) mapped.pop();
-      return {
-        repository,
-        discussions: mapped,
-        next: nextResource(mapped, hasMore),
-      };
-    });
-  }
-
-  discussion(
-    who: RepositoryResourceIdentity,
-    selector: RepositorySelector,
-    discussionId: string,
-    commentsAfter?: RepositoryResourceCursor,
-  ): Promise<RepositoryDiscussionResult> {
-    return this.db.transaction(async (sql) => {
-      const repository = await resourceRepository(sql, who, selector);
-      const row = (
-        await sql.query("SELECT * FROM discussions WHERE repository_id=$1 AND id=$2", [
-          repository.id,
-          discussionId,
-        ])
-      ).rows[0] as DiscussionRow | undefined;
-      if (!row) throw new RepositoryError(404, "找不到 Discussion。");
-      const rows = (
-        await sql.query(
-          `SELECT *
-           FROM discussion_comments
-           WHERE discussion_id=$1
-             AND ($2::bigint IS NULL OR created_at>$2 OR (created_at=$2 AND id>$3))
-           ORDER BY created_at ASC,id ASC
-           LIMIT 51`,
-          [discussionId, commentsAfter?.at ?? null, commentsAfter?.id ?? null],
-        )
-      ).rows as CommentRow[];
-      const comments = rows.map(comment);
-      const hasMore = comments.length > 50;
-      if (hasMore) comments.pop();
-      return {
-        repository,
-        discussion: discussion(row),
-        comments,
-        next: nextResource(comments, hasMore),
-      };
-    });
-  }
 
   labels(
     who: RepositoryResourceIdentity,
@@ -275,11 +139,7 @@ export class PostgresRepositoryResourceStore implements RepositoryResourceStore 
       const milestones = rows.map(milestone);
       const hasMore = milestones.length > 50;
       if (hasMore) milestones.pop();
-      return {
-        repository,
-        milestones,
-        next: nextMilestone(milestones, hasMore),
-      };
+      return { repository, milestones, next: nextMilestone(milestones, hasMore) };
     });
   }
 

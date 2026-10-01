@@ -179,7 +179,8 @@
     {
       "id": "discussion",
       "kind": "business-owner",
-      "lifecycle": "selected-target"
+      "lifecycle": "current",
+      "doc": "docs/owners/discussion.md"
     },
     {
       "id": "gist",
@@ -489,7 +490,7 @@
     {
       "id": "discussion",
       "kind": "authoritative",
-      "owner": "repository",
+      "owner": "discussion",
       "lifecycle": "current",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
@@ -501,7 +502,7 @@
     {
       "id": "discussion-comment",
       "kind": "authoritative",
-      "owner": "repository",
+      "owner": "discussion",
       "lifecycle": "current",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
@@ -993,6 +994,24 @@
       "provider": "repository",
       "consumer": "issue",
       "meaning": "Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "namespace-discussion-locator",
+      "provider": "namespace",
+      "consumer": "discussion",
+      "meaning": "Discussion uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "repository-discussion-scope",
+      "provider": "repository",
+      "consumer": "discussion",
+      "meaning": "Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads without acquiring Repository authority.",
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck"
@@ -1558,10 +1577,8 @@
         "manage-repository-stars",
         "manage-repository-star-lists",
         "read-repository-discovery",
-        "manage-discussions",
         "manage-repository-labels",
         "manage-repository-milestones",
-        "read-discussions",
         "read-repository-labels",
         "read-repository-milestones",
         "manage-repository-address"
@@ -1863,9 +1880,9 @@
     },
     {
       "id": "read-discussions",
-      "owner": "repository",
+      "owner": "discussion",
       "kind": "leaf",
-      "intent": "Read authorized Repository Discussion lists, a Discussion body, and its comments without asserting Discussion write management.",
+      "intent": "Read authorized Repository-scoped Discussion lists, a Discussion body, and its comments without asserting Discussion write management.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1877,18 +1894,13 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "authorized Repository Discussion read model and API transport",
+        "scope": "Discussion-owned authorized read model consuming Repository current access",
         "sourcePaths": [
-          "packages/repository/src/application/resources.ts",
-          "packages/repository/src/application/ports/resources.ts",
-          "packages/repository/src/adapters/postgres/resources.ts",
-          "packages/repository/src/adapters/postgres/access.ts"
+          "packages/discussion/src/application/discussions.ts",
+          "packages/discussion/src/contracts/output/discussion-read.ts",
+          "packages/discussion/src/adapters/postgres.ts"
         ],
-        "publicExports": [
-          "./application/resources",
-          "./application/ports/resources",
-          "./postgres/resources"
-        ],
+        "publicExports": ["./application/discussions", "./contracts/discussions", "./postgres"],
         "entrypoints": [
           "apps/web/src/app/api/discussions/route.ts",
           "apps/web/src/app/api/discussions/[discussionId]/route.ts",
@@ -1896,10 +1908,10 @@
           "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
         ],
         "testPaths": [
-          "packages/repository/test/resources.test.ts",
+          "packages/discussion/test/discussions.test.ts",
           "apps/web/test/repository-resources-http.test.ts"
         ],
-        "note": "Read uses owner/name selector plus current user access through repository_effective_access; local Discussion id is opaque and is not the GitHub Discussion number. No write/manage Discussion use case is asserted."
+        "note": "Discussion owns its read model and current opaque identifier validation while Repository provides identity/current access through a public contract. The opaque id remains implementation drift and does not redefine canonical FPT Discussion.number."
       }
     },
     {
@@ -1984,9 +1996,9 @@
     },
     {
       "id": "manage-discussions",
-      "owner": "repository",
+      "owner": "discussion",
       "kind": "leaf",
-      "intent": "Preserve Repository Discussion create/update/close/comment write semantics as current data without asserting runtime management.",
+      "intent": "Preserve Discussion create/update/close/comment write semantics as current data without asserting runtime management.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1997,12 +2009,12 @@
       "runtimeExpectation": "not-asserted",
       "implementation": {
         "status": "data-only",
-        "scope": "Repository-owned Discussion tables and semantic concept",
+        "scope": "Discussion-owned tables and semantic concepts",
         "sourcePaths": [],
         "publicExports": [],
         "entrypoints": [],
         "testPaths": [],
-        "note": "Discussion schema/topology evidence exists and authorized read runtime is modeled by read-discussions; create/update/comment/close management is not asserted."
+        "note": "Discussion schema/topology evidence and authorized reads exist; create/update/comment/close management remains unimplemented."
       }
     },
     {
@@ -2632,8 +2644,7 @@
     },
     {
       "semanticOwner": "discussion",
-      "targetModule": "@line_bot_v1/discussion",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+      "module": "@line_bot_v1/discussion"
     },
     {
       "semanticOwner": "gist",

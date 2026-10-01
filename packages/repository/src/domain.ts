@@ -1,4 +1,3 @@
-export { normalizeDiscussionId } from "./domain/discussion/value-objects/discussion-id.js";
 export { normalizeRepositoryMilestoneNumber } from "./domain/milestone/value-objects/milestone-number.js";
 export type {
   RepositoryAddress,

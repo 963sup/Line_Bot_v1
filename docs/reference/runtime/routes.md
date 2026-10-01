@@ -68,7 +68,7 @@ Current / target capability status 回 [Ownership facts](../../facts/ownership.m
 
 Route handler 不複製 application use case，concrete adapters 在最外層 composition 注入。
 
-Current Repository resource read API：
+Current Repository-scoped collaboration/resource read API：
 
 | Route | Responsibility |
 | --- | --- |
@@ -80,7 +80,7 @@ Current Repository resource read API：
 | `/api/repository-access` | GET access grant projection；POST expected-version + exact-replay Direct User / Organization Team grant mutation；不建立 Organization/Team membership |
 | `/api/projects` | Authorized Project collection read；每次 request 重驗 current User，Organization-owned Project 只接受 current `OrganizationOwner` scope |
 
-新增 Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion、Label、Repository Milestone 的 create/update/delete/close/comment write management 尚未成為 runtime capability。Project aggregate-root read 已 active；Project planning create/update、WBS/Item/Milestone mutation 仍是 data-only。
+Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion read lifecycle 由 Discussion owner 承接；Label 與 Repository Milestone 仍由 Repository owner 承接。各自的 create/update/delete/close/comment write management 尚未成為 runtime capability。Project aggregate-root read 已 active；Project planning create/update、WBS/Item/Milestone mutation 仍是 data-only。
 
 ## Same-page view state
 

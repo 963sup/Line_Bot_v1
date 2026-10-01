@@ -4,7 +4,7 @@ Local constraints for `@line_bot_v1/repository`. Parent rules: [`packages/AGENTS
 
 ## Local Invariants
 
-- Every Discussion belongs to exactly one Repository. Issue lifecycle is Issue-owned; Repository provides its scope/access and repository-scoped number allocation.
+- Every Issue and Discussion belongs to exactly one Repository, but their lifecycles are sibling-owned. Repository provides current scope/access; Issue additionally consumes repository-scoped number allocation.
 - Star/unstar is idempotent; starring never grants repository access.
 - Repository Star Lists are user-owned curated collections over the user current stars.
 - Repository has at most one nullable address value; that address is the attendance point for current effective Repository members. Public visibility and Stars never grant attendance eligibility.

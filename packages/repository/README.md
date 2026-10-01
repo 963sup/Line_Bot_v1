@@ -9,4 +9,4 @@ Routing and module overview for `@line_bot_v1/repository`.
 
 ## Scope
 
-Repository work container, identity/access, Discussion lifecycle, Labels, Milestones, Stars, Star Lists, and Repository-owned scope/numbering contracts consumed by Issue.
+Repository work container, identity/access, Labels, Milestones, Stars, Star Lists, and Repository-owned scope contracts consumed by Issue and Discussion. Repository-scoped Issue number allocation remains Repository-owned.
