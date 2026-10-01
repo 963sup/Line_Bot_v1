@@ -21,7 +21,7 @@ test("Repository access HTTP translates owner/name and authenticated command tra
           ownerKind: "ORGANIZATION",
           ownerLogin: "octo",
           name: "Shared",
-          actorCapability: "admin",
+          actorPermissions: ["admin"],
         },
         directUserGrants: [],
         teamGrants: [],

@@ -56,7 +56,7 @@ test("Postgres Repository collection returns only current effective access", asy
       id: "repository-a",
       ownerLogin: "viewer",
       name: "Operations",
-      capability: "admin",
+      permissions: ["admin"],
     },
   ]);
 });

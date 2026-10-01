@@ -21,7 +21,7 @@ test("Repository address HTTP translates canonical selector and authenticated co
           ownerLogin: "octo",
           name: "Shared",
           version: 1,
-          actorCapability: "admin",
+          actorPermissions: ["admin"],
         },
         address: null,
       };

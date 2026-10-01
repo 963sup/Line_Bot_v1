@@ -367,13 +367,13 @@ test("repository effective access combines direct and active same-organization T
   );
 
   const effective = await pg.query(
-    "select user_id,capability from app_private.repository_effective_access where repository_id=$1 order by user_id",
+    "select user_id,permissions from app_private.repository_effective_access where repository_id=$1 order by user_id",
     ["repository-a"],
   );
   assert.deepEqual(effective.rows, [
-    { user_id: "removed-team-user", capability: "write" },
-    { user_id: "repository-owner", capability: "read" },
-    { user_id: "team-user", capability: "write" },
+    { user_id: "removed-team-user", permissions: ["write"] },
+    { user_id: "repository-owner", permissions: ["read"] },
+    { user_id: "team-user", permissions: ["write"] },
   ]);
 
   await pg.query(
@@ -381,12 +381,12 @@ test("repository effective access combines direct and active same-organization T
     ["team-a", "removed-team-user"],
   );
   const afterRemoval = await pg.query(
-    "select user_id,capability from app_private.repository_effective_access where repository_id=$1 order by user_id",
+    "select user_id,permissions from app_private.repository_effective_access where repository_id=$1 order by user_id",
     ["repository-a"],
   );
   assert.deepEqual(afterRemoval.rows, [
-    { user_id: "repository-owner", capability: "read" },
-    { user_id: "team-user", capability: "write" },
+    { user_id: "repository-owner", permissions: ["read"] },
+    { user_id: "team-user", permissions: ["write"] },
   ]);
 
   await assert.rejects(
