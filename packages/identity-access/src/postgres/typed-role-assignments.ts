@@ -115,24 +115,8 @@ export async function requireOrganizationLifecycleOwner(
   }
 }
 
-export async function isTeamMaintainer(sql: Sql, teamId: string, userId: string) {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1
-         FROM team_role_assignments r
-         JOIN identity_access_team_subjects s
-           ON s.team_id=r.team_id AND s.user_id=r.user_id
-         WHERE r.team_id=$1 AND r.user_id=$2
-           AND r.role='TeamMaintainer' AND r.status='active'
-           AND s.team_membership_status='active'
-           AND s.user_status='active'
-           AND s.organization_status='active'
-           AND s.organization_membership_status='active'
-           AND r.user_status_version=s.user_status_version
-           AND r.membership_version=s.team_membership_version`,
-        [teamId, userId],
-      )
-    ).rows[0],
-  );
+export async function authorizeTeamMaintainer(
+  readEffectiveMaintainer: () => Promise<boolean>,
+): Promise<boolean> {
+  return readEffectiveMaintainer();
 }

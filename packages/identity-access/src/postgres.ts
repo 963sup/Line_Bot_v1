@@ -10,9 +10,9 @@ export {
   recordGovernanceResult,
 } from "./postgres/receipts.js";
 export {
+  authorizeTeamMaintainer,
   hasOrganizationOwnerAssignment,
   isOrganizationOwner,
-  isTeamMaintainer,
   requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
   requireOrganizationLifecycleOwner,

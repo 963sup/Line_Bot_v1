@@ -1,6 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
-import { isTeamMaintainer, resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
+import {
+  authorizeTeamMaintainer,
+  resolveVerifiedLineActor,
+} from "@line_bot_v1/identity-access/postgres";
 import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
@@ -22,7 +25,11 @@ import {
 } from "../domain/policies/team-maintenance.js";
 import { teamVersion } from "../domain/policies/team-version.js";
 import { teamSlugFromName } from "../domain/value-objects/team-slug.js";
-import { grantTeamMaintainer, revokeTeamMaintainer } from "./postgres-maintainer.js";
+import {
+  grantTeamMaintainer,
+  isTeamMaintainer,
+  revokeTeamMaintainer,
+} from "./postgres-maintainer.js";
 
 type TeamRow = {
   id: string;
@@ -217,7 +224,9 @@ export class PostgresTeamRepository implements TeamRepository {
           (command.action === "membership" && !selfRemoval) ||
           command.action === "maintainer"
         ) {
-          requireTeamMaintainer(await isTeamMaintainer(sql, old.team_id, actor.userId));
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)),
+          );
         }
         return old.result as TeamCommandReceipt;
       }
@@ -262,7 +271,9 @@ export class PostgresTeamRepository implements TeamRepository {
         const me = members.find((member) => member.userId === actor.userId);
 
         if (command.action === "rename-team") {
-          requireTeamMaintainer(Boolean(me?.isMaintainer));
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
+          );
           teamVersion(team.version, command.expectedVersion);
           teamAssert(team.name !== command.name, 409, "團隊名稱沒有變更。");
           const slug = teamSlugFromName(command.name);
@@ -302,7 +313,9 @@ export class PostgresTeamRepository implements TeamRepository {
           if (command.action === "membership") {
             const selfRemoval =
               command.targetUserId === actor.userId && command.status === "removed";
-            if (!selfRemoval) requireTeamMaintainer(me.isMaintainer);
+            if (!selfRemoval) {
+              requireTeamMaintainer(await authorizeTeamMaintainer(async () => me.isMaintainer));
+            }
             if (command.status === "active") {
               const eligible = await activeOrganizationParticipantIds(
                 sql,
@@ -336,7 +349,7 @@ export class PostgresTeamRepository implements TeamRepository {
               [teamId, command.targetUserId, command.status],
             );
           } else {
-            requireTeamMaintainer(me.isMaintainer);
+            requireTeamMaintainer(await authorizeTeamMaintainer(async () => me.isMaintainer));
             teamAssert(
               target.status === "active",
               409,

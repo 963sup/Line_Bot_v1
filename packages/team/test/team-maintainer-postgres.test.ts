@@ -102,8 +102,24 @@ test("TeamMaintainer revoke preserves the last-effective-maintainer invariant", 
     if (text.includes("FROM team_role_assignments") && text.includes("FOR UPDATE")) {
       return { rows: [{ status: "active" }] };
     }
-    if (text.includes("JOIN identity_access_team_subjects")) {
-      return { rows: [{ "?column?": 1 }] };
+    if (
+      text.includes("SELECT t.organization_account_id") &&
+      text.includes("FROM team_role_assignments")
+    ) {
+      return {
+        rows: [
+          {
+            organization_account_id: "organization-1",
+            user_status_version: 7,
+            membership_version: 4,
+            version: 4,
+          },
+        ],
+      };
+    }
+    if (text.includes("FROM users WHERE id=$1")) return { rows: [activeUser()] };
+    if (text.includes("SELECT m.user_id FROM organizations o")) {
+      return { rows: [{ user_id: "user-1" }] };
     }
     if (text.includes("SELECT user_id FROM team_role_assignments")) return { rows: [] };
     if (text.includes("UPDATE team_role_assignments SET status='revoked'")) {
