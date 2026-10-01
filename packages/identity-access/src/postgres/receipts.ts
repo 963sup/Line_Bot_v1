@@ -11,7 +11,7 @@ export async function readGovernanceReplay(
   sql: Sql,
   actorUserId: string,
   requestId: string,
-  fingerprint: string,
+  fingerprint: string | readonly string[],
 ): Promise<GovernanceReceipt | null> {
   const row = (
     await sql.query(
@@ -21,7 +21,8 @@ export async function readGovernanceReplay(
     )
   ).rows[0];
   if (!row) return null;
-  if (row.fingerprint !== fingerprint) {
+  const accepted = Array.isArray(fingerprint) ? fingerprint : [fingerprint];
+  if (!accepted.includes(row.fingerprint)) {
     throw new GovernanceAccessError(409, "replay-conflict", "請求編號已用於不同操作。");
   }
   return row.result as GovernanceReceipt;

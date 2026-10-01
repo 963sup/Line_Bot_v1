@@ -26,8 +26,8 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line_bot_v1/identity-access": "workspace:*",
     "@line_bot_v1/namespace": "workspace:*",
+    "@line_bot_v1/organization": "workspace:*",
     "@line_bot_v1/platform": "workspace:*"
   },
   "devDependencies": {

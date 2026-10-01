@@ -1,10 +1,10 @@
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 import {
   hasOrganizationOwnerAssignment,
   hasReplacementOrganizationOwner,
   revokeOrganizationOwnerForMembershipRemoval,
-} from "@line_bot_v1/identity-access/postgres";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+} from "./owner-roles.js";
 
 export async function assertOrganizationMembershipSourceRemovable(
   sql: Sql,

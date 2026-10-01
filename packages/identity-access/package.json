@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/manage-role-assignments": {
-      "types": "./dist/application/manage-role-assignments.d.ts",
-      "default": "./dist/application/manage-role-assignments.js"
-    },
     "./application/permissions": {
       "types": "./dist/application/permissions.d.ts",
       "default": "./dist/application/permissions.js"
@@ -15,10 +11,6 @@
     "./application/permissions/ports": {
       "types": "./dist/application/permissions/ports.d.ts",
       "default": "./dist/application/permissions/ports.js"
-    },
-    "./application/ports/role-assignments": {
-      "types": "./dist/application/ports/role-assignments.d.ts",
-      "default": "./dist/application/ports/role-assignments.js"
     },
     "./contracts/governance": {
       "types": "./dist/contracts/governance.d.ts",

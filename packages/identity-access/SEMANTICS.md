@@ -22,7 +22,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| OrganizationMemberEdge.role | organization-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#OrganizationMemberEdge#role |
 | Permission | permission | policy-decision | current | Explicit sensitive capability authorization decision; not provider role or membership. |
 | TeamMemberEdge.role | team-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#TeamMemberEdge#role |
 
@@ -40,10 +39,10 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | consumes | enterprise | query | enterprise | current-state | IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | audit | query | identity-access | current-state | Audit reads a minimal governance event projection for an exact active Enterprise or Organization scope after current owner authorization; no private history access or source-object authority transfers. |
 | provides | enterprise | query | identity-access | current-state | Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
-| provides | organization | query | identity-access | current-state | Organization governance consumes current OrganizationOwner authorization and verified governance actor decisions. |
-| provides | project | query | identity-access | current-state | Project authorized read consumes current OrganizationOwner scope for Organization-owned Projects; personal Projects remain User-owned. |
+| provides | organization | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle. |
 | provides | repository | query | identity-access | transaction-recheck | Repository creation under an Organization consumes current effective OrganizationOwner authorization. |
 | provides | team | query | identity-access | current-state | Team collaboration consumes current TeamMaintainer RoleAssignment authorization. |
+| consumes | organization | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 
 ## Tactical Model Boundary
 

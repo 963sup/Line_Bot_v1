@@ -1,10 +1,9 @@
-import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type {
   OrganizationCommand,
   OrganizationDetail,
 } from "@line_bot_v1/organization/contracts/organization-governance";
 
-type PendingOrganizationCommand = OrganizationCommand | ScopedRoleCommand;
+type PendingOrganizationCommand = OrganizationCommand;
 
 export function OrganizationDetailSection({
   detail,
@@ -224,12 +223,13 @@ export function OrganizationDetailSection({
               return;
             }
             void execute({
-              action: String(data.get("action")) as ScopedRoleCommand["action"],
+              action:
+                data.get("action") === "revoke"
+                  ? "revoke-organization-owner"
+                  : "grant-organization-owner",
               requestId: crypto.randomUUID(),
-              scopeKind: "organization",
-              scopeId: detail.id,
-              principal: { kind: "user", id: targetUserId },
-              role: "OrganizationOwner",
+              organizationAccountId: detail.id,
+              targetUserId,
               expectedVersion: member.assignmentVersion ?? 0,
               reason: String(data.get("reason")).trim(),
             });

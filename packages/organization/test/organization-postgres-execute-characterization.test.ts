@@ -206,6 +206,196 @@ test("organization lifecycle mutation keeps lock authorization replay update and
   assert.deepEqual(queries[requestLock]!.values, ["user-1:request-deactivate-1"]);
 });
 
+test("Organization owns OrganizationOwner grant mutation and durable evidence", async () => {
+  const queries: QueryRecord[] = [];
+  const command: OrganizationCommand = {
+    action: "grant-organization-owner",
+    requestId: "request-owner-grant-1",
+    organizationAccountId: "organization-1",
+    targetUserId: "user-2",
+    expectedVersion: 0,
+    reason: "characterization",
+  };
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
+      return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
+    }
+    if (organizationOwnerQuery(text)) return { rows: [{ "?column?": 1 }] };
+    if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (
+      text.includes("SELECT status,version FROM organization_memberships") &&
+      !text.includes("FOR UPDATE")
+    ) {
+      return { rows: [{ status: "active", version: 5 }] };
+    }
+    if (text.includes("FROM users WHERE id=$1")) {
+      return {
+        rows: [
+          {
+            id: "user-2",
+            status: "active",
+            status_version: 3,
+            auth_user_id: null,
+            createdAt: 1,
+          },
+        ],
+      };
+    }
+    if (
+      text.includes("FROM organization_role_assignments") &&
+      text.includes("role='OrganizationOwner' FOR UPDATE")
+    ) {
+      return { rows: [] };
+    }
+    if (text.includes("INSERT INTO organization_role_assignments")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_command_receipts")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
+    throw new Error(`unexpected owner mutation query: ${text}`);
+  }, queries);
+  const governance = new PostgresOrganizationGovernance(db);
+
+  assert.deepEqual(await governance.execute(actor, command, 100), {
+    requestId: command.requestId,
+    action: command.action,
+    scopeId: command.organizationAccountId,
+    subjectKind: "user",
+    subjectId: command.targetUserId,
+    status: "active",
+    version: 1,
+    at: 100,
+  });
+
+  const authorization = queries.findIndex((query) => organizationOwnerQuery(query.text));
+  const replayLookup = queryIndex(queries, "FROM governance_command_receipts");
+  const roleInsert = queryIndex(queries, "INSERT INTO organization_role_assignments");
+  const receiptInsert = queryIndex(queries, "INSERT INTO governance_command_receipts");
+  const auditInsert = queryIndex(queries, "INSERT INTO governance_audit_events");
+  assert.ok(authorization >= 0);
+  assert.ok(authorization < replayLookup);
+  assert.ok(replayLookup < roleInsert);
+  assert.ok(roleInsert < receiptInsert);
+  assert.ok(receiptInsert < auditInsert);
+});
+
+test("OrganizationOwner revoke preserves the last-effective-owner invariant", async () => {
+  const queries: QueryRecord[] = [];
+  const command: OrganizationCommand = {
+    action: "revoke-organization-owner",
+    requestId: "request-owner-revoke-1",
+    organizationAccountId: "organization-1",
+    targetUserId: "user-1",
+    expectedVersion: 1,
+    reason: "characterization",
+  };
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
+      return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
+    }
+    if (organizationOwnerQuery(text)) return { rows: [{ "?column?": 1 }] };
+    if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (
+      text.includes("SELECT status,version FROM organization_memberships") &&
+      !text.includes("FOR UPDATE")
+    ) {
+      return { rows: [{ status: "active", version: 5 }] };
+    }
+    if (
+      text.includes("FROM organization_role_assignments") &&
+      text.includes("role='OrganizationOwner' FOR UPDATE")
+    ) {
+      return {
+        rows: [
+          {
+            status: "active",
+            version: 1,
+            user_status_version: 7,
+            membership_version: 5,
+          },
+        ],
+      };
+    }
+    if (text.includes("JOIN organization_memberships") && text.includes("r.user_id<>$2")) {
+      return { rows: [] };
+    }
+    if (text.includes("JOIN organization_memberships")) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("UPDATE organization_role_assignments")) {
+      throw new Error("last effective owner must not be revoked");
+    }
+    throw new Error(`unexpected last-owner query: ${text}`);
+  }, queries);
+  const governance = new PostgresOrganizationGovernance(db);
+
+  await assert.rejects(
+    () => governance.execute(actor, command, 100),
+    (error: unknown) => (error as { code?: string }).code === "last-effective-role-holder",
+  );
+  assert.equal(queryIndex(queries, "UPDATE organization_role_assignments"), -1);
+  assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);
+});
+
+test("legacy OrganizationOwner fingerprint replays after owner migration", async () => {
+  const queries: QueryRecord[] = [];
+  const command: OrganizationCommand = {
+    action: "grant-organization-owner",
+    requestId: "request-owner-legacy-replay",
+    organizationAccountId: "organization-1",
+    targetUserId: "user-2",
+    expectedVersion: 0,
+    reason: "characterization",
+  };
+  const replay: OrganizationReceipt = {
+    requestId: command.requestId,
+    action: "grant-OrganizationOwner",
+    scopeId: command.organizationAccountId,
+    subjectKind: "user",
+    subjectId: command.targetUserId,
+    status: "active",
+    version: 1,
+    at: 90,
+  };
+  const legacyFingerprint = governanceFingerprint({
+    action: "grant",
+    requestId: command.requestId,
+    scopeKind: "organization",
+    scopeId: command.organizationAccountId,
+    principal: { kind: "user", id: command.targetUserId },
+    role: "OrganizationOwner",
+    expectedVersion: command.expectedVersion,
+    reason: command.reason,
+  });
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
+      return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
+    }
+    if (organizationOwnerQuery(text)) return { rows: [{ "?column?": 1 }] };
+    if (text.includes("FROM governance_command_receipts")) {
+      return { rows: [{ fingerprint: legacyFingerprint, result: replay }] };
+    }
+    if (
+      text.includes("organization_role_assignments") ||
+      text.includes("organization_memberships")
+    ) {
+      throw new Error("legacy replay must short-circuit before OrganizationOwner mutation");
+    }
+    throw new Error(`unexpected legacy replay query: ${text}`);
+  }, queries);
+  const governance = new PostgresOrganizationGovernance(db);
+
+  assert.deepEqual(await governance.execute(actor, command, 100), replay);
+  assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
+  assert.equal(queryIndex(queries, "INSERT INTO organization_role_assignments"), -1);
+  assert.equal(queryIndex(queries, "UPDATE organization_role_assignments"), -1);
+  assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);
+});
+
 test("organization create replay short-circuits before provisioning", async () => {
   const queries: QueryRecord[] = [];
   const command: OrganizationCommand = {

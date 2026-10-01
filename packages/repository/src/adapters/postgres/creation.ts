@@ -1,10 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import {
-  isOrganizationOwner,
-  readOrganizationOwnerScopeIds,
-} from "@line_bot_v1/identity-access/postgres";
+import { isOrganizationOwner } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
+import { readOrganizationOwnerScopeIds } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
   RepositoryCreateCommand,

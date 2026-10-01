@@ -13,7 +13,7 @@ Current owned relations：
 - `OrganizationInvitation`：pending join request；接受前不是 membership、role 或 resource access。
 - `OrganizationDirectMembership`：User 與 Organization 的 direct participation source，status 為 `active | removed`。
 - `OrganizationMembership`：由 current sources 推導並持久化的 effective participation epoch，status 為 `active | removed`；source 可以來自 direct membership 或 Enterprise Team assignment。
-- `OrganizationOwner`：Identity/Access 對指定 Organization 的 membership-level scoped RoleAssignment；principal 必須是 active individual Organization member，並綁定 current membership version。
+- `OrganizationOwner`：Organization-owned membership-level governance role fact；principal 必須是 active individual Organization member，並綁定 current membership version。Identity/Access 只消費此 fact 做 authorization evaluation。
 - Team capability：Organization 提供 qualification/scope，Organization Team 本身由 Team owner 維護。
 
 ```text
@@ -24,7 +24,9 @@ OrganizationMembership source
 └── enterprise-team
 ```
 
-OrganizationMembership 與 Employment 分離。Membership active 不直接授予 Owner 或 feature capability；RoleAssignment 是 authority writer。
+FPT `OrganizationMemberRole` 的 current 值域是 `ADMIN | MEMBER`。本產品把 active effective `OrganizationMembership` 直接表示為 MEMBER；不另外持久化一般 member role。需要額外治理權限時，由 Organization-owned `OrganizationOwner` fact 表示 ADMIN 語意。這個本地名稱不建立第二套 Person/Member identity，也不形成 generic role authority。
+
+OrganizationMembership 與 Employment 分離。Membership active 不直接授予 Owner 或 feature capability；Organization 是 OrganizationOwner fact 的唯一 authority writer。
 
 ## Invariants
 
