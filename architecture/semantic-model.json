@@ -427,6 +427,17 @@
       }
     },
     {
+      "id": "repository-permission",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "fpt": {
+        "file": "schema-repos.json",
+        "symbol": "RepositoryPermission"
+      }
+    },
+    {
       "id": "repository-team-access",
       "kind": "authoritative",
       "owner": "repository",
@@ -1693,7 +1704,7 @@
       "id": "manage-repository-access",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Manage Repository-owned direct User grants, including outside collaborators, and Organization Team grants with independent current qualification, replay safety and recoverable admin authority.",
+      "intent": "Manage Repository-owned direct User and Organization Team grants over the exact six-value FPT RepositoryPermission domain, preserving permission identity without a synthetic total order while retaining replay safety and recoverable admin authority.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1725,7 +1736,7 @@
           "packages/repository/test/access.test.ts",
           "apps/web/test/repository-access-http.test.ts"
         ],
-        "note": "Direct User grants remain Repository-owned and require current User qualification but not OrganizationMembership; membership only classifies an Organization-owned direct grant as member/outside. Organization Team grants still require current Team/Organization qualification. Mutations require expectedVersion plus exact replay, and a current OrganizationOwner can recover an Organization-owned Repository that has lost effective admin access."
+        "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access is the set of currently qualified permission facts, not a ranked scalar; operation policy must test explicit permissions and must not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay, and a current OrganizationOwner can recover an Organization-owned Repository that has lost effective ADMIN access."
       }
     },
     {
