@@ -1870,12 +1870,13 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Issue-owned lifecycle and commands consuming Repository-owned scope, access and numbering contracts",
+        "scope": "Issue-owned lifecycle and commands with an explicit non-code RepositoryPermission operation matrix, current-access creation policy, local workflow responsibility, replay and version invariants",
         "sourcePaths": [
+          "packages/issue/src/domain/issue/policies/issue-repository-operation.ts",
           "packages/issue/src/application/issues.ts",
           "packages/issue/src/application/ports/issues.ts"
         ],
-        "publicExports": ["./application/issues", "./application/ports/issues"],
+        "publicExports": ["./domain", "./application/issues", "./application/ports/issues"],
         "entrypoints": [
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
@@ -1888,7 +1889,7 @@
           "apps/web/test/repository-navigation.test.ts",
           "apps/web/test/repository-pending-storage.test.ts"
         ],
-        "note": "Issue owns lifecycle, replay and version invariants. Repository authority is consumed through explicit public contracts for current access, participant scope and repository-scoped Issue numbering."
+        "note": "Issue keeps Repository permission separate from local workflow responsibility. Current create adopts schema-issues.json#IssueCreationPolicy COLLABORATORS_ONLY through Repository current-access resolution; READ can open and can complete the required local publisher/assignee workflow while current access remains valid; that local workflow is not reclassified as generic FPT manage-issue authority. Generic triage/edit/close/assign classification remains limited to TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN or ADMIN. Public visibility does not grant Issue access, and unsupported comment/edit/close/assign/resource/lock operations remain deferred to their own capability slices."
       }
     },
     {
