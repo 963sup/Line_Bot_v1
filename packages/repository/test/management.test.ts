@@ -11,7 +11,7 @@ import { authorizedRepository } from "../src/postgres/access.js";
 async function activeUser(db: Database, id: string, login = id) {
   await db.transaction(async (sql) => {
     await sql.query(
-      'insert into users(id,status,status_version,"createdAt") values($1,\'active\',1,1)',
+      "insert into users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
       [id],
     );
     await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, login]);
@@ -133,10 +133,13 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
   assert.equal(restored.version, 3);
 
   await assert.rejects(
-    pg.query(
-      "select * from app_private.provision_repository($1,$2,$3,'USER',$4,$5)",
-      ["repo-2", "owner", "owner", "Beta", "private"],
-    ),
+    pg.query("select * from app_private.provision_repository($1,$2,$3,'USER',$4,$5)", [
+      "repo-2",
+      "owner",
+      "owner",
+      "Beta",
+      "private",
+    ]),
     (error: unknown) =>
       (error as { code?: string; constraint?: string }).code === "23505" &&
       (error as { constraint?: string }).constraint === "repository_name_history_reserved",
