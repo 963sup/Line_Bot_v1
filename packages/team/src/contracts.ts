@@ -1,9 +1,15 @@
+export type TeamPrivacy = "SECRET" | "VISIBLE";
+export type TeamNotificationSetting = "NOTIFICATIONS_DISABLED" | "NOTIFICATIONS_ENABLED";
+type TeamMembershipType = "IMMEDIATE" | "CHILD_TEAM";
+
 export type TeamMembershipView = {
   userId: string;
   name: string;
   status: "pending" | "active" | "removed";
   userStatus: "paused" | "active" | "suspended";
   isMaintainer: boolean;
+  membershipType: TeamMembershipType | null;
+  sourceTeamId: string | null;
 };
 
 export type TeamSummary = {
@@ -11,8 +17,12 @@ export type TeamSummary = {
   organizationAccountId: string;
   name: string;
   slug: string;
+  parentTeamId: string | null;
+  privacy: TeamPrivacy;
+  notificationSetting: TeamNotificationSetting;
   version: number;
-  membershipStatus: "pending" | "active" | "removed";
+  membershipStatus: "none" | "pending" | "active" | "removed";
+  membershipType: TeamMembershipType | null;
   isMaintainer: boolean;
 };
 
@@ -28,6 +38,7 @@ export type TeamView = {
   organizationLogin: string | null;
   teams: TeamSummary[];
   team: TeamSummary | null;
+  childTeams: TeamSummary[];
   members: TeamMembershipView[];
 };
 

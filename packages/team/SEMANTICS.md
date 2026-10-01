@@ -32,7 +32,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-team-collaboration | required | implemented | Manage Organization-scoped Team collaboration, membership, maintainer state, and team locator access. |
+| manage-team-collaboration | required | implemented | Manage Organization-scoped Team collaboration, direct/effective membership, hierarchy, privacy, notification setting, maintainer state, and locator access. |
 
 ## Context Relationships
 

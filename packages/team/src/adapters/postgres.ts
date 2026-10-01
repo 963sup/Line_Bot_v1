@@ -36,13 +36,16 @@ type TeamRow = {
   organization_account_id: string;
   name: string;
   slug: string;
+  parent_team_id: string | null;
+  privacy: "SECRET" | "VISIBLE";
+  notification_setting: "NOTIFICATIONS_DISABLED" | "NOTIFICATIONS_ENABLED";
   version: number;
 };
 
 async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string): Promise<TeamRow> {
   const row = (
     await sql.query(
-      `SELECT id,organization_account_id,name,slug,version FROM teams
+      `SELECT id,organization_account_id,name,slug,parent_team_id,privacy,notification_setting,version FROM teams
        WHERE id=$1 AND organization_account_id=$2 FOR UPDATE`,
       [teamId, organizationAccountId],
     )
@@ -51,7 +54,7 @@ async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string)
   return row;
 }
 
-async function teamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView[]> {
+async function directTeamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView[]> {
   const rows = (
     await sql.query(
       `SELECT user_id AS "userId",name,status
@@ -61,12 +64,50 @@ async function teamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView
        FOR SHARE`,
       [teamId],
     )
-  ).rows as Array<Omit<TeamMembershipView, "isMaintainer" | "userStatus">>;
+  ).rows as Array<
+    Omit<TeamMembershipView, "isMaintainer" | "userStatus" | "membershipType" | "sourceTeamId">
+  >;
   const members: TeamMembershipView[] = [];
   for (const row of rows) {
     const user = await readUserQualification(sql, row.userId);
     members.push({
       ...row,
+      userStatus: user?.status ?? "suspended",
+      isMaintainer: await isTeamMaintainer(sql, teamId, row.userId),
+      membershipType: row.status === "active" ? "IMMEDIATE" : null,
+      sourceTeamId: row.status === "active" ? teamId : null,
+    });
+  }
+  return members;
+}
+
+async function effectiveTeamMembers(sql: Sql, teamId: string): Promise<TeamMembershipView[]> {
+  const rows = (
+    await sql.query(
+      `SELECT DISTINCT ON (em.user_id)
+              em.user_id AS "userId",
+              source_membership.name,
+              em.membership_type AS "membershipType",
+              em.source_team_id AS "sourceTeamId"
+       FROM team_effective_memberships em
+       JOIN team_memberships source_membership
+         ON source_membership.team_id=em.source_team_id
+        AND source_membership.user_id=em.user_id
+        AND source_membership.status='active'
+       WHERE em.team_id=$1
+       ORDER BY em.user_id,
+                CASE WHEN em.membership_type='IMMEDIATE' THEN 0 ELSE 1 END,
+                em.depth,
+                em.source_team_id`,
+      [teamId],
+    )
+  ).rows as Array<Pick<TeamMembershipView, "userId" | "name" | "membershipType" | "sourceTeamId">>;
+  const members: TeamMembershipView[] = [];
+  for (const row of rows) {
+    const user = await readUserQualification(sql, row.userId);
+    members.push({
+      ...row,
+      status: "active",
       userStatus: user?.status ?? "suspended",
       isMaintainer: await isTeamMaintainer(sql, teamId, row.userId),
     });
@@ -81,11 +122,36 @@ async function teamSummaries(
 ): Promise<TeamSummary[]> {
   const rows = (
     await sql.query(
-      `SELECT t.id,t.organization_account_id AS "organizationAccountId",t.name,t.slug,t.version,
-              m.status AS "membershipStatus"
+      `SELECT
+         t.id,
+         t.organization_account_id AS "organizationAccountId",
+         t.name,
+         t.slug,
+         t.parent_team_id AS "parentTeamId",
+         t.privacy,
+         t.notification_setting AS "notificationSetting",
+         t.version,
+         CASE
+           WHEN em.user_id IS NOT NULL THEN 'active'
+           ELSE COALESCE(direct_membership.status,'none')
+         END AS "membershipStatus",
+         em.membership_type AS "membershipType"
        FROM teams t
-       JOIN team_memberships m ON m.team_id=t.id
-       WHERE t.organization_account_id=$1 AND m.user_id=$2 AND m.status<>'removed'
+       LEFT JOIN team_memberships direct_membership
+         ON direct_membership.team_id=t.id
+        AND direct_membership.user_id=$2
+       LEFT JOIN LATERAL (
+         SELECT m.user_id,m.membership_type
+         FROM team_effective_memberships m
+         WHERE m.team_id=t.id AND m.user_id=$2
+         ORDER BY
+           CASE WHEN m.membership_type='IMMEDIATE' THEN 0 ELSE 1 END,
+           m.depth,
+           m.source_team_id
+         LIMIT 1
+       ) em ON true
+       WHERE t.organization_account_id=$1
+         AND (t.privacy='VISIBLE' OR em.user_id IS NOT NULL)
        ORDER BY t.created_at,t.id`,
       [organizationAccountId, userId],
     )
@@ -123,6 +189,7 @@ async function readTeamView(
       organizationLogin: null,
       teams: [],
       team: null,
+      childTeams: [],
       members: [],
     };
   }
@@ -136,14 +203,26 @@ async function readTeamView(
     organizationLogin: actor.organizationLogin,
     teams,
     team: null,
+    childTeams: [],
     members: [],
   };
   if (!teamId) return empty;
 
   const team = await lockTeam(sql, organizationAccountId, teamId);
-  const members = await teamMembers(sql, teamId);
-  const me = members.find((member) => member.userId === actor.userId && member.status === "active");
-  teamAssert(me, 403, "你沒有此團隊的存取權。");
+  const directMembers = await directTeamMembers(sql, teamId);
+  const effectiveMembers = await effectiveTeamMembers(sql, teamId);
+  const me = effectiveMembers.find((member) => member.userId === actor.userId);
+  teamAssert(team.privacy === "VISIBLE" || me, 404, "找不到可存取的 Organization Team。");
+  const directMe = directMembers.find((member) => member.userId === actor.userId);
+  const maintainer = await isTeamMaintainer(sql, teamId, actor.userId);
+  const inactiveDirect = directMembers.filter(
+    (member) =>
+      member.status !== "active" &&
+      !effectiveMembers.some((effective) => effective.userId === member.userId),
+  );
+  const members = maintainer
+    ? [...effectiveMembers, ...inactiveDirect].sort((a, b) => a.userId.localeCompare(b.userId))
+    : effectiveMembers;
   return {
     ...empty,
     team: {
@@ -151,11 +230,16 @@ async function readTeamView(
       organizationAccountId: team.organization_account_id,
       name: team.name,
       slug: team.slug,
+      parentTeamId: team.parent_team_id,
+      privacy: team.privacy,
+      notificationSetting: team.notification_setting,
       version: team.version,
-      membershipStatus: me.status,
-      isMaintainer: me.isMaintainer,
+      membershipStatus: me ? "active" : (directMe?.status ?? "none"),
+      membershipType: me?.membershipType ?? null,
+      isMaintainer: maintainer,
     },
-    members: me.isMaintainer ? members : members.filter((member) => member.status === "active"),
+    childTeams: teams.filter((item) => item.parentTeamId === teamId),
+    members,
   };
 }
 
@@ -205,7 +289,7 @@ export class PostgresTeamRepository implements TeamRepository {
       if (old) {
         teamAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
         await lockTeam(sql, command.organizationAccountId, old.team_id);
-        const current = (await teamMembers(sql, old.team_id)).find(
+        const current = (await directTeamMembers(sql, old.team_id)).find(
           (member) => member.userId === actor.userId,
         );
         const selfRemoval =
@@ -221,11 +305,21 @@ export class PostgresTeamRepository implements TeamRepository {
         );
         if (
           command.action === "rename-team" ||
+          command.action === "parent-team" ||
+          command.action === "settings" ||
           (command.action === "membership" && !selfRemoval) ||
           command.action === "maintainer"
         ) {
           requireTeamMaintainer(
             await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)),
+          );
+        }
+        if (command.action === "parent-team" && command.parentTeamId) {
+          await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(() =>
+              isTeamMaintainer(sql, command.parentTeamId!, actor.userId),
+            ),
           );
         }
         return old.result as TeamCommandReceipt;
@@ -242,9 +336,20 @@ export class PostgresTeamRepository implements TeamRepository {
         const slug = teamSlugFromName(command.name);
         try {
           await sql.query(
-            `INSERT INTO teams(id,organization_account_id,name,slug,created_by_user_id,created_at)
-             VALUES($1,$2,$3,$4,$5,$6)`,
-            [teamId, command.organizationAccountId, command.name, slug, actor.userId, now],
+            `INSERT INTO teams(
+               id,organization_account_id,name,slug,privacy,notification_setting,
+               created_by_user_id,created_at
+             ) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [
+              teamId,
+              command.organizationAccountId,
+              command.name,
+              slug,
+              command.privacy,
+              command.notificationSetting,
+              actor.userId,
+              now,
+            ],
           );
         } catch (error) {
           const postgres = error as { code?: string; constraint?: string };
@@ -267,7 +372,7 @@ export class PostgresTeamRepository implements TeamRepository {
         });
       } else {
         const team = await lockTeam(sql, command.organizationAccountId, teamId);
-        const members = await teamMembers(sql, teamId);
+        const members = await directTeamMembers(sql, teamId);
         const me = members.find((member) => member.userId === actor.userId);
 
         if (command.action === "rename-team") {
@@ -295,6 +400,60 @@ export class PostgresTeamRepository implements TeamRepository {
             previousSlug: team.slug,
             name: command.name,
             slug,
+          };
+        } else if (command.action === "settings") {
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
+          );
+          teamVersion(team.version, command.expectedVersion);
+          teamAssert(
+            team.privacy !== command.privacy ||
+              team.notification_setting !== command.notificationSetting,
+            409,
+            "Team 設定沒有變更。",
+          );
+          await sql.query("UPDATE teams SET privacy=$2,notification_setting=$3 WHERE id=$1", [
+            teamId,
+            command.privacy,
+            command.notificationSetting,
+          ]);
+          details = {
+            previousPrivacy: team.privacy,
+            privacy: command.privacy,
+            previousNotificationSetting: team.notification_setting,
+            notificationSetting: command.notificationSetting,
+          };
+        } else if (command.action === "parent-team") {
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
+          );
+          teamVersion(team.version, command.expectedVersion);
+          teamAssert(team.parent_team_id !== command.parentTeamId, 409, "Team parent 沒有變更。");
+          if (command.parentTeamId) {
+            const parent = await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
+            requireTeamMaintainer(
+              await authorizeTeamMaintainer(() => isTeamMaintainer(sql, parent.id, actor.userId)),
+            );
+          }
+          try {
+            await sql.query("UPDATE teams SET parent_team_id=$2 WHERE id=$1", [
+              teamId,
+              command.parentTeamId,
+            ]);
+          } catch (error) {
+            const postgres = error as { code?: string; constraint?: string; message?: string };
+            if (
+              postgres.code === "23514" ||
+              postgres.constraint === "teams_parent_scope_fkey" ||
+              postgres.message?.includes("team_hierarchy_cycle")
+            ) {
+              throw new TeamError(409, "Team hierarchy 無效或形成 cycle。");
+            }
+            throw error;
+          }
+          details = {
+            previousParentTeamId: team.parent_team_id,
+            parentTeamId: command.parentTeamId,
           };
         } else if (command.action === "join") {
           teamAssert(!me || me.status === "pending", 403, "你已加入或曾被移除，請聯絡維護者。");

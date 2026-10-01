@@ -70,29 +70,35 @@ export function TeamWorkspace({
 
           {data.organizationAccountId && (
             <ul className="crud-entity-list" aria-label="團隊列表">
-              {data.teams
-                .filter((team) => team.membershipStatus === "active")
-                .map((team) => (
-                  <li key={team.id}>
-                    <button
-                      type="button"
-                      className="crud-entity-item"
-                      aria-current={data.team?.id === team.id ? "true" : undefined}
-                      onClick={() => {
-                        setDraft(null);
-                        selectTeam(data.organizationAccountId ?? "", team.id);
-                      }}
-                    >
-                      <span>
-                        <strong>{team.name}</strong>
-                      </span>
-                      <span aria-hidden="true">›</span>
-                    </button>
-                  </li>
-                ))}
-              {data.teams.every((team) => team.membershipStatus !== "active") && (
-                <li className="empty-copy">目前沒有已加入的團隊。</li>
-              )}
+              {data.teams.map((team) => (
+                <li key={team.id}>
+                  <button
+                    type="button"
+                    className="crud-entity-item"
+                    aria-current={data.team?.id === team.id ? "true" : undefined}
+                    onClick={() => {
+                      setDraft(null);
+                      selectTeam(data.organizationAccountId ?? "", team.id);
+                    }}
+                  >
+                    <span>
+                      <strong>{team.name}</strong>
+                      <small>
+                        {team.privacy === "SECRET" ? "Secret" : "Visible"} ·{" "}
+                        {team.membershipStatus === "active"
+                          ? team.membershipType === "CHILD_TEAM"
+                            ? "Child-team member"
+                            : "Member"
+                          : team.membershipStatus === "pending"
+                            ? "Pending"
+                            : "Discoverable"}
+                      </small>
+                    </span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </li>
+              ))}
+              {data.teams.length === 0 && <li className="empty-copy">目前沒有可查看的團隊。</li>}
             </ul>
           )}
 
@@ -136,20 +142,62 @@ export function TeamWorkspace({
                   </p>
                 )}
                 <p className={styles.meta}>Team ID：{data.team.id}</p>
+                <p className={styles.meta}>
+                  Privacy：{data.team.privacy} · Notifications：{data.team.notificationSetting}
+                </p>
+                {data.team.parentTeamId && (
+                  <p className={styles.meta}>Parent Team：{data.team.parentTeamId}</p>
+                )}
               </div>
               {maintainer && (
-                <button
-                  className="secondary crud-back"
-                  onClick={() => setDraft({ action: "rename-team", name: data.team?.name ?? "" })}
-                >
-                  重新命名
-                </button>
+                <div className={styles.actions}>
+                  <button
+                    className="secondary"
+                    onClick={() => setDraft({ action: "rename-team", name: data.team?.name ?? "" })}
+                  >
+                    重新命名
+                  </button>
+                  <button
+                    className="secondary"
+                    onClick={() =>
+                      setDraft({
+                        action: "settings",
+                        privacy: data.team?.privacy ?? "SECRET",
+                        notificationSetting:
+                          data.team?.notificationSetting ?? "NOTIFICATIONS_DISABLED",
+                      })
+                    }
+                  >
+                    Team 設定
+                  </button>
+                  <button
+                    className="secondary crud-back"
+                    onClick={() =>
+                      setDraft({
+                        action: "parent-team",
+                        parentTeamId: data.team?.parentTeamId ?? null,
+                      })
+                    }
+                  >
+                    Team 階層
+                  </button>
+                </div>
               )}
             </div>
             <p className="crud-lifecycle-note">
-              Lifecycle：目前 Team contract 沒有 hard
-              delete；可重新命名、管理成員／TeamMaintainer，或由成員退出。
+              Lifecycle：沒有 hard delete；可重新命名、管理成員／TeamMaintainer、Team
+              privacy／notification setting 與 Organization 內 parent/child hierarchy。
             </p>
+            {data.childTeams.length > 0 && (
+              <>
+                <h3>Child Teams</h3>
+                <ul>
+                  {data.childTeams.map((child) => (
+                    <li key={child.id}>{child.name}</li>
+                  ))}
+                </ul>
+              </>
+            )}
             <h3>成員</h3>
             {data.members.map((member) => (
               <section key={member.userId}>
@@ -163,7 +211,12 @@ export function TeamWorkspace({
                         ? "TeamMaintainer"
                         : "成員"}
                 </p>
-                <p className={styles.meta}>{member.userId}</p>
+                <p className={styles.meta}>
+                  {member.userId}
+                  {member.membershipType === "CHILD_TEAM" && member.sourceTeamId
+                    ? ` · inherited from ${member.sourceTeamId}`
+                    : ""}
+                </p>
                 <div className={styles.actions}>
                   {maintainer && member.status === "pending" && (
                     <button
@@ -179,36 +232,40 @@ export function TeamWorkspace({
                       核准加入
                     </button>
                   )}
-                  {maintainer && member.status === "active" && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        setDraft({
-                          action: "maintainer",
-                          targetUserId: member.userId,
-                          enabled: !member.isMaintainer,
-                          title: `${member.isMaintainer ? "撤銷" : "授予"} TeamMaintainer：${member.name}`,
-                        })
-                      }
-                    >
-                      {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
-                    </button>
-                  )}
-                  {(maintainer || member.userId === data.userId) && member.status !== "removed" && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        setDraft({
-                          action: "membership",
-                          targetUserId: member.userId,
-                          status: "removed",
-                          title: `${member.userId === data.userId ? "退出團隊" : "移除成員"}：${member.name}`,
-                        })
-                      }
-                    >
-                      {member.userId === data.userId ? "退出" : "移除／拒絕"}
-                    </button>
-                  )}
+                  {maintainer &&
+                    member.status === "active" &&
+                    member.membershipType === "IMMEDIATE" && (
+                      <button
+                        className="secondary"
+                        onClick={() =>
+                          setDraft({
+                            action: "maintainer",
+                            targetUserId: member.userId,
+                            enabled: !member.isMaintainer,
+                            title: `${member.isMaintainer ? "撤銷" : "授予"} TeamMaintainer：${member.name}`,
+                          })
+                        }
+                      >
+                        {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
+                      </button>
+                    )}
+                  {(maintainer || member.userId === data.userId) &&
+                    member.status !== "removed" &&
+                    (member.status !== "active" || member.membershipType === "IMMEDIATE") && (
+                      <button
+                        className="secondary"
+                        onClick={() =>
+                          setDraft({
+                            action: "membership",
+                            targetUserId: member.userId,
+                            status: "removed",
+                            title: `${member.userId === data.userId ? "退出團隊" : "移除成員"}：${member.name}`,
+                          })
+                        }
+                      >
+                        {member.userId === data.userId ? "退出" : "移除／拒絕"}
+                      </button>
+                    )}
                 </div>
               </section>
             ))}
@@ -248,6 +305,63 @@ export function TeamWorkspace({
                   onChange={(event) => setDraft({ ...draft, teamId: event.target.value })}
                 />
               </label>
+            )}
+            {draft.action === "parent-team" && (
+              <label>
+                Parent Team
+                <select
+                  value={draft.parentTeamId ?? ""}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      parentTeamId: event.target.value || null,
+                    })
+                  }
+                >
+                  <option value="">無 parent</option>
+                  {data.teams
+                    .filter((team) => team.id !== data.team?.id && team.isMaintainer)
+                    .map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
+            {draft.action === "settings" && (
+              <>
+                <label>
+                  Privacy
+                  <select
+                    value={draft.privacy}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        privacy: event.target.value as typeof draft.privacy,
+                      })
+                    }
+                  >
+                    <option value="SECRET">SECRET</option>
+                    <option value="VISIBLE">VISIBLE</option>
+                  </select>
+                </label>
+                <label>
+                  Notification setting
+                  <select
+                    value={draft.notificationSetting}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        notificationSetting: event.target.value as typeof draft.notificationSetting,
+                      })
+                    }
+                  >
+                    <option value="NOTIFICATIONS_DISABLED">NOTIFICATIONS_DISABLED</option>
+                    <option value="NOTIFICATIONS_ENABLED">NOTIFICATIONS_ENABLED</option>
+                  </select>
+                </label>
+              </>
             )}
             {(draft.action === "membership" || draft.action === "maintainer") && (
               <p>{draft.title}</p>

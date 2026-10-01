@@ -12,7 +12,7 @@ create table app_private.team_commands (
   created_at bigint not null,
   constraint team_commands_pkey primary key (actor_user_id, request_id),
   constraint team_commands_action_check
-    check (action in ('create-team', 'rename-team', 'join', 'membership', 'maintainer')),
+    check (action in ('create-team', 'rename-team', 'parent-team', 'settings', 'join', 'membership', 'maintainer')),
   constraint team_commands_actor_fkey foreign key (actor_user_id)
     references app_private.users(id),
   constraint team_commands_team_scope_fkey foreign key (team_id, organization_account_id)

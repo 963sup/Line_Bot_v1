@@ -1,3 +1,4 @@
+import type { TeamNotificationSetting, TeamPrivacy } from "../../contracts.js";
 import { teamAssert } from "../../domain/errors/team-error.js";
 
 type TeamCommandContext = Readonly<{
@@ -16,6 +17,8 @@ export type TeamCommand =
       Readonly<{
         action: "create-team";
         name: string;
+        privacy: TeamPrivacy;
+        notificationSetting: TeamNotificationSetting;
       }>)
   | (ExistingTeamCommandBase &
       Readonly<{
@@ -26,6 +29,17 @@ export type TeamCommand =
       Readonly<{
         action: "rename-team";
         name: string;
+      }>)
+  | (ExistingTeamCommandBase &
+      Readonly<{
+        action: "parent-team";
+        parentTeamId: string | null;
+      }>)
+  | (ExistingTeamCommandBase &
+      Readonly<{
+        action: "settings";
+        privacy: TeamPrivacy;
+        notificationSetting: TeamNotificationSetting;
       }>)
   | (ExistingTeamCommandBase &
       Readonly<{
@@ -50,6 +64,8 @@ export function parseTeamCommand(input: unknown): TeamCommand {
     value.action === "create-team" ||
       value.action === "join" ||
       value.action === "rename-team" ||
+      value.action === "parent-team" ||
+      value.action === "settings" ||
       value.action === "membership" ||
       value.action === "maintainer",
     400,
@@ -57,7 +73,14 @@ export function parseTeamCommand(input: unknown): TeamCommand {
   );
   const action = value.action;
   const allowedByAction: Record<typeof action, readonly string[]> = {
-    "create-team": ["action", "requestId", "organizationAccountId", "name"],
+    "create-team": [
+      "action",
+      "requestId",
+      "organizationAccountId",
+      "name",
+      "privacy",
+      "notificationSetting",
+    ],
     join: ["action", "requestId", "organizationAccountId", "teamId", "expectedVersion", "name"],
     "rename-team": [
       "action",
@@ -66,6 +89,23 @@ export function parseTeamCommand(input: unknown): TeamCommand {
       "teamId",
       "expectedVersion",
       "name",
+    ],
+    "parent-team": [
+      "action",
+      "requestId",
+      "organizationAccountId",
+      "teamId",
+      "expectedVersion",
+      "parentTeamId",
+    ],
+    settings: [
+      "action",
+      "requestId",
+      "organizationAccountId",
+      "teamId",
+      "expectedVersion",
+      "privacy",
+      "notificationSetting",
     ],
     membership: [
       "action",
@@ -100,8 +140,24 @@ export function parseTeamCommand(input: unknown): TeamCommand {
 
   if (action === "create-team") {
     const name = typeof value.name === "string" ? value.name.trim() : "";
+    const privacy = value.privacy ?? "SECRET";
+    const notificationSetting = value.notificationSetting ?? "NOTIFICATIONS_DISABLED";
     teamAssert(name.length >= 1 && name.length <= 80, 400, "請核對名稱欄位。");
-    return { action, requestId, organizationAccountId, name };
+    teamAssert(privacy === "SECRET" || privacy === "VISIBLE", 400, "Team privacy 無效。");
+    teamAssert(
+      notificationSetting === "NOTIFICATIONS_DISABLED" ||
+        notificationSetting === "NOTIFICATIONS_ENABLED",
+      400,
+      "Team notification setting 無效。",
+    );
+    return {
+      action,
+      requestId,
+      organizationAccountId,
+      name,
+      privacy,
+      notificationSetting,
+    };
   }
 
   const teamId = typeof value.teamId === "string" ? value.teamId.trim() : "";
@@ -123,6 +179,48 @@ export function parseTeamCommand(input: unknown): TeamCommand {
       teamId,
       expectedVersion: Number(expectedVersion),
       name,
+    };
+  }
+
+  if (action === "parent-team") {
+    const parentTeamId =
+      value.parentTeamId === null
+        ? null
+        : typeof value.parentTeamId === "string"
+          ? value.parentTeamId.trim()
+          : "";
+    teamAssert(parentTeamId === null || stableId.test(parentTeamId), 400, "父 Team ID 無效。");
+    teamAssert(parentTeamId !== teamId, 400, "Team 不能成為自己的 parent。");
+    return {
+      action,
+      requestId,
+      organizationAccountId,
+      teamId,
+      expectedVersion: Number(expectedVersion),
+      parentTeamId,
+    };
+  }
+
+  if (action === "settings") {
+    teamAssert(
+      value.privacy === "SECRET" || value.privacy === "VISIBLE",
+      400,
+      "Team privacy 無效。",
+    );
+    teamAssert(
+      value.notificationSetting === "NOTIFICATIONS_DISABLED" ||
+        value.notificationSetting === "NOTIFICATIONS_ENABLED",
+      400,
+      "Team notification setting 無效。",
+    );
+    return {
+      action,
+      requestId,
+      organizationAccountId,
+      teamId,
+      expectedVersion: Number(expectedVersion),
+      privacy: value.privacy,
+      notificationSetting: value.notificationSetting,
     };
   }
 

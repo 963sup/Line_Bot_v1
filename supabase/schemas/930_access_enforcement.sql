@@ -98,6 +98,12 @@ revoke all on app_private.enterprise_user_affiliations from public, anon, authen
 grant select on app_private.enterprise_user_affiliations to line_app;
 
 
+revoke all on app_private.team_effective_memberships from public, anon, authenticated, line_app;
+grant select on app_private.team_effective_memberships to line_app;
+
+revoke all on app_private.repository_team_effective_access_sources from public, anon, authenticated, line_app;
+grant select on app_private.repository_team_effective_access_sources to line_app;
+
 revoke all on app_private.repository_effective_access from public, anon, authenticated, line_app;
 grant select on app_private.repository_effective_access to line_app;
 
