@@ -50,8 +50,6 @@ test("rename-team is an explicit versioned command", () => {
       teamId: "team",
       expectedVersion: 2,
       name: "Platform",
-      privacy: "SECRET",
-      notificationSetting: "NOTIFICATIONS_DISABLED",
     },
   );
 });
@@ -93,7 +91,6 @@ test("create-team command does not expose server-generated TeamId", () => {
     TeamError,
   );
 });
-
 
 test("Team hierarchy and settings commands preserve exact FPT values", () => {
   assert.deepEqual(
