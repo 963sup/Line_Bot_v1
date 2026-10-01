@@ -46,6 +46,14 @@ export type EnterpriseTeamProjection = Readonly<{
   organizations: readonly EnterpriseTeamOrganizationProjection[];
 }>;
 
+type EnterpriseOutsideRepositoryCollaboratorProjection = Readonly<{
+  organizationAccountId: string;
+  repositoryId: string;
+  userId: string;
+  capability: "read" | "triage" | "write" | "admin";
+  grantVersion: number;
+}>;
+
 type EnterpriseSummary = Readonly<{
   id: string;
   name: string | null;
@@ -73,6 +81,7 @@ export type EnterpriseDetail = EnterpriseSummary &
       status: "active" | "detached";
       version: number;
     }>;
+    outsideRepositoryCollaborators: readonly EnterpriseOutsideRepositoryCollaboratorProjection[];
     teams: readonly EnterpriseTeamProjection[];
   }>;
 

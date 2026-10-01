@@ -247,6 +247,29 @@ export function detailEnterprise(
           version: row.version as number,
         }))
       : [];
+    const outsideRepositoryCollaborators: EnterpriseDetail["outsideRepositoryCollaborators"] =
+      actorIsOwner
+        ? (
+            await sql.query(
+              `SELECT
+                 organization_account_id AS "organizationAccountId",
+                 repository_id AS "repositoryId",
+                 user_id AS "userId",
+                 capability,
+                 grant_version AS "grantVersion"
+               FROM enterprise_repository_outside_collaborators
+               WHERE enterprise_account_id=$1
+               ORDER BY organization_account_id,repository_id,user_id`,
+              [enterpriseAccountId],
+            )
+          ).rows.map((row) => ({
+            organizationAccountId: String(row.organizationAccountId),
+            repositoryId: String(row.repositoryId),
+            userId: String(row.userId),
+            capability: row.capability as "read" | "triage" | "write" | "admin",
+            grantVersion: Number(row.grantVersion),
+          }))
+        : [];
     const teamRows = (
       await sql.query(
         `SELECT t.id,t.name,t.slug,t.version,
@@ -307,6 +330,7 @@ export function detailEnterprise(
         }),
       ),
       organizations,
+      outsideRepositoryCollaborators,
       teams: teamRows.map(
         (row): EnterpriseTeamProjection => ({
           id: row.id,
