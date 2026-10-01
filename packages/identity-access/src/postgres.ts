@@ -12,7 +12,6 @@ export {
 export {
   hasOrganizationOwnerAssignment,
   isOrganizationOwner,
-  isTeamMaintainer,
   requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
   requireOrganizationLifecycleOwner,
