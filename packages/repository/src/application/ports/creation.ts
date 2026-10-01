@@ -1,9 +1,12 @@
+import type { RepositoryVisibility } from "../../domain.js";
+
 export type RepositoryOwnerKind = "USER" | "ORGANIZATION";
 
 export type RepositoryOwnerOption = Readonly<{
   id: string;
   kind: RepositoryOwnerKind;
   login: string;
+  internalEligible: boolean;
 }>;
 
 export type RepositoryCreateCommand = Readonly<{
@@ -11,6 +14,7 @@ export type RepositoryCreateCommand = Readonly<{
   ownerAccountId: string;
   ownerKind: RepositoryOwnerKind;
   name: string;
+  visibility: RepositoryVisibility;
 }>;
 
 export type RepositoryCreationResult = Readonly<{
@@ -19,7 +23,7 @@ export type RepositoryCreationResult = Readonly<{
   ownerKind: RepositoryOwnerKind;
   ownerLogin: string;
   name: string;
-  visibility: "private";
+  visibility: RepositoryVisibility;
   version: number;
 }>;
 
