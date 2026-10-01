@@ -4,14 +4,14 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryManagementStore } from "../src/adapters/postgres/management.js";
 import { PostgresRepositorySubscriptionStore } from "../src/adapters/postgres/subscription.js";
-import { createRepositorySubscription } from "../src/application/subscription.js";
 import type { RepositorySubscriptionStore } from "../src/application/ports/subscription.js";
+import { createRepositorySubscription } from "../src/application/subscription.js";
 import { RepositoryError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
     await sql.query(
-      'insert into users(id,status,status_version,"createdAt") values($1,\'active\',1,1)',
+      "insert into users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
       [id],
     );
     await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, id]);
