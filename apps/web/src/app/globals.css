@@ -1435,6 +1435,60 @@ summary:focus-visible {
   gap: 18px;
 }
 
+.repository-map-picker {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.repository-map-search > * {
+  width: 100%;
+}
+
+.repository-map-canvas-wrap {
+  position: relative;
+  overflow: hidden;
+  min-height: 20rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.repository-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.repository-map-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  color: #dc2626;
+  font-size: 2rem;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.repository-map-actions,
+.repository-radius-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.repository-map-actions p {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.app-content .repository-radius-choices button {
+  flex: 1;
+  width: auto;
+  padding: 10px 6px;
+}
+
 .crud-toolbar {
   display: flex;
   align-items: center;

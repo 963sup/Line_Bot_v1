@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    return [
+    const privateHeaders = [
       "/expenses",
       "/membership/:path*",
       "/attendance/:path*",
@@ -76,6 +76,15 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
       ],
     }));
+    return [
+      ...privateHeaders,
+      {
+        // Google Maps browser-key restrictions require the origin on this one map surface.
+        // The policy still excludes the Repository path, query and fragment.
+        source: "/:login/:repository/settings",
+        headers: [{ key: "Referrer-Policy", value: "origin" }],
+      },
+    ];
   },
 };
 
