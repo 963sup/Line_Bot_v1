@@ -119,15 +119,17 @@ export async function repositoryScope(
   repositoryId: string,
 ) {
   const access = await repositoryAccess(sql, identity, repositoryId);
-  const participants = (
-    await sql.query(
-      `SELECT user_id
-       FROM repository_effective_access
-       WHERE repository_id=$1
-       ORDER BY user_id`,
-      [repositoryId],
-    )
-  ).rows as Array<{ user_id: string }>;
+  const participants = access.permissions.length
+    ? ((
+        await sql.query(
+          `SELECT user_id
+           FROM repository_effective_access
+           WHERE repository_id=$1
+           ORDER BY user_id`,
+          [repositoryId],
+        )
+      ).rows as Array<{ user_id: string }>)
+    : [];
   return {
     repository: access,
     participants: participants.map((row) => ({
