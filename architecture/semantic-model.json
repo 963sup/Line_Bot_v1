@@ -454,11 +454,9 @@
     },
     {
       "id": "repository-subscription",
-      "canonicalName": "Repository Subscription",
       "kind": "authoritative",
       "owner": "repository",
       "lifecycle": "current",
-      "definition": "User-to-Repository Subscribable state. SUBSCRIBED, UNSUBSCRIBED and IGNORED are distinct from Star, Follow, Team notification settings, Notification facts and delivery attempts.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
