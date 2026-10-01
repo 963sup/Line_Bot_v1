@@ -7,7 +7,7 @@ import { PostgresNotificationRepository } from "../src/adapters/outbound/persist
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
     await sql.query(
-      'insert into users(id,status,status_version,"createdAt") values($1,\'active\',1,1)',
+      "insert into users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
       [id],
     );
     await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, id]);
