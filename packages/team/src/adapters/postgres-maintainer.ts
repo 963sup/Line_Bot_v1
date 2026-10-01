@@ -4,30 +4,33 @@ import type { Sql } from "@line_bot_v1/platform/postgres";
 import { TeamError } from "../domain/errors/team-error.js";
 
 export async function isTeamMaintainer(sql: Sql, teamId: string, userId: string): Promise<boolean> {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1
-         FROM team_role_assignments r
-         JOIN team_memberships m
-           ON m.team_id=r.team_id AND m.user_id=r.user_id
-         JOIN teams t ON t.id=r.team_id
-         JOIN organization_memberships om
-           ON om.organization_account_id=t.organization_account_id AND om.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
-         JOIN organizations o ON o.account_id=t.organization_account_id
-         WHERE r.team_id=$1 AND r.user_id=$2
-           AND r.role='TeamMaintainer' AND r.status='active'
-           AND m.status='active'
-           AND u.status='active'
-           AND o.status='active'
-           AND om.status='active'
-           AND r.user_status_version=u.status_version
-           AND r.membership_version=m.version`,
-        [teamId, userId],
-      )
-    ).rows[0],
-  );
+  const fact = (
+    await sql.query(
+      `SELECT t.organization_account_id,r.user_status_version,r.membership_version,m.version
+       FROM team_role_assignments r
+       JOIN team_memberships m
+         ON m.team_id=r.team_id AND m.user_id=r.user_id
+       JOIN teams t ON t.id=r.team_id
+       WHERE r.team_id=$1 AND r.user_id=$2
+         AND r.role='TeamMaintainer' AND r.status='active'
+         AND m.status='active'`,
+      [teamId, userId],
+    )
+  ).rows[0] as
+    | {
+        organization_account_id: string;
+        user_status_version: number;
+        membership_version: number;
+        version: number;
+      }
+    | undefined;
+  if (!fact || Number(fact.membership_version) !== Number(fact.version)) return false;
+
+  const user = await readActiveUserQualification(sql, userId, "share");
+  if (!user || user.statusVersion !== Number(fact.user_status_version)) return false;
+
+  const participants = await activeOrganizationParticipantIds(sql, fact.organization_account_id, [userId]);
+  return participants.has(userId);
 }
 
 export async function grantTeamMaintainer(
