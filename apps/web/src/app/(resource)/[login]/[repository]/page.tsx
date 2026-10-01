@@ -2,6 +2,7 @@ import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import IssueBoard from "../../../../modules/repository/issue-board";
+import RepositorySubscriptionControl from "../../../../modules/repository/repository-subscription-control";
 import {
   repositoryDiscussionsPath,
   repositoryIssuesPath,
@@ -60,12 +61,22 @@ export default async function Page({
             Milestones
           </Link>
         </nav>
+        <RepositorySubscriptionControl
+          liffId={lineMiniApp().liffId}
+          ownerLogin={publicRepository.ownerLogin}
+          repositoryName={publicRepository.name}
+        />
       </main>
     );
   }
 
   return (
     <AppShell>
+      <RepositorySubscriptionControl
+        liffId={lineMiniApp().liffId}
+        ownerLogin={ownerLogin}
+        repositoryName={repository}
+      />
       <IssueBoard
         key={`${ownerLogin}/${repository}`}
         liffId={lineMiniApp().liffId}
