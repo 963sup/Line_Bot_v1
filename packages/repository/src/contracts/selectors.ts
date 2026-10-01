@@ -1,3 +1,3 @@
 export type RepositorySelector =
   | { repositoryId: string }
-  | { ownerLogin: string; repositoryName: string };
+  | { ownerLogin: string; repositoryName: string; followRenames?: boolean };
