@@ -4,6 +4,7 @@ import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selec
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import {
   accessibleRepositories,
+  repositoryArchived,
   repositoryScope,
   resolveAuthorizedRepositoryId,
 } from "@line_bot_v1/repository/postgres/access";
@@ -203,6 +204,10 @@ export class PostgresIssueStore implements IssueStore {
           throw new IssueError(503, "Issue 操作回執無法讀取。");
         }
         return receipt.issue;
+      }
+
+      if (await repositoryOperation(() => repositoryArchived(sql, command.repositoryId))) {
+        throw new IssueError(409, "Repository 已封存，Issue 目前為唯讀。");
       }
 
       let result: Issue;
