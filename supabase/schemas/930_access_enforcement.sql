@@ -169,9 +169,9 @@ begin
 end
 $identity_access_projection_grants$;
 
-revoke all on function app_private.provision_repository(text,text,text,text,text)
+revoke all on function app_private.provision_repository(text,text,text,text,text,text)
   from public, anon, authenticated, line_app;
-grant execute on function app_private.provision_repository(text,text,text,text,text) to line_app;
+grant execute on function app_private.provision_repository(text,text,text,text,text,text) to line_app;
 
 
 revoke all on function app_private.mutate_repository_access(text,text,text,text,text,integer)
