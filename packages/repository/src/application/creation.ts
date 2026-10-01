@@ -1,8 +1,4 @@
-import {
-  normalizeRepositoryName,
-  RepositoryError,
-  type RepositoryVisibility,
-} from "../domain.js";
+import { normalizeRepositoryName, RepositoryError, type RepositoryVisibility } from "../domain.js";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationStore,
@@ -40,11 +36,7 @@ function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
   const name = normalizeRepositoryName(value.name);
   if (!name) throw new RepositoryError(400, "Repository name 不正確。");
   const visibility = value.visibility ?? "private";
-  if (
-    visibility !== "private" &&
-    visibility !== "internal" &&
-    visibility !== "public"
-  ) {
+  if (visibility !== "private" && visibility !== "internal" && visibility !== "public") {
     throw new RepositoryError(400, "Repository visibility 不正確。");
   }
   return {
