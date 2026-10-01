@@ -280,6 +280,46 @@ join app_private.users u
 where r.visibility='internal';
 
 
+-- Project keeps the authoritative Repository reference; this projection applies the referenced
+-- Repository's current read visibility without copying Repository access into Project.
+create view app_private.project_repository_visible_references
+with (security_invoker = true)
+as
+select distinct
+  ref.project_id,
+  ref.repository_id,
+  ref.position,
+  ref.version,
+  visibility.user_id
+from app_private.project_repository_references ref
+join app_private.repository_visibility_access visibility
+  on visibility.repository_id=ref.repository_id;
+
+
+-- Notifications references Issue/Discussion source facts but must recheck the source
+-- Repository's current read visibility for the recipient. NULL user_id represents PUBLIC.
+create view app_private.notification_repository_source_access
+with (security_invoker = true)
+as
+select distinct
+  'issue'::text as source_type,
+  issue.id as source_id,
+  visibility.user_id
+from app_private.issues issue
+join app_private.repository_visibility_access visibility
+  on visibility.repository_id=issue.repository_id
+
+union
+
+select distinct
+  'discussion'::text as source_type,
+  discussion.id as source_id,
+  visibility.user_id
+from app_private.discussions discussion
+join app_private.repository_visibility_access visibility
+  on visibility.repository_id=discussion.repository_id;
+
+
 -- Organization collaborator affiliation is a rebuildable projection over Repository-owned direct
 -- grants plus current Account/Organization qualification. Every row has DIRECT grant provenance;
 -- is_outside is the current membership classification, not a second authorization fact.
