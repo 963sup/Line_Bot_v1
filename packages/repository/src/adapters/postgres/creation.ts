@@ -10,7 +10,7 @@ import type {
   RepositoryCreationStore,
   RepositoryOwnerOption,
 } from "../../application/ports/creation.js";
-import { RepositoryError } from "../../domain.js";
+import { RepositoryError, type RepositoryVisibility } from "../../domain.js";
 
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -29,7 +29,7 @@ async function currentOwner(
     }
     const locator = await readAccountLogin(sql, actorUserId, "USER");
     if (!locator) throw new RepositoryError(409, "目前 User login 不可用。");
-    return { id: actorUserId, kind: "USER", login: locator.login };
+    return { id: actorUserId, kind: "USER", login: locator.login, internalEligible: false };
   }
 
   if (!(await isOrganizationOwner(sql, command.ownerAccountId, actorUserId))) {
@@ -37,7 +37,20 @@ async function currentOwner(
   }
   const locator = await readAccountLogin(sql, command.ownerAccountId, "ORGANIZATION");
   if (!locator) throw new RepositoryError(409, "Organization login 不可用。");
-  return { id: command.ownerAccountId, kind: "ORGANIZATION", login: locator.login };
+  const internalEligible = Boolean(
+    (
+      await sql.query(
+        "SELECT 1 FROM repository_internal_scopes WHERE organization_account_id=$1 LIMIT 1",
+        [command.ownerAccountId],
+      )
+    ).rows[0],
+  );
+  return {
+    id: command.ownerAccountId,
+    kind: "ORGANIZATION",
+    login: locator.login,
+    internalEligible,
+  };
 }
 
 async function repositoryResult(
@@ -58,11 +71,16 @@ async function repositoryResult(
         owner_account_id: string;
         owner_account_kind: "USER" | "ORGANIZATION";
         name: string;
-        visibility: string;
+        visibility: RepositoryVisibility;
         version: number;
       }
     | undefined;
-  if (!row || row.visibility !== "private") {
+  if (
+    !row ||
+    (row.visibility !== "private" &&
+      row.visibility !== "internal" &&
+      row.visibility !== "public")
+  ) {
     throw new RepositoryError(503, "Repository 建立回執無法讀取。");
   }
   return {
@@ -71,7 +89,7 @@ async function repositoryResult(
     ownerKind: row.owner_account_kind,
     ownerLogin,
     name: row.name,
-    visibility: "private",
+    visibility: row.visibility,
     version: Number(row.version),
   };
 }
@@ -91,10 +109,26 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
         if (!(await isOrganizationOwner(sql, id, userId))) continue;
         const locator = await readAccountLogin(sql, id, "ORGANIZATION");
         if (!locator) throw new RepositoryError(409, "Organization login 不可用。");
-        organizations.push({ id, kind: "ORGANIZATION", login: locator.login });
+        const internalEligible = Boolean(
+          (
+            await sql.query(
+              "SELECT 1 FROM repository_internal_scopes WHERE organization_account_id=$1 LIMIT 1",
+              [id],
+            )
+          ).rows[0],
+        );
+        organizations.push({
+          id,
+          kind: "ORGANIZATION",
+          login: locator.login,
+          internalEligible,
+        });
       }
       organizations.sort((left, right) => left.login.localeCompare(right.login));
-      return [{ id: userId, kind: "USER", login: personal.login }, ...organizations];
+      return [
+        { id: userId, kind: "USER", login: personal.login, internalEligible: false },
+        ...organizations,
+      ];
     });
   }
 
@@ -106,6 +140,12 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
     const commandFingerprint = fingerprint(command);
     return this.db.transaction(async (sql) => {
       const owner = await currentOwner(sql, userId, command);
+      if (command.visibility === "internal" && !owner.internalEligible) {
+        throw new RepositoryError(
+          409,
+          "INTERNAL Repository 需要 active Enterprise scope 的 Organization owner。",
+        );
+      }
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `repository-command:${userId}:${command.requestId}`,
       ]);
@@ -129,17 +169,28 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
 
       const repositoryId = randomUUID();
       try {
-        await sql.query("SELECT * FROM app_private.provision_repository($1,$2,$3,$4,$5)", [
+        await sql.query("SELECT * FROM app_private.provision_repository($1,$2,$3,$4,$5,$6)", [
           repositoryId,
           userId,
           command.ownerAccountId,
           command.ownerKind,
           command.name,
+          command.visibility,
         ]);
       } catch (error) {
         const postgres = error as { code?: string; constraint?: string };
-        if (postgres.code === "23505" && postgres.constraint === "repositories_owner_name") {
-          throw new RepositoryError(409, "此 owner 已有相同名稱的 Repository。");
+        if (
+          postgres.code === "23505" &&
+          (postgres.constraint === "repositories_owner_name" ||
+            postgres.constraint === "repository_name_history_reserved")
+        ) {
+          throw new RepositoryError(409, "此 owner 已有相同或保留的 Repository 名稱。");
+        }
+        if (
+          postgres.code === "23514" &&
+          postgres.constraint === "repository_internal_scope_missing"
+        ) {
+          throw new RepositoryError(409, "INTERNAL Repository 的 Enterprise scope 已變更。");
         }
         if (postgres.code === "42501") {
           throw new RepositoryError(403, "目前 owner 資格不能建立 Repository。");
