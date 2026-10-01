@@ -940,6 +940,22 @@
       "participants": ["account", "issue", "organization", "team", "repository"]
     },
     {
+      "name": "organization_repository_collaborators",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "repository"]
+    },
+    {
+      "name": "enterprise_repository_outside_collaborators",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "enterprise", "organization", "repository"]
+    },
+    {
       "name": "attendance_identity_bindings",
       "kind": "view",
       "path": "supabase/schemas/900_cross_owner_projections.sql",

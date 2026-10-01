@@ -30,6 +30,7 @@ EnterpriseAccountId 是同一 AccountId 值的 ENTERPRISE identity facet，不�
 - EnterpriseOwner lifecycle 與 RoleAssignment fact 由 Enterprise 唯一寫入；Identity/Access 只讀取目前有效的 EnterpriseOwner fact 與 qualification 來做 authorization decision。
 - Enterprise Team membership 不等於 EnterpriseOwner；Team → Organization assignment 不等於 OrganizationOwner。
 - Organization membership 可同時有 direct 與多個 Enterprise Team sources；撤銷一個 source 不能破壞其他 source。
+- Enterprise 的 Repository outside-collaborator read model 只由 active Enterprise→Organization attachment 與 Repository-owned direct grant 推導；Enterprise 不另建 Collaborator identity，也不取得 Repository grant writer。
 - Enterprise Team assignment 只可指向同 Enterprise 的 active attached Organization；跨 Enterprise reference fail closed。
 - Organization Team 是單一 Organization scope entity，TeamMaintainer 只對該 Organization Team scope 生效；Enterprise Team 不共用其 role/hierarchy。
 - AccountKind、LINE group、provider role/email、UI route 都不是 governance authority。

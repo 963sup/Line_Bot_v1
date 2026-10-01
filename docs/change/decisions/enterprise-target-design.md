@@ -41,7 +41,7 @@ EnterpriseTeam → Organization assignment 可以形成 Organization participati
 
 ## Deferred
 
-Outside collaborator、resource-level access、EnterpriseTeam 作 role principal、Enterprise role/license/ruleset bypass、SCIM/IdP sync、generic policy DSL、跨 Enterprise data sharing 都需真實 consumer、authority/revoke/recovery evidence 才能實作。
+Repository outside collaborator 已由 Repository-owned direct grant 與 active Enterprise→Organization attachment 的 derived projection 承載；Enterprise 不持有 grant 或 Collaborator identity。其他 resource-level outside access、EnterpriseTeam 作 role principal、Enterprise role/license/ruleset bypass、SCIM/IdP sync、generic policy DSL、跨 Enterprise data sharing 都需真實 consumer、authority/revoke/recovery evidence 才能實作。
 
 ## Current-state routing
 

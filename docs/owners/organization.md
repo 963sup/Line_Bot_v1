@@ -54,4 +54,4 @@ Enterprise 提供上層 governance relation、Enterprise Team 與未來 policy�
 
 ## Non-goals
 
-Enterprise governance duplicate owner、Organization Team lifecycle duplicate owner、Employment/Payroll 計算、department/grade/position tree、generic tenant/plugin/resource framework、outside collaborator/resource access 在沒有 owner model 前的半套實作。
+Enterprise governance duplicate owner、Organization Team lifecycle duplicate owner、Employment/Payroll 計算、department/grade/position tree、generic tenant/plugin/resource framework。Repository outside collaborator access 由 Repository-owned direct grant 擁有；Organization 只提供 current membership classification，不成為 grant owner。其他 resource 的 outside-collaborator model 仍不得在沒有 owner/consumer 前預建。
