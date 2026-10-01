@@ -75,6 +75,27 @@ function membershipSources(value: unknown): OrganizationMembershipSource[] {
   });
 }
 
+function replayFingerprints(command: OrganizationCommand) {
+  const current = governanceFingerprint(command);
+  if (
+    command.action !== "grant-organization-owner" &&
+    command.action !== "revoke-organization-owner"
+  ) {
+    return current;
+  }
+  const legacy = governanceFingerprint({
+    action: command.action === "grant-organization-owner" ? "grant" : "revoke",
+    requestId: command.requestId,
+    scopeKind: "organization",
+    scopeId: command.organizationAccountId,
+    principal: { kind: "user", id: command.targetUserId },
+    role: "OrganizationOwner",
+    expectedVersion: command.expectedVersion,
+    reason: command.reason,
+  });
+  return [current, legacy] as const;
+}
+
 export class PostgresOrganizationGovernance implements OrganizationGovernancePort {
   constructor(private readonly db: Database = businessDatabase()) {}
 
@@ -249,6 +270,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         `${principal.userId}:${command.requestId}`,
       ]);
       const fingerprint = governanceFingerprint(command);
+      const replayFingerprint = replayFingerprints(command);
 
       if (command.action === "create-organization") {
         const replay = await readGovernanceReplay(
@@ -326,7 +348,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         sql,
         principal.userId,
         command.requestId,
-        fingerprint,
+        replayFingerprint,
       );
       if (replay) return replay;
 
