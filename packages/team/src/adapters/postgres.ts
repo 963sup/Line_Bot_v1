@@ -1,6 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
-import { authorizeTeamMaintainer, resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
+import {
+  authorizeTeamMaintainer,
+  resolveVerifiedLineActor,
+} from "@line_bot_v1/identity-access/postgres";
 import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
@@ -221,7 +224,9 @@ export class PostgresTeamRepository implements TeamRepository {
           (command.action === "membership" && !selfRemoval) ||
           command.action === "maintainer"
         ) {
-          requireTeamMaintainer(await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)));
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)),
+          );
         }
         return old.result as TeamCommandReceipt;
       }
@@ -266,7 +271,9 @@ export class PostgresTeamRepository implements TeamRepository {
         const me = members.find((member) => member.userId === actor.userId);
 
         if (command.action === "rename-team") {
-          requireTeamMaintainer(await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)));
+          requireTeamMaintainer(
+            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
+          );
           teamVersion(team.version, command.expectedVersion);
           teamAssert(team.name !== command.name, 409, "團隊名稱沒有變更。");
           const slug = teamSlugFromName(command.name);
