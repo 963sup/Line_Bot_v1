@@ -218,7 +218,7 @@ test("EnterpriseOwner mutation is owned by the Enterprise command contract", asy
       return {
         requestId: command.requestId,
         action: command.action,
-        scopeId: command.enterpriseAccountId,
+        scopeId: "enterpriseAccountId" in command ? command.enterpriseAccountId : command.slug,
         subjectKind: "user",
         subjectId: "targetUserId" in command ? command.targetUserId : null,
         status: "active",

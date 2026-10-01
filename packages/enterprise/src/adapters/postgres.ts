@@ -278,7 +278,11 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
         command.action === "revoke-enterprise-owner"
       ) {
         if (enterprise.status !== "active") {
-          throw new GovernanceAccessError(409, "inactive", "停用的 Enterprise 不能變更 owner role。");
+          throw new GovernanceAccessError(
+            409,
+            "inactive",
+            "停用的 Enterprise 不能變更 owner role。",
+          );
         }
         const changed = await mutateEnterpriseOwnerAssignment(sql, command, now);
         result = makeEnterpriseReceipt(command, changed.status, changed.version, now);

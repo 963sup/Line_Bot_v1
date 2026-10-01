@@ -137,10 +137,7 @@ function parseEnterpriseCommand(raw: unknown): EnterpriseCommand {
       throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 不正確。");
     }
   }
-  if (
-    base.action === "grant-enterprise-owner" ||
-    base.action === "revoke-enterprise-owner"
-  ) {
+  if (base.action === "grant-enterprise-owner" || base.action === "revoke-enterprise-owner") {
     requireExactGovernanceKeys(base, [
       "action",
       "requestId",

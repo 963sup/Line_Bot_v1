@@ -12,7 +12,6 @@ export {
 export { PostgresRoleAssignments } from "./postgres/role-assignments.js";
 export {
   grantTeamMaintainer,
-  hasEnterpriseOwnerAssignment,
   hasOrganizationOwnerAssignment,
   hasReplacementOrganizationOwner,
   isOrganizationOwner,

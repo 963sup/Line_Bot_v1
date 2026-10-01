@@ -327,10 +327,7 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
     ) {
       return { rows: [{ status: "active", version: 1, user_status_version: 7 }] };
     }
-    if (
-      text.includes("JOIN enterprise_direct_affiliations") &&
-      text.includes("r.user_id<>$2")
-    ) {
+    if (text.includes("JOIN enterprise_direct_affiliations") && text.includes("r.user_id<>$2")) {
       return { rows: [] };
     }
     if (text.includes("JOIN enterprise_direct_affiliations")) {

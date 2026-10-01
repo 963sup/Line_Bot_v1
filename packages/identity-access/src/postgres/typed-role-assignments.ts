@@ -2,7 +2,7 @@ import type { Sql } from "@line_bot_v1/platform/postgres";
 import { GovernanceAccessError } from "../domain/role-assignment.js";
 import { requireActiveTargetUser } from "./actor.js";
 
-export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {
+async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {
   return Boolean(
     (
       await sql.query(
@@ -20,7 +20,7 @@ export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: strin
   );
 }
 
-export async function isEnterpriseOwner(sql: Sql, enterpriseId: string, userId: string) {
+async function isEnterpriseOwner(sql: Sql, enterpriseId: string, userId: string) {
   return Boolean(
     (
       await sql.query(

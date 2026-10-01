@@ -129,7 +129,7 @@ export default function EnterprisePanel({
     }
   }
 
-  async function execute(command: EnterpriseCommand | ScopedRoleCommand) {
+  async function execute(command: EnterpriseCommand) {
     if (locked.current || (pending && pending.requestId !== command.requestId)) return;
     locked.current = true;
     const ticket = epoch.current;
@@ -144,13 +144,11 @@ export default function EnterprisePanel({
       setNotice("企業變更已保存。");
       locked.current = false;
       await load(
-        "scopeKind" in command
-          ? selected.current
-          : command.action === "create-enterprise"
-            ? String(result.scopeId)
-            : command.action === "leave-enterprise" || command.action === "decline-invitation"
-              ? ""
-              : command.enterpriseAccountId,
+        command.action === "create-enterprise"
+          ? String(result.scopeId)
+          : command.action === "leave-enterprise" || command.action === "decline-invitation"
+            ? ""
+            : command.enterpriseAccountId,
       );
     } catch (cause) {
       if (ticket === epoch.current) {
