@@ -12,12 +12,14 @@ Notifications owns user-facing Notification facts, recipient read state, and del
 
 - Issue lifecycle remains in [Issue](issue.md); discussion content remains in [Repository](repository.md).
 - Announcement publishing; a broadcast message is not silently reclassified as a notification.
-- User identity, membership, or source authorization.
+- User identity, membership, source authorization, or User→Repository Watch subscription；Repository owns Watch state.
 - Team-level `TeamNotificationSetting`; Team owns whether a Team @mention exposes an effective-member recipient population. Notifications owns recipient facts only after a source event/recipient set is provided.
 
 ## Invariants
 
 - A notification references a source fact by type, id, and source version; it does not copy source authority.
+- For `issue` / `discussion` sources, insert must prove the recipient can currently read the source Repository；Inbox read and mark-read recheck the same current access. Later grant revoke、visibility change or Enterprise detach therefore hides the old Notification instead of treating historical receipt as access.
+- Repository Watch subscription never grants source access. `SUBSCRIBED / UNSUBSCRIBED / IGNORED` is Repository-owned intent；Repository conversation fan-out is not enabled until a producer can apply subscription policy and current source access together.
 - Delivery retry is idempotent per notification, channel, and delivery key.
 - Read state is recipient-scoped and cannot mutate the source issue or discussion.
 - Missing or unavailable source data is not reported as an empty inbox without an explicit error boundary.
