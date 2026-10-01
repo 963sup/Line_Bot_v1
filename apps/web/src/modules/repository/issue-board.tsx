@@ -356,8 +356,7 @@ export default function IssueBoard({
               )}
               {initialCreating && currentRepository && !canOpenIssue && (
                 <p className="empty-copy">
-                  目前的 Repository permission 與 Issue 建立政策不允許在此 Repository 建立
-                  Issue。
+                  目前的 Repository permission 與 Issue 建立政策不允許在此 Repository 建立 Issue。
                 </p>
               )}
               {creating && canOpenIssue && (
