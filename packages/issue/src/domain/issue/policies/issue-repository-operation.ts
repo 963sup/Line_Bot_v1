@@ -1,4 +1,7 @@
-import type { RepositoryPermission } from "@line_bot_v1/repository/domain";
+import {
+  type RepositoryPermission,
+  repositoryPermissions,
+} from "@line_bot_v1/repository/domain";
 
 export type IssueRepositoryOperation =
   | "read"
@@ -11,14 +14,7 @@ export type IssueRepositoryOperation =
   | "manage-resource"
   | "lock-conversation";
 
-const allRepositoryPermissions: readonly RepositoryPermission[] = [
-  "read",
-  "triage",
-  "triage_plus",
-  "write",
-  "maintain",
-  "admin",
-];
+const allRepositoryPermissions: readonly RepositoryPermission[] = repositoryPermissions;
 
 const issueManagementPermissions: readonly RepositoryPermission[] = [
   "triage",
