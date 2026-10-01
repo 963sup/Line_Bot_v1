@@ -736,10 +736,10 @@
     },
     {
       "id": "enterprise-role-assignment",
-      "kind": "policy-decision",
-      "owner": "identity-access",
+      "kind": "authoritative",
+      "owner": "enterprise",
       "lifecycle": "current",
-      "authorityMode": "policy-decision",
+      "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-users.json",
@@ -1062,10 +1062,19 @@
       "consistency": "current-identity"
     },
     {
+      "id": "enterprise-identity-access-owner-facts",
+      "provider": "enterprise",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle.",
+      "integrationMode": "query",
+      "authority": "enterprise",
+      "consistency": "current-state"
+    },
+    {
       "id": "identity-access-enterprise-authorization",
       "provider": "identity-access",
       "consumer": "enterprise",
-      "meaning": "Enterprise governance consumes current EnterpriseOwner authorization and verified governance actor decisions.",
+      "meaning": "Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle.",
       "integrationMode": "query",
       "authority": "identity-access",
       "consistency": "current-state"

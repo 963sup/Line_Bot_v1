@@ -5,7 +5,6 @@ import type {
   EnterpriseDetail,
   EnterpriseList,
 } from "@line_bot_v1/enterprise/contracts/enterprise-governance";
-import type { ScopedRoleCommand } from "@line_bot_v1/identity-access/domain/role-assignment";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
@@ -32,7 +31,7 @@ export default function EnterprisePanel({
   const canonicalTeam = Boolean(initialSlug && initialTeamSlug);
   const [list, setList] = useState<EnterpriseList | null>(null);
   const [detail, setDetail] = useState<EnterpriseDetail | null>(null);
-  const [pending, setPending] = useState<(EnterpriseCommand | ScopedRoleCommand) | null>(null);
+  const [pending, setPending] = useState<EnterpriseCommand | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -54,7 +53,7 @@ export default function EnterprisePanel({
     setNotice("");
   }
 
-  async function request(method: "GET" | "POST", body?: EnterpriseCommand | ScopedRoleCommand) {
+  async function request(method: "GET" | "POST", body?: EnterpriseCommand) {
     const access = await liffClient.session(liffId);
     if (!access) throw new Error("請完成 LINE 登入後重試。");
     const selector = selected.current
@@ -130,7 +129,7 @@ export default function EnterprisePanel({
     }
   }
 
-  async function execute(command: EnterpriseCommand | ScopedRoleCommand) {
+  async function execute(command: EnterpriseCommand) {
     if (locked.current || (pending && pending.requestId !== command.requestId)) return;
     locked.current = true;
     const ticket = epoch.current;
@@ -145,13 +144,11 @@ export default function EnterprisePanel({
       setNotice("企業變更已保存。");
       locked.current = false;
       await load(
-        "scopeKind" in command
-          ? selected.current
-          : command.action === "create-enterprise"
-            ? String(result.scopeId)
-            : command.action === "leave-enterprise" || command.action === "decline-invitation"
-              ? ""
-              : command.enterpriseAccountId,
+        command.action === "create-enterprise"
+          ? String(result.scopeId)
+          : command.action === "leave-enterprise" || command.action === "decline-invitation"
+            ? ""
+            : command.enterpriseAccountId,
       );
     } catch (cause) {
       if (ticket === epoch.current) {
@@ -479,12 +476,13 @@ export default function EnterprisePanel({
                   return;
                 }
                 void execute({
-                  action: String(data.get("action")) as ScopedRoleCommand["action"],
+                  action:
+                    data.get("action") === "revoke"
+                      ? "revoke-enterprise-owner"
+                      : "grant-enterprise-owner",
                   requestId: crypto.randomUUID(),
-                  scopeKind: "enterprise",
-                  scopeId: detail.id,
-                  principal: { kind: "user", id: targetUserId },
-                  role: "EnterpriseOwner",
+                  enterpriseAccountId: detail.id,
+                  targetUserId,
                   expectedVersion: user.assignmentVersion ?? 0,
                   reason: String(data.get("reason")).trim(),
                 });

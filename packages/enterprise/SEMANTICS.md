@@ -24,6 +24,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- |
 | Enterprise | enterprise | authoritative | current | GitHub FPT: schema-enterprise-admin.json#Enterprise |
 | Enterprise.organizations | enterprise-organization-link | authoritative | current | GitHub FPT: schema-enterprise-admin.json#Enterprise#organizations |
+| EnterpriseAdministratorEdge.role | enterprise-role-assignment | authoritative | current | GitHub FPT: schema-users.json#EnterpriseAdministratorEdge#role |
 | EnterpriseMemberInvitation | enterprise-invitation | authoritative | current | GitHub FPT: schema-enterprise-admin.json#EnterpriseMemberInvitation |
 | EnterpriseTeam | enterprise-team | authoritative | current | GitHub FPT: schema-enterprise-admin.json#EnterpriseTeam |
 | EnterpriseTeam.assignedOrganizations | enterprise-team-organization-assignment | authoritative | current | GitHub FPT: schema-enterprise-admin.json#EnterpriseTeam#assignedOrganizations |
@@ -41,8 +42,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity | account | current-identity | Enterprise affiliations, invitations, and Team membership reference Account-owned stable User and Account identities. |
+| provides | identity-access | query | enterprise | current-state | IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | organization | projection | enterprise | atomic-where-required | Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority. |
-| consumes | identity-access | query | identity-access | current-state | Enterprise governance consumes current EnterpriseOwner authorization and verified governance actor decisions. |
+| consumes | identity-access | query | identity-access | current-state | Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
 
 ## Tactical Model Boundary
 

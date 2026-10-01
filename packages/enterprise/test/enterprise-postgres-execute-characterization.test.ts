@@ -217,6 +217,137 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
   assert.deepEqual(queries[requestLock]!.values, ["user-1:request-rename-1"]);
 });
 
+test("Enterprise owns EnterpriseOwner grant mutation and durable evidence", async () => {
+  const queries: QueryRecord[] = [];
+  const command: EnterpriseCommand = {
+    action: "grant-enterprise-owner",
+    requestId: "request-owner-grant-1",
+    enterpriseAccountId: "enterprise-1",
+    targetUserId: "user-2",
+    expectedVersion: 0,
+    reason: "characterization",
+  };
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
+      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+    }
+    if (
+      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("identity_access_enterprise_scopes")
+    ) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (text.includes("SELECT 1 FROM enterprise_direct_affiliations")) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("FROM users WHERE id=$1")) {
+      return {
+        rows: [
+          {
+            id: "user-2",
+            status: "active",
+            status_version: 3,
+            auth_user_id: null,
+            createdAt: 1,
+          },
+        ],
+      };
+    }
+    if (
+      text.includes("SELECT status,version,user_status_version FROM enterprise_role_assignments") &&
+      text.includes("FOR UPDATE")
+    ) {
+      return { rows: [] };
+    }
+    if (text.includes("INSERT INTO enterprise_role_assignments")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_command_receipts")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
+    throw new Error(`unexpected owner mutation query: ${text}`);
+  }, queries);
+  const governance = new PostgresEnterpriseGovernance(db);
+
+  assert.deepEqual(await governance.execute(actor, command, 100), {
+    requestId: command.requestId,
+    action: command.action,
+    scopeId: command.enterpriseAccountId,
+    subjectKind: "user",
+    subjectId: command.targetUserId,
+    status: "active",
+    version: 1,
+    at: 100,
+  });
+
+  const authorization = queryIndex(queries, "identity_access_enterprise_scopes");
+  const replayLookup = queryIndex(queries, "FROM governance_command_receipts");
+  const roleInsert = queryIndex(queries, "INSERT INTO enterprise_role_assignments");
+  const receiptInsert = queryIndex(queries, "INSERT INTO governance_command_receipts");
+  const auditInsert = queryIndex(queries, "INSERT INTO governance_audit_events");
+  assert.ok(authorization >= 0);
+  assert.ok(authorization < replayLookup);
+  assert.ok(replayLookup < roleInsert);
+  assert.ok(roleInsert < receiptInsert);
+  assert.ok(receiptInsert < auditInsert);
+});
+
+test("EnterpriseOwner revoke preserves the last-effective-owner invariant", async () => {
+  const queries: QueryRecord[] = [];
+  const command: EnterpriseCommand = {
+    action: "revoke-enterprise-owner",
+    requestId: "request-owner-revoke-1",
+    enterpriseAccountId: "enterprise-1",
+    targetUserId: "user-1",
+    expectedVersion: 1,
+    reason: "characterization",
+  };
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
+      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+    }
+    if (
+      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("identity_access_enterprise_scopes")
+    ) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (text.includes("SELECT 1 FROM enterprise_direct_affiliations")) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("FROM users WHERE id=$1")) {
+      return { rows: [activeActorRow()] };
+    }
+    if (
+      text.includes("SELECT status,version,user_status_version FROM enterprise_role_assignments") &&
+      text.includes("FOR UPDATE")
+    ) {
+      return { rows: [{ status: "active", version: 1, user_status_version: 7 }] };
+    }
+    if (text.includes("JOIN enterprise_direct_affiliations") && text.includes("r.user_id<>$2")) {
+      return { rows: [] };
+    }
+    if (text.includes("JOIN enterprise_direct_affiliations")) {
+      return { rows: [{ "?column?": 1 }] };
+    }
+    if (text.includes("UPDATE enterprise_role_assignments")) {
+      throw new Error("last effective owner must not be revoked");
+    }
+    throw new Error(`unexpected last-owner query: ${text}`);
+  }, queries);
+  const governance = new PostgresEnterpriseGovernance(db);
+
+  await assert.rejects(
+    () => governance.execute(actor, command, 100),
+    (error: unknown) => (error as { code?: string }).code === "last-effective-role-holder",
+  );
+  assert.equal(queryIndex(queries, "UPDATE enterprise_role_assignments"), -1);
+  assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);
+});
+
 test("enterprise create replay short-circuits before provisioning", async () => {
   const queries: QueryRecord[] = [];
   const command: EnterpriseCommand = {

@@ -201,6 +201,69 @@ test("enterprise canonical slug lookup normalizes locator before governance look
   assert.throws(() => service.detailBySlug(actor, "bad slug"), EnterpriseError);
 });
 
+test("EnterpriseOwner mutation is owned by the Enterprise command contract", async () => {
+  let observed: unknown;
+  const port: EnterpriseGovernancePort = {
+    async list() {
+      throw new Error("not used");
+    },
+    async detail() {
+      throw new Error("not used");
+    },
+    async detailBySlug() {
+      throw new Error("not used");
+    },
+    async execute(_actor, command) {
+      observed = command;
+      return {
+        requestId: command.requestId,
+        action: command.action,
+        scopeId: "enterpriseAccountId" in command ? command.enterpriseAccountId : command.slug,
+        subjectKind: "user",
+        subjectId: "targetUserId" in command ? command.targetUserId : null,
+        status: "active",
+        version: 1,
+        at: 100,
+      };
+    },
+  };
+  const service = enterpriseGovernance(port, () => 100);
+  const actor = { provider: "line:test", subject: `U${"1".repeat(32)}` };
+  const requestId = "11111111-1111-4111-8111-111111111111";
+
+  await service.execute(actor, {
+    action: "grant-enterprise-owner",
+    requestId,
+    enterpriseAccountId: "enterprise-1",
+    targetUserId: "user-2",
+    expectedVersion: 0,
+    reason: "grant owner",
+  });
+  assert.deepEqual(observed, {
+    action: "grant-enterprise-owner",
+    requestId,
+    enterpriseAccountId: "enterprise-1",
+    targetUserId: "user-2",
+    expectedVersion: 0,
+    reason: "grant owner",
+  });
+
+  assert.throws(
+    () =>
+      service.execute(actor, {
+        action: "grant",
+        requestId,
+        scopeKind: "enterprise",
+        scopeId: "enterprise-1",
+        principal: { kind: "user", id: "user-2" },
+        role: "EnterpriseOwner",
+        expectedVersion: 0,
+        reason: "legacy writer",
+      }),
+    (error: unknown) => (error as { status?: number }).status === 400,
+  );
+});
+
 test("enterprise team slug is derived from mutable name and stable id stays separate", () => {
   assert.equal(enterpriseTeamSlugFromName(" Platform SRE "), "platform-sre");
   assert.equal(enterpriseTeamSlugFromName("財務 團隊"), "財務-團隊");

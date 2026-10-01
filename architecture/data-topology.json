@@ -506,7 +506,7 @@
       "kind": "table",
       "path": "supabase/schemas/500_enterprise_role_assignments.sql",
       "authority": true,
-      "semanticOwner": "identity-access",
+      "semanticOwner": "enterprise",
       "concept": "enterprise-role-assignment"
     },
     {

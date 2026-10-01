@@ -33,7 +33,7 @@ Organization selection 只改 acting scope，不把 Organization/Enterprise acco
 
 ## Current vs target
 
-Current typed permissions / RoleAssignments 由 [Authorization](../../reference/security/permissions.md) 擁有；本文件不重抄 current EnterpriseOwner、OrganizationOwner、TeamMaintainer 規則。
+Current feature permissions 由 [Authorization](../../reference/security/permissions.md) 擁有；EnterpriseOwner 關係事實已回歸 Enterprise owner，Identity/Access 只消費它做 authorization。OrganizationOwner、TeamMaintainer 仍依各自 current owner migration 追蹤；本文件不重抄其規則。
 
 尚未 current 的 security delta只有：
 

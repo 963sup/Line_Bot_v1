@@ -2,7 +2,7 @@ import type { Sql } from "@line_bot_v1/platform/postgres";
 import { GovernanceAccessError } from "../domain/role-assignment.js";
 import { requireActiveTargetUser } from "./actor.js";
 
-export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {
+async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {
   return Boolean(
     (
       await sql.query(
@@ -20,7 +20,7 @@ export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: strin
   );
 }
 
-export async function isEnterpriseOwner(sql: Sql, enterpriseId: string, userId: string) {
+async function isEnterpriseOwner(sql: Sql, enterpriseId: string, userId: string) {
   return Boolean(
     (
       await sql.query(
@@ -36,29 +36,6 @@ export async function isEnterpriseOwner(sql: Sql, enterpriseId: string, userId: 
            AND s.affiliation_status='active' AND s.user_status='active'
            AND r.user_status_version=s.user_status_version`,
         [enterpriseId, userId],
-      )
-    ).rows[0],
-  );
-}
-
-export async function hasReplacementEnterpriseOwner(
-  sql: Sql,
-  enterpriseId: string,
-  excludedUserId: string,
-) {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1
-         FROM enterprise_role_assignments r
-         JOIN identity_access_enterprise_subjects s
-           ON s.enterprise_account_id=r.enterprise_account_id AND s.user_id=r.user_id
-         WHERE r.enterprise_account_id=$1 AND r.user_id<>$2
-           AND r.role='EnterpriseOwner' AND r.status='active'
-           AND s.affiliation_status='active' AND s.user_status='active'
-           AND r.user_status_version=s.user_status_version
-         LIMIT 1`,
-        [enterpriseId, excludedUserId],
       )
     ).rows[0],
   );
@@ -125,48 +102,6 @@ export async function hasReplacementOrganizationOwner(
       )
     ).rows[0],
   );
-}
-
-export async function readEnterpriseOwnerScopeIds(sql: Sql, userId: string): Promise<string[]> {
-  const rows = (
-    await sql.query(
-      `SELECT r.enterprise_account_id AS id
-       FROM enterprise_role_assignments r
-       JOIN identity_access_enterprise_subjects s
-         ON s.enterprise_account_id=r.enterprise_account_id AND s.user_id=r.user_id
-       WHERE r.user_id=$1
-         AND r.role='EnterpriseOwner' AND r.status='active'
-         AND s.affiliation_status='active' AND s.user_status='active'
-         AND r.user_status_version=s.user_status_version
-       ORDER BY r.enterprise_account_id`,
-      [userId],
-    )
-  ).rows as Array<{ id: string }>;
-  return rows.map((row) => row.id);
-}
-
-export async function readEnterpriseOwnerAssignments(
-  sql: Sql,
-  enterpriseId: string,
-  userIds?: string[],
-): Promise<Array<{ userId: string; version: number }>> {
-  if (userIds && userIds.length === 0) return [];
-  const rows = (
-    await sql.query(
-      `SELECT r.user_id AS "userId",r.version
-       FROM enterprise_role_assignments r
-       JOIN identity_access_enterprise_subjects s
-         ON s.enterprise_account_id=r.enterprise_account_id AND s.user_id=r.user_id
-       WHERE r.enterprise_account_id=$1
-         AND r.role='EnterpriseOwner' AND r.status='active'
-         AND s.affiliation_status='active' AND s.user_status='active'
-         AND r.user_status_version=s.user_status_version
-         AND ($2::text[] IS NULL OR r.user_id=ANY($2::text[]))
-       ORDER BY r.user_id`,
-      [enterpriseId, userIds ?? null],
-    )
-  ).rows as Array<{ userId: string; version: number }>;
-  return rows.map((row) => ({ userId: row.userId, version: Number(row.version) }));
 }
 
 export async function readOrganizationOwnerScopeIds(sql: Sql, userId: string): Promise<string[]> {
@@ -259,19 +194,6 @@ export async function revokeOrganizationOwnerForMembershipRemoval(
      WHERE organization_account_id=$1 AND user_id=$2
        AND role='OrganizationOwner' AND status='active'`,
     [organizationAccountId, userId],
-  );
-}
-
-export async function revokeEnterpriseOwnerForAffiliationRemoval(
-  sql: Sql,
-  enterpriseAccountId: string,
-  userId: string,
-) {
-  await sql.query(
-    `UPDATE enterprise_role_assignments SET status='revoked',version=version+1
-     WHERE enterprise_account_id=$1 AND user_id=$2
-       AND role='EnterpriseOwner' AND status='active'`,
-    [enterpriseAccountId, userId],
   );
 }
 

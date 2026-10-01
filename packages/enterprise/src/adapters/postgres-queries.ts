@@ -3,12 +3,7 @@ import type {
   VerifiedLineActor,
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import {
-  hasEnterpriseOwnerAssignment,
-  readEnterpriseOwnerAssignments,
-  readEnterpriseOwnerScopeIds,
-  resolveVerifiedLineActor,
-} from "@line_bot_v1/identity-access/postgres";
+import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import type {
   EnterpriseAffiliationSource,
@@ -21,6 +16,11 @@ import type {
   EnterpriseTeamProjection,
   EnterpriseUserProjection,
 } from "../contracts/enterprise-governance.js";
+import {
+  hasEnterpriseOwnerAssignment,
+  readEnterpriseOwnerAssignments,
+  readEnterpriseOwnerScopeIds,
+} from "./postgres-owner-roles.js";
 
 function teamMemberships(value: unknown): EnterpriseTeamMembershipProjection[] {
   if (!Array.isArray(value)) return [];

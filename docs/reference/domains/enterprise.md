@@ -17,7 +17,7 @@ OrganizationMembership source
 └── enterprise-team
 ```
 
-Direct affiliation／Organization-derived affiliation 只表示 Enterprise user qualification，不直接授權。`EnterpriseOwner` authority 仍要求 active Enterprise、active User、active direct affiliation 與 current User/RoleAssignment version。
+Direct affiliation／Organization-derived affiliation 只表示 Enterprise user qualification，不直接授權。`EnterpriseOwner` authority 仍要求 active Enterprise、active User、active direct affiliation 與 current Enterprise-owned role fact 綁定目前 User qualification version；Identity/Access 只消費此事實做 authorization evaluation。
 
 ## Enterprise Team / provenance
 

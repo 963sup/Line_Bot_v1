@@ -33,7 +33,7 @@ EnterpriseTeam → Organization assignment 可以形成 Organization participati
 
 ## Authority
 
-- EnterpriseOwner 由 Identity/Access 決策，需符合 Enterprise owner qualification。
+- EnterpriseOwner 關係事實與 lifecycle 由 Enterprise 擁有；Identity/Access 只依目前有效 fact 與 qualification 計算 authorization decision。
 - OrganizationOwner 屬 Organization scope，不由 EnterpriseTeam membership 推導。
 - TeamMaintainer 只屬 Organization Team。
 - Membership/Affiliation 是 qualification fact，不直接等於 Permission。

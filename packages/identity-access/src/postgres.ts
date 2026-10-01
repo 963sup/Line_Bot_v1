@@ -12,21 +12,16 @@ export {
 export { PostgresRoleAssignments } from "./postgres/role-assignments.js";
 export {
   grantTeamMaintainer,
-  hasEnterpriseOwnerAssignment,
   hasOrganizationOwnerAssignment,
-  hasReplacementEnterpriseOwner,
   hasReplacementOrganizationOwner,
   isOrganizationOwner,
   isTeamMaintainer,
-  readEnterpriseOwnerAssignments,
-  readEnterpriseOwnerScopeIds,
   readOrganizationOwnerAssignments,
   readOrganizationOwnerScopeIds,
   requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
   requireOrganizationLifecycleOwner,
   requireOrganizationOwner,
-  revokeEnterpriseOwnerForAffiliationRemoval,
   revokeOrganizationOwnerForMembershipRemoval,
   revokeTeamMaintainer,
 } from "./postgres/typed-role-assignments.js";
