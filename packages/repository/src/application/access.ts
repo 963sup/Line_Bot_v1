@@ -1,5 +1,10 @@
 import type { RepositorySelector } from "../contracts/selectors.js";
-import { normalizeRepositoryName, RepositoryError } from "../domain.js";
+import {
+  normalizeRepositoryName,
+  repositoryPermissions,
+  type RepositoryPermission,
+  RepositoryError,
+} from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type {
   RepositoryAccessCommand,
@@ -9,7 +14,7 @@ import type {
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
-const capabilities = new Set(["read", "triage", "write", "admin"]);
+const permissions = new Set<RepositoryPermission>(repositoryPermissions);
 
 function repositorySelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
@@ -76,13 +81,16 @@ function parseCommand(raw: unknown): RepositoryAccessCommand {
     expectedVersion: value.expectedVersion,
   };
   if (value.action === "revoke") return { ...base, action: "revoke" };
-  if (typeof value.capability !== "string" || !capabilities.has(value.capability)) {
-    throw new RepositoryError(400, "Repository capability 不正確。");
+  if (
+    typeof value.capability !== "string" ||
+    !permissions.has(value.capability as RepositoryPermission)
+  ) {
+    throw new RepositoryError(400, "Repository permission 不正確。");
   }
   return {
     ...base,
     action: "grant",
-    capability: value.capability as "read" | "triage" | "write" | "admin",
+    capability: value.capability as RepositoryPermission,
   };
 }
 

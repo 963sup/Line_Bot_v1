@@ -83,12 +83,12 @@ where eo.status = 'active';
 create view app_private.repository_effective_access
 with (security_invoker = true)
 as
-with candidate_access as (
-  -- A User-owned Repository is always administrable by its current active owner.
+with candidate_permissions as (
+  -- A User-owned Repository has implicit ADMIN permission for its current active owner.
   select
     r.id as repository_id,
     r.owner_account_id as user_id,
-    4 as capability_rank
+    'admin'::text as permission
   from app_private.repositories r
   join app_private.users owner_user
     on owner_user.id = r.owner_account_id
@@ -97,18 +97,12 @@ with candidate_access as (
 
   union all
 
-  -- A direct User grant is a Repository-owned authorization fact. For an
-  -- Organization-owned Repository, OrganizationMembership classifies the collaborator as
-  -- member/outside but does not qualify or revoke the direct Repository grant.
+  -- Direct Repository grants retain their exact RepositoryPermission value. Organization
+  -- membership may classify the collaborator, but never rewrites or ranks this permission.
   select
     a.repository_id,
     a.principal_id as user_id,
-    case a.capability
-      when 'read' then 1
-      when 'triage' then 2
-      when 'write' then 3
-      when 'admin' then 4
-    end as capability_rank
+    a.capability as permission
   from app_private.repository_access a
   join app_private.repositories r
     on r.id = a.repository_id
@@ -131,16 +125,11 @@ with candidate_access as (
 
   union all
 
-  -- Organization Team grants are valid only for Organization-owned repositories in the same scope.
+  -- Team grants retain their exact permission while Team/Organization qualification remains current.
   select
     a.repository_id,
     tm.user_id,
-    case a.capability
-      when 'read' then 1
-      when 'triage' then 2
-      when 'write' then 3
-      when 'admin' then 4
-    end as capability_rank
+    a.capability as permission
   from app_private.repository_team_access a
   join app_private.repositories r
     on r.id = a.repository_id
@@ -166,13 +155,8 @@ with candidate_access as (
 select
   repository_id,
   user_id,
-  case max(capability_rank)
-    when 1 then 'read'::text
-    when 2 then 'triage'::text
-    when 3 then 'write'::text
-    when 4 then 'admin'::text
-  end as capability
-from candidate_access
+  array_agg(distinct permission order by permission) as permissions
+from candidate_permissions
 group by repository_id, user_id;
 
 
