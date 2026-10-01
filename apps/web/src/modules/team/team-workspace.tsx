@@ -211,7 +211,12 @@ export function TeamWorkspace({
                         ? "TeamMaintainer"
                         : "成員"}
                 </p>
-                <p className={styles.meta}>{member.userId}</p>
+                <p className={styles.meta}>
+                  {member.userId}
+                  {member.membershipType === "CHILD_TEAM" && member.sourceTeamId
+                    ? ` · inherited from ${member.sourceTeamId}`
+                    : ""}
+                </p>
                 <div className={styles.actions}>
                   {maintainer && member.status === "pending" && (
                     <button
@@ -227,7 +232,9 @@ export function TeamWorkspace({
                       核准加入
                     </button>
                   )}
-                  {maintainer && member.status === "active" && (
+                  {maintainer &&
+                    member.status === "active" &&
+                    member.membershipType === "IMMEDIATE" && (
                     <button
                       className="secondary"
                       onClick={() =>
@@ -242,7 +249,9 @@ export function TeamWorkspace({
                       {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
                     </button>
                   )}
-                  {(maintainer || member.userId === data.userId) && member.status !== "removed" && (
+                  {(maintainer || member.userId === data.userId) &&
+                    member.status !== "removed" &&
+                    (member.status !== "active" || member.membershipType === "IMMEDIATE") && (
                     <button
                       className="secondary"
                       onClick={() =>
