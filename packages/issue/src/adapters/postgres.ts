@@ -14,12 +14,7 @@ import type {
   IssueSnapshot,
   IssueStore,
 } from "../application/ports/issues.js";
-import {
-  canIssueRepositoryOperation,
-  type Issue,
-  IssueError,
-  transitionIssue,
-} from "../domain.js";
+import { canIssueRepositoryOperation, type Issue, IssueError, transitionIssue } from "../domain.js";
 
 async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
   try {
