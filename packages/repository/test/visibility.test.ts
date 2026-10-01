@@ -13,7 +13,7 @@ import { authorizedRepository } from "../src/postgres/access.js";
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
     await sql.query(
-      'insert into users(id,status,status_version,"createdAt") values($1,\'active\',1,1)',
+      "insert into users(id,status,status_version,\"createdAt\") values($1,'active',1,1)",
       [id],
     );
     await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, id]);
@@ -108,15 +108,14 @@ test("INTERNAL, PUBLIC and PRIVATE visibility re-authorize every read projection
 
   const discovery = new PostgresRepositoryDiscoveryStore(db);
   assert.deepEqual(
-    (await discovery.snapshot("enterprise-user", { recentSince: 0, trendingLimit: 20 })).trending.map(
-      (item) => ({ id: item.id, permissions: item.permissions }),
-    ),
+    (
+      await discovery.snapshot("enterprise-user", { recentSince: 0, trendingLimit: 20 })
+    ).trending.map((item) => ({ id: item.id, permissions: item.permissions })),
     [{ id: repository.id, permissions: [] }],
   );
-  assert.deepEqual(
-    await discovery.snapshot("outsider", { recentSince: 0, trendingLimit: 20 }),
-    { trending: [] },
-  );
+  assert.deepEqual(await discovery.snapshot("outsider", { recentSince: 0, trendingLimit: 20 }), {
+    trending: [],
+  });
 
   const stars = new PostgresRepositoryStarStore(db);
   await stars.star("enterprise-user", repository.id, 11);
