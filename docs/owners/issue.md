@@ -17,20 +17,20 @@ Repository remains authoritative for Repository identity, current effective acce
 
 - Every Issue belongs to exactly one Repository.
 - Issue number is unique only within its Repository scope.
-- Permission names and Issue operations are separate contracts. FPT describes the following non-code ability groups; `available` here reports current runtime support rather than granting a route:
+- Permission names and Issue operations are separate contracts. The pinned FPT maps exact RepositoryPermission facts to these non-code Issue operations; it does not define a synthetic numeric rank:
 
-  | Operation | FPT permission | Current runtime |
-  | --- | --- | --- |
-  | read | `READ / TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN` | available for currently authorized Repository participants |
-  | open | all six values; also subject to `IssueCreationPolicy` | unavailable as a generic command; current create includes assignment |
-  | comment | all six values | unavailable |
-  | triage / edit / close / assign | `TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN` | only the local assigned-work create/transition flow is available |
-  | manage Repository Label/Milestone definitions | not an Issue operation; Repository-owned policy | unavailable |
-  | lock/unlock conversation | separate lock policy | unavailable |
+  | Operation | RepositoryPermission rule | Independent gates | Current runtime |
+  | --- | --- | --- | --- |
+  | read | `READ / TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN` | Repository public visibility is a separate Repository-owned fact | current Issue routes still require current effective Repository access; generic public Issue read is not wired |
+  | open | all six values | actor qualification + `IssueCreationPolicy`; `ALL` may admit a qualified actor on public scope, `COLLABORATORS_ONLY` requires the Repository-owned collaborator fact | generic open is not wired; current create also assigns work |
+  | comment | all six values | actor qualification + readable scope + conversation lock; no lock override is inferred from RepositoryPermission | generic comment is not wired |
+  | triage / edit / close / assign | `TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN` | current Repository access plus operation-specific actor/state rules | current assigned-work create/transition consumes this management set |
+  | manage-resource | no grant from the Issue matrix | Repository-owned Label/Milestone or other resource policy | unavailable and fail closed |
 
-  The table records only abilities stated by the pinned FPT. It does not infer a permission ranking or undocumented `TRIAGE_PLUS` abilities.
-- Current create is a local assigned-work command: it publishes an Issue and assigns another eligible participant in one transaction. `accept / report / reject / approve` are local work transitions governed by separate publisher/assignee responsibilities. Both require an explicit Issue-management permission (`TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN`); `READ` alone cannot use these commands.
-- Generic open/comment, public anonymous visibility, `IssueCreationPolicy`, conversation lock and standalone edit/close/assign/resource-management commands are not current runtime capabilities. The table does not activate a route or bypass actor qualification, current Repository scope, visibility, creation policy, lock, state, version or replay checks; unavailable operations fail closed because no command exists.
+- `canUseIssueOperation` is the canonical operation matrix. `canReadIssueScope`, `canOpenIssue` and `canCommentOnIssue` keep public visibility, actor qualification, creation policy and conversation lock as separate policy inputs instead of manufacturing Repository permissions.
+- The current create command is deliberately stricter than generic open: it publishes an Issue and assigns another eligible participant in one transaction, so both actor and assignee must have `TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN`. `READ` alone can satisfy generic open/comment policy but cannot authorize this composite open+assign command.
+- `accept / report / reject / approve` remain local publisher/assignee workflow responsibilities layered after Repository operation authorization. They are not presented as FPT generic authorization.
+- Generic public Issue delivery, generic open/comment commands, standalone edit/close/assign, conversation lock mutation and Repository resource management are not current runtime capabilities. Missing command surfaces remain fail closed; the policy matrix does not activate a route or bypass current Repository scope, state, version or replay checks.
 - Create/transition operations take the Repository governance read lock, then re-check current Repository operation capability and eligible participants in the same transaction. Access mutation takes the corresponding exclusive lock, so revoke cannot race authorization or resurrect a command through replay.
 - Publisher and assignee responsibilities govern valid state transitions; conditional mutation requires the expected Issue version.
 - Commands use stable request identity. Exact replay returns the prior result; conflicting reuse is rejected.
