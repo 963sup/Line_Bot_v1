@@ -1,10 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
 import {
-  grantTeamMaintainer,
   isTeamMaintainer,
   resolveVerifiedLineActor,
-  revokeTeamMaintainer,
 } from "@line_bot_v1/identity-access/postgres";
 import {
   activeOrganizationParticipantIds,
@@ -12,6 +10,7 @@ import {
   qualifyOrganizationTeamScope,
 } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { grantTeamMaintainer, revokeTeamMaintainer } from "./postgres-maintainer-roles.js";
 import type { TeamCommand } from "../application/commands/team-command.js";
 import type { TeamActor, TeamRepository } from "../application/ports.js";
 import type {

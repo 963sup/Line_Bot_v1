@@ -6,7 +6,7 @@ Read this file for the Team owner boundary and invariants. Load [detailed refere
 
 Organization Team 是單一 Organization 內的任務協作責任範圍。每個 Team 建立時必須有一個明確、不可改綁的 `organizationAccountId`，不從 LINE group、Workplace、email domain 或既有名稱猜測歸屬。
 
-TeamMembership 只回答某個 User 在 Organization Team 內是 `pending`、`active` 或 `removed`。它不保存 role，也不直接授權。TeamMaintainer 是 `organization-team` scope 的 RoleAssignment；一般成員沒有一個虛構的 `Member` role assignment。
+TeamMembership 只回答某個 User 在 Organization Team 內是 `pending`、`active` 或 `removed`。它不保存 role，也不直接授權。active TeamMembership 明確推導 FPT `MEMBER` 語意，不另外保存冗餘 Member RoleAssignment；TeamMaintainer 是 Team-owned、`organization-team` scoped 的治理 role fact。
 
 Current runtime 尚未支援 nested Organization Team。Vendored GitHub FPT domain truth 中 Organization Team 存在 parent/child hierarchy semantics，但本產品仍可把 runtime capability 保持未實作；不得用 EnterpriseTeam 或 generic Team alias 代替，也不得因尚未實作而改寫 FPT。EnterpriseTeam 是 Enterprise-level 的不同 current entity，由 Enterprise owner 維護其 membership 與 Organization assignment。
 
@@ -24,7 +24,7 @@ Organization Team 必須至少保有一位 effective TeamMaintainer。最後一�
 ## 與其他 owner 的邊界
 
 - Organization owner 提供 active Organization／OrganizationMembership scope qualification；Team 不查寫 Organization private state。
-- Identity/Access 是 TeamMaintainer RoleAssignment 的唯一 writer；TeamMembership 不複製 role 欄位。
+- Team 是 TeamMaintainer role fact 的唯一 authority writer；Identity/Access 只消費目前有效 fact 與 qualification 計算 authorization。TeamMembership 不複製 role 欄位。
 - Enterprise owner 擁有 EnterpriseTeam、EnterpriseTeamMembership 與 EnterpriseTeam → Organization assignment；Organization Team 不讀寫其 private state，也不共用 TeamMaintainer／nested hierarchy。
 - Repository 擁有 Repository access；Issue 擁有 Issue lifecycle。Team 不提供 Repository access，也不替 Issue 保存 scope 或 responsibility truth。
 - Partners、Attendance／Workplace、Repository 與 Notifications 各自保留授權與資料責任；TeamMaintainer 不自動取得其權限。

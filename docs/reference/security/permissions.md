@@ -2,7 +2,7 @@
 ## 責任
 本文件描述目前已實作的跨模組 feature permissions。它不取代各 module 的 business role，也不把 TeamMaintainer、LINE chat context、OrganizationAdmin 或 Project membership 視為全域管理資格。
 
-現行 Permission catalog、command validation 與 `PermissionError` 的 Domain owner 是 Identity/Access，source 位於 `packages/identity-access/src/domain/permission.ts`，公開入口為 `@line_bot_v1/identity-access/domain/permission`。Business-scoped governance roles 由各 business owner 擁有其 relation fact；Identity/Access 只計算 authorization。TeamMaintainer 仍是目前尚未遷移的 IAM-owned scoped role；不得因此恢復 generic RoleAssignment writer。
+現行 Permission catalog、command validation 與 `PermissionError` 的 Domain owner 是 Identity/Access，source 位於 `packages/identity-access/src/domain/permission.ts`，公開入口為 `@line_bot_v1/identity-access/domain/permission`。Business-scoped governance roles 由各 business owner 擁有其 relation fact；Identity/Access 只計算 authorization，不提供 generic RoleAssignment writer。
 
 人類 identity／qualification failure 由 Account/User contract 表達；歷史 `membership_denied` 等 wire code 只保留 protocol/history 意義，不代表 Membership 是 current Account owner。
 ## Current permission catalog

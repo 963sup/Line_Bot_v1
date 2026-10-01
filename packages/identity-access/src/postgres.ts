@@ -10,7 +10,6 @@ export {
   recordGovernanceResult,
 } from "./postgres/receipts.js";
 export {
-  grantTeamMaintainer,
   hasOrganizationOwnerAssignment,
   isOrganizationOwner,
   isTeamMaintainer,
@@ -18,5 +17,4 @@ export {
   requireEnterpriseOwner,
   requireOrganizationLifecycleOwner,
   requireOrganizationOwner,
-  revokeTeamMaintainer,
 } from "./postgres/typed-role-assignments.js";

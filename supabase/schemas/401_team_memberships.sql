@@ -22,5 +22,5 @@ grant insert, select, update on app_private.team_memberships to line_app;
 create policy backend on app_private.team_memberships
   for all to line_app using (true) with check (true);
 
--- Identity/Access is the sole writer of TeamMaintainer assignments.
--- TeamMembership remains a separate participation fact and never grants authority by itself.
+-- TeamMembership is the Team-owned participation fact. Active membership derives FPT MEMBER.
+-- Team-owned TeamMaintainer facts remain separate and are never inferred from membership alone.
