@@ -628,10 +628,10 @@ export {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
+export { readOrganizationOwnerScopeIds } from "./postgres/owner-roles.js";
 export {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
   qualifyOrganizationTeamScope,
   readOrganizationQualification,
 } from "./postgres/qualification.js";
-export { readOrganizationOwnerScopeIds } from "./postgres/owner-roles.js";
