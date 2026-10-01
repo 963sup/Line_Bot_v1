@@ -56,7 +56,7 @@ test("Discussion application validates scope and cursor before persistence", asy
     list: async (...args: Parameters<DiscussionReadStore["list"]>) => {
       calls.push(args);
       return {
-        repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", capability: "read" },
+        repository: { id: "repo-a", ownerLogin: "owner-a", name: "Alpha", permissions: ["read"] },
         discussions: [],
         next: null,
       };

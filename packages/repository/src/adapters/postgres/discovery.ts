@@ -8,7 +8,7 @@ import type {
   RepositoryStarListDiscovery,
   TrendingRepository,
 } from "../../contracts/discovery.js";
-import { type RepositoryCapability, RepositoryError } from "../../domain.js";
+import { RepositoryError, type RepositoryPermission } from "../../domain.js";
 import {
   readVisibleStarListRepositoryRows,
   type VisibleStarListRepositoryRow,
@@ -20,7 +20,7 @@ type TrendingRow = {
   owner_account_kind: "USER" | "ORGANIZATION";
   name: string;
   visibility: string;
-  capability: RepositoryCapability;
+  permissions: RepositoryPermission[];
   recent_star_count: number | string;
   star_count: number | string;
   starred: boolean;
@@ -139,7 +139,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
     return this.db.transaction(async (sql) => {
       const trendingRows = (
         await sql.query(
-          `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.capability,
+          `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.permissions,
                   (count(s.user_id) FILTER (WHERE s.created_at >= $2))::int AS recent_star_count,
                   count(s.user_id)::int AS star_count,
                   coalesce(bool_or(s.user_id=$1),false) AS starred
@@ -147,7 +147,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
            JOIN repositories r ON r.id=a.repository_id
            LEFT JOIN repository_stars s ON s.repository_id=r.id
            WHERE a.user_id=$1
-           GROUP BY r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.capability
+           GROUP BY r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.permissions
            ORDER BY
              count(s.user_id) FILTER (WHERE s.created_at >= $2) DESC,
              count(s.user_id) DESC,
@@ -179,7 +179,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
           ownerLogin,
           name: row.name,
           visibility: row.visibility,
-          capability: row.capability,
+          permissions: row.permissions,
           recentStarCount: Number(row.recent_star_count),
           starCount: Number(row.star_count),
           starred: Boolean(row.starred),

@@ -265,12 +265,12 @@ async function run() {
       return route.fulfill({
         json: {
           items: [
-            { id: repositoryId, ownerLogin: "acme", name: "Operations", capability: "admin" },
+            { id: repositoryId, ownerLogin: "acme", name: "Operations", permissions: ["admin"] },
             {
               id: viewerRepositoryId,
               ownerLogin: "viewer",
               name: "Personal",
-              capability: "admin",
+              permissions: ["admin"],
             },
           ],
         },
@@ -286,7 +286,7 @@ async function run() {
               ownerLogin: "acme",
               name: "Operations",
               visibility: "private",
-              capability: "admin",
+              permissions: ["admin"],
               recentStarCount: 2,
               starCount: 3,
               starred: false,
@@ -296,7 +296,7 @@ async function run() {
               ownerLogin: "viewer",
               name: "Personal",
               visibility: "private",
-              capability: "admin",
+              permissions: ["admin"],
               recentStarCount: 1,
               starCount: 2,
               starred: false,
@@ -321,7 +321,7 @@ async function run() {
         json: {
           userId: "user-1",
           repositories: [
-            { id: repositoryId, ownerLogin: "acme", name: "Operations", capability: "admin" },
+            { id: repositoryId, ownerLogin: "acme", name: "Operations", permissions: ["admin"] },
           ],
           participants: [
             { userId: "user-1", name: "使用者一" },
@@ -338,7 +338,7 @@ async function run() {
         json: {
           userId: "user-1",
           repositories: [
-            { id: repositoryId, ownerLogin: "acme", name: "Operations", capability: "admin" },
+            { id: repositoryId, ownerLogin: "acme", name: "Operations", permissions: ["admin"] },
           ],
           participants: [
             { userId: "user-1", name: "使用者一" },

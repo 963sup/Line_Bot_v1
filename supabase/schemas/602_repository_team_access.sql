@@ -7,7 +7,7 @@ create table app_private."repository_team_access" (
   "capability" text not null,
   "version" integer not null,
   constraint "repository_team_access_pkey" primary key (repository_id, team_id),
-  constraint "repository_team_access_capability_check" check (capability = any (array['read'::text, 'triage'::text, 'write'::text, 'admin'::text])),
+  constraint "repository_team_access_capability_check" check (capability = any (array['read'::text, 'triage'::text, 'triage_plus'::text, 'write'::text, 'maintain'::text, 'admin'::text])),
   constraint "repository_team_access_version_check" check (version > 0),
   constraint "repository_team_access_repository_scope_fkey"
     foreign key (repository_id, organization_id)

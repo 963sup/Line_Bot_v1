@@ -79,9 +79,9 @@ test("Issue number is monotonic within each Repository and independent across Re
   assert.equal(firstUser.number, 1);
 
   const ownerAccess = await pg.query(
-    "select capability from app_private.repository_effective_access where repository_id='repository-user' and user_id='publisher'",
+    "select permissions from app_private.repository_effective_access where repository_id='repository-user' and user_id='publisher'",
   );
-  assert.deepEqual(ownerAccess.rows, [{ capability: "admin" }]);
+  assert.deepEqual(ownerAccess.rows, [{ permissions: ["admin"] }]);
 
   const counters = await pg.query(
     "select id,next_issue_number::int as next_issue_number from app_private.repositories order by id",

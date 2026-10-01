@@ -17,7 +17,7 @@ const repository = {
   id: "repo-1",
   ownerLogin: "octo",
   name: "hello-world",
-  capability: "read" as const,
+  permissions: ["read"] as const,
 };
 
 test("Discussion HTTP reads Repository path selector and cursor from query", async () => {

@@ -1,18 +1,18 @@
 import type { RepositorySelector } from "../../contracts/selectors.js";
-import type { RepositoryCapability } from "../../domain.js";
+import type { RepositoryPermission } from "../../domain.js";
 
 export type RepositoryAccessSubjectKind = "USER" | "TEAM";
 
 type RepositoryDirectUserGrant = Readonly<{
   userId: string;
-  capability: RepositoryCapability;
+  capability: RepositoryPermission;
   version: number;
   isOutsideCollaborator: boolean;
 }>;
 
 type RepositoryTeamGrant = Readonly<{
   teamId: string;
-  capability: RepositoryCapability;
+  capability: RepositoryPermission;
   version: number;
 }>;
 
@@ -23,7 +23,7 @@ export type RepositoryAccessSnapshot = Readonly<{
     ownerKind: "USER" | "ORGANIZATION";
     ownerLogin: string;
     name: string;
-    actorCapability: RepositoryCapability | null;
+    actorPermissions: readonly RepositoryPermission[];
   };
   directUserGrants: readonly RepositoryDirectUserGrant[];
   teamGrants: readonly RepositoryTeamGrant[];
@@ -40,7 +40,7 @@ type RepositoryAccessCommandBase = Readonly<{
 export type RepositoryAccessCommand =
   | (RepositoryAccessCommandBase & {
       action: "grant";
-      capability: RepositoryCapability;
+      capability: RepositoryPermission;
     })
   | (RepositoryAccessCommandBase & {
       action: "revoke";
@@ -51,7 +51,7 @@ export type RepositoryAccessReceipt = Readonly<{
   repositoryId: string;
   subjectKind: RepositoryAccessSubjectKind;
   subjectId: string;
-  capability: RepositoryCapability | null;
+  capability: RepositoryPermission | null;
   version: number | null;
   at: number;
 }>;

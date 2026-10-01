@@ -23,6 +23,8 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 - Star/unstar is idempotent and never grants Repository access.
 - Protected read/write and assignment always use current effective Repository access.
 - Repository access grant is not OrganizationMembership or TeamMembership；Repository stores only its own User/Team grant facts. Direct User grants require a current active User and owner scope but do not require Organization membership；Team grants continue to consume current Organization/Team qualification.
+- RepositoryPermission 的 canonical 值域是 `READ / TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN`。User／Team grant 保存 exact permission；effective access 是目前有效 permission facts 的集合，不建立 `read < triage < write < admin` 之類的產品自造全序，也不把 `MAINTAIN`／`TRIAGE_PLUS` 默默升降級。
+- Permission 名稱與 operation capability policy 分離；consumer 只可檢查已明定的 permission→operation 規則，未定義能力 fail closed。
 - Access mutation requires current effective Repository `admin`；for Organization-owned Repository, current `OrganizationOwner` is an explicit recovery authority but does not become Repository access merely by managing grants.
 - An Organization-owned direct User grant can target an active User outside the owner Organization. Active membership only classifies that direct collaborator as member/outside；removing membership does not silently revoke the Repository grant, while explicit Repository revoke does. Team grants must reference an Organization Team in the same owner scope and lose effectiveness with Team/Organization participation.
 - Access mutation uses stable request identity + expected version, exact replay only, and must leave at least one current effective Repository admin.

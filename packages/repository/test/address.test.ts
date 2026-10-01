@@ -155,7 +155,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
     repositoryName: "operations",
   });
   assert.equal(memberView.repository.actorUserId, "member");
-  assert.equal(memberView.repository.actorCapability, "read");
+  assert.deepEqual(memberView.repository.actorPermissions, ["read"]);
   assert.deepEqual(memberView.address, command.address);
   await assert.rejects(
     store.view("visitor", { repositoryId: "repo" }),

@@ -40,7 +40,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
       id: "repository-a",
       ownerLogin: "acme",
       name: "Repository A",
-      capability: "read" as const,
+      permissions: ["read"] as const,
     },
   ]);
   const discover = mock.method(repositoryDiscovery, "discover", async () => ({
@@ -50,7 +50,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
         ownerLogin: "acme",
         name: "Repository A",
         visibility: "private",
-        capability: "read" as const,
+        permissions: ["read"] as const,
         recentStarCount: 1,
         starCount: 1,
         starred: false,

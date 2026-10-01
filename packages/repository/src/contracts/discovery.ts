@@ -1,11 +1,11 @@
-import type { RepositoryCapability } from "../domain.js";
+import type { RepositoryPermission } from "../domain.js";
 
 export type TrendingRepository = Readonly<{
   id: string;
   ownerLogin: string;
   name: string;
   visibility: string;
-  capability: RepositoryCapability;
+  permissions: readonly RepositoryPermission[];
   recentStarCount: number;
   starCount: number;
   starred: boolean;

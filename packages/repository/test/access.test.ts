@@ -54,6 +54,25 @@ test("Repository access application validates commands before persistence", asyn
   assert.equal(calls[0]?.[0], "actor");
   assert.equal(calls[0]?.[2], 10);
 
+  for (const [requestId, capability] of [
+    ["44444444-4444-4444-8444-444444444444", "maintain"],
+    ["55555555-5555-4555-8555-555555555555", "triage_plus"],
+  ] as const) {
+    await service.execute("subject", {
+      action: "grant",
+      requestId,
+      repositoryId: "repo",
+      subjectKind: "USER",
+      subjectId: "target",
+      capability,
+      expectedVersion: 0,
+    });
+  }
+  assert.deepEqual(
+    calls.slice(1, 3).map((call) => (call[1] as { capability?: string }).capability),
+    ["maintain", "triage_plus"],
+  );
+
   await assert.rejects(
     service.execute("subject", {
       action: "revoke",
@@ -114,7 +133,7 @@ test("Repository access management supports direct and Team grants with replay, 
 
   const store = new PostgresRepositoryAccessStore(db);
   const initial = await store.view("owner", { ownerLogin: "octo", repositoryName: "shared" });
-  assert.equal(initial.repository.actorCapability, "admin");
+  assert.deepEqual(initial.repository.actorPermissions, ["admin"]);
   assert.deepEqual(initial.directUserGrants, [
     { userId: "owner", capability: "admin", version: 1, isOutsideCollaborator: false },
   ]);
@@ -152,9 +171,9 @@ test("Repository access management supports direct and Team grants with replay, 
     "update app_private.organization_memberships set status='removed',version=version+1 where organization_account_id='org' and user_id='member'",
   );
   const afterOrganizationRemoval = await pg.query(
-    "select capability from app_private.repository_effective_access where repository_id='repo' and user_id='member'",
+    "select permissions from app_private.repository_effective_access where repository_id='repo' and user_id='member'",
   );
-  assert.deepEqual(afterOrganizationRemoval.rows, [{ capability: "write" }]);
+  assert.deepEqual(afterOrganizationRemoval.rows, [{ permissions: ["write"] }]);
   const outsideAfterRemoval = await pg.query(
     "select grant_affiliation,is_outside,grant_version from app_private.organization_repository_collaborators where repository_id='repo' and user_id='member'",
   );
@@ -200,9 +219,9 @@ test("Repository access management supports direct and Team grants with replay, 
   );
   assert.equal(outsideGrant.version, 1);
   const outsideEffective = await pg.query(
-    "select capability from app_private.repository_effective_access where repository_id='repo' and user_id='outside'",
+    "select permissions from app_private.repository_effective_access where repository_id='repo' and user_id='outside'",
   );
-  assert.deepEqual(outsideEffective.rows, [{ capability: "triage" }]);
+  assert.deepEqual(outsideEffective.rows, [{ permissions: ["triage"] }]);
   const organizationOutside = await pg.query(
     "select organization_account_id,repository_id,user_id,grant_affiliation,is_outside,capability,grant_version from app_private.organization_repository_collaborators where repository_id='repo' and user_id='outside'",
   );
@@ -284,15 +303,15 @@ test("Repository access management supports direct and Team grants with replay, 
     16,
   );
   const teamAdmin = await pg.query(
-    "select capability from app_private.repository_effective_access where repository_id='repo' and user_id='team-member'",
+    "select permissions from app_private.repository_effective_access where repository_id='repo' and user_id='team-member'",
   );
-  assert.deepEqual(teamAdmin.rows, [{ capability: "admin" }]);
+  assert.deepEqual(teamAdmin.rows, [{ permissions: ["admin"] }]);
 
   await pg.query(
     "update app_private.team_memberships set status='removed' where team_id='team-a' and user_id='team-member'",
   );
   const recovery = await store.view("owner", { repositoryId: "repo" });
-  assert.equal(recovery.repository.actorCapability, null);
+  assert.deepEqual(recovery.repository.actorPermissions, []);
   await assert.rejects(
     store.execute(
       "owner",

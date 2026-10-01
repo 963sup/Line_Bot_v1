@@ -436,7 +436,7 @@ begin
      or length(trim(coalesce(p_subject_id, ''))) = 0
      or p_subject_id <> trim(p_subject_id)
      or length(p_subject_id) > 128
-     or (p_capability is not null and p_capability not in ('read','triage','write','admin'))
+     or (p_capability is not null and p_capability not in ('read','triage','triage_plus','write','maintain','admin'))
      or p_expected_version is null
      or p_expected_version < 0 then
     raise exception 'repository_access_input_invalid' using errcode = '22023';
@@ -466,7 +466,7 @@ begin
     from app_private.repository_effective_access a
     where a.repository_id=p_repository_id
       and a.user_id=p_actor_user_id
-      and a.capability='admin'
+      and 'admin'=any(a.permissions)
   ) and not (
     current_repository.owner_account_kind='ORGANIZATION'
     and exists (
@@ -601,7 +601,7 @@ begin
   if not exists (
     select 1
     from app_private.repository_effective_access a
-    where a.repository_id=p_repository_id and a.capability='admin'
+    where a.repository_id=p_repository_id and 'admin'=any(a.permissions)
   ) then
     raise exception 'repository_access_last_admin' using errcode = '23514';
   end if;
