@@ -4,54 +4,76 @@ Low-frequency Team details. The owner boundary and invariants remain canonical i
 
 ## Locator
 
-TeamId 是 stable identity；Organization Team 的 human-readable locator 是 Organization `login` + Team `slug`。GitHub FPT 定義 `Organization.team(slug)` 與 `Team.slug`，GitHub REST docs 另明示 Team slug 由 Team name 產生，因此 current implementation 在 create／rename 時由 `name` deterministic derive slug，rename 會改變 slug，但不改 TeamId。Canonical authenticated route 是 `/orgs/{organizationLogin}/teams/{teamSlug}`；`/team` 仍是 collection/workbench。舊 slug 不建立 speculative redirect/history。
+TeamId 是 stable identity；Organization Team 的 human-readable locator 是 Organization `login` + Team `slug`。Current implementation 在 create／rename 時由 `name` deterministic derive slug，rename 會改變 slug，但不改 TeamId。Canonical authenticated route 是 `/orgs/{organizationLogin}/teams/{teamSlug}`；`/team` 是 collection/workbench。舊 slug 不建立 speculative redirect/history。
 
-Current declarative contract 要求每個 Organization Team 都有 non-null slug，且同一 Organization 內唯一；create 與 rename 都由 name deterministic derive slug。Locator 只定位：direct open 仍重新驗 LINE proof、active OrganizationMembership、active TeamMembership 與 TeamMaintainer policy。
+每個 Organization Team 都有 non-null slug 且同 Organization 唯一。Locator 只定位；direct open 仍重新驗 LINE proof、active OrganizationMembership，再依 Team privacy/effective membership 決定 read。
 
 ## 建立與加入
 
-- active User 必須同時是 active OrganizationMembership，才能讀取或操作該 Organization 的 Organization Team。
-- 建立 Organization Team 時，Team、建立者的 active TeamMembership 與 TeamMaintainer assignment 必須在同一交易成立；任一步失敗都不得留下半套狀態。
-- 申請加入必須同時提交 `organizationAccountId` 與 `teamId`。兩者不匹配時拒絕，不能只按全域 Team ID 忽略 Organization scope。
-- 加入申請先成為 pending TeamMembership；pending 參與者不能讀取 Team 私有內容。
-- 曾被 removed 的參與者不能自行重新加入。
-- LINE `groupId`、聊天室成員身分、URL 或 Rich Menu 入口都不是 TeamMembership 或 TeamMaintainer 證明。
+- active User 必須同時是 active OrganizationMembership，才能在該 Organization scope 建立或操作 Team。
+- `create-team` 在同一 transaction 建立 Team、creator 的 active direct TeamMembership 與初始 TeamMaintainer；local defaults 是 `SECRET` + `NOTIFICATIONS_DISABLED`。
+- `join` 必須提交 `organizationAccountId + teamId`，先建立／更新本人 pending direct TeamMembership；pending 不等於 effective membership，也不取得 SECRET Team read。
+- 曾被 removed 的 direct participant 不能自行重新加入。
+- LINE `groupId`、聊天室成員、URL/Rich Menu 都不是 TeamMembership 或 TeamMaintainer proof。
 
-## 成員移除與責任完整性
+## Hierarchy 與 membership projection
 
-User 暫停／停權、OrganizationMembership 失效或 TeamMembership 離開／被移除後，均不得再取得該 Team 的私有讀寫能力。管理畫面可以向 effective TeamMaintainer 顯示失效狀態，以便處理責任，但失效 assignment 不授權。
+Team row 保存 nullable `parent_team_id`。Composite FK 保證 parent/child 同 Organization，trigger + serialized hierarchy mutation 保證無 self-parent/cycle。
 
-若參與者仍是未完成 Issue 的 publisher 或 assignee，不可移除該 TeamMembership。必須先完成相關 Issue；首版不自動轉移責任，也不提供代理驗收或自動改派。這項限制保護 [Repository](../../owners/repository.md) 的責任鏈。
+`app_private.team_effective_memberships` 是可重建 read projection：
 
-## 命令與一致性
+- direct active row → target Team 的 `IMMEDIATE` source，depth 0；
+- descendant Team 的 direct active row → 每個 ancestor 的 `CHILD_TEAM` source，depth > 0；
+- projection 保留 `source_team_id`、`source_membership_version`、`depth`，不建立第二份 membership truth；
+- 同一 User 可有多個來源；consumer 若需要 FPT `ALL`，應取 IMMEDIATE + CHILD_TEAM 的集合，而不是 overwrite source。
 
-正式 Organization Team 命令只有：
+`parent-team` 是 versioned Team command。Link/move 要求 actor 同時維護 child 與新 parent；unlink 只要求 child TeamMaintainer。Cross-Organization parent 與 cycle fail closed。
 
-- `create-team`：只能在 actor 已有 active OrganizationMembership 的明確 Organization scope 建立 Team、creator membership 與 TeamMaintainer assignment；沒有 Organization 不存在可建立 Organization Team 的 global path。
-- `rename-team`：只有 effective TeamMaintainer 可在 expectedVersion 一致時修改 Team name；Team id、Organization scope、creator identity 保持 immutable。
-- `join`：建立或更新本人在該 Organization Team 的 pending 申請。
-- `member`：調整 TeamMembership status，並在同一 Team transaction 授予或撤銷 Team-owned TeamMaintainer fact；本人退出是受限情況。Identity/Access 只評估 current authorization。
+## Privacy read policy
 
-每個寫入命令必須：
+`SECRET` 只讓 current effective Team member發現／讀 Team detail 與 active effective members。 `VISIBLE` 讓 current active Organization member發現／讀 Team detail與 active effective members，但不建立 membership。Maintainer 額外可看到 pending/removed direct rows。
 
-- 由後端重新核驗 LINE proof、active User 與 active OrganizationMembership。
-- 使用 `organizationAccountId`、`teamId` 與 `userId`；不接受 `groupId`、`memberId` 或前端宣告的 role 作相容 alias。
-- 使用唯一 `requestId` 與完整 normalized command fingerprint 防止重複執行。
-- 對既有 Team mutation 核對 `expectedVersion`。
-- 同一 actor／`requestId` 只可重放完全相同命令並返回原 durable result；相同 ID 搭配不同內容必須拒絕。
-- replay 仍重新核對 User、Organization 與最低 Team participation，不能恢復已失效的資格或授權。
+Collection query因此同時回傳：actor 的 effective Teams，以及同 Organization 的 VISIBLE Teams。Summary 明確標出 `membershipStatus` 與 `membershipType`；`none` 只表示可見但不是 member。
 
-交易取得共用治理 mutation lock 後才鎖 actor／target，避免雙向角色操作形成 lock inversion。這是 concurrency correctness，不代表吞吐或 production latency 已量測。
+## Notification setting
 
-## 讀取規則
+Team-level `NOTIFICATIONS_DISABLED | NOTIFICATIONS_ENABLED` 是 Team aggregate state，由 TeamMaintainer 以 `settings` command 修改。Enabled 的語意只定義 Team @mention 時的 current effective member recipient population；Team module 不因此建立 recipient Notification、個人 subscription 或 delivery attempt。
 
-- UI 先列出本人可使用的 active Organizations，使用者明確選擇 Organization 後才列出該 scope 的 Organization Teams。
-- 使用者可以看到自己在所選 Organization 尚未 removed 的 Team 摘要。
-- 只有 active TeamMembership 可以讀取指定 Team 的私有內容。
-- TeamMaintainer 可以看到完整 membership 狀態；一般 active participant 只看到 active participants。
-- 無效 `organizationAccountId + teamId` 配對、無權限、讀取失敗與空資料必須區分。
-- 遲到回應不能覆蓋新的 LINE session、Organization 或 Team selection；未知 mutation 結果保留原 `requestId` 供 exact retry。
+Current Team slice 尚未有 Team @mention producer/fan-out。真正 Notification fact、read state、delivery idempotency/retry 仍由 [Notifications](../../owners/notifications.md) owner 管理。
 
-## 驗收邊界
+## Commands and consistency
 
-Repository source、current schema、local static checks、local tests、指定 Supabase readback、deployment 與 LINE mobile acceptance 是不同證據。本文件描述 current Organization Team source contract；EnterpriseTeam 已由 Enterprise owner 形成獨立 current slice，nested Organization Team 仍是 target，兩者不得互相代替。
+Current Organization Team commands:
+
+- `create-team`：建立 Team + creator membership + maintainer。
+- `rename-team`：effective TeamMaintainer 修改 name/derived slug。
+- `parent-team`：link/move/unlink hierarchy，使用上述雙方 maintainer 規則。
+- `settings`：effective TeamMaintainer 修改 privacy/notification setting。
+- `join`：本人建立 pending direct membership request。
+- `membership`：核准／移除 direct membership；self removal 是受限特例。
+- `maintainer`：授予／撤銷 TeamMaintainer，維持 last-effective-maintainer invariant。
+
+每個正式 write 都重新核驗 actor/current scope，使用 stable ids、唯一 requestId、normalized fingerprint；existing Team mutation核對 expectedVersion。Exact retry 只可重放相同 command，且 replay 仍重新核對 current User/Organization/Team qualification與必要 maintainer authority。Team aggregate version 在成功 mutation 後增加；失敗 mutation整筆 rollback。
+
+## Repository access source
+
+Repository grant 仍由 Repository owner保存。當 Repository grant target 是 Organization Team，`repository_team_effective_access_sources` 讀取 Team effective membership並保留：
+
+- `grant_team_id`
+- `source_team_id`
+- `membership_type`
+- `depth`
+- `grant_version`
+- `source_membership_version`
+
+只有存在 explicit Repository Team grant 時 hierarchy membership 才可能形成 Repository access；parent/child 關係本身不是 permission inheritance。若 unlink/revoke 一個來源，aggregate access 只移除該來源，其他 direct/team source仍保留。
+
+## Responsibility integrity
+
+User 暫停／停權、OrganizationMembership 失效或 direct TeamMembership removed 後，都不得繼續提供 current effective Team authority。TeamMaintainer assignment綁定 current versions，舊 assignment 不會因 reactivation 自動復活。
+
+若 direct participant仍承擔其他 owner 的未完成責任，相關 owner/invariant可以阻擋 removal；Team 不自行改派 Issue responsibility。
+
+## Acceptance boundary
+
+Repository source、declarative schema、local/static checks、PostgreSQL integration tests、Supabase readback、deployment與 LINE mobile acceptance 是不同證據。此文件描述 current Organization Team contract；EnterpriseTeam 仍是 Enterprise owner 的獨立 entity，不與 Organization Team hierarchy混用。
