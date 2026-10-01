@@ -139,14 +139,26 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
     return this.db.transaction(async (sql) => {
       const trendingRows = (
         await sql.query(
-          `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.permissions,
+          `SELECT
+                  r.id,
+                  r.owner_account_id,
+                  r.owner_account_kind,
+                  r.name,
+                  r.visibility,
+                  COALESCE(a.permissions,ARRAY[]::text[]) AS permissions,
                   (count(s.user_id) FILTER (WHERE s.created_at >= $2))::int AS recent_star_count,
                   count(s.user_id)::int AS star_count,
                   coalesce(bool_or(s.user_id=$1),false) AS starred
-           FROM repository_effective_access a
-           JOIN repositories r ON r.id=a.repository_id
+           FROM repositories r
+           LEFT JOIN repository_effective_access a
+             ON a.repository_id=r.id AND a.user_id=$1
            LEFT JOIN repository_stars s ON s.repository_id=r.id
-           WHERE a.user_id=$1
+           WHERE EXISTS (
+             SELECT 1
+             FROM repository_visibility_access v
+             WHERE v.repository_id=r.id
+               AND (v.user_id=$1 OR v.user_id IS NULL)
+           )
            GROUP BY r.id,r.owner_account_id,r.owner_account_kind,r.name,r.visibility,a.permissions
            ORDER BY
              count(s.user_id) FILTER (WHERE s.created_at >= $2) DESC,
