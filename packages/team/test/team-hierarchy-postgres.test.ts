@@ -85,7 +85,10 @@ test("Team hierarchy derives membership and Repository access without copying me
   assert.equal(parentView.team?.membershipStatus, "active");
   assert.equal(parentView.team?.membershipType, "CHILD_TEAM");
   assert.equal(parentView.team?.privacy, "VISIBLE");
-  assert.equal(parentView.members.find((member) => member.userId === "child-user")?.sourceTeamId, child.teamId);
+  assert.equal(
+    parentView.members.find((member) => member.userId === "child-user")?.sourceTeamId,
+    child.teamId,
+  );
 
   const membershipSources = await pg.query(
     `select team_id,user_id,membership_type,source_team_id,depth
@@ -105,11 +108,7 @@ test("Team hierarchy derives membership and Repository access without copying me
   ]);
 
   await assert.rejects(
-    store.view(
-      { provider: "line:test", subject: "viewer" },
-      "organization-team",
-      child.teamId,
-    ),
+    store.view({ provider: "line:test", subject: "viewer" }, "organization-team", child.teamId),
     (error: unknown) => error instanceof TeamError && error.status === 404,
   );
 
