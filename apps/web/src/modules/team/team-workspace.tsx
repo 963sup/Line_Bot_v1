@@ -235,37 +235,37 @@ export function TeamWorkspace({
                   {maintainer &&
                     member.status === "active" &&
                     member.membershipType === "IMMEDIATE" && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        setDraft({
-                          action: "maintainer",
-                          targetUserId: member.userId,
-                          enabled: !member.isMaintainer,
-                          title: `${member.isMaintainer ? "撤銷" : "授予"} TeamMaintainer：${member.name}`,
-                        })
-                      }
-                    >
-                      {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
-                    </button>
-                  )}
+                      <button
+                        className="secondary"
+                        onClick={() =>
+                          setDraft({
+                            action: "maintainer",
+                            targetUserId: member.userId,
+                            enabled: !member.isMaintainer,
+                            title: `${member.isMaintainer ? "撤銷" : "授予"} TeamMaintainer：${member.name}`,
+                          })
+                        }
+                      >
+                        {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
+                      </button>
+                    )}
                   {(maintainer || member.userId === data.userId) &&
                     member.status !== "removed" &&
                     (member.status !== "active" || member.membershipType === "IMMEDIATE") && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        setDraft({
-                          action: "membership",
-                          targetUserId: member.userId,
-                          status: "removed",
-                          title: `${member.userId === data.userId ? "退出團隊" : "移除成員"}：${member.name}`,
-                        })
-                      }
-                    >
-                      {member.userId === data.userId ? "退出" : "移除／拒絕"}
-                    </button>
-                  )}
+                      <button
+                        className="secondary"
+                        onClick={() =>
+                          setDraft({
+                            action: "membership",
+                            targetUserId: member.userId,
+                            status: "removed",
+                            title: `${member.userId === data.userId ? "退出團隊" : "移除成員"}：${member.name}`,
+                          })
+                        }
+                      >
+                        {member.userId === data.userId ? "退出" : "移除／拒絕"}
+                      </button>
+                    )}
                 </div>
               </section>
             ))}
