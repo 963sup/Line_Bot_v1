@@ -4,6 +4,7 @@ type IssueRepositoryOperation =
   | "read"
   | "open"
   | "comment"
+  | "workflow"
   | "triage"
   | "edit"
   | "close"
@@ -29,6 +30,7 @@ const issueRepositoryOperationPermissions: Readonly<
   read: allRepositoryPermissions,
   open: allRepositoryPermissions,
   comment: allRepositoryPermissions,
+  workflow: allRepositoryPermissions,
   triage: issueManagementPermissions,
   edit: issueManagementPermissions,
   close: issueManagementPermissions,
