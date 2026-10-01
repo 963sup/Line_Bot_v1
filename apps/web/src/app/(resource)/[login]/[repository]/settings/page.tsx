@@ -1,5 +1,6 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
+import RepositoryManagementSettings from "../../../../../modules/repository/repository-management-settings";
 import RepositorySettings from "../../../../../modules/repository/repository-settings";
 import { repositoryPath } from "../../../../../modules/repository/resource-navigation";
 import { lineMiniApp } from "../../../../../shared/server/line-mini-app";
@@ -24,8 +25,13 @@ export default async function Page({
     <AppShell>
       <PageHeading
         title="Repository Settings"
-        description="Repository 地址就是成員的打卡點。"
+        description="管理 Repository lifecycle、visibility 與打卡點。"
         back={repositoryPath(ownerLogin, repository)}
+      />
+      <RepositoryManagementSettings
+        liffId={lineMiniApp().liffId}
+        ownerLogin={ownerLogin}
+        repositoryName={repository}
       />
       <RepositorySettings
         liffId={lineMiniApp().liffId}
