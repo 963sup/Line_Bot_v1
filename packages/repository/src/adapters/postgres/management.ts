@@ -7,13 +7,13 @@ import type {
   RepositoryManagementReceipt,
   RepositoryManagementSnapshot,
   RepositoryManagementStore,
-  RepositoryVisibility,
 } from "../../application/ports/management.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
   hasRepositoryPermission,
   RepositoryError,
   type RepositoryPermission,
+  type RepositoryVisibility,
 } from "../../domain.js";
 
 type RepositoryRow = {
