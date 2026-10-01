@@ -522,7 +522,7 @@
       "kind": "table",
       "path": "supabase/schemas/502_team_role_assignments.sql",
       "authority": true,
-      "semanticOwner": "identity-access",
+      "semanticOwner": "team",
       "concept": "team-role-assignment"
     },
     {

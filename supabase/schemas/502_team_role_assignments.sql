@@ -1,4 +1,4 @@
--- Identity/Access-owned TeamMaintainer RoleAssignment.
+-- Team-owned MAINTAINER/TeamMaintainer role facts; MEMBER derives from active TeamMembership.
 
 create table app_private.team_role_assignments (
   team_id text not null,

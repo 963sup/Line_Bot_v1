@@ -23,7 +23,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Permission | permission | policy-decision | current | Explicit sensitive capability authorization decision; not provider role or membership. |
-| TeamMemberEdge.role | team-role-assignment | policy-decision | current | GitHub FPT: schema-users.json#TeamMemberEdge#role |
 
 ## Capabilities
 
@@ -41,8 +40,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | provides | enterprise | query | identity-access | current-state | Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
 | provides | organization | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle. |
 | provides | repository | query | identity-access | transaction-recheck | Repository creation under an Organization consumes current effective OrganizationOwner authorization. |
-| provides | team | query | identity-access | current-state | Team collaboration consumes current TeamMaintainer RoleAssignment authorization. |
+| provides | team | query | identity-access | current-state | Team collaboration consumes current authorization decisions evaluated by IdentityAccess from Team-owned TeamMaintainer facts and current qualification; IdentityAccess does not write the TeamMaintainer lifecycle. |
 | consumes | organization | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
+| consumes | team | query | team | current-state | IdentityAccess consumes current Team-owned TeamMaintainer relationship facts plus current User, Organization, and TeamMembership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 
 ## Tactical Model Boundary
 
