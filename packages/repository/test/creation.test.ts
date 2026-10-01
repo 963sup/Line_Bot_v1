@@ -188,10 +188,13 @@ test("Organization Repository creation requires current OrganizationOwner and bo
     (error) => error instanceof RepositoryError && error.status === 403,
   );
   await assert.rejects(
-    pg.query(
-      "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)",
-      ["direct-denied", "member", "org", "Direct Denied", "private"],
-    ),
+    pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)", [
+      "direct-denied",
+      "member",
+      "org",
+      "Direct Denied",
+      "private",
+    ]),
     (error: unknown) => (error as { code?: string }).code === "42501",
   );
 
