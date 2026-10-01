@@ -16,12 +16,12 @@ type Creation = ReturnType<typeof createRepositoryCreation>;
 test("Repository create HTTP exposes owner options and a 201 create result", async () => {
   const owners = await repositoryOwnersRequest(
     new Request("https://example.com/api/repositories/owners"),
-    { owners: async (subject) => [{ id: subject, kind: "USER", login: "alice" }] },
+    { owners: async (subject) => [{ id: subject, kind: "USER", login: "alice", internalEligible: false }] },
     async () => "user-1",
   );
   assert.equal(owners.status, 200);
   assert.deepEqual(await owners.json(), {
-    items: [{ id: "user-1", kind: "USER", login: "alice" }],
+    items: [{ id: "user-1", kind: "USER", login: "alice", internalEligible: false }],
   });
 
   const previous = process.env.APP_ORIGIN;
@@ -107,6 +107,7 @@ test("Repository create pending storage preserves exact retry identity", () => {
     ownerAccountId: "user-1",
     ownerKind: "USER" as const,
     name: "Repo",
+    visibility: "private" as const,
   };
   writePendingRepositoryCreate(storage, command);
   assert.deepEqual(readPendingRepositoryCreate(storage), command);
