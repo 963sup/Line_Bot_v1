@@ -131,13 +131,9 @@ async function internalEnterpriseId(sql: Sql, repository: RepositoryRow): Promis
   if (repository.owner_account_kind !== "ORGANIZATION") return null;
   const row = (
     await sql.query(
-      `SELECT eo.enterprise_account_id
-       FROM enterprise_organizations eo
-       JOIN enterprises e
-         ON e.account_id=eo.enterprise_account_id
-        AND e.status='active'
-       WHERE eo.organization_account_id=$1
-         AND eo.status='active'
+      `SELECT enterprise_account_id
+       FROM repository_internal_scopes
+       WHERE organization_account_id=$1
        LIMIT 1`,
       [repository.owner_account_id],
     )
