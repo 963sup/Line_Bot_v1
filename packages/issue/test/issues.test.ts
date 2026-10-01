@@ -5,21 +5,8 @@ import { PostgresIssueStore } from "../src/adapters/postgres.js";
 import { canIssueRepositoryOperation } from "../src/domain.js";
 
 test("Issue RepositoryPermission policy keeps open/read separate from manage-issue operations", () => {
-  const allPermissions = [
-    "read",
-    "triage",
-    "triage_plus",
-    "write",
-    "maintain",
-    "admin",
-  ] as const;
-  const managementPermissions = [
-    "triage",
-    "triage_plus",
-    "write",
-    "maintain",
-    "admin",
-  ] as const;
+  const allPermissions = ["read", "triage", "triage_plus", "write", "maintain", "admin"] as const;
+  const managementPermissions = ["triage", "triage_plus", "write", "maintain", "admin"] as const;
 
   for (const operation of ["read", "open", "comment"] as const) {
     for (const permission of allPermissions) {
