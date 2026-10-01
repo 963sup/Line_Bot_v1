@@ -126,8 +126,8 @@ test("Repository access management supports direct and Team grants with replay, 
     "insert into app_private.team_memberships(team_id,user_id,name,status,version) values('team-a','team-member','Team Member','active',1)",
   );
   const created = await pg.query(
-    "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4)",
-    ["repo", "owner", "org", "Shared"],
+    "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)",
+    ["repo", "owner", "org", "Shared", "private"],
   );
   assert.equal((created.rows[0] as { repository_id?: string } | undefined)?.repository_id, "repo");
 
