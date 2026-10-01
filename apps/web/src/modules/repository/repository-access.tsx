@@ -249,7 +249,7 @@ export default function RepositoryAccess({
                   }}
                 >
                   <label>
-                    Capability
+                    Permission
                     <select name="capability" defaultValue={item.capability}>
                       {permissions.map((capability) => (
                         <option key={capability} value={capability}>
@@ -287,7 +287,7 @@ export default function RepositoryAccess({
                 <input name="subjectId" required maxLength={128} />
               </label>
               <label>
-                Capability
+                Permission
                 <select name="capability" defaultValue="read">
                   {permissions.map((capability) => (
                     <option key={capability} value={capability}>
@@ -323,7 +323,7 @@ export default function RepositoryAccess({
                     }}
                   >
                     <label>
-                      Capability
+                      Permission
                       <select name="capability" defaultValue={item.capability}>
                         {permissions.map((capability) => (
                           <option key={capability} value={capability}>
@@ -361,7 +361,7 @@ export default function RepositoryAccess({
                   <input name="subjectId" required maxLength={128} />
                 </label>
                 <label>
-                  Capability
+                  Permission
                   <select name="capability" defaultValue="read">
                     {permissions.map((capability) => (
                       <option key={capability} value={capability}>
