@@ -175,6 +175,15 @@ test("READ collaborators can complete the local workflow while responsibility st
   );
   assert.equal(created.status, "pending");
 
+  const publicRead = await store.snapshot(
+    { userId: "stranger" },
+    { repositoryId: "repository-policy" },
+    true,
+  );
+  assert.equal(publicRead.issues[0]?.id, created.id);
+  assert.deepEqual(publicRead.repositories, []);
+  assert.deepEqual(publicRead.participants, []);
+
   await assert.rejects(
     store.execute(
       { userId: "stranger" },
@@ -188,7 +197,7 @@ test("READ collaborators can complete the local workflow while responsibility st
       },
       11,
     ),
-    /沒有此 Repository 的存取權限/,
+    /Repository access 不允許此 Issue 操作/,
   );
 
   await assert.rejects(
@@ -245,4 +254,33 @@ test("READ collaborators can complete the local workflow while responsibility st
     15,
   );
   assert.equal(completed.status, "completed");
+
+  await pg.query(
+    "update app_private.repositories set is_archived=true where id='repository-policy'",
+  );
+  const archivedRead = await store.detail(
+    { userId: "reader" },
+    completed.number,
+    { repositoryId: "repository-policy" },
+  );
+  assert.equal(archivedRead.issues[0]?.status, "completed");
+  await assert.rejects(
+    store.execute(
+      { userId: "reader" },
+      {
+        requestId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        repositoryId: "repository-policy",
+        action: "create",
+        title: "Archived write",
+        criteria: "Must not be created",
+        assignee: "assignee",
+      },
+      16,
+    ),
+    (error: unknown) =>
+      typeof error === "object" &&
+      error !== null &&
+      Reflect.get(error, "status") === 409 &&
+      String(Reflect.get(error, "message")).includes("唯讀"),
+  );
 });
