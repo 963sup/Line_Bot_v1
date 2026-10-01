@@ -65,7 +65,6 @@ test("Repository create HTTP exposes owner options and a 201 create result", asy
       ownerAccountId: "user-1",
       ownerKind: "USER",
       name: "Repo",
-      visibility: "private",
     });
   } finally {
     if (previous === undefined) delete process.env.APP_ORIGIN;
