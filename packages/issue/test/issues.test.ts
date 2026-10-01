@@ -8,7 +8,7 @@ test("Issue RepositoryPermission policy keeps open/read separate from manage-iss
   const allPermissions = ["read", "triage", "triage_plus", "write", "maintain", "admin"] as const;
   const managementPermissions = ["triage", "triage_plus", "write", "maintain", "admin"] as const;
 
-  for (const operation of ["read", "open", "comment"] as const) {
+  for (const operation of ["read", "open", "comment", "workflow"] as const) {
     for (const permission of allPermissions) {
       assert.equal(canIssueRepositoryOperation([permission], operation), true);
     }
@@ -118,7 +118,7 @@ test("Issue number is monotonic within each Repository and independent across Re
   ]);
 });
 
-test("READ can open an Issue while workflow transitions require manage permission and local responsibility", async (t) => {
+test("READ collaborators can complete the local workflow while responsibility stays enforced", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -151,7 +151,7 @@ test("READ can open an Issue while workflow transitions require manage permissio
   );
   for (const [userId, permission] of [
     ["reader", "read"],
-    ["assignee", "triage"],
+    ["assignee", "read"],
     ["observer", "triage"],
   ] as const) {
     await pg.query(
@@ -232,36 +232,17 @@ test("READ can open an Issue while workflow transitions require manage permissio
     14,
   );
 
-  await assert.rejects(
-    store.execute(
-      { userId: "reader" },
-      {
-        requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-        repositoryId: "repository-policy",
-        action: "approve",
-        issueId: created.id,
-        expectedVersion: review.version,
-        note: "",
-      },
-      15,
-    ),
-    /可管理 Issue 的 Repository permission/,
-  );
-
-  await pg.query(
-    "update app_private.repository_access set capability='triage',version=2 where repository_id='repository-policy' and principal_id='reader'",
-  );
   const completed = await store.execute(
     { userId: "reader" },
     {
-      requestId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       repositoryId: "repository-policy",
       action: "approve",
       issueId: created.id,
       expectedVersion: review.version,
       note: "",
     },
-    16,
+    15,
   );
   assert.equal(completed.status, "completed");
 });
