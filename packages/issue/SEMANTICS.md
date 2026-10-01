@@ -29,7 +29,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-issues | required | implemented | Manage Repository-scoped Issue lifecycle and commands. |
+| manage-issues | required | implemented | Apply explicit RepositoryPermission rules for Issue read/open/comment and management without conflating them with local publisher/assignee workflow responsibility. |
 | read-issue-activity | required | implemented | Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority. |
 
 ## Context Relationships
