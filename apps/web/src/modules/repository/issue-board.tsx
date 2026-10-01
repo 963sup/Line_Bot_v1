@@ -1,7 +1,11 @@
 "use client";
 
 import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/issue/application/ports/issues";
-import type { IssueAction, IssueStatus } from "@line_bot_v1/issue/domain";
+import {
+  canIssueRepositoryOperation,
+  type IssueAction,
+  type IssueStatus,
+} from "@line_bot_v1/issue/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -204,9 +208,9 @@ export default function IssueBoard({
 
   const current = detailMode ? data?.issues[0] : undefined;
   const currentRepository = data?.repositories.find((item) => item.id === selectedRepository);
-  const canWrite =
-    currentRepository?.permissions.includes("write") ||
-    currentRepository?.permissions.includes("admin");
+  const canOpenIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "open")
+    : false;
   const headingActions = !detailMode ? (
     <PrimaryLink href="/explore">探索儲存庫</PrimaryLink>
   ) : undefined;
@@ -341,7 +345,7 @@ export default function IssueBoard({
                   </button>
                 ))}
               </nav>
-              {canWrite && (
+              {canOpenIssue && (
                 <button
                   type="button"
                   className="primary-cta"
@@ -350,13 +354,13 @@ export default function IssueBoard({
                   {creating ? "收起建立表單" : "建立 Issue"}
                 </button>
               )}
-              {initialCreating && currentRepository && !canWrite && (
+              {initialCreating && currentRepository && !canOpenIssue && (
                 <p className="empty-copy">
-                  你目前只有 {currentRepository.permissions.join(", ")} capability，不能在此
-                  Repository 建立 Issue。
+                  目前的 Repository permission 與 Issue 建立政策不允許在此 Repository 建立
+                  Issue。
                 </p>
               )}
-              {creating && canWrite && (
+              {creating && canOpenIssue && (
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
