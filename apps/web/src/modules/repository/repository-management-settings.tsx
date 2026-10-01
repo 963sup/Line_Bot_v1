@@ -16,12 +16,7 @@ type PendingManagement = Readonly<{
 }>;
 
 function storageKey(ownerLogin: string, repositoryName: string) {
-  return (
-    "repository-management:" +
-    ownerLogin.toLowerCase() +
-    "/" +
-    repositoryName.toLowerCase()
-  );
+  return "repository-management:" + ownerLogin.toLowerCase() + "/" + repositoryName.toLowerCase();
 }
 
 function readPending(
@@ -330,14 +325,13 @@ export default function RepositoryManagementSettings({
                 type="button"
                 className="secondary"
                 disabled={busy || Boolean(pending)}
-                onClick={() =>
-                  command({ action: repository.archived ? "unarchive" : "archive" })
-                }
+                onClick={() => command({ action: repository.archived ? "unarchive" : "archive" })}
               >
                 {repository.archived ? "解除封存" : "封存 Repository"}
               </button>
               <p className="crud-lifecycle-note">
-                封存後內容仍依目前 visibility/access 可讀，但 Issue 協作與新打卡會停止；解除封存不會恢復已撤銷的 grant。
+                封存後內容仍依目前 visibility/access 可讀，但 Issue
+                協作與新打卡會停止；解除封存不會恢復已撤銷的 grant。
               </p>
             </>
           ) : (
