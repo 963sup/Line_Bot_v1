@@ -29,7 +29,9 @@ export async function isTeamMaintainer(sql: Sql, teamId: string, userId: string)
   const user = await readActiveUserQualification(sql, userId, "share");
   if (!user || user.statusVersion !== Number(fact.user_status_version)) return false;
 
-  const participants = await activeOrganizationParticipantIds(sql, fact.organization_account_id, [userId]);
+  const participants = await activeOrganizationParticipantIds(sql, fact.organization_account_id, [
+    userId,
+  ]);
   return participants.has(userId);
 }
 
