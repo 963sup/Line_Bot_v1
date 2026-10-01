@@ -80,6 +80,10 @@ test("INTERNAL, PUBLIC and PRIVATE visibility re-authorize every read projection
     "insert into app_private.repository_star_lists(id,owner_user_id,name,description,visibility,version,created_at,updated_at) values('list','owner','List','','public',1,10,10)",
   );
   await pg.query(
+    "insert into app_private.repository_stars(repository_id,user_id,created_at) values($1,'owner',10)",
+    [repository.id],
+  );
+  await pg.query(
     "insert into app_private.repository_star_list_items(list_id,owner_user_id,repository_id,added_at) values('list','owner',$1,10)",
     [repository.id],
   );
