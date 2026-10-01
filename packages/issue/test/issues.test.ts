@@ -258,11 +258,9 @@ test("READ collaborators can complete the local workflow while responsibility st
   await pg.query(
     "update app_private.repositories set is_archived=true where id='repository-policy'",
   );
-  const archivedRead = await store.detail(
-    { userId: "reader" },
-    completed.number,
-    { repositoryId: "repository-policy" },
-  );
+  const archivedRead = await store.detail({ userId: "reader" }, completed.number, {
+    repositoryId: "repository-policy",
+  });
   assert.equal(archivedRead.issues[0]?.status, "completed");
   await assert.rejects(
     store.execute(
