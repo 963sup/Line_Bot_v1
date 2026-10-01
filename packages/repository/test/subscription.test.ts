@@ -162,3 +162,53 @@ test("Watch state is replay-safe, grants no access and survives independent acce
   assert.equal(ignored.state, "IGNORED");
   assert.equal(ignored.version, 2);
 });
+
+test("first-time Watch writes serialize by User and Repository", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await activeUser(db, "owner");
+  await activeUser(db, "viewer");
+  await pg.query(
+    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo-race','owner','USER','Race','public',1)",
+  );
+
+  const store = new PostgresRepositorySubscriptionStore(db);
+  const results = await Promise.allSettled([
+    store.execute(
+      "viewer",
+      {
+        action: "set",
+        requestId: "55555555-5555-4555-8555-555555555555",
+        repositoryId: "repo-race",
+        expectedVersion: 0,
+        state: "SUBSCRIBED",
+      },
+      30,
+    ),
+    store.execute(
+      "viewer",
+      {
+        action: "set",
+        requestId: "66666666-6666-4666-8666-666666666666",
+        repositoryId: "repo-race",
+        expectedVersion: 0,
+        state: "IGNORED",
+      },
+      31,
+    ),
+  ]);
+
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const rejected = results.find(
+    (result): result is PromiseRejectedResult => result.status === "rejected",
+  );
+  assert.ok(rejected);
+  assert.ok(rejected.reason instanceof RepositoryError);
+  assert.equal(rejected.reason.status, 409);
+
+  const row = await pg.query(
+    "select state,version from app_private.repository_subscriptions where repository_id='repo-race' and user_id='viewer'",
+  );
+  assert.equal(row.rows.length, 1);
+  assert.equal((row.rows[0] as { version: number }).version, 1);
+});
