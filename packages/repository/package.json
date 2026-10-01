@@ -112,6 +112,30 @@
       "types": "./dist/postgres/address.d.ts",
       "default": "./dist/postgres/address.js"
     },
+    "./application/management": {
+      "types": "./dist/application/management.d.ts",
+      "default": "./dist/application/management.js"
+    },
+    "./application/ports/management": {
+      "types": "./dist/application/ports/management.d.ts",
+      "default": "./dist/application/ports/management.js"
+    },
+    "./postgres/management": {
+      "types": "./dist/postgres/management.d.ts",
+      "default": "./dist/postgres/management.js"
+    },
+    "./application/subscription": {
+      "types": "./dist/application/subscription.d.ts",
+      "default": "./dist/application/subscription.js"
+    },
+    "./application/ports/subscription": {
+      "types": "./dist/application/ports/subscription.d.ts",
+      "default": "./dist/application/ports/subscription.js"
+    },
+    "./postgres/subscription": {
+      "types": "./dist/postgres/subscription.d.ts",
+      "default": "./dist/postgres/subscription.js"
+    },
     "./contracts/selectors": {
       "types": "./dist/contracts/selectors.d.ts",
       "default": "./dist/contracts/selectors.js"
