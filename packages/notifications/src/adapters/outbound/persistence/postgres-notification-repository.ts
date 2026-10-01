@@ -81,6 +81,16 @@ export class PostgresNotificationRepository implements NotificationRepository {
          WHERE recipient=$1
            AND ($2::uuid IS NULL OR id=$2::uuid)
            AND ($3::boolean IS FALSE OR read_at IS NULL)
+           AND (
+             source_type NOT IN ('issue','discussion')
+             OR EXISTS (
+               SELECT 1
+               FROM notification_repository_source_access access
+               WHERE access.source_type=notifications.source_type
+                 AND access.source_id=notifications.source_id
+                 AND (access.user_id=$1 OR access.user_id IS NULL)
+             )
+           )
          ORDER BY created_at DESC,id
          LIMIT 100`,
         [recipient, query.id ?? null, query.unreadOnly === true],
@@ -96,6 +106,16 @@ export class PostgresNotificationRepository implements NotificationRepository {
         `SELECT id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version
          FROM notifications
          WHERE id=$1::uuid AND recipient=$2
+           AND (
+             source_type NOT IN ('issue','discussion')
+             OR EXISTS (
+               SELECT 1
+               FROM notification_repository_source_access access
+               WHERE access.source_type=notifications.source_type
+                 AND access.source_id=notifications.source_id
+                 AND (access.user_id=$2 OR access.user_id IS NULL)
+             )
+           )
          FOR UPDATE`,
         [id, recipient],
       );
@@ -111,12 +131,22 @@ export class PostgresNotificationRepository implements NotificationRepository {
         `UPDATE notifications
          SET read_at=$3,version=version+1
          WHERE id=$1::uuid AND recipient=$2
+           AND (
+             source_type NOT IN ('issue','discussion')
+             OR EXISTS (
+               SELECT 1
+               FROM notification_repository_source_access access
+               WHERE access.source_type=notifications.source_type
+                 AND access.source_id=notifications.source_id
+                 AND (access.user_id=$2 OR access.user_id IS NULL)
+             )
+           )
          RETURNING id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version`,
         [id, recipient, next.readAt],
       );
       const updatedRows: unknown[] = updatedResult.rows;
       const updated = updatedRows[0];
-      if (updated === undefined) throw invalidRow();
+      if (updated === undefined) return null;
       return notification(updated);
     });
   }
