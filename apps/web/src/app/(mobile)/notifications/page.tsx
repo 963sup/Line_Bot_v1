@@ -1,6 +1,6 @@
-import Inbox from "../../../modules/notifications/inbox";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import AppShell from "../_shell/app-shell";
+import Inbox from "../../../modules/notifications/inbox";
 
 export const dynamic = "force-dynamic";
 

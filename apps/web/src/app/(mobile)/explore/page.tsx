@@ -1,7 +1,7 @@
-import DiscoveryPanel from "../../../modules/repository/discovery-panel";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
-import { ActionRow, PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
+import DiscoveryPanel from "../../../modules/repository/discovery-panel";
+import { ActionRow, PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 
 export const dynamic = "force-dynamic";
 
