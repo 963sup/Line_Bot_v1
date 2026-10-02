@@ -1,13 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "@line_bot_v1/platform/postgres";
-import {
-  RepositoryError,
-  type RepositoryPermission,
-} from "@line_bot_v1/repository/domain";
-import {
-  repositoryArchived,
-  repositoryScope,
-} from "@line_bot_v1/repository/postgres/access";
+import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
+import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import type {
   IssueCollaborationCommand,
   IssueCollaborationIdentity,
@@ -100,16 +94,11 @@ async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
 
 export function privilegedCommenter(permissions: readonly RepositoryPermission[]) {
   return permissions.some(
-    (permission) =>
-      permission === "write" || permission === "maintain" || permission === "admin",
+    (permission) => permission === "write" || permission === "maintain" || permission === "admin",
   );
 }
 
-export async function sourceScope(
-  sql: Sql,
-  who: IssueCollaborationIdentity,
-  repositoryId: string,
-) {
+export async function sourceScope(sql: Sql, who: IssueCollaborationIdentity, repositoryId: string) {
   return repositoryOperation(() => repositoryScope(sql, who, repositoryId));
 }
 
@@ -191,9 +180,8 @@ export async function targetIssue(
   if (sourceIssueId === targetIssueId) {
     throw new IssueError(409, "Issue 關係不能指向自己。");
   }
-  const row = (
-    await sql.query("SELECT id,repository_id FROM issues WHERE id=$1", [targetIssueId])
-  ).rows[0] as { id: string; repository_id: string } | undefined;
+  const row = (await sql.query("SELECT id,repository_id FROM issues WHERE id=$1", [targetIssueId]))
+    .rows[0] as { id: string; repository_id: string } | undefined;
   if (!row) throw new IssueError(404, "找不到目標 Issue。");
   const selected = await sourceScope(sql, who, row.repository_id);
   if (!canIssueRepositoryOperation(selected.repository.permissions, "triage")) {
@@ -256,11 +244,7 @@ export async function advance(
   return Number(row.version);
 }
 
-export async function hierarchyWouldCycle(
-  sql: Sql,
-  parentIssueId: string,
-  childIssueId: string,
-) {
+export async function hierarchyWouldCycle(sql: Sql, parentIssueId: string, childIssueId: string) {
   const row = (
     await sql.query(
       `WITH RECURSIVE descendants(id) AS (
@@ -309,10 +293,7 @@ export function duplicateRelation(error: unknown): never {
   throw error;
 }
 
-export async function requireWritableRepository(
-  sql: Sql,
-  repositoryId: string,
-) {
+export async function requireWritableRepository(sql: Sql, repositoryId: string) {
   if (await repositoryOperation(() => repositoryArchived(sql, repositoryId))) {
     throw new IssueError(409, "Repository 已封存，Issue 目前為唯讀。");
   }
