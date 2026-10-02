@@ -1,6 +1,6 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import Link from "next/link";
 import { hasEntryContinuationKeys } from "../../shared/presentation/entry-destination";
-import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import PublicEntry from "./_entry/public-entry";
 
 export const dynamic = "force-dynamic";

@@ -1,3 +1,4 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
 import RepositoryAccess from "../../../../../modules/repository/repository-access";
@@ -5,7 +6,6 @@ import {
   repositoryPath,
   repositorySettingsPath,
 } from "../../../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { PageHeading, PrimaryLink } from "../../../../../shared/ui/page-layout";
 import AppShell from "../../../../(mobile)/_shell/app-shell";
 
