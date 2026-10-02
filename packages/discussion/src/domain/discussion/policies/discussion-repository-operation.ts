@@ -1,6 +1,6 @@
 import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
 
-export type DiscussionRepositoryOperation =
+type DiscussionRepositoryOperation =
   | "participate"
   | "triage"
   | "manage"
