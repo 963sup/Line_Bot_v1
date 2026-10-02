@@ -35,6 +35,25 @@ async function run() {
     serviceWorkers: "block",
     viewport: { width: 390, height: 844 },
   });
+  await context.addInitScript(() => {
+    window.liff = {
+      init: async () => {
+        window.liffInitializations = (window.liffInitializations ?? 0) + 1;
+        const current = new URL(location.href);
+        if (current.searchParams.has("liff.state"))
+          history.replaceState(null, "", "/settings?google=link&code=secret&state=secret");
+      },
+      isLoggedIn: () => true,
+      getAccessToken: () => "synthetic",
+      isInClient: () => false,
+      getProfile: async () => ({
+        userId: "U11111111111111111111111111111111",
+        displayName: "測試使用者",
+        statusMessage: "Ready to work",
+      }),
+      login: () => {},
+    };
+  });
   if (artifactDir) await context.tracing.start({ screenshots: true, snapshots: true });
   const page = await context.newPage();
   const errors = [];
@@ -93,12 +112,6 @@ async function run() {
   await context.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (url.hostname === "static.line-scdn.net") {
-      return route.fulfill({
-        contentType: "text/javascript",
-        body: "window.liff={init:async()=>{window.liffInitializations=(window.liffInitializations??0)+1;const u=new URL(location.href);if(u.searchParams.has('liff.state'))history.replaceState(null,'','/settings?google=link&code=secret&state=secret')},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({userId:'U11111111111111111111111111111111',displayName:'測試使用者',statusMessage:'Ready to work'}),login:()=>{}};",
-      });
-    }
     if (url.origin !== base) return route.abort();
     if (!url.pathname.startsWith("/api/")) return route.continue();
 
@@ -429,7 +442,7 @@ async function run() {
     assert.equal(await page.evaluate(() => window.liffInitializations), 1);
     await expect(
       page.locator('script[src="https://static.line-scdn.net/liff/edge/2/sdk.js"]'),
-    ).toHaveCount(1);
+    ).toHaveCount(0);
     for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 844 });
       assert.equal(

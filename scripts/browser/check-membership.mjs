@@ -76,6 +76,29 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     reducedMotion: options.reducedMotion ?? "no-preference",
     serviceWorkers: "block",
   });
+  await context.addInitScript(
+    ({ profileMode }) => {
+      window.liffInitCount = 0;
+      window.profileMode = profileMode;
+      window.releaseProfiles = [];
+      window.liff = {
+        init: async () => {
+          window.liffInitCount++;
+        },
+        isLoggedIn: () => true,
+        getAccessToken: () => "synthetic-line",
+        isInClient: () => false,
+        getProfile: async () => {
+          if (window.profileMode === "fail") throw new Error("profile unavailable");
+          if (window.profileMode === "hold")
+            return new Promise((resolve) => window.releaseProfiles.push(resolve));
+          return { displayName: "測試會員" };
+        },
+        login: () => {},
+      };
+    },
+    { profileMode },
+  );
   if (output) await context.tracing.start({ screenshots: true, snapshots: true });
   page = await context.newPage();
   const state = {
@@ -92,7 +115,6 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     release: null,
     pending: null,
     stages: [],
-    liffRequests: 0,
     day: options.day ?? "2026-09-10",
     balance: options.balance ?? 10,
     claims: new Map(
@@ -160,13 +182,6 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
   await context.route("**/*", async (route) => {
     const request = route.request();
     const target = new URL(request.url());
-    if (target.hostname === "static.line-scdn.net") {
-      state.liffRequests++;
-      return route.fulfill({
-        contentType: "text/javascript",
-        body: `window.liffInitCount=0;window.profileMode=${JSON.stringify(profileMode)};window.releaseProfiles=[];window.liff={init:async()=>{window.liffInitCount++},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic-line',isInClient:()=>false,getProfile:async()=>{if(window.profileMode==='fail')throw new Error('profile unavailable');if(window.profileMode==='hold')return new Promise(resolve=>window.releaseProfiles.push(resolve));return {displayName:'測試會員'}},login:()=>{}};`,
-      });
-    }
     if (target.origin !== base) return route.abort();
     if (target.pathname === "/api/membership/google-link") {
       if (request.method() === "POST") {
