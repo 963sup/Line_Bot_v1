@@ -23,6 +23,14 @@
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
+    },
+    "./application/management": {
+      "types": "./dist/application/management.d.ts",
+      "default": "./dist/application/management.js"
+    },
+    "./composition/bootstrap/postgres-project-management-store": {
+      "types": "./dist/composition/bootstrap/postgres-project-management-store.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-project-management-store.js"
     }
   },
   "files": [
