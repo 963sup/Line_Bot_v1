@@ -20,6 +20,12 @@ import { canIssueRepositoryOperation, IssueError } from "../../domain.js";
 export type IssueHead = {
   id: string;
   repository_id: string;
+  assignee: string | null;
+  status: string | null;
+  body: string | null;
+  state: string | null;
+  state_reason: string | null;
+  workflow_status: string | null;
   version: number | string;
   milestone_id: string | null;
   is_locked: boolean;
@@ -114,7 +120,9 @@ export async function currentIssue(
 ): Promise<IssueHead> {
   const row = (
     await sql.query(
-      `SELECT id,repository_id,version,milestone_id,is_locked,lock_reason
+      `SELECT
+         id,repository_id,assignee,status,body,state,state_reason,workflow_status,
+         version,milestone_id,is_locked,lock_reason
        FROM issues
        WHERE repository_id=$1 AND id=$2
        FOR UPDATE`,
@@ -122,7 +130,35 @@ export async function currentIssue(
     )
   ).rows[0] as IssueHead | undefined;
   if (!row) throw new IssueError(404, "找不到 Issue。");
-  return row;
+  if (row.assignee === null) return row;
+  if (!row.status) throw new IssueError(503, "Issue legacy 工作流程資料不完整。");
+
+  await sql.query(
+    `INSERT INTO issue_assignees(issue_id,user_id,assigned_at)
+     VALUES($1,$2,NULL)
+     ON CONFLICT DO NOTHING`,
+    [row.id, row.assignee],
+  );
+  await sql.query(
+    `UPDATE issues
+     SET assignee=NULL,
+         status=NULL,
+         body='',
+         state='OPEN',
+         state_reason=NULL,
+         workflow_status=$2
+     WHERE id=$1 AND version=$3`,
+    [row.id, row.status, Number(row.version)],
+  );
+  return {
+    ...row,
+    assignee: null,
+    status: null,
+    body: "",
+    state: "OPEN",
+    state_reason: null,
+    workflow_status: row.status,
+  };
 }
 
 export function requireExpectedVersion(issue: IssueHead, expectedVersion: number) {
