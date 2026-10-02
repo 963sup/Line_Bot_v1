@@ -22,7 +22,7 @@ owning module / package
 
 The route group is parallel to `(mobile)`; it is not owned by the Mobile shell. Route Groups do not enter the URL and do not create a second canonical URL for an existing capability.
 
-LINE provider definition, publication, rollback, and readback remain owned by `packages/line-channel` and repository LINE operations. This route group owns only the Web delivery destinations reached from Rich Menu.
+LINE provider definition, publication, rollback, and readback remain owned by `packages/line` and repository LINE operations. This route group owns only the Web delivery destinations reached from Rich Menu.
 
 ## Current navigation contract
 

@@ -40,7 +40,7 @@ Rich Menu entry / route composition
 → apps/web/src/app/(rich-menu)
 
 LINE Rich Menu provider capability
-→ packages/line-channel
+→ packages/line
 
 Rich Menu repository operations
 → scripts/line/rich-menu

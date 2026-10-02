@@ -22,7 +22,7 @@
     "@line_bot_v1/enterprise": "workspace:*",
     "@line_bot_v1/expense": "workspace:*",
     "@line_bot_v1/identity-access": "workspace:*",
-    "@line_bot_v1/line-channel": "workspace:*",
+    "@line_bot_v1/line": "workspace:*",
     "@line_bot_v1/organization": "workspace:*",
     "@line_bot_v1/partners": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
