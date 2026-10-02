@@ -93,7 +93,7 @@ Discussion、Label 與 Repository Milestone API 只承接 authorized read，並�
 
 - Notifications：`notificationView=all|unread`
 - Repository：`repository=<stable RepositoryId>` 只選擇目前可存取的 Repository
-- Repository Issues：`issueView=all|mine|created`
+- Repository Issues：`issueView=all|mine|created`；local workflow filter 使用 `workflowStatus=pending|active|review|completed`，舊 `status` 僅保留 transport 相容
 - Partners：`partnerView=news|directory|referrals`
 
 省略、重複或非法值回到各自安全預設／拒絕規則。View value 只代表 navigation intent，不授予 team role、publish permission 或 command authorization。
