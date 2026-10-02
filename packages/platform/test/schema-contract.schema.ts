@@ -186,12 +186,7 @@ test("Repository runtime privileges match only activated write capabilities", as
   const { pg } = await postgresFixture();
   t.after(() => pg.close());
 
-  const readOnly = [
-    "discussion_comments",
-    "discussions",
-    "repository_access",
-    "repository_team_access",
-  ];
+  const readOnly = ["repository_access", "repository_team_access"];
   const tablePrivileges = await pg.query(
     `select c.relname,
       has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
@@ -214,6 +209,42 @@ test("Repository runtime privileges match only activated write capabilities", as
       can_delete: false,
     })),
   );
+
+  const managedDiscussions = await pg.query(
+    `select c.relname,
+      has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
+      has_table_privilege('line_app', c.oid, 'INSERT') as can_insert,
+      has_table_privilege('line_app', c.oid, 'UPDATE') as can_update,
+      has_table_privilege('line_app', c.oid, 'DELETE') as can_delete
+     from pg_class c
+     join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private'
+       and c.relname=any(array['discussion_categories','discussion_comments','discussions'])
+     order by c.relname`,
+  );
+  assert.deepEqual(managedDiscussions.rows, [
+    {
+      relname: "discussion_categories",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: true,
+    },
+    {
+      relname: "discussion_comments",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: false,
+    },
+    {
+      relname: "discussions",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: false,
+    },
+  ]);
 
   const managedResources = await pg.query(
     `select c.relname,
