@@ -16,7 +16,6 @@ create table app_private."issue_events" (
 create index issue_events_actor on app_private.issue_events (actor);
 alter table app_private."issue_events" enable row level security;
 revoke all on app_private."issue_events" from public, anon, authenticated, line_app;
-grant insert (issue_id,version,actor,action,note,data,at), select
-  on app_private.issue_events to line_app;
+grant insert, select on app_private.issue_events to line_app;
 create policy "backend" on app_private.issue_events
   as permissive for all to line_app using (true) with check (true);
