@@ -287,8 +287,8 @@ test("architecture checks source exports, types, ports, browser reachability and
             "./ports/repository": { default: "./dist/ports/repository.js" },
             ...(name === "line-channel"
               ? {
-                  "./mini-app/browser": {
-                    default: "./dist/mini-app/browser.js",
+                  "./liff": {
+                    default: "./dist/liff/index.js",
                   },
                 }
               : {}),
@@ -585,30 +585,30 @@ test("architecture checks source exports, types, ports, browser reachability and
       ),
       "type-only imports do not bypass module server isolation",
     );
-    write(root, "packages/line-channel/src/mini-app/browser/client.ts", "export const client = 1;");
+    write(root, "packages/line-channel/src/liff/client.ts", "export const client = 1;");
     write(
       root,
-      "packages/line-channel/src/mini-app/browser.ts",
+      "packages/line-channel/src/liff/index.ts",
       `export { client } from ${JSON.stringify("./browser/client")};`,
     );
-    write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line-channel/mini-app/browser"));
+    write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line-channel/liff"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(
       root,
-      "packages/line-channel/src/adapters/messaging/private.ts",
+      "packages/line-channel/src/messaging-api/private.ts",
       "export const value = 1;",
     );
     write(
       root,
-      "packages/line-channel/src/adapters/mini-app/server/private.ts",
+      "packages/line-channel/src/rich-menu/private.ts",
       "export const value = 1;",
     );
     for (const target of [
       "node:fs",
-      "../../adapters/messaging/private",
-      "../../adapters/mini-app/server/private",
+      "../messaging-api/private",
+      "../rich-menu/private",
     ]) {
-      write(root, "packages/line-channel/src/mini-app/browser/client.ts", importing(target));
+      write(root, "packages/line-channel/src/liff/client.ts", importing(target));
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) =>
           error.startsWith("client-cannot-reach-server:"),
@@ -616,7 +616,7 @@ test("architecture checks source exports, types, ports, browser reachability and
         target,
       );
     }
-    write(root, "packages/line-channel/src/mini-app/browser/client.ts", "export const client = 1;");
+    write(root, "packages/line-channel/src/liff/client.ts", "export const client = 1;");
     write(root, "packages/platform/dist/old.js", "export const old = 1;");
     write(root, "apps/web/src/helper.ts", importing("../../../packages/platform/dist/old.js"));
     assert.ok(

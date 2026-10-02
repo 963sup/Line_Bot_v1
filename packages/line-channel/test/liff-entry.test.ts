@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createLiffClient } from "../src/mini-app/browser/client.js";
+import { createLiffClient } from "../src/liff/client.js";
 
 test("LIFF callers share initialization, wait for SDK redirect and retry failures", async () => {
   let calls = 0;

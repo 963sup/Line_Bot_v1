@@ -305,10 +305,10 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "scripts/line/rich-menu/sync.ts",
     "apps/web/src/modules/assistant/rich-menu/publication.server.ts",
     "apps/web/src/modules/assistant/rich-menu/operator.server.ts",
-    "apps/web/src/shared/server/line-mini-app.ts",
+    "packages/line-channel/src/mini-app/registration.ts",
     "apps/web/src/shared/presentation/entry-route.ts",
-    "packages/line-channel/src/adapters/messaging/rich-menu-client.ts",
-    "packages/line-channel/src/adapters/messaging/rich-menu-image.ts",
+    "packages/line-channel/src/rich-menu/client.ts",
+    "packages/line-channel/src/rich-menu/image.ts",
     "scripts/runtime/load-env.mjs",
     "pnpm-lock.yaml",
   ])

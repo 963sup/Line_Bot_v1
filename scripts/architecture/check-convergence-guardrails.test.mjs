@@ -16,10 +16,11 @@ test("context adapters, composition, agents, testing and platform database mecha
     assert.equal(isServerOnlyPackageSource(source), true, source);
   }
 
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/mini-app/browser.ts"), false);
-  assert.equal(
-    isServerOnlyPackageSource("packages/line-channel/src/mini-app/browser/client.ts"),
-    false,
-  );
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/liff/index.ts"), false);
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/liff/client.ts"), false);
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/mini-app/registration.ts"), false);
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/identity/index.ts"), true);
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/messaging-api/index.ts"), true);
+  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/rich-menu/index.ts"), true);
   assert.equal(isServerOnlyPackageSource("packages/account/src/domain/user.ts"), false);
 });

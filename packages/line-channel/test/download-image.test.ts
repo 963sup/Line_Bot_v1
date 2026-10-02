@@ -18,7 +18,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { downloadLineImage } from "../src/adapters/messaging/download-image.js";
+import { downloadLineImage } from "../src/messaging-api/content.js";
 
 test("LINE image adapter uses a fixed endpoint, bounds bytes and rejects non-images", async (t) => {
   let body = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);

@@ -2,7 +2,7 @@
 
 ## Environment identity
 
-MINI App 的公開永久入口是產品／LINE Console identity，不是 secret。Current source 只由 `apps/web/src/shared/server/line-mini-app.ts` 擁有 Developing、Review、Published 三個 `https://miniapp.line.me/...` permanent URL；本文件不複製實際值作第二份 source of truth。
+MINI App 的公開永久入口是產品／LINE Console identity，不是 secret。Current source 只由 `packages/line-channel/src/mini-app/registration.ts` 擁有 Developing、Review、Published 三個 `https://miniapp.line.me/...` permanent URL；本文件不複製實際值作第二份 source of truth。
 
 同一 stage 的三個值只由該 URL 派生：
 

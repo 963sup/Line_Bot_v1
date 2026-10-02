@@ -18,9 +18,9 @@ const PUBLICATION_ONLY_SOURCES = [
 const RICH_MENU_SOURCES = [
   ...PUBLICATION_ONLY_SOURCES,
   /^apps\/web\/src\/modules\/assistant\/rich-menu\/.*\.ts$/,
-  /^apps\/web\/src\/shared\/server\/line-mini-app\.ts$/,
+  /^packages\/line-channel\/src\/mini-app\/(?:index|registration)\.ts$/,
   /^apps\/web\/src\/shared\/presentation\/entry-route\.ts$/,
-  /^packages\/line-channel\/src\/adapters\/messaging\/(?:index|rich-menu-client|rich-menu-image)\.ts$/,
+  /^packages\/line-channel\/src\/rich-menu\/(?:index|client|image)\.ts$/,
   /^scripts\/runtime\/load-env\.mjs$/,
   /^(?:pnpm-lock\.yaml|package\.json|apps\/web\/package\.json|packages\/line-channel\/package\.json)$/,
 ];

@@ -13,7 +13,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createLineClient } = await import(
-  pathToFileURL(require.resolve("@line_bot_v1/line-channel/messaging")).href
+  pathToFileURL(require.resolve("@line_bot_v1/line-channel/messaging-api")).href
 );
 const { tsImport } = require("tsx/esm/api");
 const { renderExpenseNotice } = await tsImport(
@@ -21,7 +21,7 @@ const { renderExpenseNotice } = await tsImport(
   import.meta.url,
 );
 const { lineMiniApp } = await tsImport(
-  "../../apps/web/src/shared/server/line-mini-app.ts",
+  "../../packages/line-channel/src/mini-app/registration.ts",
   import.meta.url,
 );
 
