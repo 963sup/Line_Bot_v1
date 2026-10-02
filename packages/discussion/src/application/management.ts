@@ -2,16 +2,18 @@ import type {
   DiscussionManagementCommand,
   DiscussionManagementStore,
 } from "../contracts/management.js";
-import type {
-  DiscussionCloseReason,
-  DiscussionLockReason,
-} from "../domain.js";
+import type { DiscussionCloseReason, DiscussionLockReason } from "../domain.js";
 import { DiscussionError } from "../domain.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const closeReasons: readonly DiscussionCloseReason[] = ["DUPLICATE", "OUTDATED", "RESOLVED"];
-const lockReasons: readonly DiscussionLockReason[] = ["OFF_TOPIC", "RESOLVED", "SPAM", "TOO_HEATED"];
+const lockReasons: readonly DiscussionLockReason[] = [
+  "OFF_TOPIC",
+  "RESOLVED",
+  "SPAM",
+  "TOO_HEATED",
+];
 
 function objectInput(raw: unknown): Record<string, unknown> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -231,7 +233,11 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
       value.categoryId === undefined
         ? undefined
         : id(value.categoryId, "Category 識別碼");
-    if (title === undefined && body === undefined && categoryId === undefined) {
+    if (
+      title === undefined &&
+      body === undefined &&
+      categoryId === undefined
+    ) {
       throw new DiscussionError(400, "Discussion 修改至少需要一個欄位。");
     }
     return {
@@ -259,7 +265,11 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
     return { ...current, action, stateReason: reason as DiscussionCloseReason | null };
   }
 
-  if (action === "reopen-discussion" || action === "delete-discussion" || action === "clear-labels") {
+  if (
+    action === "reopen-discussion" ||
+    action === "delete-discussion" ||
+    action === "clear-labels"
+  ) {
     exactKeys(value, ["action", "requestId", "repositoryId", "discussionId", "expectedVersion"]);
     return { ...current, action };
   }
