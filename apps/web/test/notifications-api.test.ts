@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { notifications } from "../src/app/api/_composition/notifications.server";
 import { GET, POST } from "../src/app/api/notifications/route";
-import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 
 test("notification HTTP verifies LINE, bounds JSON and does not leak failures", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
