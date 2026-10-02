@@ -168,11 +168,13 @@ test("Label management preserves stable identity, replay, current authority and 
   assert.equal(
     Number(
       (
-        await pg.query(
-          "select count(*)::int as count from app_private.repository_labels where id=$1",
-          [created.label.id],
-        )
-      ).rows[0]?.count,
+        (
+          await pg.query(
+            "select count(*)::int as count from app_private.repository_labels where id=$1",
+            [created.label.id],
+          )
+        ).rows[0] as { count?: number }
+      )?.count,
     ),
     1,
   );
