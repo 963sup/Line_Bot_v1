@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { IssueError } from "@line_bot_v1/issue/domain";
-import {
-  issueBody,
-  issueFailure,
-  repositoryBody,
-} from "../src/modules/repository/http.server";
+import { issueBody, issueFailure, repositoryBody } from "../src/modules/repository/http.server";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { loginReturnUrl } from "../src/shared/presentation/entry-route";
 
