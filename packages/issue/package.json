@@ -43,6 +43,10 @@
     "./postgres/collaboration": {
       "types": "./dist/postgres/collaboration.d.ts",
       "default": "./dist/postgres/collaboration.js"
+    },
+    "./postgres/project-reference": {
+      "types": "./dist/postgres/project-reference.d.ts",
+      "default": "./dist/postgres/project-reference.js"
     }
   },
   "files": [
