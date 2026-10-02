@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "./liff-client";
 
 /**
- * LIFF boot starts when liff-client is evaluated. This component only observes readiness and
- * hands control to the feature; React hydration is not an initialization prerequisite anymore.
+ * LIFF boot starts from Next instrumentation-client before hydration. This component only
+ * observes readiness and hands control to the feature.
  */
 export default function MiniAppRuntime({
   liffId,

@@ -37,7 +37,9 @@ await build({
       import ProfileEntry from '../../apps/web/src/app/(mobile)/profile/profile-entry.tsx';
       import MemberAvatar from '../../apps/web/src/modules/account/member-avatar.tsx';
       import '../../apps/web/src/app/globals.css';
+      import {startLineMiniAppBoot} from '../../apps/web/src/shared/browser/liff-bootstrap.ts';
       const root = createRoot(document.getElementById('root'));
+      startLineMiniAppBoot();
       window.renderProfile=async(props)=>{
         const page=await ProfilePage({params:Promise.resolve({login:'viewer'})});
         const popular=page.props.children.props.children;

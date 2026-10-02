@@ -30,7 +30,7 @@ test("LIFF boot starts immediately, shares initialization, waits for redirect an
 
   fail = false;
   const client = createLiffClient(
-    boot,
+    () => boot,
     () => href,
     () => "https://example.com/",
   );
