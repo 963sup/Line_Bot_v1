@@ -75,7 +75,7 @@ function commandBase(value: Record<string, unknown>) {
     throw new IssueError(400, "請求編號或 Repository 不正確。");
   }
   return {
-    requestId: value.requestId.toLowerCase(),
+    requestId: value.requestId,
     repositoryId: value.repositoryId,
   };
 }
