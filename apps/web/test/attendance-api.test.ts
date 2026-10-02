@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import {
   GET as attendanceRouteGet,
   POST as attendanceRoutePost,
 } from "../src/app/api/attendance/[[...operation]]/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import {
   activateMember,
   allowAttendance,

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { achievements, follows, profiles } from "../src/app/api/_composition/account.server";
 import { issueActivity } from "../src/app/api/_composition/issue-activity.server";
 import { repositoryCollection } from "../src/app/api/_composition/repository-collection.server";
@@ -11,7 +12,6 @@ import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/r
 import { GET as exploreGet, POST as explorePost } from "../src/app/api/repositories/explore/route";
 import { GET as repositoriesGet } from "../src/app/api/repositories/route";
 import { GET as starredGet } from "../src/app/api/repositories/starred/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 
 test("profile, follow and Repository discovery HTTP surfaces verify LINE and call owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;

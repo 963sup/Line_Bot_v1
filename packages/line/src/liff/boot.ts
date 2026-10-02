@@ -12,7 +12,7 @@ export type LiffSdk = {
   use?: (plugin: unknown) => void;
 };
 
-export type LiffBootState = "initializing" | "ready" | "failed";
+type LiffBootState = "initializing" | "ready" | "failed";
 
 export type LiffBootOptions = {
   beforeInit?: (sdk: LiffSdk) => void | Promise<void>;

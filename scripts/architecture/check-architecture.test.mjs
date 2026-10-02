@@ -589,7 +589,7 @@ test("architecture checks source exports, types, ports, browser reachability and
     write(
       root,
       "packages/line/src/liff/index.ts",
-      `export { client } from ${JSON.stringify("./browser/client")};`,
+      `export { client } from ${JSON.stringify("./client")};`,
     );
     write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line/liff"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);

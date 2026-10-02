@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { PostgresUserManagement } from "@line_bot_v1/account/postgres";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET, POST } from "../src/app/api/membership/manage/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";
 
 test("member management HTTP verifies LINE, rejects forged origin/identity and redacts failures", async () => {

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mock, test } from "node:test";
 import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import {
   GET as attendanceRouteGet,
   POST as attendanceRoutePost,
@@ -10,7 +11,6 @@ import {
 import { POST as REGISTER } from "../src/app/api/membership/register/route";
 import { POST as RESTORE } from "../src/app/api/membership/restore/route";
 import { GET, POST } from "../src/app/api/membership/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import {
   activateMember,
   allowAttendance,
