@@ -1,4 +1,4 @@
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { enterpriseRequest } from "../../../modules/enterprise/http.server";
 import { normalizeEnterpriseWireCommand } from "../../../modules/enterprise/wire-command";
 import { enterpriseService } from "../_composition/enterprise.server";
