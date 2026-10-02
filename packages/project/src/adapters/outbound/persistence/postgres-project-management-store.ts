@@ -6,7 +6,6 @@ import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import type {
-  ProjectAccessRole,
   ProjectCollaborator,
   ProjectManagementCommand,
   ProjectManagementIdentity,
@@ -14,7 +13,7 @@ import type {
   ProjectManagementStore,
   ProjectManagementView,
 } from "../../../contracts/management.js";
-import { ProjectError } from "../../../domain.js";
+import { type ProjectAccessRole, ProjectError } from "../../../domain.js";
 import {
   advanceProject,
   allocateProjectNumber,
@@ -45,12 +44,6 @@ import {
   readProjectStatusUpdates,
   readProjectViews,
 } from "./postgres-project-view-status.js";
-
-type CollaboratorRow = {
-  kind: "USER" | "TEAM";
-  id: string;
-  role: ProjectAccessRole;
-};
 
 function collaboratorRole(
   role: Extract<ProjectManagementCommand, { action: "update-collaborators" }>["collaborators"][number]["role"],
