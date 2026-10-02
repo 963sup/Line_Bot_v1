@@ -1,5 +1,5 @@
 {
-  "name": "@line_bot_v1/line-channel",
+  "name": "@line_bot_v1/line",
   "version": "0.0.0",
   "private": true,
   "type": "module",

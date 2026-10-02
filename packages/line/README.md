@@ -1,6 +1,6 @@
-# LINE Channel package
+# LINE integration package
 
-Routing and module overview for `@line_bot_v1/line-channel`.
+Routing and module overview for `@line_bot_v1/line`.
 
 - Semantic Owner: `line-integration`
 - Authority document: [`docs/owners/line-integration.md`](../../docs/owners/line-integration.md)
