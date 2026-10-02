@@ -276,7 +276,7 @@ test("architecture checks source exports, types, ports, browser reachability and
   mkdirSync(artifacts, { recursive: true });
   const root = mkdtempSync(resolve(artifacts, "architecture-"));
   try {
-    for (const name of ["account", "team", "attendance", "platform", "line-channel"]) {
+    for (const name of ["account", "team", "attendance", "platform", "line"]) {
       write(
         root,
         `packages/${name}/package.json`,
@@ -285,7 +285,7 @@ test("architecture checks source exports, types, ports, browser reachability and
           exports: {
             ".": { default: "./dist/index.js" },
             "./ports/repository": { default: "./dist/ports/repository.js" },
-            ...(name === "line-channel"
+            ...(name === "line"
               ? {
                   "./liff": {
                     default: "./dist/liff/index.js",
@@ -585,22 +585,22 @@ test("architecture checks source exports, types, ports, browser reachability and
       ),
       "type-only imports do not bypass module server isolation",
     );
-    write(root, "packages/line-channel/src/liff/client.ts", "export const client = 1;");
+    write(root, "packages/line/src/liff/client.ts", "export const client = 1;");
     write(
       root,
-      "packages/line-channel/src/liff/index.ts",
+      "packages/line/src/liff/index.ts",
       `export { client } from ${JSON.stringify("./browser/client")};`,
     );
-    write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line-channel/liff"));
+    write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line/liff"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);
     write(
       root,
-      "packages/line-channel/src/messaging-api/private.ts",
+      "packages/line/src/messaging-api/private.ts",
       "export const value = 1;",
     );
     write(
       root,
-      "packages/line-channel/src/rich-menu/private.ts",
+      "packages/line/src/rich-menu/private.ts",
       "export const value = 1;",
     );
     for (const target of [
@@ -608,7 +608,7 @@ test("architecture checks source exports, types, ports, browser reachability and
       "../messaging-api/private",
       "../rich-menu/private",
     ]) {
-      write(root, "packages/line-channel/src/liff/client.ts", importing(target));
+      write(root, "packages/line/src/liff/client.ts", importing(target));
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) =>
           error.startsWith("client-cannot-reach-server:"),
@@ -616,7 +616,7 @@ test("architecture checks source exports, types, ports, browser reachability and
         target,
       );
     }
-    write(root, "packages/line-channel/src/liff/client.ts", "export const client = 1;");
+    write(root, "packages/line/src/liff/client.ts", "export const client = 1;");
     write(root, "packages/platform/dist/old.js", "export const old = 1;");
     write(root, "apps/web/src/helper.ts", importing("../../../packages/platform/dist/old.js"));
     assert.ok(

@@ -218,7 +218,7 @@ function isClientModule(root, source) {
 /** Protect the browser graph by owner responsibility rather than a horizontal layer package. */
 export function isServerOnlyPackageSource(source) {
   const target = normalize(source);
-  if (/^packages\/line-channel\/src\/(?:identity|messaging-api|rich-menu)(?:\.ts|\/)/.test(target))
+  if (/^packages\/line\/src\/(?:identity|messaging-api|rich-menu)(?:\.ts|\/)/.test(target))
     return true;
   if (
     !/^packages\/[^/]+\/src\/(?:adapters(?:\.ts|\/)|composition(?:\.ts|\/)|agents(?:\.ts|\/)|testing(?:\.ts|\/)|database(?:\.ts|\/)|migration(?:\.ts|\/)|postgres(?:\.ts|\/))/.test(
