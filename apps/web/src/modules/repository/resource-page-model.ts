@@ -77,6 +77,7 @@ export function repositoryResourcesEndpoint({
   repositoryName,
   kind,
   discussionId,
+  discussionNumber,
   milestoneNumber,
   milestoneStatus,
   after,
@@ -85,6 +86,7 @@ export function repositoryResourcesEndpoint({
   repositoryName: string;
   kind: ResourcesKind;
   discussionId?: string;
+  discussionNumber?: number;
   milestoneNumber?: number;
   milestoneStatus: MilestoneStatus;
   after?: string;
@@ -95,6 +97,9 @@ export function repositoryResourcesEndpoint({
     else query.set("after", after);
   }
   if (kind === "milestones") query.set("status", milestoneStatus);
+  if (kind === "discussion" && discussionNumber) {
+    return `/api/discussions/by-number/${encodeURIComponent(String(discussionNumber))}?${query}`;
+  }
   if (kind === "discussion" && discussionId) {
     return `/api/discussions/${encodeURIComponent(discussionId)}?${query}`;
   }
