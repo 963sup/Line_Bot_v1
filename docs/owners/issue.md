@@ -45,14 +45,14 @@ The permission matrix follows the exact FPT `schema-repos.json#RepositoryPermiss
 | --- | --- | --- |
 | read | read, triage, triage_plus, write, maintain, admin | Implemented through current Repository visibility/access |
 | open | read, triage, triage_plus, write, maintain, admin | Implemented; creation policy is collaborators-only |
-| comment | read, triage, triage_plus, write, maintain, admin | Deferred to IssueComment adoption |
+| comment | read, triage, triage_plus, write, maintain, admin | Implemented through manage-issue-collaboration; lock state is checked separately |
 | local workflow | read, triage, triage_plus, write, maintain, admin | Implemented; publisher/current-assignee responsibility is checked separately |
-| triage | triage, triage_plus, write, maintain, admin | Implemented for IssueType assign/clear; Label/Milestone classification remains separate |
+| triage | triage, triage_plus, write, maintain, admin | Implemented for IssueType, Label/Milestone classification and typed Issue relations |
 | edit | triage, triage_plus, write, maintain, admin | Implemented for title/body/local criteria |
 | close | triage, triage_plus, write, maintain, admin | Implemented for close/reopen + stateReason |
 | assign | triage, triage_plus, write, maintain, admin | Implemented for add/remove assignees |
 | manage-resource | none in Issue | Repository Label/Milestone definition management remains Repository-owned |
-| lock-conversation | none in current runtime | Deferred to the separate conversation-lock capability |
+| lock-conversation | write, maintain, admin | Implemented; lock/unlock is independent from Issue OPEN/CLOSED state |
 
 The matrix classifies permission only. Actor qualification/current access, Repository archive state, the collaborators-only creation policy, and local workflow responsibility are evaluated separately. Visibility-only readers get no synthetic RepositoryPermission and therefore cannot mutate Issues.
 
