@@ -52,15 +52,19 @@ The matrix classifies permission only. Actor qualification/current access, Repos
 
 ## Existing-data mapping strategy
 
-A deployment that upgrades pre-parity Issue rows must map data without inventing historical events:
+The current schema is an expand-compatible rollout, not a destructive contract cutover. Pre-parity physical `assignee` / `status` columns remain nullable compatibility storage until a separately authorized data cutover proves no legacy rows remain. New Issue INSERTs cannot write those columns.
 
-- old `pending | active | review` → same `workflow_status`, `state=OPEN`, `state_reason=null`;
-- old `completed` → `workflow_status=completed`, `state=CLOSED`, `state_reason=COMPLETED`;
-- each old single `assignee` → one current `issue_assignees` row, including publisher self-assignment if such data exists;
-- old `criteria` remains local criteria and is copied into initial `body` so the only pre-parity descriptive text is not lost;
-- old immutable events remain immutable and may retain empty structured `data`; no state reason or assignment delta is inferred retroactively.
+Runtime mapping does not invent facts that did not exist before parity:
 
-The declarative schema and tests prove the target contract only; they do not claim a remote production cutover has run.
+- old `pending | active | review | completed` maps only to the same local `workflowStatus`;
+- every pre-parity row is presented as canonical `state=OPEN`, `stateReason=null` until an explicit close command occurs; local `completed` is not retroactively reinterpreted as an FPT close event;
+- the old single `assignee` is presented as the current one-element assignee collection; its historical assignment time is unknown and remains `NULL` if materialized;
+- old `criteria` remains local criteria; pre-parity `body` is the empty string because no historical general body fact existed;
+- old immutable events remain immutable and retain empty structured `data` when that field did not exist; no state reason, body or assignment timestamp is reconstructed.
+
+On the first business mutation of a legacy row, the same transaction locks the Issue, materializes the exact legacy assignee into `issue_assignees`, populates canonical state/body/workflow fields, clears the compatibility columns, applies the requested business mutation, increments the aggregate version exactly once and appends exactly one event for that business mutation. The technical representation change is not presented as a historical business event.
+
+Physical removal of the legacy columns is a later contract stage and is forbidden until the pending Issue core cutover has provider recovery evidence plus a readback proving zero legacy rows. See [Issue core parity cutover](../change/migrations/issue-core-parity.md).
 
 ## Mapping
 
