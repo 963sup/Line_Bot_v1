@@ -2249,12 +2249,12 @@
         "scope": "Repository-owned Milestone create/update/open/close; repository-local number allocation; current write/maintain/admin authorization; archived Repository fail-closed; Issue milestone assignment remains Issue-owned.",
         "sourcePaths": [
           "packages/repository/src/application/resource-management.ts",
-          "packages/repository/src/application/ports/resource-management.ts",
+          "packages/repository/src/contracts/output/resource-management.ts",
           "packages/repository/src/adapters/postgres/resource-management.ts"
         ],
         "publicExports": [
           "./application/resource-management",
-          "./application/ports/resource-management",
+          "./contracts/output/resource-management",
           "./postgres/resource-management"
         ],
         "entrypoints": ["apps/web/src/app/api/repository-milestones/route.ts"],
