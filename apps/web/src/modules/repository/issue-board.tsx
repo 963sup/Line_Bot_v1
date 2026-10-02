@@ -436,7 +436,9 @@ export default function IssueBoard({
                         )}
                       >
                         <strong>{issue.title}</strong>
-                        <span className="status-badge">{workflowStatusLabel[issue.workflowStatus]}</span>
+                        <span className="status-badge">
+                          {workflowStatusLabel[issue.workflowStatus]}
+                        </span>
                       </Link>
                     </li>
                   );
@@ -483,7 +485,11 @@ export default function IssueBoard({
           {current.state === "OPEN" &&
             current.assignees.includes(data.userId) &&
             current.workflowStatus === "pending" && (
-              <button type="button" disabled={busy || Boolean(pending)} onClick={() => operate("accept")}>
+              <button
+                type="button"
+                disabled={busy || Boolean(pending)}
+                onClick={() => operate("accept")}
+              >
                 {actionLabel.accept}
               </button>
             )}
@@ -581,7 +587,11 @@ export default function IssueBoard({
                 >
                   <label>
                     新增 Assignees
-                    <select name="assigneeIds" multiple size={Math.max(1, Math.min(6, data.participants.length))}>
+                    <select
+                      name="assigneeIds"
+                      multiple
+                      size={Math.max(1, Math.min(6, data.participants.length))}
+                    >
                       {data.participants
                         .filter((participant) => !current.assignees.includes(participant.userId))
                         .map((participant) => (
@@ -700,7 +710,6 @@ export default function IssueBoard({
           </ol>
         </article>
       )}
-
     </>
   );
 }
