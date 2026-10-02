@@ -19,7 +19,7 @@ export type DiscussionCategory = Readonly<{
   updatedAt: number;
 }>;
 
-export type DiscussionPollOption = Readonly<{
+type DiscussionPollOption = Readonly<{
   id: string;
   option: string;
   position: number;
@@ -39,7 +39,7 @@ export type DiscussionPoll = Readonly<{
   options: readonly DiscussionPollOption[];
 }>;
 
-export type DiscussionAnswer = Readonly<{
+type DiscussionAnswer = Readonly<{
   commentId: string;
   chosenBy: string;
   chosenAt: number;
