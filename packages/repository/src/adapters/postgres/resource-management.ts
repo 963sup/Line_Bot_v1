@@ -5,12 +5,12 @@ import type {
   RepositoryResourceManagementCommand,
   RepositoryResourceManagementReceipt,
   RepositoryResourceManagementStore,
-} from "../../application/ports/resource-management.js";
+} from "../../contracts/output/resource-management.js";
 import type {
   RepositoryLabel,
   RepositoryMilestone,
   RepositoryMilestoneStatus,
-} from "../../application/ports/resources.js";
+} from "../../contracts/dto/resources.js";
 import {
   hasRepositoryPermission,
   RepositoryError,
