@@ -33,7 +33,14 @@ test("Issue activity projects only Issues in currently accessible Repositories",
     `insert into app_private.issues(
        id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
      ) values($1,$2,1,$3,$4,$5,$6,'OPEN',NULL,'pending',1,90,90)`,
-    ["issue-a", "repository-a", "owner", "Prepare payroll", "Prepare payroll details", "Complete review"],
+    [
+      "issue-a",
+      "repository-a",
+      "owner",
+      "Prepare payroll",
+      "Prepare payroll details",
+      "Complete review",
+    ],
   );
   await pg.query(
     "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue-a','viewer',90)",
