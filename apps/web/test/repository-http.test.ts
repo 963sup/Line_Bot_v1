@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { IssueError } from "@line_bot_v1/issue/domain";
-import { issueBody, issueFailure } from "../src/modules/repository/http.server";
+import {
+  issueBody,
+  issueFailure,
+  repositoryBody,
+} from "../src/modules/repository/http.server";
 import { entryDestination } from "../src/shared/presentation/entry-destination";
 import { loginReturnUrl } from "../src/shared/presentation/entry-route";
 
@@ -19,7 +23,15 @@ test("issue delivery rejects wrong origin, oversized body and malformed JSON", a
     await assert.rejects(issueBody(request("{}", "https://attacker.example")), /Line_Bot_v1/);
     await assert.rejects(issueBody(request("[]")), /格式/);
     await assert.rejects(issueBody(request("bad")), /格式/);
-    await assert.rejects(issueBody(request("x".repeat(8193))), /過大/);
+
+    const largeIssue = {
+      action: "create",
+      body: "測".repeat(10_000),
+    };
+    assert.deepEqual(await issueBody(request(JSON.stringify(largeIssue))), largeIssue);
+    await assert.rejects(issueBody(request("x".repeat(65_537))), /過大/);
+    await assert.rejects(repositoryBody(request("x".repeat(8193))), /過大/);
+
     const response = issueFailure(new IssueError(409, "版本衝突"));
     assert.equal(response.status, 409);
     assert.equal(response.headers.get("cache-control"), "no-store");
