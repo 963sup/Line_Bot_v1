@@ -516,6 +516,15 @@ test("Issue state, assignment, content and local workflow remain separate axes",
     },
     25,
   );
+  const closedBlockers = await pg.query(
+    `select item_id
+     from app_private.user_management_activity
+     where user_id='assignee'
+       and activity_kind='unfinished-issue'
+       and item_id=$1`,
+    [secondIssue.id],
+  );
+  assert.deepEqual(closedBlockers.rows, []);
   await assert.rejects(
     store.execute(
       { userId: "assignee" },
