@@ -500,7 +500,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
             command.categoryId,
           );
           const number =
-            row.number === null ? await nextDiscussionNumber(sql, command.repositoryId) : Number(row.number);
+            row.number === null
+              ? await nextDiscussionNumber(sql, command.repositoryId)
+              : Number(row.number);
           next = await advanceDiscussion(sql, row, command.expectedVersion, now, {
             number,
             category: selectedCategory.name,
@@ -610,7 +612,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           const target = await currentComment(sql, row.id, command.commentId);
           requireVersion(target.version, command.commentVersion, "Discussion comment");
           if (target.deleted_at !== null)
-          throw new DiscussionError(409, "Discussion comment 已刪除。");
+            throw new DiscussionError(409, "Discussion comment 已刪除。");
           if (target.author !== identity.userId && !canModerate(permissions)) {
             throw new DiscussionError(403, "只能編輯自己的 comment 或使用 triage 管理能力。");
           }
@@ -650,9 +652,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           requireAuthorOrModerator(row, identity.userId, permissions);
           if (!row.category_id) {
             throw new DiscussionError(
-            409,
-            "Legacy category 尚未 adoption，不能管理 chosen answer。",
-          );
+              409,
+              "Legacy category 尚未 adoption，不能管理 chosen answer。",
+            );
           }
           const selectedCategory = await readableCategory(sql, row.repository_id, row.category_id);
           if (!selectedCategory.is_answerable) {
@@ -660,13 +662,12 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           }
           const target = await currentComment(sql, row.id, command.commentId);
           if (target.deleted_at !== null)
-          throw new DiscussionError(409, "不能選取已刪除的 comment。");
+            throw new DiscussionError(409, "不能選取已刪除的 comment。");
           if (command.action === "mark-answer") {
             const before = (
-              await sql.query(
-                "SELECT comment_id FROM discussion_answers WHERE discussion_id=$1",
-                [row.id],
-              )
+              await sql.query("SELECT comment_id FROM discussion_answers WHERE discussion_id=$1", [
+                row.id,
+              ])
             ).rows[0] as { comment_id: string } | undefined;
             if (before?.comment_id === target.id) {
               throw new DiscussionError(409, "此 comment 已是 chosen answer。");
@@ -841,7 +842,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           requireVersion(poll.version, command.pollVersion, "Discussion Poll");
           if (command.action === "update-poll") {
             if (poll.question === command.question)
-            throw new DiscussionError(409, "Poll 沒有變更。");
+              throw new DiscussionError(409, "Poll 沒有變更。");
             await sql.query(
               `UPDATE discussion_polls
                SET question=$3,version=version+1,updated_at=$4
@@ -851,10 +852,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
             data = { pollId: poll.id, question: command.question };
           } else {
             const votes = (
-              await sql.query(
-                "SELECT 1 FROM discussion_poll_votes WHERE poll_id=$1 LIMIT 1",
-                [poll.id],
-              )
+              await sql.query("SELECT 1 FROM discussion_poll_votes WHERE poll_id=$1 LIMIT 1", [
+                poll.id,
+              ])
             ).rows[0];
             if (votes) {
               throw new DiscussionError(409, "Poll 已有投票，不能替換選項；需保留可解釋歷史。");
