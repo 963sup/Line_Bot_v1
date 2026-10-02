@@ -8,7 +8,7 @@ Current Repository-owned reads include owner/name resolution and accessible disc
 
 Current Repository-owned writes include Repository create with explicit visibility, rename/visibility/archive/unarchive lifecycle management, Direct User / Organization Team access grant-update-revoke, User→Repository Watch state, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete. Issue create, canonical state, content, assignee collection and local workflow are Issue-owned and consume Repository access/numbering contracts.
 
-Not yet claimed as general Repository runtime management: Label/Repository Milestone general write management. Discussion write management remains separately inactive under the Discussion owner; IssueLabel belongs to Issue. Repository conversation subscription fan-out is also not enabled yet; Watch state is live without pretending Notification delivery exists.
+Repository Label definition create/update/delete and Repository Milestone create/update/open/close are current runtime capabilities. They require current effective `write | maintain | admin`, resource-local expected version and exact replay; Label deletion conflicts while Issue-owned references exist. Discussion write management remains separately inactive under the Discussion owner; IssueLabel and Issue→Milestone assignment belong to Issue. Repository conversation subscription fan-out is also not enabled yet; Watch state is live without pretending Notification delivery exists.
 
 Star List specifics:
 
@@ -67,7 +67,7 @@ Canonical create surface is `/repositories/new`; API is `POST /api/repositories`
 - Rename changes only `name`; old aliases stay in `repository_name_history`.
 - Visibility does not alter Direct User/Team grants. PUBLIC/INTERNAL can add read visibility without adding RepositoryPermission；switching back to PRIVATE removes that visibility immediately.
 - INTERNAL derives same-Enterprise viewers from the owner Organization's one current active Enterprise attachment plus current Enterprise affiliation. Detach removes INTERNAL-only visibility immediately；an independent explicit grant still works.
-- Archive preserves locator/content reads and current access. Issue command runtime rejects writes while archived. Discussion/Label/Milestone writers remain inactive. Repository address remains stored/readable/manageable, but archived Repositories are excluded from new Attendance clock-in sites.
+- Archive preserves locator/content reads and current access. Issue commands and Repository Label/Milestone definition mutations reject writes while archived. Discussion writer remains inactive. Repository address remains stored/readable/manageable, but archived Repositories are excluded from new Attendance clock-in sites.
 
 ## Watch / Subscribable
 
