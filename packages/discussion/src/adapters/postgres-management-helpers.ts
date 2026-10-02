@@ -1,13 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "@line_bot_v1/platform/postgres";
-import {
-  RepositoryError,
-  type RepositoryPermission,
-} from "@line_bot_v1/repository/domain";
-import {
-  repositoryArchived,
-  repositoryScope,
-} from "@line_bot_v1/repository/postgres/access";
+import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
+import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import { repositoryLabelIdsExist } from "@line_bot_v1/repository/postgres/resource-management";
 import type {
   DiscussionCategory,
@@ -230,10 +224,10 @@ export async function readableCategory(
   categoryId: string,
 ): Promise<CategoryRow> {
   const row = (
-    await sql.query(
-      "SELECT * FROM discussion_categories WHERE repository_id=$1 AND id=$2",
-      [repositoryId, categoryId],
-    )
+    await sql.query("SELECT * FROM discussion_categories WHERE repository_id=$1 AND id=$2", [
+      repositoryId,
+      categoryId,
+    ])
   ).rows[0] as CategoryRow | undefined;
   if (!row) throw new DiscussionError(409, "Category 必須存在於同一 Repository。");
   return row;
