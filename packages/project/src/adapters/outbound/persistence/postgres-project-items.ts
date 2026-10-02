@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Sql } from "@line_bot_v1/platform/postgres";
 import {
   createIssueFromProjectDraft,
   readProjectIssueReference,
 } from "@line_bot_v1/issue/postgres/project-reference";
+import type { Sql } from "@line_bot_v1/platform/postgres";
 import type {
   ProjectDraftIssue,
   ProjectItem,
@@ -117,11 +117,7 @@ async function nextPosition(sql: Sql, projectId: string): Promise<number> {
   return Number(row.position);
 }
 
-async function ensureRepositoryReference(
-  sql: Sql,
-  projectId: string,
-  repositoryId: string,
-) {
+async function ensureRepositoryReference(sql: Sql, projectId: string, repositoryId: string) {
   const existing = (
     await sql.query(
       `SELECT 1
@@ -215,15 +211,7 @@ export async function executeProjectItemCommand(
            id,project_id,repository_id,issue_id,draft_issue_id,source_version,
            position,archived,version,created_at,updated_at
          ) VALUES($1,$2,$3,$4,NULL,$5,$6,false,1,$7,$7)`,
-        [
-          itemId,
-          projectId,
-          issue.repositoryId,
-          issue.id,
-          issue.version,
-          position,
-          now,
-        ],
+        [itemId, projectId, issue.repositoryId, issue.id, issue.version, position, now],
       );
     } catch (error) {
       postgresConflict(error, "此 Issue 已存在於 Project 或 Item 關係不合法。");
@@ -308,10 +296,9 @@ export async function executeProjectItemCommand(
         [projectId, draftRow.id, title, body, now, command.draftVersion],
       );
       if (command.assigneeIds !== undefined) {
-        await sql.query(
-          "DELETE FROM project_draft_issue_assignees WHERE draft_issue_id=$1",
-          [draftRow.id],
-        );
+        await sql.query("DELETE FROM project_draft_issue_assignees WHERE draft_issue_id=$1", [
+          draftRow.id,
+        ]);
         if (command.assigneeIds.length) {
           await sql.query(
             `INSERT INTO project_draft_issue_assignees(draft_issue_id,user_id,added_at)
@@ -342,19 +329,19 @@ export async function executeProjectItemCommand(
         "DELETE FROM project_item_multi_select_values WHERE project_id=$1 AND item_id=$2",
         [projectId, item.id],
       );
-      await sql.query(
-        "DELETE FROM project_item_field_values WHERE project_id=$1 AND item_id=$2",
-        [projectId, item.id],
-      );
-      await sql.query(
-        "DELETE FROM project_items WHERE project_id=$1 AND id=$2 AND version=$3",
-        [projectId, item.id, command.itemVersion],
-      );
+      await sql.query("DELETE FROM project_item_field_values WHERE project_id=$1 AND item_id=$2", [
+        projectId,
+        item.id,
+      ]);
+      await sql.query("DELETE FROM project_items WHERE project_id=$1 AND id=$2 AND version=$3", [
+        projectId,
+        item.id,
+        command.itemVersion,
+      ]);
       if (item.draft_issue_id) {
-        await sql.query(
-          "DELETE FROM project_draft_issue_assignees WHERE draft_issue_id=$1",
-          [item.draft_issue_id],
-        );
+        await sql.query("DELETE FROM project_draft_issue_assignees WHERE draft_issue_id=$1", [
+          item.draft_issue_id,
+        ]);
         await sql.query(
           `UPDATE project_draft_issues
            SET title='[deleted]',body='',deleted_at=$3,version=version+1,updated_at=$3
@@ -459,15 +446,7 @@ export async function executeProjectItemCommand(
              version=version+1,
              updated_at=$6
          WHERE project_id=$1 AND id=$2 AND version=$7`,
-        [
-          projectId,
-          item.id,
-          issue.repositoryId,
-          issue.id,
-          issue.version,
-          now,
-          command.itemVersion,
-        ],
+        [projectId, item.id, issue.repositoryId, issue.id, issue.version, now, command.itemVersion],
       );
     } catch (error) {
       postgresConflict(error, "DraftIssue conversion 目標 Issue 關係不合法。");
