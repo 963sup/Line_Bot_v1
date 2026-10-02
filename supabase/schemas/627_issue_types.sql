@@ -53,6 +53,8 @@ create table app_private.issue_type_assignments (
 );
 create index issue_type_assignments_type
   on app_private.issue_type_assignments(issue_type_id,issue_id);
+create index issue_type_assignments_actor
+  on app_private.issue_type_assignments(assigned_by,assigned_at);
 
 create table app_private.issue_type_events (
   issue_type_id text not null,
@@ -79,9 +81,51 @@ revoke all on app_private.issue_types from public, anon, authenticated, line_app
 revoke all on app_private.issue_type_assignments from public, anon, authenticated, line_app;
 revoke all on app_private.issue_type_events from public, anon, authenticated, line_app;
 
-grant select, insert, update on app_private.issue_types to line_app;
-grant select, insert, update, delete on app_private.issue_type_assignments to line_app;
-grant select, insert on app_private.issue_type_events to line_app;
+grant select on app_private.issue_types to line_app;
+grant insert (
+  id,
+  organization_account_id,
+  name,
+  description,
+  color,
+  is_enabled,
+  version,
+  created_at,
+  updated_at
+) on app_private.issue_types to line_app;
+grant update (
+  name,
+  description,
+  color,
+  is_enabled,
+  deleted_at,
+  version,
+  updated_at
+) on app_private.issue_types to line_app;
+
+grant select on app_private.issue_type_assignments to line_app;
+grant insert (
+  issue_id,
+  issue_type_id,
+  assigned_by,
+  assigned_at
+) on app_private.issue_type_assignments to line_app;
+grant update (
+  issue_type_id,
+  assigned_by,
+  assigned_at
+) on app_private.issue_type_assignments to line_app;
+grant delete on app_private.issue_type_assignments to line_app;
+
+grant select on app_private.issue_type_events to line_app;
+grant insert (
+  issue_type_id,
+  version,
+  actor,
+  action,
+  data,
+  at
+) on app_private.issue_type_events to line_app;
 
 create policy backend on app_private.issue_types
   for all to line_app using (true) with check (true);
