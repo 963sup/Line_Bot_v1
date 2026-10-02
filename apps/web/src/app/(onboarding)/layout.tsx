@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import RouteAccess from "../../modules/account/route-access";
 import EntryResolver from "../../shared/browser/entry-resolver";
-import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 export default function Layout({ children }: { children: ReactNode }) {
   const liffId = lineMiniApp().liffId;
   return (

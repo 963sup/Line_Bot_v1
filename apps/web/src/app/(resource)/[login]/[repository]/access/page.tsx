@@ -5,7 +5,7 @@ import {
   repositoryPath,
   repositorySettingsPath,
 } from "../../../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { PageHeading, PrimaryLink } from "../../../../../shared/ui/page-layout";
 import AppShell from "../../../../(mobile)/_shell/app-shell";
 
