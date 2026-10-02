@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { RepositoryPermission } from "@line_bot_v1/repository/domain";
 import type {
   DiscussionManagementCommand,
@@ -99,7 +99,7 @@ function postgresConflict(error: unknown, message: string): never {
 }
 
 async function pollView(
-  sql: Parameters<Parameters<Database["transaction"]>[0]>[0],
+  sql: Sql,
   discussionId: string,
   userId: string,
 ): Promise<DiscussionPoll | null> {
@@ -736,42 +736,67 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           }
           next = await advanceDiscussion(sql, row, command.expectedVersion, now);
         } else if (command.action === "add-upvote" || command.action === "remove-upvote") {
-          let table: "discussion_upvotes" | "discussion_comment_upvotes";
-          let subjectColumn: "discussion_id" | "comment_id";
           if (command.subjectKind === "discussion") {
-            if (command.subjectId !== row.id) throw new DiscussionError(409, "Upvote subject 不屬於此 Discussion。");
-            table = "discussion_upvotes";
-            subjectColumn = "discussion_id";
+            if (command.subjectId !== row.id) {
+              throw new DiscussionError(409, "Upvote subject 不屬於此 Discussion。");
+            }
+            if (command.action === "add-upvote") {
+              const added = (
+                await sql.query(
+                  `INSERT INTO discussion_upvotes(discussion_id,user_id,created_at)
+                   VALUES($1,$2,$3)
+                   ON CONFLICT DO NOTHING
+                   RETURNING user_id`,
+                  [row.id, identity.userId, now],
+                )
+              ).rows[0];
+              if (!added) throw new DiscussionError(409, "已對此 Discussion upvote。");
+            } else {
+              const removed = (
+                await sql.query(
+                  `DELETE FROM discussion_upvotes
+                   WHERE discussion_id=$1 AND user_id=$2
+                   RETURNING user_id`,
+                  [row.id, identity.userId],
+                )
+              ).rows[0];
+              if (!removed) throw new DiscussionError(409, "尚未對此 Discussion upvote。");
+            }
           } else {
             const target = await currentComment(sql, row.id, command.subjectId);
-            if (target.deleted_at !== null) throw new DiscussionError(409, "不能 upvote 已刪除的 comment。");
-            table = "discussion_comment_upvotes";
-            subjectColumn = "comment_id";
+            if (target.deleted_at !== null) {
+              throw new DiscussionError(409, "不能 upvote 已刪除的 comment。");
+            }
+            if (command.action === "add-upvote") {
+              const added = (
+                await sql.query(
+                  `INSERT INTO discussion_comment_upvotes(comment_id,user_id,created_at)
+                   VALUES($1,$2,$3)
+                   ON CONFLICT DO NOTHING
+                   RETURNING user_id`,
+                  [target.id, identity.userId, now],
+                )
+              ).rows[0];
+              if (!added) throw new DiscussionError(409, "已對此 Discussion comment upvote。");
+            } else {
+              const removed = (
+                await sql.query(
+                  `DELETE FROM discussion_comment_upvotes
+                   WHERE comment_id=$1 AND user_id=$2
+                   RETURNING user_id`,
+                  [target.id, identity.userId],
+                )
+              ).rows[0];
+              if (!removed) {
+                throw new DiscussionError(409, "尚未對此 Discussion comment upvote。");
+              }
+            }
           }
-          if (command.action === "add-upvote") {
-            const added = (
-              await sql.query(
-                `INSERT INTO ${table}(${subjectColumn},user_id,created_at)
-                 VALUES($1,$2,$3)
-                 ON CONFLICT DO NOTHING
-                 RETURNING user_id`,
-                [command.subjectId, identity.userId, now],
-              )
-            ).rows[0];
-            if (!added) throw new DiscussionError(409, "已對此 subject upvote。");
-            data = { upvoted: true, subjectKind: command.subjectKind, subjectId: command.subjectId };
-          } else {
-            const removed = (
-              await sql.query(
-                `DELETE FROM ${table}
-                 WHERE ${subjectColumn}=$1 AND user_id=$2
-                 RETURNING user_id`,
-                [command.subjectId, identity.userId],
-              )
-            ).rows[0];
-            if (!removed) throw new DiscussionError(409, "尚未對此 subject upvote。");
-            data = { upvoted: false, subjectKind: command.subjectKind, subjectId: command.subjectId };
-          }
+          data = {
+            upvoted: command.action === "add-upvote",
+            subjectKind: command.subjectKind,
+            subjectId: command.subjectId,
+          };
           resourceId = command.subjectId;
           next = await advanceDiscussion(sql, row, command.expectedVersion, now);
         } else if (command.action === "create-poll") {
