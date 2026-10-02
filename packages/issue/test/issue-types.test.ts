@@ -8,11 +8,7 @@ import { PostgresIssueTypeStore } from "../src/adapters/postgres/issue-types.js"
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
-    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
-      "active",
-      1,
-    ]);
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [id, "active", 1]);
     await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
   });
 }

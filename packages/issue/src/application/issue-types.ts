@@ -1,8 +1,4 @@
-import type {
-  IssueTypeColor,
-  IssueTypeCommand,
-  IssueTypeStore,
-} from "../contracts/issue-types.js";
+import type { IssueTypeColor, IssueTypeCommand, IssueTypeStore } from "../contracts/issue-types.js";
 import { IssueError } from "../domain.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

@@ -650,7 +650,10 @@ export {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
-export { readOrganizationOwnerScopeIds } from "./postgres/owner-roles.js";
+export {
+  hasOrganizationOwnerAssignment,
+  readOrganizationOwnerScopeIds,
+} from "./postgres/owner-roles.js";
 export {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
@@ -658,5 +661,3 @@ export {
   readOrganizationQualification,
 } from "./postgres/qualification.js";
 
-export { hasOrganizationOwnerAssignment };
-export { readOrganizationQualification } from "./postgres/qualification.js";

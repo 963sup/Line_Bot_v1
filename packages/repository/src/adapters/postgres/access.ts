@@ -252,10 +252,9 @@ export async function repositoryOwnerIdentity(
 ): Promise<RepositoryOwnerIdentity> {
   await repositoryAccess(sql, identity, repositoryId);
   const row = (
-    await sql.query(
-      "SELECT owner_account_id,owner_account_kind FROM repositories WHERE id=$1",
-      [repositoryId],
-    )
+    await sql.query("SELECT owner_account_id,owner_account_kind FROM repositories WHERE id=$1", [
+      repositoryId,
+    ])
   ).rows[0] as
     | { owner_account_id: string; owner_account_kind: "USER" | "ORGANIZATION" }
     | undefined;

@@ -245,10 +245,9 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
           data = { before: definition(before), after: definition(row!) };
         } else {
           const assigned = (
-            await sql.query(
-              "SELECT 1 FROM issue_type_assignments WHERE issue_type_id=$1 LIMIT 1",
-              [before.id],
-            )
+            await sql.query("SELECT 1 FROM issue_type_assignments WHERE issue_type_id=$1 LIMIT 1", [
+              before.id,
+            ])
           ).rows[0];
           if (assigned) {
             throw new IssueError(409, "IssueType 仍被 Issue 使用，請先清除關係。");
@@ -259,12 +258,7 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
                SET is_enabled=false,deleted_at=$3,version=version+1,updated_at=$3
                WHERE organization_account_id=$1 AND id=$2 AND version=$4
                RETURNING *`,
-              [
-                command.organizationAccountId,
-                command.issueTypeId,
-                now,
-                command.expectedVersion,
-              ],
+              [command.organizationAccountId, command.issueTypeId, now, command.expectedVersion],
             )
           ).rows[0] as IssueTypeRow;
           data = { before: definition(before), after: definition(row) };
@@ -275,14 +269,7 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
       await sql.query(
         `INSERT INTO issue_type_events(issue_type_id,version,actor,action,data,at)
          VALUES($1,$2,$3,$4,$5::jsonb,$6)`,
-        [
-          current.id,
-          current.version,
-          identity.userId,
-          command.action,
-          JSON.stringify(data),
-          now,
-        ],
+        [current.id, current.version, identity.userId, command.action, JSON.stringify(data), now],
       );
       const result: IssueTypeReceipt = {
         requestId: command.requestId,
