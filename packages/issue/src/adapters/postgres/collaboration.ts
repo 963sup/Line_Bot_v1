@@ -20,6 +20,7 @@ import {
   advance,
   type CommentRow,
   comment,
+  type IssueHead,
   currentIssue,
   dependencyWouldCycle,
   duplicateRelation,
@@ -242,10 +243,30 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       if (replay) return replay;
 
       await requireWritableRepository(sql, command.repositoryId);
+      let issue: IssueHead;
+      let relatedTarget: { id: string; repository_id: string } | undefined;
+      let relatedTargetHead: IssueHead | undefined;
       if (command.action === "add-related" || command.action === "remove-related") {
-        await sql.query("SELECT pg_advisory_xact_lock(hashtext('issue-related-graph'))");
+        relatedTarget = await targetIssue(sql, who, command.issueId, command.targetIssueId);
+        const endpoints = [
+          { id: command.issueId, repositoryId: command.repositoryId },
+          { id: relatedTarget.id, repositoryId: relatedTarget.repository_id },
+        ].sort((left, right) => left.id.localeCompare(right.id));
+        const first = await currentIssue(
+          sql,
+          endpoints[0]!.repositoryId,
+          endpoints[0]!.id,
+        );
+        const second = await currentIssue(
+          sql,
+          endpoints[1]!.repositoryId,
+          endpoints[1]!.id,
+        );
+        issue = first.id === command.issueId ? first : second;
+        relatedTargetHead = first.id === relatedTarget.id ? first : second;
+      } else {
+        issue = await currentIssue(sql, command.repositoryId, command.issueId);
       }
-      const issue = await currentIssue(sql, command.repositoryId, command.issueId);
       requireExpectedVersion(issue, command.expectedVersion);
 
       let data: Record<string, unknown> = {};
@@ -465,8 +486,11 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           data = { removedBlockedByIssueId: target.id };
         }
       } else if (command.action === "add-related" || command.action === "remove-related") {
-        const target = await targetIssue(sql, who, issue.id, command.targetIssueId);
-        const targetHead = await currentIssue(sql, target.repository_id, target.id);
+        if (!relatedTarget || !relatedTargetHead) {
+          throw new IssueError(503, "Issue relatesTo endpoint lock state 不完整。");
+        }
+        const target = relatedTarget;
+        const targetHead = relatedTargetHead;
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
         const left = ordered[0]!;
         const right = ordered[1]!;
