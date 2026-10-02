@@ -43,6 +43,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | namespace | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
+| provides | project | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |
 | provides | project | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
 | consumes | repository | query | repository | transaction-recheck | Issue classification and milestone assignment reference Repository-owned Label and Milestone definitions in the same Repository; Issue owns only the association fact. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
