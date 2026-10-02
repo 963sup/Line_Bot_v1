@@ -349,6 +349,11 @@ export type ProjectManagementIdentity = Readonly<{ userId: string }>;
 
 export interface ProjectManagementStore {
   view(identity: ProjectManagementIdentity, projectId: string): Promise<ProjectManagementView>;
+  viewByNumber(
+    identity: ProjectManagementIdentity,
+    ownerLogin: string,
+    projectNumber: number,
+  ): Promise<ProjectManagementView>;
   execute(
     identity: ProjectManagementIdentity,
     command: ProjectManagementCommand,
