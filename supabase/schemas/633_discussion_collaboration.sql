@@ -95,7 +95,7 @@ revoke all on app_private.discussion_polls from public, anon, authenticated, lin
 revoke all on app_private.discussion_poll_options from public, anon, authenticated, line_app;
 revoke all on app_private.discussion_poll_votes from public, anon, authenticated, line_app;
 
-grant select, insert, delete on app_private.discussion_answers to line_app;
+grant select, insert, update, delete on app_private.discussion_answers to line_app;
 grant select, insert, delete on app_private.discussion_labels to line_app;
 grant select, insert, delete on app_private.discussion_upvotes to line_app;
 grant select, insert, delete on app_private.discussion_comment_upvotes to line_app;
