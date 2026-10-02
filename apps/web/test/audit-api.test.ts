@@ -5,7 +5,7 @@ import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
 import { auditQuery } from "../src/app/api/_composition/audit.server";
 import { GET } from "../src/app/api/audit/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 
 const subject = `U${"8".repeat(32)}`;
 

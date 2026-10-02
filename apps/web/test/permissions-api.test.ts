@@ -4,7 +4,7 @@ import { mock, test } from "node:test";
 import { PermissionError } from "@line_bot_v1/identity-access/domain/permission";
 import { PostgresPermissionStore } from "@line_bot_v1/identity-access/postgres";
 import { GET, POST } from "../src/app/api/permissions/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";
 
 test("permission HTTP uses verified actor and rejects forgery, missing proof, cross-origin and oversized requests", async () => {

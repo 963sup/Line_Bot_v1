@@ -2,7 +2,7 @@ import { normalizeIssueNumber } from "@line_bot_v1/issue/domain";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
 import IssueBoard from "../../../../../../modules/repository/issue-board";
-import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 import AppShell from "../../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";
