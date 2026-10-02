@@ -20,9 +20,8 @@ const { renderExpenseNotice } = await tsImport(
   "../../apps/web/src/modules/expense/notice.server.ts",
   import.meta.url,
 );
-const { lineMiniApp } = await tsImport(
-  "../../packages/line/src/mini-app/registration.ts",
-  import.meta.url,
+const { lineMiniApp } = await import(
+  pathToFileURL(require.resolve("@line_bot_v1/line/mini-app")).href
 );
 
 import { loadRootEnv } from "../runtime/load-env.mjs";
