@@ -4,8 +4,8 @@ import {
   type IssueAction,
   type IssueClosedStateReason,
   IssueError,
-  issueText,
   type IssueWorkflowStatus,
+  issueText,
   normalizeIssueNumber,
 } from "../domain.js";
 import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
@@ -18,11 +18,7 @@ const workflowStatuses: readonly IssueWorkflowStatus[] = [
   "review",
   "completed",
 ];
-const closedReasons: readonly IssueClosedStateReason[] = [
-  "COMPLETED",
-  "DUPLICATE",
-  "NOT_PLANNED",
-];
+const closedReasons: readonly IssueClosedStateReason[] = ["COMPLETED", "DUPLICATE", "NOT_PLANNED"];
 
 function accountLoginForRepositoryLocator(value: string): string | null {
   try {
@@ -44,12 +40,7 @@ function optionalText(value: unknown, max: number, label: string): string {
 }
 
 function identifier(value: unknown, label: string): string {
-  if (
-    typeof value !== "string" ||
-    !value.trim() ||
-    value !== value.trim() ||
-    value.length > 120
-  ) {
+  if (typeof value !== "string" || !value.trim() || value !== value.trim() || value.length > 120) {
     throw new IssueError(400, `${label} 不正確。`);
   }
   return value;
@@ -82,10 +73,7 @@ function commandBase(value: Record<string, unknown>) {
 
 function existingIssueBase(value: Record<string, unknown>) {
   const base = commandBase(value);
-  if (
-    !Number.isSafeInteger(value.expectedVersion) ||
-    Number(value.expectedVersion) < 1
-  ) {
+  if (!Number.isSafeInteger(value.expectedVersion) || Number(value.expectedVersion) < 1) {
     throw new IssueError(400, "Issue 版本不正確。");
   }
   return {
@@ -212,10 +200,7 @@ export function createIssues(deps: {
     ) => {
       const actor = await identity(subject);
       const selected = selector(repository);
-      if (
-        workflowStatus &&
-        !workflowStatuses.includes(workflowStatus as IssueWorkflowStatus)
-      ) {
+      if (workflowStatus && !workflowStatuses.includes(workflowStatus as IssueWorkflowStatus)) {
         throw new IssueError(400, "Issue 工作流程狀態不正確。");
       }
       let cursor: { at: number; id: string } | undefined;
@@ -236,12 +221,10 @@ export function createIssues(deps: {
           throw new IssueError(400, "Issue 分頁不正確，請重新讀取。");
         }
       }
-      return deps
-        .store()
-        .snapshot(actor, selected, list, view, {
-          after: cursor,
-          workflowStatus: workflowStatus as IssueWorkflowStatus | undefined,
-        });
+      return deps.store().snapshot(actor, selected, list, view, {
+        after: cursor,
+        workflowStatus: workflowStatus as IssueWorkflowStatus | undefined,
+      });
     },
     detail: async (subject: string, issueNumber: number, repository: RepositorySelector) => {
       const selectedIssueNumber = normalizeIssueNumber(issueNumber);
