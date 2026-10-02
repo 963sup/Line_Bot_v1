@@ -16,11 +16,7 @@ export async function GET(request: Request) {
       throw new IssueError(400, "Repository 或 Issue 識別碼不正確。");
     }
     return jsonResponse(
-      await issueCollaboration.view(
-        await requestLineIdentity(request),
-        repositoryId,
-        issueId,
-      ),
+      await issueCollaboration.view(await requestLineIdentity(request), repositoryId, issueId),
     );
   } catch (error) {
     return issueFailure(error);
