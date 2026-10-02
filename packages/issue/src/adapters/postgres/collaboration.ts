@@ -25,6 +25,7 @@ import {
   duplicateRelation,
   fingerprint,
   hierarchyWouldCycle,
+  type IssueHead,
   privilegedCommenter,
   readReceipt,
   requireActionPermission,
@@ -242,7 +243,22 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       if (replay) return replay;
 
       await requireWritableRepository(sql, command.repositoryId);
-      const issue = await currentIssue(sql, command.repositoryId, command.issueId);
+      let issue: IssueHead;
+      let relatedTarget: { id: string; repository_id: string } | undefined;
+      let relatedTargetHead: IssueHead | undefined;
+      if (command.action === "add-related" || command.action === "remove-related") {
+        relatedTarget = await targetIssue(sql, who, command.issueId, command.targetIssueId);
+        const endpoints = [
+          { id: command.issueId, repositoryId: command.repositoryId },
+          { id: relatedTarget.id, repositoryId: relatedTarget.repository_id },
+        ].sort((left, right) => left.id.localeCompare(right.id));
+        const first = await currentIssue(sql, endpoints[0]!.repositoryId, endpoints[0]!.id);
+        const second = await currentIssue(sql, endpoints[1]!.repositoryId, endpoints[1]!.id);
+        issue = first.id === command.issueId ? first : second;
+        relatedTargetHead = first.id === relatedTarget.id ? first : second;
+      } else {
+        issue = await currentIssue(sql, command.repositoryId, command.issueId);
+      }
       requireExpectedVersion(issue, command.expectedVersion);
 
       let data: Record<string, unknown> = {};
@@ -462,11 +478,16 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           data = { removedBlockedByIssueId: target.id };
         }
       } else if (command.action === "add-related" || command.action === "remove-related") {
-        const target = await targetIssue(sql, who, issue.id, command.targetIssueId);
+        if (!relatedTarget || !relatedTargetHead) {
+          throw new IssueError(503, "Issue relatesTo endpoint lock state 不完整。");
+        }
+        const target = relatedTarget;
+        const targetHead = relatedTargetHead;
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
         const left = ordered[0]!;
         const right = ordered[1]!;
         resourceId = target.id;
+        let targetData: Record<string, unknown>;
         if (command.action === "add-related") {
           try {
             await sql.query(
@@ -478,6 +499,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
             duplicateRelation(error);
           }
           data = { relatedIssueId: target.id };
+          targetData = { relatedIssueId: issue.id };
         } else {
           const removed = (
             await sql.query(
@@ -489,7 +511,21 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           ).rows[0];
           if (!removed) throw new IssueError(409, "此 relatesTo 關係不存在。");
           data = { removedRelatedIssueId: target.id };
+          targetData = { removedRelatedIssueId: issue.id };
         }
+        const targetVersion = await advance(sql, targetHead, Number(targetHead.version), now);
+        await sql.query(
+          `INSERT INTO issue_events(issue_id,version,actor,action,note,data,at)
+           VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
+          [
+            targetHead.id,
+            targetVersion,
+            who.userId,
+            command.action,
+            JSON.stringify(targetData),
+            now,
+          ],
+        );
       } else if (command.action === "set-issue-type") {
         const before = await assignedIssueType(sql, issue.id);
         if (command.issueTypeId === null) {

@@ -22,6 +22,18 @@ export function repositoryDiscussionsPath(ownerLogin: string, repositoryName: st
   return `${repositoryPath(ownerLogin, repositoryName)}/discussions`;
 }
 
+export function repositoryDiscussionPath(
+  ownerLogin: string,
+  repositoryName: string,
+  discussionId: string,
+  discussionNumber: number | null,
+) {
+  const base = repositoryDiscussionsPath(ownerLogin, repositoryName);
+  return discussionNumber === null
+    ? `${base}/${encodeURIComponent(discussionId)}`
+    : `${base}/number/${encodeURIComponent(String(discussionNumber))}`;
+}
+
 export function repositoryLabelsPath(ownerLogin: string, repositoryName: string) {
   return `${repositoryPath(ownerLogin, repositoryName)}/labels`;
 }

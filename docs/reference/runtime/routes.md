@@ -30,7 +30,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/enterprises`, `/enterprises/{enterpriseSlug}` | Authenticated Enterprise collection / canonical governance detail；slug 只定位，不授權 |
 | `/enterprises/{enterpriseSlug}/teams/{teamSlug}` | Authenticated Enterprise Team canonical detail；stable TeamId 由 server 產生，slug 由 name derive並隨 rename 更新 |
 | `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
-| `/projects` | Authorized Project collection read；User-owned Project 只對 owner User 可見，Organization-owned Project 目前只對 current `OrganizationOwner` 可見；不宣稱 Project planning write management |
+| `/projects` | Authorized Project collection；Project-owned User/Team collaborator grants 與 public read projection 都由 Project owner重驗，來源 Repository/Issue 仍逐項重驗 access；planning write management 由 `/api/project-management` 承接 |
 | `/repositories`, `/explore` | Repository collection/workbench、Trending / Awesome Lists / Activity discovery + Star surface |
 | `/stars` | Current User 已 Star 且目前仍可存取的 Repository；使用既有 Repository Star query，Home Favorites 為相同 query 的摘要入口 |
 | `/issues` | Repository 選擇入口，進入 `/{login}/{repository}/issues`；目前不是跨 Repository Issue aggregate |
@@ -42,8 +42,9 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/{ownerLogin}/{repositoryName}/settings` | Repository lifecycle + address；rename/visibility/archive 與 address 是獨立 replay family，current admin 授權；archive 保留地址但不再作新 clock-in site |
 | `/{ownerLogin}/{repositoryName}/issues` | Repository-scoped Issue collection；owner/name 只定位 Repository，read API 重新驗 current User access |
 | `/{ownerLogin}/{repositoryName}/issues/{issueNumber}` | Repository-scoped Issue detail；`issueNumber` 是 Repository-local locator，stable IssueId 仍只作 internal identity/command reference；重新解析 owner/name 並驗目前 access |
-| `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；只讀 authorized conversations，不宣稱 Discussion write management |
-| `/{ownerLogin}/{repositoryName}/discussions/{discussionId}` | Repository-scoped Discussion detail；`discussionId` 是本產品 opaque id，不採用 GitHub Discussion number；comments 隨 detail authorized read 載入 |
+| `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；authorized read 與 Discussion owner 的 current management capability 分離，list navigation 優先使用 canonical number locator |
+| `/{ownerLogin}/{repositoryName}/discussions/number/{discussionNumber}` | Repository-scoped canonical Discussion detail；`discussionNumber` 是 Repository-local locator，stable DiscussionId 仍是 internal identity；每次 read 重新驗 access |
+| `/{ownerLogin}/{repositoryName}/discussions/{discussionId}` | Opaque DiscussionId compatibility detail；只供 pre-parity `number=null` 舊資料 fallback，不能取代 canonical Discussion.number 或授權 |
 | `/{ownerLogin}/{repositoryName}/labels` | Repository Label collection；Label 是 Repository-owned classification metadata，沒有獨立 label URL identity |
 | `/{ownerLogin}/{repositoryName}/milestones` | Repository Milestone collection；Milestone 是 Repository goal/checkpoint，不等於 Project Milestone |
 | `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
@@ -71,23 +72,26 @@ Current / target capability status 回 [Ownership facts](../../facts/ownership.m
 
 Route handler 不複製 application use case，concrete adapters 在最外層 composition 注入。
 
-Current Repository-scoped collaboration/resource read API：
+Current Repository-scoped collaboration/resource API：
 
 | Route | Responsibility |
 | --- | --- |
 | `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and replay-safe command transport；read 投影分開回 canonical `state/stateReason` 與 local `workflowStatus`，並含 body/assignees；保留 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
 | `/api/issue-types` | Organization-scoped IssueType definition list/create/update/delete；current active `OrganizationOwner` only，disabled/tombstone lifecycle independent from Issue workflow/permission |
 | `/api/issue-collaboration` | Issue collaboration + nullable IssueType assign/clear；assignment rechecks Repository triage authority and same Organization scope |
-| `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
+| `/api/discussions`, `/api/discussions/{discussionId}`, `/api/discussions/by-number/{discussionNumber}` | Discussion list/detail/comment read；number 是 canonical Repository-local locator，opaque id 只保留 compatibility read |
+| `/api/discussion-management` | Discussion current write lifecycle/collaboration transport；create/update/close/reopen/comment/category/answer/label/upvote/poll/lock 依 Repository current access、expectedVersion、exact replay 與 Discussion events 驗證 |
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
 | `/api/repository-address` | Repository 地址查詢及 expected-version / exact-replay 地址設定與移除 |
 | `/api/repository-management` | Repository settings read + current-admin expected-version/exact-replay rename、visibility、archive、unarchive |
 | `/api/repository-subscription` | Current-readable Repository 的 User Watch state；SUBSCRIBED / UNSUBSCRIBED / IGNORED，獨立 version/replay 且不授權 |
 | `/api/repository-access` | GET access grant projection；POST expected-version + exact-replay Direct User / Organization Team grant mutation；不建立 Organization/Team membership |
-| `/api/projects` | Authorized Project collection read；每次 request 重驗 current User，Organization-owned Project 只接受 current `OrganizationOwner` scope |
+| `/api/projects` | Authorized Project collection read；Project-owned collaborator/public read policy與來源 access 每次重新驗證 |
+| `/api/projects/by-number/{projectNumber}` | owner-scoped canonical Project number lookup；owner login + number 只定位，仍重新驗 current Project access |
+| `/api/project-management` | Project current planning management；root lifecycle、User/Team collaborator、Item/DraftIssue、typed fields/values、views、status updates 都保留 expectedVersion/exact replay 與 immutable Project events |
 
-Discussion、Label 與 Repository Milestone API 只承接 authorized read，並要求 `owner` + `name` selector。Discussion read lifecycle 由 Discussion owner 承接；Label 與 Repository Milestone 仍由 Repository owner 承接。各自的 create/update/delete/close/comment write management 尚未成為 runtime capability。Project aggregate-root read 已 active；Project planning create/update、WBS/Item/Milestone mutation 仍是 data-only。
+Discussion read 與 current management write 都由 Discussion owner 承接；read locator 不授權，write 仍逐次重驗 Repository access、version 與 replay。Project aggregate-root read 與 `manage-project-planning` 都已 current；Project-owned collaborator、Item/DraftIssue、typed fields/values、views、status updates 是正式 runtime capability，來源 Repository/Issue authority 不轉移。Project WBS 與 Project-local Milestone 保持相鄰 planning persistence，不因這些 current capability 被重新解讀。
 
 ## Same-page view state
 
