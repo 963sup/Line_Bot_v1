@@ -89,6 +89,7 @@ grant insert (
   description,
   color,
   is_enabled,
+  deleted_at,
   version,
   created_at,
   updated_at
