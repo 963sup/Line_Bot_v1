@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
-import {
-  readActiveUserQualification,
-} from "@line_bot_v1/account/postgres";
+import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
@@ -16,10 +14,17 @@ import type {
 } from "../../../contracts/management.js";
 import { type ProjectAccessRole, ProjectError } from "../../../domain.js";
 import {
+  executeProjectFieldCommand,
+  readProjectFields,
+  readProjectFieldValues,
+} from "./postgres-project-fields.js";
+import { executeProjectItemCommand, readProjectItems } from "./postgres-project-items.js";
+import {
   advanceProject,
   allocateProjectNumber,
   appendProjectEvent,
   lockProjectScope,
+  type ProjectRow,
   projectFingerprint,
   projectRoot,
   readProjectReceipt,
@@ -29,17 +34,7 @@ import {
   requireProjectTeamTarget,
   requireProjectVersion,
   storeProjectReceipt,
-  type ProjectRow,
 } from "./postgres-project-management-helpers.js";
-import {
-  executeProjectFieldCommand,
-  readProjectFields,
-  readProjectFieldValues,
-} from "./postgres-project-fields.js";
-import {
-  executeProjectItemCommand,
-  readProjectItems,
-} from "./postgres-project-items.js";
 import {
   executeProjectViewStatusCommand,
   readProjectStatusUpdates,
@@ -47,7 +42,10 @@ import {
 } from "./postgres-project-view-status.js";
 
 function collaboratorRole(
-  role: Extract<ProjectManagementCommand, { action: "update-collaborators" }>["collaborators"][number]["role"],
+  role: Extract<
+    ProjectManagementCommand,
+    { action: "update-collaborators" }
+  >["collaborators"][number]["role"],
 ): ProjectAccessRole | null {
   if (role === "NONE") return null;
   if (role === "READER") return "READ";
@@ -55,10 +53,7 @@ function collaboratorRole(
   return "ADMIN";
 }
 
-async function projectCollaborators(
-  sql: Sql,
-  projectId: string,
-): Promise<ProjectCollaborator[]> {
+async function projectCollaborators(sql: Sql, projectId: string): Promise<ProjectCollaborator[]> {
   const userRows = (
     await sql.query(
       `SELECT user_id AS id,role
@@ -83,11 +78,7 @@ async function projectCollaborators(
   ];
 }
 
-async function requireReadableRepository(
-  sql: Sql,
-  userId: string,
-  repositoryId: string,
-) {
+async function requireReadableRepository(sql: Sql, userId: string, repositoryId: string) {
   try {
     return await repositoryScope(sql, { userId }, repositoryId);
   } catch (error) {
@@ -143,30 +134,16 @@ async function createProject(
   }>,
   now: number,
 ) {
-  await requireProjectOwnerTarget(
-    sql,
-    identity.userId,
-    input.ownerAccountId,
-    input.ownerKind,
-  );
+  await requireProjectOwnerTarget(sql, identity.userId, input.ownerAccountId, input.ownerKind);
   if (input.repositoryId) {
     await requireReadableRepository(sql, identity.userId, input.repositoryId);
   }
   if (input.teamId) {
-    await requireProjectTeamTarget(
-      sql,
-      input.ownerAccountId,
-      input.ownerKind,
-      input.teamId,
-    );
+    await requireProjectTeamTarget(sql, input.ownerAccountId, input.ownerKind, input.teamId);
   }
 
   const projectId = randomUUID();
-  const number = await allocateProjectNumber(
-    sql,
-    input.ownerAccountId,
-    input.ownerKind,
-  );
+  const number = await allocateProjectNumber(sql, input.ownerAccountId, input.ownerKind);
   const row = (
     await sql.query(
       `INSERT INTO projects(
@@ -191,12 +168,7 @@ async function createProject(
   ).rows[0] as ProjectRow;
 
   if (input.repositoryId) {
-    await addRepositoryReference(
-      sql,
-      identity.userId,
-      projectId,
-      input.repositoryId,
-    );
+    await addRepositoryReference(sql, identity.userId, projectId, input.repositoryId);
   }
   if (input.teamId) {
     await sql.query(
@@ -229,10 +201,7 @@ async function mutateCollaborators(
 
     const role = collaboratorRole(collaborator.role);
     if (kind === "USER") {
-      if (
-        row.owner_account_kind === "USER" &&
-        row.owner_account_id === id
-      ) {
+      if (row.owner_account_kind === "USER" && row.owner_account_id === id) {
         throw new ProjectError(409, "Project owner 不需要重複 collaborator grant。");
       }
       if (role !== null) {
@@ -252,10 +221,10 @@ async function mutateCollaborators(
       ).rows[0] as { role: ProjectAccessRole } | undefined;
       if (role === null) {
         if (before) {
-          await sql.query(
-            "DELETE FROM project_user_access WHERE project_id=$1 AND user_id=$2",
-            [row.id, id],
-          );
+          await sql.query("DELETE FROM project_user_access WHERE project_id=$1 AND user_id=$2", [
+            row.id,
+            id,
+          ]);
           changes += 1;
         }
       } else if (!before) {
@@ -279,12 +248,7 @@ async function mutateCollaborators(
     }
 
     if (role !== null) {
-      await requireProjectTeamTarget(
-        sql,
-        row.owner_account_id,
-        row.owner_account_kind,
-        id,
-      );
+      await requireProjectTeamTarget(sql, row.owner_account_id, row.owner_account_kind, id);
     }
     const before = (
       await sql.query(
@@ -297,10 +261,10 @@ async function mutateCollaborators(
     ).rows[0] as { role: ProjectAccessRole } | undefined;
     if (role === null) {
       if (before) {
-        await sql.query(
-          "DELETE FROM project_team_access WHERE project_id=$1 AND team_id=$2",
-          [row.id, id],
-        );
+        await sql.query("DELETE FROM project_team_access WHERE project_id=$1 AND team_id=$2", [
+          row.id,
+          id,
+        ]);
         changes += 1;
       }
     } else if (!before) {
@@ -359,15 +323,12 @@ function isViewStatusCommand(command: ProjectManagementCommand) {
   );
 }
 
-async function validateDraftAssignees(
-  sql: Sql,
-  command: ProjectManagementCommand,
-) {
+async function validateDraftAssignees(sql: Sql, command: ProjectManagementCommand) {
   const ids =
     command.action === "add-draft-item"
       ? command.assigneeIds
       : command.action === "update-draft-item"
-        ? command.assigneeIds ?? []
+        ? (command.assigneeIds ?? [])
         : [];
   for (const userId of ids) {
     if (!(await readActiveUserQualification(sql, userId, "share"))) {
@@ -379,16 +340,9 @@ async function validateDraftAssignees(
 export class PostgresProjectManagementStore implements ProjectManagementStore {
   constructor(private readonly db: Database = businessDatabase()) {}
 
-  view(
-    identity: ProjectManagementIdentity,
-    projectId: string,
-  ): Promise<ProjectManagementView> {
+  view(identity: ProjectManagementIdentity, projectId: string): Promise<ProjectManagementView> {
     return this.db.transaction(async (sql) => {
-      const selected = await readProjectScope(
-        sql,
-        identity.userId,
-        projectId,
-      );
+      const selected = await readProjectScope(sql, identity.userId, projectId);
       const items = await readProjectItems(sql, identity.userId, projectId);
       const visibleItemIds = items.map((item) => item.id);
       const [collaborators, fields, fieldValues, views, statusUpdates] =
