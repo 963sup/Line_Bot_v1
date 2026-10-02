@@ -10,10 +10,7 @@ import type {
   ProjectManagementReceipt,
   ProjectRoot,
 } from "../../../contracts/management.js";
-import type {
-  ProjectAccessRole,
-  ProjectOwnerKind,
-} from "../../../domain.js";
+import type { ProjectAccessRole, ProjectOwnerKind } from "../../../domain.js";
 import { ProjectError } from "../../../domain.js";
 
 export type ProjectRow = {
@@ -100,10 +97,10 @@ async function effectiveProjectRole(
   }
 
   const direct = (
-    await sql.query(
-      "SELECT role FROM project_user_access WHERE project_id=$1 AND user_id=$2",
-      [row.id, userId],
-    )
+    await sql.query("SELECT role FROM project_user_access WHERE project_id=$1 AND user_id=$2", [
+      row.id,
+      userId,
+    ])
   ).rows[0] as { role: ProjectAccessRole } | undefined;
   if (direct) roles.push(direct.role);
 
@@ -129,9 +126,9 @@ export async function readProjectScope(
   projectId: string,
   includeDeleted = false,
 ): Promise<{ row: ProjectRow; role: ProjectAccessRole }> {
-  const row = (
-    await sql.query("SELECT * FROM projects WHERE id=$1", [projectId])
-  ).rows[0] as ProjectRow | undefined;
+  const row = (await sql.query("SELECT * FROM projects WHERE id=$1", [projectId])).rows[0] as
+    | ProjectRow
+    | undefined;
   if (!row || (!includeDeleted && row.deleted_at !== null)) {
     throw new ProjectError(404, "找不到 Project。");
   }
@@ -147,9 +144,8 @@ export async function lockProjectScope(
   includeDeleted = false,
 ): Promise<{ row: ProjectRow; role: ProjectAccessRole }> {
   await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`project:${projectId}`]);
-  const row = (
-    await sql.query("SELECT * FROM projects WHERE id=$1 FOR UPDATE", [projectId])
-  ).rows[0] as ProjectRow | undefined;
+  const row = (await sql.query("SELECT * FROM projects WHERE id=$1 FOR UPDATE", [projectId]))
+    .rows[0] as ProjectRow | undefined;
   if (!row || (!includeDeleted && row.deleted_at !== null)) {
     throw new ProjectError(404, "找不到 Project。");
   }
@@ -158,10 +154,7 @@ export async function lockProjectScope(
   return { row, role };
 }
 
-export function requireProjectRole(
-  actual: ProjectAccessRole,
-  required: ProjectAccessRole,
-) {
+export function requireProjectRole(actual: ProjectAccessRole, required: ProjectAccessRole) {
   if (roleRank[actual] < roleRank[required]) {
     throw new ProjectError(403, "目前 Project access 不允許此操作。");
   }
