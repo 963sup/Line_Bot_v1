@@ -49,11 +49,14 @@ export function createLiffBoot(
 
     let operation: Promise<void>;
     try {
+      const initOptions: { liffId: string; mock?: boolean } = options.mock
+        ? { liffId, mock: true }
+        : { liffId };
       const prepared = options.beforeInit?.(sdk);
       operation =
         prepared === undefined
-          ? Promise.resolve(sdk.init(options.mock ? { liffId, mock: true } : { liffId }))
-          : Promise.resolve(prepared).then(() => sdk.init(options.mock ? { liffId, mock: true } : { liffId }));
+          ? Promise.resolve(sdk.init(initOptions))
+          : Promise.resolve(prepared).then(() => sdk.init(initOptions));
     } catch {
       operation = Promise.reject(new Error(initializationError));
     }

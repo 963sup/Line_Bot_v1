@@ -58,7 +58,7 @@ await build({
   loader: { ".css": "css" },
   define: {
     "process.env.NODE_ENV": '"production"',
-    "process.env.NEXT_PUBLIC_USE_LIFF_MOCK": '"true"',
+    "process.env.NEXT_PUBLIC_BROWSER_TEST_HARNESS": '"true"',
   },
   plugins: [
     {

@@ -44,7 +44,7 @@ Object.assign(env, {
   NEXT_TELEMETRY_DISABLED: "1",
   NEXT_PUBLIC_SUPABASE_URL: "https://local-auth.example.test",
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "synthetic-browser-test-key",
-  NEXT_PUBLIC_USE_LIFF_MOCK: "true",
+  NEXT_PUBLIC_BROWSER_TEST_HARNESS: "true",
   GOOGLE_MAPS_API_KEY: "synthetic-google-maps-browser-key",
   NAVIGATION_BASE: base,
   NAVIGATION_ARTIFACT_DIR: output,

@@ -27,10 +27,13 @@ const mockOptions: LiffBootOptions | undefined =
     : undefined;
 
 const liffId = lineMiniApp().liffId;
-const injected =
-  process.env.NEXT_PUBLIC_USE_LIFF_MOCK === "true"
-    ? (globalThis as typeof globalThis & { liff?: LiffSdk }).liff
-    : undefined;
+const browserTestHarness =
+  process.env.NEXT_PUBLIC_BROWSER_TEST_HARNESS === "true" &&
+  new Set(["127.0.0.1", "localhost", "[::1]"]).has(location.hostname);
+const injected = browserTestHarness
+  ? (globalThis as typeof globalThis & { liff?: LiffSdk }).liff
+  : undefined;
+if (browserTestHarness && !injected) throw new Error("Synthetic LIFF test SDK is missing.");
 const boot = injected ? createLiffBoot(injected, liffId) : bootLiff(liffId, mockOptions);
 
 export const liffClient = createLiffClient(boot, () => location.href, loginReturnUrl);
