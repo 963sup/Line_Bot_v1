@@ -74,6 +74,10 @@ create table app_private."issues" (
       and workflow_status is not null
     )
   ),
+  constraint "issues_lock_check" check (
+    (is_locked and lock_reason in ('OFF_TOPIC','RESOLVED','SPAM','TOO_HEATED'))
+    or (not is_locked and lock_reason is null)
+  ),
   constraint "issues_version_check" check (version > 0),
   constraint "issues_repository_id_fkey"
     foreign key (repository_id) references app_private.repositories(id),
