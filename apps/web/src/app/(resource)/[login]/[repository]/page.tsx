@@ -1,6 +1,8 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { publicRepositories } from "../../_composition/repository.server";
 import IssueBoard from "../../../../modules/repository/issue-board";
 import RepositorySubscriptionControl from "../../../../modules/repository/repository-subscription-control";
 import {
@@ -9,9 +11,7 @@ import {
   repositoryLabelsPath,
   repositoryMilestonesPath,
 } from "../../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import AppShell from "../../../(mobile)/_shell/app-shell";
-import { publicRepositories } from "../../_composition/repository.server";
 
 export const dynamic = "force-dynamic";
 
