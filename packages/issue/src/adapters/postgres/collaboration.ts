@@ -497,12 +497,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           data = { removedRelatedIssueId: target.id };
           targetData = { removedRelatedIssueId: issue.id };
         }
-        const targetVersion = await advance(
-          sql,
-          targetHead,
-          Number(targetHead.version),
-          now,
-        );
+        const targetVersion = await advance(sql, targetHead, Number(targetHead.version), now);
         await sql.query(
           `INSERT INTO issue_events(issue_id,version,actor,action,note,data,at)
            VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
