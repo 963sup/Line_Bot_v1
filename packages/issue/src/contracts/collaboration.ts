@@ -16,7 +16,8 @@ export type IssueCollaborationCommand =
         commentVersion: number;
         body?: string;
       }>)
-  | (CommandBase & Readonly<{ action: "add-labels" | "remove-labels"; labelIds: readonly string[] }>)
+  | (CommandBase &
+      Readonly<{ action: "add-labels" | "remove-labels"; labelIds: readonly string[] }>)
   | (CommandBase & Readonly<{ action: "clear-labels" }>)
   | (CommandBase & Readonly<{ action: "set-milestone"; milestoneId: string | null }>)
   | (CommandBase &
