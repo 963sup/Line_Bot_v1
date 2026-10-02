@@ -9,11 +9,11 @@ import type {
   ProjectManagementCommand,
   ProjectManagementReceipt,
   ProjectRoot,
-} from "../contracts/management.js";
+} from "../../../contracts/management.js";
 import type {
   ProjectAccessRole,
   ProjectOwnerKind,
-} from "../domain.js";
+} from "../../../domain.js";
 import { ProjectError } from "../domain.js";
 
 export type ProjectRow = {
