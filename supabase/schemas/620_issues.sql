@@ -21,6 +21,8 @@ create table app_private."issues" (
   "state_reason" text,
   "workflow_status" text,
   "milestone_id" text,
+  "is_locked" boolean not null default false,
+  "lock_reason" text,
   "version" integer not null,
   "created_at" bigint not null,
   "updated_at" bigint not null,
@@ -123,6 +125,9 @@ grant update (
   state,
   state_reason,
   workflow_status,
+  milestone_id,
+  is_locked,
+  lock_reason,
   version,
   updated_at
 ) on app_private.issues to line_app;
