@@ -59,7 +59,7 @@ function identifierList(value: unknown, label: string, required = false): string
   if (value === undefined && !required) return [];
   if (!Array.isArray(value)) throw new IssueError(400, `${label} 格式不正確。`);
   const normalized = value.map((item) => identifier(item, label));
-  const unique = [...new Set(normalized)];
+  const unique = [...new Set(normalized)].sort((left, right) => left.localeCompare(right));
   if (required && !unique.length) throw new IssueError(400, `${label} 不可為空。`);
   return unique;
 }
