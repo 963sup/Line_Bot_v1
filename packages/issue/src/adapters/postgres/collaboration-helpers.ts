@@ -83,7 +83,7 @@ export function storedReceipt(result: IssueCollaborationReceipt): StoredReceipt 
   return { receiptVersion: 1, family: "issue-collaboration", result };
 }
 
-export async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
+async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
   try {
     return await operation();
   } catch (error) {
