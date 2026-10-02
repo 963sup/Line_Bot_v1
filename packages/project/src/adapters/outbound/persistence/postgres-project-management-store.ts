@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   readActiveUserQualification,
 } from "@line_bot_v1/account/postgres";
+import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryScope } from "@line_bot_v1/repository/postgres/access";
@@ -397,6 +398,52 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           readProjectFieldValues(sql, projectId, visibleItemIds),
           readProjectViews(sql, projectId),
           readProjectStatusUpdates(sql, projectId),
+        ]);
+      return {
+        project: projectRoot(selected.row),
+        role: selected.role,
+        collaborators,
+        items,
+        fields,
+        fieldValues,
+        views,
+        statusUpdates,
+      };
+    });
+  }
+
+  viewByNumber(
+    identity: ProjectManagementIdentity,
+    ownerLogin: string,
+    projectNumber: number,
+  ): Promise<ProjectManagementView> {
+    return this.db.transaction(async (sql) => {
+      const owner = await resolveAccountLogin(sql, ownerLogin);
+      if (!owner || (owner.kind !== "USER" && owner.kind !== "ORGANIZATION")) {
+        throw new ProjectError(404, "找不到 Project owner。");
+      }
+      const row = (
+        await sql.query(
+          `SELECT id
+           FROM projects
+           WHERE owner_account_id=$1
+             AND owner_account_kind=$2
+             AND number=$3
+             AND deleted_at IS NULL`,
+          [owner.id, owner.kind, projectNumber],
+        )
+      ).rows[0] as { id: string } | undefined;
+      if (!row) throw new ProjectError(404, "找不到 Project。");
+      const selected = await readProjectScope(sql, identity.userId, row.id);
+      const items = await readProjectItems(sql, identity.userId, row.id);
+      const visibleItemIds = items.map((item) => item.id);
+      const [collaborators, fields, fieldValues, views, statusUpdates] =
+        await Promise.all([
+          projectCollaborators(sql, row.id),
+          readProjectFields(sql, row.id),
+          readProjectFieldValues(sql, row.id, visibleItemIds),
+          readProjectViews(sql, row.id),
+          readProjectStatusUpdates(sql, row.id),
         ]);
       return {
         project: projectRoot(selected.row),
