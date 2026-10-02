@@ -22,6 +22,7 @@ export function repositoryPathSelector(owner: string, repository: string) {
 async function jsonObjectBody(
   request: Request,
   failure: (status: number, message: string) => Error,
+  maxBytes = 8192,
 ): Promise<Record<string, unknown>> {
   const configured = process.env.APP_ORIGIN;
   if (
@@ -39,7 +40,7 @@ async function jsonObjectBody(
   }
   let text: string;
   try {
-    text = await readBodyText(request, 8192);
+    text = await readBodyText(request, maxBytes);
   } catch (error) {
     if (error instanceof BodyTooLargeError) throw failure(413, "內容過大。");
     throw error;
@@ -54,7 +55,7 @@ async function jsonObjectBody(
 }
 
 export function issueBody(request: Request): Promise<Record<string, unknown>> {
-  return jsonObjectBody(request, (status, message) => new IssueError(status, message));
+  return jsonObjectBody(request, (status, message) => new IssueError(status, message), 65_536);
 }
 
 export function repositoryBody(request: Request): Promise<Record<string, unknown>> {
