@@ -634,12 +634,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         const child = await executeProjectFieldCommand(sql, selected.row.id, command, now);
         resourceId = child.resourceId;
         data = child.data;
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now);
       } else if (isViewStatusCommand(command)) {
         const child = await executeProjectViewStatusCommand(
           sql,
@@ -678,13 +673,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         at: now,
         data,
       };
-      await storeProjectReceipt(
-        sql,
-        identity.userId,
-        fingerprint,
-        result,
-        now,
-      );
+      await storeProjectReceipt(sql, identity.userId, fingerprint, result, now);
       return result;
     });
   }
