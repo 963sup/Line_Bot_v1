@@ -1,10 +1,6 @@
 import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
 
-type DiscussionRepositoryOperation =
-  | "participate"
-  | "triage"
-  | "manage"
-  | "lock-conversation";
+type DiscussionRepositoryOperation = "participate" | "triage" | "manage" | "lock-conversation";
 
 const participationPermissions: readonly RepositoryPermission[] = repositoryPermissions;
 const triagePermissions: readonly RepositoryPermission[] = [
