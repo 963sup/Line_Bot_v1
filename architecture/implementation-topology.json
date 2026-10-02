@@ -124,8 +124,8 @@
         "@line_bot_v1/platform"
       ]
     },
-    "@line_bot_v1/line-channel": {
-      "path": "packages/line-channel",
+    "@line_bot_v1/line": {
+      "path": "packages/line",
       "moduleKind": "integration-adapter",
       "semanticOwner": "line-integration",
       "allowedWorkspaceDependencies": []
@@ -575,7 +575,7 @@
         "@line_bot_v1/expense",
         "@line_bot_v1/identity-access",
         "@line_bot_v1/issue",
-        "@line_bot_v1/line-channel",
+        "@line_bot_v1/line",
         "@line_bot_v1/organization",
         "@line_bot_v1/partners",
         "@line_bot_v1/platform",

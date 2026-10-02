@@ -152,9 +152,9 @@ importers:
       '@line_bot_v1/issue':
         specifier: workspace:*
         version: link:../../packages/issue
-      '@line_bot_v1/line-channel':
+      '@line_bot_v1/line':
         specifier: workspace:*
-        version: link:../../packages/line-channel
+        version: link:../../packages/line
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../../packages/namespace
@@ -500,7 +500,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/line-channel:
+  packages/line:
     dependencies:
       '@line/bot-sdk':
         specifier: 'catalog:'

@@ -55,7 +55,7 @@ GitHub GraphQL semantics 的 authority 是 [vendored FPT JSON](../../../architec
   - 全域登入憑證管理、頂層 URL 保留字與防碰撞命名空間分配。
 - **授權權限體系 (`identity-access`)**：
   - 基於角色的權限驗證（RBAC）、Subject Version 遞增與權限快照。
-- **通訊與通道適配 (`notifications`, `line-channel`, `google-workspace`, `platform`)**：
+- **通訊與通道適配 (`notifications`, `line`, `google-workspace`, `platform`)**：
   - 訊息推送、LINE Webhook 與 Google Workspace OAuth 通訊適配器、技術底層工具。
 
 ---
@@ -120,7 +120,7 @@ GitHub GraphQL semantics 的 authority 是 [vendored FPT JSON](../../../architec
 3. **Conformist (CF, 順應者)**：
    - `Explore` 投影模組完全順應 `Repository` 領域的資料結構，不做額外概念轉換。
 4. **Anti-Corruption Layer (ACL, 防腐層)**：
-   - `@line_bot_v1/line-channel` 與 `@line_bot_v1/google-workspace` 內部設置 ACL，將外部不穩定的 Webhook Payload 或 Google OAuth Token 轉換為內部標準 Domain Command。
+   - `@line_bot_v1/line` 與 `@line_bot_v1/google-workspace` 內部設置 ACL，將外部不穩定的 Webhook Payload 或 Google OAuth Token 轉換為內部標準 Domain Command。
 5. **Separate Ways (封閉隔離)**：
    - `LedgerContext` 封閉在核心內部，與前端 `apps/web` 保持 Separate Ways，嚴禁任何直接路由穿透。
 

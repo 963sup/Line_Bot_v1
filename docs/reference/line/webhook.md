@@ -14,7 +14,7 @@ Current activation policy：
 - `group` / `room`：普通文字保持沉默；Assistant 問答只接受 LINE 原生 self mention，既有 explicit command 仍依各自 handler 規則處理。
 - conversation scope 只隔離 interaction context，不授予 Organization、Team、Employment、Repository 或其他 business permission。
 
-這個 policy 由 Webhook router 執行；`@line_bot_v1/line-channel` 只負責可信 provider source parsing，不擁有 Assistant product policy。
+這個 policy 由 Webhook router 執行；`@line_bot_v1/line` 只負責可信 provider source parsing，不擁有 Assistant product policy。
 ## Event claim and replay
 跨 instance 的短效 Webhook claim 可以使用 Redis，但 Redis 只負責有限 TTL 協調；持久 business idempotency / ledger authority 仍在 PostgreSQL。
 

@@ -3,7 +3,7 @@ Read this file only to choose the LINE boundary. Provider-specific details are s
 ## Channel and provider boundary
 LINE 提供 identity proof、Messaging/Webhook、MINI App entry 等 provider 能力，但不擁有 User qualification、Organization/Team participation、TeamManager、Employment 或其他 business state。
 ## Implementation ownership
-`@line_bot_v1/line-channel` 是 current LINE integration code owner：LINE user proof、Messaging/Webhook、Rich Menu、MINI App browser adapter 均透過其 exports 提供。這是 Module Boundary，不改 LINE Console state、provider protocol、business authorization 或 Supabase Data Boundary。
+`@line_bot_v1/line` 是 current LINE integration code owner：LINE user proof、Messaging/Webhook、Rich Menu、MINI App browser adapter 均透過其 exports 提供。這是 Module Boundary，不改 LINE Console state、provider protocol、business authorization 或 Supabase Data Boundary。
 ## Product authority
 LINE profile/userId/groupId/mention/chat membership 都不是 business role：
 

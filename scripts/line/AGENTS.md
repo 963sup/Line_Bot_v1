@@ -1,6 +1,6 @@
 # LINE operator scripts
 
-- `pnpm line:rich-menu` is the canonical operation entry. `rich-menu/sync.ts` adapts env/argv/output to the existing Web Rich Menu publisher; protocol/client stay in `@line_bot_v1/line-channel`.
+- `pnpm line:rich-menu` is the canonical operation entry. `rich-menu/sync.ts` adapts env/argv/output to the existing Web Rich Menu publisher; protocol/client stay in `@line_bot_v1/line`.
 - Assets live in `assets/line/rich-menu/`. Image, definition and executable publication-code changes trigger one publication after validated current-main; documentation/tests alone do not.
 - Rich Menu publishes the six pages defined by the current Web owner: attendance-in, attendance-out, forms, incident, notifications and team. `all` follows that owner's `MENU_PAGES` contract; scripts do not maintain another page list.
 - Publish is independent of Supabase and Vercel. No duplicate publication jobs or general Web-change gate.
