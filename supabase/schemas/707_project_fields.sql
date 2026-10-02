@@ -92,7 +92,7 @@ create table app_private.project_item_field_values (
     foreign key (field_id, single_select_option_id)
     references app_private.project_field_options(field_id, id),
   constraint project_item_field_values_type_check check (
-    value_type in ('DATE','ITERATION','NUMBER','SINGLE_SELECT','TEXT')
+    value_type in ('DATE','ITERATION','MULTI_SELECT','NUMBER','SINGLE_SELECT','TEXT')
   ),
   constraint project_item_field_values_shape_check check (
     (
@@ -107,6 +107,14 @@ create table app_private.project_item_field_values (
       value_type='ITERATION'
       and date_value is null
       and iteration_id is not null
+      and number_value is null
+      and single_select_option_id is null
+      and text_value is null
+    )
+    or (
+      value_type='MULTI_SELECT'
+      and date_value is null
+      and iteration_id is null
       and number_value is null
       and single_select_option_id is null
       and text_value is null
