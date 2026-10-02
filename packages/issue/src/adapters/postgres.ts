@@ -76,9 +76,7 @@ function issue(row: IssueRow, relationAssignees: readonly string[]): Issue {
     throw new IssueError(503, "Issue canonical 資料不完整。");
   }
   const assignees =
-    relationAssignees.length || row.assignee === null
-      ? relationAssignees
-      : [row.assignee];
+    relationAssignees.length || row.assignee === null ? relationAssignees : [row.assignee];
   return {
     id: row.id,
     repositoryId: row.repository_id,
