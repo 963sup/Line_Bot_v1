@@ -14,6 +14,8 @@
 | `/api/permissions` | Identity/Access；不能因 Web presenter 在 account 目錄就歸為 Account domain |
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
 | `/api/issues`、`/api/issues/{issueNumber}` | Issue owner transport；Repository-scoped read returns canonical `state/stateReason`, local `workflowStatus`, body and assignees；POST carries replay-safe create/workflow/edit/close/reopen/add-remove-assignees commands；GET `workflowStatus` is canonical and legacy `status` remains a temporary alias |
+| `/api/issue-types` | Issue owner Organization-scoped IssueType definition read/manage；current active `OrganizationOwner` only，create/update/delete 與 Issue assign/clear 分離 |
+| `/api/issue-collaboration` | Issue collaboration transport；comments/labels/milestone/relations/lock 與 IssueType assign/clear 共用 Issue expected-version/exact-replay aggregate mutation |
 | `/api/discussions`、`/api/discussions/{discussionId}` | Discussion owner transport；Repository-scoped authorized GET，必須提供 `owner` + `name` |
 | `/api/repository-labels` | GET：Repository Label authorized collection read，必須提供 `owner` + `name`；POST：Repository-owned replay-safe Label create/update/delete definition mutation |
 | `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | GET：Repository Milestone authorized collection/detail read，必須提供 `owner` + `name`；collection POST：Repository-owned replay-safe Milestone create/update/open/close definition mutation |

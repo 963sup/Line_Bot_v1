@@ -240,6 +240,29 @@ export async function authorizedRepository(
   return repositoryAccess(sql, identity, repositoryId);
 }
 
+export type RepositoryOwnerIdentity = Readonly<{
+  id: string;
+  kind: "USER" | "ORGANIZATION";
+}>;
+
+export async function repositoryOwnerIdentity(
+  sql: Sql,
+  identity: RepositoryIdentity,
+  repositoryId: string,
+): Promise<RepositoryOwnerIdentity> {
+  await repositoryAccess(sql, identity, repositoryId);
+  const row = (
+    await sql.query(
+      "SELECT owner_account_id,owner_account_kind FROM repositories WHERE id=$1",
+      [repositoryId],
+    )
+  ).rows[0] as
+    | { owner_account_id: string; owner_account_kind: "USER" | "ORGANIZATION" }
+    | undefined;
+  if (!row) throw new RepositoryError(404, "找不到 Repository。");
+  return { id: row.owner_account_id, kind: row.owner_account_kind };
+}
+
 export async function repositoryArchived(sql: Sql, repositoryId: string): Promise<boolean> {
   const row = (await sql.query("SELECT is_archived FROM repositories WHERE id=$1", [repositoryId]))
     .rows[0] as { is_archived: boolean } | undefined;

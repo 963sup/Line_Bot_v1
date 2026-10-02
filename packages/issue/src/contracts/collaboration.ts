@@ -1,3 +1,5 @@
+import type { IssueTypeDefinition } from "./issue-types.js";
+
 export type IssueLockReason = "OFF_TOPIC" | "RESOLVED" | "SPAM" | "TOO_HEATED";
 
 type CommandBase = Readonly<{
@@ -20,6 +22,7 @@ export type IssueCollaborationCommand =
       Readonly<{ action: "add-labels" | "remove-labels"; labelIds: readonly string[] }>)
   | (CommandBase & Readonly<{ action: "clear-labels" }>)
   | (CommandBase & Readonly<{ action: "set-milestone"; milestoneId: string | null }>)
+  | (CommandBase & Readonly<{ action: "set-issue-type"; issueTypeId: string | null }>)
   | (CommandBase &
       Readonly<{
         action:
@@ -58,6 +61,7 @@ export type IssueCollaborationView = Readonly<{
   locked: boolean;
   lockReason: IssueLockReason | null;
   milestoneId: string | null;
+  issueType: IssueTypeDefinition | null;
   labelIds: readonly string[];
   comments: readonly IssueCommentView[];
   parentIssueId: string | null;

@@ -657,3 +657,6 @@ export {
   qualifyOrganizationTeamScope,
   readOrganizationQualification,
 } from "./postgres/qualification.js";
+
+export { hasOrganizationOwnerAssignment };
+export { readOrganizationQualification } from "./postgres/qualification.js";

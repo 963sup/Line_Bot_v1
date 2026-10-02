@@ -464,6 +464,9 @@ importers:
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
+      '@line_bot_v1/organization':
+        specifier: workspace:*
+        version: link:../organization
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform

@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { repositoryOwnerIdentity } from "@line_bot_v1/repository/postgres/access";
 import {
   repositoryLabelIdsExist,
   repositoryMilestoneExists,
@@ -12,6 +14,7 @@ import type {
   IssueCollaborationView,
   IssueLockReason,
 } from "../../contracts/collaboration.js";
+import type { IssueTypeDefinition } from "../../contracts/issue-types.js";
 import { IssueError } from "../../domain.js";
 import {
   advance,
@@ -32,6 +35,53 @@ import {
   targetIssue,
   visibleRelatedIds,
 } from "./collaboration-helpers.js";
+
+type AssignedIssueTypeRow = {
+  id: string;
+  organization_account_id: string;
+  name: string;
+  description: string | null;
+  color: IssueTypeDefinition["color"];
+  is_enabled: boolean;
+  deleted_at: number | string | null;
+  version: number | string;
+  created_at: number | string;
+  updated_at: number | string;
+};
+
+function issueTypeDefinition(row: AssignedIssueTypeRow): IssueTypeDefinition {
+  return {
+    id: row.id,
+    organizationAccountId: row.organization_account_id,
+    name: row.name,
+    description: row.description,
+    color: row.color,
+    isEnabled: row.is_enabled,
+    deletedAt: row.deleted_at === null ? null : Number(row.deleted_at),
+    version: Number(row.version),
+    createdAt: Number(row.created_at),
+    updatedAt: Number(row.updated_at),
+  };
+}
+
+async function assignedIssueType(sql: Sql, issueId: string): Promise<IssueTypeDefinition | null> {
+  const row = (
+    await sql.query(
+      `SELECT
+         t.id,t.organization_account_id,t.name,t.description,t.color,t.is_enabled,
+         t.deleted_at,t.version,t.created_at,t.updated_at
+       FROM issue_type_assignments a
+       JOIN issue_types t ON t.id=a.issue_type_id
+       WHERE a.issue_id=$1`,
+      [issueId],
+    )
+  ).rows[0] as AssignedIssueTypeRow | undefined;
+  if (!row) return null;
+  if (row.deleted_at !== null) {
+    throw new IssueError(503, "IssueType assignment 指向已刪除的 type。");
+  }
+  return issueTypeDefinition(row);
+}
 
 export class PostgresIssueCollaborationStore implements IssueCollaborationStore {
   constructor(private readonly db: Database = businessDatabase()) {}
@@ -62,6 +112,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       if (!issue) throw new IssueError(404, "找不到 Issue。");
 
       const [
+        issueType,
         commentRows,
         labelRows,
         parentRows,
@@ -70,6 +121,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         blockingIssueIds,
         relatedIssueIds,
       ] = await Promise.all([
+        assignedIssueType(sql, issueId),
         sql.query(
           `SELECT id,issue_id,author,body,deleted_at,version,created_at,updated_at
            FROM issue_comments WHERE issue_id=$1 ORDER BY created_at,id`,
@@ -155,6 +207,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         locked: issue.is_locked,
         lockReason: issue.lock_reason,
         milestoneId: issue.milestone_id,
+        issueType,
         labelIds: (labelRows.rows as Array<{ label_id: string }>).map((row) => row.label_id),
         comments: (commentRows.rows as CommentRow[]).map(comment),
         parentIssueId: (parentRows.rows[0] as { id: string } | undefined)?.id ?? null,
@@ -436,6 +489,69 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           ).rows[0];
           if (!removed) throw new IssueError(409, "此 relatesTo 關係不存在。");
           data = { removedRelatedIssueId: target.id };
+        }
+      } else if (command.action === "set-issue-type") {
+        const before = await assignedIssueType(sql, issue.id);
+        if (command.issueTypeId === null) {
+          if (!before) throw new IssueError(409, "Issue 尚未指定 IssueType。");
+          await sql.query("DELETE FROM issue_type_assignments WHERE issue_id=$1", [issue.id]);
+          resourceId = before.id;
+          data = {
+            timelineEvent: "issue_type_removed",
+            previousIssueType: before,
+            issueType: null,
+          };
+        } else {
+          if (before?.id === command.issueTypeId) {
+            throw new IssueError(409, "IssueType 沒有變更。");
+          }
+          const owner = await repositoryOwnerIdentity(sql, who, issue.repository_id);
+          if (owner.kind !== "ORGANIZATION") {
+            throw new IssueError(409, "個人 Repository 不能指定 Organization IssueType。");
+          }
+          const organization = await readOrganizationQualification(sql, owner.id, "share");
+          if (!organization || organization.status !== "active") {
+            throw new IssueError(409, "Repository Organization 目前不可使用 IssueType。");
+          }
+          const row = (
+            await sql.query(
+              `SELECT
+                 id,organization_account_id,name,description,color,is_enabled,
+                 deleted_at,version,created_at,updated_at
+               FROM issue_types
+               WHERE id=$1 AND organization_account_id=$2`,
+              [command.issueTypeId, owner.id],
+            )
+          ).rows[0] as AssignedIssueTypeRow | undefined;
+          if (!row || row.deleted_at !== null) {
+            throw new IssueError(409, "IssueType 不屬於此 Repository Organization scope。");
+          }
+          if (!row.is_enabled) {
+            throw new IssueError(409, "disabled IssueType 不能建立新的 Issue 關係。");
+          }
+          try {
+            await sql.query(
+              `INSERT INTO issue_type_assignments(issue_id,issue_type_id,assigned_by,assigned_at)
+               VALUES($1,$2,$3,$4)
+               ON CONFLICT(issue_id) DO UPDATE
+               SET issue_type_id=EXCLUDED.issue_type_id,
+                   assigned_by=EXCLUDED.assigned_by,
+                   assigned_at=EXCLUDED.assigned_at`,
+              [issue.id, row.id, who.userId, now],
+            );
+          } catch (error) {
+            if ((error as { code?: string }).code === "23514") {
+              throw new IssueError(409, "IssueType 與 Repository Organization scope 不相容。");
+            }
+            throw error;
+          }
+          const after = issueTypeDefinition(row);
+          resourceId = after.id;
+          data = {
+            timelineEvent: before ? "issue_type_changed" : "issue_type_added",
+            previousIssueType: before,
+            issueType: after,
+          };
         }
       } else if (command.action === "lock") {
         if (issue.is_locked) throw new IssueError(409, "Conversation 已鎖定。");

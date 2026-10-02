@@ -12,6 +12,7 @@ Issue owns:
 - the separate local `pending / active / review / completed` work workflow;
 - replay-safe Issue commands, aggregate version and immutable structured Issue event history;
 - Issue → Repository Label association facts.
+- Organization-scoped `IssueType` definitions and the optional Issue → IssueType association fact.
 
 Repository remains authoritative for Repository identity, current visibility/access, participant scope, Label/Milestone definitions and allocation of the next repository-scoped Issue number. Project may reference Issue but cannot rewrite Issue state.
 
@@ -30,6 +31,11 @@ Repository remains authoritative for Repository identity, current visibility/acc
 - Event `data` stores the command-time structured delta for state, assignment, workflow and content changes. Historical events are not reconstructed from the current snapshot.
 - Archived Repository content remains readable under current visibility, but all new Issue mutations fail closed.
 - Project references do not transfer Issue authority.
+- IssueType definition scope is a stable Organization identity. Create/update/delete requires current active `OrganizationOwner`; Repository or Issue roles do not grant type-definition authority.
+- Assign/clear IssueType is an Issue classification mutation using current Repository triage authority. The target type must belong to the Organization that owns the Issue Repository; User-owned Repositories have no Organization IssueType scope.
+- IssueType is independent from permission, `OPEN/CLOSED`, `stateReason` and local workflow. Assigning a type changes only the Issue aggregate version and type relation/history.
+- `isEnabled=false` blocks only new assignment; existing assignments stay readable. Delete is a soft tombstone, is forbidden while any current Issue references the type, and deleted definitions cannot be revived.
+- Type-definition history is immutable in `issue_type_events`; Issue add/change/remove type history is recorded in `issue_events` as `issue_type_added | issue_type_changed | issue_type_removed` timeline evidence.
 
 ## Repository operation matrix
 
@@ -41,7 +47,7 @@ The permission matrix follows the exact FPT `schema-repos.json#RepositoryPermiss
 | open | read, triage, triage_plus, write, maintain, admin | Implemented; creation policy is collaborators-only |
 | comment | read, triage, triage_plus, write, maintain, admin | Deferred to IssueComment adoption |
 | local workflow | read, triage, triage_plus, write, maintain, admin | Implemented; publisher/current-assignee responsibility is checked separately |
-| triage | triage, triage_plus, write, maintain, admin | Classification only; no generic triage command |
+| triage | triage, triage_plus, write, maintain, admin | Implemented for IssueType assign/clear; Label/Milestone classification remains separate |
 | edit | triage, triage_plus, write, maintain, admin | Implemented for title/body/local criteria |
 | close | triage, triage_plus, write, maintain, admin | Implemented for close/reopen + stateReason |
 | assign | triage, triage_plus, write, maintain, admin | Implemented for add/remove assignees |
@@ -65,6 +71,18 @@ Runtime mapping does not invent facts that did not exist before parity:
 On the first business mutation of a legacy row, the same transaction locks the Issue, materializes the exact legacy assignee into `issue_assignees`, populates canonical state/body/workflow fields, clears the compatibility columns, applies the requested business mutation, increments the aggregate version exactly once and appends exactly one event for that business mutation. The technical representation change is not presented as a historical business event.
 
 Physical removal of the legacy columns is a later contract stage and is forbidden until the pending Issue core cutover has provider recovery evidence plus a readback proving zero legacy rows. See [Issue core parity cutover](../change/migrations/issue-core-parity.md).
+
+## IssueType parity
+
+FPT `schema-issues.json#IssueType` is implemented inside the Issue owner; FPT category does not create a package boundary.
+
+- `IssueTypeColor` accepts exactly `BLUE | GRAY | GREEN | ORANGE | PINK | PURPLE | RED | YELLOW`.
+- Type identity is server-generated and stable. Name (1–120) and optional description (≤2000) are Line_Bot_v1 storage/input limits, not GitHub FPT semantics.
+- Definitions are Organization-scoped and listable/manageable only by a current active `OrganizationOwner`. Assignment is separate and follows Repository triage authority.
+- Existing disabled assignments remain explainable/readable. A disabled or tombstoned type cannot be newly assigned.
+- Tombstones retain definition/event history; deletion requires zero current assignments. No historical type relation is reconstructed from the current row.
+- `IssueType.pinnedFields` belongs to the separate IssueField capability and is not fabricated by this parity slice.
+- Activation is atomic: `627_issue_types.sql`, cross-owner scope enforcement, semantic/data topology, package contracts, HTTP delivery and integration tests must coexist at the same revision. There is no separate adoption ledger or partial runtime flag.
 
 ## Mapping
 

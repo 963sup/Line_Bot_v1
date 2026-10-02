@@ -142,6 +142,23 @@ function parseCommand(raw: unknown): IssueCollaborationCommand {
     };
   }
 
+  if (action === "set-issue-type") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "repositoryId",
+      "issueId",
+      "expectedVersion",
+      "issueTypeId",
+    ]);
+    return {
+      ...base,
+      action,
+      issueTypeId:
+        value.issueTypeId === null ? null : identifier(value.issueTypeId, "IssueType 識別碼"),
+    };
+  }
+
   if (
     action === "add-sub-issue" ||
     action === "remove-sub-issue" ||
