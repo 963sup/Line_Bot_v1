@@ -8,15 +8,12 @@ import { ProjectError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
-    await sql.query(
-      'insert into users(id,status,status_version,"createdAt") values($1,$2,1,$3)',
-      [id, "active", 1],
-    );
-    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+    await sql.query('insert into users(id,status,status_version,"createdAt") values($1,$2,1,$3)', [
       id,
-      id,
+      "active",
       1,
     ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
   });
 }
 
