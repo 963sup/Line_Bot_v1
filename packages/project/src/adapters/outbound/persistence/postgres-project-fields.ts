@@ -8,10 +8,7 @@ import type {
   ProjectItemFieldValue,
   ProjectManagementCommand,
 } from "../../../contracts/management.js";
-import type {
-  ProjectFieldDataType,
-  ProjectOptionColor,
-} from "../../../domain.js";
+import type { ProjectFieldDataType, ProjectOptionColor } from "../../../domain.js";
 import { ProjectError } from "../../../domain.js";
 
 type FieldRow = {
@@ -140,10 +137,7 @@ async function iterationRows(sql: Sql, fieldIds: readonly string[]): Promise<Ite
 export async function readProjectFields(sql: Sql, projectId: string): Promise<ProjectField[]> {
   const fields = await fieldRows(sql, projectId);
   const ids = fields.map((row) => row.id);
-  const [options, iterations] = await Promise.all([
-    optionRows(sql, ids),
-    iterationRows(sql, ids),
-  ]);
+  const [options, iterations] = await Promise.all([optionRows(sql, ids), iterationRows(sql, ids)]);
   const optionsByField = new Map<string, OptionRow[]>();
   const iterationsByField = new Map<string, IterationRow[]>();
   for (const row of options) {
@@ -280,15 +274,7 @@ async function insertOptions(
       `INSERT INTO project_field_options(
          id,field_id,option_kind,name,color,description,position,version
        ) VALUES($1,$2,$3,$4,$5,$6,$7,1)`,
-      [
-        item.id ?? randomUUID(),
-        fieldId,
-        kind,
-        item.name,
-        item.color,
-        item.description,
-        index,
-      ],
+      [item.id ?? randomUUID(), fieldId, kind, item.name, item.color, item.description, index],
     );
   }
 }
@@ -357,15 +343,7 @@ async function replaceOptions(
         `INSERT INTO project_field_options(
            id,field_id,option_kind,name,color,description,position,version
          ) VALUES($1,$2,$3,$4,$5,$6,$7,1)`,
-        [
-          id,
-          field.id,
-          field.data_type,
-          input.name,
-          input.color,
-          input.description,
-          index,
-        ],
+        [id, field.id, field.data_type, input.name, input.color, input.description, index],
       );
     }
   }
@@ -389,10 +367,10 @@ async function replaceOptions(
     if (inUse) {
       throw new ProjectError(409, "Option 仍被 Project item value 使用，不能移除。");
     }
-    await sql.query(
-      "DELETE FROM project_field_options WHERE field_id=$1 AND id=ANY($2::text[])",
-      [field.id, removedIds],
-    );
+    await sql.query("DELETE FROM project_field_options WHERE field_id=$1 AND id=ANY($2::text[])", [
+      field.id,
+      removedIds,
+    ]);
   }
 }
 
@@ -468,10 +446,10 @@ async function replaceIterations(
 
 async function requireItem(sql: Sql, projectId: string, itemId: string) {
   const row = (
-    await sql.query(
-      "SELECT 1 FROM project_items WHERE project_id=$1 AND id=$2",
-      [projectId, itemId],
-    )
+    await sql.query("SELECT 1 FROM project_items WHERE project_id=$1 AND id=$2", [
+      projectId,
+      itemId,
+    ])
   ).rows[0];
   if (!row) throw new ProjectError(404, "找不到 Project item。");
 }
@@ -495,10 +473,10 @@ async function requireOption(
 
 async function requireIteration(sql: Sql, fieldId: string, iterationId: string) {
   const row = (
-    await sql.query(
-      "SELECT 1 FROM project_field_iterations WHERE field_id=$1 AND id=$2",
-      [fieldId, iterationId],
-    )
+    await sql.query("SELECT 1 FROM project_field_iterations WHERE field_id=$1 AND id=$2", [
+      fieldId,
+      iterationId,
+    ])
   ).rows[0];
   if (!row) throw new ProjectError(409, "Project iteration 不合法。");
 }
@@ -645,8 +623,8 @@ export async function executeProjectFieldCommand(
     }
     const nameChanged = name !== before.name;
     const configChanged =
-      command.options !== undefined && command.options.length > 0 ||
-      command.iterations !== undefined && command.iterations.length > 0;
+      (command.options !== undefined && command.options.length > 0) ||
+      (command.iterations !== undefined && command.iterations.length > 0);
     if (!nameChanged && !configChanged) {
       throw new ProjectError(409, "Project field 沒有變更。");
     }
@@ -685,10 +663,11 @@ export async function executeProjectFieldCommand(
     }
     await sql.query("DELETE FROM project_field_options WHERE field_id=$1", [before.id]);
     await sql.query("DELETE FROM project_field_iterations WHERE field_id=$1", [before.id]);
-    await sql.query(
-      "DELETE FROM project_fields WHERE project_id=$1 AND id=$2 AND version=$3",
-      [projectId, before.id, command.fieldVersion],
-    );
+    await sql.query("DELETE FROM project_fields WHERE project_id=$1 AND id=$2 AND version=$3", [
+      projectId,
+      before.id,
+      command.fieldVersion,
+    ]);
     return { resourceId: before.id, data: { fieldId: before.id, deleted: true } };
   }
 
