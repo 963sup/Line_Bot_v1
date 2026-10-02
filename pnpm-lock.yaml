@@ -18,6 +18,9 @@ catalogs:
     '@line/bot-sdk':
       specifier: 11.2.0
       version: 11.2.0
+    '@line/liff':
+      specifier: 2.31.0
+      version: 2.31.0
     '@line/liff-mock':
       specifier: 1.0.4
       version: 1.0.4
@@ -152,9 +155,9 @@ importers:
       '@line_bot_v1/issue':
         specifier: workspace:*
         version: link:../../packages/issue
-      '@line_bot_v1/line-channel':
+      '@line_bot_v1/line':
         specifier: workspace:*
-        version: link:../../packages/line-channel
+        version: link:../../packages/line
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../../packages/namespace
@@ -500,11 +503,14 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/line-channel:
+  packages/line:
     dependencies:
       '@line/bot-sdk':
         specifier: 'catalog:'
         version: 11.2.0
+      '@line/liff':
+        specifier: 'catalog:'
+        version: 2.31.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

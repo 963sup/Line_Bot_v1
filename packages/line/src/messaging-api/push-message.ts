@@ -1,3 +1,5 @@
+import "../server.js";
+
 type NotificationOutcome = "accepted" | "retry" | "failed";
 
 /** A single attempt. The caller owns persistent retry keys and scheduling. */

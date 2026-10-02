@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET, POST } from "../src/app/api/expenses/[id]/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import {
   activateMember,
   closeFixture,

@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
-import { createLineClient, parseLineWebhook, verifyLineSignature } from "../src/messaging.js";
+import {
+  createLineClient,
+  parseLineWebhook,
+  verifyLineSignature,
+} from "../src/messaging-api/index.js";
 
 test("LINE signature covers the original bytes, including whitespace and Unicode", () => {
   const secret = "offline-test-secret";

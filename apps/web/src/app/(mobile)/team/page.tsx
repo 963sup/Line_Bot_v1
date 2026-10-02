@@ -1,5 +1,5 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import TeamPanel from "../../../modules/team/panel";
-import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { PageHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
 export const dynamic = "force-dynamic";

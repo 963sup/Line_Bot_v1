@@ -4,7 +4,7 @@ import {
   LineIdentityError,
   LineIdentityUnavailableError,
   verifyLiffUser,
-} from "../src/adapters/identity/verify-user.js";
+} from "../src/identity/verify-user.js";
 
 const subject = `U${"1".repeat(32)}`;
 const valid = { client_id: "channel", expires_in: 60, scope: "profile openid" };

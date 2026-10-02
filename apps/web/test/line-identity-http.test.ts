@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET as expense } from "../src/app/api/expenses/[id]/route";
 import { GET as membership } from "../src/app/api/membership/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 import { closeFixture, expenseStore, mockSupabase } from "./member-fixture";
 
 test("technology identity failures retain the membership and expense HTTP 401 contracts", async () => {

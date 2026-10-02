@@ -36,6 +36,14 @@ const context = await browser.newContext({
 const tokenStorageKey = "repository-browser-token";
 await context.addInitScript((key) => {
   if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, "token-a");
+  window.liff = {
+    init: async () => {},
+    isLoggedIn: () => true,
+    getAccessToken: () => window.localStorage.getItem(key) || "token-a",
+    isInClient: () => false,
+    getProfile: async () => ({ displayName: "Repository Tester" }),
+    login: () => {},
+  };
 }, tokenStorageKey);
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
 
@@ -397,12 +405,6 @@ page.on("pageerror", (error) => errors.push(error.message));
 await context.route("**/*", async (route) => {
   const request = route.request();
   const url = new URL(request.url());
-  if (url.hostname === "static.line-scdn.net") {
-    return route.fulfill({
-      contentType: "text/javascript",
-      body: `window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=>window.localStorage.getItem(${JSON.stringify(tokenStorageKey)})||'token-a',isInClient:()=>false,getProfile:async()=>({displayName:'Repository Tester'}),login:()=>{}};`,
-    });
-  }
   if (url.origin !== base) return route.abort();
   if (!url.pathname.startsWith("/api/")) return route.continue();
 

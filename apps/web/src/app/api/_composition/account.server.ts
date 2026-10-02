@@ -14,7 +14,7 @@ import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-c
 import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 
 const state = globalThis as typeof globalThis & {

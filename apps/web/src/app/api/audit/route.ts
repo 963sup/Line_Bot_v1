@@ -1,4 +1,4 @@
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { captureHandledServerError } from "../../../shared/observability/server-error";
 import { jsonResponse } from "../../../shared/server/http";
 import { RequestIdentityError } from "../../../shared/server/request-identity-error";

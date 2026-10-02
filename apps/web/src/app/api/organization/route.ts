@@ -1,4 +1,4 @@
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { organizationRequest } from "../../../modules/organization/http.server";
 import { normalizeOrganizationWireCommand } from "../../../modules/organization/wire-command";
 import { organizationService } from "../_composition/organization.server";

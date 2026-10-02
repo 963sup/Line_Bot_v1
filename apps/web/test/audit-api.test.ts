@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { createAuditQuery } from "@line_bot_v1/audit/application/use-cases/read-governance-audit";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { auditQuery } from "../src/app/api/_composition/audit.server";
 import { GET } from "../src/app/api/audit/route";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 
 const subject = `U${"8".repeat(32)}`;
 

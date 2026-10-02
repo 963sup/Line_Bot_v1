@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { pushLineText } from "../src/adapters/messaging/push-message.js";
+import { pushLineText } from "../src/messaging-api/push-message.js";
 
 const subject = `U${"1".repeat(32)}`,
   key = "11111111-1111-4111-8111-111111111111";

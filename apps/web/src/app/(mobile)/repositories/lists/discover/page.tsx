@@ -1,6 +1,6 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import AwesomeLists from "../../../../../modules/repository/awesome-lists";
 import { repositoryStarListsPath } from "../../../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "../../../../../shared/server/line-mini-app";
 import { PageHeading, PrimaryLink, SectionHeading } from "../../../../../shared/ui/page-layout";
 import AppShell from "../../../_shell/app-shell";
 

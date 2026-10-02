@@ -2,7 +2,7 @@
 
 ## Environment identity
 
-MINI App 的公開永久入口是產品／LINE Console identity，不是 secret。Current source 只由 `apps/web/src/shared/server/line-mini-app.ts` 擁有 Developing、Review、Published 三個 `https://miniapp.line.me/...` permanent URL；本文件不複製實際值作第二份 source of truth。
+MINI App 的公開永久入口是產品／LINE Console identity，不是 secret。Current source 只由 `packages/line/src/mini-app/registration.ts` 擁有 Developing、Review、Published 三個 `https://miniapp.line.me/...` permanent URL；本文件不複製實際值作第二份 source of truth。
 
 同一 stage 的三個值只由該 URL 派生：
 
@@ -22,8 +22,8 @@ Web 端透過 LINE LIFF SDK 初始化 MINI App runtime。初始化完成前，�
 
 目前共用 runtime 會：
 
-1. 載入 LIFF SDK。
-2. 初始化 LIFF client；開發環境可明確啟用 LIFF mock。
+1. 由 `@line_bot_v1/line/liff` 直接依賴並載入 `@line/liff`。
+2. `apps/web/instrumentation-client.ts` 對 canonical MINI App continuation 在 HTML 載入後、React hydration 前啟動共享的 `liff.init()`；其他 direct/external route 在第一個 LIFF consumer 出現時 lazy start。Feature component 不擁有 SDK loading strategy。開發環境若明確啟用 LIFF mock，mock plugin 會在該次 init 前安裝。
 3. 初始化完成後才交回各功能繼續核驗與載入。
 4. SDK 載入或初始化失敗時顯示可重試錯誤，不把失敗當成匿名成功或空資料。
 

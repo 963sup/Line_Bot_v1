@@ -89,9 +89,22 @@ async function fixture(options = {}) {
   });
   if (output) await context.tracing.start({ screenshots: true, snapshots: true });
   await context.addInitScript(
-    ({ gps, storageBlocked }) => {
+    ({ gps, storageBlocked, external }) => {
       window.closeCalls = 0;
       window.gpsCalls = 0;
+      window.liff = {
+        init: async () => {},
+        isLoggedIn: () => true,
+        getAccessToken: () => "synthetic-line",
+        isInClient: () => !external,
+        getProfile: () => {
+          throw new Error("Profile must not be loaded");
+        },
+        closeWindow: () => {
+          window.closeCalls++;
+        },
+        login: () => {},
+      };
       Object.defineProperty(navigator, "geolocation", {
         value: {
           getCurrentPosition(success, failure) {
@@ -111,18 +124,13 @@ async function fixture(options = {}) {
           throw new Error("storage unavailable");
         };
     },
-    { gps: options.gps, storageBlocked: options.storageBlocked },
+    { gps: options.gps, storageBlocked: options.storageBlocked, external: options.external },
   );
   page = await context.newPage();
   page.on("pageerror", (error) => state.errors.push(error.message));
   await context.route("**/*", async (route) => {
     const request = route.request(),
       url = new URL(request.url());
-    if (url.hostname === "static.line-scdn.net")
-      return route.fulfill({
-        contentType: "text/javascript",
-        body: `window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic-line',isInClient:()=>${!options.external},getProfile:()=>{throw Error('Profile must not be loaded')},closeWindow:()=>{window.closeCalls++},login:()=>{}};`,
-      });
     if (url.origin !== base) return route.abort();
     if (url.pathname === "/api/attendance") {
       state.reads.push(url.search);

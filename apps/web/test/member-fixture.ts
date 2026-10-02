@@ -6,7 +6,7 @@ import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/compositi
 import { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
 import { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
 import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";

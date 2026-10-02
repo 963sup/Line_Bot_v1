@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
-import { createRichMenuClient } from "../src/adapters/messaging/rich-menu-client.js";
-import { richMenuImage } from "../src/adapters/messaging/rich-menu-image.js";
+import { createRichMenuClient } from "../src/rich-menu/client.js";
+import { richMenuImage } from "../src/rich-menu/image.js";
 
 test("actual upload dimensions and malformed image rejection", () => {
   const directory = new URL("../../../assets/line/rich-menu/", import.meta.url);

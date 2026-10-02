@@ -13,16 +13,15 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
 const { createLineClient } = await import(
-  pathToFileURL(require.resolve("@line_bot_v1/line-channel/messaging")).href
+  pathToFileURL(require.resolve("@line_bot_v1/line/messaging-api")).href
 );
 const { tsImport } = require("tsx/esm/api");
 const { renderExpenseNotice } = await tsImport(
   "../../apps/web/src/modules/expense/notice.server.ts",
   import.meta.url,
 );
-const { lineMiniApp } = await tsImport(
-  "../../apps/web/src/shared/server/line-mini-app.ts",
-  import.meta.url,
+const { lineMiniApp } = await import(
+  pathToFileURL(require.resolve("@line_bot_v1/line/mini-app")).href
 );
 
 import { loadRootEnv } from "../runtime/load-env.mjs";

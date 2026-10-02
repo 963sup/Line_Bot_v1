@@ -1,6 +1,6 @@
-# LINE Channel package constraints
+# LINE integration package constraints
 
-Local constraints for `@line_bot_v1/line-channel`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
+Local constraints for `@line_bot_v1/line`. Parent rules: [`packages/AGENTS.md`](../AGENTS.md).
 
 ## Local Invariants
 

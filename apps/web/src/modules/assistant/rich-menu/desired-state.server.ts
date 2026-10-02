@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { richMenuImage } from "@line_bot_v1/line-channel/messaging";
-import { lineMiniApp } from "../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import { richMenuImage } from "@line_bot_v1/line/rich-menu";
 import { lineBotV1RichMenu, type MenuPage, menuAsset } from "./definition";
 
 export type DesiredRichMenu = {

@@ -1,8 +1,8 @@
 import { normalizeDiscussionId } from "@line_bot_v1/discussion/domain";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";
-import { lineMiniApp } from "../../../../../../shared/server/line-mini-app";
 import AppShell from "../../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";

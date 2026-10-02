@@ -2,8 +2,9 @@ import { createClockAttendance } from "@line_bot_v1/attendance/application/clock
 import { createAttendanceMaintenance } from "@line_bot_v1/attendance/application/maintenance";
 import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { attendanceNotificationText } from "@line_bot_v1/attendance/contracts/dto/attendance-presentation";
-import { createRichMenuClient, pushLineText } from "@line_bot_v1/line-channel/messaging";
-import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line-channel/provider";
+import { pushLineText } from "@line_bot_v1/line/messaging-api";
+import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
+import { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
 import { syncUserRichMenu } from "../../../modules/assistant/rich-menu/user-menu.server";
 import { activeLineUser } from "./account.server";
 

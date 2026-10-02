@@ -3242,7 +3242,7 @@
     },
     {
       "semanticOwner": "line-integration",
-      "module": "@line_bot_v1/line-channel"
+      "module": "@line_bot_v1/line"
     },
     {
       "semanticOwner": "google-workspace",

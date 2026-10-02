@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { repositoryDiscovery } from "../src/app/api/_composition/repository-discovery.server";
 import { repositoryStarLists } from "../src/app/api/_composition/repository-star-lists.server";
 import { GET as listGet, POST as listPost } from "../src/app/api/repositories/lists/[listId]/route";
@@ -13,7 +14,6 @@ import {
   writePendingRepositoryStarListCommand,
   writePendingRepositoryStarListCreate,
 } from "../src/modules/repository/star-list-pending-storage";
-import { lineMiniApp } from "../src/shared/server/line-mini-app";
 
 test("Repository Star List HTTP uses verified LINE identity and owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;

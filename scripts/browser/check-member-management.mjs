@@ -26,6 +26,15 @@ const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   serviceWorkers: "block",
 });
+await context.addInitScript(() => {
+  window.liff = {
+    init: async () => {},
+    isLoggedIn: () => true,
+    getAccessToken: () => "synthetic",
+    isInClient: () => false,
+    login: () => {},
+  };
+});
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
 const page = await context.newPage(),
   errors = [],
@@ -48,11 +57,6 @@ const user = {
 };
 await context.route("**/*", async (route) => {
   const url = new URL(route.request().url());
-  if (url.hostname === "static.line-scdn.net")
-    return route.fulfill({
-      contentType: "text/javascript",
-      body: "window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,login:()=>{}};",
-    });
   if (url.origin !== target.origin) return route.abort();
   if (url.pathname === "/api/membership/manage") {
     if (deny) return route.fulfill({ status: 403, json: { error: "無會員管理權限" } });

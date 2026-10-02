@@ -3,7 +3,7 @@ import {
   type LineWebhookEvent,
   parseLineWebhook,
   verifyLineSignature,
-} from "@line_bot_v1/line-channel/messaging";
+} from "@line_bot_v1/line/messaging-api";
 
 const response = (status: number) =>
   new Response(null, { status, headers: { "Cache-Control": "no-store" } });

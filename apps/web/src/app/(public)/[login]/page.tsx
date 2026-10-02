@@ -1,8 +1,8 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "../../../shared/server/line-mini-app";
 import { profiles, publicUserById } from "../../api/_composition/account.server";
 import { resolveAccountNamespace } from "../../api/_composition/namespace.server";
 import ProfileViewerShell from "../_components/profile-viewer-shell";

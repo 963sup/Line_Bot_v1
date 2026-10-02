@@ -24,8 +24,8 @@
  * ============================================================================
  */
 
-import "../../server.js";
-import { requireValue } from "../../config.js";
+import "../server.js";
+import { requireValue } from "../config.js";
 
 /**
  * 記憶體安全下載 LINE 訊息影像內容
