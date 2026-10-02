@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import RepositoryManagementSettings from "../../../../../modules/repository/repository-management-settings";
 import RepositorySettings from "../../../../../modules/repository/repository-settings";
 import { repositoryPath } from "../../../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "../../../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 import { PageHeading } from "../../../../../shared/ui/page-layout";
 import AppShell from "../../../../(mobile)/_shell/app-shell";
 

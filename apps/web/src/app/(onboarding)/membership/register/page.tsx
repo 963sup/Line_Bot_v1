@@ -1,5 +1,5 @@
 import MembershipSetup from "../../../../modules/account/setup-panel";
-import { lineMiniApp } from "../../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 
 export const dynamic = "force-dynamic";
 

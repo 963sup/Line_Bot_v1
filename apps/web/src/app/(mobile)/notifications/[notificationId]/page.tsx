@@ -1,5 +1,5 @@
 import Inbox from "../../../../modules/notifications/inbox";
-import { lineMiniApp } from "../../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 import AppShell from "../../_shell/app-shell";
 
 export default async function Page({
