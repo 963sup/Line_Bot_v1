@@ -345,14 +345,13 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       const selected = await readProjectScope(sql, identity.userId, projectId);
       const items = await readProjectItems(sql, identity.userId, projectId);
       const visibleItemIds = items.map((item) => item.id);
-      const [collaborators, fields, fieldValues, views, statusUpdates] =
-        await Promise.all([
-          projectCollaborators(sql, projectId),
-          readProjectFields(sql, projectId),
-          readProjectFieldValues(sql, projectId, visibleItemIds),
-          readProjectViews(sql, projectId),
-          readProjectStatusUpdates(sql, projectId),
-        ]);
+      const [collaborators, fields, fieldValues, views, statusUpdates] = await Promise.all([
+        projectCollaborators(sql, projectId),
+        readProjectFields(sql, projectId),
+        readProjectFieldValues(sql, projectId, visibleItemIds),
+        readProjectViews(sql, projectId),
+        readProjectStatusUpdates(sql, projectId),
+      ]);
       return {
         project: projectRoot(selected.row),
         role: selected.role,
@@ -391,14 +390,13 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       const selected = await readProjectScope(sql, identity.userId, row.id);
       const items = await readProjectItems(sql, identity.userId, row.id);
       const visibleItemIds = items.map((item) => item.id);
-      const [collaborators, fields, fieldValues, views, statusUpdates] =
-        await Promise.all([
-          projectCollaborators(sql, row.id),
-          readProjectFields(sql, row.id),
-          readProjectFieldValues(sql, row.id, visibleItemIds),
-          readProjectViews(sql, row.id),
-          readProjectStatusUpdates(sql, row.id),
-        ]);
+      const [collaborators, fields, fieldValues, views, statusUpdates] = await Promise.all([
+        projectCollaborators(sql, row.id),
+        readProjectFields(sql, row.id),
+        readProjectFieldValues(sql, row.id, visibleItemIds),
+        readProjectViews(sql, row.id),
+        readProjectStatusUpdates(sql, row.id),
+      ]);
       return {
         project: projectRoot(selected.row),
         role: selected.role,
@@ -423,19 +421,9 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         `project-request:${identity.userId}:${command.requestId}`,
       ]);
 
-      const replay = await readProjectReceipt(
-        sql,
-        identity.userId,
-        command.requestId,
-        fingerprint,
-      );
+      const replay = await readProjectReceipt(sql, identity.userId, command.requestId, fingerprint);
       if (replay) {
-        await readProjectScope(
-          sql,
-          identity.userId,
-          replay.projectId,
-          true,
-        );
+        await readProjectScope(sql, identity.userId, replay.projectId, true);
         return replay;
       }
 
@@ -446,15 +434,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           ownerKind: row.owner_account_kind,
           number: Number(row.number),
         };
-        await appendProjectEvent(
-          sql,
-          row.id,
-          1,
-          identity.userId,
-          command.action,
-          data,
-          now,
-        );
+        await appendProjectEvent(sql, row.id, 1, identity.userId, command.action, data, now);
         const result: ProjectManagementReceipt = {
           requestId: command.requestId,
           action: command.action,
@@ -464,22 +444,12 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           at: now,
           data,
         };
-        await storeProjectReceipt(
-          sql,
-          identity.userId,
-          fingerprint,
-          result,
-          now,
-        );
+        await storeProjectReceipt(sql, identity.userId, fingerprint, result, now);
         return result;
       }
 
       if (command.action === "copy-project") {
-        const source = await lockProjectScope(
-          sql,
-          identity.userId,
-          command.sourceProjectId,
-        );
+        const source = await lockProjectScope(sql, identity.userId, command.sourceProjectId);
         requireProjectVersion(source.row, command.sourceExpectedVersion);
         const copied = await createProject(
           sql,
@@ -495,11 +465,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           now,
         );
 
-        const sourceItems = await readProjectItems(
-          sql,
-          identity.userId,
-          source.row.id,
-        );
+        const sourceItems = await readProjectItems(sql, identity.userId, source.row.id);
         for (const item of sourceItems) {
           if (item.kind === "ISSUE" && item.issue) {
             await executeProjectItemCommand(
@@ -547,15 +513,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
             (item) => item.kind === "ISSUE" || command.includeDraftIssues,
           ).length,
         };
-        await appendProjectEvent(
-          sql,
-          copied.id,
-          1,
-          identity.userId,
-          command.action,
-          data,
-          now,
-        );
+        await appendProjectEvent(sql, copied.id, 1, identity.userId, command.action, data, now);
         const result: ProjectManagementReceipt = {
           requestId: command.requestId,
           action: command.action,
@@ -575,11 +533,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         return result;
       }
 
-      const selected = await lockProjectScope(
-        sql,
-        identity.userId,
-        command.projectId,
-      );
+      const selected = await lockProjectScope(sql, identity.userId, command.projectId);
       requireProjectVersion(selected.row, command.expectedVersion);
 
       const adminActions = new Set<ProjectManagementCommand["action"]>([
@@ -590,10 +544,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         "delete-project",
         "update-collaborators",
       ]);
-      requireProjectRole(
-        selected.role,
-        adminActions.has(command.action) ? "ADMIN" : "WRITE",
-      );
+      requireProjectRole(selected.role, adminActions.has(command.action) ? "ADMIN" : "WRITE");
 
       if (
         selected.row.closed &&
