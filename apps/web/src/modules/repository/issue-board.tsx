@@ -4,7 +4,7 @@ import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/issue/application
 import {
   canIssueRepositoryOperation,
   type IssueAction,
-  type IssueStatus,
+  type IssueWorkflowStatus,
 } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -28,7 +28,7 @@ import {
 } from "./resource-navigation";
 import styles from "./resource-navigation.module.css";
 
-const statusLabel: Record<IssueStatus, string> = {
+const workflowStatusLabel: Record<IssueWorkflowStatus, string> = {
   pending: "待承接",
   active: "進行中",
   review: "待驗收",
@@ -210,6 +210,15 @@ export default function IssueBoard({
   const currentRepository = data?.repositories.find((item) => item.id === selectedRepository);
   const canOpenIssue = currentRepository
     ? canIssueRepositoryOperation(currentRepository.permissions, "open")
+    : false;
+  const canAssignIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "assign")
+    : false;
+  const canEditIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "edit")
+    : false;
+  const canCloseIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "close")
     : false;
   const headingActions = !detailMode ? (
     <PrimaryLink href="/explore">探索儲存庫</PrimaryLink>
@@ -418,7 +427,7 @@ export default function IssueBoard({
                         )}
                       >
                         <strong>{issue.title}</strong>
-                        <span className="status-badge">{statusLabel[issue.status]}</span>
+                        <span className="status-badge">{workflowStatusLabel[issue.workflowStatus]}</span>
                       </Link>
                     </li>
                   );
@@ -431,7 +440,7 @@ export default function IssueBoard({
       {data && current && detailMode && (
         <article className="detail-card">
           <h2>{current.title}</h2>
-          <p>{statusLabel[current.status]}</p>
+          <p>{workflowStatusLabel[current.workflowStatus]}</p>
           <p>{current.criteria}</p>
           <p>
             建立者：{current.publisher}；承接人：{current.assignee}
