@@ -451,10 +451,9 @@ export async function executeProjectItemCommand(
     } catch (error) {
       postgresConflict(error, "DraftIssue conversion 目標 Issue 關係不合法。");
     }
-    await sql.query(
-      "DELETE FROM project_draft_issue_assignees WHERE draft_issue_id=$1",
-      [draftRow.id],
-    );
+    await sql.query("DELETE FROM project_draft_issue_assignees WHERE draft_issue_id=$1", [
+      draftRow.id,
+    ]);
     await sql.query(
       `UPDATE project_draft_issues
        SET title='[deleted]',body='',deleted_at=$3,version=version+1,updated_at=$3
