@@ -58,6 +58,7 @@ type IssueEvent = {
   actor: string;
   action: string;
   note: string;
+  data: Readonly<Record<string, unknown>>;
   version: number;
   at: number;
 };
