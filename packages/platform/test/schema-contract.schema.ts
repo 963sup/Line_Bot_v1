@@ -241,8 +241,28 @@ test("Repository runtime privileges match only activated write capabilities", as
       relname: "discussions",
       can_select: true,
       can_insert: true,
-      can_update: true,
+      can_update: false,
       can_delete: false,
+    },
+  ]);
+
+  const discussionColumns = await pg.query(
+    `select
+      has_column_privilege('line_app','app_private.discussions','title','UPDATE') as can_update_title,
+      has_column_privilege('line_app','app_private.discussions','number','UPDATE') as can_update_number,
+      has_column_privilege('line_app','app_private.discussions','category_id','UPDATE') as can_update_category,
+      has_column_privilege('line_app','app_private.discussions','state','UPDATE') as can_update_state,
+      has_column_privilege('line_app','app_private.discussions','is_locked','UPDATE') as can_update_lock,
+      has_column_privilege('line_app','app_private.discussions','version','UPDATE') as can_update_version`,
+  );
+  assert.deepEqual(discussionColumns.rows, [
+    {
+      can_update_title: true,
+      can_update_number: true,
+      can_update_category: true,
+      can_update_state: true,
+      can_update_lock: true,
+      can_update_version: true,
     },
   ]);
 
