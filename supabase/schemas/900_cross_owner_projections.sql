@@ -404,7 +404,16 @@ select
 from app_private.issue_assignees a
 join app_private.issues i on i.id=a.issue_id
 where i.state='OPEN'
-  and i.workflow_status <> 'completed';
+  and i.workflow_status <> 'completed'
+union all
+select
+  i.assignee as user_id,
+  'unfinished-issue'::text as activity_kind,
+  i.id::text as item_id
+from app_private.issues i
+where i.assignee is not null
+  and i.state is null
+  and i.status <> 'completed';
 
 
 -- Identity/Access qualification read models. These expose only scope/membership/affiliation
