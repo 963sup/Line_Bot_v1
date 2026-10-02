@@ -1,4 +1,6 @@
-import { richMenuImage } from "./rich-menu-image.js";
+import "../server.js";
+import { requireValue } from "../config.js";
+import { richMenuImage } from "./image.js";
 
 export type RichMenuDefinition = {
   size: { width: number; height: number };
@@ -15,7 +17,7 @@ export type RichMenuDefinition = {
 };
 
 export function createRichMenuClient(token: string, fetcher: typeof fetch = fetch) {
-  if (!token) throw new Error("LINE channel access token required");
+  const accessToken = requireValue(token, "LINE_CHANNEL_ACCESS_TOKEN");
   function checkedId(id: string) {
     if (!/^richmenu-[a-f0-9]+$/.test(id)) throw new Error("Invalid rich menu ID");
     return id;
@@ -38,7 +40,7 @@ export function createRichMenuClient(token: string, fetcher: typeof fetch = fetc
     const response = await fetcher(`https://${image ? "api-data" : "api"}.line.me/v2/bot/${path}`, {
       method,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": imageDetails?.mimeType ?? "application/json",
       },
       ...(body ? { body: image ? new Uint8Array(body).buffer : JSON.stringify(body) } : {}),

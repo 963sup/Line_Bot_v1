@@ -1,3 +1,4 @@
+import "../server.js";
 export type LineWebhookEvent = Record<string, unknown>;
 
 const object = (value: unknown): value is LineWebhookEvent =>

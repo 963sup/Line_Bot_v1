@@ -7,6 +7,13 @@ Routing and module overview for `@line_bot_v1/line-channel`.
 - Machine boundaries: [`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
 - Persistence mapping: [`architecture/data-topology.json`](../../architecture/data-topology.json)
 
-## Scope
+## Public capabilities
 
-LINE Bot Webhook handling, signature verification, message dispatch, and LINE identity proofs.
+- `./liff` — browser LIFF SDK/session lifecycle.
+- `./messaging-api` — server Messaging API, webhook verification/parsing, content retrieval and push delivery.
+- `./mini-app` — public MINI App stage/permanent-link registration identity.
+- `./rich-menu` — server Rich Menu API and image validation.
+- `./identity` — server verification of LIFF identity proof.
+- `./provider` — stable provider namespace used for Account binding.
+
+The package is already the LINE integration adapter. Internal source is grouped by provider capability; there is no nested generic `adapters/` layer.

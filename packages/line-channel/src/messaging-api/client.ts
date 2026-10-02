@@ -16,9 +16,9 @@
  * ============================================================================
  */
 
-import "../../server.js";
+import "../server.js";
 import { LineBotClient } from "@line/bot-sdk";
-import { requireValue } from "../../config.js";
+import { requireValue } from "../config.js";
 
 /**
  * 建立 LINE 官方 Messaging API 客戶端

@@ -4,21 +4,29 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./mini-app/browser": {
-      "types": "./dist/mini-app/browser.d.ts",
-      "default": "./dist/mini-app/browser.js"
+    "./liff": {
+      "types": "./dist/liff/index.d.ts",
+      "default": "./dist/liff/index.js"
+    },
+    "./messaging-api": {
+      "types": "./dist/messaging-api/index.d.ts",
+      "default": "./dist/messaging-api/index.js"
+    },
+    "./mini-app": {
+      "types": "./dist/mini-app/index.d.ts",
+      "default": "./dist/mini-app/index.js"
+    },
+    "./rich-menu": {
+      "types": "./dist/rich-menu/index.d.ts",
+      "default": "./dist/rich-menu/index.js"
+    },
+    "./identity": {
+      "types": "./dist/identity/index.d.ts",
+      "default": "./dist/identity/index.js"
     },
     "./provider": {
       "types": "./dist/provider.d.ts",
       "default": "./dist/provider.js"
-    },
-    "./identity": {
-      "types": "./dist/identity.d.ts",
-      "default": "./dist/identity.js"
-    },
-    "./messaging": {
-      "types": "./dist/messaging.d.ts",
-      "default": "./dist/messaging.js"
     }
   },
   "files": [

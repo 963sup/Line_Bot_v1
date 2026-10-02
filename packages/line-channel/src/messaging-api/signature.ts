@@ -1,6 +1,6 @@
-import "../../server.js";
+import "../server.js";
 import { validateSignature } from "@line/bot-sdk";
-import { requireValue } from "../../config.js";
+import { requireValue } from "../config.js";
 
 // Verify the original bytes before JSON parsing. Kept separate from the public barrel
 // so the webhook adapter does not import the index that re-exports it.
