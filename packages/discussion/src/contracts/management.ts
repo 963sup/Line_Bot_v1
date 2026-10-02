@@ -176,8 +176,7 @@ export type DiscussionManagementCommand =
         action: "add-poll-vote" | "remove-poll-vote";
         optionId: string;
       }>)
-  | (ExistingDiscussionBase &
-      Readonly<{ action: "lock"; reason: DiscussionLockReason }>)
+  | (ExistingDiscussionBase & Readonly<{ action: "lock"; reason: DiscussionLockReason }>)
   | (ExistingDiscussionBase & Readonly<{ action: "unlock" }>);
 
 export type DiscussionManagementReceipt = Readonly<{
