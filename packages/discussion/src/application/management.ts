@@ -134,32 +134,39 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
       "emoji",
       "isAnswerable",
     ]);
-    const command: Extract<DiscussionManagementCommand, { action: "update-category" }> = {
-      ...base(value),
-      action,
-      categoryId: id(value.categoryId, "Category 識別碼"),
-      expectedVersion: version(value.expectedVersion),
-    };
-    if (value.name !== undefined) command.name = text(value.name, "Category 名稱", 120);
-    if (value.description !== undefined) {
-      command.description = text(value.description, "Category 描述", 500, true);
-    }
-    if (value.emoji !== undefined) command.emoji = text(value.emoji, "Category emoji", 32, true);
+    const name =
+      value.name === undefined ? undefined : text(value.name, "Category 名稱", 120);
+    const description =
+      value.description === undefined
+        ? undefined
+        : text(value.description, "Category 描述", 500, true);
+    const emoji =
+      value.emoji === undefined ? undefined : text(value.emoji, "Category emoji", 32, true);
+    let isAnswerable: boolean | undefined;
     if (value.isAnswerable !== undefined) {
       if (typeof value.isAnswerable !== "boolean") {
         throw new DiscussionError(400, "Category answerable 設定不正確。");
       }
-      command.isAnswerable = value.isAnswerable;
+      isAnswerable = value.isAnswerable;
     }
     if (
-      command.name === undefined &&
-      command.description === undefined &&
-      command.emoji === undefined &&
-      command.isAnswerable === undefined
+      name === undefined &&
+      description === undefined &&
+      emoji === undefined &&
+      isAnswerable === undefined
     ) {
       throw new DiscussionError(400, "Category 修改至少需要一個欄位。");
     }
-    return command;
+    return {
+      ...base(value),
+      action,
+      categoryId: id(value.categoryId, "Category 識別碼"),
+      expectedVersion: version(value.expectedVersion),
+      ...(name === undefined ? {} : { name }),
+      ...(description === undefined ? {} : { description }),
+      ...(emoji === undefined ? {} : { emoji }),
+      ...(isAnswerable === undefined ? {} : { isAnswerable }),
+    };
   }
 
   if (action === "delete-category") {
@@ -216,19 +223,24 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
       "body",
       "categoryId",
     ]);
-    const command: Extract<DiscussionManagementCommand, { action: "update-discussion" }> = {
-      ...current,
-      action,
-    };
-    if (value.title !== undefined) command.title = text(value.title, "Discussion title", 160);
-    if (value.body !== undefined) command.body = text(value.body, "Discussion body", 20_000);
-    if (value.categoryId !== undefined) {
-      command.categoryId = id(value.categoryId, "Category 識別碼");
-    }
-    if (command.title === undefined && command.body === undefined && command.categoryId === undefined) {
+    const title =
+      value.title === undefined ? undefined : text(value.title, "Discussion title", 160);
+    const body =
+      value.body === undefined ? undefined : text(value.body, "Discussion body", 20_000);
+    const categoryId =
+      value.categoryId === undefined
+        ? undefined
+        : id(value.categoryId, "Category 識別碼");
+    if (title === undefined && body === undefined && categoryId === undefined) {
       throw new DiscussionError(400, "Discussion 修改至少需要一個欄位。");
     }
-    return command;
+    return {
+      ...current,
+      action,
+      ...(title === undefined ? {} : { title }),
+      ...(body === undefined ? {} : { body }),
+      ...(categoryId === undefined ? {} : { categoryId }),
+    };
   }
 
   if (action === "close-discussion") {
@@ -273,38 +285,41 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
     };
   }
 
-  if (action === "edit-comment" || action === "delete-comment") {
-    exactKeys(
-      value,
-      action === "edit-comment"
-        ? [
-            "action",
-            "requestId",
-            "repositoryId",
-            "discussionId",
-            "expectedVersion",
-            "commentId",
-            "commentVersion",
-            "body",
-          ]
-        : [
-            "action",
-            "requestId",
-            "repositoryId",
-            "discussionId",
-            "expectedVersion",
-            "commentId",
-            "commentVersion",
-          ],
-    );
+  if (action === "edit-comment") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "repositoryId",
+      "discussionId",
+      "expectedVersion",
+      "commentId",
+      "commentVersion",
+      "body",
+    ]);
     return {
       ...current,
       action,
       commentId: id(value.commentId, "Comment 識別碼"),
       commentVersion: version(value.commentVersion),
-      ...(action === "edit-comment"
-        ? { body: text(value.body, "Discussion comment", 20_000) }
-        : {}),
+      body: text(value.body, "Discussion comment", 20_000),
+    };
+  }
+
+  if (action === "delete-comment") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "repositoryId",
+      "discussionId",
+      "expectedVersion",
+      "commentId",
+      "commentVersion",
+    ]);
+    return {
+      ...current,
+      action,
+      commentId: id(value.commentId, "Comment 識別碼"),
+      commentVersion: version(value.commentVersion),
     };
   }
 
