@@ -4,10 +4,7 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { readActiveProjectTeamIds } from "@line_bot_v1/team/postgres/project-access";
 import type { ProjectSummary } from "../../../contracts/dto/project-collection.js";
 import type { ProjectCollectionStore } from "../../../contracts/repositories/project-collection-store.js";
-import type {
-  ProjectAccessRole,
-  ProjectOwnerKind,
-} from "../../../domain.js";
+import type { ProjectAccessRole, ProjectOwnerKind } from "../../../domain.js";
 
 const roleRank: Readonly<Record<ProjectAccessRole, number>> = {
   READ: 1,
@@ -15,9 +12,7 @@ const roleRank: Readonly<Record<ProjectAccessRole, number>> = {
   ADMIN: 3,
 };
 
-function effectiveRole(
-  values: readonly ProjectAccessRole[],
-): ProjectAccessRole {
+function effectiveRole(values: readonly ProjectAccessRole[]): ProjectAccessRole {
   let best: ProjectAccessRole = "READ";
   for (const value of values) {
     if (roleRank[value] > roleRank[best]) best = value;
@@ -99,23 +94,17 @@ export class PostgresProjectCollectionStore implements ProjectCollectionStore {
         })),
       );
       const ownerLogins = new Map(
-        owners.map((owner) => [
-          `${owner.id}:\0:${owner.kind}`,
-          owner.login,
-        ] as const),
+        owners.map((owner) => [`${owner.id}:\0:${owner.kind}`, owner.login] as const),
       );
 
       return rows.flatMap((row) => {
-        const ownerLogin = ownerLogins.get(
-          `${row.owner_account_id}:\0:${row.owner_account_kind}`,
-        );
+        const ownerLogin = ownerLogins.get(`${row.owner_account_id}:\0:${row.owner_account_kind}`);
         if (!ownerLogin) return [];
 
         const roles: ProjectAccessRole[] = [];
         if (row.is_public) roles.push("READ");
         if (
-          (row.owner_account_kind === "USER" &&
-            row.owner_account_id === userId) ||
+          (row.owner_account_kind === "USER" && row.owner_account_id === userId) ||
           (row.owner_account_kind === "ORGANIZATION" &&
             organizationOwnerIds.includes(row.owner_account_id))
         ) {
