@@ -1,5 +1,5 @@
-export type DiscussionState = "OPEN" | "CLOSED";
-export type DiscussionStateReason = "DUPLICATE" | "OUTDATED" | "REOPENED" | "RESOLVED";
+type DiscussionState = "OPEN" | "CLOSED";
+type DiscussionStateReason = "DUPLICATE" | "OUTDATED" | "REOPENED" | "RESOLVED";
 export type DiscussionCloseReason = Exclude<DiscussionStateReason, "REOPENED">;
 export type DiscussionLockReason = "OFF_TOPIC" | "RESOLVED" | "SPAM" | "TOO_HEATED";
 
