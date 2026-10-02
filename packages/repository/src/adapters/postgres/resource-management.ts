@@ -2,15 +2,15 @@ import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
-  RepositoryResourceManagementCommand,
-  RepositoryResourceManagementReceipt,
-  RepositoryResourceManagementStore,
-} from "../../contracts/output/resource-management.js";
-import type {
   RepositoryLabel,
   RepositoryMilestone,
   RepositoryMilestoneStatus,
 } from "../../contracts/dto/resources.js";
+import type {
+  RepositoryResourceManagementCommand,
+  RepositoryResourceManagementReceipt,
+  RepositoryResourceManagementStore,
+} from "../../contracts/output/resource-management.js";
 import {
   hasRepositoryPermission,
   RepositoryError,
