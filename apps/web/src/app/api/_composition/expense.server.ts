@@ -5,7 +5,7 @@ import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-in
 import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
 import { createGeminiReceiptRecognizer } from "@line_bot_v1/expense/composition/bootstrap/gemini-receipt-recognizer";
 import { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
-import { downloadLineImage } from "@line_bot_v1/line-channel/messaging";
+import { downloadLineImage } from "@line_bot_v1/line-channel/messaging-api";
 import { activeLineUser } from "./account.server";
 
 const recognizeImage = async (imageId: string) => {
