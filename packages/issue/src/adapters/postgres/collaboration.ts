@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";\nimport {\n  repositoryLabelIdsExist,\n  repositoryMilestoneExists,\n} from "@line_bot_v1/repository/postgres/resource-management";
 import type {
   IssueCollaborationCommand,
   IssueCollaborationIdentity,
@@ -244,15 +244,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           data = { commentId: row.id, commentVersion: Number(deleted.version), deleted: true };
         }
       } else if (command.action === "add-labels") {
-        const rows = (
-          await sql.query(
-            `SELECT id FROM repository_labels
-             WHERE repository_id=$1 AND id=ANY($2::text[])
-             ORDER BY id`,
-            [issue.repository_id, command.labelIds],
-          )
-        ).rows as Array<{ id: string }>;
-        if (rows.length !== command.labelIds.length) {
+        if (!(await repositoryLabelIdsExist(sql, issue.repository_id, command.labelIds))) {
           throw new IssueError(409, "Label 必須存在於同一 Repository。");
         }
         const added = (
@@ -285,13 +277,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         data = { removedLabelIds: removed.map((row) => row.label_id).sort() };
       } else if (command.action === "set-milestone") {
         if (command.milestoneId !== null) {
-          const milestone = (
-            await sql.query(
-              "SELECT 1 FROM repository_milestones WHERE repository_id=$1 AND id=$2",
-              [issue.repository_id, command.milestoneId],
-            )
-          ).rows[0];
-          if (!milestone) throw new IssueError(409, "Milestone 必須存在於同一 Repository。");
+          if (!(await repositoryMilestoneExists(sql, issue.repository_id, command.milestoneId))) {
+            throw new IssueError(409, "Milestone 必須存在於同一 Repository。");
+          }
         }
         if (issue.milestone_id === command.milestoneId) {
           throw new IssueError(409, "Issue milestone 沒有變更。");
@@ -339,6 +327,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           if (!removed) throw new IssueError(409, "此 Sub-issue 關係不存在。");
           data = { subIssueId: target.id, previousPosition: Number(removed.position) };
         } else {
+          if (!("beforeIssueId" in command)) {
+            throw new IssueError(400, "Sub-issue 排序命令不正確。");
+          }
           if (command.beforeIssueId === target.id) {
             throw new IssueError(409, "Sub-issue 排序沒有變更。");
           }
