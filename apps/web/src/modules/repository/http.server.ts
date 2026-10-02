@@ -58,6 +58,10 @@ export function issueBody(request: Request): Promise<Record<string, unknown>> {
   return jsonObjectBody(request, (status, message) => new IssueError(status, message), 65_536);
 }
 
+export function discussionBody(request: Request): Promise<Record<string, unknown>> {
+  return jsonObjectBody(request, (status, message) => new DiscussionError(status, message), 65_536);
+}
+
 export function repositoryBody(request: Request): Promise<Record<string, unknown>> {
   return jsonObjectBody(request, (status, message) => new RepositoryError(status, message));
 }
