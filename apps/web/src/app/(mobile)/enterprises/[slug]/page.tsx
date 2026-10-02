@@ -1,9 +1,9 @@
 import { normalizeEnterpriseSlug } from "@line_bot_v1/enterprise/domain";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { notFound } from "next/navigation";
-import AppShell from "../../_shell/app-shell";
 import EnterprisePanel from "../../../../modules/enterprise/panel";
 import { PageHeading } from "../../../../shared/ui/page-layout";
+import AppShell from "../../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
