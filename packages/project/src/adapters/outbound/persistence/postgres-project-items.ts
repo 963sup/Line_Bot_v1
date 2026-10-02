@@ -205,6 +205,7 @@ export async function executeProjectItemCommand(
     if (!issue) throw new ProjectError(404, "找不到可讀取的 source Issue。");
     const itemId = randomUUID();
     const position = await nextPosition(sql, projectId);
+    await ensureRepositoryReference(sql, projectId, issue.repositoryId);
     try {
       await sql.query(
         `INSERT INTO project_items(
@@ -216,7 +217,6 @@ export async function executeProjectItemCommand(
     } catch (error) {
       postgresConflict(error, "此 Issue 已存在於 Project 或 Item 關係不合法。");
     }
-    await ensureRepositoryReference(sql, projectId, issue.repositoryId);
     return {
       resourceId: itemId,
       data: { itemId, kind: "ISSUE", issueId: issue.id, position },
@@ -436,6 +436,7 @@ export async function executeProjectItemCommand(
       assigneeIds,
       now,
     });
+    await ensureRepositoryReference(sql, projectId, issue.repositoryId);
     try {
       await sql.query(
         `UPDATE project_items
@@ -460,7 +461,6 @@ export async function executeProjectItemCommand(
        WHERE project_id=$1 AND id=$2`,
       [projectId, draftRow.id, now],
     );
-    await ensureRepositoryReference(sql, projectId, issue.repositoryId);
     return {
       resourceId: item.id,
       data: {
