@@ -22,7 +22,7 @@ create table app_private.discussion_events (
 create index discussion_events_actor on app_private.discussion_events(actor, at);
 
 create table app_private.discussion_category_events (
-  category_id text not null references app_private.discussion_categories(id),
+  category_id text not null,
   version integer not null,
   actor text not null references app_private.users(id),
   action text not null,
