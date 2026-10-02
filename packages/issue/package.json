@@ -41,8 +41,8 @@
       "default": "./dist/contracts/collaboration.js"
     },
     "./postgres/collaboration": {
-      "types": "./dist/adapters/postgres/collaboration.d.ts",
-      "default": "./dist/adapters/postgres/collaboration.js"
+      "types": "./dist/postgres/collaboration.d.ts",
+      "default": "./dist/postgres/collaboration.js"
     }
   },
   "files": [
