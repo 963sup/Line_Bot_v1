@@ -2143,7 +2143,10 @@
           "./postgres/collaboration"
         ],
         "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
-        "testPaths": ["packages/issue/test/collaboration.test.ts", "packages/issue/test/issues.test.ts"],
+        "testPaths": [
+          "packages/issue/test/collaboration.test.ts",
+          "packages/issue/test/issues.test.ts"
+        ],
         "note": "Repository retains Label and Milestone definition authority. Cross-Repository Issue relations recheck both endpoint repositories; relation reads hide inaccessible endpoints. Comments retain stable identity on delete and Issue events remain audit evidence."
       }
     },
