@@ -403,7 +403,8 @@ select
   i.id::text as item_id
 from app_private.issue_assignees a
 join app_private.issues i on i.id=a.issue_id
-where i.workflow_status <> 'completed';
+where i.state='OPEN'
+  and i.workflow_status <> 'completed';
 
 
 -- Identity/Access qualification read models. These expose only scope/membership/affiliation
