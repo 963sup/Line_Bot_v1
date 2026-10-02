@@ -6,17 +6,12 @@ import type {
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import type { RepositorySummary } from "../../domain.js";
 
-export type {
-  RepositoryLabel,
-  RepositoryMilestone,
-  RepositoryMilestoneStatus,
-};
+export type { RepositoryLabel, RepositoryMilestone, RepositoryMilestoneStatus };
 
 export type RepositoryResourceIdentity = { userId: string };
 
 export type RepositoryLabelCursor = { name: string; id: string };
 export type RepositoryMilestoneCursor = { number: number; id: string };
-
 
 export type RepositoryLabelsResult = {
   repository: RepositorySummary;
