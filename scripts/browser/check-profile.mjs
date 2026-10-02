@@ -38,7 +38,6 @@ await build({
       import MemberAvatar from '../../apps/web/src/modules/account/member-avatar.tsx';
       import '../../apps/web/src/app/globals.css';
       const root = createRoot(document.getElementById('root'));
-      window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>true,getProfile:async()=>window.holdProvider ? new Promise(()=>{}) : ({displayName:'LINE Viewer',statusMessage:'Ready to work'}),login:()=>{}};
       window.renderProfile=async(props)=>{
         const page=await ProfilePage({params:Promise.resolve({login:'viewer'})});
         const popular=page.props.children.props.children;
@@ -57,13 +56,16 @@ await build({
   nodePaths: [path.join(web, "node_modules")],
   jsx: "automatic",
   loader: { ".css": "css" },
-  define: { "process.env.NODE_ENV": '"production"' },
+  define: {
+    "process.env.NODE_ENV": '"production"',
+    "process.env.NEXT_PUBLIC_USE_LIFF_MOCK": '"true"',
+  },
   plugins: [
     {
       name: "next-test-delivery",
       setup(builder) {
         const publicQueries = {
-          "line-mini-app": "export const lineMiniApp=()=>({liffId:'test'});",
+          "mini-app": "export const lineMiniApp=()=>({liffId:'test'});",
           "account.server":
             "export const publicUserById=async()=>({login:'viewer'}); export const profiles={publicByUserId:async()=>null};",
           "namespace.server":
@@ -76,7 +78,7 @@ await build({
         builder.onResolve(
           {
             filter:
-              /(?:line-mini-app|account\.server|namespace\.server|directory\.server|repository\.server)$/,
+              /(?:mini-app|account\.server|namespace\.server|directory\.server|repository\.server)$/,
           },
           ({ path: specifier }) => ({
             path: specifier.split("/").at(-1),
@@ -146,7 +148,7 @@ await build({
           "next/link": "exports.default = () => null;",
           "next/navigation": "exports.notFound = () => { throw Error('not-found'); };",
           "resource-navigation": "exports.repositoryPath = () => '/repository';",
-          "line-mini-app": "exports.lineMiniApp = () => ({liffId:'test'});",
+          "mini-app": "exports.lineMiniApp = () => ({liffId:'test'});",
           "account.server":
             "exports.publicUserById = async () => ({login:'viewer'}); exports.profiles = {publicByUserId:async()=>null};",
           "namespace.server":
@@ -217,6 +219,19 @@ try {
   context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     serviceWorkers: "block",
+  });
+  await context.addInitScript(() => {
+    window.liff = {
+      init: async () => {},
+      isLoggedIn: () => true,
+      getAccessToken: () => "synthetic",
+      isInClient: () => true,
+      getProfile: async () =>
+        window.holdProvider
+          ? new Promise(() => {})
+          : { displayName: "LINE Viewer", statusMessage: "Ready to work" },
+      login: () => {},
+    };
   });
   await context.tracing.start({ screenshots: true, snapshots: true });
   const page = await context.newPage();
