@@ -77,7 +77,10 @@ function parseCommand(raw: unknown): RepositoryResourceManagementCommand {
     throw new RepositoryError(400, "Repository resource 操作格式不正確。");
   }
   const value = raw as Record<string, unknown>;
-  if (typeof value.action !== "string" || !actions.has(value.action as RepositoryResourceManagementCommand["action"])) {
+  if (
+    typeof value.action !== "string" ||
+    !actions.has(value.action as RepositoryResourceManagementCommand["action"])
+  ) {
     throw new RepositoryError(400, "Repository resource 動作不正確。");
   }
 
@@ -128,7 +131,11 @@ function parseCommand(raw: unknown): RepositoryResourceManagementCommand {
     if (value.description !== undefined) {
       command.description = stringField(value.description, "Label 描述", 500);
     }
-    if (command.name === undefined && command.color === undefined && command.description === undefined) {
+    if (
+      command.name === undefined &&
+      command.color === undefined &&
+      command.description === undefined
+    ) {
       throw new RepositoryError(400, "Label 修改至少需要一個欄位。");
     }
     return command;
@@ -176,10 +183,7 @@ function parseCommand(raw: unknown): RepositoryResourceManagementCommand {
       "description",
       "dueAt",
     ]);
-    const command: Extract<
-      RepositoryResourceManagementCommand,
-      { action: "update-milestone" }
-    > = {
+    const command: Extract<RepositoryResourceManagementCommand, { action: "update-milestone" }> = {
       ...base(value, false),
       action: "update-milestone",
       milestoneId: idField(value.milestoneId, "Milestone 識別碼"),
@@ -191,7 +195,11 @@ function parseCommand(raw: unknown): RepositoryResourceManagementCommand {
       command.description = stringField(value.description, "Milestone 描述", 5000);
     }
     if (value.dueAt !== undefined) command.dueAt = dueAt(value.dueAt);
-    if (command.title === undefined && command.description === undefined && command.dueAt === undefined) {
+    if (
+      command.title === undefined &&
+      command.description === undefined &&
+      command.dueAt === undefined
+    ) {
       throw new RepositoryError(400, "Milestone 修改至少需要一個欄位。");
     }
     return command;
