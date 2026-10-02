@@ -242,12 +242,6 @@ function requireCommandPermission(
     if (!canIssueRepositoryOperation(permissions, "open")) {
       throw new IssueError(403, "目前的 Repository access 不允許建立 Issue。");
     }
-    if (
-      command.assigneeIds.length &&
-      !canIssueRepositoryOperation(permissions, "assign")
-    ) {
-      throw new IssueError(403, "目前的 Repository access 不允許指派 Issue。");
-    }
     return;
   }
 
@@ -421,6 +415,14 @@ export class PostgresIssueStore implements IssueStore {
 
       if (await repositoryOperation(() => repositoryArchived(sql, command.repositoryId))) {
         throw new IssueError(409, "Repository 已封存，Issue 目前為唯讀。");
+      }
+
+      if (
+        command.action === "create" &&
+        command.assigneeIds.length &&
+        !canIssueRepositoryOperation(selected.repository.permissions, "assign")
+      ) {
+        throw new IssueError(403, "目前的 Repository access 不允許指派 Issue。");
       }
 
       const participantIds = new Set(selected.participants.map((participant) => participant.userId));
