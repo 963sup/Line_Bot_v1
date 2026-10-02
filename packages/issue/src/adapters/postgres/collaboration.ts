@@ -19,13 +19,13 @@ import { IssueError } from "../../domain.js";
 import {
   advance,
   type CommentRow,
-  type IssueHead,
   comment,
   currentIssue,
   dependencyWouldCycle,
   duplicateRelation,
   fingerprint,
   hierarchyWouldCycle,
+  type IssueHead,
   privilegedCommenter,
   readReceipt,
   requireActionPermission,
@@ -590,7 +590,14 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         await sql.query(
           `INSERT INTO issue_events(issue_id,version,actor,action,note,data,at)
            VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
-          [relatedPeer.id, peerVersion, who.userId, relatedPeerAction, JSON.stringify(peerData), now],
+          [
+            relatedPeer.id,
+            peerVersion,
+            who.userId,
+            relatedPeerAction,
+            JSON.stringify(peerData),
+            now,
+          ],
         );
       }
 

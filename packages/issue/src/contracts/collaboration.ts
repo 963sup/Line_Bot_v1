@@ -25,11 +25,7 @@ export type IssueCollaborationCommand =
   | (CommandBase & Readonly<{ action: "set-issue-type"; issueTypeId: string | null }>)
   | (CommandBase &
       Readonly<{
-        action:
-          | "add-sub-issue"
-          | "remove-sub-issue"
-          | "add-blocked-by"
-          | "remove-blocked-by";
+        action: "add-sub-issue" | "remove-sub-issue" | "add-blocked-by" | "remove-blocked-by";
         targetIssueId: string;
       }>)
   | (CommandBase &
