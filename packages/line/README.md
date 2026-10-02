@@ -9,7 +9,7 @@ Routing and module overview for `@line_bot_v1/line`.
 
 ## Public capabilities
 
-- `./liff` — browser LIFF SDK/session lifecycle.
+- `./liff` — browser LIFF SDK, eager boot and session lifecycle.
 - `./messaging-api` — server Messaging API, webhook verification/parsing, content retrieval and push delivery.
 - `./mini-app` — public MINI App stage/permanent-link registration identity.
 - `./rich-menu` — server Rich Menu API and image validation.

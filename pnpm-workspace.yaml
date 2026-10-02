@@ -20,6 +20,7 @@ catalog:
   '@electric-sql/pglite': '0.5.8'
   '@google/genai': '2.21.0'
   '@line/bot-sdk': '11.2.0'
+  '@line/liff': '2.31.0'
   '@line/liff-mock': '1.0.4'
   '@sentry/nextjs': '10.75.0'
   '@supabase/supabase-js': '2.115.0'

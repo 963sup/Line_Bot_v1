@@ -22,8 +22,8 @@ Web 端透過 LINE LIFF SDK 初始化 MINI App runtime。初始化完成前，�
 
 目前共用 runtime 會：
 
-1. 載入 LIFF SDK。
-2. 初始化 LIFF client；開發環境可明確啟用 LIFF mock。
+1. 由 `@line_bot_v1/line/liff` 直接依賴並載入 `@line/liff`。
+2. browser module evaluation 時立即啟動共享的 `liff.init()`；不等待 React component mount／effect。開發環境若明確啟用 LIFF mock，mock plugin 會在該次 init 前安裝。
 3. 初始化完成後才交回各功能繼續核驗與載入。
 4. SDK 載入或初始化失敗時顯示可重試錯誤，不把失敗當成匿名成功或空資料。
 

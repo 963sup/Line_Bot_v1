@@ -18,6 +18,9 @@ catalogs:
     '@line/bot-sdk':
       specifier: 11.2.0
       version: 11.2.0
+    '@line/liff':
+      specifier: 2.31.0
+      version: 2.31.0
     '@line/liff-mock':
       specifier: 1.0.4
       version: 1.0.4
@@ -505,6 +508,9 @@ importers:
       '@line/bot-sdk':
         specifier: 'catalog:'
         version: 11.2.0
+      '@line/liff':
+        specifier: 'catalog:'
+        version: 2.31.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

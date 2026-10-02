@@ -1,48 +1,37 @@
 "use client";
-import "./sdk.js";
+
+import type { LiffBoot } from "./boot.js";
 
 export function createLiffClient(
-  sdk: () => Window["liff"],
+  boot: LiffBoot,
   href: () => string,
   loginReturnUrl: (href: string) => string,
 ) {
-  let initialization: Promise<void> | undefined;
-  let configuredId: string | undefined;
   let initialized = false;
-  async function initialize(liffId: string) {
+
+  async function initialize(liffId = boot.liffId) {
     if (!liffId) throw new Error("LINE 入口尚未設定。");
-    if (configuredId && configuredId !== liffId) throw new Error("LINE 入口設定不一致。");
-    if (!initialization) {
-      configuredId = liffId;
-      initialization = Promise.resolve()
-        .then(() => sdk().init({ liffId }))
-        .then(() => {
-          initialized = true;
-        })
-        .catch(() => {
-          initialization = undefined;
-          configuredId = undefined;
-          throw new Error("LINE 登入元件初始化失敗，請重試。");
-        });
-    }
-    await initialization;
+    if (liffId !== boot.liffId) throw new Error("LINE 入口設定不一致。");
+    await boot.ready();
+    initialized = true;
     return !new URL(href()).searchParams.has("liff.state");
   }
+
   return {
     initialize,
-    async session(liffId: string) {
+    async session(liffId = boot.liffId) {
       if (!(await initialize(liffId))) return null;
-      if (!sdk().isLoggedIn()) {
-        sdk().login({ redirectUri: loginReturnUrl(href()) });
+      if (!boot.sdk.isLoggedIn()) {
+        boot.sdk.login({ redirectUri: loginReturnUrl(href()) });
         return null;
       }
-      const token = sdk().getAccessToken();
+      const token = boot.sdk.getAccessToken();
       if (!token) throw new Error("請從 LINE 重新開啟。");
       return token;
     },
-    inClient: () => initialized && sdk().isInClient(),
-    profile: () => sdk().getProfile(),
-    close: () => sdk().closeWindow(),
-    openExternal: (url: string) => sdk().openWindow({ url, external: true }),
+    inClient: () => initialized && boot.state() === "ready" && boot.sdk.isInClient(),
+    profile: () => boot.sdk.getProfile(),
+    close: () => boot.sdk.closeWindow(),
+    openExternal: (url: string) => boot.sdk.openWindow({ url, external: true }),
   };
 }

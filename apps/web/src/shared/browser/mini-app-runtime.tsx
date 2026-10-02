@@ -1,19 +1,11 @@
 "use client";
-import Script from "next/script";
-import { useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "./liff-client";
 
-async function installLocalMock() {
-  if (process.env.NODE_ENV !== "development" || process.env.NEXT_PUBLIC_USE_LIFF_MOCK !== "true")
-    return;
-  const { LiffMockPlugin } = await import("@line/liff-mock");
-  const liff = window.liff as Window["liff"] & { use?: (plugin: unknown) => void };
-  if (typeof liff.use !== "function")
-    throw new Error("LINE mock 元件載入失敗，請改用真實 LIFF SDK。");
-  liff.use(new LiffMockPlugin());
-}
-
-/** LIFF runtime only: initialize the SDK, then let callers decide the next step. */
+/**
+ * LIFF boot starts when liff-client is evaluated. This component only observes readiness and
+ * hands control to the feature; React hydration is not an initialization prerequisite anymore.
+ */
 export default function MiniAppRuntime({
   liffId,
   onReady,
@@ -26,48 +18,36 @@ export default function MiniAppRuntime({
   silent?: boolean;
 }) {
   const [error, setError] = useState("");
-  const scriptId = useId();
   const started = useRef(false);
-  async function initialize() {
+  const ready = useRef(onReady);
+  const wait = useRef(onWait);
+  ready.current = onReady;
+  wait.current = onWait;
+
+  const initialize = useCallback(async () => {
     setError("");
     try {
-      await installLocalMock();
       if (!(await liffClient.initialize(liffId))) {
-        onWait();
+        wait.current();
         return;
       }
-      await onReady();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "登入載入失敗。");
-      onWait();
+      await ready.current();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "登入載入失敗。");
+      wait.current();
     }
-  }
-  function onSdkReady() {
+  }, [liffId]);
+
+  useEffect(() => {
     if (started.current) return;
     started.current = true;
     void initialize();
-  }
-  return (
-    <>
-      <Script
-        id={`line-sdk-${scriptId}`}
-        src="https://static.line-scdn.net/liff/edge/2/sdk.js"
-        strategy="afterInteractive"
-        // Next deduplicates the download by src, but concurrent consumers receive onLoad.
-        // A distinct id keeps another consumer's pending cache entry from firing onReady early.
-        onLoad={onSdkReady}
-        onReady={onSdkReady}
-        onError={() => {
-          setError("LINE 元件載入失敗，請重新開啟。");
-          onWait();
-        }}
-      />
-      {error && !silent && (
-        <div role="alert">
-          <p>{error}</p>
-          <button onClick={() => void initialize()}>重試 LINE 登入</button>
-        </div>
-      )}
-    </>
-  );
+  }, [initialize]);
+
+  return error && !silent ? (
+    <div role="alert">
+      <p>{error}</p>
+      <button onClick={() => void initialize()}>重試 LINE 登入</button>
+    </div>
+  ) : null;
 }
