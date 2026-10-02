@@ -3,9 +3,9 @@
 create table app_private.issue_assignees (
   issue_id text not null references app_private.issues(id) on delete cascade,
   user_id text not null references app_private.users(id),
-  assigned_at bigint not null,
+  assigned_at bigint,
   constraint issue_assignees_pkey primary key (issue_id, user_id),
-  constraint issue_assignees_assigned_at_check check (assigned_at >= 0)
+  constraint issue_assignees_assigned_at_check check (assigned_at is null or assigned_at >= 0)
 );
 create index issue_assignees_user_lookup
   on app_private.issue_assignees(user_id, issue_id);
