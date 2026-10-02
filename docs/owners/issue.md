@@ -73,3 +73,15 @@ Runtime owner: `packages/issue`. Repository scope provider: `packages/repository
 Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
 
 Adjacent owners: [Repository](repository.md) · [Project](project.md) · [Notifications](notifications.md)
+
+
+## Collaboration parity
+
+Issue collaboration is current runtime authority through `manage-issue-collaboration`.
+
+- `IssueComment` has stable identity, author, body, version, edit/delete-retain lifecycle, and is never reconstructed from `issue_events`.
+- Issue owns Label association facts and Milestone assignment; Repository continues to own Label/Milestone definitions and same-Repository validity is enforced on every write.
+- `parent/subIssues`, `blockedBy/blocking`, and `relatesTo` are distinct persisted relations. Parent and dependency graphs reject self/cycles; `relatesTo` is symmetric and canonicalized.
+- Cross-Repository relation mutations recheck both endpoints' current Repository access. Read projections omit inaccessible relation endpoints rather than leaking hidden titles or counts.
+- Conversation lock is independent of OPEN/CLOSED state. Lock/unlock requires Repository write/maintain/admin; a locked conversation allows comments only from those same privileged collaborators.
+- Every mutation requires `expectedVersion` plus a request UUID, advances the Issue aggregate version exactly once, persists one immutable Issue event, and stores an exact replay receipt in the same transaction.
