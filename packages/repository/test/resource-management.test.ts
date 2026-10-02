@@ -3,8 +3,8 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryResourceManagementStore } from "../src/adapters/postgres/resource-management.js";
-import { createRepositoryResourceManagement } from "../src/application/resource-management.js";
 import type { RepositoryResourceManagementStore } from "../src/application/ports/resource-management.js";
+import { createRepositoryResourceManagement } from "../src/application/resource-management.js";
 import { RepositoryError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string, login = id) {
@@ -168,9 +168,10 @@ test("Label management preserves stable identity, replay, current authority and 
   assert.equal(
     Number(
       (
-        await pg.query("select count(*)::int as count from app_private.repository_labels where id=$1", [
-          created.label.id,
-        ])
+        await pg.query(
+          "select count(*)::int as count from app_private.repository_labels where id=$1",
+          [created.label.id],
+        )
       ).rows[0]?.count,
     ),
     1,
