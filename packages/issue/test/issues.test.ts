@@ -603,3 +603,94 @@ test("Issue stateReason and assignee scope are enforced by persistence invariant
   );
   assert.deepEqual(rows.rows, [{ user_id: "owner" }]);
 });
+
+test("pre-parity Issue rows stay readable and materialize without invented history", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await activeUser(db, "legacy-owner");
+  await activeUser(db, "legacy-assignee");
+  await pg.query(
+    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('legacy-repo','legacy-owner','USER','Legacy','private',1)",
+  );
+  await pg.query(
+    "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('legacy-repo','legacy-assignee','read',1)",
+  );
+  await pg.query(
+    `insert into app_private.issues(
+       id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
+     ) values('legacy-issue','legacy-repo',1,'legacy-owner','legacy-assignee','Legacy work','Original criteria','completed',1,10,10)`,
+  );
+  await pg.query(
+    "insert into app_private.issue_events(issue_id,version,actor,action,note,at) values('legacy-issue',1,'legacy-owner','create','',10)",
+  );
+
+  const store = new PostgresIssueStore(db);
+  const before = await store.detail(
+    { userId: "legacy-owner" },
+    1,
+    { repositoryId: "legacy-repo" },
+  );
+  assert.deepEqual(before.issues[0], {
+    id: "legacy-issue",
+    repositoryId: "legacy-repo",
+    number: 1,
+    publisher: "legacy-owner",
+    assignees: ["legacy-assignee"],
+    title: "Legacy work",
+    body: "",
+    criteria: "Original criteria",
+    state: "OPEN",
+    stateReason: null,
+    workflowStatus: "completed",
+    version: 1,
+    createdAt: 10,
+    updatedAt: 10,
+  });
+  assert.deepEqual(before.events[0]?.data, {});
+
+  const changed = await store.execute(
+    { userId: "legacy-owner" },
+    {
+      requestId: "18181818-1818-4818-8818-181818181818",
+      repositoryId: "legacy-repo",
+      action: "edit",
+      issueId: "legacy-issue",
+      expectedVersion: 1,
+      body: "Canonical body",
+    },
+    20,
+  );
+  assert.equal(changed.version, 2);
+  assert.equal(changed.state, "OPEN");
+  assert.equal(changed.stateReason, null);
+  assert.equal(changed.workflowStatus, "completed");
+  assert.deepEqual(changed.assignees, ["legacy-assignee"]);
+
+  const row = await pg.query(
+    `select assignee,status,body,state,state_reason,workflow_status,version
+     from app_private.issues where id='legacy-issue'`,
+  );
+  assert.deepEqual(row.rows, [
+    {
+      assignee: null,
+      status: null,
+      body: "Canonical body",
+      state: "OPEN",
+      state_reason: null,
+      workflow_status: "completed",
+      version: 2,
+    },
+  ]);
+  const assignments = await pg.query(
+    "select user_id,assigned_at from app_private.issue_assignees where issue_id='legacy-issue'",
+  );
+  assert.deepEqual(assignments.rows, [{ user_id: "legacy-assignee", assigned_at: null }]);
+
+  const events = await pg.query(
+    "select version,action,data from app_private.issue_events where issue_id='legacy-issue' order by version",
+  );
+  assert.deepEqual(events.rows[0], { version: 1, action: "create", data: {} });
+  assert.equal((events.rows[1] as { version: number }).version, 2);
+  assert.equal((events.rows[1] as { action: string }).action, "edit");
+});
+
