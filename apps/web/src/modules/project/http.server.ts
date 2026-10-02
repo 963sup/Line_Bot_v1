@@ -1,11 +1,7 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { ProjectError } from "@line_bot_v1/project/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
-import {
-  BodyTooLargeError,
-  jsonResponse,
-  readBodyText,
-} from "../../shared/server/http";
+import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
 export async function projectBody(request: Request): Promise<Record<string, unknown>> {
