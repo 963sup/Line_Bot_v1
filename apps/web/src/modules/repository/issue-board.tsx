@@ -641,9 +641,7 @@ export default function IssueBoard({
                     const form = new FormData(event.currentTarget);
                     const reason = String(form.get("stateReason") ?? "");
                     const stateReason: IssueClosedStateReason | null =
-                      reason === "COMPLETED" ||
-                      reason === "DUPLICATE" ||
-                      reason === "NOT_PLANNED"
+                      reason === "COMPLETED" || reason === "DUPLICATE" || reason === "NOT_PLANNED"
                         ? reason
                         : null;
                     void submit({
