@@ -622,6 +622,9 @@ importers:
 
   packages/project:
     dependencies:
+      '@line_bot_v1/account':
+        specifier: workspace:*
+        version: link:../account
       '@line_bot_v1/issue':
         specifier: workspace:*
         version: link:../issue
