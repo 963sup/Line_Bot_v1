@@ -1,10 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import {
-  RepositoryError,
-  type RepositoryPermission,
-} from "@line_bot_v1/repository/domain";
+import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
 import {
   accessibleRepositories,
   repositoryArchived,
@@ -194,11 +191,7 @@ function receiptIssue(value: unknown): Issue | null {
 
 function acceptedFingerprints(command: IssueCommand): Set<string> {
   const values = new Set([fingerprint(command)]);
-  if (
-    command.action === "create" &&
-    command.body === "" &&
-    command.assigneeIds.length === 1
-  ) {
+  if (command.action === "create" && command.body === "" && command.assigneeIds.length === 1) {
     values.add(
       fingerprint({
         requestId: command.requestId,
@@ -432,7 +425,9 @@ export class PostgresIssueStore implements IssueStore {
         throw new IssueError(403, "目前的 Repository access 不允許指派 Issue。");
       }
 
-      const participantIds = new Set(selected.participants.map((participant) => participant.userId));
+      const participantIds = new Set(
+        selected.participants.map((participant) => participant.userId),
+      );
       let result: Issue;
       let eventNote = "";
       let data: Readonly<Record<string, unknown>>;
