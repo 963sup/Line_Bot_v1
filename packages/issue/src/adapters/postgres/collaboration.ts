@@ -61,14 +61,23 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         | undefined;
       if (!issue) throw new IssueError(404, "找不到 Issue。");
 
-      const [commentRows, labelRows, parentRows, subIssueIds, blockedByIssueIds, blockingIssueIds, relatedIssueIds] =
-        await Promise.all([
+      const [
+        commentRows,
+        labelRows,
+        parentRows,
+        subIssueIds,
+        blockedByIssueIds,
+        blockingIssueIds,
+        relatedIssueIds,
+      ] = await Promise.all([
           sql.query(
             `SELECT id,issue_id,author,body,deleted_at,version,created_at,updated_at
              FROM issue_comments WHERE issue_id=$1 ORDER BY created_at,id`,
             [issueId],
           ),
-          sql.query("SELECT label_id FROM issue_labels WHERE issue_id=$1 ORDER BY label_id", [issueId]),
+          sql.query("SELECT label_id FROM issue_labels WHERE issue_id=$1 ORDER BY label_id", [
+            issueId,
+          ]),
           sql.query(
             `SELECT p.parent_issue_id AS id
              FROM issue_sub_issues p
@@ -275,7 +284,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         data = { removedLabelIds: removed.map((row) => row.label_id).sort() };
       } else if (command.action === "clear-labels") {
         const removed = (
-          await sql.query("DELETE FROM issue_labels WHERE issue_id=$1 RETURNING label_id", [issue.id])
+          await sql.query("DELETE FROM issue_labels WHERE issue_id=$1 RETURNING label_id", [
+            issue.id,
+          ])
         ).rows as Array<{ label_id: string }>;
         if (!removed.length) throw new IssueError(409, "Issue labels 已是空集合。");
         data = { removedLabelIds: removed.map((row) => row.label_id).sort() };
@@ -352,7 +363,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           if (currentIndex < 0) throw new IssueError(409, "此 Sub-issue 關係不存在。");
           ordered.splice(currentIndex, 1);
           const beforeIndex =
-            command.beforeIssueId === null ? ordered.length : ordered.indexOf(command.beforeIssueId);
+            command.beforeIssueId === null
+              ? ordered.length
+              : ordered.indexOf(command.beforeIssueId);
           if (beforeIndex < 0) throw new IssueError(409, "排序目標不是同一 parent 的 Sub-issue。");
           ordered.splice(beforeIndex, 0, target.id);
           for (let index = 0; index < ordered.length; index += 1) {
@@ -454,12 +467,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       await sql.query(
         `INSERT INTO issue_commands(actor,request_id,fingerprint,result)
          VALUES($1,$2,$3,$4::jsonb)`,
-        [
-          who.userId,
-          command.requestId,
-          commandFingerprint,
-          JSON.stringify(storedReceipt(result)),
-        ],
+        [who.userId, command.requestId, commandFingerprint, JSON.stringify(storedReceipt(result))],
       );
       return result;
     });
