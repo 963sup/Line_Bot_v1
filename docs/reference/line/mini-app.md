@@ -23,7 +23,7 @@ Web 端透過 LINE LIFF SDK 初始化 MINI App runtime。初始化完成前，�
 目前共用 runtime 會：
 
 1. 由 `@line_bot_v1/line/liff` 直接依賴並載入 `@line/liff`。
-2. `apps/web/src/instrumentation-client.ts` 對 canonical MINI App continuation 在 HTML 載入後、React hydration 前啟動共享的 `liff.init()`；其他 direct/external route 在第一個 LIFF consumer 出現時 lazy start。Feature component 不擁有 SDK loading strategy。開發環境若明確啟用 LIFF mock，mock plugin 會在該次 init 前安裝。
+2. `apps/web/instrumentation-client.ts` 對 canonical MINI App continuation 在 HTML 載入後、React hydration 前啟動共享的 `liff.init()`；其他 direct/external route 在第一個 LIFF consumer 出現時 lazy start。Feature component 不擁有 SDK loading strategy。開發環境若明確啟用 LIFF mock，mock plugin 會在該次 init 前安裝。
 3. 初始化完成後才交回各功能繼續核驗與載入。
 4. SDK 載入或初始化失敗時顯示可重試錯誤，不把失敗當成匿名成功或空資料。
 
