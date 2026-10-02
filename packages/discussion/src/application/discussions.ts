@@ -5,7 +5,7 @@ import type {
   DiscussionReadStore,
   RepositorySelector,
 } from "../contracts/output/discussion-read.js";
-import { DiscussionError, normalizeDiscussionId } from "../domain.js";
+import { DiscussionError, normalizeDiscussionId, normalizeDiscussionNumber } from "../domain.js";
 
 const maxCursorLength = 240;
 
@@ -77,6 +77,19 @@ export function createDiscussions(deps: {
       const page = cursor(commentsAfter);
       const actor = await identity(subject);
       return deps.store().detail(actor, selected, id, page);
+    },
+    detailByNumber: async (
+      subject: string,
+      selector: RepositorySelector,
+      discussionNumber: number | string,
+      commentsAfter?: string,
+    ) => {
+      const selected = repositorySelector(selector);
+      const number = normalizeDiscussionNumber(discussionNumber);
+      if (number === null) throw new DiscussionError(400, "Discussion number 不正確。");
+      const page = cursor(commentsAfter);
+      const actor = await identity(subject);
+      return deps.store().detailByNumber(actor, selected, number, page);
     },
   };
 }
