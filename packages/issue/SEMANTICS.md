@@ -23,13 +23,14 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Issue | issue | authoritative | current | GitHub FPT: schema-issues.json#Issue |
+| Issue.assignees | issue-assignment | authoritative | current | GitHub FPT: schema-issues.json#Issue#assignees |
 | Issue.labels | issue-label-link | authoritative | current-data-only | GitHub FPT: schema-issues.json#Issue#labels |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-issues | required | implemented | Manage Repository-scoped Issue lifecycle and commands. |
+| manage-issues | required | implemented | Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow. |
 | read-issue-activity | required | implemented | Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority. |
 
 ## Context Relationships
