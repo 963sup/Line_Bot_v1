@@ -28,6 +28,15 @@ const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   serviceWorkers: "block",
 });
+await context.addInitScript(() => {
+  window.liff = {
+    init: async () => {},
+    isLoggedIn: () => true,
+    getAccessToken: () => "synthetic",
+    isInClient: () => false,
+    login: () => {},
+  };
+});
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
 const page = await context.newPage(),
   errors = [],
@@ -44,11 +53,6 @@ page.on("pageerror", (error) => errors.push(error.message));
 await context.route("**/*", async (route) => {
   const request = route.request(),
     url = new URL(request.url());
-  if (url.hostname === "static.line-scdn.net")
-    return route.fulfill({
-      contentType: "text/javascript",
-      body: "window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,login:()=>{}};",
-    });
   if (url.hostname === "maps.googleapis.com" && url.pathname === "/maps/api/js") {
     mapsLoads += 1;
     assert.equal(url.searchParams.get("key"), "synthetic-google-maps-browser-key");

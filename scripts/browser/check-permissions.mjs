@@ -28,6 +28,15 @@ const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   serviceWorkers: "block",
 });
+await context.addInitScript(() => {
+  window.liff = {
+    init: async () => {},
+    isLoggedIn: () => true,
+    getAccessToken: () => "synthetic",
+    isInClient: () => false,
+    login: () => {},
+  };
+});
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
 const page = await context.newPage(),
   errors = [],
@@ -42,11 +51,6 @@ page.on("pageerror", (e) => errors.push(e.message));
 await context.route("**/*", async (route) => {
   const req = route.request(),
     url = new URL(req.url());
-  if (url.hostname === "static.line-scdn.net")
-    return route.fulfill({
-      contentType: "text/javascript",
-      body: "window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,login:()=>{}};",
-    });
   if (url.origin !== target.origin) return route.abort();
   if (url.pathname === "/api/permissions") {
     if (req.method() === "POST") {
