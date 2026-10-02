@@ -7,6 +7,7 @@ import {
   restorePendingPermissionOperation,
   savePendingPermissionOperation,
 } from "../src/modules/account/permission-operations";
+import { repositoryDiscussionPath } from "../src/modules/repository/resource-navigation";
 import {
   mergeRepositoryResourcePage,
   parseRepositoryResourcePage,
@@ -49,6 +50,17 @@ test("permission pending operation remains owner-scoped and mismatch clears stor
   savePendingPermissionOperation(storage, operation);
   clearPendingPermissionOperation(storage);
   assert.equal(storage.getItem("permission-operation"), null);
+});
+
+test("repository discussion navigation prefers canonical number and keeps legacy id fallback", () => {
+  assert.equal(
+    repositoryDiscussionPath("octo", "repo", "discussion/1", 7),
+    "/octo/repo/discussions/number/7",
+  );
+  assert.equal(
+    repositoryDiscussionPath("octo", "repo", "discussion/1", null),
+    "/octo/repo/discussions/discussion%2F1",
+  );
 });
 
 test("repository resource endpoint preserves selector and cursor semantics", () => {

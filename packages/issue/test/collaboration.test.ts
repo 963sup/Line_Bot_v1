@@ -138,7 +138,7 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
     },
     15,
   );
-  await store.execute(
+  const related = await store.execute(
     actor,
     {
       action: "add-related",
@@ -149,6 +149,25 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
       targetIssueId: "child",
     },
     16,
+  );
+  assert.equal(related.version, 7);
+  const childAfterRelated = await store.view(actor, "repo", "child");
+  assert.equal(childAfterRelated.version, 2);
+  assert.deepEqual(childAfterRelated.relatedIssueIds, ["parent"]);
+  await assert.rejects(
+    store.execute(
+      actor,
+      {
+        action: "remove-related",
+        requestId: randomUUID(),
+        repositoryId: "repo",
+        issueId: "child",
+        expectedVersion: 1,
+        targetIssueId: "parent",
+      },
+      16,
+    ),
+    /已更新/,
   );
   await store.execute(
     actor,
@@ -189,4 +208,15 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
   assert.deepEqual(view.blockedByIssueIds, ["blocker"]);
   assert.deepEqual(view.relatedIssueIds, ["child"]);
   assert.equal(view.comments.length, 1);
+
+  const childEvents = await pg.query(
+    "select version,action,data from issue_events where issue_id='child' order by version",
+  );
+  assert.deepEqual(childEvents.rows, [
+    {
+      version: 2,
+      action: "add-related",
+      data: { relatedIssueId: "parent" },
+    },
+  ]);
 });

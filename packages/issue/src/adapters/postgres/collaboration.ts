@@ -242,6 +242,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       if (replay) return replay;
 
       await requireWritableRepository(sql, command.repositoryId);
+      if (command.action === "add-related" || command.action === "remove-related") {
+        await sql.query("SELECT pg_advisory_xact_lock(hashtext('issue-related-graph'))");
+      }
       const issue = await currentIssue(sql, command.repositoryId, command.issueId);
       requireExpectedVersion(issue, command.expectedVersion);
 
@@ -463,10 +466,12 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         }
       } else if (command.action === "add-related" || command.action === "remove-related") {
         const target = await targetIssue(sql, who, issue.id, command.targetIssueId);
+        const targetHead = await currentIssue(sql, target.repository_id, target.id);
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
         const left = ordered[0]!;
         const right = ordered[1]!;
         resourceId = target.id;
+        let targetData: Record<string, unknown>;
         if (command.action === "add-related") {
           try {
             await sql.query(
@@ -478,6 +483,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
             duplicateRelation(error);
           }
           data = { relatedIssueId: target.id };
+          targetData = { relatedIssueId: issue.id };
         } else {
           const removed = (
             await sql.query(
@@ -489,7 +495,26 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           ).rows[0];
           if (!removed) throw new IssueError(409, "此 relatesTo 關係不存在。");
           data = { removedRelatedIssueId: target.id };
+          targetData = { removedRelatedIssueId: issue.id };
         }
+        const targetVersion = await advance(
+          sql,
+          targetHead,
+          Number(targetHead.version),
+          now,
+        );
+        await sql.query(
+          `INSERT INTO issue_events(issue_id,version,actor,action,note,data,at)
+           VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
+          [
+            targetHead.id,
+            targetVersion,
+            who.userId,
+            command.action,
+            JSON.stringify(targetData),
+            now,
+          ],
+        );
       } else if (command.action === "set-issue-type") {
         const before = await assignedIssueType(sql, issue.id);
         if (command.issueTypeId === null) {

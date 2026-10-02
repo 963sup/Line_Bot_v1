@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { PageState } from "../../shared/ui/page-layout";
-import { repositoryDiscussionsPath, repositoryMilestonesPath } from "./resource-navigation";
+import {
+  repositoryDiscussionPath,
+  repositoryDiscussionsPath,
+  repositoryMilestonesPath,
+} from "./resource-navigation";
 import type { PageData } from "./resource-page-model";
 
 function dateTime(value: number) {
@@ -9,10 +13,6 @@ function dateTime(value: number) {
 
 function swatch(color: string) {
   return /^#[0-9a-f]{6}$/i.test(color) ? color : `#${color.replaceAll("#", "")}`;
-}
-
-function discussionPath(ownerLogin: string, repositoryName: string, discussionId: string) {
-  return `${repositoryDiscussionsPath(ownerLogin, repositoryName)}/${encodeURIComponent(discussionId)}`;
 }
 
 function milestonePath(ownerLogin: string, repositoryName: string, number: number) {
@@ -38,7 +38,12 @@ export function ResourceContent({
           <li key={discussion.id}>
             <Link
               className="notification-item"
-              href={discussionPath(ownerLogin, repositoryName, discussion.id)}
+              href={repositoryDiscussionPath(
+                ownerLogin,
+                repositoryName,
+                discussion.id,
+                discussion.number,
+              )}
             >
               <span>
                 <strong>{discussion.title}</strong>
