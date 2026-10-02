@@ -147,6 +147,18 @@
     "./postgres/issue-number": {
       "types": "./dist/postgres/issue-number.d.ts",
       "default": "./dist/postgres/issue-number.js"
+    },
+    "./application/resource-management": {
+      "types": "./dist/application/resource-management.d.ts",
+      "default": "./dist/application/resource-management.js"
+    },
+    "./contracts/output/resource-management": {
+      "types": "./dist/contracts/output/resource-management.d.ts",
+      "default": "./dist/contracts/output/resource-management.js"
+    },
+    "./postgres/resource-management": {
+      "types": "./dist/postgres/resource-management.d.ts",
+      "default": "./dist/postgres/resource-management.js"
     }
   },
   "files": [

@@ -2095,7 +2095,7 @@
       "id": "read-repository-labels",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Read authorized Repository Label collections without asserting label create/update/delete management.",
+      "intent": "Read authorized Repository Label collections through current Repository visibility/access.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -2134,7 +2134,7 @@
       "id": "read-repository-milestones",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Read authorized Repository Milestone lists and detail by repository-local number without asserting milestone write management.",
+      "intent": "Read authorized Repository Milestone lists and detail by repository-local number through current Repository visibility/access.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -2168,7 +2168,7 @@
           "packages/repository/test/resources.test.ts",
           "apps/web/test/repository-resources-http.test.ts"
         ],
-        "note": "Milestone number is repository-local and verified in schema/application input; write management remains separate and unasserted."
+        "note": "Milestone number is repository-local and verified in schema/application input; definition management is an independent Repository-owned capability."
       }
     },
     {
@@ -2198,46 +2198,72 @@
       "id": "manage-repository-labels",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Preserve Repository Label create/update/delete semantics as current data without asserting runtime management.",
-      "preserves": ["K1", "K2", "K5"],
+      "intent": "Manage Repository-owned Label definitions with stable identity, explicit write/maintain/admin authorization, version concurrency, exact replay and reference-safe deletion.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
         "schema",
+        "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "not-asserted",
+      "runtimeExpectation": "required",
       "implementation": {
-        "status": "data-only",
-        "scope": "Repository-owned Label table and semantic concept",
-        "sourcePaths": [],
-        "publicExports": [],
-        "entrypoints": [],
-        "testPaths": [],
-        "note": "Repository Label schema/topology evidence exists and authorized read runtime is modeled by read-repository-labels; create/update/delete management is not asserted."
+        "status": "implemented",
+        "scope": "Repository-owned Label create/update/delete; stable LabelId across rename; current write/maintain/admin authorization; archived Repository fail-closed; Issue-owned references are never mutated by this owner.",
+        "sourcePaths": [
+          "packages/repository/src/application/resource-management.ts",
+          "packages/repository/src/contracts/output/resource-management.ts",
+          "packages/repository/src/adapters/postgres/resource-management.ts"
+        ],
+        "publicExports": [
+          "./application/resource-management",
+          "./contracts/output/resource-management",
+          "./postgres/resource-management"
+        ],
+        "entrypoints": ["apps/web/src/app/api/repository-labels/route.ts"],
+        "testPaths": [
+          "packages/repository/test/resource-management.test.ts",
+          "packages/platform/test/schema-contract.schema.ts",
+          "apps/web/test/repository-resource-management-http.test.ts"
+        ],
+        "note": "Definition mutation uses resource-local expectedVersion plus durable repository_commands replay. Label deletion relies on the Issue-owned reference foreign key: an in-use Label conflicts instead of deleting IssueLabel truth across owner boundaries."
       }
     },
     {
       "id": "manage-repository-milestones",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management.",
-      "preserves": ["K1", "K2", "K5"],
+      "intent": "Manage Repository-owned Milestone definitions and OPEN/CLOSED lifecycle with repository-local numbers, explicit write/maintain/admin authorization, version concurrency and exact replay.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
         "schema",
+        "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "not-asserted",
+      "runtimeExpectation": "required",
       "implementation": {
-        "status": "data-only",
-        "scope": "Repository-owned Milestone table and semantic concept",
-        "sourcePaths": [],
-        "publicExports": [],
-        "entrypoints": [],
-        "testPaths": [],
-        "note": "Repository Milestone schema/topology evidence exists and authorized read runtime is modeled by read-repository-milestones; create/update/close management is not asserted."
+        "status": "implemented",
+        "scope": "Repository-owned Milestone create/update/open/close; repository-local number allocation; current write/maintain/admin authorization; archived Repository fail-closed; Issue milestone assignment remains Issue-owned.",
+        "sourcePaths": [
+          "packages/repository/src/application/resource-management.ts",
+          "packages/repository/src/contracts/output/resource-management.ts",
+          "packages/repository/src/adapters/postgres/resource-management.ts"
+        ],
+        "publicExports": [
+          "./application/resource-management",
+          "./contracts/output/resource-management",
+          "./postgres/resource-management"
+        ],
+        "entrypoints": ["apps/web/src/app/api/repository-milestones/route.ts"],
+        "testPaths": [
+          "packages/repository/test/resource-management.test.ts",
+          "packages/platform/test/schema-contract.schema.ts",
+          "apps/web/test/repository-resource-management-http.test.ts"
+        ],
+        "note": "Milestone definition/lifecycle mutation is distinct from Issue milestone assignment and Project checkpoints. The Repository row lock serializes creation so max(number)+1 remains repository-local and collision-free without creating a second counter authority."
       }
     },
     {

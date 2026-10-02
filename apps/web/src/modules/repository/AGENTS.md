@@ -4,7 +4,7 @@ URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`�
 
 Repository resource routes 同時呈現 repos/issues/discussions，但 route grouping 不轉移 domain ownership：Repository 擁有 Repository scope/access，Issue lifecycle 由 `@line_bot_v1/issue` 擁有，Discussion lifecycle 由 `@line_bot_v1/discussion` 擁有。Issue.number、Milestone.number 與 Discussion.number 都是 Repository-local canonical semantics；現行 Discussion detail route 仍使用 opaque id，這只是目前 implementation locator，不得覆蓋 FPT authority。Label 目前只有 collection；若調整 locator，必須從 semantic truth 同步到 schema、domain 與 route，而不是只改 URL。
 
-目前 `/repositories` 是 current viewer 的 authorized Repository collection；IssueBoard 只在 canonical Repository Issues surface 使用，不再把 Repository collection 等同 Issue collection。Discussion/Comment、Label、Milestone 為 authorized read；write management 與 Project 不因頁面存在而完成。Repository root、IssueBoard 與 resources-panel 的 sibling navigation 應維持一致 contract，修改時同時覆蓋 public/private 根頁與直接開啟的子頁。
+目前 `/repositories` 是 current viewer 的 authorized Repository collection；IssueBoard 只在 canonical Repository Issues surface 使用，不再把 Repository collection 等同 Issue collection。Discussion/Comment 維持 authorized read；Repository Label definition create/update/delete 與 Repository Milestone create/update/open/close 已是 current mutation contract，並與 Issue-owned 貼標／Milestone 指定分開。Project write 不因頁面存在而完成。Repository root、IssueBoard 與 resources-panel 的 sibling navigation 應維持一致 contract，修改時同時覆蓋 public/private 根頁與直接開啟的子頁。
 
 只在存在不同 lifecycle/consumer 需要時細分檔案；不建立 generic resource CRUD 抹去各資源語意。
 

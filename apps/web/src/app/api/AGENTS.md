@@ -15,8 +15,8 @@
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
 | `/api/issues`、`/api/issues/{issueNumber}` | Issue owner transport；Repository-scoped read returns canonical `state/stateReason`, local `workflowStatus`, body and assignees；POST carries replay-safe create/workflow/edit/close/reopen/add-remove-assignees commands；GET `workflowStatus` is canonical and legacy `status` remains a temporary alias |
 | `/api/discussions`、`/api/discussions/{discussionId}` | Discussion owner transport；Repository-scoped authorized GET，必須提供 `owner` + `name` |
-| `/api/repository-labels` | Repository Label authorized GET；必須提供 `owner` + `name` |
-| `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | Repository Milestone authorized GET；必須提供 `owner` + `name` |
+| `/api/repository-labels` | GET：Repository Label authorized collection read，必須提供 `owner` + `name`；POST：Repository-owned replay-safe Label create/update/delete definition mutation |
+| `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | GET：Repository Milestone authorized collection/detail read，必須提供 `owner` + `name`；collection POST：Repository-owned replay-safe Milestone create/update/open/close definition mutation |
 | `/api/repositories` | GET：Current User 的 explicit-access Repository collection；POST：Repository owner contract 的 replay-safe PRIVATE / INTERNAL / PUBLIC Repository create |
 | `/api/repository-management` | GET：current Repository settings projection；POST：current admin replay-safe rename/visibility/archive/unarchive with expected Repository version |
 | `/api/repository-subscription` | GET/POST：current-readable Repository 的 User Watch state；exact SUBSCRIBED / UNSUBSCRIBED / IGNORED，subscription 不授權 |

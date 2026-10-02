@@ -190,8 +190,6 @@ test("Repository runtime privileges match only activated write capabilities", as
     "discussion_comments",
     "discussions",
     "repository_access",
-    "repository_labels",
-    "repository_milestones",
     "repository_team_access",
   ];
   const tablePrivileges = await pg.query(
@@ -216,6 +214,35 @@ test("Repository runtime privileges match only activated write capabilities", as
       can_delete: false,
     })),
   );
+
+  const managedResources = await pg.query(
+    `select c.relname,
+      has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
+      has_table_privilege('line_app', c.oid, 'INSERT') as can_insert,
+      has_table_privilege('line_app', c.oid, 'UPDATE') as can_update,
+      has_table_privilege('line_app', c.oid, 'DELETE') as can_delete
+     from pg_class c
+     join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private'
+       and c.relname=any(array['repository_labels','repository_milestones'])
+     order by c.relname`,
+  );
+  assert.deepEqual(managedResources.rows, [
+    {
+      relname: "repository_labels",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: true,
+    },
+    {
+      relname: "repository_milestones",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: false,
+    },
+  ]);
 
   const accessCoordinator = await pg.query(
     `select
