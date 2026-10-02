@@ -1,7 +1,28 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain";
-import { IssueError, issueText, normalizeIssueNumber } from "../domain.js";
+import {
+  type IssueAction,
+  type IssueClosedStateReason,
+  IssueError,
+  issueText,
+  type IssueWorkflowStatus,
+  normalizeIssueNumber,
+} from "../domain.js";
 import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
+
+const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const workflowActions: readonly IssueAction[] = ["accept", "report", "reject", "approve"];
+const workflowStatuses: readonly IssueWorkflowStatus[] = [
+  "pending",
+  "active",
+  "review",
+  "completed",
+];
+const closedReasons: readonly IssueClosedStateReason[] = [
+  "COMPLETED",
+  "DUPLICATE",
+  "NOT_PLANNED",
+];
 
 function accountLoginForRepositoryLocator(value: string): string | null {
   try {
@@ -11,42 +32,145 @@ function accountLoginForRepositoryLocator(value: string): string | null {
   }
 }
 
-function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
-  const { requestId, repositoryId, action } = value;
+function optionalText(value: unknown, max: number, label: string): string {
+  if (typeof value !== "string") {
+    throw new IssueError(400, `${label} 格式不正確。`);
+  }
+  const normalized = value.trim();
+  if (normalized.length > max) {
+    throw new IssueError(400, `${label} 最多 ${max} 字。`);
+  }
+  return normalized;
+}
+
+function identifier(value: unknown, label: string): string {
   if (
-    typeof requestId !== "string" ||
-    !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(requestId) ||
-    typeof repositoryId !== "string" ||
-    !repositoryId ||
-    repositoryId.length > 120
+    typeof value !== "string" ||
+    !value.trim() ||
+    value !== value.trim() ||
+    value.length > 120
+  ) {
+    throw new IssueError(400, `${label} 不正確。`);
+  }
+  return value;
+}
+
+function identifierList(value: unknown, label: string, required = false): string[] {
+  if (value === undefined && !required) return [];
+  if (!Array.isArray(value)) throw new IssueError(400, `${label} 格式不正確。`);
+  const normalized = value.map((item) => identifier(item, label));
+  const unique = [...new Set(normalized)];
+  if (required && !unique.length) throw new IssueError(400, `${label} 不可為空。`);
+  return unique;
+}
+
+function commandBase(value: Record<string, unknown>) {
+  if (
+    typeof value.requestId !== "string" ||
+    !requestIdPattern.test(value.requestId) ||
+    typeof value.repositoryId !== "string" ||
+    !value.repositoryId ||
+    value.repositoryId.length > 120
   ) {
     throw new IssueError(400, "請求編號或 Repository 不正確。");
   }
-  if (action === "create") {
-    return {
-      requestId,
-      repositoryId,
-      action,
-      title: issueText(value.title, 80),
-      criteria: issueText(value.criteria, 1000),
-      assignee: issueText(value.assignee, 120),
-    };
-  }
+  return {
+    requestId: value.requestId.toLowerCase(),
+    repositoryId: value.repositoryId,
+  };
+}
+
+function existingIssueBase(value: Record<string, unknown>) {
+  const base = commandBase(value);
   if (
-    !["accept", "report", "reject", "approve"].includes(String(action)) ||
     !Number.isSafeInteger(value.expectedVersion) ||
     Number(value.expectedVersion) < 1
   ) {
-    throw new IssueError(400, "操作或版本不正確。");
+    throw new IssueError(400, "Issue 版本不正確。");
   }
   return {
-    requestId,
-    repositoryId,
-    action: action as "accept" | "report" | "reject" | "approve",
-    issueId: issueText(value.issueId, 120),
+    ...base,
+    issueId: identifier(value.issueId, "Issue 識別碼"),
     expectedVersion: Number(value.expectedVersion),
-    note: action === "report" || action === "reject" ? issueText(value.note, 1000) : "",
   };
+}
+
+function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
+  const action = value.action;
+  if (action === "create") {
+    const base = commandBase(value);
+    const assigneeIds =
+      value.assigneeIds === undefined && value.assignee !== undefined
+        ? [identifier(value.assignee, "Issue assignee")]
+        : identifierList(value.assigneeIds, "Issue assignees");
+    return {
+      ...base,
+      action,
+      title: issueText(value.title, 80),
+      body: optionalText(value.body ?? "", 10000, "Issue body"),
+      criteria: optionalText(value.criteria ?? "", 1000, "Issue acceptance criteria"),
+      assigneeIds,
+    };
+  }
+
+  const base = existingIssueBase(value);
+  if (workflowActions.includes(action as IssueAction)) {
+    return {
+      ...base,
+      action: action as IssueAction,
+      note:
+        action === "report" || action === "reject"
+          ? issueText(value.note, 1000)
+          : optionalText(value.note ?? "", 1000, "Issue note"),
+    };
+  }
+
+  if (action === "edit") {
+    const update: { title?: string; body?: string; criteria?: string } = {};
+    if (value.title !== undefined) update.title = issueText(value.title, 80);
+    if (value.body !== undefined) update.body = optionalText(value.body, 10000, "Issue body");
+    if (value.criteria !== undefined) {
+      update.criteria = optionalText(value.criteria, 1000, "Issue acceptance criteria");
+    }
+    if (update.title === undefined && update.body === undefined && update.criteria === undefined) {
+      throw new IssueError(400, "Issue 內容沒有可更新欄位。");
+    }
+    return { ...base, action, ...update };
+  }
+
+  if (action === "close") {
+    let stateReason: IssueClosedStateReason | null = null;
+    if (value.stateReason !== undefined && value.stateReason !== null) {
+      if (!closedReasons.includes(value.stateReason as IssueClosedStateReason)) {
+        throw new IssueError(400, "Issue close stateReason 不正確。");
+      }
+      stateReason = value.stateReason as IssueClosedStateReason;
+    }
+    return {
+      ...base,
+      action,
+      stateReason,
+      note: optionalText(value.note ?? "", 1000, "Issue note"),
+    };
+  }
+
+  if (action === "reopen") {
+    return {
+      ...base,
+      action,
+      note: optionalText(value.note ?? "", 1000, "Issue note"),
+    };
+  }
+
+  if (action === "add-assignees" || action === "remove-assignees") {
+    return {
+      ...base,
+      action,
+      assigneeIds: identifierList(value.assigneeIds, "Issue assignees", true),
+    };
+  }
+
+  throw new IssueError(400, "Issue 操作不正確。");
 }
 
 function selector(value?: RepositorySelector): RepositorySelector | undefined {
@@ -62,7 +186,11 @@ function selector(value?: RepositorySelector): RepositorySelector | undefined {
   if (!ownerLogin || !repositoryName) {
     throw new IssueError(400, "Repository 路徑不正確。");
   }
-  return { ownerLogin, repositoryName };
+  return {
+    ownerLogin,
+    repositoryName,
+    ...(value.followRenames === false ? { followRenames: false } : {}),
+  };
 }
 
 export function createIssues(deps: {
@@ -80,12 +208,15 @@ export function createIssues(deps: {
       list = false,
       view?: "mine" | "created",
       after?: string,
-      status?: string,
+      workflowStatus?: string,
     ) => {
       const actor = await identity(subject);
       const selected = selector(repository);
-      if (status && !["pending", "active", "review", "completed"].includes(status)) {
-        throw new IssueError(400, "Issue 狀態不正確。");
+      if (
+        workflowStatus &&
+        !workflowStatuses.includes(workflowStatus as IssueWorkflowStatus)
+      ) {
+        throw new IssueError(400, "Issue 工作流程狀態不正確。");
       }
       let cursor: { at: number; id: string } | undefined;
       if (after !== undefined) {
@@ -105,7 +236,12 @@ export function createIssues(deps: {
           throw new IssueError(400, "Issue 分頁不正確，請重新讀取。");
         }
       }
-      return deps.store().snapshot(actor, selected, list, view, { after: cursor, status });
+      return deps
+        .store()
+        .snapshot(actor, selected, list, view, {
+          after: cursor,
+          workflowStatus: workflowStatus as IssueWorkflowStatus | undefined,
+        });
     },
     detail: async (subject: string, issueNumber: number, repository: RepositorySelector) => {
       const selectedIssueNumber = normalizeIssueNumber(issueNumber);
