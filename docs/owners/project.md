@@ -1,29 +1,100 @@
 # Project
 
-狀態：**Project identity/read current；planning write data-only**。
+Read this file for Project ownership and invariants.
 
-Project 是 Account-owned（User 或 Organization）的跨 Repository planning boundary。它擁有 planning facts，但不取得被參照 work 的 authority。GitHub GraphQL ownership semantics 直接由 `architecture/domain/fpt/schema-projects.json` 的 `ProjectV2.owner` 提供 domain truth；`architecture/semantic-model.json` 只保存 Line_Bot_v1 owner、invariant、runtime/implementation overlay。
+## Responsibility
 
-## Authority / runtime
+Project owns:
 
-- Project 擁有 Project identity、ProjectItem reference、WBS / ordering、Project Milestone、Project → Repository reference。
-- `700_projects.sql` 的 owner 是 `owner_account_id + owner_account_kind`，只允許 `USER | ORGANIZATION`；`packages/project` 使用相同 Domain identity。
-- `read-projects` 是 current runtime capability：User-owned Project 只對 owner User 可讀；Organization-owned Project 目前只對 current `OrganizationOwner` 可讀。Organization membership 本身不授予 Project read。
-- `manage-project-planning` 仍是 data-only；Project create/update、WBS/Item/Milestone mutation、expected version 與 replay command contract 尚未開放。
-- Web collection 是 `/projects`，transport 是 `GET /api/projects`。目前沒有 Project detail/write route。
+- stable Project identity plus an owner-scoped positive `number`;
+- root planning lifecycle: create, update, close/reopen, copy and soft delete;
+- Project-specific User/Team collaborator grants and effective `READ | WRITE | ADMIN` access;
+- ProjectItem identity, ordering, archive lifecycle and content variant;
+- Project-owned `DraftIssue` identity/content/assignees until explicit conversion to a real Issue;
+- typed Project field definitions, select/iteration options and per-Item typed values;
+- persisted Project views and their visible-field configuration;
+- Project status updates, independent from Issue state/events;
+- replay-safe Project commands, aggregate version and immutable Project event evidence;
+- references to Repository and Issue identities without acquiring either source owner's authority.
 
-## Invariants
+Account remains authoritative for User/Organization identity. Organization and Team remain authoritative for their membership/qualification facts. Repository remains authoritative for Repository visibility/access. Issue remains authoritative for Issue content and lifecycle.
 
-- `Project ≠ WBS`；WBS 是 Project-owned decomposition。
-- Project Item 是 reference，不複製 Repository Issue business truth。
-- Project Milestone 與 Repository Milestone 是不同 owner 的 concept。
-- Project reference 不轉移 Repository access、Issue lifecycle 或 content authority。Viewer-facing Repository reference 由 `project_repository_visible_references` 依 Repository 當下 visibility/access 投影；PRIVATE 隱藏、PUBLIC 可讀、INTERNAL 只依 same current active Enterprise，且不洩漏 hidden reference/count。
-- Owner login 只作 locator/presentation，不授權。
-- 在 Project-specific access policy 成為 machine truth 前，不得把 Organization member 擴張成 Project viewer。
-- Planning write 啟用前必須定義 expected version、request replay、Repository current-access validation 與 mutation consistency boundary。
+## Current runtime
 
-Canonical machine truth：
-[`architecture/semantic-model.json`](../../architecture/semantic-model.json) ·
-[`architecture/implementation-topology.json`](../../architecture/implementation-topology.json) ·
-[`architecture/data-topology.json`](../../architecture/data-topology.json) ·
-[`supabase/schemas/700_projects.sql`](../../supabase/schemas/700_projects.sql)
+Canonical capability `manage-project-planning` is implemented alongside `read-projects`.
+
+- HTTP management transport: `GET/POST /api/project-management`.
+- Owner-number lookup: `GET /api/projects/by-number/{projectNumber}?owner={ownerLogin}`.
+- Stable ProjectId remains the authoritative identity; owner login and number are locators only.
+- Creation allocates a number inside the owner Account scope. Number uniqueness is owner-scoped and independent from mutable title.
+- Existing pre-parity rows without a number are adopted explicitly rather than silently reinterpreted.
+- User and Team collaborators are Project-owned grants. Current source qualification is rechecked; Project grants do not rewrite Account/Team authority.
+- Public Project visibility may grant read projection only. It never grants Project write authority or source Repository/Issue access.
+- Root writes require Project write/admin policy; collaborator administration and destructive root operations require the stronger management policy enforced by the Project owner runtime.
+- Every command carries a stable request UUID. Existing-project mutations require `expectedVersion`; exact replay and stale-version conflicts are handled inside one transaction.
+
+## Item and DraftIssue invariants
+
+- `ProjectItem ≠ Issue`. Project owns Item identity/order/archive metadata; an Issue-backed Item only references Issue-owned work.
+- Removing or archiving an Item never closes or deletes its source Issue.
+- An Item has exactly one adopted content variant: Issue reference or Project-owned DraftIssue. No fake Repository/Issue placeholder is used.
+- DraftIssue conversion checks current target Repository create authority, delegates Issue creation to the Issue owner in the same transaction, preserves Project Item identity/planning metadata and then replaces only the content reference.
+- Viewer-facing Issue/Repository references recheck current source visibility/access. Hidden source items and field values are omitted rather than leaking titles, counts or metadata.
+
+## Collaborator invariants
+
+- Owner authority, Project collaborator access, Organization membership and public visibility are distinct facts.
+- Project User/Team grants use `READ | WRITE | ADMIN`; Team qualification is consumed from the Team owner and never copied as Project membership truth.
+- Seeing a Project does not imply access to every referenced Repository or Issue.
+- Grant/revoke changes are versioned Project mutations and do not grant Repository/Issue permissions.
+
+## Typed field invariants
+
+- Project fields are Project-only planning fields and are separate from IssueField.
+- Adopted data types are `DATE | ITERATION | MULTI_SELECT | NUMBER | SINGLE_SELECT | TEXT`.
+- Scalar values use typed columns; MULTI_SELECT uses a separate option relation. Arbitrary JSON/EAV values are not Project field truth.
+- Select options and iterations have stable identity inside their field. Field type is not mutated in place.
+- Set/clear value validates Item/Field scope and referenced option/iteration identity.
+- Deleting a field removes only Project-owned planning values/configuration; it never rewrites source Issue facts.
+
+## View invariants
+
+- ProjectView has stable identity, Project-scoped number, name, layout and explicit visible-field ordering.
+- Adopted layouts are `BOARD_LAYOUT | ROADMAP_LAYOUT | TABLE_LAYOUT`.
+- A View configures presentation only. It does not create a second Item store, rewrite field values or become an access policy.
+- Visible fields must reference fields owned by the same Project.
+
+## Status-update invariants
+
+- ProjectV2StatusUpdate is Project-owned and independent from Issue status/events.
+- Current adopted status values are `AT_RISK | COMPLETE | INACTIVE | OFF_TRACK | ON_TRACK`, plus nullable status/date/body where allowed by the contract.
+- Create/update/delete-retain operations preserve author, stable identity, timestamps and version.
+- Project event evidence may reference status-update mutations but is not a second writable copy of the update body.
+
+## Number / locator invariants
+
+- ProjectId is stable identity. Project number is stable only within the owner Account scope.
+- Number allocation is serialized by the Project owner runtime and never shares the Repository Issue/Discussion number sequence.
+- Mutable title is presentation, not identity.
+- Owner login + Project number resolves the Project and then rechecks current Project access; knowing the URL never authorizes access.
+
+## Deferred adjacent planning facts
+
+Existing Project WBS and Project-local Milestone persistence remain separate planning concepts. This capability does not reinterpret them as Issue hierarchy or Repository Milestone, and no acceptance claim for #181–#188 depends on expanding those adjacent concepts.
+
+## Mapping
+
+Runtime owner: `packages/project`.
+
+Canonical machine truth:
+[semantic model](../../architecture/semantic-model.json) ·
+[implementation topology](../../architecture/implementation-topology.json) ·
+[data topology](../../architecture/data-topology.json) ·
+[Project root schema](../../supabase/schemas/700_projects.sql) ·
+[Project Item/Draft schema](../../supabase/schemas/701_project_items.sql) ·
+[Project access schema](../../supabase/schemas/705_project_access.sql) ·
+[Project field schema](../../supabase/schemas/707_project_fields.sql) ·
+[Project view schema](../../supabase/schemas/708_project_views.sql) ·
+[Project status schema](../../supabase/schemas/709_project_status_updates.sql).
+
+Adjacent owners: [Account](account.md) · [Organization](organization.md) · [Team](team.md) · [Repository](repository.md) · [Issue](issue.md)

@@ -53,7 +53,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | provides | wallet | stable-identity+query | account | current-state | Wallet balance projection consumes current User holder qualification and stable Account identity. |
 | consumes | line-integration | external-proof | line-integration | verified-request | Verified LINE identity proof consumed for account mapping/qualification. |
 | consumes | namespace | query | namespace | current-policy | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
-| provides | project | stable-identity | account | current-identity | Project owner identity is an Account constrained to User or Organization. |
+| provides | project | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |
 
 ## Tactical Model Boundary
 

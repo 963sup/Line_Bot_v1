@@ -23,13 +23,21 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Discussion | discussion | authoritative | current | GitHub FPT: schema-discussions.json#Discussion |
+| Discussion.answer | discussion-answer | authoritative | current | GitHub FPT: schema-discussions.json#Discussion#answer |
+| Discussion.labels | discussion-label-link | authoritative | current | GitHub FPT: schema-discussions.json#Discussion#labels |
+| Discussion.upvoteCount | discussion-upvote | authoritative | current | GitHub FPT: schema-discussions.json#Discussion#upvoteCount |
+| DiscussionCategory | discussion-category | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionCategory |
 | DiscussionComment | discussion-comment | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionComment |
+| DiscussionComment.upvoteCount | discussion-comment-upvote | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionComment#upvoteCount |
+| DiscussionPoll | discussion-poll | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionPoll |
+| DiscussionPollOption | discussion-poll-option | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionPollOption |
+| DiscussionPollOption.viewerHasVoted | discussion-poll-vote | authoritative | current | GitHub FPT: schema-discussions.json#DiscussionPollOption#viewerHasVoted |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-discussions | not-asserted | data-only | Preserve Discussion create/update/close/comment write semantics as current data without asserting runtime management. |
+| manage-discussions | required | implemented | Manage Repository-scoped Discussion lifecycle, stable number/category, comments/replies, chosen answer, labels, upvotes, poll and conversation lock without transferring Repository authority. |
 | read-discussions | required | implemented | Read authorized Repository-scoped Discussion lists, a Discussion body, and its comments without asserting Discussion write management. |
 
 ## Context Relationships
@@ -37,7 +45,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | namespace | query | namespace | current-state | Discussion uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
-| consumes | repository | stable-identity+query | repository | transaction-recheck | Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads without acquiring Repository authority. |
+| consumes | repository | query | repository | transaction-recheck | Discussion label associations reference Repository-owned Label definitions in the same Repository; Discussion owns only the association fact. |
+| consumes | repository | stable-identity+query | repository | transaction-recheck | Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads and mutations without acquiring Repository authority. |
 
 ## Tactical Model Boundary
 

@@ -177,6 +177,7 @@
       "semanticOwner": "issue",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/namespace",
+        "@line_bot_v1/organization",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"
       ]
@@ -209,9 +210,13 @@
       "moduleKind": "domain-module",
       "semanticOwner": "project",
       "allowedWorkspaceDependencies": [
+        "@line_bot_v1/account",
+        "@line_bot_v1/issue",
         "@line_bot_v1/namespace",
         "@line_bot_v1/organization",
-        "@line_bot_v1/platform"
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/team"
       ]
     },
     "@line_bot_v1/workforce": {

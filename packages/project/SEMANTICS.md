@@ -22,17 +22,26 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
+| DraftIssue | project-draft-issue | authoritative | current | GitHub FPT: schema-projects.json#DraftIssue |
+| DraftIssue.assignees | project-draft-issue-assignee | authoritative | current | GitHub FPT: schema-projects.json#DraftIssue#assignees |
 | Milestone | project-milestone | authoritative | current-data-only | Project-scoped goal or checkpoint, distinct from WBS structure and Repository milestone. |
 | ProjectV2 | project | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2 |
-| ProjectV2.repositories | project-repository-link | reference | current-data-only | GitHub FPT: schema-projects.json#ProjectV2#repositories |
-| ProjectV2Item | project-item | reference | current-data-only | GitHub FPT: schema-projects.json#ProjectV2Item |
+| ProjectV2.repositories | project-repository-link | reference | current | GitHub FPT: schema-projects.json#ProjectV2#repositories |
+| ProjectV2Collaborator | project-collaborator | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2Collaborator |
+| ProjectV2Field | project-field | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2Field |
+| ProjectV2FieldValue | project-item-field-value | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2FieldValue |
+| ProjectV2Item | project-item | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2Item |
+| ProjectV2IterationFieldConfiguration | project-field-iteration | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2IterationFieldConfiguration |
+| ProjectV2SingleSelectFieldOption | project-field-option | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2SingleSelectFieldOption |
+| ProjectV2StatusUpdate | project-status-update | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2StatusUpdate |
+| ProjectV2View | project-view | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2View |
 | WBS | wbs | authoritative | current-data-only | Project-owned work breakdown structure. Project is not WBS. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-project-planning | not-asserted | data-only | Manage Project planning, WBS, Project-local milestones, and references without taking underlying work authority. |
+| manage-project-planning | required | implemented | Manage ProjectV2 root lifecycle, owner-scoped number, collaborators, Item/DraftIssue lifecycle, typed fields and values, views, status updates, and Repository/Issue references without taking source-owner authority. |
 | read-projects | required | implemented | Read authorized Project summaries without asserting Project planning writes or underlying Repository work authority. |
 
 ## Context Relationships
@@ -41,9 +50,11 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | consumes | namespace | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
 | consumes | organization | query | organization | current-state | Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned. |
+| consumes | issue | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |
 | consumes | issue | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
-| consumes | account | stable-identity | account | current-identity | Project owner identity is an Account constrained to User or Organization. |
+| consumes | account | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |
 | consumes | repository | reference | repository | current-access-and-identity | Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access. |
+| consumes | team | query | team | transaction-recheck | Project-owned Team grants consume current Team membership and Team organization scope; Team identity or membership does not become Project-owned authority. |
 
 ## Tactical Model Boundary
 

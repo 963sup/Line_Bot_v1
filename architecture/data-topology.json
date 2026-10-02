@@ -196,11 +196,35 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/625_issue_comments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/626_issue_relations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/627_issue_types.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/630_discussions.sql",
       "role": "authoritative"
     },
     {
       "path": "supabase/schemas/631_discussion_comments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/632_discussion_categories.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/634_discussion_commands.sql",
       "role": "authoritative"
     },
     {
@@ -221,6 +245,26 @@
     },
     {
       "path": "supabase/schemas/704_project_repository_references.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/705_project_access.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/706_project_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/707_project_fields.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/708_project_views.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/709_project_status_updates.sql",
       "role": "authoritative"
     },
     {
@@ -723,6 +767,61 @@
       "concept": "issue-label-link"
     },
     {
+      "name": "issue_comments",
+      "kind": "table",
+      "path": "supabase/schemas/625_issue_comments.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-comment"
+    },
+    {
+      "name": "issue_sub_issues",
+      "kind": "table",
+      "path": "supabase/schemas/626_issue_relations.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-parent-link"
+    },
+    {
+      "name": "issue_dependencies",
+      "kind": "table",
+      "path": "supabase/schemas/626_issue_relations.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-dependency-link"
+    },
+    {
+      "name": "issue_related",
+      "kind": "table",
+      "path": "supabase/schemas/626_issue_relations.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-related-link"
+    },
+    {
+      "name": "issue_types",
+      "kind": "table",
+      "path": "supabase/schemas/627_issue_types.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-type"
+    },
+    {
+      "name": "issue_type_assignments",
+      "kind": "table",
+      "path": "supabase/schemas/627_issue_types.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-type-link"
+    },
+    {
+      "name": "issue_type_events",
+      "kind": "table",
+      "path": "supabase/schemas/627_issue_types.sql",
+      "authority": true,
+      "semanticOwner": "issue"
+    },
+    {
       "name": "discussions",
       "kind": "table",
       "path": "supabase/schemas/630_discussions.sql",
@@ -737,6 +836,91 @@
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-comment"
+    },
+    {
+      "name": "discussion_categories",
+      "kind": "table",
+      "path": "supabase/schemas/632_discussion_categories.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-category"
+    },
+    {
+      "name": "discussion_answers",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-answer"
+    },
+    {
+      "name": "discussion_labels",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-label-link"
+    },
+    {
+      "name": "discussion_upvotes",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-upvote"
+    },
+    {
+      "name": "discussion_comment_upvotes",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-comment-upvote"
+    },
+    {
+      "name": "discussion_polls",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-poll"
+    },
+    {
+      "name": "discussion_poll_options",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-poll-option"
+    },
+    {
+      "name": "discussion_poll_votes",
+      "kind": "table",
+      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-poll-vote"
+    },
+    {
+      "name": "discussion_commands",
+      "kind": "table",
+      "path": "supabase/schemas/634_discussion_commands.sql",
+      "authority": true,
+      "semanticOwner": "discussion"
+    },
+    {
+      "name": "discussion_events",
+      "kind": "table",
+      "path": "supabase/schemas/634_discussion_commands.sql",
+      "authority": true,
+      "semanticOwner": "discussion"
+    },
+    {
+      "name": "discussion_category_events",
+      "kind": "table",
+      "path": "supabase/schemas/634_discussion_commands.sql",
+      "authority": true,
+      "semanticOwner": "discussion"
     },
     {
       "name": "projects",
@@ -777,6 +961,116 @@
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-repository-link"
+    },
+    {
+      "name": "project_draft_issues",
+      "kind": "table",
+      "path": "supabase/schemas/701_project_items.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-draft-issue"
+    },
+    {
+      "name": "project_draft_issue_assignees",
+      "kind": "table",
+      "path": "supabase/schemas/701_project_items.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-draft-issue-assignee"
+    },
+    {
+      "name": "project_user_access",
+      "kind": "table",
+      "path": "supabase/schemas/705_project_access.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-collaborator"
+    },
+    {
+      "name": "project_team_access",
+      "kind": "table",
+      "path": "supabase/schemas/705_project_access.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-collaborator"
+    },
+    {
+      "name": "project_commands",
+      "kind": "table",
+      "path": "supabase/schemas/706_project_commands.sql",
+      "authority": true,
+      "semanticOwner": "project"
+    },
+    {
+      "name": "project_events",
+      "kind": "table",
+      "path": "supabase/schemas/706_project_commands.sql",
+      "authority": true,
+      "semanticOwner": "project"
+    },
+    {
+      "name": "project_fields",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-field"
+    },
+    {
+      "name": "project_field_options",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-field-option"
+    },
+    {
+      "name": "project_field_iterations",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-field-iteration"
+    },
+    {
+      "name": "project_item_field_values",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-item-field-value"
+    },
+    {
+      "name": "project_item_multi_select_values",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-item-field-value"
+    },
+    {
+      "name": "project_views",
+      "kind": "table",
+      "path": "supabase/schemas/708_project_views.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-view"
+    },
+    {
+      "name": "project_view_visible_fields",
+      "kind": "table",
+      "path": "supabase/schemas/708_project_views.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-view"
+    },
+    {
+      "name": "project_status_updates",
+      "kind": "table",
+      "path": "supabase/schemas/709_project_status_updates.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-status-update"
     },
     {
       "name": "asset_definitions",

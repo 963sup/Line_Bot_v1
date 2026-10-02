@@ -31,6 +31,10 @@
     "./domain/value-objects/team-slug": {
       "types": "./dist/domain/value-objects/team-slug.d.ts",
       "default": "./dist/domain/value-objects/team-slug.js"
+    },
+    "./postgres/project-access": {
+      "types": "./dist/postgres/project-access.d.ts",
+      "default": "./dist/postgres/project-access.js"
     }
   },
   "files": [

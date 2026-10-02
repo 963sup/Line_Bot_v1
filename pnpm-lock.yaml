@@ -464,6 +464,9 @@ importers:
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
+      '@line_bot_v1/organization':
+        specifier: workspace:*
+        version: link:../organization
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
@@ -622,6 +625,12 @@ importers:
 
   packages/project:
     dependencies:
+      '@line_bot_v1/account':
+        specifier: workspace:*
+        version: link:../account
+      '@line_bot_v1/issue':
+        specifier: workspace:*
+        version: link:../issue
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
@@ -631,6 +640,12 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
+      '@line_bot_v1/team':
+        specifier: workspace:*
+        version: link:../team
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

@@ -31,6 +31,7 @@ export default function RepositoryResourcesPanel({
   repositoryName,
   kind,
   discussionId,
+  discussionNumber,
   milestoneNumber,
 }: {
   liffId: string;
@@ -38,6 +39,7 @@ export default function RepositoryResourcesPanel({
   repositoryName: string;
   kind: ResourcesKind;
   discussionId?: string;
+  discussionNumber?: number;
   milestoneNumber?: number;
 }) {
   const [data, setData] = useState<PageData | null>(null);
@@ -77,11 +79,20 @@ export default function RepositoryResourcesPanel({
         repositoryName,
         kind,
         discussionId,
+        discussionNumber,
         milestoneNumber,
         milestoneStatus,
         after,
       }),
-    [discussionId, kind, milestoneNumber, milestoneStatus, ownerLogin, repositoryName],
+    [
+      discussionId,
+      discussionNumber,
+      kind,
+      milestoneNumber,
+      milestoneStatus,
+      ownerLogin,
+      repositoryName,
+    ],
   );
 
   const load = useCallback(

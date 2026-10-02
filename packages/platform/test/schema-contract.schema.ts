@@ -144,14 +144,28 @@ test("runtime provisioning creates governance roots only through narrow coordina
   assert.deepEqual(organizationOwner.rows, [{ status: "active", membership_version: 1 }]);
 });
 
-test("Project runtime exposes only aggregate-root read access", async (t) => {
+test("Project runtime privileges match activated planning capabilities", async (t) => {
   const { pg } = await postgresFixture();
   t.after(() => pg.close());
 
   const expected = [
+    "project_commands",
+    "project_draft_issue_assignees",
+    "project_draft_issues",
+    "project_events",
+    "project_field_iterations",
+    "project_field_options",
+    "project_fields",
+    "project_item_field_values",
+    "project_item_multi_select_values",
     "project_items",
     "project_milestones",
     "project_repository_references",
+    "project_status_updates",
+    "project_team_access",
+    "project_user_access",
+    "project_view_visible_fields",
+    "project_views",
     "project_wbs",
     "projects",
   ];
@@ -169,29 +183,103 @@ test("Project runtime exposes only aggregate-root read access", async (t) => {
     [expected],
   );
 
-  assert.deepEqual(
-    result.rows,
-    expected.map((relname) => ({
-      relname,
+  const all = {
+    relrowsecurity: true,
+    can_select: true,
+    can_insert: true,
+    can_update: true,
+    can_delete: true,
+  };
+  const readInsert = {
+    relrowsecurity: true,
+    can_select: true,
+    can_insert: true,
+    can_update: false,
+    can_delete: false,
+  };
+  const relationSet = {
+    relrowsecurity: true,
+    can_select: true,
+    can_insert: true,
+    can_update: false,
+    can_delete: true,
+  };
+  const readInsertUpdate = {
+    relrowsecurity: true,
+    can_select: true,
+    can_insert: true,
+    can_update: true,
+    can_delete: false,
+  };
+  const none = {
+    relrowsecurity: true,
+    can_select: false,
+    can_insert: false,
+    can_update: false,
+    can_delete: false,
+  };
+
+  assert.deepEqual(result.rows, [
+    { relname: "project_commands", ...readInsert },
+    { relname: "project_draft_issue_assignees", ...relationSet },
+    { relname: "project_draft_issues", ...readInsertUpdate },
+    { relname: "project_events", ...readInsert },
+    { relname: "project_field_iterations", ...all },
+    { relname: "project_field_options", ...all },
+    { relname: "project_fields", ...all },
+    { relname: "project_item_field_values", ...all },
+    { relname: "project_item_multi_select_values", ...relationSet },
+    { relname: "project_items", ...all },
+    { relname: "project_milestones", ...none },
+    { relname: "project_repository_references", ...all },
+    { relname: "project_status_updates", ...readInsertUpdate },
+    { relname: "project_team_access", ...all },
+    { relname: "project_user_access", ...all },
+    { relname: "project_view_visible_fields", ...all },
+    { relname: "project_views", ...all },
+    { relname: "project_wbs", ...none },
+    {
+      relname: "projects",
       relrowsecurity: true,
-      can_select: relname === "projects",
+      can_select: true,
       can_insert: false,
       can_update: false,
       can_delete: false,
-    })),
+    },
+  ]);
+
+  const projectColumns = await pg.query(
+    `select
+      has_column_privilege('line_app','app_private.projects','id','INSERT') as can_insert_id,
+      has_column_privilege('line_app','app_private.projects','owner_account_id','INSERT') as can_insert_owner,
+      has_column_privilege('line_app','app_private.projects','number','INSERT') as can_insert_number,
+      has_column_privilege('line_app','app_private.projects','number','UPDATE') as can_update_number,
+      has_column_privilege('line_app','app_private.projects','name','UPDATE') as can_update_name,
+      has_column_privilege('line_app','app_private.projects','is_public','UPDATE') as can_update_public,
+      has_column_privilege('line_app','app_private.projects','creator','UPDATE') as can_update_creator,
+      has_column_privilege('line_app','app_private.projects','owner_account_id','UPDATE') as can_update_owner,
+      has_column_privilege('line_app','app_private.projects','deleted_at','UPDATE') as can_update_deleted`,
   );
+  assert.deepEqual(projectColumns.rows, [
+    {
+      can_insert_id: true,
+      can_insert_owner: true,
+      can_insert_number: true,
+      can_update_number: true,
+      can_update_name: true,
+      can_update_public: true,
+      can_update_creator: false,
+      can_update_owner: false,
+      can_update_deleted: true,
+    },
+  ]);
 });
 
 test("Repository runtime privileges match only activated write capabilities", async (t) => {
   const { pg } = await postgresFixture();
   t.after(() => pg.close());
 
-  const readOnly = [
-    "discussion_comments",
-    "discussions",
-    "repository_access",
-    "repository_team_access",
-  ];
+  const readOnly = ["repository_access", "repository_team_access"];
   const tablePrivileges = await pg.query(
     `select c.relname,
       has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
@@ -214,6 +302,62 @@ test("Repository runtime privileges match only activated write capabilities", as
       can_delete: false,
     })),
   );
+
+  const managedDiscussions = await pg.query(
+    `select c.relname,
+      has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
+      has_table_privilege('line_app', c.oid, 'INSERT') as can_insert,
+      has_table_privilege('line_app', c.oid, 'UPDATE') as can_update,
+      has_table_privilege('line_app', c.oid, 'DELETE') as can_delete
+     from pg_class c
+     join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private'
+       and c.relname=any(array['discussion_categories','discussion_comments','discussions'])
+     order by c.relname`,
+  );
+  assert.deepEqual(managedDiscussions.rows, [
+    {
+      relname: "discussion_categories",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: true,
+    },
+    {
+      relname: "discussion_comments",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: false,
+    },
+    {
+      relname: "discussions",
+      can_select: true,
+      can_insert: true,
+      can_update: false,
+      can_delete: false,
+    },
+  ]);
+
+  const discussionColumns = await pg.query(
+    `select
+      has_column_privilege('line_app','app_private.discussions','title','UPDATE') as can_update_title,
+      has_column_privilege('line_app','app_private.discussions','number','UPDATE') as can_update_number,
+      has_column_privilege('line_app','app_private.discussions','category_id','UPDATE') as can_update_category,
+      has_column_privilege('line_app','app_private.discussions','state','UPDATE') as can_update_state,
+      has_column_privilege('line_app','app_private.discussions','is_locked','UPDATE') as can_update_lock,
+      has_column_privilege('line_app','app_private.discussions','version','UPDATE') as can_update_version`,
+  );
+  assert.deepEqual(discussionColumns.rows, [
+    {
+      can_update_title: true,
+      can_update_number: true,
+      can_update_category: true,
+      can_update_state: true,
+      can_update_lock: true,
+      can_update_version: true,
+    },
+  ]);
 
   const managedResources = await pg.query(
     `select c.relname,
@@ -266,15 +410,15 @@ test("Repository runtime privileges match only activated write capabilities", as
     { runtime_execute: true, anon_execute: false, authenticated_execute: false },
   ]);
 
-  const inactiveIssueLabels = await pg.query(
+  const issueLabels = await pg.query(
     `select
       has_table_privilege('line_app','app_private.issue_labels','SELECT') as can_select,
       has_table_privilege('line_app','app_private.issue_labels','INSERT') as can_insert,
       has_table_privilege('line_app','app_private.issue_labels','UPDATE') as can_update,
       has_table_privilege('line_app','app_private.issue_labels','DELETE') as can_delete`,
   );
-  assert.deepEqual(inactiveIssueLabels.rows, [
-    { can_select: false, can_insert: false, can_update: false, can_delete: false },
+  assert.deepEqual(issueLabels.rows, [
+    { can_select: true, can_insert: true, can_update: false, can_delete: true },
   ]);
 
   const repositoryColumns = await pg.query(
@@ -352,6 +496,9 @@ test("Repository runtime privileges match only activated write capabilities", as
       has_column_privilege('line_app','app_private.issues','title','UPDATE') as can_update_title,
       has_column_privilege('line_app','app_private.issues','body','UPDATE') as can_update_body,
       has_column_privilege('line_app','app_private.issues','criteria','UPDATE') as can_update_criteria,
+      has_column_privilege('line_app','app_private.issues','milestone_id','UPDATE') as can_update_milestone,
+      has_column_privilege('line_app','app_private.issues','is_locked','UPDATE') as can_update_lock,
+      has_column_privilege('line_app','app_private.issues','lock_reason','UPDATE') as can_update_lock_reason,
       has_column_privilege('line_app','app_private.issues','version','UPDATE') as can_update_version,
       has_column_privilege('line_app','app_private.issues','updated_at','UPDATE') as can_update_timestamp,
       has_table_privilege('line_app','app_private.issues','DELETE') as can_delete`,
@@ -371,6 +518,9 @@ test("Repository runtime privileges match only activated write capabilities", as
       can_update_title: true,
       can_update_body: true,
       can_update_criteria: true,
+      can_update_milestone: true,
+      can_update_lock: true,
+      can_update_lock_reason: true,
       can_update_version: true,
       can_update_timestamp: true,
       can_delete: false,

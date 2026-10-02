@@ -31,10 +31,14 @@ test("Issue RepositoryPermission policy keeps open/workflow separate from generi
     }
   }
 
-  for (const operation of ["manage-resource", "lock-conversation"] as const) {
-    for (const permission of allPermissions) {
-      assert.equal(canIssueRepositoryOperation([permission], operation), false);
-    }
+  for (const permission of allPermissions) {
+    assert.equal(canIssueRepositoryOperation([permission], "manage-resource"), false);
+  }
+  for (const permission of ["read", "triage", "triage_plus"] as const) {
+    assert.equal(canIssueRepositoryOperation([permission], "lock-conversation"), false);
+  }
+  for (const permission of ["write", "maintain", "admin"] as const) {
+    assert.equal(canIssueRepositoryOperation([permission], "lock-conversation"), true);
   }
 });
 

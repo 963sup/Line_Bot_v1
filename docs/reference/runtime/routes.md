@@ -76,6 +76,8 @@ Current Repository-scoped collaboration/resource read API：
 | Route | Responsibility |
 | --- | --- |
 | `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and replay-safe command transport；read 投影分開回 canonical `state/stateReason` 與 local `workflowStatus`，並含 body/assignees；保留 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
+| `/api/issue-types` | Organization-scoped IssueType definition list/create/update/delete；current active `OrganizationOwner` only，disabled/tombstone lifecycle independent from Issue workflow/permission |
+| `/api/issue-collaboration` | Issue collaboration + nullable IssueType assign/clear；assignment rechecks Repository triage authority and same Organization scope |
 | `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |

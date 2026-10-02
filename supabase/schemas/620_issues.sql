@@ -21,6 +21,8 @@ create table app_private."issues" (
   "state_reason" text,
   "workflow_status" text,
   "milestone_id" text,
+  "is_locked" boolean not null default false,
+  "lock_reason" text,
   "version" integer not null,
   "created_at" bigint not null,
   "updated_at" bigint not null,
@@ -74,6 +76,10 @@ create table app_private."issues" (
       and workflow_status is not null
     )
   ),
+  constraint "issues_lock_check" check (
+    (is_locked and lock_reason in ('OFF_TOPIC','RESOLVED','SPAM','TOO_HEATED'))
+    or (not is_locked and lock_reason is null)
+  ),
   constraint "issues_version_check" check (version > 0),
   constraint "issues_repository_id_fkey"
     foreign key (repository_id) references app_private.repositories(id),
@@ -119,6 +125,9 @@ grant update (
   state,
   state_reason,
   workflow_status,
+  milestone_id,
+  is_locked,
+  lock_reason,
   version,
   updated_at
 ) on app_private.issues to line_app;

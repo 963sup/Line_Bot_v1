@@ -23,6 +23,11 @@ const issueManagementPermissions: readonly RepositoryPermission[] = [
 ];
 
 const deferredPermissions: readonly RepositoryPermission[] = [];
+const conversationManagementPermissions: readonly RepositoryPermission[] = [
+  "write",
+  "maintain",
+  "admin",
+];
 
 const issueRepositoryOperationPermissions: Readonly<
   Record<IssueRepositoryOperation, readonly RepositoryPermission[]>
@@ -36,7 +41,7 @@ const issueRepositoryOperationPermissions: Readonly<
   close: issueManagementPermissions,
   assign: issueManagementPermissions,
   "manage-resource": deferredPermissions,
-  "lock-conversation": deferredPermissions,
+  "lock-conversation": conversationManagementPermissions,
 };
 
 export function canIssueRepositoryOperation(

@@ -548,6 +548,107 @@
       }
     },
     {
+      "id": "discussion-category",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionCategory"
+      }
+    },
+    {
+      "id": "discussion-answer",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "answer"
+      }
+    },
+    {
+      "id": "discussion-label-link",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "labels"
+      }
+    },
+    {
+      "id": "discussion-upvote",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "upvoteCount"
+      }
+    },
+    {
+      "id": "discussion-comment-upvote",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionComment",
+        "field": "upvoteCount"
+      }
+    },
+    {
+      "id": "discussion-poll",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionPoll"
+      }
+    },
+    {
+      "id": "discussion-poll-option",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionPollOption"
+      }
+    },
+    {
+      "id": "discussion-poll-vote",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionPollOption",
+        "field": "viewerHasVoted"
+      }
+    },
+    {
       "id": "repository-label",
       "kind": "authoritative",
       "owner": "repository",
@@ -563,13 +664,89 @@
       "id": "issue-label-link",
       "kind": "authoritative",
       "owner": "issue",
-      "lifecycle": "current-data-only",
+      "lifecycle": "current",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-issues.json",
         "symbol": "Issue",
         "field": "labels"
+      }
+    },
+    {
+      "id": "issue-comment",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "IssueComment"
+      }
+    },
+    {
+      "id": "issue-parent-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "parent"
+      }
+    },
+    {
+      "id": "issue-dependency-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "blockedBy"
+      }
+    },
+    {
+      "id": "issue-related-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "relatesTo"
+      }
+    },
+    {
+      "id": "issue-type",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "IssueType"
+      }
+    },
+    {
+      "id": "issue-type-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "issueType"
       }
     },
     {
@@ -598,10 +775,10 @@
     },
     {
       "id": "project-item",
-      "kind": "reference",
+      "kind": "authoritative",
       "owner": "project",
-      "lifecycle": "current-data-only",
-      "authorityMode": "reference-only",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
       "persistenceExpectation": "relation",
       "fpt": {
         "file": "schema-projects.json",
@@ -609,10 +786,119 @@
       }
     },
     {
+      "id": "project-draft-issue",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "DraftIssue"
+      }
+    },
+    {
+      "id": "project-draft-issue-assignee",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "DraftIssue",
+        "field": "assignees"
+      }
+    },
+    {
+      "id": "project-collaborator",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2Collaborator"
+      }
+    },
+    {
+      "id": "project-field",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2Field"
+      }
+    },
+    {
+      "id": "project-field-option",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2SingleSelectFieldOption"
+      }
+    },
+    {
+      "id": "project-field-iteration",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2IterationFieldConfiguration"
+      }
+    },
+    {
+      "id": "project-item-field-value",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2FieldValue"
+      }
+    },
+    {
+      "id": "project-view",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2View"
+      }
+    },
+    {
+      "id": "project-status-update",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-projects.json",
+        "symbol": "ProjectV2StatusUpdate"
+      }
+    },
+    {
       "id": "project-repository-link",
       "kind": "reference",
       "owner": "project",
-      "lifecycle": "current-data-only",
+      "lifecycle": "current",
       "authorityMode": "reference-only",
       "persistenceExpectation": "relation",
       "fpt": {
@@ -984,10 +1270,10 @@
       "id": "project-owner-account",
       "provider": "account",
       "consumer": "project",
-      "meaning": "Project owner identity is an Account constrained to User or Organization.",
-      "integrationMode": "stable-identity",
+      "meaning": "Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references.",
+      "integrationMode": "stable-identity+query",
       "authority": "account",
-      "consistency": "current-identity"
+      "consistency": "transaction-recheck"
     },
     {
       "id": "organization-project-owner-scope",
@@ -997,6 +1283,15 @@
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "current-state"
+    },
+    {
+      "id": "organization-issue-type-scope",
+      "provider": "organization",
+      "consumer": "issue",
+      "meaning": "IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "organization",
+      "consistency": "transaction-recheck"
     },
     {
       "id": "namespace-project-owner-locator",
@@ -1026,11 +1321,38 @@
       "consistency": "current-access-and-identity"
     },
     {
+      "id": "project-issue-draft-conversion",
+      "provider": "issue",
+      "consumer": "project",
+      "meaning": "Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly.",
+      "integrationMode": "command",
+      "authority": "issue",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "team-project-collaborator",
+      "provider": "team",
+      "consumer": "project",
+      "meaning": "Project-owned Team grants consume current Team membership and Team organization scope; Team identity or membership does not become Project-owned authority.",
+      "integrationMode": "query",
+      "authority": "team",
+      "consistency": "transaction-recheck"
+    },
+    {
       "id": "repository-issue-scope",
       "provider": "repository",
       "consumer": "issue",
       "meaning": "Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority.",
       "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-issue-resource-definitions",
+      "provider": "repository",
+      "consumer": "issue",
+      "meaning": "Issue classification and milestone assignment reference Repository-owned Label and Milestone definitions in the same Repository; Issue owns only the association fact.",
+      "integrationMode": "query",
       "authority": "repository",
       "consistency": "transaction-recheck"
     },
@@ -1047,8 +1369,17 @@
       "id": "repository-discussion-scope",
       "provider": "repository",
       "consumer": "discussion",
-      "meaning": "Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads without acquiring Repository authority.",
+      "meaning": "Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads and mutations without acquiring Repository authority.",
       "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-discussion-resource-definitions",
+      "provider": "repository",
+      "consumer": "discussion",
+      "meaning": "Discussion label associations reference Repository-owned Label definitions in the same Repository; Discussion owns only the association fact.",
+      "integrationMode": "query",
       "authority": "repository",
       "consistency": "transaction-recheck"
     },
@@ -2056,6 +2387,80 @@
       }
     },
     {
+      "id": "manage-issue-collaboration",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Manage Issue comments, Repository Label links, Repository Milestone assignment, Issue hierarchy/dependencies/related links, and independent conversation lock state without transferring Repository authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned comments, classification links, milestone assignment, typed Issue relations, and conversation lock/unlock with current access, expectedVersion, exact replay and immutable Issue events.",
+        "sourcePaths": [
+          "packages/issue/src/application/collaboration.ts",
+          "packages/issue/src/contracts/collaboration.ts",
+          "packages/issue/src/adapters/postgres/collaboration.ts"
+        ],
+        "publicExports": [
+          "./application/collaboration",
+          "./contracts/collaboration",
+          "./postgres/collaboration"
+        ],
+        "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
+        "testPaths": [
+          "packages/issue/test/collaboration.test.ts",
+          "packages/issue/test/issues.test.ts"
+        ],
+        "note": "Repository retains Label and Milestone definition authority. Cross-Repository Issue relations recheck both endpoint repositories; relation reads hide inaccessible endpoints. Comments retain stable identity on delete and Issue events remain audit evidence."
+      }
+    },
+    {
+      "id": "manage-issue-types",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Manage Organization-scoped IssueType definitions and the optional Issue-to-IssueType relation without granting Repository permission or changing Issue workflow.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned Organization-scoped type definitions, enabled/tombstone lifecycle, optional same-Organization Issue assignment, exact replay and immutable type/Issue history.",
+        "sourcePaths": [
+          "packages/issue/src/application/issue-types.ts",
+          "packages/issue/src/contracts/issue-types.ts",
+          "packages/issue/src/adapters/postgres/issue-types.ts",
+          "packages/issue/src/adapters/postgres/collaboration.ts"
+        ],
+        "publicExports": [
+          "./application/issue-types",
+          "./contracts/issue-types",
+          "./postgres/issue-types",
+          "./application/collaboration",
+          "./contracts/collaboration",
+          "./postgres/collaboration"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/issue-types/route.ts",
+          "apps/web/src/app/api/issue-collaboration/route.ts"
+        ],
+        "testPaths": ["packages/issue/test/issue-types.test.ts"],
+        "note": "FPT IssueType is Organization-scoped while remaining Issue-owned. Disabled types keep existing assignments readable but cannot be newly assigned; deletion is an immutable tombstone blocked while referenced. Type assignment uses Repository triage authority, never grants permission and never changes Issue state/workflow. Activation is atomic at this revision: schema, semantic overlay, contracts, API and tests coexist; no second adoption ledger or partial gate is used."
+      }
+    },
+    {
       "id": "read-discussions",
       "owner": "discussion",
       "kind": "leaf",
@@ -2175,23 +2580,38 @@
       "id": "manage-discussions",
       "owner": "discussion",
       "kind": "leaf",
-      "intent": "Preserve Discussion create/update/close/comment write semantics as current data without asserting runtime management.",
-      "preserves": ["K1", "K2", "K5"],
+      "intent": "Manage Repository-scoped Discussion lifecycle, stable number/category, comments/replies, chosen answer, labels, upvotes, poll and conversation lock without transferring Repository authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
         "schema",
+        "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "not-asserted",
+      "runtimeExpectation": "required",
       "implementation": {
-        "status": "data-only",
-        "scope": "Discussion-owned tables and semantic concepts",
-        "sourcePaths": [],
-        "publicExports": [],
-        "entrypoints": [],
-        "testPaths": [],
-        "note": "Discussion schema/topology evidence and authorized reads exist; create/update/comment/close management remains unimplemented."
+        "status": "implemented",
+        "scope": "Discussion-owned write lifecycle and collaboration relations with current Repository access, archive fail-closed behavior, expected-version concurrency, exact replay and immutable owner events.",
+        "sourcePaths": [
+          "packages/discussion/src/application/management.ts",
+          "packages/discussion/src/contracts/management.ts",
+          "packages/discussion/src/adapters/postgres-management.ts"
+        ],
+        "publicExports": [
+          "./application/management",
+          "./contracts/management",
+          "./postgres/management"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/discussion-management/route.ts",
+          "apps/web/src/app/api/discussions/by-number/[discussionNumber]/route.ts"
+        ],
+        "testPaths": [
+          "packages/discussion/test/management.test.ts",
+          "packages/discussion/test/discussions.test.ts"
+        ],
+        "note": "Legacy category text and opaque DiscussionId remain readable compatibility evidence. Canonical adoption is explicit: a selected Repository-scoped category is bound and any missing Discussion.number is allocated without guessing historical facts. Lock, closed, answered, upvote and poll facts remain independent."
       }
     },
     {
@@ -2297,30 +2717,42 @@
           "apps/web/src/app/(mobile)/projects/page.tsx"
         ],
         "testPaths": ["packages/project/test/collection.test.ts"],
-        "note": "Personal Projects require current User ownership; Organization Projects are exposed only to current OrganizationOwner scopes until a distinct Project access policy exists. Planning writes remain inactive."
+        "note": "Project collection reads combine current owner authority, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
       }
     },
     {
       "id": "manage-project-planning",
       "owner": "project",
       "kind": "leaf",
-      "intent": "Manage Project planning, WBS, Project-local milestones, and references without taking underlying work authority.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "intent": "Manage ProjectV2 root lifecycle, owner-scoped number, collaborators, Item/DraftIssue lifecycle, typed fields and values, views, status updates, and Repository/Issue references without taking source-owner authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
         "schema",
+        "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "not-asserted",
+      "runtimeExpectation": "required",
       "implementation": {
-        "status": "data-only",
-        "scope": "Project planning mutations remain data-only",
-        "sourcePaths": [],
-        "publicExports": [],
-        "entrypoints": [],
-        "testPaths": [],
-        "note": "Authorized Project collection read is modeled separately by read-projects; create/update/WBS/Item/Milestone management is not asserted."
+        "status": "implemented",
+        "scope": "ProjectV2 root, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
+        "sourcePaths": [
+          "packages/project/src/application/management.ts",
+          "packages/project/src/contracts/management.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-management-store.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-items.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-fields.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts"
+        ],
+        "publicExports": [
+          "./application/management",
+          "./contracts/management",
+          "./composition/bootstrap/postgres-project-management-store"
+        ],
+        "entrypoints": ["apps/web/src/app/api/project-management/route.ts"],
+        "testPaths": ["packages/project/test/collection.test.ts"],
+        "note": "Project owns planning metadata only. Issue content/state remains Issue-owned and every viewer-facing Issue item is filtered by current source access; Draft conversion calls the Issue owner contract in the same transaction. WBS and Project-local Milestone writes remain explicitly data-only."
       }
     },
     {
@@ -3371,6 +3803,23 @@
       }
     },
     {
+      "id": "discussion-number",
+      "concept": "discussion",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "number"],
+      "scope": "repository-scoped-discussion-number",
+      "scopeAuthority": "repository",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/discussions/number/[discussionNumber]/page.tsx"
+      ],
+      "note": "Canonical Discussion number is stable within one Repository and grants no access by itself.",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "number"
+      }
+    },
+    {
       "id": "discussion-opaque-id",
       "concept": "discussion",
       "status": "active",
@@ -3380,7 +3829,7 @@
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
       ],
-      "note": "Current runtime Discussion detail route still uses the local opaque DiscussionId as implementation evidence. Canonical GitHub FPT Discussion.number remains authoritative; this locator records current drift and does not redefine the FPT semantic."
+      "note": "Opaque DiscussionId remains a rollout-compatibility locator for pre-number links. It is stable identity evidence, not canonical Repository-scoped numbering or authorization."
     },
     {
       "id": "repository-milestone-number",

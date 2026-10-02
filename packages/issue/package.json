@@ -31,6 +31,34 @@
     "./postgres/activity": {
       "types": "./dist/postgres/activity.d.ts",
       "default": "./dist/postgres/activity.js"
+    },
+    "./application/collaboration": {
+      "types": "./dist/application/collaboration.d.ts",
+      "default": "./dist/application/collaboration.js"
+    },
+    "./contracts/collaboration": {
+      "types": "./dist/contracts/collaboration.d.ts",
+      "default": "./dist/contracts/collaboration.js"
+    },
+    "./postgres/collaboration": {
+      "types": "./dist/postgres/collaboration.d.ts",
+      "default": "./dist/postgres/collaboration.js"
+    },
+    "./postgres/project-reference": {
+      "types": "./dist/postgres/project-reference.d.ts",
+      "default": "./dist/postgres/project-reference.js"
+    },
+    "./application/issue-types": {
+      "types": "./dist/application/issue-types.d.ts",
+      "default": "./dist/application/issue-types.js"
+    },
+    "./contracts/issue-types": {
+      "types": "./dist/contracts/issue-types.d.ts",
+      "default": "./dist/contracts/issue-types.js"
+    },
+    "./postgres/issue-types": {
+      "types": "./dist/postgres/issue-types.d.ts",
+      "default": "./dist/postgres/issue-types.js"
     }
   },
   "files": [
@@ -43,6 +71,7 @@
   },
   "dependencies": {
     "@line_bot_v1/namespace": "workspace:*",
+    "@line_bot_v1/organization": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*"
   },

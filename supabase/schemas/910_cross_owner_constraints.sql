@@ -293,3 +293,33 @@ grant execute on function app_private.enforce_notification_source_access() to li
 create trigger notification_source_access_guard
 before insert on app_private.notifications
 for each row execute function app_private.enforce_notification_source_access();
+
+-- IssueType is Organization-scoped, while Repository ownership remains Repository authority.
+-- An Issue may reference only a type scoped to the Organization that owns its Repository.
+create function app_private.enforce_issue_type_repository_scope()
+returns trigger
+language plpgsql
+security invoker
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+begin
+  if not exists (
+    select 1
+    from app_private.issues i
+    join app_private.repositories r on r.id=i.repository_id
+    join app_private.issue_types t on t.id=new.issue_type_id
+    where i.id=new.issue_id
+      and r.owner_account_kind='ORGANIZATION'
+      and r.owner_account_id=t.organization_account_id
+  ) then
+    raise exception 'issue_type_repository_scope_mismatch' using errcode='23514';
+  end if;
+  return new;
+end
+$function$;
+revoke all on function app_private.enforce_issue_type_repository_scope()
+  from public, anon, authenticated, line_app;
+grant execute on function app_private.enforce_issue_type_repository_scope() to line_app;
+create trigger issue_type_assignment_repository_scope_guard
+before insert or update on app_private.issue_type_assignments
+for each row execute function app_private.enforce_issue_type_repository_scope();

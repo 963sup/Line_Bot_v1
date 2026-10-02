@@ -24,12 +24,20 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- |
 | Issue | issue | authoritative | current | GitHub FPT: schema-issues.json#Issue |
 | Issue.assignees | issue-assignment | authoritative | current | GitHub FPT: schema-issues.json#Issue#assignees |
-| Issue.labels | issue-label-link | authoritative | current-data-only | GitHub FPT: schema-issues.json#Issue#labels |
+| Issue.blockedBy | issue-dependency-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#blockedBy |
+| Issue.issueType | issue-type-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#issueType |
+| Issue.labels | issue-label-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#labels |
+| Issue.parent | issue-parent-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#parent |
+| Issue.relatesTo | issue-related-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#relatesTo |
+| IssueComment | issue-comment | authoritative | current | GitHub FPT: schema-issues.json#IssueComment |
+| IssueType | issue-type | authoritative | current | GitHub FPT: schema-issues.json#IssueType |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
+| manage-issue-collaboration | required | implemented | Manage Issue comments, Repository Label links, Repository Milestone assignment, Issue hierarchy/dependencies/related links, and independent conversation lock state without transferring Repository authority. |
+| manage-issue-types | required | implemented | Manage Organization-scoped IssueType definitions and the optional Issue-to-IssueType relation without granting Repository permission or changing Issue workflow. |
 | manage-issues | required | implemented | Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow. |
 | read-issue-activity | required | implemented | Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority. |
 
@@ -38,7 +46,10 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | namespace | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
+| consumes | organization | stable-identity+query | organization | transaction-recheck | IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority. |
+| provides | project | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |
 | provides | project | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
+| consumes | repository | query | repository | transaction-recheck | Issue classification and milestone assignment reference Repository-owned Label and Milestone definitions in the same Repository; Issue owns only the association fact. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
 
 ## Tactical Model Boundary

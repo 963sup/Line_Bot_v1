@@ -15,6 +15,22 @@
     "./composition/bootstrap/postgres-project-collection-store": {
       "types": "./dist/composition/bootstrap/postgres-project-collection-store.d.ts",
       "default": "./dist/composition/bootstrap/postgres-project-collection-store.js"
+    },
+    "./contracts/management": {
+      "types": "./dist/contracts/management.d.ts",
+      "default": "./dist/contracts/management.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./application/management": {
+      "types": "./dist/application/management.d.ts",
+      "default": "./dist/application/management.js"
+    },
+    "./composition/bootstrap/postgres-project-management-store": {
+      "types": "./dist/composition/bootstrap/postgres-project-management-store.d.ts",
+      "default": "./dist/composition/bootstrap/postgres-project-management-store.js"
     }
   },
   "files": [
@@ -28,7 +44,11 @@
   "dependencies": {
     "@line_bot_v1/namespace": "workspace:*",
     "@line_bot_v1/organization": "workspace:*",
-    "@line_bot_v1/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/issue": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/team": "workspace:*",
+    "@line_bot_v1/account": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

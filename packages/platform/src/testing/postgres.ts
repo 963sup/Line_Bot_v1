@@ -17,6 +17,7 @@ export async function postgresFixture() {
   );
   try {
     for (const schema of schemaFiles()) await pg.exec(`BEGIN;\n${schema.sql}\nCOMMIT;`);
+    await pg.exec("SET search_path=app_private,pg_catalog;");
   } catch (error) {
     await pg.close();
     throw error;
