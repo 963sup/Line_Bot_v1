@@ -214,8 +214,7 @@ export type ProjectManagementCommand =
         action: "update-collaborators";
         collaborators: readonly ProjectCollaboratorInput[];
       }>)
-  | (ExistingProjectBase &
-      Readonly<{ action: "add-issue-item"; issueId: string }>)
+  | (ExistingProjectBase & Readonly<{ action: "add-issue-item"; issueId: string }>)
   | (ExistingProjectBase &
       Readonly<{
         action: "add-draft-item";
