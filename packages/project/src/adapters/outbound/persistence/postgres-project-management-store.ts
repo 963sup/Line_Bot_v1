@@ -645,12 +645,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         );
         resourceId = child.resourceId;
         data = child.data;
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now);
       } else {
         throw new ProjectError(400, "Project 操作不正確。");
       }
