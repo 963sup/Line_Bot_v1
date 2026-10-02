@@ -1,14 +1,8 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
-import {
-  repositoryArchived,
-  repositoryScope,
-} from "@line_bot_v1/repository/postgres/access";
+import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import { allocateRepositoryIssueNumber } from "@line_bot_v1/repository/postgres/issue-number";
-import {
-  canIssueRepositoryOperation,
-  IssueError,
-} from "../domain.js";
+import { canIssueRepositoryOperation, IssueError } from "../domain.js";
 
 export type ProjectIssueReference = Readonly<{
   id: string;
@@ -116,15 +110,7 @@ export async function createIssueFromProjectDraft(
        id,repository_id,number,publisher,title,body,criteria,
        state,state_reason,workflow_status,version,created_at,updated_at
      ) VALUES($1,$2,$3,$4,$5,$6,'','OPEN',NULL,'pending',1,$7,$7)`,
-    [
-      issueId,
-      input.repositoryId,
-      number,
-      input.userId,
-      input.title,
-      input.body,
-      input.now,
-    ],
+    [issueId, input.repositoryId, number, input.userId, input.title, input.body, input.now],
   );
   if (input.assigneeIds.length) {
     await sql.query(
