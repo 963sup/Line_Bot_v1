@@ -1,8 +1,5 @@
 import { DiscussionError } from "@line_bot_v1/discussion/domain";
-import {
-  discussionBody,
-  repositoryFailure,
-} from "../../../modules/repository/http.server";
+import { discussionBody, repositoryFailure } from "../../../modules/repository/http.server";
 import { jsonResponse } from "../../../shared/server/http";
 import { discussionManagement } from "../_composition/discussion-management.server";
 import { requestLineIdentity } from "../_composition/request-identity.server";
