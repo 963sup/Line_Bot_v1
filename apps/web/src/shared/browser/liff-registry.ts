@@ -16,6 +16,5 @@ export function installLineMiniAppBoot(boot: LiffBoot) {
 }
 
 export function lineMiniAppBoot() {
-  if (!current) throw new Error("LINE runtime 尚未啟動。");
   return current;
 }
