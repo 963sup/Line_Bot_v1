@@ -660,4 +660,3 @@ export {
   qualifyOrganizationTeamScope,
   readOrganizationQualification,
 } from "./postgres/qualification.js";
-
