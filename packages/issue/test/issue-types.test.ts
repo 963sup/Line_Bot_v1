@@ -234,7 +234,9 @@ test("IssueType keeps Organization scope separate from Issue permission and work
     "select data from issue_events where issue_id='issue-a' order by version",
   );
   assert.deepEqual(
-    issueEvents.rows.map((row) => row.data.timelineEvent),
+    (issueEvents.rows as Array<{ data: { timelineEvent: string } }>).map(
+      (row) => row.data.timelineEvent,
+    ),
     ["issue_type_added", "issue_type_removed"],
   );
 });
