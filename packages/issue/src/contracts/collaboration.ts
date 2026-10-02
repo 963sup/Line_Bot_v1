@@ -32,7 +32,11 @@ export type IssueCollaborationCommand =
       Readonly<{
         action: "add-related" | "remove-related";
         targetIssueId: string;
-        targetExpectedVersion: number;
+        /**
+         * Required for new symmetric mutations. Optional only so a pre-dual-version
+         * request can reach exact-replay receipt lookup after rollout.
+         */
+        targetExpectedVersion?: number;
       }>)
   | (CommandBase &
       Readonly<{

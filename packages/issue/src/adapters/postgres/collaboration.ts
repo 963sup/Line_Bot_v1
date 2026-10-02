@@ -242,6 +242,17 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
+      let relatedTargetExpectedVersion: number | null = null;
+      if (command.action === "add-related" || command.action === "remove-related") {
+        if (command.targetExpectedVersion === undefined) {
+          throw new IssueError(
+            400,
+            "新的 relatesTo 操作必須提供目標 Issue 版本；省略版本只允許舊請求 exact replay。",
+          );
+        }
+        relatedTargetExpectedVersion = command.targetExpectedVersion;
+      }
+
       await requireWritableRepository(sql, command.repositoryId);
       if (command.action === "add-related" || command.action === "remove-related") {
         await sql.query("SELECT pg_advisory_xact_lock(hashtext('issue-related-graph'))");
@@ -471,8 +482,11 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       } else if (command.action === "add-related" || command.action === "remove-related") {
         const target = await targetIssue(sql, who, issue.id, command.targetIssueId);
         relatedPeer = await currentIssue(sql, target.repository_id, target.id);
-        requireExpectedVersion(relatedPeer, command.targetExpectedVersion);
-        relatedPeerExpectedVersion = command.targetExpectedVersion;
+        if (relatedTargetExpectedVersion === null) {
+          throw new IssueError(503, "relatesTo 目標版本狀態不完整。");
+        }
+        requireExpectedVersion(relatedPeer, relatedTargetExpectedVersion);
+        relatedPeerExpectedVersion = relatedTargetExpectedVersion;
         relatedPeerAction = command.action;
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
         const left = ordered[0]!;

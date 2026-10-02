@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresIssueCollaborationStore } from "../src/adapters/postgres/collaboration.js";
+import { createIssueCollaboration } from "../src/application/collaboration.js";
 
 test("Issue collaboration keeps comments, labels, milestone and graphs replay-safe", async (t) => {
   const { pg, db } = await postgresFixture();
@@ -58,6 +59,53 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
 
   const store = new PostgresIssueCollaborationStore(db);
   const actor = { userId: "actor" };
+
+  const legacyRequestId = randomUUID();
+  const legacyRelatedCommand = {
+    requestId: legacyRequestId,
+    repositoryId: "repo",
+    issueId: "child",
+    expectedVersion: 1,
+    action: "add-related" as const,
+    targetIssueId: "blocker",
+  };
+  const legacyReceipt = {
+    requestId: legacyRequestId,
+    repositoryId: "repo",
+    issueId: "child",
+    action: "add-related" as const,
+    version: 2,
+    at: 9,
+    resourceId: "blocker",
+    data: { relatedIssueId: "blocker" },
+  };
+  const legacyFingerprint = createHash("sha256")
+    .update(JSON.stringify({ family: "issue-collaboration", command: legacyRelatedCommand }))
+    .digest("hex");
+  await pg.query(
+    `insert into issue_commands(actor,request_id,fingerprint,result)
+     values($1,$2,$3,$4::jsonb)`,
+    [
+      "actor",
+      legacyRequestId,
+      legacyFingerprint,
+      JSON.stringify({
+        receiptVersion: 1,
+        family: "issue-collaboration",
+        result: legacyReceipt,
+      }),
+    ],
+  );
+  const application = createIssueCollaboration({
+    activeUser: async () => ({ id: "actor" }),
+    store: () => store,
+    now: () => 999,
+  });
+  assert.deepEqual(await application.command("actor", legacyRelatedCommand), legacyReceipt);
+  await assert.rejects(
+    application.command("actor", { ...legacyRelatedCommand, requestId: randomUUID() }),
+    /省略版本只允許舊請求 exact replay/,
+  );
 
   const addComment = {
     action: "add-comment" as const,

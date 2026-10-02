@@ -194,7 +194,9 @@ function parseCommand(raw: unknown): IssueCollaborationCommand {
       ...base,
       action,
       targetIssueId: identifier(value.targetIssueId, "目標 Issue 識別碼"),
-      targetExpectedVersion: positiveVersion(value.targetExpectedVersion, "目標 Issue"),
+      ...(value.targetExpectedVersion === undefined
+        ? {}
+        : { targetExpectedVersion: positiveVersion(value.targetExpectedVersion, "目標 Issue") }),
     };
   }
 
