@@ -1,7 +1,4 @@
-import type {
-  ProjectAccessRole,
-  ProjectOwnerKind,
-} from "../../domain.js";
+import type { ProjectAccessRole, ProjectOwnerKind } from "../../domain.js";
 
 export type ProjectSummary = Readonly<{
   id: string;
