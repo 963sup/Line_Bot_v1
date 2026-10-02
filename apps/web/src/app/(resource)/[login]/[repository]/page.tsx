@@ -9,7 +9,7 @@ import {
   repositoryLabelsPath,
   repositoryMilestonesPath,
 } from "../../../../modules/repository/resource-navigation";
-import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import AppShell from "../../../(mobile)/_shell/app-shell";
 import { publicRepositories } from "../../_composition/repository.server";
 

@@ -1,5 +1,5 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { createLineClient } from "@line_bot_v1/line-channel/messaging-api";
+import { createLineClient } from "@line_bot_v1/line/messaging-api";
 import {
   createUpstashRedisRestTransport,
   RedisIdempotencyStore,
@@ -10,7 +10,7 @@ import { membershipFailureCode } from "../../../modules/account/failure-code.ser
 import { agentText, aiTestText, answer } from "../../../modules/assistant/answer.server";
 import { createAssistantReply } from "../../../modules/assistant/event-router.server";
 import { membershipMessage } from "../../../modules/assistant/response-presenter.server";
-import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { redisNamespace } from "../../../shared/server/runtime-environment";
 import { activeLineUser, findUser } from "./account.server";
 import { showAttendanceMenu } from "./attendance.server";
