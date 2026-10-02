@@ -18,6 +18,16 @@ const browser = await chromium.launch({
 try {
   for (const pathname of ["/home", "/attendance", "/settings", "/repositories"]) {
     const context = await browser.newContext({ serviceWorkers: "block" });
+    await context.addInitScript(() => {
+      window.liff = {
+        init: async () => {},
+        isLoggedIn: () => true,
+        getAccessToken: () => "synthetic",
+        isInClient: () => false,
+        getProfile: async () => ({ displayName: "測試會員" }),
+        login: () => {},
+      };
+    });
     const page = await context.newPage();
     let scriptBytes = 0;
     let scripts = 0;
@@ -32,11 +42,6 @@ try {
     });
     await context.route("**/*", async (route) => {
       const url = new URL(route.request().url());
-      if (url.hostname === "static.line-scdn.net")
-        return route.fulfill({
-          contentType: "text/javascript",
-          body: "window.liff={init:async()=>{},isLoggedIn:()=>true,getAccessToken:()=> 'synthetic',isInClient:()=>false,getProfile:async()=>({displayName:'測試會員'})};",
-        });
       if (url.origin !== base.origin) return route.abort();
       if (url.pathname.startsWith("/api/"))
         return route.fulfill({ status: 403, json: { error: "合成資格拒絕" } });
