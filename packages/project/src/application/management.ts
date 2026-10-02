@@ -37,11 +37,7 @@ const colors: readonly ProjectOptionColor[] = [
   "RED",
   "YELLOW",
 ];
-const layouts: readonly ProjectViewLayout[] = [
-  "BOARD_LAYOUT",
-  "ROADMAP_LAYOUT",
-  "TABLE_LAYOUT",
-];
+const layouts: readonly ProjectViewLayout[] = ["BOARD_LAYOUT", "ROADMAP_LAYOUT", "TABLE_LAYOUT"];
 const statuses: readonly ProjectStatusUpdateStatus[] = [
   "AT_RISK",
   "COMPLETE",
@@ -49,12 +45,7 @@ const statuses: readonly ProjectStatusUpdateStatus[] = [
   "OFF_TRACK",
   "ON_TRACK",
 ];
-const collaboratorRoles: readonly ProjectCollaboratorRole[] = [
-  "ADMIN",
-  "NONE",
-  "READER",
-  "WRITER",
-];
+const collaboratorRoles: readonly ProjectCollaboratorRole[] = ["ADMIN", "NONE", "READER", "WRITER"];
 
 function objectInput(value: unknown, label = "Project 操作"): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -193,7 +184,11 @@ function iterations(value: unknown): ProjectIterationInput[] {
   return value.map((item) => {
     const record = objectInput(item, "Project iteration");
     exactKeys(record, ["id", "title", "startDate", "duration"]);
-    if (!Number.isSafeInteger(record.duration) || Number(record.duration) < 1 || Number(record.duration) > 3650) {
+    if (
+      !Number.isSafeInteger(record.duration) ||
+      Number(record.duration) < 1 ||
+      Number(record.duration) > 3650
+    ) {
       throw new ProjectError(400, "Iteration duration 不正確。");
     }
     return {
@@ -325,15 +320,15 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
       "readme",
       "public",
     ]);
-    const title =
-      value.title === undefined ? undefined : text(value.title, "Project title", 160);
+    const title = value.title === undefined ? undefined : text(value.title, "Project title", 160);
     const shortDescription =
       value.shortDescription === undefined
         ? undefined
         : text(value.shortDescription, "Project short description", 500, true);
     const readme =
       value.readme === undefined ? undefined : text(value.readme, "Project readme", 20_000, true);
-    const publicValue = value.public === undefined ? undefined : bool(value.public, "Project public");
+    const publicValue =
+      value.public === undefined ? undefined : bool(value.public, "Project public");
     if (
       title === undefined &&
       shortDescription === undefined &&
@@ -393,8 +388,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
       "body",
       "assigneeIds",
     ]);
-    const title =
-      value.title === undefined ? undefined : text(value.title, "Draft title", 160);
+    const title = value.title === undefined ? undefined : text(value.title, "Draft title", 160);
     const body =
       value.body === undefined ? undefined : text(value.body, "Draft body", 20_000, true);
     const assigneeIds =
@@ -413,11 +407,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
     };
   }
 
-  if (
-    action === "archive-item" ||
-    action === "unarchive-item" ||
-    action === "delete-item"
-  ) {
+  if (action === "archive-item" || action === "unarchive-item" || action === "delete-item") {
     exactKeys(value, [
       "action",
       "requestId",
@@ -450,9 +440,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
       itemId: id(value.itemId, "Project item 識別碼"),
       itemVersion: expectedVersion(value.itemVersion),
       beforeItemId:
-        value.beforeItemId === null
-          ? null
-          : id(value.beforeItemId, "排序目標 Project item 識別碼"),
+        value.beforeItemId === null ? null : id(value.beforeItemId, "排序目標 Project item 識別碼"),
     };
   }
 
@@ -511,8 +499,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
       "options",
       "iterations",
     ]);
-    const name =
-      value.name === undefined ? undefined : text(value.name, "Project field name", 120);
+    const name = value.name === undefined ? undefined : text(value.name, "Project field name", 120);
     const optionValues = value.options === undefined ? undefined : options(value.options);
     const iterationValues =
       value.iterations === undefined ? undefined : iterations(value.iterations);
@@ -567,14 +554,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
   }
 
   if (action === "clear-field-value") {
-    exactKeys(value, [
-      "action",
-      "requestId",
-      "projectId",
-      "expectedVersion",
-      "itemId",
-      "fieldId",
-    ]);
+    exactKeys(value, ["action", "requestId", "projectId", "expectedVersion", "itemId", "fieldId"]);
     return {
       ...base,
       action,
@@ -617,8 +597,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
       "layout",
       "visibleFieldIds",
     ]);
-    const name =
-      value.name === undefined ? undefined : text(value.name, "Project view name", 120);
+    const name = value.name === undefined ? undefined : text(value.name, "Project view name", 120);
     let layout: ProjectViewLayout | undefined;
     if (value.layout !== undefined) {
       if (!layouts.includes(value.layout as ProjectViewLayout)) {
@@ -725,9 +704,7 @@ function parseCommand(raw: unknown): ProjectManagementCommand {
       status = value.status as ProjectStatusUpdateStatus | null;
     }
     const startDate =
-      value.startDate === undefined
-        ? undefined
-        : optionalDate(value.startDate, "Status startDate");
+      value.startDate === undefined ? undefined : optionalDate(value.startDate, "Status startDate");
     const targetDate =
       value.targetDate === undefined
         ? undefined
@@ -784,11 +761,7 @@ export function createProjectManagement(deps: {
   return {
     view: async (subject: string, projectId: string) =>
       deps.store().view(await identity(subject), id(projectId, "Project 識別碼")),
-    viewByNumber: async (
-      subject: string,
-      ownerLogin: string,
-      projectNumber: number | string,
-    ) => {
+    viewByNumber: async (subject: string, ownerLogin: string, projectNumber: number | string) => {
       let owner: string;
       try {
         owner = normalizeAccountLogin(ownerLogin);
