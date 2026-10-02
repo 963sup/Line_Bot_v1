@@ -205,6 +205,9 @@ function parseCommand(raw: unknown): RepositoryResourceManagementCommand {
     return command;
   }
 
+  if (value.action !== "open-milestone" && value.action !== "close-milestone") {
+    throw new RepositoryError(400, "Repository resource 動作不正確。");
+  }
   exactKeys(value, ["action", "requestId", "repositoryId", "expectedVersion", "milestoneId"]);
   return {
     ...base(value, false),
