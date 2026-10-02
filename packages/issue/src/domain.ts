@@ -2,8 +2,6 @@ export type {
   Issue,
   IssueAction,
   IssueClosedStateReason,
-  IssueState,
-  IssueStateReason,
   IssueWorkflowStatus,
 } from "./domain/issue/entities/issue.js";
 export { IssueError } from "./domain/issue/errors/issue-error.js";
