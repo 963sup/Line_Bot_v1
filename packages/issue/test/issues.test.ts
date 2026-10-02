@@ -9,11 +9,7 @@ import { canIssueRepositoryOperation, IssueError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
-    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [
-      id,
-      "active",
-      1,
-    ]);
+    await sql.query('insert into users(id,status,"createdAt") values($1,$2,$3)', [id, "active", 1]);
     await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [id, id, 1]);
   });
 }
@@ -471,7 +467,11 @@ test("Issue state, assignment, content and local workflow remain separate axes",
   const editEvent = eventRows.rows.find((row: { action: string }) => row.action === "edit") as
     | { data: { changes?: Record<string, unknown> } }
     | undefined;
-  assert.deepEqual(Object.keys(editEvent?.data.changes ?? {}).sort(), ["body", "criteria", "title"]);
+  assert.deepEqual(Object.keys(editEvent?.data.changes ?? {}).sort(), [
+    "body",
+    "criteria",
+    "title",
+  ]);
   const closeEvent = eventRows.rows.find((row: { action: string }) => row.action === "close") as
     | { data: { to?: { state?: string; stateReason?: string } } }
     | undefined;
