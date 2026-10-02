@@ -163,9 +163,7 @@ function parseCommand(raw: unknown): IssueCollaborationCommand {
     action === "add-sub-issue" ||
     action === "remove-sub-issue" ||
     action === "add-blocked-by" ||
-    action === "remove-blocked-by" ||
-    action === "add-related" ||
-    action === "remove-related"
+    action === "remove-blocked-by"
   ) {
     exactKeys(value, [
       "action",
@@ -179,6 +177,24 @@ function parseCommand(raw: unknown): IssueCollaborationCommand {
       ...base,
       action,
       targetIssueId: identifier(value.targetIssueId, "目標 Issue 識別碼"),
+    };
+  }
+
+  if (action === "add-related" || action === "remove-related") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "repositoryId",
+      "issueId",
+      "expectedVersion",
+      "targetIssueId",
+      "targetExpectedVersion",
+    ]);
+    return {
+      ...base,
+      action,
+      targetIssueId: identifier(value.targetIssueId, "目標 Issue 識別碼"),
+      targetExpectedVersion: positiveVersion(value.targetExpectedVersion, "目標 Issue"),
     };
   }
 

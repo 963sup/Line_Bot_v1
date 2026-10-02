@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   repositoryAccessPath,
+  repositoryDiscussionPath,
   repositoryDiscussionsPath,
   repositoryIssueCreatePath,
   repositoryIssuePath,
@@ -24,6 +25,14 @@ test("repository resource navigation builds canonical owner/name URLs", () => {
   assert.equal(repositoryIssuePath("acme", "Operations", 12), "/acme/Operations/issues/12");
   assert.equal(repositoryIssueCreatePath("acme", "Operations"), "/acme/Operations/issues?create=1");
   assert.equal(repositoryDiscussionsPath("acme", "Operations"), "/acme/Operations/discussions");
+  assert.equal(
+    repositoryDiscussionPath("acme", "Operations", "opaque", 42),
+    "/acme/Operations/discussions/number/42",
+  );
+  assert.equal(
+    repositoryDiscussionPath("acme", "Operations", "opaque / id", null),
+    "/acme/Operations/discussions/opaque%20%2F%20id",
+  );
   assert.equal(repositoryLabelsPath("acme", "Operations"), "/acme/Operations/labels");
   assert.equal(repositoryMilestonesPath("acme", "Operations"), "/acme/Operations/milestones");
 });

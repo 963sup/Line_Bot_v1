@@ -29,10 +29,14 @@ export type IssueCollaborationCommand =
           | "add-sub-issue"
           | "remove-sub-issue"
           | "add-blocked-by"
-          | "remove-blocked-by"
-          | "add-related"
-          | "remove-related";
+          | "remove-blocked-by";
         targetIssueId: string;
+      }>)
+  | (CommandBase &
+      Readonly<{
+        action: "add-related" | "remove-related";
+        targetIssueId: string;
+        targetExpectedVersion: number;
       }>)
   | (CommandBase &
       Readonly<{

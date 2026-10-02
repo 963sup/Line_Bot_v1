@@ -19,6 +19,7 @@ import { IssueError } from "../../domain.js";
 import {
   advance,
   type CommentRow,
+  type IssueHead,
   comment,
   currentIssue,
   dependencyWouldCycle,
@@ -242,11 +243,15 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       if (replay) return replay;
 
       await requireWritableRepository(sql, command.repositoryId);
+      if (command.action === "add-related" || command.action === "remove-related") {
+        await sql.query("SELECT pg_advisory_xact_lock(hashtext('issue-related-graph'))");
+      }
       const issue = await currentIssue(sql, command.repositoryId, command.issueId);
       requireExpectedVersion(issue, command.expectedVersion);
 
       let data: Record<string, unknown> = {};
       let resourceId: string | null = null;
+      let relatedPeer: IssueHead | null = null;
       let patch:
         | { milestoneId?: string | null; locked?: boolean; lockReason?: IssueLockReason | null }
         | undefined;
@@ -463,6 +468,8 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         }
       } else if (command.action === "add-related" || command.action === "remove-related") {
         const target = await targetIssue(sql, who, issue.id, command.targetIssueId);
+        relatedPeer = await currentIssue(sql, target.repository_id, target.id);
+        requireExpectedVersion(relatedPeer, command.targetExpectedVersion);
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
         const left = ordered[0]!;
         const right = ordered[1]!;
@@ -569,6 +576,24 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
          VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
         [issue.id, nextVersion, who.userId, command.action, JSON.stringify(data), now],
       );
+
+      if (relatedPeer) {
+        const peerVersion = await advance(
+          sql,
+          relatedPeer,
+          command.targetExpectedVersion,
+          now,
+        );
+        const peerData =
+          command.action === "add-related"
+            ? { relatedIssueId: issue.id, mirrored: true }
+            : { removedRelatedIssueId: issue.id, mirrored: true };
+        await sql.query(
+          `INSERT INTO issue_events(issue_id,version,actor,action,note,data,at)
+           VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
+          [relatedPeer.id, peerVersion, who.userId, command.action, JSON.stringify(peerData), now],
+        );
+      }
 
       const result: IssueCollaborationReceipt = {
         requestId: command.requestId,

@@ -147,6 +147,7 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
       issueId: "parent",
       expectedVersion: 6,
       targetIssueId: "child",
+      targetExpectedVersion: 1,
     },
     16,
   );
@@ -189,4 +190,51 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
   assert.deepEqual(view.blockedByIssueIds, ["blocker"]);
   assert.deepEqual(view.relatedIssueIds, ["child"]);
   assert.equal(view.comments.length, 1);
+
+  const childAfterAdd = await store.view(actor, "repo", "child");
+  assert.equal(childAfterAdd.version, 2);
+  assert.deepEqual(childAfterAdd.relatedIssueIds, ["parent"]);
+
+  await store.execute(
+    actor,
+    {
+      action: "remove-related",
+      requestId: randomUUID(),
+      repositoryId: "repo",
+      issueId: "child",
+      expectedVersion: 2,
+      targetIssueId: "parent",
+      targetExpectedVersion: 8,
+    },
+    19,
+  );
+  const [parentAfterRemove, childAfterRemove] = await Promise.all([
+    store.view(actor, "repo", "parent"),
+    store.view(actor, "repo", "child"),
+  ]);
+  assert.equal(parentAfterRemove.version, 9);
+  assert.equal(childAfterRemove.version, 3);
+  assert.deepEqual(parentAfterRemove.relatedIssueIds, []);
+  assert.deepEqual(childAfterRemove.relatedIssueIds, []);
+
+  const mirroredEvents = await pg.query(
+    `SELECT issue_id,version,action,data
+     FROM issue_events
+     WHERE issue_id IN ('parent','child') AND action='remove-related'
+     ORDER BY issue_id`,
+  );
+  assert.deepEqual(mirroredEvents.rows, [
+    {
+      issue_id: "child",
+      version: 3,
+      action: "remove-related",
+      data: { removedRelatedIssueId: "parent" },
+    },
+    {
+      issue_id: "parent",
+      version: 9,
+      action: "remove-related",
+      data: { removedRelatedIssueId: "child", mirrored: true },
+    },
+  ]);
 });
