@@ -11,16 +11,16 @@ test("context adapters, composition, agents, testing and platform database mecha
     "packages/platform/src/testing/postgres.ts",
     "packages/platform/src/database/postgres/database.ts",
     "packages/platform/src/migration/runtime.ts",
-    "packages/line-channel/src/adapters.ts",
+    "packages/line/src/adapters.ts",
   ]) {
     assert.equal(isServerOnlyPackageSource(source), true, source);
   }
 
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/liff/index.ts"), false);
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/liff/client.ts"), false);
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/mini-app/registration.ts"), false);
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/identity/index.ts"), true);
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/messaging-api/index.ts"), true);
-  assert.equal(isServerOnlyPackageSource("packages/line-channel/src/rich-menu/index.ts"), true);
+  assert.equal(isServerOnlyPackageSource("packages/line/src/liff/index.ts"), false);
+  assert.equal(isServerOnlyPackageSource("packages/line/src/liff/client.ts"), false);
+  assert.equal(isServerOnlyPackageSource("packages/line/src/mini-app/registration.ts"), false);
+  assert.equal(isServerOnlyPackageSource("packages/line/src/identity/index.ts"), true);
+  assert.equal(isServerOnlyPackageSource("packages/line/src/messaging-api/index.ts"), true);
+  assert.equal(isServerOnlyPackageSource("packages/line/src/rich-menu/index.ts"), true);
   assert.equal(isServerOnlyPackageSource("packages/account/src/domain/user.ts"), false);
 });

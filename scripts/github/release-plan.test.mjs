@@ -305,10 +305,10 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "scripts/line/rich-menu/sync.ts",
     "apps/web/src/modules/assistant/rich-menu/publication.server.ts",
     "apps/web/src/modules/assistant/rich-menu/operator.server.ts",
-    "packages/line-channel/src/mini-app/registration.ts",
+    "packages/line/src/mini-app/registration.ts",
     "apps/web/src/shared/presentation/entry-route.ts",
-    "packages/line-channel/src/rich-menu/client.ts",
-    "packages/line-channel/src/rich-menu/image.ts",
+    "packages/line/src/rich-menu/client.ts",
+    "packages/line/src/rich-menu/image.ts",
     "scripts/runtime/load-env.mjs",
     "pnpm-lock.yaml",
   ])
@@ -317,7 +317,7 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "scripts/line/rich-menu/README.md",
     "scripts/line/rich-menu/sync.test.ts",
     "apps/web/src/modules/assistant/rich-menu/publication.server.test.ts",
-    "packages/line-channel/src/adapters/messaging/line-webhook-parser.ts",
+    "packages/line/src/adapters/messaging/line-webhook-parser.ts",
     "apps/web/src/app/page.tsx",
   ])
     assert.equal(richMenuChanged([file]), false, file);
