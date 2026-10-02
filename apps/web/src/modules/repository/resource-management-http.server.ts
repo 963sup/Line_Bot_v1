@@ -9,12 +9,7 @@ type ResourceFamily = "label" | "milestone";
 
 const familyActions: Record<ResourceFamily, ReadonlySet<string>> = {
   label: new Set(["create-label", "update-label", "delete-label"]),
-  milestone: new Set([
-    "create-milestone",
-    "update-milestone",
-    "open-milestone",
-    "close-milestone",
-  ]),
+  milestone: new Set(["create-milestone", "update-milestone", "open-milestone", "close-milestone"]),
 };
 
 export async function repositoryResourceManagementRequest(
