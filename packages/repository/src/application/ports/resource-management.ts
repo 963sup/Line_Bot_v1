@@ -54,11 +54,7 @@ export type RepositoryResourceManagementReceipt =
   | Readonly<{
       requestId: string;
       repositoryId: string;
-      action:
-        | "create-milestone"
-        | "update-milestone"
-        | "open-milestone"
-        | "close-milestone";
+      action: "create-milestone" | "update-milestone" | "open-milestone" | "close-milestone";
       milestone: RepositoryMilestone;
       at: number;
     }>;
