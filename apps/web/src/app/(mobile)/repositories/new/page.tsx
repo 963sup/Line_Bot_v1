@@ -1,5 +1,5 @@
 import RepositoryCreate from "../../../../modules/repository/repository-create";
-import { lineMiniApp } from "../../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 import { PageHeading } from "../../../../shared/ui/page-layout";
 import AppShell from "../../_shell/app-shell";
 

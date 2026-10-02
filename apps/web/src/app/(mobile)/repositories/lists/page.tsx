@@ -3,7 +3,7 @@ import {
   repositoryStarListDiscoverPath,
 } from "../../../../modules/repository/resource-navigation";
 import RepositoryStarListCollection from "../../../../modules/repository/star-list-collection";
-import { lineMiniApp } from "../../../../shared/server/line-mini-app";
+import { lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
 import { PageHeading, PrimaryLink, SectionHeading } from "../../../../shared/ui/page-layout";
 import AppShell from "../../_shell/app-shell";
 
