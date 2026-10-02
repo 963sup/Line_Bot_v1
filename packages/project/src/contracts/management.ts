@@ -32,7 +32,7 @@ export type ProjectCollaborator = Readonly<{
   role: ProjectAccessRole;
 }>;
 
-export type ProjectIssueReference = Readonly<{
+type ProjectIssueReference = Readonly<{
   id: string;
   repositoryId: string;
   number: number;
@@ -345,12 +345,12 @@ export type ProjectManagementReceipt = Readonly<{
   data: Readonly<Record<string, unknown>>;
 }>;
 
-export type ProjectIdentity = Readonly<{ userId: string }>;
+export type ProjectManagementIdentity = Readonly<{ userId: string }>;
 
 export interface ProjectManagementStore {
-  view(identity: ProjectIdentity, projectId: string): Promise<ProjectManagementView>;
+  view(identity: ProjectManagementIdentity, projectId: string): Promise<ProjectManagementView>;
   execute(
-    identity: ProjectIdentity,
+    identity: ProjectManagementIdentity,
     command: ProjectManagementCommand,
     now: number,
   ): Promise<ProjectManagementReceipt>;
