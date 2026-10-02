@@ -20,12 +20,12 @@ import {
   advance,
   type CommentRow,
   comment,
-  type IssueHead,
   currentIssue,
   dependencyWouldCycle,
   duplicateRelation,
   fingerprint,
   hierarchyWouldCycle,
+  type IssueHead,
   privilegedCommenter,
   readReceipt,
   requireActionPermission,
@@ -252,16 +252,8 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           { id: command.issueId, repositoryId: command.repositoryId },
           { id: relatedTarget.id, repositoryId: relatedTarget.repository_id },
         ].sort((left, right) => left.id.localeCompare(right.id));
-        const first = await currentIssue(
-          sql,
-          endpoints[0]!.repositoryId,
-          endpoints[0]!.id,
-        );
-        const second = await currentIssue(
-          sql,
-          endpoints[1]!.repositoryId,
-          endpoints[1]!.id,
-        );
+        const first = await currentIssue(sql, endpoints[0]!.repositoryId, endpoints[0]!.id);
+        const second = await currentIssue(sql, endpoints[1]!.repositoryId, endpoints[1]!.id);
         issue = first.id === command.issueId ? first : second;
         relatedTargetHead = first.id === relatedTarget.id ? first : second;
       } else {
