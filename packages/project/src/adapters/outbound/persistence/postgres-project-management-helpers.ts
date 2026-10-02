@@ -14,7 +14,7 @@ import type {
   ProjectAccessRole,
   ProjectOwnerKind,
 } from "../../../domain.js";
-import { ProjectError } from "../domain.js";
+import { ProjectError } from "../../../domain.js";
 
 export type ProjectRow = {
   id: string;
