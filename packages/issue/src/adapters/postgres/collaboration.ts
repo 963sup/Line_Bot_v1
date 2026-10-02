@@ -252,6 +252,8 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
       let data: Record<string, unknown> = {};
       let resourceId: string | null = null;
       let relatedPeer: IssueHead | null = null;
+      let relatedPeerExpectedVersion: number | null = null;
+      let relatedPeerAction: "add-related" | "remove-related" | null = null;
       let patch:
         | { milestoneId?: string | null; locked?: boolean; lockReason?: IssueLockReason | null }
         | undefined;
@@ -470,6 +472,8 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         const target = await targetIssue(sql, who, issue.id, command.targetIssueId);
         relatedPeer = await currentIssue(sql, target.repository_id, target.id);
         requireExpectedVersion(relatedPeer, command.targetExpectedVersion);
+        relatedPeerExpectedVersion = command.targetExpectedVersion;
+        relatedPeerAction = command.action;
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
         const left = ordered[0]!;
         const right = ordered[1]!;
@@ -577,21 +581,16 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         [issue.id, nextVersion, who.userId, command.action, JSON.stringify(data), now],
       );
 
-      if (relatedPeer) {
-        const peerVersion = await advance(
-          sql,
-          relatedPeer,
-          command.targetExpectedVersion,
-          now,
-        );
+      if (relatedPeer && relatedPeerExpectedVersion !== null && relatedPeerAction !== null) {
+        const peerVersion = await advance(sql, relatedPeer, relatedPeerExpectedVersion, now);
         const peerData =
-          command.action === "add-related"
+          relatedPeerAction === "add-related"
             ? { relatedIssueId: issue.id, mirrored: true }
             : { removedRelatedIssueId: issue.id, mirrored: true };
         await sql.query(
           `INSERT INTO issue_events(issue_id,version,actor,action,note,data,at)
            VALUES($1,$2,$3,$4,'',$5::jsonb,$6)`,
-          [relatedPeer.id, peerVersion, who.userId, command.action, JSON.stringify(peerData), now],
+          [relatedPeer.id, peerVersion, who.userId, relatedPeerAction, JSON.stringify(peerData), now],
         );
       }
 
