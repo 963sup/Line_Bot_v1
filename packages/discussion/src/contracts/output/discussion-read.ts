@@ -30,6 +30,12 @@ export interface DiscussionReadStore {
     discussionId: string,
     commentsAfter?: DiscussionCursor,
   ): Promise<DiscussionResult>;
+  detailByNumber(
+    identity: DiscussionIdentity,
+    selector: RepositorySelector,
+    discussionNumber: number,
+    commentsAfter?: DiscussionCursor,
+  ): Promise<DiscussionResult>;
 }
 
 export type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
