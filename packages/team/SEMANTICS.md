@@ -43,6 +43,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
 | consumes | organization | stable-identity+query | organization | current-state | Organization scope and participation. |
 | provides | identity-access | query | team | current-state | IdentityAccess consumes current Team-owned TeamMaintainer relationship facts plus current User, Organization, and TeamMembership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
+| provides | project | query | team | transaction-recheck | Project-owned Team grants consume current Team membership and Team organization scope; Team identity or membership does not become Project-owned authority. |
 
 ## Tactical Model Boundary
 
