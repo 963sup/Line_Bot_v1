@@ -20,11 +20,7 @@ export async function readProjectTeamOrganization(
   sql: Sql,
   teamId: string,
 ): Promise<string | null> {
-  const row = (
-    await sql.query(
-      "SELECT organization_account_id FROM teams WHERE id=$1",
-      [teamId],
-    )
-  ).rows[0] as { organization_account_id: string } | undefined;
+  const row = (await sql.query("SELECT organization_account_id FROM teams WHERE id=$1", [teamId]))
+    .rows[0] as { organization_account_id: string } | undefined;
   return row?.organization_account_id ?? null;
 }
