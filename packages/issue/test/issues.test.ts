@@ -452,7 +452,8 @@ test("Issue state, assignment, content and local workflow remain separate axes",
     "select action,data from app_private.issue_events where issue_id=$1 order by version",
     [created.id],
   );
-  const actions = eventRows.rows.map((row: { action: string }) => row.action);
+  const events = eventRows.rows as Array<{ action: string; data: unknown }>;
+  const actions = events.map((row) => row.action);
   assert.deepEqual(actions, [
     "create",
     "add-assignees",
@@ -464,7 +465,7 @@ test("Issue state, assignment, content and local workflow remain separate axes",
     "reopen",
     "remove-assignees",
   ]);
-  const editEvent = eventRows.rows.find((row: { action: string }) => row.action === "edit") as
+  const editEvent = events.find((row) => row.action === "edit") as
     | { data: { changes?: Record<string, unknown> } }
     | undefined;
   assert.deepEqual(Object.keys(editEvent?.data.changes ?? {}).sort(), [
@@ -472,7 +473,7 @@ test("Issue state, assignment, content and local workflow remain separate axes",
     "criteria",
     "title",
   ]);
-  const closeEvent = eventRows.rows.find((row: { action: string }) => row.action === "close") as
+  const closeEvent = events.find((row) => row.action === "close") as
     | { data: { to?: { state?: string; stateReason?: string } } }
     | undefined;
   assert.deepEqual(closeEvent?.data.to, { state: "CLOSED", stateReason: "COMPLETED" });
