@@ -15,6 +15,14 @@
     "./composition/bootstrap/postgres-project-collection-store": {
       "types": "./dist/composition/bootstrap/postgres-project-collection-store.d.ts",
       "default": "./dist/composition/bootstrap/postgres-project-collection-store.js"
+    },
+    "./contracts/management": {
+      "types": "./dist/contracts/management.d.ts",
+      "default": "./dist/contracts/management.js"
+    },
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
     }
   },
   "files": [
