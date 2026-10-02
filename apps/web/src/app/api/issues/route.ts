@@ -40,7 +40,14 @@ export async function GET(request: Request) {
         true,
         view === "mine" || view === "created" ? view : undefined,
         params.get("after") ?? undefined,
-        params.get("status") || undefined,
+        (() => {
+          const workflowStatus = params.get("workflowStatus");
+          const legacyStatus = params.get("status");
+          if (workflowStatus && legacyStatus) {
+            throw new IssueError(400, "請只使用 workflowStatus；status 僅保留舊版相容。");
+          }
+          return workflowStatus || legacyStatus || undefined;
+        })(),
       ),
     );
   } catch (error) {
