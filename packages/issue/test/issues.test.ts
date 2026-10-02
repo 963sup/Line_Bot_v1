@@ -625,11 +625,9 @@ test("pre-parity Issue rows stay readable and materialize without invented histo
   );
 
   const store = new PostgresIssueStore(db);
-  const before = await store.detail(
-    { userId: "legacy-owner" },
-    1,
-    { repositoryId: "legacy-repo" },
-  );
+  const before = await store.detail({ userId: "legacy-owner" }, 1, {
+    repositoryId: "legacy-repo",
+  });
   assert.deepEqual(before.issues[0], {
     id: "legacy-issue",
     repositoryId: "legacy-repo",
@@ -693,4 +691,3 @@ test("pre-parity Issue rows stay readable and materialize without invented histo
   assert.equal((events.rows[1] as { version: number }).version, 2);
   assert.equal((events.rows[1] as { action: string }).action, "edit");
 });
-
