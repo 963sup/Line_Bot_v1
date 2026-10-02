@@ -1,7 +1,4 @@
-import type {
-  RepositoryLabel,
-  RepositoryMilestone,
-} from "../dto/resources.js";
+import type { RepositoryLabel, RepositoryMilestone } from "../dto/resources.js";
 
 type RepositoryResourceCommandBase = Readonly<{
   requestId: string;
