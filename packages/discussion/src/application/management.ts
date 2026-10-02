@@ -136,8 +136,7 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
       "emoji",
       "isAnswerable",
     ]);
-    const name =
-      value.name === undefined ? undefined : text(value.name, "Category 名稱", 120);
+    const name = value.name === undefined ? undefined : text(value.name, "Category 名稱", 120);
     const description =
       value.description === undefined
         ? undefined
@@ -227,17 +226,10 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
     ]);
     const title =
       value.title === undefined ? undefined : text(value.title, "Discussion title", 160);
-    const body =
-      value.body === undefined ? undefined : text(value.body, "Discussion body", 20_000);
+    const body = value.body === undefined ? undefined : text(value.body, "Discussion body", 20_000);
     const categoryId =
-      value.categoryId === undefined
-        ? undefined
-        : id(value.categoryId, "Category 識別碼");
-    if (
-      title === undefined &&
-      body === undefined &&
-      categoryId === undefined
-    ) {
+      value.categoryId === undefined ? undefined : id(value.categoryId, "Category 識別碼");
+    if (title === undefined && body === undefined && categoryId === undefined) {
       throw new DiscussionError(400, "Discussion 修改至少需要一個欄位。");
     }
     return {
