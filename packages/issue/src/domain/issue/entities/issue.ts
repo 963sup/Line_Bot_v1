@@ -1,5 +1,5 @@
-export type IssueState = "OPEN" | "CLOSED";
-export type IssueStateReason = "COMPLETED" | "DUPLICATE" | "NOT_PLANNED" | "REOPENED";
+type IssueState = "OPEN" | "CLOSED";
+type IssueStateReason = "COMPLETED" | "DUPLICATE" | "NOT_PLANNED" | "REOPENED";
 export type IssueClosedStateReason = Exclude<IssueStateReason, "REOPENED">;
 export type IssueWorkflowStatus = "pending" | "active" | "review" | "completed";
 export type IssueAction = "accept" | "report" | "reject" | "approve";
