@@ -1,34 +1,22 @@
+import type {
+  RepositoryLabel,
+  RepositoryMilestone,
+  RepositoryMilestoneStatus,
+} from "../../contracts/dto/resources.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import type { RepositorySummary } from "../../domain.js";
+
+export type {
+  RepositoryLabel,
+  RepositoryMilestone,
+  RepositoryMilestoneStatus,
+};
 
 export type RepositoryResourceIdentity = { userId: string };
 
 export type RepositoryLabelCursor = { name: string; id: string };
 export type RepositoryMilestoneCursor = { number: number; id: string };
 
-export type RepositoryLabel = {
-  id: string;
-  repositoryId: string;
-  name: string;
-  color: string;
-  description: string;
-  version: number;
-};
-
-export type RepositoryMilestoneStatus = "open" | "closed";
-
-export type RepositoryMilestone = {
-  id: string;
-  repositoryId: string;
-  number: number;
-  title: string;
-  description: string;
-  status: RepositoryMilestoneStatus;
-  dueAt: number | null;
-  version: number;
-  createdAt: number;
-  updatedAt: number;
-};
 
 export type RepositoryLabelsResult = {
   repository: RepositorySummary;
