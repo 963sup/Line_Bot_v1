@@ -244,6 +244,26 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/705_project_access.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/706_project_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/707_project_fields.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/708_project_views.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/709_project_status_updates.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/800_asset_definitions.sql",
       "role": "authoritative"
     },
@@ -914,6 +934,116 @@
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-repository-link"
+    },
+    {
+      "name": "project_draft_issues",
+      "kind": "table",
+      "path": "supabase/schemas/701_project_items.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-draft-issue"
+    },
+    {
+      "name": "project_draft_issue_assignees",
+      "kind": "table",
+      "path": "supabase/schemas/701_project_items.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-draft-issue-assignee"
+    },
+    {
+      "name": "project_user_access",
+      "kind": "table",
+      "path": "supabase/schemas/705_project_access.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-collaborator"
+    },
+    {
+      "name": "project_team_access",
+      "kind": "table",
+      "path": "supabase/schemas/705_project_access.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-collaborator"
+    },
+    {
+      "name": "project_commands",
+      "kind": "table",
+      "path": "supabase/schemas/706_project_commands.sql",
+      "authority": true,
+      "semanticOwner": "project"
+    },
+    {
+      "name": "project_events",
+      "kind": "table",
+      "path": "supabase/schemas/706_project_commands.sql",
+      "authority": true,
+      "semanticOwner": "project"
+    },
+    {
+      "name": "project_fields",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-field"
+    },
+    {
+      "name": "project_field_options",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-field-option"
+    },
+    {
+      "name": "project_field_iterations",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-field-iteration"
+    },
+    {
+      "name": "project_item_field_values",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-item-field-value"
+    },
+    {
+      "name": "project_item_multi_select_values",
+      "kind": "table",
+      "path": "supabase/schemas/707_project_fields.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-item-field-value"
+    },
+    {
+      "name": "project_views",
+      "kind": "table",
+      "path": "supabase/schemas/708_project_views.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-view"
+    },
+    {
+      "name": "project_view_visible_fields",
+      "kind": "table",
+      "path": "supabase/schemas/708_project_views.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-view"
+    },
+    {
+      "name": "project_status_updates",
+      "kind": "table",
+      "path": "supabase/schemas/709_project_status_updates.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-status-update"
     },
     {
       "name": "asset_definitions",
