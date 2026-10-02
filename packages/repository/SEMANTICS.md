@@ -43,16 +43,16 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | manage-repository | not-asserted |  | Coordinate Repository identity, reads, access, lifecycle, interactions and local extensions without transferring authority to consumers. |
 | manage-repository-access | required | implemented | Manage Repository-owned direct User and Organization Team grants over the exact six-value FPT RepositoryPermission domain, preserving permission identity without a synthetic total order while retaining replay safety and recoverable admin authority. |
 | manage-repository-address | required | implemented | Maintain the Repository address property used as the attendance clock point for current effective members. |
-| manage-repository-labels | not-asserted | data-only | Preserve Repository Label create/update/delete semantics as current data without asserting runtime management. |
+| manage-repository-labels | required | implemented | Manage Repository-owned Label definitions with stable identity, explicit write/maintain/admin authorization, version concurrency, exact replay and reference-safe deletion. |
 | manage-repository-lifecycle | required | implemented | Rename a Repository, change visibility, and archive or unarchive it while preserving stable identity, current authority, expected-version concurrency, replay and history. |
-| manage-repository-milestones | not-asserted | data-only | Preserve Repository Milestone create/update/close semantics as current data without asserting runtime management. |
+| manage-repository-milestones | required | implemented | Manage Repository-owned Milestone definitions and OPEN/CLOSED lifecycle with repository-local numbers, explicit write/maintain/admin authorization, version concurrency and exact replay. |
 | manage-repository-star-lists | required | implemented | Manage replay-safe User curated Lists over the User's current Repository stars. |
 | manage-repository-stars | required | implemented | Manage User star/unstar interaction over Repository resources. |
 | manage-repository-subscription | required | implemented | Manage replay-safe User-to-Repository Watch state over the exact FPT SubscriptionState values without granting Repository access. |
 | read-repository | required | implemented | Read Repository stable identity through current visibility/access and owner-scoped current or historical locators. |
 | read-repository-discovery | required | implemented | Read authorized Repository Trending and published Repository Star List projections without creating a new Explore authority. |
-| read-repository-labels | required | implemented | Read authorized Repository Label collections without asserting label create/update/delete management. |
-| read-repository-milestones | required | implemented | Read authorized Repository Milestone lists and detail by repository-local number without asserting milestone write management. |
+| read-repository-labels | required | implemented | Read authorized Repository Label collections through current Repository visibility/access. |
+| read-repository-milestones | required | implemented | Read authorized Repository Milestone lists and detail by repository-local number through current Repository visibility/access. |
 
 ## Context Relationships
 
