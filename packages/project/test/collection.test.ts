@@ -36,7 +36,7 @@ async function activeUser(db: Database, id: string, login: string) {
   });
 }
 
-test("Postgres Project collection exposes personal and OrganizationOwner Projects only", async (t) => {
+test("Postgres Project collection exposes owner-scoped projects with effective roles", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -62,14 +62,22 @@ test("Postgres Project collection exposes personal and OrganizationOwner Project
       id: "personal",
       ownerLogin: "alice",
       ownerKind: "USER",
+      number: null,
       name: "Personal Plan",
+      public: false,
+      closed: false,
+      role: "ADMIN",
       version: 1,
     },
     {
       id: "shared",
       ownerLogin: "acme",
       ownerKind: "ORGANIZATION",
+      number: null,
       name: "Shared Plan",
+      public: false,
+      closed: false,
+      role: "ADMIN",
       version: 1,
     },
   ]);
