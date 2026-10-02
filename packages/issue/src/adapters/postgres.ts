@@ -39,12 +39,14 @@ type IssueRow = {
   repository_id: string;
   number: number | string;
   publisher: string;
+  assignee: string | null;
   title: string;
-  body: string;
+  body: string | null;
   criteria: string;
-  state: Issue["state"];
+  status: Issue["workflowStatus"] | null;
+  state: Issue["state"] | null;
   state_reason: Issue["stateReason"];
-  workflow_status: Issue["workflowStatus"];
+  workflow_status: Issue["workflowStatus"] | null;
   version: number;
   created_at: number | string;
   updated_at: number | string;
@@ -64,7 +66,19 @@ function isWorkflowCommand(command: IssueCommand): command is WorkflowIssueComma
   );
 }
 
-function issue(row: IssueRow, assignees: readonly string[]): Issue {
+function issue(row: IssueRow, relationAssignees: readonly string[]): Issue {
+  const workflowStatus = row.workflow_status ?? row.status;
+  if (!workflowStatus) {
+    throw new IssueError(503, "Issue 工作流程資料無法讀取。");
+  }
+  const canonical = row.state !== null;
+  if (canonical && (row.body === null || row.workflow_status === null)) {
+    throw new IssueError(503, "Issue canonical 資料不完整。");
+  }
+  const assignees =
+    relationAssignees.length || row.assignee === null
+      ? relationAssignees
+      : [row.assignee];
   return {
     id: row.id,
     repositoryId: row.repository_id,
@@ -72,11 +86,11 @@ function issue(row: IssueRow, assignees: readonly string[]): Issue {
     publisher: row.publisher,
     assignees,
     title: row.title,
-    body: row.body,
+    body: canonical ? (row.body ?? "") : "",
     criteria: row.criteria,
-    state: row.state,
-    stateReason: row.state_reason,
-    workflowStatus: row.workflow_status,
+    state: canonical ? (row.state ?? "OPEN") : "OPEN",
+    stateReason: canonical ? row.state_reason : null,
+    workflowStatus,
     version: Number(row.version),
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
@@ -178,10 +192,10 @@ function receiptIssue(value: unknown): Issue | null {
     publisher: row.publisher,
     assignees: [row.assignee],
     title: row.title,
-    body: row.criteria,
+    body: "",
     criteria: row.criteria,
-    state: legacyStatus === "completed" ? "CLOSED" : "OPEN",
-    stateReason: legacyStatus === "completed" ? "COMPLETED" : null,
+    state: "OPEN",
+    stateReason: null,
     workflowStatus: legacyStatus,
     version: row.version,
     createdAt: row.createdAt,
@@ -294,13 +308,14 @@ export class PostgresIssueStore implements IssueStore {
            WHERE i.repository_id=$1
              AND (
                $2::text IS NULL
+               OR i.assignee=$2
                OR EXISTS (
                  SELECT 1 FROM issue_assignees a
                  WHERE a.issue_id=i.id AND a.user_id=$2
                )
              )
              AND ($3::text IS NULL OR i.publisher=$3)
-             AND ($4::text IS NULL OR i.workflow_status=$4)
+             AND ($4::text IS NULL OR COALESCE(i.workflow_status,i.status)=$4)
              AND ($5::bigint IS NULL OR i.created_at<$5 OR (i.created_at=$5 AND i.id>$6))
            ORDER BY i.created_at DESC,i.id
            LIMIT $7`,
@@ -493,6 +508,14 @@ export class PostgresIssueStore implements IssueStore {
         ).rows[0] as IssueRow | undefined;
         if (!row) throw new IssueError(404, "找不到 Issue。");
 
+        if (row.assignee !== null) {
+          await sql.query(
+            `INSERT INTO issue_assignees(issue_id,user_id,assigned_at)
+             VALUES($1,$2,NULL)
+             ON CONFLICT DO NOTHING`,
+            [row.id, row.assignee],
+          );
+        }
         const assigneeMap = await assigneesByIssue(sql, [row.id]);
         result = issue(row, assigneeMap.get(row.id) ?? []);
         if (result.version !== command.expectedVersion) {
@@ -590,9 +613,11 @@ export class PostgresIssueStore implements IssueStore {
         const changed = (
           await sql.query(
             `UPDATE issues
-             SET title=$2,
+             SET assignee=NULL,
+                 title=$2,
                  body=$3,
                  criteria=$4,
+                 status=NULL,
                  state=$5,
                  state_reason=$6,
                  workflow_status=$7,
