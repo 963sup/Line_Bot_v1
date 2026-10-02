@@ -398,11 +398,12 @@ from app_private.attendance_sessions s
 where s.ended_at is null
 union all
 select
-  i.assignee as user_id,
+  a.user_id,
   'unfinished-issue'::text as activity_kind,
   i.id::text as item_id
-from app_private.issues i
-where i.status <> 'completed';
+from app_private.issue_assignees a
+join app_private.issues i on i.id=a.issue_id
+where i.workflow_status <> 'completed';
 
 
 -- Identity/Access qualification read models. These expose only scope/membership/affiliation
