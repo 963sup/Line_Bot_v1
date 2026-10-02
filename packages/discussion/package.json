@@ -19,6 +19,18 @@
     "./postgres": {
       "types": "./dist/postgres.d.ts",
       "default": "./dist/postgres.js"
+    },
+    "./application/management": {
+      "types": "./dist/application/management.d.ts",
+      "default": "./dist/application/management.js"
+    },
+    "./contracts/management": {
+      "types": "./dist/contracts/management.d.ts",
+      "default": "./dist/contracts/management.js"
+    },
+    "./postgres/management": {
+      "types": "./dist/postgres/management.d.ts",
+      "default": "./dist/postgres/management.js"
     }
   },
   "files": [
