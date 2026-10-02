@@ -62,7 +62,7 @@ export async function accessibleRepositories(
   return repositorySummaries(sql, rows);
 }
 
-export async function accessibleRepositoriesByIds(
+export async function readableRepositoriesByIds(
   sql: Sql,
   userId: string,
   repositoryIds: string[],
@@ -70,11 +70,22 @@ export async function accessibleRepositoriesByIds(
   if (!repositoryIds.length) return [];
   const rows = (
     await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.permissions
+      `SELECT
+         r.id,
+         r.owner_account_id,
+         r.owner_account_kind,
+         r.name,
+         COALESCE(a.permissions,ARRAY[]::text[]) AS permissions
        FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE a.user_id=$1
-         AND r.id = ANY($2::text[])
+       LEFT JOIN repository_effective_access a
+         ON a.repository_id=r.id AND a.user_id=$1
+       WHERE r.id=ANY($2::text[])
+         AND EXISTS (
+           SELECT 1
+           FROM repository_visibility_access v
+           WHERE v.repository_id=r.id
+             AND (v.user_id=$1 OR v.user_id IS NULL)
+         )
        ORDER BY r.id`,
       [userId, repositoryIds],
     )
@@ -88,15 +99,17 @@ export async function repositoryScope(
   repositoryId: string,
 ) {
   const access = await repositoryAccess(sql, identity, repositoryId);
-  const participants = (
-    await sql.query(
-      `SELECT user_id
-       FROM repository_effective_access
-       WHERE repository_id=$1
-       ORDER BY user_id`,
-      [repositoryId],
-    )
-  ).rows as Array<{ user_id: string }>;
+  const participants = access.permissions.length
+    ? ((
+        await sql.query(
+          `SELECT user_id
+           FROM repository_effective_access
+           WHERE repository_id=$1
+           ORDER BY user_id`,
+          [repositoryId],
+        )
+      ).rows as Array<{ user_id: string }>)
+    : [];
   return {
     repository: access,
     participants: participants.map((row) => ({
@@ -113,31 +126,60 @@ async function repositoryAccess(
 ): Promise<RepositorySummary> {
   const row = (
     await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name,a.permissions
+      `SELECT
+         r.id,
+         r.owner_account_id,
+         r.owner_account_kind,
+         r.name,
+         COALESCE(a.permissions,ARRAY[]::text[]) AS permissions
        FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
-       WHERE r.id=$1 AND a.user_id=$2`,
+       LEFT JOIN repository_effective_access a
+         ON a.repository_id=r.id AND a.user_id=$2
+       WHERE r.id=$1
+         AND EXISTS (
+           SELECT 1
+           FROM repository_visibility_access v
+           WHERE v.repository_id=r.id
+             AND (v.user_id=$2 OR v.user_id IS NULL)
+         )`,
       [repositoryId, identity.userId],
     )
-  ).rows[0] as
-    | {
-        id: string;
-        owner_account_id: string;
-        owner_account_kind: "USER" | "ORGANIZATION";
-        name: string;
-        permissions: RepositoryPermission[];
-      }
-    | undefined;
-  if (!row) throw new RepositoryError(403, "沒有此 Repository 的存取權限。");
+  ).rows[0] as RepositoryAccessRow | undefined;
+  if (!row) throw new RepositoryError(403, "沒有此 Repository 的讀取權限。");
   const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
   if (!owner) throw new RepositoryError(409, "Repository owner locator 不可用。");
-  const access: RepositorySummary = {
+  return {
     id: row.id,
     ownerLogin: owner.login,
     name: row.name,
     permissions: row.permissions,
   };
-  return access;
+}
+
+async function currentRepositoryId(
+  sql: Sql,
+  ownerId: string,
+  ownerKind: "USER" | "ORGANIZATION",
+  repositoryName: string,
+  userId: string,
+): Promise<string | null> {
+  const row = (
+    await sql.query(
+      `SELECT r.id
+       FROM repositories r
+       WHERE r.owner_account_id=$1
+         AND r.owner_account_kind=$2
+         AND lower(r.name)=lower($3)
+         AND EXISTS (
+           SELECT 1
+           FROM repository_visibility_access v
+           WHERE v.repository_id=r.id
+             AND (v.user_id=$4 OR v.user_id IS NULL)
+         )`,
+      [ownerId, ownerKind, repositoryName, userId],
+    )
+  ).rows[0] as { id: string } | undefined;
+  return row?.id ?? null;
 }
 
 export async function resolveAuthorizedRepositoryId(
@@ -145,23 +187,48 @@ export async function resolveAuthorizedRepositoryId(
   identity: RepositoryIdentity,
   selector: RepositorySelector,
 ): Promise<string> {
-  if ("repositoryId" in selector) return selector.repositoryId;
+  if ("repositoryId" in selector) {
+    return (await repositoryAccess(sql, identity, selector.repositoryId)).id;
+  }
   const owner = await resolveAccountLogin(sql, selector.ownerLogin);
   if (!owner) throw new RepositoryError(404, "找不到可存取的 Repository。");
-  const row = (
+
+  const currentId = await currentRepositoryId(
+    sql,
+    owner.id,
+    owner.kind,
+    selector.repositoryName,
+    identity.userId,
+  );
+  if (currentId) return currentId;
+  if (selector.followRenames === false) {
+    throw new RepositoryError(404, "找不到可存取的 Repository。");
+  }
+
+  const rows = (
     await sql.query(
       `SELECT r.id
-       FROM repositories r
-       JOIN repository_effective_access a ON a.repository_id=r.id
+       FROM repository_name_history h
+       JOIN repositories r ON r.id=h.repository_id
        WHERE r.owner_account_id=$1
          AND r.owner_account_kind=$2
-         AND lower(r.name)=lower($3)
-         AND a.user_id=$4`,
+         AND lower(h.old_name)=lower($3)
+         AND EXISTS (
+           SELECT 1
+           FROM repository_visibility_access v
+           WHERE v.repository_id=r.id
+             AND (v.user_id=$4 OR v.user_id IS NULL)
+         )
+       ORDER BY h.renamed_at DESC,r.id
+       LIMIT 2`,
       [owner.id, owner.kind, selector.repositoryName, identity.userId],
     )
-  ).rows[0] as { id: string } | undefined;
-  if (!row) throw new RepositoryError(404, "找不到可存取的 Repository。");
-  return row.id;
+  ).rows as Array<{ id: string }>;
+  if (!rows.length) throw new RepositoryError(404, "找不到可存取的 Repository。");
+  if (rows.length > 1) {
+    throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
+  }
+  return rows[0]!.id;
 }
 
 export async function authorizedRepository(
@@ -171,4 +238,11 @@ export async function authorizedRepository(
 ): Promise<RepositorySummary> {
   const repositoryId = await resolveAuthorizedRepositoryId(sql, identity, selector);
   return repositoryAccess(sql, identity, repositoryId);
+}
+
+export async function repositoryArchived(sql: Sql, repositoryId: string): Promise<boolean> {
+  const row = (await sql.query("SELECT is_archived FROM repositories WHERE id=$1", [repositoryId]))
+    .rows[0] as { is_archived: boolean } | undefined;
+  if (!row) throw new RepositoryError(404, "找不到 Repository。");
+  return Boolean(row.is_archived);
 }

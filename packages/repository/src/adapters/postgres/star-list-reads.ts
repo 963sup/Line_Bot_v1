@@ -23,10 +23,13 @@ export async function readVisibleStarListRepositoryRows(
               r.name AS repository_name,r.visibility AS repository_visibility
        FROM repository_star_list_items i
        JOIN repositories r ON r.id=i.repository_id
-       LEFT JOIN repository_effective_access a
-         ON a.repository_id=r.id AND a.user_id=$1
        WHERE i.list_id=ANY($2::text[])
-         AND (r.visibility='public' OR a.repository_id IS NOT NULL)
+         AND EXISTS (
+           SELECT 1
+           FROM repository_visibility_access v
+           WHERE v.repository_id=r.id
+             AND (v.user_id=$1 OR v.user_id IS NULL)
+         )
        ORDER BY i.list_id,i.added_at DESC,i.repository_id`,
       [viewerUserId, listIds],
     )

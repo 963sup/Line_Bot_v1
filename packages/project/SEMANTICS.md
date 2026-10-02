@@ -43,7 +43,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | consumes | organization | query | organization | current-state | Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned. |
 | consumes | issue | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
 | consumes | account | stable-identity | account | current-identity | Project owner identity is an Account constrained to User or Organization. |
-| consumes | repository | reference | repository | current-identity | Project references Repository without acquiring Repository authority. |
+| consumes | repository | reference | repository | current-access-and-identity | Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access. |
 
 ## Tactical Model Boundary
 

@@ -1,4 +1,4 @@
-import { normalizeRepositoryName, RepositoryError } from "../domain.js";
+import { normalizeRepositoryName, RepositoryError, type RepositoryVisibility } from "../domain.js";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationStore,
@@ -12,7 +12,7 @@ function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
     throw new RepositoryError(400, "Repository 建立資料格式不正確。");
   }
   const value = raw as Record<string, unknown>;
-  const allowed = ["requestId", "ownerAccountId", "ownerKind", "name"];
+  const allowed = ["requestId", "ownerAccountId", "ownerKind", "name", "visibility"];
   if (Object.keys(value).some((key) => !allowed.includes(key))) {
     throw new RepositoryError(400, "Repository 建立資料包含不支援的欄位。");
   }
@@ -35,11 +35,16 @@ function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
   }
   const name = normalizeRepositoryName(value.name);
   if (!name) throw new RepositoryError(400, "Repository name 不正確。");
+  const visibility = value.visibility ?? "private";
+  if (visibility !== "private" && visibility !== "internal" && visibility !== "public") {
+    throw new RepositoryError(400, "Repository visibility 不正確。");
+  }
   return {
     requestId: value.requestId.toLowerCase(),
     ownerAccountId: value.ownerAccountId,
     ownerKind: value.ownerKind as RepositoryOwnerKind,
     name,
+    visibility: visibility as RepositoryVisibility,
   };
 }
 

@@ -256,15 +256,57 @@ test("Repository runtime privileges match only activated write capabilities", as
       has_table_privilege('line_app','app_private.repositories','INSERT') as can_insert,
       has_column_privilege('line_app','app_private.repositories','next_issue_number','UPDATE') as can_allocate_issue_number,
       has_column_privilege('line_app','app_private.repositories','name','UPDATE') as can_update_name,
-      has_column_privilege('line_app','app_private.repositories','visibility','UPDATE') as can_update_visibility`,
+      has_column_privilege('line_app','app_private.repositories','visibility','UPDATE') as can_update_visibility,
+      has_column_privilege('line_app','app_private.repositories','is_archived','UPDATE') as can_update_archive`,
   );
   assert.deepEqual(repositoryColumns.rows, [
     {
       can_select: true,
       can_insert: false,
       can_allocate_issue_number: true,
-      can_update_name: false,
-      can_update_visibility: false,
+      can_update_name: true,
+      can_update_visibility: true,
+      can_update_archive: true,
+    },
+  ]);
+
+  const lifecycleRelations = await pg.query(
+    `select c.relname,
+      has_table_privilege('line_app', c.oid, 'SELECT') as can_select,
+      has_table_privilege('line_app', c.oid, 'INSERT') as can_insert,
+      has_table_privilege('line_app', c.oid, 'UPDATE') as can_update,
+      has_table_privilege('line_app', c.oid, 'DELETE') as can_delete
+     from pg_class c
+     join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private'
+       and c.relname=any(array[
+         'repository_events',
+         'repository_name_history',
+         'repository_subscriptions'
+       ]::text[])
+     order by c.relname`,
+  );
+  assert.deepEqual(lifecycleRelations.rows, [
+    {
+      relname: "repository_events",
+      can_select: true,
+      can_insert: true,
+      can_update: false,
+      can_delete: false,
+    },
+    {
+      relname: "repository_name_history",
+      can_select: true,
+      can_insert: true,
+      can_update: false,
+      can_delete: false,
+    },
+    {
+      relname: "repository_subscriptions",
+      can_select: true,
+      can_insert: true,
+      can_update: true,
+      can_delete: false,
     },
   ]);
 

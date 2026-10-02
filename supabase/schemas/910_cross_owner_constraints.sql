@@ -263,3 +263,33 @@ create constraint trigger daily_check_in_claim_requires_ledger
 after insert on app_private.daily_check_in_claims
 deferrable initially deferred for each row
 execute function app_private.enforce_daily_check_in_claim_ledger_parity();
+
+
+-- Repository-backed Notification sources must be readable by the recipient at creation time.
+-- Inbox reads recheck the same projection, so later visibility/access changes also fail closed.
+create function app_private.enforce_notification_source_access()
+returns trigger
+language plpgsql
+security invoker
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+begin
+  if new.source_type in ('issue','discussion')
+     and not exists (
+       select 1
+       from app_private.notification_repository_source_access access
+       where access.source_type=new.source_type
+         and access.source_id=new.source_id
+         and (access.user_id=new.recipient or access.user_id is null)
+     ) then
+    raise exception 'notification_source_access_forbidden' using errcode = '42501';
+  end if;
+  return new;
+end
+$function$;
+revoke all on function app_private.enforce_notification_source_access()
+  from public, anon, authenticated, line_app;
+grant execute on function app_private.enforce_notification_source_access() to line_app;
+create trigger notification_source_access_guard
+before insert on app_private.notifications
+for each row execute function app_private.enforce_notification_source_access();

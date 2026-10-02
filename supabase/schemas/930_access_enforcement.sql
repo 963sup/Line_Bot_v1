@@ -107,6 +107,20 @@ grant select on app_private.repository_team_effective_access_sources to line_app
 revoke all on app_private.repository_effective_access from public, anon, authenticated, line_app;
 grant select on app_private.repository_effective_access to line_app;
 
+revoke all on app_private.repository_internal_scopes from public, anon, authenticated, line_app;
+grant select on app_private.repository_internal_scopes to line_app;
+
+revoke all on app_private.repository_visibility_access from public, anon, authenticated, line_app;
+grant select on app_private.repository_visibility_access to line_app;
+
+revoke all on app_private.project_repository_visible_references
+  from public, anon, authenticated, line_app;
+grant select on app_private.project_repository_visible_references to line_app;
+
+revoke all on app_private.notification_repository_source_access
+  from public, anon, authenticated, line_app;
+grant select on app_private.notification_repository_source_access to line_app;
+
 revoke all on app_private.organization_repository_collaborators from public, anon, authenticated, line_app;
 grant select on app_private.organization_repository_collaborators to line_app;
 
@@ -163,9 +177,9 @@ begin
 end
 $identity_access_projection_grants$;
 
-revoke all on function app_private.provision_repository(text,text,text,text,text)
+revoke all on function app_private.provision_repository(text,text,text,text,text,text)
   from public, anon, authenticated, line_app;
-grant execute on function app_private.provision_repository(text,text,text,text,text) to line_app;
+grant execute on function app_private.provision_repository(text,text,text,text,text,text) to line_app;
 
 
 revoke all on function app_private.mutate_repository_access(text,text,text,text,text,integer)

@@ -17,7 +17,7 @@ Project 是 Account-owned（User 或 Organization）的跨 Repository planning b
 - `Project ≠ WBS`；WBS 是 Project-owned decomposition。
 - Project Item 是 reference，不複製 Repository Issue business truth。
 - Project Milestone 與 Repository Milestone 是不同 owner 的 concept。
-- Project reference 不轉移 Repository access、Issue lifecycle 或 content authority。
+- Project reference 不轉移 Repository access、Issue lifecycle 或 content authority。Viewer-facing Repository reference 由 `project_repository_visible_references` 依 Repository 當下 visibility/access 投影；PRIVATE 隱藏、PUBLIC 可讀、INTERNAL 只依 same current active Enterprise，且不洩漏 hidden reference/count。
 - Owner login 只作 locator/presentation，不授權。
 - 在 Project-specific access policy 成為 machine truth 前，不得把 Organization member 擴張成 Project viewer。
 - Planning write 啟用前必須定義 expected version、request replay、Repository current-access validation 與 mutation consistency boundary。

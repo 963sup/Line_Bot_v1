@@ -62,8 +62,23 @@ async function repositoryRow(
       [owner.id, owner.kind, selector.repositoryName],
     )
   ).rows[0] as RepositoryRow | undefined;
-  if (!row) throw new RepositoryError(404, "找不到 Repository。");
-  return row;
+  if (row) return row;
+
+  const historical = (
+    await sql.query(
+      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name
+       FROM repository_name_history h
+       JOIN repositories r ON r.id=h.repository_id
+       WHERE r.owner_account_id=$1
+         AND r.owner_account_kind=$2
+         AND lower(h.old_name)=lower($3)
+       ORDER BY h.renamed_at DESC,r.id
+       LIMIT 2`,
+      [owner.id, owner.kind, selector.repositoryName],
+    )
+  ).rows as RepositoryRow[];
+  if (historical.length !== 1) throw new RepositoryError(404, "找不到 Repository。");
+  return historical[0]!;
 }
 
 async function actorPermissions(

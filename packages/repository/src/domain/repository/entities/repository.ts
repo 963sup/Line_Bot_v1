@@ -1,5 +1,7 @@
 import type { RepositoryPermission } from "../value-objects/repository-capability.js";
 
+export type RepositoryVisibility = "private" | "internal" | "public";
+
 export type RepositoryAddress = Readonly<{
   address: string;
   latitude: number;

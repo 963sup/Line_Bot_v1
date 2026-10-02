@@ -450,6 +450,18 @@
       }
     },
     {
+      "id": "repository-subscription",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-activity.json",
+        "symbol": "SubscriptionState"
+      }
+    },
+    {
       "id": "repository-star",
       "kind": "authoritative",
       "owner": "repository",
@@ -986,10 +998,10 @@
       "id": "project-repository-reference",
       "provider": "repository",
       "consumer": "project",
-      "meaning": "Project references Repository without acquiring Repository authority.",
+      "meaning": "Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access.",
       "integrationMode": "reference",
       "authority": "repository",
-      "consistency": "current-identity"
+      "consistency": "current-access-and-identity"
     },
     {
       "id": "project-issue-reference",
@@ -1024,6 +1036,15 @@
       "consumer": "discussion",
       "meaning": "Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads without acquiring Repository authority.",
       "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-notification-source-access",
+      "provider": "repository",
+      "consumer": "notifications",
+      "meaning": "Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access.",
+      "integrationMode": "query",
       "authority": "repository",
       "consistency": "transaction-recheck"
     },
@@ -1614,7 +1635,7 @@
       "id": "manage-repository",
       "owner": "repository",
       "kind": "aggregate",
-      "intent": "Coordinate the Repository capability family while keeping implemented reads separate from unimplemented write management.",
+      "intent": "Coordinate Repository identity, reads, access, lifecycle, interactions and local extensions without transferring authority to consumers.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1634,14 +1655,16 @@
         "manage-repository-milestones",
         "read-repository-labels",
         "read-repository-milestones",
-        "manage-repository-address"
+        "manage-repository-address",
+        "manage-repository-lifecycle",
+        "manage-repository-subscription"
       ]
     },
     {
       "id": "create-repository",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Create a private User- or Organization-owned Repository with replay-safe owner authorization and immediate creator access.",
+      "intent": "Create a User- or Organization-owned Repository with explicit PRIVATE, INTERNAL or PUBLIC visibility, replay-safe owner authorization and immediate creator administration.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1653,7 +1676,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current private Repository creation for self User owner or current effective OrganizationOwner",
+        "scope": "Repository creation for self User owner or current effective OrganizationOwner; INTERNAL requires the Organization's current active Enterprise scope.",
         "sourcePaths": [
           "packages/repository/src/application/creation.ts",
           "packages/repository/src/application/ports/creation.ts",
@@ -1673,14 +1696,14 @@
           "packages/repository/test/creation.test.ts",
           "apps/web/test/repository-creation-http.test.ts"
         ],
-        "note": "Create is private-only. User owner is self; Organization owner requires effective OrganizationOwner. Exact replay rechecks current authority before returning the receipt."
+        "note": "Create persists the selected visibility atomically. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current owner authority and accepts pre-visibility private-create fingerprints for rollout-safe retry."
       }
     },
     {
       "id": "read-repository",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Read Repository identity and public Repository locator data.",
+      "intent": "Read Repository stable identity through current visibility/access and owner-scoped current or historical locators.",
       "preserves": ["K1", "K2", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1692,18 +1715,103 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Repository read and public lookup surface",
+        "scope": "Current Repository reads over explicit access, PUBLIC visibility or same-active-Enterprise INTERNAL visibility, plus public anonymous lookup.",
         "sourcePaths": [
           "packages/repository/src/application/public.ts",
-          "packages/repository/src/application/ports/public.ts"
+          "packages/repository/src/application/ports/public.ts",
+          "packages/repository/src/adapters/postgres/access.ts",
+          "packages/repository/src/postgres/public.ts"
         ],
         "publicExports": ["./application/public", "./application/ports/public"],
         "entrypoints": [
           "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
           "apps/web/src/app/(mobile)/repositories/page.tsx"
         ],
-        "testPaths": ["packages/repository/test/stars.test.ts"],
-        "note": "Public Repository lookup resolves owner login plus repository name; URL does not become authorization."
+        "testPaths": [
+          "packages/repository/test/management.test.ts",
+          "packages/repository/test/visibility.test.ts",
+          "packages/repository/test/stars.test.ts"
+        ],
+        "note": "RepositoryId is stable. Current owner/name wins. With followRenames=true, an old owner-scoped name resolves the same Repository; false rejects the old name. Historical names stay reserved against other Repositories under that owner, while the same Repository may reclaim its own alias. Visibility grants read authority only and never synthesizes RepositoryPermission."
+      }
+    },
+    {
+      "id": "manage-repository-lifecycle",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Rename a Repository, change visibility, and archive or unarchive it while preserving stable identity, current authority, expected-version concurrency, replay and history.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository admin lifecycle management for rename, PRIVATE/INTERNAL/PUBLIC visibility, archive and unarchive.",
+        "sourcePaths": [
+          "packages/repository/src/application/management.ts",
+          "packages/repository/src/application/ports/management.ts",
+          "packages/repository/src/adapters/postgres/management.ts"
+        ],
+        "publicExports": [
+          "./application/management",
+          "./application/ports/management",
+          "./postgres/management"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-management/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/settings/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/management.test.ts",
+          "packages/repository/test/visibility.test.ts",
+          "packages/issue/test/issues.test.ts",
+          "apps/web/test/repository-management-http.test.ts"
+        ],
+        "note": "Rename preserves RepositoryId and durable lifecycle events. Archive preserves reads under current visibility but blocks Issue commands; Discussion/Label/Milestone have no write runtime yet. INTERNAL is Organization-only and consumes current active Enterprise scope."
+      }
+    },
+    {
+      "id": "manage-repository-subscription",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage replay-safe User-to-Repository Watch state over the exact FPT SubscriptionState values without granting Repository access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository is the supported non-code Subscribable subject; User state is SUBSCRIBED, UNSUBSCRIBED or IGNORED with current-access recheck and independent versioning.",
+        "sourcePaths": [
+          "packages/repository/src/application/subscription.ts",
+          "packages/repository/src/application/ports/subscription.ts",
+          "packages/repository/src/adapters/postgres/subscription.ts"
+        ],
+        "publicExports": [
+          "./application/subscription",
+          "./application/ports/subscription",
+          "./postgres/subscription"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-subscription/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/subscription.test.ts",
+          "packages/notifications/test/repository-source-access.test.ts",
+          "apps/web/test/repository-subscription-http.test.ts"
+        ],
+        "note": "Watch state is distinct from Star, Follow, TeamNotificationSetting, Notification and delivery. Subscription grants no read/write access. Repository conversation fan-out is not enabled; when Notifications reference Issue/Discussion sources, creation and Inbox reads recheck current Repository visibility/access."
       }
     },
     {
@@ -1778,7 +1886,7 @@
           "packages/repository/test/stars.test.ts",
           "apps/web/test/profile-discovery-api.test.ts"
         ],
-        "note": "Star is an interaction signal; it does not imply repository authority."
+        "note": "Star is an interaction signal and never grants Repository authority. Star/unstar and starred reads recheck current Repository visibility/access."
       }
     },
     {
@@ -1819,7 +1927,7 @@
           "packages/repository/test/star-lists.test.ts",
           "apps/web/test/repository-star-lists-api.test.ts"
         ],
-        "note": "Create is private by default; publish is explicit. Items require the owner Star and current access when added. Unstar removes matching memberships through the declared Star foreign-key invariant. List visibility never grants Repository access."
+        "note": "Create is private by default; publish is explicit. Items require the owner Star and current Repository visibility/access when added. Viewer counts/previews recheck current visibility, so hidden Repository items do not leak. Unstar removes matching memberships through the declared Star foreign-key invariant. List visibility never grants Repository access."
       }
     },
     {
@@ -1857,7 +1965,7 @@
           "apps/web/test/repository-star-lists-api.test.ts",
           "packages/explore/test/discovery.test.ts"
         ],
-        "note": "Trending uses a 7-day active-Star window with total Star/name/id tie-breaks. Published Star Lists require an active owner, public List visibility and at least one viewer-visible Repository; counts/previews include visible items only. Explore delivery composes Issue-owned activity separately."
+        "note": "Trending and published Star List projections recheck current Repository visibility/access. INTERNAL means the same current active Enterprise; PUBLIC is anonymous-readable; PRIVATE needs explicit access. Hidden items and counts are excluded. Explore delivery composes Issue-owned activity separately under the same current visibility rule."
       }
     },
     {
@@ -2421,7 +2529,7 @@
           "packages/repository/test/address.test.ts",
           "packages/attendance/test/repository-attendance.test.ts"
         ],
-        "note": "Source and local tests do not prove remote data cutover or deployment."
+        "note": "Address remains Repository-owned and readable/manageable by current effective members/admins even while archived. Attendance excludes archived Repositories from new clock-in sites; existing Attendance sessions keep their immutable snapshot. Source and local tests do not prove remote deployment."
       }
     }
   ],

@@ -36,16 +36,31 @@ test("Repository create application canonicalizes input before the store", async
     ownerKind: "USER",
     name: "  Repo  ",
   });
-  assert.equal((calls[0]?.[1] as { name: string }).name, "Repo");
+  assert.deepEqual(calls[0]?.[1], {
+    requestId: "11111111-1111-4111-8111-111111111111",
+    ownerAccountId: "user",
+    ownerKind: "USER",
+    name: "Repo",
+    visibility: "private",
+  });
   assert.equal(calls[0]?.[2], 10);
+
+  await service.create("subject", {
+    requestId: "22222222-2222-4222-8222-222222222222",
+    ownerAccountId: "user",
+    ownerKind: "USER",
+    name: "Public",
+    visibility: "public",
+  });
+  assert.equal((calls[1]?.[1] as { visibility?: string }).visibility, "public");
 
   await assert.rejects(
     service.create("subject", {
-      requestId: "11111111-1111-4111-8111-111111111111",
+      requestId: "33333333-3333-4333-8333-333333333333",
       ownerAccountId: "user",
       ownerKind: "USER",
       name: "Repo",
-      visibility: "public",
+      visibility: "hidden",
     }),
     (error) => error instanceof RepositoryError && error.status === 400,
   );
@@ -85,8 +100,13 @@ test("Repository creation lists only effective owner scopes and preserves exact 
 
   const store = new PostgresRepositoryCreationStore(db);
   assert.deepEqual(await store.owners("creator"), [
-    { id: "creator", kind: "USER", login: "alice" },
-    { id: "org-active", kind: "ORGANIZATION", login: "acme" },
+    { id: "creator", kind: "USER", login: "alice", internalEligible: false },
+    {
+      id: "org-active",
+      kind: "ORGANIZATION",
+      login: "acme",
+      internalEligible: false,
+    },
   ]);
 
   const command = {
@@ -94,6 +114,7 @@ test("Repository creation lists only effective owner scopes and preserves exact 
     ownerAccountId: "creator",
     ownerKind: "USER" as const,
     name: "Alpha",
+    visibility: "private" as const,
   };
   const created = await store.create("creator", command, 10);
   const replay = await store.create("creator", command, 11);
@@ -149,6 +170,7 @@ test("Organization Repository creation requires current OrganizationOwner and bo
     ownerAccountId: "org",
     ownerKind: "ORGANIZATION" as const,
     name: "Shared",
+    visibility: "private" as const,
   };
   const created = await store.create("owner", command, 10);
   const grant = await pg.query(
@@ -166,11 +188,12 @@ test("Organization Repository creation requires current OrganizationOwner and bo
     (error) => error instanceof RepositoryError && error.status === 403,
   );
   await assert.rejects(
-    pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4)", [
+    pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)", [
       "direct-denied",
       "member",
       "org",
       "Direct Denied",
+      "private",
     ]),
     (error: unknown) => (error as { code?: string }).code === "42501",
   );

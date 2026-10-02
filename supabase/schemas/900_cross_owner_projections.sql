@@ -211,6 +211,115 @@ from candidate_permissions
 group by repository_id, user_id;
 
 
+-- INTERNAL Repository visibility consumes the one active Enterprise attachment of the owner
+-- Organization without transferring Enterprise authority into Repository.
+create view app_private.repository_internal_scopes
+with (security_invoker = true)
+as
+select
+  eo.organization_account_id,
+  eo.enterprise_account_id
+from app_private.enterprise_organizations eo
+join app_private.organizations o
+  on o.account_id=eo.organization_account_id
+ and o.status='active'
+join app_private.enterprises e
+  on e.account_id=eo.enterprise_account_id
+ and e.status='active'
+where eo.status='active';
+
+
+-- Visibility is read authority, not RepositoryPermission. PUBLIC contributes one anonymous row;
+-- INTERNAL contributes current active Users in the active Enterprise attached to the owner
+-- Organization; EXPLICIT preserves existing grant-derived users. Consumers use EXISTS so
+-- multiple independent read sources never duplicate Repository content.
+create view app_private.repository_visibility_access
+with (security_invoker = true)
+as
+select
+  a.repository_id,
+  a.user_id,
+  'EXPLICIT'::text as source_kind
+from app_private.repository_effective_access a
+
+union all
+
+select
+  r.id as repository_id,
+  null::text as user_id,
+  'PUBLIC'::text as source_kind
+from app_private.repositories r
+left join app_private.users owner_user
+  on r.owner_account_kind='USER'
+ and owner_user.id=r.owner_account_id
+left join app_private.organizations owner_organization
+  on r.owner_account_kind='ORGANIZATION'
+ and owner_organization.account_id=r.owner_account_id
+where r.visibility='public'
+  and (
+    (r.owner_account_kind='USER' and owner_user.status='active')
+    or
+    (r.owner_account_kind='ORGANIZATION' and owner_organization.status='active')
+  )
+
+union all
+
+select distinct
+  r.id as repository_id,
+  a.user_id,
+  'INTERNAL'::text as source_kind
+from app_private.repositories r
+join app_private.repository_internal_scopes scope
+  on r.owner_account_kind='ORGANIZATION'
+ and scope.organization_account_id=r.owner_account_id
+join app_private.enterprise_user_affiliations a
+  on a.enterprise_account_id=scope.enterprise_account_id
+join app_private.users u
+  on u.id=a.user_id
+ and u.status='active'
+where r.visibility='internal';
+
+
+-- Project keeps the authoritative Repository reference; this projection applies the referenced
+-- Repository's current read visibility without copying Repository access into Project.
+create view app_private.project_repository_visible_references
+with (security_invoker = true)
+as
+select distinct
+  ref.project_id,
+  ref.repository_id,
+  ref.position,
+  ref.version,
+  visibility.user_id
+from app_private.project_repository_references ref
+join app_private.repository_visibility_access visibility
+  on visibility.repository_id=ref.repository_id;
+
+
+-- Notifications references Issue/Discussion source facts but must recheck the source
+-- Repository's current read visibility for the recipient. NULL user_id represents PUBLIC.
+create view app_private.notification_repository_source_access
+with (security_invoker = true)
+as
+select distinct
+  'issue'::text as source_type,
+  issue.id as source_id,
+  visibility.user_id
+from app_private.issues issue
+join app_private.repository_visibility_access visibility
+  on visibility.repository_id=issue.repository_id
+
+union
+
+select distinct
+  'discussion'::text as source_type,
+  discussion.id as source_id,
+  visibility.user_id
+from app_private.discussions discussion
+join app_private.repository_visibility_access visibility
+  on visibility.repository_id=discussion.repository_id;
+
+
 -- Organization collaborator affiliation is a rebuildable projection over Repository-owned direct
 -- grants plus current Account/Organization qualification. Every row has DIRECT grant provenance;
 -- is_outside is the current membership classification, not a second authorization fact.

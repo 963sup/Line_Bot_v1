@@ -7,7 +7,8 @@ Read this file for Repository ownership and invariants. Load [detailed reference
 Repository owns:
 
 - Optional address property (address text, coordinates, radius), also the clock point for effective members;
-- Repository identity、visibility、Direct User / Organization Team access grants and User → Repository Star；
+- Repository stable identity、current name、owner-scoped rename history、visibility、archive state；
+- Direct User / Organization Team access grants、User → Repository Star and User → Repository Watch subscription；
 - Repository Star List / List membership；
 - Repository Label、Repository Milestone and repository-scoped Issue number allocation；
 - discovery projections derived from Repository / Star / immutable Issue event facts。
@@ -16,7 +17,13 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 
 ## Invariants
 
-- Address mutation requires current effective Repository `admin`, expected version and exact replay. Public visibility and Star do not grant clock eligibility. Address deletion does not rewrite Attendance snapshots.
+- Address mutation requires current effective Repository `admin`, expected version and exact replay. Visibility、Star and Watch do not grant clock eligibility. Address remains readable/manageable while archived, but archived Repository is excluded from new Attendance clock-in sites; existing Attendance snapshots are immutable.
+- RepositoryId is stable across rename、visibility and archive lifecycle. Rename changes only the owner-scoped locator and increments Repository version; Issue/Discussion/Project references keep the same RepositoryId.
+- Current owner/name always wins. Historical names are retained as owner-scoped aliases. `followRenames=true` resolves an old alias to the same Repository；`false` rejects it. An old alias stays reserved against every other Repository under that owner, while the same Repository may reclaim its own historical name.
+- Visibility is read authority, not RepositoryPermission：`PRIVATE` requires explicit current access；`PUBLIC` is readable without a User grant；`INTERNAL` is Organization-only and readable by current active Users in the same current active Enterprise scope. INTERNAL is not Organization membership, every logged-in User, or public.
+- Archive is not delete and not PRIVATE. Archived content keeps stable identity/history and remains readable under current visibility/access. Issue commands fail closed while archived. Discussion/Label/Milestone write runtimes are currently inactive; any future writer must also enforce archive before mutation.
+- Repository Watch stores exactly `SUBSCRIBED | UNSUBSCRIBED | IGNORED` for User→Repository. It is distinct from Star、Follow、Team notificationSetting、Notification and delivery, and grants no access. `UNSUBSCRIBED` permits participation/@mention notification policy；`IGNORED` means no Repository-conversation notification. Repository conversation subscription fan-out is not yet enabled.
+- Project Repository-reference presentation and Issue/Discussion-backed Notification creation/read recheck current Repository visibility/access; they never acquire Repository authority.
 
 - Every Issue and Discussion belongs to exactly one Repository, but each lifecycle remains with its own semantic owner.
 - Issue、Discussion、Notification are distinct concepts; Repository does not own Issue or Discussion lifecycle.

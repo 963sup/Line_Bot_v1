@@ -104,6 +104,28 @@ await context.route("**/*", async (route) => {
     });
   }
   if (url.origin !== target.origin) return route.abort();
+  if (url.pathname === "/api/repository-management") {
+    assert.equal(request.method(), "GET");
+    assert.equal(url.searchParams.get("owner"), "alice");
+    assert.equal(url.searchParams.get("name"), "Operations");
+    return route.fulfill({
+      json: {
+        repository: {
+          id: "repo",
+          actorUserId,
+          ownerAccountId: actorUserId,
+          ownerKind: "USER",
+          ownerLogin: "alice",
+          name: "Operations",
+          visibility: "private",
+          archived: false,
+          version,
+          actorPermissions: [capability],
+          internalEnterpriseId: null,
+        },
+      },
+    });
+  }
   if (url.pathname === "/api/repository-address") {
     if (request.method() === "GET") {
       assert.equal(url.searchParams.get("owner"), "alice");

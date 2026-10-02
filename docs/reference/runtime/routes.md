@@ -37,8 +37,9 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/repositories/lists`, `/repositories/lists/new` | Current User Repository Star List collection/create；create預設 private，pending requestId 只作 exact-retry presentation metadata |
 | `/repositories/lists/{listId}` | Repository Star List detail/manage；stable ListId只定位，private/public read與 mutation仍由 Repository owner重驗 |
 | `/repositories/lists/discover` | Awesome Lists presentation：public Repository Star List discovery，只顯示 viewer 可見 Repository/count |
-| `/{ownerLogin}/{repositoryName}` | Repository canonical locator；owner 是 User 或 Organization login；public 直接讀 public projection，private/internal 重新驗目前 User access |
+| `/{ownerLogin}/{repositoryName}` | Repository canonical locator；RepositoryId stable，current name 優先，old alias 預設 follow rename；PUBLIC anonymous-readable，PRIVATE explicit access，INTERNAL same current active Enterprise；登入 User 可在此管理 Watch state但 Watch 不授權 |
 | `/{ownerLogin}/{repositoryName}/access` | Repository access management；管理 Direct User / Organization Team grants，owner/name 只定位，每次讀寫重新驗 Repository admin 或 OrganizationOwner recovery authority |
+| `/{ownerLogin}/{repositoryName}/settings` | Repository lifecycle + address；rename/visibility/archive 與 address 是獨立 replay family，current admin 授權；archive 保留地址但不再作新 clock-in site |
 | `/{ownerLogin}/{repositoryName}/issues` | Repository-scoped Issue collection；owner/name 只定位 Repository，read API 重新驗 current User access |
 | `/{ownerLogin}/{repositoryName}/issues/{issueNumber}` | Repository-scoped Issue detail；`issueNumber` 是 Repository-local locator，stable IssueId 仍只作 internal identity/command reference；重新解析 owner/name 並驗目前 access |
 | `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；只讀 authorized conversations，不宣稱 Discussion write management |
@@ -46,7 +47,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/{ownerLogin}/{repositoryName}/labels` | Repository Label collection；Label 是 Repository-owned classification metadata，沒有獨立 label URL identity |
 | `/{ownerLogin}/{repositoryName}/milestones` | Repository Milestone collection；Milestone 是 Repository goal/checkpoint，不等於 Project Milestone |
 | `/{ownerLogin}/{repositoryName}/milestones/{milestoneNumber}` | Repository-scoped Milestone detail；`milestoneNumber` 是 Repository-local locator，stable MilestoneId 留在 internal identity |
-| `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection |
+| `/notifications`, `/notifications/[notificationId]` | recipient-scoped Notification inbox/read-state projection；Issue/Discussion source 每次 read/mark-read 重驗 current Repository access |
 | `/history` | 工作紀錄入口 |
 | `/{login}` | 唯一 User / Organization Profile；Home 頭像、Rich Menu 個人入口與分享收斂於此。Namespace 解析後使用 stable ID 查 User，不重做 login 解析；只有 trusted active User 與目標 User 相符才載入本人資料、Achievements 與 Settings，其他訪客只有 public projection |
 | `/profile` | 已發布個人入口解析：核驗 LINE 身分並取得 Account login 後 replace 至 `/{login}`；不呈現第二個 Profile。缺 login 是資料完整性錯誤，不導向設定或推導名稱 |
@@ -58,7 +59,7 @@ Stable ID 只定位 entity，不授權。Detail route 直接開啟、刷新與 l
 
 ## Owner-scoped management
 
-Admin partition 已移除。Account 使用者管理位於 `/settings/users`；Identity/Access 權限管理位於 `/settings/permissions`；Partners 名錄維護位於 `/partners/manage`；Repository 地址維護位於 `/{ownerLogin}/{repositoryName}/settings`。Repository admin 在該頁用 Google Maps 搜尋、目前位置或移動地圖選點，座標不作為文字欄位呈現；最後儲存仍走既有 expected-version / exact-replay owner contract。各操作仍由 owner contract 在 server 重新授權，沒有替代的集中管理入口。
+Admin partition 已移除。Account 使用者管理位於 `/settings/users`；Identity/Access 權限管理位於 `/settings/permissions`；Partners 名錄維護位於 `/partners/manage`；Repository lifecycle 與地址維護位於 `/{ownerLogin}/{repositoryName}/settings`。Lifecycle 支援 rename / PRIVATE-INTERNAL-PUBLIC / archive-unarchive；地址與 lifecycle 保持不同 request replay family。Repository admin 在該頁用 Google Maps 搜尋、目前位置或移動地圖選點，座標不作為文字欄位呈現；最後儲存仍走既有 expected-version / exact-replay owner contract。各操作仍由 owner contract 在 server 重新授權，沒有替代的集中管理入口。
 
 Google Places／Geocoding 回傳地址只作當次設定草稿並允許使用者修改；使用者按儲存本身不構成 Google Maps Content 長期保存權的法律或契約豁免。Production 啟用前仍須依實際 billing region／agreement 核對 Google Maps Platform 的 attribution、Terms／Privacy Policy 與 caching/storage 限制。
 
@@ -79,6 +80,8 @@ Current Repository-scoped collaboration/resource read API：
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
 | `/api/repository-address` | Repository 地址查詢及 expected-version / exact-replay 地址設定與移除 |
+| `/api/repository-management` | Repository settings read + current-admin expected-version/exact-replay rename、visibility、archive、unarchive |
+| `/api/repository-subscription` | Current-readable Repository 的 User Watch state；SUBSCRIBED / UNSUBSCRIBED / IGNORED，獨立 version/replay 且不授權 |
 | `/api/repository-access` | GET access grant projection；POST expected-version + exact-replay Direct User / Organization Team grant mutation；不建立 Organization/Team membership |
 | `/api/projects` | Authorized Project collection read；每次 request 重驗 current User，Organization-owned Project 只接受 current `OrganizationOwner` scope |
 

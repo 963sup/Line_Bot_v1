@@ -316,11 +316,15 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
         if (!star) throw new RepositoryError(409, "請先 Star 此 Repository 再加入 List。");
         const access = (
           await sql.query(
-            "SELECT 1 FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
+            `SELECT 1
+             FROM repository_visibility_access
+             WHERE repository_id=$1
+               AND (user_id=$2 OR user_id IS NULL)
+             LIMIT 1`,
             [command.repositoryId, userId],
           )
         ).rows[0];
-        if (!access) throw new RepositoryError(403, "目前沒有此 Repository 的存取權限。");
+        if (!access) throw new RepositoryError(403, "目前沒有此 Repository 的讀取權限。");
         const inserted = (
           await sql.query(
             `INSERT INTO repository_star_list_items(list_id,owner_user_id,repository_id,added_at)

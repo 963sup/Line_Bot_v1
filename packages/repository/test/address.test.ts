@@ -177,6 +177,11 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
   ]);
   assert.deepEqual(await db.transaction((sql) => repositoryAttendanceSites(sql, "visitor")), []);
 
+  await pg.query("update app_private.repositories set is_archived=true where id='repo'");
+  assert.deepEqual(await db.transaction((sql) => repositoryAttendanceSites(sql, "member")), []);
+  assert.deepEqual((await store.view("member", { repositoryId: "repo" })).address, command.address);
+  await pg.query("update app_private.repositories set is_archived=false where id='repo'");
+
   await pg.query(
     "delete from app_private.repository_access where repository_id='repo' and principal_id='member'",
   );
@@ -203,11 +208,12 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
     "Octo",
     20,
   ]);
-  await pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4)", [
+  await pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)", [
     "org-repo",
     "owner",
     "org",
     "Shared",
+    "private",
   ]);
   const organizationAdminView = await store.view("owner", { repositoryId: "org-repo" });
   assert.equal(organizationAdminView.repository.actorIsOwner, false);

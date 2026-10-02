@@ -1,6 +1,6 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import { accessibleRepositoriesByIds } from "@line_bot_v1/repository/postgres/access";
+import { readableRepositoriesByIds } from "@line_bot_v1/repository/postgres/access";
 import type { IssueActivityItem, IssueActivityStore } from "../../contracts/activity.js";
 import { IssueError } from "../../domain.js";
 
@@ -28,9 +28,12 @@ export class PostgresIssueActivityStore implements IssueActivityStore {
                   i.number,i.title,i.repository_id
            FROM issue_events e
            JOIN issues i ON i.id=e.issue_id
-           JOIN repository_effective_access a
-             ON a.repository_id=i.repository_id
-            AND a.user_id=$1
+           WHERE EXISTS (
+             SELECT 1
+             FROM repository_visibility_access v
+             WHERE v.repository_id=i.repository_id
+               AND (v.user_id=$1 OR v.user_id IS NULL)
+           )
            ORDER BY e.at DESC,e.issue_id,e.version DESC
            LIMIT $2`,
           [userId, limit],
@@ -38,7 +41,7 @@ export class PostgresIssueActivityStore implements IssueActivityStore {
       ).rows as ActivityRow[];
       if (!rows.length) return [];
 
-      const repositories = await accessibleRepositoriesByIds(sql, userId, [
+      const repositories = await readableRepositoriesByIds(sql, userId, [
         ...new Set(rows.map((row) => row.repository_id)),
       ]);
       const repositoryById = new Map(repositories.map((repository) => [repository.id, repository]));

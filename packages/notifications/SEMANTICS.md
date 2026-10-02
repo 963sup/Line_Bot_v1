@@ -33,7 +33,9 @@ No owner capability is currently declared in the canonical semantic model.
 
 ## Context Relationships
 
-No cross-owner semantic relationship is currently declared for this owner.
+| Direction | Counterparty | Mode | Authority | Consistency | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| consumes | repository | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
 
 ## Tactical Model Boundary
 

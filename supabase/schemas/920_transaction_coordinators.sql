@@ -315,7 +315,8 @@ create function app_private.provision_repository(
   p_actor_user_id text,
   p_owner_account_id text,
   p_owner_account_kind text,
-  p_name text
+  p_name text,
+  p_visibility text
 ) returns table(repository_id text, owner_login text)
 language plpgsql
 security definer
@@ -333,9 +334,12 @@ begin
      or length(p_owner_account_id) > 128
      or p_owner_account_kind not in ('USER','ORGANIZATION')
      or p_name is null or p_name <> trim(p_name)
-     or length(p_name) not between 1 and 100 then
+     or length(p_name) not between 1 and 100
+     or p_visibility not in ('private','internal','public') then
     raise exception 'provision_repository_input_invalid' using errcode = '22023';
   end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(71020260912::bigint);
 
   perform 1 from app_private.users
     where id=p_actor_user_id and status='active'
@@ -385,10 +389,35 @@ begin
     raise exception 'provision_repository_owner_login_missing' using errcode = '42501';
   end if;
 
+  if p_visibility='internal' and (
+    p_owner_account_kind<>'ORGANIZATION'
+    or not exists (
+      select 1
+      from app_private.repository_internal_scopes s
+      where s.organization_account_id=p_owner_account_id
+    )
+  ) then
+    raise exception 'repository_internal_scope_missing'
+      using errcode='23514', constraint='repository_internal_scope_missing';
+  end if;
+
+  if exists (
+    select 1
+    from app_private.repository_name_history h
+    join app_private.repositories existing_repository
+      on existing_repository.id=h.repository_id
+    where existing_repository.owner_account_id=p_owner_account_id
+      and existing_repository.owner_account_kind=p_owner_account_kind
+      and lower(h.old_name)=lower(p_name)
+  ) then
+    raise exception 'repository_name_history_reserved'
+      using errcode='23505', constraint='repository_name_history_reserved';
+  end if;
+
   insert into app_private.repositories(
     id,owner_account_id,owner_account_kind,name,visibility,version
   ) values(
-    p_repository_id,p_owner_account_id,p_owner_account_kind,p_name,'private',1
+    p_repository_id,p_owner_account_id,p_owner_account_kind,p_name,p_visibility,1
   );
 
   if p_owner_account_kind='ORGANIZATION' then

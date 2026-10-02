@@ -15,6 +15,7 @@ import {
   RepositoryError,
   type RepositoryPermission,
 } from "../../domain.js";
+import { resolveAuthorizedRepositoryId } from "./access.js";
 
 type RepositoryRow = {
   id: string;
@@ -194,7 +195,7 @@ export async function repositoryAttendanceSites(
       `SELECT r.id,r.name,r.address,r.version
        FROM repository_effective_access a
        JOIN repositories r ON r.id=a.repository_id
-       WHERE a.user_id=$1 AND r.address IS NOT NULL
+       WHERE a.user_id=$1 AND r.address IS NOT NULL AND NOT r.is_archived
        ORDER BY r.id`,
       [userId],
     )
@@ -219,7 +220,8 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
     return this.db.transaction(async (sql) => {
       const actor = await readActiveUserQualification(sql, userId, "share");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能讀取 Repository 地址。");
-      const repository = await repositoryRow(sql, selector);
+      const repositoryId = await resolveAuthorizedRepositoryId(sql, { userId }, selector);
+      const repository = await repositoryRow(sql, { repositoryId });
       const permissions = await requireMember(sql, repository.id, userId);
       return snapshot(sql, repository, userId, permissions);
     });

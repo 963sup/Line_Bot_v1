@@ -24,7 +24,11 @@ async function qualifiedOwner(sql: Sql, ownerLogin: string) {
 export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
   constructor(private db: Database = businessDatabase()) {}
 
-  byOwnerAndName(ownerLogin: string, name: string): Promise<PublicRepository | null> {
+  byOwnerAndName(
+    ownerLogin: string,
+    name: string,
+    followRenames = true,
+  ): Promise<PublicRepository | null> {
     return this.db.transaction(async (sql) => {
       const owner = await qualifiedOwner(sql, ownerLogin);
       if (!owner) return null;
@@ -36,7 +40,24 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
           [owner.id, owner.kind, name],
         )
       ).rows[0] as { id: string; name: string } | undefined;
-      return row ? { ...row, ownerLogin: owner.login } : null;
+      if (row) return { ...row, ownerLogin: owner.login };
+      if (!followRenames) return null;
+
+      const historical = (
+        await sql.query(
+          `SELECT r.id,r.name
+           FROM repository_name_history h
+           JOIN repositories r ON r.id=h.repository_id
+           WHERE r.owner_account_id=$1
+             AND r.owner_account_kind=$2
+             AND lower(h.old_name)=lower($3)
+             AND r.visibility='public'
+           ORDER BY h.renamed_at DESC,r.id
+           LIMIT 2`,
+          [owner.id, owner.kind, name],
+        )
+      ).rows as Array<{ id: string; name: string }>;
+      return historical.length === 1 ? { ...historical[0]!, ownerLogin: owner.login } : null;
     });
   }
 

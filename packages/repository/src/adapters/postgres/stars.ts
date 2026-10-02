@@ -6,7 +6,11 @@ import { RepositoryError } from "../../domain.js";
 async function requireAccess(sql: Sql, userId: string, repositoryId: string): Promise<void> {
   const row = (
     await sql.query(
-      "SELECT 1 FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
+      `SELECT 1
+       FROM repository_visibility_access
+       WHERE repository_id=$1
+         AND (user_id=$2 OR user_id IS NULL)
+       LIMIT 1`,
       [repositoryId, userId],
     )
   ).rows[0];
@@ -44,8 +48,13 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
                   (SELECT count(*)::int FROM repository_stars all_stars WHERE all_stars.repository_id=r.id) AS star_count
            FROM repository_stars s
            JOIN repositories r ON r.id=s.repository_id
-           JOIN repository_effective_access a ON a.repository_id=r.id AND a.user_id=$1
            WHERE s.user_id=$1
+             AND EXISTS (
+               SELECT 1
+               FROM repository_visibility_access v
+               WHERE v.repository_id=r.id
+                 AND (v.user_id=$1 OR v.user_id IS NULL)
+             )
            ORDER BY s.created_at DESC,r.id`,
           [userId],
         )

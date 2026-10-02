@@ -156,6 +156,18 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/606_repository_name_history.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/607_repository_subscriptions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/608_repository_events.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/610_repository_labels.sql",
       "role": "authoritative"
     },
@@ -631,6 +643,28 @@
       "concept": "repository-star-list-item"
     },
     {
+      "name": "repository_name_history",
+      "kind": "table",
+      "path": "supabase/schemas/606_repository_name_history.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_subscriptions",
+      "kind": "table",
+      "path": "supabase/schemas/607_repository_subscriptions.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-subscription"
+    },
+    {
+      "name": "repository_events",
+      "kind": "table",
+      "path": "supabase/schemas/608_repository_events.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
       "name": "repository_labels",
       "kind": "table",
       "path": "supabase/schemas/610_repository_labels.sql",
@@ -954,6 +988,38 @@
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "issue", "organization", "team", "repository"]
+    },
+    {
+      "name": "repository_internal_scopes",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["enterprise", "organization", "repository"]
+    },
+    {
+      "name": "repository_visibility_access",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "enterprise", "organization", "team", "issue", "repository"]
+    },
+    {
+      "name": "project_repository_visible_references",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["project", "repository"]
+    },
+    {
+      "name": "notification_repository_source_access",
+      "kind": "view",
+      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["issue", "discussion", "repository", "notifications"]
     },
     {
       "name": "organization_repository_collaborators",
