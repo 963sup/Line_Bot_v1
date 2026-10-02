@@ -26,10 +26,10 @@ export async function repositoryMilestoneExists(
 ): Promise<boolean> {
   return Boolean(
     (
-      await sql.query(
-        "SELECT 1 FROM repository_milestones WHERE repository_id=$1 AND id=$2",
-        [repositoryId, milestoneId],
-      )
+      await sql.query("SELECT 1 FROM repository_milestones WHERE repository_id=$1 AND id=$2", [
+        repositoryId,
+        milestoneId,
+      ])
     ).rows[0],
   );
 }
