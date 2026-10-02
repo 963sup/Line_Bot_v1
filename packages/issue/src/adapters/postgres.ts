@@ -56,8 +56,15 @@ type IssueRow = {
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-function isWorkflowAction(action: IssueCommand["action"]): action is IssueAction {
-  return action === "accept" || action === "report" || action === "reject" || action === "approve";
+type WorkflowIssueCommand = Extract<IssueCommand, { action: IssueAction }>;
+
+function isWorkflowCommand(command: IssueCommand): command is WorkflowIssueCommand {
+  return (
+    command.action === "accept" ||
+    command.action === "report" ||
+    command.action === "reject" ||
+    command.action === "approve"
+  );
 }
 
 function issue(row: IssueRow, assignees: readonly string[]): Issue {
@@ -203,7 +210,7 @@ function acceptedFingerprints(command: IssueCommand): Set<string> {
       }),
     );
   }
-  if (isWorkflowAction(command.action)) {
+  if (isWorkflowCommand(command)) {
     values.add(
       fingerprint({
         requestId: command.requestId,
@@ -245,7 +252,7 @@ function requireCommandPermission(
     return;
   }
 
-  const permitted = isWorkflowAction(command.action)
+  const permitted = isWorkflowCommand(command)
     ? canIssueRepositoryOperation(permissions, "workflow")
     : command.action === "edit"
       ? canIssueRepositoryOperation(permissions, "edit")
@@ -497,7 +504,7 @@ export class PostgresIssueStore implements IssueStore {
           throw new IssueError(409, "Issue 已更新，請重新讀取後再操作。");
         }
 
-        if (isWorkflowAction(command.action)) {
+        if (isWorkflowCommand(command)) {
           const previousWorkflowStatus = result.workflowStatus;
           const workflowStatus = transitionIssue(result, who.userId, command.action, command.note);
           result = { ...result, workflowStatus };
@@ -568,7 +575,7 @@ export class PostgresIssueStore implements IssueStore {
             ),
           };
           data = { addedAssigneeIds: added };
-        } else {
+        } else if (command.action === "remove-assignees") {
           const current = new Set(result.assignees);
           const removed = command.assigneeIds.filter((userId) => current.has(userId));
           if (!removed.length) throw new IssueError(409, "Issue assignees 沒有變更。");
@@ -582,6 +589,9 @@ export class PostgresIssueStore implements IssueStore {
             assignees: result.assignees.filter((userId) => !removedSet.has(userId)),
           };
           data = { removedAssigneeIds: removed };
+        } else {
+          command satisfies never;
+          throw new IssueError(400, "Issue 操作不正確。");
         }
 
         const nextVersion = result.version + 1;
