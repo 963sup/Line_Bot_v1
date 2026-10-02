@@ -1,3 +1,4 @@
+import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import type {
   ProjectCollaboratorInput,
   ProjectFieldOptionInput,
@@ -783,6 +784,26 @@ export function createProjectManagement(deps: {
   return {
     view: async (subject: string, projectId: string) =>
       deps.store().view(await identity(subject), id(projectId, "Project 識別碼")),
+    viewByNumber: async (
+      subject: string,
+      ownerLogin: string,
+      projectNumber: number | string,
+    ) => {
+      let owner: string;
+      try {
+        owner = normalizeAccountLogin(ownerLogin);
+      } catch {
+        throw new ProjectError(400, "Project owner login 不正確。");
+      }
+      const number =
+        typeof projectNumber === "string" && projectNumber.trim()
+          ? Number(projectNumber)
+          : projectNumber;
+      if (!Number.isSafeInteger(number) || Number(number) < 1) {
+        throw new ProjectError(400, "Project number 不正確。");
+      }
+      return deps.store().viewByNumber(await identity(subject), owner, Number(number));
+    },
     command: async (subject: string, raw: unknown) =>
       deps.store().execute(await identity(subject), parseCommand(raw), deps.now()),
   };
