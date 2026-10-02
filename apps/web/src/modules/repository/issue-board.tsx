@@ -378,8 +378,11 @@ export default function IssueBoard({
                       repositoryId: selectedRepository,
                       action: "create",
                       title: String(form.get("title") ?? ""),
+                      body: String(form.get("body") ?? ""),
                       criteria: String(form.get("criteria") ?? ""),
-                      assignee: String(form.get("assignee") ?? ""),
+                      assigneeIds: canAssignIssue
+                        ? form.getAll("assignees").map((value) => String(value))
+                        : [],
                     });
                   }}
                 >
@@ -388,24 +391,29 @@ export default function IssueBoard({
                     <input name="title" required maxLength={80} />
                   </label>
                   <label>
-                    完成條件
-                    <textarea name="criteria" required maxLength={1000} />
+                    Issue body
+                    <textarea name="body" maxLength={10000} />
                   </label>
                   <label>
-                    承接人
-                    <select name="assignee" required defaultValue="">
-                      <option value="" disabled>
-                        選擇儲存庫成員
-                      </option>
-                      {data.participants
-                        .filter((participant) => participant.userId !== data.userId)
-                        .map((participant) => (
+                    本地驗收條件
+                    <textarea name="criteria" maxLength={1000} />
+                  </label>
+                  {canAssignIssue && (
+                    <label>
+                      Assignees（可多選）
+                      <select
+                        name="assignees"
+                        multiple
+                        size={Math.max(1, Math.min(6, data.participants.length))}
+                      >
+                        {data.participants.map((participant) => (
                           <option key={participant.userId} value={participant.userId}>
                             {participant.name}
                           </option>
                         ))}
-                    </select>
-                  </label>
+                      </select>
+                    </label>
+                  )}
                   <button disabled={busy || Boolean(pending)}>建立</button>
                 </form>
               )}
