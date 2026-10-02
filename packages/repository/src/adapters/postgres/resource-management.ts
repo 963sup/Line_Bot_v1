@@ -199,10 +199,10 @@ async function requireDefinitionWriter(sql: Sql, repositoryId: string, userId: s
 
 async function currentLabel(sql: Sql, repositoryId: string, labelId: string): Promise<LabelRow> {
   const row = (
-    await sql.query(
-      "SELECT * FROM repository_labels WHERE repository_id=$1 AND id=$2 FOR UPDATE",
-      [repositoryId, labelId],
-    )
+    await sql.query("SELECT * FROM repository_labels WHERE repository_id=$1 AND id=$2 FOR UPDATE", [
+      repositoryId,
+      labelId,
+    ])
   ).rows[0] as LabelRow | undefined;
   if (!row) throw new RepositoryError(404, "找不到 Label。");
   return row;
