@@ -36,7 +36,10 @@
   "dependencies": {
     "@line_bot_v1/namespace": "workspace:*",
     "@line_bot_v1/organization": "workspace:*",
-    "@line_bot_v1/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/issue": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/team": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
