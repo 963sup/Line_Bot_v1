@@ -266,15 +266,15 @@ test("Repository runtime privileges match only activated write capabilities", as
     { runtime_execute: true, anon_execute: false, authenticated_execute: false },
   ]);
 
-  const inactiveIssueLabels = await pg.query(
+  const issueLabels = await pg.query(
     `select
       has_table_privilege('line_app','app_private.issue_labels','SELECT') as can_select,
       has_table_privilege('line_app','app_private.issue_labels','INSERT') as can_insert,
       has_table_privilege('line_app','app_private.issue_labels','UPDATE') as can_update,
       has_table_privilege('line_app','app_private.issue_labels','DELETE') as can_delete`,
   );
-  assert.deepEqual(inactiveIssueLabels.rows, [
-    { can_select: false, can_insert: false, can_update: false, can_delete: false },
+  assert.deepEqual(issueLabels.rows, [
+    { can_select: true, can_insert: true, can_update: false, can_delete: true },
   ]);
 
   const repositoryColumns = await pg.query(
@@ -352,6 +352,9 @@ test("Repository runtime privileges match only activated write capabilities", as
       has_column_privilege('line_app','app_private.issues','title','UPDATE') as can_update_title,
       has_column_privilege('line_app','app_private.issues','body','UPDATE') as can_update_body,
       has_column_privilege('line_app','app_private.issues','criteria','UPDATE') as can_update_criteria,
+      has_column_privilege('line_app','app_private.issues','milestone_id','UPDATE') as can_update_milestone,
+      has_column_privilege('line_app','app_private.issues','is_locked','UPDATE') as can_update_lock,
+      has_column_privilege('line_app','app_private.issues','lock_reason','UPDATE') as can_update_lock_reason,
       has_column_privilege('line_app','app_private.issues','version','UPDATE') as can_update_version,
       has_column_privilege('line_app','app_private.issues','updated_at','UPDATE') as can_update_timestamp,
       has_table_privilege('line_app','app_private.issues','DELETE') as can_delete`,
@@ -371,6 +374,9 @@ test("Repository runtime privileges match only activated write capabilities", as
       can_update_title: true,
       can_update_body: true,
       can_update_criteria: true,
+      can_update_milestone: true,
+      can_update_lock: true,
+      can_update_lock_reason: true,
       can_update_version: true,
       can_update_timestamp: true,
       can_delete: false,
