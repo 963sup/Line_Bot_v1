@@ -75,7 +75,7 @@ Current Repository-scoped collaboration/resource read API：
 
 | Route | Responsibility |
 | --- | --- |
-| `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and Issue command transport；保留既有 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
+| `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and replay-safe command transport；read 投影分開回 canonical `state/stateReason` 與 local `workflowStatus`，並含 body/assignees；保留 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
 | `/api/discussions`, `/api/discussions/{discussionId}` | Discussion list/detail/comment read；`discussionId` 是 local opaque id |
 | `/api/repository-labels` | Repository Label collection read |
 | `/api/repository-milestones`, `/api/repository-milestones/{milestoneNumber}` | Repository Milestone list/detail read；`milestoneNumber` 是 Repository-local number |
@@ -93,7 +93,7 @@ Discussion、Label 與 Repository Milestone API 只承接 authorized read，並�
 
 - Notifications：`notificationView=all|unread`
 - Repository：`repository=<stable RepositoryId>` 只選擇目前可存取的 Repository
-- Repository Issues：`issueView=all|mine|created`
+- Repository Issues：`issueView=all|mine|created`；local workflow filter 使用 `workflowStatus=pending|active|review|completed`，舊 `status` 僅保留 transport 相容
 - Partners：`partnerView=news|directory|referrals`
 
 省略、重複或非法值回到各自安全預設／拒絕規則。View value 只代表 navigation intent，不授予 team role、publish permission 或 command authorization。

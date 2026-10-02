@@ -1,20 +1,64 @@
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
 import type { RepositorySummary } from "@line_bot_v1/repository/domain";
-import type { Issue, IssueAction } from "../../domain.js";
+import type {
+  Issue,
+  IssueAction,
+  IssueClosedStateReason,
+  IssueWorkflowStatus,
+} from "../../domain.js";
 
 export type IssueIdentity = { userId: string };
 
 export type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
 
-export type IssueCommand = { requestId: string; repositoryId: string } & (
-  | { action: "create"; title: string; criteria: string; assignee: string }
-  | { action: IssueAction; issueId: string; expectedVersion: number; note: string }
-);
+type IssueCommandBase = Readonly<{
+  requestId: string;
+  repositoryId: string;
+}>;
+
+type ExistingIssueCommandBase = IssueCommandBase &
+  Readonly<{
+    issueId: string;
+    expectedVersion: number;
+  }>;
+
+export type IssueCommand =
+  | (IssueCommandBase & {
+      action: "create";
+      title: string;
+      body: string;
+      criteria: string;
+      assigneeIds: readonly string[];
+    })
+  | (ExistingIssueCommandBase & {
+      action: IssueAction;
+      note: string;
+    })
+  | (ExistingIssueCommandBase & {
+      action: "edit";
+      title?: string;
+      body?: string;
+      criteria?: string;
+    })
+  | (ExistingIssueCommandBase & {
+      action: "close";
+      stateReason: IssueClosedStateReason | null;
+      note: string;
+    })
+  | (ExistingIssueCommandBase & {
+      action: "reopen";
+      note: string;
+    })
+  | (ExistingIssueCommandBase & {
+      action: "add-assignees" | "remove-assignees";
+      assigneeIds: readonly string[];
+    });
 
 type IssueEvent = {
   actor: string;
   action: string;
   note: string;
+  data: Readonly<Record<string, unknown>>;
   version: number;
   at: number;
 };
@@ -34,7 +78,7 @@ export interface IssueStore {
     selector?: RepositorySelector,
     list?: boolean,
     view?: "mine" | "created",
-    page?: { after?: { at: number; id: string }; status?: string },
+    page?: { after?: { at: number; id: string }; workflowStatus?: IssueWorkflowStatus },
   ): Promise<IssueSnapshot>;
   detail(
     identity: IssueIdentity,

@@ -31,13 +31,23 @@ test("Issue activity projects only Issues in currently accessible Repositories",
   );
   await pg.query(
     `insert into app_private.issues(
-       id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
-     ) values($1,$2,1,$3,$4,$5,$6,'pending',1,90,90)`,
-    ["issue-a", "repository-a", "owner", "viewer", "Prepare payroll", "Complete review"],
+       id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
+     ) values($1,$2,1,$3,$4,$5,$6,'OPEN',NULL,'pending',1,90,90)`,
+    [
+      "issue-a",
+      "repository-a",
+      "owner",
+      "Prepare payroll",
+      "Prepare payroll details",
+      "Complete review",
+    ],
   );
   await pg.query(
-    "insert into app_private.issue_events(issue_id,version,actor,action,note,at) values($1,1,$2,'create','',96)",
-    ["issue-a", "owner"],
+    "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue-a','viewer',90)",
+  );
+  await pg.query(
+    "insert into app_private.issue_events(issue_id,version,actor,action,note,data,at) values($1,1,$2,'create','',$3::jsonb,96)",
+    ["issue-a", "owner", JSON.stringify({ state: "OPEN", workflowStatus: "pending" })],
   );
 
   const store = new PostgresIssueActivityStore(db);

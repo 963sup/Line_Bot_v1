@@ -3,5 +3,6 @@
 只保存仍需執行或驗證的 cutover。完成後仍成立的 truth 蒸餾到 owner，完成 migration 文件刪除，不保留第二份現況。
 
 - [Enterprise / Organization / Workforce / Payroll migration](enterprise-organization-workforce-payroll.md)：仍在進行的 Employment-scoped Attendance、Workforce 與 Payroll activation/cutover。
+- [Issue core parity cutover](issue-core-parity.md)：Issue state/body/assignee expand 已相容；只追蹤經 recovery/preflight 後的 legacy physical backfill 與 contract cleanup。
 
 Permission/User naming 與早期 management migration 已完成並由 current source/schema/owner contract取代，因此不再留在 migration navigation。

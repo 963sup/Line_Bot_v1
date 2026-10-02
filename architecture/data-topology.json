@@ -192,6 +192,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/624_issue_assignees.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/630_discussions.sql",
       "role": "authoritative"
     },
@@ -694,6 +698,14 @@
       "path": "supabase/schemas/621_issue_commands.sql",
       "authority": true,
       "semanticOwner": "issue"
+    },
+    {
+      "name": "issue_assignees",
+      "kind": "table",
+      "path": "supabase/schemas/624_issue_assignees.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-assignment"
     },
     {
       "name": "issue_events",

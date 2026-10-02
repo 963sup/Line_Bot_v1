@@ -4,7 +4,8 @@ import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/issue/application
 import {
   canIssueRepositoryOperation,
   type IssueAction,
-  type IssueStatus,
+  type IssueClosedStateReason,
+  type IssueWorkflowStatus,
 } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -28,7 +29,7 @@ import {
 } from "./resource-navigation";
 import styles from "./resource-navigation.module.css";
 
-const statusLabel: Record<IssueStatus, string> = {
+const workflowStatusLabel: Record<IssueWorkflowStatus, string> = {
   pending: "待承接",
   active: "進行中",
   review: "待驗收",
@@ -211,6 +212,15 @@ export default function IssueBoard({
   const canOpenIssue = currentRepository
     ? canIssueRepositoryOperation(currentRepository.permissions, "open")
     : false;
+  const canAssignIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "assign")
+    : false;
+  const canEditIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "edit")
+    : false;
+  const canCloseIssue = currentRepository
+    ? canIssueRepositoryOperation(currentRepository.permissions, "close")
+    : false;
   const headingActions = !detailMode ? (
     <PrimaryLink href="/explore">探索儲存庫</PrimaryLink>
   ) : undefined;
@@ -231,7 +241,7 @@ export default function IssueBoard({
     <>
       <PageHeading
         title={detailMode ? "Issue" : canonicalRepository ? "Issues" : "儲存庫"}
-        description="Issue 擁有工作生命週期；儲存庫提供範圍與存取，Project 只引用工作。"
+        description="Issue state 與本地工作流程分開管理；儲存庫提供範圍與存取，Project 只引用工作。"
         actions={headingActions}
       />
       {canonicalRepository && ownerLogin && repositoryName && (
@@ -369,8 +379,11 @@ export default function IssueBoard({
                       repositoryId: selectedRepository,
                       action: "create",
                       title: String(form.get("title") ?? ""),
+                      body: String(form.get("body") ?? ""),
                       criteria: String(form.get("criteria") ?? ""),
-                      assignee: String(form.get("assignee") ?? ""),
+                      assigneeIds: canAssignIssue
+                        ? form.getAll("assignees").map((value) => String(value))
+                        : [],
                     });
                   }}
                 >
@@ -379,24 +392,29 @@ export default function IssueBoard({
                     <input name="title" required maxLength={80} />
                   </label>
                   <label>
-                    完成條件
-                    <textarea name="criteria" required maxLength={1000} />
+                    Issue body
+                    <textarea name="body" maxLength={10000} />
                   </label>
                   <label>
-                    承接人
-                    <select name="assignee" required defaultValue="">
-                      <option value="" disabled>
-                        選擇儲存庫成員
-                      </option>
-                      {data.participants
-                        .filter((participant) => participant.userId !== data.userId)
-                        .map((participant) => (
+                    本地驗收條件
+                    <textarea name="criteria" maxLength={1000} />
+                  </label>
+                  {canAssignIssue && (
+                    <label>
+                      Assignees（可多選）
+                      <select
+                        name="assignees"
+                        multiple
+                        size={Math.max(1, Math.min(6, data.participants.length))}
+                      >
+                        {data.participants.map((participant) => (
                           <option key={participant.userId} value={participant.userId}>
                             {participant.name}
                           </option>
                         ))}
-                    </select>
-                  </label>
+                      </select>
+                    </label>
+                  )}
                   <button disabled={busy || Boolean(pending)}>建立</button>
                 </form>
               )}
@@ -418,7 +436,9 @@ export default function IssueBoard({
                         )}
                       >
                         <strong>{issue.title}</strong>
-                        <span className="status-badge">{statusLabel[issue.status]}</span>
+                        <span className="status-badge">
+                          {workflowStatusLabel[issue.workflowStatus]}
+                        </span>
                       </Link>
                     </li>
                   );
@@ -431,42 +451,248 @@ export default function IssueBoard({
       {data && current && detailMode && (
         <article className="detail-card">
           <h2>{current.title}</h2>
-          <p>{statusLabel[current.status]}</p>
-          <p>{current.criteria}</p>
           <p>
-            建立者：{current.publisher}；承接人：{current.assignee}
+            Issue state：{current.state}
+            {current.stateReason ? ` · ${current.stateReason}` : ""}
           </p>
-          {((current.assignee === data.userId && current.status === "active") ||
-            (current.publisher === data.userId && current.status === "review")) && (
-            <label>
-              說明
-              <textarea
-                maxLength={1000}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-              />
-            </label>
+          <p>本地工作流程：{workflowStatusLabel[current.workflowStatus]}</p>
+          {current.body ? <p>{current.body}</p> : <p className="empty-copy">Issue body 為空。</p>}
+          {current.criteria ? (
+            <section>
+              <h3>本地驗收條件</h3>
+              <p>{current.criteria}</p>
+            </section>
+          ) : (
+            <p className="empty-copy">未設定本地驗收條件。</p>
           )}
-          {current.assignee === data.userId && current.status === "pending" && (
-            <button type="button" onClick={() => operate("accept")}>
-              {actionLabel.accept}
-            </button>
-          )}
-          {current.assignee === data.userId && current.status === "active" && (
-            <button type="button" disabled={!note.trim()} onClick={() => operate("report")}>
-              {actionLabel.report}
-            </button>
-          )}
-          {current.publisher === data.userId && current.status === "review" && (
-            <>
-              <button type="button" onClick={() => operate("approve")}>
-                {actionLabel.approve}
+          <p>
+            建立者：{current.publisher}；Assignees：
+            {current.assignees.length ? current.assignees.join(", ") : "未指派"}
+          </p>
+
+          {current.state === "OPEN" &&
+            ((current.assignees.includes(data.userId) && current.workflowStatus === "active") ||
+              (current.publisher === data.userId && current.workflowStatus === "review")) && (
+              <label>
+                本地工作流程說明
+                <textarea
+                  maxLength={1000}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              </label>
+            )}
+          {current.state === "OPEN" &&
+            current.assignees.includes(data.userId) &&
+            current.workflowStatus === "pending" && (
+              <button
+                type="button"
+                disabled={busy || Boolean(pending)}
+                onClick={() => operate("accept")}
+              >
+                {actionLabel.accept}
               </button>
-              <button type="button" disabled={!note.trim()} onClick={() => operate("reject")}>
-                {actionLabel.reject}
+            )}
+          {current.state === "OPEN" &&
+            current.assignees.includes(data.userId) &&
+            current.workflowStatus === "active" && (
+              <button
+                type="button"
+                disabled={busy || Boolean(pending) || !note.trim()}
+                onClick={() => operate("report")}
+              >
+                {actionLabel.report}
               </button>
-            </>
+            )}
+          {current.state === "OPEN" &&
+            current.publisher === data.userId &&
+            current.workflowStatus === "review" && (
+              <>
+                <button
+                  type="button"
+                  disabled={busy || Boolean(pending)}
+                  onClick={() => operate("approve")}
+                >
+                  {actionLabel.approve}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || Boolean(pending) || !note.trim()}
+                  onClick={() => operate("reject")}
+                >
+                  {actionLabel.reject}
+                </button>
+              </>
+            )}
+
+          {canEditIssue && (
+            <form
+              key={"edit-" + current.version}
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
+                void submit({
+                  requestId: crypto.randomUUID(),
+                  repositoryId: current.repositoryId,
+                  issueId: current.id,
+                  expectedVersion: current.version,
+                  action: "edit",
+                  title: String(form.get("title") ?? ""),
+                  body: String(form.get("body") ?? ""),
+                  criteria: String(form.get("criteria") ?? ""),
+                });
+              }}
+            >
+              <h3>編輯 Issue 內容</h3>
+              <label>
+                標題
+                <input name="title" required maxLength={80} defaultValue={current.title} />
+              </label>
+              <label>
+                Issue body
+                <textarea name="body" maxLength={10000} defaultValue={current.body} />
+              </label>
+              <label>
+                本地驗收條件
+                <textarea name="criteria" maxLength={1000} defaultValue={current.criteria} />
+              </label>
+              <button type="submit" disabled={busy || Boolean(pending)}>
+                儲存內容
+              </button>
+            </form>
           )}
+
+          {canAssignIssue && (
+            <section>
+              <h3>Assignees</h3>
+              {data.participants.some(
+                (participant) => !current.assignees.includes(participant.userId),
+              ) && (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const assigneeIds = new FormData(event.currentTarget)
+                      .getAll("assigneeIds")
+                      .map((value) => String(value));
+                    if (!assigneeIds.length) return;
+                    void submit({
+                      requestId: crypto.randomUUID(),
+                      repositoryId: current.repositoryId,
+                      issueId: current.id,
+                      expectedVersion: current.version,
+                      action: "add-assignees",
+                      assigneeIds,
+                    });
+                  }}
+                >
+                  <label>
+                    新增 Assignees
+                    <select
+                      name="assigneeIds"
+                      multiple
+                      size={Math.max(1, Math.min(6, data.participants.length))}
+                    >
+                      {data.participants
+                        .filter((participant) => !current.assignees.includes(participant.userId))
+                        .map((participant) => (
+                          <option key={participant.userId} value={participant.userId}>
+                            {participant.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <button type="submit" disabled={busy || Boolean(pending)}>
+                    新增指派
+                  </button>
+                </form>
+              )}
+              {current.assignees.map((assigneeId) => (
+                <p key={assigneeId}>
+                  {assigneeId}{" "}
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={busy || Boolean(pending)}
+                    onClick={() =>
+                      void submit({
+                        requestId: crypto.randomUUID(),
+                        repositoryId: current.repositoryId,
+                        issueId: current.id,
+                        expectedVersion: current.version,
+                        action: "remove-assignees",
+                        assigneeIds: [assigneeId],
+                      })
+                    }
+                  >
+                    移除指派
+                  </button>
+                </p>
+              ))}
+            </section>
+          )}
+
+          {canCloseIssue && (
+            <section>
+              <h3>Issue state</h3>
+              {current.state === "OPEN" ? (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const form = new FormData(event.currentTarget);
+                    const reason = String(form.get("stateReason") ?? "");
+                    const stateReason: IssueClosedStateReason | null =
+                      reason === "COMPLETED" || reason === "DUPLICATE" || reason === "NOT_PLANNED"
+                        ? reason
+                        : null;
+                    void submit({
+                      requestId: crypto.randomUUID(),
+                      repositoryId: current.repositoryId,
+                      issueId: current.id,
+                      expectedVersion: current.version,
+                      action: "close",
+                      stateReason,
+                      note: String(form.get("note") ?? ""),
+                    });
+                  }}
+                >
+                  <label>
+                    Close reason
+                    <select name="stateReason" defaultValue="">
+                      <option value="">未指定</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                      <option value="DUPLICATE">DUPLICATE</option>
+                      <option value="NOT_PLANNED">NOT_PLANNED</option>
+                    </select>
+                  </label>
+                  <label>
+                    說明
+                    <textarea name="note" maxLength={1000} />
+                  </label>
+                  <button type="submit" disabled={busy || Boolean(pending)}>
+                    Close Issue
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy || Boolean(pending)}
+                  onClick={() =>
+                    void submit({
+                      requestId: crypto.randomUUID(),
+                      repositoryId: current.repositoryId,
+                      issueId: current.id,
+                      expectedVersion: current.version,
+                      action: "reopen",
+                      note: "",
+                    })
+                  }
+                >
+                  Reopen Issue
+                </button>
+              )}
+            </section>
+          )}
+
           <h3>Issue history</h3>
           <ol>
             {data.events

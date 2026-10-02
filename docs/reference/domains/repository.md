@@ -6,7 +6,7 @@ Low-frequency Repository runtime, locator and discovery details. Ownership/invar
 
 Current Repository-owned reads include owner/name resolution and accessible discovery, Label collection, Repository Milestone list/detail, Star List and Explore discovery. Issue and Discussion reads are delivered on Repository-scoped routes but owned by [Issue](../../owners/issue.md) and [Discussion](../../owners/discussion.md).
 
-Current Repository-owned writes include Repository create with explicit visibility, rename/visibility/archive/unarchive lifecycle management, Direct User / Organization Team access grant-update-revoke, User→Repository Watch state, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete. Issue create/transition is Issue-owned and consumes Repository access/numbering contracts.
+Current Repository-owned writes include Repository create with explicit visibility, rename/visibility/archive/unarchive lifecycle management, Direct User / Organization Team access grant-update-revoke, User→Repository Watch state, star/unstar and Repository Star List create/update/publish/unpublish/item add/remove/delete. Issue create, canonical state, content, assignee collection and local workflow are Issue-owned and consume Repository access/numbering contracts.
 
 Not yet claimed as general Repository runtime management: Label/Repository Milestone general write management. Discussion write management remains separately inactive under the Discussion owner; IssueLabel belongs to Issue. Repository conversation subscription fan-out is also not enabled yet; Watch state is live without pretending Notification delivery exists.
 

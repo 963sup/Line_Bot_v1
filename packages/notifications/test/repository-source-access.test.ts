@@ -27,8 +27,11 @@ test("Repository-backed notifications recheck source access on create and read",
   );
   await pg.query(
     `insert into app_private.issues(
-       id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
-     ) values('issue','repo',1,'owner','assignee','Issue','Done','pending',1,1,1)`,
+       id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
+     ) values('issue','repo',1,'owner','Issue','Body','Done','OPEN',NULL,'pending',1,1,1)`,
+  );
+  await pg.query(
+    "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue','assignee',1)",
   );
 
   const insertIssueNotification = (id: string, recipient: string, at: number) =>

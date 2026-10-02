@@ -1,4 +1,7 @@
-export type IssueStatus = "pending" | "active" | "review" | "completed";
+type IssueState = "OPEN" | "CLOSED";
+type IssueStateReason = "COMPLETED" | "DUPLICATE" | "NOT_PLANNED" | "REOPENED";
+export type IssueClosedStateReason = Exclude<IssueStateReason, "REOPENED">;
+export type IssueWorkflowStatus = "pending" | "active" | "review" | "completed";
 export type IssueAction = "accept" | "report" | "reject" | "approve";
 
 export type Issue = {
@@ -6,10 +9,13 @@ export type Issue = {
   repositoryId: string;
   number: number;
   publisher: string;
-  assignee: string;
+  assignees: readonly string[];
   title: string;
+  body: string;
   criteria: string;
-  status: IssueStatus;
+  state: IssueState;
+  stateReason: IssueStateReason | null;
+  workflowStatus: IssueWorkflowStatus;
   version: number;
   createdAt: number;
   updatedAt: number;

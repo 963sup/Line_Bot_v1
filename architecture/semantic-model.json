@@ -511,6 +511,19 @@
       }
     },
     {
+      "id": "issue-assignment",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "assignees"
+      }
+    },
+    {
       "id": "discussion",
       "kind": "authoritative",
       "owner": "discussion",
@@ -1972,7 +1985,7 @@
       "id": "manage-issues",
       "owner": "issue",
       "kind": "leaf",
-      "intent": "Manage Repository-scoped Issue lifecycle and commands.",
+      "intent": "Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -1984,11 +1997,13 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Issue-owned lifecycle and commands with an explicit non-code RepositoryPermission operation matrix, current-access creation policy, local workflow responsibility, replay and version invariants",
+        "scope": "Issue-owned canonical state/stateReason, title/body editing, 0..N assignees, local workflow responsibility, structured immutable events, replay/version invariants, and explicit RepositoryPermission operation policy",
         "sourcePaths": [
           "packages/issue/src/domain/issue/policies/issue-repository-operation.ts",
+          "packages/issue/src/domain/issue/policies/issue-transition.ts",
           "packages/issue/src/application/issues.ts",
-          "packages/issue/src/application/ports/issues.ts"
+          "packages/issue/src/application/ports/issues.ts",
+          "packages/issue/src/adapters/postgres.ts"
         ],
         "publicExports": ["./domain", "./application/issues", "./application/ports/issues"],
         "entrypoints": [
@@ -2003,7 +2018,7 @@
           "apps/web/test/repository-navigation.test.ts",
           "apps/web/test/repository-pending-storage.test.ts"
         ],
-        "note": "Issue keeps Repository permission separate from local workflow responsibility. Current create adopts schema-issues.json#IssueCreationPolicy COLLABORATORS_ONLY through Repository current-access resolution; READ can open and can complete the required local publisher/assignee workflow while current access remains valid; that local workflow is not reclassified as generic FPT manage-issue authority. Generic triage/edit/close/assign classification remains limited to TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN or ADMIN. Public visibility does not grant Issue access, and unsupported comment/edit/close/assign/resource/lock operations remain deferred to their own capability slices."
+        "note": "Issue keeps FPT IssueState/IssueStateReason separate from the local pending/active/review/completed workflow. Assignees are a 0..N Issue-owned relation and author self-assignment is valid. Current create uses schema-issues.json#IssueCreationPolicy COLLABORATORS_ONLY: every exact RepositoryPermission may open an unassigned Issue, while adding assignees, editing content, and close/reopen use the generic TRIAGE/TRIAGE_PLUS/WRITE/MAINTAIN/ADMIN management set. READ collaborators can still perform the required local workflow when they are the publisher/current assignee. PUBLIC/INTERNAL visibility may grant read-only Issue visibility but never synthesizes RepositoryPermission or Issue write authority. Structured immutable Issue events preserve state, assignment, workflow and content-change evidence; comment/label/milestone/relation/lock operations remain separate capability slices."
       }
     },
     {

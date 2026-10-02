@@ -1,4 +1,9 @@
-export type { Issue, IssueAction, IssueStatus } from "./domain/issue/entities/issue.js";
+export type {
+  Issue,
+  IssueAction,
+  IssueClosedStateReason,
+  IssueWorkflowStatus,
+} from "./domain/issue/entities/issue.js";
 export { IssueError } from "./domain/issue/errors/issue-error.js";
 export { canIssueRepositoryOperation } from "./domain/issue/policies/issue-repository-operation.js";
 export { transitionIssue } from "./domain/issue/policies/issue-transition.js";

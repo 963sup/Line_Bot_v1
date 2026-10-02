@@ -9,4 +9,4 @@ Routing and module overview for `@line_bot_v1/issue`.
 
 ## Scope
 
-Issue lifecycle, assignment, command replay, event history, and Issue-to-Label links. Repository identity, access, participant scope, Label/Milestone definitions, and repository-scoped Issue number allocation remain Repository-owned dependencies.
+Issue canonical OPEN/CLOSED state and stateReason, title/body content, 0..N assignee relation, separate local work workflow, command replay, immutable event history, and Issue-to-Label links. Repository identity, visibility/access, participant scope, Label/Milestone definitions, and repository-scoped Issue number allocation remain Repository-owned dependencies.

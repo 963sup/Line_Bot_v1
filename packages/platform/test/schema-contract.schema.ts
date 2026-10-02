@@ -315,10 +315,18 @@ test("Repository runtime privileges match only activated write capabilities", as
       has_table_privilege('line_app','app_private.issues','SELECT') as can_select,
       has_column_privilege('line_app','app_private.issues','id','INSERT') as can_insert_id,
       has_column_privilege('line_app','app_private.issues','milestone_id','INSERT') as can_insert_milestone,
-      has_column_privilege('line_app','app_private.issues','status','UPDATE') as can_update_status,
+      has_column_privilege('line_app','app_private.issues','assignee','INSERT') as can_insert_legacy_assignee,
+      has_column_privilege('line_app','app_private.issues','status','INSERT') as can_insert_legacy_status,
+      has_column_privilege('line_app','app_private.issues','assignee','UPDATE') as can_clear_legacy_assignee,
+      has_column_privilege('line_app','app_private.issues','status','UPDATE') as can_clear_legacy_status,
+      has_column_privilege('line_app','app_private.issues','state','UPDATE') as can_update_state,
+      has_column_privilege('line_app','app_private.issues','state_reason','UPDATE') as can_update_state_reason,
+      has_column_privilege('line_app','app_private.issues','workflow_status','UPDATE') as can_update_workflow,
+      has_column_privilege('line_app','app_private.issues','title','UPDATE') as can_update_title,
+      has_column_privilege('line_app','app_private.issues','body','UPDATE') as can_update_body,
+      has_column_privilege('line_app','app_private.issues','criteria','UPDATE') as can_update_criteria,
       has_column_privilege('line_app','app_private.issues','version','UPDATE') as can_update_version,
       has_column_privilege('line_app','app_private.issues','updated_at','UPDATE') as can_update_timestamp,
-      has_column_privilege('line_app','app_private.issues','title','UPDATE') as can_update_title,
       has_table_privilege('line_app','app_private.issues','DELETE') as can_delete`,
   );
   assert.deepEqual(issueColumns.rows, [
@@ -326,11 +334,35 @@ test("Repository runtime privileges match only activated write capabilities", as
       can_select: true,
       can_insert_id: true,
       can_insert_milestone: false,
-      can_update_status: true,
+      can_insert_legacy_assignee: false,
+      can_insert_legacy_status: false,
+      can_clear_legacy_assignee: true,
+      can_clear_legacy_status: true,
+      can_update_state: true,
+      can_update_state_reason: true,
+      can_update_workflow: true,
+      can_update_title: true,
+      can_update_body: true,
+      can_update_criteria: true,
       can_update_version: true,
       can_update_timestamp: true,
-      can_update_title: false,
       can_delete: false,
+    },
+  ]);
+
+  const issueAssignees = await pg.query(
+    `select
+      has_table_privilege('line_app','app_private.issue_assignees','SELECT') as can_select,
+      has_table_privilege('line_app','app_private.issue_assignees','INSERT') as can_insert,
+      has_table_privilege('line_app','app_private.issue_assignees','UPDATE') as can_update,
+      has_table_privilege('line_app','app_private.issue_assignees','DELETE') as can_delete`,
+  );
+  assert.deepEqual(issueAssignees.rows, [
+    {
+      can_select: true,
+      can_insert: true,
+      can_update: false,
+      can_delete: true,
     },
   ]);
 });
