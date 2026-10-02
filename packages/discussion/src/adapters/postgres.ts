@@ -69,7 +69,11 @@ async function detailRows(
   predicate: "id" | "number",
   value: string | number,
   commentsAfter?: DiscussionCursor,
-): Promise<{ row: ReadDiscussionRow; comments: ReturnType<typeof comment>[]; next: string | null }> {
+): Promise<{
+  row: ReadDiscussionRow;
+  comments: ReturnType<typeof comment>[];
+  next: string | null;
+}> {
   const row = (
     await sql.query(
       `SELECT d.*,c.name AS category_name
@@ -156,13 +160,7 @@ export class PostgresDiscussionReadStore implements DiscussionReadStore {
   ): Promise<DiscussionResult> {
     return this.db.transaction(async (sql) => {
       const selected = await repository(sql, who, selector);
-      const values = await detailRows(
-        sql,
-        selected.id,
-        "number",
-        discussionNumber,
-        commentsAfter,
-      );
+      const values = await detailRows(sql, selected.id, "number", discussionNumber, commentsAfter);
       return {
         repository: selected,
         discussion: discussion(values.row, values.row.category_name ?? undefined),
