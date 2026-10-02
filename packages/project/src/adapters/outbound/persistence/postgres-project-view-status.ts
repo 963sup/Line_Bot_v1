@@ -5,10 +5,7 @@ import type {
   ProjectStatusUpdate,
   ProjectView,
 } from "../../../contracts/management.js";
-import type {
-  ProjectStatusUpdateStatus,
-  ProjectViewLayout,
-} from "../../../domain.js";
+import type { ProjectStatusUpdateStatus, ProjectViewLayout } from "../../../domain.js";
 import { ProjectError } from "../../../domain.js";
 
 type ViewRow = {
@@ -110,11 +107,7 @@ export async function readProjectStatusUpdates(
   }));
 }
 
-async function requireFieldIds(
-  sql: Sql,
-  projectId: string,
-  fieldIds: readonly string[],
-) {
+async function requireFieldIds(sql: Sql, projectId: string, fieldIds: readonly string[]) {
   if (!fieldIds.length) return;
   const rows = (
     await sql.query(
@@ -184,7 +177,8 @@ async function currentStatus(
       [projectId, statusUpdateId],
     )
   ).rows[0] as StatusRow | undefined;
-  if (!row || row.deleted_at !== null) throw new ProjectError(404, "找不到 Project status update。");
+  if (!row || row.deleted_at !== null)
+    throw new ProjectError(404, "找不到 Project status update。");
   return row;
 }
 
@@ -229,7 +223,7 @@ export async function executeProjectViewStatusCommand(
     requireChildVersion(before.version, command.viewVersion, "Project view");
     const fields =
       command.visibleFieldIds === undefined
-        ? (await visibleFields(sql, [before.id])).get(before.id) ?? []
+        ? ((await visibleFields(sql, [before.id])).get(before.id) ?? [])
         : command.visibleFieldIds;
     if (command.visibleFieldIds !== undefined) {
       await requireFieldIds(sql, projectId, fields);
@@ -273,10 +267,11 @@ export async function executeProjectViewStatusCommand(
     const before = await currentView(sql, projectId, command.viewId);
     requireChildVersion(before.version, command.viewVersion, "Project view");
     await sql.query("DELETE FROM project_view_visible_fields WHERE view_id=$1", [before.id]);
-    await sql.query(
-      "DELETE FROM project_views WHERE project_id=$1 AND id=$2 AND version=$3",
-      [projectId, before.id, command.viewVersion],
-    );
+    await sql.query("DELETE FROM project_views WHERE project_id=$1 AND id=$2 AND version=$3", [
+      projectId,
+      before.id,
+      command.viewVersion,
+    ]);
     return { resourceId: before.id, data: { viewId: before.id, deleted: true } };
   }
 
