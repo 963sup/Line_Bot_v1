@@ -523,13 +523,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           at: now,
           data,
         };
-        await storeProjectReceipt(
-          sql,
-          identity.userId,
-          fingerprint,
-          result,
-          now,
-        );
+        await storeProjectReceipt(sql, identity.userId, fingerprint, result, now);
         return result;
       }
 
@@ -569,18 +563,11 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           selected.row.owner_account_id,
           selected.row.owner_account_kind,
         );
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-          { number },
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now, { number });
         data = { number };
       } else if (command.action === "update-project") {
         const title = command.title ?? selected.row.name;
-        const shortDescription =
-          command.shortDescription ?? selected.row.short_description;
+        const shortDescription = command.shortDescription ?? selected.row.short_description;
         const readme = command.readme ?? selected.row.readme;
         const publicValue = command.public ?? selected.row.is_public;
         if (
@@ -591,78 +578,46 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         ) {
           throw new ProjectError(409, "Project 沒有變更。");
         }
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-          {
-            title,
-            shortDescription,
-            readme,
-            public: publicValue,
-          },
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
+          title,
+          shortDescription,
+          readme,
+          public: publicValue,
+        });
         data = {
           titleChanged: title !== selected.row.name,
-          shortDescriptionChanged:
-            shortDescription !== selected.row.short_description,
+          shortDescriptionChanged: shortDescription !== selected.row.short_description,
           readmeChanged: readme !== selected.row.readme,
           public: publicValue,
         };
       } else if (command.action === "close-project") {
         if (selected.row.closed) throw new ProjectError(409, "Project 已關閉。");
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-          { closed: true, closedAt: now },
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
+          closed: true,
+          closedAt: now,
+        });
         data = { closed: true };
       } else if (command.action === "reopen-project") {
         if (!selected.row.closed) throw new ProjectError(409, "Project 已開啟。");
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-          { closed: false, closedAt: null },
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
+          closed: false,
+          closedAt: null,
+        });
         data = { closed: false };
       } else if (command.action === "delete-project") {
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-          {
-            title: "[deleted]",
-            shortDescription: "",
-            readme: "",
-            public: false,
-            closed: true,
-            closedAt:
-              selected.row.closed_at === null
-                ? now
-                : Number(selected.row.closed_at),
-            deletedAt: now,
-          },
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
+          title: "[deleted]",
+          shortDescription: "",
+          readme: "",
+          public: false,
+          closed: true,
+          closedAt: selected.row.closed_at === null ? now : Number(selected.row.closed_at),
+          deletedAt: now,
+        });
         data = { deleted: true };
       } else if (command.action === "update-collaborators") {
-        data = await mutateCollaborators(
-          sql,
-          selected.row,
-          command,
-          now,
-        );
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-        );
+        data = await mutateCollaborators(sql, selected.row, command, now);
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now);
       } else if (isItemCommand(command)) {
         await validateDraftAssignees(sql, command);
         const child = await executeProjectItemCommand(
@@ -674,19 +629,9 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         );
         resourceId = child.resourceId;
         data = child.data;
-        next = await advanceProject(
-          sql,
-          selected.row,
-          command.expectedVersion,
-          now,
-        );
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now);
       } else if (isFieldCommand(command)) {
-        const child = await executeProjectFieldCommand(
-          sql,
-          selected.row.id,
-          command,
-          now,
-        );
+        const child = await executeProjectFieldCommand(sql, selected.row.id, command, now);
         resourceId = child.resourceId;
         data = child.data;
         next = await advanceProject(
