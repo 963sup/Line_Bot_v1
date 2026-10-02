@@ -1,4 +1,4 @@
--- Durable Repository lifecycle evidence for locator/visibility/archive state changes.
+-- Durable Repository lifecycle and Repository-owned definition evidence.
 
 create table app_private.repository_events (
   id bigint generated always as identity primary key,
@@ -9,7 +9,11 @@ create table app_private.repository_events (
   current_state jsonb not null,
   at bigint not null,
   constraint repository_events_action_check check (
-    action in ('rename','visibility','archive','unarchive')
+    action in (
+      'rename','visibility','archive','unarchive',
+      'create-label','update-label','delete-label',
+      'create-milestone','update-milestone','open-milestone','close-milestone'
+    )
   ),
   constraint repository_events_previous_state_check check (jsonb_typeof(previous_state) = 'object'),
   constraint repository_events_current_state_check check (jsonb_typeof(current_state) = 'object'),
