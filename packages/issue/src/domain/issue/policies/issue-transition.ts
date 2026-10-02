@@ -13,9 +13,7 @@ export function transitionIssue(
   }
 
   const assigneeAction = action === "accept" || action === "report";
-  const authorized = assigneeAction
-    ? issue.assignees.includes(actor)
-    : actor === issue.publisher;
+  const authorized = assigneeAction ? issue.assignees.includes(actor) : actor === issue.publisher;
   if (!authorized) {
     throw new IssueError(403, "沒有此 Issue 的本地工作流程操作權限。");
   }
