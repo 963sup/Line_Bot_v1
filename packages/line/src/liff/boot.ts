@@ -1,7 +1,7 @@
 "use client";
 
 export type LiffSdk = {
-  init: (options: { liffId: string }) => Promise<void>;
+  init: (options: { liffId: string; mock?: boolean }) => Promise<void>;
   isLoggedIn: () => boolean;
   login: (options?: { redirectUri: string }) => void;
   getProfile: () => Promise<{ userId: string; displayName: string; pictureUrl?: string }>;
@@ -16,6 +16,7 @@ export type LiffBootState = "initializing" | "ready" | "failed";
 
 export type LiffBootOptions = {
   beforeInit?: (sdk: LiffSdk) => void | Promise<void>;
+  mock?: boolean;
 };
 
 export type LiffBoot = {
@@ -51,8 +52,8 @@ export function createLiffBoot(
       const prepared = options.beforeInit?.(sdk);
       operation =
         prepared === undefined
-          ? Promise.resolve(sdk.init({ liffId }))
-          : Promise.resolve(prepared).then(() => sdk.init({ liffId }));
+          ? Promise.resolve(sdk.init(options.mock ? { liffId, mock: true } : { liffId }))
+          : Promise.resolve(prepared).then(() => sdk.init(options.mock ? { liffId, mock: true } : { liffId }));
     } catch {
       operation = Promise.reject(new Error(initializationError));
     }
