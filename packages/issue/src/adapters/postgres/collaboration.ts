@@ -70,83 +70,83 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         blockingIssueIds,
         relatedIssueIds,
       ] = await Promise.all([
-          sql.query(
-            `SELECT id,issue_id,author,body,deleted_at,version,created_at,updated_at
-             FROM issue_comments WHERE issue_id=$1 ORDER BY created_at,id`,
-            [issueId],
-          ),
-          sql.query("SELECT label_id FROM issue_labels WHERE issue_id=$1 ORDER BY label_id", [
-            issueId,
-          ]),
-          sql.query(
-            `SELECT p.parent_issue_id AS id
-             FROM issue_sub_issues p
-             JOIN issues target ON target.id=p.parent_issue_id
-             WHERE p.child_issue_id=$1
-               AND EXISTS (
-                 SELECT 1 FROM repository_visibility_access v
-                 WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
-               )`,
-            [issueId, who.userId],
-          ),
-          visibleRelatedIds(
-            sql,
-            who.userId,
-            `SELECT s.child_issue_id AS id
-             FROM issue_sub_issues s
-             JOIN issues target ON target.id=s.child_issue_id
-             WHERE s.parent_issue_id=$1
-               AND EXISTS (
-                 SELECT 1 FROM repository_visibility_access v
-                 WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
-               )
-             ORDER BY s.position,s.child_issue_id`,
-            issueId,
-          ),
-          visibleRelatedIds(
-            sql,
-            who.userId,
-            `SELECT d.blocking_issue_id AS id
-             FROM issue_dependencies d
-             JOIN issues target ON target.id=d.blocking_issue_id
-             WHERE d.blocked_issue_id=$1
-               AND EXISTS (
-                 SELECT 1 FROM repository_visibility_access v
-                 WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
-               )
-             ORDER BY d.blocking_issue_id`,
-            issueId,
-          ),
-          visibleRelatedIds(
-            sql,
-            who.userId,
-            `SELECT d.blocked_issue_id AS id
-             FROM issue_dependencies d
-             JOIN issues target ON target.id=d.blocked_issue_id
-             WHERE d.blocking_issue_id=$1
-               AND EXISTS (
-                 SELECT 1 FROM repository_visibility_access v
-                 WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
-               )
-             ORDER BY d.blocked_issue_id`,
-            issueId,
-          ),
-          visibleRelatedIds(
-            sql,
-            who.userId,
-            `SELECT CASE WHEN r.left_issue_id=$1 THEN r.right_issue_id ELSE r.left_issue_id END AS id
-             FROM issue_related r
-             JOIN issues target
-               ON target.id=CASE WHEN r.left_issue_id=$1 THEN r.right_issue_id ELSE r.left_issue_id END
-             WHERE (r.left_issue_id=$1 OR r.right_issue_id=$1)
-               AND EXISTS (
-                 SELECT 1 FROM repository_visibility_access v
-                 WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
-               )
-             ORDER BY id`,
-            issueId,
-          ),
-        ]);
+        sql.query(
+          `SELECT id,issue_id,author,body,deleted_at,version,created_at,updated_at
+           FROM issue_comments WHERE issue_id=$1 ORDER BY created_at,id`,
+          [issueId],
+        ),
+        sql.query("SELECT label_id FROM issue_labels WHERE issue_id=$1 ORDER BY label_id", [
+          issueId,
+        ]),
+        sql.query(
+          `SELECT p.parent_issue_id AS id
+           FROM issue_sub_issues p
+           JOIN issues target ON target.id=p.parent_issue_id
+           WHERE p.child_issue_id=$1
+             AND EXISTS (
+               SELECT 1 FROM repository_visibility_access v
+               WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
+             )`,
+          [issueId, who.userId],
+        ),
+        visibleRelatedIds(
+          sql,
+          who.userId,
+          `SELECT s.child_issue_id AS id
+           FROM issue_sub_issues s
+           JOIN issues target ON target.id=s.child_issue_id
+           WHERE s.parent_issue_id=$1
+             AND EXISTS (
+               SELECT 1 FROM repository_visibility_access v
+               WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
+             )
+           ORDER BY s.position,s.child_issue_id`,
+          issueId,
+        ),
+        visibleRelatedIds(
+          sql,
+          who.userId,
+          `SELECT d.blocking_issue_id AS id
+           FROM issue_dependencies d
+           JOIN issues target ON target.id=d.blocking_issue_id
+           WHERE d.blocked_issue_id=$1
+             AND EXISTS (
+               SELECT 1 FROM repository_visibility_access v
+               WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
+             )
+           ORDER BY d.blocking_issue_id`,
+          issueId,
+        ),
+        visibleRelatedIds(
+          sql,
+          who.userId,
+          `SELECT d.blocked_issue_id AS id
+           FROM issue_dependencies d
+           JOIN issues target ON target.id=d.blocked_issue_id
+           WHERE d.blocking_issue_id=$1
+             AND EXISTS (
+               SELECT 1 FROM repository_visibility_access v
+               WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
+             )
+           ORDER BY d.blocked_issue_id`,
+          issueId,
+        ),
+        visibleRelatedIds(
+          sql,
+          who.userId,
+          `SELECT CASE WHEN r.left_issue_id=$1 THEN r.right_issue_id ELSE r.left_issue_id END AS id
+           FROM issue_related r
+           JOIN issues target
+             ON target.id=CASE WHEN r.left_issue_id=$1 THEN r.right_issue_id ELSE r.left_issue_id END
+           WHERE (r.left_issue_id=$1 OR r.right_issue_id=$1)
+             AND EXISTS (
+               SELECT 1 FROM repository_visibility_access v
+               WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
+             )
+           ORDER BY id`,
+          issueId,
+        ),
+      ]);
 
       return {
         issueId: issue.id,
