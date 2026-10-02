@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";\nimport {\n  repositoryLabelIdsExist,\n  repositoryMilestoneExists,\n} from "@line_bot_v1/repository/postgres/resource-management";
+import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import {
+  repositoryLabelIdsExist,
+  repositoryMilestoneExists,
+} from "@line_bot_v1/repository/postgres/resource-management";
 import type {
   IssueCollaborationCommand,
   IssueCollaborationIdentity,
