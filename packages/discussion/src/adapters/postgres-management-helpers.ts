@@ -108,7 +108,7 @@ export function readReceipt(
   return result as DiscussionManagementReceipt;
 }
 
-export function receiptEnvelope(result: DiscussionManagementReceipt): StoredReceipt {
+function receiptEnvelope(result: DiscussionManagementReceipt): StoredReceipt {
   return { receiptVersion: 1, family: "discussion-management", result };
 }
 
