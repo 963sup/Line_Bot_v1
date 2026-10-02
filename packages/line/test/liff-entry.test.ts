@@ -29,7 +29,11 @@ test("LIFF boot starts immediately, shares initialization, waits for redirect an
   await assert.rejects(boot.ready(), /初始化失敗/);
 
   fail = false;
-  const client = createLiffClient(boot, () => href, () => "https://example.com/");
+  const client = createLiffClient(
+    boot,
+    () => href,
+    () => "https://example.com/",
+  );
   assert.deepEqual(await Promise.all([client.initialize("id"), client.initialize("id")]), [
     false,
     false,

@@ -3,8 +3,8 @@ import { createAttendanceMaintenance } from "@line_bot_v1/attendance/application
 import { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { attendanceNotificationText } from "@line_bot_v1/attendance/contracts/dto/attendance-presentation";
 import { pushLineText } from "@line_bot_v1/line/messaging-api";
-import { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
+import { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
 import { syncUserRichMenu } from "../../../modules/assistant/rich-menu/user-menu.server";
 import { activeLineUser } from "./account.server";
 

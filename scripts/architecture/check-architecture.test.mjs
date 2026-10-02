@@ -593,21 +593,9 @@ test("architecture checks source exports, types, ports, browser reachability and
     );
     write(root, "apps/web/src/helper.ts", importing("@line_bot_v1/line/liff"));
     assert.deepEqual((await checkArchitecture(root)).errors, []);
-    write(
-      root,
-      "packages/line/src/messaging-api/private.ts",
-      "export const value = 1;",
-    );
-    write(
-      root,
-      "packages/line/src/rich-menu/private.ts",
-      "export const value = 1;",
-    );
-    for (const target of [
-      "node:fs",
-      "../messaging-api/private",
-      "../rich-menu/private",
-    ]) {
+    write(root, "packages/line/src/messaging-api/private.ts", "export const value = 1;");
+    write(root, "packages/line/src/rich-menu/private.ts", "export const value = 1;");
+    for (const target of ["node:fs", "../messaging-api/private", "../rich-menu/private"]) {
       write(root, "packages/line/src/liff/client.ts", importing(target));
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) =>

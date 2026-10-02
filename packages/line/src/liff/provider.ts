@@ -1,12 +1,7 @@
 "use client";
 
 import liff from "@line/liff";
-import {
-  createLiffBoot,
-  type LiffBoot,
-  type LiffBootOptions,
-  type LiffSdk,
-} from "./boot.js";
+import { createLiffBoot, type LiffBoot, type LiffBootOptions, type LiffSdk } from "./boot.js";
 
 let current: { liffId: string; boot: LiffBoot } | undefined;
 
