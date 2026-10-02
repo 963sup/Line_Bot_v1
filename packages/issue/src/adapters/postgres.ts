@@ -570,7 +570,7 @@ export class PostgresIssueStore implements IssueStore {
             ),
           };
           data = { addedAssigneeIds: added };
-        } else if (command.action === "remove-assignees") {
+        } else {
           const current = new Set(result.assignees);
           const removed = command.assigneeIds.filter((userId) => current.has(userId));
           if (!removed.length) throw new IssueError(409, "Issue assignees 沒有變更。");
@@ -584,9 +584,6 @@ export class PostgresIssueStore implements IssueStore {
             assignees: result.assignees.filter((userId) => !removedSet.has(userId)),
           };
           data = { removedAssigneeIds: removed };
-        } else {
-          command satisfies never;
-          throw new IssueError(400, "Issue 操作不正確。");
         }
 
         const nextVersion = result.version + 1;
