@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { createRichMenuClient, type RichMenuDefinition } from "@line_bot_v1/line-channel/rich-menu";
+import { createRichMenuClient, type RichMenuDefinition } from "@line_bot_v1/line/rich-menu";
 import { MENU_PAGES, type MenuPage, menuAlias, SUBMENU_PAGES } from "./definition";
 import type { DesiredRichMenu } from "./desired-state.server";
 

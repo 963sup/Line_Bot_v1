@@ -3,7 +3,7 @@ import {
   attendanceActionLabel,
   attendanceOperation,
 } from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
-import type { RichMenuDefinition } from "@line_bot_v1/line-channel/rich-menu";
+import type { RichMenuDefinition } from "@line_bot_v1/line/rich-menu";
 import { miniAppEntryUrl } from "../../../shared/presentation/entry-route";
 
 // Publication uses the same page keys for menu definitions, assets and aliases.

@@ -1,4 +1,4 @@
-import { createRichMenuClient } from "@line_bot_v1/line-channel/rich-menu";
+import { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
 import { isMenuPage, MENU_PAGES, type MenuPage } from "./definition";
 import { buildRichMenuDesiredState } from "./desired-state.server";
 import { preflightRichMenuBatch, publishRichMenuBatch } from "./publication.server";

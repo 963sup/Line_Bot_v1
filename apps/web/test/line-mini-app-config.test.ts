@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CURRENT_LINE_MINI_APP_STAGE, lineMiniApp } from "@line_bot_v1/line-channel/mini-app";
+import { CURRENT_LINE_MINI_APP_STAGE, lineMiniApp } from "@line_bot_v1/line/mini-app";
 
 test("MINI App stages derive LIFF and Login Channel identity from one permanent URL", () => {
   assert.deepEqual(lineMiniApp("developing"), {

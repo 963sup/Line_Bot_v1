@@ -1,4 +1,4 @@
-import type { createRichMenuClient } from "@line_bot_v1/line-channel/rich-menu";
+import type { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
 import { menuAlias, SUBMENU_PAGES } from "./definition";
 
 /** Preserve submenu browsing during maintenance; explicit Back uses current Attendance truth. */
