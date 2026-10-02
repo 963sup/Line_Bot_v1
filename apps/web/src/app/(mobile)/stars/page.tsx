@@ -1,7 +1,7 @@
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
-import AppShell from "../_shell/app-shell";
 import StarredRepositories from "../../../modules/repository/starred-repositories";
 import { PageHeading, PrimaryLink } from "../../../shared/ui/page-layout";
+import AppShell from "../_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 

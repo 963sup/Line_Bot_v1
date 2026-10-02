@@ -2,12 +2,12 @@ import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import ProfileViewerShell from "../_components/profile-viewer-shell";
-import { publicOrganizations } from "../_composition/directory.server";
-import { publicRepositories } from "../_composition/repository.server";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import { profiles, publicUserById } from "../../api/_composition/account.server";
 import { resolveAccountNamespace } from "../../api/_composition/namespace.server";
+import ProfileViewerShell from "../_components/profile-viewer-shell";
+import { publicOrganizations } from "../_composition/directory.server";
+import { publicRepositories } from "../_composition/repository.server";
 import styles from "./profile.module.css";
 
 export const dynamic = "force-dynamic";
