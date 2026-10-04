@@ -307,8 +307,12 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "apps/web/src/modules/assistant/rich-menu/operator.server.ts",
     "packages/line/src/mini-app/registration.ts",
     "apps/web/src/shared/presentation/entry-route.ts",
+    "packages/line/src/rich-menu/alias.ts",
     "packages/line/src/rich-menu/client.ts",
     "packages/line/src/rich-menu/image.ts",
+    "packages/line/src/rich-menu/menu.ts",
+    "packages/line/src/rich-menu/transport.ts",
+    "packages/line/src/rich-menu/user-link.ts",
     "scripts/runtime/load-env.mjs",
     "pnpm-lock.yaml",
   ])
@@ -317,6 +321,7 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "scripts/line/rich-menu/README.md",
     "scripts/line/rich-menu/sync.test.ts",
     "apps/web/src/modules/assistant/rich-menu/publication.server.test.ts",
+    "packages/line/src/rich-menu/types.ts",
     "packages/line/src/adapters/messaging/line-webhook-parser.ts",
     "apps/web/src/app/page.tsx",
   ])

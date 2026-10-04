@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
-import { createRichMenuClient } from "../src/rich-menu/client.js";
+import { createRichMenuClient, type RichMenuDefinition } from "../src/rich-menu/client.js";
 import { richMenuImage } from "../src/rich-menu/image.js";
 
 test("actual upload dimensions and malformed image rejection", () => {
@@ -23,6 +23,59 @@ test("actual upload dimensions and malformed image rejection", () => {
     assert.throws(() => richMenuImage(image.subarray(0, 10)), file);
   }
   assert.throws(() => richMenuImage(new Uint8Array(1000001)));
+});
+
+test("rich menu client keeps its existing public method surface", () => {
+  const client = createRichMenuClient("test", async () => new Response(null, { status: 200 }));
+  assert.deepEqual(Object.keys(client), [
+    "validate",
+    "create",
+    "upload",
+    "get",
+    "delete",
+    "getAlias",
+    "createAlias",
+    "updateAlias",
+    "deleteAlias",
+    "getUserMenu",
+    "getDefault",
+    "activate",
+    "deleteDefault",
+    "linkUser",
+  ]);
+});
+
+test("menu operations preserve official paths, methods, payloads and response IDs", async () => {
+  const requests: Request[] = [];
+  const menu: RichMenuDefinition = {
+    size: { width: 2500, height: 1686 },
+    selected: true,
+    name: "test",
+    chatBarText: "test",
+    areas: [],
+  };
+  const client = createRichMenuClient("test", async (input, init) => {
+    const request = new Request(input, init);
+    requests.push(request);
+    if (request.method === "POST" && request.url.endsWith("/richmenu")) {
+      return Response.json({ richMenuId: "richmenu-0123abcd" });
+    }
+    if (request.method === "GET") return Response.json({ name: "test" });
+    return new Response(null, { status: 200 });
+  });
+
+  await client.validate(menu);
+  assert.equal(requests[0]?.method, "POST");
+  assert.equal(requests[0]?.url, "https://api.line.me/v2/bot/richmenu/validate");
+
+  assert.deepEqual(await client.create(menu), { richMenuId: "richmenu-0123abcd" });
+  assert.equal(requests[1]?.method, "POST");
+  assert.equal(requests[1]?.url, "https://api.line.me/v2/bot/richmenu");
+  assert.deepEqual(await requests[1]!.json(), menu);
+
+  assert.deepEqual(await client.get("richmenu-0123abcd"), { name: "test" });
+  assert.equal(requests[2]?.method, "GET");
+  assert.equal(requests[2]?.url, "https://api.line.me/v2/bot/richmenu/richmenu-0123abcd");
 });
 
 test("default absence is distinct from API failure; no retry or error-body exposure", async () => {

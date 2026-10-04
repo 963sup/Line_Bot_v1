@@ -20,7 +20,7 @@ const RICH_MENU_SOURCES = [
   /^apps\/web\/src\/modules\/assistant\/rich-menu\/.*\.ts$/,
   /^packages\/line\/src\/mini-app\/(?:index|registration)\.ts$/,
   /^apps\/web\/src\/shared\/presentation\/entry-route\.ts$/,
-  /^packages\/line\/src\/rich-menu\/(?:index|client|image)\.ts$/,
+  /^packages\/line\/src\/rich-menu\/(?:alias|client|image|index|menu|transport|user-link)\.ts$/,
   /^scripts\/runtime\/load-env\.mjs$/,
   /^(?:pnpm-lock\.yaml|package\.json|apps\/web\/package\.json|packages\/line\/package\.json)$/,
 ];
