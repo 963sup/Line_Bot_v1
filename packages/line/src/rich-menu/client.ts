@@ -2,7 +2,6 @@ import "../server.js";
 import { createRichMenuAliasOperations } from "./alias.js";
 import { createRichMenuOperations } from "./menu.js";
 import { createRichMenuTransport } from "./transport.js";
-import type { RichMenuDefinition } from "./types.js";
 import { createRichMenuUserLinkOperations } from "./user-link.js";
 
 export type { RichMenuDefinition } from "./types.js";

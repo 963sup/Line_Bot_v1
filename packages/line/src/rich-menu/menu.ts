@@ -26,8 +26,7 @@ export function createRichMenuOperations(transport: RichMenuTransport) {
     },
     getDefault: async () =>
       transport.responseId(await transport.request("user/all/richmenu", undefined, "GET")),
-    activate: (id: string) =>
-      transport.request(`user/all/richmenu/${transport.checkedId(id)}`),
+    activate: (id: string) => transport.request(`user/all/richmenu/${transport.checkedId(id)}`),
     deleteDefault: () => transport.request("user/all/richmenu", undefined, "DELETE"),
   };
 }

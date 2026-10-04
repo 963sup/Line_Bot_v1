@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
-import {
-  createRichMenuClient,
-  type RichMenuDefinition,
-} from "../src/rich-menu/client.js";
+import { createRichMenuClient, type RichMenuDefinition } from "../src/rich-menu/client.js";
 import { richMenuImage } from "../src/rich-menu/image.js";
 
 test("actual upload dimensions and malformed image rejection", () => {
