@@ -12,6 +12,13 @@ test("context adapters, composition, agents, testing and platform database mecha
     "packages/platform/src/database/postgres/database.ts",
     "packages/platform/src/migration/runtime.ts",
     "packages/line/src/adapters.ts",
+    "packages/line/src/rich-menu/alias.ts",
+    "packages/line/src/rich-menu/client.ts",
+    "packages/line/src/rich-menu/image.ts",
+    "packages/line/src/rich-menu/menu.ts",
+    "packages/line/src/rich-menu/transport.ts",
+    "packages/line/src/rich-menu/types.ts",
+    "packages/line/src/rich-menu/user-link.ts",
   ]) {
     assert.equal(isServerOnlyPackageSource(source), true, source);
   }
