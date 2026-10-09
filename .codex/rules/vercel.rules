@@ -1,0 +1,83 @@
+vercel_commands = ["vercel", "vercel.exe", "vercel.cmd"]
+
+# ============================================================
+# Vercel: inspection and preview development
+# ============================================================
+
+prefix_rule(
+    pattern = [vercel_commands, [
+        "whoami",
+        "inspect",
+        "list",
+        "ls",
+        "logs",
+        "env",
+    ]],
+    decision = "allow",
+    justification = "Vercel inspection commands are needed for development and deployment diagnosis.",
+    match = [
+        "vercel whoami",
+        "vercel inspect example.vercel.app",
+        "vercel ls",
+        "vercel logs example.vercel.app",
+        "vercel env ls",
+    ],
+    not_match = [
+        "vercel remove project-name",
+        "vercel --prod",
+    ],
+)
+
+prefix_rule(
+    pattern = [vercel_commands, "deploy"],
+    decision = "prompt",
+    justification = "Deployments change remote project state and require confirmation of the exact target and environment.",
+    match = ["vercel deploy"],
+    not_match = ["vercel inspect example.vercel.app"],
+)
+
+
+# ============================================================
+# Vercel: production deployment and deletion
+# ============================================================
+
+prefix_rule(
+    pattern = [vercel_commands, ["--prod", "--production"]],
+    decision = "prompt",
+    justification = "Production deployments modify the live service and require explicit deployment review.",
+    match = [
+        "vercel --prod",
+        "vercel --production",
+    ],
+    not_match = [
+        "vercel",
+        "vercel inspect example.vercel.app",
+    ],
+)
+
+prefix_rule(
+    pattern = [vercel_commands, "deploy", ["--prod", "--production"]],
+    decision = "prompt",
+    justification = "Production deployments modify the live service and require explicit deployment review.",
+    match = [
+        "vercel deploy --prod",
+        "vercel deploy --production",
+    ],
+    not_match = [
+        "vercel deploy",
+    ],
+)
+
+prefix_rule(
+    pattern = [vercel_commands, ["remove", "rm"]],
+    decision = "prompt",
+    justification = "Removing Vercel projects or deployments is destructive and requires explicit review.",
+    match = [
+        "vercel remove project-name",
+        "vercel rm project-name",
+    ],
+    not_match = [
+        "vercel ls",
+        "vercel inspect example.vercel.app",
+    ],
+)

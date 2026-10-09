@@ -1,0 +1,77 @@
+package_commands = [
+    "pnpm",
+    "pnpm.exe",
+    "pnpm.cmd",
+    "npm",
+    "npm.cmd",
+    "npm.exe",
+]
+
+# ============================================================
+# Package managers: install and validation
+# ============================================================
+
+prefix_rule(
+    pattern = [package_commands, [
+        "install",
+        "i",
+        "lint",
+        "test",
+        "build",
+        "typecheck",
+        "check",
+        "validate",
+    ]],
+    decision = "allow",
+    justification = "Dependency installation and local validation/build commands are ordinary development operations.",
+    match = [
+        "pnpm install",
+        "pnpm lint",
+        "pnpm test",
+        "pnpm build",
+        "pnpm typecheck",
+        "pnpm validate",
+        "npm install",
+        "npm test",
+    ],
+    not_match = [
+        "npm publish",
+        "pnpm publish",
+    ],
+)
+
+prefix_rule(
+    pattern = [package_commands, ["run", "exec", "dlx"]],
+    decision = "allow",
+    justification = "Running project-defined scripts and development tools is part of normal local development.",
+    match = [
+        "pnpm run validate",
+        "pnpm run lint",
+        "pnpm exec biome check .",
+        "pnpm exec tsc --noEmit",
+        "npm run test",
+        "npm run build",
+    ],
+    not_match = [
+        "npm publish",
+        "pnpm publish",
+    ],
+)
+
+
+# ============================================================
+# Package publishing
+# ============================================================
+
+prefix_rule(
+    pattern = [package_commands, "publish"],
+    decision = "prompt",
+    justification = "Package publishing creates externally visible releases and requires explicit review.",
+    match = [
+        "npm publish",
+        "pnpm publish",
+    ],
+    not_match = [
+        "pnpm test",
+    ],
+)

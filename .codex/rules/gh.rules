@@ -1,0 +1,95 @@
+github_commands = ["gh", "gh.exe"]
+
+# ============================================================
+# GitHub CLI: inspection
+# ============================================================
+
+prefix_rule(
+    pattern = [github_commands, "status"],
+    decision = "allow",
+    justification = "GitHub inspection commands are required for reviewing repository and workflow state.",
+    match = ["gh status"],
+    not_match = ["gh repo delete owner/repository"],
+)
+
+prefix_rule(
+    pattern = [github_commands, "repo", "view"],
+    decision = "allow",
+    justification = "Repository view is a read-only GitHub inspection command.",
+    match = ["gh repo view owner/repository"],
+    not_match = ["gh repo delete owner/repository"],
+)
+
+prefix_rule(
+    pattern = [github_commands, "run", ["list", "view"]],
+    decision = "allow",
+    justification = "GitHub Actions run listing and inspection are read-only operations.",
+    match = ["gh run list", "gh run view 123456", "gh run view 123456 --log"],
+    not_match = ["gh run cancel 123456"],
+)
+
+prefix_rule(
+    pattern = [github_commands, "workflow", "list"],
+    decision = "allow",
+    justification = "Listing GitHub workflows is a read-only inspection operation.",
+    match = ["gh workflow list"],
+    not_match = ["gh workflow run validate.yml"],
+)
+
+prefix_rule(
+    pattern = [github_commands, "pr", ["list", "view", "checks"]],
+    decision = "allow",
+    justification = "Pull request listing and inspection are read-only GitHub operations.",
+    match = ["gh pr list", "gh pr view 123", "gh pr checks 123"],
+    not_match = ["gh pr merge 123 --squash"],
+)
+
+prefix_rule(
+    pattern = [github_commands, "issue", ["list", "view"]],
+    decision = "allow",
+    justification = "Issue listing and inspection are read-only GitHub operations.",
+    match = ["gh issue list", "gh issue view 123"],
+    not_match = ["gh issue close 123"],
+)
+# ============================================================
+# GitHub CLI: workflow execution / merge / deletion
+# ============================================================
+
+prefix_rule(
+    pattern = [github_commands, "workflow", "run"],
+    decision = "allow",
+    justification = "Manually triggering an existing development workflow is permitted; workflow permissions still govern its effects.",
+    match = [
+        "gh workflow run validate.yml",
+        "gh workflow run deploy.yml --ref main",
+    ],
+    not_match = [
+        "gh repo delete owner/repository",
+    ],
+)
+
+prefix_rule(
+    pattern = [github_commands, "pr", "merge"],
+    decision = "prompt",
+    justification = "Merging changes affects the shared repository and must only occur after validation and review requirements are satisfied.",
+    match = [
+        "gh pr merge 123 --squash",
+        "gh pr merge 123 --merge",
+    ],
+    not_match = [
+        "gh pr view 123",
+        "gh pr checks 123",
+    ],
+)
+
+prefix_rule(
+    pattern = [github_commands, "repo", "delete"],
+    decision = "prompt",
+    justification = "Repository deletion is destructive and requires explicit review.",
+    match = [
+        "gh repo delete owner/repository",
+    ],
+    not_match = [
+        "gh repo view owner/repository",
+    ],
+)

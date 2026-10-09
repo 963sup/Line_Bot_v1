@@ -16,8 +16,9 @@
 | 路徑未知 | `repository-mapper` |
 | symptom 有、根因未知 | `root-cause-analyst` |
 | Owner/Truth/Boundary/Dependency 分析 | `architecture-analyst` |
-| current framework/provider/API facts | `technical-researcher` |
-| 已決定的 bounded change | `implementation-worker` |
+| current framework/provider/API/CLI facts (GitHub CLI, Supabase, Vercel, pnpm/Codex CLI) | `technical-researcher` |
+| tooling / command-policy failure with unknown cause | `root-cause-analyst` |
+| 已決定的 bounded source/schema/workflow/Codex-config change | `implementation-worker` |
 | concrete diff defect/regression review | `diff-reviewer` |
 | completion/evidence claim verification | `evidence-verifier` |
 | 獨立最終 architecture decision | `architecture-decider` |

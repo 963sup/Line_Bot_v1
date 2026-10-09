@@ -1,7 +1,6 @@
 # Project defaults; trusted projects only. Live session overrides take precedence.
 # Preserve the user's permissions, approval policy and MCP settings.
 # Primary model: GPT-6 Astra (gpt-6-astra).
-model = "gpt-6-astra"
 developer_instructions = """
 Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
 Model routing and subagent roles are owned by .codex/agents/AGENTS.md.
