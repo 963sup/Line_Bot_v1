@@ -27,6 +27,7 @@
 
 ```text
 pnpm tooling:doctor
+pnpm skills:list
 pnpm change:status
 pnpm change:impact "<intent>"
 pnpm change:preflight
