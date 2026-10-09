@@ -308,6 +308,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/834_attendance_supplements.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/840_workplaces.sql",
       "role": "authoritative"
     },
@@ -1167,6 +1171,14 @@
       "path": "supabase/schemas/833_attendance_outbox.sql",
       "authority": true,
       "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_supplement_requests",
+      "kind": "table",
+      "path": "supabase/schemas/834_attendance_supplements.sql",
+      "authority": true,
+      "semanticOwner": "attendance",
+      "concept": "attendance-supplement-request"
     },
     {
       "name": "workplaces",

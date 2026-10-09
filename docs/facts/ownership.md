@@ -19,7 +19,7 @@ Workforce
 → Employment / work-policy foundation
 
 Attendance
-→ actual attendance / workplace facts
+→ actual attendance plus User-submitted supplement requests and Repository ADMIN decisions
 
 Payroll
 → payroll authority when activated

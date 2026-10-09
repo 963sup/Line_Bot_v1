@@ -62,6 +62,21 @@ export async function accessibleRepositories(
   return repositorySummaries(sql, rows);
 }
 
+/** Stable IDs for current effective Repository admins; no owner locator is needed for authorization. */
+export async function repositoryAdministeredIds(sql: Sql, userId: string): Promise<string[]> {
+  await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+  const rows = (
+    await sql.query(
+      `SELECT repository_id
+       FROM repository_effective_access
+       WHERE user_id=$1 AND 'admin'=ANY(permissions)
+       ORDER BY repository_id`,
+      [userId],
+    )
+  ).rows as Array<{ repository_id: string }>;
+  return rows.map((row) => row.repository_id);
+}
+
 export async function readableRepositoriesByIds(
   sql: Sql,
   userId: string,

@@ -25,6 +25,7 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Attendance | attendance | authoritative | current | Actual attendance lifecycle, Repository-member clock eligibility, immutable address snapshots and attendance facts. |
+| Attendance Supplement Request | attendance-supplement-request | authoritative | current | A User-submitted proposal to append a complete historical Attendance session or close that User's existing open session; it is not an Attendance fact until a current effective Repository ADMIN approves it. |
 | Workplace | workplace | authoritative | current-data-only | Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository address properties. |
 
 ## Capabilities
@@ -32,6 +33,8 @@ Subdomain classification is not currently modeled in `architecture/semantic-mode
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | record-attendance | required | implemented | Record valid attendance while preserving eligibility, replay, version, and isolation semantics. |
+| review-attendance-supplement | required | implemented | Let a current effective Repository ADMIN User approve or reject a pending Attendance supplement, with approval atomically appending the Attendance fact and decision event. |
+| submit-attendance-supplement | required | implemented | Let an active User propose a missing complete session or a missing end time without directly changing authoritative Attendance facts. |
 
 ## Context Relationships
 
