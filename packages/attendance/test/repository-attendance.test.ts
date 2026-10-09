@@ -304,7 +304,7 @@ test("review inbox shows all pending requests and repository submissions enforce
       await pg.query(
         "SELECT count(*) AS count FROM app_private.attendance_supplement_requests WHERE repository_id=ANY(ARRAY['repo','repo-2']::text[]) AND status='PENDING' AND uid<>'outsider'",
       )
-    ).rows[0]!.count,
+    ).rows[0] as { count: string },
   );
   assert.equal(fullInbox.review.length, expectedVisible);
   assert.ok(fullInbox.review.length > 100);
