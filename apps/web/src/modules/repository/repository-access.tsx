@@ -200,6 +200,7 @@ export default function RepositoryAccess({
             <h2>
               {data.repository.ownerLogin}/{data.repository.name}
             </h2>
+            <p>所有權：{data.repository.ownerKind === "USER" ? "Personal User" : "Organization"}</p>
             <p>
               Current permissions：
               {data.repository.actorPermissions.length
@@ -207,8 +208,9 @@ export default function RepositoryAccess({
                 : "OrganizationOwner recovery only"}
             </p>
             <p className="crud-lifecycle-note">
-              Repository owns access grants；Organization/Team membership remains owned by those
-              scopes. Grant 不會建立 Organization 或 Team membership。
+              Repository ADMIN 才是日常 access 管理者；OrganizationOwner recovery 不會自動建立
+              Repository access。Organization/Team membership remains owned by those scopes，Grant
+              不會建立 Organization 或 Team membership。
             </p>
           </section>
 

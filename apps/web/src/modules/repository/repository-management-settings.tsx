@@ -267,6 +267,14 @@ export default function RepositoryManagementSettings({
             Visibility：{repository.visibility.toUpperCase()} ·{" "}
             {repository.archived ? "ARCHIVED" : "ACTIVE"}
           </p>
+          <p>
+            所有權：{repository.ownerKind === "USER" ? "Personal User" : "Organization"} ·{" "}
+            {repository.ownerLogin}
+          </p>
+          <p className="crud-lifecycle-note">
+            Repository lifecycle 只由當下有效的 Repository ADMIN 管理；OrganizationOwner 不會因
+            組織角色自動取得這個 Repository 的操作權。
+          </p>
           {repository.internalEnterpriseId && (
             <p>INTERNAL scope：Enterprise {repository.internalEnterpriseId}</p>
           )}
