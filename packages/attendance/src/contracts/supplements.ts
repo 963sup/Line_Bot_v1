@@ -25,6 +25,7 @@ export type AttendanceSupplement = Readonly<{
 }>;
 
 export type AttendanceSupplementInbox = Readonly<{
+  viewerId: string;
   mine: AttendanceSupplement[];
   review: AttendanceSupplement[];
 }>;

@@ -93,10 +93,15 @@ function parseAttendanceSupplement(value: unknown): AttendanceSupplement {
 
 export function parseAttendanceSupplementInbox(value: unknown): AttendanceSupplementInbox {
   const inbox = objectValue(value);
-  if (!Array.isArray(inbox.mine) || !Array.isArray(inbox.review)) {
+  if (
+    typeof inbox.viewerId !== "string" ||
+    !Array.isArray(inbox.mine) ||
+    !Array.isArray(inbox.review)
+  ) {
     throw new AttendanceError(502, "補登清單回應不完整，請重新整理。");
   }
   return {
+    viewerId: inbox.viewerId,
     mine: inbox.mine.map(parseAttendanceSupplement),
     review: inbox.review.map(parseAttendanceSupplement),
   };

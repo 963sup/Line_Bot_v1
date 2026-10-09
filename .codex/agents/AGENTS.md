@@ -39,7 +39,7 @@ Primary GPT-6 可直接做 final decision；不為形式重派。只使用會改
 ## Protected-branch delivery
 
 - Deliver changes to `main` through a pull request; do not push directly to protected `main` or force-push shared history.
-- Keep an in-progress change in Draft. Treat the required aggregate `validate` result as merge evidence only when it succeeded for the exact current PR head and the PR is based on current `main`; a new head or moved base invalidates that evidence. For a Ready PR, return it to Draft, update the branch, then mark it Ready to trigger full validation for the new candidate, as defined by the development workflow.
+- Keep an in-progress change in Draft. Treat the required aggregate `validate` result as merge evidence only when it succeeded for the exact current PR head and the PR is based on current `main`; a new head or moved base invalidates that evidence. Exact event triggers and Draft/Ready behavior are owned by the [development workflow](../../docs/reference/engineering/development-workflow.md); follow that source and do not require a Draft toggle by default.
 - When validation fails, inspect the job logs and fix the owning source, contract, dependency, or placement. Do not weaken governing architecture, data-boundary, dead-code, or test checks to obtain a green result.
 - Merge only after the required `validate` check passes. Follow the repository merge method and read back the resulting `main` commit; report CI, deployment, remote-state, and device evidence separately.
 

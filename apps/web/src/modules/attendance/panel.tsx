@@ -17,6 +17,7 @@ import type {
   AttendanceSupplementReview,
   AttendanceSupplementSubmission,
 } from "@line_bot_v1/attendance/contracts/input/attendance-supplement";
+import { parseAttendanceSupplementReview } from "@line_bot_v1/attendance/contracts/input/attendance-supplement";
 import type { AttendanceSupplementInbox } from "@line_bot_v1/attendance/contracts/supplements";
 import { attendanceActionForMenuState } from "@line_bot_v1/attendance/domain/policies/attendance-view";
 import {
@@ -56,6 +57,41 @@ const supplementStatus = {
 } as const;
 
 const message = (e: unknown) => (e instanceof Error ? e.message : "出勤結果尚未確認，請稍後再試。");
+const pendingReviewStorageKey = (viewerId: string) =>
+  `attendance:supplement-reviews:v1:${encodeURIComponent(viewerId)}`;
+
+function readPendingReviews(viewerId: string): Record<string, AttendanceSupplementReview> {
+  const key = pendingReviewStorageKey(viewerId);
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return {};
+    const value: unknown = JSON.parse(raw);
+    if (!Array.isArray(value)) throw new Error("Invalid stored review commands");
+    return Object.fromEntries(
+      value.map((command) => {
+        const parsed = parseAttendanceSupplementReview(command);
+        return [parsed.supplementId, parsed];
+      }),
+    );
+  } catch {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Storage can be disabled by the browser; there is nothing safe to recover.
+    }
+    return {};
+  }
+}
+
+function writePendingReview(viewerId: string, command: AttendanceSupplementReview, remove = false) {
+  const key = pendingReviewStorageKey(viewerId);
+  const pending = readPendingReviews(viewerId);
+  if (remove) delete pending[command.supplementId];
+  else pending[command.supplementId] = command;
+  if (Object.keys(pending).length)
+    window.sessionStorage.setItem(key, JSON.stringify(Object.values(pending)));
+  else window.sessionStorage.removeItem(key);
+}
 
 export default function AttendancePanel({ liffId }: { liffId: string }) {
   const [data, setData] = useState<AttendanceSnapshot | null>(null);
@@ -145,7 +181,10 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     setSupplementError("");
     try {
       const value = await readSupplements(access);
-      if (ticket === undefined || ticket === supplementGeneration.current) setSupplements(value);
+      if (ticket === undefined || ticket === supplementGeneration.current) {
+        setSupplements(value);
+        setPendingReviews(readPendingReviews(value.viewerId));
+      }
     } catch (e) {
       if (ticket === undefined || ticket === supplementGeneration.current) {
         if (e instanceof Error && e.name === "AttendanceAccessError") clearPrivate();
@@ -363,8 +402,15 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
   }
 
   async function sendReview(command: AttendanceSupplementReview) {
-    if (!token || supplementBusy) return;
+    if (!token || supplementBusy || !supplements?.viewerId) return;
     const identityTicket = supplementGeneration.current;
+    const viewerId = supplements.viewerId;
+    try {
+      writePendingReview(viewerId, command);
+    } catch {
+      setSupplementError("無法保存審核重試資料；請檢查此分頁的儲存空間後再送出。");
+      return;
+    }
     setPendingReviews((current) => ({ ...current, [command.supplementId]: command }));
     setSupplementBusy(true);
     setSupplementError("");
@@ -378,6 +424,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (identityTicket !== supplementGeneration.current) return;
       if (!response.ok) {
         if (response.status < 500) {
+          writePendingReview(viewerId, command, true);
           setPendingReviews((current) => {
             const next = { ...current };
             delete next[command.supplementId];
@@ -388,6 +435,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
         throw new Error(value.error || "審核結果尚未確認，請重新整理或重送同一筆。");
       }
       parseAttendanceSupplementReceipt(value);
+      writePendingReview(viewerId, command, true);
       setPendingReviews((current) => {
         const next = { ...current };
         delete next[command.supplementId];

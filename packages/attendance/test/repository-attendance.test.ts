@@ -306,3 +306,31 @@ test("review inbox shows all pending requests and repository submissions enforce
   assert.equal(fullInbox.review.length, expectedVisible);
   assert.ok(fullInbox.review.length > 100);
 });
+
+test("applicant inbox keeps every pending request visible beyond the recent-history limit", async (t) => {
+  const { pg, store } = await fixture();
+  t.after(() => pg.close());
+  const member = { provider: "line:test", subject: "U11111111111111111111111111111111" };
+  await pg.query(
+    `INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+     VALUES('repo-2','owner','USER','test-2','public',1)`,
+  );
+  await pg.query(
+    `INSERT INTO app_private.attendance_supplement_requests(
+       id,uid,repository_id,kind,started_at,ended_at,site_snapshot,reason,submitted_at
+     )
+     SELECT gen_random_uuid(),'member',repository_id,'new-session',
+       $1::bigint-(sequence::bigint*7200000)-3600000,$1::bigint-(sequence::bigint*7200000),
+       jsonb_build_object('id',repository_id,'repositoryId',repository_id,'name',repository_id,
+         'address','Test address','latitude',25,'longitude',121,'radius',100,'version',1),
+       'pending applicant request',$1
+     FROM unnest(ARRAY['repo','repo-2']::text[]) AS repositories(repository_id)
+     CROSS JOIN generate_series(1,60) AS series(sequence)`,
+    [now],
+  );
+
+  const inbox = await store.list("member", now, member);
+
+  assert.equal(inbox.mine.length, 120);
+  assert.ok(inbox.mine.every((request) => request.status === "PENDING"));
+});

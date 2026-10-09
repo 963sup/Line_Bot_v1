@@ -406,8 +406,17 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       }
       const reviewRepositoryIds = await repositoryAdministeredIds(sql, id);
       const mine = await sql.query(
-        `SELECT * FROM attendance_supplement_requests
-         WHERE uid=$1 ORDER BY submitted_at DESC,id DESC LIMIT 100`,
+        `SELECT * FROM (
+           SELECT * FROM attendance_supplement_requests
+           WHERE uid=$1 AND status='PENDING'
+           UNION ALL
+           SELECT * FROM (
+             SELECT * FROM attendance_supplement_requests
+             WHERE uid=$1 AND status<>'PENDING'
+             ORDER BY submitted_at DESC,id DESC LIMIT 100
+           ) AS recent_history
+         ) AS applicant_requests
+         ORDER BY submitted_at DESC,id DESC`,
         [id],
       );
       const review = reviewRepositoryIds.length
@@ -419,6 +428,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
           )
         : { rows: [] };
       return {
+        viewerId: id,
         mine: (mine.rows as AttendanceSupplementRow[]).map(attendanceSupplement),
         review: (review.rows as AttendanceSupplementRow[]).map(attendanceSupplement),
       };
