@@ -30,7 +30,8 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/enterprises`, `/enterprises/{enterpriseSlug}` | Authenticated Enterprise collection / canonical governance detail；slug 只定位，不授權 |
 | `/enterprises/{enterpriseSlug}/teams/{teamSlug}` | Authenticated Enterprise Team canonical detail；stable TeamId 由 server 產生，slug 由 name derive並隨 rename 更新 |
 | `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
-| `/projects` | Authorized Project collection；Project-owned User/Team collaborator grants 與 public read projection 都由 Project owner重驗，來源 Repository/Issue 仍逐項重驗 access；planning write management 由 `/api/project-management` 承接 |
+| `/projects` | Authorized Project collection；可建立 Personal/Organization Project 並進入 Project detail；Project-owned User/Team collaborator grants 與 public read projection 都由 Project owner重驗，來源 Repository/Issue 仍逐項重驗 access；planning write management 由 `/api/project-management` 承接 |
+| `/projects/new`、`/projects/{projectId}` | Project create/detail presentation；detail 由 Project `ADMIN` 管理設定與協作者、由 `WRITE`/`ADMIN` 維護 Project-local DraftIssue 與 progress 欄位，命令使用 owner current role、expected version 與 replay contract；不改寫來源 Issue |
 | `/repositories`, `/explore` | Repository collection/workbench、Trending / Awesome Lists / Activity discovery + Star surface |
 | `/stars` | Current User 已 Star 且目前仍可存取的 Repository；使用既有 Repository Star query，Home Favorites 為相同 query 的摘要入口 |
 | `/issues` | Repository 選擇入口，進入 `/{login}/{repository}/issues`；目前不是跨 Repository Issue aggregate |
@@ -91,6 +92,7 @@ Current Repository-scoped collaboration/resource API：
 | `/api/projects` | Authorized Project collection read；Project-owned collaborator/public read policy與來源 access 每次重新驗證 |
 | `/api/projects/by-number/{projectNumber}` | owner-scoped canonical Project number lookup；owner login + number 只定位，仍重新驗 current Project access |
 | `/api/project-management` | Project current planning management；root lifecycle、User/Team collaborator、Item/DraftIssue、typed fields/values、views、status updates 都保留 expectedVersion/exact replay 與 immutable Project events |
+| `/api/project-management/users` | Project-scoped User lookup；exact login candidate 僅供 current Project ADMIN 邀請，label lookup 只接受 snapshot 中已可見的 User IDs |
 
 Discussion read 與 current management write 都由 Discussion owner 承接；read locator 不授權，write 仍逐次重驗 Repository access、version 與 replay。Project aggregate-root read 與 `manage-project-planning` 都已 current；Project-owned collaborator、Item/DraftIssue、typed fields/values、views、status updates 是正式 runtime capability，來源 Repository/Issue authority 不轉移。Project WBS 與 Project-local Milestone 保持相鄰 planning persistence，不因這些 current capability 被重新解讀。
 

@@ -24,6 +24,9 @@ Account remains authoritative for User/Organization identity. Organization and T
 Canonical capability `manage-project-planning` is implemented alongside `read-projects`.
 
 - HTTP management transport: `GET/POST /api/project-management`.
+- User lookup transport: `GET /api/project-management/users`. Every lookup first obtains the current authorized Project view; exact-login invite candidates require `ADMIN`, while display-label lookups accept only User IDs already present in that view and return active User login projections.
+- Web presentation supports Project creation, settings, Project User/Team grants, Project-local DraftIssue items and a Project-owned single-select progress field. User invite lookup is an exact-login projection and requires current Project `ADMIN`; it never lists arbitrary Users.
+- Project User label lookup is limited to IDs already visible in the authorized Project snapshot and returns only active User login labels.
 - Owner-number lookup: `GET /api/projects/by-number/{projectNumber}?owner={ownerLogin}`.
 - Stable ProjectId remains the authoritative identity; owner login and number are locators only.
 - Creation allocates a number inside the owner Account scope. Number uniqueness is owner-scoped and independent from mutable title.

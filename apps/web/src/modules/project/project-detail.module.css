@@ -1,0 +1,92 @@
+.projectReadme {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.collaboratorActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.collaboratorActions label {
+  margin: 0;
+}
+
+.collaboratorActions select {
+  min-height: 42px;
+}
+
+.progressRow {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.progressRow select {
+  width: auto;
+  min-width: 132px;
+  margin: 0;
+}
+
+.workItem {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.workItemSummary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workItemSummary > span {
+  min-width: 0;
+}
+
+.itemBody {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.workItem details > summary {
+  min-height: 42px;
+  padding: 10px 0 2px;
+  color: var(--green-strong);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.workItem details form {
+  margin-top: 12px;
+}
+
+@media (max-width: 520px) {
+  .collaboratorActions {
+    align-items: flex-end;
+    flex-direction: column;
+  }
+
+  .progressRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .progressRow select {
+    width: 100%;
+  }
+}
