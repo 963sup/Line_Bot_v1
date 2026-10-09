@@ -947,6 +947,16 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "attendance-supplement-request",
+      "canonicalName": "Attendance Supplement Request",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "A User-submitted proposal to append a complete historical Attendance session or close that User's existing open session; it is not an Attendance fact until a current effective Repository ADMIN approves it.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "workplace",
       "canonicalName": "Workplace",
       "kind": "authoritative",
@@ -2796,6 +2806,68 @@
           "packages/attendance/test/attendance-shifts.test.ts"
         ],
         "note": "Attendance implementation evidence is static; remote/device acceptance is separate."
+      }
+    },
+    {
+      "id": "submit-attendance-supplement",
+      "owner": "attendance",
+      "kind": "leaf",
+      "intent": "Let an active User propose a missing complete session or a missing end time without directly changing authoritative Attendance facts.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": ["semantic-architecture", "schema", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "The submitting User can propose a closed session for a currently eligible Repository address, or propose only an end time for their own open Repository session; each proposal is durable and remains pending until reviewed.",
+        "sourcePaths": [
+          "packages/attendance/src/application/supplements.ts",
+          "packages/attendance/src/contracts/supplements.ts",
+          "packages/attendance/src/contracts/input/attendance-supplement.ts",
+          "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
+        ],
+        "publicExports": [
+          "./application/supplements",
+          "./contracts/supplements",
+          "./contracts/input/attendance-supplement",
+          "./contracts/dto/attendance-supplement"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/attendance/[[...operation]]/route.ts",
+          "apps/web/src/modules/attendance/panel.tsx"
+        ],
+        "testPaths": [],
+        "note": "A proposal never mutates an existing started time or a closed session."
+      }
+    },
+    {
+      "id": "review-attendance-supplement",
+      "owner": "attendance",
+      "kind": "leaf",
+      "intent": "Let a current effective Repository ADMIN User approve or reject a pending Attendance supplement, with approval atomically appending the Attendance fact and decision event.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": ["semantic-architecture", "schema", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked from current Repository grants on every read and decision; Organization administration alone is not sufficient, and requesters cannot approve their own requests.",
+        "sourcePaths": [
+          "packages/attendance/src/application/supplements.ts",
+          "packages/attendance/src/contracts/supplements.ts",
+          "packages/attendance/src/contracts/input/attendance-supplement.ts",
+          "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
+        ],
+        "publicExports": [
+          "./application/supplements",
+          "./contracts/supplements",
+          "./contracts/input/attendance-supplement",
+          "./contracts/dto/attendance-supplement"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/attendance/[[...operation]]/route.ts",
+          "apps/web/src/modules/attendance/panel.tsx"
+        ],
+        "testPaths": [],
+        "note": "Approval adds or closes an Attendance session and records the reviewer in the same transaction; it does not grant Ledger rewards or calculate payroll."
       }
     },
     {

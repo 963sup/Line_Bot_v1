@@ -2,6 +2,7 @@ export {
   accessibleRepositories,
   authorizedRepository,
   readableRepositoriesByIds,
+  repositoryAdministeredIds,
   repositoryArchived,
   repositoryOwnerIdentity,
   repositoryScope,

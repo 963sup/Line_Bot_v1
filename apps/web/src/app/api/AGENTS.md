@@ -30,7 +30,7 @@
 | `/api/audit` | Audit read query over Identity/Access governance evidence; exact current EnterpriseOwner / OrganizationOwner scope required |
 | `/api/notifications` | recipient-scoped Notifications；Issue/Discussion-backed source 在 create/read/mark-read 都需 current Repository source access |
 | `/api/assistant` | Assistant Ask / Issue-draft Generate / text Review transport；current User qualification required，output 不形成 formal write |
-| `/api/attendance`、`/api/attendance/clock-in`、`/api/attendance/clock-out` | Attendance 現行 subject 與 Repository 地址打卡契約 |
+| `/api/attendance`、`/api/attendance/clock-in`、`/api/attendance/clock-out`、`/api/attendance/supplements`、`/api/attendance/supplements/review` | Attendance 現行 subject 與 Repository 地址打卡契約；補登 request 由 User 提出，決策時重驗該 Repository 當下 effective ADMIN |
 | `/api/expenses/{id}`、`/api/partners` | Expense／Partners |
 | `/api/line/webhook` | LINE 驗簽、Bot qualification 與 event delivery，再交各 owner |
 | `/api/internal/attendance-maintenance` | Attendance 內部維護；不是一般使用者入口 |

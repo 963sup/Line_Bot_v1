@@ -4,11 +4,13 @@ Low-frequency Attendance flows and edge cases. The owner boundary and invariants
 
 ## Operations
 
-目前只有兩個明確 business commands：
+目前有打卡與補登審核 commands：
 
 ```text
 clock-in  -> 建立一筆 open attendance session
 clock-out -> 結束目前 open attendance session
+submit-supplement -> 提出補一段完整歷史 session 或補目前 open session 的下班時間
+review-supplement -> Repository 當下 effective ADMIN User 核准或拒絕一筆 pending request
 ```
 
 08:00、17:00、午夜或 Rich Menu image state 都不會自動產生打卡。沒有通用 toggle；舊 UI 狀態不能反向觸發另一個 command。
@@ -34,7 +36,15 @@ Attendance 決定：
 - reward business day。
 - reward amount = 0.5 Coin。
 
-Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只投影 balance。[DailyCheckIn](../../owners/daily-check-in.md) 是獨立的每日簽到 owner；既有 source context/type 的相容與保留規則由該 owner 維護，不因更名重寫 persisted literal。Attendance reward 與薪資無關。
+Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只投影 balance。[DailyCheckIn](../../owners/daily-check-in.md) 是獨立的每日簽到 owner；既有 source context/type 的相容與保留規則由該 owner 維護，不因更名重寫 persisted literal。Attendance reward 與薪資無關；補登也不發 Coin。
+
+## Supplement review
+
+- 補登申請不是出勤事實；只有核准後，完整時段才會新增 closed session，或既有 open session 才會補上 ended time。
+- 已有的 start time、Repository identity、point snapshot 與已結束 session 不可由補登改寫；時間重疊或原 session 已變更時拒絕核准。
+- Applicant 可提交台灣時間、Repository 地址與原因；申請快照記錄提交者主張，不是當時 GPS 驗證證據。
+- Reviewer 必須在讀取及決策當下都具有該 Repository 的 effective `ADMIN`。Organization admin 不自動取得此權限；申請者不得核准自己的 request。
+- 核准與出勤事實、事件、Attendance version 及 menu state projection 同 transaction。拒絕必須留下原因，不產生薪資結果。
 
 ## Repository address eligibility
 

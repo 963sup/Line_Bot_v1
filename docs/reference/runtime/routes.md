@@ -21,7 +21,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | --- | --- |
 | `/home` | 工作台組裝；current IA = Popular Repository projection + primary Workspace links + collapsed More tools。Popular 重用 Repository discovery query，不建立第二份 ranking truth；Issues/Discussions仍先選 Repository再進 canonical scoped route；Projects進入 authorized `/projects` collection；Starred直接進 `/stars`；More 只重排既有 destination，不建立 browser-owned business state |
 | `/assistant` | Assistant one-shot Ask / Issue-draft Generate / text Review；current User qualification required，output 不直接形成 formal write；`/home/assistant` 為 compatibility redirect |
-| `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢與明確操作 |
+| `/attendance`, `/attendance/clock-in`, `/attendance/clock-out` | Attendance 查詢、明確打卡、補登申請與 Repository ADMIN 審核 |
 | `/diary` | Product external-entry surface；不代表存在 Diary business state |
 | `/expenses` | 指定 Expense 操作／結果 |
 | `/team` | Organization Team collection/workbench；不是 Team resource identity |
@@ -76,6 +76,7 @@ Current Repository-scoped collaboration/resource API：
 
 | Route | Responsibility |
 | --- | --- |
+| `/api/attendance`, `/api/attendance/clock-in`, `/api/attendance/clock-out`, `/api/attendance/supplements`, `/api/attendance/supplements/review` | Attendance state / clock commands / User-submitted supplement requests / effective Repository ADMIN decisions；所有 protected call 重新驗證 identity，review 每次重驗 Repository access |
 | `/api/issues`, `/api/issues/{issueNumber}` | Issue list/detail read and replay-safe command transport；read 投影分開回 canonical `state/stateReason` 與 local `workflowStatus`，並含 body/assignees；保留 workbench/default repository、repository id 與 `owner` + `name` selector 行為 |
 | `/api/issue-types` | Organization-scoped IssueType definition list/create/update/delete；current active `OrganizationOwner` only，disabled/tombstone lifecycle independent from Issue workflow/permission |
 | `/api/issue-collaboration` | Issue collaboration + nullable IssueType assign/clear；assignment rechecks Repository triage authority and same Organization scope |

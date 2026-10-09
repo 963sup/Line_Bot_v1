@@ -12,6 +12,10 @@
       "types": "./dist/application/maintenance.d.ts",
       "default": "./dist/application/maintenance.js"
     },
+    "./application/supplements": {
+      "types": "./dist/application/supplements.d.ts",
+      "default": "./dist/application/supplements.js"
+    },
     "./contracts/clock": {
       "types": "./dist/contracts/clock.d.ts",
       "default": "./dist/contracts/clock.js"
@@ -24,9 +28,21 @@
       "types": "./dist/contracts/dto/attendance-presentation.d.ts",
       "default": "./dist/contracts/dto/attendance-presentation.js"
     },
+    "./contracts/dto/attendance-supplement": {
+      "types": "./dist/contracts/dto/attendance-supplement.d.ts",
+      "default": "./dist/contracts/dto/attendance-supplement.js"
+    },
     "./contracts/input/attendance-command": {
       "types": "./dist/contracts/input/attendance-command.d.ts",
       "default": "./dist/contracts/input/attendance-command.js"
+    },
+    "./contracts/input/attendance-supplement": {
+      "types": "./dist/contracts/input/attendance-supplement.d.ts",
+      "default": "./dist/contracts/input/attendance-supplement.js"
+    },
+    "./contracts/supplements": {
+      "types": "./dist/contracts/supplements.d.ts",
+      "default": "./dist/contracts/supplements.js"
     },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",

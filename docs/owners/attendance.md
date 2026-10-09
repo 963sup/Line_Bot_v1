@@ -4,7 +4,7 @@ Read this file for the Attendance owner boundary and invariants. Load [detailed 
 
 ## Responsibility
 
-Attendance owns clock-in / clock-out、open session invariant、time classification、Repository-address eligibility、clock reward eligibility / amount、write replay/version 與 attendance-derived menu/notification expectations。Asset denomination、Wallet balance 與 durable Ledger history 由各自 owner 定義；LINE delivery、LIFF runtime 與 deployment 不屬本 module business authority。
+Attendance owns clock-in / clock-out、open session invariant、time classification、Repository-address eligibility、clock reward eligibility / amount、supplement requests/reviews、write replay/version 與 attendance-derived menu/notification expectations。Asset denomination、Wallet balance 與 durable Ledger history 由各自 owner 定義；LINE delivery、LIFF runtime 與 deployment 不屬本 module business authority。
 
 ## Session invariants
 
@@ -25,6 +25,16 @@ Write command 帶 stable request UUID、`expectedVersion` 與定位 payload。Ac
 - Session state、version、event、Ledger credit、receipt 與必要 outbox expectation 同 transaction commit/rollback；value persistence 不拆成遠端 service call。
 
 Browser `sessionStorage` 只能協助 UX 恢復；server receipt/version/state 才是 authority。
+
+## Supplement requests
+
+- User 只能提出補登，不可直接建立或改寫 Attendance session。
+- MVP 支援兩種提案：新增一段完整的已結束歷史 session；或替自己的未結束 Repository session 提出下班時間。第二種核准只做單向 close，不改上班時間、Repository 或地址快照。
+- 補登地點取自申請時保存的 Repository address snapshot；它是申請與人工審核內容，不代表系統驗證了歷史 GPS 位置。
+- Repository 當下有效的 `ADMIN` User 才能看到待審核項目並核准／拒絕。Organization admin 身分本身不授權；Organization-owned Repository 也必須重驗該 User 的 Repository `ADMIN` access。
+- 申請人不能核准自己的補登。拒絕必須記錄理由；每一決定重驗當下 Repository permission、stable command identity 與 request version。
+- 核准建立/結束出勤事實、追加事件、更新版本、留下審核者與更新必要 menu state 同 transaction commit/rollback。拒絕只結束 request 並追加事件。
+- 補登不發 Ledger 打卡獎勵，也不計算薪資；正式薪資由後續範圍處理。
 
 ## Qualification
 

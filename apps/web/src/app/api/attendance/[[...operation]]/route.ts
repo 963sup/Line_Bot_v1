@@ -1,6 +1,10 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { attendanceClockReceipt } from "@line_bot_v1/attendance/contracts/dto/attendance-client";
 import { parseAttendanceInput } from "@line_bot_v1/attendance/contracts/input/attendance-command";
+import {
+  parseAttendanceSupplementReview,
+  parseAttendanceSupplementSubmission,
+} from "@line_bot_v1/attendance/contracts/input/attendance-supplement";
 import { AttendanceError } from "@line_bot_v1/attendance/domain/error";
 import {
   type AttendanceAction,
@@ -10,18 +14,26 @@ import { captureHandledServerError } from "../../../../shared/observability/serv
 import { infrastructureFailureCode } from "../../../../shared/server/failure-code";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../../../shared/server/http";
 import { RequestIdentityError } from "../../../../shared/server/request-identity-error";
-import { clockAttendance, syncMemberAttendance } from "../../_composition/attendance.server";
+import {
+  attendanceSupplements,
+  clockAttendance,
+  syncMemberAttendance,
+} from "../../_composition/attendance.server";
 import { requestLineIdentity } from "../../_composition/request-identity.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type AttendanceRoute = "root" | AttendanceAction | "unknown";
+type AttendanceRoute = "root" | "supplements" | "supplement-review" | AttendanceAction | "unknown";
 
 function attendanceRoute(request: Request): AttendanceRoute {
   const segments = new URL(request.url).pathname.split("/").filter(Boolean);
   if (segments[0] !== "api" || segments[1] !== "attendance") return "unknown";
   if (segments.length === 2) return "root";
+  if (segments.length === 3 && segments[2] === "supplements") return "supplements";
+  if (segments.length === 4 && segments[2] === "supplements" && segments[3] === "review") {
+    return "supplement-review";
+  }
   if (segments.length !== 3) return "unknown";
   return attendanceActionFromOperation(segments[2]) ?? "unknown";
 }
@@ -105,10 +117,11 @@ function attendanceApiError(error: unknown) {
 export async function GET(request: Request) {
   const route = attendanceRoute(request);
   if (route === "unknown") return new Response(null, { status: 404 });
-  if (route !== "root") return methodNotAllowed("POST");
+  if (route !== "root" && route !== "supplements") return methodNotAllowed("POST");
 
   try {
     const subject = await requestLineIdentity(request);
+    if (route === "supplements") return jsonResponse(await attendanceSupplements.list(subject));
     if (new URL(request.url).searchParams.get("view") === "clock")
       return jsonResponse(await clockAttendance.prepare(subject));
     return jsonResponse(await clockAttendance.get(subject));
@@ -123,8 +136,16 @@ export async function POST(request: Request) {
   if (route === "root") return methodNotAllowed("GET");
 
   try {
-    const input = parseAttendanceInput(await readAttendanceJsonBody(request));
     const subject = await requestLineIdentity(request);
+    if (route === "supplements") {
+      const input = parseAttendanceSupplementSubmission(await readAttendanceJsonBody(request));
+      return jsonResponse(await attendanceSupplements.submit(subject, input));
+    }
+    if (route === "supplement-review") {
+      const input = parseAttendanceSupplementReview(await readAttendanceJsonBody(request));
+      return jsonResponse(await attendanceSupplements.review(subject, input));
+    }
+    const input = parseAttendanceInput(await readAttendanceJsonBody(request));
     const result = await clockAttendance.execute(subject, route, input);
     await syncMemberAttendance(subject).catch(() => {});
     if (new URL(request.url).searchParams.get("view") === "clock")
