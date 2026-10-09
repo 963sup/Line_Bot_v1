@@ -334,3 +334,82 @@ test("applicant inbox keeps every pending request visible beyond the recent-hist
   assert.equal(inbox.mine.length, 120);
   assert.ok(inbox.mine.every((request) => request.status === "PENDING"));
 });
+
+test("OrganizationOwner without Repository ADMIN cannot review an Organization-owned supplement", async (t) => {
+  const { pg, store } = await fixture();
+  t.after(() => pg.close());
+
+  await pg.exec(`
+    INSERT INTO app_private.users(id,status,"createdAt")
+    VALUES('org-owner','active',1),('org-worker','active',1);
+    SELECT app_private.claim_account_login(id,'USER',id,1)
+    FROM app_private.users
+    WHERE id IN ('org-owner','org-worker');
+    INSERT INTO app_private.user_identities(provider,subject,user_id)
+    VALUES
+      ('line:test','U33333333333333333333333333333333','org-worker'),
+      ('line:test','U44444444444444444444444444444444','org-owner');
+  `);
+  await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
+    "org-scope",
+    "org-owner",
+    "org-login",
+    "Org Scope",
+    2,
+  ]);
+  await pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)", [
+    "org-repo",
+    "org-owner",
+    "org-scope",
+    "Org Repo",
+    "private",
+  ]);
+  await pg.query(
+    "DELETE FROM app_private.repository_access WHERE repository_id='org-repo' AND principal_id='org-owner'",
+  );
+  await pg.query(
+    "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES('org-repo','org-worker','read',1)",
+  );
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='org-repo'", [
+    JSON.stringify(address),
+  ]);
+
+  const workerRecipient = {
+    provider: "line:test",
+    subject: "U33333333333333333333333333333333",
+  };
+  const ownerRecipient = {
+    provider: "line:test",
+    subject: "U44444444444444444444444444444444",
+  };
+  const submitted = await store.submit(
+    "org-worker",
+    {
+      requestId: randomUUID(),
+      kind: "new-session",
+      repositoryId: "org-repo",
+      startedAt: now - 7200000,
+      endedAt: now - 3600000,
+      reason: "Organization Repository 補登測試",
+    },
+    now,
+    workerRecipient,
+  );
+
+  await assert.rejects(
+    store.review(
+      "org-owner",
+      {
+        commandId: randomUUID(),
+        supplementId: submitted.supplement.id,
+        expectedVersion: submitted.supplement.version,
+        decision: "approve",
+      },
+      now,
+      ownerRecipient,
+    ),
+    /需要該 Repository 當下有效的 ADMIN 權限才能審核/,
+  );
+  const inbox = await store.list("org-owner", now, ownerRecipient);
+  assert.equal(inbox.review.length, 0);
+});

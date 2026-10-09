@@ -8,3 +8,4 @@
 - [Attendance employment-scope target design](attendance-employment-scope-target-design.md)：currentMemberstream→Employmentstream，history/reward/periodversion保留。
 - [Payroll target design](payroll-target-design.md)：versionedinputs、finalizedresult/publication與Financeboundary。
 - [Account identity design](account-identity-design.md)：單一identitynamespace、consumer-specificIDs、Account/DailyCheckInowner與不採用方案；source/schema/remote未完成。
+- [Repository owner governance](repository-owner-governance-design.md)：Personal / Organization Repository 的所有權、Repository ADMIN、OrganizationOwner、成員資格與補登審核邊界。
