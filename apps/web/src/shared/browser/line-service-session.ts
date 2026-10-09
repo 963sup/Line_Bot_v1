@@ -15,6 +15,10 @@ export class SessionBlockedError extends Error {
 
 const endpoint = "/api/auth";
 const blockedKey = "line_bot_v1:session-blocked";
+// This is only a best-effort reload/cross-tab hint. It contains no provider
+// token and is never used as proof; the server cookie and generation remain
+// authoritative.
+const sessionHintKey = "line_bot_v1:session-established";
 const channelName = "line_bot_v1:session";
 const renewAfterMs = 6 * 60 * 60 * 1000;
 
@@ -46,11 +50,52 @@ function savedBlockReason(): SessionBlockReason | undefined {
   }
 }
 
+function readSessionHint() {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.sessionStorage.getItem(sessionHintKey) === "1") return true;
+  } catch {
+    // Try the cross-tab hint independently when sessionStorage is unavailable.
+  }
+  try {
+    return window.localStorage.getItem(sessionHintKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markSessionHint() {
+  try {
+    window.sessionStorage.setItem(sessionHintKey, "1");
+  } catch {
+    // The in-memory generation still avoids repeated exchanges in this tab.
+  }
+  try {
+    window.localStorage.setItem(sessionHintKey, "1");
+  } catch {
+    // A private browsing context may reject persistent storage.
+  }
+}
+
+function clearSessionHint() {
+  try {
+    window.sessionStorage.removeItem(sessionHintKey);
+  } catch {
+    // A best-effort hint must never block sign-out or session replacement.
+  }
+  try {
+    window.localStorage.removeItem(sessionHintKey);
+  } catch {
+    // A best-effort hint must never block sign-out or session replacement.
+  }
+}
+
 function setBlocked(reason: SessionBlockReason, notify: boolean) {
   transition++;
   blockedReason = reason;
   generation = undefined;
   renewAfter = 0;
+  clearSessionHint();
   try {
     window.sessionStorage.setItem(blockedKey, reason);
   } catch {
@@ -71,6 +116,14 @@ channel?.addEventListener("message", (event: MessageEvent<unknown>) => {
 
 export function lineSessionBlocked() {
   return savedBlockReason();
+}
+
+export function lineSessionEstablished() {
+  return Boolean(generation);
+}
+
+export function lineSessionHintAvailable() {
+  return readSessionHint();
 }
 
 export function onLineSessionBlocked(listener: (reason: SessionBlockReason) => void) {
@@ -163,6 +216,7 @@ async function exchangeLineProof(lineAccessToken: string, expectedTransition: nu
   const previousGeneration = generation;
   generation = body.generation;
   renewAfter = Date.now() + renewAfterMs;
+  markSessionHint();
   if (body.sessionChanged === true) {
     channel?.postMessage({ type: "session-changed" });
     if (previousGeneration && previousGeneration !== body.generation) window.location.reload();
@@ -186,8 +240,10 @@ async function renewOrRecover(current: AppSessionGeneration, expectedTransition:
   if (latest) {
     generation = latest;
     renewAfter = Date.now() + renewAfterMs;
+    markSessionHint();
     return latest;
   }
+  clearSessionHint();
   if (generation === current) {
     generation = undefined;
     renewAfter = 0;
@@ -217,9 +273,13 @@ export async function ensureLineServiceSession() {
     const restored = await readSessionGeneration();
     if (transition !== expectedTransition)
       throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
-    if (!restored) return null;
+    if (!restored) {
+      clearSessionHint();
+      return null;
+    }
     generation = restored;
     renewAfter = 0;
+    markSessionHint();
     return renewOrRecover(restored, expectedTransition);
   })();
   pending = { fingerprint: null, transition: expectedTransition, promise };
@@ -249,16 +309,7 @@ export async function startLineServiceSession(lineAccessToken: string) {
     return startLineServiceSession(lineAccessToken);
   }
 
-  const promise = (async () => {
-    if (!generation) {
-      const restored = await readSessionGeneration();
-      if (transition !== expectedTransition)
-        throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
-      generation = restored ?? undefined;
-      renewAfter = 0;
-    }
-    return exchangeLineProof(lineAccessToken, expectedTransition);
-  })();
+  const promise = exchangeLineProof(lineAccessToken, expectedTransition);
   pending = { fingerprint, transition: expectedTransition, promise };
   try {
     return await promise;

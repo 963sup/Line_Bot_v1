@@ -9,6 +9,8 @@ import {
   endLineServiceSession,
   ensureLineServiceSession,
   lineSessionBlocked,
+  lineSessionEstablished,
+  lineSessionHintAvailable,
   onLineSessionBlocked,
   SessionBlockedError,
   startLineServiceSession,
@@ -20,16 +22,34 @@ const providerClient = createLiffClient(
   loginReturnUrl,
 );
 
-const { accessToken: getLineAccessToken, ...liffRuntime } = providerClient;
+const {
+  accessToken: getLineAccessToken,
+  accessTokenIfLoggedIn: getLineAccessTokenIfLoggedIn,
+  ...liffRuntime
+} = providerClient;
 
 async function establishServiceSession(liffId?: string, explicit = false) {
   if (explicit) allowLineServiceSession();
   const blocked = lineSessionBlocked();
   if (blocked) throw new SessionBlockedError(blocked);
+
+  let restoreAttempted = false;
   if (!explicit) {
-    const restored = await ensureLineServiceSession();
-    if (restored) return restored;
+    if (lineSessionEstablished() || lineSessionHintAvailable()) {
+      restoreAttempted = true;
+      const restored = await ensureLineServiceSession();
+      if (restored) return restored;
+    }
+
+    const lineAccessToken = await getLineAccessTokenIfLoggedIn(liffId);
+    if (lineAccessToken) return startLineServiceSession(lineAccessToken);
+
+    if (!restoreAttempted) {
+      const restored = await ensureLineServiceSession();
+      if (restored) return restored;
+    }
   }
+
   const lineAccessToken = await getLineAccessToken(liffId);
   if (!lineAccessToken) return null;
   return startLineServiceSession(lineAccessToken);

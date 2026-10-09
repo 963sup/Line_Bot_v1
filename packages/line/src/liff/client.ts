@@ -19,19 +19,22 @@ export function createLiffClient(
     return !new URL(href()).searchParams.has("liff.state");
   }
 
+  async function readAccessToken(liffId: string | undefined, redirectIfMissing: boolean) {
+    const boot = resolveBoot();
+    if (!(await initialize(liffId ?? boot.liffId))) return null;
+    if (!boot.sdk.isLoggedIn()) {
+      if (redirectIfMissing) boot.sdk.login({ redirectUri: loginReturnUrl(href()) });
+      return null;
+    }
+    const token = boot.sdk.getAccessToken();
+    if (!token) throw new Error("請從 LINE 重新開啟。");
+    return token;
+  }
+
   return {
     initialize,
-    async accessToken(liffId?: string) {
-      const boot = resolveBoot();
-      if (!(await initialize(liffId ?? boot.liffId))) return null;
-      if (!boot.sdk.isLoggedIn()) {
-        boot.sdk.login({ redirectUri: loginReturnUrl(href()) });
-        return null;
-      }
-      const token = boot.sdk.getAccessToken();
-      if (!token) throw new Error("請從 LINE 重新開啟。");
-      return token;
-    },
+    accessTokenIfLoggedIn: (liffId?: string) => readAccessToken(liffId, false),
+    accessToken: (liffId?: string) => readAccessToken(liffId, true),
     inClient: () => {
       const boot = resolveBoot();
       return initialized && boot.state() === "ready" && boot.sdk.isInClient();
