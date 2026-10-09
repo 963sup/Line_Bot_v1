@@ -197,6 +197,7 @@ function main() {
       [
         "--test",
         "scripts/tooling/doctor.test.mjs",
+        "scripts/tooling/list-skills.test.mjs",
         "scripts/tooling/check-tooling.test.mjs",
         "scripts/tooling/validate.test.mjs",
       ],

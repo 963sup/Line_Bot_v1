@@ -30,6 +30,7 @@
     "tooling:check": "node scripts/tooling/check-tooling.mjs",
     "tooling:rules": "node scripts/tooling/check-rules.mjs",
     "tooling:doctor": "node scripts/tooling/doctor.mjs",
+    "skills:list": "node scripts/tooling/list-skills.mjs",
     "start": "pnpm --filter @line_bot_v1/web start",
     "boundaries": "node scripts/architecture/check-implementation-topology.mjs",
     "schema:remote": "node scripts/supabase/remote.mjs",
