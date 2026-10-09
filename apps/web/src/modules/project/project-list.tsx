@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import styles from "./project-list.module.css";
@@ -23,6 +24,9 @@ export default function ProjectList({ liffId }: { liffId: string }) {
     <div className={`repository-list resource-workspace ${styles.collection}`}>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <div className={styles.filters} role="group" aria-label="Filter projects by owner type">
+        <Link className={styles.create} href="/projects/new">
+          建立 Project
+        </Link>
         {ownerFilters.map((filter) => (
           <button
             key={filter.value}
@@ -56,12 +60,17 @@ export default function ProjectList({ liffId }: { liffId: string }) {
       {visibleItems && visibleItems.length > 0 && (
         <div className={styles.list}>
           {visibleItems.map((item) => (
-            <div className={styles.row} key={item.id}>
+            <Link
+              className={styles.row}
+              href={`/projects/${encodeURIComponent(item.id)}`}
+              key={item.id}
+            >
               <span className={styles.copy}>
                 <small className={styles.owner}>{item.ownerLogin}</small>
                 <strong className={styles.name}>{item.name}</strong>
               </span>
-            </div>
+              <span className={styles.open}>開啟</span>
+            </Link>
           ))}
         </div>
       )}

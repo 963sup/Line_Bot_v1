@@ -16,7 +16,8 @@
 
 .collection .filters .filter,
 .collection .filters .activeFilter,
-.collection .filters .refresh {
+.collection .filters .refresh,
+.collection .filters .create {
   width: auto;
   min-height: 44px;
   flex: 0 0 auto;
@@ -33,8 +34,16 @@
 
 .filter,
 .activeFilter,
-.refresh:not(:disabled) {
+.refresh:not(:disabled),
+.create {
   cursor: pointer;
+}
+
+.collection .filters .create {
+  border-color: var(--green-strong);
+  background: var(--green-strong);
+  color: var(--surface);
+  text-decoration: none;
 }
 
 .collection .filters .activeFilter {
@@ -55,7 +64,8 @@
 
 .filter:focus-visible,
 .activeFilter:focus-visible,
-.refresh:focus-visible {
+.refresh:focus-visible,
+.create:focus-visible {
   outline: 2px solid var(--green-strong);
   outline-offset: 2px;
 }
@@ -67,8 +77,28 @@
 .row {
   display: flex;
   min-height: 78px;
+  justify-content: space-between;
   align-items: center;
   padding: 14px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--green-strong);
+  outline-offset: 3px;
+}
+
+.row:hover .name {
+  color: var(--green-strong);
+}
+
+.open {
+  flex: 0 0 auto;
+  margin-left: 12px;
+  color: var(--green-strong);
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .row + .row {
