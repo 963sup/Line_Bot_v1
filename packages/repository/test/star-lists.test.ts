@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryStarListStore } from "../src/adapters/postgres/star-lists.js";
-import { PostgresRepositoryStarStore } from "../src/adapters/postgres/stars.js";
-import type { RepositoryStarListStore } from "../src/application/ports/star-lists.js";
 import { createRepositoryStarLists } from "../src/application/star-lists.js";
+import type { RepositoryStarListStore } from "../src/contracts/repositories/star-lists.js";
 import { RepositoryError } from "../src/domain.js";
+import { PostgresRepositoryStarListStore } from "../src/postgres/star-lists.js";
+import { PostgresRepositoryStarStore } from "../src/postgres/stars.js";
 
 async function activeUser(db: Database, id: string, login: string) {
   await db.transaction(async (sql) => {

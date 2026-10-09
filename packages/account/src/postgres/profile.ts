@@ -3,7 +3,7 @@ import type {
   UserProfile,
   UserProfileStore,
   UserProfileUpdate,
-} from "../application/ports/profile.js";
+} from "../contracts/repositories/profile.js";
 import { UserError } from "../domain/user.js";
 
 type ProfileRow = {

@@ -1,5 +1,7 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain";
+import type { IssueCommand, RepositorySelector } from "../contracts/input/issues.js";
+import type { IssueRepository } from "../contracts/repositories/issues.js";
 import {
   type IssueAction,
   type IssueClosedStateReason,
@@ -8,7 +10,6 @@ import {
   issueText,
   normalizeIssueNumber,
 } from "../domain.js";
-import type { IssueCommand, IssueStore, RepositorySelector } from "./ports/issues.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const workflowActions: readonly IssueAction[] = ["accept", "report", "reject", "approve"];
@@ -183,7 +184,7 @@ function selector(value?: RepositorySelector): RepositorySelector | undefined {
 
 export function createIssues(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
-  store(): IssueStore;
+  store(): IssueRepository;
   now(): number;
 }) {
   async function identity(subject: string) {

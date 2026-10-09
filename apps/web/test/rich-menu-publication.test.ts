@@ -16,7 +16,7 @@ const legacyTasksAlias = `${legacyAliasPrefix}-tasks`;
 
 const config = (page: RichMenuPublicationConfig["page"]): RichMenuPublicationConfig => ({
   page,
-  image: `assets/${page}.png`,
+  image: `assets/${page}.jpg`,
   upload: new Uint8Array([1, 2, 3]),
   menu: {
     size: { width: 800, height: 250 },

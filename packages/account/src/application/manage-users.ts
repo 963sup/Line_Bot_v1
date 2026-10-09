@@ -1,7 +1,6 @@
+import type { UserManagementRepository } from "../contracts/repositories/user-management.js";
 import type { UserManagementQuery } from "../contracts/user-management.js";
 import { parseUserStatusCommand, UserError } from "../domain/user.js";
-
-import type { UserManagementRepository } from "./ports/user-management.js";
 export function createUserManagement(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   repository(): UserManagementRepository;
@@ -25,3 +24,5 @@ export function createUserManagement(deps: {
     },
   };
 }
+
+export type UserManagementUseCases = ReturnType<typeof createUserManagement>;

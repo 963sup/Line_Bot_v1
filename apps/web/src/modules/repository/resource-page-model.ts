@@ -6,7 +6,7 @@ import type {
   RepositoryLabelsResult,
   RepositoryMilestoneResult,
   RepositoryMilestonesResult,
-} from "@line_bot_v1/repository/application/ports/resources";
+} from "@line_bot_v1/repository/contracts/output/resources";
 
 export type ResourcesKind = "discussions" | "discussion" | "labels" | "milestones" | "milestone";
 export type MilestoneStatus = "open" | "closed";

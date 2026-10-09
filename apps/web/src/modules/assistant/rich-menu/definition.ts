@@ -18,7 +18,7 @@ export function menuAlias(page: MenuPage) {
   return `line_bot_v1-${page}`;
 }
 export function menuAsset(page: MenuPage) {
-  return `line_bot_v1-${page}.png`;
+  return `line_bot_v1-${page}.jpg`;
 }
 
 type Rectangle = readonly [number, number, number, number];

@@ -43,6 +43,26 @@ export default {
       to: { path: "^apps/[^/]+/src/app/" },
     },
     {
+      name: "web-features-do-not-import-concrete-package-implementations",
+      severity: "error",
+      comment:
+        "Web modules and shared mechanisms may consume package contracts, but concrete implementations are wired by the host composition root",
+      from: { path: "^apps/web/src/(modules|shared)/" },
+      to: {
+        path: "^packages/[^/]+/src/(postgres|adapters|composition|agents|database|migration|supabase-identity|gemini)(?:\\.ts|/)",
+      },
+    },
+    {
+      name: "web-delivery-does-not-import-concrete-package-implementations",
+      severity: "error",
+      comment:
+        "Next route/page delivery stays an inbound adapter; only app _composition may wire concrete package implementations",
+      from: { path: "^apps/web/src/app/(?!.*_composition/)" },
+      to: {
+        path: "^packages/[^/]+/src/(postgres|adapters|composition|agents|database|migration|supabase-identity|gemini)(?:\\.ts|/)",
+      },
+    },
+    {
       name: "shared-has-no-business-owner",
       severity: "error",
       from: { path: "^apps/[^/]+/src/shared/" },
@@ -138,6 +158,14 @@ export default {
       to: {
         path: "^packages/$1/src/(adapters|composition|postgres|agents|testing|database|migration)(?:\\.ts|/)",
       },
+    },
+    {
+      name: "application-ports-are-not-canonical",
+      severity: "error",
+      comment:
+        "Ports belong to the explicit contracts/input, contracts/output or contracts/repositories boundary",
+      from: { path: "^(apps|packages)/[^/]+/src/" },
+      to: { path: "^packages/[^/]+/src/application/ports(?:\\.ts|/)" },
     },
     {
       name: "context-inner-layers-do-not-import-adapters",

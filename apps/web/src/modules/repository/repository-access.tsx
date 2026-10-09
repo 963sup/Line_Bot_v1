@@ -4,7 +4,7 @@ import type {
   RepositoryAccessCommand,
   RepositoryAccessSnapshot,
   RepositoryAccessSubjectKind,
-} from "@line_bot_v1/repository/application/ports/access";
+} from "@line_bot_v1/repository/contracts/repositories/access";
 import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
 import { useCallback, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

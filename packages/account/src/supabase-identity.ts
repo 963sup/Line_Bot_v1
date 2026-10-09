@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
-import type { IdentityProvider } from "./application/ports/identity-provider.js";
+import type { IdentityProvider } from "./contracts/output/identity-provider.js";
 import { UserError } from "./domain/user.js";
 
 function googleUser(user: User) {

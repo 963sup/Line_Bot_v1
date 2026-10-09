@@ -7,7 +7,7 @@ import type {
   PublicRepository,
   PublicRepositoryList,
   PublicRepositoryStore,
-} from "../application/ports/public.js";
+} from "../contracts/output/public.js";
 
 async function qualifiedOwner(sql: Sql, ownerLogin: string) {
   const owner = await resolveAccountLogin(sql, ownerLogin);

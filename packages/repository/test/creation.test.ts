@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryCreationStore } from "../src/adapters/postgres/creation.js";
 import { createRepositoryCreation } from "../src/application/creation.js";
-import type { RepositoryCreationStore } from "../src/application/ports/creation.js";
+import type { RepositoryCreationStore } from "../src/contracts/repositories/creation.js";
 import { RepositoryError } from "../src/domain.js";
+import { PostgresRepositoryCreationStore } from "../src/postgres/creation.js";
 
 test("Repository create application canonicalizes input before the store", async () => {
   const calls: unknown[][] = [];

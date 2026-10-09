@@ -1,11 +1,11 @@
-import type { RepositorySelector } from "../contracts/selectors.js";
-import { normalizeRepositoryName, RepositoryError } from "../domain.js";
-import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 import type {
   RepositorySubscriptionCommand,
   RepositorySubscriptionState,
   RepositorySubscriptionStore,
-} from "./ports/subscription.js";
+} from "../contracts/repositories/subscription.js";
+import type { RepositorySelector } from "../contracts/selectors.js";
+import { normalizeRepositoryName, RepositoryError } from "../domain.js";
+import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;

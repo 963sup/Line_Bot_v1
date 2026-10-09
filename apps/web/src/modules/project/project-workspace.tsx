@@ -1,17 +1,15 @@
 "use client";
 
+import {
+  projectProgressOptions,
+  suggestedProgressName,
+} from "@line_bot_v1/project/application/progress";
 import type {
   ProjectManagementCommand,
   ProjectManagementView,
 } from "@line_bot_v1/project/contracts/management";
 import { useState } from "react";
 import styles from "./project-detail.module.css";
-
-const progressOptions = [
-  { name: "待處理", color: "GRAY", description: "尚未開始" },
-  { name: "進行中", color: "BLUE", description: "正在處理" },
-  { name: "已完成", color: "GREEN", description: "已完成" },
-] as const;
 
 function itemTitle(item: ProjectManagementView["items"][number]) {
   return item.kind === "DRAFT_ISSUE"
@@ -23,14 +21,6 @@ function itemTitle(item: ProjectManagementView["items"][number]) {
 
 function itemBody(item: ProjectManagementView["items"][number]) {
   return item.kind === "DRAFT_ISSUE" ? item.draft?.body || "" : "";
-}
-
-function suggestedProgressName(fields: ProjectManagementView["fields"]) {
-  const names = new Set(fields.map((field) => field.name.trim().toLocaleLowerCase()));
-  let candidate = "工作進度";
-  let suffix = 2;
-  while (names.has(candidate.toLocaleLowerCase())) candidate = `工作進度 ${suffix++}`;
-  return candidate;
 }
 
 function displayUser(id: string, actorUserId: string, users: Readonly<Record<string, string>>) {
@@ -146,7 +136,7 @@ export default function ProjectWorkspace({
         expectedVersion: data.project.version,
         name: suggestedProgressName(data.fields),
         dataType: "SINGLE_SELECT",
-        options: progressOptions,
+        options: projectProgressOptions,
         iterations: [],
       },
       "工作進度欄位已建立。",

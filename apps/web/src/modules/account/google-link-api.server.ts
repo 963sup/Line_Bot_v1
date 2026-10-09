@@ -1,6 +1,6 @@
 import type { createGoogleLink } from "@line_bot_v1/account/application/user";
+import type { VerifiedGoogleIdentity } from "@line_bot_v1/account/contracts/output/identity-provider";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import { jsonResponse } from "../../shared/server/http";
 import { apiError, readJsonBody } from "./http.server";
 
@@ -9,6 +9,7 @@ export function createGoogleLinkRequest(
   dependencies: {
     requestIdentity: (request: Request) => Promise<string>;
     limitRequest: (token: string) => Promise<void>;
+    verifyGoogle: (token: string) => Promise<VerifiedGoogleIdentity>;
   },
 ) {
   return {
@@ -30,7 +31,7 @@ export function createGoogleLinkRequest(
           await dependencies.limitRequest(token);
           const authorization = request.headers.get("authorization") ?? "";
           if (!authorization.startsWith("Bearer ")) throw new UserError(401, "請先登入 Google。");
-          await service.stage(token, await supabaseIdentity().verify(authorization.slice(7)));
+          await service.stage(token, await dependencies.verifyGoogle(authorization.slice(7)));
         } else {
           const subject = await dependencies.requestIdentity(request);
           if (body.action === "start") return jsonResponse(await service.start(subject));

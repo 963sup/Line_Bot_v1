@@ -1,27 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { VerifiedGoogleIdentity } from "@line_bot_v1/account/contracts/output/identity-provider";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { createGoogleLinkRequest } from "../src/modules/account/google-link-api.server";
 
 test("external Google handoff verifies Google without LINE and cannot confirm without LINE proof", async () => {
-  const originalFetch = globalThis.fetch;
   const saved = { ...process.env };
-  const calls: string[] = [];
   let staged = false;
+  let verifiedToken = "";
   process.env.APP_ORIGIN = "https://app.example.test";
-  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://auth.example.test";
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-key";
   delete process.env.KV_REST_API_URL;
   delete process.env.KV_REST_API_TOKEN;
-  globalThis.fetch = async (input) => {
-    calls.push(String(input));
-    return Response.json({
-      id: "11111111-1111-4111-8111-111111111111",
-      email: "test@example.test",
-      email_confirmed_at: "2026-09-12",
-      identities: [{ provider: "google", id: "google-sub" }],
-    });
-  };
   const api = createGoogleLinkRequest(
     {
       start: async () => {
@@ -47,6 +36,14 @@ test("external Google handoff verifies Google without LINE and cannot confirm wi
         throw new UserError(401, "請重新登入 LINE。");
       },
       limitRequest: async () => {},
+      verifyGoogle: async (token) => {
+        verifiedToken = token;
+        return {
+          id: "google-user",
+          sub: "google-sub",
+          email: "test@example.test",
+        } satisfies VerifiedGoogleIdentity;
+      },
     },
   );
   const request = (action: string, origin = process.env.APP_ORIGIN!, bearer = true) =>
@@ -67,11 +64,8 @@ test("external Google handoff verifies Google without LINE and cannot confirm wi
     assert.equal(staged, false);
     assert.equal((await api.POST(request("stage"))).status, 200);
     assert.equal(staged, true);
-    assert.ok(
-      calls.length > 0 && calls.every((url) => url.startsWith("https://auth.example.test/")),
-    );
+    assert.equal(verifiedToken, "verified-google");
   } finally {
-    globalThis.fetch = originalFetch;
     process.env = saved;
   }
 });

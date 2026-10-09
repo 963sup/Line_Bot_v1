@@ -1,58 +1,59 @@
-import type { TeamNotificationSetting, TeamPrivacy } from "../../contracts.js";
+import type { TeamCommand, TeamCommandDraft } from "../../contracts/input/team-command.js";
+import type { TeamView } from "../../contracts.js";
 import { teamAssert } from "../../domain/errors/team-error.js";
 
-type TeamCommandContext = Readonly<{
-  requestId: string;
-  organizationAccountId: string;
-}>;
-
-type ExistingTeamCommandBase = TeamCommandContext &
-  Readonly<{
-    teamId: string;
-    expectedVersion: number;
-  }>;
-
-export type TeamCommand =
-  | (TeamCommandContext &
-      Readonly<{
-        action: "create-team";
-        name: string;
-        privacy: TeamPrivacy;
-        notificationSetting: TeamNotificationSetting;
-      }>)
-  | (ExistingTeamCommandBase &
-      Readonly<{
-        action: "join";
-        name: string;
-      }>)
-  | (ExistingTeamCommandBase &
-      Readonly<{
-        action: "rename-team";
-        name: string;
-      }>)
-  | (ExistingTeamCommandBase &
-      Readonly<{
-        action: "parent-team";
-        parentTeamId: string | null;
-      }>)
-  | (ExistingTeamCommandBase &
-      Readonly<{
-        action: "settings";
-        privacy: TeamPrivacy;
-        notificationSetting: TeamNotificationSetting;
-      }>)
-  | (ExistingTeamCommandBase &
-      Readonly<{
-        action: "membership";
-        targetUserId: string;
-        status: "active" | "removed";
-      }>)
-  | (ExistingTeamCommandBase &
-      Readonly<{
-        action: "maintainer";
-        targetUserId: string;
-        enabled: boolean;
-      }>);
+export function buildTeamCommand(
+  data: TeamView | null,
+  value: TeamCommandDraft,
+  requestId: string,
+): TeamCommand {
+  const context = {
+    requestId,
+    organizationAccountId: data?.organizationAccountId ?? "",
+  };
+  if (value.action === "create-team") {
+    return {
+      ...context,
+      action: value.action,
+      name: value.name,
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+    };
+  }
+  const existing = {
+    ...context,
+    teamId: value.action === "join" ? value.teamId : (data?.team?.id ?? ""),
+    expectedVersion: value.action === "join" ? 0 : (data?.team?.version ?? 0),
+  };
+  if (value.action === "rename-team" || value.action === "join") {
+    return { ...existing, action: value.action, name: value.name };
+  }
+  if (value.action === "parent-team") {
+    return { ...existing, action: value.action, parentTeamId: value.parentTeamId };
+  }
+  if (value.action === "settings") {
+    return {
+      ...existing,
+      action: value.action,
+      privacy: value.privacy,
+      notificationSetting: value.notificationSetting,
+    };
+  }
+  if (value.action === "membership") {
+    return {
+      ...existing,
+      action: value.action,
+      targetUserId: value.targetUserId,
+      status: value.status,
+    };
+  }
+  return {
+    ...existing,
+    action: value.action,
+    targetUserId: value.targetUserId,
+    enabled: value.enabled,
+  };
+}
 
 const stableId = /^[\w-]{1,128}$/;
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

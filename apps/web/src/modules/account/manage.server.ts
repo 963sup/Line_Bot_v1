@@ -1,26 +1,13 @@
-import { createUserManagement } from "@line_bot_v1/account/application/manage-users";
-import type { UserUseCases } from "@line_bot_v1/account/application/user";
+import type { UserManagementUseCases } from "@line_bot_v1/account/application/manage-users";
 import type { UserManagementQuery } from "@line_bot_v1/account/contracts/user-management";
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { PostgresUserManagement } from "@line_bot_v1/account/postgres";
-import {
-  hasPermission,
-  protectPermissionAdministrator,
-} from "@line_bot_v1/identity-access/postgres";
 import { jsonResponse } from "../../shared/server/http";
 import { apiError, readJsonBody } from "./http.server";
 
-const accountManagementAuthorization = { hasPermission, protectPermissionAdministrator };
-
 export function createUserManagementRequest(
-  activeUser: UserUseCases["activeLineUser"],
+  management: UserManagementUseCases,
   requestIdentity: (request: Request) => Promise<string>,
 ) {
-  const management = createUserManagement({
-    activeUser,
-    repository: () => new PostgresUserManagement(undefined, accountManagementAuthorization),
-    now: () => Date.now(),
-  });
   return async (request: Request) => {
     try {
       if (request.method === "POST") {

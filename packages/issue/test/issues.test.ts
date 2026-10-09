@@ -4,7 +4,7 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresIssueStore } from "../src/adapters/postgres.js";
 import { createIssues } from "../src/application/issues.js";
-import type { IssueStore } from "../src/application/ports/issues.js";
+import type { IssueRepository } from "../src/contracts/repositories/issues.js";
 import { canIssueRepositoryOperation, IssueError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string) {
@@ -64,7 +64,7 @@ test("Issue application canonicalizes body, assignee sets and exact FPT close re
         updatedAt: 1,
       };
     },
-  } as unknown as IssueStore;
+  } as unknown as IssueRepository;
   const issues = createIssues({
     activeUser: async () => ({ id: "actor" }),
     store: () => store,

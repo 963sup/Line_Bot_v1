@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryCollectionStore } from "../src/adapters/postgres/collection.js";
 import { createRepositoryCollection } from "../src/application/collection.js";
-import type { RepositoryCollectionStore } from "../src/application/ports/collection.js";
+import type { RepositoryCollectionStore } from "../src/contracts/output/collection.js";
+import { PostgresRepositoryCollectionStore } from "../src/postgres/collection.js";
 
 test("Repository collection resolves the active User before reading accessible Repositories", async () => {
   const calls: string[] = [];

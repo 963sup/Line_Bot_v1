@@ -1,6 +1,6 @@
+import type { PublicRepositoryStore } from "../contracts/output/public.js";
 import { normalizeRepositoryName, RepositoryError } from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
-import type { PublicRepositoryStore } from "./ports/public.js";
 
 function publicListLimit(value: number): number {
   if (!Number.isSafeInteger(value) || value < 1 || value > 50) {

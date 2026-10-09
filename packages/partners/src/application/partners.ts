@@ -1,6 +1,6 @@
+import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type { PartnerView } from "../contracts.js";
 import { PartnerError, parsePartnerCommand } from "../domain.js";
-import type { PartnerCursor, PartnerRepository } from "./ports/partners.js";
 
 export function createPartners(deps: {
   activeUser(subject: string): Promise<{ id: string }>;

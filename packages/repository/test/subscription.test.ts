@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryManagementStore } from "../src/adapters/postgres/management.js";
-import { PostgresRepositorySubscriptionStore } from "../src/adapters/postgres/subscription.js";
-import type { RepositorySubscriptionStore } from "../src/application/ports/subscription.js";
 import { createRepositorySubscription } from "../src/application/subscription.js";
+import type { RepositorySubscriptionStore } from "../src/contracts/repositories/subscription.js";
 import { RepositoryError } from "../src/domain.js";
+import { PostgresRepositoryManagementStore } from "../src/postgres/management.js";
+import { PostgresRepositorySubscriptionStore } from "../src/postgres/subscription.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {

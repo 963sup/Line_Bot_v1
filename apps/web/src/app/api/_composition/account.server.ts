@@ -1,5 +1,6 @@
 import { createUserAchievements } from "@line_bot_v1/account/application/achievements";
 import { createFollows } from "@line_bot_v1/account/application/follows";
+import { createUserManagement } from "@line_bot_v1/account/application/manage-users";
 import { createUserProfiles } from "@line_bot_v1/account/application/profile";
 import { createGoogleLink, createUser } from "@line_bot_v1/account/application/user";
 import { requireActiveUser } from "@line_bot_v1/account/domain/user";
@@ -7,13 +8,18 @@ import {
   PostgresFollowStore,
   PostgresGoogleLinkStore,
   PostgresUserAchievementStore,
+  PostgresUserManagement,
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line_bot_v1/account/postgres";
+import { supabaseIdentity } from "@line_bot_v1/account/supabase-identity";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
 import { createDailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
-import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/postgres";
+import {
+  hasPermission,
+  protectPermissionAdministrator,
+} from "@line_bot_v1/identity-access/postgres";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 
@@ -24,9 +30,10 @@ const state = globalThis as typeof globalThis & {
   followStore?: PostgresFollowStore;
   achievementStore?: PostgresUserAchievementStore;
   profileStore?: PostgresUserProfileStore;
+  userManagementStore?: PostgresUserManagement;
 };
 
-const accountAdministration = { protectPermissionAdministrator };
+const accountAdministration = { hasPermission, protectPermissionAdministrator };
 
 function userStore() {
   return (state.userStore ??= new PostgresUserStore(undefined, accountAdministration));
@@ -46,6 +53,12 @@ function achievementStore() {
 function profileStore() {
   return (state.profileStore ??= new PostgresUserProfileStore());
 }
+function userManagementStore() {
+  return (state.userManagementStore ??= new PostgresUserManagement(
+    undefined,
+    accountAdministration,
+  ));
+}
 
 const dailyCheckIn = createDailyCheckIn({
   activeUser: async (subject) =>
@@ -62,6 +75,7 @@ export const googleLink = createGoogleLink({
   lineProvider: () => LINE_PROVIDER_NAMESPACE,
   now: () => Date.now(),
 });
+export const verifyGoogle = (token: string) => supabaseIdentity().verify(token);
 
 export const {
   findUser,
@@ -72,6 +86,11 @@ export const {
   pauseUser,
   restoreUser,
 } = user;
+export const userManagement = createUserManagement({
+  activeUser: activeLineUser,
+  repository: userManagementStore,
+  now: () => Date.now(),
+});
 export const achievements = createUserAchievements({
   activeUser: activeLineUser,
   store: achievementStore,

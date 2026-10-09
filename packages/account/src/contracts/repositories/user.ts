@@ -1,5 +1,5 @@
 import type { User } from "../../domain/user.js";
-import type { VerifiedGoogleIdentity } from "./identity-provider.js";
+import type { VerifiedGoogleIdentity } from "../output/identity-provider.js";
 
 type UserView = User & {
   login: string;

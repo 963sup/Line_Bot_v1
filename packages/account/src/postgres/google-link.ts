@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { VerifiedGoogleIdentity } from "../application/ports/identity-provider.js";
-import type { GoogleLinkRepository } from "../application/ports/user-repository.js";
+import type { VerifiedGoogleIdentity } from "../contracts/output/identity-provider.js";
+import type { GoogleLinkRepository } from "../contracts/repositories/user.js";
 import { UserError } from "../domain/user.js";
 import { PostgresUserStore } from "./user.js";
 

@@ -1,5 +1,5 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import type { FollowItem, FollowStore } from "../application/ports/follows.js";
+import type { FollowItem, FollowStore } from "../contracts/output/follows.js";
 import { UserError } from "../domain/user.js";
 
 export class PostgresFollowStore implements FollowStore {

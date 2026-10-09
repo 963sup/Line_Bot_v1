@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createUserAchievements } from "../src/application/achievements.js";
-import type { UserAchievementStore } from "../src/application/ports/achievements.js";
+import type { UserAchievementStore } from "../src/contracts/output/achievements.js";
 import { UserError } from "../src/domain/user.js";
 
 test("achievement reads resolve the active User and keep the owner store authoritative", async () => {

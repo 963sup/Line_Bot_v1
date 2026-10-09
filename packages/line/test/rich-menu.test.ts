@@ -7,22 +7,29 @@ import { richMenuImage } from "../src/rich-menu/image.js";
 test("actual upload dimensions and malformed image rejection", () => {
   const directory = new URL("../../../assets/line/rich-menu/", import.meta.url);
   const files = [
-    "line_bot_v1-attendance-in.png",
-    "line_bot_v1-attendance-out.png",
-    "line_bot_v1-forms.png",
-    "line_bot_v1-incident.png",
-    "line_bot_v1-notifications.png",
-    "line_bot_v1-team.png",
+    "line_bot_v1-attendance-in.jpg",
+    "line_bot_v1-attendance-out.jpg",
+    "line_bot_v1-forms.jpg",
+    "line_bot_v1-incident.jpg",
+    "line_bot_v1-notifications.jpg",
+    "line_bot_v1-team.jpg",
   ];
   assert.deepEqual(readdirSync(directory).sort(), files);
   for (const file of files) {
     const image = readFileSync(new URL(file, directory));
+    assert.ok(image.byteLength <= 1_000_000, `${file} exceeds LINE's 1 MB image limit`);
     const size = richMenuImage(image);
     assert.ok(size.width >= 800 && size.width <= 2500, file);
-    assert.equal(size.mimeType, "image/png", file);
+    assert.equal(size.mimeType, "image/jpeg", file);
     assert.throws(() => richMenuImage(image.subarray(0, 10)), file);
   }
-  assert.throws(() => richMenuImage(new Uint8Array(1000001)));
+  const oversizedPng = new Uint8Array(1_500_000);
+  oversizedPng.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  oversizedPng.set([0x49, 0x48, 0x44, 0x52], 12);
+  const oversizedHeader = new DataView(oversizedPng.buffer);
+  oversizedHeader.setUint32(16, 1280);
+  oversizedHeader.setUint32(20, 853);
+  assert.throws(() => richMenuImage(oversizedPng), /1 MB/);
 });
 
 test("rich menu client keeps its existing public method surface", () => {
@@ -114,10 +121,10 @@ test("upload uses the MIME type detected from image bytes", async () => {
     return new Response(null, { status: 200 });
   });
   const image = readFileSync(
-    new URL("../../../assets/line/rich-menu/line_bot_v1-attendance-in.png", import.meta.url),
+    new URL("../../../assets/line/rich-menu/line_bot_v1-attendance-in.jpg", import.meta.url),
   );
   await client.upload("richmenu-0123abcd", image);
-  assert.equal(requests[0]?.headers.get("content-type"), "image/png");
+  assert.equal(requests[0]?.headers.get("content-type"), "image/jpeg");
 });
 
 test("rich menu recovery endpoints validate IDs and use official delete requests", async () => {

@@ -1,6 +1,6 @@
 import { buildNamespacePath } from "@line_bot_v1/namespace";
-import type { TeamCommand } from "@line_bot_v1/team/application/commands/team-command";
 import type { TeamView } from "@line_bot_v1/team/contracts";
+import type { TeamCommand } from "@line_bot_v1/team/contracts/input/team-command";
 import type { RefObject } from "react";
 import styles from "./team.module.css";
 import type { TeamDraft } from "./team-command";

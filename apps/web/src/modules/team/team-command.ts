@@ -1,5 +1,6 @@
-import type { TeamCommand } from "@line_bot_v1/team/application/commands/team-command";
+import { buildTeamCommand as buildOwnedTeamCommand } from "@line_bot_v1/team/application/commands/team-command";
 import type { TeamNotificationSetting, TeamPrivacy, TeamView } from "@line_bot_v1/team/contracts";
+import type { TeamCommand, TeamCommandDraft } from "@line_bot_v1/team/contracts/input/team-command";
 
 export type TeamDraft =
   | { action: "create-team"; name: string }
@@ -30,50 +31,19 @@ export const teamActionLabels: Record<TeamCommand["action"], string> = {
 };
 
 export function buildTeamCommand(data: TeamView | null, value: TeamDraft): TeamCommand {
-  const context = {
-    requestId: crypto.randomUUID(),
-    organizationAccountId: data?.organizationAccountId ?? "",
-  };
-  if (value.action === "create-team") {
-    return {
-      ...context,
-      action: value.action,
-      name: value.name,
-      privacy: "SECRET",
-      notificationSetting: "NOTIFICATIONS_DISABLED",
-    };
-  }
-  const existing = {
-    ...context,
-    teamId: value.action === "join" ? value.teamId : (data?.team?.id ?? ""),
-    expectedVersion: value.action === "join" ? 0 : (data?.team?.version ?? 0),
-  };
-  if (value.action === "rename-team" || value.action === "join") {
-    return { ...existing, action: value.action, name: value.name };
-  }
-  if (value.action === "parent-team") {
-    return { ...existing, action: value.action, parentTeamId: value.parentTeamId };
-  }
-  if (value.action === "settings") {
-    return {
-      ...existing,
-      action: value.action,
-      privacy: value.privacy,
-      notificationSetting: value.notificationSetting,
-    };
-  }
-  if (value.action === "membership") {
-    return {
-      ...existing,
-      action: value.action,
-      targetUserId: value.targetUserId,
-      status: value.status,
-    };
-  }
-  return {
-    ...existing,
-    action: value.action,
-    targetUserId: value.targetUserId,
-    enabled: value.enabled,
-  };
+  const draft =
+    value.action === "membership"
+      ? ({
+          action: value.action,
+          targetUserId: value.targetUserId,
+          status: value.status,
+        } satisfies TeamCommandDraft)
+      : value.action === "maintainer"
+        ? ({
+            action: value.action,
+            targetUserId: value.targetUserId,
+            enabled: value.enabled,
+          } satisfies TeamCommandDraft)
+        : value;
+  return buildOwnedTeamCommand(data, draft, crypto.randomUUID());
 }

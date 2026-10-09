@@ -1,7 +1,7 @@
 "use client";
 
-import type { UserAchievement } from "@line_bot_v1/account/application/ports/achievements";
-import type { UserProfile } from "@line_bot_v1/account/application/ports/profile";
+import type { UserAchievement } from "@line_bot_v1/account/contracts/output/achievements";
+import type { UserProfile } from "@line_bot_v1/account/contracts/repositories/profile";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";

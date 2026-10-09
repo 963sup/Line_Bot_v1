@@ -9,12 +9,12 @@ import {
   resolveAuthorizedRepositoryId,
 } from "@line_bot_v1/repository/postgres/access";
 import { allocateRepositoryIssueNumber } from "@line_bot_v1/repository/postgres/issue-number";
+import type { IssueCommand } from "../contracts/input/issues.js";
 import type {
-  IssueCommand,
   IssueIdentity,
+  IssueRepository,
   IssueSnapshot,
-  IssueStore,
-} from "../application/ports/issues.js";
+} from "../contracts/repositories/issues.js";
 import {
   canIssueRepositoryOperation,
   type Issue,
@@ -280,7 +280,7 @@ function assertAssignableUsers(
   }
 }
 
-export class PostgresIssueStore implements IssueStore {
+export class PostgresIssueStore implements IssueRepository {
   constructor(private db: Database = businessDatabase()) {}
 
   snapshot(

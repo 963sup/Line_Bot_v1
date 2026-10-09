@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryResourceManagementStore } from "../src/adapters/postgres/resource-management.js";
 import { createRepositoryResourceManagement } from "../src/application/resource-management.js";
 import type { RepositoryResourceManagementStore } from "../src/contracts/output/resource-management.js";
 import { RepositoryError } from "../src/domain.js";
+import { PostgresRepositoryResourceManagementStore } from "../src/postgres/resource-management.js";
 
 async function activeUser(db: Database, id: string, login = id) {
   await db.transaction(async (sql) => {

@@ -1,4 +1,4 @@
-import type { RepositoryCreateCommand } from "@line_bot_v1/repository/application/ports/creation";
+import type { RepositoryCreateCommand } from "@line_bot_v1/repository/contracts/repositories/creation";
 
 const key = "repository-create-pending:v1";
 

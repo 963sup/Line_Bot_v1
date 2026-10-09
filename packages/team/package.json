@@ -12,9 +12,13 @@
       "types": "./dist/application/collaboration.d.ts",
       "default": "./dist/application/collaboration.js"
     },
-    "./application/ports": {
-      "types": "./dist/application/ports.d.ts",
-      "default": "./dist/application/ports.js"
+    "./contracts/repositories/team": {
+      "types": "./dist/contracts/repositories/team.d.ts",
+      "default": "./dist/contracts/repositories/team.js"
+    },
+    "./contracts/input/team-command": {
+      "types": "./dist/contracts/input/team-command.d.ts",
+      "default": "./dist/contracts/input/team-command.js"
     },
     "./contracts": {
       "types": "./dist/contracts.d.ts",

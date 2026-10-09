@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryAddressStore } from "../src/adapters/postgres/address.js";
 import { createRepositoryAddress } from "../src/application/address.js";
-import type { RepositoryAddressStore } from "../src/application/ports/address.js";
+import type { RepositoryAddressStore } from "../src/contracts/repositories/address.js";
 import { RepositoryError } from "../src/domain.js";
-import { repositoryAttendanceSites } from "../src/postgres/address.js";
+import {
+  PostgresRepositoryAddressStore,
+  repositoryAttendanceSites,
+} from "../src/postgres/address.js";
 
 async function activeUser(db: Database, id: string, login = id) {
   await db.transaction(async (sql) => {

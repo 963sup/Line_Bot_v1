@@ -10,8 +10,8 @@ import {
   qualifyOrganizationTeamScope,
 } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { TeamCommand } from "../application/commands/team-command.js";
-import type { TeamActor, TeamRepository } from "../application/ports.js";
+import type { TeamCommand } from "../contracts/input/team-command.js";
+import type { TeamActor, TeamRepository } from "../contracts/repositories/team.js";
 import type {
   TeamCommandReceipt,
   TeamMembershipView,

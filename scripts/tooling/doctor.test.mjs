@@ -14,8 +14,8 @@ test("evaluateDoctor succeeds only when required local toolchain matches", () =>
     evaluateDoctor({
       expectedNode: "24.19.0",
       actualNode: "24.19.0",
-      expectedPnpm: "11.19.0",
-      actualPnpm: "11.19.0",
+      expectedPnpm: "11.25.0",
+      actualPnpm: "11.25.0",
       gitVersion: "git version 2.50.0",
       dependencies: { turbo: true, typescript: true },
     }).ok,
@@ -25,7 +25,7 @@ test("evaluateDoctor succeeds only when required local toolchain matches", () =>
   const failed = evaluateDoctor({
     expectedNode: "24.19.0",
     actualNode: "24.18.0",
-    expectedPnpm: "11.19.0",
+    expectedPnpm: "11.25.0",
     actualPnpm: null,
     gitVersion: null,
     dependencies: { turbo: false },

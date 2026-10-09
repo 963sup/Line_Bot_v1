@@ -63,7 +63,7 @@ test("successful owner jobs advance independently while other jobs in the Releas
       hasCommit: () => true,
       isAncestor: () => true,
       changedFiles: (baseline) =>
-        baseline ? [] : ["assets/line/rich-menu/menu.png", "supabase/schemas/200_enterprises.sql"],
+        baseline ? [] : ["assets/line/rich-menu/menu.jpg", "supabase/schemas/200_enterprises.sql"],
     },
     turbo: { webBuildAffected: () => false },
   });
@@ -76,7 +76,7 @@ test("successful owner jobs advance independently while other jobs in the Releas
 test("release source classifiers preserve owner boundaries", () => {
   assert.equal(schemaChanged(["supabase/schemas/200_enterprises.sql"]), true);
   assert.equal(schemaChanged(["scripts/supabase/remote.mjs"]), false);
-  assert.equal(richMenuChanged(["assets/line/rich-menu/menu.png"]), true);
+  assert.equal(richMenuChanged(["assets/line/rich-menu/menu.jpg"]), true);
   assert.equal(richMenuChanged(["apps/web/src/modules/assistant/rich-menu/definition.ts"]), true);
   assert.equal(publicationOnlyRichMenuSource("apps/web/src/app/page.tsx"), false);
   assert.equal(
@@ -282,7 +282,7 @@ test("each current Rich Menu asset triggers independent publication even when Tu
     "team",
   ]) {
     const plan = await planRelease(
-      plannerFixture({ files: [`assets/line/rich-menu/line_bot_v1-${page}.png`], affected: true }),
+      plannerFixture({ files: [`assets/line/rich-menu/line_bot_v1-${page}.jpg`], affected: true }),
     );
     assert.equal(plan.rich_menu_changed, true, page);
     assert.equal(plan.web_affected, false, page);
@@ -335,7 +335,7 @@ test("failed and skipped publications retain pending changes", async () => {
     const plan = await planRelease(
       plannerFixture({
         previousJobs: [{ name: "rich_menu", conclusion }],
-        byBaseline: (baseline) => (baseline === null ? ["assets/line/rich-menu/home.png"] : []),
+        byBaseline: (baseline) => (baseline === null ? ["assets/line/rich-menu/home.jpg"] : []),
       }),
     );
     assert.equal(plan.baselines.rich_menu, null);
