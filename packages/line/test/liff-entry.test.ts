@@ -8,16 +8,17 @@ test("LIFF boot starts immediately, shares initialization, waits for redirect an
   let login = 0;
   let href = "https://example.com/?liff.state=x";
   let fail = true;
+  let loggedIn = false;
   const sdk: LiffSdk = {
     init: async () => {
       calls++;
       if (fail) throw new Error("private error");
     },
-    isLoggedIn: () => false,
+    isLoggedIn: () => loggedIn,
     login: () => {
       login++;
     },
-    getAccessToken: () => null,
+    getAccessToken: () => (loggedIn ? "synthetic-token" : null),
     getProfile: async () => ({ userId: "test", displayName: "test" }),
     isInClient: () => true,
     closeWindow: () => {},
@@ -44,6 +45,11 @@ test("LIFF boot starts immediately, shares initialization, waits for redirect an
   assert.equal(login, 0, "liff.state stays pending until the SDK redirect is complete");
 
   href = "https://example.com/?membership=1";
+  assert.equal(await client.accessTokenIfLoggedIn("id"), null);
+  loggedIn = true;
+  assert.equal(await client.accessTokenIfLoggedIn("id"), "synthetic-token");
+  assert.equal(login, 0, "the non-redirecting token read never starts a second login");
+  loggedIn = false;
   await client.accessToken("id");
   assert.equal(login, 1);
   assert.equal(calls, 2);

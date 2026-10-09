@@ -256,12 +256,14 @@ try {
   let holdMembership = false;
   let heldMembership;
   let authProofExchanges = 0;
+  const authMethods = [];
   const privateReads = [];
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.origin !== base) return route.abort();
     if (
       await fulfillLineSessionMock(route, ({ method }) => {
+        authMethods.push(method);
         if (method === "POST") authProofExchanges++;
       })
     )
@@ -315,6 +317,7 @@ try {
   );
   assert.deepEqual(privateReads.sort(), ["/api/profile", "/api/profile/achievements"]);
   assert.equal(authProofExchanges, 1, "the initial service session exchanges LINE proof once");
+  assert.equal(authMethods[0], "POST", "a fresh LIFF entry exchanges proof without a restore hop");
   const tokenReads = await page.evaluate(() =>
     sessionStorage.getItem("profile-line-access-token-reads"),
   );
@@ -324,6 +327,7 @@ try {
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Private viewer");
   assert.equal(authProofExchanges, 1, "a valid cookie restores the app session without LINE proof");
+  assert.equal(authMethods[1], "GET", "a reload restores the existing service session");
   assert.equal(
     await page.evaluate(() => sessionStorage.getItem("profile-line-access-token-reads")),
     tokenReads,
