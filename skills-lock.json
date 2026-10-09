@@ -7,13 +7,6 @@
       "skillPath": "skills/21st-ui-review/SKILL.md",
       "computedHash": "ce7470a4777379716282b5a410a8a3211ac51a763786f6b81c3abcd282c220ab"
     },
-    "a11y-testing": {
-      "source": "pedronauck/skills",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/community/a11y-testing/SKILL.md",
-      "computedHash": "79bb57e51467c4954b3c2ba6d286350b7772ab970b48a42afbb064fe22dba3e3"
-    },
     "agentic-actions-auditor": {
       "source": "trailofbits/skills",
       "sourceType": "github",
