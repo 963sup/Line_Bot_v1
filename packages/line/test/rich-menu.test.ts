@@ -17,6 +17,7 @@ test("actual upload dimensions and malformed image rejection", () => {
   assert.deepEqual(readdirSync(directory).sort(), files);
   for (const file of files) {
     const image = readFileSync(new URL(file, directory));
+    assert.ok(image.byteLength <= 1_000_000, `${file} exceeds LINE's 1 MB image limit`);
     const size = richMenuImage(image);
     assert.ok(size.width >= 800 && size.width <= 2500, file);
     assert.equal(size.mimeType, "image/jpeg", file);
