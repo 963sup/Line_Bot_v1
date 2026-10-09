@@ -19,7 +19,7 @@ Repository
 | Concern | User-owned Repository | Organization-owned Repository |
 | --- | --- | --- |
 | 建立 | current active User 本人 | current active OrganizationOwner |
-| 所有權主體 | User Account | Organization Account |
+| 所有權主體 | User | Organization Account |
 | 日常 Repository 操作 | owner 的 implicit `ADMIN` 或明確有效 `ADMIN` | 明確有效 Repository `ADMIN` |
 | OrganizationOwner | 不適用 | 可建立與執行 access recovery，不因角色自動取得 Repository access |
 | Direct User grant | Repository-owned | Repository-owned；可包含 outside collaborator |
