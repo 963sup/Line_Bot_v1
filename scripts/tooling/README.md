@@ -12,5 +12,6 @@
 | `doctor.mjs` | `pnpm tooling:doctor`：檢查 exact Node/pnpm、Git、必要 workspace dev tools，env 只回報 key 是否存在。 |
 | `doctor.test.mjs` | 驗證 env key parsing 與 required toolchain health evaluation。 |
 | `list-skills.mjs` | `pnpm skills:list [query]`：從已安裝技能的 SKILL.md metadata 列表或搜尋技能，並確認每項技能都在 `skills-lock.json` 登錄。 |
+| `list-skills.test.mjs` | 驗證技能/lockfile 配對、metadata 解析、錯誤登錄與修復案例。 |
 
 `tooling:doctor` 是 developer environment diagnosis；`tooling:check` 是 repository contract validation。兩者 evidence 不互相替代。

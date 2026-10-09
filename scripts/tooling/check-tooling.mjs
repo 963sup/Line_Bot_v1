@@ -929,6 +929,7 @@ if (import.meta.main) {
       .map((file) => ["--check", file]),
     [
       "--test",
+      "scripts/tooling/list-skills.test.mjs",
       "scripts/tooling/check-tooling.test.mjs",
       "scripts/tooling/validate.test.mjs",
       "scripts/vercel/deploy-production.test.mjs",
