@@ -49,7 +49,7 @@ function parseSite(value: unknown): AttendancePoint {
   };
 }
 
-export function parseAttendanceSupplement(value: unknown): AttendanceSupplement {
+function parseAttendanceSupplement(value: unknown): AttendanceSupplement {
   const row = objectValue(value);
   if (
     typeof row.id !== "string" ||

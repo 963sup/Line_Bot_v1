@@ -4,7 +4,7 @@ import type {
   AttendanceSupplementSubmission,
 } from "./input/attendance-supplement.js";
 
-export type AttendanceSupplementStatus = "PENDING" | "APPROVED" | "REJECTED";
+type AttendanceSupplementStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type AttendanceSupplement = Readonly<{
   id: string;

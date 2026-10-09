@@ -180,13 +180,12 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
   ) {
     await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
     const ids = [...new Set([reviewerId, requesterId])].sort();
-    const locked = await sql.query(
-      "SELECT id FROM users WHERE id=ANY($1::text[]) ORDER BY id FOR UPDATE",
-      [ids],
-    );
-    if (locked.rows.length !== ids.length) throw new AttendanceError(404, "找不到補登申請人。");
-
-    const reviewer = await readUserQualification(sql, reviewerId);
+    let reviewer: Awaited<ReturnType<typeof readUserQualification>> = null;
+    for (const id of ids) {
+      const qualification = await readUserQualification(sql, id, "update");
+      if (!qualification) throw new AttendanceError(404, "找不到補登申請人。");
+      if (id === reviewerId) reviewer = qualification;
+    }
     if (!reviewer || reviewer.status !== "active") {
       throw new AttendanceError(403, "目前 User 資格不能審核補登。");
     }
