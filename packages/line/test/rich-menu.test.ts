@@ -29,11 +29,7 @@ test("actual upload dimensions and malformed image rejection", () => {
   const oversizedHeader = new DataView(oversizedPng.buffer);
   oversizedHeader.setUint32(16, 1280);
   oversizedHeader.setUint32(20, 853);
-  assert.deepEqual(richMenuImage(oversizedPng), {
-    width: 1280,
-    height: 853,
-    mimeType: "image/png",
-  });
+  assert.throws(() => richMenuImage(oversizedPng), /1 MB/);
 });
 
 test("rich menu client keeps its existing public method surface", () => {
