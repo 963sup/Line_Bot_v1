@@ -299,13 +299,10 @@ test("review inbox shows all pending requests and repository submissions enforce
   );
 
   const fullInbox = await store.list("outsider", now, reviewer);
-  const expectedVisible = Number(
-    (
-      await pg.query(
-        "SELECT count(*) AS count FROM app_private.attendance_supplement_requests WHERE repository_id=ANY(ARRAY['repo','repo-2']::text[]) AND status='PENDING' AND uid<>'outsider'",
-      )
-    ).rows[0] as { count: string },
+  const visibleCount = await pg.query(
+    "SELECT count(*) AS count FROM app_private.attendance_supplement_requests WHERE repository_id=ANY(ARRAY['repo','repo-2']::text[]) AND status='PENDING' AND uid<>'outsider'",
   );
+  const expectedVisible = Number((visibleCount.rows[0] as { count: string }).count);
   assert.equal(fullInbox.review.length, expectedVisible);
   assert.ok(fullInbox.review.length > 100);
 });
