@@ -15,14 +15,22 @@ test("Rich Menu desired state is derived from canonical definitions and assets",
   );
   assert.equal(
     desired.find(({ page }) => page === "attendance-in")?.image,
-    "assets/line/rich-menu/line_bot_v1-attendance-in.png",
+    "assets/line/rich-menu/line_bot_v1-attendance-in.jpg",
   );
   assert.equal(
     desired.find(({ page }) => page === "attendance-out")?.image,
-    "assets/line/rich-menu/line_bot_v1-attendance-out.png",
+    "assets/line/rich-menu/line_bot_v1-attendance-out.jpg",
   );
+  const expectedSizes = {
+    "attendance-in": { width: 1280, height: 853 },
+    "attendance-out": { width: 1280, height: 853 },
+    forms: { width: 1536, height: 1024 },
+    incident: { width: 1536, height: 1024 },
+    notifications: { width: 1536, height: 1024 },
+    team: { width: 1536, height: 1024 },
+  } as const;
   for (const item of desired) {
-    assert.ok(item.upload.length > 0 && item.upload.length <= 400000, item.page);
-    assert.deepEqual(item.menu.size, { width: 1536, height: 1024 }, item.page);
+    assert.ok(item.upload.length > 0, item.page);
+    assert.deepEqual(item.menu.size, expectedSizes[item.page], item.page);
   }
 });

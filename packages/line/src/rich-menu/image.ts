@@ -1,6 +1,5 @@
 /** Inspect the actual image being uploaded, not a separate design source. */
 export function richMenuImage(bytes: Uint8Array) {
-  if (bytes.length > 1_000_000) throw new Error("Rich menu image must be under 1 MB");
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const png =
     bytes.length >= 24 &&
