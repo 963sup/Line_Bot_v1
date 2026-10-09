@@ -4,10 +4,23 @@ const generation = "11111111-1111-4111-8111-111111111111";
 const cookie =
   "__Host-line_bot_v1_session=synthetic-session; Path=/; HttpOnly; Secure; SameSite=Lax";
 
-export async function fulfillLineSessionMock(route) {
+export async function fulfillLineSessionMock(route, onRequest = () => {}) {
   const request = route.request();
   const url = new URL(request.url());
   if (url.pathname !== "/api/auth") return false;
+  onRequest({ method: request.method() });
+
+  if (request.method() === "GET") {
+    const cookies = request.headers().cookie ?? "";
+    const hasSession = cookies
+      .split(";")
+      .some((part) => part.trim() === "__Host-line_bot_v1_session=synthetic-session");
+    await route.fulfill({
+      status: hasSession ? 200 : 401,
+      json: hasSession ? { generation } : { error: "服務登入已失效，請重新登入。" },
+    });
+    return true;
+  }
 
   if (request.method() === "POST") {
     const body = request.postDataJSON();

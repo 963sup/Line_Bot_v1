@@ -3,6 +3,7 @@ import { RequestIdentityError } from "../../../shared/server/request-identity-er
 import {
   createLineSession,
   renewLineSession,
+  restoreLineSession,
   revokeLineSession,
 } from "../_composition/request-identity.server";
 
@@ -18,7 +19,7 @@ class SessionRouteError extends Error {
   }
 }
 
-function requireSameOrigin(request: Request) {
+function requireSameOrigin(request: Request, allowMissingOriginForGet = false) {
   const configured = process.env.APP_ORIGIN ?? "";
   let appUrl: URL;
   try {
@@ -28,7 +29,14 @@ function requireSameOrigin(request: Request) {
   }
   if (appUrl.protocol !== "https:" || appUrl.origin !== configured)
     throw new SessionRouteError(503, "服務網址必須是固定 HTTPS origin。");
-  if (request.headers.get("origin") !== configured)
+  const origin = request.headers.get("origin");
+  const fetchSite = request.headers.get("sec-fetch-site");
+  const safeSameOriginGet =
+    allowMissingOriginForGet &&
+    request.method === "GET" &&
+    origin === null &&
+    (fetchSite === null || fetchSite === "same-origin");
+  if (origin !== configured && !safeSameOriginGet)
     throw new SessionRouteError(403, "來源不符，請重新開啟服務。");
 }
 
@@ -87,6 +95,16 @@ export async function POST(request: Request) {
       { generation: session.generation, sessionChanged: session.sessionChanged },
       session.cookie,
     );
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    requireSameOrigin(request, true);
+    const session = await restoreLineSession(request);
+    return jsonResponse({ generation: session.generation });
   } catch (error) {
     return errorResponse(error);
   }

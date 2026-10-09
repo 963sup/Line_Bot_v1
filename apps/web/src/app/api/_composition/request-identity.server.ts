@@ -214,15 +214,9 @@ export async function createLineSession(lineToken: string, request: Request) {
   }
 }
 
-async function currentSession(request: Request): Promise<StoredSession> {
+async function sessionFromCookie(request: Request): Promise<StoredSession> {
   const id = readSessionId(request);
   if (!id) throw new RequestIdentityError(401, "服務登入已失效，請重新登入。");
-  const generation = request.headers.get("x-app-session-generation");
-  if (
-    !generation ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(generation)
-  )
-    throw new RequestIdentityError(401, "登入狀態已變更，請重新登入。");
   await limitRequest("member-api", id);
   try {
     const store = sessionStore();
@@ -232,13 +226,31 @@ async function currentSession(request: Request): Promise<StoredSession> {
       if (raw) await store.delete(id);
       throw new RequestIdentityError(401, "服務登入已失效，請重新登入。");
     }
-    if (record.generation !== generation)
-      throw new RequestIdentityError(401, "登入帳號已切換，請重新載入後重試。");
     return { id, raw, record };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
     throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
   }
+}
+
+/** Read the current generation so a fresh browser document can restore its cookie session. */
+export async function restoreLineSession(request: Request) {
+  const current = await sessionFromCookie(request);
+  return { generation: current.record.generation };
+}
+
+async function currentSession(request: Request): Promise<StoredSession> {
+  if (!readSessionId(request)) throw new RequestIdentityError(401, "服務登入已失效，請重新登入。");
+  const generation = request.headers.get("x-app-session-generation");
+  if (
+    !generation ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(generation)
+  )
+    throw new RequestIdentityError(401, "登入狀態已變更，請重新登入。");
+  const current = await sessionFromCookie(request);
+  if (current.record.generation !== generation)
+    throw new RequestIdentityError(401, "登入帳號已切換，請重新載入後重試。");
+  return current;
 }
 
 /** Extend a valid service session without reusing or resending the LINE credential. */

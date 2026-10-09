@@ -90,7 +90,7 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
     setError("");
     setOrganizationWarning("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new ProjectRequestError("請完成 LINE 登入後重試。", 401);
       const currentActor = await requestProjectActor(token);
       if (ticket !== generation.current) return;
@@ -132,7 +132,7 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new ProjectRequestError("請完成 LINE 登入後重試。", 401);
       const currentActor = await requestProjectActor(token);
       if (currentActor.id !== operation.actorUserId) {

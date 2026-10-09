@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
-import { POST as auth, DELETE as logout, PATCH as renew } from "../src/app/api/auth/route";
+import {
+  POST as auth,
+  DELETE as logout,
+  PATCH as renew,
+  GET as restore,
+} from "../src/app/api/auth/route";
 import { GET as expense } from "../src/app/api/expenses/[id]/route";
 import { GET as membership } from "../src/app/api/membership/route";
 import { closeFixture, expenseStore, mockSupabase } from "./member-fixture";
@@ -37,6 +42,17 @@ test("the auth endpoint rejects a wrong-channel proof; protected APIs never reve
     );
     assert.equal(wrongOrigin.status, 403);
     assert.equal(calls, 0, "the server rejects a cross-origin exchange before LINE verification");
+    const wrongOriginRestore = await restore(
+      new Request("https://example.test/api/auth", {
+        headers: { origin: "https://attacker.test" },
+      }),
+    );
+    assert.equal(wrongOriginRestore.status, 403);
+    assert.equal(
+      calls,
+      0,
+      "the read-only restore endpoint still rejects an explicit foreign origin",
+    );
     assert.equal(
       (
         await renew(
@@ -156,6 +172,9 @@ test("app sessions authenticate protected APIs without another LINE verification
     assert.equal(missing.status, 401);
     assert.deepEqual(await missing.json(), { error: "服務登入已失效，請重新登入。" });
     assert.equal(proofCalls, 0);
+    const missingSession = await restore(new Request("https://example.test/api/auth"));
+    assert.equal(missingSession.status, 401);
+    assert.equal(proofCalls, 0, "a missing cookie never invokes LINE verification");
 
     const exchanged = await auth(
       new Request("https://example.test/api/auth", {
@@ -186,6 +205,14 @@ test("app sessions authenticate protected APIs without another LINE verification
       "X-App-Session-Generation": String(exchangedBody.generation),
     };
     assert.equal(proofCalls, 2, "session exchange verifies the token and fetches its subject");
+
+    const restored = await restore(
+      new Request("https://example.test/api/auth", { headers: { Cookie: session.Cookie } }),
+    );
+    assert.equal(restored.status, 200);
+    assert.deepEqual(await restored.json(), { generation: session["X-App-Session-Generation"] });
+    assert.equal(restored.headers.get("cache-control"), "no-store");
+    assert.equal(proofCalls, 2, "cookie restoration returns the generation without calling LINE");
 
     const sameSubjectExchange = await auth(
       new Request("https://example.test/api/auth", {
@@ -277,6 +304,17 @@ test("app sessions authenticate protected APIs without another LINE verification
     assert.match(signedOut.headers.get("set-cookie") ?? "", /Max-Age=0/);
     assert.equal((await expense(request(switchedSession), context)).status, 401);
     assert.equal(proofCalls, 6, "logout and later protected requests do not reverify LINE");
+    assert.equal(
+      (
+        await restore(
+          new Request("https://example.test/api/auth", {
+            headers: { Cookie: switchedSession.Cookie },
+          }),
+        )
+      ).status,
+      401,
+      "a revoked cookie cannot restore a service session",
+    );
   } finally {
     globalThis.fetch = previous.fetch;
     if (previous.provider === undefined) delete process.env.LINE_PROVIDER_ID;

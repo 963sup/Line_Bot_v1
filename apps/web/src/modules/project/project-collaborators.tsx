@@ -65,7 +65,7 @@ export default function ProjectCollaborators({
     setLookupError("");
     setCandidate(null);
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new ProjectRequestError("請完成 LINE 登入後重試。", 401);
       const actor = await requestProjectActor(token);
       if (actor.id !== actorUserId) {

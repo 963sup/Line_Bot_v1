@@ -193,6 +193,20 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     const target = new URL(request.url());
     if (target.origin !== base) return route.abort();
     if (target.pathname === "/api/auth") {
+      if (request.method() === "GET") {
+        const cookies = request.headers().cookie ?? "";
+        const proof = Object.keys(sessionGenerations).find((candidate) =>
+          cookies
+            .split(";")
+            .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
+        );
+        if (!proof)
+          return route.fulfill({
+            status: 401,
+            json: { error: "服務登入已失效，請重新登入。" },
+          });
+        return route.fulfill({ json: { generation: sessionGenerations[proof] } });
+      }
       if (request.method() === "POST") {
         const body = request.postDataJSON();
         assert.ok(Object.hasOwn(sessionGenerations, body.accessToken));
@@ -704,18 +718,31 @@ try {
     });
     await otherTab.goto(base + "/settings");
     await expect(otherTab.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
-    assert.equal(state.sessionExchanges, 2, "same-account tabs reuse the service session");
+    assert.equal(state.sessionExchanges, 1, "a second tab restores the existing cookie session");
     await page.evaluate(
       (key) => window.localStorage.setItem(key, "token-b"),
       syntheticProofStorageKey,
     );
     await page.reload();
     await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    await expect(otherTab.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 1, "reload does not exchange a new LINE proof");
+
+    await button("登出此服務").click();
+    await expect(page.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
     await expect(otherTab.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
-    await expect(otherTab.getByText(/登入狀態已在其他分頁更新/)).toBeVisible();
-    assert.equal(state.sessionExchanges, 3);
+    await expect(
+      otherTab.getByText("你已登出此服務，請選擇「使用 LINE 重新登入」。", { exact: true }),
+    ).toBeVisible();
+    assert.equal(state.sessionRevocations, 1);
+    await button("使用 LINE 重新登入").click();
+    await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 2, "explicit re-login exchanges the selected LINE proof");
     assert.ok(otherTabDocuments.length > 1, "the stale tab reloads to clear private page state");
-    await finish("Cross-tab session rotation clears and blocks stale page state", state);
+    await finish(
+      "Cookie restore avoids LINE proof exchange; explicit re-login keeps stale tabs blocked",
+      state,
+    );
   }
   console.log(JSON.stringify(results, null, 2));
   if (output)

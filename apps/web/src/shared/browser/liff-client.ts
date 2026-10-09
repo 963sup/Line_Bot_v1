@@ -11,6 +11,7 @@ import {
   lineSessionBlocked,
   onLineSessionBlocked,
   SessionBlockedError,
+  startLineServiceSession,
 } from "./line-service-session";
 
 const providerClient = createLiffClient(
@@ -25,9 +26,13 @@ async function establishServiceSession(liffId?: string, explicit = false) {
   if (explicit) allowLineServiceSession();
   const blocked = lineSessionBlocked();
   if (blocked) throw new SessionBlockedError(blocked);
+  if (!explicit) {
+    const restored = await ensureLineServiceSession();
+    if (restored) return restored;
+  }
   const lineAccessToken = await getLineAccessToken(liffId);
   if (!lineAccessToken) return null;
-  return ensureLineServiceSession(lineAccessToken);
+  return startLineServiceSession(lineAccessToken);
 }
 
 export const liffClient = {

@@ -212,6 +212,16 @@ async function setSyntheticProof(value) {
   );
 }
 
+async function switchServiceAccount(accessToken) {
+  await gotoPath("/settings");
+  await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "登出此服務", exact: true }).click();
+  await expect(page.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
+  await setSyntheticProof(accessToken);
+  await page.getByRole("button", { name: "使用 LINE 重新登入", exact: true }).click();
+  await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+}
+
 function routeKind(url) {
   const segments = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
   const last = segments.at(-1);
@@ -442,6 +452,20 @@ await context.route("**/*", async (route) => {
   if (!url.pathname.startsWith("/api/")) return route.continue();
 
   if (url.pathname === "/api/auth") {
+    if (request.method() === "GET") {
+      const cookies = request.headers().cookie ?? "";
+      const proof = Object.keys(sessionGenerations).find((candidate) =>
+        cookies
+          .split(";")
+          .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
+      );
+      if (!proof)
+        return route.fulfill({
+          status: 401,
+          json: { error: "服務登入已失效，請重新登入。" },
+        });
+      return route.fulfill({ json: { generation: sessionGenerations[proof] } });
+    }
     if (request.method() === "POST") {
       const body = request.postDataJSON();
       assert.equal(typeof body.accessToken, "string");
@@ -571,26 +595,17 @@ try {
   }
   result.checks.push("missing, forbidden and unavailable source stay distinct");
 
+  await switchServiceAccount("token-b");
   delayNextPrivateLabels = true;
-  await setSyntheticProof("token-b");
   await gotoPath("/private/Operations/labels");
   await expect.poll(() => (releaseDelayedPrivateLabels ? "delayed" : "pending")).toBe("delayed");
-  await page.evaluate((key) => {
-    window.localStorage.setItem(key, "token-a");
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
-    document.dispatchEvent(new Event("visibilitychange"));
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
-    document.dispatchEvent(new Event("visibilitychange"));
-  }, syntheticProofStorageKey);
+  await switchServiceAccount("token-a");
   releaseDelayedPrivateLabels();
+  await gotoPath("/private/Operations/labels");
   await expectPageState("沒有可讀取的儲存庫資源", "沒有 Repository 存取權限");
   await expect(page.getByText("private-visible", { exact: true })).toHaveCount(0);
 
-  await page.evaluate((key) => {
-    window.localStorage.setItem(key, "token-b");
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
-    document.dispatchEvent(new Event("visibilitychange"));
-  }, syntheticProofStorageKey);
+  await switchServiceAccount("token-b");
   await gotoPath("/private/Operations/labels");
   await expect(page.getByText("private-visible", { exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);

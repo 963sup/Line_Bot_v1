@@ -18,14 +18,13 @@ const blockedKey = "line_bot_v1:session-blocked";
 const channelName = "line_bot_v1:session";
 const renewAfterMs = 6 * 60 * 60 * 1000;
 
-let proofFingerprint: string | undefined;
 let generation: AppSessionGeneration | undefined;
 let renewAfter = 0;
 let blockedReason: SessionBlockReason | undefined;
 let transition = 0;
 let pending:
   | {
-      fingerprint: string;
+      fingerprint: string | null;
       transition: number;
       promise: Promise<AppSessionGeneration | null>;
     }
@@ -50,7 +49,6 @@ function savedBlockReason(): SessionBlockReason | undefined {
 function setBlocked(reason: SessionBlockReason, notify: boolean) {
   transition++;
   blockedReason = reason;
-  proofFingerprint = undefined;
   generation = undefined;
   renewAfter = 0;
   try {
@@ -108,6 +106,19 @@ async function responseError(response: Response) {
   return new Error("登入服務暫不可用，請稍後重試。");
 }
 
+async function readSessionGeneration() {
+  const response = await fetch(endpoint, {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (response.status === 401) return null;
+  if (!response.ok) throw await responseError(response);
+  const body = (await response.json()) as { generation?: unknown };
+  if (!isGeneration(body.generation)) throw new Error("登入服務回應格式不正確。");
+  return body.generation;
+}
+
 async function renewSession(current: AppSessionGeneration) {
   const response = await fetch(endpoint, {
     method: "PATCH",
@@ -124,11 +135,7 @@ async function renewSession(current: AppSessionGeneration) {
   return true;
 }
 
-async function exchangeLineProof(
-  lineAccessToken: string,
-  fingerprint: string,
-  expectedTransition: number,
-) {
+async function exchangeLineProof(lineAccessToken: string, expectedTransition: number) {
   const response = await fetch(endpoint, {
     method: "POST",
     credentials: "same-origin",
@@ -154,7 +161,6 @@ async function exchangeLineProof(
     throw new SessionBlockedError(reason ?? "session-changed");
   }
   const previousGeneration = generation;
-  proofFingerprint = fingerprint;
   generation = body.generation;
   renewAfter = Date.now() + renewAfterMs;
   if (body.sessionChanged === true) {
@@ -164,16 +170,75 @@ async function exchangeLineProof(
   return generation;
 }
 
-export async function ensureLineServiceSession(lineAccessToken: string) {
+async function renewOrRecover(current: AppSessionGeneration, expectedTransition: number) {
+  const renewed = await renewSession(current);
+  if (transition !== expectedTransition)
+    throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
+  if (renewed) return current;
+
+  const latest = await readSessionGeneration();
+  if (transition !== expectedTransition)
+    throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
+  if (latest && latest !== current) {
+    setBlocked("session-changed", true);
+    throw new SessionBlockedError("session-changed");
+  }
+  if (latest) {
+    generation = latest;
+    renewAfter = Date.now() + renewAfterMs;
+    return latest;
+  }
+  if (generation === current) {
+    generation = undefined;
+    renewAfter = 0;
+  }
+  return null;
+}
+
+export async function ensureLineServiceSession() {
+  const blocked = savedBlockReason();
+  if (blocked) throw new SessionBlockedError(blocked);
+  const expectedTransition = transition;
+  if (pending) {
+    const active = pending;
+    if (active.fingerprint === null && active.transition === expectedTransition)
+      return active.promise;
+    await active.promise.catch(() => null);
+    if (transition !== expectedTransition)
+      throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
+    return ensureLineServiceSession();
+  }
+
+  const promise = (async () => {
+    if (generation) {
+      if (Date.now() < renewAfter) return generation;
+      return renewOrRecover(generation, expectedTransition);
+    }
+    const restored = await readSessionGeneration();
+    if (transition !== expectedTransition)
+      throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
+    if (!restored) return null;
+    generation = restored;
+    renewAfter = 0;
+    return renewOrRecover(restored, expectedTransition);
+  })();
+  pending = { fingerprint: null, transition: expectedTransition, promise };
+  try {
+    return await promise;
+  } finally {
+    if (pending?.promise === promise) pending = undefined;
+  }
+}
+
+export async function startLineServiceSession(lineAccessToken: string) {
   const blocked = savedBlockReason();
   if (blocked) throw new SessionBlockedError(blocked);
   if (!lineAccessToken) throw new Error("請從 LINE 重新開啟操作頁。");
 
   const expectedTransition = transition;
   const fingerprint = await tokenFingerprint(lineAccessToken);
-  if (transition !== expectedTransition) {
+  if (transition !== expectedTransition)
     throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
-  }
   if (pending) {
     const active = pending;
     if (active.fingerprint === fingerprint && active.transition === expectedTransition)
@@ -181,29 +246,19 @@ export async function ensureLineServiceSession(lineAccessToken: string) {
     await active.promise.catch(() => null);
     if (transition !== expectedTransition)
       throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
-    return ensureLineServiceSession(lineAccessToken);
+    return startLineServiceSession(lineAccessToken);
   }
 
-  if (proofFingerprint === fingerprint && generation) {
-    if (Date.now() < renewAfter) return generation;
-    const current = generation;
-    const promise = (async () => {
-      const renewed = await renewSession(current);
-      if (transition !== expectedTransition) {
+  const promise = (async () => {
+    if (!generation) {
+      const restored = await readSessionGeneration();
+      if (transition !== expectedTransition)
         throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
-      }
-      if (renewed) return current;
-      return exchangeLineProof(lineAccessToken, fingerprint, expectedTransition);
-    })();
-    pending = { fingerprint, transition: expectedTransition, promise };
-    try {
-      return await promise;
-    } finally {
-      if (pending?.promise === promise) pending = undefined;
+      generation = restored ?? undefined;
+      renewAfter = 0;
     }
-  }
-
-  const promise = exchangeLineProof(lineAccessToken, fingerprint, expectedTransition);
+    return exchangeLineProof(lineAccessToken, expectedTransition);
+  })();
   pending = { fingerprint, transition: expectedTransition, promise };
   try {
     return await promise;

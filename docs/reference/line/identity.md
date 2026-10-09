@@ -28,8 +28,8 @@ LINE bot userId／`destination` 只作 Integration 維護的 provider context；
 
 ## Browser / failure
 
-Browser只取得proof並送server；authorization不在client完成。產品入口以 `POST /api/auth` 傳送短期 LINE access token。伺服器驗證 token 的 channel、有效期與 `profile` scope，再向 LINE 取得 subject；只有此伺服器驗證出的 subject 可用來解析 Account mapping。前端不得傳 userId、profile 或 decoded token claims 作登入依據。
+Browser只取得proof並送server；authorization不在client完成。產品首次登入或使用者明確重新登入時，以 `POST /api/auth` 傳送短期 LINE access token。伺服器驗證 token 的 channel、有效期與 `profile` scope，再向 LINE 取得 subject；只有此伺服器驗證出的 subject 可用來解析 Account mapping。前端不得傳 userId、profile 或 decoded token claims 作登入依據。一般頁面載入先以 `GET /api/auth` 從有效 HttpOnly cookie 恢復產品 session；cookie 無效時才要求 LIFF proof。
 
-驗證成功後，Web 以隨機 opaque ID 發出 HttpOnly、Secure、SameSite=Lax cookie；Redis 保存 subject 與 session generation，session 有效期為七天，可由 `DELETE /api/auth` 撤銷。相同有效 subject 重新驗證會沿用 session generation；建立新 generation 時回傳 `sessionChanged`，其他分頁會撤銷舊頁面記憶並要求重新登入，避免共用 cookie 換帳號後沿用舊畫面。後續受保護 API 只讀取產品 cookie 與非秘密 generation 一致性標記，不重複呼叫 LINE。`PATCH /api/auth` 只延長有效的產品 session。Cookie 不授予 User qualification、Repository scope 或 business permission；各 owner 每次仍須重新解析狀態與授權。
+驗證成功後，Web 以隨機 opaque ID 發出 HttpOnly、Secure、SameSite=Lax cookie；Redis 保存 subject 與 session generation，session 有效期為七天，可由 `DELETE /api/auth` 撤銷。`GET /api/auth` 只在有效 cookie 存在時回傳非秘密 generation，讓重新載入的頁面恢復現有產品 session；瀏覽器接著以 `PATCH /api/auth` 續期，不需重新呼叫 LINE。相同有效 subject 重新驗證會沿用 session generation；明確以新 LINE proof 登入並建立新 generation 時回傳 `sessionChanged`，其他分頁會撤銷舊頁面記憶並要求重新登入，避免共用 cookie 換帳號後沿用舊畫面。後續受保護 API 只讀取產品 cookie 與非秘密 generation 一致性標記，不重複呼叫 LINE。Cookie 不授予 User qualification、Repository scope 或 business permission；各 owner 每次仍須重新解析狀態與授權。
 
 LINE token 僅在建立／重新驗證產品 session 時經 HTTPS 傳送；不放入 URL、local/session storage、一般 API header、business record、log 或 analytics。LINE token 不作長期產品 session。登出只撤銷本服務 session，不呼叫 LINE logout，也不登出 LINE 帳號。Token 過期、Channel 不符、subject 無 mapping、account 不 qualified 或 mapping conflict 皆 fail closed，不回退 profile/email/cache。
