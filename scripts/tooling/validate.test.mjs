@@ -1,12 +1,21 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import {
   classifyChangedFiles,
+  detectFastScope,
   fastTaskArgs,
   selectValidationStages,
   shouldRunFast,
   validationGroups,
 } from "./validate.mjs";
+
+function git(directory, args) {
+  execFileSync("git", args, { cwd: directory, stdio: "ignore" });
+}
 
 test("lockfile consistency gate cannot be skipped by fast scope", () => {
   for (const scope of [
@@ -30,6 +39,53 @@ test("documentation-only changes run only documentation-owned fast gates", () =>
   });
   for (const task of ["docs:test", "docs:check"]) assert.equal(shouldRunFast(task, scope), true);
   assert.equal(shouldRunFast("tooling:check", scope), false);
+});
+
+test("local fast scope includes non-ignored untracked files and ignores excluded files", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-fast-scope-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  git(directory, ["init", "--quiet"]);
+  git(directory, ["config", "user.name", "Validation Fixture"]);
+  git(directory, ["config", "user.email", "validation@example.invalid"]);
+  writeFileSync(join(directory, ".gitignore"), "ignored.ts\n");
+  writeFileSync(join(directory, "README.md"), "before\n");
+  git(directory, ["add", ".gitignore", "README.md"]);
+  git(directory, ["commit", "--quiet", "-m", "fixture baseline"]);
+
+  writeFileSync(join(directory, "README.md"), "after\n");
+  writeFileSync(join(directory, "ignored.ts"), "export {}\n");
+  assert.deepEqual(detectFastScope({ directory, baseRef: null }), {
+    codeAffected: false,
+    docsAffected: true,
+    schemaAffected: false,
+    toolingAffected: false,
+  });
+
+  const sourceDirectory = join(directory, "packages", "folder with spaces");
+  mkdirSync(sourceDirectory, { recursive: true });
+  writeFileSync(join(sourceDirectory, "新增功能.ts"), "export {}\n");
+  const scope = detectFastScope({ directory, baseRef: null });
+  assert.deepEqual(scope, {
+    codeAffected: true,
+    docsAffected: true,
+    schemaAffected: false,
+    toolingAffected: false,
+    hasUntrackedFiles: true,
+  });
+  assert.equal(shouldRunFast("typecheck+test", scope), true);
+  assert.equal(shouldRunFast("deadcode", scope), true);
+  assert.deepEqual(
+    fastTaskArgs("typecheck+test", ["turbo", "run", "typecheck", "test"], scope, ["--affected"]),
+    ["turbo", "run", "typecheck", "test"],
+  );
+});
+
+test("fast scope detection falls back to all stages when Git inventory fails", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-no-git-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const scope = detectFastScope({ directory, baseRef: null });
+  assert.equal(scope, null);
+  assert.equal(shouldRunFast("typecheck+test", scope), true);
 });
 
 test("schema-only changes run schema, remote-contract, architecture and product test gates", () => {

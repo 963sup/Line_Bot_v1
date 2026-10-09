@@ -71,6 +71,9 @@ async function repositoryBySelector(
     )
   ).rows[0] as RepositoryRow | undefined;
   if (current) return current;
+  if (selector.followRenames === false) {
+    throw new RepositoryError(404, "找不到 Repository。");
+  }
 
   const historical = (
     await sql.query(

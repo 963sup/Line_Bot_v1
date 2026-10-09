@@ -2,26 +2,17 @@ import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createCommandExpense } from "@line_bot_v1/expense/application/command-expense";
 import type { createGetExpense } from "@line_bot_v1/expense/application/get-expense";
 import type { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
-import {
-  type Expense,
-  type ExpenseCommand,
-  ExpenseError,
-} from "@line_bot_v1/expense/domain/aggregates/expense";
+import { type ExpenseCommand, ExpenseError } from "@line_bot_v1/expense/domain/aggregates/expense";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
+import { toExpenseApiView } from "./api-contract";
 
 const json = (data: unknown, status = 200) =>
   Response.json(data, {
     status,
     headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
   });
-
-const publicExpense = (d: Expense) => {
-  const view = { ...d } as Record<string, unknown>;
-  for (const key of ["owner", "scope", "imageId", "project"]) delete view[key];
-  return view;
-};
 
 type ExpenseRequests = {
   commandExpense: ReturnType<typeof createCommandExpense>;
@@ -44,7 +35,7 @@ async function run(
     const subject = await expense.requestIdentity(request);
     const { id } = await context.params;
     if (!/^[a-f0-9-]{36}$/.test(id)) throw new ExpenseError(404, "資料不存在。");
-    if (!mutate) return json(publicExpense(await expense.getExpense(subject, id)));
+    if (!mutate) return json(toExpenseApiView(await expense.getExpense(subject, id)));
 
     if (!request.headers.get("content-type")?.startsWith("application/json")) {
       throw new ExpenseError(415, "資料格式不正確。");
@@ -73,7 +64,7 @@ async function run(
     }
 
     const d = await expense.commandExpense(subject, id, command);
-    return json(publicExpense(d));
+    return json(toExpenseApiView(d));
   } catch (error) {
     const known =
       error instanceof ExpenseError ||
