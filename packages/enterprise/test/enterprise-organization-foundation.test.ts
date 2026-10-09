@@ -11,8 +11,8 @@ import {
   resolveOrganizationInvitation,
 } from "@line_bot_v1/organization/domain";
 import { enterpriseGovernance } from "../src/application/enterprise-governance.js";
-import type { EnterpriseGovernancePort } from "../src/application/ports/enterprise-governance.js";
 import type { EnterpriseDetail } from "../src/contracts/enterprise-governance.js";
+import type { EnterpriseGovernancePort } from "../src/contracts/input/enterprise-governance.js";
 import {
   assignEnterpriseTeamToOrganization,
   createEnterprise,

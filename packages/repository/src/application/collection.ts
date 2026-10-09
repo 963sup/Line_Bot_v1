@@ -1,4 +1,4 @@
-import type { RepositoryCollectionStore } from "./ports/collection.js";
+import type { RepositoryCollectionStore } from "../contracts/output/collection.js";
 
 export function createRepositoryCollection(deps: {
   activeUser(subject: string): Promise<{ id: string }>;

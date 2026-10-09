@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresRepositoryDiscoveryStore } from "../src/adapters/postgres/discovery.js";
+import { PostgresRepositoryDiscoveryStore } from "../src/postgres/discovery.js";
 
 test("Repository discovery ranks current Stars and rechecks Repository access", async (t) => {
   const { pg, db } = await postgresFixture();

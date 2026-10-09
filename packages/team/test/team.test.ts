@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createTeamCollaboration } from "../src/application/collaboration.js";
-import { parseTeamCommand } from "../src/application/commands/team-command.js";
+import { buildTeamCommand, parseTeamCommand } from "../src/application/commands/team-command.js";
+import type { TeamView } from "../src/contracts.js";
 import { TeamError } from "../src/domain/errors/team-error.js";
 import { normalizeTeamSlug, teamSlugFromName } from "../src/domain/value-objects/team-slug.js";
 
@@ -49,6 +50,42 @@ test("rename-team is an explicit versioned command", () => {
       organizationAccountId: "organization",
       teamId: "team",
       expectedVersion: 2,
+      name: "Platform",
+    },
+  );
+});
+
+test("team command builder keeps scope and accepts request identity from the delivery adapter", () => {
+  const data: TeamView = {
+    userId: "user-1",
+    organizations: [],
+    organizationAccountId: "org-1",
+    organizationLogin: "org",
+    teams: [],
+    team: {
+      id: "team-1",
+      organizationAccountId: "org-1",
+      name: "Core",
+      slug: "core",
+      parentTeamId: null,
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+      version: 7,
+      membershipStatus: "active",
+      membershipType: null,
+      isMaintainer: true,
+    },
+    childTeams: [],
+    members: [],
+  };
+  assert.deepEqual(
+    buildTeamCommand(data, { action: "rename-team", name: "Platform" }, "request-1"),
+    {
+      action: "rename-team",
+      requestId: "request-1",
+      organizationAccountId: "org-1",
+      teamId: "team-1",
+      expectedVersion: 7,
       name: "Platform",
     },
   );

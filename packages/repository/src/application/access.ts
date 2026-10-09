@@ -1,3 +1,8 @@
+import type {
+  RepositoryAccessCommand,
+  RepositoryAccessStore,
+  RepositoryAccessSubjectKind,
+} from "../contracts/repositories/access.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import {
   normalizeRepositoryName,
@@ -6,11 +11,6 @@ import {
   repositoryPermissions,
 } from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
-import type {
-  RepositoryAccessCommand,
-  RepositoryAccessStore,
-  RepositoryAccessSubjectKind,
-} from "./ports/access.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;

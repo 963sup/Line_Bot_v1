@@ -52,8 +52,8 @@ function parseVersion(value: unknown, name: string, allowZero = false) {
   return value;
 }
 
+import type { OrganizationGovernancePort } from "../contracts/input/organization-governance.js";
 import type { OrganizationCommand } from "../contracts/organization-governance.js";
-import type { OrganizationGovernancePort } from "./ports/organization-governance.js";
 
 function parseOrganizationCommand(raw: unknown): OrganizationCommand {
   const base = governanceInput(raw, [

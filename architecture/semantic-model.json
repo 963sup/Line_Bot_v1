@@ -1713,9 +1713,9 @@
         "scope": "current account qualification use case and login identity surface",
         "sourcePaths": [
           "packages/account/src/application/user.ts",
-          "packages/account/src/application/ports/user-repository.ts"
+          "packages/account/src/contracts/repositories/user.ts"
         ],
-        "publicExports": ["./application/user", "./application/ports/user-repository"],
+        "publicExports": ["./application/user", "./contracts/repositories/user"],
         "entrypoints": [],
         "testPaths": ["packages/account/test/user.test.ts"],
         "note": "Static source/export evidence only; runtime success still requires executed tests or runtime evidence."
@@ -1740,9 +1740,9 @@
         "scope": "current User profile application surface",
         "sourcePaths": [
           "packages/account/src/application/profile.ts",
-          "packages/account/src/application/ports/profile.ts"
+          "packages/account/src/contracts/repositories/profile.ts"
         ],
-        "publicExports": ["./application/profile", "./application/ports/profile"],
+        "publicExports": ["./application/profile", "./contracts/repositories/profile"],
         "entrypoints": [
           "apps/web/src/app/api/profile/route.ts",
           "apps/web/src/app/(mobile)/settings/profile/page.tsx"
@@ -1770,10 +1770,10 @@
         "scope": "authenticated self Achievement read projection for Profile",
         "sourcePaths": [
           "packages/account/src/application/achievements.ts",
-          "packages/account/src/application/ports/achievements.ts",
+          "packages/account/src/contracts/output/achievements.ts",
           "packages/account/src/postgres/achievements.ts"
         ],
-        "publicExports": ["./application/achievements", "./application/ports/achievements"],
+        "publicExports": ["./application/achievements", "./contracts/output/achievements"],
         "entrypoints": [
           "apps/web/src/app/api/profile/achievements/route.ts",
           "apps/web/src/app/(public)/[login]/page.tsx"
@@ -1804,9 +1804,9 @@
         "scope": "current User follow application surface",
         "sourcePaths": [
           "packages/account/src/application/follows.ts",
-          "packages/account/src/application/ports/follows.ts"
+          "packages/account/src/contracts/output/follows.ts"
         ],
-        "publicExports": ["./application/follows", "./application/ports/follows"],
+        "publicExports": ["./application/follows", "./contracts/output/follows"],
         "entrypoints": [
           "apps/web/src/app/api/follows/route.ts",
           "apps/web/src/app/(mobile)/settings/network/page.tsx"
@@ -1834,12 +1834,14 @@
         "scope": "current Enterprise governance application surface",
         "sourcePaths": [
           "packages/enterprise/src/application/enterprise-governance.ts",
-          "packages/enterprise/src/application/ports/enterprise-governance.ts",
-          "packages/enterprise/src/domain.ts"
+          "packages/enterprise/src/contracts/input/enterprise-governance.ts",
+          "packages/enterprise/src/domain.ts",
+          "packages/enterprise/src/contracts/enterprise-governance.ts"
         ],
         "publicExports": [
           "./application/enterprise-governance",
-          "./application/ports/enterprise-governance",
+          "./contracts/input/enterprise-governance",
+          "./contracts/enterprise-governance",
           "./domain"
         ],
         "entrypoints": [
@@ -1895,12 +1897,14 @@
         "scope": "current Organization governance application surface",
         "sourcePaths": [
           "packages/organization/src/application/organization-governance.ts",
-          "packages/organization/src/application/ports/organization-governance.ts",
-          "packages/organization/src/domain.ts"
+          "packages/organization/src/contracts/input/organization-governance.ts",
+          "packages/organization/src/domain.ts",
+          "packages/organization/src/contracts/organization-governance.ts"
         ],
         "publicExports": [
           "./application/organization-governance",
-          "./application/ports/organization-governance",
+          "./contracts/input/organization-governance",
+          "./contracts/organization-governance",
           "./domain"
         ],
         "entrypoints": ["apps/web/src/app/(mobile)/organizations/page.tsx"],
@@ -1958,7 +1962,8 @@
         "sourcePaths": [
           "packages/team/src/application/collaboration.ts",
           "packages/team/src/application/commands/team-command.ts",
-          "packages/team/src/application/ports.ts",
+          "packages/team/src/contracts/input/team-command.ts",
+          "packages/team/src/contracts/repositories/team.ts",
           "packages/team/src/contracts.ts",
           "packages/team/src/adapters/postgres.ts",
           "packages/team/src/domain/errors/team-error.ts",
@@ -1969,7 +1974,8 @@
         "publicExports": [
           "./application/collaboration",
           "./application/commands/team-command",
-          "./application/ports",
+          "./contracts/input/team-command",
+          "./contracts/repositories/team",
           "./contracts",
           "./domain/errors/team-error",
           "./domain/value-objects/team-slug"
@@ -2033,12 +2039,12 @@
         "scope": "Repository creation for self User owner or current effective OrganizationOwner; INTERNAL requires the Organization's current active Enterprise scope.",
         "sourcePaths": [
           "packages/repository/src/application/creation.ts",
-          "packages/repository/src/application/ports/creation.ts",
-          "packages/repository/src/adapters/postgres/creation.ts"
+          "packages/repository/src/contracts/repositories/creation.ts",
+          "packages/repository/src/postgres/creation.ts"
         ],
         "publicExports": [
           "./application/creation",
-          "./application/ports/creation",
+          "./contracts/repositories/creation",
           "./postgres/creation"
         ],
         "entrypoints": [
@@ -2072,11 +2078,11 @@
         "scope": "Current Repository reads over explicit access, PUBLIC visibility or same-active-Enterprise INTERNAL visibility, plus public anonymous lookup.",
         "sourcePaths": [
           "packages/repository/src/application/public.ts",
-          "packages/repository/src/application/ports/public.ts",
-          "packages/repository/src/adapters/postgres/access.ts",
+          "packages/repository/src/contracts/output/public.ts",
+          "packages/repository/src/postgres/access.ts",
           "packages/repository/src/postgres/public.ts"
         ],
-        "publicExports": ["./application/public", "./application/ports/public"],
+        "publicExports": ["./application/public", "./contracts/output/public"],
         "entrypoints": [
           "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
           "apps/web/src/app/(mobile)/repositories/page.tsx"
@@ -2108,12 +2114,12 @@
         "scope": "Repository admin lifecycle management for rename, PRIVATE/INTERNAL/PUBLIC visibility, archive and unarchive.",
         "sourcePaths": [
           "packages/repository/src/application/management.ts",
-          "packages/repository/src/application/ports/management.ts",
-          "packages/repository/src/adapters/postgres/management.ts"
+          "packages/repository/src/contracts/repositories/management.ts",
+          "packages/repository/src/postgres/management.ts"
         ],
         "publicExports": [
           "./application/management",
-          "./application/ports/management",
+          "./contracts/repositories/management",
           "./postgres/management"
         ],
         "entrypoints": [
@@ -2148,12 +2154,12 @@
         "scope": "Repository is the supported non-code Subscribable subject; User state is SUBSCRIBED, UNSUBSCRIBED or IGNORED with current-access recheck and independent versioning.",
         "sourcePaths": [
           "packages/repository/src/application/subscription.ts",
-          "packages/repository/src/application/ports/subscription.ts",
-          "packages/repository/src/adapters/postgres/subscription.ts"
+          "packages/repository/src/contracts/repositories/subscription.ts",
+          "packages/repository/src/postgres/subscription.ts"
         ],
         "publicExports": [
           "./application/subscription",
-          "./application/ports/subscription",
+          "./contracts/repositories/subscription",
           "./postgres/subscription"
         ],
         "entrypoints": [
@@ -2187,12 +2193,12 @@
         "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization, OrganizationOwner recovery, expected-version mutation and exact replay.",
         "sourcePaths": [
           "packages/repository/src/application/access.ts",
-          "packages/repository/src/application/ports/access.ts",
-          "packages/repository/src/adapters/postgres/access-management.ts"
+          "packages/repository/src/contracts/repositories/access.ts",
+          "packages/repository/src/postgres/access-management.ts"
         ],
         "publicExports": [
           "./application/access",
-          "./application/ports/access",
+          "./contracts/repositories/access",
           "./postgres/access-management"
         ],
         "entrypoints": [
@@ -2226,9 +2232,9 @@
         "scope": "current Repository star application surface",
         "sourcePaths": [
           "packages/repository/src/application/stars.ts",
-          "packages/repository/src/application/ports/stars.ts"
+          "packages/repository/src/contracts/repositories/stars.ts"
         ],
-        "publicExports": ["./application/stars", "./application/ports/stars"],
+        "publicExports": ["./application/stars", "./contracts/repositories/stars"],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/api/repositories/starred/route.ts",
@@ -2262,12 +2268,12 @@
         "scope": "current User-owned private/public Repository Star List lifecycle and Star-backed membership",
         "sourcePaths": [
           "packages/repository/src/application/star-lists.ts",
-          "packages/repository/src/application/ports/star-lists.ts",
-          "packages/repository/src/adapters/postgres/star-lists.ts"
+          "packages/repository/src/contracts/repositories/star-lists.ts",
+          "packages/repository/src/postgres/star-lists.ts"
         ],
         "publicExports": [
           "./application/star-lists",
-          "./application/ports/star-lists",
+          "./contracts/repositories/star-lists",
           "./postgres/star-lists"
         ],
         "entrypoints": [
@@ -2302,7 +2308,7 @@
         "status": "implemented",
         "scope": "Explore application query over Repository-owned discovery projections and current access",
         "sourcePaths": [
-          "packages/repository/src/adapters/postgres/discovery.ts",
+          "packages/repository/src/postgres/discovery.ts",
           "packages/repository/src/contracts/discovery.ts"
         ],
         "publicExports": ["./contracts/discovery", "./postgres/discovery"],
@@ -2343,10 +2349,16 @@
           "packages/issue/src/domain/issue/policies/issue-repository-operation.ts",
           "packages/issue/src/domain/issue/policies/issue-transition.ts",
           "packages/issue/src/application/issues.ts",
-          "packages/issue/src/application/ports/issues.ts",
+          "packages/issue/src/contracts/repositories/issues.ts",
+          "packages/issue/src/contracts/input/issues.ts",
           "packages/issue/src/adapters/postgres.ts"
         ],
-        "publicExports": ["./domain", "./application/issues", "./application/ports/issues"],
+        "publicExports": [
+          "./domain",
+          "./application/issues",
+          "./contracts/input/issues",
+          "./contracts/repositories/issues"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
@@ -2525,13 +2537,13 @@
         "scope": "authorized Repository Label read model and API transport",
         "sourcePaths": [
           "packages/repository/src/application/resources.ts",
-          "packages/repository/src/application/ports/resources.ts",
-          "packages/repository/src/adapters/postgres/resources.ts",
-          "packages/repository/src/adapters/postgres/access.ts"
+          "packages/repository/src/contracts/output/resources.ts",
+          "packages/repository/src/postgres/resources.ts",
+          "packages/repository/src/postgres/access.ts"
         ],
         "publicExports": [
           "./application/resources",
-          "./application/ports/resources",
+          "./contracts/output/resources",
           "./postgres/resources"
         ],
         "entrypoints": [
@@ -2564,13 +2576,13 @@
         "scope": "authorized Repository Milestone read model and API transport",
         "sourcePaths": [
           "packages/repository/src/application/resources.ts",
-          "packages/repository/src/application/ports/resources.ts",
-          "packages/repository/src/adapters/postgres/resources.ts",
-          "packages/repository/src/adapters/postgres/access.ts"
+          "packages/repository/src/contracts/output/resources.ts",
+          "packages/repository/src/postgres/resources.ts",
+          "packages/repository/src/postgres/access.ts"
         ],
         "publicExports": [
           "./application/resources",
-          "./application/ports/resources",
+          "./contracts/output/resources",
           "./postgres/resources"
         ],
         "entrypoints": [
@@ -2644,7 +2656,7 @@
         "sourcePaths": [
           "packages/repository/src/application/resource-management.ts",
           "packages/repository/src/contracts/output/resource-management.ts",
-          "packages/repository/src/adapters/postgres/resource-management.ts"
+          "packages/repository/src/postgres/resource-management.ts"
         ],
         "publicExports": [
           "./application/resource-management",
@@ -2680,7 +2692,7 @@
         "sourcePaths": [
           "packages/repository/src/application/resource-management.ts",
           "packages/repository/src/contracts/output/resource-management.ts",
-          "packages/repository/src/adapters/postgres/resource-management.ts"
+          "packages/repository/src/postgres/resource-management.ts"
         ],
         "publicExports": [
           "./application/resource-management",
@@ -3058,12 +3070,12 @@
         "scope": "Optional single Repository address; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
         "sourcePaths": [
           "packages/repository/src/application/address.ts",
-          "packages/repository/src/application/ports/address.ts",
-          "packages/repository/src/adapters/postgres/address.ts"
+          "packages/repository/src/contracts/repositories/address.ts",
+          "packages/repository/src/postgres/address.ts"
         ],
         "publicExports": [
           "./application/address",
-          "./application/ports/address",
+          "./contracts/repositories/address",
           "./postgres/address"
         ],
         "entrypoints": [

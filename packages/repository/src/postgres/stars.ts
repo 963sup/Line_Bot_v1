@@ -1,7 +1,7 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { RepositoryStarStore, StarredRepository } from "../../application/ports/stars.js";
-import { RepositoryError } from "../../domain.js";
+import type { RepositoryStarStore, StarredRepository } from "../contracts/repositories/stars.js";
+import { RepositoryError } from "../domain.js";
 
 async function requireAccess(sql: Sql, userId: string, repositoryId: string): Promise<void> {
   const row = (

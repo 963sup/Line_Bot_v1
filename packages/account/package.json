@@ -8,25 +8,13 @@
       "types": "./dist/application/manage-users.d.ts",
       "default": "./dist/application/manage-users.js"
     },
-    "./application/ports/identity-provider": {
-      "types": "./dist/application/ports/identity-provider.d.ts",
-      "default": "./dist/application/ports/identity-provider.js"
-    },
-    "./application/ports/user-management": {
-      "types": "./dist/application/ports/user-management.d.ts",
-      "default": "./dist/application/ports/user-management.js"
-    },
-    "./application/ports/user-repository": {
-      "types": "./dist/application/ports/user-repository.d.ts",
-      "default": "./dist/application/ports/user-repository.js"
+    "./contracts/user-management": {
+      "types": "./dist/contracts/user-management.d.ts",
+      "default": "./dist/contracts/user-management.js"
     },
     "./application/user": {
       "types": "./dist/application/user.d.ts",
       "default": "./dist/application/user.js"
-    },
-    "./contracts/user-management": {
-      "types": "./dist/contracts/user-management.d.ts",
-      "default": "./dist/contracts/user-management.js"
     },
     "./domain": {
       "types": "./dist/domain.d.ts",
@@ -40,25 +28,13 @@
       "types": "./dist/application/follows.d.ts",
       "default": "./dist/application/follows.js"
     },
-    "./application/ports/follows": {
-      "types": "./dist/application/ports/follows.d.ts",
-      "default": "./dist/application/ports/follows.js"
-    },
     "./application/profile": {
       "types": "./dist/application/profile.d.ts",
       "default": "./dist/application/profile.js"
     },
-    "./application/ports/profile": {
-      "types": "./dist/application/ports/profile.d.ts",
-      "default": "./dist/application/ports/profile.js"
-    },
     "./application/achievements": {
       "types": "./dist/application/achievements.d.ts",
       "default": "./dist/application/achievements.js"
-    },
-    "./application/ports/achievements": {
-      "types": "./dist/application/ports/achievements.d.ts",
-      "default": "./dist/application/ports/achievements.js"
     },
     "./postgres": {
       "types": "./dist/postgres.d.ts",
@@ -67,6 +43,30 @@
     "./supabase-identity": {
       "types": "./dist/supabase-identity.d.ts",
       "default": "./dist/supabase-identity.js"
+    },
+    "./contracts/output/identity-provider": {
+      "types": "./dist/contracts/output/identity-provider.d.ts",
+      "default": "./dist/contracts/output/identity-provider.js"
+    },
+    "./contracts/repositories/user-management": {
+      "types": "./dist/contracts/repositories/user-management.d.ts",
+      "default": "./dist/contracts/repositories/user-management.js"
+    },
+    "./contracts/repositories/user": {
+      "types": "./dist/contracts/repositories/user.d.ts",
+      "default": "./dist/contracts/repositories/user.js"
+    },
+    "./contracts/output/follows": {
+      "types": "./dist/contracts/output/follows.d.ts",
+      "default": "./dist/contracts/output/follows.js"
+    },
+    "./contracts/repositories/profile": {
+      "types": "./dist/contracts/repositories/profile.d.ts",
+      "default": "./dist/contracts/repositories/profile.js"
+    },
+    "./contracts/output/achievements": {
+      "types": "./dist/contracts/output/achievements.d.ts",
+      "default": "./dist/contracts/output/achievements.js"
     }
   },
   "files": [

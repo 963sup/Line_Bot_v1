@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { PartnerCursor, PartnerRepository } from "../application/ports/partners.js";
+import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type {
   Partner,
   PartnerContact,

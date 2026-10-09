@@ -17,13 +17,13 @@ import {
 } from "@line_bot_v1/identity-access/postgres";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { EnterpriseGovernancePort } from "../application/ports/enterprise-governance.js";
 import type {
   EnterpriseCommand,
   EnterpriseDetail,
   EnterpriseList,
   EnterpriseReceipt,
 } from "../contracts/enterprise-governance.js";
+import type { EnterpriseGovernancePort } from "../contracts/input/enterprise-governance.js";
 import {
   hasEnterpriseOwnerAssignment,
   hasReplacementEnterpriseOwner,

@@ -1,8 +1,8 @@
 "use client";
 
 import { buildNamespacePath } from "@line_bot_v1/namespace";
-import type { TeamCommand } from "@line_bot_v1/team/application/commands/team-command";
 import type { TeamView } from "@line_bot_v1/team/contracts";
+import type { TeamCommand } from "@line_bot_v1/team/contracts/input/team-command";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

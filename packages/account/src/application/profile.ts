@@ -1,11 +1,11 @@
-import { UserError } from "../domain/user.js";
 import type {
   PublicUserProfile,
   UserProfile,
   UserProfileStore,
   UserProfileUpdate,
   UserProfileVisibility,
-} from "./ports/profile.js";
+} from "../contracts/repositories/profile.js";
+import { UserError } from "../domain/user.js";
 
 const visibilities = new Set<UserProfileVisibility>(["private", "organization", "public"]);
 

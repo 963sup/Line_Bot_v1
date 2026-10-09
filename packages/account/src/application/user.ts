@@ -1,7 +1,7 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
+import type { VerifiedGoogleIdentity } from "../contracts/output/identity-provider.js";
+import type { GoogleLinkRepository, UserRepository } from "../contracts/repositories/user.js";
 import { requireActiveUser, UserError } from "../domain/user.js";
-import type { VerifiedGoogleIdentity } from "./ports/identity-provider.js";
-import type { GoogleLinkRepository, UserRepository } from "./ports/user-repository.js";
 
 export interface UserDependencies {
   repository(): UserRepository;

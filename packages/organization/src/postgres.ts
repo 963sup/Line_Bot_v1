@@ -14,7 +14,7 @@ import {
 } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
-import type { OrganizationGovernancePort } from "./application/ports/organization-governance.js";
+import type { OrganizationGovernancePort } from "./contracts/input/organization-governance.js";
 import type {
   OrganizationCommand,
   OrganizationDetail,

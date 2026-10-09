@@ -1,5 +1,5 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import type { UserAchievement, UserAchievementStore } from "../application/ports/achievements.js";
+import type { UserAchievement, UserAchievementStore } from "../contracts/output/achievements.js";
 
 type AchievementRow = {
   achievement_id: string;

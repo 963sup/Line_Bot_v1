@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/progress": {
+      "types": "./dist/application/progress.d.ts",
+      "default": "./dist/application/progress.js"
+    },
     "./application/queries/project-collection": {
       "types": "./dist/application/queries/project-collection.d.ts",
       "default": "./dist/application/queries/project-collection.js"

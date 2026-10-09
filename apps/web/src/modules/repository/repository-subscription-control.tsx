@@ -4,7 +4,7 @@ import type {
   RepositorySubscriptionCommand,
   RepositorySubscriptionSnapshot,
   RepositorySubscriptionState,
-} from "@line_bot_v1/repository/application/ports/subscription";
+} from "@line_bot_v1/repository/contracts/repositories/subscription";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

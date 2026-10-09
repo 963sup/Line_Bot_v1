@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { PermissionCommand } from "@line_bot_v1/identity-access/domain/permission";
+import { buildTeamCommand as buildOwnedTeamCommand } from "@line_bot_v1/team/application/commands/team-command";
 import type { TeamView } from "@line_bot_v1/team/contracts";
 import {
   clearPendingPermissionOperation,
@@ -13,7 +14,6 @@ import {
   parseRepositoryResourcePage,
   repositoryResourcesEndpoint,
 } from "../src/modules/repository/resource-page-model";
-import { buildTeamCommand } from "../src/modules/team/team-command";
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -160,7 +160,11 @@ test("team command construction keeps current scope, stable team id and version"
     },
     members: [],
   };
-  const rename = buildTeamCommand(data, { action: "rename-team", name: "Platform" });
+  const rename = buildOwnedTeamCommand(
+    data,
+    { action: "rename-team", name: "Platform" },
+    "request-1",
+  );
   assert.equal(rename.action, "rename-team");
   if (rename.action !== "rename-team") return;
   assert.equal(rename.organizationAccountId, "org-1");
@@ -168,12 +172,15 @@ test("team command construction keeps current scope, stable team id and version"
   assert.equal(rename.expectedVersion, 7);
   assert.equal(rename.name, "Platform");
 
-  const membership = buildTeamCommand(data, {
-    action: "membership",
-    targetUserId: "user-2",
-    status: "removed",
-    title: "remove",
-  });
+  const membership = buildOwnedTeamCommand(
+    data,
+    {
+      action: "membership",
+      targetUserId: "user-2",
+      status: "removed",
+    },
+    "request-2",
+  );
   assert.equal(membership.action, "membership");
   if (membership.action !== "membership") return;
   assert.equal(membership.organizationAccountId, "org-1");

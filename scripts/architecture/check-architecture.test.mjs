@@ -41,6 +41,7 @@ test("inner layers reject composition, persistence, Node, SDK and environment de
       "outer layers may own runtime dependencies",
     );
     const scenarios = [
+      ["application", importing("./ports/legacy"), "application-ports-are-not-canonical"],
       ["domain", importing("node:fs"), "context-domain-does-not-import-runtime"],
       ["domain", importing("provider-sdk"), "context-domain-does-not-import-external-packages"],
       [
@@ -70,6 +71,9 @@ test("inner layers reject composition, persistence, Node, SDK and environment de
     ];
     for (const [layer, content, rule] of scenarios) {
       const file = `packages/demo/src/${layer}/probe.ts`;
+      if (rule === "application-ports-are-not-canonical") {
+        write(root, "packages/demo/src/application/ports/legacy.ts", "export const legacy = 1;");
+      }
       write(root, file, content);
       assert.ok(
         (await checkArchitecture(root)).errors.some((error) => error.startsWith(`${rule}:`)),

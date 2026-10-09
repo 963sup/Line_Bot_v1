@@ -1,4 +1,4 @@
-import type { RepositoryStarListCreateCommand } from "@line_bot_v1/repository/application/ports/star-lists";
+import type { RepositoryStarListCreateCommand } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 
 export type RepositoryStarListCommandBody =
   | Readonly<{

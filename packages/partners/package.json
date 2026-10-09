@@ -12,10 +12,6 @@
       "types": "./dist/application/partners.d.ts",
       "default": "./dist/application/partners.js"
     },
-    "./application/ports/partners": {
-      "types": "./dist/application/ports/partners.d.ts",
-      "default": "./dist/application/ports/partners.js"
-    },
     "./contracts": {
       "types": "./dist/contracts.d.ts",
       "default": "./dist/contracts.js"
@@ -23,6 +19,10 @@
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
+    },
+    "./contracts/repositories/partners": {
+      "types": "./dist/contracts/repositories/partners.d.ts",
+      "default": "./dist/contracts/repositories/partners.js"
     }
   },
   "files": [

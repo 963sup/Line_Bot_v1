@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { agentText, aiTestText, answer } from "../src/modules/assistant/answer.server";
+import { agentText, aiTestText, answer } from "../src/app/api/_composition/assistant.server";
 
 test("question failures retain shared cooldown for issue aliases and fixed probes without network", async () => {
   const previousKey = process.env.GEMINI_API_KEY;

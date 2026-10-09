@@ -4,7 +4,7 @@
 
 目前不把任何 quota、價格、模型上限或成本門檻寫成固定平台事實；這些需針對實際 provider / environment 查證。
 ## Implementation ownership
-Gemini Developer API 的 SDK client、固定 liveness probe、server-only/config guard 由 `@line_bot_v1/assistant` package-private implementation 擁有，對外只透過 `@line_bot_v1/assistant/adapters/gemini` 公開。Receipt／Issue draft 等產品 agent 仍屬各自 owner；provider adapter 不做 authorization、持久化或 business state transition。
+Gemini Developer API 的 SDK client、固定 liveness probe、server-only/config guard 由 `@line_bot_v1/assistant` 擁有，對外只透過 `@line_bot_v1/assistant/gemini` 公開。Receipt／Issue draft 等產品 agent 仍屬各自 owner；provider adapter 不做 authorization、持久化或 business state transition。
 ## Decision unit
 評估 AI 不只看單次 token price，而看「每件成功確認事項的總處理成本」與品質：
 

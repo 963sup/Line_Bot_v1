@@ -4,7 +4,7 @@ import type {
   RepositoryAddressCommand,
   RepositoryAddressReceipt,
   RepositoryAddressSnapshot,
-} from "@line_bot_v1/repository/application/ports/address";
+} from "@line_bot_v1/repository/contracts/repositories/address";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

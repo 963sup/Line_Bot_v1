@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { organizationGovernance } from "../src/application/organization-governance.js";
-import type { OrganizationGovernancePort } from "../src/application/ports/organization-governance.js";
+import type { OrganizationGovernancePort } from "../src/contracts/input/organization-governance.js";
 
 test("OrganizationOwner mutation is owned by the Organization command contract", async () => {
   let observed: unknown;

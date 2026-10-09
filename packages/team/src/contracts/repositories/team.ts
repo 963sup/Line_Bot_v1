@@ -1,5 +1,5 @@
-import type { TeamCommandReceipt, TeamView } from "../contracts.js";
-import type { TeamCommand } from "./commands/team-command.js";
+import type { TeamCommandReceipt, TeamView } from "../../contracts.js";
+import type { TeamCommand } from "../input/team-command.js";
 
 export type TeamActor = { provider: string; subject: string };
 

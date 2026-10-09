@@ -1,3 +1,9 @@
+import type {
+  RepositoryLabelCursor,
+  RepositoryMilestoneCursor,
+  RepositoryMilestoneStatus,
+  RepositoryResourceStore,
+} from "../contracts/output/resources.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import {
   normalizeRepositoryMilestoneNumber,
@@ -5,12 +11,6 @@ import {
   RepositoryError,
 } from "../domain.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
-import type {
-  RepositoryLabelCursor,
-  RepositoryMilestoneCursor,
-  RepositoryMilestoneStatus,
-  RepositoryResourceStore,
-} from "./ports/resources.js";
 
 const maxCursorLength = 240;
 

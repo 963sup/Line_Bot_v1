@@ -1,4 +1,4 @@
-import type { AnswerDependencies } from "./ports/answer.js";
+import type { AnswerDependencies } from "../contracts/output/answer.js";
 
 export type AnswerResult =
   | { type: "help" | "tooLong" | "cooldown" | "empty" | "unavailable" }

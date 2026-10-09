@@ -1,5 +1,5 @@
+import type { UserAchievementStore } from "../contracts/output/achievements.js";
 import { UserError } from "../domain/user.js";
-import type { UserAchievementStore } from "./ports/achievements.js";
 
 function achievementLimit(value: number) {
   if (!Number.isSafeInteger(value) || value < 1 || value > 50) {

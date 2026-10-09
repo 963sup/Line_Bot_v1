@@ -1,4 +1,5 @@
-import type { IssueCommand, IssueSnapshot } from "@line_bot_v1/issue/application/ports/issues";
+import type { IssueCommand } from "@line_bot_v1/issue/contracts/input/issues";
+import type { IssueSnapshot } from "@line_bot_v1/issue/contracts/repositories/issues";
 
 export async function requestIssueSnapshot({
   token,

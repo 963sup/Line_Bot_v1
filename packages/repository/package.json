@@ -8,10 +8,6 @@
       "types": "./dist/application/resources.d.ts",
       "default": "./dist/application/resources.js"
     },
-    "./application/ports/resources": {
-      "types": "./dist/application/ports/resources.d.ts",
-      "default": "./dist/application/ports/resources.js"
-    },
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
@@ -20,33 +16,17 @@
       "types": "./dist/application/stars.d.ts",
       "default": "./dist/application/stars.js"
     },
-    "./application/ports/stars": {
-      "types": "./dist/application/ports/stars.d.ts",
-      "default": "./dist/application/ports/stars.js"
-    },
     "./application/public": {
       "types": "./dist/application/public.d.ts",
       "default": "./dist/application/public.js"
-    },
-    "./application/ports/public": {
-      "types": "./dist/application/ports/public.d.ts",
-      "default": "./dist/application/ports/public.js"
     },
     "./application/collection": {
       "types": "./dist/application/collection.d.ts",
       "default": "./dist/application/collection.js"
     },
-    "./application/ports/collection": {
-      "types": "./dist/application/ports/collection.d.ts",
-      "default": "./dist/application/ports/collection.js"
-    },
     "./application/creation": {
       "types": "./dist/application/creation.d.ts",
       "default": "./dist/application/creation.js"
-    },
-    "./application/ports/creation": {
-      "types": "./dist/application/ports/creation.d.ts",
-      "default": "./dist/application/ports/creation.js"
     },
     "./contracts/discovery": {
       "types": "./dist/contracts/discovery.d.ts",
@@ -55,10 +35,6 @@
     "./application/star-lists": {
       "types": "./dist/application/star-lists.d.ts",
       "default": "./dist/application/star-lists.js"
-    },
-    "./application/ports/star-lists": {
-      "types": "./dist/application/ports/star-lists.d.ts",
-      "default": "./dist/application/ports/star-lists.js"
     },
     "./postgres/public": {
       "types": "./dist/postgres/public.d.ts",
@@ -92,17 +68,9 @@
       "types": "./dist/application/access.d.ts",
       "default": "./dist/application/access.js"
     },
-    "./application/ports/access": {
-      "types": "./dist/application/ports/access.d.ts",
-      "default": "./dist/application/ports/access.js"
-    },
     "./application/address": {
       "types": "./dist/application/address.d.ts",
       "default": "./dist/application/address.js"
-    },
-    "./application/ports/address": {
-      "types": "./dist/application/ports/address.d.ts",
-      "default": "./dist/application/ports/address.js"
     },
     "./postgres/access-management": {
       "types": "./dist/postgres/access-management.d.ts",
@@ -116,10 +84,6 @@
       "types": "./dist/application/management.d.ts",
       "default": "./dist/application/management.js"
     },
-    "./application/ports/management": {
-      "types": "./dist/application/ports/management.d.ts",
-      "default": "./dist/application/ports/management.js"
-    },
     "./postgres/management": {
       "types": "./dist/postgres/management.d.ts",
       "default": "./dist/postgres/management.js"
@@ -127,10 +91,6 @@
     "./application/subscription": {
       "types": "./dist/application/subscription.d.ts",
       "default": "./dist/application/subscription.js"
-    },
-    "./application/ports/subscription": {
-      "types": "./dist/application/ports/subscription.d.ts",
-      "default": "./dist/application/ports/subscription.js"
     },
     "./postgres/subscription": {
       "types": "./dist/postgres/subscription.d.ts",
@@ -159,6 +119,46 @@
     "./postgres/resource-management": {
       "types": "./dist/postgres/resource-management.d.ts",
       "default": "./dist/postgres/resource-management.js"
+    },
+    "./contracts/output/resources": {
+      "types": "./dist/contracts/output/resources.d.ts",
+      "default": "./dist/contracts/output/resources.js"
+    },
+    "./contracts/repositories/stars": {
+      "types": "./dist/contracts/repositories/stars.d.ts",
+      "default": "./dist/contracts/repositories/stars.js"
+    },
+    "./contracts/output/public": {
+      "types": "./dist/contracts/output/public.d.ts",
+      "default": "./dist/contracts/output/public.js"
+    },
+    "./contracts/output/collection": {
+      "types": "./dist/contracts/output/collection.d.ts",
+      "default": "./dist/contracts/output/collection.js"
+    },
+    "./contracts/repositories/creation": {
+      "types": "./dist/contracts/repositories/creation.d.ts",
+      "default": "./dist/contracts/repositories/creation.js"
+    },
+    "./contracts/repositories/star-lists": {
+      "types": "./dist/contracts/repositories/star-lists.d.ts",
+      "default": "./dist/contracts/repositories/star-lists.js"
+    },
+    "./contracts/repositories/access": {
+      "types": "./dist/contracts/repositories/access.d.ts",
+      "default": "./dist/contracts/repositories/access.js"
+    },
+    "./contracts/repositories/address": {
+      "types": "./dist/contracts/repositories/address.d.ts",
+      "default": "./dist/contracts/repositories/address.js"
+    },
+    "./contracts/repositories/management": {
+      "types": "./dist/contracts/repositories/management.d.ts",
+      "default": "./dist/contracts/repositories/management.js"
+    },
+    "./contracts/repositories/subscription": {
+      "types": "./dist/contracts/repositories/subscription.d.ts",
+      "default": "./dist/contracts/repositories/subscription.js"
     }
   },
   "files": [

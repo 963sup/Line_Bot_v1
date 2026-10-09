@@ -1,9 +1,9 @@
-import { normalizeRepositoryName, RepositoryError, type RepositoryVisibility } from "../domain.js";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationStore,
   RepositoryOwnerKind,
-} from "./ports/creation.js";
+} from "../contracts/repositories/creation.js";
+import { normalizeRepositoryName, RepositoryError, type RepositoryVisibility } from "../domain.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 

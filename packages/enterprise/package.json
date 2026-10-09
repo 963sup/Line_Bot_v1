@@ -12,10 +12,6 @@
       "types": "./dist/application/enterprise-governance.d.ts",
       "default": "./dist/application/enterprise-governance.js"
     },
-    "./application/ports/enterprise-governance": {
-      "types": "./dist/application/ports/enterprise-governance.d.ts",
-      "default": "./dist/application/ports/enterprise-governance.js"
-    },
     "./contracts/enterprise-governance": {
       "types": "./dist/contracts/enterprise-governance.d.ts",
       "default": "./dist/contracts/enterprise-governance.js"
@@ -23,6 +19,10 @@
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
+    },
+    "./contracts/input/enterprise-governance": {
+      "types": "./dist/contracts/input/enterprise-governance.d.ts",
+      "default": "./dist/contracts/input/enterprise-governance.js"
     }
   },
   "files": [

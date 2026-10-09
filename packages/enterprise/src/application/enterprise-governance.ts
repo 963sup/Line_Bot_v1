@@ -53,7 +53,7 @@ function parseVersion(value: unknown, name: string, allowZero = false) {
 }
 
 import type { EnterpriseCommand } from "../contracts/enterprise-governance.js";
-import type { EnterpriseGovernancePort } from "./ports/enterprise-governance.js";
+import type { EnterpriseGovernancePort } from "../contracts/input/enterprise-governance.js";
 
 function parseTeamName(value: unknown) {
   if (

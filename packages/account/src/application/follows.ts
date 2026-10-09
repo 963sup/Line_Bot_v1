@@ -1,5 +1,5 @@
+import type { FollowStore } from "../contracts/output/follows.js";
 import { UserError } from "../domain/user.js";
-import type { FollowStore } from "./ports/follows.js";
 
 function targetUserId(value: string): string {
   const id = value.trim();
