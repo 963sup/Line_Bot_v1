@@ -55,6 +55,19 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
     assert.equal(apiCalls, 0);
     const memberId = owner;
     const view = await (await GET(request(), context)).json();
+    assert.deepEqual(Object.keys(view).sort(), [
+      "amount",
+      "createdAt",
+      "currency",
+      "date",
+      "id",
+      "invoiceNumber",
+      "merchant",
+      "number",
+      "payment",
+      "revision",
+      "status",
+    ]);
     assert.equal(view.number, d.number);
     assert.equal(view.owner, undefined);
     assert.equal(view.scope, undefined);

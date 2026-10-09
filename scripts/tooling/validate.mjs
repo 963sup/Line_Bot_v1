@@ -61,17 +61,10 @@ export function selectValidationStages(stages, group) {
   return stages.filter(([task]) => validationGroups[group].includes(task));
 }
 
-function lines(value) {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
-function gitChangedFiles(args) {
-  const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+function gitChangedFiles(args, directory = root) {
+  const result = spawnSync("git", args, { cwd: directory, encoding: "utf8" });
   if (result.error || result.status !== 0) return null;
-  return lines(result.stdout);
+  return result.stdout.split("\0").filter(Boolean);
 }
 
 export function classifyChangedFiles(files) {
@@ -121,23 +114,33 @@ export function classifyChangedFiles(files) {
   return { codeAffected, docsAffected, schemaAffected, toolingAffected };
 }
 
-function detectFastScope() {
-  if (process.env.GITHUB_BASE_REF) {
-    const changed = gitChangedFiles([
-      "diff",
-      "--name-only",
-      "--diff-filter=ACMRD",
-      `origin/${process.env.GITHUB_BASE_REF}...HEAD`,
-    ]);
+export function detectFastScope({ directory = root, baseRef = process.env.GITHUB_BASE_REF } = {}) {
+  if (baseRef) {
+    const changed = gitChangedFiles(
+      ["diff", "--name-only", "-z", "--diff-filter=ACMRD", `origin/${baseRef}...HEAD`],
+      directory,
+    );
     if (changed?.length) return classifyChangedFiles(changed);
     return changed ? classifyChangedFiles([]) : null;
   }
 
-  const working = gitChangedFiles(["diff", "--name-only", "--diff-filter=ACMRD", "HEAD"]);
-  const staged = gitChangedFiles(["diff", "--cached", "--name-only", "--diff-filter=ACMRD"]);
-  if (working === null || staged === null) return null;
-  const changed = [...new Set([...working, ...staged])];
-  return changed.length ? classifyChangedFiles(changed) : null;
+  const working = gitChangedFiles(
+    ["diff", "--name-only", "-z", "--diff-filter=ACMRD", "HEAD"],
+    directory,
+  );
+  const staged = gitChangedFiles(
+    ["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMRD"],
+    directory,
+  );
+  const untracked = gitChangedFiles(
+    ["ls-files", "--others", "--exclude-standard", "-z"],
+    directory,
+  );
+  if (working === null || staged === null || untracked === null) return null;
+  const changed = [...new Set([...working, ...staged, ...untracked])];
+  if (!changed.length) return null;
+  const scope = classifyChangedFiles(changed);
+  return untracked.length ? { ...scope, hasUntrackedFiles: true } : scope;
 }
 
 export function shouldRunFast(task, scope) {
@@ -160,7 +163,7 @@ export function shouldRunFast(task, scope) {
 
 export function fastTaskArgs(task, command, scope, selection, explicitFilters = false) {
   if (task !== "typecheck+test") return command;
-  if (scope?.schemaAffected && !explicitFilters) return command;
+  if ((scope?.schemaAffected || scope?.hasUntrackedFiles) && !explicitFilters) return command;
   return [...command, ...selection];
 }
 

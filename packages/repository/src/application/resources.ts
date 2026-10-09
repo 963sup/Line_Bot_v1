@@ -26,7 +26,11 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
   if (!ownerLogin || !repositoryName) {
     throw new RepositoryError(400, "Repository 路徑不正確。");
   }
-  return { ownerLogin, repositoryName };
+  return {
+    ownerLogin,
+    repositoryName,
+    ...(value.followRenames === false ? { followRenames: false } : {}),
+  };
 }
 
 function parseJsonCursor(after: string | undefined): Record<string, unknown> | undefined {

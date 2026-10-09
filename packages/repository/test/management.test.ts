@@ -75,6 +75,34 @@ test("Repository management application canonicalizes lifecycle commands", async
   );
 });
 
+test("Repository management view preserves explicit locator rename policy", async () => {
+  const calls: unknown[][] = [];
+  const store = {
+    view: async (...args: Parameters<RepositoryManagementStore["view"]>) => {
+      calls.push(args);
+      return {} as Awaited<ReturnType<RepositoryManagementStore["view"]>>;
+    },
+    execute: async () => {
+      throw new Error("not used");
+    },
+  } satisfies RepositoryManagementStore;
+  const management = createRepositoryManagement({
+    activeUser: async () => ({ id: "owner" }),
+    store: () => store,
+    now: () => 10,
+  });
+
+  await management.view("subject", {
+    ownerLogin: "alice",
+    repositoryName: " Alpha ",
+    followRenames: false,
+  });
+  assert.deepEqual(calls[0], [
+    "owner",
+    { ownerLogin: "alice", repositoryName: "Alpha", followRenames: false },
+  ]);
+});
+
 test("rename keeps stable identity, follows aliases, preserves history and exact replay", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
@@ -97,6 +125,19 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
   assert.equal(renamed.name, "Beta");
   assert.equal(renamed.version, 2);
   assert.deepEqual(await store.execute("owner", rename, 11), renamed);
+
+  assert.equal(
+    (await store.view("owner", { ownerLogin: "alice", repositoryName: "Alpha" })).repository.name,
+    "Beta",
+  );
+  await assert.rejects(
+    store.view("owner", {
+      ownerLogin: "alice",
+      repositoryName: "Alpha",
+      followRenames: false,
+    }),
+    (error) => error instanceof RepositoryError && error.status === 404,
+  );
 
   const followed = await db.transaction((sql) =>
     authorizedRepository(

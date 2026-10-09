@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { PostgresRepositoryManagementStore } from "../src/adapters/postgres/management.js";
 import { PostgresRepositoryResourceStore } from "../src/adapters/postgres/resources.js";
 import type { RepositoryResourceStore } from "../src/application/ports/resources.js";
 import { createRepositoryResources } from "../src/application/resources.js";
@@ -66,10 +67,20 @@ test("Repository resources validate selectors and typed cursors before persisten
     { ownerLogin: "owner-a", repositoryName: " Alpha " },
     JSON.stringify({ name: "bug", id: "label-a" }),
   );
-  assert.equal(storeFactories, 1);
+  await resources.labels("line-subject", {
+    ownerLogin: "owner-a",
+    repositoryName: " Alpha ",
+    followRenames: false,
+  });
+  assert.equal(storeFactories, 2);
   assert.deepEqual(calls[0]?.[0], { userId: "line-subject-user" });
   assert.deepEqual(calls[0]?.[1], { ownerLogin: "owner-a", repositoryName: "Alpha" });
   assert.deepEqual(calls[0]?.[2], { name: "bug", id: "label-a" });
+  assert.deepEqual(calls[1]?.[1], {
+    ownerLogin: "owner-a",
+    repositoryName: "Alpha",
+    followRenames: false,
+  });
 
   storeFactories = 0;
   calls.length = 0;
@@ -83,6 +94,34 @@ test("Repository resources validate selectors and typed cursors before persisten
   );
   assert.equal(storeFactories, 0);
   assert.equal(calls.length, 0);
+});
+
+test("Repository resource stores honor explicit historical locator policy", async (t) => {
+  const { pg, db } = await repositoryFixture();
+  t.after(() => pg.close());
+  const management = new PostgresRepositoryManagementStore(db);
+  await management.execute(
+    "owner-a",
+    {
+      action: "rename",
+      requestId: "11111111-1111-4111-8111-111111111111",
+      repositoryId: "repo-a",
+      expectedVersion: 1,
+      name: "Renamed",
+    },
+    10,
+  );
+
+  const store = new PostgresRepositoryResourceStore(db);
+  const identity = { userId: "reader" };
+  const alias = { ownerLogin: "owner-a", repositoryName: "Alpha" } as const;
+  assert.equal((await store.labels(identity, alias)).repository.name, "Renamed");
+
+  const currentOnly = { ...alias, followRenames: false } as const;
+  const notFound = (error: unknown) => error instanceof RepositoryError && error.status === 404;
+  await assert.rejects(store.labels(identity, currentOnly), notFound);
+  await assert.rejects(store.milestones(identity, currentOnly), notFound);
+  await assert.rejects(store.milestone(identity, currentOnly, 1), notFound);
 });
 
 test("Repository resource reads recheck Organization Team access qualification", async (t) => {

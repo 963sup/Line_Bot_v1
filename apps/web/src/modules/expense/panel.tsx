@@ -1,12 +1,13 @@
 "use client";
-import type { Expense, ExpenseFields } from "@line_bot_v1/expense/domain/aggregates/expense";
+import type { ExpenseApiView } from "@line_bot_v1/expense/contracts/dto/expense-api-view";
+import type { ExpenseFields } from "@line_bot_v1/expense/domain/aggregates/expense";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { authHeaders } from "../../shared/browser/supabase-session";
 
-type View = Omit<Expense, "owner" | "scope" | "imageId">;
+type View = ExpenseApiView;
 type ReceiptReadingView = {
   merchant: string | null;
   amount: string | null;
