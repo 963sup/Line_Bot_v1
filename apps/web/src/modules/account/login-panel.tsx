@@ -32,10 +32,10 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/membership?view=account", {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
       const value = (await response.json()) as { member?: AccountView | null; error?: string };
@@ -61,12 +61,12 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/membership", {
         method: "POST",
         headers: {
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
           "content-type": "application/json",
         },
         body: JSON.stringify({ action: "updateLogin", login, expectedLogin }),

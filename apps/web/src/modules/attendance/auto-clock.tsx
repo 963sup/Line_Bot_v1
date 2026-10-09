@@ -17,7 +17,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { authHeaders } from "../../shared/browser/supabase-session";
 import { locateAttendance } from "./location";
 
 type Attempt = { owner: string; operation: AttendanceOperation } & (
@@ -110,10 +109,10 @@ export default function AutoClock({
     let submitted = false;
     let current: Attempt | null = null;
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       signal.throwIfAborted();
       if (!token) return;
-      const headers = await authHeaders(token);
+      const headers = { "X-App-Session-Generation": token };
       const response = await fetch("/api/attendance?view=clock", {
         headers,
         cache: "no-store",
@@ -173,7 +172,7 @@ export default function AutoClock({
 
       setAttempt(current);
       setStatus(`正在確認${attendanceOperationLabel(current.operation)}…`);
-      if ((await liffClient.session(liffId)) !== token)
+      if ((await liffClient.ensureSession(liffId)) !== token)
         throw new Error("LINE 登入已變更，請重新確認本次打卡。");
       signal.throwIfAborted();
       submitted = true;

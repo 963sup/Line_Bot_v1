@@ -66,7 +66,7 @@ export default function DiscoveryPanel({
 
   async function read(token: string): Promise<DiscoverySnapshot> {
     const response = await fetch("/api/repositories/explore", {
-      headers: { "x-line-token": token },
+      headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
     const value = (await response.json()) as {
@@ -85,7 +85,7 @@ export default function DiscoveryPanel({
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const value = await read(token);
       if (ticket !== generation.current) return;
@@ -106,12 +106,12 @@ export default function DiscoveryPanel({
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/repositories/explore", {
         method: "POST",
         headers: {
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
           "content-type": "application/json",
         },
         body: JSON.stringify({
@@ -121,7 +121,8 @@ export default function DiscoveryPanel({
       });
       const value = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(value.error ?? "儲存庫 Star 操作失敗。");
-      if ((await liffClient.session(liffId)) !== token || ticket !== generation.current) return;
+      if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
+        return;
       setSnapshot(await read(token));
       setNotice(item.starred ? "已取消 Star。" : "已加入 Star。");
     } catch (cause) {

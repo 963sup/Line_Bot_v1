@@ -29,7 +29,7 @@ const context = await browser.newContext({
   serviceWorkers: "block",
 });
 await context.addInitScript(() => {
-  window.testToken = "one";
+  window.testToken = window.name === "two" ? "two" : "one";
   window.liff = {
     init: async () => {},
     isLoggedIn: () => true,
@@ -50,11 +50,80 @@ let savedPartner = null,
   conflict = false;
 const posts = [],
   receipts = new Map();
+const partnerSessionGenerations = new Map([
+  ["one", "11111111-1111-4111-8111-111111111111"],
+  ["two", "22222222-2222-4222-8222-222222222222"],
+]);
+let activeLineProof;
+const identityReads = [],
+  documentRequests = [];
 page.on("pageerror", (error) => errors.push(error.message));
+page.on("request", (request) => {
+  if (request.resourceType() === "document") documentRequests.push(request.url());
+});
 await context.route("**/*", async (route) => {
-  const url = new URL(route.request().url());
+  const request = route.request();
+  const url = new URL(request.url());
   if (url.origin !== target.origin) return route.abort();
+  if (url.pathname === "/api/auth") {
+    const cookies = request.headers().cookie ?? "";
+    const cookieProof = [...partnerSessionGenerations.keys()].find((candidate) =>
+      cookies
+        .split(";")
+        .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
+    );
+    if (request.method() === "GET") {
+      if (!cookieProof)
+        return route.fulfill({
+          status: 401,
+          json: { error: "服務登入已失效，請重新登入。" },
+        });
+      return route.fulfill({
+        json: { generation: partnerSessionGenerations.get(cookieProof) },
+      });
+    }
+    if (request.method() === "POST") {
+      const body = request.postDataJSON();
+      assert.ok(partnerSessionGenerations.has(body.accessToken));
+      const sessionChanged = activeLineProof !== undefined && activeLineProof !== body.accessToken;
+      activeLineProof = body.accessToken;
+      return route.fulfill({
+        json: {
+          generation: partnerSessionGenerations.get(body.accessToken),
+          sessionChanged,
+        },
+        headers: {
+          "Set-Cookie": `__Host-line_bot_v1_session=synthetic-${body.accessToken}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+        },
+      });
+    }
+    if (request.method() === "PATCH") {
+      const generation = request.headers()["x-app-session-generation"];
+      assert.ok(cookieProof);
+      assert.equal(generation, partnerSessionGenerations.get(cookieProof));
+      return route.fulfill({ json: { generation } });
+    }
+    if (request.method() === "DELETE") {
+      assert.ok(cookieProof);
+      assert.equal(
+        request.headers()["x-app-session-generation"],
+        partnerSessionGenerations.get(cookieProof),
+      );
+      activeLineProof = undefined;
+      return route.fulfill({
+        status: 204,
+        headers: {
+          "Set-Cookie":
+            "__Host-line_bot_v1_session=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax",
+        },
+      });
+    }
+    return route.fulfill({ status: 405 });
+  }
   if (url.pathname === "/api/partners") {
+    const generation = request.headers()["x-app-session-generation"];
+    assert.ok(generation, `Missing app session generation: ${request.method()} ${url.pathname}`);
+    identityReads.push(generation);
     if (route.request().method() === "POST") {
       const command = route.request().postDataJSON();
       posts.push(command);
@@ -164,12 +233,21 @@ try {
   });
   await page.getByRole("button", { name: "重新讀取" }).click();
   await held;
+  await page.goto(target.origin + "/settings");
+  await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "登出此服務", exact: true }).click();
+  await expect(page.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
   await page.evaluate(() => {
+    window.name = "two";
     window.testToken = "two";
   });
+  await page.getByRole("button", { name: "使用 LINE 重新登入", exact: true }).click();
+  await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
   release();
-  await expect(page.getByText("LINE 身分已變更，請重新讀取。", { exact: true })).toBeVisible();
-  await expect(page.getByText("測試合作夥伴（已下架）", { exact: true })).toHaveCount(0);
+  await page.goto(target.origin + "/partners/manage");
+  await expect.poll(() => documentRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => identityReads.at(-1)).toBe(partnerSessionGenerations.get("two"));
+  await expect(page.getByRole("heading", { name: "測試合作夥伴（已下架）" })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "測試合作夥伴（已下架）" })).toBeVisible();
   await page.getByRole("button", { name: "新增合作夥伴", exact: true }).click();

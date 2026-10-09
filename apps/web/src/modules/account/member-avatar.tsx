@@ -29,7 +29,7 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
     setPicture(undefined);
     setHref("/profile");
     setUnavailable(false);
-    const token = await liffClient.session(liffId);
+    const token = await liffClient.ensureSession(liffId);
     if (!token || ticket !== generation.current) return;
 
     void liffClient.profile().then(
@@ -45,7 +45,7 @@ export default function MemberAvatar({ liffId }: { liffId: string }) {
     // This locator is never reused as authorization for the destination's private data.
     try {
       const response = await fetch("/api/membership?view=account", {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
         signal: controller.signal,
       });

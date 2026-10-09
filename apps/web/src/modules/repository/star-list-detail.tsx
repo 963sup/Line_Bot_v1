@@ -46,7 +46,7 @@ export default function RepositoryStarListDetail({
   }
 
   async function session() {
-    const token = await liffClient.session(liffId);
+    const token = await liffClient.ensureSession(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
     const profile = await liffClient.profile();
     if (!profile.userId)
@@ -58,7 +58,7 @@ export default function RepositoryStarListDetail({
     const response = await fetch(`/api/repositories/lists/${encodeURIComponent(listId)}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(20_000),
-      headers: { "x-line-token": current.token },
+      headers: { "X-App-Session-Generation": current.token },
     });
     const payload = (await response.json()) as {
       item?: RepositoryStarListDetailValue;
@@ -74,7 +74,7 @@ export default function RepositoryStarListDetail({
       const starredResponse = await fetch("/api/repositories/starred", {
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
-        headers: { "x-line-token": current.token },
+        headers: { "X-App-Session-Generation": current.token },
       });
       const starredPayload = (await starredResponse.json()) as {
         items?: StarredRepository[];
@@ -132,7 +132,7 @@ export default function RepositoryStarListDetail({
         signal: AbortSignal.timeout(20_000),
         headers: {
           "content-type": "application/json",
-          "x-line-token": current.token,
+          "X-App-Session-Generation": current.token,
         },
         body: JSON.stringify(command),
       });

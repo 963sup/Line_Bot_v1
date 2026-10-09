@@ -102,7 +102,7 @@ export default function RepositoryResourcesPanel({
       setBusy(true);
       setError(null);
       try {
-        const token = await liffClient.session(liffId);
+        const token = await liffClient.ensureSession(liffId);
         if (!token) {
           if (ticket === generation.current) {
             setData(null);
@@ -113,7 +113,7 @@ export default function RepositoryResourcesPanel({
         const current = dataRef.current;
         const nextCursor = append && current && "next" in current ? current.next : undefined;
         const response = await fetch(endpoint(nextCursor || undefined), {
-          headers: { "x-line-token": token },
+          headers: { "X-App-Session-Generation": token },
           cache: "no-store",
         });
         const value = (await response.json()) as { error?: string };

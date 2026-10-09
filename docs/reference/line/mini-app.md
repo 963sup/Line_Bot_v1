@@ -43,6 +43,8 @@ LIFF 自己產生的 `liff.state` 在 SDK 完成處理前視為 pending，不由
 
 ## 登入與接續
 
+登入 proof 與服務登入狀態分開管理：LIFF runtime 只在瀏覽器記憶體提供原始 access token；首次登入或明確重新登入時，瀏覽器將它送到 `POST /api/auth`，由伺服器向 LINE 驗證，再簽發可撤銷的 HttpOnly 產品 session cookie。一般載入先用 `GET /api/auth` 從有效 cookie 恢復 session，接著由 `PATCH /api/auth` 續期；cookie 失效時才需要新的 LINE proof。之後功能 API 使用產品 session，不把 LINE token 當作每次 API 呼叫的 credential。`DELETE /api/auth` 登出本服務，不登出 LINE 帳號。完整身份邊界見 [LINE identity](./identity.md)。
+
 登入接續只保存 Web 已知且必要的功能 intent 與白名單視圖，例如：
 
 - 任務：`taskView=board|mine|publish`

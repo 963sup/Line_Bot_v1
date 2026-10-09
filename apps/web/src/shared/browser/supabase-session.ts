@@ -52,8 +52,3 @@ export async function googleLogin() {
   });
   if (error) throw new Error("Google 登入暫不可用。");
 }
-export async function authHeaders(lineToken: string): Promise<Record<string, string>> {
-  return {
-    "X-Line-Token": lineToken,
-  };
-}

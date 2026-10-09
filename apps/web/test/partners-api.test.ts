@@ -5,6 +5,7 @@ import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { PartnerError } from "@line_bot_v1/partners/domain";
 import { PostgresPartnerRepository } from "@line_bot_v1/partners/postgres";
 import { GET, POST } from "../src/app/api/partners/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";
 
 test("partner management HTTP uses verified LINE User, not supplied identity or role", async () => {
@@ -27,11 +28,13 @@ test("partner management HTTP uses verified LINE User, not supplied identity or 
     if (String(input) === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw Error("Unexpected outbound request");
   }) as typeof fetch;
+  const sessions = new Map<string, HeadersInit>();
   const request = (token = "proof", query = "view=manage&userId=forged&role=admin") =>
     new Request(`https://app.example/api/partners?${query}`, {
-      headers: { "x-line-token": token },
+      headers: sessions.get(token) ?? {},
     });
   try {
+    sessions.set("proof", await lineSessionHeaders("proof"));
     const id = await activateMember(user);
     let calls = 0;
     mock.method(
@@ -100,7 +103,7 @@ test("partner management HTTP uses verified LINE User, not supplied identity or 
     const post = (body: unknown = command, origin = "https://app.example", token = "proof") =>
       new Request("https://app.example/api/partners", {
         method: "POST",
-        headers: { origin, "content-type": "application/json", "x-line-token": token },
+        headers: { origin, "content-type": "application/json", ...(sessions.get(token) ?? {}) },
         body: JSON.stringify(body),
       });
     assert.equal((await POST(post(command, "https://evil.example"))).status, 403);

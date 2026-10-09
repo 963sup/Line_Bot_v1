@@ -95,7 +95,7 @@ export default function TeamPanel({
       query.set("teamSlug", routedLocator.current.teamSlug);
     }
     const response = await fetch(`/api/team?${query.toString()}`, {
-      headers: { "x-line-token": access },
+      headers: { "X-App-Session-Generation": access },
       cache: "no-store",
       signal: AbortSignal.timeout(20_000),
     });
@@ -127,7 +127,7 @@ export default function TeamPanel({
     setDraft(null);
     setError("");
     try {
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       if (ticket !== generation.current) return;
       if (!access) {
         clear();
@@ -174,7 +174,7 @@ export default function TeamPanel({
     setPending(command);
     const ticket = generation.current;
     try {
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       if (ticket !== generation.current) return;
       if (!access || access !== token.current) {
         clear();
@@ -183,7 +183,7 @@ export default function TeamPanel({
       const response = await fetch("/api/team", {
         method: "POST",
         signal: AbortSignal.timeout(20_000),
-        headers: { "x-line-token": access, "content-type": "application/json" },
+        headers: { "X-App-Session-Generation": access, "content-type": "application/json" },
         body: JSON.stringify(command),
       });
       const result = await response.json();

@@ -43,7 +43,7 @@ export async function requestProjectActor(token: string): Promise<ProjectActor> 
   const response = await fetch("/api/membership?view=account", {
     cache: "no-store",
     signal: AbortSignal.timeout(20_000),
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
   });
   const value = await payload<{
     member?: { id?: unknown; login?: unknown; status?: unknown } | null;
@@ -64,7 +64,7 @@ export async function requestProjectOwnerOrganizations(
   const response = await fetch("/api/organization", {
     cache: "no-store",
     signal: AbortSignal.timeout(20_000),
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
   });
   const value = await payload<{
     items?: readonly {
@@ -95,7 +95,7 @@ export async function requestProjectView(
   const response = await fetch(`/api/project-management?${query.toString()}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(20_000),
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
   });
   return payload<ProjectManagementView>(response, "Project 讀取失敗。");
 }
@@ -110,7 +110,7 @@ export async function requestProjectUsers(
   const response = await fetch(`/api/project-management/users?${query.toString()}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(20_000),
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
   });
   const value = await payload<{ users?: readonly ProjectDirectoryUser[] }>(
     response,
@@ -131,7 +131,7 @@ export async function requestProjectUserByLogin(
   const response = await fetch(`/api/project-management/users?${query.toString()}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(20_000),
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
   });
   const value = await payload<{ user?: ProjectDirectoryUser }>(
     response,
@@ -153,7 +153,7 @@ export async function postProjectCommand(
     signal: AbortSignal.timeout(20_000),
     headers: {
       "content-type": "application/json",
-      "x-line-token": token,
+      "X-App-Session-Generation": token,
     },
     body: JSON.stringify(command),
   });

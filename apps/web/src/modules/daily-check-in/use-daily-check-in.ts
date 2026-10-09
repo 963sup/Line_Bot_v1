@@ -4,7 +4,6 @@ import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
-import { authHeaders } from "../../shared/browser/supabase-session";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type DailyCheckInView = Awaited<ReturnType<DailyCheckIn["currentView"]>>;
@@ -75,7 +74,7 @@ export function useDailyCheckIn(liffId: string) {
   }
 
   async function load(access: string, signal: AbortSignal) {
-    const headers = await authHeaders(access);
+    const headers = { "X-App-Session-Generation": access };
     signal.throwIfAborted();
     const response = await fetch("/api/membership", { headers, cache: "no-store", signal });
     const data = (await response.json()) as MembershipWireResponse & { error?: string };
@@ -97,7 +96,7 @@ export function useDailyCheckIn(liffId: string) {
     clearUnknownResult();
     try {
       if (!liffId) throw new Error("每日簽到入口尚未設定。");
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       signal.throwIfAborted();
       if (!access) return;
       setToken(access);
@@ -129,7 +128,7 @@ export function useDailyCheckIn(liffId: string) {
     day: string,
     signal: AbortSignal,
   ): Promise<DailyCheckInClaim | null> {
-    const headers = await authHeaders(access);
+    const headers = { "X-App-Session-Generation": access };
     signal.throwIfAborted();
     const response = await fetch(`/api/membership?${new URLSearchParams({ checkInDay: day })}`, {
       headers,
@@ -216,7 +215,7 @@ export function useDailyCheckIn(liffId: string) {
     setUnresolvedDay(expectedDay);
 
     try {
-      const headers = await authHeaders(token);
+      const headers = { "X-App-Session-Generation": token };
       signal.throwIfAborted();
       const response = await fetch("/api/membership", {
         method: "POST",

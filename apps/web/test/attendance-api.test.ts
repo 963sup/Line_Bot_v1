@@ -6,6 +6,7 @@ import {
   GET as attendanceRouteGet,
   POST as attendanceRoutePost,
 } from "../src/app/api/attendance/[[...operation]]/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 import {
   activateMember,
   allowAttendance,
@@ -64,6 +65,7 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
       });
     throw Error("Unexpected outbound request");
   }) as typeof fetch;
+  const sessions = new Map<string, HeadersInit>();
   const body = (expectedVersion: number, extra = {}) => ({
     requestId: randomUUID(),
     expectedVersion,
@@ -81,11 +83,13 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
       headers: {
         Origin: origin,
         ...(value === undefined ? {} : { "Content-Type": "application/json" }),
-        ...(token ? { "X-Line-Token": token } : {}),
+        ...(token ? (sessions.get(token) ?? {}) : {}),
       },
       ...(value === undefined ? {} : { body: JSON.stringify(value) }),
     });
   try {
+    sessions.set("token", await lineSessionHeaders("token"));
+    sessions.set("other", await lineSessionHeaders("other"));
     for (const action of [clockIn, clockOut]) {
       assert.equal((await action(request(body(0), ""))).status, 401);
       assert.equal((await action(request(body(0), "token", "https://evil.example"))).status, 403);

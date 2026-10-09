@@ -141,7 +141,7 @@ export default function ProjectDetail({
       setError("");
       if (!preserveNotice) setNotice("");
       try {
-        const token = await liffClient.session(liffId);
+        const token = await liffClient.ensureSession(liffId);
         if (!token) throw new ProjectRequestError("請完成 LINE 登入後重試。", 401);
         const [actor, snapshot] = await Promise.all([
           requestProjectActor(token),
@@ -224,7 +224,7 @@ export default function ProjectDetail({
     let refresh = false;
     let preserveRefreshNotice = false;
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new ProjectRequestError("請完成 LINE 登入後重試。", 401);
       const actor = await requestProjectActor(token);
       if (ticket !== generation.current) return;

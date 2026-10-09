@@ -23,11 +23,11 @@ export async function resolveVerifiedProfileEntry(
   signal?: AbortSignal,
 ): Promise<ProfileEntryResolution> {
   clearVerifiedProfileEntry();
-  const token = await liffClient.session(liffId);
+  const token = await liffClient.ensureSession(liffId);
   if (!token) return { kind: "waiting" };
 
   const response = await fetch("/api/membership?view=account", {
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
     cache: "no-store",
     signal,
   });

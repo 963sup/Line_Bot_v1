@@ -33,7 +33,12 @@ const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   serviceWorkers: "block",
 });
-const tokenStorageKey = "repository-browser-token";
+const syntheticProofStorageKey = "synthetic-liff-proof";
+const sessionGenerations = Object.freeze({
+  "token-a": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "token-b": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+});
+let activeSyntheticProof;
 await context.addInitScript((key) => {
   if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, "token-a");
   window.liff = {
@@ -44,7 +49,7 @@ await context.addInitScript((key) => {
     getProfile: async () => ({ displayName: "Repository Tester" }),
     login: () => {},
   };
-}, tokenStorageKey);
+}, syntheticProofStorageKey);
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
 
 const page = await context.newPage();
@@ -76,10 +81,17 @@ const otherRepository = {
 const firstDiscussion = {
   id: "discussion-alpha",
   repositoryId: repository.id,
+  number: null,
   author: "user-alpha",
   title: "Release readiness",
   category: "General",
+  categoryId: null,
   body: "Cutover notes stay attached to the Repository discussion.",
+  state: "OPEN",
+  stateReason: null,
+  locked: false,
+  lockReason: null,
+  deleted: false,
   version: 1,
   createdAt: 1_780_000_001_000,
   updatedAt: 1_780_000_001_000,
@@ -89,9 +101,16 @@ delete firstDiscussionSummary.body;
 const secondDiscussion = {
   id: "discussion-beta",
   repositoryId: repository.id,
+  number: null,
   author: "user-beta",
   title: "Daily operations",
   category: "Q&A",
+  categoryId: null,
+  state: "OPEN",
+  stateReason: null,
+  locked: false,
+  lockReason: null,
+  deleted: false,
   version: 1,
   createdAt: 1_780_000_000_000,
   updatedAt: 1_780_000_000_000,
@@ -102,16 +121,22 @@ const comments = [
     discussionId: firstDiscussion.id,
     author: "user-beta",
     body: "First comment keeps its own identity.",
+    replyToId: null,
+    deleted: false,
     version: 1,
     createdAt: 1_780_000_002_000,
+    updatedAt: 1_780_000_002_000,
   },
   {
     id: "comment-beta",
     discussionId: firstDiscussion.id,
     author: "user-gamma",
     body: "Second comment arrives by cursor.",
+    replyToId: null,
+    deleted: false,
     version: 1,
     createdAt: 1_780_000_003_000,
+    updatedAt: 1_780_000_003_000,
   },
 ];
 const labels = [
@@ -176,15 +201,25 @@ function pageItems(items, after, cursorFor, size = 1) {
   };
 }
 
-function readToken(request) {
-  return request.headers()["x-line-token"] ?? "token-a";
+function readSessionGeneration(request) {
+  return request.headers()["x-app-session-generation"];
 }
 
-async function setSyntheticToken(value) {
+async function setSyntheticProof(value) {
   await page.evaluate(
-    ([key, token]) => window.localStorage.setItem(key, token),
-    [tokenStorageKey, value],
+    ([key, proof]) => window.localStorage.setItem(key, proof),
+    [syntheticProofStorageKey, value],
   );
+}
+
+async function switchServiceAccount(accessToken) {
+  await gotoPath("/settings");
+  await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "登出此服務", exact: true }).click();
+  await expect(page.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
+  await setSyntheticProof(accessToken);
+  await page.getByRole("button", { name: "使用 LINE 重新登入", exact: true }).click();
+  await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
 }
 
 function routeKind(url) {
@@ -223,14 +258,14 @@ function routeOwner(url) {
 function payloadFor(url, request) {
   const kind = routeKind(url);
   const owner = routeOwner(url);
-  const token = readToken(request);
+  const generation = readSessionGeneration(request);
   const activeRepository = owner === "private" ? otherRepository : repository;
   if (!kind) return undefined;
   if (owner === "malformed" && kind === "labels") {
     return { json: { repository: {}, labels: "bad" } };
   }
   if (owner === "missing") return { status: 404, json: { error: "找不到 Repository resource。" } };
-  if (owner === "private" && token !== "token-b") {
+  if (owner === "private" && generation !== sessionGenerations["token-b"]) {
     return { status: 403, json: { error: "沒有 Repository 存取權限。" } };
   }
   if (owner === "source-down")
@@ -264,7 +299,10 @@ function payloadFor(url, request) {
     };
   }
   if (kind === "labels") {
-    const items = token === "token-b" ? [{ ...labels[1], name: "private-visible" }] : labels;
+    const items =
+      generation === sessionGenerations["token-b"]
+        ? [{ ...labels[1], name: "private-visible" }]
+        : labels;
     const page = pageItems(
       items,
       after,
@@ -398,7 +436,12 @@ async function expectRepositoryResourceMobileLayout() {
 async function gotoPath(pathname) {
   const url = `${base}${pathname}`;
   result.urls.push(url);
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded" });
+  } catch (error) {
+    if (!(error instanceof Error) || !error.message.includes("net::ERR_ABORTED")) throw error;
+    await expect(page).toHaveURL(url);
+  }
 }
 
 page.on("pageerror", (error) => errors.push(error.message));
@@ -408,11 +451,67 @@ await context.route("**/*", async (route) => {
   if (url.origin !== base) return route.abort();
   if (!url.pathname.startsWith("/api/")) return route.continue();
 
+  if (url.pathname === "/api/auth") {
+    if (request.method() === "GET") {
+      const cookies = request.headers().cookie ?? "";
+      const proof = Object.keys(sessionGenerations).find((candidate) =>
+        cookies
+          .split(";")
+          .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
+      );
+      if (!proof)
+        return route.fulfill({
+          status: 401,
+          json: { error: "服務登入已失效，請重新登入。" },
+        });
+      return route.fulfill({ json: { generation: sessionGenerations[proof] } });
+    }
+    if (request.method() === "POST") {
+      const body = request.postDataJSON();
+      assert.equal(typeof body.accessToken, "string");
+      assert.ok(
+        Object.hasOwn(sessionGenerations, body.accessToken),
+        "Expected a synthetic LINE proof.",
+      );
+      const accessToken = body.accessToken;
+      const sessionChanged = activeSyntheticProof !== accessToken;
+      activeSyntheticProof = accessToken;
+      return route.fulfill({
+        json: {
+          generation: sessionGenerations[accessToken],
+          sessionChanged,
+        },
+        headers: {
+          "Set-Cookie": `__Host-line_bot_v1_session=synthetic-${accessToken}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+        },
+      });
+    }
+    if (request.method() === "PATCH") {
+      const generation = readSessionGeneration(request);
+      assert.ok(Object.values(sessionGenerations).includes(generation));
+      assert.match(request.headers().cookie ?? "", /__Host-line_bot_v1_session=/);
+      return route.fulfill({ json: { generation } });
+    }
+    if (request.method() === "DELETE")
+      return route.fulfill({
+        status: 204,
+        headers: {
+          "Set-Cookie":
+            "__Host-line_bot_v1_session=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax",
+        },
+      });
+    return route.fulfill({ status: 405 });
+  }
+
+  assert.ok(readSessionGeneration(request), `Missing app session generation for ${url.pathname}.`);
+  assert.equal(request.headers()["x-line-token"], undefined);
+  assert.match(request.headers().cookie ?? "", /__Host-line_bot_v1_session=/);
+
   const matched = payloadFor(url, request);
   if (
     routeKind(url) === "labels" &&
     routeOwner(url) === "private" &&
-    readToken(request) === "token-b" &&
+    readSessionGeneration(request) === sessionGenerations["token-b"] &&
     delayNextPrivateLabels
   ) {
     delayNextPrivateLabels = false;
@@ -424,7 +523,7 @@ await context.route("**/*", async (route) => {
     method: request.method(),
     path: `${url.pathname}${url.search}`,
     kind: routeKind(url) ?? "other",
-    token: readToken(request),
+    generation: readSessionGeneration(request),
     status: matched?.status ?? 404,
   });
   if (!matched) return route.fulfill({ status: 404, json: { error: "synthetic route not found" } });
@@ -496,26 +595,17 @@ try {
   }
   result.checks.push("missing, forbidden and unavailable source stay distinct");
 
+  await switchServiceAccount("token-b");
   delayNextPrivateLabels = true;
-  await setSyntheticToken("token-b");
   await gotoPath("/private/Operations/labels");
   await expect.poll(() => (releaseDelayedPrivateLabels ? "delayed" : "pending")).toBe("delayed");
-  await page.evaluate((key) => {
-    window.localStorage.setItem(key, "token-a");
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
-    document.dispatchEvent(new Event("visibilitychange"));
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
-    document.dispatchEvent(new Event("visibilitychange"));
-  }, tokenStorageKey);
+  await switchServiceAccount("token-a");
   releaseDelayedPrivateLabels();
+  await gotoPath("/private/Operations/labels");
   await expectPageState("沒有可讀取的儲存庫資源", "沒有 Repository 存取權限");
   await expect(page.getByText("private-visible", { exact: true })).toHaveCount(0);
 
-  await page.evaluate((key) => {
-    window.localStorage.setItem(key, "token-b");
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
-    document.dispatchEvent(new Event("visibilitychange"));
-  }, tokenStorageKey);
+  await switchServiceAccount("token-b");
   await gotoPath("/private/Operations/labels");
   await expect(page.getByText("private-visible", { exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);

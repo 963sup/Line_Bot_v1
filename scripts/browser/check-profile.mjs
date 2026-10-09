@@ -7,6 +7,7 @@ import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const web = path.join(root, "apps/web");
@@ -226,7 +227,14 @@ try {
     window.liff = {
       init: async () => {},
       isLoggedIn: () => true,
-      getAccessToken: () => "synthetic",
+      getAccessToken: () => {
+        const key = "profile-line-access-token-reads";
+        const reads = Number(sessionStorage.getItem(key) ?? "0") + 1;
+        sessionStorage.setItem(key, String(reads));
+        return sessionStorage.getItem("profile-line-access-token-mode") === "unavailable"
+          ? null
+          : "synthetic";
+      },
       isInClient: () => true,
       getProfile: async () =>
         window.holdProvider
@@ -247,10 +255,17 @@ try {
   let membershipStatus = 200;
   let holdMembership = false;
   let heldMembership;
+  let authProofExchanges = 0;
   const privateReads = [];
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.origin !== base) return route.abort();
+    if (
+      await fulfillLineSessionMock(route, ({ method }) => {
+        if (method === "POST") authProofExchanges++;
+      })
+    )
+      return;
     if (url.pathname === "/api/membership") {
       membershipReads++;
       assert.equal(url.search, "?view=account");
@@ -299,6 +314,24 @@ try {
     "/projects",
   );
   assert.deepEqual(privateReads.sort(), ["/api/profile", "/api/profile/achievements"]);
+  assert.equal(authProofExchanges, 1, "the initial service session exchanges LINE proof once");
+  const tokenReads = await page.evaluate(() =>
+    sessionStorage.getItem("profile-line-access-token-reads"),
+  );
+  await page.evaluate(() =>
+    sessionStorage.setItem("profile-line-access-token-mode", "unavailable"),
+  );
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Private viewer");
+  assert.equal(authProofExchanges, 1, "a valid cookie restores the app session without LINE proof");
+  assert.equal(
+    await page.evaluate(() => sessionStorage.getItem("profile-line-access-token-reads")),
+    tokenReads,
+    "a valid app session survives reload without requesting a LINE access token",
+  );
+  results.push(
+    "valid product session restores after reload without a LINE token or proof exchange",
+  );
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
     const share = page.getByRole("button", { name: "分享 Profile", exact: true });

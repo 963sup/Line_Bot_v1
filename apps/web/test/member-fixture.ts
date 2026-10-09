@@ -69,6 +69,7 @@ export async function activateMember(user: string) {
   const login = `test-${user.slice(1, 9).toLowerCase()}`;
   return (await memberStore().registerLine(LINE_PROVIDER_NAMESPACE, user, login)).id;
 }
+
 export async function closeFixture() {
   await fixture.pg.close();
 }

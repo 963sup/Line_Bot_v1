@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const require = createRequire(import.meta.url);
 const packagePath = process.env.PLAYWRIGHT_PACKAGE_PATH;
@@ -108,11 +109,15 @@ async function run() {
     version: 1,
   };
 
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (error) => {
+    errors.push(error.message);
+    console.error("PAGEERROR", error.stack);
+  });
   await context.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     if (url.origin !== base) return route.abort();
+    if (await fulfillLineSessionMock(route)) return;
     if (!url.pathname.startsWith("/api/")) return route.continue();
 
     if (request.method() === "POST")
@@ -138,8 +143,12 @@ async function run() {
         organizationAccountId: "org-1",
         name: "Operations Team",
         slug: "operations",
+        parentTeamId: null,
+        privacy: "VISIBLE",
+        notificationSetting: "NOTIFICATIONS_DISABLED",
         version: 1,
         membershipStatus: "active",
+        membershipType: "IMMEDIATE",
         isMaintainer: false,
       };
       return route.fulfill({
@@ -150,6 +159,7 @@ async function run() {
           organizationLogin: "acme",
           teams: [team],
           team,
+          childTeams: [],
           members: [],
         },
       });

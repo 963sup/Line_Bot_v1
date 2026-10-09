@@ -23,6 +23,11 @@ const base = url.origin;
 const output = process.env.NAVIGATION_ARTIFACT_DIR;
 if (output) mkdirSync(output, { recursive: true });
 const storageKey = "sb-local-auth-auth-token";
+const syntheticProofStorageKey = "synthetic-liff-proof";
+const sessionGenerations = Object.freeze({
+  "token-a": "11111111-1111-4111-8111-111111111111",
+  "token-b": "22222222-2222-4222-8222-222222222222",
+});
 const checkInPolicy = {
   version: "wheel-v1",
   totalWeight: 100,
@@ -77,16 +82,17 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     serviceWorkers: "block",
   });
   await context.addInitScript(
-    ({ profileMode }) => {
+    ({ profileMode, proofKey }) => {
       window.liffInitCount = 0;
       window.profileMode = profileMode;
       window.releaseProfiles = [];
+      if (!window.localStorage.getItem(proofKey)) window.localStorage.setItem(proofKey, "token-a");
       window.liff = {
         init: async () => {
           window.liffInitCount++;
         },
         isLoggedIn: () => true,
-        getAccessToken: () => "synthetic-line",
+        getAccessToken: () => window.localStorage.getItem(proofKey) || "token-a",
         isInClient: () => false,
         getProfile: async () => {
           if (window.profileMode === "fail") throw new Error("profile unavailable");
@@ -97,7 +103,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
         login: () => {},
       };
     },
-    { profileMode },
+    { profileMode, proofKey: syntheticProofStorageKey },
   );
   if (output) await context.tracing.start({ screenshots: true, snapshots: true });
   page = await context.newPage();
@@ -105,6 +111,8 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     documents: 0,
     errors: [],
     posts: [],
+    sessionExchanges: 0,
+    sessionRevocations: 0,
     checkInPosts: [],
     recoveryReads: [],
     reads: [],
@@ -133,6 +141,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     recoveryFailuresRemaining: options.recoveryFailures ?? 0,
     dayAfterCommit: options.dayAfterCommit ?? null,
   };
+  let activeSyntheticProof;
   const coins = (day = state.day) => {
     const claim = state.claims.get(day) ?? null;
     return {
@@ -183,6 +192,66 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
     const request = route.request();
     const target = new URL(request.url());
     if (target.origin !== base) return route.abort();
+    if (target.pathname === "/api/auth") {
+      if (request.method() === "GET") {
+        const cookies = request.headers().cookie ?? "";
+        const proof = Object.keys(sessionGenerations).find((candidate) =>
+          cookies
+            .split(";")
+            .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
+        );
+        if (!proof)
+          return route.fulfill({
+            status: 401,
+            json: { error: "服務登入已失效，請重新登入。" },
+          });
+        return route.fulfill({ json: { generation: sessionGenerations[proof] } });
+      }
+      if (request.method() === "POST") {
+        const body = request.postDataJSON();
+        assert.ok(Object.hasOwn(sessionGenerations, body.accessToken));
+        const sessionChanged = activeSyntheticProof !== body.accessToken;
+        activeSyntheticProof = body.accessToken;
+        state.sessionExchanges++;
+        return route.fulfill({
+          json: {
+            generation: sessionGenerations[body.accessToken],
+            sessionChanged,
+          },
+          headers: {
+            "Set-Cookie": `__Host-line_bot_v1_session=synthetic-${body.accessToken}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+          },
+        });
+      }
+      if (request.method() === "PATCH") {
+        const generation = request.headers()["x-app-session-generation"];
+        assert.ok(Object.values(sessionGenerations).includes(generation));
+        return route.fulfill({ json: { generation } });
+      }
+      if (request.method() === "DELETE") {
+        state.sessionRevocations++;
+        activeSyntheticProof = undefined;
+        return route.fulfill({
+          status: 204,
+          headers: {
+            "Set-Cookie":
+              "__Host-line_bot_v1_session=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax",
+          },
+        });
+      }
+      return route.fulfill({ status: 405 });
+    }
+    if (!target.pathname.startsWith("/api/")) return route.continue();
+    // The external Google staging step uses its one-time handoff token and verified Google identity.
+    const externalGoogleStage =
+      target.pathname === "/api/membership/google-link" &&
+      request.method() === "POST" &&
+      request.postDataJSON().action === "stage";
+    if (!externalGoogleStage) {
+      assert.ok(request.headers()["x-app-session-generation"]);
+      assert.match(request.headers().cookie ?? "", /__Host-line_bot_v1_session=/);
+    }
+    assert.equal(request.headers()["x-line-token"], undefined);
     if (target.pathname === "/api/membership/google-link") {
       if (request.method() === "POST") {
         const body = request.postDataJSON();
@@ -197,6 +266,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
         }
         if (body.action === "stage") {
           assert.equal(request.headers()["x-line-token"], undefined);
+          assert.equal(request.headers()["x-app-session-generation"], undefined);
           assert.equal(request.headers()["x-google-link"], "a".repeat(43));
           assert.ok(request.headers().authorization);
           state.stages.push(body);
@@ -425,7 +495,10 @@ try {
     await button("綁定 Google（選填）").click();
     await expect(page).toHaveURL(base + "/google-link");
     await expect(button("選擇 Google 帳號")).toBeEnabled();
-    assert.equal(state.liffRequests, 1, "External Google page must not load LIFF");
+    assert.equal(await page.evaluate(() => window.liffInitCount), 0);
+    await expect(
+      page.locator('script[src="https://static.line-scdn.net/liff/edge/2/sdk.js"]'),
+    ).toHaveCount(0);
     assert.equal(
       await page.evaluate(() => sessionStorage.getItem("googleLinkRequest")),
       "a".repeat(43),
@@ -434,7 +507,10 @@ try {
     await page.goto(base + "/google-link?complete=1");
     await expect(page.getByText(/Google 帳號已備妥/)).toBeVisible();
     assert.equal(state.stages.length, 1);
-    assert.equal(state.liffRequests, 1);
+    assert.equal(await page.evaluate(() => window.liffInitCount), 0);
+    await expect(
+      page.locator('script[src="https://static.line-scdn.net/liff/edge/2/sdk.js"]'),
+    ).toHaveCount(0);
     assert.equal(state.linked, null, "Google stage must not bind the member");
     state.pending.email = "first@example.test";
     await page.goto(base + "/settings/account");
@@ -466,7 +542,10 @@ try {
     const state = await fixture("active");
     await page.goto(base + "/google-link");
     await expect(page.getByRole("main").getByRole("alert")).toContainText("綁定連結已失效");
-    assert.equal(state.liffRequests, 0);
+    assert.equal(await page.evaluate(() => window.liffInitCount), 0);
+    await expect(
+      page.locator('script[src="https://static.line-scdn.net/liff/edge/2/sdk.js"]'),
+    ).toHaveCount(0);
     assert.equal(state.posts.length, 0);
     await finish("Missing handoff fails without LINE login", state);
   }
@@ -610,6 +689,60 @@ try {
     await assertNoHorizontalOverflow();
     await button("關閉").click();
     await finish(`Reduced-motion wheel fits ${width}px viewport`, state);
+  }
+  {
+    const state = await fixture("active");
+    await page.goto(base + "/settings");
+    await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 1);
+    await button("登出此服務").click();
+    await expect(page.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("你已登出此服務。LINE 帳號本身仍保持登入。", { exact: true }),
+    ).toBeVisible();
+    assert.equal(state.sessionRevocations, 1);
+    await button("使用 LINE 重新登入").click();
+    await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 2);
+    await finish("Service logout revokes the app session and LINE sign-in restores it", state);
+  }
+  {
+    const state = await fixture("active");
+    await page.goto(base + "/settings");
+    await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    const otherTab = await context.newPage();
+    const otherTabDocuments = [];
+    otherTab.on("pageerror", (error) => state.errors.push(error.message));
+    otherTab.on("request", (request) => {
+      if (request.resourceType() === "document") otherTabDocuments.push(request.url());
+    });
+    await otherTab.goto(base + "/settings");
+    await expect(otherTab.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 1, "a second tab restores the existing cookie session");
+    await page.evaluate(
+      (key) => window.localStorage.setItem(key, "token-b"),
+      syntheticProofStorageKey,
+    );
+    await page.reload();
+    await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    await expect(otherTab.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 1, "reload does not exchange a new LINE proof");
+
+    await button("登出此服務").click();
+    await expect(page.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
+    await expect(otherTab.getByText("目前已登出此服務。", { exact: true })).toBeVisible();
+    await expect(
+      otherTab.getByText("你已登出此服務，請選擇「使用 LINE 重新登入」。", { exact: true }),
+    ).toBeVisible();
+    assert.equal(state.sessionRevocations, 1);
+    await button("使用 LINE 重新登入").click();
+    await expect(page.getByText("目前已登入此服務。", { exact: true })).toBeVisible();
+    assert.equal(state.sessionExchanges, 2, "explicit re-login exchanges the selected LINE proof");
+    assert.ok(otherTabDocuments.length > 1, "the stale tab reloads to clear private page state");
+    await finish(
+      "Cookie restore avoids LINE proof exchange; explicit re-login keeps stale tabs blocked",
+      state,
+    );
   }
   console.log(JSON.stringify(results, null, 2));
   if (output)

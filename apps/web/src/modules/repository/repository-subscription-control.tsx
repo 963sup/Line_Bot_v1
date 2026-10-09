@@ -69,7 +69,7 @@ export default function RepositorySubscriptionControl({
   }
 
   async function session() {
-    const token = await liffClient.session(liffId);
+    const token = await liffClient.ensureSession(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
     return token;
   }
@@ -79,7 +79,7 @@ export default function RepositorySubscriptionControl({
     const response = await fetch("/api/repository-subscription?" + query.toString(), {
       cache: "no-store",
       signal: AbortSignal.timeout(20_000),
-      headers: { "x-line-token": token },
+      headers: { "X-App-Session-Generation": token },
     });
     const payload = (await response.json()) as RepositorySubscriptionSnapshot & { error?: string };
     if (!response.ok || !payload?.repository?.id) {
@@ -99,7 +99,8 @@ export default function RepositorySubscriptionControl({
     try {
       const token = await session();
       const snapshot = await requestView(token);
-      if (ticket !== generation.current || (await liffClient.session(liffId)) !== token) return;
+      if (ticket !== generation.current || (await liffClient.ensureSession(liffId)) !== token)
+        return;
       setData(snapshot);
       setPending(readPending(key, snapshot.repository.actorUserId, snapshot.repository.id));
     } catch (cause) {
@@ -127,7 +128,7 @@ export default function RepositorySubscriptionControl({
         ticket !== generation.current ||
         fresh.repository.actorUserId !== operation.owner ||
         fresh.repository.id !== operation.command.repositoryId ||
-        (await liffClient.session(liffId)) !== token
+        (await liffClient.ensureSession(liffId)) !== token
       ) {
         sessionStorage.removeItem(key);
         setPending(null);
@@ -143,7 +144,7 @@ export default function RepositorySubscriptionControl({
         signal: AbortSignal.timeout(20_000),
         headers: {
           "content-type": "application/json",
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
         },
         body: JSON.stringify(operation.command),
       });
@@ -154,7 +155,7 @@ export default function RepositorySubscriptionControl({
         version?: number;
         error?: string;
       };
-      if (ticket !== generation.current || (await liffClient.session(liffId)) !== token) {
+      if (ticket !== generation.current || (await liffClient.ensureSession(liffId)) !== token) {
         throw new Error("LINE 身分已變更；請重新讀取並確認原操作結果。");
       }
       if (!response.ok) {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
@@ -108,6 +109,7 @@ await context.route("**/*", async (route) => {
     });
   }
   if (url.origin !== target.origin) return route.abort();
+  if (await fulfillLineSessionMock(route)) return;
   if (url.pathname === "/api/repository-management") {
     assert.equal(request.method(), "GET");
     assert.equal(url.searchParams.get("owner"), "alice");

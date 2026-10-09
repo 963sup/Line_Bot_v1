@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const require = createRequire(import.meta.url);
 const packagePath = process.env.PLAYWRIGHT_PACKAGE_PATH;
@@ -43,6 +44,7 @@ try {
     await context.route("**/*", async (route) => {
       const url = new URL(route.request().url());
       if (url.origin !== base.origin) return route.abort();
+      if (await fulfillLineSessionMock(route)) return;
       if (url.pathname.startsWith("/api/"))
         return route.fulfill({ status: 403, json: { error: "合成資格拒絕" } });
       return route.continue();

@@ -42,7 +42,7 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
   async function read(token: string, after?: string): Promise<PartnersView> {
     const response = await fetch(
       `/api/partners?view=manage${after ? `&after=${encodeURIComponent(after)}` : ""}`,
-      { headers: { "x-line-token": token }, cache: "no-store" },
+      { headers: { "X-App-Session-Generation": token }, cache: "no-store" },
     );
     const value = await response.json();
     if (!response.ok) throw new Error(value.error ?? "合作夥伴資料暫不可用。");
@@ -56,11 +56,11 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
     setError("");
     setBusy(true);
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const value = await read(token, after);
       if (ticket !== sequence.current) return;
-      if ((await liffClient.session(liffId)) !== token)
+      if ((await liffClient.ensureSession(liffId)) !== token)
         throw new Error("LINE 身分已變更，請重新讀取。");
       if (ticket !== sequence.current) return;
       const saved = sessionStorage.getItem(storageKey);
@@ -91,11 +91,14 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       const command = parsePartnerCommand(operation.command);
       if (command.action !== "save-partner") throw new Error("管理操作不正確。");
       validated = true;
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const current = await read(token);
       if (ticket !== sequence.current) return;
-      if (current.userId !== operation.userId || (await liffClient.session(liffId)) !== token) {
+      if (
+        current.userId !== operation.userId ||
+        (await liffClient.ensureSession(liffId)) !== token
+      ) {
         sessionStorage.removeItem(storageKey);
         setData(null);
         setDraft(null);
@@ -108,12 +111,12 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       submitted = true;
       const response = await fetch("/api/partners", {
         method: "POST",
-        headers: { "x-line-token": token, "content-type": "application/json" },
+        headers: { "X-App-Session-Generation": token, "content-type": "application/json" },
         body: JSON.stringify(command),
       });
       const result = await response.json();
       if (ticket !== sequence.current) return;
-      if ((await liffClient.session(liffId)) !== token) {
+      if ((await liffClient.ensureSession(liffId)) !== token) {
         clear();
         return;
       }

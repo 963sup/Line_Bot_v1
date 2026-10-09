@@ -58,7 +58,7 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
   }
 
   async function request(init: RequestInit = {}, cursor?: string) {
-    const access = await liffClient.session(liffId);
+    const access = await liffClient.ensureSession(liffId);
     if (!access) throw new Error("請完成 LINE 登入後重試。");
     token.current = access;
     const response = await fetch(
@@ -69,7 +69,7 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
         ...init,
         cache: "no-store",
         headers: {
-          "x-line-token": access,
+          "X-App-Session-Generation": access,
           ...(init.body ? { "content-type": "application/json" } : {}),
         },
         signal: AbortSignal.timeout(20000),

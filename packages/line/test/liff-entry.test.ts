@@ -40,11 +40,11 @@ test("LIFF boot starts immediately, shares initialization, waits for redirect an
   ]);
   assert.equal(calls, 2, "concurrent consumers share one retry attempt");
 
-  assert.equal(await client.session("id"), null);
+  assert.equal(await client.accessToken("id"), null);
   assert.equal(login, 0, "liff.state stays pending until the SDK redirect is complete");
 
   href = "https://example.com/?membership=1";
-  await client.session("id");
+  await client.accessToken("id");
   assert.equal(login, 1);
   assert.equal(calls, 2);
   await assert.rejects(client.initialize("other"), /不一致/);

@@ -25,7 +25,7 @@ export async function requestIssueSnapshot({
     }
     const suffix = detailQuery.size ? `?${detailQuery}` : "";
     const response = await fetch(`/api/issues/${issueNumber}${suffix}`, {
-      headers: { "x-line-token": token },
+      headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
     const value = await response.json();
@@ -45,7 +45,7 @@ export async function requestIssueSnapshot({
     query.set("repository", repository);
   }
   const response = await fetch(`/api/issues?${query}`, {
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
     cache: "no-store",
   });
   const value = await response.json();
@@ -57,7 +57,7 @@ export async function postIssueCommand(token: string, command: IssueCommand) {
   const response = await fetch("/api/issues", {
     method: "POST",
     headers: {
-      "x-line-token": token,
+      "X-App-Session-Generation": token,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(command),

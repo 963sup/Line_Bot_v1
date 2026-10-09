@@ -3,6 +3,7 @@ import { mock, test } from "node:test";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { notifications } from "../src/app/api/_composition/notifications.server";
 import { GET, POST } from "../src/app/api/notifications/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 
 test("notification HTTP verifies LINE, bounds JSON and does not leak failures", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
@@ -28,18 +29,24 @@ test("notification HTTP verifies LINE, bounds JSON and does not leak failures", 
     if (url === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw new Error("Unexpected network request");
   });
-  const request = (body?: string, origin = "https://app.example", auth = true) =>
+  let authenticated: HeadersInit = {};
+  const request = (
+    body?: string,
+    origin = "https://app.example",
+    auth: HeadersInit = authenticated,
+  ) =>
     new Request("https://app.example/api/notifications", {
       method: body === undefined ? "GET" : "POST",
       headers: {
         Origin: origin,
         "Content-Type": "application/json",
-        ...(auth ? { "x-line-token": "offline-notification" } : {}),
+        ...auth,
       },
       body,
     });
   try {
-    assert.equal((await GET(request(undefined, "", false))).status, 401);
+    authenticated = await lineSessionHeaders("offline-notification");
+    assert.equal((await GET(request(undefined, "", {}))).status, 401);
     assert.equal((await POST(request("{}", "https://evil.example"))).status, 403);
     assert.equal((await POST(request("{"))).status, 400);
     assert.equal((await POST(request("x".repeat(4097)))).status, 413);

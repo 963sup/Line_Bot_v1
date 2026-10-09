@@ -12,6 +12,7 @@ import { GET as profileGet, POST as profilePost } from "../src/app/api/profile/r
 import { GET as exploreGet, POST as explorePost } from "../src/app/api/repositories/explore/route";
 import { GET as repositoriesGet } from "../src/app/api/repositories/route";
 import { GET as starredGet } from "../src/app/api/repositories/starred/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 
 test("profile, follow and Repository discovery HTTP surfaces verify LINE and call owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
@@ -82,18 +83,20 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     throw new Error("Unexpected network request");
   });
 
+  let authenticated: HeadersInit = {};
   const request = (path: string, body?: string, origin = "https://app.example") =>
     new Request(`https://app.example${path}`, {
       method: body === undefined ? "GET" : "POST",
       headers: {
         Origin: origin,
         "Content-Type": "application/json",
-        "x-line-token": "offline-social",
+        ...authenticated,
       },
       body,
     });
 
   try {
+    authenticated = await lineSessionHeaders("offline-social");
     assert.equal((await profileGet(request("/api/profile"))).status, 200);
     assert.equal((await achievementsGet(request("/api/profile/achievements"))).status, 200);
     assert.equal(

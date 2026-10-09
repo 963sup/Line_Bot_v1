@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { authHeaders } from "../../shared/browser/supabase-session";
 
 type View = ExpenseApiView;
 type ReceiptReadingView = {
@@ -41,7 +40,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
 
   async function load(access: string, expenseId: string) {
     const result = await fetch(`/api/expenses/${encodeURIComponent(expenseId)}`, {
-      headers: await authHeaders(access),
+      headers: { "X-App-Session-Generation": access },
       cache: "no-store",
     });
     const data = await result.json();
@@ -56,7 +55,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
     setToken("");
     try {
       if (!liffId) throw new Error("操作頁尚未設定。");
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       if (!access) return;
       const expenseId = new URL(window.location.href).searchParams.get("expense");
       if (!expenseId) throw new Error("請從群組中的「處理」按鈕開啟支出。");
@@ -84,7 +83,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       );
       const result = await fetch(`/api/expenses/${id}`, {
         method: "POST",
-        headers: { ...(await authHeaders(token)), "Content-Type": "application/json" },
+        headers: { "X-App-Session-Generation": token, "Content-Type": "application/json" },
         body: JSON.stringify({
           type,
           revision: expense.revision,
