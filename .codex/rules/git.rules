@@ -1,0 +1,365 @@
+git_commands = [
+    "git",
+    "git.exe",
+    "C:\\Users\\963su\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\git\\cmd\\git.exe",
+]
+
+destructive_push_options = [
+    "--force",
+    "-f",
+    "--force-with-lease",
+    "--mirror",
+    "--delete",
+    "-d",
+]
+
+# ============================================================
+# Git: safe inspection
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, [
+        "status",
+        "diff",
+        "log",
+        "show",
+        "branch",
+        "rev-parse",
+        "remote",
+        "tag",
+        "describe",
+        "ls-files",
+        "ls-tree",
+        "merge-base",
+        "name-rev",
+        "shortlog",
+        "blame",
+    ]],
+    decision = "allow",
+    justification = "Read-only Git inspection is safe and required for normal development.",
+    match = [
+        "git status",
+        "git status --short",
+        "git diff",
+        "git diff --cached",
+        "git log --oneline --decorate -20",
+        "git show HEAD",
+        "git branch -vv",
+        "git rev-parse HEAD",
+        "git remote -v",
+    ],
+    not_match = [
+        "git reset --hard HEAD",
+        "git clean -fd",
+        "git push --force origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: remote synchronization
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "fetch"],
+    decision = "allow",
+    justification = "Fetching remote refs does not modify working-tree files or remote history.",
+    match = [
+        "git fetch origin",
+        "git fetch --prune origin",
+        "git fetch origin main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git reset --hard origin/main",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "pull", "--ff-only"],
+    decision = "allow",
+    justification = "Fast-forward-only pull prevents implicit merge commits and history rewrites.",
+    match = [
+        "git pull --ff-only",
+        "git pull --ff-only origin main",
+    ],
+    not_match = [
+        "git pull --rebase",
+        "git pull --force",
+    ],
+)
+
+
+# ============================================================
+# Git: branch navigation and creation
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "switch"],
+    decision = "allow",
+    justification = "Normal branch switching and branch creation are standard development operations.",
+    match = [
+        "git switch main",
+        "git switch feature/example",
+        "git switch -c feature/example",
+    ],
+    not_match = [
+    ],
+)
+
+
+# ============================================================
+# Git: staging and commits
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "add"],
+    decision = "allow",
+    justification = "Staging changes is reversible and part of normal development.",
+    match = [
+        "git add .",
+        "git add -A",
+        "git add packages/example/index.ts",
+    ],
+    not_match = [
+        "git clean -fd",
+        "git reset --hard HEAD",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "commit"],
+    decision = "allow",
+    justification = "Local commits are recoverable and are part of ordinary development.",
+    match = [
+        'git commit -m "fix: resolve namespace lookup"',
+        "git commit --amend --no-edit",
+    ],
+    not_match = [
+        "git push --force origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: remote push confirmation
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "push"],
+    decision = "prompt",
+    justification = "Git push changes remote refs; confirm the exact remote and destination before writing shared history.",
+    match = [
+        "git push origin main",
+        "git push origin feature/example",
+        "git push origin HEAD",
+        "git push origin HEAD:refs/heads/main",
+        "git push -u origin feature/example",
+    ],
+    not_match = ["git fetch origin", "git status"],
+)
+
+
+# ============================================================
+# Git: destructive push protection
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "push", destructive_push_options],
+    decision = "prompt",
+    justification = "Do not rewrite or delete remote history during ordinary development. Use a normal push or prepare a separately reviewed recovery operation.",
+    match = [
+        "git push --force origin main",
+        "git.exe push --mirror origin",
+        "git push --delete origin main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git fetch origin",
+        "git pull --ff-only",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "push", "origin", destructive_push_options],
+    decision = "prompt",
+    justification = "Remote-first force and deletion options are destructive too. Use a normal push.",
+    match = [
+        "git push origin --force main",
+        "git push origin -d main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git push origin HEAD:refs/heads/main",
+    ],
+)
+
+prefix_rule(
+    pattern = [
+        git_commands,
+        "push",
+        "origin",
+        ["main", "HEAD:refs/heads/main"],
+        destructive_push_options,
+    ],
+    decision = "prompt",
+    justification = "Do not append force or deletion options to the normal main push.",
+    match = [
+        "git push origin main --force",
+        "git push origin HEAD:refs/heads/main --force-with-lease",
+    ],
+    not_match = [
+        "git push origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: rebase
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "rebase", "--autostash", "origin/main"],
+    decision = "allow",
+    justification = "Allow the narrow non-fast-forward recovery path that preserves worktree edits while replaying local main on origin/main.",
+    match = [
+        "git rebase --autostash origin/main",
+        "git.exe rebase --autostash origin/main",
+    ],
+    not_match = [
+        "git rebase --abort",
+        "git rebase --interactive origin/main",
+        "git push --force origin main",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "rebase", "--continue"],
+    decision = "allow",
+    justification = "Allow continuing a reviewed rebase after conflicts are resolved without granting destructive history rewrites.",
+    match = [
+        "git rebase --continue",
+        "git.exe rebase --continue",
+    ],
+    not_match = [
+        "git rebase --abort",
+        "git reset --hard HEAD",
+        "git push --force origin main",
+    ],
+)
+
+
+# ============================================================
+# Git: restore / reset
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "restore", "--staged"],
+    decision = "allow",
+    justification = "Unstaging files does not discard working-tree changes.",
+    match = [
+        "git restore --staged package.json",
+        "git restore --staged .",
+    ],
+    not_match = [
+        "git restore .",
+        "git restore --source=HEAD .",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "restore", ["package.json", "."]],
+    decision = "prompt",
+    justification = "Restoring working-tree files can discard uncommitted changes. Review the exact paths first.",
+    match = [
+        "git restore package.json",
+        "git restore .",
+    ],
+    not_match = [
+        "git restore --staged package.json",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "restore", "--source=HEAD"],
+    decision = "prompt",
+    justification = "Restoring from a source revision can replace working-tree files. Review the exact paths first.",
+    match = ["git restore --source=HEAD ."],
+    not_match = ["git restore --staged package.json"],
+)
+
+prefix_rule(
+    pattern = [git_commands, "reset", "--soft"],
+    decision = "allow",
+    justification = "Soft reset changes commit pointers while preserving index and working-tree content.",
+    match = [
+        "git reset --soft HEAD~1",
+    ],
+    not_match = [
+        "git reset --hard HEAD",
+    ],
+)
+
+prefix_rule(
+    pattern = [git_commands, "reset", "--hard"],
+    decision = "prompt",
+    justification = "Hard reset can discard existing work. Inspect the diff and preserve changes before preparing targeted recovery.",
+    match = [
+        "git reset --hard HEAD",
+        "git.exe reset --hard",
+    ],
+    not_match = [
+        "git reset --soft HEAD~1",
+        "git status",
+    ],
+)
+
+
+# ============================================================
+# Git: clean
+# ============================================================
+
+prefix_rule(
+    pattern = [git_commands, "clean", ["-n", "-nd", "-dn", "--dry-run"]],
+    decision = "allow",
+    justification = "Dry-run clean only previews files that would be removed.",
+    match = [
+        "git clean -n",
+        "git clean -nd",
+        "git clean --dry-run",
+    ],
+    not_match = [
+        "git clean -fd",
+        "git clean -fdx",
+    ],
+)
+
+prefix_rule(
+    pattern = [
+        git_commands,
+        "clean",
+        [
+            "-f",
+            "-fd",
+            "-df",
+            "-fx",
+            "-xf",
+            "-fdx",
+            "-xdf",
+            "-dxf",
+            "-ffdx",
+            "--force",
+        ],
+    ],
+    decision = "prompt",
+    justification = "Do not bulk-delete untracked work. Use git clean -n to inspect and review exact paths first.",
+    match = [
+        "git clean -fdx",
+        "git clean -f -d",
+        "git.exe clean --force",
+    ],
+    not_match = [
+        "git clean -nd",
+        "git clean --dry-run",
+    ],
+)

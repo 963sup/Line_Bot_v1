@@ -1,0 +1,59 @@
+supabase_commands = ["supabase", "supabase.exe"]
+
+# ============================================================
+# Supabase: inspection and validation
+# ============================================================
+
+prefix_rule(
+    pattern = [supabase_commands, [
+        "status",
+        "projects",
+        "migration",
+        "inspect",
+        "gen",
+    ]],
+    decision = "allow",
+    justification = "Supabase inspection and code-generation commands are non-destructive development operations.",
+    match = [
+        "supabase status",
+        "supabase projects list",
+        "supabase migration list",
+        "supabase inspect db table-stats",
+        "supabase gen types typescript",
+    ],
+    not_match = [
+        "supabase db reset",
+    ],
+)
+
+prefix_rule(
+    pattern = [supabase_commands, "db", ["diff", "lint"]],
+    decision = "allow",
+    justification = "Schema diff and lint operations inspect or validate database state without intentionally deleting data.",
+    match = [
+        "supabase db diff",
+        "supabase db lint",
+    ],
+    not_match = [
+        "supabase db reset",
+    ],
+)
+
+
+# ============================================================
+# Supabase: destructive operations
+# ============================================================
+
+prefix_rule(
+    pattern = [supabase_commands, "db", "reset"],
+    decision = "prompt",
+    justification = "Database reset deletes data. Inspect schemas and prepare a separately reviewed recovery plan.",
+    match = [
+        "supabase db reset",
+        "supabase.exe db reset --linked",
+    ],
+    not_match = [
+        "supabase db diff",
+        "supabase migration list",
+    ],
+)
