@@ -1,6 +1,6 @@
 # LINE rich-menu reference
 ## 現行結構
-發布六張 Rich Menu 素材：`attendance-in` 與 `attendance-out` 使用目前的 1280 × 853 JPEG，`forms`、`incident`、`notifications`、`team` 使用 1536 × 1024 PNG。檔名由 `definition.ts` 的 page key 與副檔名決定；desired state 會從實際素材讀取尺寸。Rich Menu 素材沒有 repository 端的 byte-size 上限，LINE provider 的驗證仍是最終限制。default 使用上班選單。
+發布六張 Rich Menu 素材，統一使用 LINE Rich Menu 大尺寸範例的 2500 × 1686 解析度與 JPEG 格式。JPEG 適合這批不透明的漸層與插畫素材，可在保留文字與圖示清晰度的同時為未來素材變更留下 1 MB 容量餘裕。檔名由 `definition.ts` 的 page key 與 `.jpg` 副檔名決定；desired state 會從實際素材讀取尺寸。LINE provider 要求圖片為 JPEG 或 PNG、檔案不超過 1 MB；repository 不另設 byte-size 上限，素材提交前仍須通過 provider 規格與實際發布驗證。default 使用上班選單。
 
 主選單中央保留上班／下班操作，儲存庫與個人保留直接 URI。外圈表單、異常通報、公告通知、團隊協作使用原生 `richmenuswitch` 切到對應子選單。四個子選單皆有左上角返回箭頭；表單頁另有左上日誌、右上報銷、左下請假、右下即時四個外部 Google Forms URI，精確連結由 `definition.ts` 保存。開啟或提交外部表單不代表本系統建立日誌、報銷、請假或出勤紀錄。其餘三個子選單內部圖示不配置動作、不建立佔位頁。點擊範圍按實際圖片尺寸等比例計算。
 

@@ -9,17 +9,17 @@ test("actual upload dimensions and malformed image rejection", () => {
   const files = [
     "line_bot_v1-attendance-in.jpg",
     "line_bot_v1-attendance-out.jpg",
-    "line_bot_v1-forms.png",
-    "line_bot_v1-incident.png",
-    "line_bot_v1-notifications.png",
-    "line_bot_v1-team.png",
+    "line_bot_v1-forms.jpg",
+    "line_bot_v1-incident.jpg",
+    "line_bot_v1-notifications.jpg",
+    "line_bot_v1-team.jpg",
   ];
   assert.deepEqual(readdirSync(directory).sort(), files);
   for (const file of files) {
     const image = readFileSync(new URL(file, directory));
     const size = richMenuImage(image);
     assert.ok(size.width >= 800 && size.width <= 2500, file);
-    assert.equal(size.mimeType, file.endsWith(".jpg") ? "image/jpeg" : "image/png", file);
+    assert.equal(size.mimeType, "image/jpeg", file);
     assert.throws(() => richMenuImage(image.subarray(0, 10)), file);
   }
   const oversizedPng = new Uint8Array(1_500_000);

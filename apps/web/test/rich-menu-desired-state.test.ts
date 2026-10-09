@@ -22,12 +22,12 @@ test("Rich Menu desired state is derived from canonical definitions and assets",
     "assets/line/rich-menu/line_bot_v1-attendance-out.jpg",
   );
   const expectedSizes = {
-    "attendance-in": { width: 1280, height: 853 },
-    "attendance-out": { width: 1280, height: 853 },
-    forms: { width: 1536, height: 1024 },
-    incident: { width: 1536, height: 1024 },
-    notifications: { width: 1536, height: 1024 },
-    team: { width: 1536, height: 1024 },
+    "attendance-in": { width: 2500, height: 1686 },
+    "attendance-out": { width: 2500, height: 1686 },
+    forms: { width: 2500, height: 1686 },
+    incident: { width: 2500, height: 1686 },
+    notifications: { width: 2500, height: 1686 },
+    team: { width: 2500, height: 1686 },
   } as const;
   for (const item of desired) {
     assert.ok(item.upload.length > 0, item.page);

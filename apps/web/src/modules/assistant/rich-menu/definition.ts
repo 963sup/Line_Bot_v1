@@ -18,8 +18,7 @@ export function menuAlias(page: MenuPage) {
   return `line_bot_v1-${page}`;
 }
 export function menuAsset(page: MenuPage) {
-  const extension = page === "attendance-in" || page === "attendance-out" ? "jpg" : "png";
-  return `line_bot_v1-${page}.${extension}`;
+  return `line_bot_v1-${page}.jpg`;
 }
 
 type Rectangle = readonly [number, number, number, number];
