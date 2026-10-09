@@ -78,6 +78,8 @@ function attendanceSupplement(row: AttendanceSupplementRow): AttendanceSupplemen
   };
 }
 
+const MAX_PENDING_SUPPLEMENT_REQUESTS_PER_REPOSITORY = 100;
+
 function commandFingerprint(command: unknown) {
   return createHash("sha256").update(JSON.stringify(command)).digest("hex");
 }
@@ -412,7 +414,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         ? await sql.query(
             `SELECT * FROM attendance_supplement_requests
              WHERE repository_id=ANY($1::text[]) AND status='PENDING' AND uid<>$2
-             ORDER BY submitted_at,id LIMIT 100`,
+             ORDER BY submitted_at,id`,
             [reviewRepositoryIds, id],
           )
         : { rows: [] };
@@ -521,6 +523,9 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         site = open.point_snapshot;
       }
 
+      await sql.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 71020260913::bigint))", [
+        repositoryId,
+      ]);
       const duplicate = (
         await sql.query(
           `SELECT 1 FROM attendance_supplement_requests
@@ -532,6 +537,17 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         )
       ).rows[0];
       if (duplicate) throw new AttendanceError(409, "相同補登申請仍在等待審核。");
+      const pendingCount = Number(
+        (
+          await sql.query(
+            "SELECT count(*) AS count FROM attendance_supplement_requests WHERE repository_id=$1 AND status='PENDING'",
+            [repositoryId],
+          )
+        ).rows[0]!.count,
+      );
+      if (pendingCount >= MAX_PENDING_SUPPLEMENT_REQUESTS_PER_REPOSITORY) {
+        throw new AttendanceError(409, "該 Repository 待審補登已達上限，請先處理待審申請。");
+      }
 
       await sql.query(
         `INSERT INTO attendance_supplement_requests(
@@ -612,11 +628,6 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         throw new AttendanceError(403, "申請人不能審核自己的補登。");
       }
 
-      const reviewRepositoryIds = await repositoryAdministeredIds(sql, reviewerId);
-      if (!reviewRepositoryIds.includes(pending.repository_id)) {
-        throw new AttendanceError(403, "需要該 Repository 當下有效的 ADMIN 權限才能審核。");
-      }
-
       const previous = (
         await sql.query(
           "SELECT fingerprint,result FROM attendance_commands WHERE uid=$1 AND request_id=$2",
@@ -628,6 +639,10 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
           throw new AttendanceError(409, "審核請求編號已用於不同操作。");
         }
         return replaySupplementReceipt(previous.result);
+      }
+      const reviewRepositoryIds = await repositoryAdministeredIds(sql, reviewerId);
+      if (!reviewRepositoryIds.includes(pending.repository_id)) {
+        throw new AttendanceError(403, "需要該 Repository 當下有效的 ADMIN 權限才能審核。");
       }
       if (pending.status !== "PENDING" || Number(pending.version) !== command.expectedVersion) {
         throw new AttendanceError(409, "補登申請已變更，請重新整理後確認。");

@@ -184,3 +184,128 @@ test("pre-cutover open session closes using its existing clock-in evidence witho
   ).rows;
   assert.deepEqual(rows, [{ repository_id: null, point_snapshot: null }]);
 });
+
+test("review receipt replays after repository ADMIN access is revoked", async (t) => {
+  const { pg, store } = await fixture();
+  t.after(() => pg.close());
+  const member = { provider: "line:test", subject: "U11111111111111111111111111111111" };
+  const reviewer = { provider: "line:test", subject: "U22222222222222222222222222222222" };
+  await pg.query(
+    "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES('repo','outsider','admin',1)",
+  );
+  const submitted = await store.submit(
+    "member",
+    {
+      requestId: randomUUID(),
+      kind: "new-session",
+      repositoryId: "repo",
+      startedAt: now - 7200000,
+      endedAt: now - 3600000,
+      reason: "補登測試",
+    },
+    now,
+    member,
+  );
+  const command = {
+    commandId: randomUUID(),
+    supplementId: submitted.supplement.id,
+    expectedVersion: 0,
+    decision: "reject" as const,
+    reason: "資料待確認",
+  };
+  const first = await store.review("outsider", command, now, reviewer);
+  await pg.query(
+    "DELETE FROM app_private.repository_access WHERE repository_id='repo' AND principal_id='outsider'",
+  );
+
+  const replay = await store.review("outsider", command, now + 1, reviewer);
+
+  assert.equal(first.replayed, false);
+  assert.equal(replay.replayed, true);
+  assert.deepEqual(replay.supplement, first.supplement);
+});
+
+test("review inbox shows all pending requests and repository submissions enforce a concurrent limit", async (t) => {
+  const { pg, store } = await fixture();
+  t.after(() => pg.close());
+  const reviewer = { provider: "line:test", subject: "U22222222222222222222222222222222" };
+  const member = { provider: "line:test", subject: "U11111111111111111111111111111111" };
+  await pg.exec(`
+    INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+    VALUES('repo-2','owner','USER','test-2','public',1);
+    INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version)
+    VALUES('repo','outsider','admin',1),('repo-2','outsider','admin',1),('repo-2','member','read',1);
+  `);
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo-2'", [
+    JSON.stringify(address),
+  ]);
+  await pg.query(
+    `INSERT INTO app_private.attendance_supplement_requests(
+       id,uid,repository_id,kind,started_at,ended_at,site_snapshot,reason,submitted_at
+     )
+     SELECT gen_random_uuid(),'member',repository_id,'new-session',
+       $1::bigint-(sequence::bigint*7200000)-3600000,$1::bigint-(sequence::bigint*7200000),
+       jsonb_build_object('id',repository_id,'repositoryId',repository_id,'name',repository_id,
+         'address','Test address','latitude',25,'longitude',121,'radius',100,'version',1),
+       'queue seed',$1
+     FROM unnest(ARRAY['repo','repo-2']::text[]) AS repositories(repository_id)
+     CROSS JOIN generate_series(1,60) AS series(sequence)`,
+    [now],
+  );
+
+  const initialInbox = await store.list("outsider", now, reviewer);
+  assert.equal(initialInbox.review.length, 120);
+
+  await pg.query(
+    `INSERT INTO app_private.attendance_supplement_requests(
+       id,uid,repository_id,kind,started_at,ended_at,site_snapshot,reason,submitted_at
+     )
+     SELECT gen_random_uuid(),'member','repo','new-session',
+       $1::bigint-(sequence::bigint*1000)-100,$1::bigint-(sequence::bigint*1000),
+       jsonb_build_object('id','repo','repositoryId','repo','name','repo',
+         'address','Test address','latitude',25,'longitude',121,'radius',100,'version',1),
+       'queue seed',$1
+     FROM generate_series(1,39) AS series(sequence)`,
+    [now],
+  );
+  const firstSubmission = {
+    kind: "new-session" as const,
+    repositoryId: "repo",
+    startedAt: now - 900000,
+    endedAt: now - 899000,
+    reason: "並行申請一",
+  };
+  const secondSubmission = {
+    ...firstSubmission,
+    startedAt: now - 898000,
+    endedAt: now - 897000,
+    reason: "並行申請二",
+  };
+  const results = await Promise.allSettled([
+    store.submit("member", { requestId: randomUUID(), ...firstSubmission }, now, member),
+    store.submit("outsider", { requestId: randomUUID(), ...secondSubmission }, now, reviewer),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const rejected = results.find((result) => result.status === "rejected");
+  assert.ok(rejected && rejected.status === "rejected");
+  assert.match(String(rejected.reason), /待審補登已達上限/);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT count(*)::int AS count FROM app_private.attendance_supplement_requests WHERE repository_id='repo' AND status='PENDING'",
+      )
+    ).rows,
+    [{ count: 100 }],
+  );
+
+  const fullInbox = await store.list("outsider", now, reviewer);
+  const expectedVisible = Number(
+    (
+      await pg.query(
+        "SELECT count(*) AS count FROM app_private.attendance_supplement_requests WHERE repository_id=ANY(ARRAY['repo','repo-2']::text[]) AND status='PENDING' AND uid<>'outsider'",
+      )
+    ).rows[0]!.count,
+  );
+  assert.equal(fullInbox.review.length, expectedVisible);
+  assert.ok(fullInbox.review.length > 100);
+});
