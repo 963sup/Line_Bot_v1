@@ -21,7 +21,7 @@ export function createLiffClient(
 
   return {
     initialize,
-    async session(liffId?: string) {
+    async accessToken(liffId?: string) {
       const boot = resolveBoot();
       if (!(await initialize(liffId ?? boot.liffId))) return null;
       if (!boot.sdk.isLoggedIn()) {

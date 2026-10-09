@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
@@ -119,10 +120,13 @@ async function fixture(options = {}) {
           },
         },
       });
-      if (storageBlocked)
-        Storage.prototype.setItem = () => {
-          throw new Error("storage unavailable");
+      if (storageBlocked) {
+        const setItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+          if (key === "attendance-auto-attempt-v1") throw new Error("storage unavailable");
+          return setItem.call(this, key, value);
         };
+      }
     },
     { gps: options.gps, storageBlocked: options.storageBlocked, external: options.external },
   );
@@ -132,6 +136,14 @@ async function fixture(options = {}) {
     const request = route.request(),
       url = new URL(request.url());
     if (url.origin !== base) return route.abort();
+    if (await fulfillLineSessionMock(route)) return;
+    if (url.pathname.startsWith("/api/")) {
+      assert.ok(
+        request.headers()["x-app-session-generation"],
+        `Missing app session generation: ${request.method()} ${url.pathname}`,
+      );
+      assert.equal(request.headers()["x-line-token"], undefined);
+    }
     if (url.pathname === "/api/attendance") {
       state.reads.push(url.search);
       if (options.panel) {
@@ -161,6 +173,10 @@ async function fixture(options = {}) {
               ],
         },
       });
+    }
+    if (url.pathname === "/api/attendance/supplements") {
+      assert.equal(request.method(), "GET");
+      return route.fulfill({ json: { viewerId: state.memberId, mine: [], review: [] } });
     }
     if (/^\/api\/attendance\/clock-(in|out)$/.test(url.pathname)) {
       assert.equal(request.method(), "POST");

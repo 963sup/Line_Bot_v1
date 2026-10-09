@@ -28,7 +28,7 @@ type ProfileResource = Readonly<{
 
 async function readJson<T>(path: string, token: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(path, {
-    headers: { "x-line-token": token },
+    headers: { "X-App-Session-Generation": token },
     cache: "no-store",
     signal,
   });

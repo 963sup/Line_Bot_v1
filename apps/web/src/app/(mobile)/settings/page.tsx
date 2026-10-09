@@ -1,3 +1,5 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import ServiceSessionControl from "../../../modules/account/service-session-control";
 import { ActionRow, PageHeading, SectionHeading } from "../../../shared/ui/page-layout";
 import AppShell from "../_shell/app-shell";
 
@@ -50,6 +52,7 @@ export default function SettingsPage() {
           description="查詢 User 狀態與處理停權"
         />
       </div>
+      <ServiceSessionControl liffId={lineMiniApp().liffId} />
     </AppShell>
   );
 }

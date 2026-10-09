@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET, POST } from "../src/app/api/expenses/[id]/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 import {
   activateMember,
   closeFixture,
@@ -18,7 +19,6 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
   const originalFetch = globalThis.fetch;
   let apiCalls = 0;
   globalThis.fetch = (async (input) => {
-    apiCalls++;
     const url = String(input);
     if (url.startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
@@ -27,11 +27,14 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
         scope: "profile",
       });
     if (url === "https://api.line.me/v2/profile") return Response.json({ userId: user });
+    apiCalls++;
     throw new Error("Unexpected external side effect");
   }) as typeof fetch;
+  let authenticated: HeadersInit = {};
   const owner = await activateMember(user);
   const store = expenseStore();
   try {
+    authenticated = await lineSessionHeaders("offline-token");
     await store.arm("group:A", owner);
     const d = (await store.receive("group:A", owner, "1"))!;
     const context = { params: Promise.resolve({ id: d.id }) };
@@ -39,7 +42,7 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
       new Request(`https://app.example/api/expenses/${d.id}`, {
         method: body ? "POST" : "GET",
         headers: {
-          ...(auth ? { "X-Line-Token": "offline-token" } : {}),
+          ...(auth ? authenticated : {}),
           Origin: origin,
           "Content-Type": "application/json",
         },

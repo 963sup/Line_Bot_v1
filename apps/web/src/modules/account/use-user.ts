@@ -3,7 +3,6 @@
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
-import { authHeaders } from "../../shared/browser/supabase-session";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type MembershipWireResponse = { member: AccountView | null };
@@ -44,7 +43,7 @@ export function useUser(liffId: string) {
   }
 
   async function load(access: string, signal: AbortSignal) {
-    const headers = await authHeaders(access);
+    const headers = { "X-App-Session-Generation": access };
     signal.throwIfAborted();
     const result = await fetch("/api/membership?view=account", {
       headers,
@@ -81,7 +80,7 @@ export function useUser(liffId: string) {
     setPending(null);
     try {
       if (!liffId) throw new Error("會員入口尚未設定。");
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       signal.throwIfAborted();
       if (!access) return;
       setInClient(liffClient.inClient());
@@ -131,13 +130,13 @@ export function useUser(liffId: string) {
   async function googleLink(action: "start" | "confirm" | "cancel" | "unlink") {
     const signal = begin();
     try {
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       signal.throwIfAborted();
       if (!access) return;
       const response = await fetch("/api/membership/google-link", {
         method: "POST",
         signal,
-        headers: { "X-Line-Token": access, "Content-Type": "application/json" },
+        headers: { "X-App-Session-Generation": access, "Content-Type": "application/json" },
         body: JSON.stringify({ action, id: pending?.id }),
       });
       const data = await response.json();
@@ -163,10 +162,10 @@ export function useUser(liffId: string) {
     const signal = begin();
     setNotice("");
     try {
-      const access = token || (await liffClient.session(liffId));
+      const access = token || (await liffClient.ensureSession(liffId));
       signal.throwIfAborted();
       if (!access) throw new Error("請完成 LINE 登入。");
-      const headers = await authHeaders(access);
+      const headers = { "X-App-Session-Generation": access };
       signal.throwIfAborted();
       const endpoint =
         action === "register" || action === "restore"
@@ -191,7 +190,7 @@ export function useUser(liffId: string) {
       if (signal.aborted) return;
       setError(cause instanceof Error ? cause.message : "操作失敗，請重試。");
       try {
-        const access = token || (await liffClient.session(liffId));
+        const access = token || (await liffClient.ensureSession(liffId));
         if (access && !signal.aborted) await load(access, signal);
       } catch {
         // Keep the original operation error; explicit refresh remains available.

@@ -30,7 +30,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
 
   async function read(token: string) {
     const response = await fetch("/api/follows", {
-      headers: { "x-line-token": token },
+      headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
     const value = (await response.json()) as NetworkData & { error?: string };
@@ -43,7 +43,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const value = await read(token);
       if (ticket !== generation.current) return;
@@ -64,19 +64,20 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/follows", {
         method: "POST",
         headers: {
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
           "content-type": "application/json",
         },
         body: JSON.stringify({ action, targetUserId }),
       });
       const value = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(value.error ?? "追蹤操作失敗。");
-      if ((await liffClient.session(liffId)) !== token || ticket !== generation.current) return;
+      if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
+        return;
       setData(await read(token));
       setNotice(action === "follow" ? "已追蹤使用者。" : "已取消追蹤。");
     } catch (cause) {

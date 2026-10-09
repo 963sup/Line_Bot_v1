@@ -71,11 +71,12 @@ export default function PermissionsPanel({
     if (!keepNotice) setNotice("");
     setConfirmed(false);
     try {
-      const proof = await liffClient.session(liffId);
+      const proof = await liffClient.ensureSession(liffId);
       if (!proof) throw new Error("請完成 LINE 登入。");
       const value: PermissionView = await requestPermissions(proof, id);
       if (ticket !== generation.current) return;
-      if ((await liffClient.session(liffId)) !== proof) throw new Error("帳號已變更，請重新載入。");
+      if ((await liffClient.ensureSession(liffId)) !== proof)
+        throw new Error("帳號已變更，請重新載入。");
       if (ticket !== generation.current) return;
       if (!value.userId || !Array.isArray(value.own)) throw new Error("回應不完整。");
       const changed = lastUser.current && lastUser.current !== value.userId;
@@ -109,14 +110,14 @@ export default function PermissionsPanel({
     try {
       savePendingPermissionOperation(sessionStorage, operation);
       setPending(operation);
-      const proof = await liffClient.session(liffId);
+      const proof = await liffClient.ensureSession(liffId);
       if (!proof) throw new Error("請完成 LINE 登入。");
       const fresh: PermissionView = await requestPermissions(proof);
       if (ticket !== generation.current) return;
       if (
         fresh.userId !== operation.owner ||
         !fresh.canManage ||
-        (await liffClient.session(liffId)) !== proof
+        (await liffClient.ensureSession(liffId)) !== proof
       )
         throw Object.assign(new Error("身分或權限已變更，請重新載入。"), { status: 403 });
       if (ticket !== generation.current) return;

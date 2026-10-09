@@ -6,6 +6,7 @@ import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { auditQuery } from "../src/app/api/_composition/audit.server";
 import { GET } from "../src/app/api/audit/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 
 const subject = `U${"8".repeat(32)}`;
 
@@ -36,9 +37,10 @@ test("audit route verifies LINE identity before forwarding the exact scope to Au
   const fetch = mockLineIdentity();
   try {
     const url = "https://app.example/api/audit?scopeKind=organization&scopeId=org&limit=5";
+    const headers = await lineSessionHeaders("offline-audit", "https://app.example");
     assert.equal((await GET(new Request(url))).status, 401);
     assert.equal(list.mock.callCount(), 0);
-    const response = await GET(new Request(url, { headers: { "x-line-token": "offline-audit" } }));
+    const response = await GET(new Request(url, { headers }));
     assert.equal(response.status, 200);
     assert.deepEqual(list.mock.calls[0]?.arguments, [
       { provider: LINE_PROVIDER_NAMESPACE, subject },
@@ -52,7 +54,6 @@ test("audit route verifies LINE identity before forwarding the exact scope to Au
 
 test("audit route separates uncached unauthenticated, invalid, forbidden, empty and unavailable results", async () => {
   const url = "https://app.example/api/audit?scopeKind=organization&scopeId=org";
-  const headers = { "x-line-token": "offline-audit" };
   let reads = 0;
   let sourceError: Error | undefined;
   const query = createAuditQuery({
@@ -65,6 +66,7 @@ test("audit route separates uncached unauthenticated, invalid, forbidden, empty 
   const list = mock.method(auditQuery, "list", query.list);
   const fetch = mockLineIdentity();
   try {
+    const headers = await lineSessionHeaders("offline-audit", "https://app.example");
     const unauthorized = await GET(new Request(url));
     assert.equal(unauthorized.status, 401);
     assert.equal(unauthorized.headers.get("cache-control"), "no-store");

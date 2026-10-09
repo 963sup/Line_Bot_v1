@@ -45,12 +45,12 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
     setResult("");
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: {
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
           "content-type": "application/json",
         },
         body: JSON.stringify({ mode, input: value }),
@@ -59,7 +59,8 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
       if (!response.ok || typeof payload.text !== "string") {
         throw new Error(payload.error ?? "AI 暫時不可用。");
       }
-      if ((await liffClient.session(liffId)) !== token || ticket !== generation.current) return;
+      if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
+        return;
       setResult(payload.text);
     } catch (cause) {
       if (ticket === generation.current) {

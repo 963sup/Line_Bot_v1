@@ -108,7 +108,7 @@ export default function IssueBoard({
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token || ticket !== generation.current) return;
       const snapshot = await requestIssueSnapshot({
         token,
@@ -155,7 +155,7 @@ export default function IssueBoard({
     const pendingCommand = { owner: data.userId, command };
     rememberPending(pendingCommand);
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請重新登入 LINE。");
       const { response, value } = await postIssueCommand(token, command);
       if (!response.ok) {
@@ -167,7 +167,7 @@ export default function IssueBoard({
       setCreating(false);
       setNote("");
       setNotice("Issue 已更新。");
-      const tokenAfter = await liffClient.session(liffId);
+      const tokenAfter = await liffClient.ensureSession(liffId);
       if (!tokenAfter || ticket !== generation.current) return;
       setData(
         await requestIssueSnapshot({

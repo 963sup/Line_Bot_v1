@@ -41,13 +41,13 @@ export default function Inbox({
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token || ticket !== generation.current) return;
       const query = new URLSearchParams();
       if (notificationId) query.set("id", notificationId);
       if (!notificationId && view === "unread") query.set("unread", "1");
       const response = await fetch(`/api/notifications${query.size ? `?${query}` : ""}`, {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
       const value: unknown = await response.json();
@@ -70,12 +70,12 @@ export default function Inbox({
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token || ticket !== generation.current) return;
       const response = await fetch("/api/notifications", {
         method: "POST",
         headers: {
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ id }),

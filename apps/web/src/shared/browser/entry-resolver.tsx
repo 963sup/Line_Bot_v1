@@ -11,16 +11,18 @@ export default function EntryResolver({
   fallback = "home",
   children,
   resolveRedirect,
+  initialRenderedPathname,
 }: {
   liffId: string;
   fallback?: Exclude<EntryRoute, "pending" | "invalid">;
   children?: ReactNode;
   resolveRedirect?: (target: string, signal: AbortSignal) => Promise<string | null>;
+  initialRenderedPathname?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
-  const renderedPathname = useRef(pathname);
+  const renderedPathname = useRef(initialRenderedPathname ?? pathname);
   const resolving = useRef<AbortController | null>(null);
   const [state, setState] = useState<"waiting" | "ready" | "pending" | "invalid">("waiting");
   useEffect(

@@ -58,10 +58,10 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/profile", {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
       const value = (await response.json()) as { profile?: UserProfile | null; error?: string };
@@ -88,12 +88,12 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/profile", {
         method: "POST",
         headers: {
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
           "content-type": "application/json",
         },
         body: JSON.stringify({

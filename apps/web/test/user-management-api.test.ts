@@ -5,6 +5,7 @@ import { UserError } from "@line_bot_v1/account/domain/user";
 import { PostgresUserManagement } from "@line_bot_v1/account/postgres";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET, POST } from "../src/app/api/membership/manage/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";
 
 test("member management HTTP verifies LINE, rejects forged origin/identity and redacts failures", async () => {
@@ -27,11 +28,13 @@ test("member management HTTP verifies LINE, rejects forged origin/identity and r
     if (String(input) === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw Error("Unexpected outbound request");
   }) as typeof fetch;
+  const sessions = new Map<string, HeadersInit>();
   const request = (query = "", token = "proof") =>
     new Request(`https://app.example/api/membership/manage?${query}`, {
-      headers: { "x-line-token": token },
+      headers: sessions.get(token) ?? {},
     });
   try {
+    sessions.set("proof", await lineSessionHeaders("proof"));
     const id = await activateMember(user);
     let writes = 0;
     mock.method(PostgresUserManagement.prototype, "view", async (actor: string) => {
@@ -54,7 +57,7 @@ test("member management HTTP verifies LINE, rejects forged origin/identity and r
     const post = (body: unknown = command, origin = "https://app.example", token = "proof") =>
       new Request("https://app.example/api/membership/manage", {
         method: "POST",
-        headers: { origin, "x-line-token": token, "content-type": "application/json" },
+        headers: { origin, ...(sessions.get(token) ?? {}), "content-type": "application/json" },
         body: JSON.stringify(body),
       });
     mock.method(PostgresUserManagement.prototype, "execute", async (actor: string) => {

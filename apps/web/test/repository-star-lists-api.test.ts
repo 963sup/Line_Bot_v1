@@ -14,6 +14,7 @@ import {
   writePendingRepositoryStarListCommand,
   writePendingRepositoryStarListCreate,
 } from "../src/modules/repository/star-list-pending-storage";
+import { lineSessionHeaders } from "./line-session-fixture";
 
 test("Repository Star List HTTP uses verified LINE identity and owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
@@ -72,18 +73,20 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
     throw new Error("Unexpected network request");
   });
 
+  let authenticated: HeadersInit = {};
   const request = (path: string, body?: unknown) =>
     new Request(`https://app.example${path}`, {
       method: body === undefined ? "GET" : "POST",
       headers: {
         Origin: "https://app.example",
         "Content-Type": "application/json",
-        "x-line-token": "offline-list",
+        ...authenticated,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
 
   try {
+    authenticated = await lineSessionHeaders("offline-list");
     assert.equal((await discoverGet(request("/api/repositories/lists/discover"))).status, 200);
     assert.equal((await listsGet(request("/api/repositories/lists"))).status, 200);
     assert.equal(

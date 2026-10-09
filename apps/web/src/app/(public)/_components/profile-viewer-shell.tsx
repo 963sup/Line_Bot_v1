@@ -79,10 +79,10 @@ export default function ProfileViewerShell({
     }
     setViewer(null);
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token || ticket !== generation.current) return;
       const response = await fetch("/api/membership?view=account", {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
       if (ticket !== generation.current || !response.ok) return;

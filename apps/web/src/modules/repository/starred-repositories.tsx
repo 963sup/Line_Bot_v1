@@ -25,10 +25,10 @@ export default function StarredRepositories({ liffId }: { liffId: string }) {
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/repositories/starred", {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
       const value = (await response.json()) as { items?: StarredRepository[]; error?: string };

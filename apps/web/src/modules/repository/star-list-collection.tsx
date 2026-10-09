@@ -25,12 +25,12 @@ export default function RepositoryStarListCollection({ liffId }: { liffId: strin
     setBusy(true);
     setError("");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
       const response = await fetch("/api/repositories/lists", {
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
       });
       const payload = (await response.json()) as {
         items?: RepositoryStarListSummary[];
@@ -39,7 +39,8 @@ export default function RepositoryStarListCollection({ liffId }: { liffId: strin
       if (!response.ok || !Array.isArray(payload.items)) {
         throw new Error(payload.error ?? "Lists 暫不可用。");
       }
-      if ((await liffClient.session(liffId)) !== token || ticket !== generation.current) return;
+      if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
+        return;
       setItems(payload.items);
     } catch (cause) {
       if (ticket === generation.current) {

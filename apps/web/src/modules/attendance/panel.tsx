@@ -30,7 +30,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { authHeaders } from "../../shared/browser/supabase-session";
 import { PageHeading } from "../../shared/ui/page-layout";
 import { locateAttendance } from "./location";
 
@@ -150,7 +149,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
 
   async function read(access: string) {
     const response = await fetch("/api/attendance", {
-      headers: await authHeaders(access),
+      headers: { "X-App-Session-Generation": access },
       cache: "no-store",
     });
     const value = await response.json();
@@ -164,7 +163,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
 
   async function readSupplements(access: string) {
     const response = await fetch("/api/attendance/supplements", {
-      headers: await authHeaders(access),
+      headers: { "X-App-Session-Generation": access },
       cache: "no-store",
     });
     const value = await response.json().catch(() => ({}));
@@ -203,7 +202,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     setLoading(true);
     setError("");
     try {
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       if (!access || ticket !== generation.current) return;
       const value = await read(access);
       if (ticket !== generation.current) return;
@@ -225,7 +224,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     setLoading(true);
     setError("");
     try {
-      const access = await liffClient.session(liffId);
+      const access = await liffClient.ensureSession(liffId);
       if (ticket !== generation.current) return;
       if (!access) {
         clearPrivate();
@@ -265,7 +264,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     setNotice("正在記錄…");
     const response = await fetch(`/api/attendance/${request.operation}`, {
       method: "POST",
-      headers: { ...(await authHeaders(token)), "Content-Type": "application/json" },
+      headers: { "X-App-Session-Generation": token, "Content-Type": "application/json" },
       body: JSON.stringify(request.body),
     });
     const value = await response.json().catch(() => ({}));
@@ -326,7 +325,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     try {
       const response = await fetch("/api/attendance/supplements", {
         method: "POST",
-        headers: { ...(await authHeaders(token)), "Content-Type": "application/json" },
+        headers: { "X-App-Session-Generation": token, "Content-Type": "application/json" },
         body: JSON.stringify(command),
       });
       const value = await response.json().catch(() => ({}));
@@ -417,7 +416,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     try {
       const response = await fetch("/api/attendance/supplements/review", {
         method: "POST",
-        headers: { ...(await authHeaders(token)), "Content-Type": "application/json" },
+        headers: { "X-App-Session-Generation": token, "Content-Type": "application/json" },
         body: JSON.stringify(command),
       });
       const value = await response.json().catch(() => ({}));

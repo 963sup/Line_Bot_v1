@@ -11,6 +11,7 @@ import {
 import { POST as REGISTER } from "../src/app/api/membership/register/route";
 import { POST as RESTORE } from "../src/app/api/membership/restore/route";
 import { GET, POST } from "../src/app/api/membership/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 import {
   activateMember,
   allowAttendance,
@@ -55,6 +56,7 @@ test("LINE-only membership preserves ownership and rewards; retired direct Googl
       });
     throw new Error("Unexpected outbound request");
   }) as typeof fetch;
+  const sessions = new Map<string, HeadersInit>();
   const request = (
     body?: unknown,
     token = "token",
@@ -66,19 +68,22 @@ test("LINE-only membership preserves ownership and rewards; retired direct Googl
       headers: {
         Origin: origin,
         "Content-Type": "application/json",
-        ...(token ? { "X-Line-Token": token } : {}),
+        ...(token ? (sessions.get(token) ?? {}) : {}),
         ...(google ? { Authorization: `Bearer ${google}` } : {}),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
   try {
+    sessions.set("token", await lineSessionHeaders("token"));
+    sessions.set("other", await lineSessionHeaders("other"));
+    const callsAfterSessionExchange = calls;
     assert.equal((await GET(request(undefined, ""))).status, 401);
-    assert.equal(calls, 0);
+    assert.equal(calls, callsAfterSessionExchange);
     assert.equal(
       (await REGISTER(request({ login: "alice" }, "token", "https://evil.test"))).status,
       403,
     );
-    assert.equal(calls, 0);
+    assert.equal(calls, callsAfterSessionExchange);
     assert.equal((await POST(request({ action: "checkIn" }))).status, 403);
     assert.equal((await (await GET(request())).json()).member, null);
     const registrations = await Promise.all(

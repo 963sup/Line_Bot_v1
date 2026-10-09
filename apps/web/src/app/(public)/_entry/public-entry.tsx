@@ -28,5 +28,7 @@ export default function PublicEntry({
     },
     [liffId],
   );
-  return continuing ? <EntryResolver liffId={liffId} resolveRedirect={resolveRedirect} /> : null;
+  return continuing ? (
+    <EntryResolver liffId={liffId} initialRenderedPathname="/" resolveRedirect={resolveRedirect} />
+  ) : null;
 }

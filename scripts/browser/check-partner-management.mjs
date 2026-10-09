@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
@@ -29,7 +30,7 @@ const context = await browser.newContext({
   serviceWorkers: "block",
 });
 await context.addInitScript(() => {
-  window.testToken = "one";
+  window.testToken = window.name === "two" ? "two" : "one";
   window.liff = {
     init: async () => {},
     isLoggedIn: () => true,
@@ -50,11 +51,41 @@ let savedPartner = null,
   conflict = false;
 const posts = [],
   receipts = new Map();
+const partnerSessionGenerations = new Map([
+  ["one", "11111111-1111-4111-8111-111111111111"],
+  ["two", "22222222-2222-4222-8222-222222222222"],
+]);
+let activeLineProof;
+const identityReads = [],
+  documentRequests = [];
 page.on("pageerror", (error) => errors.push(error.message));
+page.on("request", (request) => {
+  if (request.resourceType() === "document") documentRequests.push(request.url());
+});
 await context.route("**/*", async (route) => {
-  const url = new URL(route.request().url());
+  const request = route.request();
+  const url = new URL(request.url());
   if (url.origin !== target.origin) return route.abort();
+  if (url.pathname === "/api/auth" && request.method() === "POST") {
+    const body = request.postDataJSON();
+    assert.ok(partnerSessionGenerations.has(body.accessToken));
+    const sessionChanged = activeLineProof !== undefined && activeLineProof !== body.accessToken;
+    activeLineProof = body.accessToken;
+    return route.fulfill({
+      json: {
+        generation: partnerSessionGenerations.get(body.accessToken),
+        sessionChanged,
+      },
+      headers: {
+        "Set-Cookie": `__Host-line_bot_v1_session=synthetic-${body.accessToken}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      },
+    });
+  }
+  if (await fulfillLineSessionMock(route)) return;
   if (url.pathname === "/api/partners") {
+    const generation = request.headers()["x-app-session-generation"];
+    assert.ok(generation, `Missing app session generation: ${request.method()} ${url.pathname}`);
+    identityReads.push(generation);
     if (route.request().method() === "POST") {
       const command = route.request().postDataJSON();
       posts.push(command);
@@ -165,11 +196,13 @@ try {
   await page.getByRole("button", { name: "重新讀取" }).click();
   await held;
   await page.evaluate(() => {
+    window.name = "two";
     window.testToken = "two";
   });
   release();
-  await expect(page.getByText("LINE 身分已變更，請重新讀取。", { exact: true })).toBeVisible();
-  await expect(page.getByText("測試合作夥伴（已下架）", { exact: true })).toHaveCount(0);
+  await expect.poll(() => documentRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => identityReads.at(-1)).toBe(partnerSessionGenerations.get("two"));
+  await expect(page.getByRole("heading", { name: "測試合作夥伴（已下架）" })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "測試合作夥伴（已下架）" })).toBeVisible();
   await page.getByRole("button", { name: "新增合作夥伴", exact: true }).click();

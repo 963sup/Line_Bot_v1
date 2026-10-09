@@ -34,7 +34,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
   }
 
   async function request(method: "GET" | "POST", body?: Pending) {
-    const access = await liffClient.session(liffId);
+    const access = await liffClient.ensureSession(liffId);
     if (!access) throw new Error("請完成 LINE 登入後重試。");
     const response = await fetch(
       `/api/organization${selected.current ? `?id=${encodeURIComponent(selected.current)}` : ""}`,
@@ -43,7 +43,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
         headers: {
-          "x-line-token": access,
+          "X-App-Session-Generation": access,
           ...(body ? { "content-type": "application/json" } : {}),
         },
         body: body ? JSON.stringify(body) : undefined,

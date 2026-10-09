@@ -17,7 +17,7 @@ export async function requestPermissions(
     method: command ? "POST" : "GET",
     cache: "no-store",
     headers: {
-      "x-line-token": proof,
+      "X-App-Session-Generation": proof,
       ...(command ? { "Content-Type": "application/json" } : {}),
     },
     body: command ? JSON.stringify(command) : undefined,

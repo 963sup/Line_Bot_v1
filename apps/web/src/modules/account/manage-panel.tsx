@@ -42,7 +42,7 @@ export default function UserManagement({ liffId }: { liffId: string }) {
   }
   async function read(token: string, filter: UserManagementQuery) {
     const response = await fetch(`/api/membership/manage?${new URLSearchParams(filter)}`, {
-      headers: { "x-line-token": token },
+      headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
     const result = await response.json();
@@ -61,11 +61,11 @@ export default function UserManagement({ liffId }: { liffId: string }) {
     setError("");
     setQuery(filter);
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入。");
       const result = await read(token, filter);
       if (ticket !== sequence.current) return;
-      if ((await liffClient.session(liffId)) !== token)
+      if ((await liffClient.ensureSession(liffId)) !== token)
         throw new Error("LINE 身分已變更，請重新讀取。");
       if (ticket !== sequence.current) return;
       const saved = sessionStorage.getItem(key);
@@ -94,11 +94,11 @@ export default function UserManagement({ liffId }: { liffId: string }) {
     let submitted = false;
     try {
       const command = parseUserStatusCommand(operation.command);
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入。");
       const fresh = await read(token, { id: command.target });
       if (ticket !== sequence.current) return;
-      if (fresh.actorId !== operation.owner || (await liffClient.session(liffId)) !== token) {
+      if (fresh.actorId !== operation.owner || (await liffClient.ensureSession(liffId)) !== token) {
         sessionStorage.removeItem(key);
         setPending(null);
         throw new Error("LINE 身分已變更，請重新讀取後確認。");
@@ -110,12 +110,12 @@ export default function UserManagement({ liffId }: { liffId: string }) {
       submitted = true;
       const response = await fetch("/api/membership/manage", {
         method: "POST",
-        headers: { "x-line-token": token, "content-type": "application/json" },
+        headers: { "X-App-Session-Generation": token, "content-type": "application/json" },
         body: JSON.stringify(command),
       });
       const result = await response.json();
       if (ticket !== sequence.current) return;
-      if ((await liffClient.session(liffId)) !== token) {
+      if ((await liffClient.ensureSession(liffId)) !== token) {
         clear();
         return;
       }

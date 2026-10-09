@@ -66,7 +66,7 @@ export default function RepositoryAccess({
   }, []);
 
   async function session() {
-    const token = await liffClient.session(liffId);
+    const token = await liffClient.ensureSession(liffId);
     if (!token) throw Object.assign(new Error("請完成 LINE 登入後重試。"), { status: 401 });
     return token;
   }
@@ -81,7 +81,7 @@ export default function RepositoryAccess({
       const response = await fetch(`/api/repository-access?${query}`, {
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
       });
       const payload = (await response.json()) as RepositoryAccessSnapshot & { error?: string };
       if (!response.ok || !payload?.repository || !Array.isArray(payload.directUserGrants)) {
@@ -118,7 +118,7 @@ export default function RepositoryAccess({
         signal: AbortSignal.timeout(20_000),
         headers: {
           "content-type": "application/json",
-          "x-line-token": token,
+          "X-App-Session-Generation": token,
         },
         body: JSON.stringify(command),
       });

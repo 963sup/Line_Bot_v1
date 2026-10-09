@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
@@ -58,6 +59,7 @@ const user = {
 await context.route("**/*", async (route) => {
   const url = new URL(route.request().url());
   if (url.origin !== target.origin) return route.abort();
+  if (await fulfillLineSessionMock(route)) return;
   if (url.pathname === "/api/membership/manage") {
     if (deny) return route.fulfill({ status: 403, json: { error: "無會員管理權限" } });
     if (fail) return route.fulfill({ status: 503, json: { error: "會員服務失敗" } });

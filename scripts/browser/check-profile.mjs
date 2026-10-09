@@ -7,6 +7,7 @@ import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const web = path.join(root, "apps/web");
@@ -251,6 +252,7 @@ try {
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.origin !== base) return route.abort();
+    if (await fulfillLineSessionMock(route)) return;
     if (url.pathname === "/api/membership") {
       membershipReads++;
       assert.equal(url.search, "?view=account");

@@ -19,10 +19,10 @@ export default function RouteAccess({
   async function check() {
     setState("loading");
     try {
-      const token = await liffClient.session(liffId);
+      const token = await liffClient.ensureSession(liffId);
       if (!token) return;
       const response = await fetch("/api/membership", {
-        headers: { "x-line-token": token },
+        headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
       if (!response.ok) {

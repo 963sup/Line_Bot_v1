@@ -5,6 +5,7 @@ import { PermissionError } from "@line_bot_v1/identity-access/domain/permission"
 import { PostgresPermissionStore } from "@line_bot_v1/identity-access/postgres";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET, POST } from "../src/app/api/permissions/route";
+import { lineSessionHeaders } from "./line-session-fixture";
 import { activateMember, closeFixture, mockSupabase } from "./member-fixture";
 
 test("permission HTTP uses verified actor and rejects forgery, missing proof, cross-origin and oversized requests", async () => {
@@ -27,13 +28,15 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
     if (String(input) === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw Error("Unexpected outbound request");
   }) as typeof fetch;
+  const sessions = new Map<string, HeadersInit>();
   const request = (body?: unknown, token = "proof", origin = "https://app.example") =>
     new Request("https://app.example/api/permissions", {
       method: body ? "POST" : "GET",
-      headers: { "x-line-token": token, origin, "content-type": "application/json" },
+      headers: { ...(sessions.get(token) ?? {}), origin, "content-type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
   try {
+    sessions.set("proof", await lineSessionHeaders("proof"));
     const id = await activateMember(user);
     let calls = 0;
     mock.method(PostgresPermissionStore.prototype, "read", async (actor: string) => {
