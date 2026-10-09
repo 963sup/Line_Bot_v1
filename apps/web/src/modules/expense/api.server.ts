@@ -2,11 +2,11 @@ import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createCommandExpense } from "@line_bot_v1/expense/application/command-expense";
 import type { createGetExpense } from "@line_bot_v1/expense/application/get-expense";
 import type { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
+import { toExpenseApiView } from "@line_bot_v1/expense/contracts/dto/expense-api-view";
 import { type ExpenseCommand, ExpenseError } from "@line_bot_v1/expense/domain/aggregates/expense";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
-import { toExpenseApiView } from "./api-contract";
 
 const json = (data: unknown, status = 200) =>
   Response.json(data, {

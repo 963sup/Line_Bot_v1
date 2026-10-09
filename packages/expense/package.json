@@ -31,6 +31,10 @@
     "./composition/bootstrap/gemini-receipt-recognizer": {
       "types": "./dist/composition/bootstrap/gemini-receipt-recognizer.d.ts",
       "default": "./dist/composition/bootstrap/gemini-receipt-recognizer.js"
+    },
+    "./contracts/dto/expense-api-view": {
+      "types": "./dist/contracts/dto/expense-api-view.d.ts",
+      "default": "./dist/contracts/dto/expense-api-view.js"
     }
   },
   "files": [

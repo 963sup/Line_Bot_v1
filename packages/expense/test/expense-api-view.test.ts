@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Expense } from "@line_bot_v1/expense/domain/aggregates/expense";
-import { type ExpenseApiView, toExpenseApiView } from "../src/modules/expense/api-contract.js";
+import { type ExpenseApiView, toExpenseApiView } from "../src/contracts/dto/expense-api-view.js";
+import type { Expense } from "../src/domain/aggregates/expense.js";
 
 test("Expense API view serializes only its explicit allowlist", () => {
   const aggregate = {

@@ -1,11 +1,11 @@
 "use client";
+import type { ExpenseApiView } from "@line_bot_v1/expense/contracts/dto/expense-api-view";
 import type { ExpenseFields } from "@line_bot_v1/expense/domain/aggregates/expense";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { authHeaders } from "../../shared/browser/supabase-session";
-import type { ExpenseApiView } from "./api-contract";
 
 type View = ExpenseApiView;
 type ReceiptReadingView = {

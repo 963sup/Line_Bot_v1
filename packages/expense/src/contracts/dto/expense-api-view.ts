@@ -1,4 +1,4 @@
-import type { Expense } from "@line_bot_v1/expense/domain/aggregates/expense";
+import type { Expense } from "../../domain/aggregates/expense.js";
 
 export type ExpenseApiView = Pick<
   Expense,
