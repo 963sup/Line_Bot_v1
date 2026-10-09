@@ -35,3 +35,12 @@ Primary GPT-6 可直接做 final decision；不為形式重派。只使用會改
 - 派工至少給 goal、scope、allowed/excluded paths、evidence、invariants、deliverable、stop、validation owner。
 
 模型 ID / role files 以 repository current config/TOML 為 truth；解析成功不代表帳號可用、live reload 或 concurrency 已實測。
+
+## Protected-branch delivery
+
+- Deliver changes to `main` through a pull request; do not push directly to protected `main` or force-push shared history.
+- Keep an in-progress change in Draft. Treat the required aggregate `validate` result as merge evidence only when it succeeded for the exact current PR head and the PR is based on current `main`; a new head or moved base invalidates that evidence. For a Ready PR, return it to Draft, update the branch, then mark it Ready to trigger full validation for the new candidate, as defined by the development workflow.
+- When validation fails, inspect the job logs and fix the owning source, contract, dependency, or placement. Do not weaken governing architecture, data-boundary, dead-code, or test checks to obtain a green result.
+- Merge only after the required `validate` check passes. Follow the repository merge method and read back the resulting `main` commit; report CI, deployment, remote-state, and device evidence separately.
+
+The authoritative workflow and validation trigger details are in [development workflow](../../docs/reference/engineering/development-workflow.md) and [validation evidence](../../docs/rules/validation-evidence.md).
