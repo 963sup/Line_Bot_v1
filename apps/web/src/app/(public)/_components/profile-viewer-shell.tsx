@@ -4,24 +4,19 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  clearCurrentAccount,
+  ensureCurrentAccount,
+} from "../../../modules/account/current-account";
+import {
   clearVerifiedProfileEntry,
   readVerifiedProfileEntry,
 } from "../../../modules/account/profile-entry-handoff";
-import { liffClient } from "../../../shared/browser/liff-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 import WorkNavigation from "../../_shell/work-navigation";
 import ProfileOverview from "./profile-overview";
 import ProfileShare from "./profile-share";
 import { isVerifiedSelfUser } from "./profile-viewer";
 import styles from "./profile-viewer-shell.module.css";
-
-type AccountProjection = {
-  member?: {
-    id?: string | null;
-    login?: string | null;
-    status?: string | null;
-  } | null;
-};
 
 export default function ProfileViewerShell({
   children,
@@ -57,6 +52,7 @@ export default function ProfileViewerShell({
 
   const clear = useCallback(() => {
     generation.current++;
+    clearCurrentAccount();
     clearVerifiedProfileEntry();
     setViewer(null);
   }, []);
@@ -79,18 +75,17 @@ export default function ProfileViewerShell({
     }
     setViewer(null);
     try {
-      const token = await liffClient.ensureSession(liffId);
-      if (!token || ticket !== generation.current) return;
-      const response = await fetch("/api/membership?view=account", {
-        headers: { "X-App-Session-Generation": token },
-        cache: "no-store",
-      });
-      if (ticket !== generation.current || !response.ok) return;
-      const value = (await response.json()) as AccountProjection;
-      if (ticket !== generation.current) return;
+      const current = await ensureCurrentAccount(liffId);
+      if (!current || ticket !== generation.current) return;
       setViewer(
-        profileUserId && isVerifiedSelfUser(value.member, profileUserId, profileLogin, profileKind)
-          ? { profileKind: "USER", profileLogin, profileUserId, token }
+        profileUserId &&
+          isVerifiedSelfUser(current.member, profileUserId, profileLogin, profileKind)
+          ? {
+              profileKind: "USER",
+              profileLogin,
+              profileUserId,
+              token: current.token,
+            }
           : null,
       );
     } catch {
@@ -101,6 +96,7 @@ export default function ProfileViewerShell({
   useEffect(
     () => () => {
       generation.current++;
+      clearCurrentAccount();
       clearVerifiedProfileEntry();
     },
     [],

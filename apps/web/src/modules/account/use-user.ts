@@ -3,6 +3,8 @@
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
+import type { AppSessionGeneration } from "../../shared/browser/line-service-session";
+import { clearCurrentAccount, readCurrentAccount } from "./current-account";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type MembershipWireResponse = { member: AccountView | null };
@@ -17,7 +19,7 @@ export function useUser(liffId: string) {
     expiresAt: number;
   } | null>(null);
   const [user, setUser] = useState<AccountView | null>(null);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState<AppSessionGeneration | "">("");
   const [busy, setBusy] = useState(true);
   const [lineName, setLineName] = useState("");
   const [inClient, setInClient] = useState(false);
@@ -30,6 +32,7 @@ export function useUser(liffId: string) {
     return () => {
       mounted.current = false;
       request.current?.abort();
+      clearCurrentAccount();
     };
   }, []);
 
@@ -42,18 +45,11 @@ export function useUser(liffId: string) {
     return controller.signal;
   }
 
-  async function load(access: string, signal: AbortSignal) {
+  async function load(access: AppSessionGeneration, signal: AbortSignal) {
     const headers = { "X-App-Session-Generation": access };
     signal.throwIfAborted();
-    const result = await fetch("/api/membership?view=account", {
-      headers,
-      cache: "no-store",
-      signal,
-    });
-    const data = (await result.json()) as MembershipWireResponse & { error?: string };
-    signal.throwIfAborted();
-    if (!result.ok) throw new Error(data.error ?? "會員資料讀取失敗。");
-    const account = data.member;
+    const current = await readCurrentAccount(access, signal);
+    const account = current.member;
     setUser(account);
     if (account?.status === "active") {
       const response = await fetch("/api/membership/google-link", {
@@ -105,6 +101,7 @@ export function useUser(liffId: string) {
 
   async function refresh() {
     if (!token) return initialize();
+    clearCurrentAccount();
     const signal = begin();
     try {
       await load(token, signal);
@@ -117,7 +114,8 @@ export function useUser(liffId: string) {
   }
 
   const onResume = useEffectEvent(() => {
-    if (document.visibilityState === "visible") void refresh();
+    if (document.visibilityState === "hidden") clearCurrentAccount();
+    else void refresh();
   });
 
   useEffect(() => {
@@ -149,6 +147,7 @@ export function useUser(liffId: string) {
       }
       if (action === "confirm") setNotice("Google 綁定完成。");
       if (action === "unlink") setNotice("Google 綁定已解除；LINE 身分與既有資料保持不變。");
+      clearCurrentAccount();
       await load(access, signal);
     } catch (cause) {
       if (!signal.aborted)
@@ -184,6 +183,7 @@ export function useUser(liffId: string) {
       if (!result.ok) throw new Error(data.error ?? "操作失敗，請重試。");
       if (action === "register" || action === "restore")
         setNotice("會員已開通，可以使用工作功能。");
+      clearCurrentAccount();
       await load(access, signal);
       setPauseConfirmation(false);
     } catch (cause) {
@@ -191,7 +191,10 @@ export function useUser(liffId: string) {
       setError(cause instanceof Error ? cause.message : "操作失敗，請重試。");
       try {
         const access = token || (await liffClient.ensureSession(liffId));
-        if (access && !signal.aborted) await load(access, signal);
+        if (access && !signal.aborted) {
+          clearCurrentAccount();
+          await load(access, signal);
+        }
       } catch {
         // Keep the original operation error; explicit refresh remains available.
       }

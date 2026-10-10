@@ -513,14 +513,12 @@ try {
   holdMembership = true;
   await page.evaluate(() => window.renderAvatar(13));
   await expect.poll(() => Boolean(heldMembership)).toBe(true);
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveCount(0);
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
-    "href",
-    "/profile",
-  );
+  await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveCount(0);
   holdMembership = false;
   member = { id: "other", login: "other", status: "active" };
   await page.evaluate(() => {

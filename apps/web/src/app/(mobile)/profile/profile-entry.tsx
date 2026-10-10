@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { clearCurrentAccount } from "../../../modules/account/current-account";
 import { resolveVerifiedProfileEntry } from "../../../modules/account/profile-entry-client";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 
@@ -46,6 +47,7 @@ export default function ProfileEntry({ liffId }: { liffId: string }) {
     () => () => {
       generation.current++;
       request.current?.abort();
+      clearCurrentAccount();
     },
     [],
   );
