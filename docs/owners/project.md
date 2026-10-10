@@ -35,6 +35,7 @@ Canonical capability `manage-project-planning` is implemented alongside `read-pr
 - Public Project visibility may grant read projection only. It never grants Project write authority or source Repository/Issue access.
 - Root writes require Project write/admin policy; collaborator administration and destructive root operations require the stronger management policy enforced by the Project owner runtime.
 - Every command carries a stable request UUID. Existing-project mutations require `expectedVersion`; exact replay and stale-version conflicts are handled inside one transaction.
+- Organization-owned Project creation and owner-level management consume Organization's current `viewerCanCreateProjects` / `viewerCanAdminister` capability contract. `OrganizationOwner` is not a Project collaborator grant and no generic Permission value is created for this path.
 
 ## Item and DraftIssue invariants
 

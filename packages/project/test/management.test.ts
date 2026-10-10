@@ -256,3 +256,49 @@ test("Project management composes access, draft conversion, typed fields, views 
     (error) => error instanceof ProjectError && error.status === 409,
   );
 });
+
+test("Organization FPT ADMIN can create an Organization-owned Project while MEMBER cannot", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+
+  await activeUser(db, "owner");
+  await activeUser(db, "org-admin");
+  await activeUser(db, "member");
+  await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
+    "org",
+    "owner",
+    "acme",
+    "Acme",
+    2,
+  ]);
+  await pg.query(
+    "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3),('org','member','active',1,3)",
+  );
+  await pg.query(
+    "insert into app_private.organization_member_role_assignments(organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at) values('org','org-admin','ADMIN','active',1,1,1,4)",
+  );
+
+  const store = new PostgresProjectManagementStore(db);
+  const command = {
+    action: "create-project" as const,
+    requestId: randomUUID(),
+    ownerAccountId: "org",
+    ownerKind: "ORGANIZATION" as const,
+    expectedVersion: 0 as const,
+    title: "Admin Plan",
+    public: false,
+    repositoryId: null,
+    teamId: null,
+  };
+  const created = await store.execute({ userId: "org-admin" }, command, 10);
+  assert.equal(created.version, 1);
+
+  await assert.rejects(
+    store.execute(
+      { userId: "member" },
+      { ...command, requestId: randomUUID(), title: "Denied Plan" },
+      11,
+    ),
+    (error) => error instanceof ProjectError && error.status === 403,
+  );
+});

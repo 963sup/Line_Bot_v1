@@ -8,7 +8,7 @@ begin
     'enterprises','organizations','enterprise_direct_affiliations','enterprise_invitations',
     'organization_memberships','organization_direct_memberships','organization_invitations',
     'enterprise_role_assignments',
-    'organization_role_assignments','governance_bootstrap_receipts'
+    'organization_role_assignments','organization_member_role_assignments','governance_bootstrap_receipts'
   ] loop
     execute format('alter table app_private.%I enable row level security', relation_name);
     execute format('revoke all on app_private.%I from public, anon, authenticated, line_app', relation_name);
@@ -41,6 +41,7 @@ grant select, insert, update on app_private.organization_direct_memberships to l
 grant select, insert, update on app_private.organization_invitations to line_app;
 grant select, insert, update on app_private.enterprise_role_assignments to line_app;
 grant select, insert, update on app_private.organization_role_assignments to line_app;
+grant select, insert, update on app_private.organization_member_role_assignments to line_app;
 grant select, insert, update on app_private.enterprise_organizations to line_app;
 grant select, insert, update on app_private.enterprise_teams to line_app;
 grant select, insert, update on app_private.enterprise_team_memberships to line_app;
@@ -71,6 +72,8 @@ create policy organization_invitation_runtime on app_private.organization_invita
 create policy enterprise_assignment_runtime on app_private.enterprise_role_assignments
   for all to line_app using (true) with check (true);
 create policy organization_assignment_runtime on app_private.organization_role_assignments
+  for all to line_app using (true) with check (true);
+create policy organization_member_role_assignment_runtime on app_private.organization_member_role_assignments
   for all to line_app using (true) with check (true);
 create policy enterprise_organization_runtime on app_private.enterprise_organizations
   for all to line_app using (true) with check (true);

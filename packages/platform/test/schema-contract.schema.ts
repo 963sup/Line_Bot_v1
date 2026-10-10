@@ -32,6 +32,7 @@ test("governance runtime relations keep row-level security enabled", async (t) =
     "enterprise_direct_affiliations",
     "enterprise_role_assignments",
     "enterprises",
+    "organization_member_role_assignments",
     "organization_memberships",
     "organization_role_assignments",
     "organizations",

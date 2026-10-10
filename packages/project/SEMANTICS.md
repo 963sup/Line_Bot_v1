@@ -49,7 +49,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | namespace | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
-| consumes | organization | query | organization | current-state | Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned. |
+| consumes | organization | query | organization | transaction-recheck | Project creation rechecks the Organization-owned viewerCanCreateProjects capability for the current active member. |
+| consumes | organization | query | organization | current-state | Project collection and management consume current Organization-owned viewerCanAdminister/viewerCanCreateProjects capabilities for Organization-owned Projects; personal Projects remain User-owned. |
 | consumes | issue | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |
 | consumes | issue | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
 | consumes | account | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |

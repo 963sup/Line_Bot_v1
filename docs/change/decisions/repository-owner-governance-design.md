@@ -18,15 +18,15 @@ Repository
 
 | Concern | User-owned Repository | Organization-owned Repository |
 | --- | --- | --- |
-| 建立 | current active User 本人 | current active OrganizationOwner |
+| 建立 | current active User 本人 | current active Organization member with current `viewerCanCreateRepositories` |
 | 所有權主體 | User | Organization Account |
 | 日常 Repository 操作 | owner 的 implicit `ADMIN` 或明確有效 `ADMIN` | 明確有效 Repository `ADMIN` |
-| OrganizationOwner | 不適用 | 可建立與執行 access recovery，不因角色自動取得 Repository access |
+| OrganizationOwner | 不適用 | 可執行 access recovery；Owner 的 viewer capability 可建立 Repository，但不因角色自動取得既有 Repository access |
 | Direct User grant | Repository-owned | Repository-owned；可包含 outside collaborator |
 | Team grant | 不適用 | 只接受同 owner Organization 的 Team |
 | 補登審核 | Repository 當下有效 `ADMIN` | Repository 當下有效 `ADMIN` |
 
-Organization membership 是參與資格與 member/outside classification，不是 Repository access。OrganizationOwner 也不是 Repository ADMIN；Organization-owned Repository 的 owner account 不能登入，所有操作都必須由 current human User 以明確的 authority path 執行。
+Organization membership 是參與資格與 member/outside classification，不是 Repository access。FPT `OrganizationMemberRole.ADMIN` / OrganizationOwner 的 Organization capability 可以建立 Repository，但兩者都不是既有 Repository `ADMIN` grant；Organization-owned Repository 的 owner account 不能登入，所有操作都必須由 current human User 以明確的 authority path 執行。
 
 ## Invariants
 

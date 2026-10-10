@@ -10,7 +10,7 @@ export default function Page() {
     <AppShell>
       <PageHeading
         title="New Repository"
-        description="建立 private Repository；Personal owner 為目前 User，Organization owner 需要 current OrganizationOwner。"
+        description="建立 private Repository；Personal owner 為目前 User，Organization owner 需要 current viewerCanCreateRepositories capability。"
         back="/repositories"
       />
       <RepositoryCreate liffId={lineMiniApp().liffId} />

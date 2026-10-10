@@ -364,11 +364,11 @@ begin
       join app_private.organization_memberships m
         on m.organization_account_id=o.account_id
        and m.user_id=p_actor_user_id
+      join app_private.users u on u.id=p_actor_user_id
       join app_private.organization_role_assignments r
         on r.organization_account_id=o.account_id
        and r.user_id=p_actor_user_id
        and r.role='OrganizationOwner'
-      join app_private.users u on u.id=p_actor_user_id
       where o.account_id=p_owner_account_id
         and o.status='active'
         and m.status='active'
@@ -376,9 +376,29 @@ begin
         and r.status='active'
         and r.user_status_version=u.status_version
         and r.membership_version=m.version
-      for share of o,m,r,u;
+      for share of o,m,u,r;
     if not found then
-      raise exception 'provision_repository_organization_owner_forbidden' using errcode = '42501';
+      perform 1
+        from app_private.organizations o
+        join app_private.organization_memberships m
+          on m.organization_account_id=o.account_id
+         and m.user_id=p_actor_user_id
+        join app_private.users u on u.id=p_actor_user_id
+        join app_private.organization_member_role_assignments r
+          on r.organization_account_id=o.account_id
+         and r.user_id=p_actor_user_id
+         and r.role='ADMIN'
+        where o.account_id=p_owner_account_id
+          and o.status='active'
+          and m.status='active'
+          and u.status='active'
+          and r.status='active'
+          and r.user_status_version=u.status_version
+          and r.membership_version=m.version
+        for share of o,m,u,r;
+    end if;
+    if not found then
+      raise exception 'provision_repository_organization_capability_forbidden' using errcode = '42501';
     end if;
   end if;
 

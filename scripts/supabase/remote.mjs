@@ -85,6 +85,7 @@ from unnest(array[
   'enterprises',
   'organizations',
   'enterprise_role_assignments',
+  'organization_member_role_assignments',
   'organization_role_assignments',
   'team_role_assignments'
 ]) as expected(relation_name)

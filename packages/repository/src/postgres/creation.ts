@@ -1,8 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { isOrganizationOwner } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
-import { readOrganizationOwnerScopeIds } from "@line_bot_v1/organization/postgres";
+import {
+  listOrganizationRepositoryCreationScopeIds,
+  readOrganizationViewerCapabilities,
+} from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
   RepositoryCreateCommand,
@@ -32,8 +34,13 @@ async function currentOwner(
     return { id: actorUserId, kind: "USER", login: locator.login, internalEligible: false };
   }
 
-  if (!(await isOrganizationOwner(sql, command.ownerAccountId, actorUserId))) {
-    throw new RepositoryError(403, "需要 current OrganizationOwner 才能建立 Repository。");
+  const capabilities = await readOrganizationViewerCapabilities(
+    sql,
+    actorUserId,
+    command.ownerAccountId,
+  );
+  if (!capabilities?.viewerCanCreateRepositories) {
+    throw new RepositoryError(403, "目前 Organization capability 不允許建立 Repository。");
   }
   const locator = await readAccountLogin(sql, command.ownerAccountId, "ORGANIZATION");
   if (!locator) throw new RepositoryError(409, "Organization login 不可用。");
@@ -103,8 +110,7 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
       if (!personal) throw new RepositoryError(409, "目前 User login 不可用。");
 
       const organizations: RepositoryOwnerOption[] = [];
-      for (const id of await readOrganizationOwnerScopeIds(sql, userId)) {
-        if (!(await isOrganizationOwner(sql, id, userId))) continue;
+      for (const id of await listOrganizationRepositoryCreationScopeIds(sql, userId)) {
         const locator = await readAccountLogin(sql, id, "ORGANIZATION");
         if (!locator) throw new RepositoryError(409, "Organization login 不可用。");
         const internalEligible = Boolean(

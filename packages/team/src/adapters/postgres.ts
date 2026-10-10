@@ -8,6 +8,7 @@ import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
   qualifyOrganizationTeamScope,
+  readOrganizationViewerCapabilities,
 } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type { TeamCommand } from "../contracts/input/team-command.js";
@@ -333,6 +334,16 @@ export class PostgresTeamRepository implements TeamRepository {
       let details: Record<string, unknown> = {};
 
       if (command.action === "create-team") {
+        const capabilities = await readOrganizationViewerCapabilities(
+          sql,
+          actor.userId,
+          command.organizationAccountId,
+        );
+        teamAssert(
+          capabilities?.viewerCanCreateTeams === true,
+          403,
+          "目前 Organization capability 不允許建立 Team。",
+        );
         const slug = teamSlugFromName(command.name);
         try {
           await sql.query(

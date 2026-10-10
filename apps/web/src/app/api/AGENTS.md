@@ -25,7 +25,7 @@
 | `/api/repository-subscription` | GET/POST：current-readable Repository 的 User Watch state；exact SUBSCRIBED / UNSUBSCRIBED / IGNORED，subscription 不授權 |
 | `/api/repository-access` | GET：Repository access management projection；POST：replay-safe Direct User / Organization Team grant mutation；owner/name/request body 只定位與表達 intent，不授權 |
 | `/api/repository-address` | GET：current effective Repository member address projection；POST：current effective Repository admin replay-safe address set/remove；public visibility does not grant this read |
-| `/api/repositories/owners` | Repository create owner options：current User 本人 + current effective OrganizationOwner scopes；Organization option 同時回 current INTERNAL eligibility |
+| `/api/repositories/owners` | Repository create owner options：current User 本人 + Organization scopes where current `viewerCanCreateRepositories` is true (OrganizationOwner or FPT `OrganizationMemberRole.ADMIN` under the current contract)；Organization option 同時回 current INTERNAL eligibility |
 | `/api/repositories/explore` | GET：Repository Trending + current-access-filtered Issue Activity projection；POST：Repository Star/unstar transport |
 | `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |\n| `/api/repositories/lists`、`/api/repositories/lists/{listId}` | Repository Star List owner lifecycle；create預設 private，mutation使用 stable requestId + expectedVersion，item add 仍由 Repository owner重驗 Star/access |\n| `/api/repositories/lists/discover` | Published Repository Star List discovery projection；只計算並預覽 viewer 當下可見的 Repository items |
 | `/api/audit` | Audit read query over Identity/Access governance evidence; exact current EnterpriseOwner / OrganizationOwner scope required |
