@@ -4,6 +4,7 @@ import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { clearCurrentAccount, ensureCurrentAccount } from "./current-account";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 
@@ -18,6 +19,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
 
   function clear() {
     generation.current++;
+    clearCurrentAccount();
     setLogin("");
     setExpectedLogin("");
     setLoaded(false);
@@ -32,18 +34,12 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     setError("");
     setNotice("");
     try {
-      const token = await liffClient.ensureSession(liffId);
-      if (!token) throw new Error("請完成 LINE 登入後重試。");
-      const response = await fetch("/api/membership?view=account", {
-        headers: { "X-App-Session-Generation": token },
-        cache: "no-store",
-      });
-      const value = (await response.json()) as { member?: AccountView | null; error?: string };
-      if (!response.ok) throw new Error(value.error ?? "登入名稱讀取失敗。");
+      const current = await ensureCurrentAccount(liffId);
+      if (!current) throw new Error("請完成 LINE 登入後重試。");
       if (ticket !== generation.current) return;
-      setLogin(value.member?.login ?? "");
-      setExpectedLogin(value.member?.login ?? "");
-      setLoaded(Boolean(value.member));
+      setLogin(current.member?.login ?? "");
+      setExpectedLogin(current.member?.login ?? "");
+      setLoaded(Boolean(current.member));
     } catch (cause) {
       if (ticket === generation.current) {
         setLoaded(false);
@@ -74,6 +70,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
       const value = (await response.json()) as { member?: AccountView; error?: string };
       if (!response.ok || !value.member) throw new Error(value.error ?? "登入名稱保存失敗。");
       if (ticket !== generation.current) return;
+      clearCurrentAccount();
       setLogin(value.member.login ?? "");
       setExpectedLogin(value.member.login ?? "");
       setLoaded(true);
@@ -97,6 +94,7 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
     document.addEventListener("visibilitychange", visibility);
     return () => {
       generation.current++;
+      clearCurrentAccount();
       document.removeEventListener("visibilitychange", visibility);
     };
   }, []);

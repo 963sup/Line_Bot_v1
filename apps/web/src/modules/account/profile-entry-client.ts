@@ -1,16 +1,8 @@
 "use client";
 
-import { liffClient } from "../../shared/browser/liff-client";
-import {
-  type ProfileAccount,
-  type ProfileResolution,
-  resolveProfileDestination,
-} from "./profile-destination";
+import { ensureCurrentAccount } from "./current-account";
+import { type ProfileResolution, resolveProfileDestination } from "./profile-destination";
 import { clearVerifiedProfileEntry, rememberVerifiedProfileEntry } from "./profile-entry-handoff";
-
-type AccountProjection = {
-  member?: (ProfileAccount & { id?: string | null }) | null;
-};
 
 export type ProfileEntryResolution = ProfileResolution | { kind: "waiting" };
 
@@ -23,19 +15,10 @@ export async function resolveVerifiedProfileEntry(
   signal?: AbortSignal,
 ): Promise<ProfileEntryResolution> {
   clearVerifiedProfileEntry();
-  const token = await liffClient.ensureSession(liffId);
-  if (!token) return { kind: "waiting" };
+  const current = await ensureCurrentAccount(liffId, signal);
+  if (!current) return { kind: "waiting" };
 
-  const response = await fetch("/api/membership?view=account", {
-    headers: { "X-App-Session-Generation": token },
-    cache: "no-store",
-    signal,
-  });
-  if (!response.ok) return { kind: "unavailable" };
-
-  const value = (await response.json()) as AccountProjection;
-  signal?.throwIfAborted();
-  const member = value.member ?? null;
+  const { member, token } = current;
   const result = resolveProfileDestination(member);
   if (
     result.kind === "redirect" &&
