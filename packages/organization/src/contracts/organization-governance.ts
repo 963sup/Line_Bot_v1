@@ -1,5 +1,7 @@
 import type { GovernanceReceipt } from "@line_bot_v1/identity-access/contracts/governance";
 
+import type { OrganizationMemberRole } from "../domain.js";
+
 export type OrganizationMembershipSource = Readonly<{
   kind: "direct" | "enterprise-team";
   id: string;
@@ -14,6 +16,8 @@ export type OrganizationMembershipProjection = Readonly<{
   directMembershipVersion: number | null;
   effectiveOwner: boolean;
   assignmentVersion: number | null;
+  memberRole: OrganizationMemberRole;
+  memberRoleVersion: number | null;
 }>;
 
 export type OrganizationInvitationProjection = Readonly<{
@@ -33,6 +37,7 @@ type OrganizationSummary = Readonly<{
   actorInvitationStatus: "pending" | "accepted" | "cancelled" | "declined" | null;
   actorInvitationVersion: number | null;
   actorIsOwner: boolean;
+  actorMemberRole: OrganizationMemberRole | null;
 }>;
 
 export type OrganizationList = Readonly<{
@@ -56,6 +61,14 @@ export type OrganizationCommand =
     }>
   | Readonly<{
       action: "grant-organization-owner" | "revoke-organization-owner";
+      requestId: string;
+      organizationAccountId: string;
+      targetUserId: string;
+      expectedVersion: number;
+      reason: string;
+    }>
+  | Readonly<{
+      action: "grant-organization-admin" | "revoke-organization-admin";
       requestId: string;
       organizationAccountId: string;
       targetUserId: string;

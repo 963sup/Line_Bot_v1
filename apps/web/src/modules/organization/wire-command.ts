@@ -21,7 +21,7 @@ export function normalizeOrganizationWireCommand(raw: unknown): unknown {
     !hasExactKeys(value, legacyKeys) ||
     (value.action !== "grant" && value.action !== "revoke") ||
     value.scopeKind !== "organization" ||
-    value.role !== "OrganizationOwner" ||
+    (value.role !== "OrganizationOwner" && value.role !== "ADMIN") ||
     !value.principal ||
     typeof value.principal !== "object" ||
     Array.isArray(value.principal)
@@ -32,8 +32,15 @@ export function normalizeOrganizationWireCommand(raw: unknown): unknown {
   if (!hasExactKeys(principal, ["kind", "id"]) || principal.kind !== "user") {
     return raw;
   }
+  const admin = value.role === "ADMIN";
   return {
-    action: value.action === "grant" ? "grant-organization-owner" : "revoke-organization-owner",
+    action: admin
+      ? value.action === "grant"
+        ? "grant-organization-admin"
+        : "revoke-organization-admin"
+      : value.action === "grant"
+        ? "grant-organization-owner"
+        : "revoke-organization-owner",
     requestId: value.requestId,
     organizationAccountId: value.scopeId,
     targetUserId: principal.id,

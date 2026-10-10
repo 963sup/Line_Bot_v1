@@ -45,10 +45,40 @@ test("Organization wire compatibility stays narrow and fails closed", () => {
   for (const value of [
     { ...legacy, scopeKind: "enterprise" },
     { ...legacy, role: "TeamMaintainer" },
+    { ...legacy, role: "OrganizationAdmin" },
     { ...legacy, principal: { kind: "organization-team", id: "team-1" } },
     { ...legacy, unexpected: true },
     { ...legacy, principal: { ...legacy.principal, unexpected: true } },
   ]) {
     assert.equal(normalizeOrganizationWireCommand(value), value);
   }
+});
+
+test("FPT ADMIN wire command translates to an Organization-owned member role action", () => {
+  const base = {
+    requestId: "22222222-2222-4222-8222-222222222222",
+    scopeKind: "organization",
+    scopeId: "organization-1",
+    principal: { kind: "user", id: "user-2" },
+    role: "ADMIN",
+    expectedVersion: 0,
+    reason: "promote administrator",
+  };
+
+  assert.deepEqual(normalizeOrganizationWireCommand({ action: "grant", ...base }), {
+    action: "grant-organization-admin",
+    requestId: base.requestId,
+    organizationAccountId: base.scopeId,
+    targetUserId: base.principal.id,
+    expectedVersion: 0,
+    reason: base.reason,
+  });
+  assert.deepEqual(normalizeOrganizationWireCommand({ action: "revoke", ...base }), {
+    action: "revoke-organization-admin",
+    requestId: base.requestId,
+    organizationAccountId: base.scopeId,
+    targetUserId: base.principal.id,
+    expectedVersion: 0,
+    reason: base.reason,
+  });
 });

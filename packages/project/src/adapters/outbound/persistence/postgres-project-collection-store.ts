@@ -1,5 +1,5 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
-import { readOrganizationOwnerScopeIds } from "@line_bot_v1/organization/postgres";
+import { listOrganizationAdministrationScopeIds } from "@line_bot_v1/organization/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { readActiveProjectTeamIds } from "@line_bot_v1/team/postgres/project-access";
 import type { ProjectSummary } from "../../../contracts/dto/project-collection.js";
@@ -25,8 +25,8 @@ export class PostgresProjectCollectionStore implements ProjectCollectionStore {
 
   accessible(userId: string): Promise<readonly ProjectSummary[]> {
     return this.db.transaction(async (sql) => {
-      const [organizationOwnerIds, teamIds] = await Promise.all([
-        readOrganizationOwnerScopeIds(sql, userId),
+      const [organizationAdministrationIds, teamIds] = await Promise.all([
+        listOrganizationAdministrationScopeIds(sql, userId),
         readActiveProjectTeamIds(sql, userId),
       ]);
       const rows = (
@@ -71,7 +71,7 @@ export class PostgresProjectCollectionStore implements ProjectCollectionStore {
                )
              )
            ORDER BY lower(p.name),p.id`,
-          [userId, organizationOwnerIds, teamIds],
+          [userId, organizationAdministrationIds, teamIds],
         )
       ).rows as Array<{
         id: string;
@@ -106,7 +106,7 @@ export class PostgresProjectCollectionStore implements ProjectCollectionStore {
         if (
           (row.owner_account_kind === "USER" && row.owner_account_id === userId) ||
           (row.owner_account_kind === "ORGANIZATION" &&
-            organizationOwnerIds.includes(row.owner_account_id))
+            organizationAdministrationIds.includes(row.owner_account_id))
         ) {
           roles.push("ADMIN");
         }

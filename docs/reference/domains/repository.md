@@ -52,12 +52,12 @@ Current read transport includes `/api/issues`, `/api/discussions`, `/api/reposit
 Canonical create surface is `/repositories/new`; API is `POST /api/repositories`; owner picker is `GET /api/repositories/owners`.
 
 - User owner must be the current active User.
-- Organization owner requires current effective `OrganizationOwner`.
+- Organization owner requires current Organization `viewerCanCreateRepositories` capability. The current projection is granted to OrganizationOwner and FPT `OrganizationMemberRole.ADMIN`; ordinary `MEMBER` is denied. `OrganizationOwner` remains the separate recovery authority.
 - Caller selects `private | internal | public`; UI labels map directly to FPT PRIVATE / INTERNAL / PUBLIC.
 - INTERNAL is available only to an Organization currently attached to an active Enterprise. The database coordinator rechecks that scope atomically.
 - `(owner_account_id, lower(name))` is unique within owner scope, and retained historical aliases are also reserved against other Repositories.
 - Create uses stable `requestId` + fingerprint + durable receipt; exact replay re-checks current authority before returning the same Repository.
-- The narrow database coordinator re-checks actor/OrganizationOwner, INTERNAL eligibility and initial access in one transaction; `line_app` does not gain unrestricted insert.
+- The narrow database coordinator re-checks actor/Organization capability, INTERNAL eligibility and initial access in one transaction; `line_app` does not gain unrestricted insert.
 - Retry compatibility accepts a pre-visibility rollout private-create fingerprint for the same command so an unknown old request can still resolve safely.
 
 ## Lifecycle management

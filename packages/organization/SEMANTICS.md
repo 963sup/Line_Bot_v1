@@ -23,9 +23,16 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Organization | organization | authoritative | current | GitHub FPT: schema-orgs.json#Organization |
+| Organization.viewerCanAdminister | organization-viewer-can-administer | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanAdminister |
+| Organization.viewerCanCreateProjects | organization-viewer-can-create-projects | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanCreateProjects |
+| Organization.viewerCanCreateRepositories | organization-viewer-can-create-repositories | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanCreateRepositories |
+| Organization.viewerCanCreateTeams | organization-viewer-can-create-teams | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanCreateTeams |
+| Organization.viewerIsAMember | organization-viewer-is-member | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerIsAMember |
 | OrganizationInvitation | organization-invitation | authoritative | current | GitHub FPT: schema-orgs.json#OrganizationInvitation |
 | OrganizationMemberEdge | organization-membership | authoritative | current | GitHub FPT: schema-users.json#OrganizationMemberEdge |
-| OrganizationMemberEdge.role | organization-role-assignment | authoritative | current | GitHub FPT: schema-users.json#OrganizationMemberEdge#role |
+| OrganizationMemberEdge.role | organization-member-role-assignment | authoritative | current | GitHub FPT: schema-users.json#OrganizationMemberEdge#role |
+| OrganizationMemberRole | organization-member-role | authoritative | current | GitHub FPT: schema-orgs.json#OrganizationMemberRole |
+| OrganizationOwner | organization-owner-assignment | authoritative | current | Organization-owned governance fact distinct from the FPT OrganizationMemberRole enum. |
 
 ## Capabilities
 
@@ -40,13 +47,15 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | Organization participation and public locator behavior reference Account-owned User and Account identity contracts. |
 | consumes | enterprise | projection | enterprise | atomic-where-required | Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority. |
-| consumes | identity-access | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle. |
+| consumes | identity-access | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess for owner-controlled lifecycle and role appointment; IdentityAccess does not write OrganizationOwner or OrganizationMemberRole facts. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
 | provides | identity-access | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | issue | stable-identity+query | organization | transaction-recheck | IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority. |
-| provides | project | query | organization | current-state | Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned. |
-| provides | repository | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant. |
-| provides | team | stable-identity+query | organization | current-state | Organization scope and participation. |
+| provides | project | query | organization | transaction-recheck | Project creation rechecks the Organization-owned viewerCanCreateProjects capability for the current active member. |
+| provides | project | query | organization | current-state | Project collection and management consume current Organization-owned viewerCanAdminister/viewerCanCreateProjects capabilities for Organization-owned Projects; personal Projects remain User-owned. |
+| provides | repository | query | organization | transaction-recheck | Repository creation under an Organization consumes the Organization-owned viewerCanCreateRepositories capability; Repository access recovery remains a separate OrganizationOwner authority path. |
+| provides | repository | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and viewerCanCreateRepositories/viewerCanAdminister capabilities. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant. |
+| provides | team | stable-identity+query | organization | current-state | Organization scope, active participation and current viewerCanCreateTeams capability. |
 
 ## Tactical Model Boundary
 

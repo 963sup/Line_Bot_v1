@@ -90,7 +90,12 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
   }
   const organizationAccountId = parseId(base.organizationAccountId, "Organization");
 
-  if (base.action === "grant-organization-owner" || base.action === "revoke-organization-owner") {
+  if (
+    base.action === "grant-organization-owner" ||
+    base.action === "revoke-organization-owner" ||
+    base.action === "grant-organization-admin" ||
+    base.action === "revoke-organization-admin"
+  ) {
     requireExactGovernanceKeys(base, [
       "action",
       "requestId",
@@ -106,8 +111,10 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
       targetUserId: parseId(base.targetUserId, "使用者"),
       expectedVersion: parseVersion(
         base.expectedVersion,
-        "OrganizationOwner",
-        base.action === "grant-organization-owner",
+        base.action === "grant-organization-owner" || base.action === "revoke-organization-owner"
+          ? "OrganizationOwner"
+          : "Organization ADMIN",
+        base.action === "grant-organization-owner" || base.action === "grant-organization-admin",
       ),
     };
   }

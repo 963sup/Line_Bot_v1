@@ -1080,7 +1080,18 @@
       }
     },
     {
-      "id": "organization-role-assignment",
+      "id": "organization-member-role",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "OrganizationMemberRole"
+      }
+    },
+    {
+      "id": "organization-member-role-assignment",
       "kind": "authoritative",
       "owner": "organization",
       "lifecycle": "current",
@@ -1090,6 +1101,76 @@
         "file": "schema-users.json",
         "symbol": "OrganizationMemberEdge",
         "field": "role"
+      }
+    },
+    {
+      "id": "organization-owner-assignment",
+      "canonicalName": "OrganizationOwner",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "definition": "Organization-owned governance fact distinct from the FPT OrganizationMemberRole enum.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "organization-viewer-is-member",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerIsAMember"
+      }
+    },
+    {
+      "id": "organization-viewer-can-administer",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanAdminister"
+      }
+    },
+    {
+      "id": "organization-viewer-can-create-repositories",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanCreateRepositories"
+      }
+    },
+    {
+      "id": "organization-viewer-can-create-projects",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanCreateProjects"
+      }
+    },
+    {
+      "id": "organization-viewer-can-create-teams",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanCreateTeams"
       }
     },
     {
@@ -1226,7 +1307,7 @@
       "id": "organization-team-scope",
       "provider": "organization",
       "consumer": "team",
-      "meaning": "Organization scope and participation.",
+      "meaning": "Organization scope, active participation and current viewerCanCreateTeams capability.",
       "integrationMode": "stable-identity+query",
       "authority": "organization",
       "consistency": "current-state"
@@ -1289,10 +1370,19 @@
       "id": "organization-project-owner-scope",
       "provider": "organization",
       "consumer": "project",
-      "meaning": "Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned.",
+      "meaning": "Project collection and management consume current Organization-owned viewerCanAdminister/viewerCanCreateProjects capabilities for Organization-owned Projects; personal Projects remain User-owned.",
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "current-state"
+    },
+    {
+      "id": "organization-project-creation-capability",
+      "provider": "organization",
+      "consumer": "project",
+      "meaning": "Project creation rechecks the Organization-owned viewerCanCreateProjects capability for the current active member.",
+      "integrationMode": "query",
+      "authority": "organization",
+      "consistency": "transaction-recheck"
     },
     {
       "id": "organization-issue-type-scope",
@@ -1523,7 +1613,7 @@
       "id": "identity-access-organization-authorization",
       "provider": "identity-access",
       "consumer": "organization",
-      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle.",
+      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess for owner-controlled lifecycle and role appointment; IdentityAccess does not write OrganizationOwner or OrganizationMemberRole facts.",
       "integrationMode": "query",
       "authority": "identity-access",
       "consistency": "current-state"
@@ -1550,18 +1640,27 @@
       "id": "organization-repository-owner-scope",
       "provider": "organization",
       "consumer": "repository",
-      "meaning": "Organization-owned Repositories consume current Organization scope. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant.",
+      "meaning": "Organization-owned Repositories consume current Organization scope and viewerCanCreateRepositories/viewerCanAdminister capabilities. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant.",
       "integrationMode": "stable-identity+query",
       "authority": "organization",
       "consistency": "current-state"
     },
     {
-      "id": "identity-access-repository-owner-authorization",
+      "id": "identity-access-repository-authorization",
       "provider": "identity-access",
       "consumer": "repository",
-      "meaning": "Repository creation under an Organization consumes current effective OrganizationOwner authorization.",
+      "meaning": "Repository consumes current IdentityAccess authorization decisions for Repository-owned access and protected operations; IdentityAccess does not own or mutate Repository grant truth.",
       "integrationMode": "query",
       "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "organization-repository-creation-capability",
+      "provider": "organization",
+      "consumer": "repository",
+      "meaning": "Repository creation under an Organization consumes the Organization-owned viewerCanCreateRepositories capability; Repository access recovery remains a separate OrganizationOwner authority path.",
+      "integrationMode": "query",
+      "authority": "organization",
       "consistency": "transaction-recheck"
     },
     {
@@ -1894,12 +1993,15 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Organization governance application surface",
+        "scope": "current Organization governance application surface, FPT OrganizationMemberRole projection, and viewer capability reads",
         "sourcePaths": [
           "packages/organization/src/application/organization-governance.ts",
           "packages/organization/src/contracts/input/organization-governance.ts",
           "packages/organization/src/domain.ts",
-          "packages/organization/src/contracts/organization-governance.ts"
+          "packages/organization/src/contracts/organization-governance.ts",
+          "packages/organization/src/contracts/output/public.ts",
+          "packages/organization/src/postgres/member-roles.ts",
+          "packages/organization/src/postgres/public.ts"
         ],
         "publicExports": [
           "./application/organization-governance",
@@ -1908,8 +2010,11 @@
           "./domain"
         ],
         "entrypoints": ["apps/web/src/app/(mobile)/organizations/page.tsx"],
-        "testPaths": [],
-        "note": "Organization source/export evidence exists; no test result is implied by this metadata."
+        "testPaths": [
+          "packages/organization/test/organization-capabilities.test.ts",
+          "packages/organization/test/organization-postgres-execute-characterization.test.ts"
+        ],
+        "note": "OrganizationOwner remains a distinct governance fact. FPT ADMIN is an Organization-owned member role assignment; MEMBER is derived from active membership. Viewer capabilities are current, version-bound projections and are not generic Identity/Access permissions."
       }
     },
     {
@@ -2036,7 +2141,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository creation for self User owner or current effective OrganizationOwner; INTERNAL requires the Organization's current active Enterprise scope.",
+        "scope": "Repository creation for self User owner or an active Organization member with viewerCanCreateRepositories; INTERNAL requires the Organization's current active Enterprise scope.",
         "sourcePaths": [
           "packages/repository/src/application/creation.ts",
           "packages/repository/src/contracts/repositories/creation.ts",
@@ -2056,7 +2161,7 @@
           "packages/repository/test/creation.test.ts",
           "apps/web/test/repository-creation-http.test.ts"
         ],
-        "note": "Create persists the selected visibility atomically. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current owner authority and accepts pre-visibility private-create fingerprints for rollout-safe retry."
+        "note": "Create persists the selected visibility atomically. Organization creation uses the Organization-owned viewerCanCreateRepositories capability; OrganizationOwner remains a separate recovery authority. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current capability and accepts pre-visibility private-create fingerprints for rollout-safe retry."
       }
     },
     {
@@ -2739,7 +2844,7 @@
           "apps/web/src/app/(mobile)/projects/page.tsx"
         ],
         "testPaths": ["packages/project/test/collection.test.ts"],
-        "note": "Project collection reads combine current owner authority, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
+        "note": "Project collection reads combine current Organization viewerCanAdminister capability, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
       }
     },
     {
@@ -2758,7 +2863,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "ProjectV2 root, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
+        "scope": "ProjectV2 root, owner-scoped creation through viewerCanCreateProjects, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
         "sourcePaths": [
           "packages/project/src/application/management.ts",
           "packages/project/src/contracts/management.ts",
@@ -3267,8 +3372,7 @@
     },
     {
       "semanticOwner": "project",
-      "module": "@line_bot_v1/project",
-      "note": "Project workspace/module ownership is registered; runtime Project capability remains inactive."
+      "module": "@line_bot_v1/project"
     },
     {
       "semanticOwner": "notifications",

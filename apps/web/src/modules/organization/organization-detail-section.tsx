@@ -120,7 +120,7 @@ export function OrganizationDetailSection({
           <strong>{member.userId}</strong>
           <p>
             {member.status}
-            {member.effectiveOwner ? " · OrganizationOwner" : ""}
+            {member.effectiveOwner ? " · OrganizationOwner" : ` · FPT ${member.memberRole}`}
           </p>
           <p>
             Membership sources：
@@ -253,6 +253,53 @@ export function OrganizationDetailSection({
           </label>
           <button disabled={busy || !!pending} type="submit">
             保存 owner role
+          </button>
+        </form>
+      )}
+
+      {detail.actorIsOwner && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            const targetUserId = String(data.get("targetUserId")).trim();
+            const member = detail.members.find(
+              (item) => item.userId === targetUserId && item.status === "active",
+            );
+            if (!member || member.effectiveOwner) {
+              setError("Organization ADMIN 對象必須是非 Owner 的有效 Organization member。");
+              return;
+            }
+            const action = data.get("action") === "revoke" ? "revoke" : "grant";
+            void execute({
+              action:
+                action === "revoke" ? "revoke-organization-admin" : "grant-organization-admin",
+              requestId: crypto.randomUUID(),
+              organizationAccountId: detail.id,
+              targetUserId,
+              expectedVersion: member.memberRoleVersion ?? 0,
+              reason: String(data.get("reason")).trim(),
+            });
+          }}
+        >
+          <h3>Organization member role</h3>
+          <label>
+            Organization member
+            <input name="targetUserId" required maxLength={128} />
+          </label>
+          <label>
+            操作
+            <select name="action" defaultValue="grant">
+              <option value="grant">授予 FPT ADMIN</option>
+              <option value="revoke">撤銷 FPT ADMIN</option>
+            </select>
+          </label>
+          <label>
+            原因
+            <textarea name="reason" required maxLength={500} />
+          </label>
+          <button disabled={busy || !!pending} type="submit">
+            保存 member role
           </button>
         </form>
       )}

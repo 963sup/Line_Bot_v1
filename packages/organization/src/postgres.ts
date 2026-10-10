@@ -25,6 +25,10 @@ import type {
   OrganizationReceipt,
 } from "./contracts/organization-governance.js";
 import {
+  mutateOrganizationAdminAssignment,
+  readOrganizationAdminAssignments,
+} from "./postgres/member-roles.js";
+import {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
@@ -34,6 +38,7 @@ import {
   readOrganizationOwnerAssignments,
   readOrganizationOwnerScopeIds,
 } from "./postgres/owner-roles.js";
+import { readOrganizationViewerCapabilities } from "./postgres/public.js";
 
 function receipt(
   command: OrganizationCommand,
@@ -131,6 +136,11 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         if (!locator) {
           throw new GovernanceAccessError(409, "scope-conflict", "Organization login 不可用。");
         }
+        const actorCapabilities = await readOrganizationViewerCapabilities(
+          sql,
+          principal.userId,
+          row.id,
+        );
         items.push({
           id: row.id,
           login: locator.login,
@@ -142,6 +152,8 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           actorInvitationStatus: row.invitation_status ?? null,
           actorInvitationVersion: row.invitation_version ?? null,
           actorIsOwner: ownerScopeIds.includes(row.id),
+          actorMemberRole:
+            actorCapabilities?.memberRole ?? (ownerScopeIds.includes(row.id) ? "ADMIN" : null),
         });
       }
       return {
@@ -160,6 +172,12 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         organizationAccountId,
         principal.userId,
       );
+      const actorCapabilities = await readOrganizationViewerCapabilities(
+        sql,
+        principal.userId,
+        organizationAccountId,
+      );
+      const actorCanAdminister = actorIsOwner || actorCapabilities?.viewerCanAdminister === true;
       const scope = (
         await sql.query(
           `SELECT o.account_id AS id,o.name,o.status,o.version,
@@ -204,7 +222,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                AND d.user_id=m.user_id AND d.status='active'
            WHERE m.organization_account_id=$1 AND ($2::boolean OR m.user_id=$3)
            ORDER BY m.user_id`,
-          [organizationAccountId, actorIsOwner, principal.userId],
+          [organizationAccountId, actorCanAdminister, principal.userId],
         )
       ).rows;
       const ownerAssignments = new Map(
@@ -216,12 +234,21 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           )
         ).map((row) => [row.userId, row.version] as const),
       );
+      const adminAssignments = new Map(
+        (
+          await readOrganizationAdminAssignments(
+            sql,
+            organizationAccountId,
+            memberRows.map((row) => String(row.user_id)),
+          )
+        ).map((row) => [row.userId, row.version] as const),
+      );
       const invitationRows = (
         await sql.query(
           `SELECT user_id,status,version FROM organization_invitations
            WHERE organization_account_id=$1 AND ($2::boolean OR user_id=$3)
            ORDER BY user_id`,
-          [organizationAccountId, actorIsOwner, principal.userId],
+          [organizationAccountId, actorCanAdminister, principal.userId],
         )
       ).rows;
 
@@ -236,6 +263,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         actorInvitationStatus: scope.invitation_status ?? null,
         actorInvitationVersion: scope.invitation_version ?? null,
         actorIsOwner,
+        actorMemberRole: actorCapabilities?.memberRole ?? (actorIsOwner ? "ADMIN" : null),
         members: memberRows.map(
           (row): OrganizationMembershipProjection => ({
             userId: row.user_id,
@@ -245,6 +273,12 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             directMembershipVersion: row.direct_membership_version ?? null,
             effectiveOwner: ownerAssignments.has(row.user_id),
             assignmentVersion: ownerAssignments.get(row.user_id) ?? null,
+            memberRole:
+              ownerAssignments.has(row.user_id) || adminAssignments.has(row.user_id)
+                ? "ADMIN"
+                : "MEMBER",
+            memberRoleVersion:
+              ownerAssignments.get(row.user_id) ?? adminAssignments.get(row.user_id) ?? null,
           }),
         ),
         invitations: invitationRows.map(
@@ -365,6 +399,19 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           );
         }
         const changed = await mutateOrganizationOwnerAssignment(sql, command, now);
+        result = receipt(command, changed.status, changed.version, now);
+      } else if (
+        command.action === "grant-organization-admin" ||
+        command.action === "revoke-organization-admin"
+      ) {
+        if (organization.status !== "active") {
+          throw new GovernanceAccessError(
+            409,
+            "inactive",
+            "停用的 Organization 不能變更 ADMIN role。",
+          );
+        }
+        const changed = await mutateOrganizationAdminAssignment(sql, command, now);
         result = receipt(command, changed.status, changed.version, now);
       } else if (command.action === "deactivate" || command.action === "reactivate") {
         if (organization.version !== command.expectedVersion) {
@@ -650,10 +697,12 @@ export {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
+export { hasOrganizationOwnerAssignment } from "./postgres/owner-roles.js";
 export {
-  hasOrganizationOwnerAssignment,
-  readOrganizationOwnerScopeIds,
-} from "./postgres/owner-roles.js";
+  listOrganizationAdministrationScopeIds,
+  listOrganizationRepositoryCreationScopeIds,
+  readOrganizationViewerCapabilities,
+} from "./postgres/public.js";
 export {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,

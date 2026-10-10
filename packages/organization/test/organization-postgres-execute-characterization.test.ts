@@ -303,6 +303,7 @@ test("OrganizationOwner revoke preserves the last-effective-owner invariant", as
     ) {
       return { rows: [{ status: "active", version: 5 }] };
     }
+    if (text.includes("FROM users WHERE id=$1")) return { rows: [activeActorRow()] };
     if (
       text.includes("FROM organization_role_assignments") &&
       text.includes("role='OrganizationOwner' FOR UPDATE")
@@ -433,4 +434,57 @@ test("organization create replay short-circuits before provisioning", async () =
   assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
   assert.equal(queryIndex(queries, "provision_organization_scope"), -1);
   assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);
+});
+
+test("OrganizationOwner appoints FPT ADMIN without changing the owner fact", async () => {
+  const queries: QueryRecord[] = [];
+  const command: OrganizationCommand = {
+    action: "grant-organization-admin",
+    requestId: "66666666-6666-4666-8666-666666666666",
+    organizationAccountId: "organization-1",
+    targetUserId: "user-2",
+    expectedVersion: 0,
+    reason: "characterization",
+  };
+  const { db } = databaseWith(async (text) => {
+    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
+    if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
+      return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
+    }
+    if (organizationOwnerQuery(text)) return { rows: [{ "?column?": 1 }] };
+    if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (
+      text.includes("SELECT status,version FROM organization_memberships") &&
+      !text.includes("FOR UPDATE")
+    ) {
+      return { rows: [{ status: "active", version: 5 }] };
+    }
+    if (text.includes("FROM users WHERE id=$1")) {
+      return { rows: [{ id: "user-2", status: "active", status_version: 3 }] };
+    }
+    if (text.includes("FROM organization_member_role_assignments") && text.includes("FOR UPDATE")) {
+      return { rows: [] };
+    }
+    if (text.includes("INSERT INTO organization_member_role_assignments")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_command_receipts")) return { rows: [] };
+    if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
+    throw new Error(`unexpected admin mutation query: ${text}`);
+  }, queries);
+  const governance = new PostgresOrganizationGovernance(db);
+
+  assert.deepEqual(await governance.execute(actor, command, 100), {
+    requestId: command.requestId,
+    action: command.action,
+    scopeId: command.organizationAccountId,
+    subjectKind: "user",
+    subjectId: command.targetUserId,
+    status: "active",
+    version: 1,
+    at: 100,
+  });
+
+  assert.ok(queryIndex(queries, "FROM organization_role_assignments") >= 0);
+  assert.ok(queryIndex(queries, "INSERT INTO organization_member_role_assignments") >= 0);
+  assert.equal(queryIndex(queries, "INSERT INTO organization_role_assignments"), -1);
 });

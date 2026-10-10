@@ -62,6 +62,19 @@ test("Team hierarchy derives membership and Repository access without copying me
     },
     11,
   );
+  const memberCreated = await store.execute(
+    { provider: "line:test", subject: "child-user" },
+    {
+      action: "create-team",
+      requestId: "77777777-7777-4777-8777-777777777777",
+      organizationAccountId: "organization-team",
+      name: "Member Team",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+    },
+    11,
+  );
+  assert.ok(memberCreated.teamId);
 
   await store.execute(
     owner,

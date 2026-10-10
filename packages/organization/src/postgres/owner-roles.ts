@@ -139,17 +139,15 @@ export async function mutateOrganizationOwnerAssignment(
     if (!target) {
       throw new GovernanceAccessError(404, "not-found", "找不到有效對象使用者。");
     }
-    if (
-      (!assignment && command.expectedVersion !== 0) ||
-      (assignment && assignment.version !== command.expectedVersion)
-    ) {
-      throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派版本已更新。");
-    }
-    if (
+    const effectiveAssignment =
       assignment?.status === "active" &&
       assignment.user_status_version === target.statusVersion &&
-      assignment.membership_version === membership.version
-    ) {
+      assignment.membership_version === membership.version;
+    const effectiveVersion = effectiveAssignment ? Number(assignment.version) : 0;
+    if (command.expectedVersion !== effectiveVersion) {
+      throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派版本已更新。");
+    }
+    if (effectiveAssignment) {
       throw new GovernanceAccessError(409, "invalid-transition", "OrganizationOwner 已生效。");
     }
     if (assignment) {
@@ -190,11 +188,17 @@ export async function mutateOrganizationOwnerAssignment(
   if (!assignment) {
     throw new GovernanceAccessError(404, "not-found", "找不到 OrganizationOwner 指派。");
   }
-  if (assignment.version !== command.expectedVersion) {
-    throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派版本已更新。");
+  const target = await readActiveUserQualification(sql, command.targetUserId, "share");
+  const effectiveAssignment =
+    target !== null &&
+    assignment.status === "active" &&
+    assignment.user_status_version === target.statusVersion &&
+    assignment.membership_version === membership.version;
+  if (!effectiveAssignment) {
+    throw new GovernanceAccessError(409, "invalid-transition", "OrganizationOwner 指派已失效。");
   }
-  if (assignment.status !== "active") {
-    throw new GovernanceAccessError(409, "invalid-transition", "OrganizationOwner 已撤銷。");
+  if (Number(assignment.version) !== command.expectedVersion) {
+    throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派版本已更新。");
   }
   if (
     (await hasOrganizationOwnerAssignment(

@@ -13,25 +13,28 @@ Current owned relations：
 - `OrganizationInvitation`：pending join request；接受前不是 membership、role 或 resource access。
 - `OrganizationDirectMembership`：User 與 Organization 的 direct participation source，status 為 `active | removed`。
 - `OrganizationMembership`：由 current sources 推導並持久化的 effective participation epoch，status 為 `active | removed`；source 可以來自 direct membership 或 Enterprise Team assignment。
-- `OrganizationOwner`：Organization-owned membership-level governance role fact；principal 必須是 active individual Organization member，並綁定 current membership version。Identity/Access 只消費此 fact 做 authorization evaluation。
+- `OrganizationOwner`：Organization-owned membership-level governance fact；principal 必須是 active individual Organization member，並綁定 current membership version。它不是 FPT `OrganizationMemberRole` 的替代名稱。
+- `OrganizationMemberRole`：FPT exact enum `ADMIN | MEMBER`。本產品由 Organization owner 寫入 `ADMIN` assignment；active membership 且沒有有效 ADMIN assignment 時，`MEMBER` 由 membership projection 推導。Owner 仍是獨立治理 fact，但其 viewer projection 可呈現 `memberRole=ADMIN`。
+- `OrganizationViewerCapabilities`：由 current Organization、membership、OrganizationOwner 與 Organization ADMIN assignment 版本重算的 read contract；`viewerCanAdminister`、`viewerCanCreateRepositories`、`viewerCanCreateProjects`、`viewerCanCreateTeams` 是 scoped capability，不是 Identity/Access generic Permission。
 - Team capability：Organization 提供 qualification/scope，Organization Team 本身由 Team owner 維護。
 
 ```text
-Invitation ≠ MembershipSource ≠ OrganizationMembership ≠ OrganizationOwner RoleAssignment
+Invitation ≠ MembershipSource ≠ OrganizationMembership ≠ OrganizationMemberRole assignment ≠ OrganizationOwner
 
 OrganizationMembership source
 ├── direct
 └── enterprise-team
 ```
 
-FPT `OrganizationMemberRole` 的 current 值域是 `ADMIN | MEMBER`。本產品把 active effective `OrganizationMembership` 直接表示為 MEMBER；不另外持久化一般 member role。需要額外治理權限時，由 Organization-owned `OrganizationOwner` fact 表示 ADMIN 語意。這個本地名稱不建立第二套 Person/Member identity，也不形成 generic role authority。
+`OrganizationOwner` 與 FPT `OrganizationMemberRole.ADMIN` 不互相取代：Owner 負責生命週期、Owner/ADMIN appointment 與 recovery；ADMIN assignment 只表達 member role 與由 Organization contract 計算出的治理 capability。兩者都由 Organization owner boundary 持有，Identity/Access 只消費 current fact 做授權評估，不寫入任何一方。
 
-OrganizationMembership 與 Employment 分離。Membership active 不直接授予 Owner 或 feature capability；Organization 是 OrganizationOwner fact 的唯一 authority writer。
+OrganizationMembership 與 Employment 分離。Membership active 不直接授予 Owner 或 Repository/Project capability；目前 Team create capability 依 FPT viewer contract 對 active member 開放，Repository/Project create 則要求 current `viewerCanCreateRepositories` / `viewerCanCreateProjects`。
 
 ## Invariants
 
 - OrganizationInvitation != OrganizationDirectMembership != OrganizationMembership != Employment。
-- OrganizationMembership active 不自動授予 OrganizationOwner、EnterpriseOwner、TeamMaintainer、Workforce/Payroll 或 feature permissions。
+- OrganizationMembership active 不自動授予 OrganizationOwner、EnterpriseOwner、TeamMaintainer、Workforce/Payroll、RepositoryPermission 或 Project collaborator grant。
+- Organization ADMIN assignment 必須指向 active Organization member，並綁定 User status version 與 membership version；membership/status 變更後舊 assignment fail closed，不自動復活。
 - direct 與一個以上 Enterprise Team membership sources 可以同時存在；撤銷單一 source 只能移除該 source 帶來的資格，不能誤刪其他 source。
 - 沒有任何 active source 時，effective OrganizationMembership 才能轉為 removed；重新取得有效 source 時可以建立新的 active membership epoch/version。
 - OrganizationOwner principal 必須是 active individual Organization member；Organization Team 不可整體成為 Owner，source removal 也不得繞過 last-owner/replacement protection。

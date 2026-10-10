@@ -4,6 +4,8 @@
 
 現行 Permission catalog、command validation 與 `PermissionError` 的 Domain owner 是 Identity/Access，source 位於 `packages/identity-access/src/domain/permission.ts`，公開入口為 `@line_bot_v1/identity-access/domain/permission`。Business-scoped governance roles 由各 business owner 擁有其 relation fact；Identity/Access 只計算 authorization。EnterpriseOwner、OrganizationOwner、TeamMaintainer 都不再由 IAM 寫入，也不恢復 generic RoleAssignment writer。
 
+FPT `OrganizationMemberRole.ADMIN | MEMBER` 同樣不是 global Permission catalog：它是 Organization-owned member-role fact；Organization 的 `viewerCanAdminister`、`viewerCanCreateRepositories`、`viewerCanCreateProjects`、`viewerCanCreateTeams` 是 scoped capability read contract。不要把 `OrganizationAdmin`、RepositoryPermission 或 Project access role 加進這個 catalog 來模擬 FPT。
+
 人類 identity／qualification failure 由 Account/User contract 表達；歷史 `membership_denied` 等 wire code 只保留 protocol/history 意義，不代表 Membership 是 current Account owner。
 ## Current permission catalog
 | Permission | 意義 |

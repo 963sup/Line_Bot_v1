@@ -579,7 +579,15 @@
       "path": "supabase/schemas/501_organization_role_assignments.sql",
       "authority": true,
       "semanticOwner": "organization",
-      "concept": "organization-role-assignment"
+      "concept": "organization-owner-assignment"
+    },
+    {
+      "name": "organization_member_role_assignments",
+      "kind": "table",
+      "path": "supabase/schemas/501_organization_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "organization",
+      "concept": "organization-member-role-assignment"
     },
     {
       "name": "team_role_assignments",
