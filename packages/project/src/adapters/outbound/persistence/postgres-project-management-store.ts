@@ -417,6 +417,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
   ): Promise<ProjectManagementReceipt> {
     const fingerprint = projectFingerprint(command);
     return this.db.transaction(async (sql) => {
+      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `project-request:${identity.userId}:${command.requestId}`,
       ]);
