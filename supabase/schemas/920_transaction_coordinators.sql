@@ -339,7 +339,7 @@ begin
     raise exception 'provision_repository_input_invalid' using errcode = '22023';
   end if;
 
-  perform pg_catalog.pg_advisory_xact_lock(71020260912::bigint);
+  perform pg_catalog.pg_advisory_xact_lock_shared(71020260912::bigint);
 
   perform 1 from app_private.users
     where id=p_actor_user_id and status='active'

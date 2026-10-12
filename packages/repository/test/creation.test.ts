@@ -76,6 +76,19 @@ async function activeUser(db: Database, id: string, login: string) {
   });
 }
 
+test("Repository provisioning uses the shared governance lock held by its caller", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  const result = await pg.query(
+    "select pg_get_functiondef('app_private.provision_repository(text,text,text,text,text,text)'::regprocedure) as definition",
+  );
+  const definition = String((result.rows[0] as { definition: string } | undefined)?.definition);
+
+  assert.match(definition, /pg_advisory_xact_lock_shared\(71020260912::bigint\)/);
+  assert.doesNotMatch(definition, /pg_advisory_xact_lock\(71020260912::bigint\)/);
+});
+
 test("Repository creation lists only effective owner scopes and preserves exact replay", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
