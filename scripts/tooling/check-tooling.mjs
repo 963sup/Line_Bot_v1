@@ -250,6 +250,43 @@ export function validate(root) {
       errors.push("biome.json: schema version must match Biome");
     if (biome.assist?.actions?.source?.organizeImports !== "on")
       errors.push("biome.json: organizeImports must remain enabled");
+    for (const [group, rules] of Object.entries({
+      suspicious: ["noExplicitAny", "noTsIgnore"],
+      style: ["noNonNullAssertion", "noEnum", "noNamespace"],
+    })) {
+      for (const rule of rules) {
+        if (biome.linter?.rules?.[group]?.[rule] !== "error")
+          errors.push(`biome.json: ${group}/${rule} must remain error`);
+      }
+    }
+    const safetyOptions = [
+      "strict",
+      "noUncheckedIndexedAccess",
+      "exactOptionalPropertyTypes",
+      "noImplicitOverride",
+      "noFallthroughCasesInSwitch",
+    ];
+    for (const file of [
+      resolve(root, "tsconfig.base.json"),
+      ...workspace.packages.flatMap((pattern) => files(`${pattern}/tsconfig*.json`)),
+    ]) {
+      const config = ts.getParsedCommandLineOfConfigFile(
+        file,
+        {},
+        {
+          ...ts.sys,
+          onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+            errors.push(
+              `${relative(root, file)}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, " ")}`,
+            );
+          },
+        },
+      );
+      for (const option of safetyOptions) {
+        if (config?.options[option] !== true)
+          errors.push(`${relative(root, file)}: ${option} must remain true`);
+      }
+    }
     const knipSource = read(resolve(root, "knip.jsonc"));
     if (!knipSource.includes('"$schema": "https://unpkg.com/knip@6/schema-jsonc.json"'))
       errors.push("knip.jsonc: Knip 6 schema contract is required");
@@ -457,6 +494,8 @@ export function validate(root) {
     }
 
     const turbo = JSON.parse(read(resolve(root, "turbo.json")));
+    if (!turbo.globalDependencies?.includes("tsconfig.base.json"))
+      errors.push("turbo.json: shared TypeScript configuration must invalidate task caches");
     if ((turbo.globalEnv ?? []).length)
       errors.push("turbo.json: product configuration must not use globalEnv");
     if ((turbo.globalDependencies ?? []).includes(".env.local"))

@@ -31,9 +31,11 @@ test("Upstash REST transport requires HTTPS and sends EVAL without exposing cred
     },
   );
   assert.equal(await transport.eval("return 1", ["key"], ["arg"]), 1);
-  assert.equal(requests[0]!.url, "https://redis.example/");
-  assert.equal(requests[0]!.headers.get("authorization"), "Bearer secret-token");
-  assert.deepEqual(requests[0]!.body, ["EVAL", "return 1", "1", "key", "arg"]);
+  const request = requests[0];
+  assert.ok(request);
+  assert.equal(request.url, "https://redis.example/");
+  assert.equal(request.headers.get("authorization"), "Bearer secret-token");
+  assert.deepEqual(request.body, ["EVAL", "return 1", "1", "key", "arg"]);
 });
 
 test("Upstash REST maps provider failures to bounded non-secret codes", async () => {

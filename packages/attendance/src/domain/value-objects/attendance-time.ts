@@ -16,6 +16,10 @@ export function taipeiDay(now: number): string {
   requireAttendanceTime(now);
   const parts = calendar.formatToParts(now);
   return ["year", "month", "day"]
-    .map((type) => parts.find((p) => p.type === type)!.value)
+    .map((type) => {
+      const part = parts.find((candidate) => candidate.type === type);
+      if (!part) throw new AttendanceError(500, "出勤日期格式化失敗。");
+      return part.value;
+    })
     .join("-");
 }

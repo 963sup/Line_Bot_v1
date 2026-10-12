@@ -20,7 +20,7 @@ export async function requestPermissions(
       "X-App-Session-Generation": proof,
       ...(command ? { "Content-Type": "application/json" } : {}),
     },
-    body: command ? JSON.stringify(command) : undefined,
+    ...(command ? { body: JSON.stringify(command) } : {}),
     signal: AbortSignal.timeout(20000),
   });
   const value = await response.json();

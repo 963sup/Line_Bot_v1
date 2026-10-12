@@ -122,7 +122,9 @@ function readSessionId(request: Request) {
     .map((part) => part.trim())
     .filter((part) => part.startsWith(`${LINE_SESSION_COOKIE}=`));
   if (values.length !== 1) return null;
-  const id = values[0]!.slice(LINE_SESSION_COOKIE.length + 1);
+  const [value] = values;
+  if (!value) return null;
+  const id = value.slice(LINE_SESSION_COOKIE.length + 1);
   return /^[A-Za-z0-9_-]{43}$/.test(id) ? id : null;
 }
 

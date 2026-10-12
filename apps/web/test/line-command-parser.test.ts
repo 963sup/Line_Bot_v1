@@ -15,6 +15,6 @@ test("command extraction preserves existing matching and precedence", () => {
     [" 取消 ", "answer"],
     ["今天幾號", "answer"],
     ["建立任務：巡檢", "answer"],
-  ])
-    assert.equal(parseAssistantCommand(input!), expected);
+  ] as const)
+    assert.equal(parseAssistantCommand(input), expected);
 });

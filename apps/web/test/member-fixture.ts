@@ -49,14 +49,18 @@ export async function mockSupabase() {
     return identityFor(userId);
   });
 }
+function requireFixtureValue<T>(value: T | undefined, name: string): T {
+  if (value === undefined) throw new Error(`${name} fixture is not initialized`);
+  return value;
+}
 export function memberStore() {
-  return state.userStore!;
+  return requireFixtureValue(state.userStore, "User store");
 }
 export function walletStore() {
-  return state.walletStore!;
+  return requireFixtureValue(state.walletStore, "Wallet store");
 }
 export function expenseStore() {
-  return state.expenseStore!;
+  return requireFixtureValue(state.expenseStore, "Expense store");
 }
 export async function prepareGoogle(user: string) {
   const identity = identityFor(user);

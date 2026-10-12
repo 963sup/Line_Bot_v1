@@ -46,7 +46,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
           "X-App-Session-Generation": access,
           ...(body ? { "content-type": "application/json" } : {}),
         },
-        body: body ? JSON.stringify(body) : undefined,
+        ...(body ? { body: JSON.stringify(body) } : {}),
       },
     );
     const payload = await response.json();

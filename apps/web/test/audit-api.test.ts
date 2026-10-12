@@ -44,7 +44,7 @@ test("audit route verifies LINE identity before forwarding the exact scope to Au
     assert.equal(response.status, 200);
     assert.deepEqual(list.mock.calls[0]?.arguments, [
       { provider: LINE_PROVIDER_NAMESPACE, subject },
-      { scopeKind: "organization", scopeId: "org", before: undefined, limit: 5 },
+      { scopeKind: "organization", scopeId: "org", limit: 5 },
     ]);
   } finally {
     list.mock.restore();

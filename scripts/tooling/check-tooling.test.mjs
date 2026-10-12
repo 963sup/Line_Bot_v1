@@ -77,8 +77,18 @@ function fixture(t) {
   );
   write(
     "biome.json",
-    '{"$schema":"https://biomejs.dev/schemas/2.5.12/schema.json","assist":{"actions":{"source":{"organizeImports":"on"}}}}',
+    JSON.stringify({
+      $schema: "https://biomejs.dev/schemas/2.5.12/schema.json",
+      assist: { actions: { source: { organizeImports: "on" } } },
+      linter: {
+        rules: {
+          suspicious: { noExplicitAny: "error", noTsIgnore: "error" },
+          style: { noNonNullAssertion: "error", noEnum: "error", noNamespace: "error" },
+        },
+      },
+    }),
   );
+  write("tsconfig.base.json", readFileSync(resolve(repo, "tsconfig.base.json"), "utf8"));
   write("knip.jsonc", '{"$schema": "https://unpkg.com/knip@6/schema-jsonc.json"}');
   write(
     ".vscode/settings.json",
@@ -109,6 +119,7 @@ function fixture(t) {
   write(
     "turbo.json",
     JSON.stringify({
+      globalDependencies: ["tsconfig.base.json"],
       tasks: {
         test: {
           inputs: ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"],
@@ -156,6 +167,58 @@ function rejects(root, message) {
     JSON.stringify(errors),
   );
 }
+test("TypeScript safety options cannot be weakened by a workspace config", (t) => {
+  const { root, write } = fixture(t);
+  const base = "../../tsconfig.base.json";
+  write("packages/demo/tsconfig.json", JSON.stringify({ extends: base }));
+  assert.deepEqual(validate(root), []);
+  for (const option of [
+    "strict",
+    "noUncheckedIndexedAccess",
+    "exactOptionalPropertyTypes",
+    "noImplicitOverride",
+    "noFallthroughCasesInSwitch",
+  ]) {
+    write(
+      "packages/demo/tsconfig.json",
+      JSON.stringify({ extends: base, compilerOptions: { [option]: false } }),
+    );
+    rejects(root, `${option} must remain true`);
+  }
+  write("packages/demo/tsconfig.json", JSON.stringify({ extends: base }));
+  assert.deepEqual(validate(root), []);
+});
+
+test("unsafe syntax rules must fail checks rather than warn", (t) => {
+  const { root, write } = fixture(t);
+  const original = readFileSync(resolve(root, "biome.json"), "utf8");
+  for (const [group, rule] of [
+    ["suspicious", "noExplicitAny"],
+    ["suspicious", "noTsIgnore"],
+    ["style", "noNonNullAssertion"],
+    ["style", "noEnum"],
+    ["style", "noNamespace"],
+  ]) {
+    const biome = JSON.parse(original);
+    biome.linter.rules[group][rule] = "warn";
+    write("biome.json", JSON.stringify(biome));
+    rejects(root, `${group}/${rule} must remain error`);
+  }
+  write("biome.json", original);
+  assert.deepEqual(validate(root), []);
+});
+
+test("shared TypeScript configuration participates in every Turbo task cache", (t) => {
+  const { root, write } = fixture(t);
+  const original = readFileSync(resolve(root, "turbo.json"), "utf8");
+  const turbo = JSON.parse(original);
+  delete turbo.globalDependencies;
+  write("turbo.json", JSON.stringify(turbo));
+  rejects(root, "shared TypeScript configuration must invalidate task caches");
+  write("turbo.json", original);
+  assert.deepEqual(validate(root), []);
+});
+
 test("stale dist cannot hide deleted source for each module extension", (t) => {
   const { root, write } = fixture(t);
   for (const [compiled, source] of [

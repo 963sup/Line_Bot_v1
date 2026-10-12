@@ -312,7 +312,7 @@ export class PostgresRepositoryResourceManagementStore
       let result: RepositoryResourceManagementReceipt;
 
       if (command.action === "create-label") {
-        let created: LabelRow;
+        let created: LabelRow | undefined;
         try {
           created = (
             await sql.query(
@@ -322,11 +322,12 @@ export class PostgresRepositoryResourceManagementStore
                RETURNING *`,
               [randomUUID(), repository.id, command.name, command.color, command.description],
             )
-          ).rows[0] as LabelRow;
+          ).rows[0] as LabelRow | undefined;
         } catch (error) {
           labelConflict(error);
         }
-        const value = label(created!);
+        if (!created) throw new RepositoryError(503, "Repository Label 建立結果不完整。");
+        const value = label(created);
         await event(sql, repository.id, userId, command.action, {}, value, now);
         result = {
           requestId: command.requestId,
@@ -370,7 +371,7 @@ export class PostgresRepositoryResourceManagementStore
         } catch (error) {
           labelConflict(error);
         }
-        if (!updated!) throw new RepositoryError(409, "Label 已更新，請重新讀取後再操作。");
+        if (!updated) throw new RepositoryError(409, "Label 已更新，請重新讀取後再操作。");
         const previous = label(before);
         const value = label(updated);
         await event(sql, repository.id, userId, command.action, previous, value, now);

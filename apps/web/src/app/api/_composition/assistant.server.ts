@@ -46,7 +46,17 @@ const assistantRuntime = createAssistantRuntime({
   },
   probe: async () => {
     const { client, model } = geminiRuntime();
-    return runGeminiProbe(client, model);
+    return runGeminiProbe(
+      {
+        models: {
+          generateContent: async (parameters) => {
+            const response = await client.models.generateContent(parameters);
+            return response.text === undefined ? {} : { text: response.text };
+          },
+        },
+      },
+      model,
+    );
   },
 } satisfies AssistantRuntimeDependencies);
 

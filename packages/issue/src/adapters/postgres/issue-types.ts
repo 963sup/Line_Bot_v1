@@ -171,7 +171,7 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
-      let row: IssueTypeRow;
+      let row: IssueTypeRow | undefined;
       let data: Record<string, unknown>;
 
       if (command.action === "create-issue-type") {
@@ -198,7 +198,8 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
         } catch (error) {
           postgresConflict(error);
         }
-        data = { issueType: definition(row!) };
+        if (!row) throw new IssueError(503, "IssueType 建立結果不完整。");
+        data = { issueType: definition(row) };
       } else {
         const before = await currentType(sql, command.organizationAccountId, command.issueTypeId);
         if (Number(before.version) !== command.expectedVersion) {
@@ -242,7 +243,8 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
           } catch (error) {
             postgresConflict(error);
           }
-          data = { before: definition(before), after: definition(row!) };
+          if (!row) throw new IssueError(409, "IssueType 已更新，請重新讀取後再操作。");
+          data = { before: definition(before), after: definition(row) };
         } else {
           const assigned = (
             await sql.query("SELECT 1 FROM issue_type_assignments WHERE issue_type_id=$1 LIMIT 1", [
@@ -260,12 +262,14 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
                RETURNING *`,
               [command.organizationAccountId, command.issueTypeId, now, command.expectedVersion],
             )
-          ).rows[0] as IssueTypeRow;
+          ).rows[0] as IssueTypeRow | undefined;
+          if (!row) throw new IssueError(409, "IssueType 已更新，請重新讀取後再操作。");
           data = { before: definition(before), after: definition(row) };
         }
       }
 
-      const current = definition(row!);
+      if (!row) throw new IssueError(503, "IssueType mutation 結果不完整。");
+      const current = definition(row);
       await sql.query(
         `INSERT INTO issue_type_events(issue_type_id,version,actor,action,data,at)
          VALUES($1,$2,$3,$4,$5::jsonb,$6)`,

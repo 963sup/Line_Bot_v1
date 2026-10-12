@@ -46,7 +46,9 @@ test("external Google handoff verifies Google without LINE and cannot confirm wi
       },
     },
   );
-  const request = (action: string, origin = process.env.APP_ORIGIN!, bearer = true) =>
+  const appOrigin = process.env.APP_ORIGIN;
+  assert.ok(appOrigin);
+  const request = (action: string, origin = appOrigin, bearer = true) =>
     new Request("https://app.example.test/api/membership/google-link", {
       method: "POST",
       headers: {

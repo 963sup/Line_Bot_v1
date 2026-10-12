@@ -36,7 +36,7 @@ export function createLineWebhookRouter(config: {
       return 503;
 
     const { selected, senderMismatches, badRequest } = classifyLineWebhookEvents(events, {
-      testUserId: config.testUserId,
+      ...(config.testUserId ? { testUserId: config.testUserId } : {}),
       attendanceMenu: !!config.attendanceMenu,
       replyAiTest: !!config.replyAiTest,
       replyAgent: !!config.replyAgent,
@@ -84,16 +84,27 @@ export function createLineWebhookRouter(config: {
                   : false;
             }
             if (attendanceMenu) {
-              await config.attendanceMenu!(userId);
+              const handler = config.attendanceMenu;
+              if (!handler) throw new Error("Attendance menu handler is unavailable");
+              await handler(userId);
               return false;
             }
-            return assistant
-              ? config.replyAssistant!(token, assistant)
-              : agentInput !== undefined
-                ? config.replyAgent!(token, agentInput)
-                : ai
-                  ? config.replyAiTest!(token)
-                  : config.reply(token);
+            if (assistant) {
+              const handler = config.replyAssistant;
+              if (!handler) throw new Error("Assistant reply handler is unavailable");
+              return handler(token, assistant);
+            }
+            if (agentInput !== undefined) {
+              const handler = config.replyAgent;
+              if (!handler) throw new Error("Agent reply handler is unavailable");
+              return handler(token, agentInput);
+            }
+            if (ai) {
+              const handler = config.replyAiTest;
+              if (!handler) throw new Error("AI test reply handler is unavailable");
+              return handler(token);
+            }
+            return config.reply(token);
           };
           const result = await execute();
           config.report?.(result === false ? "handled_silently" : "replied");

@@ -49,10 +49,13 @@ export function parseLineMessage(event: LineWebhookEvent) {
       Number(m.index) + Number(m.length) <= (text?.length ?? 0),
   );
   let mentionedText = text;
+  if (mentionedText === undefined) {
+    return { text, imageId, mentionedText, mentioned: false };
+  }
   for (const m of self.sort((a, b) => Number(b.index) - Number(a.index))) {
     mentionedText =
-      mentionedText!.slice(0, Number(m.index)) +
-      mentionedText!.slice(Number(m.index) + Number(m.length));
+      mentionedText.slice(0, Number(m.index)) +
+      mentionedText.slice(Number(m.index) + Number(m.length));
   }
   return { text, imageId, mentionedText, mentioned: self.length > 0 };
 }

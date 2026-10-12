@@ -15,7 +15,11 @@ function sqlReservedKeys(pattern: RegExp): string[] {
   );
   const body = pattern.exec(sql)?.[1];
   assert.ok(body, "account login SQL must expose the reserved-key enforcement list");
-  return [...body.matchAll(/'([^']+)'/g)].map((match) => match[1]!);
+  return [...body.matchAll(/'([^']+)'/g)].map((match) => {
+    const key = match[1];
+    assert.ok(key);
+    return key;
+  });
 }
 
 test("root namespace reservation keys are canonical and unique", () => {

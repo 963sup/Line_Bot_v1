@@ -239,7 +239,9 @@ export async function resolveAuthorizedRepositoryId(
   if (rows.length > 1) {
     throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
   }
-  return rows[0]!.id;
+  const repository = rows[0];
+  if (!repository) throw new RepositoryError(404, "找不到可存取的 Repository。");
+  return repository.id;
 }
 
 export async function authorizedRepository(

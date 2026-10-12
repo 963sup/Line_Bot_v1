@@ -57,7 +57,8 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
           [owner.id, owner.kind, name],
         )
       ).rows as Array<{ id: string; name: string }>;
-      return historical.length === 1 ? { ...historical[0]!, ownerLogin: owner.login } : null;
+      const repository = historical.length === 1 ? historical[0] : undefined;
+      return repository ? { ...repository, ownerLogin: owner.login } : null;
     });
   }
 

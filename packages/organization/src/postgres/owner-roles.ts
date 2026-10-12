@@ -166,7 +166,10 @@ export async function mutateOrganizationOwnerAssignment(
             now,
           ],
         )
-      ).rows[0]!;
+      ).rows[0];
+      if (!row) {
+        throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派已更新。");
+      }
       return { status: "active", version: Number(row.version) };
     }
     await sql.query(
@@ -226,7 +229,10 @@ export async function mutateOrganizationOwnerAssignment(
        RETURNING version`,
       [command.organizationAccountId, command.targetUserId],
     )
-  ).rows[0]!;
+  ).rows[0];
+  if (!row) {
+    throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派已更新。");
+  }
   return { status: "revoked", version: Number(row.version) };
 }
 

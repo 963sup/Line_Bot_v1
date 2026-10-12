@@ -292,16 +292,18 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
     setNotice(retry ? "正在確認原操作…" : "正在取得本次定位…");
     const ticket = ++generation.current;
     try {
-      const request =
-        retry ??
-        ({
+      let request = retry;
+      if (!request) {
+        if (!data) return;
+        request = {
           operation,
           body: {
             requestId: crypto.randomUUID(),
-            expectedVersion: data!.version,
+            expectedVersion: data.version,
             location: await locateAttendance(),
           },
-        } satisfies Pending);
+        } satisfies Pending;
+      }
       if (ticket === generation.current) await send(request, ticket);
     } catch (e) {
       if (ticket === generation.current) {
@@ -773,7 +775,10 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
                       <button
                         className="secondary"
                         disabled={supplementBusy}
-                        onClick={() => void sendReview(pendingReviews[item.id]!)}
+                        onClick={() => {
+                          const pendingReview = pendingReviews[item.id];
+                          if (pendingReview) void sendReview(pendingReview);
+                        }}
                       >
                         重送上次審核結果
                       </button>

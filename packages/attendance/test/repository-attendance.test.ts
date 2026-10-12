@@ -72,7 +72,8 @@ test("Repository member can clock; public visibility does not grant attendance; 
   );
   const snapshot = (
     await pg.query("SELECT repository_id,point_snapshot FROM app_private.attendance_sessions")
-  ).rows[0] as any;
+  ).rows[0] as { repository_id: string; point_snapshot: { address: string | null } } | undefined;
+  assert.ok(snapshot);
   assert.equal(snapshot.repository_id, "repo");
   assert.equal(snapshot.point_snapshot.address, address.address);
 });
@@ -197,7 +198,9 @@ test("pre-cutover open session closes using its existing clock-in evidence witho
     )
     .digest("hex");
   const snapshot = await store.snapshot("member", now + 1000);
-  const { address: oldAddress, repositoryId: _repositoryId, ...oldPoint } = snapshot.sites[0]!;
+  const originalSite = snapshot.sites[0];
+  assert.ok(originalSite);
+  const { address: oldAddress, repositoryId: _repositoryId, ...oldPoint } = originalSite;
   await pg.query(
     "INSERT INTO app_private.attendance_commands(uid,request_id,fingerprint,result,at) VALUES('member',$1,$2,$3,$4)",
     [

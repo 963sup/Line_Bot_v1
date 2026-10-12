@@ -293,7 +293,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
 
       if (command.action === "create-category") {
         const id = randomUUID();
-        let row: CategoryRow;
+        let row: CategoryRow | undefined;
         try {
           row = (
             await sql.query(
@@ -313,11 +313,12 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
                 now,
               ],
             )
-          ).rows[0] as CategoryRow;
+          ).rows[0] as CategoryRow | undefined;
         } catch (error) {
           postgresConflict(error, "此 Repository 已有相同 slug 的 Discussion category。");
         }
-        await categoryEvent(sql, id, 1, identity.userId, command.action, category(row!), now);
+        if (!row) throw new DiscussionError(503, "Discussion category 建立結果不完整。");
+        await categoryEvent(sql, id, 1, identity.userId, command.action, category(row), now);
         result = {
           requestId: command.requestId,
           repositoryId: command.repositoryId,
@@ -327,7 +328,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           resourceId: id,
           version: 1,
           at: now,
-          data: { category: category(row!) },
+          data: { category: category(row) },
         };
       } else if (command.action === "update-category") {
         const before = await currentCategory(sql, command.repositoryId, command.categoryId);

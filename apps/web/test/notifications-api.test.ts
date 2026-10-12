@@ -57,7 +57,7 @@ test("notification HTTP verifies LINE, bounds JSON and does not leak failures", 
     assert.equal(inbox.headers.get("cache-control"), "no-store");
     assert.deepEqual(await inbox.json(), { items: [] });
     assert.equal(read.mock.callCount(), 1);
-    assert.deepEqual(read.mock.calls[0].arguments, [user, { id: undefined, unreadOnly: false }]);
+    assert.deepEqual(read.mock.calls[0].arguments, [user, { unreadOnly: false }]);
     const id = "11111111-1111-4111-8111-111111111111";
     const failed = await POST(request(JSON.stringify({ id, recipient: "forged-user" })));
     assert.equal(failed.status, 503);

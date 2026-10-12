@@ -131,9 +131,7 @@ function parseCommand(raw: unknown): IssueTypeCommand {
       issueTypeId: identifier(value.issueTypeId, "IssueType 識別碼"),
       expectedVersion: expectedVersion(value.expectedVersion),
       ...(value.name === undefined ? {} : { name: name(value.name) }),
-      ...(value.description === undefined
-        ? {}
-        : { description: description(value.description) }),
+      ...(value.description === undefined ? {} : { description: description(value.description) }),
       ...(value.color === undefined ? {} : { color: color(value.color) }),
       ...(value.isEnabled === undefined ? {} : { isEnabled: enabled(value.isEnabled) }),
     };

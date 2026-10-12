@@ -153,9 +153,13 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           actorCanCreateProjectV2: actorCapabilities?.viewerCanCreateProjectV2 === true,
         });
       }
+      const nextOrganization = rows.length > 20 ? rows[19] : undefined;
+      if (rows.length > 20 && !nextOrganization) {
+        throw new GovernanceAccessError(503, "unknown-result", "Organization 分頁結果不完整。");
+      }
       return {
         items,
-        next: rows.length > 20 ? rows[19]!.id : null,
+        next: nextOrganization?.id ?? null,
       };
     });
   }
@@ -426,7 +430,10 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
               command.memberCanCreateTeams,
             ],
           )
-        ).rows[0]!;
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
+        }
         result = receipt(command, "active", Number(changed.version), now);
       } else if (command.action === "deactivate" || command.action === "reactivate") {
         if (organization.version !== command.expectedVersion) {
@@ -446,7 +453,10 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             "UPDATE organizations SET status=$2,version=version+1 WHERE account_id=$1 RETURNING version",
             [command.organizationAccountId, wanted],
           )
-        ).rows[0]!;
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
+        }
         result = receipt(command, wanted, changed.version, now);
       } else {
         const targetUserId =
@@ -522,7 +532,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                  WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
                 [command.organizationAccountId, command.targetUserId, now],
               )
-            ).rows[0]!;
+            ).rows[0];
+            if (!changed) {
+              throw new GovernanceAccessError(
+                409,
+                "conflict",
+                "Organization 狀態已更新，請重新讀取。",
+              );
+            }
             result = receipt(command, "pending", changed.version, now);
           }
         } else if (command.action === "accept-invitation") {
@@ -573,7 +590,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, command.targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           result = receipt(command, "accepted", changed.version, now);
         } else if (command.action === "decline-invitation") {
           if (
@@ -594,7 +618,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           result = receipt(command, "declined", changed.version, now);
         } else if (command.action === "cancel-invitation") {
           if (
@@ -615,7 +646,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, command.targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           result = receipt(command, "cancelled", changed.version, now);
         } else {
           if (
@@ -670,7 +708,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, targetUserId],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           await refreshOrganizationMembershipFromSources(
             sql,
             command.organizationAccountId,

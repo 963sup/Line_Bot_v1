@@ -261,7 +261,13 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
             </section>
           ))}
           {data.next && (
-            <button type="button" disabled={blocked} onClick={() => void load(data.next!)}>
+            <button
+              type="button"
+              disabled={blocked}
+              onClick={() => {
+                if (data.next) void load(data.next);
+              }}
+            >
               下一頁
             </button>
           )}

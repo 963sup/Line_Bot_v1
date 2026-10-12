@@ -13,17 +13,23 @@ test("idempotency claim hashes external identifiers and maps Lua states", async 
   const transport: RedisTransport = {
     eval: async (script, keys, args) => {
       calls.push({ script, keys, args });
-      return ["claimed", args[0]!];
+      const token = args[0];
+      assert.ok(token);
+      return ["claimed", token];
     },
   };
   const store = new RedisIdempotencyStore("line", transport);
   const claimed = await store.claim("group:private", "event-private");
   assert.equal(claimed.state, "claimed");
   if (claimed.state === "claimed") assert.match(claimed.token, /^[0-9a-f-]{36}$/i);
-  assert.equal(calls[0]!.script, IDEMPOTENCY_CLAIM_SCRIPT);
-  assert.match(calls[0]!.keys[0]!, /^line:webhook:[a-f0-9]{64}$/);
-  assert.equal(calls[0]!.keys[0]!.includes("private"), false);
-  assert.equal(calls[0]!.args[1], String(IDEMPOTENCY_TTL_SECONDS));
+  const firstCall = calls[0];
+  assert.ok(firstCall);
+  const firstKey = firstCall.keys[0];
+  assert.ok(firstKey);
+  assert.equal(firstCall.script, IDEMPOTENCY_CLAIM_SCRIPT);
+  assert.match(firstKey, /^line:webhook:[a-f0-9]{64}$/);
+  assert.equal(firstKey.includes("private"), false);
+  assert.equal(firstCall.args[1], String(IDEMPOTENCY_TTL_SECONDS));
 
   transport.eval = async () => ["pending"];
   assert.deepEqual(await store.claim("scope", "event"), { state: "pending" });
@@ -42,8 +48,10 @@ test("completion sends owner-token compare arguments and rejects stale ownership
   };
   const store = new RedisIdempotencyStore("line", transport);
   assert.equal(await store.complete("scope", "event", token, 200), false);
-  assert.equal(calls[0]!.script, IDEMPOTENCY_COMPLETE_SCRIPT);
-  assert.deepEqual(calls[0]!.args, [token, "200", String(IDEMPOTENCY_TTL_SECONDS)]);
+  const firstCall = calls[0];
+  assert.ok(firstCall);
+  assert.equal(firstCall.script, IDEMPOTENCY_COMPLETE_SCRIPT);
+  assert.deepEqual(firstCall.args, [token, "200", String(IDEMPOTENCY_TTL_SECONDS)]);
 
   transport.eval = async () => 1;
   assert.equal(await store.complete("scope", "event", token, 502), true);
@@ -70,7 +78,11 @@ test("injected idempotency transport keeps lifecycle, timeout and cooldown", asy
   mock.timers.tick(2500);
   await assert.rejects(pending, /Redis temporarily unavailable/);
   assert.equal(closed, 0);
-  transport.eval = async (_script, _keys, args) => ["claimed", args[0]!];
+  transport.eval = async (_script, _keys, args) => {
+    const token = args[0];
+    assert.ok(token);
+    return ["claimed", token];
+  };
   await assert.rejects(store.claim("scope", "cooldown"), /Redis temporarily unavailable/);
   now = 5100;
   assert.equal((await store.claim("scope", "retry")).state, "claimed");

@@ -73,7 +73,9 @@ async function repositoryRow(
     )
   ).rows as RepositoryRow[];
   if (historical.length !== 1) throw new RepositoryError(404, "找不到 Repository。");
-  return historical[0]!;
+  const repository = historical[0];
+  if (!repository) throw new RepositoryError(404, "找不到 Repository。");
+  return repository;
 }
 
 async function actorPermissions(

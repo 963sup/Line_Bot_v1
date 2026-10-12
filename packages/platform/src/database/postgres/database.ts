@@ -1,4 +1,4 @@
-import { Pool, type PoolClient } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
 import { supabaseCa } from "./ca.js";
 import { normalizePostgresConnectionUrl } from "./connection.js";
 
@@ -6,7 +6,7 @@ export interface Sql {
   query(
     text: string,
     values?: unknown[],
-  ): Promise<{ rows: Record<string, any>[]; rowCount?: number | null }>;
+  ): Promise<{ rows: QueryResultRow[]; rowCount?: number | null }>;
 }
 export interface Database {
   transaction<T>(work: (sql: Sql) => Promise<T>): Promise<T>;
@@ -32,7 +32,13 @@ export class PostgresDatabase implements Database {
       await client.query("SET LOCAL ROLE line_app");
       await client.query("SET LOCAL search_path = app_private, pg_catalog");
       await client.query("SET LOCAL statement_timeout = '10s'");
-      const value = await work(client);
+      const sql: Sql = {
+        async query(text: string, values?: unknown[]) {
+          const result = await client.query(text, values);
+          return { rows: result.rows, rowCount: result.rowCount };
+        },
+      };
+      const value = await work(sql);
       await client.query("COMMIT");
       return value;
     } catch (error) {

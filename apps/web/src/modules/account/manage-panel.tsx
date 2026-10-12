@@ -218,9 +218,10 @@ export default function UserManagement({ liffId }: { liffId: string }) {
               const id = String(form.get("id") ?? "").trim();
               const status = String(form.get("status") ?? "");
               setReceipt(null);
-              void load(
-                id ? { id } : status ? { status: status as UserManagementQuery["status"] } : {},
-              );
+              const selectedStatus = ["active", "paused", "suspended"].includes(status)
+                ? (status as NonNullable<UserManagementQuery["status"]>)
+                : undefined;
+              void load(id ? { id } : selectedStatus ? { status: selectedStatus } : {});
             }}
           >
             <fieldset disabled={blocked}>
@@ -273,7 +274,9 @@ export default function UserManagement({ liffId }: { liffId: string }) {
                 <button
                   type="button"
                   disabled={blocked}
-                  onClick={() => void load({ ...query, after: data.next! })}
+                  onClick={() => {
+                    if (data.next) void load({ ...query, after: data.next });
+                  }}
                 >
                   下一頁
                 </button>

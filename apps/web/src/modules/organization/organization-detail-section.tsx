@@ -100,15 +100,17 @@ export function OrganizationDetailSection({
         <button
           className="secondary"
           disabled={busy || !!pending}
-          onClick={() =>
+          onClick={() => {
+            const expectedVersion = detail.actorDirectMembershipVersion;
+            if (expectedVersion === null) return;
             void execute({
               action: "leave-organization",
               requestId: crypto.randomUUID(),
               organizationAccountId: detail.id,
-              expectedVersion: detail.actorDirectMembershipVersion!,
+              expectedVersion,
               reason: "由會員本人退出 Organization",
-            })
-          }
+            });
+          }}
         >
           退出組織
         </button>
@@ -210,16 +212,18 @@ export function OrganizationDetailSection({
           {detail.actorIsOwner && member.directMembershipVersion !== null && (
             <button
               disabled={busy || !!pending}
-              onClick={() =>
+              onClick={() => {
+                const expectedVersion = member.directMembershipVersion;
+                if (expectedVersion === null) return;
                 void execute({
                   action: "remove-direct-membership",
                   requestId: crypto.randomUUID(),
                   organizationAccountId: detail.id,
                   targetUserId: member.userId,
-                  expectedVersion: member.directMembershipVersion!,
+                  expectedVersion,
                   reason: "由 OrganizationOwner 移除 direct membership",
-                })
-              }
+                });
+              }}
             >
               移除 direct membership
             </button>

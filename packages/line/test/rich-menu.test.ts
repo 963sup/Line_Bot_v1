@@ -78,7 +78,9 @@ test("menu operations preserve official paths, methods, payloads and response ID
   assert.deepEqual(await client.create(menu), { richMenuId: "richmenu-0123abcd" });
   assert.equal(requests[1]?.method, "POST");
   assert.equal(requests[1]?.url, "https://api.line.me/v2/bot/richmenu");
-  assert.deepEqual(await requests[1]!.json(), menu);
+  const createRequest = requests[1];
+  assert.ok(createRequest);
+  assert.deepEqual(await createRequest.json(), menu);
 
   assert.deepEqual(await client.get("richmenu-0123abcd"), { name: "test" });
   assert.equal(requests[2]?.method, "GET");
@@ -150,7 +152,9 @@ test("aliases use official endpoints and reject malformed identifiers", async ()
   });
   await client.createAlias("line_bot_v1-home", "richmenu-0123abcd");
   assert.equal(requests[0]?.url, "https://api.line.me/v2/bot/richmenu/alias");
-  assert.deepEqual(await requests[0]!.json(), {
+  const createAliasRequest = requests[0];
+  assert.ok(createAliasRequest);
+  assert.deepEqual(await createAliasRequest.json(), {
     richMenuAliasId: "line_bot_v1-home",
     richMenuId: "richmenu-0123abcd",
   });
@@ -158,7 +162,9 @@ test("aliases use official endpoints and reject malformed identifiers", async ()
   await client.updateAlias("line_bot_v1-home", "richmenu-0123abcd");
   assert.equal(requests[2]?.url, "https://api.line.me/v2/bot/richmenu/alias/line_bot_v1-home");
   assert.equal(requests[2]?.method, "POST");
-  assert.deepEqual(await requests[2]!.json(), { richMenuId: "richmenu-0123abcd" });
+  const updateAliasRequest = requests[2];
+  assert.ok(updateAliasRequest);
+  assert.deepEqual(await updateAliasRequest.json(), { richMenuId: "richmenu-0123abcd" });
   await client.deleteAlias("line_bot_v1-home");
   assert.equal(requests[3]?.url, "https://api.line.me/v2/bot/richmenu/alias/line_bot_v1-home");
   assert.equal(requests[3]?.method, "DELETE");

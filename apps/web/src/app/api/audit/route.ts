@@ -15,11 +15,13 @@ export async function GET(request: Request) {
       subject: await requestLineIdentity(request),
     };
     const params = new URL(request.url).searchParams;
+    const before = params.get("before");
+    const limit = params.has("limit") ? Number(params.get("limit")) : undefined;
     const result = await auditQuery.list(actor, {
       scopeKind: params.get("scopeKind") ?? "",
       scopeId: params.get("scopeId") ?? "",
-      before: params.get("before") ?? undefined,
-      limit: params.has("limit") ? Number(params.get("limit")) : undefined,
+      ...(before !== null ? { before } : {}),
+      ...(limit !== undefined ? { limit } : {}),
     });
     return jsonResponse(result, result.ok ? 200 : result.error === "forbidden" ? 403 : 400);
   } catch (error) {

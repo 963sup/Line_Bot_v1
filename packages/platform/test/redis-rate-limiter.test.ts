@@ -14,8 +14,13 @@ test("rate limiter keeps namespace, atomic script arguments and hashed identity"
   const limiter = new RedisRateLimiter("line", transport);
   assert.equal(await limiter.allow("membership", "line-user", 20, 3, 60), true);
   assert.equal(await limiter.allow("membership", "line-user", 20, 3, 60), false);
-  assert.deepEqual(calls[0]!.args, ["20", "3", "60"]);
-  assert.match(calls[0]!.keys[0]!, /^line:\{membership\}:global$/);
-  assert.match(calls[0]!.keys[1]!, /^line:\{membership\}:[a-f0-9]{64}$/);
-  assert.equal(calls[0]!.keys[1]!.includes("line-user"), false);
+  const firstCall = calls[0];
+  assert.ok(firstCall);
+  const [globalKey, identityKey] = firstCall.keys;
+  assert.ok(globalKey);
+  assert.ok(identityKey);
+  assert.deepEqual(firstCall.args, ["20", "3", "60"]);
+  assert.match(globalKey, /^line:\{membership\}:global$/);
+  assert.match(identityKey, /^line:\{membership\}:[a-f0-9]{64}$/);
+  assert.equal(identityKey.includes("line-user"), false);
 });

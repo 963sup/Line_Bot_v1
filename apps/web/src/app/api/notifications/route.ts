@@ -41,8 +41,9 @@ async function notificationRequest(request: Request) {
     const subject = await requestLineIdentity(request);
     if (request.method === "GET") {
       const params = new URL(request.url).searchParams;
+      const id = params.get("id");
       const result = await notifications.read(subject, {
-        id: params.get("id") ?? undefined,
+        ...(id !== null ? { id } : {}),
         unreadOnly: params.get("unread") === "1",
       });
       return result.ok ? jsonResponse(result.value) : notificationFailure(result.error);

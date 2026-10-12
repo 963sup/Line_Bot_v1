@@ -95,16 +95,18 @@ async function repositoryBySelector(
   if (historical.length > 1) {
     throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
   }
+  const historicalRepository = historical[0];
+  if (!historicalRepository) throw new RepositoryError(404, "找不到 Repository。");
   if (lock) {
     const locked = (
       await sql.query(`SELECT ${columns} FROM repositories WHERE id=$1 FOR UPDATE`, [
-        historical[0]!.id,
+        historicalRepository.id,
       ])
     ).rows[0] as RepositoryRow | undefined;
     if (!locked) throw new RepositoryError(404, "找不到 Repository。");
     return locked;
   }
-  return historical[0]!;
+  return historicalRepository;
 }
 
 async function actorPermissions(

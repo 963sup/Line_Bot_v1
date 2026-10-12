@@ -14,7 +14,15 @@ import { type UserManagementAuthorization, unavailableAccountAuthorization } fro
 const projection = `m.id,m.status,m."createdAt",m.status_version AS version,
   COALESCE(m.suspended_from,'paused') AS "restoreStatus",
   EXISTS(SELECT 1 FROM user_identities i WHERE i.user_id=m.id AND i.provider='google') AS "googleLinked"`;
-const present = (row: Record<string, any>): ManagedUser => ({
+type ManagedUserRow = {
+  id: string;
+  status: ManagedUser["status"];
+  createdAt: number | string;
+  version: number;
+  restoreStatus: ManagedUser["restoreStatus"];
+  googleLinked: boolean;
+};
+const present = (row: ManagedUserRow): ManagedUser => ({
   id: row.id,
   status: row.status,
   createdAt: Number(row.createdAt),
@@ -57,7 +65,7 @@ export class PostgresUserManagement implements UserManagementRepository {
           [query.id ?? null, query.status ?? null, query.after ?? null],
         )
       ).rows;
-      const users = rows.slice(0, 20).map(present);
+      const users = (rows.slice(0, 20) as ManagedUserRow[]).map(present);
       let detail: UserManagementView["detail"] = null;
       if (query.id) {
         if (!users[0]) throw new UserError(404, "使用者不存在。");
@@ -109,11 +117,15 @@ export class PostgresUserManagement implements UserManagementRepository {
           unfinishedIssueCount: Number(issues[0]?.total ?? 0),
         };
       }
+      const nextUser = rows.length > 20 ? users[19] : undefined;
+      if (rows.length > 20 && !nextUser) {
+        throw new UserError(500, "使用者分頁結果不完整。");
+      }
       return {
         actorId: actor,
         canSuspend,
         users,
-        next: rows.length > 20 ? users[19]!.id : null,
+        next: nextUser?.id ?? null,
         detail,
       };
     });
@@ -162,7 +174,8 @@ export class PostgresUserManagement implements UserManagementRepository {
           command.target,
           status,
         ])
-      ).rows[0]!;
+      ).rows[0];
+      if (!changed) throw new UserError(409, "使用者狀態已更新，請重新讀取後確認。");
       const result: UserStatusReceipt = {
         id: command.target,
         requestId: command.requestId,

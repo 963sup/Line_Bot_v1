@@ -15,14 +15,20 @@ test("push retry keeps exact recipient, payload and key; only accepted 409 is su
   ];
   const fetcher: typeof fetch = async (url, init) => {
     assert.equal(url, "https://api.line.me/v2/bot/message/push");
-    calls.push(init!);
-    return outcomes.shift()!;
+    assert.ok(init);
+    calls.push(init);
+    const outcome = outcomes.shift();
+    assert.ok(outcome);
+    return outcome;
   };
   assert.equal(await pushLineText("token", subject, "上班已記錄", key, fetcher), "retry");
   assert.equal(await pushLineText("token", subject, "上班已記錄", key, fetcher), "accepted");
-  assert.equal(calls[0]!.body, calls[1]!.body);
-  assert.equal(new Headers(calls[0]!.headers).get("X-Line-Retry-Key"), key);
-  assert.equal(JSON.parse(String(calls[0]!.body)).to, subject);
+  const [firstCall, secondCall] = calls;
+  assert.ok(firstCall);
+  assert.ok(secondCall);
+  assert.equal(firstCall.body, secondCall.body);
+  assert.equal(new Headers(firstCall.headers).get("X-Line-Retry-Key"), key);
+  assert.equal(JSON.parse(String(firstCall.body)).to, subject);
   for (const result of ["failed", "failed", "retry"])
     assert.equal(await pushLineText("token", subject, "上班已記錄", key, fetcher), result);
 });

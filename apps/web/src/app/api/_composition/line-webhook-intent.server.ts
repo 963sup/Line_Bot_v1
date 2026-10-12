@@ -74,25 +74,29 @@ export function classifyLineWebhookEvents(
       return { selected, senderMismatches, badRequest: true };
     }
 
+    const agentInput = agent && text ? text.slice(6).trim() : undefined;
+    const assistantText =
+      mentioned && mentionedText
+        ? mentionedText.trim()
+        : privateAssistantText && text
+          ? text.trim()
+          : undefined;
+    const assistantEvent = assistant
+      ? {
+          scope: `${source.type}:${scopeId}`,
+          userId: source.userId,
+          ...(imageId ? { imageId } : {}),
+          ...(assistantText !== undefined ? { text: assistantText } : {}),
+        }
+      : undefined;
     selected.push({
       id: event.webhookEventId,
       token: event.replyToken,
       userId: source.userId,
       ai,
-      attendanceMenu,
-      agentInput: agent ? text!.slice(6).trim() : undefined,
-      assistant: assistant
-        ? {
-            scope: `${source.type}:${scopeId}`,
-            userId: source.userId,
-            imageId,
-            text: mentioned
-              ? mentionedText!.trim()
-              : privateAssistantText
-                ? text!.trim()
-                : undefined,
-          }
-        : undefined,
+      ...(attendanceMenu ? { attendanceMenu } : {}),
+      ...(agentInput !== undefined ? { agentInput } : {}),
+      ...(assistantEvent ? { assistant: assistantEvent } : {}),
     });
   }
 

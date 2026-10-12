@@ -42,8 +42,9 @@ export function parsePermissionCommand(raw: unknown): PermissionCommand {
     typeof c.permission !== "string" ||
     !Object.hasOwn(permissions, c.permission) ||
     typeof c.enabled !== "boolean" ||
+    typeof c.expectedVersion !== "number" ||
     !Number.isSafeInteger(c.expectedVersion) ||
-    c.expectedVersion! < 0 ||
+    c.expectedVersion < 0 ||
     typeof c.reason !== "string" ||
     !c.reason.trim() ||
     c.reason.length > 500

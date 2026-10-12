@@ -115,7 +115,7 @@ test("Project management composes access, draft conversion, typed fields, views 
     14,
   );
   assert.ok(draft.resourceId);
-  const draftItemId = draft.resourceId!;
+  const draftItemId = draft.resourceId;
 
   const converted = await store.execute(
     writer,
@@ -158,7 +158,7 @@ test("Project management composes access, draft conversion, typed fields, views 
     16,
   );
   assert.ok(field.resourceId);
-  const fieldId = field.resourceId!;
+  const fieldId = field.resourceId;
   const beforeValue = await store.view(writer, created.projectId);
   const optionId = beforeValue.fields
     .find((item) => item.id === fieldId)

@@ -206,7 +206,8 @@ async function mutateCollaborators(
   let changes = 0;
   for (const collaborator of command.collaborators) {
     const kind = collaborator.userId ? "USER" : "TEAM";
-    const id = collaborator.userId ?? collaborator.teamId!;
+    const id = collaborator.userId ?? collaborator.teamId;
+    if (!id) throw new ProjectError(400, "Project collaborator 必須指定 User 或 Team。");
     const key = `${kind}:${id}`;
     if (seen.has(key)) {
       throw new ProjectError(400, "Project collaborator 不可重複。");

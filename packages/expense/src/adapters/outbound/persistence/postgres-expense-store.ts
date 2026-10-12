@@ -92,7 +92,8 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
           "INSERT INTO expenses(id,owner,scope,image_id,body) VALUES($1,$2,$3,$4,$5::jsonb) RETURNING number",
           [d.id, owner, scope, imageId, JSON.stringify(d)],
         )
-      ).rows[0]!;
+      ).rows[0];
+      if (!row) throw new ExpenseError(500, "支出建立結果不完整。");
       d.number = Number(row.number);
       await this.write(sql, d);
       await this.event(sql, d, "attention_required");

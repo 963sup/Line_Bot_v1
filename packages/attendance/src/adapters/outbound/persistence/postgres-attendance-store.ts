@@ -89,7 +89,15 @@ function replaySupplementReceipt(value: unknown): AttendanceSupplementReceipt {
   return { ...receipt, replayed: true };
 }
 
-const session = (r: Record<string, any>): AttendanceSession => ({
+type AttendanceSessionRow = {
+  id: string;
+  day: string;
+  started_at: number | string;
+  ended_at: number | string | null;
+  rule_version: AttendanceSession["ruleVersion"];
+};
+
+const session = (r: AttendanceSessionRow): AttendanceSession => ({
   id: r.id,
   day: r.day,
   startedAt: Number(r.started_at),
@@ -169,9 +177,10 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       if (!u?.active) throw new AttendanceError(403, "會員登入帳號不可用。");
     }
     await sql.query("INSERT INTO attendance_state(uid) VALUES($1) ON CONFLICT DO NOTHING", [id]);
-    return Number(
-      (await sql.query("SELECT version FROM attendance_state WHERE uid=$1", [id])).rows[0]!.version,
-    );
+    const state = (await sql.query("SELECT version FROM attendance_state WHERE uid=$1", [id]))
+      .rows[0];
+    if (!state) throw new AttendanceError(500, "出勤狀態建立失敗。");
+    return Number(state.version);
   }
 
   private async lockForSupplementReview(
@@ -211,7 +220,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         "SELECT * FROM attendance_sessions WHERE uid=$1 AND (ended_at >= $2 OR ended_at IS NULL) ORDER BY started_at,id",
         [id, now - 30 * 86400000],
       )
-    ).rows.map(session);
+    ).rows.map((row) => session(row as AttendanceSessionRow));
   }
 
   private async sites(sql: Sql, id: string): Promise<AttendancePoint[]> {
@@ -246,9 +255,10 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
 
   private async view(sql: Sql, id: string, now: number): Promise<AttendanceSnapshot> {
     const attendance = attendanceView(await this.records(sql, id, now), now);
-    const version = Number(
-      (await sql.query("SELECT version FROM attendance_state WHERE uid=$1", [id])).rows[0]!.version,
-    );
+    const state = (await sql.query("SELECT version FROM attendance_state WHERE uid=$1", [id]))
+      .rows[0];
+    if (!state) throw new AttendanceError(500, "找不到出勤狀態。");
+    const version = Number(state.version);
     await sql.query(
       `INSERT INTO attendance_menu_outbox(uid,state,revision,available_at) VALUES($1,$2,$3,$4)
        ON CONFLICT(uid) DO UPDATE SET state=EXCLUDED.state,revision=GREATEST(attendance_menu_outbox.revision+1,EXCLUDED.revision),available_at=EXCLUDED.available_at,attempts=0
@@ -373,7 +383,8 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         ],
       );
       const result = { ...(await this.view(sql, id, now)), credited, replayed: false };
-      const record = result.attendance.records.find((r) => r.id === recordId)!;
+      const record = result.attendance.records.find((r) => r.id === recordId);
+      if (!record) throw new AttendanceError(500, "找不到剛建立的出勤紀錄。");
       await sql.query(
         "INSERT INTO attendance_notification_outbox(id,uid,provider,subject,revision,payload,created_at,available_at) VALUES($1,$2,$3,$4,$5,$6,$7,$7)",
         [
@@ -547,14 +558,14 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         )
       ).rows[0];
       if (duplicate) throw new AttendanceError(409, "相同補登申請仍在等待審核。");
-      const pendingCount = Number(
-        (
-          await sql.query(
-            "SELECT count(*) AS count FROM attendance_supplement_requests WHERE repository_id=$1 AND status='PENDING'",
-            [repositoryId],
-          )
-        ).rows[0]!.count,
-      );
+      const countRow = (
+        await sql.query(
+          "SELECT count(*) AS count FROM attendance_supplement_requests WHERE repository_id=$1 AND status='PENDING'",
+          [repositoryId],
+        )
+      ).rows[0];
+      if (!countRow) throw new AttendanceError(500, "補登待審數量讀取失敗。");
+      const pendingCount = Number(countRow.count);
       if (pendingCount >= MAX_PENDING_SUPPLEMENT_REQUESTS_PER_REPOSITORY) {
         throw new AttendanceError(409, "該 Repository 待審補登已達上限，請先處理待審申請。");
       }
@@ -673,12 +684,16 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
           ).rows[0];
           if (overlaps) throw new AttendanceError(409, "申請時段與既有出勤紀錄重疊，無法核准。");
           recordId = randomUUID();
-          const day = (
+          const dayRow = (
             await sql.query(
               "SELECT to_char(to_timestamp($1::bigint/1000.0) AT TIME ZONE 'Asia/Taipei','YYYY-MM-DD') AS day",
               [startedAt],
             )
-          ).rows[0]!.day as string;
+          ).rows[0];
+          if (!dayRow || typeof dayRow.day !== "string") {
+            throw new AttendanceError(500, "補登日期計算失敗。");
+          }
+          const day = dayRow.day;
           await sql.query(
             `INSERT INTO attendance_sessions(
                id,uid,day,started_at,ended_at,rule_version,repository_id,point_snapshot

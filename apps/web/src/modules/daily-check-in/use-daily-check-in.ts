@@ -238,9 +238,11 @@ export function useDailyCheckIn(liffId: string) {
           ? `簽到成功，已領取 ${data.checkIn.credited} Coin。`
           : "今天已領取，明天再來！",
       );
+      const { coins: coinProjection, ...outcome } = data.checkIn;
+      const coins = isCoinView(coinProjection) ? coinProjection : undefined;
       return {
-        ...data.checkIn,
-        coins: isCoinView(data.checkIn.coins) ? data.checkIn.coins : undefined,
+        ...outcome,
+        ...(coins ? { coins } : {}),
         state: "claimed",
       };
     } catch (cause) {

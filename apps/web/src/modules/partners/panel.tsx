@@ -209,7 +209,12 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
             </button>
           )}
           {data.next && (
-            <button disabled={busy} onClick={() => void load(data.next!)}>
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (data.next) void load(data.next);
+              }}
+            >
               下一頁
             </button>
           )}

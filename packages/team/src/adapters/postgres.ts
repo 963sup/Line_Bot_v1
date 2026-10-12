@@ -342,7 +342,7 @@ export class PostgresTeamRepository implements TeamRepository {
         if (command.action === "parent-team" && command.parentTeamId) {
           await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
           requireTeamManager(
-            actorIsOwner || (await isTeamMaintainer(sql, command.parentTeamId!, actor.userId)),
+            actorIsOwner || (await isTeamMaintainer(sql, command.parentTeamId, actor.userId)),
           );
         }
         return old.result as TeamCommandReceipt;
@@ -587,7 +587,8 @@ export class PostgresTeamRepository implements TeamRepository {
         await sql.query("UPDATE teams SET version=version+1 WHERE id=$1 RETURNING version", [
           teamId,
         ])
-      ).rows[0]!;
+      ).rows[0];
+      if (!updated) throw new TeamError(409, "團隊版本已更新，請重新讀取。");
       const result: TeamCommandReceipt = {
         organizationAccountId: command.organizationAccountId,
         teamId,

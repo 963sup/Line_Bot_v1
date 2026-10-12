@@ -36,7 +36,11 @@ test("all six aliases survive publication and submenu targets activate before ma
   const updates: string[] = [];
   let defaultId: string | null = "old-attendance-in";
   const client = {
-    get: async (id: string) => configs.find(({ page }) => id === `new-${page}`)!.menu,
+    get: async (id: string) => {
+      const found = configs.find(({ page }) => id === `new-${page}`);
+      assert.ok(found);
+      return found.menu;
+    },
     getAlias: async (alias: string) => aliases.get(alias) ?? null,
     updateAlias: async (alias: string, id: string) => {
       aliases.set(alias, id);
@@ -61,6 +65,8 @@ test("all six aliases survive publication and submenu targets activate before ma
 
 test("create batch removes every known menu created in a failed operation", async () => {
   const configs = [config("attendance-in"), config("attendance-out")];
+  const [firstConfig] = configs;
+  assert.ok(firstConfig);
   const deleted: string[] = [];
   let creates = 0;
   const client = {
@@ -70,7 +76,7 @@ test("create batch removes every known menu created in a failed operation", asyn
       if (id.endsWith("2")) throw new Error("synthetic upload failure");
       return new Response(null, { status: 200 });
     },
-    get: async () => configs[0]!.menu,
+    get: async () => firstConfig.menu,
     delete: async (id: string) => {
       deleted.push(id);
       return new Response(null, { status: 200 });
