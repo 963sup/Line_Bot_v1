@@ -1363,7 +1363,7 @@
       "id": "organization-project-creation-capability",
       "provider": "organization",
       "consumer": "project",
-      "meaning": "ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member; the deprecated FPT Projects (classic) field is not its authorization contract.",
+      "meaning": "ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member. A creator without OrganizationOwner authority receives a Project-owned ADMIN grant atomically; OrganizationOwner remains implicit owner authority. The deprecated FPT Projects (classic) field is not its authorization contract.",
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "transaction-recheck"
@@ -2846,7 +2846,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "ProjectV2 root, owner-scoped creation through product-local viewerCanCreateProjectV2, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
+        "scope": "ProjectV2 root, owner-scoped creation through product-local viewerCanCreateProjectV2 with an atomic creator ADMIN grant for non-Owner members, distinct implicit OrganizationOwner authority, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
         "sourcePaths": [
           "packages/project/src/application/management.ts",
           "packages/project/src/contracts/management.ts",
@@ -2861,7 +2861,10 @@
           "./composition/bootstrap/postgres-project-management-store"
         ],
         "entrypoints": ["apps/web/src/app/api/project-management/route.ts"],
-        "testPaths": ["packages/project/test/collection.test.ts"],
+        "testPaths": [
+          "packages/project/test/collection.test.ts",
+          "packages/project/test/management.test.ts"
+        ],
         "note": "Project owns planning metadata only. Issue content/state remains Issue-owned and every viewer-facing Issue item is filtered by current source access; Draft conversion calls the Issue owner contract in the same transaction. WBS and Project-local Milestone writes remain explicitly data-only."
       }
     },

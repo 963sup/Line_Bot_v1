@@ -134,7 +134,12 @@ async function createProject(
   }>,
   now: number,
 ) {
-  await requireProjectOwnerTarget(sql, identity.userId, input.ownerAccountId, input.ownerKind);
+  const viewerCanAdminister = await requireProjectOwnerTarget(
+    sql,
+    identity.userId,
+    input.ownerAccountId,
+    input.ownerKind,
+  );
   if (input.repositoryId) {
     await requireReadableRepository(sql, identity.userId, input.repositoryId);
   }
@@ -166,6 +171,15 @@ async function createProject(
       ],
     )
   ).rows[0] as ProjectRow;
+
+  if (input.ownerKind === "ORGANIZATION" && !viewerCanAdminister) {
+    await sql.query(
+      `INSERT INTO project_user_access(
+         project_id,user_id,role,version,created_at,updated_at
+       ) VALUES($1,$2,'ADMIN',1,$3,$3)`,
+      [row.id, identity.userId, now],
+    );
+  }
 
   if (input.repositoryId) {
     await addRepositoryReference(sql, identity.userId, projectId, input.repositoryId);

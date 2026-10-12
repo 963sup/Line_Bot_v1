@@ -175,17 +175,18 @@ export async function requireProjectOwnerTarget(
   userId: string,
   ownerAccountId: string,
   ownerKind: ProjectOwnerKind,
-) {
+): Promise<boolean> {
   if (ownerKind === "USER") {
     if (ownerAccountId !== userId) {
       throw new ProjectError(403, "只能在自己的 User owner scope 建立 Project。");
     }
-    return;
+    return true;
   }
   const capabilities = await readOrganizationViewerCapabilities(sql, userId, ownerAccountId);
   if (!capabilities?.viewerCanCreateProjectV2) {
     throw new ProjectError(403, "目前 Organization capability 不允許建立 Project。");
   }
+  return capabilities.viewerCanAdminister;
 }
 
 export async function requireProjectTeamTarget(

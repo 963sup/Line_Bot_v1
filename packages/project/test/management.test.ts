@@ -290,12 +290,21 @@ test("Organization members create ProjectV2 by default and Owner policy can rest
   const created = await store.execute({ userId: "org-admin" }, command, 10);
   assert.equal(created.version, 1);
 
-  const memberCreated = await store.execute(
-    { userId: "member" },
-    { ...command, requestId: randomUUID(), title: "Member Plan" },
-    11,
-  );
+  const memberCommand = { ...command, requestId: randomUUID(), title: "Member Plan" };
+  const memberIdentity = { userId: "member" };
+  const memberCreated = await store.execute(memberIdentity, memberCommand, 11);
   assert.equal(memberCreated.version, 1);
+  assert.equal((await store.view(memberIdentity, memberCreated.projectId)).role, "ADMIN");
+  assert.deepEqual(await store.execute(memberIdentity, memberCommand, 11), memberCreated);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select role from app_private.project_user_access where project_id=$1 and user_id='member'",
+        [memberCreated.projectId],
+      )
+    ).rows,
+    [{ role: "ADMIN" }],
+  );
 
   await pg.query(
     "update app_private.organizations set member_can_create_project_v2=false,version=version+1 where account_id='org'",
@@ -314,4 +323,13 @@ test("Organization members create ProjectV2 by default and Owner policy can rest
     13,
   );
   assert.equal(ownerCreated.version, 1);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select role from app_private.project_user_access where project_id=$1 and user_id='owner'",
+        [ownerCreated.projectId],
+      )
+    ).rows,
+    [],
+  );
 });
