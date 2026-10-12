@@ -23,8 +23,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | Organization | organization | authoritative | current | GitHub FPT: schema-orgs.json#Organization |
+| Organization viewerCanCreateProjectV2 | organization-viewer-can-create-project-v2 | policy-decision | current | Product-local Organization decision for creating ProjectV2 under this owner; it does not reinterpret the deprecated FPT Projects (classic) viewerCanCreateProjects field. |
 | Organization.viewerCanAdminister | organization-viewer-can-administer | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanAdminister |
-| Organization.viewerCanCreateProjects | organization-viewer-can-create-projects | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanCreateProjects |
 | Organization.viewerCanCreateRepositories | organization-viewer-can-create-repositories | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanCreateRepositories |
 | Organization.viewerCanCreateTeams | organization-viewer-can-create-teams | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerCanCreateTeams |
 | Organization.viewerIsAMember | organization-viewer-is-member | policy-decision | current | GitHub FPT: schema-orgs.json#Organization#viewerIsAMember |
@@ -51,8 +51,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
 | provides | identity-access | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | issue | stable-identity+query | organization | transaction-recheck | IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority. |
-| provides | project | query | organization | transaction-recheck | Project creation rechecks the Organization-owned viewerCanCreateProjects capability for the current active member. |
-| provides | project | query | organization | current-state | Project collection and management consume current Organization-owned viewerCanAdminister/viewerCanCreateProjects capabilities for Organization-owned Projects; personal Projects remain User-owned. |
+| provides | project | query | organization | transaction-recheck | ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member; the deprecated FPT Projects (classic) field is not its authorization contract. |
+| provides | project | query | organization | current-state | ProjectV2 collection and owner-level management consume current Organization-owned viewerCanAdminister for Organization-owned Projects; creation separately consumes viewerCanCreateProjectV2, while personal Projects remain User-owned. |
 | provides | repository | query | organization | transaction-recheck | Repository creation under an Organization consumes the Organization-owned viewerCanCreateRepositories capability; Repository access recovery remains a separate OrganizationOwner authority path. |
 | provides | repository | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and viewerCanCreateRepositories/viewerCanAdminister capabilities. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant. |
 | provides | team | stable-identity+query | organization | current-state | Organization scope, active participation and current viewerCanCreateTeams capability. |

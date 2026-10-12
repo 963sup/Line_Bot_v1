@@ -216,4 +216,63 @@ test("Team hierarchy derives membership and Repository access without copying me
     viewerView.members.some((member) => member.userId === "child-user"),
     true,
   );
+
+  await pg.query(
+    "insert into app_private.organization_member_role_assignments(organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at) values('organization-team','child-user','ADMIN','active',1,1,1,16)",
+  );
+  const adminTeam = await store.execute(
+    childActor,
+    {
+      action: "create-team",
+      requestId: "88888888-8888-4888-8888-888888888888",
+      organizationAccountId: "organization-team",
+      name: "Admin Team",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+    },
+    17,
+  );
+  assert.ok(adminTeam.teamId);
+  await pg.query(
+    "update app_private.organization_member_role_assignments set status='revoked',version=version+1 where organization_account_id='organization-team' and user_id='child-user'",
+  );
+  const memberTeam = await store.execute(
+    childActor,
+    {
+      action: "create-team",
+      requestId: "99999999-9999-4999-8999-999999999999",
+      organizationAccountId: "organization-team",
+      name: "Member After Revoke",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+    },
+    18,
+  );
+  assert.ok(memberTeam.teamId);
+  await pg.query(
+    "update app_private.organization_memberships set status='removed',version=version+1 where organization_account_id='organization-team' and user_id='child-user'",
+  );
+  await assert.rejects(
+    store.execute(
+      childActor,
+      {
+        action: "create-team",
+        requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        organizationAccountId: "organization-team",
+        name: "Former Member",
+        privacy: "SECRET",
+        notificationSetting: "NOTIFICATIONS_DISABLED",
+      },
+      19,
+    ),
+    (error: unknown) => (error as { status?: number }).status === 403,
+  );
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select count(*)::integer as total from app_private.teams where name='Former Member'",
+      )
+    ).rows,
+    [{ total: 0 }],
+  );
 });

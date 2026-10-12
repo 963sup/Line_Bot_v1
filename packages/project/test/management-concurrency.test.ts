@@ -30,7 +30,7 @@ function queryIndex(queries: QueryRecord[], fragment: string) {
   return queries.findIndex((query) => query.text.includes(fragment));
 }
 
-test("Project management serializes Organization capability checks with governance role changes", async () => {
+test("Project management takes a shared governance lock before replay and capability checks", async () => {
   const queries: QueryRecord[] = [];
   const db = databaseWith(async (text) => {
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
@@ -60,7 +60,8 @@ test("Project management serializes Organization capability checks with governan
     (error: unknown) => error instanceof ProjectError && error.status === 403,
   );
 
-  const governanceLock = queryIndex(queries, "pg_advisory_xact_lock(71020260912");
+  const governanceLock = queryIndex(queries, "pg_advisory_xact_lock_shared(71020260912");
+  assert.equal(queryIndex(queries, "pg_advisory_xact_lock(71020260912"), -1);
   const requestLock = queries.findIndex(
     (query, index) =>
       index > governanceLock && query.text.includes("pg_advisory_xact_lock(hashtext($1))"),

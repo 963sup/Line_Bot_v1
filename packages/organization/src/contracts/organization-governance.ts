@@ -38,6 +38,7 @@ type OrganizationSummary = Readonly<{
   actorInvitationVersion: number | null;
   actorIsOwner: boolean;
   actorMemberRole: OrganizationMemberRole | null;
+  actorCanCreateProjectV2: boolean;
 }>;
 
 export type OrganizationList = Readonly<{

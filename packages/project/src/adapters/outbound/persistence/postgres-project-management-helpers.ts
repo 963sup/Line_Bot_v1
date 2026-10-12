@@ -183,7 +183,7 @@ export async function requireProjectOwnerTarget(
     return;
   }
   const capabilities = await readOrganizationViewerCapabilities(sql, userId, ownerAccountId);
-  if (!capabilities?.viewerCanCreateProjects) {
+  if (!capabilities?.viewerCanCreateProjectV2) {
     throw new ProjectError(403, "目前 Organization capability 不允許建立 Project。");
   }
 }

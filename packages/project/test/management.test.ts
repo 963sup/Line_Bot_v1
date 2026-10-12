@@ -257,7 +257,7 @@ test("Project management composes access, draft conversion, typed fields, views 
   );
 });
 
-test("Organization FPT ADMIN can create an Organization-owned Project while MEMBER cannot", async (t) => {
+test("Organization ADMIN qualifies the local ProjectV2 creation capability while MEMBER cannot", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -298,6 +298,32 @@ test("Organization FPT ADMIN can create an Organization-owned Project while MEMB
       { userId: "member" },
       { ...command, requestId: randomUUID(), title: "Denied Plan" },
       11,
+    ),
+    (error) => error instanceof ProjectError && error.status === 403,
+  );
+
+  await pg.query(
+    "update app_private.organization_member_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  );
+  await assert.rejects(
+    store.execute(
+      { userId: "org-admin" },
+      { ...command, requestId: randomUUID(), title: "Revoked Plan" },
+      12,
+    ),
+    (error) => error instanceof ProjectError && error.status === 403,
+  );
+  await pg.query(
+    "update app_private.organization_member_role_assignments set status='active',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  );
+  await pg.query(
+    "update app_private.organization_memberships set version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  );
+  await assert.rejects(
+    store.execute(
+      { userId: "org-admin" },
+      { ...command, requestId: randomUUID(), title: "Stale Qualification Plan" },
+      13,
     ),
     (error) => error instanceof ProjectError && error.status === 403,
   );

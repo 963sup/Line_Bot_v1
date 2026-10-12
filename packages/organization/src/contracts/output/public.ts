@@ -12,7 +12,7 @@ export type OrganizationViewerCapabilities = Readonly<{
   viewerIsAMember: true;
   viewerCanAdminister: boolean;
   viewerCanCreateRepositories: boolean;
-  viewerCanCreateProjects: boolean;
+  viewerCanCreateProjectV2: boolean;
   viewerCanCreateTeams: boolean;
   organizationVersion: number;
   membershipVersion: number;

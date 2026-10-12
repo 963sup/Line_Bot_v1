@@ -89,7 +89,7 @@ export async function readOrganizationViewerCapabilities(
     viewerIsAMember: true,
     viewerCanAdminister,
     viewerCanCreateRepositories: viewerCanAdminister,
-    viewerCanCreateProjects: viewerCanAdminister,
+    viewerCanCreateProjectV2: viewerCanAdminister,
     viewerCanCreateTeams: true,
     organizationVersion: Number(row.organization_version),
     membershipVersion: Number(row.membership_version),

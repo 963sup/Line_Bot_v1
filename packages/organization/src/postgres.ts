@@ -154,6 +154,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           actorIsOwner: ownerScopeIds.includes(row.id),
           actorMemberRole:
             actorCapabilities?.memberRole ?? (ownerScopeIds.includes(row.id) ? "ADMIN" : null),
+          actorCanCreateProjectV2: actorCapabilities?.viewerCanCreateProjectV2 === true,
         });
       }
       return {
@@ -264,6 +265,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         actorInvitationVersion: scope.invitation_version ?? null,
         actorIsOwner,
         actorMemberRole: actorCapabilities?.memberRole ?? (actorIsOwner ? "ADMIN" : null),
+        actorCanCreateProjectV2: actorCapabilities?.viewerCanCreateProjectV2 === true,
         members: memberRows.map(
           (row): OrganizationMembershipProjection => ({
             userId: row.user_id,

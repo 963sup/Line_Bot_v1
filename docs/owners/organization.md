@@ -15,7 +15,7 @@ Current owned relations：
 - `OrganizationMembership`：由 current sources 推導並持久化的 effective participation epoch，status 為 `active | removed`；source 可以來自 direct membership 或 Enterprise Team assignment。
 - `OrganizationOwner`：Organization-owned membership-level governance fact；principal 必須是 active individual Organization member，並綁定 current membership version。它不是 FPT `OrganizationMemberRole` 的替代名稱。
 - `OrganizationMemberRole`：FPT exact enum `ADMIN | MEMBER`。本產品由 Organization owner 寫入 `ADMIN` assignment；active membership 且沒有有效 ADMIN assignment 時，`MEMBER` 由 membership projection 推導。Owner 仍是獨立治理 fact，但其 viewer projection 可呈現 `memberRole=ADMIN`。
-- `OrganizationViewerCapabilities`：由 current Organization、membership、OrganizationOwner 與 Organization ADMIN assignment 版本重算的 read contract；`viewerCanAdminister`、`viewerCanCreateRepositories`、`viewerCanCreateProjects`、`viewerCanCreateTeams` 是 scoped capability，不是 Identity/Access generic Permission。
+- `OrganizationViewerCapabilities`：由 current Organization、membership、OrganizationOwner 與 Organization ADMIN assignment 版本重算的 read contract；`viewerCanAdminister`、`viewerCanCreateRepositories`、本產品 ProjectV2 專用的 `viewerCanCreateProjectV2`、`viewerCanCreateTeams` 是 scoped capability，不是 Identity/Access generic Permission。FPT `viewerCanCreateProjects` 已標為 Projects (classic) deprecated，不作 ProjectV2 授權契約。
 - Team capability：Organization 提供 qualification/scope，Organization Team 本身由 Team owner 維護。
 
 ```text
@@ -28,7 +28,7 @@ OrganizationMembership source
 
 `OrganizationOwner` 與 FPT `OrganizationMemberRole.ADMIN` 不互相取代：Owner 負責生命週期、Owner/ADMIN appointment 與 recovery；ADMIN assignment 只表達 member role 與由 Organization contract 計算出的治理 capability。兩者都由 Organization owner boundary 持有，Identity/Access 只消費 current fact 做授權評估，不寫入任何一方。
 
-OrganizationMembership 與 Employment 分離。Membership active 不直接授予 Owner 或 Repository/Project capability；目前 Team create capability 依 FPT viewer contract 對 active member 開放，Repository/Project create 則要求 current `viewerCanCreateRepositories` / `viewerCanCreateProjects`。
+OrganizationMembership 與 Employment 分離。Membership active 不直接授予 Owner 或 Repository/Project capability；目前 Team create capability 依 FPT viewer contract 對 active member 開放，Repository/ProjectV2 create 則要求 current `viewerCanCreateRepositories` / `viewerCanCreateProjectV2`。
 
 ## Invariants
 

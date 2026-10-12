@@ -201,6 +201,31 @@ test("Organization Repository creation follows viewerCanCreateRepositories and b
     ),
     (error) => error instanceof RepositoryError && error.status === 403,
   );
+  await pg.query(
+    "update app_private.organization_member_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  );
+  await assert.rejects(
+    store.create(
+      "org-admin",
+      { ...command, requestId: "66666666-6666-4666-8666-666666666666", name: "Revoked" },
+      12,
+    ),
+    (error) => error instanceof RepositoryError && error.status === 403,
+  );
+  await pg.query(
+    "update app_private.organization_member_role_assignments set status='active',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  );
+  await pg.query(
+    "update app_private.organization_memberships set version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  );
+  await assert.rejects(
+    store.create(
+      "org-admin",
+      { ...command, requestId: "77777777-7777-4777-8777-777777777777", name: "Stale" },
+      12,
+    ),
+    (error) => error instanceof RepositoryError && error.status === 403,
+  );
   await assert.rejects(
     pg.query("select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)", [
       "direct-denied",

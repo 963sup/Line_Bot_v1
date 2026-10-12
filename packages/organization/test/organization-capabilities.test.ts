@@ -22,6 +22,9 @@ test("Organization viewer capabilities separate FPT ADMIN, derived MEMBER, and O
   await activeUser(db, "owner", "owner");
   await activeUser(db, "org-admin", "org-admin");
   await activeUser(db, "member", "member");
+  await pg.query(
+    "insert into user_identities(provider,subject,user_id) values('line:test','owner','owner'),('line:test','org-admin','org-admin'),('line:test','member','member')",
+  );
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "org",
     "owner",
@@ -44,19 +47,20 @@ test("Organization viewer capabilities separate FPT ADMIN, derived MEMBER, and O
     viewerIsAMember: true,
     viewerCanAdminister: true,
     viewerCanCreateRepositories: true,
-    viewerCanCreateProjects: true,
+    viewerCanCreateProjectV2: true,
     viewerCanCreateTeams: true,
     organizationVersion: 1,
     membershipVersion: 1,
     roleVersion: 1,
   });
+  assert.equal(Object.hasOwn((await read("owner")) ?? {}, "viewerCanCreateProjects"), false);
   assert.deepEqual(await read("org-admin"), {
     memberRole: "ADMIN",
     isOrganizationOwner: false,
     viewerIsAMember: true,
     viewerCanAdminister: true,
     viewerCanCreateRepositories: true,
-    viewerCanCreateProjects: true,
+    viewerCanCreateProjectV2: true,
     viewerCanCreateTeams: true,
     organizationVersion: 1,
     membershipVersion: 1,
@@ -68,17 +72,73 @@ test("Organization viewer capabilities separate FPT ADMIN, derived MEMBER, and O
     viewerIsAMember: true,
     viewerCanAdminister: false,
     viewerCanCreateRepositories: false,
-    viewerCanCreateProjects: false,
+    viewerCanCreateProjectV2: false,
     viewerCanCreateTeams: true,
     organizationVersion: 1,
     membershipVersion: 1,
     roleVersion: null,
   });
 
+  const governance = new PostgresOrganizationGovernance(db);
+  for (const [subject, canCreate] of [
+    ["owner", true],
+    ["org-admin", true],
+    ["member", false],
+  ] as const) {
+    const list = await governance.list({ provider: "line:test", subject }, {});
+    assert.equal(list.items[0]?.actorCanCreateProjectV2, canCreate);
+  }
+
   await pg.query(
     "update app_private.organization_memberships set version=version+1 where organization_account_id='org' and user_id='org-admin'",
   );
   assert.equal((await read("org-admin"))?.memberRole, "MEMBER");
+  assert.equal(
+    (await governance.list({ provider: "line:test", subject: "org-admin" }, {})).items[0]
+      ?.actorCanCreateProjectV2,
+    false,
+  );
+
+  const regranted = await governance.execute(
+    { provider: "line:test", subject: "owner" },
+    {
+      action: "grant-organization-admin",
+      requestId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      organizationAccountId: "org",
+      targetUserId: "org-admin",
+      expectedVersion: 0,
+      reason: "restore current role",
+    },
+    5,
+  );
+  assert.equal(regranted.status, "active");
+  assert.equal((await read("org-admin"))?.viewerCanCreateProjectV2, true);
+  assert.equal(
+    (await governance.list({ provider: "line:test", subject: "org-admin" }, {})).items[0]
+      ?.actorCanCreateProjectV2,
+    true,
+  );
+  const revoked = await governance.execute(
+    { provider: "line:test", subject: "owner" },
+    {
+      action: "revoke-organization-admin",
+      requestId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      organizationAccountId: "org",
+      targetUserId: "org-admin",
+      expectedVersion: regranted.version,
+      reason: "remove role",
+    },
+    6,
+  );
+  assert.equal(revoked.status, "revoked");
+  assert.equal((await read("org-admin"))?.viewerCanCreateProjectV2, false);
+  assert.equal((await read("org-admin"))?.viewerCanCreateRepositories, false);
+  assert.equal((await read("org-admin"))?.viewerCanCreateTeams, true);
+  assert.equal(
+    (await governance.list({ provider: "line:test", subject: "org-admin" }, {})).items[0]
+      ?.actorCanCreateProjectV2,
+    false,
+  );
 
   await pg.query("update app_private.organizations set status='inactive' where account_id='org'");
   assert.equal(await read("owner"), null);
@@ -111,6 +171,7 @@ test("pending Organization invitation has no FPT member role projection", async 
   );
   assert.equal(list.items[0]?.actorInvitationStatus, "pending");
   assert.equal(list.items[0]?.actorMemberRole, null);
+  assert.equal(list.items[0]?.actorCanCreateProjectV2, false);
 });
 
 test("OrganizationOwner can be explicitly re-granted after membership epoch removal", async (t) => {

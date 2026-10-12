@@ -1150,16 +1150,13 @@
       }
     },
     {
-      "id": "organization-viewer-can-create-projects",
+      "id": "organization-viewer-can-create-project-v2",
+      "canonicalName": "Organization viewerCanCreateProjectV2",
       "kind": "policy-decision",
       "owner": "organization",
       "lifecycle": "current",
-      "authorityMode": "policy-decision",
-      "fpt": {
-        "file": "schema-orgs.json",
-        "symbol": "Organization",
-        "field": "viewerCanCreateProjects"
-      }
+      "definition": "Product-local Organization decision for creating ProjectV2 under this owner; it does not reinterpret the deprecated FPT Projects (classic) viewerCanCreateProjects field.",
+      "authorityMode": "policy-decision"
     },
     {
       "id": "organization-viewer-can-create-teams",
@@ -1370,7 +1367,7 @@
       "id": "organization-project-owner-scope",
       "provider": "organization",
       "consumer": "project",
-      "meaning": "Project collection and management consume current Organization-owned viewerCanAdminister/viewerCanCreateProjects capabilities for Organization-owned Projects; personal Projects remain User-owned.",
+      "meaning": "ProjectV2 collection and owner-level management consume current Organization-owned viewerCanAdminister for Organization-owned Projects; creation separately consumes viewerCanCreateProjectV2, while personal Projects remain User-owned.",
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "current-state"
@@ -1379,7 +1376,7 @@
       "id": "organization-project-creation-capability",
       "provider": "organization",
       "consumer": "project",
-      "meaning": "Project creation rechecks the Organization-owned viewerCanCreateProjects capability for the current active member.",
+      "meaning": "ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member; the deprecated FPT Projects (classic) field is not its authorization contract.",
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "transaction-recheck"
@@ -2863,7 +2860,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "ProjectV2 root, owner-scoped creation through viewerCanCreateProjects, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
+        "scope": "ProjectV2 root, owner-scoped creation through product-local viewerCanCreateProjectV2, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
         "sourcePaths": [
           "packages/project/src/application/management.ts",
           "packages/project/src/contracts/management.ts",

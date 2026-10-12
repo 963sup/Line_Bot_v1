@@ -71,8 +71,7 @@ export async function requestProjectOwnerOrganizations(
       id?: unknown;
       login?: unknown;
       status?: unknown;
-      actorIsOwner?: unknown;
-      actorMemberRole?: unknown;
+      actorCanCreateProjectV2?: unknown;
     }[];
   }>(response, "Organization 清單讀取失敗。");
   if (!Array.isArray(value.items)) {
@@ -80,7 +79,7 @@ export async function requestProjectOwnerOrganizations(
   }
   return value.items.flatMap((item) =>
     item.status === "active" &&
-    (item.actorIsOwner === true || item.actorMemberRole === "ADMIN") &&
+    item.actorCanCreateProjectV2 === true &&
     typeof item.id === "string" &&
     typeof item.login === "string"
       ? [{ id: item.id, kind: "ORGANIZATION" as const, login: item.login }]
