@@ -24,6 +24,7 @@ export type TeamSummary = {
   membershipStatus: "none" | "pending" | "active" | "removed";
   membershipType: TeamMembershipType | null;
   isMaintainer: boolean;
+  canManage: boolean;
 };
 
 type TeamOrganizationSummary = {

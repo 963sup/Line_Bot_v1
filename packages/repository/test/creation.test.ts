@@ -100,12 +100,19 @@ test("Repository creation lists only effective owner scopes and preserves exact 
 
   const store = new PostgresRepositoryCreationStore(db);
   assert.deepEqual(await store.owners("creator"), [
-    { id: "creator", kind: "USER", login: "alice", internalEligible: false },
+    {
+      id: "creator",
+      kind: "USER",
+      login: "alice",
+      internalEligible: false,
+      creatableVisibilities: ["private", "public"],
+    },
     {
       id: "org-active",
       kind: "ORGANIZATION",
       login: "acme",
       internalEligible: false,
+      creatableVisibilities: ["private", "public"],
     },
   ]);
 
@@ -167,9 +174,6 @@ test("Organization Repository creation follows viewerCanCreateRepositories and b
   await pg.query(
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3)",
   );
-  await pg.query(
-    "insert into app_private.organization_member_role_assignments(organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at) values('org','org-admin','ADMIN','active',1,1,1,4)",
-  );
 
   const store = new PostgresRepositoryCreationStore(db);
   const command = {
@@ -193,35 +197,34 @@ test("Organization Repository creation follows viewerCanCreateRepositories and b
   );
   assert.equal(adminCreated.ownerAccountId, "org");
 
-  await assert.rejects(
-    store.create(
-      "member",
-      { ...command, requestId: "44444444-4444-4444-8444-444444444444", name: "Denied" },
-      12,
-    ),
-    (error) => error instanceof RepositoryError && error.status === 403,
+  const memberCreated = await store.create(
+    "member",
+    { ...command, requestId: "44444444-4444-4444-8444-444444444444", name: "Member Shared" },
+    12,
   );
+  assert.equal(memberCreated.ownerAccountId, "org");
   await pg.query(
-    "update app_private.organization_member_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+    "update app_private.organizations set member_can_create_private_repositories=false,version=version+1 where account_id='org'",
   );
+  assert.deepEqual(
+    (await store.owners("member")).find((option) => option.id === "org")?.creatableVisibilities,
+    ["public"],
+  );
+  const publicCreated = await store.create(
+    "member",
+    {
+      ...command,
+      requestId: "88888888-8888-4888-8888-888888888888",
+      name: "Public Shared",
+      visibility: "public",
+    },
+    12,
+  );
+  assert.equal(publicCreated.visibility, "public");
   await assert.rejects(
     store.create(
       "org-admin",
-      { ...command, requestId: "66666666-6666-4666-8666-666666666666", name: "Revoked" },
-      12,
-    ),
-    (error) => error instanceof RepositoryError && error.status === 403,
-  );
-  await pg.query(
-    "update app_private.organization_member_role_assignments set status='active',version=version+1 where organization_account_id='org' and user_id='org-admin'",
-  );
-  await pg.query(
-    "update app_private.organization_memberships set version=version+1 where organization_account_id='org' and user_id='org-admin'",
-  );
-  await assert.rejects(
-    store.create(
-      "org-admin",
-      { ...command, requestId: "77777777-7777-4777-8777-777777777777", name: "Stale" },
+      { ...command, requestId: "66666666-6666-4666-8666-666666666666", name: "Restricted" },
       12,
     ),
     (error) => error instanceof RepositoryError && error.status === 403,
@@ -241,7 +244,11 @@ test("Organization Repository creation follows viewerCanCreateRepositories and b
     "update app_private.organization_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='owner' and role='OrganizationOwner'",
   );
   await assert.rejects(
-    store.create("owner", command, 13),
+    store.create(
+      "owner",
+      { ...command, requestId: "77777777-7777-4777-8777-777777777777", name: "Former Owner" },
+      13,
+    ),
     (error) => error instanceof RepositoryError && error.status === 403,
   );
 });

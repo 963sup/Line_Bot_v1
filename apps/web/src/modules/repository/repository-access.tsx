@@ -205,12 +205,12 @@ export default function RepositoryAccess({
               Current permissions：
               {data.repository.actorPermissions.length
                 ? data.repository.actorPermissions.join(", ")
-                : "OrganizationOwner recovery only"}
+                : "無"}
             </p>
             <p className="crud-lifecycle-note">
-              Repository ADMIN 才是日常 access 管理者；OrganizationOwner recovery 不會自動建立
-              Repository access。Organization/Team membership remains owned by those scopes，Grant
-              不會建立 Organization 或 Team membership。
+              有效 OrganizationOwner 具有 implicit Repository ADMIN，不會寫入重複 direct grant。
+              Organization/Team membership remains owned by those scopes；Grant 不會建立
+              Organization 或 Team membership。
             </p>
           </section>
 

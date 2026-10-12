@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { isOrganizationOwner } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import type {
@@ -94,12 +93,6 @@ async function actorPermissions(
 async function requireManagementAuthority(sql: Sql, repository: RepositoryRow, userId: string) {
   const permissions = await actorPermissions(sql, repository.id, userId);
   if (permissions && hasRepositoryPermission(permissions, "admin")) return permissions;
-  if (
-    repository.owner_account_kind === "ORGANIZATION" &&
-    (await isOrganizationOwner(sql, repository.owner_account_id, userId))
-  ) {
-    return permissions ?? [];
-  }
   throw new RepositoryError(403, "沒有此 Repository 的 access 管理權限。");
 }
 

@@ -268,6 +268,23 @@ test("accepts separated semantic, implementation and fpt authority", () => {
   assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 });
 
+test("current FPT-backed concepts reject deprecated fields while a current replacement is legal", () => {
+  const { model, fpt, topology } = fixture();
+  model.concepts[0].fpt.field = "name";
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+
+  fpt.files["schema-repos.json"].objects[0].fields[0].isDeprecated = true;
+  fpt.symbols = indexFptDocuments(fpt.files);
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /deprecated FPT reference/,
+  );
+
+  fpt.files["schema-repos.json"].objects[0].fields[0].isDeprecated = false;
+  fpt.symbols = indexFptDocuments(fpt.files);
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
 test("rejects required runtime capability without implemented source and export evidence", () => {
   const { model, fpt, topology } = fixture();
   model.capabilities[0].implementation.sourcePaths = [];

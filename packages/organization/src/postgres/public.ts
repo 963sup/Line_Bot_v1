@@ -38,8 +38,12 @@ export async function readOrganizationViewerCapabilities(
   const row = (
     await sql.query(
       `SELECT o.version AS organization_version,m.version AS membership_version,
-              owner_role.version AS owner_role_version,
-              admin_role.version AS admin_role_version
+              o.member_can_create_public_repositories,
+              o.member_can_create_private_repositories,
+              o.member_can_create_internal_repositories,
+              o.member_can_create_project_v2,
+              o.member_can_create_teams,
+              owner_role.version AS owner_role_version
        FROM organizations o
        JOIN organization_memberships m
          ON m.organization_account_id=o.account_id
@@ -56,17 +60,6 @@ export async function readOrganizationViewerCapabilities(
            AND r.membership_version=m.version
          LIMIT 1
        ) owner_role ON true
-       LEFT JOIN LATERAL (
-         SELECT r.version
-         FROM organization_member_role_assignments r
-         WHERE r.organization_account_id=o.account_id
-           AND r.user_id=$2
-           AND r.role='ADMIN'
-           AND r.status='active'
-           AND r.user_status_version=$3
-           AND r.membership_version=m.version
-         LIMIT 1
-       ) admin_role ON true
        WHERE o.account_id=$1 AND o.status='active'`,
       [organizationAccountId, userId, user.statusVersion],
     )
@@ -75,29 +68,35 @@ export async function readOrganizationViewerCapabilities(
         organization_version: number;
         membership_version: number;
         owner_role_version: number | null;
-        admin_role_version: number | null;
+        member_can_create_public_repositories: boolean;
+        member_can_create_private_repositories: boolean;
+        member_can_create_internal_repositories: boolean;
+        member_can_create_project_v2: boolean;
+        member_can_create_teams: boolean;
       }
     | undefined;
   if (!row) return null;
 
   const isOrganizationOwner = row.owner_role_version !== null;
-  const memberRole = isOrganizationOwner || row.admin_role_version !== null ? "ADMIN" : "MEMBER";
-  const viewerCanAdminister = memberRole === "ADMIN";
+  const memberRole = isOrganizationOwner ? "ADMIN" : "MEMBER";
+  const viewerCanAdminister = isOrganizationOwner;
+  const viewerCanCreateRepositoryVisibilities = {
+    public: isOrganizationOwner || row.member_can_create_public_repositories,
+    private: isOrganizationOwner || row.member_can_create_private_repositories,
+    internal: isOrganizationOwner || row.member_can_create_internal_repositories,
+  };
   return {
     memberRole,
     isOrganizationOwner,
     viewerIsAMember: true,
     viewerCanAdminister,
-    viewerCanCreateRepositories: viewerCanAdminister,
-    viewerCanCreateProjectV2: viewerCanAdminister,
-    viewerCanCreateTeams: true,
+    viewerCanCreateRepositories: Object.values(viewerCanCreateRepositoryVisibilities).some(Boolean),
+    viewerCanCreateRepositoryVisibilities,
+    viewerCanCreateProjectV2: isOrganizationOwner || row.member_can_create_project_v2,
+    viewerCanCreateTeams: isOrganizationOwner || row.member_can_create_teams,
     organizationVersion: Number(row.organization_version),
     membershipVersion: Number(row.membership_version),
-    roleVersion: isOrganizationOwner
-      ? Number(row.owner_role_version)
-      : row.admin_role_version === null
-        ? null
-        : Number(row.admin_role_version),
+    roleVersion: isOrganizationOwner ? Number(row.owner_role_version) : null,
   };
 }
 

@@ -668,9 +668,6 @@ importers:
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:../account
-      '@line_bot_v1/identity-access':
-        specifier: workspace:*
-        version: link:../identity-access
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace

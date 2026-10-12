@@ -1091,25 +1091,12 @@
       }
     },
     {
-      "id": "organization-member-role-assignment",
-      "kind": "authoritative",
-      "owner": "organization",
-      "lifecycle": "current",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation",
-      "fpt": {
-        "file": "schema-users.json",
-        "symbol": "OrganizationMemberEdge",
-        "field": "role"
-      }
-    },
-    {
       "id": "organization-owner-assignment",
       "canonicalName": "OrganizationOwner",
       "kind": "authoritative",
       "owner": "organization",
       "lifecycle": "current",
-      "definition": "Organization-owned governance fact distinct from the FPT OrganizationMemberRole enum.",
+      "definition": "Organization-owned governance fact: a current Owner projects FPT OrganizationMemberRole.ADMIN and has administrative authority across Organization-owned resources; ordinary active members project MEMBER.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1304,7 +1291,7 @@
       "id": "organization-team-scope",
       "provider": "organization",
       "consumer": "team",
-      "meaning": "Organization scope, active participation and current viewerCanCreateTeams capability.",
+      "meaning": "Organization scope, active participation, current viewerCanCreateTeams capability and current Owner administration of Organization Teams.",
       "integrationMode": "stable-identity+query",
       "authority": "organization",
       "consistency": "current-state"
@@ -1610,7 +1597,7 @@
       "id": "identity-access-organization-authorization",
       "provider": "identity-access",
       "consumer": "organization",
-      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess for owner-controlled lifecycle and role appointment; IdentityAccess does not write OrganizationOwner or OrganizationMemberRole facts.",
+      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess for Owner-controlled lifecycle, Owner appointment and member creation policy; IdentityAccess does not write OrganizationOwner facts.",
       "integrationMode": "query",
       "authority": "identity-access",
       "consistency": "current-state"
@@ -1655,7 +1642,7 @@
       "id": "organization-repository-creation-capability",
       "provider": "organization",
       "consumer": "repository",
-      "meaning": "Repository creation under an Organization consumes the Organization-owned viewerCanCreateRepositories capability; Repository access recovery remains a separate OrganizationOwner authority path.",
+      "meaning": "Repository creation under an Organization consumes the Organization-owned visibility-specific member creation policy; current OrganizationOwner also projects implicit admin on Organization-owned Repositories without copying grants.",
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "transaction-recheck"
@@ -1990,14 +1977,13 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Organization governance application surface, FPT OrganizationMemberRole projection, and viewer capability reads",
+        "scope": "current Organization Owner governance, member creation policy, FPT OrganizationMemberRole projection, and viewer capability reads",
         "sourcePaths": [
           "packages/organization/src/application/organization-governance.ts",
           "packages/organization/src/contracts/input/organization-governance.ts",
           "packages/organization/src/domain.ts",
           "packages/organization/src/contracts/organization-governance.ts",
           "packages/organization/src/contracts/output/public.ts",
-          "packages/organization/src/postgres/member-roles.ts",
           "packages/organization/src/postgres/public.ts"
         ],
         "publicExports": [
@@ -2011,7 +1997,7 @@
           "packages/organization/test/organization-capabilities.test.ts",
           "packages/organization/test/organization-postgres-execute-characterization.test.ts"
         ],
-        "note": "OrganizationOwner remains a distinct governance fact. FPT ADMIN is an Organization-owned member role assignment; MEMBER is derived from active membership. Viewer capabilities are current, version-bound projections and are not generic Identity/Access permissions."
+        "note": "OrganizationOwner is the sole Organization administrative fact and projects FPT ADMIN; ordinary active membership projects MEMBER. Owner-controlled creation policies default open for members and may restrict Repository visibility, ProjectV2 and Team creation. Viewer capabilities are current projections, not generic Identity/Access permissions."
       }
     },
     {
@@ -2158,7 +2144,7 @@
           "packages/repository/test/creation.test.ts",
           "apps/web/test/repository-creation-http.test.ts"
         ],
-        "note": "Create persists the selected visibility atomically. Organization creation uses the Organization-owned viewerCanCreateRepositories capability; OrganizationOwner remains a separate recovery authority. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current capability and accepts pre-visibility private-create fingerprints for rollout-safe retry."
+        "note": "Create persists the selected visibility atomically. Organization creation uses the Organization-owned visibility-specific member creation capability; current OrganizationOwner bypasses member restrictions. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current capability and accepts pre-visibility private-create fingerprints for rollout-safe retry."
       }
     },
     {
@@ -2292,7 +2278,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization, OrganizationOwner recovery, expected-version mutation and exact replay.",
+        "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization including implicit OrganizationOwner admin, expected-version mutation and exact replay.",
         "sourcePaths": [
           "packages/repository/src/application/access.ts",
           "packages/repository/src/contracts/repositories/access.ts",
@@ -2312,7 +2298,7 @@
           "packages/repository/test/access.test.ts",
           "apps/web/test/repository-access-http.test.ts"
         ],
-        "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access is the set of currently qualified permission facts, not a ranked scalar; operation policy must test explicit permissions and must not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay, and a current OrganizationOwner can recover an Organization-owned Repository that has lost effective ADMIN access."
+        "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access adds current OrganizationOwner implicit ADMIN without persisting a Repository grant; operation policy tests explicit permissions and does not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay."
       }
     },
     {
@@ -2963,7 +2949,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked from current Repository grants on every read and decision; Organization administration alone is not sufficient, and requesters cannot approve their own requests.",
+        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked on every read and decision; current OrganizationOwner grants implicit ADMIN for its Organization-owned Repositories without a persisted Repository grant, and requesters cannot approve their own requests.",
         "sourcePaths": [
           "packages/attendance/src/application/supplements.ts",
           "packages/attendance/src/contracts/supplements.ts",

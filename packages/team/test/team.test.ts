@@ -74,6 +74,7 @@ test("team command builder keeps scope and accepts request identity from the del
       membershipStatus: "active",
       membershipType: null,
       isMaintainer: true,
+      canManage: true,
     },
     childTeams: [],
     members: [],

@@ -257,7 +257,7 @@ test("Project management composes access, draft conversion, typed fields, views 
   );
 });
 
-test("Organization ADMIN qualifies the local ProjectV2 creation capability while MEMBER cannot", async (t) => {
+test("Organization members create ProjectV2 by default and Owner policy can restrict them", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -273,9 +273,6 @@ test("Organization ADMIN qualifies the local ProjectV2 creation capability while
   ]);
   await pg.query(
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3),('org','member','active',1,3)",
-  );
-  await pg.query(
-    "insert into app_private.organization_member_role_assignments(organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at) values('org','org-admin','ADMIN','active',1,1,1,4)",
   );
 
   const store = new PostgresProjectManagementStore(db);
@@ -293,38 +290,28 @@ test("Organization ADMIN qualifies the local ProjectV2 creation capability while
   const created = await store.execute({ userId: "org-admin" }, command, 10);
   assert.equal(created.version, 1);
 
-  await assert.rejects(
-    store.execute(
-      { userId: "member" },
-      { ...command, requestId: randomUUID(), title: "Denied Plan" },
-      11,
-    ),
-    (error) => error instanceof ProjectError && error.status === 403,
+  const memberCreated = await store.execute(
+    { userId: "member" },
+    { ...command, requestId: randomUUID(), title: "Member Plan" },
+    11,
   );
+  assert.equal(memberCreated.version, 1);
 
   await pg.query(
-    "update app_private.organization_member_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+    "update app_private.organizations set member_can_create_project_v2=false,version=version+1 where account_id='org'",
   );
   await assert.rejects(
     store.execute(
       { userId: "org-admin" },
-      { ...command, requestId: randomUUID(), title: "Revoked Plan" },
+      { ...command, requestId: randomUUID(), title: "Restricted Plan" },
       12,
     ),
     (error) => error instanceof ProjectError && error.status === 403,
   );
-  await pg.query(
-    "update app_private.organization_member_role_assignments set status='active',version=version+1 where organization_account_id='org' and user_id='org-admin'",
+  const ownerCreated = await store.execute(
+    { userId: "owner" },
+    { ...command, requestId: randomUUID(), title: "Owner Plan" },
+    13,
   );
-  await pg.query(
-    "update app_private.organization_memberships set version=version+1 where organization_account_id='org' and user_id='org-admin'",
-  );
-  await assert.rejects(
-    store.execute(
-      { userId: "org-admin" },
-      { ...command, requestId: randomUUID(), title: "Stale Qualification Plan" },
-      13,
-    ),
-    (error) => error instanceof ProjectError && error.status === 403,
-  );
+  assert.equal(ownerCreated.version, 1);
 });

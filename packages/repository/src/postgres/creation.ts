@@ -20,7 +20,7 @@ const fingerprint = (value: unknown) =>
 async function currentOwner(
   sql: Sql,
   actorUserId: string,
-  command: Pick<RepositoryCreateCommand, "ownerAccountId" | "ownerKind">,
+  command: Pick<RepositoryCreateCommand, "ownerAccountId" | "ownerKind" | "visibility">,
 ): Promise<RepositoryOwnerOption> {
   const actor = await readActiveUserQualification(sql, actorUserId, "update");
   if (!actor) throw new RepositoryError(403, "目前 User 資格不能建立 Repository。");
@@ -31,7 +31,13 @@ async function currentOwner(
     }
     const locator = await readAccountLogin(sql, actorUserId, "USER");
     if (!locator) throw new RepositoryError(409, "目前 User login 不可用。");
-    return { id: actorUserId, kind: "USER", login: locator.login, internalEligible: false };
+    return {
+      id: actorUserId,
+      kind: "USER",
+      login: locator.login,
+      internalEligible: false,
+      creatableVisibilities: ["private", "public"],
+    };
   }
 
   const capabilities = await readOrganizationViewerCapabilities(
@@ -39,7 +45,7 @@ async function currentOwner(
     actorUserId,
     command.ownerAccountId,
   );
-  if (!capabilities?.viewerCanCreateRepositories) {
+  if (!capabilities?.viewerCanCreateRepositoryVisibilities[command.visibility]) {
     throw new RepositoryError(403, "目前 Organization capability 不允許建立 Repository。");
   }
   const locator = await readAccountLogin(sql, command.ownerAccountId, "ORGANIZATION");
@@ -57,6 +63,11 @@ async function currentOwner(
     kind: "ORGANIZATION",
     login: locator.login,
     internalEligible,
+    creatableVisibilities: (["private", "public", "internal"] as const).filter(
+      (visibility) =>
+        capabilities.viewerCanCreateRepositoryVisibilities[visibility] &&
+        (visibility !== "internal" || internalEligible),
+    ),
   };
 }
 
@@ -111,6 +122,8 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
 
       const organizations: RepositoryOwnerOption[] = [];
       for (const id of await listOrganizationRepositoryCreationScopeIds(sql, userId)) {
+        const capabilities = await readOrganizationViewerCapabilities(sql, userId, id);
+        if (!capabilities) continue;
         const locator = await readAccountLogin(sql, id, "ORGANIZATION");
         if (!locator) throw new RepositoryError(409, "Organization login 不可用。");
         const internalEligible = Boolean(
@@ -126,12 +139,23 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
           kind: "ORGANIZATION",
           login: locator.login,
           internalEligible,
+          creatableVisibilities: (["private", "public", "internal"] as const).filter(
+            (visibility) =>
+              capabilities.viewerCanCreateRepositoryVisibilities[visibility] &&
+              (visibility !== "internal" || internalEligible),
+          ),
         });
       }
       organizations.sort((left, right) => left.login.localeCompare(right.login));
       return [
-        { id: userId, kind: "USER", login: personal.login, internalEligible: false },
-        ...organizations,
+        {
+          id: userId,
+          kind: "USER",
+          login: personal.login,
+          internalEligible: false,
+          creatableVisibilities: ["private", "public"],
+        },
+        ...organizations.filter((organization) => organization.creatableVisibilities.length > 0),
       ];
     });
   }
@@ -152,6 +176,7 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
           })
         : null;
     return this.db.transaction(async (sql) => {
+      await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
       const owner = await currentOwner(sql, userId, command);
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `repository-command:${userId}:${command.requestId}`,

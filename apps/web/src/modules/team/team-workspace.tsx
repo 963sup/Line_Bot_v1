@@ -27,7 +27,7 @@ export function TeamWorkspace({
   selectOrganization: (organizationAccountId: string) => void;
   selectTeam: (organizationAccountId: string, teamId: string) => void;
 }) {
-  const maintainer = data.team?.isMaintainer === true;
+  const manager = data.team?.canManage === true;
   return (
     <>
       <fieldset disabled={busy || !!pending}>
@@ -149,7 +149,7 @@ export function TeamWorkspace({
                   <p className={styles.meta}>Parent Team：{data.team.parentTeamId}</p>
                 )}
               </div>
-              {maintainer && (
+              {manager && (
                 <div className={styles.actions}>
                   <button
                     className="secondary"
@@ -218,7 +218,7 @@ export function TeamWorkspace({
                     : ""}
                 </p>
                 <div className={styles.actions}>
-                  {maintainer && member.status === "pending" && (
+                  {manager && member.status === "pending" && (
                     <button
                       onClick={() =>
                         setDraft({
@@ -232,7 +232,7 @@ export function TeamWorkspace({
                       核准加入
                     </button>
                   )}
-                  {maintainer &&
+                  {manager &&
                     member.status === "active" &&
                     member.membershipType === "IMMEDIATE" && (
                       <button
@@ -249,7 +249,7 @@ export function TeamWorkspace({
                         {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
                       </button>
                     )}
-                  {(maintainer || member.userId === data.userId) &&
+                  {(manager || member.userId === data.userId) &&
                     member.status !== "removed" &&
                     (member.status !== "active" || member.membershipType === "IMMEDIATE") && (
                       <button
@@ -320,7 +320,7 @@ export function TeamWorkspace({
                 >
                   <option value="">無 parent</option>
                   {data.teams
-                    .filter((team) => team.id !== data.team?.id && team.isMaintainer)
+                    .filter((team) => team.id !== data.team?.id && team.canManage)
                     .map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name}

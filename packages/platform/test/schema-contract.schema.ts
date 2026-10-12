@@ -32,7 +32,6 @@ test("governance runtime relations keep row-level security enabled", async (t) =
     "enterprise_direct_affiliations",
     "enterprise_role_assignments",
     "enterprises",
-    "organization_member_role_assignments",
     "organization_memberships",
     "organization_role_assignments",
     "organizations",
@@ -624,7 +623,7 @@ test("repository effective access combines direct and active same-organization T
   );
   assert.deepEqual(effective.rows, [
     { user_id: "removed-team-user", permissions: ["write"] },
-    { user_id: "repository-owner", permissions: ["read"] },
+    { user_id: "repository-owner", permissions: ["admin", "read"] },
     { user_id: "team-user", permissions: ["triage", "write"] },
   ]);
 
@@ -637,7 +636,7 @@ test("repository effective access combines direct and active same-organization T
     ["repository-a"],
   );
   assert.deepEqual(afterRemoval.rows, [
-    { user_id: "repository-owner", permissions: ["read"] },
+    { user_id: "repository-owner", permissions: ["admin", "read"] },
     { user_id: "team-user", permissions: ["triage", "write"] },
   ]);
 

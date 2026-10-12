@@ -87,7 +87,7 @@ test("Repository access application validates commands before persistence", asyn
   );
 });
 
-test("Repository access management supports direct and Team grants with replay, version and admin recovery", async (t) => {
+test("Repository access management supports direct and Team grants with Owner implicit admin", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
@@ -311,22 +311,20 @@ test("Repository access management supports direct and Team grants with replay, 
     "update app_private.team_memberships set status='removed' where team_id='team-a' and user_id='team-member'",
   );
   const recovery = await store.view("owner", { repositoryId: "repo" });
-  assert.deepEqual(recovery.repository.actorPermissions, []);
-  await assert.rejects(
-    store.execute(
-      "owner",
-      {
-        action: "revoke",
-        requestId: "66666666-6666-4666-8666-666666666666",
-        repositoryId: "repo",
-        subjectKind: "TEAM",
-        subjectId: "team-a",
-        expectedVersion: 1,
-      },
-      17,
-    ),
-    (error) => error instanceof RepositoryError && error.status === 409,
+  assert.deepEqual(recovery.repository.actorPermissions, ["admin"]);
+  const revokedTeam = await store.execute(
+    "owner",
+    {
+      action: "revoke",
+      requestId: "66666666-6666-4666-8666-666666666666",
+      repositoryId: "repo",
+      subjectKind: "TEAM",
+      subjectId: "team-a",
+      expectedVersion: 1,
+    },
+    17,
   );
+  assert.equal(revokedTeam.capability, null);
   const recovered = await store.execute(
     "owner",
     {
@@ -345,7 +343,7 @@ test("Repository access management supports direct and Team grants with replay, 
   const commands = await pg.query(
     "select count(*)::int as count from app_private.repository_commands where actor='owner'",
   );
-  assert.equal((commands.rows[0] as { count?: number } | undefined)?.count, 8);
+  assert.equal((commands.rows[0] as { count?: number } | undefined)?.count, 9);
 
   await assert.rejects(
     db.transaction((sql) =>
@@ -354,6 +352,34 @@ test("Repository access management supports direct and Team grants with replay, 
       ),
     ),
     (error: unknown) => (error as { code?: string }).code === "42501",
+  );
+});
+
+test("Organization Owner implicit Repository admin disappears when its current role is revoked", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await activeUser(db, "owner", "owner");
+  await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
+    "org",
+    "owner",
+    "acme",
+    "Acme",
+    2,
+  ]);
+  await pg.query(
+    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo-owner','org','ORGANIZATION','Owner Repo','private',1)",
+  );
+  const store = new PostgresRepositoryAccessStore(db);
+  assert.deepEqual(
+    (await store.view("owner", { repositoryId: "repo-owner" })).repository.actorPermissions,
+    ["admin"],
+  );
+  await pg.query(
+    "update app_private.organization_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='owner' and role='OrganizationOwner'",
+  );
+  await assert.rejects(
+    store.view("owner", { repositoryId: "repo-owner" }),
+    (error: unknown) => (error as { status?: number }).status === 403,
   );
 });
 

@@ -31,7 +31,7 @@ Browser `sessionStorage` 只能協助 UX 恢復；server receipt/version/state �
 - User 只能提出補登，不可直接建立或改寫 Attendance session。
 - MVP 支援兩種提案：新增一段完整的已結束歷史 session；或替自己的未結束 Repository session 提出下班時間。第二種核准只做單向 close，不改上班時間、Repository 或地址快照。
 - 補登地點取自申請時保存的 Repository address snapshot；它是申請與人工審核內容，不代表系統驗證了歷史 GPS 位置。
-- Repository 當下有效的 `ADMIN` User 才能看到待審核項目並核准／拒絕。Organization admin 身分本身不授權；Organization-owned Repository 也必須重驗該 User 的 Repository `ADMIN` access。
+- Repository 當下有效的 `ADMIN` User 才能看到待審核項目並核准／拒絕。Organization-owned Repository 的有效 OrganizationOwner 由 Repository effective access 投影取得隱含 `ADMIN`；決策時仍重新驗證，申請者不得審核自己。
 - 申請人不能核准自己的補登。拒絕必須記錄理由；每一決定重驗當下 Repository permission、stable command identity 與 request version。
 - 核准建立/結束出勤事實、追加事件、更新版本、留下審核者與更新必要 menu state 同 transaction commit/rollback。拒絕只結束 request 並追加事件。
 - 補登不發 Ledger 打卡獎勵，也不計算薪資；正式薪資由後續範圍處理。

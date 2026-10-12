@@ -8,6 +8,14 @@ export type OrganizationMembershipSource = Readonly<{
   version: number;
 }>;
 
+type OrganizationMemberCreationPolicy = Readonly<{
+  memberCanCreatePublicRepositories: boolean;
+  memberCanCreatePrivateRepositories: boolean;
+  memberCanCreateInternalRepositories: boolean;
+  memberCanCreateProjectV2: boolean;
+  memberCanCreateTeams: boolean;
+}>;
+
 export type OrganizationMembershipProjection = Readonly<{
   userId: string;
   status: "active" | "removed";
@@ -17,7 +25,6 @@ export type OrganizationMembershipProjection = Readonly<{
   effectiveOwner: boolean;
   assignmentVersion: number | null;
   memberRole: OrganizationMemberRole;
-  memberRoleVersion: number | null;
 }>;
 
 export type OrganizationInvitationProjection = Readonly<{
@@ -48,11 +55,21 @@ export type OrganizationList = Readonly<{
 
 export type OrganizationDetail = OrganizationSummary &
   Readonly<{
+    memberCreationPolicy: OrganizationMemberCreationPolicy;
     members: readonly OrganizationMembershipProjection[];
     invitations: readonly OrganizationInvitationProjection[];
   }>;
 
 export type OrganizationCommand =
+  | Readonly<
+      {
+        action: "update-member-creation-policy";
+        requestId: string;
+        organizationAccountId: string;
+        expectedVersion: number;
+        reason: string;
+      } & OrganizationMemberCreationPolicy
+    >
   | Readonly<{
       action: "create-organization";
       requestId: string;
@@ -62,14 +79,6 @@ export type OrganizationCommand =
     }>
   | Readonly<{
       action: "grant-organization-owner" | "revoke-organization-owner";
-      requestId: string;
-      organizationAccountId: string;
-      targetUserId: string;
-      expectedVersion: number;
-      reason: string;
-    }>
-  | Readonly<{
-      action: "grant-organization-admin" | "revoke-organization-admin";
       requestId: string;
       organizationAccountId: string;
       targetUserId: string;

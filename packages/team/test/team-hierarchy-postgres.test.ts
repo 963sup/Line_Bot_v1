@@ -75,6 +75,21 @@ test("Team hierarchy derives membership and Repository access without copying me
     11,
   );
   assert.ok(memberCreated.teamId);
+  const ownerViewOfMemberTeam = await store.view(owner, "organization-team", memberCreated.teamId);
+  assert.equal(ownerViewOfMemberTeam.team?.isMaintainer, false);
+  assert.equal(ownerViewOfMemberTeam.team?.canManage, true);
+  await store.execute(
+    owner,
+    {
+      action: "rename-team",
+      requestId: "abababab-abab-4bab-8bab-abababababab",
+      organizationAccountId: "organization-team",
+      teamId: memberCreated.teamId,
+      expectedVersion: 1,
+      name: "Owner Managed Team",
+    },
+    11,
+  );
 
   await store.execute(
     owner,
@@ -217,38 +232,37 @@ test("Team hierarchy derives membership and Repository access without copying me
     true,
   );
 
-  await pg.query(
-    "insert into app_private.organization_member_role_assignments(organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at) values('organization-team','child-user','ADMIN','active',1,1,1,16)",
-  );
-  const adminTeam = await store.execute(
+  const memberTeam = await store.execute(
     childActor,
     {
       action: "create-team",
       requestId: "88888888-8888-4888-8888-888888888888",
       organizationAccountId: "organization-team",
-      name: "Admin Team",
+      name: "Member Second Team",
       privacy: "SECRET",
       notificationSetting: "NOTIFICATIONS_DISABLED",
     },
     17,
   );
-  assert.ok(adminTeam.teamId);
-  await pg.query(
-    "update app_private.organization_member_role_assignments set status='revoked',version=version+1 where organization_account_id='organization-team' and user_id='child-user'",
-  );
-  const memberTeam = await store.execute(
-    childActor,
-    {
-      action: "create-team",
-      requestId: "99999999-9999-4999-8999-999999999999",
-      organizationAccountId: "organization-team",
-      name: "Member After Revoke",
-      privacy: "SECRET",
-      notificationSetting: "NOTIFICATIONS_DISABLED",
-    },
-    18,
-  );
   assert.ok(memberTeam.teamId);
+  await pg.query(
+    "update app_private.organizations set member_can_create_teams=false,version=version+1 where account_id='organization-team'",
+  );
+  await assert.rejects(
+    store.execute(
+      childActor,
+      {
+        action: "create-team",
+        requestId: "99999999-9999-4999-8999-999999999999",
+        organizationAccountId: "organization-team",
+        name: "Member Restricted",
+        privacy: "SECRET",
+        notificationSetting: "NOTIFICATIONS_DISABLED",
+      },
+      18,
+    ),
+    (error: unknown) => (error as { status?: number }).status === 403,
+  );
   await pg.query(
     "update app_private.organization_memberships set status='removed',version=version+1 where organization_account_id='organization-team' and user_id='child-user'",
   );
@@ -274,5 +288,12 @@ test("Team hierarchy derives membership and Repository access without copying me
       )
     ).rows,
     [{ total: 0 }],
+  );
+  await pg.query(
+    "update app_private.organization_role_assignments set status='revoked',version=version+1 where organization_account_id='organization-team' and user_id='owner' and role='OrganizationOwner'",
+  );
+  await assert.rejects(
+    store.view(owner, "organization-team", memberCreated.teamId),
+    (error: unknown) => (error as { status?: number }).status === 404,
   );
 });

@@ -736,8 +736,8 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
             <section aria-labelledby="review-attendance-supplements">
               <h3 id="review-attendance-supplements">待我審核</h3>
               <p>
-                只有該 Repository 當下有效的 ADMIN User 可以審核；Organization admin
-                身分本身不授權。
+                只有該 Repository 當下有效的 ADMIN User 可以審核；Organization-owned Repository
+                的有效 OrganizationOwner 具有隱含 ADMIN 權限。
               </p>
               {supplements?.review.length ? (
                 supplements.review.map((item) => (

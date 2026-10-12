@@ -218,17 +218,17 @@ test("Issue state, assignment, content and local workflow remain separate axes",
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
 
-  for (const id of ["reader", "assignee", "second", "manager", "stranger"]) {
+  for (const id of ["owner", "reader", "assignee", "second", "manager", "stranger"]) {
     await activeUser(db, id);
   }
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "organization-policy",
-    "reader",
+    "owner",
     "policy",
     "Policy",
     2,
   ]);
-  for (const userId of ["assignee", "second", "manager", "stranger"]) {
+  for (const userId of ["reader", "assignee", "second", "manager", "stranger"]) {
     await pg.query(
       "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values($1,$2,'active',1,$3)",
       ["organization-policy", userId, 3],

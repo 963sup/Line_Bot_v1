@@ -54,6 +54,7 @@ test("INTERNAL, PUBLIC and PRIVATE visibility re-authorize every read projection
       kind: "ORGANIZATION",
       login: "acme",
       internalEligible: true,
+      creatableVisibilities: ["private", "public", "internal"],
     },
   );
   const repository = await creation.create(

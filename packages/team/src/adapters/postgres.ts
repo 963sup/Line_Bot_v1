@@ -1,9 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
-import {
-  authorizeTeamMaintainer,
-  resolveVerifiedLineActor,
-} from "@line_bot_v1/identity-access/postgres";
+import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,
@@ -20,10 +17,7 @@ import type {
   TeamView,
 } from "../contracts.js";
 import { TeamError, teamAssert } from "../domain/errors/team-error.js";
-import {
-  requireAnotherEffectiveMaintainer,
-  requireTeamMaintainer,
-} from "../domain/policies/team-maintenance.js";
+import { requireAnotherEffectiveMaintainer } from "../domain/policies/team-maintenance.js";
 import { teamVersion } from "../domain/policies/team-version.js";
 import { teamSlugFromName } from "../domain/value-objects/team-slug.js";
 import {
@@ -42,6 +36,10 @@ type TeamRow = {
   notification_setting: "NOTIFICATIONS_DISABLED" | "NOTIFICATIONS_ENABLED";
   version: number;
 };
+
+function requireTeamManager(allowed: boolean) {
+  teamAssert(allowed, 403, "需要 TeamMaintainer 或 OrganizationOwner 權限。");
+}
 
 async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string): Promise<TeamRow> {
   const row = (
@@ -121,6 +119,9 @@ async function teamSummaries(
   organizationAccountId: string,
   userId: string,
 ): Promise<TeamSummary[]> {
+  const owner =
+    (await readOrganizationViewerCapabilities(sql, userId, organizationAccountId))
+      ?.viewerCanAdminister === true;
   const rows = (
     await sql.query(
       `SELECT
@@ -152,14 +153,15 @@ async function teamSummaries(
          LIMIT 1
        ) em ON true
        WHERE t.organization_account_id=$1
-         AND (t.privacy='VISIBLE' OR em.user_id IS NOT NULL)
+         AND ($3::boolean OR t.privacy='VISIBLE' OR em.user_id IS NOT NULL)
        ORDER BY t.created_at,t.id`,
-      [organizationAccountId, userId],
+      [organizationAccountId, userId, owner],
     )
-  ).rows as Array<Omit<TeamSummary, "isMaintainer">>;
+  ).rows as Array<Omit<TeamSummary, "isMaintainer" | "canManage">>;
   const teams: TeamSummary[] = [];
   for (const row of rows) {
-    teams.push({ ...row, isMaintainer: await isTeamMaintainer(sql, row.id, userId) });
+    const isMaintainer = await isTeamMaintainer(sql, row.id, userId);
+    teams.push({ ...row, isMaintainer, canManage: owner || isMaintainer });
   }
   return teams;
 }
@@ -213,7 +215,10 @@ async function readTeamView(
   const directMembers = await directTeamMembers(sql, teamId);
   const effectiveMembers = await effectiveTeamMembers(sql, teamId);
   const me = effectiveMembers.find((member) => member.userId === actor.userId);
-  teamAssert(team.privacy === "VISIBLE" || me, 404, "找不到可存取的 Organization Team。");
+  const owner =
+    (await readOrganizationViewerCapabilities(sql, actor.userId, organizationAccountId))
+      ?.viewerCanAdminister === true;
+  teamAssert(team.privacy === "VISIBLE" || me || owner, 404, "找不到可存取的 Organization Team。");
   const directMe = directMembers.find((member) => member.userId === actor.userId);
   const maintainer = await isTeamMaintainer(sql, teamId, actor.userId);
   const inactiveDirect = directMembers.filter(
@@ -221,9 +226,10 @@ async function readTeamView(
       member.status !== "active" &&
       !effectiveMembers.some((effective) => effective.userId === member.userId),
   );
-  const members = maintainer
-    ? [...effectiveMembers, ...inactiveDirect].sort((a, b) => a.userId.localeCompare(b.userId))
-    : effectiveMembers;
+  const members =
+    maintainer || owner
+      ? [...effectiveMembers, ...inactiveDirect].sort((a, b) => a.userId.localeCompare(b.userId))
+      : effectiveMembers;
   return {
     ...empty,
     team: {
@@ -238,6 +244,7 @@ async function readTeamView(
       membershipStatus: me ? "active" : (directMe?.status ?? "none"),
       membershipType: me?.membershipType ?? null,
       isMaintainer: maintainer,
+      canManage: maintainer || owner,
     },
     childTeams: teams.filter((item) => item.parentTeamId === teamId),
     members,
@@ -276,6 +283,9 @@ export class PostgresTeamRepository implements TeamRepository {
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
       const actor = await qualifyOrganizationTeamScope(sql, proof, command.organizationAccountId);
+      const actorIsOwner =
+        (await readOrganizationViewerCapabilities(sql, actor.userId, command.organizationAccountId))
+          ?.viewerCanAdminister === true;
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `${actor.userId}:${command.requestId}`,
       ]);
@@ -299,6 +309,7 @@ export class PostgresTeamRepository implements TeamRepository {
           command.status === "removed";
         teamAssert(
           current?.status === "active" ||
+            actorIsOwner ||
             (command.action === "join" && current?.status === "pending") ||
             selfRemoval,
           403,
@@ -311,16 +322,14 @@ export class PostgresTeamRepository implements TeamRepository {
           (command.action === "membership" && !selfRemoval) ||
           command.action === "maintainer"
         ) {
-          requireTeamMaintainer(
-            await authorizeTeamMaintainer(() => isTeamMaintainer(sql, old.team_id, actor.userId)),
+          requireTeamManager(
+            actorIsOwner || (await isTeamMaintainer(sql, old.team_id, actor.userId)),
           );
         }
         if (command.action === "parent-team" && command.parentTeamId) {
           await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
-          requireTeamMaintainer(
-            await authorizeTeamMaintainer(() =>
-              isTeamMaintainer(sql, command.parentTeamId!, actor.userId),
-            ),
+          requireTeamManager(
+            actorIsOwner || (await isTeamMaintainer(sql, command.parentTeamId!, actor.userId)),
           );
         }
         return old.result as TeamCommandReceipt;
@@ -385,11 +394,10 @@ export class PostgresTeamRepository implements TeamRepository {
         const team = await lockTeam(sql, command.organizationAccountId, teamId);
         const members = await directTeamMembers(sql, teamId);
         const me = members.find((member) => member.userId === actor.userId);
+        const canManage = actorIsOwner || Boolean(me?.isMaintainer);
 
         if (command.action === "rename-team") {
-          requireTeamMaintainer(
-            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
-          );
+          requireTeamManager(canManage);
           teamVersion(team.version, command.expectedVersion);
           teamAssert(team.name !== command.name, 409, "團隊名稱沒有變更。");
           const slug = teamSlugFromName(command.name);
@@ -413,9 +421,7 @@ export class PostgresTeamRepository implements TeamRepository {
             slug,
           };
         } else if (command.action === "settings") {
-          requireTeamMaintainer(
-            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
-          );
+          requireTeamManager(canManage);
           teamVersion(team.version, command.expectedVersion);
           teamAssert(
             team.privacy !== command.privacy ||
@@ -435,15 +441,13 @@ export class PostgresTeamRepository implements TeamRepository {
             notificationSetting: command.notificationSetting,
           };
         } else if (command.action === "parent-team") {
-          requireTeamMaintainer(
-            await authorizeTeamMaintainer(async () => Boolean(me?.isMaintainer)),
-          );
+          requireTeamManager(canManage);
           teamVersion(team.version, command.expectedVersion);
           teamAssert(team.parent_team_id !== command.parentTeamId, 409, "Team parent 沒有變更。");
           if (command.parentTeamId) {
             const parent = await lockTeam(sql, command.organizationAccountId, command.parentTeamId);
-            requireTeamMaintainer(
-              await authorizeTeamMaintainer(() => isTeamMaintainer(sql, parent.id, actor.userId)),
+            requireTeamManager(
+              actorIsOwner || (await isTeamMaintainer(sql, parent.id, actor.userId)),
             );
           }
           try {
@@ -475,7 +479,7 @@ export class PostgresTeamRepository implements TeamRepository {
             [teamId, actor.userId, command.name],
           );
         } else {
-          teamAssert(me?.status === "active", 403, "你沒有此團隊的操作權。");
+          teamAssert(me?.status === "active" || actorIsOwner, 403, "你沒有此團隊的操作權。");
           teamVersion(team.version, command.expectedVersion);
           const target = members.find((member) => member.userId === command.targetUserId);
           teamAssert(target && target.status !== "removed", 404, "找不到此加入申請或有效成員。");
@@ -484,7 +488,7 @@ export class PostgresTeamRepository implements TeamRepository {
             const selfRemoval =
               command.targetUserId === actor.userId && command.status === "removed";
             if (!selfRemoval) {
-              requireTeamMaintainer(await authorizeTeamMaintainer(async () => me.isMaintainer));
+              requireTeamManager(canManage);
             }
             if (command.status === "active") {
               const eligible = await activeOrganizationParticipantIds(
@@ -519,7 +523,7 @@ export class PostgresTeamRepository implements TeamRepository {
               [teamId, command.targetUserId, command.status],
             );
           } else {
-            requireTeamMaintainer(await authorizeTeamMaintainer(async () => me.isMaintainer));
+            requireTeamManager(canManage);
             teamAssert(
               target.status === "active",
               409,

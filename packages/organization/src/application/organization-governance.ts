@@ -65,6 +65,11 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
     "targetUserId",
     "expectedVersion",
     "reason",
+    "memberCanCreatePublicRepositories",
+    "memberCanCreatePrivateRepositories",
+    "memberCanCreateInternalRepositories",
+    "memberCanCreateProjectV2",
+    "memberCanCreateTeams",
   ]);
   const evidence = parseMutationEvidence(base);
   if (base.action === "create-organization") {
@@ -90,12 +95,43 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
   }
   const organizationAccountId = parseId(base.organizationAccountId, "Organization");
 
-  if (
-    base.action === "grant-organization-owner" ||
-    base.action === "revoke-organization-owner" ||
-    base.action === "grant-organization-admin" ||
-    base.action === "revoke-organization-admin"
-  ) {
+  if (base.action === "update-member-creation-policy") {
+    const policyKeys = [
+      "memberCanCreatePublicRepositories",
+      "memberCanCreatePrivateRepositories",
+      "memberCanCreateInternalRepositories",
+      "memberCanCreateProjectV2",
+      "memberCanCreateTeams",
+    ] as const;
+    requireExactGovernanceKeys(base, [
+      "action",
+      "requestId",
+      "organizationAccountId",
+      "expectedVersion",
+      "reason",
+      ...policyKeys,
+    ]);
+    if (policyKeys.some((key) => typeof base[key] !== "boolean")) {
+      throw new GovernanceAccessError(
+        400,
+        "invalid-input",
+        "Organization member creation policy 不正確。",
+      );
+    }
+    return {
+      ...evidence,
+      action: base.action,
+      organizationAccountId,
+      expectedVersion: parseVersion(base.expectedVersion, "Organization"),
+      memberCanCreatePublicRepositories: base.memberCanCreatePublicRepositories as boolean,
+      memberCanCreatePrivateRepositories: base.memberCanCreatePrivateRepositories as boolean,
+      memberCanCreateInternalRepositories: base.memberCanCreateInternalRepositories as boolean,
+      memberCanCreateProjectV2: base.memberCanCreateProjectV2 as boolean,
+      memberCanCreateTeams: base.memberCanCreateTeams as boolean,
+    };
+  }
+
+  if (base.action === "grant-organization-owner" || base.action === "revoke-organization-owner") {
     requireExactGovernanceKeys(base, [
       "action",
       "requestId",
@@ -111,10 +147,8 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
       targetUserId: parseId(base.targetUserId, "使用者"),
       expectedVersion: parseVersion(
         base.expectedVersion,
-        base.action === "grant-organization-owner" || base.action === "revoke-organization-owner"
-          ? "OrganizationOwner"
-          : "Organization ADMIN",
-        base.action === "grant-organization-owner" || base.action === "grant-organization-admin",
+        "OrganizationOwner",
+        base.action === "grant-organization-owner",
       ),
     };
   }

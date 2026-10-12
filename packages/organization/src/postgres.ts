@@ -25,10 +25,6 @@ import type {
   OrganizationReceipt,
 } from "./contracts/organization-governance.js";
 import {
-  mutateOrganizationAdminAssignment,
-  readOrganizationAdminAssignments,
-} from "./postgres/member-roles.js";
-import {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
@@ -182,6 +178,11 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
       const scope = (
         await sql.query(
           `SELECT o.account_id AS id,o.name,o.status,o.version,
+             o.member_can_create_public_repositories,
+             o.member_can_create_private_repositories,
+             o.member_can_create_internal_repositories,
+             o.member_can_create_project_v2,
+             o.member_can_create_teams,
              m.status AS membership_status,
              d.version AS direct_membership_version,
              i.status AS invitation_status,i.version AS invitation_version
@@ -235,15 +236,6 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           )
         ).map((row) => [row.userId, row.version] as const),
       );
-      const adminAssignments = new Map(
-        (
-          await readOrganizationAdminAssignments(
-            sql,
-            organizationAccountId,
-            memberRows.map((row) => String(row.user_id)),
-          )
-        ).map((row) => [row.userId, row.version] as const),
-      );
       const invitationRows = (
         await sql.query(
           `SELECT user_id,status,version FROM organization_invitations
@@ -266,6 +258,13 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         actorIsOwner,
         actorMemberRole: actorCapabilities?.memberRole ?? (actorIsOwner ? "ADMIN" : null),
         actorCanCreateProjectV2: actorCapabilities?.viewerCanCreateProjectV2 === true,
+        memberCreationPolicy: {
+          memberCanCreatePublicRepositories: scope.member_can_create_public_repositories,
+          memberCanCreatePrivateRepositories: scope.member_can_create_private_repositories,
+          memberCanCreateInternalRepositories: scope.member_can_create_internal_repositories,
+          memberCanCreateProjectV2: scope.member_can_create_project_v2,
+          memberCanCreateTeams: scope.member_can_create_teams,
+        },
         members: memberRows.map(
           (row): OrganizationMembershipProjection => ({
             userId: row.user_id,
@@ -275,12 +274,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             directMembershipVersion: row.direct_membership_version ?? null,
             effectiveOwner: ownerAssignments.has(row.user_id),
             assignmentVersion: ownerAssignments.get(row.user_id) ?? null,
-            memberRole:
-              ownerAssignments.has(row.user_id) || adminAssignments.has(row.user_id)
-                ? "ADMIN"
-                : "MEMBER",
-            memberRoleVersion:
-              ownerAssignments.get(row.user_id) ?? adminAssignments.get(row.user_id) ?? null,
+            memberRole: ownerAssignments.has(row.user_id) ? "ADMIN" : "MEMBER",
           }),
         ),
         invitations: invitationRows.map(
@@ -402,19 +396,38 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         }
         const changed = await mutateOrganizationOwnerAssignment(sql, command, now);
         result = receipt(command, changed.status, changed.version, now);
-      } else if (
-        command.action === "grant-organization-admin" ||
-        command.action === "revoke-organization-admin"
-      ) {
+      } else if (command.action === "update-member-creation-policy") {
         if (organization.status !== "active") {
           throw new GovernanceAccessError(
             409,
             "inactive",
-            "停用的 Organization 不能變更 ADMIN role。",
+            "停用的 Organization 不能變更成員建立政策。",
           );
         }
-        const changed = await mutateOrganizationAdminAssignment(sql, command, now);
-        result = receipt(command, changed.status, changed.version, now);
+        if (organization.version !== command.expectedVersion) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
+        }
+        const changed = (
+          await sql.query(
+            `UPDATE organizations SET
+               member_can_create_public_repositories=$2,
+               member_can_create_private_repositories=$3,
+               member_can_create_internal_repositories=$4,
+               member_can_create_project_v2=$5,
+               member_can_create_teams=$6,
+               version=version+1
+             WHERE account_id=$1 RETURNING version`,
+            [
+              command.organizationAccountId,
+              command.memberCanCreatePublicRepositories,
+              command.memberCanCreatePrivateRepositories,
+              command.memberCanCreateInternalRepositories,
+              command.memberCanCreateProjectV2,
+              command.memberCanCreateTeams,
+            ],
+          )
+        ).rows[0]!;
+        result = receipt(command, "active", Number(changed.version), now);
       } else if (command.action === "deactivate" || command.action === "reactivate") {
         if (organization.version !== command.expectedVersion) {
           throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");

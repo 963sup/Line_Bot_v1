@@ -57,9 +57,6 @@ test("Postgres Project collection exposes owner-scoped projects with effective r
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3)",
   );
   await pg.query(
-    "insert into app_private.organization_member_role_assignments(organization_account_id,user_id,role,status,version,user_status_version,membership_version,granted_at) values('org','org-admin','ADMIN','active',1,1,1,4)",
-  );
-  await pg.query(
     "insert into app_private.projects(id,owner_account_id,owner_account_kind,name,version) values ('personal','owner','USER','Personal Plan',1),('shared','org','ORGANIZATION','Shared Plan',1)",
   );
 
@@ -89,17 +86,5 @@ test("Postgres Project collection exposes owner-scoped projects with effective r
     },
   ]);
   assert.deepEqual(await store.accessible("member"), []);
-  assert.deepEqual(await store.accessible("org-admin"), [
-    {
-      id: "shared",
-      ownerLogin: "acme",
-      ownerKind: "ORGANIZATION",
-      number: null,
-      name: "Shared Plan",
-      public: false,
-      closed: false,
-      role: "ADMIN",
-      version: 1,
-    },
-  ]);
+  assert.deepEqual(await store.accessible("org-admin"), []);
 });

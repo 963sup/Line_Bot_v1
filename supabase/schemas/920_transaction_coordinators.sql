@@ -384,18 +384,16 @@ begin
           on m.organization_account_id=o.account_id
          and m.user_id=p_actor_user_id
         join app_private.users u on u.id=p_actor_user_id
-        join app_private.organization_member_role_assignments r
-          on r.organization_account_id=o.account_id
-         and r.user_id=p_actor_user_id
-         and r.role='ADMIN'
         where o.account_id=p_owner_account_id
           and o.status='active'
           and m.status='active'
           and u.status='active'
-          and r.status='active'
-          and r.user_status_version=u.status_version
-          and r.membership_version=m.version
-        for share of o,m,u,r;
+          and (
+            (p_visibility='public' and o.member_can_create_public_repositories)
+            or (p_visibility='private' and o.member_can_create_private_repositories)
+            or (p_visibility='internal' and o.member_can_create_internal_repositories)
+          )
+        for share of o,m,u;
     end if;
     if not found then
       raise exception 'provision_repository_organization_capability_forbidden' using errcode = '42501';
@@ -516,28 +514,6 @@ begin
     where a.repository_id=p_repository_id
       and a.user_id=p_actor_user_id
       and 'admin'=any(a.permissions)
-  ) and not (
-    current_repository.owner_account_kind='ORGANIZATION'
-    and exists (
-      select 1
-      from app_private.organizations o
-      join app_private.organization_memberships m
-        on m.organization_account_id=o.account_id
-       and m.user_id=p_actor_user_id
-       and m.status='active'
-      join app_private.organization_role_assignments r
-        on r.organization_account_id=o.account_id
-       and r.user_id=p_actor_user_id
-       and r.role='OrganizationOwner'
-       and r.status='active'
-      join app_private.users u
-        on u.id=p_actor_user_id
-       and u.status='active'
-      where o.account_id=current_repository.owner_account_id
-        and o.status='active'
-        and r.user_status_version=u.status_version
-        and r.membership_version=m.version
-    )
   ) then
     raise exception 'repository_access_actor_forbidden' using errcode = '42501';
   end if;

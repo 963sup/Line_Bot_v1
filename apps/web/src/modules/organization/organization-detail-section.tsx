@@ -114,6 +114,81 @@ export function OrganizationDetailSection({
         </button>
       )}
 
+      {detail.actorIsOwner && detail.status === "active" && (
+        <form
+          key={`member-policy-${detail.version}`}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            void execute({
+              action: "update-member-creation-policy",
+              requestId: crypto.randomUUID(),
+              organizationAccountId: detail.id,
+              expectedVersion: detail.version,
+              reason: String(data.get("reason")).trim(),
+              memberCanCreatePublicRepositories: data.has("publicRepositories"),
+              memberCanCreatePrivateRepositories: data.has("privateRepositories"),
+              memberCanCreateInternalRepositories: data.has("internalRepositories"),
+              memberCanCreateProjectV2: data.has("projectV2"),
+              memberCanCreateTeams: data.has("teams"),
+            });
+          }}
+        >
+          <h3>成員建立權限</h3>
+          <p>
+            Owner 永遠可建立；以下設定只限制一般成員。INTERNAL Repository 仍需有效 Enterprise
+            scope。
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              name="publicRepositories"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreatePublicRepositories}
+            />
+            公開 Repository
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="privateRepositories"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreatePrivateRepositories}
+            />
+            私人 Repository
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="internalRepositories"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreateInternalRepositories}
+            />
+            內部 Repository
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="projectV2"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreateProjectV2}
+            />
+            ProjectV2
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="teams"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreateTeams}
+            />
+            Team
+          </label>
+          <label>
+            變更原因
+            <textarea name="reason" required maxLength={500} />
+          </label>
+          <button disabled={busy || !!pending} type="submit">
+            儲存成員權限
+          </button>
+        </form>
+      )}
+
       <h3>成員</h3>
       {detail.members.map((member) => (
         <article key={member.userId}>
@@ -253,53 +328,6 @@ export function OrganizationDetailSection({
           </label>
           <button disabled={busy || !!pending} type="submit">
             保存 owner role
-          </button>
-        </form>
-      )}
-
-      {detail.actorIsOwner && (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            const targetUserId = String(data.get("targetUserId")).trim();
-            const member = detail.members.find(
-              (item) => item.userId === targetUserId && item.status === "active",
-            );
-            if (!member || member.effectiveOwner) {
-              setError("Organization ADMIN 對象必須是非 Owner 的有效 Organization member。");
-              return;
-            }
-            const action = data.get("action") === "revoke" ? "revoke" : "grant";
-            void execute({
-              action:
-                action === "revoke" ? "revoke-organization-admin" : "grant-organization-admin",
-              requestId: crypto.randomUUID(),
-              organizationAccountId: detail.id,
-              targetUserId,
-              expectedVersion: member.memberRoleVersion ?? 0,
-              reason: String(data.get("reason")).trim(),
-            });
-          }}
-        >
-          <h3>Organization member role</h3>
-          <label>
-            Organization member
-            <input name="targetUserId" required maxLength={128} />
-          </label>
-          <label>
-            操作
-            <select name="action" defaultValue="grant">
-              <option value="grant">授予 FPT ADMIN</option>
-              <option value="revoke">撤銷 FPT ADMIN</option>
-            </select>
-          </label>
-          <label>
-            原因
-            <textarea name="reason" required maxLength={500} />
-          </label>
-          <button disabled={busy || !!pending} type="submit">
-            保存 member role
           </button>
         </form>
       )}

@@ -335,7 +335,7 @@ test("applicant inbox keeps every pending request visible beyond the recent-hist
   assert.ok(inbox.mine.every((request) => request.status === "PENDING"));
 });
 
-test("OrganizationOwner without Repository ADMIN cannot review an Organization-owned supplement", async (t) => {
+test("OrganizationOwner can review an Organization-owned supplement without a direct Repository grant", async (t) => {
   const { pg, store } = await fixture();
   t.after(() => pg.close());
 
@@ -396,20 +396,18 @@ test("OrganizationOwner without Repository ADMIN cannot review an Organization-o
     workerRecipient,
   );
 
-  await assert.rejects(
-    store.review(
-      "org-owner",
-      {
-        commandId: randomUUID(),
-        supplementId: submitted.supplement.id,
-        expectedVersion: submitted.supplement.version,
-        decision: "approve",
-      },
-      now,
-      ownerRecipient,
-    ),
-    /需要該 Repository 當下有效的 ADMIN 權限才能審核/,
-  );
   const inbox = await store.list("org-owner", now, ownerRecipient);
-  assert.equal(inbox.review.length, 0);
+  assert.equal(inbox.review.length, 1);
+  const review = await store.review(
+    "org-owner",
+    {
+      commandId: randomUUID(),
+      supplementId: submitted.supplement.id,
+      expectedVersion: submitted.supplement.version,
+      decision: "approve",
+    },
+    now,
+    ownerRecipient,
+  );
+  assert.equal(review.supplement.status, "APPROVED");
 });
