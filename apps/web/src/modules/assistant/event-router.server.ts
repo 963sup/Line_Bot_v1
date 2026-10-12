@@ -20,7 +20,7 @@ export function createAssistantReply(deps: {
   return async (token: string, event: AssistantEvent) => {
     const input = event.text ?? "";
     const command = parseAssistantCommand(input);
-    let message;
+    let message: messagingApi.Message | null;
     if (event.imageId || command === "receipt" || command === "cancel") {
       const result = await deps.receiptIntake(
         event.userId,

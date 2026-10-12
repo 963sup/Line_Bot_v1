@@ -22,6 +22,44 @@ export class GoogleCalendarError extends Error {
   }
 }
 
+type CalendarEventDate = NonNullable<CalendarEvent["start"]>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasOptionalString(value: Record<string, unknown>, field: string): boolean {
+  return !(field in value) || typeof value[field] === "string";
+}
+
+function isCalendarEventDate(value: unknown): value is CalendarEventDate {
+  return (
+    isRecord(value) &&
+    hasOptionalString(value, "date") &&
+    hasOptionalString(value, "dateTime") &&
+    hasOptionalString(value, "timeZone")
+  );
+}
+
+function hasOptionalEventDate(value: Record<string, unknown>, field: string): boolean {
+  return !(field in value) || isCalendarEventDate(value[field]);
+}
+
+function isCalendarEvent(
+  value: Record<string, unknown>,
+): value is CalendarEvent & Record<string, unknown> {
+  return (
+    typeof value.id === "string" &&
+    hasOptionalString(value, "etag") &&
+    hasOptionalString(value, "status") &&
+    hasOptionalString(value, "summary") &&
+    hasOptionalEventDate(value, "start") &&
+    hasOptionalEventDate(value, "end") &&
+    hasOptionalString(value, "recurringEventId") &&
+    hasOptionalEventDate(value, "originalStartTime")
+  );
+}
+
 function asCalendarError(error: unknown): never {
   if (error instanceof GoogleApiError) throw new GoogleCalendarError(error.status, error.message);
   throw error;
@@ -69,13 +107,6 @@ export async function readCalendarEvents(
     },
     request,
   ).catch(asCalendarError);
-  if (
-    rows.some(
-      (event) =>
-        !event || typeof event !== "object" || !("id" in event) || typeof event.id !== "string",
-    )
-  )
-    throw new GoogleCalendarError(502, "Invalid calendar events");
-  const events = rows as unknown as CalendarEvent[];
-  return events;
+  if (!rows.every(isCalendarEvent)) throw new GoogleCalendarError(502, "Invalid calendar events");
+  return rows;
 }

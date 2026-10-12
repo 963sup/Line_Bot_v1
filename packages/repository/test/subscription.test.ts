@@ -19,12 +19,12 @@ async function activeUser(db: Database, id: string) {
 }
 
 test("Repository subscription accepts only the exact FPT states", async () => {
-  const calls: unknown[][] = [];
-  const store = {
+  const calls: Parameters<RepositorySubscriptionStore["execute"]>[] = [];
+  const store: RepositorySubscriptionStore = {
     view: async () => {
       throw new Error("not used");
     },
-    execute: async (...args: unknown[]) => {
+    execute: async (...args) => {
       calls.push(args);
       return {
         requestId: "11111111-1111-4111-8111-111111111111",
@@ -34,7 +34,7 @@ test("Repository subscription accepts only the exact FPT states", async () => {
         at: 10,
       } as const;
     },
-  } as RepositorySubscriptionStore;
+  };
   const subscription = createRepositorySubscription({
     activeUser: async () => ({ id: "viewer" }),
     store: () => store,
@@ -48,7 +48,7 @@ test("Repository subscription accepts only the exact FPT states", async () => {
     expectedVersion: 0,
     state: "SUBSCRIBED",
   });
-  assert.equal((calls[0]?.[1] as { state?: string }).state, "SUBSCRIBED");
+  assert.equal(calls[0]?.[1].state, "SUBSCRIBED");
 
   await assert.rejects(
     subscription.execute("subject", {

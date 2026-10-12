@@ -8,10 +8,10 @@ import { RepositoryError } from "../src/domain.js";
 import { PostgresRepositoryCreationStore } from "../src/postgres/creation.js";
 
 test("Repository create application canonicalizes input before the store", async () => {
-  const calls: unknown[][] = [];
-  const store = {
+  const calls: Parameters<RepositoryCreationStore["create"]>[] = [];
+  const store: RepositoryCreationStore = {
     owners: async () => [],
-    create: async (...args: unknown[]) => {
+    create: async (...args) => {
       calls.push(args);
       return {
         id: "repo",
@@ -23,7 +23,7 @@ test("Repository create application canonicalizes input before the store", async
         version: 1,
       } as const;
     },
-  } as RepositoryCreationStore;
+  };
   const service = createRepositoryCreation({
     activeUser: async () => ({ id: "user" }),
     store: () => store,
@@ -52,7 +52,7 @@ test("Repository create application canonicalizes input before the store", async
     name: "Public",
     visibility: "public",
   });
-  assert.equal((calls[1]?.[1] as { visibility?: string }).visibility, "public");
+  assert.equal(calls[1]?.[1].visibility, "public");
 
   await assert.rejects(
     service.create("subject", {

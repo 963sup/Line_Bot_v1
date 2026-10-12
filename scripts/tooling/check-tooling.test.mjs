@@ -82,8 +82,21 @@ function fixture(t) {
       assist: { actions: { source: { organizeImports: "on" } } },
       linter: {
         rules: {
-          suspicious: { noExplicitAny: "error", noTsIgnore: "error" },
-          style: { noNonNullAssertion: "error", noEnum: "error", noNamespace: "error" },
+          correctness: { noUnsafeOptionalChaining: "error" },
+          complexity: { noBannedTypes: "error" },
+          suspicious: {
+            noExplicitAny: "error",
+            noTsIgnore: "error",
+            noEvolvingTypes: "error",
+            noImplicitAnyLet: "error",
+            noUnsafeDeclarationMerging: "error",
+          },
+          style: {
+            noNonNullAssertion: "error",
+            noEnum: "error",
+            noNamespace: "error",
+            useAsConstAssertion: "error",
+          },
         },
       },
     }),
@@ -193,6 +206,12 @@ test("unsafe syntax rules must fail checks rather than warn", (t) => {
   const { root, write } = fixture(t);
   const original = readFileSync(resolve(root, "biome.json"), "utf8");
   for (const [group, rule] of [
+    ["correctness", "noUnsafeOptionalChaining"],
+    ["complexity", "noBannedTypes"],
+    ["suspicious", "noImplicitAnyLet"],
+    ["suspicious", "noEvolvingTypes"],
+    ["suspicious", "noUnsafeDeclarationMerging"],
+    ["style", "useAsConstAssertion"],
     ["suspicious", "noExplicitAny"],
     ["suspicious", "noTsIgnore"],
     ["style", "noNonNullAssertion"],
@@ -206,6 +225,46 @@ test("unsafe syntax rules must fail checks rather than warn", (t) => {
   }
   write("biome.json", original);
   assert.deepEqual(validate(root), []);
+});
+
+test("type drift rules reject unsafe syntax and accept contract-preserving replacements", (t) => {
+  const { root, write } = fixture(t);
+  const config = JSON.parse(readFileSync(resolve(repo, "biome.json"), "utf8"));
+  config.vcs.enabled = false;
+  write("biome.json", JSON.stringify(config));
+  const biome = resolve(repo, "node_modules/@biomejs/biome/bin/biome");
+  for (const [rule, invalid, repaired] of [
+    ["noEvolvingTypes", "let value; value = 1;", "let value: number; value = 1;"],
+    ["noImplicitAnyLet", "let value;", "let value: unknown;"],
+    ["noBannedTypes", "const value: String = input;", "const value: string = input;"],
+    [
+      "noUnsafeOptionalChaining",
+      "const value = (source?.value).name;",
+      "const value = source?.value?.name;",
+    ],
+    [
+      "noUnsafeDeclarationMerging",
+      "class Value {} interface Value { name: string; }",
+      'class Value { name = "value"; }',
+    ],
+    ["useAsConstAssertion", 'const value = "value" as "value";', 'const value = "value" as const;'],
+  ]) {
+    const lint = (source) => {
+      write("apps/web/src/type-safety.ts", source);
+      return spawnSync(process.execPath, [biome, "lint", "apps/web/src/type-safety.ts"], {
+        cwd: root,
+        encoding: "utf8",
+      });
+    };
+    const rejected = lint(invalid);
+    assert.equal(rejected.status, 1, rejected.stdout + rejected.stderr);
+    assert.ok(
+      (rejected.stdout + rejected.stderr).includes(rule),
+      rejected.stdout + rejected.stderr,
+    );
+    const accepted = lint(repaired);
+    assert.equal(accepted.status, 0, accepted.stderr);
+  }
 });
 
 test("shared TypeScript configuration participates in every Turbo task cache", (t) => {

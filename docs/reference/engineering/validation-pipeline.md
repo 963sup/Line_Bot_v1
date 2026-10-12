@@ -43,6 +43,25 @@ TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace sour
 
 `biome.json` 將 explicit `any`、`@ts-ignore`、非空斷言 `!`、`enum` 與 `namespace` 設為 error，經 `lint`、`check` 與 `validate` 被動阻擋。外部輸入先用 `unknown` 再驗證，nullable / indexed value 用控制流程收窄；optional property 沒有值時省略，只有契約真的接受明確 `undefined` 才標示它。有限集合使用 literal union 或 `as const`，模組使用 ESM。一般 `as` 斷言仍可能出現在驗證過的 adapter 邊界，這些靜態規則不證明外部資料有效，也不保證完全不存在型別逃生口。
 
+防止型別漂移的目標是讓資料與契約改變時，編譯器或邊界驗證能指出失配，而不是單純減少某個關鍵字。另啟用 `noEvolvingTypes`、`noImplicitAnyLet`、`noBannedTypes`、`noUnsafeOptionalChaining`、`noUnsafeDeclarationMerging` 與 `useAsConstAssertion` 為 error；`tooling:check` 拒絕將這些規則降為 warning。
+
+`noEvolvingTypes` 是明確的 repository policy 選擇：TypeScript strict 下的 evolving inference 本身可以合法且安全，但這裡對未初始化暫存變數要求明確契約，避免後續 assignment 靜默擴大型別。這不代表一般型別推導都應改成註記；`noImplicitAnyLet` 另外補上讀取未初始化變數的逃生口。
+
+| 漂移來源 | 優先處理方式 | 檢查責任與限制 |
+| --- | --- | --- |
+| 未初始化變數隱式演化成 `any` | 標明真正的 union／契約型別 | Biome `noEvolvingTypes`；`strict` 不能完全阻止 evolving any |
+| 未初始化變數的 implicit any／boxed `String`、`Object`、`Function`、`{}` 寬型別 | 明確契約、primitive、實際函式簽章或 `unknown` | Biome `noImplicitAnyLet`／`noBannedTypes`；`{}` 不代表空物件 |
+| 物件／測試 mock 的 `as Contract` | 型別註記或 `satisfies Contract`；spy 參數取 `Parameters<Contract["method"]>` | TypeScript 檢查契約變更；不要改成雙重斷言 |
+| URL 值斷言成有限集合 | 從允許集合找出匹配值，讓回傳型別由集合推導 | 控制流程＋既有 parser 測試 |
+| 外部 JSON 的 `as T`／`as unknown as T` | 在所屬 adapter 驗證 required、optional 與 nested fields | 執行期驗證＋有效／無效 payload 測試；`satisfies` 不驗證執行期資料 |
+| optional chaining 後仍直接解參考 | 明確檢查存在，或保留完整 optional chain | Biome `noUnsafeOptionalChaining` |
+| class/interface 宣告合併宣稱不存在的 member | 由實際 class implementation 提供成員 | Biome `noUnsafeDeclarationMerging` |
+| literal 斷言 | 使用 `as const` 保留推導 | Biome `useAsConstAssertion`；`as const` 不等於執行期 freeze |
+| SQL driver 的未驗證 row 型別 | 對照 SQL projection／schema，在 owner adapter mapping | TypeScript 不會驗證 SQL；泛型 query 也不等於資料驗證 |
+| 未處理 Promise／union 新增分支 | 由 owner 確認 await、錯誤處理及 exhaustive decision | 保留 TypeScript／測試；需先驗證型別 lint 的偵測限制 |
+
+目前不全庫啟用 nursery `noUnsafeTypeAssertion`：固定版本 Biome 2.5.14 的規則禁止所有非 const 斷言，包含已驗證的 adapter 與第三方 SDK 邊界，不能用全庫禁令迫使程式改成未驗證的 type predicate。也不直接啟用 `noMisusedPromises`：對 `Map.get()` 取得 `Promise | undefined` 後檢查是否已有進行中請求，必須保留存在檢查，不能自動改成 await。`noFloatingPromises`／`useExhaustiveSwitchCases` 可在獨立變更中評估；新增規則前先用固定版本實測，再補對應 regression fixture，不加 ignore 或引進第二套重複 linter。
+
 ## Concurrency
 
 Web build 同時承擔 Sentry sourcemap 上傳，因此 `@line_bot_v1/web#build` 停用 Turbo 快取，避免重播產物而跳過上傳；其他 package build 仍可使用快取。`SENTRY_AUTH_TOKEN` 保留 passthrough，不納入 cache hash。未提供 Sentry 配置的本機 build 不證明上傳成功。

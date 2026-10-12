@@ -21,12 +21,12 @@ async function activeUser(db: Database, id: string, login = id) {
 }
 
 test("Repository address application validates the full address value before persistence", async () => {
-  const calls: unknown[][] = [];
-  const store = {
+  const calls: Parameters<RepositoryAddressStore["execute"]>[] = [];
+  const store: RepositoryAddressStore = {
     view: async () => {
       throw new Error("not used");
     },
-    execute: async (...args: unknown[]) => {
+    execute: async (...args) => {
       calls.push(args);
       return {
         requestId: "11111111-1111-4111-8111-111111111111",
@@ -36,7 +36,7 @@ test("Repository address application validates the full address value before per
         at: 10,
       };
     },
-  } as RepositoryAddressStore;
+  };
   const service = createRepositoryAddress({
     activeUser: async () => ({ id: "actor" }),
     store: () => store,
@@ -70,7 +70,9 @@ test("Repository address application validates the full address value before per
       radius: 100,
     },
   });
-  assert.deepEqual((calls[1]?.[1] as { address: { address: string | null } }).address, {
+  const command = calls[1]?.[1];
+  assert.ok(command?.action === "set");
+  assert.deepEqual(command.address, {
     address: null,
     latitude: 25.0375,
     longitude: 121.5637,
