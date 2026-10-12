@@ -115,7 +115,7 @@ test("Project management composes access, draft conversion, typed fields, views 
     14,
   );
   assert.ok(draft.resourceId);
-  const draftItemId = draft.resourceId!;
+  const draftItemId = draft.resourceId;
 
   const converted = await store.execute(
     writer,
@@ -158,7 +158,7 @@ test("Project management composes access, draft conversion, typed fields, views 
     16,
   );
   assert.ok(field.resourceId);
-  const fieldId = field.resourceId!;
+  const fieldId = field.resourceId;
   const beforeValue = await store.view(writer, created.projectId);
   const optionId = beforeValue.fields
     .find((item) => item.id === fieldId)
@@ -254,5 +254,82 @@ test("Project management composes access, draft conversion, typed fields, views 
       21,
     ),
     (error) => error instanceof ProjectError && error.status === 409,
+  );
+});
+
+test("Organization members create ProjectV2 by default and Owner policy can restrict them", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+
+  await activeUser(db, "owner");
+  await activeUser(db, "org-admin");
+  await activeUser(db, "member");
+  await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
+    "org",
+    "owner",
+    "acme",
+    "Acme",
+    2,
+  ]);
+  await pg.query(
+    "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3),('org','member','active',1,3)",
+  );
+
+  const store = new PostgresProjectManagementStore(db);
+  const command = {
+    action: "create-project" as const,
+    requestId: randomUUID(),
+    ownerAccountId: "org",
+    ownerKind: "ORGANIZATION" as const,
+    expectedVersion: 0 as const,
+    title: "Admin Plan",
+    public: false,
+    repositoryId: null,
+    teamId: null,
+  };
+  const created = await store.execute({ userId: "org-admin" }, command, 10);
+  assert.equal(created.version, 1);
+
+  const memberCommand = { ...command, requestId: randomUUID(), title: "Member Plan" };
+  const memberIdentity = { userId: "member" };
+  const memberCreated = await store.execute(memberIdentity, memberCommand, 11);
+  assert.equal(memberCreated.version, 1);
+  assert.equal((await store.view(memberIdentity, memberCreated.projectId)).role, "ADMIN");
+  assert.deepEqual(await store.execute(memberIdentity, memberCommand, 11), memberCreated);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select role from app_private.project_user_access where project_id=$1 and user_id='member'",
+        [memberCreated.projectId],
+      )
+    ).rows,
+    [{ role: "ADMIN" }],
+  );
+
+  await pg.query(
+    "update app_private.organizations set member_can_create_project_v2=false,version=version+1 where account_id='org'",
+  );
+  await assert.rejects(
+    store.execute(
+      { userId: "org-admin" },
+      { ...command, requestId: randomUUID(), title: "Restricted Plan" },
+      12,
+    ),
+    (error) => error instanceof ProjectError && error.status === 403,
+  );
+  const ownerCreated = await store.execute(
+    { userId: "owner" },
+    { ...command, requestId: randomUUID(), title: "Owner Plan" },
+    13,
+  );
+  assert.equal(ownerCreated.version, 1);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select role from app_private.project_user_access where project_id=$1 and user_id='owner'",
+        [ownerCreated.projectId],
+      )
+    ).rows,
+    [],
   );
 });

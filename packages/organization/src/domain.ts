@@ -1,5 +1,7 @@
 import type { AccountId, UserId } from "@line_bot_v1/account/domain";
 
+export type OrganizationMemberRole = "ADMIN" | "MEMBER";
+
 export type OrganizationAccountId = AccountId;
 
 type OrganizationStatus = "active" | "inactive";

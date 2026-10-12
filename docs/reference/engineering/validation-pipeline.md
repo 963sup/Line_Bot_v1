@@ -37,6 +37,12 @@ Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Pro
 - `pnpm validate` 證明 repository revision通過完整 gate，不等於 deployment。
 - Release Supabase success才證明該 validated revision的 database contract已完成對應 remote readback。
 - Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
+## TypeScript safety
+
+TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace source 與 test config 必須繼承五項安全設定；`tooling:check` 解析實際繼承結果，拒絕子設定關閉它們。此共用檔也納入 Turbo `globalDependencies`，避免設定改變後仍重播舊的成功快取。
+
+`biome.json` 將 explicit `any`、`@ts-ignore`、非空斷言 `!`、`enum` 與 `namespace` 設為 error，經 `lint`、`check` 與 `validate` 被動阻擋。外部輸入先用 `unknown` 再驗證，nullable / indexed value 用控制流程收窄；optional property 沒有值時省略，只有契約真的接受明確 `undefined` 才標示它。有限集合使用 literal union 或 `as const`，模組使用 ESM。一般 `as` 斷言仍可能出現在驗證過的 adapter 邊界，這些靜態規則不證明外部資料有效，也不保證完全不存在型別逃生口。
+
 ## Concurrency
 
 Web build 同時承擔 Sentry sourcemap 上傳，因此 `@line_bot_v1/web#build` 停用 Turbo 快取，避免重播產物而跳過上傳；其他 package build 仍可使用快取。`SENTRY_AUTH_TOKEN` 保留 passthrough，不納入 cache hash。未提供 Sentry 配置的本機 build 不證明上傳成功。

@@ -252,8 +252,12 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           { id: command.issueId, repositoryId: command.repositoryId },
           { id: relatedTarget.id, repositoryId: relatedTarget.repository_id },
         ].sort((left, right) => left.id.localeCompare(right.id));
-        const first = await currentIssue(sql, endpoints[0]!.repositoryId, endpoints[0]!.id);
-        const second = await currentIssue(sql, endpoints[1]!.repositoryId, endpoints[1]!.id);
+        const [firstEndpoint, secondEndpoint] = endpoints;
+        if (!firstEndpoint || !secondEndpoint) {
+          throw new IssueError(503, "Issue relatesTo endpoint 排序結果不完整。");
+        }
+        const first = await currentIssue(sql, firstEndpoint.repositoryId, firstEndpoint.id);
+        const second = await currentIssue(sql, secondEndpoint.repositoryId, secondEndpoint.id);
         issue = first.id === command.issueId ? first : second;
         relatedTargetHead = first.id === relatedTarget.id ? first : second;
       } else {
@@ -484,8 +488,10 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         const target = relatedTarget;
         const targetHead = relatedTargetHead;
         const ordered = [issue.id, target.id].sort((left, right) => left.localeCompare(right));
-        const left = ordered[0]!;
-        const right = ordered[1]!;
+        const [left, right] = ordered;
+        if (!left || !right) {
+          throw new IssueError(503, "Issue relatesTo identity 排序結果不完整。");
+        }
         resourceId = target.id;
         let targetData: Record<string, unknown>;
         if (command.action === "add-related") {

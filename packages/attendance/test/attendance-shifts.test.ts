@@ -37,7 +37,9 @@ test("two commands accept all times, repeat sessions, and never auto-transition"
 });
 test("daily partition covers exact boundaries, fractions and midnight without subtracting breaks", () => {
   const r = session("2026-09-07T06:30:00+08:00", "2026-09-08T01:00:00+08:00");
-  const sum = summarizeAttendance(r, r.endedAt!);
+  const endedAt = r.endedAt;
+  assert.ok(endedAt !== null);
+  const sum = summarizeAttendance(r, endedAt);
   assert.equal(sum.elapsedMs, 18.5 * hour);
   assert.equal(sum.beforeMs, 2.5 * hour);
   assert.equal(sum.scheduledMs, 9 * hour);
@@ -58,11 +60,13 @@ test("daily partition covers exact boundaries, fractions and midnight without su
 });
 test("long sessions split every day and preserve exact totals", () => {
   const r = session("2026-09-01T22:00:00+08:00", "2026-09-07T03:00:00+08:00");
-  const s = summarizeAttendance(r, r.endedAt!);
+  const endedAt = r.endedAt;
+  assert.ok(endedAt !== null);
+  const s = summarizeAttendance(r, endedAt);
   assert.equal(s.days.length, 7);
   assert.equal(
     s.days.reduce((n, d) => n + d.elapsedMs, 0),
-    r.endedAt! - r.startedAt,
+    endedAt - r.startedAt,
   );
   assert.equal(s.beforeMs + s.scheduledMs + s.afterMs, s.elapsedMs);
 });

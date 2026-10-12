@@ -72,9 +72,60 @@ test("Repository member can clock; public visibility does not grant attendance; 
   );
   const snapshot = (
     await pg.query("SELECT repository_id,point_snapshot FROM app_private.attendance_sessions")
-  ).rows[0] as any;
+  ).rows[0] as { repository_id: string; point_snapshot: { address: string | null } } | undefined;
+  assert.ok(snapshot);
   assert.equal(snapshot.repository_id, "repo");
   assert.equal(snapshot.point_snapshot.address, address.address);
+});
+
+test("coordinates and radius authorize attendance when the Repository description is null", async (t) => {
+  const { pg, store } = await fixture();
+  t.after(() => pg.close());
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo'", [
+    JSON.stringify({ ...address, address: null }),
+  ]);
+  const recipient = { provider: "line:test", subject: "U11111111111111111111111111111111" };
+
+  const prepared = await store.prepare("member", now);
+  assert.equal(prepared.sites[0]?.address, null);
+  await assert.rejects(
+    store.execute(
+      "member",
+      "clockIn",
+      {
+        ...input(0),
+        location: { latitude: 25.01, longitude: 121, accuracy: 5 },
+      },
+      now,
+      recipient,
+    ),
+    /範圍/,
+  );
+
+  const started = await store.execute("member", "clockIn", input(0), now, recipient);
+  assert.equal(started.sites[0]?.address, null);
+  const persisted = await pg.query(
+    "SELECT point_snapshot FROM app_private.attendance_sessions WHERE uid='member'",
+  );
+  assert.equal(
+    (persisted.rows[0] as { point_snapshot: { address: string | null } }).point_snapshot.address,
+    null,
+  );
+
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo'", [
+    JSON.stringify({ ...address, address: "後續新增的地址描述" }),
+  ]);
+  const active = await store.prepare("member", now + 1_000);
+  assert.equal(active.sites[0]?.address, null);
+  const ended = await store.execute("member", "clockOut", input(1), now + 3_600_000, recipient);
+  assert.equal(ended.attendance.active, null);
+  const unchanged = await pg.query(
+    "SELECT point_snapshot FROM app_private.attendance_sessions WHERE uid='member'",
+  );
+  assert.equal(
+    (unchanged.rows[0] as { point_snapshot: { address: string | null } }).point_snapshot.address,
+    null,
+  );
 });
 
 test("clock-out checks original geofence, replay fingerprint and state version", async (t) => {
@@ -147,7 +198,9 @@ test("pre-cutover open session closes using its existing clock-in evidence witho
     )
     .digest("hex");
   const snapshot = await store.snapshot("member", now + 1000);
-  const { address: oldAddress, repositoryId: _repositoryId, ...oldPoint } = snapshot.sites[0]!;
+  const originalSite = snapshot.sites[0];
+  assert.ok(originalSite);
+  const { address: oldAddress, repositoryId: _repositoryId, ...oldPoint } = originalSite;
   await pg.query(
     "INSERT INTO app_private.attendance_commands(uid,request_id,fingerprint,result,at) VALUES('member',$1,$2,$3,$4)",
     [
@@ -335,7 +388,7 @@ test("applicant inbox keeps every pending request visible beyond the recent-hist
   assert.ok(inbox.mine.every((request) => request.status === "PENDING"));
 });
 
-test("OrganizationOwner without Repository ADMIN cannot review an Organization-owned supplement", async (t) => {
+test("OrganizationOwner can review an Organization-owned supplement without a direct Repository grant", async (t) => {
   const { pg, store } = await fixture();
   t.after(() => pg.close());
 
@@ -396,20 +449,18 @@ test("OrganizationOwner without Repository ADMIN cannot review an Organization-o
     workerRecipient,
   );
 
-  await assert.rejects(
-    store.review(
-      "org-owner",
-      {
-        commandId: randomUUID(),
-        supplementId: submitted.supplement.id,
-        expectedVersion: submitted.supplement.version,
-        decision: "approve",
-      },
-      now,
-      ownerRecipient,
-    ),
-    /需要該 Repository 當下有效的 ADMIN 權限才能審核/,
-  );
   const inbox = await store.list("org-owner", now, ownerRecipient);
-  assert.equal(inbox.review.length, 0);
+  assert.equal(inbox.review.length, 1);
+  const review = await store.review(
+    "org-owner",
+    {
+      commandId: randomUUID(),
+      supplementId: submitted.supplement.id,
+      expectedVersion: submitted.supplement.version,
+      decision: "approve",
+    },
+    now,
+    ownerRecipient,
+  );
+  assert.equal(review.supplement.status, "APPROVED");
 });

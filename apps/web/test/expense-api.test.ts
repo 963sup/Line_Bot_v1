@@ -36,7 +36,8 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
   try {
     authenticated = await lineSessionHeaders("offline-token");
     await store.arm("group:A", owner);
-    const d = (await store.receive("group:A", owner, "1"))!;
+    const d = await store.receive("group:A", owner, "1");
+    assert.ok(d);
     const context = { params: Promise.resolve({ id: d.id }) };
     const request = (body?: unknown, origin = "https://app.example", auth = true) =>
       new Request(`https://app.example/api/expenses/${d.id}`, {
@@ -82,7 +83,8 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
     assert.equal((await store.get(d.id, owner)).status, "pending");
     const otherOwner = await activateMember(`U${"2".repeat(32)}`);
     await store.arm("group:B", otherOwner);
-    const other = (await store.receive("group:B", otherOwner, "2"))!;
+    const other = await store.receive("group:B", otherOwner, "2");
+    assert.ok(other);
     assert.equal((await GET(request(), { params: Promise.resolve({ id: other.id }) })).status, 404);
 
     assert.equal(

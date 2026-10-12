@@ -11,7 +11,11 @@ export async function GET(request: Request) {
   try {
     const values = new URL(request.url).searchParams.getAll("organizationAccountId");
     if (values.length !== 1) throw new IssueError(400, "Organization 識別碼不正確。");
-    return jsonResponse(await issueTypes.list(await requestLineIdentity(request), values[0]!));
+    const [organizationAccountId] = values;
+    if (!organizationAccountId) throw new IssueError(400, "Organization 識別碼不正確。");
+    return jsonResponse(
+      await issueTypes.list(await requestLineIdentity(request), organizationAccountId),
+    );
   } catch (error) {
     return issueFailure(error);
   }

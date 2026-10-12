@@ -156,7 +156,10 @@ export async function mutateEnterpriseOwnerAssignment(
            RETURNING version`,
           [command.enterpriseAccountId, command.targetUserId, target.statusVersion, now],
         )
-      ).rows[0]!;
+      ).rows[0];
+      if (!row) {
+        throw new GovernanceAccessError(409, "conflict", "EnterpriseOwner 指派已更新。");
+      }
       return { status: "active", version: Number(row.version) };
     }
     await sql.query(
@@ -194,7 +197,10 @@ export async function mutateEnterpriseOwnerAssignment(
        RETURNING version`,
       [command.enterpriseAccountId, command.targetUserId],
     )
-  ).rows[0]!;
+  ).rows[0];
+  if (!row) {
+    throw new GovernanceAccessError(409, "conflict", "EnterpriseOwner 指派已更新。");
+  }
   return { status: "revoked", version: Number(row.version) };
 }
 

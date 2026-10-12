@@ -303,15 +303,21 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
              WHERE account_id=$1 RETURNING version`,
             [command.enterpriseAccountId, wanted],
           )
-        ).rows[0]!;
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
+        }
         result = makeEnterpriseReceipt(command, wanted, changed.version, now);
       } else if (
         command.action === "attach-organization" ||
         command.action === "detach-organization"
       ) {
+        if (!organization) {
+          throw new GovernanceAccessError(404, "not-found", "找不到 Organization。");
+        }
         if (
           enterprise.version !== command.expectedEnterpriseVersion ||
-          organization!.version !== command.expectedOrganizationVersion
+          organization.version !== command.expectedOrganizationVersion
         ) {
           throw new GovernanceAccessError(
             409,
@@ -321,7 +327,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
         }
         if (
           command.action === "attach-organization" &&
-          (enterprise.status !== "active" || organization!.status !== "active")
+          (enterprise.status !== "active" || organization.status !== "active")
         ) {
           throw new GovernanceAccessError(409, "inactive", "停用的範圍不能建立治理關係。");
         }
@@ -368,7 +374,14 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                    WHERE enterprise_account_id=$1 AND organization_account_id=$2 RETURNING version`,
                   [command.enterpriseAccountId, command.organizationAccountId],
                 )
-              ).rows[0]!;
+              ).rows[0];
+              if (!changed) {
+                throw new GovernanceAccessError(
+                  409,
+                  "conflict",
+                  "Enterprise 狀態已更新，請重新讀取。",
+                );
+              }
               result = makeEnterpriseReceipt(command, "active", changed.version, now);
             } catch (error) {
               if ((error as { code?: string }).code === "23505")
@@ -410,7 +423,10 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                WHERE enterprise_account_id=$1 AND organization_account_id=$2 RETURNING version`,
               [command.enterpriseAccountId, command.organizationAccountId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
+          }
           result = makeEnterpriseReceipt(command, "detached", changed.version, now);
         }
       } else if (isEnterpriseTeamCommand(command)) {
@@ -479,7 +495,14 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                  WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
                 [command.enterpriseAccountId, command.targetUserId, now],
               )
-            ).rows[0]!;
+            ).rows[0];
+            if (!changed) {
+              throw new GovernanceAccessError(
+                409,
+                "conflict",
+                "Enterprise 狀態已更新，請重新讀取。",
+              );
+            }
             result = makeEnterpriseReceipt(command, "pending", changed.version, now);
           }
         } else if (command.action === "accept-invitation") {
@@ -526,7 +549,10 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, command.targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
+          }
           result = makeEnterpriseReceipt(command, "accepted", changed.version, now);
         } else if (command.action === "decline-invitation") {
           if (
@@ -547,7 +573,10 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
+          }
           result = makeEnterpriseReceipt(command, "declined", changed.version, now);
         } else if (command.action === "cancel-invitation") {
           if (
@@ -568,7 +597,10 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, command.targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
+          }
           result = makeEnterpriseReceipt(command, "cancelled", changed.version, now);
         } else {
           if (
@@ -626,7 +658,10 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, targetUserId],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
+          }
           if (hasOwner) {
             await revokeEnterpriseOwnerForAffiliationRemoval(
               sql,

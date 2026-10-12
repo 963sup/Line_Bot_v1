@@ -9,7 +9,7 @@
 - [Google Workspace gaps](google-workspace.md)：Workspace source、OAuth scope、recovery 與按需整合未決事項。
 - [Account lifecycle / identity gaps](account-lifecycle-and-identity.md)：User profile、closure、provider unlink、recovery/transfer 的 current/future 邊界。
 - [Workforce gaps](workforce.md)：Organization／Employment／Calendar／Schedule 尚未落地、Attendance employment-scope 接續與完成條件。
-- [Enterprise / Organization gaps](enterprise-and-organization.md)：target hierarchy、Organization scope、Team naming、OrganizationAdmin、Personal Center multi-scope projection 與 bootstrap/authority 尚待落地的完成條件。
+- [Enterprise / Organization gaps](enterprise-and-organization.md)：target hierarchy、Organization scope、Personal Center multi-scope projection 與 bootstrap/authority 尚待落地的完成條件；Organization FPT member role/capability contract 已回到 Organization owner。
 - [Payroll gaps](payroll.md)：Payroll rule source、versioned Workforce/Attendance inputs、authorization、audit、PayStatement publication／Personal Center、Finance/payment boundary 與正式驗收條件。
 
 Gaps 只保存未決事項與完成條件；已採用的長期契約回到 product／architecture／module／integration owner，具日期驗收證據留 acceptance/history。

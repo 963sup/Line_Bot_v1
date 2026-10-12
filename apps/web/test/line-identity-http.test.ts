@@ -200,8 +200,10 @@ test("app sessions authenticate protected APIs without another LINE verification
     assert.match(sessionCookie, /HttpOnly/);
     assert.match(sessionCookie, /Secure/);
     assert.match(sessionCookie, /SameSite=Lax/);
+    const sessionId = sessionCookie.split(";", 1)[0];
+    assert.ok(sessionId);
     const session = {
-      Cookie: sessionCookie.split(";", 1)[0]!,
+      Cookie: sessionId,
       "X-App-Session-Generation": String(exchangedBody.generation),
     };
     assert.equal(proofCalls, 2, "session exchange verifies the token and fetches its subject");
@@ -280,8 +282,10 @@ test("app sessions authenticate protected APIs without another LINE verification
     };
     assert.equal(switchedBody.sessionChanged, true);
     assert.equal(typeof switchedBody.generation, "string");
+    const switchedGeneration = switchedBody.generation;
+    assert.ok(switchedGeneration);
     assert.match(
-      switchedBody.generation!,
+      switchedGeneration,
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
     assert.notEqual(switchedBody.generation, new Headers(session).get("X-App-Session-Generation"));
@@ -289,7 +293,7 @@ test("app sessions authenticate protected APIs without another LINE verification
     assert.ok(switchedCookie);
     const switchedSession = {
       Cookie: switchedCookie,
-      "X-App-Session-Generation": switchedBody.generation!,
+      "X-App-Session-Generation": switchedGeneration,
     };
     assert.equal((await expense(request(session), context)).status, 401);
     assert.equal(proofCalls, 6, "account switching verifies the new proof once");

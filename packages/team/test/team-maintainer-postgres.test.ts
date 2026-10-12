@@ -10,12 +10,12 @@ function sqlWith(
   responder: (
     text: string,
     values: unknown[] | undefined,
-  ) => Promise<{ rows: Record<string, any>[] }>,
+  ) => Promise<{ rows: Record<string, unknown>[] }>,
   queries: QueryRecord[],
 ): Sql {
   return {
     async query(text, values) {
-      queries.push({ text, values });
+      queries.push({ text, ...(values === undefined ? {} : { values }) });
       return responder(text, values);
     },
   };

@@ -61,6 +61,7 @@ test("team command builder keeps scope and accepts request identity from the del
     organizations: [],
     organizationAccountId: "org-1",
     organizationLogin: "org",
+    viewerCanCreateTeams: true,
     teams: [],
     team: {
       id: "team-1",
@@ -74,6 +75,7 @@ test("team command builder keeps scope and accepts request identity from the del
       membershipStatus: "active",
       membershipType: null,
       isMaintainer: true,
+      canManage: true,
     },
     childTeams: [],
     members: [],

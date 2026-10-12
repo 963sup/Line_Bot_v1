@@ -24,24 +24,31 @@ test("session storage hashes opaque ids and uses atomic create, renew, replace a
   const replacementId = "second-opaque-session-id-with-more-than-16-chars";
 
   assert.equal(await store.create(id, '{"subject":"U123"}', 3600), true);
-  assert.equal(await store.get(id), `record:${calls[1]!.keys[0]}`);
+  const stored = await store.get(id);
   assert.equal(await store.update(id, "old", "new", 3600), true);
   assert.equal(await store.replace(id, replacementId, "replacement", 3600), true);
   assert.equal(await store.delete(replacementId), true);
 
-  assert.equal(calls[0]!.script, SESSION_CREATE_SCRIPT);
-  assert.equal(calls[2]!.script, SESSION_UPDATE_SCRIPT);
-  assert.equal(calls[3]!.script, SESSION_REPLACE_SCRIPT);
-  assert.equal(calls[4]!.script, SESSION_DELETE_SCRIPT);
+  const [createCall, readCall, updateCall, replaceCall, deleteCall] = calls;
+  assert.ok(createCall);
+  assert.ok(readCall);
+  assert.ok(updateCall);
+  assert.ok(replaceCall);
+  assert.ok(deleteCall);
+  assert.equal(stored, `record:${readCall.keys[0]}`);
+  assert.equal(createCall.script, SESSION_CREATE_SCRIPT);
+  assert.equal(updateCall.script, SESSION_UPDATE_SCRIPT);
+  assert.equal(replaceCall.script, SESSION_REPLACE_SCRIPT);
+  assert.equal(deleteCall.script, SESSION_DELETE_SCRIPT);
   for (const call of calls) {
     assert.ok(call.keys.every((key) => key.startsWith("line_bot_v1:test:{sessions}:")));
     assert.ok(call.keys.every((key) => !key.includes(id) && !key.includes(replacementId)));
   }
-  assert.equal(calls[0]!.keys[0], calls[1]!.keys[0]);
-  assert.notEqual(calls[0]!.keys[0], calls[3]!.keys[1]);
-  assert.deepEqual(calls[0]!.args, ['{"subject":"U123"}', "3600"]);
-  assert.deepEqual(calls[2]!.args, ["old", "new", "3600"]);
-  assert.deepEqual(calls[3]!.args, ["replacement", "3600"]);
+  assert.equal(createCall.keys[0], readCall.keys[0]);
+  assert.notEqual(createCall.keys[0], replaceCall.keys[1]);
+  assert.deepEqual(createCall.args, ['{"subject":"U123"}', "3600"]);
+  assert.deepEqual(updateCall.args, ["old", "new", "3600"]);
+  assert.deepEqual(replaceCall.args, ["replacement", "3600"]);
 });
 
 test("session storage rejects unsafe key and lifetime inputs before Redis access", async () => {

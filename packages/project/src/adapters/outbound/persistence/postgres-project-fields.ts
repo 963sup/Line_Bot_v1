@@ -268,8 +268,7 @@ async function insertOptions(
     description: string;
   }[],
 ) {
-  for (let index = 0; index < values.length; index += 1) {
-    const item = values[index]!;
+  for (const [index, item] of values.entries()) {
     await sql.query(
       `INSERT INTO project_field_options(
          id,field_id,option_kind,name,color,description,position,version
@@ -289,8 +288,7 @@ async function insertIterations(
     duration: number;
   }[],
 ) {
-  for (let index = 0; index < values.length; index += 1) {
-    const item = values[index]!;
+  for (const [index, item] of values.entries()) {
     await sql.query(
       `INSERT INTO project_field_iterations(
          id,field_id,title,start_date,duration,position,version
@@ -317,8 +315,7 @@ async function replaceOptions(
   const existing = await optionRows(sql, [field.id]);
   const existingById = new Map(existing.map((row) => [row.id, row]));
   const keep = new Set<string>();
-  for (let index = 0; index < values.length; index += 1) {
-    const input = values[index]!;
+  for (const [index, input] of values.entries()) {
     if (input.id) {
       const before = existingById.get(input.id);
       if (!before) throw new ProjectError(409, "Option identity 不屬於此 Project field。");
@@ -391,8 +388,7 @@ async function replaceIterations(
   const existing = await iterationRows(sql, [field.id]);
   const existingById = new Map(existing.map((row) => [row.id, row]));
   const keep = new Set<string>();
-  for (let index = 0; index < values.length; index += 1) {
-    const input = values[index]!;
+  for (const [index, input] of values.entries()) {
     if (input.id) {
       const before = existingById.get(input.id);
       if (!before) throw new ProjectError(409, "Iteration identity 不屬於此 Project field。");

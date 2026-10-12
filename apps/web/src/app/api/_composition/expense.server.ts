@@ -9,9 +9,15 @@ import { downloadLineImage } from "@line_bot_v1/line/messaging-api";
 import { activeLineUser } from "./account.server";
 
 const recognizeImage = async (imageId: string) => {
+  const models = createGeminiClient({ apiKey: process.env.GEMINI_API_KEY ?? "" }).models;
   return createGeminiReceiptRecognizer({
     downloadImage: (id) => downloadLineImage(id, process.env.LINE_CHANNEL_ACCESS_TOKEN ?? ""),
-    models: createGeminiClient({ apiKey: process.env.GEMINI_API_KEY ?? "" }).models,
+    models: {
+      generateContent: async (parameters) => {
+        const response = await models.generateContent(parameters);
+        return response.text === undefined ? {} : { text: response.text };
+      },
+    },
     model: process.env.GEMINI_MODEL ?? "",
   })(imageId);
 };

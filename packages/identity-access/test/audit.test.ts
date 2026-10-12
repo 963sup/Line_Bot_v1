@@ -28,7 +28,9 @@ test("audit reads exact authorized scope, stable pages and safe fields; revoked 
   assert.equal(first[0]?.version, 2);
   assert.equal(JSON.stringify(first).includes("private reason"), false);
   assert.equal(JSON.stringify(first).includes("secret"), false);
-  const second = await reader.read(actor, { ...query, before: { at: 100, id: first[0]!.id } });
+  const firstEvent = first[0];
+  assert.ok(firstEvent);
+  const second = await reader.read(actor, { ...query, before: { at: 100, id: firstEvent.id } });
   assert.equal(second[0]?.id, "9007199254740992");
   await assert.rejects(reader.read(actor, { ...query, scopeId: "other" }), { status: 403 });
   await assert.rejects(reader.read({ ...actor, subject: "outsider" }, query), { status: 403 });

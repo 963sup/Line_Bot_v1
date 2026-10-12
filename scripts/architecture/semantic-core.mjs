@@ -195,13 +195,24 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
         errors.push("Concept " + concept.id + ": local concept definition is required");
       }
     }
-    if (concept.fpt && !resolveFptReference(fpt, concept.fpt)) {
-      errors.push(
-        "Concept " +
-          concept.id +
-          ": unresolved FPT reference " +
-          [concept.fpt.file, concept.fpt.symbol, concept.fpt.field].filter(Boolean).join("#"),
-      );
+    if (concept.fpt) {
+      const resolved = resolveFptReference(fpt, concept.fpt);
+      const reference = [concept.fpt.file, concept.fpt.symbol, concept.fpt.field]
+        .filter(Boolean)
+        .join("#");
+      if (!resolved) {
+        errors.push("Concept " + concept.id + ": unresolved FPT reference " + reference);
+      } else if (concept.lifecycle?.startsWith("current")) {
+        const field = concept.fpt.field;
+        const member = field
+          ? ["fields", "args", "inputFields", "returnFields"]
+              .flatMap((collection) => resolved.item?.[collection] ?? [])
+              .find((candidate) => candidate.name === field)
+          : null;
+        if (resolved.item?.isDeprecated === true || member?.isDeprecated === true) {
+          errors.push("Concept " + concept.id + ": deprecated FPT reference " + reference);
+        }
+      }
     }
     if (concept.kind === "derived-projection" && !(concept.derivedFrom ?? []).length) {
       errors.push("Concept " + concept.id + ": derived projection requires derivedFrom");

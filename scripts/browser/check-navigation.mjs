@@ -61,6 +61,7 @@ async function run() {
   const posts = [];
   const reads = [];
   let membershipLogin = "viewer";
+  let teamCreationAllowed = false;
   const membershipStatus = "active";
   const repositoryId = "repo-1";
   const viewerRepositoryId = "repo-2";
@@ -157,6 +158,7 @@ async function run() {
           organizations: [{ organizationAccountId: "org-1", login: "acme" }],
           organizationAccountId: "org-1",
           organizationLogin: "acme",
+          viewerCanCreateTeams: teamCreationAllowed,
           teams: [team],
           team,
           childTeams: [],
@@ -662,8 +664,15 @@ async function run() {
     );
     await page.goto(`${base}/orgs/acme/teams/operations`);
     await expect(page.getByRole("heading", { name: "Operations Team", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "重新載入", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "新增團隊", exact: true })).toBeDisabled();
+    await expect(page.getByText(/目前帳號沒有此組織的建立團隊資格/)).toBeVisible();
+    teamCreationAllowed = true;
     await page.reload();
     await expect(page.getByRole("heading", { name: "Operations Team", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "重新載入", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "新增團隊", exact: true })).toBeEnabled();
+    await expect(page.getByText(/目前帳號沒有此組織的建立團隊資格/)).toHaveCount(0);
     const publishedTeamResponse = await page.goto(`${base}/organizations/acme/teams/operations`);
     assert.equal(publishedTeamResponse?.status(), 200);
     assert.equal(publishedTeamResponse?.request().redirectedFrom(), null);

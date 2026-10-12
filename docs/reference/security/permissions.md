@@ -4,6 +4,8 @@
 
 現行 Permission catalog、command validation 與 `PermissionError` 的 Domain owner 是 Identity/Access，source 位於 `packages/identity-access/src/domain/permission.ts`，公開入口為 `@line_bot_v1/identity-access/domain/permission`。Business-scoped governance roles 由各 business owner 擁有其 relation fact；Identity/Access 只計算 authorization。EnterpriseOwner、OrganizationOwner、TeamMaintainer 都不再由 IAM 寫入，也不恢復 generic RoleAssignment writer。
 
+FPT `OrganizationMemberRole.ADMIN | MEMBER` 不是 global Permission catalog：`ADMIN` 僅由有效 OrganizationOwner 投影，其他有效成員為 `MEMBER`。Organization 的 `viewerCanAdminister`、按可見度的 Repository 建立資格、`viewerCanCreateTeams` 與本產品 ProjectV2 專用的 `viewerCanCreateProjectV2` 是 scoped capability read contract，受 Owner 的 member creation policy 約束。FPT `viewerCanCreateProjects` 僅指已淘汰的 Projects (classic)，不作 ProjectV2 授權。不要把 `OrganizationAdmin`、RepositoryPermission 或 Project access role 加進此 catalog 來模擬 FPT。
+
 人類 identity／qualification failure 由 Account/User contract 表達；歷史 `membership_denied` 等 wire code 只保留 protocol/history 意義，不代表 Membership 是 current Account owner。
 ## Current permission catalog
 | Permission | 意義 |
@@ -15,7 +17,7 @@
 
 `members.read`／`members.suspend` 已退出 current contract，且 persistence 不再接受 legacy alias。`permission_grants` 與 `permission_administrators` 使用 `user_id` / `user_version`，Permission source、public contract 與 database constraint 使用同一組名稱，不設 dual-write、compatibility view 或 adapter mapping。
 
-`workplaces.manage` 已退出 runtime catalog；舊 enum/grant scope 僅為保留資料，RLS 不允許 runtime 讀寫舊授權。Repository 地址由 effective Repository admin 管理。
+`workplaces.manage` 已退出 runtime catalog；舊 enum/grant scope 僅為保留資料，RLS 不允許 runtime 讀寫舊授權。Repository 打卡點由 effective Repository admin 管理。
 
 沒有列在 current catalog 的能力，不因頁面、選單或 target 文件存在而自動成為 feature permission。
 ## 授權來源

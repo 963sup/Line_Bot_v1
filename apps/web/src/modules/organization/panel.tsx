@@ -46,7 +46,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
           "X-App-Session-Generation": access,
           ...(body ? { "content-type": "application/json" } : {}),
         },
-        body: body ? JSON.stringify(body) : undefined,
+        ...(body ? { body: JSON.stringify(body) } : {}),
       },
     );
     const payload = await response.json();
@@ -221,11 +221,13 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
                         {item.status} ·{" "}
                         {item.actorIsOwner
                           ? "OrganizationOwner"
-                          : item.actorMembershipStatus === "active"
-                            ? "Member"
-                            : item.actorInvitationStatus === "pending"
-                              ? "待接受邀請"
-                              : "目前不可用"}
+                          : item.actorMemberRole === "ADMIN"
+                            ? "FPT ADMIN"
+                            : item.actorMembershipStatus === "active"
+                              ? "Member"
+                              : item.actorInvitationStatus === "pending"
+                                ? "待接受邀請"
+                                : "目前不可用"}
                       </small>
                     </span>
                     <span aria-hidden="true">›</span>

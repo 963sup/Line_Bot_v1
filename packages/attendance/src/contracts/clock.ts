@@ -6,12 +6,12 @@ import type {
 import type { AttendanceAction } from "../domain/value-objects/attendance-action.js";
 import type { AttendanceInput } from "./input/attendance-command.js";
 
-/** Immutable attendance projection of the Repository address used for this session. */
+/** Immutable Attendance projection of a Repository point and its optional description. */
 export type AttendancePoint = {
   id: string;
   repositoryId: string | null;
   name: string;
-  address: string;
+  address: string | null;
   latitude: number;
   longitude: number;
   radius: number;

@@ -27,7 +27,7 @@ export function TeamWorkspace({
   selectOrganization: (organizationAccountId: string) => void;
   selectTeam: (organizationAccountId: string, teamId: string) => void;
 }) {
-  const maintainer = data.team?.isMaintainer === true;
+  const manager = data.team?.canManage === true;
   return (
     <>
       <fieldset disabled={busy || !!pending}>
@@ -35,12 +35,17 @@ export function TeamWorkspace({
           <div className="crud-section-head">
             <div>
               <h2>團隊</h2>
-              <p>選擇組織，查看或建立團隊。</p>
+              <p>
+                選擇組織，查看或建立團隊。
+                {data.organizationAccountId &&
+                  !data.viewerCanCreateTeams &&
+                  " 目前帳號沒有此組織的建立團隊資格。"}
+              </p>
             </div>
             <button
               type="button"
               className="crud-create"
-              disabled={!data.organizationAccountId}
+              disabled={!data.organizationAccountId || !data.viewerCanCreateTeams}
               onClick={() => setDraft({ action: "create-team", name: "" })}
             >
               新增團隊
@@ -149,7 +154,7 @@ export function TeamWorkspace({
                   <p className={styles.meta}>Parent Team：{data.team.parentTeamId}</p>
                 )}
               </div>
-              {maintainer && (
+              {manager && (
                 <div className={styles.actions}>
                   <button
                     className="secondary"
@@ -218,7 +223,7 @@ export function TeamWorkspace({
                     : ""}
                 </p>
                 <div className={styles.actions}>
-                  {maintainer && member.status === "pending" && (
+                  {manager && member.status === "pending" && (
                     <button
                       onClick={() =>
                         setDraft({
@@ -232,7 +237,7 @@ export function TeamWorkspace({
                       核准加入
                     </button>
                   )}
-                  {maintainer &&
+                  {manager &&
                     member.status === "active" &&
                     member.membershipType === "IMMEDIATE" && (
                       <button
@@ -249,7 +254,7 @@ export function TeamWorkspace({
                         {member.isMaintainer ? "撤銷 TeamMaintainer" : "設為 TeamMaintainer"}
                       </button>
                     )}
-                  {(maintainer || member.userId === data.userId) &&
+                  {(manager || member.userId === data.userId) &&
                     member.status !== "removed" &&
                     (member.status !== "active" || member.membershipType === "IMMEDIATE") && (
                       <button
@@ -320,7 +325,7 @@ export function TeamWorkspace({
                 >
                   <option value="">無 parent</option>
                   {data.teams
-                    .filter((team) => team.id !== data.team?.id && team.isMaintainer)
+                    .filter((team) => team.id !== data.team?.id && team.canManage)
                     .map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name}

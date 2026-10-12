@@ -184,7 +184,9 @@ test("Discussion list omits body and paginates stable same-time rows by id", asy
   const store = new PostgresDiscussionReadStore(db);
   const first = await store.list({ userId: "reader" }, { repositoryId: "repo-a" });
   assert.equal(first.discussions.length, 20);
-  assert.equal("body" in first.discussions[0]!, false);
+  const firstDiscussion = first.discussions[0];
+  assert.ok(firstDiscussion);
+  assert.equal("body" in firstDiscussion, false);
   assert.deepEqual(first.discussions.map((discussion) => discussion.id).slice(0, 3), [
     "discussion-01",
     "discussion-02",
@@ -196,7 +198,7 @@ test("Discussion list omits body and paginates stable same-time rows by id", asy
   const second = await store.list(
     { userId: "reader" },
     { repositoryId: "repo-a" },
-    JSON.parse(first.next!) as { at: number; id: string },
+    JSON.parse(first.next) as { at: number; id: string },
   );
   assert.deepEqual(
     second.discussions.map((discussion) => discussion.id),
@@ -248,7 +250,7 @@ test("Discussion detail and comment pagination stay inside one Repository scope"
     { userId: "reader" },
     { repositoryId: "repo-a" },
     "discussion-a",
-    JSON.parse(first.next!) as { at: number; id: string },
+    JSON.parse(first.next) as { at: number; id: string },
   );
   assert.deepEqual(
     second.comments.map((entry) => entry.id),

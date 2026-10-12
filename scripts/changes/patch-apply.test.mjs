@@ -105,7 +105,18 @@ test("rejects Windows trailing-dot and trailing-space aliases before any write",
     }
   }));
 
-test("rejects path escapes and symlink traversal", () =>
+function createJunctionOrSkip(t, target, path) {
+  try {
+    symlinkSync(target, path, "junction");
+    return true;
+  } catch (error) {
+    if (error?.code !== "EPERM") throw error;
+    t.skip("Windows denied junction creation (EPERM)");
+    return false;
+  }
+}
+
+test("rejects path escapes and symlink traversal", (t) =>
   fixture((root) => {
     writeFileSync(join(root, "note.txt"), "before");
     assert.throws(
@@ -115,7 +126,7 @@ test("rejects path escapes and symlink traversal", () =>
     const outside = mkdtempSync(join(process.cwd(), ".artifacts", "patch-apply-outside-"));
     try {
       writeFileSync(join(outside, "secret.txt"), "before");
-      symlinkSync(outside, join(root, "linked"), "junction");
+      if (!createJunctionOrSkip(t, outside, join(root, "linked"))) return;
       assert.throws(
         () => preparePatch(plan("linked/secret.txt", "before", "after"), { root }),
         /Symlink traversal/,
@@ -151,17 +162,18 @@ test("rechecks all original bytes before writing", () =>
     assert.equal(readFileSync(join(root, "note.txt"), "utf8"), "changed");
   }));
 
-test("rechecks symlink traversal immediately before writes", () =>
+test("rechecks symlink traversal immediately before writes", (t) =>
   fixture((root) => {
-    writeFileSync(join(root, "note.txt"), "before");
-    const prepared = preparePatch(plan("note.txt", "before", "after"), { root });
+    mkdirSync(join(root, "nested"));
+    writeFileSync(join(root, "nested", "note.txt"), "before");
+    const prepared = preparePatch(plan("nested/note.txt", "before", "after"), { root });
     const outside = mkdtempSync(join(process.cwd(), ".artifacts", "patch-apply-outside-"));
     try {
-      writeFileSync(join(outside, "target.txt"), "before");
-      rmSync(join(root, "note.txt"));
-      symlinkSync(join(outside, "target.txt"), join(root, "note.txt"), "file");
+      writeFileSync(join(outside, "note.txt"), "before");
+      rmSync(join(root, "nested"), { recursive: true });
+      if (!createJunctionOrSkip(t, outside, join(root, "nested"))) return;
       assert.throws(() => applyPreparedPatch(prepared), /Symlink traversal/);
-      assert.equal(readFileSync(join(outside, "target.txt"), "utf8"), "before");
+      assert.equal(readFileSync(join(outside, "note.txt"), "utf8"), "before");
     } finally {
       rmSync(outside, { recursive: true, force: true });
     }

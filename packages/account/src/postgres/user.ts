@@ -17,8 +17,8 @@ type UserViewRow = {
   google_email: string | null;
 };
 type IdentityUserViewRow = Partial<UserViewRow> & { identity_user_id: string };
-const user = (row: Record<string, any>): StoredUser =>
-  ({ ...row, createdAt: Number(row.createdAt) }) as StoredUser;
+type StoredUserRow = Omit<StoredUser, "createdAt"> & { createdAt: number | string };
+const user = (row: StoredUserRow): StoredUser => ({ ...row, createdAt: Number(row.createdAt) });
 const userView = (row: UserViewRow) => {
   if (!row.login) throw new UserError(500, "User 登入名稱資料不完整。");
   return {
@@ -41,7 +41,7 @@ export class PostgresUserStore implements UserRepository {
       await sql.query(`SELECT * FROM users WHERE id=$1${lock ? " FOR UPDATE" : ""}`, [id])
     ).rows[0];
     if (!row) throw new UserError(404, "會員不存在。");
-    return user(row);
+    return user(row as StoredUserRow);
   }
 
   get(id: string) {
@@ -91,7 +91,7 @@ export class PostgresUserStore implements UserRepository {
           [provider, subject],
         )
       ).rows[0];
-      return row ? user(row) : null;
+      return row ? user(row as StoredUserRow) : null;
     });
   }
 
@@ -156,7 +156,7 @@ export class PostgresUserStore implements UserRepository {
         )
       ).rows[0];
       if (row) {
-        const m = user(row);
+        const m = user(row as StoredUserRow);
         if (m.status === "suspended") throw new UserError(403, "會員已停權。");
         if (operation === "register") {
           if (!login) throw new UserError(400, "登入名稱格式不正確。");
@@ -229,7 +229,7 @@ export class PostgresUserStore implements UserRepository {
           )
         ).rows[0];
         if (!row) throw new UserError(403, "請使用已註冊的 LINE 會員。");
-        const m = user(row);
+        const m = user(row as StoredUserRow);
         if (m.status === "suspended") throw new UserError(403, "會員已停權。");
         const old = (
           await sql.query(

@@ -22,4 +22,7 @@ test("current permission commands have no workplace scope", () => {
   assert.deepEqual(parsePermissionCommand(command), { ...command, reason: "authorize" });
   assert.throws(() => parsePermissionCommand({ ...command, workplaceId: null }));
   assert.throws(() => parsePermissionCommand({ ...command, permission: "workplaces.manage" }));
+  for (const permission of ["OrganizationAdmin", "ADMIN", "RepositoryPermission"] as const) {
+    assert.throws(() => parsePermissionCommand({ ...command, permission }));
+  }
 });

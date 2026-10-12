@@ -93,6 +93,10 @@ export function listEnterprises(
         [principal.userId, query.id ?? null, query.after ?? null, ownerScopeIds],
       )
     ).rows;
+    const nextEnterprise = rows.length > 20 ? rows[19] : undefined;
+    if (rows.length > 20 && !nextEnterprise) {
+      throw new GovernanceAccessError(503, "unknown-result", "Enterprise 分頁結果不完整。");
+    }
     return {
       items: rows.slice(0, 20).map((row) => ({
         id: row.id,
@@ -105,7 +109,7 @@ export function listEnterprises(
         actorInvitationVersion: row.invitation_version ?? null,
         actorIsOwner: ownerScopeIds.includes(row.id),
       })),
-      next: rows.length > 20 ? rows[19]!.id : null,
+      next: nextEnterprise?.id ?? null,
     };
   });
 }

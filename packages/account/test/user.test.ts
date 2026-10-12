@@ -412,9 +412,9 @@ test("login rename rejects stale edits and collisions without changing identity"
   for (const [login, expectedLogin] of [
     ["alice-3", "alice"],
     ["bob", "alice-2"],
-  ]) {
+  ] as const) {
     await assert.rejects(
-      store.updateLogin(user.id, login!, expectedLogin!, 3),
+      store.updateLogin(user.id, login, expectedLogin, 3),
       (error) => error instanceof UserError && error.status === 409,
     );
   }

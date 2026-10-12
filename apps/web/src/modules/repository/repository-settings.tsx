@@ -82,6 +82,7 @@ export default function RepositorySettings({
   const [address, setAddress] = useState("");
   const [radius, setRadius] = useState(100);
   const addressEdited = useRef(false);
+  const selectedPoint = useRef<MapPoint | null>(null);
   const generation = useRef(0);
   const locked = useRef(false);
   const storageKey = pendingKey(ownerLogin, repositoryName);
@@ -94,6 +95,7 @@ export default function RepositorySettings({
     setError("");
     setNotice("");
     setPoint(null);
+    selectedPoint.current = null;
     setAddress("");
     setRadius(100);
     addressEdited.current = false;
@@ -143,6 +145,9 @@ export default function RepositorySettings({
           ? { latitude: payload.address.latitude, longitude: payload.address.longitude }
           : null,
       );
+      selectedPoint.current = payload.address
+        ? { latitude: payload.address.latitude, longitude: payload.address.longitude }
+        : null;
       setAddress(payload.address?.address ?? "");
       setRadius(payload.address?.radius ?? 100);
       addressEdited.current = false;
@@ -158,10 +163,26 @@ export default function RepositorySettings({
     }
   }
 
-  const selectPoint = useCallback((next: MapPoint, suggestedAddress: string | null) => {
-    setPoint(next);
-    if (!addressEdited.current) setAddress(suggestedAddress ?? "");
-  }, []);
+  const selectPoint = useCallback(
+    (next: MapPoint, suggestedAddress: string | null, source: "selection" | "geocode") => {
+      if (source === "geocode") {
+        if (
+          selectedPoint.current?.latitude === next.latitude &&
+          selectedPoint.current.longitude === next.longitude &&
+          !addressEdited.current &&
+          suggestedAddress
+        ) {
+          setAddress(suggestedAddress);
+        }
+        return;
+      }
+      selectedPoint.current = next;
+      addressEdited.current = false;
+      setPoint(next);
+      setAddress(suggestedAddress?.trim() ?? "");
+    },
+    [],
+  );
 
   async function execute(operation: PendingAddressOperation) {
     if (locked.current) return;
@@ -286,7 +307,7 @@ export default function RepositorySettings({
             {data.repository.ownerLogin}/{data.repository.name}
           </h2>
           <p>
-            Repository 地址就是打卡點；你目前是
+            Repository 打卡點由座標與半徑決定；地址描述僅供辨識。你目前是
             {data.repository.actorIsOwner
               ? "擁有者"
               : data.repository.actorPermissions.includes("admin")
@@ -303,6 +324,10 @@ export default function RepositorySettings({
                   setError("請先在地圖選擇打卡位置。");
                   return;
                 }
+                if (!Number.isFinite(radius) || radius <= 0 || radius > 10_000) {
+                  setError("打卡半徑必須大於 0 且不可超過 10,000 公尺。");
+                  return;
+                }
                 void execute({
                   owner: data.repository.actorUserId,
                   command: {
@@ -311,7 +336,7 @@ export default function RepositorySettings({
                     repositoryId: data.repository.id,
                     expectedVersion: data.repository.version,
                     address: {
-                      address: address.trim(),
+                      address: address.trim() || null,
                       latitude: point.latitude,
                       longitude: point.longitude,
                       radius,
@@ -320,22 +345,17 @@ export default function RepositorySettings({
                 });
               }}
             >
-              {mapsApiKey ? (
-                <GoogleMapPicker
-                  apiKey={mapsApiKey}
-                  point={point}
-                  radius={radius}
-                  disabled={busy || Boolean(pending)}
-                  onChange={selectPoint}
-                />
-              ) : (
-                <p role="alert">Google Maps 尚未設定，暫時無法選擇新的打卡位置。</p>
-              )}
+              <GoogleMapPicker
+                apiKey={mapsApiKey}
+                point={point}
+                radius={radius}
+                disabled={busy || Boolean(pending)}
+                onChange={selectPoint}
+              />
               <label>
                 地址
                 <input
                   name="address"
-                  required
                   maxLength={500}
                   value={address}
                   onChange={(event) => {
@@ -344,19 +364,21 @@ export default function RepositorySettings({
                   }}
                 />
               </label>
+              <p className="field-help">地址描述選填；沒有地址或地理編碼失敗，不影響座標打卡點。</p>
               <label>
                 打卡半徑（公尺）
                 <input
                   name="radius"
                   type="number"
                   required
-                  min={1}
+                  min={0}
                   max={10000}
                   step="any"
                   value={radius}
                   onChange={(event) => setRadius(Number(event.currentTarget.value))}
                 />
               </label>
+              <p className="field-help">必須大於 0 且不超過 10,000 公尺。</p>
               <div className="repository-radius-choices" aria-label="常用打卡半徑">
                 {[50, 100, 200].map((value) => (
                   <button
@@ -372,7 +394,14 @@ export default function RepositorySettings({
               </div>
               <button
                 type="submit"
-                disabled={busy || Boolean(pending) || !point || !address.trim()}
+                disabled={
+                  busy ||
+                  Boolean(pending) ||
+                  !point ||
+                  !Number.isFinite(radius) ||
+                  radius <= 0 ||
+                  radius > 10_000
+                }
               >
                 儲存打卡點
               </button>
@@ -399,7 +428,8 @@ export default function RepositorySettings({
             </form>
           ) : data.address ? (
             <p>
-              {data.address.address} · {data.address.radius} 公尺
+              {data.address.address ? `${data.address.address} · ` : "未提供地址描述 · "}
+              {data.address.radius} 公尺
             </p>
           ) : (
             <p className="empty-copy">此 Repository 尚未設定打卡點。</p>

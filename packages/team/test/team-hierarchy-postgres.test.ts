@@ -62,6 +62,34 @@ test("Team hierarchy derives membership and Repository access without copying me
     },
     11,
   );
+  const memberCreated = await store.execute(
+    { provider: "line:test", subject: "child-user" },
+    {
+      action: "create-team",
+      requestId: "77777777-7777-4777-8777-777777777777",
+      organizationAccountId: "organization-team",
+      name: "Member Team",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+    },
+    11,
+  );
+  assert.ok(memberCreated.teamId);
+  const ownerViewOfMemberTeam = await store.view(owner, "organization-team", memberCreated.teamId);
+  assert.equal(ownerViewOfMemberTeam.team?.isMaintainer, false);
+  assert.equal(ownerViewOfMemberTeam.team?.canManage, true);
+  await store.execute(
+    owner,
+    {
+      action: "rename-team",
+      requestId: "abababab-abab-4bab-8bab-abababababab",
+      organizationAccountId: "organization-team",
+      teamId: memberCreated.teamId,
+      expectedVersion: 1,
+      name: "Owner Managed Team",
+    },
+    11,
+  );
 
   await store.execute(
     owner,
@@ -202,5 +230,74 @@ test("Team hierarchy derives membership and Repository access without copying me
   assert.equal(
     viewerView.members.some((member) => member.userId === "child-user"),
     true,
+  );
+
+  const memberTeam = await store.execute(
+    childActor,
+    {
+      action: "create-team",
+      requestId: "88888888-8888-4888-8888-888888888888",
+      organizationAccountId: "organization-team",
+      name: "Member Second Team",
+      privacy: "SECRET",
+      notificationSetting: "NOTIFICATIONS_DISABLED",
+    },
+    17,
+  );
+  assert.ok(memberTeam.teamId);
+  await pg.query(
+    "update app_private.organizations set member_can_create_teams=false,version=version+1 where account_id='organization-team'",
+  );
+  const restrictedMemberView = await store.view(childActor, "organization-team", "");
+  assert.equal(restrictedMemberView.viewerCanCreateTeams, false);
+  const ownerView = await store.view(owner, "organization-team", "");
+  assert.equal(ownerView.viewerCanCreateTeams, true);
+  await assert.rejects(
+    store.execute(
+      childActor,
+      {
+        action: "create-team",
+        requestId: "99999999-9999-4999-8999-999999999999",
+        organizationAccountId: "organization-team",
+        name: "Member Restricted",
+        privacy: "SECRET",
+        notificationSetting: "NOTIFICATIONS_DISABLED",
+      },
+      18,
+    ),
+    (error: unknown) => (error as { status?: number }).status === 403,
+  );
+  await pg.query(
+    "update app_private.organization_memberships set status='removed',version=version+1 where organization_account_id='organization-team' and user_id='child-user'",
+  );
+  await assert.rejects(
+    store.execute(
+      childActor,
+      {
+        action: "create-team",
+        requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        organizationAccountId: "organization-team",
+        name: "Former Member",
+        privacy: "SECRET",
+        notificationSetting: "NOTIFICATIONS_DISABLED",
+      },
+      19,
+    ),
+    (error: unknown) => (error as { status?: number }).status === 403,
+  );
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select count(*)::integer as total from app_private.teams where name='Former Member'",
+      )
+    ).rows,
+    [{ total: 0 }],
+  );
+  await pg.query(
+    "update app_private.organization_role_assignments set status='revoked',version=version+1 where organization_account_id='organization-team' and user_id='owner' and role='OrganizationOwner'",
+  );
+  await assert.rejects(
+    store.view(owner, "organization-team", memberCreated.teamId),
+    (error: unknown) => (error as { status?: number }).status === 404,
   );
 });

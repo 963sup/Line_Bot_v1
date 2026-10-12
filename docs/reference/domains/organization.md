@@ -22,7 +22,10 @@ Current runtime 支援：
 - `create-organization`：active User 以唯一 `login` 與獨立 `name` 建立新的 Organization；`login` 是 locator、`name` 是 display identity。Account identity、shared RepositoryOwner login、Organization name、direct/effective membership 與初始 OrganizationOwner 在同一 transaction 成立。
 - Organization lifecycle：`deactivate` / `reactivate`。
 - People：`invite-member`、受邀者本人 `accept-invitation` / `decline-invitation`、Owner `cancel-invitation` / `remove-direct-membership`、本人 `leave-organization`。
-- Owner role：Organization-owned `grant-organization-owner` / `revoke-organization-owner`；active OrganizationMembership 表示 FPT MEMBER，OrganizationOwner fact 表示 ADMIN 語意，Identity/Access 只做 authorization evaluation。
+- Owner role：Organization-owned `grant-organization-owner` / `revoke-organization-owner`；`OrganizationOwner` 是獨立治理 fact，不是 FPT `OrganizationMemberRole` 的 alias。
+- Member role：有效 OrganizationOwner 投影 FPT `OrganizationMemberRole.ADMIN`，其餘有效 member 投影 `MEMBER`；沒有非 Owner ADMIN 命令或指派表。舊非 Owner ADMIN 在 schema 升級後成為一般 MEMBER，不自動提權為 Owner。
+- Member creation policy：Owner 以 `update-member-creation-policy` 一次更新公開／私人／內部 Repository、ProjectV2、Team 五個開關，使用 Organization version、requestId、reason 與 audit/receipt；預設全部開放，Owner 自身不受成員限制。
+- Viewer capability：Organization public contract 以 current organization/membership/Owner/policy 計算 `viewerCanAdminister`、`viewerCanCreateRepositories`、visibility-specific Repository 建立資格、本產品 ProjectV2 專用的 `viewerCanCreateProjectV2`、`viewerCanCreateTeams`。FPT `viewerCanCreateProjects` 是 deprecated Projects (classic) 欄位，不用於 ProjectV2 授權；這些 capability 不進入 generic Permission catalog。
 - Enterprise Team-derived membership：由 Enterprise owner 的 Team membership / Team → Organization commands 在同一 transaction 內建立、移除 source 並刷新 effective OrganizationMembership；Organization 不直接寫 Enterprise Team private state。
 
 一般產品建立走 active User 的 `create-organization`，同 transaction 建立 Account identity、Organization、creator 的 active `OrganizationDirectMembership`、active effective OrganizationMembership 與初始 OrganizationOwner。受控 operator bootstrap 保留 recovery／administrative provisioning，且與 runtime create 共用唯一 DB provisioning coordinator。Organization 可獨立存在，不要求先有 Enterprise。
@@ -31,7 +34,7 @@ Current runtime 支援：
 
 ## Queries / read model
 
-提供可參與 Organization summary、current lifecycle/version、actor membership/invitation、member safe projection、membership source projection、Owner responsibility 與 invitation projection。Consumer 只拿必要欄位，不暴露 unrestricted repository。
+提供可參與 Organization summary、current lifecycle/version、actor membership/invitation、FPT member-role projection、membership source projection、Owner responsibility、viewer capability 與 invitation projection。Consumer 只拿必要欄位，不暴露 unrestricted repository。
 
 Resource 自身 owner 保存其 authoritative scope reference；Organization 提供 scope/lifecycle/participation contract，不新增萬用 resource ownership table。Organization Team → OrganizationAccountId 由 Team owner維護；EnterpriseTeam → Organization assignment 由 Enterprise owner 維護，Organization 只消費其 membership-source 結果。
 
@@ -51,7 +54,7 @@ OrganizationPolicy 是本 Organization scope 的 versioned governance constraint
 
 至少區分 not-found、forbidden、inactive、scope mismatch、invalid transition、last-effective-role-holder、version/replay conflict、upstream unavailable、unknown result。
 
-Private operation 由 trusted Principal 解析，按 owner authority、current participation與 feature capability 重驗。Mutation 使用 requestId/fingerprint/expectedVersion/reason 與 audit/receipt；same request 只可 exact replay，撤權後不靠舊 receipt 恢復 access。Membership source mutation、effective membership refresh、owner protection 與 invitation cleanup 必須維持同一 transaction boundary。
+Private operation 由 trusted Principal 解析，按 owner authority、current participation 與 feature capability 重驗。Repository/Project/Team 建立依 Organization viewer capability；目前有效的 Owner 對 Organization-owned 資源另有管理權，不以建立資格推得。Mutation 使用 requestId/fingerprint/expectedVersion/reason 與 audit/receipt；same request 只可 exact replay，撤權後不靠舊 receipt 恢復 access。Membership source mutation、effective membership refresh、role version binding、owner protection 與 invitation cleanup 必須維持同一 transaction boundary。
 
 [Persistence](../../change/proposals/data-target.md) 與 [Audit](../../change/proposals/security-target.md) 擁有 transaction/locking/history 要求；[Public contracts](../../change/proposals/domain-target.md) 限定 consumer 依賴。
 

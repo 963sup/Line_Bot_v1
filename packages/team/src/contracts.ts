@@ -24,6 +24,7 @@ export type TeamSummary = {
   membershipStatus: "none" | "pending" | "active" | "removed";
   membershipType: TeamMembershipType | null;
   isMaintainer: boolean;
+  canManage: boolean;
 };
 
 type TeamOrganizationSummary = {
@@ -36,6 +37,7 @@ export type TeamView = {
   organizations: TeamOrganizationSummary[];
   organizationAccountId: string | null;
   organizationLogin: string | null;
+  viewerCanCreateTeams: boolean;
   teams: TeamSummary[];
   team: TeamSummary | null;
   childTeams: TeamSummary[];

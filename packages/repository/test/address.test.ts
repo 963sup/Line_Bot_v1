@@ -58,10 +58,29 @@ test("Repository address application validates the full address value before per
   assert.equal(calls[0]?.[0], "actor");
   assert.equal(calls[0]?.[2], 10);
 
+  await service.execute("subject", {
+    action: "set",
+    requestId: "22222222-2222-4222-8222-222222222222",
+    repositoryId: "repo",
+    expectedVersion: 1,
+    address: {
+      address: null,
+      latitude: 25.0375,
+      longitude: 121.5637,
+      radius: 100,
+    },
+  });
+  assert.deepEqual((calls[1]?.[1] as { address: { address: string | null } }).address, {
+    address: null,
+    latitude: 25.0375,
+    longitude: 121.5637,
+    radius: 100,
+  });
+
   await assert.rejects(
     service.execute("subject", {
       action: "set",
-      requestId: "22222222-2222-4222-8222-222222222222",
+      requestId: "33333333-3333-4333-8333-333333333333",
       repositoryId: "repo",
       expectedVersion: 1,
       address: {
@@ -75,13 +94,79 @@ test("Repository address application validates the full address value before per
   );
   await assert.rejects(
     service.execute("subject", {
+      action: "set",
+      requestId: "88888888-8888-4888-8888-888888888888",
+      repositoryId: "repo",
+      expectedVersion: 1,
+      address: { address: null, latitude: 25, longitude: 121, radius: 0 },
+    }),
+    (error) => error instanceof RepositoryError && error.status === 400,
+  );
+  await assert.rejects(
+    service.execute("subject", {
       action: "remove",
-      requestId: "33333333-3333-4333-8333-333333333333",
+      requestId: "44444444-4444-4444-8444-444444444444",
       repositoryId: "repo",
       expectedVersion: 1,
       address: null,
     }),
     (error) => error instanceof RepositoryError && error.status === 400,
+  );
+});
+
+test("Repository stores an addressless point without fabricating an address", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await activeUser(db, "owner", "alice");
+  await activeUser(db, "member");
+  await pg.query(
+    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Operations','private',1)",
+  );
+  await pg.query(
+    "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('repo','member','read',1)",
+  );
+
+  const store = new PostgresRepositoryAddressStore(db);
+  const command = {
+    action: "set" as const,
+    requestId: "55555555-5555-4555-8555-555555555555",
+    repositoryId: "repo",
+    expectedVersion: 1,
+    address: { address: null, latitude: 25.0375, longitude: 121.5637, radius: 0.5 },
+  };
+  const receipt = await store.execute("owner", command, 10);
+  assert.deepEqual(receipt.address, command.address);
+  assert.deepEqual(await store.execute("owner", command, 11), receipt);
+  assert.deepEqual((await store.view("member", { repositoryId: "repo" })).address, command.address);
+  assert.deepEqual(await db.transaction((sql) => repositoryAttendanceSites(sql, "member")), [
+    { id: "repo", name: "Operations", ...command.address, version: 2 },
+  ]);
+  const persisted = await pg.query(
+    "select address->'address' as description, jsonb_typeof(address->'address') as description_type from app_private.repositories where id='repo'",
+  );
+  assert.deepEqual(persisted.rows, [{ description: null, description_type: "null" }]);
+
+  await assert.rejects(
+    store.execute("owner", { ...command, address: { ...command.address, radius: 1 } }, 12),
+    (error) => error instanceof RepositoryError && error.status === 409,
+  );
+  await assert.rejects(
+    store.execute(
+      "owner",
+      {
+        ...command,
+        requestId: "66666666-6666-4666-8666-666666666666",
+        expectedVersion: 1,
+      },
+      12,
+    ),
+    (error) => error instanceof RepositoryError && error.status === 409,
+  );
+  await assert.rejects(
+    pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo'", [
+      JSON.stringify({ ...command.address, radius: 0 }),
+    ]),
+    /repositories_address_check/,
   );
 });
 
@@ -105,7 +190,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
     repositoryId: "repo",
     expectedVersion: 1,
     address: {
-      address: "台北市信義區市府路 1 號",
+      address: "既有街道地址",
       latitude: 25.0375,
       longitude: 121.5637,
       radius: 100,
@@ -128,7 +213,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
         address: {
           radius: 100,
           longitude: 121.5637,
-          address: "台北市信義區市府路 1 號",
+          address: "既有街道地址",
           latitude: 25.0375,
         },
       },

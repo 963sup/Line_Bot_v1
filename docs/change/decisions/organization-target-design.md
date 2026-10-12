@@ -33,7 +33,7 @@ Organization Team 擁有自己的 Team/TeamMembership lifecycle 與 Organization
 
 - OrganizationOwner 是 Organization-scoped membership-level governance role；Organization 是此 role fact 的 authority writer，Identity/Access 只計算 authorization。
 - Principal 必須符合 active effective Organization participation。
-- OrganizationOwner 不自動取得 TeamMaintainer、Payroll 或 Repository capability。
+- OrganizationOwner 不會被寫成 TeamMaintainer、Payroll 或 Repository direct grant；目前有效的 Owner 由 Team 與 Repository 各自的有效權限契約取得所屬資源管理權，不延伸為跨 Organization 或 Payroll 權限。
 - 未來 additive/custom roles 若接受 Team principal，必須由 RoleDefinition 明確定義。
 
 ## EnterpriseTeam participation source

@@ -22,10 +22,12 @@ function parse(url: string) {
     !match
   )
     throw new Error("Invalid LINE MINI App URL");
+  const channelId = match[1];
+  if (!channelId) throw new Error("Invalid LINE MINI App channel ID");
   return {
     url: value.origin + value.pathname,
     liffId: value.pathname.slice(1),
-    channelId: match[1]!,
+    channelId,
   };
 }
 

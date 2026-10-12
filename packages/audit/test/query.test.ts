@@ -86,7 +86,6 @@ test("audit defaults the page size and forwards exact actor and scope without no
       assert.deepEqual(input, {
         scopeKind: "enterprise",
         scopeId: " exact-scope ",
-        before: undefined,
         limit: calls === 1 ? 51 : 101,
       });
       return [];

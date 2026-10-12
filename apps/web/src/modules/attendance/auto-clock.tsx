@@ -144,7 +144,8 @@ export default function AutoClock({
               ? "目前已上班，不會重複上班打卡。"
               : "目前尚未上班，無法下班打卡。",
           );
-        if (!data.sites.length) throw new Error("尚未加入已設定地址的儲存庫，請聯絡儲存庫管理者。");
+        if (!data.sites.length)
+          throw new Error("尚未加入有可用打卡點的 Repository，請聯絡管理者。");
         if (!liffClient.inClient() && !explicit) {
           saveAttempt({ owner: data.memberId, operation, phase: "started" });
           setStatus("請確認後定位打卡。");

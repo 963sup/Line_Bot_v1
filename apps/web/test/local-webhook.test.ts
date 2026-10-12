@@ -325,7 +325,9 @@ test("concurrent deliveries and partial success never repeat an attempted reply 
   );
   assert.equal((await handle(request({ events: [event()] }))).status, 200);
   assert.deepEqual(calls, ["one", "two"]);
-  assert.equal(await responses[0]!.text(), "");
+  const [firstResponse] = responses;
+  assert.ok(firstResponse);
+  assert.equal(await firstResponse.text(), "");
 });
 
 test("two webhook instances share claims, and Redis outages prevent side effects", async () => {

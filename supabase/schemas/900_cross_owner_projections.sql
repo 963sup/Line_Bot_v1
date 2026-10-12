@@ -167,6 +167,32 @@ with candidate_permissions as (
 
   union all
 
+  -- Current Organization Owners administer every Repository in their Organization.
+  -- The role is derived at read time and never copied into a Repository grant.
+  select
+    r.id as repository_id,
+    owner_role.user_id,
+    'admin'::text as permission
+  from app_private.repositories r
+  join app_private.organizations o
+    on o.account_id=r.owner_account_id and o.status='active'
+  join app_private.organization_role_assignments owner_role
+    on owner_role.organization_account_id=o.account_id
+      and owner_role.role='OrganizationOwner'
+      and owner_role.status='active'
+  join app_private.organization_memberships m
+    on m.organization_account_id=o.account_id
+      and m.user_id=owner_role.user_id
+      and m.status='active'
+      and m.version=owner_role.membership_version
+  join app_private.users owner_user
+    on owner_user.id=owner_role.user_id
+      and owner_user.status='active'
+      and owner_user.status_version=owner_role.user_status_version
+  where r.owner_account_kind='ORGANIZATION'
+
+  union all
+
   -- Direct Repository grants retain their exact RepositoryPermission value. Organization
   -- membership may classify the collaborator, but never rewrites or ranks this permission.
   select

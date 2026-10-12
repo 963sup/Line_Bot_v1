@@ -76,6 +76,19 @@ async function activeUser(db: Database, id: string, login: string) {
   });
 }
 
+test("Repository provisioning uses the shared governance lock held by its caller", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  const result = await pg.query(
+    "select pg_get_functiondef('app_private.provision_repository(text,text,text,text,text,text)'::regprocedure) as definition",
+  );
+  const definition = String((result.rows[0] as { definition: string } | undefined)?.definition);
+
+  assert.match(definition, /pg_advisory_xact_lock_shared\(71020260912::bigint\)/);
+  assert.doesNotMatch(definition, /pg_advisory_xact_lock\(71020260912::bigint\)/);
+});
+
 test("Repository creation lists only effective owner scopes and preserves exact replay", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
@@ -100,12 +113,19 @@ test("Repository creation lists only effective owner scopes and preserves exact 
 
   const store = new PostgresRepositoryCreationStore(db);
   assert.deepEqual(await store.owners("creator"), [
-    { id: "creator", kind: "USER", login: "alice", internalEligible: false },
+    {
+      id: "creator",
+      kind: "USER",
+      login: "alice",
+      internalEligible: false,
+      creatableVisibilities: ["private", "public"],
+    },
     {
       id: "org-active",
       kind: "ORGANIZATION",
       login: "acme",
       internalEligible: false,
+      creatableVisibilities: ["private", "public"],
     },
   ]);
 
@@ -148,10 +168,11 @@ test("Repository creation lists only effective owner scopes and preserves exact 
   );
 });
 
-test("Organization Repository creation requires current OrganizationOwner and bootstraps creator admin atomically", async (t) => {
+test("Organization Repository creation follows viewerCanCreateRepositories and bootstraps creator admin atomically", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await activeUser(db, "owner", "owner");
+  await activeUser(db, "org-admin", "org-admin");
   await activeUser(db, "member", "member");
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "org",
@@ -162,6 +183,9 @@ test("Organization Repository creation requires current OrganizationOwner and bo
   ]);
   await pg.query(
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','member','active',1,3)",
+  );
+  await pg.query(
+    "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3)",
   );
 
   const store = new PostgresRepositoryCreationStore(db);
@@ -179,11 +203,42 @@ test("Organization Repository creation requires current OrganizationOwner and bo
   );
   assert.deepEqual(grant.rows, [{ capability: "admin", version: 1 }]);
 
+  const adminCreated = await store.create(
+    "org-admin",
+    { ...command, requestId: "55555555-5555-4555-8555-555555555555", name: "Admin Shared" },
+    11,
+  );
+  assert.equal(adminCreated.ownerAccountId, "org");
+
+  const memberCreated = await store.create(
+    "member",
+    { ...command, requestId: "44444444-4444-4444-8444-444444444444", name: "Member Shared" },
+    12,
+  );
+  assert.equal(memberCreated.ownerAccountId, "org");
+  await pg.query(
+    "update app_private.organizations set member_can_create_private_repositories=false,version=version+1 where account_id='org'",
+  );
+  assert.deepEqual(
+    (await store.owners("member")).find((option) => option.id === "org")?.creatableVisibilities,
+    ["public"],
+  );
+  const publicCreated = await store.create(
+    "member",
+    {
+      ...command,
+      requestId: "88888888-8888-4888-8888-888888888888",
+      name: "Public Shared",
+      visibility: "public",
+    },
+    12,
+  );
+  assert.equal(publicCreated.visibility, "public");
   await assert.rejects(
     store.create(
-      "member",
-      { ...command, requestId: "44444444-4444-4444-8444-444444444444", name: "Denied" },
-      11,
+      "org-admin",
+      { ...command, requestId: "66666666-6666-4666-8666-666666666666", name: "Restricted" },
+      12,
     ),
     (error) => error instanceof RepositoryError && error.status === 403,
   );
@@ -202,7 +257,11 @@ test("Organization Repository creation requires current OrganizationOwner and bo
     "update app_private.organization_role_assignments set status='revoked',version=version+1 where organization_account_id='org' and user_id='owner' and role='OrganizationOwner'",
   );
   await assert.rejects(
-    store.create("owner", command, 12),
+    store.create(
+      "owner",
+      { ...command, requestId: "77777777-7777-4777-8777-777777777777", name: "Former Owner" },
+      13,
+    ),
     (error) => error instanceof RepositoryError && error.status === 403,
   );
 });

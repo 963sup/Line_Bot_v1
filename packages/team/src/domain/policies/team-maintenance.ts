@@ -10,10 +10,6 @@ export type TeamMemberState = Readonly<{
   isMaintainer: boolean;
 }>;
 
-export function requireTeamMaintainer(isMaintainer: boolean) {
-  teamAssert(isMaintainer, 403, "需要團隊維護者權限。");
-}
-
 export function requireAnotherEffectiveMaintainer(
   members: readonly TeamMemberState[],
   targetUserId: string,

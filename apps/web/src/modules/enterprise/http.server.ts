@@ -30,7 +30,12 @@ export async function enterpriseRequest(
       const id = params.get("id") ?? undefined;
       const slug = params.get("slug") ?? undefined;
       if (id && slug) throw new EnterpriseHttpError(400, "Enterprise locator 不正確。");
-      return jsonResponse(await view(actor, { id, slug }));
+      return jsonResponse(
+        await view(actor, {
+          ...(id ? { id } : {}),
+          ...(slug ? { slug } : {}),
+        }),
+      );
     }
     const origin = process.env.APP_ORIGIN ?? "";
     if (!origin || !origin.startsWith("https://") || new URL(origin).origin !== origin)

@@ -41,6 +41,7 @@ test("Postgres Project collection exposes owner-scoped projects with effective r
   t.after(() => pg.close());
 
   await activeUser(db, "owner", "alice");
+  await activeUser(db, "org-admin", "carol");
   await activeUser(db, "member", "bob");
   await pg.query("select * from app_private.provision_organization_scope($1,$2,$3,$4,$5)", [
     "org",
@@ -51,6 +52,9 @@ test("Postgres Project collection exposes owner-scoped projects with effective r
   ]);
   await pg.query(
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','member','active',1,3)",
+  );
+  await pg.query(
+    "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('org','org-admin','active',1,3)",
   );
   await pg.query(
     "insert into app_private.projects(id,owner_account_id,owner_account_kind,name,version) values ('personal','owner','USER','Personal Plan',1),('shared','org','ORGANIZATION','Shared Plan',1)",
@@ -82,4 +86,5 @@ test("Postgres Project collection exposes owner-scoped projects with effective r
     },
   ]);
   assert.deepEqual(await store.accessible("member"), []);
+  assert.deepEqual(await store.accessible("org-admin"), []);
 });

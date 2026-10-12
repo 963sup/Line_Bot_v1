@@ -45,6 +45,8 @@ test("Organization wire compatibility stays narrow and fails closed", () => {
   for (const value of [
     { ...legacy, scopeKind: "enterprise" },
     { ...legacy, role: "TeamMaintainer" },
+    { ...legacy, role: "OrganizationAdmin" },
+    { ...legacy, role: "ADMIN" },
     { ...legacy, principal: { kind: "organization-team", id: "team-1" } },
     { ...legacy, unexpected: true },
     { ...legacy, principal: { ...legacy.principal, unexpected: true } },

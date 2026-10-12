@@ -113,10 +113,10 @@ export default function IssueBoard({
       if (!token || ticket !== generation.current) return;
       const snapshot = await requestIssueSnapshot({
         token,
-        issueNumber,
-        repositoryId,
-        ownerLogin,
-        repositoryName,
+        ...(issueNumber !== undefined ? { issueNumber } : {}),
+        ...(repositoryId !== undefined ? { repositoryId } : {}),
+        ...(ownerLogin !== undefined ? { ownerLogin } : {}),
+        ...(repositoryName !== undefined ? { repositoryName } : {}),
         repository: nextRepository,
         view: nextView,
       });
@@ -173,10 +173,10 @@ export default function IssueBoard({
       setData(
         await requestIssueSnapshot({
           token: tokenAfter,
-          issueNumber,
-          repositoryId,
-          ownerLogin,
-          repositoryName,
+          ...(issueNumber !== undefined ? { issueNumber } : {}),
+          ...(repositoryId !== undefined ? { repositoryId } : {}),
+          ...(ownerLogin !== undefined ? { ownerLogin } : {}),
+          ...(repositoryName !== undefined ? { repositoryName } : {}),
           repository: command.repositoryId,
           view,
         }),

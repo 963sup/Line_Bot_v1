@@ -4,6 +4,7 @@
     "githubActionsRemoteBaseRefFallback": true
   },
   "globalPassThroughEnv": ["npm_config_store_dir"],
+  "globalDependencies": ["tsconfig.base.json"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

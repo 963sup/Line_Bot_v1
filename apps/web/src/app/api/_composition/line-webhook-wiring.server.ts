@@ -30,7 +30,9 @@ function webhookRedisTransport() {
 
 export function createLineWebhookHandler(channelSecret: string) {
   const miniApp = lineMiniApp();
-  const line = createLineClient({ channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN! });
+  const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!channelAccessToken) throw new Error("LINE_CHANNEL_ACCESS_TOKEN is required");
+  const line = createLineClient({ channelAccessToken });
   const handleEvents = createLineWebhookRouter({
     idempotency: () => {
       try {

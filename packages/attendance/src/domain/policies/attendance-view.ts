@@ -26,10 +26,11 @@ export function attendanceView(records: AttendanceSession[], now: number): Atten
   const ordered = [...records].sort(
     (a, b) => a.startedAt - b.startedAt || a.id.localeCompare(b.id),
   );
-  for (let i = 1; i < ordered.length; i++) {
-    const previous = ordered[i - 1]!;
-    if (previous.endedAt === null || previous.endedAt > ordered[i]!.startedAt)
+  let previous = ordered[0];
+  for (const current of ordered.slice(1)) {
+    if (previous && (previous.endedAt === null || previous.endedAt > current.startedAt))
       throw new AttendanceError(409, "出勤紀錄不可重疊。");
+    previous = current;
   }
   const active = ordered.find((r) => r.endedAt === null) ?? null;
   return {

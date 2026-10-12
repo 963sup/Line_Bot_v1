@@ -122,7 +122,7 @@ export default async function Page({ params }: { params: Promise<{ login: string
     <ProfileViewerShell
       key={`${owner.kind}:${owner.id}:${owner.login}`}
       liffId={liffId}
-      profileBio={profile?.bio}
+      {...(profile ? { profileBio: profile.bio } : {})}
       profileKind="USER"
       profileLogin={owner.login}
       profileTitle={profile?.displayName ?? user.login}

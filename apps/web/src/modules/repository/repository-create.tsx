@@ -136,7 +136,12 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (!selectedOwner || !name.trim()) return;
+              if (
+                !selectedOwner ||
+                !name.trim() ||
+                !selectedOwner.creatableVisibilities.includes(visibility)
+              )
+                return;
               void execute({
                 requestId: crypto.randomUUID(),
                 ownerAccountId: selectedOwner.id,
@@ -154,8 +159,8 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
                   const nextOwnerId = event.target.value;
                   setOwnerAccountId(nextOwnerId);
                   const nextOwner = owners.find((owner) => owner.id === nextOwnerId);
-                  if (visibility === "internal" && !nextOwner?.internalEligible) {
-                    setVisibility("private");
+                  if (nextOwner && !nextOwner.creatableVisibilities.includes(visibility)) {
+                    setVisibility(nextOwner.creatableVisibilities[0] ?? "private");
                   }
                 }}
                 disabled={busy}
@@ -189,18 +194,40 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
                   setVisibility(event.target.value as RepositoryCreateCommand["visibility"])
                 }
               >
-                <option value="private">PRIVATE · explicit access only</option>
-                <option value="public">PUBLIC · visible to everyone</option>
-                <option value="internal" disabled={!selectedOwner?.internalEligible}>
+                <option
+                  value="private"
+                  disabled={!selectedOwner?.creatableVisibilities.includes("private")}
+                >
+                  PRIVATE · explicit access only
+                </option>
+                <option
+                  value="public"
+                  disabled={!selectedOwner?.creatableVisibilities.includes("public")}
+                >
+                  PUBLIC · visible to everyone
+                </option>
+                <option
+                  value="internal"
+                  disabled={!selectedOwner?.creatableVisibilities.includes("internal")}
+                >
                   INTERNAL · same active Enterprise only
                 </option>
               </select>
             </label>
             <p className="crud-lifecycle-note">
-              INTERNAL 只適用於目前連結 active Enterprise 的 Organization owner；visibility 不會建立
-              RepositoryPermission grant。
+              INTERNAL 只適用於目前連結 active Enterprise 的 Organization；建立資格由 Organization
+              viewer capability 決定，visibility 不會建立 RepositoryPermission grant。
             </p>
-            <button disabled={busy || !selectedOwner || !name.trim()}>建立 Repository</button>
+            <button
+              disabled={
+                busy ||
+                !selectedOwner ||
+                !name.trim() ||
+                !selectedOwner.creatableVisibilities.includes(visibility)
+              }
+            >
+              建立 Repository
+            </button>
           </form>
         </section>
       )}

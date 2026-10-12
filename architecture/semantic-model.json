@@ -942,7 +942,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current",
-      "definition": "Actual attendance lifecycle, Repository-member clock eligibility, immutable address snapshots and attendance facts.",
+      "definition": "Actual attendance lifecycle, Repository-member clock eligibility, immutable point snapshots and attendance facts.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -962,7 +962,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current-data-only",
-      "definition": "Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository address properties.",
+      "definition": "Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository-owned coordinates and radius with an optional address description.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1080,16 +1080,81 @@
       }
     },
     {
-      "id": "organization-role-assignment",
+      "id": "organization-member-role",
       "kind": "authoritative",
       "owner": "organization",
       "lifecycle": "current",
       "authorityMode": "authoritative",
-      "persistenceExpectation": "relation",
       "fpt": {
-        "file": "schema-users.json",
-        "symbol": "OrganizationMemberEdge",
-        "field": "role"
+        "file": "schema-orgs.json",
+        "symbol": "OrganizationMemberRole"
+      }
+    },
+    {
+      "id": "organization-owner-assignment",
+      "canonicalName": "OrganizationOwner",
+      "kind": "authoritative",
+      "owner": "organization",
+      "lifecycle": "current",
+      "definition": "Organization-owned governance fact: a current Owner projects FPT OrganizationMemberRole.ADMIN and has administrative authority across Organization-owned resources; ordinary active members project MEMBER.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "organization-viewer-is-member",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerIsAMember"
+      }
+    },
+    {
+      "id": "organization-viewer-can-administer",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanAdminister"
+      }
+    },
+    {
+      "id": "organization-viewer-can-create-repositories",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanCreateRepositories"
+      }
+    },
+    {
+      "id": "organization-viewer-can-create-project-v2",
+      "canonicalName": "Organization viewerCanCreateProjectV2",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "definition": "Product-local Organization decision for creating ProjectV2 under this owner; it does not reinterpret the deprecated FPT Projects (classic) viewerCanCreateProjects field.",
+      "authorityMode": "policy-decision"
+    },
+    {
+      "id": "organization-viewer-can-create-teams",
+      "kind": "policy-decision",
+      "owner": "organization",
+      "lifecycle": "current",
+      "authorityMode": "policy-decision",
+      "fpt": {
+        "file": "schema-orgs.json",
+        "symbol": "Organization",
+        "field": "viewerCanCreateTeams"
       }
     },
     {
@@ -1226,7 +1291,7 @@
       "id": "organization-team-scope",
       "provider": "organization",
       "consumer": "team",
-      "meaning": "Organization scope and participation.",
+      "meaning": "Organization scope, active participation, current viewerCanCreateTeams capability and current Owner administration of Organization Teams.",
       "integrationMode": "stable-identity+query",
       "authority": "organization",
       "consistency": "current-state"
@@ -1289,10 +1354,19 @@
       "id": "organization-project-owner-scope",
       "provider": "organization",
       "consumer": "project",
-      "meaning": "Project collection reads consume current Organization-owned OrganizationOwner scope facts for Organization-owned Projects; personal Projects remain User-owned.",
+      "meaning": "ProjectV2 collection and owner-level management consume current Organization-owned viewerCanAdminister for Organization-owned Projects; creation separately consumes viewerCanCreateProjectV2, while personal Projects remain User-owned.",
       "integrationMode": "query",
       "authority": "organization",
       "consistency": "current-state"
+    },
+    {
+      "id": "organization-project-creation-capability",
+      "provider": "organization",
+      "consumer": "project",
+      "meaning": "ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member. A creator without OrganizationOwner authority receives a Project-owned ADMIN grant atomically; OrganizationOwner remains implicit owner authority. The deprecated FPT Projects (classic) field is not its authorization contract.",
+      "integrationMode": "query",
+      "authority": "organization",
+      "consistency": "transaction-recheck"
     },
     {
       "id": "organization-issue-type-scope",
@@ -1523,7 +1597,7 @@
       "id": "identity-access-organization-authorization",
       "provider": "identity-access",
       "consumer": "organization",
-      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess from Organization-owned OrganizationOwner facts and current qualification; IdentityAccess does not write the OrganizationOwner lifecycle.",
+      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess for Owner-controlled lifecycle, Owner appointment and member creation policy; IdentityAccess does not write OrganizationOwner facts.",
       "integrationMode": "query",
       "authority": "identity-access",
       "consistency": "current-state"
@@ -1550,18 +1624,27 @@
       "id": "organization-repository-owner-scope",
       "provider": "organization",
       "consumer": "repository",
-      "meaning": "Organization-owned Repositories consume current Organization scope. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant.",
+      "meaning": "Organization-owned Repositories consume current Organization scope and viewerCanCreateRepositories/viewerCanAdminister capabilities. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant.",
       "integrationMode": "stable-identity+query",
       "authority": "organization",
       "consistency": "current-state"
     },
     {
-      "id": "identity-access-repository-owner-authorization",
+      "id": "identity-access-repository-authorization",
       "provider": "identity-access",
       "consumer": "repository",
-      "meaning": "Repository creation under an Organization consumes current effective OrganizationOwner authorization.",
+      "meaning": "Repository consumes current IdentityAccess authorization decisions for Repository-owned access and protected operations; IdentityAccess does not own or mutate Repository grant truth.",
       "integrationMode": "query",
       "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "organization-repository-creation-capability",
+      "provider": "organization",
+      "consumer": "repository",
+      "meaning": "Repository creation under an Organization consumes the Organization-owned visibility-specific member creation policy; current OrganizationOwner also projects implicit admin on Organization-owned Repositories without copying grants.",
+      "integrationMode": "query",
+      "authority": "organization",
       "consistency": "transaction-recheck"
     },
     {
@@ -1640,7 +1723,7 @@
       "id": "repository-attendance-address-eligibility",
       "provider": "repository",
       "consumer": "attendance",
-      "meaning": "Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal.",
+      "meaning": "Attendance consumes a Repository point (coordinates and radius with an optional address description) plus current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal.",
       "integrationMode": "query",
       "authority": "repository",
       "consistency": "current-state"
@@ -1894,12 +1977,14 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current Organization governance application surface",
+        "scope": "current Organization Owner governance, member creation policy, FPT OrganizationMemberRole projection, and viewer capability reads",
         "sourcePaths": [
           "packages/organization/src/application/organization-governance.ts",
           "packages/organization/src/contracts/input/organization-governance.ts",
           "packages/organization/src/domain.ts",
-          "packages/organization/src/contracts/organization-governance.ts"
+          "packages/organization/src/contracts/organization-governance.ts",
+          "packages/organization/src/contracts/output/public.ts",
+          "packages/organization/src/postgres/public.ts"
         ],
         "publicExports": [
           "./application/organization-governance",
@@ -1908,8 +1993,11 @@
           "./domain"
         ],
         "entrypoints": ["apps/web/src/app/(mobile)/organizations/page.tsx"],
-        "testPaths": [],
-        "note": "Organization source/export evidence exists; no test result is implied by this metadata."
+        "testPaths": [
+          "packages/organization/test/organization-capabilities.test.ts",
+          "packages/organization/test/organization-postgres-execute-characterization.test.ts"
+        ],
+        "note": "OrganizationOwner is the sole Organization administrative fact and projects FPT ADMIN; ordinary active membership projects MEMBER. Owner-controlled creation policies default open for members and may restrict Repository visibility, ProjectV2 and Team creation. Viewer capabilities are current projections, not generic Identity/Access permissions."
       }
     },
     {
@@ -2036,7 +2124,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository creation for self User owner or current effective OrganizationOwner; INTERNAL requires the Organization's current active Enterprise scope.",
+        "scope": "Repository creation for self User owner or an active Organization member with viewerCanCreateRepositories; INTERNAL requires the Organization's current active Enterprise scope.",
         "sourcePaths": [
           "packages/repository/src/application/creation.ts",
           "packages/repository/src/contracts/repositories/creation.ts",
@@ -2056,7 +2144,7 @@
           "packages/repository/test/creation.test.ts",
           "apps/web/test/repository-creation-http.test.ts"
         ],
-        "note": "Create persists the selected visibility atomically. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current owner authority and accepts pre-visibility private-create fingerprints for rollout-safe retry."
+        "note": "Create persists the selected visibility atomically. Organization creation uses the Organization-owned visibility-specific member creation capability; current OrganizationOwner bypasses member restrictions. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current capability and accepts pre-visibility private-create fingerprints for rollout-safe retry."
       }
     },
     {
@@ -2190,7 +2278,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization, OrganizationOwner recovery, expected-version mutation and exact replay.",
+        "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization including implicit OrganizationOwner admin, expected-version mutation and exact replay.",
         "sourcePaths": [
           "packages/repository/src/application/access.ts",
           "packages/repository/src/contracts/repositories/access.ts",
@@ -2210,7 +2298,7 @@
           "packages/repository/test/access.test.ts",
           "apps/web/test/repository-access-http.test.ts"
         ],
-        "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access is the set of currently qualified permission facts, not a ranked scalar; operation policy must test explicit permissions and must not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay, and a current OrganizationOwner can recover an Organization-owned Repository that has lost effective ADMIN access."
+        "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access adds current OrganizationOwner implicit ADMIN without persisting a Repository grant; operation policy tests explicit permissions and does not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay."
       }
     },
     {
@@ -2739,7 +2827,7 @@
           "apps/web/src/app/(mobile)/projects/page.tsx"
         ],
         "testPaths": ["packages/project/test/collection.test.ts"],
-        "note": "Project collection reads combine current owner authority, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
+        "note": "Project collection reads combine current Organization viewerCanAdminister capability, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
       }
     },
     {
@@ -2758,7 +2846,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "ProjectV2 root, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
+        "scope": "ProjectV2 root, owner-scoped creation through product-local viewerCanCreateProjectV2 with an atomic creator ADMIN grant for non-Owner members, distinct implicit OrganizationOwner authority, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
         "sourcePaths": [
           "packages/project/src/application/management.ts",
           "packages/project/src/contracts/management.ts",
@@ -2773,7 +2861,10 @@
           "./composition/bootstrap/postgres-project-management-store"
         ],
         "entrypoints": ["apps/web/src/app/api/project-management/route.ts"],
-        "testPaths": ["packages/project/test/collection.test.ts"],
+        "testPaths": [
+          "packages/project/test/collection.test.ts",
+          "packages/project/test/management.test.ts"
+        ],
         "note": "Project owns planning metadata only. Issue content/state remains Issue-owned and every viewer-facing Issue item is filtered by current source access; Draft conversion calls the Issue owner contract in the same transaction. WBS and Project-local Milestone writes remain explicitly data-only."
       }
     },
@@ -2793,7 +2884,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository address clock-in for effective members; clock-out uses original session point snapshot even after member removal.",
+        "scope": "Clock-in validates Repository coordinates, radius, current GPS accuracy and effective member access; clock-out uses the original immutable point snapshot even after member removal.",
         "sourcePaths": [
           "packages/attendance/src/application/clock.ts",
           "packages/attendance/src/contracts/clock.ts",
@@ -2830,7 +2921,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "The submitting User can propose a closed session for a currently eligible Repository address, or propose only an end time for their own open Repository session; each proposal is durable and remains pending until reviewed.",
+        "scope": "The submitting User can propose a closed session for a currently eligible Repository point, or propose only an end time for their own open Repository session; each proposal snapshot is durable and remains pending until reviewed.",
         "sourcePaths": [
           "packages/attendance/src/application/supplements.ts",
           "packages/attendance/src/contracts/supplements.ts",
@@ -2861,7 +2952,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked from current Repository grants on every read and decision; Organization administration alone is not sufficient, and requesters cannot approve their own requests.",
+        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked on every read and decision; current OrganizationOwner grants implicit ADMIN for its Organization-owned Repositories without a persisted Repository grant, and requesters cannot approve their own requests.",
         "sourcePaths": [
           "packages/attendance/src/application/supplements.ts",
           "packages/attendance/src/contracts/supplements.ts",
@@ -3055,7 +3146,7 @@
       "id": "manage-repository-address",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Maintain the Repository address property used as the attendance clock point for current effective members.",
+      "intent": "Maintain the Repository attendance point, consisting of coordinates and radius with an optional address description.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -3067,7 +3158,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Optional single Repository address; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
+        "scope": "Optional single Repository point with required coordinates and radius and a nullable address description; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
         "sourcePaths": [
           "packages/repository/src/application/address.ts",
           "packages/repository/src/contracts/repositories/address.ts",
@@ -3267,8 +3358,7 @@
     },
     {
       "semanticOwner": "project",
-      "module": "@line_bot_v1/project",
-      "note": "Project workspace/module ownership is registered; runtime Project capability remains inactive."
+      "module": "@line_bot_v1/project"
     },
     {
       "semanticOwner": "notifications",

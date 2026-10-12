@@ -17,7 +17,9 @@ const claim = {
   decidedAt: 1,
 };
 
-function dependencies() {
+type UserRequests = Parameters<typeof createUserRequest>[0];
+
+function dependencies(): UserRequests {
   return {
     requestIdentity: async () => "verified-subject",
     getUser: async () => account,
@@ -29,7 +31,7 @@ function dependencies() {
     updateLogin: async () => account,
     readClaim: async () => null,
     checkIn: async () => ({ claim, credited: 1, replayed: false }),
-  } as any;
+  };
 }
 
 test("membership Account read survives DailyCheckIn projection failure", async () => {

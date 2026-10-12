@@ -42,18 +42,18 @@ Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只�
 
 - 補登申請不是出勤事實；只有核准後，完整時段才會新增 closed session，或既有 open session 才會補上 ended time。
 - 已有的 start time、Repository identity、point snapshot 與已結束 session 不可由補登改寫；時間重疊或原 session 已變更時拒絕核准。
-- Applicant 可提交台灣時間、Repository 地址與原因；申請快照記錄提交者主張，不是當時 GPS 驗證證據。
-- Reviewer 必須在讀取及決策當下都具有該 Repository 的 effective `ADMIN`。Organization admin 不自動取得此權限；申請者不得核准自己的 request。
+- Applicant 可提交台灣時間、Repository 打卡點快照與原因；申請快照記錄提交者主張，不是當時 GPS 驗證證據。
+- Reviewer 必須在讀取及決策當下都具有該 Repository 的 effective `ADMIN`。Organization-owned Repository 的有效 OrganizationOwner 由 Repository effective access 投影取得隱含 `ADMIN`；申請者不得核准自己的 request。
 - 核准與出勤事實、事件、Attendance version 及 menu state projection 同 transaction。拒絕必須留下原因，不產生薪資結果。
 
-## Repository address eligibility
+## Repository attendance-point eligibility
 
-儲存庫可設定一個地址屬性（地址文字、經緯度、打卡半徑）；該屬性就是打卡點，不另外建立地點或地點人員名單。
+儲存庫可設定一個打卡點（經緯度、打卡半徑與可選地址描述）；只有座標與半徑是打卡點成立條件，不另外建立地點或地點人員名單。
 
-- 上班需要 active User、current effective Repository access 與有效地址。Direct User 或同 owner scope Team grant 沿用 Repository 現行資格投影；公開可見、Star 不算成員。
+- 上班需要 active User、current effective Repository access 與有效座標／半徑。描述地址為 null 不影響資格；Direct User 或同 owner scope Team grant 沿用 Repository 現行資格投影；公開可見、Star 不算成員。
 - 上班符合多個地址時取最近者，同距離依 stable Repository ID；distance + accuracy 必須在 radius 內。
 - 下班只驗本人 open session 的原始地址快照；移除成員或變更地址不阻擋正常下班，仍保留定位與半徑核驗。
-- 新 session 保存 Repository ID 與 immutable point snapshot；地址修改或移除不改寫歷史。
+- 新 session 保存 Repository ID 與 immutable point snapshot（描述地址可為 null）；Repository 打卡點修改或移除不改寫歷史。
 - 切換前 open session 沿用其既有 clock-in event 的 site evidence，不猜測 Repository 對應、不回填成員權限。缺少原始證據時明確回報資料問題。
 - 只在明確 attendance intent 後取得定位，不背景追蹤。
 

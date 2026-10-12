@@ -36,7 +36,7 @@ type Receipt = Readonly<{
 export type RepositoryAttendanceSite = Readonly<{
   id: string;
   name: string;
-  address: string;
+  address: string | null;
   latitude: number;
   longitude: number;
   radius: number;
@@ -149,13 +149,27 @@ function validAddress(value: unknown): value is RepositoryAddress | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const address = value as Partial<RepositoryAddress>;
   return (
-    typeof address.address === "string" &&
+    Object.keys(address).length === 4 &&
+    Object.keys(address).every((key) =>
+      ["address", "latitude", "longitude", "radius"].includes(key),
+    ) &&
+    (address.address === null ||
+      (typeof address.address === "string" &&
+        address.address === address.address.trim() &&
+        address.address.length >= 1 &&
+        address.address.length <= 500)) &&
     typeof address.latitude === "number" &&
     Number.isFinite(address.latitude) &&
+    address.latitude >= -90 &&
+    address.latitude <= 90 &&
     typeof address.longitude === "number" &&
     Number.isFinite(address.longitude) &&
+    address.longitude >= -180 &&
+    address.longitude <= 180 &&
     typeof address.radius === "number" &&
-    Number.isFinite(address.radius)
+    Number.isFinite(address.radius) &&
+    address.radius > 0 &&
+    address.radius <= 10_000
   );
 }
 

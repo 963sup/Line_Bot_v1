@@ -19,48 +19,48 @@ export default async function Page({
   const browseResource = resource === "issues" || resource === "discussions" ? resource : undefined;
   const choosingRepository =
     createIssue || manageAccess || manageSettings || Boolean(browseResource);
+  const description = createIssue
+    ? "選擇具 write 或 admin capability 的 Repository，再建立該 Repository 擁有的 Issue。"
+    : manageAccess
+      ? "選擇具 admin capability 的 Repository，再管理 Direct User 與 Organization Team access。"
+      : manageSettings
+        ? "選擇具 admin capability 的 Repository，再設定地址與打卡範圍。"
+        : browseResource === "issues"
+          ? "選擇 Repository，再進入該 Repository 的 canonical Issues surface。"
+          : browseResource === "discussions"
+            ? "選擇 Repository，再進入該 Repository 的 canonical Discussions surface。"
+            : undefined;
+  const repositoryIntent = createIssue
+    ? "create-issue"
+    : manageAccess
+      ? "manage-access"
+      : manageSettings
+        ? "manage-settings"
+        : browseResource === "issues"
+          ? "browse-issues"
+          : browseResource === "discussions"
+            ? "browse-discussions"
+            : undefined;
 
   return (
     <AppShell>
       <PageHeading
         title={choosingRepository ? "Choose Repository" : "Repositories"}
-        description={
-          createIssue
-            ? "選擇具 write 或 admin capability 的 Repository，再建立該 Repository 擁有的 Issue。"
-            : manageAccess
-              ? "選擇具 admin capability 的 Repository，再管理 Direct User 與 Organization Team access。"
-              : manageSettings
-                ? "選擇具 admin capability 的 Repository，再設定地址與打卡範圍。"
-                : browseResource === "issues"
-                  ? "選擇 Repository，再進入該 Repository 的 canonical Issues surface。"
-                  : browseResource === "discussions"
-                    ? "選擇 Repository，再進入該 Repository 的 canonical Discussions surface。"
-                    : undefined
-        }
-        actions={
-          choosingRepository ? undefined : (
-            <div className="collection-heading-actions">
-              <RepositoryCollectionActions />
-            </div>
-          )
-        }
+        {...(description ? { description } : {})}
+        {...(!choosingRepository
+          ? {
+              actions: (
+                <div className="collection-heading-actions">
+                  <RepositoryCollectionActions />
+                </div>
+              ),
+            }
+          : {})}
         back="/home"
       />
       <RepositoryList
         liffId={lineMiniApp().liffId}
-        intent={
-          createIssue
-            ? "create-issue"
-            : manageAccess
-              ? "manage-access"
-              : manageSettings
-                ? "manage-settings"
-                : browseResource === "issues"
-                  ? "browse-issues"
-                  : browseResource === "discussions"
-                    ? "browse-discussions"
-                    : undefined
-        }
+        {...(repositoryIntent ? { intent: repositoryIntent } : {})}
       />
     </AppShell>
   );

@@ -13,7 +13,11 @@ export function dailyCheckInDay(now: number): string {
     throw new DailyCheckInError();
   const parts = calendar.formatToParts(now);
   return ["year", "month", "day"]
-    .map((type) => parts.find((part) => part.type === type)!.value)
+    .map((type) => {
+      const part = parts.find((candidate) => candidate.type === type);
+      if (!part) throw new DailyCheckInError();
+      return part.value;
+    })
     .join("-");
 }
 

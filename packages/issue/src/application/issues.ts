@@ -223,8 +223,10 @@ export function createIssues(deps: {
         }
       }
       return deps.store().snapshot(actor, selected, list, view, {
-        after: cursor,
-        workflowStatus: workflowStatus as IssueWorkflowStatus | undefined,
+        ...(cursor === undefined ? {} : { after: cursor }),
+        ...(workflowStatus === undefined
+          ? {}
+          : { workflowStatus: workflowStatus as IssueWorkflowStatus }),
       });
     },
     detail: async (subject: string, issueNumber: number, repository: RepositorySelector) => {

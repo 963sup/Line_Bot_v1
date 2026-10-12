@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readOrganizationOwnerScopeIds } from "@line_bot_v1/organization/postgres";
+import { readOrganizationViewerCapabilities } from "@line_bot_v1/organization/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import {
   readActiveProjectTeamIds,
@@ -92,8 +92,12 @@ async function effectiveProjectRole(
     roles.push("ADMIN");
   }
   if (row.owner_account_kind === "ORGANIZATION") {
-    const organizationOwnerIds = await readOrganizationOwnerScopeIds(sql, userId);
-    if (organizationOwnerIds.includes(row.owner_account_id)) roles.push("ADMIN");
+    const capabilities = await readOrganizationViewerCapabilities(
+      sql,
+      userId,
+      row.owner_account_id,
+    );
+    if (capabilities?.viewerCanAdminister) roles.push("ADMIN");
   }
 
   const direct = (
@@ -171,17 +175,18 @@ export async function requireProjectOwnerTarget(
   userId: string,
   ownerAccountId: string,
   ownerKind: ProjectOwnerKind,
-) {
+): Promise<boolean> {
   if (ownerKind === "USER") {
     if (ownerAccountId !== userId) {
       throw new ProjectError(403, "只能在自己的 User owner scope 建立 Project。");
     }
-    return;
+    return true;
   }
-  const organizationOwnerIds = await readOrganizationOwnerScopeIds(sql, userId);
-  if (!organizationOwnerIds.includes(ownerAccountId)) {
-    throw new ProjectError(403, "需要目前 OrganizationOwner 才能在此 scope 建立 Project。");
+  const capabilities = await readOrganizationViewerCapabilities(sql, userId, ownerAccountId);
+  if (!capabilities?.viewerCanCreateProjectV2) {
+    throw new ProjectError(403, "目前 Organization capability 不允許建立 Project。");
   }
+  return capabilities.viewerCanAdminister;
 }
 
 export async function requireProjectTeamTarget(

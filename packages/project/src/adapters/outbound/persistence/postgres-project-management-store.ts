@@ -134,7 +134,12 @@ async function createProject(
   }>,
   now: number,
 ) {
-  await requireProjectOwnerTarget(sql, identity.userId, input.ownerAccountId, input.ownerKind);
+  const viewerCanAdminister = await requireProjectOwnerTarget(
+    sql,
+    identity.userId,
+    input.ownerAccountId,
+    input.ownerKind,
+  );
   if (input.repositoryId) {
     await requireReadableRepository(sql, identity.userId, input.repositoryId);
   }
@@ -167,6 +172,15 @@ async function createProject(
     )
   ).rows[0] as ProjectRow;
 
+  if (input.ownerKind === "ORGANIZATION" && !viewerCanAdminister) {
+    await sql.query(
+      `INSERT INTO project_user_access(
+         project_id,user_id,role,version,created_at,updated_at
+       ) VALUES($1,$2,'ADMIN',1,$3,$3)`,
+      [row.id, identity.userId, now],
+    );
+  }
+
   if (input.repositoryId) {
     await addRepositoryReference(sql, identity.userId, projectId, input.repositoryId);
   }
@@ -192,7 +206,8 @@ async function mutateCollaborators(
   let changes = 0;
   for (const collaborator of command.collaborators) {
     const kind = collaborator.userId ? "USER" : "TEAM";
-    const id = collaborator.userId ?? collaborator.teamId!;
+    const id = collaborator.userId ?? collaborator.teamId;
+    if (!id) throw new ProjectError(400, "Project collaborator 必須指定 User 或 Team。");
     const key = `${kind}:${id}`;
     if (seen.has(key)) {
       throw new ProjectError(400, "Project collaborator 不可重複。");
@@ -417,6 +432,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
   ): Promise<ProjectManagementReceipt> {
     const fingerprint = projectFingerprint(command);
     return this.db.transaction(async (sql) => {
+      await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `project-request:${identity.userId}:${command.requestId}`,
       ]);

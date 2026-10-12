@@ -215,7 +215,7 @@ export async function executeEnterpriseTeamMutation(
         }
         let version: number;
         if (membership) {
-          version = (
+          const changed = (
             await sql.query(
               `UPDATE enterprise_team_memberships
                SET status='active',version=version+1,joined_at=$4
@@ -223,7 +223,11 @@ export async function executeEnterpriseTeamMutation(
                RETURNING version`,
               [command.enterpriseAccountId, command.teamId, command.targetUserId, now],
             )
-          ).rows[0]!.version;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise Team membership 已更新。");
+          }
+          version = Number(changed.version);
         } else {
           await sql.query(
             `INSERT INTO enterprise_team_memberships(
@@ -282,7 +286,10 @@ export async function executeEnterpriseTeamMutation(
              RETURNING version`,
             [command.enterpriseAccountId, command.teamId, command.targetUserId],
           )
-        ).rows[0]!;
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Enterprise Team membership 已更新。");
+        }
         for (const organizationAccountId of organizationIds) {
           await refreshOrganizationMembershipFromSources(
             sql,
@@ -326,7 +333,7 @@ export async function executeEnterpriseTeamMutation(
         }
         let version: number;
         if (assignment) {
-          version = (
+          const changed = (
             await sql.query(
               `UPDATE enterprise_team_organizations
                SET status='active',version=version+1,assigned_at=$4,detached_at=null
@@ -334,7 +341,11 @@ export async function executeEnterpriseTeamMutation(
                RETURNING version`,
               [command.enterpriseAccountId, command.teamId, command.organizationAccountId, now],
             )
-          ).rows[0]!.version;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(409, "conflict", "Enterprise Team assignment 已更新。");
+          }
+          version = Number(changed.version);
         } else {
           await sql.query(
             `INSERT INTO enterprise_team_organizations(
@@ -394,7 +405,10 @@ export async function executeEnterpriseTeamMutation(
              RETURNING version`,
             [command.enterpriseAccountId, command.teamId, command.organizationAccountId, now],
           )
-        ).rows[0]!;
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Enterprise Team assignment 已更新。");
+        }
         for (const userId of memberIds) {
           await refreshOrganizationMembershipFromSources(
             sql,

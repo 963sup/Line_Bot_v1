@@ -63,11 +63,12 @@ export function entryDestination(href: string, fallback: Destination = "home") {
       if (partnerView === "referrals") target.pathname = "/partners/referrals";
     }
   }
-  if (selected === "attendance" && source.searchParams.has("operation")) {
-    target.pathname = `/attendance/${source.searchParams.get("operation")!}`;
+  const operation = source.searchParams.get("operation");
+  if (selected === "attendance" && operation !== null) {
+    target.pathname = `/attendance/${operation}`;
   }
-  if (selected === "expense" && source.searchParams.has("expense"))
-    target.searchParams.set("expense", source.searchParams.get("expense")!);
+  const expense = source.searchParams.get("expense");
+  if (selected === "expense" && expense !== null) target.searchParams.set("expense", expense);
   return target.pathname + target.search;
 }
 

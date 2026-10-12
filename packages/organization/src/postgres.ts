@@ -34,6 +34,7 @@ import {
   readOrganizationOwnerAssignments,
   readOrganizationOwnerScopeIds,
 } from "./postgres/owner-roles.js";
+import { readOrganizationViewerCapabilities } from "./postgres/public.js";
 
 function receipt(
   command: OrganizationCommand,
@@ -131,6 +132,11 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         if (!locator) {
           throw new GovernanceAccessError(409, "scope-conflict", "Organization login 不可用。");
         }
+        const actorCapabilities = await readOrganizationViewerCapabilities(
+          sql,
+          principal.userId,
+          row.id,
+        );
         items.push({
           id: row.id,
           login: locator.login,
@@ -142,11 +148,18 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           actorInvitationStatus: row.invitation_status ?? null,
           actorInvitationVersion: row.invitation_version ?? null,
           actorIsOwner: ownerScopeIds.includes(row.id),
+          actorMemberRole:
+            actorCapabilities?.memberRole ?? (ownerScopeIds.includes(row.id) ? "ADMIN" : null),
+          actorCanCreateProjectV2: actorCapabilities?.viewerCanCreateProjectV2 === true,
         });
+      }
+      const nextOrganization = rows.length > 20 ? rows[19] : undefined;
+      if (rows.length > 20 && !nextOrganization) {
+        throw new GovernanceAccessError(503, "unknown-result", "Organization 分頁結果不完整。");
       }
       return {
         items,
-        next: rows.length > 20 ? rows[19]!.id : null,
+        next: nextOrganization?.id ?? null,
       };
     });
   }
@@ -160,9 +173,20 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         organizationAccountId,
         principal.userId,
       );
+      const actorCapabilities = await readOrganizationViewerCapabilities(
+        sql,
+        principal.userId,
+        organizationAccountId,
+      );
+      const actorCanAdminister = actorIsOwner || actorCapabilities?.viewerCanAdminister === true;
       const scope = (
         await sql.query(
           `SELECT o.account_id AS id,o.name,o.status,o.version,
+             o.member_can_create_public_repositories,
+             o.member_can_create_private_repositories,
+             o.member_can_create_internal_repositories,
+             o.member_can_create_project_v2,
+             o.member_can_create_teams,
              m.status AS membership_status,
              d.version AS direct_membership_version,
              i.status AS invitation_status,i.version AS invitation_version
@@ -204,7 +228,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                AND d.user_id=m.user_id AND d.status='active'
            WHERE m.organization_account_id=$1 AND ($2::boolean OR m.user_id=$3)
            ORDER BY m.user_id`,
-          [organizationAccountId, actorIsOwner, principal.userId],
+          [organizationAccountId, actorCanAdminister, principal.userId],
         )
       ).rows;
       const ownerAssignments = new Map(
@@ -221,7 +245,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           `SELECT user_id,status,version FROM organization_invitations
            WHERE organization_account_id=$1 AND ($2::boolean OR user_id=$3)
            ORDER BY user_id`,
-          [organizationAccountId, actorIsOwner, principal.userId],
+          [organizationAccountId, actorCanAdminister, principal.userId],
         )
       ).rows;
 
@@ -236,6 +260,15 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         actorInvitationStatus: scope.invitation_status ?? null,
         actorInvitationVersion: scope.invitation_version ?? null,
         actorIsOwner,
+        actorMemberRole: actorCapabilities?.memberRole ?? (actorIsOwner ? "ADMIN" : null),
+        actorCanCreateProjectV2: actorCapabilities?.viewerCanCreateProjectV2 === true,
+        memberCreationPolicy: {
+          memberCanCreatePublicRepositories: scope.member_can_create_public_repositories,
+          memberCanCreatePrivateRepositories: scope.member_can_create_private_repositories,
+          memberCanCreateInternalRepositories: scope.member_can_create_internal_repositories,
+          memberCanCreateProjectV2: scope.member_can_create_project_v2,
+          memberCanCreateTeams: scope.member_can_create_teams,
+        },
         members: memberRows.map(
           (row): OrganizationMembershipProjection => ({
             userId: row.user_id,
@@ -245,6 +278,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             directMembershipVersion: row.direct_membership_version ?? null,
             effectiveOwner: ownerAssignments.has(row.user_id),
             assignmentVersion: ownerAssignments.get(row.user_id) ?? null,
+            memberRole: ownerAssignments.has(row.user_id) ? "ADMIN" : "MEMBER",
           }),
         ),
         invitations: invitationRows.map(
@@ -366,6 +400,41 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
         }
         const changed = await mutateOrganizationOwnerAssignment(sql, command, now);
         result = receipt(command, changed.status, changed.version, now);
+      } else if (command.action === "update-member-creation-policy") {
+        if (organization.status !== "active") {
+          throw new GovernanceAccessError(
+            409,
+            "inactive",
+            "停用的 Organization 不能變更成員建立政策。",
+          );
+        }
+        if (organization.version !== command.expectedVersion) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
+        }
+        const changed = (
+          await sql.query(
+            `UPDATE organizations SET
+               member_can_create_public_repositories=$2,
+               member_can_create_private_repositories=$3,
+               member_can_create_internal_repositories=$4,
+               member_can_create_project_v2=$5,
+               member_can_create_teams=$6,
+               version=version+1
+             WHERE account_id=$1 RETURNING version`,
+            [
+              command.organizationAccountId,
+              command.memberCanCreatePublicRepositories,
+              command.memberCanCreatePrivateRepositories,
+              command.memberCanCreateInternalRepositories,
+              command.memberCanCreateProjectV2,
+              command.memberCanCreateTeams,
+            ],
+          )
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
+        }
+        result = receipt(command, "active", Number(changed.version), now);
       } else if (command.action === "deactivate" || command.action === "reactivate") {
         if (organization.version !== command.expectedVersion) {
           throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
@@ -384,7 +453,10 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             "UPDATE organizations SET status=$2,version=version+1 WHERE account_id=$1 RETURNING version",
             [command.organizationAccountId, wanted],
           )
-        ).rows[0]!;
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
+        }
         result = receipt(command, wanted, changed.version, now);
       } else {
         const targetUserId =
@@ -460,7 +532,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                  WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
                 [command.organizationAccountId, command.targetUserId, now],
               )
-            ).rows[0]!;
+            ).rows[0];
+            if (!changed) {
+              throw new GovernanceAccessError(
+                409,
+                "conflict",
+                "Organization 狀態已更新，請重新讀取。",
+              );
+            }
             result = receipt(command, "pending", changed.version, now);
           }
         } else if (command.action === "accept-invitation") {
@@ -511,7 +590,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, command.targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           result = receipt(command, "accepted", changed.version, now);
         } else if (command.action === "decline-invitation") {
           if (
@@ -532,7 +618,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           result = receipt(command, "declined", changed.version, now);
         } else if (command.action === "cancel-invitation") {
           if (
@@ -553,7 +646,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, command.targetUserId, now],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           result = receipt(command, "cancelled", changed.version, now);
         } else {
           if (
@@ -608,7 +708,14 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, targetUserId],
             )
-          ).rows[0]!;
+          ).rows[0];
+          if (!changed) {
+            throw new GovernanceAccessError(
+              409,
+              "conflict",
+              "Organization 狀態已更新，請重新讀取。",
+            );
+          }
           await refreshOrganizationMembershipFromSources(
             sql,
             command.organizationAccountId,
@@ -650,10 +757,12 @@ export {
   assertOrganizationMembershipSourceRemovable,
   refreshOrganizationMembershipFromSources,
 } from "./postgres/membership-sources.js";
+export { hasOrganizationOwnerAssignment } from "./postgres/owner-roles.js";
 export {
-  hasOrganizationOwnerAssignment,
-  readOrganizationOwnerScopeIds,
-} from "./postgres/owner-roles.js";
+  listOrganizationAdministrationScopeIds,
+  listOrganizationRepositoryCreationScopeIds,
+  readOrganizationViewerCapabilities,
+} from "./postgres/public.js";
 export {
   activeOrganizationParticipantIds,
   listOrganizationTeamScopes,

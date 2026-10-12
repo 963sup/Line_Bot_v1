@@ -59,12 +59,11 @@ function parseCommand(raw: unknown): RepositoryAddressCommand {
     throw new RepositoryError(400, "Repository 版本不正確。");
   }
   const base = {
-    action: value.action,
     requestId: value.requestId.toLowerCase(),
     repositoryId: value.repositoryId,
     expectedVersion: value.expectedVersion,
   } as const;
-  if (value.action === "remove") return base;
+  if (value.action === "remove") return { ...base, action: "remove" };
   if (!value.address || typeof value.address !== "object" || Array.isArray(value.address)) {
     throw new RepositoryError(400, "Repository 地址不正確。");
   }
@@ -73,10 +72,13 @@ function parseCommand(raw: unknown): RepositoryAddressCommand {
     Object.keys(address).some(
       (key) => !["address", "latitude", "longitude", "radius"].includes(key),
     ) ||
-    typeof address.address !== "string" ||
-    address.address !== address.address.trim() ||
-    address.address.length < 1 ||
-    address.address.length > 500 ||
+    !(
+      address.address === null ||
+      (typeof address.address === "string" &&
+        address.address === address.address.trim() &&
+        address.address.length >= 1 &&
+        address.address.length <= 500)
+    ) ||
     !finiteNumber(address.latitude, -90, 90) ||
     !finiteNumber(address.longitude, -180, 180) ||
     !finiteNumber(address.radius, Number.MIN_VALUE, 10_000)
@@ -87,7 +89,7 @@ function parseCommand(raw: unknown): RepositoryAddressCommand {
     ...base,
     action: "set",
     address: {
-      address: address.address,
+      address: address.address as string | null,
       latitude: address.latitude as number,
       longitude: address.longitude as number,
       radius: address.radius as number,

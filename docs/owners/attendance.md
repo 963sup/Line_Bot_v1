@@ -4,7 +4,7 @@ Read this file for the Attendance owner boundary and invariants. Load [detailed 
 
 ## Responsibility
 
-Attendance owns clock-in / clock-out、open session invariant、time classification、Repository-address eligibility、clock reward eligibility / amount、supplement requests/reviews、write replay/version 與 attendance-derived menu/notification expectations。Asset denomination、Wallet balance 與 durable Ledger history 由各自 owner 定義；LINE delivery、LIFF runtime 與 deployment 不屬本 module business authority。
+Attendance owns clock-in / clock-out、open session invariant、time classification、Repository-point eligibility、clock reward eligibility / amount、supplement requests/reviews、write replay/version 與 attendance-derived menu/notification expectations。Asset denomination、Wallet balance 與 durable Ledger history 由各自 owner 定義；LINE delivery、LIFF runtime 與 deployment 不屬本 module business authority。
 
 ## Session invariants
 
@@ -30,8 +30,8 @@ Browser `sessionStorage` 只能協助 UX 恢復；server receipt/version/state �
 
 - User 只能提出補登，不可直接建立或改寫 Attendance session。
 - MVP 支援兩種提案：新增一段完整的已結束歷史 session；或替自己的未結束 Repository session 提出下班時間。第二種核准只做單向 close，不改上班時間、Repository 或地址快照。
-- 補登地點取自申請時保存的 Repository address snapshot；它是申請與人工審核內容，不代表系統驗證了歷史 GPS 位置。
-- Repository 當下有效的 `ADMIN` User 才能看到待審核項目並核准／拒絕。Organization admin 身分本身不授權；Organization-owned Repository 也必須重驗該 User 的 Repository `ADMIN` access。
+- 補登地點取自申請時保存的 Repository point snapshot（含可為 null 的描述）；它是申請與人工審核內容，不代表系統驗證了歷史 GPS 位置。
+- Repository 當下有效的 `ADMIN` User 才能看到待審核項目並核准／拒絕。Organization-owned Repository 的有效 OrganizationOwner 由 Repository effective access 投影取得隱含 `ADMIN`；決策時仍重新驗證，申請者不得審核自己。
 - 申請人不能核准自己的補登。拒絕必須記錄理由；每一決定重驗當下 Repository permission、stable command identity 與 request version。
 - 核准建立/結束出勤事實、追加事件、更新版本、留下審核者與更新必要 menu state 同 transaction commit/rollback。拒絕只結束 request 並追加事件。
 - 補登不發 Ledger 打卡獎勵，也不計算薪資；正式薪資由後續範圍處理。
@@ -39,7 +39,8 @@ Browser `sessionStorage` 只能協助 UX 恢復；server receipt/version/state �
 ## Qualification
 
 - Account/User 提供 current active human qualification，每次操作重新驗證。
-- 上班使用 Repository 的地址屬性作打卡點，且必須具有該 Repository 的 current effective access；公開可見或 Star 不授權。
-- 下班使用該筆出勤的原始地址快照。移除成員、移除或修改儲存庫地址不阻擋本人正常下班，但不授予新上班資格。
-- Repository 擁有地址、座標、半徑與地址維護授權；Attendance 擁有出勤、定位核驗、快照與結果。
+- 上班以 Repository 座標與半徑作打卡點；描述地址可為 null，不參與資格判定。仍須有 current effective access；公開可見或 Star 不授權。
+- 核驗以打卡當下座標、GPS 精度與半徑計算；地址文字只供辨識，不替代定位證據。
+- 下班使用該筆出勤的原始 point snapshot。移除成員、移除或修改 Repository 打卡點不阻擋本人正常下班，但不授予新上班資格。
+- Repository 擁有座標、半徑、可選描述與打卡點維護授權；Attendance 擁有出勤、定位核驗、快照與結果。
 - 舊 Workplace 管理 API、Web 與 LINE 聊天建立流程已移除。原表只保留歷史資料，runtime 不再讀寫；不得由舊名單推導 Repository access。

@@ -214,7 +214,9 @@ function fieldValue(value: unknown): ProjectFieldValue {
   if (present.length !== 1) {
     throw new ProjectError(400, "Project field value 必須恰好指定一種 typed value。");
   }
-  const [key, item] = present[0]!;
+  const entry = present[0];
+  if (!entry) throw new ProjectError(400, "Project field value 缺少 typed value。");
+  const [key, item] = entry;
   if (key === "date") return { type: "DATE", date: date(item, "Field date") };
   if (key === "iterationId") {
     return { type: "ITERATION", iterationId: id(item, "Iteration 識別碼") };

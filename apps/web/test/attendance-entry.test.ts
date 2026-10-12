@@ -34,7 +34,9 @@ test("six menus expose native switches, Back, and only configured form actions",
     if (page === "attendance-in" || page === "attendance-out") {
       assert.equal(menu.areas.length, 7);
       const links = menu.areas.filter((area) => area.action.type === "uri");
-      assert.equal(links[0]!.action.label, page === "attendance-out" ? "下班" : "上班");
+      const firstLink = links[0];
+      assert.ok(firstLink?.action.type === "uri");
+      assert.equal(firstLink.action.label, page === "attendance-out" ? "下班" : "上班");
       const destinations = [
         page === "attendance-out" ? "/attendance/clock-out" : "/attendance/clock-in",
         "/repositories",
@@ -66,12 +68,14 @@ test("six menus expose native switches, Back, and only configured form actions",
         page === "forms" ? 5 : 1,
         "Only configured buttons are active",
       );
-      assert.deepEqual(menu.areas[0]!.action, {
+      const firstArea = menu.areas[0];
+      assert.ok(firstArea);
+      assert.deepEqual(firstArea.action, {
         type: "postback",
         label: "返回出勤選單",
         data: "attendance-menu",
       });
-      const back = menu.areas[0]!.bounds;
+      const back = firstArea.bounds;
       assert.ok(
         back.x <= 160 && back.x + back.width >= 160 && back.y <= 110 && back.y + back.height >= 110,
       );
@@ -87,7 +91,9 @@ test("six menus expose native switches, Back, and only configured form actions",
             ({ bounds: b }) => x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height,
           );
           assert.equal(hits.length, 1);
-          assert.deepEqual(hits[0]!.action, { type: "uri", label, uri });
+          const [hit] = hits;
+          assert.ok(hit);
+          assert.deepEqual(hit.action, { type: "uri", label, uri });
         }
       }
     }

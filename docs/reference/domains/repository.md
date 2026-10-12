@@ -52,12 +52,12 @@ Current read transport includes `/api/issues`, `/api/discussions`, `/api/reposit
 Canonical create surface is `/repositories/new`; API is `POST /api/repositories`; owner picker is `GET /api/repositories/owners`.
 
 - User owner must be the current active User.
-- Organization owner requires current effective `OrganizationOwner`.
+- Organization creation requires current Organization membership and the Owner's visibility-specific member creation policy; members are allowed by default, while OrganizationOwner can always create. Current OrganizationOwner also has implicit admin on existing Organization-owned Repositories without a copied Repository grant.
 - Caller selects `private | internal | public`; UI labels map directly to FPT PRIVATE / INTERNAL / PUBLIC.
 - INTERNAL is available only to an Organization currently attached to an active Enterprise. The database coordinator rechecks that scope atomically.
 - `(owner_account_id, lower(name))` is unique within owner scope, and retained historical aliases are also reserved against other Repositories.
 - Create uses stable `requestId` + fingerprint + durable receipt; exact replay re-checks current authority before returning the same Repository.
-- The narrow database coordinator re-checks actor/OrganizationOwner, INTERNAL eligibility and initial access in one transaction; `line_app` does not gain unrestricted insert.
+- The narrow database coordinator re-checks actor/Organization capability, INTERNAL eligibility and initial access in one transaction; `line_app` does not gain unrestricted insert.
 - Retry compatibility accepts a pre-visibility rollout private-create fingerprint for the same command so an unknown old request can still resolve safely.
 
 ## Lifecycle management
@@ -67,7 +67,7 @@ Canonical create surface is `/repositories/new`; API is `POST /api/repositories`
 - Rename changes only `name`; old aliases stay in `repository_name_history`.
 - Visibility does not alter Direct User/Team grants. PUBLIC/INTERNAL can add read visibility without adding RepositoryPermission；switching back to PRIVATE removes that visibility immediately.
 - INTERNAL derives same-Enterprise viewers from the owner Organization's one current active Enterprise attachment plus current Enterprise affiliation. Detach removes INTERNAL-only visibility immediately；an independent explicit grant still works.
-- Archive preserves locator/content reads and current access. Issue commands and Repository Label/Milestone definition mutations reject writes while archived. Discussion writer remains inactive. Repository address remains stored/readable/manageable, but archived Repositories are excluded from new Attendance clock-in sites.
+- Archive preserves locator/content reads and current access. Issue commands and Repository Label/Milestone definition mutations reject writes while archived. Discussion writer remains inactive. Repository clock points remain stored/readable/manageable, but archived Repositories are excluded from new Attendance clock-in sites.
 
 ## Watch / Subscribable
 
@@ -86,7 +86,7 @@ Repository access authority remains Repository-owned:
 - Direct User effective access re-checks current User and owner-scope qualification without requiring OrganizationMembership. Team-derived access re-checks current Organization qualification and Team effective membership. Nested Organization Team membership is derived from direct TeamMembership with traceable `grant_team_id / source_team_id / membership_type / depth`; grant rows never copy those upstream facts. Parent/child hierarchy alone grants nothing: an explicit Repository Team grant is still required. Removing one hierarchy or grant source removes only that source, while independent direct/Team sources remain. Effective access returns the set of exact currently qualified permissions; it does not collapse multiple sources through a numeric maximum.
 - User-owned Repository owner has implicit admin authority and cannot receive a redundant direct grant.
 - Organization-owned direct User grants may target any current active User. All such rows are direct Repository grants; a User with no current owner-Organization membership is projected as an outside collaborator. Membership removal flips affiliation to outside without rewriting the grant, rejoin flips it back without a new grant, and explicit revoke removes access.
-- Current effective Repository `admin` can manage grants. Current `OrganizationOwner` is an explicit recovery authority for an Organization-owned Repository whose effective admin access has been lost.
+- Current effective Repository `admin` can manage grants. A current `OrganizationOwner` contributes implicit `admin` for all Organization-owned Repositories; this disappears immediately when Owner qualification is revoked.
 - Permission value and operation capability are separate concerns. Current access/address administration checks exact `admin`. Issue owns its non-code operation matrix: current collaborator access with any exact permission may open an Issue and participate in the required local publisher/assignee workflow; generic triage/edit/close/assign classification remains `triage | triage_plus | write | maintain | admin`. Deferred Issue, Discussion, settings and SCM operations remain fail-closed and do not inherit invented capabilities.
 - Current runtime uses immediate explicit Repository-admin grant/revoke. It does not model a pending collaborator invitation/acceptance handshake and never substitutes Organization membership for consent; a future invitation lifecycle, if added, must be a separate Repository-owned intent. Mutation uses stable `requestId`, fingerprint and `expectedVersion`; exact replay returns the durable receipt, stale/different content conflicts.
-- A successful mutation must leave at least one current effective Repository admin. Team membership can later invalidate a Team-derived admin; OrganizationOwner recovery exists for that cross-owner change.
+- A successful mutation must leave at least one current effective Repository admin. Team membership can later invalidate a Team-derived admin; a current OrganizationOwner remains an implicit admin for cross-owner recovery.

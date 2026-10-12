@@ -28,11 +28,13 @@ create table app_private."attendance_supplement_requests" (
       AND started_at >= 0 AND ended_at > started_at
       AND site_snapshot IS NOT NULL AND jsonb_typeof(site_snapshot) = 'object'
       AND site_snapshot ?& array['repositoryId','id','name','address','latitude','longitude','radius','version']
+      AND jsonb_typeof(site_snapshot->'address') IN ('string','null')
       AND (site_snapshot->>'repositoryId') IS NOT DISTINCT FROM repository_id
       AND (site_snapshot->>'id') IS NOT DISTINCT FROM repository_id)
      OR (kind = 'close-session' AND session_id IS NOT NULL AND started_at IS NULL
        AND site_snapshot IS NOT NULL AND jsonb_typeof(site_snapshot) = 'object'
        AND site_snapshot ?& array['repositoryId','id','name','address','latitude','longitude','radius','version']
+       AND jsonb_typeof(site_snapshot->'address') IN ('string','null')
        AND (site_snapshot->>'repositoryId') IS NOT DISTINCT FROM repository_id
        AND (site_snapshot->>'id') IS NOT DISTINCT FROM repository_id))
   ),

@@ -21,7 +21,7 @@ export default function AppShell({
       <main id="main-content" className="app-content">
         {children}
       </main>
-      {navigation === "tabs" && <WorkNavigation activeHref={activeHref} />}
+      {navigation === "tabs" && <WorkNavigation {...(activeHref ? { activeHref } : {})} />}
     </div>
   );
 }

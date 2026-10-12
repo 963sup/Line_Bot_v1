@@ -163,11 +163,11 @@ export default function ProfileViewerShell({
         </header>
         <ProfileOverview
           key={`${profileKind}:${profileUserId ?? ""}:${profileLogin}:${ownProfile ? viewer?.token : "public"}`}
-          profileBio={profileBio}
+          {...(profileBio !== undefined ? { profileBio } : {})}
           profileLogin={profileLogin}
           profileTitle={profileTitle}
-          publicRepositoryCount={publicRepositoryCount}
-          token={ownProfile ? viewer?.token : undefined}
+          {...(publicRepositoryCount !== undefined ? { publicRepositoryCount } : {})}
+          {...(ownProfile && viewer ? { token: viewer.token } : {})}
         >
           {children}
         </ProfileOverview>

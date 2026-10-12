@@ -1,9 +1,19 @@
 import type { GovernanceReceipt } from "@line_bot_v1/identity-access/contracts/governance";
 
+import type { OrganizationMemberRole } from "../domain.js";
+
 export type OrganizationMembershipSource = Readonly<{
   kind: "direct" | "enterprise-team";
   id: string;
   version: number;
+}>;
+
+type OrganizationMemberCreationPolicy = Readonly<{
+  memberCanCreatePublicRepositories: boolean;
+  memberCanCreatePrivateRepositories: boolean;
+  memberCanCreateInternalRepositories: boolean;
+  memberCanCreateProjectV2: boolean;
+  memberCanCreateTeams: boolean;
 }>;
 
 export type OrganizationMembershipProjection = Readonly<{
@@ -14,6 +24,7 @@ export type OrganizationMembershipProjection = Readonly<{
   directMembershipVersion: number | null;
   effectiveOwner: boolean;
   assignmentVersion: number | null;
+  memberRole: OrganizationMemberRole;
 }>;
 
 export type OrganizationInvitationProjection = Readonly<{
@@ -33,6 +44,8 @@ type OrganizationSummary = Readonly<{
   actorInvitationStatus: "pending" | "accepted" | "cancelled" | "declined" | null;
   actorInvitationVersion: number | null;
   actorIsOwner: boolean;
+  actorMemberRole: OrganizationMemberRole | null;
+  actorCanCreateProjectV2: boolean;
 }>;
 
 export type OrganizationList = Readonly<{
@@ -42,11 +55,21 @@ export type OrganizationList = Readonly<{
 
 export type OrganizationDetail = OrganizationSummary &
   Readonly<{
+    memberCreationPolicy: OrganizationMemberCreationPolicy;
     members: readonly OrganizationMembershipProjection[];
     invitations: readonly OrganizationInvitationProjection[];
   }>;
 
 export type OrganizationCommand =
+  | Readonly<
+      {
+        action: "update-member-creation-policy";
+        requestId: string;
+        organizationAccountId: string;
+        expectedVersion: number;
+        reason: string;
+      } & OrganizationMemberCreationPolicy
+    >
   | Readonly<{
       action: "create-organization";
       requestId: string;

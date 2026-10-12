@@ -7,6 +7,7 @@ export type RepositoryOwnerOption = Readonly<{
   kind: RepositoryOwnerKind;
   login: string;
   internalEligible: boolean;
+  creatableVisibilities: readonly RepositoryVisibility[];
 }>;
 
 export type RepositoryCreateCommand = Readonly<{

@@ -6,7 +6,7 @@ Read this file for Repository ownership and invariants. Load [detailed reference
 
 Repository owns:
 
-- Optional address property (address text, coordinates, radius), also the clock point for effective members;
+- Optional attendance point (coordinates and radius, with an optional descriptive address), used for effective members;
 - Repository stable identity、current name、owner-scoped rename history、visibility、archive state；
 - Direct User / Organization Team access grants、User → Repository Star and User → Repository Watch subscription；
 - Repository Star List / List membership；
@@ -17,7 +17,7 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 
 ## Invariants
 
-- Address mutation requires current effective Repository `admin`, expected version and exact replay. Visibility、Star and Watch do not grant clock eligibility. Address remains readable/manageable while archived, but archived Repository is excluded from new Attendance clock-in sites; existing Attendance snapshots are immutable.
+- Clock-point mutation requires current effective Repository `admin`, expected version and exact replay. Coordinates and radius determine clock eligibility; the descriptive address is optional. Visibility、Star and Watch do not grant clock eligibility. The point remains readable/manageable while archived, but archived Repository is excluded from new Attendance clock-in sites; existing Attendance snapshots are immutable.
 - RepositoryId is stable across rename、visibility and archive lifecycle. Rename changes only the owner-scoped locator and increments Repository version; Issue/Discussion/Project references keep the same RepositoryId.
 - Current owner/name always wins. Historical names are retained as owner-scoped aliases. `followRenames=true` resolves an old alias to the same Repository；`false` rejects it. An old alias stays reserved against every other Repository under that owner, while the same Repository may reclaim its own historical name.
 - Visibility is read authority, not RepositoryPermission：`PRIVATE` requires explicit current access；`PUBLIC` is readable without a User grant；`INTERNAL` is Organization-only and readable by current active Users in the same current active Enterprise scope. INTERNAL is not Organization membership, every logged-in User, or public.
@@ -33,7 +33,7 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 - RepositoryPermission 的 canonical 值域是 `READ / TRIAGE / TRIAGE_PLUS / WRITE / MAINTAIN / ADMIN`。User／Team grant 保存 exact permission；effective access 是目前有效 permission facts 的集合，不建立 `read < triage < write < admin` 之類的產品自造全序，也不把 `MAINTAIN`／`TRIAGE_PLUS` 默默升降級。
 - Permission 名稱與 operation capability policy 分離；consumer 只可檢查已明定的 permission→operation 規則，未定義能力 fail closed。
 - Repository Label/Milestone definition management 明定只允許 current effective `write | maintain | admin`。每個 resource 使用自己的 `expectedVersion` 與 exact replay；Label rename 保留 stable identity，Label 若仍被 Issue-owned `issue_labels` 引用則刪除衝突而不跨 owner 清除關係；Milestone number 僅在 Repository 範圍內配置。
-- Access mutation requires current effective Repository `admin`；for Organization-owned Repository, current `OrganizationOwner` is an explicit recovery authority but does not become Repository access merely by managing grants.
+- Organization-owned Repository creation requires the Organization-owned current visibility-specific member creation capability. Access mutation requires current effective Repository `admin`; current `OrganizationOwner` contributes implicit `admin` through the effective-access projection without copying a Repository grant.
 - An Organization-owned direct User grant can target an active User outside the owner Organization. Active membership only classifies that direct collaborator as member/outside；removing membership does not silently revoke the Repository grant, while explicit Repository revoke does. Team grants must reference an Organization Team in the same owner scope and lose effectiveness with Team/Organization participation.
 - Access mutation uses stable request identity + expected version, exact replay only, and must leave at least one current effective Repository admin.
 - Commands use stable request identity; conditional mutation uses expected version.

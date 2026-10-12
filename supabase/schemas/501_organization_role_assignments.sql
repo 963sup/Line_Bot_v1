@@ -1,4 +1,4 @@
--- Organization-owned ADMIN/OrganizationOwner role facts; MEMBER derives from active OrganizationMembership.
+-- OrganizationOwner is the sole Organization-level administrative fact; MEMBER derives from active membership.
 
 create table app_private.organization_role_assignments (
   organization_account_id text not null references app_private.organizations(account_id),

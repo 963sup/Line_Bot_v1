@@ -23,11 +23,14 @@ export function attendanceNotificationText({ action, record }: AttendanceNotific
   const label = attendanceActionLabel(action);
   if (action === "clockIn")
     return `${label}已記錄\n${attendanceTime(record.startedAt)}\n結束工作時按「下班」，其餘時段自動計算。`;
+  if (record.endedAt === null) {
+    throw new TypeError("clockOut notification requires a completed attendance record");
+  }
   const summary = record.summary;
   return [
     `${label}已記錄`,
     `上班：${attendanceTime(record.startedAt)}`,
-    `下班：${attendanceTime(record.endedAt!)}`,
+    `下班：${attendanceTime(record.endedAt)}`,
     `記錄經過：${attendanceDuration(summary.elapsedMs)}${summary.crossesMidnight ? "（跨日）" : ""}`,
     `08:00 前：${attendanceDuration(summary.beforeMs)}`,
     `08:00–17:00：${attendanceDuration(summary.scheduledMs)}`,

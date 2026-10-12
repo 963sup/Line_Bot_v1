@@ -100,18 +100,95 @@ export function OrganizationDetailSection({
         <button
           className="secondary"
           disabled={busy || !!pending}
-          onClick={() =>
+          onClick={() => {
+            const expectedVersion = detail.actorDirectMembershipVersion;
+            if (expectedVersion === null) return;
             void execute({
               action: "leave-organization",
               requestId: crypto.randomUUID(),
               organizationAccountId: detail.id,
-              expectedVersion: detail.actorDirectMembershipVersion!,
+              expectedVersion,
               reason: "由會員本人退出 Organization",
-            })
-          }
+            });
+          }}
         >
           退出組織
         </button>
+      )}
+
+      {detail.actorIsOwner && detail.status === "active" && (
+        <form
+          key={`member-policy-${detail.version}`}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            void execute({
+              action: "update-member-creation-policy",
+              requestId: crypto.randomUUID(),
+              organizationAccountId: detail.id,
+              expectedVersion: detail.version,
+              reason: String(data.get("reason")).trim(),
+              memberCanCreatePublicRepositories: data.has("publicRepositories"),
+              memberCanCreatePrivateRepositories: data.has("privateRepositories"),
+              memberCanCreateInternalRepositories: data.has("internalRepositories"),
+              memberCanCreateProjectV2: data.has("projectV2"),
+              memberCanCreateTeams: data.has("teams"),
+            });
+          }}
+        >
+          <h3>成員建立權限</h3>
+          <p>
+            Owner 永遠可建立；以下設定只限制一般成員。INTERNAL Repository 仍需有效 Enterprise
+            scope。
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              name="publicRepositories"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreatePublicRepositories}
+            />
+            公開 Repository
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="privateRepositories"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreatePrivateRepositories}
+            />
+            私人 Repository
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="internalRepositories"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreateInternalRepositories}
+            />
+            內部 Repository
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="projectV2"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreateProjectV2}
+            />
+            ProjectV2
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="teams"
+              defaultChecked={detail.memberCreationPolicy.memberCanCreateTeams}
+            />
+            Team
+          </label>
+          <label>
+            變更原因
+            <textarea name="reason" required maxLength={500} />
+          </label>
+          <button disabled={busy || !!pending} type="submit">
+            儲存成員權限
+          </button>
+        </form>
       )}
 
       <h3>成員</h3>
@@ -120,7 +197,7 @@ export function OrganizationDetailSection({
           <strong>{member.userId}</strong>
           <p>
             {member.status}
-            {member.effectiveOwner ? " · OrganizationOwner" : ""}
+            {member.effectiveOwner ? " · OrganizationOwner" : ` · FPT ${member.memberRole}`}
           </p>
           <p>
             Membership sources：
@@ -135,16 +212,18 @@ export function OrganizationDetailSection({
           {detail.actorIsOwner && member.directMembershipVersion !== null && (
             <button
               disabled={busy || !!pending}
-              onClick={() =>
+              onClick={() => {
+                const expectedVersion = member.directMembershipVersion;
+                if (expectedVersion === null) return;
                 void execute({
                   action: "remove-direct-membership",
                   requestId: crypto.randomUUID(),
                   organizationAccountId: detail.id,
                   targetUserId: member.userId,
-                  expectedVersion: member.directMembershipVersion!,
+                  expectedVersion,
                   reason: "由 OrganizationOwner 移除 direct membership",
-                })
-              }
+                });
+              }}
             >
               移除 direct membership
             </button>

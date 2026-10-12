@@ -14,13 +14,15 @@ export type RepositoryAddressSnapshot = Readonly<{
   address: RepositoryAddress | null;
 }>;
 
-export type RepositoryAddressCommand = Readonly<{
-  action: "set" | "remove";
+type RepositoryAddressCommandBase = Readonly<{
   requestId: string;
   repositoryId: string;
   expectedVersion: number;
-  address?: RepositoryAddress;
 }>;
+
+export type RepositoryAddressCommand =
+  | (RepositoryAddressCommandBase & Readonly<{ action: "set"; address: RepositoryAddress }>)
+  | (RepositoryAddressCommandBase & Readonly<{ action: "remove" }>);
 
 export type RepositoryAddressReceipt = Readonly<{
   requestId: string;

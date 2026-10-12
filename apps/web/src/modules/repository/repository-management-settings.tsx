@@ -272,8 +272,8 @@ export default function RepositoryManagementSettings({
             {repository.ownerLogin}
           </p>
           <p className="crud-lifecycle-note">
-            Repository lifecycle 只由當下有效的 Repository ADMIN 管理；OrganizationOwner 不會因
-            組織角色自動取得這個 Repository 的操作權。
+            Repository lifecycle 只由當下有效的 Repository ADMIN 管理；Organization-owned Repository
+            的有效 OrganizationOwner 具有隱含 ADMIN 權限。
           </p>
           {repository.internalEnterpriseId && (
             <p>INTERNAL scope：Enterprise {repository.internalEnterpriseId}</p>

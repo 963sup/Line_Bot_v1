@@ -52,7 +52,11 @@ test("payroll readiness rejects ambiguous duplicate rule versions", async () => 
   const readiness = createPayrollReadiness({
     workforceVersion: async () => "workforce-v7",
     attendancePeriodVersion: async () => "attendance-v3",
-    ruleVersions: async () => [ruleVersions[0]!, ruleVersions[0]!],
+    ruleVersions: async () => {
+      const first = ruleVersions[0];
+      assert.ok(first);
+      return [first, first];
+    },
   });
 
   await assert.rejects(() => readiness(query), /Duplicate payroll rule version/);

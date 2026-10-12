@@ -74,9 +74,9 @@ test("LINE identity verifies token then profile with no cache, redirects or cred
     ["", "channel"],
     ["x".repeat(4097), "channel"],
     ["token", ""],
-  ]) {
+  ] as const) {
     await assert.rejects(
-      verifyLiffUser(token!, channel!, async () => {
+      verifyLiffUser(token, channel, async () => {
         throw new Error("must not fetch");
       }),
       LineIdentityError,

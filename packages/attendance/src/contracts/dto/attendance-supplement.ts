@@ -25,7 +25,7 @@ function parseSite(value: unknown): AttendancePoint {
     typeof site.id !== "string" ||
     typeof site.repositoryId !== "string" ||
     typeof site.name !== "string" ||
-    typeof site.address !== "string" ||
+    !(site.address === null || typeof site.address === "string") ||
     typeof site.latitude !== "number" ||
     !Number.isFinite(site.latitude) ||
     typeof site.longitude !== "number" ||
