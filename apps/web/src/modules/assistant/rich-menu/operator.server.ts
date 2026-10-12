@@ -1,5 +1,5 @@
 import { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
-import { isMenuPage, MENU_PAGES, type MenuPage } from "./definition";
+import { isMenuPage, MENU_PAGES } from "./definition";
 import { buildRichMenuDesiredState } from "./desired-state.server";
 import { preflightRichMenuBatch, publishRichMenuBatch } from "./publication.server";
 
@@ -12,12 +12,11 @@ export async function runRichMenuOperation(input: {
   repositoryRoot: string;
   channelAccessToken?: string;
 }) {
-  if (!commands.some((command) => command === input.command))
-    throw new Error("Use preview <page|all>, preflight all, publish all");
+  const command = commands.find((candidate) => candidate === input.command);
+  if (!command) throw new Error("Use preview <page|all>, preflight all, publish all");
   if (input.target !== "all" && !isMenuPage(input.target)) throw new Error("Unknown menu page");
 
-  const command = input.command as RichMenuCommand;
-  const pages = input.target === "all" ? MENU_PAGES : ([input.target as MenuPage] as const);
+  const pages = input.target === "all" ? MENU_PAGES : [input.target];
   const configs = buildRichMenuDesiredState(pages, input.repositoryRoot);
 
   if (command === "preview") {

@@ -50,10 +50,10 @@ function expectedVersion(value: unknown): number {
 }
 
 function parseCreate(raw: unknown): RepositoryStarListCreateCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "List 建立資料格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (Object.keys(value).some((key) => !["requestId", "name", "description"].includes(key))) {
     throw new RepositoryError(400, "List 建立資料包含不支援的欄位。");
   }
@@ -66,10 +66,10 @@ function parseCreate(raw: unknown): RepositoryStarListCreateCommand {
 }
 
 function parseCommand(targetListId: string, raw: unknown): RepositoryStarListCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "List 操作資料格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   const action = value.action;
   const base = {
     requestId: requestId(value.requestId),
@@ -134,3 +134,5 @@ export function createRepositoryStarLists(deps: {
       deps.store().execute(await userId(subject), parseCommand(targetListId, raw), deps.now()),
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

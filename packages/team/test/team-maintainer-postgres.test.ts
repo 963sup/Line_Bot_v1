@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import { createSql, type Sql } from "@line_bot_v1/platform/postgres";
 import { grantTeamMaintainer, revokeTeamMaintainer } from "../src/adapters/postgres-maintainer.js";
 import { TeamError } from "../src/domain/errors/team-error.js";
 
@@ -13,12 +13,10 @@ function sqlWith(
   ) => Promise<{ rows: Record<string, unknown>[] }>,
   queries: QueryRecord[],
 ): Sql {
-  return {
-    async query(text, values) {
-      queries.push({ text, ...(values === undefined ? {} : { values }) });
-      return responder(text, values);
-    },
-  };
+  return createSql(async (text, values) => {
+    queries.push({ text, ...(values === undefined ? {} : { values }) });
+    return responder(text, values);
+  });
 }
 
 function activeUser() {

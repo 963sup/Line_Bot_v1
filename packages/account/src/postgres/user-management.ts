@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  numberValue,
+  numericValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { UserManagementRepository } from "../contracts/repositories/user-management.js";
 import type {
   ManagedUser,
@@ -30,13 +38,71 @@ const present = (row: ManagedUserRow): ManagedUser => ({
   restoreStatus: row.restoreStatus,
   googleLinked: row.googleLinked,
 });
-const presentStoredReceipt = (stored: Record<string, unknown>): UserStatusReceipt => ({
-  id: String(stored.id),
-  requestId: String(stored.requestId),
-  status: stored.status === "pending" ? "paused" : (stored.status as UserStatusReceipt["status"]),
-  version: Number(stored.version),
-  at: Number(stored.at),
-});
+
+function managedUserRow(row: Record<string, unknown>): ManagedUserRow {
+  return {
+    id: stringValue(row.id),
+    status: literalValue(row.status, ["active", "paused", "suspended"]),
+    createdAt: numericValue(row.createdAt),
+    version: numberValue(row.version),
+    restoreStatus: literalValue(row.restoreStatus, ["active", "paused"]),
+    googleLinked: booleanValue(row.googleLinked),
+  };
+}
+
+function presentStoredReceipt(value: unknown): UserStatusReceipt {
+  const stored = record(value);
+  return {
+    id: stringValue(stored.id),
+    requestId: stringValue(stored.requestId),
+    status:
+      stored.status === "pending"
+        ? "paused"
+        : literalValue(stored.status, ["active", "paused", "suspended"]),
+    version: numberValue(stored.version),
+    at: numberValue(stored.at),
+  };
+}
+
+function eventRow(row: Record<string, unknown>) {
+  return { type: stringValue(row.type), at: numericValue(row.at) };
+}
+
+function operationRow(row: Record<string, unknown>) {
+  return {
+    actor: stringValue(row.actor),
+    action: stringValue(row.action),
+    reason: stringValue(row.reason),
+    status: stringValue(row.status),
+    version: numberValue(row.version),
+    at: numericValue(row.at),
+  };
+}
+
+function itemRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id) };
+}
+
+function issueRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id), total: numericValue(row.total) };
+}
+
+function storedCommandRow(row: Record<string, unknown>) {
+  return { fingerprint: stringValue(row.fingerprint), result: row.result };
+}
+
+function targetStatusRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "paused", "suspended"]),
+    status_version: numberValue(row.status_version),
+    suspended_from:
+      row.suspended_from === null ? null : literalValue(row.suspended_from, ["active", "paused"]),
+  };
+}
+
+function statusVersionRow(row: Record<string, unknown>) {
+  return { status_version: numberValue(row.status_version) };
+}
 
 export class PostgresUserManagement implements UserManagementRepository {
   constructor(
@@ -63,9 +129,10 @@ export class PostgresUserManagement implements UserManagementRepository {
         WHERE ($1::text IS NULL OR m.id=$1) AND ($2::text IS NULL OR m.status=$2)
         AND ($3::text IS NULL OR m.id>$3) ORDER BY m.id LIMIT 21`,
           [query.id ?? null, query.status ?? null, query.after ?? null],
+          managedUserRow,
         )
       ).rows;
-      const users = (rows.slice(0, 20) as ManagedUserRow[]).map(present);
+      const users = rows.slice(0, 20).map(present);
       let detail: UserManagementView["detail"] = null;
       if (query.id) {
         if (!users[0]) throw new UserError(404, "使用者不存在。");
@@ -73,6 +140,7 @@ export class PostgresUserManagement implements UserManagementRepository {
           await sql.query(
             "SELECT type,at FROM user_events WHERE user_id=$1 ORDER BY at DESC,id DESC LIMIT 21",
             [query.id],
+            eventRow,
           )
         ).rows;
         const operations = (
@@ -80,6 +148,7 @@ export class PostgresUserManagement implements UserManagementRepository {
             `SELECT actor,action,reason,status,version,at FROM user_management_commands
           WHERE target=$1 ORDER BY at DESC,request_id DESC LIMIT 21`,
             [query.id],
+            operationRow,
           )
         ).rows;
         const open = (
@@ -88,6 +157,7 @@ export class PostgresUserManagement implements UserManagementRepository {
              WHERE user_id=$1 AND activity_kind='open-attendance'
              ORDER BY item_id`,
             [query.id],
+            itemRow,
           )
         ).rows;
         const issues = (
@@ -97,6 +167,7 @@ export class PostgresUserManagement implements UserManagementRepository {
              WHERE user_id=$1 AND activity_kind='unfinished-issue'
              ORDER BY item_id LIMIT 20`,
             [query.id],
+            issueRow,
           )
         ).rows;
         detail = {
@@ -146,16 +217,19 @@ export class PostgresUserManagement implements UserManagementRepository {
         await sql.query(
           "SELECT fingerprint,result FROM user_management_commands WHERE actor=$1 AND request_id=$2",
           [actor, command.requestId],
+          storedCommandRow,
         )
       ).rows[0];
       if (old) {
         if (old.fingerprint !== fingerprint) throw new UserError(409, "操作編號已用於不同內容。");
-        return presentStoredReceipt(old.result as Record<string, unknown>);
+        return presentStoredReceipt(old.result);
       }
       const target = (
-        await sql.query("SELECT status,status_version,suspended_from FROM users WHERE id=$1", [
-          command.target,
-        ])
+        await sql.query(
+          "SELECT status,status_version,suspended_from FROM users WHERE id=$1",
+          [command.target],
+          targetStatusRow,
+        )
       ).rows[0];
       if (!target) throw new UserError(404, "使用者不存在。");
       if (target.status_version !== command.expectedVersion) {
@@ -170,10 +244,11 @@ export class PostgresUserManagement implements UserManagementRepository {
       const status =
         command.action === "suspend" ? "suspended" : (target.suspended_from ?? "paused");
       const changed = (
-        await sql.query("UPDATE users SET status=$2 WHERE id=$1 RETURNING status_version", [
-          command.target,
-          status,
-        ])
+        await sql.query(
+          "UPDATE users SET status=$2 WHERE id=$1 RETURNING status_version",
+          [command.target, status],
+          statusVersionRow,
+        )
       ).rows[0];
       if (!changed) throw new UserError(409, "使用者狀態已更新，請重新讀取後確認。");
       const result: UserStatusReceipt = {

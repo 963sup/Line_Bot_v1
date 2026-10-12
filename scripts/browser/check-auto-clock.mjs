@@ -93,17 +93,23 @@ async function fixture(options = {}) {
     ({ gps, storageBlocked, external }) => {
       window.closeCalls = 0;
       window.gpsCalls = 0;
+      window.profileCalls = 0;
       window.liff = {
         init: async () => {},
         isLoggedIn: () => true,
         getAccessToken: () => "synthetic-line",
         isInClient: () => !external,
-        getProfile: () => {
-          throw new Error("Profile must not be loaded");
+        getProfile: async () => {
+          window.profileCalls++;
+          return {
+            userId: "U11111111111111111111111111111111",
+            displayName: "Auto Clock Tester",
+          };
         },
         closeWindow: () => {
           window.closeCalls++;
         },
+        openWindow: () => {},
         login: () => {},
       };
       Object.defineProperty(navigator, "geolocation", {
@@ -215,6 +221,7 @@ async function fixture(options = {}) {
 }
 async function finish(name, state) {
   assert.deepEqual(state.errors, []);
+  assert.equal(await page.evaluate(() => window.profileCalls), 0, "Profile must not be loaded");
   results.push({ name, posts: state.posts.length, status: "passed" });
   if (output) {
     await page.screenshot({

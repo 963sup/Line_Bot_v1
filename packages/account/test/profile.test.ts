@@ -10,8 +10,9 @@ test("profile use case owns presentation metadata only", async () => {
   const calls: unknown[][] = [];
   const profiles = createUserProfiles({
     activeUser: async () => ({ id: "user-a" }),
-    store: () =>
-      ({
+    store: () => {
+      const store: UserProfileStore = {
+        read: async () => null,
         save: async (...args: unknown[]) => {
           calls.push(args);
           return {
@@ -25,7 +26,9 @@ test("profile use case owns presentation metadata only", async () => {
             updatedAt: 10,
           };
         },
-      }) as UserProfileStore,
+      };
+      return store;
+    },
     now: () => 10,
   });
 

@@ -18,7 +18,7 @@ test("member management HTTP verifies LINE, rejects forged origin/identity and r
   });
   const original = globalThis.fetch,
     user = "U" + "3".repeat(32);
-  globalThis.fetch = (async (input) => {
+  globalThis.fetch = async (input) => {
     if (String(input).startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
         client_id: lineMiniApp("developing").channelId,
@@ -27,7 +27,7 @@ test("member management HTTP verifies LINE, rejects forged origin/identity and r
       });
     if (String(input) === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw Error("Unexpected outbound request");
-  }) as typeof fetch;
+  };
   const sessions = new Map<string, HeadersInit>();
   const request = (query = "", token = "proof") =>
     new Request(`https://app.example/api/membership/manage?${query}`, {

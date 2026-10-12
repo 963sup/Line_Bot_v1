@@ -29,10 +29,11 @@ export function transitionIssue(
   }
   if (action === "report" || action === "reject") issueText(note, 1000);
 
-  return {
+  const transitions: Record<IssueAction, IssueWorkflowStatus> = {
     accept: "active",
     report: "review",
     reject: "active",
     approve: "completed",
-  }[action] as IssueWorkflowStatus;
+  };
+  return transitions[action];
 }

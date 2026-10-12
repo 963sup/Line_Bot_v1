@@ -1,20 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState } from "../../shared/ui/page-layout";
+import RepositoryResourceNavigation from "./repository-resource-navigation";
 import { ResourceContent } from "./resource-content";
-import {
-  repositoryDiscussionsPath,
-  repositoryIssuesPath,
-  repositoryLabelsPath,
-  repositoryMilestonesPath,
-  repositoryPath,
-  repositorySettingsPath,
-} from "./resource-navigation";
-import styles from "./resource-navigation.module.css";
+import { repositoryPath } from "./resource-navigation";
 import {
   type MilestoneStatus,
   mergeRepositoryResourcePage,
@@ -51,11 +43,6 @@ export default function RepositoryResourcesPanel({
   const dataRef = useRef<PageData | null>(null);
   const readyRef = useRef(false);
   const repositoryHref = repositoryPath(ownerLogin, repositoryName);
-  const issuesHref = repositoryIssuesPath(ownerLogin, repositoryName);
-  const discussionsHref = repositoryDiscussionsPath(ownerLogin, repositoryName);
-  const labelsHref = repositoryLabelsPath(ownerLogin, repositoryName);
-  const milestonesHref = repositoryMilestonesPath(ownerLogin, repositoryName);
-  const settingsHref = repositorySettingsPath(ownerLogin, repositoryName);
 
   const clear = useCallback(() => {
     generation.current++;
@@ -116,9 +103,16 @@ export default function RepositoryResourcesPanel({
           headers: { "X-App-Session-Generation": token },
           cache: "no-store",
         });
-        const value = (await response.json()) as { error?: string };
+        const value: unknown = await response.json();
         if (!response.ok) {
-          throw { status: response.status, message: value.error ?? "Repository 資源讀取失敗。" };
+          const message =
+            value !== null &&
+            typeof value === "object" &&
+            "error" in value &&
+            typeof value.error === "string"
+              ? value.error
+              : "Repository 資源讀取失敗。";
+          throw { status: response.status, message };
         }
         if (ticket !== generation.current) return;
         const incoming = parseRepositoryResourcePage(kind, value);
@@ -128,11 +122,14 @@ export default function RepositoryResourcesPanel({
       } catch (cause) {
         if (ticket === generation.current) {
           setData(null);
-          const failure = cause as Partial<ResourceError>;
+          const failure = cause !== null && typeof cause === "object" ? cause : {};
           setError({
-            status: typeof failure.status === "number" ? failure.status : 503,
+            status:
+              "status" in failure && typeof failure.status === "number" ? failure.status : 503,
             message:
-              typeof failure.message === "string" ? failure.message : "Repository 資源讀取失敗。",
+              "message" in failure && typeof failure.message === "string"
+                ? failure.message
+                : "Repository 資源讀取失敗。",
           });
         }
       } finally {
@@ -174,35 +171,18 @@ export default function RepositoryResourcesPanel({
         description="查看這個儲存庫的討論、標籤與里程碑。"
         back={repositoryHref}
       />
-      <nav className={styles.resourceNav} aria-label="Repository resources">
-        <Link className={styles.resourceLink} href={issuesHref}>
-          Issues
-        </Link>
-        <Link
-          className={styles.resourceLink}
-          href={discussionsHref}
-          aria-current={kind.startsWith("discussion") ? "page" : undefined}
-        >
-          Discussions
-        </Link>
-        <Link
-          className={styles.resourceLink}
-          href={labelsHref}
-          aria-current={kind === "labels" ? "page" : undefined}
-        >
-          Labels
-        </Link>
-        <Link
-          className={styles.resourceLink}
-          href={milestonesHref}
-          aria-current={kind.startsWith("milestone") ? "page" : undefined}
-        >
-          Milestones
-        </Link>
-        <Link className={styles.resourceLink} href={settingsHref}>
-          Settings
-        </Link>
-      </nav>
+      <RepositoryResourceNavigation
+        ownerLogin={ownerLogin}
+        repositoryName={repositoryName}
+        active={
+          kind.startsWith("discussion")
+            ? "discussions"
+            : kind === "labels"
+              ? "labels"
+              : "milestones"
+        }
+        canManage={data?.repository.permissions.includes("admin") ?? false}
+      />
       <MiniAppRuntime
         liffId={liffId}
         onReady={async () => {

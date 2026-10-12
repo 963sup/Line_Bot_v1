@@ -14,6 +14,10 @@ export class GoogleApiError extends Error {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function operationSignal(signal?: AbortSignal): AbortSignal {
   const timeout = AbortSignal.timeout(30_000);
   return signal ? AbortSignal.any([signal, timeout]) : timeout;
@@ -50,9 +54,8 @@ export async function requestJson(
     }
     const data: unknown = await response.json();
     signal.throwIfAborted();
-    if (!data || typeof data !== "object" || Array.isArray(data))
-      throw new GoogleApiError(502, "Invalid Google response");
-    return data as Record<string, unknown>;
+    if (!isRecord(data)) throw new GoogleApiError(502, "Invalid Google response");
+    return data;
   } catch (error) {
     signal.throwIfAborted();
     if (error instanceof GoogleApiError) throw error;
@@ -74,10 +77,7 @@ export async function readPages(
   for (let page = 0; page < 1000; page++) {
     const data = await requestJson(pageUrl, { ...options, signal }, request);
     const rows = data[key] === undefined ? [] : data[key];
-    if (
-      !Array.isArray(rows) ||
-      rows.some((row) => !row || typeof row !== "object" || Array.isArray(row))
-    )
+    if (!Array.isArray(rows) || !rows.every(isRecord))
       throw new GoogleApiError(502, "Invalid Google collection");
     items.push(...rows);
     if (items.length > 100_000) throw new GoogleApiError(413, "Google collection too large");

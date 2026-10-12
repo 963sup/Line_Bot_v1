@@ -27,5 +27,5 @@ export const assistantSurfaceConfig = {
 >;
 
 export function isAssistantSurfaceMode(value: unknown): value is AssistantSurfaceMode {
-  return assistantSurfaceModes.includes(value as AssistantSurfaceMode);
+  return value === "ask" || value === "generate" || value === "review";
 }

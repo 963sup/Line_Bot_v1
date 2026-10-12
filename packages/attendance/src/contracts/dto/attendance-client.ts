@@ -6,7 +6,6 @@ import { AttendanceError } from "../../domain/error.js";
 import type {
   AttendanceRecordView,
   AttendanceView,
-  MenuState,
 } from "../../domain/policies/attendance-view.js";
 import {
   type AttendanceAction,
@@ -18,26 +17,34 @@ import type {
   AttendanceDay,
   AttendanceSummary,
 } from "../../domain/value-objects/attendance-summary.js";
-import type { AttendancePoint, AttendanceResult, AttendanceSnapshot } from "../clock.js";
+import type {
+  AttendanceNotification,
+  AttendancePoint,
+  AttendanceResult,
+  AttendanceSnapshot,
+} from "../clock.js";
 
 type ObjectValue = Record<string, unknown>;
 
-function objectValue(value: unknown): ObjectValue {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new AttendanceError(502, "出勤回應不完整，請重新整理。");
-  return value as ObjectValue;
+function isObjectValue(value: unknown): value is ObjectValue {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function finite(value: unknown) {
+function objectValue(value: unknown): ObjectValue {
+  if (!isObjectValue(value)) throw new AttendanceError(502, "出勤回應不完整，請重新整理。");
+  return value;
+}
+
+function finite(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function nonNegative(value: unknown) {
-  return finite(value) && (value as number) >= 0;
+function nonNegative(value: unknown): value is number {
+  return finite(value) && value >= 0;
 }
 
-function safeVersion(value: unknown) {
-  return Number.isSafeInteger(value) && (value as number) >= 0;
+function safeVersion(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 function parsePoint(value: unknown): AttendancePoint {
@@ -50,19 +57,19 @@ function parsePoint(value: unknown): AttendancePoint {
     !finite(point.latitude) ||
     !finite(point.longitude) ||
     !nonNegative(point.radius) ||
-    (point.radius as number) <= 0 ||
+    point.radius <= 0 ||
     !safeVersion(point.version)
   )
     throw new AttendanceError(502, "出勤地點回應不完整，請重新整理。");
   return {
     id: point.id,
-    repositoryId: point.repositoryId as string | null,
+    repositoryId: point.repositoryId,
     name: point.name,
     address: point.address,
-    latitude: point.latitude as number,
-    longitude: point.longitude as number,
-    radius: point.radius as number,
-    version: point.version as number,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    radius: point.radius,
+    version: point.version,
   };
 }
 
@@ -78,10 +85,10 @@ function parseDay(value: unknown): AttendanceDay {
     throw new AttendanceError(502, "出勤每日明細不完整，請重新整理。");
   return {
     day: day.day,
-    beforeMs: day.beforeMs as number,
-    scheduledMs: day.scheduledMs as number,
-    afterMs: day.afterMs as number,
-    elapsedMs: day.elapsedMs as number,
+    beforeMs: day.beforeMs,
+    scheduledMs: day.scheduledMs,
+    afterMs: day.afterMs,
+    elapsedMs: day.elapsedMs,
   };
 }
 
@@ -98,10 +105,10 @@ function parseSummary(value: unknown): AttendanceSummary {
   )
     throw new AttendanceError(502, "出勤分類回應不完整，請重新整理。");
   return {
-    elapsedMs: summary.elapsedMs as number,
-    beforeMs: summary.beforeMs as number,
-    scheduledMs: summary.scheduledMs as number,
-    afterMs: summary.afterMs as number,
+    elapsedMs: summary.elapsedMs,
+    beforeMs: summary.beforeMs,
+    scheduledMs: summary.scheduledMs,
+    afterMs: summary.afterMs,
     crossesMidnight: summary.crossesMidnight,
     provisional: summary.provisional,
     days: summary.days.map(parseDay),
@@ -121,8 +128,8 @@ function parseSession(value: unknown): AttendanceSession {
   return {
     id: session.id,
     day: session.day,
-    startedAt: session.startedAt as number,
-    endedAt: session.endedAt as number | null,
+    startedAt: session.startedAt,
+    endedAt: session.endedAt,
     ruleVersion: ATTENDANCE_RULE_VERSION,
   };
 }
@@ -130,6 +137,14 @@ function parseSession(value: unknown): AttendanceSession {
 function parseRecord(value: unknown): AttendanceRecordView {
   const record = objectValue(value);
   return { ...parseSession(record), summary: parseSummary(record.summary) };
+}
+
+export function parseAttendanceNotification(value: unknown): AttendanceNotification {
+  const notification = objectValue(value);
+  if (notification.action !== "clockIn" && notification.action !== "clockOut") {
+    throw new AttendanceError(502, "出勤通知資料不完整。");
+  }
+  return { action: notification.action, record: parseRecord(notification.record) };
 }
 
 function parseView(value: unknown): AttendanceView {
@@ -153,8 +168,8 @@ function parseView(value: unknown): AttendanceView {
   return {
     records,
     active,
-    menuState: view.menuState as MenuState,
-    computedAt: view.computedAt as number,
+    menuState: view.menuState,
+    computedAt: view.computedAt,
   };
 }
 
@@ -164,7 +179,7 @@ export function parseAttendanceSnapshot(value: unknown): AttendanceSnapshot {
     throw new AttendanceError(502, "出勤快照回應不完整，請重新整理。");
   return {
     attendance: parseView(snapshot.attendance),
-    version: snapshot.version as number,
+    version: snapshot.version,
     sites: snapshot.sites.map(parsePoint),
   };
 }
@@ -176,7 +191,7 @@ export function parseAttendanceResult(value: unknown): AttendanceResult {
     throw new AttendanceError(502, "出勤操作回應不完整，請重新整理。");
   return {
     ...snapshot,
-    credited: result.credited as number,
+    credited: result.credited,
     replayed: result.replayed,
   };
 }
@@ -206,7 +221,7 @@ export function parseAttendanceClockPreparation(value: unknown): AttendanceClock
     working: preparation.working,
     action,
     operation: attendanceOperation(action),
-    version: preparation.version as number,
+    version: preparation.version,
     sites: preparation.sites.map(parsePoint),
   };
 }
@@ -224,7 +239,7 @@ export function attendanceClockReceipt(result: AttendanceResult): AttendanceCloc
   if (!finite(at)) throw new AttendanceError(500, "出勤回執不完整，請重新讀取出勤狀態。");
   return {
     version: result.version,
-    at: at as number,
+    at,
     credited: result.credited,
     replayed: result.replayed,
   };
@@ -240,9 +255,9 @@ export function parseAttendanceClockReceipt(value: unknown): AttendanceClockRece
   )
     throw new AttendanceError(502, "出勤回執不完整，請重試同一筆。");
   return {
-    version: receipt.version as number,
-    at: receipt.at as number,
-    credited: receipt.credited as number,
+    version: receipt.version,
+    at: receipt.at,
+    credited: receipt.credited,
     replayed: receipt.replayed,
   };
 }

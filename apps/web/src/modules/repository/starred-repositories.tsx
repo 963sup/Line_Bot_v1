@@ -6,6 +6,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryPath } from "./resource-navigation";
+import { errorMessage, isRecord, isStarredRepository } from "./response-validation";
 
 export default function StarredRepositories({ liffId }: { liffId: string }) {
   const [items, setItems] = useState<StarredRepository[] | null>(null);
@@ -31,9 +32,14 @@ export default function StarredRepositories({ liffId }: { liffId: string }) {
         headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
-      const value = (await response.json()) as { items?: StarredRepository[]; error?: string };
-      if (!response.ok || !Array.isArray(value.items)) {
-        throw new Error(value.error ?? "收藏的儲存庫暫不可用。");
+      const value: unknown = await response.json();
+      if (
+        !response.ok ||
+        !isRecord(value) ||
+        !Array.isArray(value.items) ||
+        !value.items.every(isStarredRepository)
+      ) {
+        throw new Error(errorMessage(value, "收藏的儲存庫暫不可用。"));
       }
       if (ticket === generation.current) setItems(value.items);
     } catch (cause) {

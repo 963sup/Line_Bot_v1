@@ -1,6 +1,14 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { listOrganizationAdministrationScopeIds } from "@line_bot_v1/organization/postgres";
-import type { Database } from "@line_bot_v1/platform/postgres";
+import type { Database, SqlRow } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  nullableNumericValue,
+  numericValue,
+  stringArray,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { readActiveProjectTeamIds } from "@line_bot_v1/team/postgres/project-access";
 import type { ProjectSummary } from "../../../contracts/dto/project-collection.js";
 import type { ProjectCollectionStore } from "../../../contracts/repositories/project-collection-store.js";
@@ -11,6 +19,37 @@ const roleRank: Readonly<Record<ProjectAccessRole, number>> = {
   WRITE: 2,
   ADMIN: 3,
 };
+
+type CollectionRow = {
+  id: string;
+  owner_account_id: string;
+  owner_account_kind: ProjectOwnerKind;
+  number: number | string | null;
+  name: string;
+  is_public: boolean;
+  closed: boolean;
+  version: number | string;
+  user_role: ProjectAccessRole | null;
+  team_roles: ProjectAccessRole[];
+};
+
+const projectAccessRoles: readonly ProjectAccessRole[] = ["READ", "WRITE", "ADMIN"];
+const projectOwnerKinds: readonly ProjectOwnerKind[] = ["USER", "ORGANIZATION"];
+
+function decodeCollectionRow(row: SqlRow): CollectionRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: literalValue(row.owner_account_kind, projectOwnerKinds),
+    number: nullableNumericValue(row.number),
+    name: stringValue(row.name),
+    is_public: booleanValue(row.is_public),
+    closed: booleanValue(row.closed),
+    version: numericValue(row.version),
+    user_role: row.user_role === null ? null : literalValue(row.user_role, projectAccessRoles),
+    team_roles: stringArray(row.team_roles).map((role) => literalValue(role, projectAccessRoles)),
+  };
+}
 
 function effectiveRole(values: readonly ProjectAccessRole[]): ProjectAccessRole {
   let best: ProjectAccessRole = "READ";
@@ -72,19 +111,9 @@ export class PostgresProjectCollectionStore implements ProjectCollectionStore {
              )
            ORDER BY lower(p.name),p.id`,
           [userId, organizationAdministrationIds, teamIds],
+          decodeCollectionRow,
         )
-      ).rows as Array<{
-        id: string;
-        owner_account_id: string;
-        owner_account_kind: ProjectOwnerKind;
-        number: number | string | null;
-        name: string;
-        is_public: boolean;
-        closed: boolean;
-        version: number | string;
-        user_role: ProjectAccessRole | null;
-        team_roles: ProjectAccessRole[];
-      }>;
+      ).rows;
 
       const owners = await readAccountLogins(
         sql,

@@ -9,7 +9,10 @@ import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
-const states = new Set<RepositorySubscriptionState>(["SUBSCRIBED", "UNSUBSCRIBED", "IGNORED"]);
+
+function isSubscriptionState(value: unknown): value is RepositorySubscriptionState {
+  return value === "SUBSCRIBED" || value === "UNSUBSCRIBED" || value === "IGNORED";
+}
 
 function repositorySelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
@@ -31,10 +34,10 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
 }
 
 function parseCommand(raw: unknown): RepositorySubscriptionCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository subscription 操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   const allowed = ["action", "requestId", "repositoryId", "expectedVersion", "state"];
   if (
     value.action !== "set" ||
@@ -46,8 +49,7 @@ function parseCommand(raw: unknown): RepositorySubscriptionCommand {
     typeof value.expectedVersion !== "number" ||
     !Number.isSafeInteger(value.expectedVersion) ||
     value.expectedVersion < 0 ||
-    typeof value.state !== "string" ||
-    !states.has(value.state as RepositorySubscriptionState)
+    !isSubscriptionState(value.state)
   ) {
     throw new RepositoryError(400, "Repository subscription 操作不正確。");
   }
@@ -56,7 +58,7 @@ function parseCommand(raw: unknown): RepositorySubscriptionCommand {
     requestId: value.requestId.toLowerCase(),
     repositoryId: value.repositoryId,
     expectedVersion: value.expectedVersion,
-    state: value.state as RepositorySubscriptionState,
+    state: value.state,
   };
 }
 
@@ -77,3 +79,5 @@ export function createRepositorySubscription(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

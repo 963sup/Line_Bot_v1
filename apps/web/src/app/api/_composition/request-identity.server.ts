@@ -12,6 +12,7 @@ import {
   RedisUnavailableError,
   redisUnavailableCode,
 } from "@line_bot_v1/platform/redis";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { RequestIdentityError } from "../../../shared/server/request-identity-error";
 import { redisNamespace } from "../../../shared/server/runtime-environment";
 
@@ -68,12 +69,6 @@ class DevelopmentSessionStore implements SessionStore {
   }
 }
 
-const state = globalThis as typeof globalThis & {
-  redisLimiter?: RedisRateLimiter;
-  redisSessions?: RedisSessionStore;
-  developmentSessions?: DevelopmentSessionStore;
-};
-
 function requestProtectionTransport() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -87,8 +82,8 @@ export async function limitRequest(scope: "member-api", token: string) {
   try {
     const transport = requestProtectionTransport();
     if (!transport) return;
-    state.redisLimiter ??= new RedisRateLimiter(redisNamespace(), transport);
-    const allowed = await state.redisLimiter.allow(scope, token, 300, 60);
+    globalThis.redisLimiter ??= new RedisRateLimiter(redisNamespace(), transport);
+    const allowed = await globalThis.redisLimiter.allow(scope, token, 300, 60);
     if (!allowed) throw new RequestIdentityError(429, "操作太頻繁，請稍候一分鐘再試。");
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
@@ -108,12 +103,12 @@ export async function limitRequest(scope: "member-api", token: string) {
 function sessionStore(): SessionStore {
   const transport = requestProtectionTransport();
   if (transport) {
-    state.redisSessions ??= new RedisSessionStore(redisNamespace(), transport);
-    return state.redisSessions;
+    globalThis.redisSessions ??= new RedisSessionStore(redisNamespace(), transport);
+    return globalThis.redisSessions;
   }
   if (process.env.VERCEL_ENV) throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。");
-  state.developmentSessions ??= new DevelopmentSessionStore();
-  return state.developmentSessions;
+  globalThis.developmentSessions ??= new DevelopmentSessionStore();
+  return globalThis.developmentSessions;
 }
 
 function readSessionId(request: Request) {
@@ -132,8 +127,8 @@ function parseSession(value: string): SessionRecord | null {
   if (value.length > 512) return null;
   try {
     const parsed: unknown = JSON.parse(value);
-    if (!parsed || typeof parsed !== "object") return null;
-    const { subject, generation } = parsed as Record<string, unknown>;
+    if (!isRecord(parsed)) return null;
+    const { subject, generation } = parsed;
     if (
       typeof subject !== "string" ||
       !/^U[a-f0-9]{32}$/i.test(subject) ||

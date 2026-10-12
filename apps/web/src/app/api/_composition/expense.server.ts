@@ -22,15 +22,11 @@ const recognizeImage = async (imageId: string) => {
   })(imageId);
 };
 
-/** Global state is retained across Next.js hot reloads and remains process-local. */
-const state = globalThis as typeof globalThis & {
-  expenseStore?: ReturnType<typeof createPostgresExpenseStore>;
-  expenseRecognition?: Map<string, ReturnType<typeof recognizeImage>>;
-  nextReceiptAt?: number;
-};
+const expenseRecognition = new Map<string, ReturnType<typeof recognizeImage>>();
+let nextReceiptAt: number | undefined;
 
 function expenseStore() {
-  return (state.expenseStore ??= createPostgresExpenseStore());
+  return (globalThis.expenseStore ??= createPostgresExpenseStore());
 }
 
 const dependencies = {
@@ -43,10 +39,10 @@ export const commandExpense = createCommandExpense(dependencies);
 export const recognizeReceipt = createRecognizeReceipt({
   ...dependencies,
   recognize: recognizeImage,
-  recognition: (state.expenseRecognition ??= new Map()),
-  nextReceiptAt: () => state.nextReceiptAt,
+  recognition: expenseRecognition,
+  nextReceiptAt: () => nextReceiptAt,
   setNextReceiptAt: (value) => {
-    state.nextReceiptAt = value;
+    nextReceiptAt = value;
   },
   now: Date.now,
   cooldownMs: 30_000,

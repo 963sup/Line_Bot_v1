@@ -4,16 +4,17 @@ import { createUserRequest } from "../src/modules/account/api.server";
 
 const account = {
   id: "user-1",
-  status: "active",
+  login: "user-1",
+  status: "active" as const,
   createdAt: 1,
   googleEmail: null,
 };
 
 const claim = {
   day: "2026-09-24",
-  prizeCode: "coin-one",
+  prizeCode: "coin-one" as const,
   reward: 1,
-  policyVersion: "wheel-v1",
+  policyVersion: "wheel-v1" as const,
   decidedAt: 1,
 };
 

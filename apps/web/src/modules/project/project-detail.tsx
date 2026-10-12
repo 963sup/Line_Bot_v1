@@ -1,5 +1,7 @@
 "use client";
 
+import { isRecord } from "@line_bot_v1/platform/validation";
+import { parseProjectManagementCommand } from "@line_bot_v1/project/application/management";
 import type {
   ProjectManagementCommand,
   ProjectManagementView,
@@ -55,13 +57,13 @@ function readPending(projectId: string, actorUserId: string): PendingOperation |
   try {
     const raw = sessionStorage.getItem(pendingKey(projectId, actorUserId));
     if (!raw) return null;
-    const value = JSON.parse(raw) as PendingOperation;
-    const command = value?.command;
+    const value: unknown = JSON.parse(raw);
+    if (!isRecord(value) || typeof value.actorUserId !== "string") {
+      clearPending(projectId, actorUserId);
+      return null;
+    }
+    const command = parseProjectManagementCommand(value.command);
     if (
-      !value ||
-      typeof value !== "object" ||
-      !command ||
-      typeof command !== "object" ||
       value.actorUserId !== actorUserId ||
       !("projectId" in command) ||
       command.projectId !== projectId ||
@@ -72,7 +74,7 @@ function readPending(projectId: string, actorUserId: string): PendingOperation |
       clearPending(projectId, actorUserId);
       return null;
     }
-    return value;
+    return { actorUserId: value.actorUserId, command };
   } catch {
     clearPending(projectId, actorUserId);
     return null;

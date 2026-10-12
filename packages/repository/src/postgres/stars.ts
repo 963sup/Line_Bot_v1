@@ -1,7 +1,26 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { RepositoryStarStore, StarredRepository } from "../contracts/repositories/stars.js";
 import { RepositoryError } from "../domain.js";
+import { repositoryOwnerKind, repositoryVisibility } from "./decode.js";
+
+function decodeStarredRow(row: SqlRow) {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+    visibility: repositoryVisibility(row.visibility),
+    created_at: numericValue(row.created_at),
+    star_count: numericValue(row.star_count),
+  };
+}
 
 async function requireAccess(sql: Sql, userId: string, repositoryId: string): Promise<void> {
   const row = (
@@ -57,16 +76,9 @@ export class PostgresRepositoryStarStore implements RepositoryStarStore {
              )
            ORDER BY s.created_at DESC,r.id`,
           [userId],
+          decodeStarredRow,
         )
-      ).rows as Array<{
-        id: string;
-        owner_account_id: string;
-        owner_account_kind: "USER" | "ORGANIZATION";
-        name: string;
-        visibility: string;
-        created_at: number | string;
-        star_count: number | string;
-      }>;
+      ).rows;
       const owners = await readAccountLogins(
         sql,
         rows.map((row) => ({ id: row.owner_account_id, kind: row.owner_account_kind })),

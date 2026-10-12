@@ -1,6 +1,7 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
+import { booleanValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
   RepositoryDiscoveryOptions,
   RepositoryDiscoverySnapshot,
@@ -9,6 +10,7 @@ import type {
   TrendingRepository,
 } from "../contracts/discovery.js";
 import { RepositoryError, type RepositoryPermission } from "../domain.js";
+import { repositoryOwnerKind, repositoryPermissionArray, repositoryVisibility } from "./decode.js";
 import {
   readVisibleStarListRepositoryRows,
   type VisibleStarListRepositoryRow,
@@ -36,6 +38,30 @@ type PublishedListRow = {
 
 const accountKey = (id: string, kind: "USER" | "ORGANIZATION") => `${id}:\0:${kind}`;
 
+function decodePublishedListRow(row: SqlRow): PublishedListRow {
+  return {
+    id: stringValue(row.id),
+    owner_user_id: stringValue(row.owner_user_id),
+    name: stringValue(row.name),
+    description: stringValue(row.description),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+function decodeTrendingRow(row: SqlRow): TrendingRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+    visibility: repositoryVisibility(row.visibility),
+    permissions: repositoryPermissionArray(row.permissions),
+    recent_star_count: numericValue(row.recent_star_count),
+    star_count: numericValue(row.star_count),
+    starred: booleanValue(row.starred),
+  };
+}
+
 export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStore {
   constructor(private db: Database = businessDatabase()) {}
 
@@ -49,7 +75,7 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
       const pageSize = Math.max(1, limit);
 
       while (selected.length < limit) {
-        const rows = (
+        const rows: PublishedListRow[] = (
           await sql.query(
             `SELECT id,owner_user_id,name,description,updated_at
              FROM repository_star_lists
@@ -62,8 +88,9 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
              ORDER BY updated_at DESC,id
              LIMIT $3`,
             [cursorAt, cursorId, pageSize],
+            decodePublishedListRow,
           )
-        ).rows as PublishedListRow[];
+        ).rows;
         if (!rows.length) break;
 
         const visibleRows = await readVisibleStarListRepositoryRows(
@@ -167,8 +194,9 @@ export class PostgresRepositoryDiscoveryStore implements RepositoryDiscoveryStor
              r.id
            LIMIT $3`,
           [userId, options.recentSince, options.trendingLimit],
+          decodeTrendingRow,
         )
-      ).rows as TrendingRow[];
+      ).rows;
 
       const logins = await readAccountLogins(
         sql,

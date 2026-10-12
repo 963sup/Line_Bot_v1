@@ -2,6 +2,12 @@ import { randomUUID } from "node:crypto";
 import { claimNamespace, NamespaceError, renameNamespace } from "@line_bot_v1/namespace";
 import { PostgresNamespaceStore, readAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { VerifiedGoogleIdentity } from "../contracts/output/identity-provider.js";
 import type { UserRepository } from "../contracts/repositories/user.js";
 import { type User, UserError } from "../domain/user.js";
@@ -16,7 +22,6 @@ type UserViewRow = {
   login: string | null;
   google_email: string | null;
 };
-type IdentityUserViewRow = Partial<UserViewRow> & { identity_user_id: string };
 type StoredUserRow = Omit<StoredUser, "createdAt"> & { createdAt: number | string };
 const user = (row: StoredUserRow): StoredUser => ({ ...row, createdAt: Number(row.createdAt) });
 const userView = (row: UserViewRow) => {
@@ -30,6 +35,75 @@ const userView = (row: UserViewRow) => {
   };
 };
 
+function storedUserRow(row: Record<string, unknown>): StoredUserRow {
+  return {
+    id: stringValue(row.id),
+    status: literalValue(row.status, ["paused", "active", "suspended"]),
+    createdAt: numericValue(row.createdAt),
+    auth_user_id: nullableString(row.auth_user_id),
+  };
+}
+
+function publicUserRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id), login: stringValue(row.login) };
+}
+
+function identityProjectionRow(row: Record<string, unknown>) {
+  return {
+    identity_user_id: stringValue(row.identity_user_id),
+    id: row.id,
+    status: row.status,
+    createdAt: row.createdAt,
+    login: row.login,
+    google_email: row.google_email,
+  };
+}
+
+function projectedUser(row: ReturnType<typeof identityProjectionRow>): UserViewRow {
+  if (
+    typeof row.id !== "string" ||
+    (row.status !== "paused" && row.status !== "active" && row.status !== "suspended") ||
+    (typeof row.createdAt !== "number" && typeof row.createdAt !== "string") ||
+    typeof row.login !== "string" ||
+    (row.google_email !== null && typeof row.google_email !== "string")
+  ) {
+    throw new UserError(500, "User 帳號識別資料不完整。");
+  }
+  return {
+    id: row.id,
+    status: row.status,
+    createdAt: row.createdAt,
+    login: row.login,
+    google_email: row.google_email,
+  };
+}
+
+function subjectRow(row: Record<string, unknown>) {
+  return { subject: stringValue(row.subject) };
+}
+
+function userIdRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id) };
+}
+
+function googleIdentityRow(row: Record<string, unknown>) {
+  return { subject: stringValue(row.subject), email: stringValue(row.email) };
+}
+
+function userViewRow(row: Record<string, unknown>): UserViewRow {
+  return {
+    id: stringValue(row.id),
+    status: literalValue(row.status, ["paused", "active", "suspended"]),
+    createdAt: numericValue(row.createdAt),
+    login: nullableString(row.login),
+    google_email: nullableString(row.google_email),
+  };
+}
+
+function hasPostgresCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}
+
 export class PostgresUserStore implements UserRepository {
   constructor(
     private db: Database = businessDatabase(),
@@ -38,10 +112,14 @@ export class PostgresUserStore implements UserRepository {
 
   private async getFrom(sql: Sql, id: string, lock = false) {
     const row = (
-      await sql.query(`SELECT * FROM users WHERE id=$1${lock ? " FOR UPDATE" : ""}`, [id])
+      await sql.query(
+        `SELECT * FROM users WHERE id=$1${lock ? " FOR UPDATE" : ""}`,
+        [id],
+        storedUserRow,
+      )
     ).rows[0];
     if (!row) throw new UserError(404, "會員不存在。");
-    return user(row as StoredUserRow);
+    return user(row);
   }
 
   get(id: string) {
@@ -53,10 +131,11 @@ export class PostgresUserStore implements UserRepository {
       const row = (
         await sql.query(
           `SELECT id,login FROM user_namespace_projection
-           WHERE id=$1 AND status='active'`,
+          WHERE id=$1 AND status='active'`,
           [userId],
+          publicUserRow,
         )
-      ).rows[0] as { id: string; login: string } | undefined;
+      ).rows[0];
       if (!row) return null;
       if (!row.login) throw new UserError(500, "User 登入名稱資料不完整。");
       return row;
@@ -89,9 +168,10 @@ export class PostgresUserStore implements UserRepository {
         await sql.query(
           "SELECT m.* FROM users m JOIN user_identities i ON i.user_id=m.id WHERE i.provider=$1 AND i.subject=$2",
           [provider, subject],
+          storedUserRow,
         )
       ).rows[0];
-      return row ? user(row as StoredUserRow) : null;
+      return row ? user(row) : null;
     });
   }
 
@@ -103,21 +183,13 @@ export class PostgresUserStore implements UserRepository {
                   p.id,p.status,p."createdAt",p.login,p.google_email
            FROM user_identities i
            LEFT JOIN user_namespace_projection p ON p.id=i.user_id
-           WHERE i.provider=$1 AND i.subject=$2`,
+          WHERE i.provider=$1 AND i.subject=$2`,
           [provider, subject],
+          identityProjectionRow,
         )
-      ).rows[0] as IdentityUserViewRow | undefined;
+      ).rows[0];
       if (!row) return null;
-      if (
-        !row.id ||
-        !row.status ||
-        row.createdAt === undefined ||
-        row.login === undefined ||
-        row.google_email === undefined
-      ) {
-        throw new UserError(500, "User 帳號識別資料不完整。");
-      }
-      return userView(row as UserViewRow);
+      return userView(projectedUser(row));
     });
   }
 
@@ -153,10 +225,11 @@ export class PostgresUserStore implements UserRepository {
         await sql.query(
           "SELECT m.* FROM users m JOIN user_identities i ON i.user_id=m.id WHERE i.provider=$1 AND i.subject=$2 FOR UPDATE OF m",
           [provider, subject],
+          storedUserRow,
         )
       ).rows[0];
       if (row) {
-        const m = user(row as StoredUserRow);
+        const m = user(row);
         if (m.status === "suspended") throw new UserError(403, "會員已停權。");
         if (operation === "register") {
           if (!login) throw new UserError(400, "登入名稱格式不正確。");
@@ -226,15 +299,17 @@ export class PostgresUserStore implements UserRepository {
           await sql.query(
             "SELECT m.* FROM users m JOIN user_identities i ON i.user_id=m.id WHERE i.provider=$1 AND i.subject=$2 FOR UPDATE OF m",
             [provider, subject],
+            storedUserRow,
           )
         ).rows[0];
         if (!row) throw new UserError(403, "請使用已註冊的 LINE 會員。");
-        const m = user(row as StoredUserRow);
+        const m = user(row);
         if (m.status === "suspended") throw new UserError(403, "會員已停權。");
         const old = (
           await sql.query(
             "SELECT subject FROM user_identities WHERE user_id=$1 AND provider='google'",
             [m.id],
+            subjectRow,
           )
         ).rows[0];
         if (
@@ -247,6 +322,7 @@ export class PostgresUserStore implements UserRepository {
           await sql.query(
             "SELECT user_id FROM user_identities WHERE provider='google' AND subject=$1",
             [google.sub],
+            userIdRow,
           )
         ).rows[0];
         if (other && other.user_id !== m.id) {
@@ -266,7 +342,7 @@ export class PostgresUserStore implements UserRepository {
         return { ...m, status: "active" as const, auth_user_id: google.id };
       });
     } catch (e) {
-      if ((e as { code?: string }).code === "23505") {
+      if (hasPostgresCode(e, "23505")) {
         throw new UserError(409, "帳號已被綁定，請重新載入。");
       }
       throw e;
@@ -279,9 +355,10 @@ export class PostgresUserStore implements UserRepository {
         await sql.query(
           "SELECT subject,email FROM user_identities WHERE user_id=$1 AND provider='google'",
           [id],
+          googleIdentityRow,
         )
       ).rows[0];
-      return row ? { sub: String(row.subject), email: String(row.email) } : null;
+      return row ? { sub: row.subject, email: row.email } : null;
     });
   }
 
@@ -291,8 +368,9 @@ export class PostgresUserStore implements UserRepository {
         `SELECT id,status,"createdAt",login,google_email
          FROM user_namespace_projection WHERE id=$1`,
         [id],
+        userViewRow,
       )
-    ).rows[0] as UserViewRow | undefined;
+    ).rows[0];
     if (!row) throw new UserError(404, "會員不存在。");
     return userView(row);
   }

@@ -1,6 +1,7 @@
 "use client";
 import type { ExpenseApiView } from "@line_bot_v1/expense/contracts/dto/expense-api-view";
 import type { ExpenseFields } from "@line_bot_v1/expense/domain/aggregates/expense";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -22,6 +23,70 @@ const labels = {
   date: "日期",
   invoiceNumber: "憑證號碼（選填）",
 };
+const fieldKeys: readonly (keyof Omit<ExpenseFields, "payment">)[] = [
+  "merchant",
+  "amount",
+  "currency",
+  "date",
+  "invoiceNumber",
+];
+
+function readExpense(value: unknown): ExpenseApiView {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    typeof value.number !== "number" ||
+    typeof value.merchant !== "string" ||
+    typeof value.amount !== "string" ||
+    typeof value.currency !== "string" ||
+    typeof value.date !== "string" ||
+    typeof value.invoiceNumber !== "string" ||
+    (value.payment !== "" &&
+      value.payment !== "advance" &&
+      value.payment !== "company" &&
+      value.payment !== "unpaid") ||
+    (value.status !== "pending" &&
+      value.status !== "draft" &&
+      value.status !== "confirmed" &&
+      value.status !== "cancelled") ||
+    typeof value.revision !== "number" ||
+    typeof value.createdAt !== "number"
+  )
+    throw new Error("支出回應格式不完整。");
+  return {
+    id: value.id,
+    number: value.number,
+    merchant: value.merchant,
+    amount: value.amount,
+    currency: value.currency,
+    date: value.date,
+    invoiceNumber: value.invoiceNumber,
+    payment: value.payment,
+    status: value.status,
+    revision: value.revision,
+    createdAt: value.createdAt,
+  };
+}
+
+function readReceipt(value: unknown): ReceiptReadingView {
+  if (!isRecord(value)) throw new Error("辨識回應格式不完整。");
+  const nullable = (item: unknown) => item === null || typeof item === "string";
+  if (
+    !nullable(value.merchant) ||
+    !nullable(value.amount) ||
+    !nullable(value.currency) ||
+    !nullable(value.date) ||
+    !nullable(value.invoiceNumber)
+  )
+    throw new Error("辨識回應格式不完整。");
+  return {
+    merchant: value.merchant,
+    amount: value.amount,
+    currency: value.currency,
+    date: value.date,
+    invoiceNumber: value.invoiceNumber,
+  };
+}
 
 export default function ExpensePanel({ liffId }: { liffId: string }) {
   const [expense, setExpense] = useState<View>();
@@ -43,10 +108,11 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       headers: { "X-App-Session-Generation": access },
       cache: "no-store",
     });
-    const data = await result.json();
-    if (!result.ok) throw new Error(data.error);
+    const data: unknown = await result.json();
+    if (!result.ok)
+      throw new Error(isRecord(data) && typeof data.error === "string" ? data.error : "載入失敗。");
     setHasRecognition(false);
-    setExpense(data);
+    setExpense(readExpense(data));
   }
 
   async function initialize() {
@@ -76,9 +142,9 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
     setNotice("");
     try {
       const fields = Object.fromEntries(
-        [...Object.keys(labels), "payment"].map((key) => [
+        ([...fieldKeys, "payment"] satisfies readonly (keyof ExpenseApiView)[]).map((key) => [
           key,
-          expense[key as keyof ExpenseFields],
+          expense[key],
         ]),
       );
       const result = await fetch(`/api/expenses/${id}`, {
@@ -90,11 +156,15 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
           ...(["save", "confirm"].includes(type) ? { fields } : {}),
         }),
       });
-      const data = await result.json();
-      if (!result.ok) throw new Error(data.error);
+      const data: unknown = await result.json();
+      if (!result.ok)
+        throw new Error(
+          isRecord(data) && typeof data.error === "string" ? data.error : "操作失敗。",
+        );
 
       if (type === "recognize") {
-        const reading = data.reading as ReceiptReadingView;
+        if (!isRecord(data)) throw new Error("辨識回應格式不完整。");
+        const reading = readReceipt(data.reading);
         setExpense({
           ...expense,
           merchant: reading.merchant ?? "",
@@ -108,7 +178,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       }
 
       setHasRecognition(false);
-      setExpense(data);
+      setExpense(readExpense(data));
       if (type === "save") setNotice("已儲存修改。");
     } catch (e) {
       setError(e instanceof Error ? e.message : "操作失敗，請重試。");
@@ -186,16 +256,16 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
         >
           <p className="expense-hint">核對辨識結果；空白欄位需要補充。</p>
           <fieldset disabled={busy}>
-            {Object.entries(labels).map(([key, label]) => (
+            {fieldKeys.map((key) => (
               <label key={key}>
-                {label}
+                {labels[key]}
                 <input
-                  aria-label={label}
+                  aria-label={labels[key]}
                   required={key !== "invoiceNumber"}
                   maxLength={120}
                   inputMode={key === "amount" ? "decimal" : undefined}
                   type={key === "date" ? "date" : "text"}
-                  value={expense[key as keyof ExpenseFields]}
+                  value={expense[key]}
                   onChange={(e) => setExpense({ ...expense, [key]: e.target.value })}
                 />
               </label>
@@ -206,9 +276,16 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
                 required
                 aria-label="付款方式"
                 value={expense.payment}
-                onChange={(e) =>
-                  setExpense({ ...expense, payment: e.target.value as ExpenseFields["payment"] })
-                }
+                onChange={(e) => {
+                  const payment = e.target.value;
+                  if (
+                    payment === "" ||
+                    payment === "advance" ||
+                    payment === "company" ||
+                    payment === "unpaid"
+                  )
+                    setExpense({ ...expense, payment });
+                }}
               >
                 <option value="">請選擇</option>
                 <option value="advance">我先墊付</option>

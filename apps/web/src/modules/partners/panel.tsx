@@ -1,7 +1,15 @@
 "use client";
 
-import type { ContactMethod, PartnersView } from "@line_bot_v1/partners/contracts";
+import type {
+  ContactMethod,
+  Partner,
+  PartnerContact,
+  PartnerNewsItem,
+  PartnerReferral,
+  PartnersView,
+} from "@line_bot_v1/partners/contracts";
 import type { PartnerCommand } from "@line_bot_v1/partners/domain";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -39,6 +47,134 @@ const labels: Record<Mode, string> = {
 const date = (value: number | null) =>
   value ? new Date(value).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }) : "尚未審核";
 
+function readPartnersView(value: unknown): PartnersView {
+  if (
+    !isRecord(value) ||
+    typeof value.userId !== "string" ||
+    !Array.isArray(value.partners) ||
+    !Array.isArray(value.news) ||
+    !Array.isArray(value.referrals) ||
+    (value.next !== undefined && value.next !== null && typeof value.next !== "string") ||
+    (value.canReview !== undefined && typeof value.canReview !== "boolean")
+  )
+    throw new Error("夥伴服務回應格式不完整。");
+  const partners = value.partners.map((partner): Partner => {
+    if (
+      !isRecord(partner) ||
+      typeof partner.id !== "string" ||
+      typeof partner.name !== "string" ||
+      typeof partner.category !== "string" ||
+      typeof partner.region !== "string" ||
+      (partner.status !== "published" && partner.status !== "unlisted") ||
+      !Array.isArray(partner.contacts) ||
+      typeof partner.version !== "number"
+    )
+      throw new Error("夥伴服務回應格式不完整。");
+    const contacts = partner.contacts.map((contact): PartnerContact => {
+      if (
+        !isRecord(contact) ||
+        typeof contact.id !== "string" ||
+        typeof contact.partnerId !== "string" ||
+        typeof contact.name !== "string" ||
+        typeof contact.responsibility !== "string" ||
+        typeof contact.phone !== "string" ||
+        typeof contact.email !== "string" ||
+        typeof contact.line !== "string" ||
+        (contact.status !== "published" && contact.status !== "unlisted")
+      )
+        throw new Error("夥伴服務回應格式不完整。");
+      return {
+        id: contact.id,
+        partnerId: contact.partnerId,
+        name: contact.name,
+        responsibility: contact.responsibility,
+        phone: contact.phone,
+        email: contact.email,
+        line: contact.line,
+        status: contact.status,
+      };
+    });
+    return {
+      id: partner.id,
+      name: partner.name,
+      category: partner.category,
+      region: partner.region,
+      status: partner.status,
+      contacts,
+      version: partner.version,
+    };
+  });
+  const news = value.news.map((item): PartnerNewsItem => {
+    if (
+      !isRecord(item) ||
+      typeof item.referralId !== "string" ||
+      typeof item.partnerId !== "string" ||
+      typeof item.contactId !== "string" ||
+      typeof item.partnerName !== "string" ||
+      typeof item.category !== "string" ||
+      typeof item.contactName !== "string" ||
+      typeof item.responsibility !== "string" ||
+      typeof item.successfulAt !== "number"
+    )
+      throw new Error("夥伴服務回應格式不完整。");
+    return {
+      referralId: item.referralId,
+      partnerId: item.partnerId,
+      contactId: item.contactId,
+      partnerName: item.partnerName,
+      category: item.category,
+      contactName: item.contactName,
+      responsibility: item.responsibility,
+      successfulAt: item.successfulAt,
+    };
+  });
+  const referrals = value.referrals.map((item): PartnerReferral => {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== "string" ||
+      typeof item.partnerName !== "string" ||
+      typeof item.category !== "string" ||
+      typeof item.region !== "string" ||
+      typeof item.contactName !== "string" ||
+      typeof item.responsibility !== "string" ||
+      (item.method !== "phone" && item.method !== "email" && item.method !== "line") ||
+      typeof item.value !== "string" ||
+      typeof item.reason !== "string" ||
+      (item.status !== "pending" &&
+        item.status !== "successful" &&
+        item.status !== "rejected" &&
+        item.status !== "withdrawn") ||
+      typeof item.submittedAt !== "number" ||
+      (item.reviewedAt !== null && typeof item.reviewedAt !== "number") ||
+      typeof item.reviewNote !== "string"
+    )
+      throw new Error("夥伴服務回應格式不完整。");
+    return {
+      id: item.id,
+      partnerName: item.partnerName,
+      category: item.category,
+      region: item.region,
+      contactName: item.contactName,
+      responsibility: item.responsibility,
+      method: item.method,
+      value: item.value,
+      reason: item.reason,
+      status: item.status,
+      submittedAt: item.submittedAt,
+      reviewedAt: item.reviewedAt,
+      reviewNote: item.reviewNote,
+    };
+  });
+  return {
+    userId: value.userId,
+    partners,
+    news,
+    referrals,
+    ...(value.next === undefined ? {} : { next: value.next }),
+    ...(value.canReview === undefined ? {} : { canReview: value.canReview }),
+  };
+}
+
 export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: Mode }) {
   const [data, setData] = useState<PartnersView | null>(null);
   const [after, setAfter] = useState<string>();
@@ -75,10 +211,14 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
         signal: AbortSignal.timeout(20000),
       },
     );
-    const payload = await response.json();
+    const payload: unknown = await response.json();
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) clear();
-      throw new Error(payload.error ?? "夥伴服務暫不可用。");
+      throw new Error(
+        isRecord(payload) && typeof payload.error === "string"
+          ? payload.error
+          : "夥伴服務暫不可用。",
+      );
     }
     return payload;
   }
@@ -88,7 +228,7 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
     setBusy(true);
     setError("");
     try {
-      const payload = (await request({}, cursor)) as PartnersView;
+      const payload = readPartnersView(await request({}, cursor));
       if (ticket !== sequence.current) return;
       if (cursor && data && payload.userId !== data.userId) {
         clear();
@@ -277,7 +417,11 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
               聯繫方式
               <select
                 value={draft.method}
-                onChange={(e) => setDraft({ ...draft, method: e.target.value as ContactMethod })}
+                onChange={(e) => {
+                  const method = e.target.value;
+                  if (method === "phone" || method === "email" || method === "line")
+                    setDraft({ ...draft, method });
+                }}
               >
                 <option value="phone">電話</option>
                 <option value="email">Email</option>

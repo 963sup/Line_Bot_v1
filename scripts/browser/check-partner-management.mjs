@@ -33,8 +33,14 @@ await context.addInitScript(() => {
   window.liff = {
     init: async () => {},
     isLoggedIn: () => true,
+    getProfile: async () => ({
+      userId: "U11111111111111111111111111111111",
+      displayName: "Partner Management Tester",
+    }),
     getAccessToken: () => window.testToken,
     isInClient: () => false,
+    closeWindow: () => {},
+    openWindow: () => {},
     login: () => {},
   };
 });

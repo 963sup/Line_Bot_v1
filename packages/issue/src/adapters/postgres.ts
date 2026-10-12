@@ -1,5 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numberValue,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
 import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
 import {
@@ -51,6 +58,59 @@ type IssueRow = {
   created_at: number | string;
   updated_at: number | string;
 };
+
+const workflowStatusValues: readonly Issue["workflowStatus"][] = [
+  "pending",
+  "active",
+  "review",
+  "completed",
+];
+const stateValues: readonly Issue["state"][] = ["OPEN", "CLOSED"];
+const stateReasonValues: readonly Exclude<Issue["stateReason"], null>[] = [
+  "COMPLETED",
+  "DUPLICATE",
+  "NOT_PLANNED",
+  "REOPENED",
+];
+
+function decodeIssueRow(row: Record<string, unknown>): IssueRow {
+  const status = nullableString(row.status);
+  const state = nullableString(row.state);
+  const stateReason = nullableString(row.state_reason);
+  const workflowStatus = nullableString(row.workflow_status);
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    number: numericValue(row.number),
+    publisher: stringValue(row.publisher),
+    assignee: nullableString(row.assignee),
+    title: stringValue(row.title),
+    body: nullableString(row.body),
+    criteria: stringValue(row.criteria),
+    status: status === null ? null : literalValue(status, workflowStatusValues),
+    state: state === null ? null : literalValue(state, stateValues),
+    state_reason: stateReason === null ? null : literalValue(stateReason, stateReasonValues),
+    workflow_status:
+      workflowStatus === null ? null : literalValue(workflowStatus, workflowStatusValues),
+    version: numberValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+const decodeAssigneeRow = (row: Record<string, unknown>) => ({
+  issue_id: stringValue(row.issue_id),
+  user_id: stringValue(row.user_id),
+});
+
+const decodeReceiptRow = (row: Record<string, unknown>) => ({
+  fingerprint: stringValue(row.fingerprint),
+  result: row.result,
+});
+
+const decodeVersionRow = (row: Record<string, unknown>) => ({
+  version: numberValue(row.version),
+});
 
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -108,8 +168,9 @@ async function assigneesByIssue(
        WHERE issue_id=ANY($1::text[])
        ORDER BY issue_id,user_id`,
       [issueIds],
+      decodeAssigneeRow,
     )
-  ).rows as Array<{ issue_id: string; user_id: string }>;
+  ).rows;
   for (const row of rows) {
     const values = result.get(row.issue_id) ?? [];
     values.push(row.user_id);
@@ -128,13 +189,13 @@ async function hydratedIssues(sql: Sql, rows: IssueRow[]): Promise<Issue[]> {
 
 function eventData(value: unknown): Readonly<Record<string, unknown>> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Readonly<Record<string, unknown>>)
+    ? Object.fromEntries(Object.entries(value))
     : {};
 }
 
 function receiptIssue(value: unknown): Issue | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const row = value as Record<string, unknown>;
+  const row = Object.fromEntries(Object.entries(value));
 
   if (
     typeof row.id === "string" &&
@@ -160,7 +221,22 @@ function receiptIssue(value: unknown): Issue | null {
     typeof row.createdAt === "number" &&
     typeof row.updatedAt === "number"
   ) {
-    return row as unknown as Issue;
+    return {
+      id: row.id,
+      repositoryId: row.repositoryId,
+      number: row.number,
+      publisher: row.publisher,
+      assignees: row.assignees,
+      title: row.title,
+      body: row.body,
+      criteria: row.criteria,
+      state: row.state,
+      stateReason: row.stateReason,
+      workflowStatus: row.workflowStatus,
+      version: row.version,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
   }
 
   const legacyStatus = row.status;
@@ -238,7 +314,10 @@ function readReceipt(
   if (!acceptedFingerprints(command).has(previous.fingerprint)) {
     throw new IssueError(409, "此請求編號已用於不同內容。");
   }
-  const receipt = previous.result as { receiptVersion?: number; issue?: unknown };
+  if (!previous.result || typeof previous.result !== "object" || Array.isArray(previous.result)) {
+    throw new IssueError(503, "Issue 操作回執無法讀取。");
+  }
+  const receipt = Object.fromEntries(Object.entries(previous.result));
   const restored = receiptIssue(receipt.issue);
   if (receipt.receiptVersion !== 1 || !restored) {
     throw new IssueError(503, "Issue 操作回執無法讀取。");
@@ -326,8 +405,9 @@ export class PostgresIssueStore implements IssueRepository {
             list ? (page?.after?.id ?? null) : null,
             list ? 21 : 100,
           ],
+          decodeIssueRow,
         )
-      ).rows as IssueRow[];
+      ).rows;
       const mapped = await hydratedIssues(sql, rows);
       const hasMore = list && mapped.length > 20;
       if (hasMore) mapped.pop();
@@ -376,11 +456,12 @@ export class PostgresIssueStore implements IssueRepository {
       const selected = await repositoryOperation(() => repositoryScope(sql, who, repositoryId));
       const available = await repositoryOperation(() => accessibleRepositories(sql, who.userId));
       const row = (
-        await sql.query("SELECT * FROM issues WHERE repository_id=$1 AND number=$2", [
-          repositoryId,
-          issueNumber,
-        ])
-      ).rows[0] as IssueRow | undefined;
+        await sql.query(
+          "SELECT * FROM issues WHERE repository_id=$1 AND number=$2",
+          [repositoryId, issueNumber],
+          decodeIssueRow,
+        )
+      ).rows[0];
       if (!row) throw new IssueError(404, "找不到 Issue。");
       const mapped = await hydratedIssues(sql, [row]);
       const events = (
@@ -421,8 +502,9 @@ export class PostgresIssueStore implements IssueRepository {
         await sql.query(
           "SELECT fingerprint,result FROM issue_commands WHERE actor=$1 AND request_id=$2",
           [who.userId, command.requestId],
+          decodeReceiptRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, command);
       if (replay) return replay;
 
@@ -499,11 +581,12 @@ export class PostgresIssueStore implements IssueRepository {
         };
       } else {
         const row = (
-          await sql.query("SELECT * FROM issues WHERE id=$1 AND repository_id=$2 FOR UPDATE", [
-            command.issueId,
-            command.repositoryId,
-          ])
-        ).rows[0] as IssueRow | undefined;
+          await sql.query(
+            "SELECT * FROM issues WHERE id=$1 AND repository_id=$2 FOR UPDATE",
+            [command.issueId, command.repositoryId],
+            decodeIssueRow,
+          )
+        ).rows[0];
         if (!row) throw new IssueError(404, "找不到 Issue。");
 
         if (row.assignee !== null) {
@@ -635,8 +718,9 @@ export class PostgresIssueStore implements IssueRepository {
               now,
               result.version,
             ],
+            decodeVersionRow,
           )
-        ).rows[0] as { version: number } | undefined;
+        ).rows[0];
         if (!changed) throw new IssueError(409, "Issue 已更新，請重新讀取後再操作。");
         result = {
           ...result,

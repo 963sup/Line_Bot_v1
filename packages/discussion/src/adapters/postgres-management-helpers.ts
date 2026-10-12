@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
 import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import { repositoryLabelIdsExist } from "@line_bot_v1/repository/postgres/resource-management";
@@ -67,6 +75,106 @@ type StoredReceipt = Readonly<{
   result: DiscussionManagementReceipt;
 }>;
 
+const discussionStates: readonly Discussion["state"][] = ["OPEN", "CLOSED"];
+const discussionStateReasons: readonly Exclude<Discussion["stateReason"], null>[] = [
+  "DUPLICATE",
+  "OUTDATED",
+  "REOPENED",
+  "RESOLVED",
+];
+const discussionLockReasons: readonly Exclude<Discussion["lockReason"], null>[] = [
+  "OFF_TOPIC",
+  "RESOLVED",
+  "SPAM",
+  "TOO_HEATED",
+];
+
+export function decodeCategoryRow(row: Record<string, unknown>): CategoryRow {
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    name: stringValue(row.name),
+    slug: stringValue(row.slug),
+    description: stringValue(row.description),
+    emoji: stringValue(row.emoji),
+    is_answerable: booleanValue(row.is_answerable),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+export function decodeDiscussionRow(row: Record<string, unknown>): DiscussionRow {
+  const stateReason = nullableString(row.state_reason);
+  const lockReason = nullableString(row.lock_reason);
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    number: nullableNumericValue(row.number),
+    author: stringValue(row.author),
+    title: stringValue(row.title),
+    body: stringValue(row.body),
+    category: stringValue(row.category),
+    category_id: nullableString(row.category_id),
+    state: literalValue(row.state, discussionStates),
+    state_reason: stateReason === null ? null : literalValue(stateReason, discussionStateReasons),
+    closed_at: nullableNumericValue(row.closed_at),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    is_locked: booleanValue(row.is_locked),
+    lock_reason: lockReason === null ? null : literalValue(lockReason, discussionLockReasons),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+export function decodeCommentRow(row: Record<string, unknown>): CommentRow {
+  return {
+    id: stringValue(row.id),
+    discussion_id: stringValue(row.discussion_id),
+    author: stringValue(row.author),
+    body: stringValue(row.body),
+    reply_to_id: nullableString(row.reply_to_id),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: nullableNumericValue(row.updated_at),
+  };
+}
+
+export const decodeNumericVersionRow = (row: Record<string, unknown>) => ({
+  version: numericValue(row.version),
+});
+
+const receiptActions: readonly DiscussionManagementReceipt["action"][] = [
+  "create-category",
+  "update-category",
+  "delete-category",
+  "create-discussion",
+  "adopt-discussion",
+  "update-discussion",
+  "close-discussion",
+  "reopen-discussion",
+  "delete-discussion",
+  "add-comment",
+  "edit-comment",
+  "delete-comment",
+  "mark-answer",
+  "unmark-answer",
+  "add-labels",
+  "remove-labels",
+  "clear-labels",
+  "add-upvote",
+  "remove-upvote",
+  "create-poll",
+  "update-poll",
+  "replace-poll-options",
+  "add-poll-vote",
+  "remove-poll-vote",
+  "lock",
+  "unlock",
+];
+
 export const commandFingerprint = (command: DiscussionManagementCommand) =>
   createHash("sha256")
     .update(JSON.stringify({ family: "discussion-management", command }))
@@ -85,21 +193,40 @@ export function readReceipt(
     throw new DiscussionError(409, "此請求編號已用於不同 Discussion 操作。");
   }
   if (!record(previous.result)) throw new DiscussionError(503, "Discussion 回執無法讀取。");
-  const envelope = previous.result as Partial<StoredReceipt>;
+  const envelope = previous.result;
   const result = envelope.result;
+  const action = record(result)
+    ? receiptActions.find((candidate) => candidate === result.action)
+    : undefined;
   if (
     envelope.receiptVersion !== 1 ||
     envelope.family !== "discussion-management" ||
     !record(result) ||
     typeof result.requestId !== "string" ||
     typeof result.repositoryId !== "string" ||
-    typeof result.action !== "string" ||
+    !action ||
+    (result.discussionId !== null && typeof result.discussionId !== "string") ||
+    (result.categoryId !== null && typeof result.categoryId !== "string") ||
+    (result.resourceId !== null && typeof result.resourceId !== "string") ||
+    typeof result.version !== "number" ||
     !Number.isSafeInteger(result.version) ||
-    !Number.isSafeInteger(result.at)
+    typeof result.at !== "number" ||
+    !Number.isSafeInteger(result.at) ||
+    !record(result.data)
   ) {
     throw new DiscussionError(503, "Discussion 回執無法讀取。");
   }
-  return result as DiscussionManagementReceipt;
+  return {
+    requestId: result.requestId,
+    repositoryId: result.repositoryId,
+    action,
+    discussionId: result.discussionId,
+    categoryId: result.categoryId,
+    resourceId: result.resourceId,
+    version: result.version,
+    at: result.at,
+    data: result.data,
+  };
 }
 
 function receiptEnvelope(result: DiscussionManagementReceipt): StoredReceipt {
@@ -212,8 +339,9 @@ export async function currentCategory(
        WHERE repository_id=$1 AND id=$2
        FOR UPDATE`,
       [repositoryId, categoryId],
+      decodeCategoryRow,
     )
-  ).rows[0] as CategoryRow | undefined;
+  ).rows[0];
   if (!row) throw new DiscussionError(404, "找不到 Discussion category。");
   return row;
 }
@@ -224,11 +352,12 @@ export async function readableCategory(
   categoryId: string,
 ): Promise<CategoryRow> {
   const row = (
-    await sql.query("SELECT * FROM discussion_categories WHERE repository_id=$1 AND id=$2", [
-      repositoryId,
-      categoryId,
-    ])
-  ).rows[0] as CategoryRow | undefined;
+    await sql.query(
+      "SELECT * FROM discussion_categories WHERE repository_id=$1 AND id=$2",
+      [repositoryId, categoryId],
+      decodeCategoryRow,
+    )
+  ).rows[0];
   if (!row) throw new DiscussionError(409, "Category 必須存在於同一 Repository。");
   return row;
 }
@@ -245,8 +374,9 @@ export async function currentDiscussion(
        WHERE repository_id=$1 AND id=$2
        FOR UPDATE`,
       [repositoryId, discussionId],
+      decodeDiscussionRow,
     )
-  ).rows[0] as DiscussionRow | undefined;
+  ).rows[0];
   if (!row || row.deleted_at !== null) throw new DiscussionError(404, "找不到 Discussion。");
   return row;
 }
@@ -263,8 +393,9 @@ export async function currentComment(
        WHERE discussion_id=$1 AND id=$2
        FOR UPDATE`,
       [discussionId, commentId],
+      decodeCommentRow,
     )
-  ).rows[0] as CommentRow | undefined;
+  ).rows[0];
   if (!row) throw new DiscussionError(404, "找不到 Discussion comment。");
   return row;
 }
@@ -283,8 +414,10 @@ export async function nextDiscussionNumber(sql: Sql, repositoryId: string): Prom
     await sql.query(
       "SELECT COALESCE(MAX(number),0)+1 AS number FROM discussions WHERE repository_id=$1",
       [repositoryId],
+      (row) => ({ number: numericValue(row.number) }),
     )
-  ).rows[0] as { number: number | string };
+  ).rows[0];
+  if (!row) throw new DiscussionError(503, "Discussion number 無法配置。");
   return Number(row.number);
 }
 
@@ -341,8 +474,9 @@ export async function advanceDiscussion(
         "lockReason" in patch ? patch.lockReason : row.lock_reason,
         now,
       ],
+      decodeDiscussionRow,
     )
-  ).rows[0] as DiscussionRow | undefined;
+  ).rows[0];
   if (!updated) throw new DiscussionError(409, "Discussion 已更新，請重新讀取後再操作。");
   return updated;
 }

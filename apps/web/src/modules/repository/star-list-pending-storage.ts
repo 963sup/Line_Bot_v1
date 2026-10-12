@@ -38,33 +38,40 @@ function commandKey(subject: string, listId: string) {
 
 function validCreate(value: unknown): value is RepositoryStarListCreateCommand {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const command = value as Record<string, unknown>;
   return (
-    typeof command.requestId === "string" &&
-    typeof command.name === "string" &&
-    typeof command.description === "string"
+    "requestId" in value &&
+    typeof value.requestId === "string" &&
+    "name" in value &&
+    typeof value.name === "string" &&
+    "description" in value &&
+    typeof value.description === "string"
   );
 }
 
 function validCommand(value: unknown): value is RepositoryStarListCommandBody {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const command = value as Record<string, unknown>;
   if (
-    typeof command.requestId !== "string" ||
-    !Number.isSafeInteger(command.expectedVersion) ||
-    Number(command.expectedVersion) < 1
+    !("requestId" in value) ||
+    typeof value.requestId !== "string" ||
+    !("expectedVersion" in value) ||
+    !Number.isSafeInteger(value.expectedVersion) ||
+    Number(value.expectedVersion) < 1 ||
+    !("action" in value)
   ) {
     return false;
   }
-  if (command.action === "update") {
-    return typeof command.name === "string" && typeof command.description === "string";
+  if (value.action === "update") {
+    return (
+      "name" in value &&
+      typeof value.name === "string" &&
+      "description" in value &&
+      typeof value.description === "string"
+    );
   }
-  if (command.action === "add" || command.action === "remove") {
-    return typeof command.repositoryId === "string";
+  if (value.action === "add" || value.action === "remove") {
+    return "repositoryId" in value && typeof value.repositoryId === "string";
   }
-  return (
-    command.action === "publish" || command.action === "unpublish" || command.action === "delete"
-  );
+  return value.action === "publish" || value.action === "unpublish" || value.action === "delete";
 }
 
 export function readPendingRepositoryStarListCreate(

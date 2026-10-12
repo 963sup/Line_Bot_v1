@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { RepositoryPermission } from "@line_bot_v1/repository/domain";
 import type {
   DiscussionManagementCommand,
@@ -13,7 +19,6 @@ import { DiscussionError } from "../domain.js";
 import {
   advanceDiscussion,
   type CategoryRow,
-  type CommentRow,
   canManage,
   canModerate,
   category,
@@ -24,6 +29,10 @@ import {
   currentComment,
   currentDiscussion,
   type DiscussionRow,
+  decodeCategoryRow,
+  decodeCommentRow,
+  decodeDiscussionRow,
+  decodeNumericVersionRow,
   discussion,
   discussionEvent,
   discussionScope,
@@ -45,6 +54,58 @@ type PollRow = {
   created_at: number | string;
   updated_at: number | string;
 };
+
+function decodePollRow(row: Record<string, unknown>): PollRow {
+  return {
+    id: stringValue(row.id),
+    discussion_id: stringValue(row.discussion_id),
+    question: stringValue(row.question),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+const decodePollOptionRow = (row: Record<string, unknown>) => ({
+  id: stringValue(row.id),
+  option: stringValue(row.option),
+  position: numericValue(row.position),
+  version: numericValue(row.version),
+  vote_count: numericValue(row.vote_count),
+  viewer_has_voted: row.viewer_has_voted === null ? null : booleanValue(row.viewer_has_voted),
+});
+
+const decodeReadDiscussionRow = (row: Record<string, unknown>) => ({
+  ...decodeDiscussionRow(row),
+  category_name: nullableString(row.category_name),
+});
+const decodeLabelRow = (row: Record<string, unknown>) => ({
+  label_id: stringValue(row.label_id),
+});
+const decodeAnswerRow = (row: Record<string, unknown>) => ({
+  comment_id: stringValue(row.comment_id),
+  chosen_by: stringValue(row.chosen_by),
+  chosen_at: numericValue(row.chosen_at),
+});
+const decodeVoteSummaryRow = (row: Record<string, unknown>) => ({
+  count: numericValue(row.count),
+  viewer_has_upvoted: row.viewer_has_upvoted === null ? null : booleanValue(row.viewer_has_upvoted),
+});
+const decodeCommentVoteRow = (row: Record<string, unknown>) => ({
+  comment_id: stringValue(row.comment_id),
+  ...decodeVoteSummaryRow(row),
+});
+const decodeReceiptRow = (row: Record<string, unknown>) => ({
+  fingerprint: stringValue(row.fingerprint),
+  result: row.result,
+});
+const decodeCommentIdRow = (row: Record<string, unknown>) => ({
+  comment_id: stringValue(row.comment_id),
+});
+const decodePollOptionLocatorRow = (row: Record<string, unknown>) => ({
+  id: stringValue(row.id),
+  poll_id: stringValue(row.poll_id),
+});
 
 function operationFor(
   command: DiscussionManagementCommand,
@@ -91,8 +152,9 @@ function requireAuthorOrManager(
 }
 
 function postgresConflict(error: unknown, message: string): never {
-  const postgres = error as { code?: string };
-  if (postgres.code === "23505" || postgres.code === "23503") {
+  const code =
+    error !== null && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (code === "23505" || code === "23503") {
     throw new DiscussionError(409, message);
   }
   throw error;
@@ -104,8 +166,12 @@ async function pollView(
   userId: string,
 ): Promise<DiscussionPoll | null> {
   const poll = (
-    await sql.query("SELECT * FROM discussion_polls WHERE discussion_id=$1", [discussionId])
-  ).rows[0] as PollRow | undefined;
+    await sql.query(
+      "SELECT * FROM discussion_polls WHERE discussion_id=$1",
+      [discussionId],
+      decodePollRow,
+    )
+  ).rows[0];
   if (!poll) return null;
   const options = (
     await sql.query(
@@ -120,15 +186,9 @@ async function pollView(
        GROUP BY o.id,o.option,o.position,o.version
        ORDER BY o.position,o.id`,
       [poll.id, userId],
+      decodePollOptionRow,
     )
-  ).rows as Array<{
-    id: string;
-    option: string;
-    position: number | string;
-    version: number | string;
-    vote_count: number | string;
-    viewer_has_voted: boolean | null;
-  }>;
+  ).rows;
   return {
     id: poll.id,
     question: poll.question,
@@ -162,8 +222,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
         await sql.query(
           "SELECT * FROM discussion_categories WHERE repository_id=$1 ORDER BY lower(name),id",
           [repositoryId],
+          decodeCategoryRow,
         )
-      ).rows as CategoryRow[];
+      ).rows;
       if (!discussionId) {
         return {
           repository: selected.repository,
@@ -186,8 +247,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
            LEFT JOIN discussion_categories c ON c.id=d.category_id
            WHERE d.repository_id=$1 AND d.id=$2 AND d.deleted_at IS NULL`,
           [repositoryId, discussionId],
+          decodeReadDiscussionRow,
         )
-      ).rows[0] as (DiscussionRow & { category_name: string | null }) | undefined;
+      ).rows[0];
       if (!row) throw new DiscussionError(404, "找不到 Discussion。");
 
       const [commentRows, labelRows, answerRow, discussionVotes, commentVotes, poll] =
@@ -197,14 +259,17 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
              WHERE discussion_id=$1
              ORDER BY created_at,id`,
             [discussionId],
+            decodeCommentRow,
           ),
           sql.query(
             "SELECT label_id FROM discussion_labels WHERE discussion_id=$1 ORDER BY label_id",
             [discussionId],
+            decodeLabelRow,
           ),
           sql.query(
             "SELECT comment_id,chosen_by,chosen_at FROM discussion_answers WHERE discussion_id=$1",
             [discussionId],
+            decodeAnswerRow,
           ),
           sql.query(
             `SELECT COUNT(*)::int AS count,
@@ -212,6 +277,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
              FROM discussion_upvotes
              WHERE discussion_id=$1`,
             [discussionId, identity.userId],
+            decodeVoteSummaryRow,
           ),
           sql.query(
             `SELECT
@@ -223,34 +289,27 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
              WHERE c.discussion_id=$1
              GROUP BY c.id`,
             [discussionId, identity.userId],
+            decodeCommentVoteRow,
           ),
           pollView(sql, discussionId, identity.userId),
         ]);
 
       const commentUpvotes: Record<string, { count: number; viewerHasUpvoted: boolean }> = {};
-      for (const vote of commentVotes.rows as Array<{
-        comment_id: string;
-        count: number | string;
-        viewer_has_upvoted: boolean | null;
-      }>) {
+      for (const vote of commentVotes.rows) {
         commentUpvotes[vote.comment_id] = {
           count: Number(vote.count),
           viewerHasUpvoted: Boolean(vote.viewer_has_upvoted),
         };
       }
-      const rootVote = discussionVotes.rows[0] as
-        | { count: number | string; viewer_has_upvoted: boolean | null }
-        | undefined;
-      const answer = answerRow.rows[0] as
-        | { comment_id: string; chosen_by: string; chosen_at: number | string }
-        | undefined;
+      const rootVote = discussionVotes.rows[0];
+      const answer = answerRow.rows[0];
 
       return {
         repository: selected.repository,
         categories: categoryRows.map(category),
         discussion: discussion(row, row.category_name ?? undefined),
-        comments: (commentRows.rows as CommentRow[]).map(comment),
-        labelIds: (labelRows.rows as Array<{ label_id: string }>).map((item) => item.label_id),
+        comments: commentRows.rows.map(comment),
+        labelIds: labelRows.rows.map((item) => item.label_id),
         answer: answer
           ? {
               commentId: answer.comment_id,
@@ -283,8 +342,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
         await sql.query(
           "SELECT fingerprint,result FROM discussion_commands WHERE actor=$1 AND request_id=$2",
           [identity.userId, command.requestId],
+          decodeReceiptRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, fingerprint);
       if (replay) return replay;
 
@@ -312,8 +372,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
                 command.isAnswerable,
                 now,
               ],
+              decodeCategoryRow,
             )
-          ).rows[0] as CategoryRow | undefined;
+          ).rows[0];
         } catch (error) {
           postgresConflict(error, "此 Repository 已有相同 slug 的 Discussion category。");
         }
@@ -377,8 +438,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
               now,
               command.expectedVersion,
             ],
+            decodeCategoryRow,
           )
-        ).rows[0] as CategoryRow | undefined;
+        ).rows[0];
         if (!row) throw new DiscussionError(409, "Discussion category 已更新。");
         await categoryEvent(
           sql,
@@ -461,8 +523,10 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
               selectedCategory.id,
               now,
             ],
+            decodeDiscussionRow,
           )
-        ).rows[0] as DiscussionRow;
+        ).rows[0];
+        if (!row) throw new DiscussionError(503, "Discussion 建立結果不完整。");
         await discussionEvent(
           sql,
           row.id,
@@ -629,8 +693,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
                  WHERE discussion_id=$1 AND id=$2 AND version=$5 AND deleted_at IS NULL
                  RETURNING version`,
                 [row.id, target.id, command.body, now, command.commentVersion],
+                decodeNumericVersionRow,
               )
-            ).rows[0] as { version: number | string } | undefined;
+            ).rows[0];
             if (!changed) throw new DiscussionError(409, "Discussion comment 已更新。");
             data = { commentId: target.id, commentVersion: Number(changed.version) };
           } else {
@@ -666,10 +731,12 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
             throw new DiscussionError(409, "不能選取已刪除的 comment。");
           if (command.action === "mark-answer") {
             const before = (
-              await sql.query("SELECT comment_id FROM discussion_answers WHERE discussion_id=$1", [
-                row.id,
-              ])
-            ).rows[0] as { comment_id: string } | undefined;
+              await sql.query(
+                "SELECT comment_id FROM discussion_answers WHERE discussion_id=$1",
+                [row.id],
+                decodeCommentIdRow,
+              )
+            ).rows[0];
             if (before?.comment_id === target.id) {
               throw new DiscussionError(409, "此 comment 已是 chosen answer。");
             }
@@ -716,8 +783,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
                  ON CONFLICT DO NOTHING
                  RETURNING label_id`,
                 [row.repository_id, row.id, command.labelIds, identity.userId, now],
+                decodeLabelRow,
               )
-            ).rows as Array<{ label_id: string }>;
+            ).rows;
             if (!added.length) throw new DiscussionError(409, "Discussion labels 沒有變更。");
             data = { addedLabelIds: added.map((item) => item.label_id).sort() };
           } else if (command.action === "remove-labels") {
@@ -727,8 +795,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
                  WHERE discussion_id=$1 AND label_id=ANY($2::text[])
                  RETURNING label_id`,
                 [row.id, command.labelIds],
+                decodeLabelRow,
               )
-            ).rows as Array<{ label_id: string }>;
+            ).rows;
             if (!removed.length) throw new DiscussionError(409, "Discussion labels 沒有變更。");
             data = { removedLabelIds: removed.map((item) => item.label_id).sort() };
           } else {
@@ -736,8 +805,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
               await sql.query(
                 "DELETE FROM discussion_labels WHERE discussion_id=$1 RETURNING label_id",
                 [row.id],
+                decodeLabelRow,
               )
-            ).rows as Array<{ label_id: string }>;
+            ).rows;
             if (!removed.length) throw new DiscussionError(409, "Discussion labels 已是空集合。");
             data = { removedLabelIds: removed.map((item) => item.label_id).sort() };
           }
@@ -837,8 +907,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
             await sql.query(
               "SELECT * FROM discussion_polls WHERE discussion_id=$1 AND id=$2 FOR UPDATE",
               [row.id, command.pollId],
+              decodePollRow,
             )
-          ).rows[0] as PollRow | undefined;
+          ).rows[0];
           if (!poll) throw new DiscussionError(404, "找不到 Discussion Poll。");
           requireVersion(poll.version, command.pollVersion, "Discussion Poll");
           if (command.action === "update-poll") {
@@ -888,8 +959,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
                JOIN discussion_polls p ON p.id=o.poll_id
                WHERE p.discussion_id=$1 AND o.id=$2`,
               [row.id, command.optionId],
+              decodePollOptionLocatorRow,
             )
-          ).rows[0] as { id: string; poll_id: string } | undefined;
+          ).rows[0];
           if (!option) throw new DiscussionError(404, "找不到 Discussion Poll option。");
           if (command.action === "add-poll-vote") {
             const added = (

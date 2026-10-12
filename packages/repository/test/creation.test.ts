@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryCreation } from "../src/application/creation.js";
 import type { RepositoryCreationStore } from "../src/contracts/repositories/creation.js";
 import { RepositoryError } from "../src/domain.js";
@@ -83,7 +84,10 @@ test("Repository provisioning uses the shared governance lock held by its caller
   const result = await pg.query(
     "select pg_get_functiondef('app_private.provision_repository(text,text,text,text,text,text)'::regprocedure) as definition",
   );
-  const definition = String((result.rows[0] as { definition: string } | undefined)?.definition);
+  const definitionRow: unknown = result.rows[0];
+  assert.ok(isRecord(definitionRow));
+  assert.ok(typeof definitionRow.definition === "string");
+  const definition = definitionRow.definition;
 
   assert.match(definition, /pg_advisory_xact_lock_shared\(71020260912::bigint\)/);
   assert.doesNotMatch(definition, /pg_advisory_xact_lock\(71020260912::bigint\)/);
@@ -250,7 +254,7 @@ test("Organization Repository creation follows viewerCanCreateRepositories and b
       "Direct Denied",
       "private",
     ]),
-    (error: unknown) => (error as { code?: string }).code === "42501",
+    (error: unknown) => isRecord(error) && error.code === "42501",
   );
 
   await pg.query(

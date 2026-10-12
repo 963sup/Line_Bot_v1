@@ -18,7 +18,7 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
   });
   const original = globalThis.fetch,
     user = "U" + "1".repeat(32);
-  globalThis.fetch = (async (input) => {
+  globalThis.fetch = async (input) => {
     if (String(input).startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
         client_id: lineMiniApp("developing").channelId,
@@ -27,13 +27,13 @@ test("permission HTTP uses verified actor and rejects forgery, missing proof, cr
       });
     if (String(input) === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw Error("Unexpected outbound request");
-  }) as typeof fetch;
+  };
   const sessions = new Map<string, HeadersInit>();
   const request = (body?: unknown, token = "proof", origin = "https://app.example") =>
     new Request("https://app.example/api/permissions", {
       method: body ? "POST" : "GET",
       headers: { ...(sessions.get(token) ?? {}), origin, "content-type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
+      ...(body ? { body: JSON.stringify(body) } : {}),
     });
   try {
     sessions.set("proof", await lineSessionHeaders("proof"));

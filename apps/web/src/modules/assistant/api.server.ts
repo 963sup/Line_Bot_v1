@@ -1,4 +1,5 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
@@ -55,12 +56,12 @@ export async function assistantRequest(
     } catch {
       throw new AssistantRequestError(400, "AI 請求格式不正確。");
     }
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
+    if (!isRecord(body)) {
       throw new AssistantRequestError(400, "AI 請求格式不正確。");
     }
 
     const keys = Object.keys(body);
-    const candidate = body as { mode?: unknown; input?: unknown };
+    const candidate = body;
     if (
       keys.some((key) => key !== "mode" && key !== "input") ||
       !isAssistantSurfaceMode(candidate.mode) ||

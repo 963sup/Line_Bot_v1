@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { record, stringValue } from "@line_bot_v1/platform/validation";
 import { PostgresIssueCollaborationStore } from "../src/adapters/postgres/collaboration.js";
 import { PostgresIssueTypeStore } from "../src/adapters/postgres/issue-types.js";
 
@@ -14,7 +15,7 @@ async function activeUser(db: Database, id: string) {
 }
 
 test("IssueType keeps Organization scope separate from Issue permission and workflow", async (t) => {
-  const { pg, db } = await postgresFixture();
+  const { pg, db, sql } = await postgresFixture();
   t.after(() => pg.close());
 
   for (const userId of ["owner", "writer", "reader"]) await activeUser(db, userId);
@@ -230,13 +231,15 @@ test("IssueType keeps Organization scope separate from Issue permission and work
     { version: 2, action: "update-issue-type" },
     { version: 3, action: "delete-issue-type" },
   ]);
-  const issueEvents = await pg.query(
+  const issueEvents = await sql.query(
     "select data from issue_events where issue_id='issue-a' order by version",
+    undefined,
+    (row) => ({
+      data: { timelineEvent: stringValue(record(row.data).timelineEvent) },
+    }),
   );
   assert.deepEqual(
-    (issueEvents.rows as Array<{ data: { timelineEvent: string } }>).map(
-      (row) => row.data.timelineEvent,
-    ),
+    issueEvents.rows.map((row) => row.data.timelineEvent),
     ["issue_type_added", "issue_type_removed"],
   );
 });

@@ -72,6 +72,10 @@ export class ExpenseError extends Error {
   }
 }
 
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 /**
  * 第一性驗證：支出欄位防禦性清洗與邊界校驗
  *
@@ -83,26 +87,45 @@ export class ExpenseError extends Error {
  * 4. 必填條件閘門：僅在 complete (確認入帳) 階段強制要求全部必要欄位齊備；草稿階段允許暫存殘缺狀態。
  */
 export function validateExpenseFields(input: unknown, complete = false): ExpenseFields {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
+  if (!isObjectValue(input)) {
     throw new ExpenseError(400, "資料格式不正確。");
   }
-  const v = input as Record<string, unknown>;
-  const keys = ["merchant", "amount", "currency", "date", "invoiceNumber", "payment"];
+  const keys = ["merchant", "amount", "currency", "date", "invoiceNumber", "payment"] as const;
+  const { merchant, amount, currency, date, invoiceNumber, payment } = input;
 
   // 檢查白名單鍵值與基礎型別長度、不可包含控制字元
   if (
-    Object.keys(v).some((k) => !keys.includes(k)) ||
-    keys.some(
-      (k) =>
-        typeof v[k] !== "string" ||
-        (v[k] as string).length > 120 ||
-        /[\u0000-\u001f]/.test(v[k] as string),
+    Object.keys(input).some((key) => !keys.some((field) => field === key)) ||
+    typeof merchant !== "string" ||
+    typeof amount !== "string" ||
+    typeof currency !== "string" ||
+    typeof date !== "string" ||
+    typeof invoiceNumber !== "string" ||
+    typeof payment !== "string" ||
+    [merchant, amount, currency, date, invoiceNumber, payment].some(
+      (field) => field.length > 120 || /[\u0000-\u001f]/.test(field),
     )
   ) {
     throw new ExpenseError(400, "欄位格式不正確。");
   }
 
-  const f = Object.fromEntries(keys.map((k) => [k, (v[k] as string).trim()])) as ExpenseFields;
+  const normalizedPayment = payment.trim();
+  if (
+    normalizedPayment !== "" &&
+    normalizedPayment !== "advance" &&
+    normalizedPayment !== "company" &&
+    normalizedPayment !== "unpaid"
+  ) {
+    throw new ExpenseError(400, "請選擇付款方式。");
+  }
+  const f: ExpenseFields = {
+    merchant: merchant.trim(),
+    amount: amount.trim(),
+    currency: currency.trim(),
+    date: date.trim(),
+    invoiceNumber: invoiceNumber.trim(),
+    payment: normalizedPayment,
+  };
 
   // 金額必須為最多兩位小數的正數數值字串
   if (f.amount && (!/^\d{1,9}(?:\.\d{1,2})?$/.test(f.amount) || Number(f.amount) <= 0)) {
@@ -124,17 +147,48 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
     throw new ExpenseError(400, "日期格式不正確。");
   }
 
-  // 付款方式必須為枚舉允許值
-  if (!["", "advance", "company", "unpaid"].includes(f.payment)) {
-    throw new ExpenseError(400, "請選擇付款方式。");
-  }
-
   // 若為正式入帳確認 (complete=true)，不可留空關鍵財務欄位
   if (complete && [f.merchant, f.amount, f.currency, f.date, f.payment].some((x) => !x)) {
     throw new ExpenseError(400, "請補齊商家、金額、幣別、日期與付款方式。");
   }
 
   return f;
+}
+
+/** Decodes the persisted JSONB aggregate while retaining unknown legacy fields for lossless rewrites. */
+export function parsePersistedExpense(value: unknown): Expense {
+  if (!isObjectValue(value)) throw new ExpenseError(500, "支出資料格式不完整。");
+  const { id, number, owner, scope, imageId, status, revision, createdAt } = value;
+  if (
+    typeof id !== "string" ||
+    typeof number !== "number" ||
+    !Number.isSafeInteger(number) ||
+    number < 0 ||
+    typeof owner !== "string" ||
+    typeof scope !== "string" ||
+    typeof imageId !== "string" ||
+    (status !== "pending" &&
+      status !== "draft" &&
+      status !== "confirmed" &&
+      status !== "cancelled") ||
+    typeof revision !== "number" ||
+    !Number.isSafeInteger(revision) ||
+    revision < 0 ||
+    typeof createdAt !== "number" ||
+    !Number.isSafeInteger(createdAt) ||
+    createdAt < 0
+  ) {
+    throw new ExpenseError(500, "支出資料格式不完整。");
+  }
+  const fields = validateExpenseFields({
+    merchant: value.merchant,
+    amount: value.amount,
+    currency: value.currency,
+    date: value.date,
+    invoiceNumber: value.invoiceNumber,
+    payment: value.payment,
+  });
+  return { ...value, id, number, owner, scope, imageId, status, revision, createdAt, ...fields };
 }
 
 /**

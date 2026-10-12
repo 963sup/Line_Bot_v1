@@ -1,4 +1,10 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import { allocateRepositoryIssueNumber } from "@line_bot_v1/repository/postgres/issue-number";
@@ -12,6 +18,20 @@ export type ProjectIssueReference = Readonly<{
   state: "OPEN" | "CLOSED";
   version: number;
 }>;
+
+const issueStates: readonly ProjectIssueReference["state"][] = ["OPEN", "CLOSED"];
+
+function decodeProjectIssueRow(row: Record<string, unknown>) {
+  const state = nullableString(row.state);
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    number: numericValue(row.number),
+    title: stringValue(row.title),
+    state: state === null ? null : literalValue(state, issueStates),
+    version: numericValue(row.version),
+  };
+}
 
 async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -35,17 +55,9 @@ export async function readProjectIssueReference(
        FROM issues
        WHERE id=$1`,
       [issueId],
+      decodeProjectIssueRow,
     )
-  ).rows[0] as
-    | {
-        id: string;
-        repository_id: string;
-        number: number | string;
-        title: string;
-        state: "OPEN" | "CLOSED" | null;
-        version: number | string;
-      }
-    | undefined;
+  ).rows[0];
   if (!row) return null;
 
   try {

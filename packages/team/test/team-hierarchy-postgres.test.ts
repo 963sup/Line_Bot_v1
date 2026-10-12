@@ -4,6 +4,10 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresTeamRepository } from "../src/adapters/postgres.js";
 import { TeamError } from "../src/domain/errors/team-error.js";
 
+function hasStatus(error: unknown, status: number): boolean {
+  return error instanceof Error && "status" in error && error.status === status;
+}
+
 test("Team hierarchy derives membership and Repository access without copying membership truth", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
@@ -265,7 +269,7 @@ test("Team hierarchy derives membership and Repository access without copying me
       },
       18,
     ),
-    (error: unknown) => (error as { status?: number }).status === 403,
+    (error: unknown) => hasStatus(error, 403),
   );
   await pg.query(
     "update app_private.organization_memberships set status='removed',version=version+1 where organization_account_id='organization-team' and user_id='child-user'",
@@ -283,7 +287,7 @@ test("Team hierarchy derives membership and Repository access without copying me
       },
       19,
     ),
-    (error: unknown) => (error as { status?: number }).status === 403,
+    (error: unknown) => hasStatus(error, 403),
   );
   assert.deepEqual(
     (
@@ -298,6 +302,6 @@ test("Team hierarchy derives membership and Repository access without copying me
   );
   await assert.rejects(
     store.view(owner, "organization-team", memberCreated.teamId),
-    (error: unknown) => (error as { status?: number }).status === 404,
+    (error: unknown) => hasStatus(error, 404),
   );
 });

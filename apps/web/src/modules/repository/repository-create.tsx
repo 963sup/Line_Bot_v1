@@ -2,7 +2,6 @@
 
 import type {
   RepositoryCreateCommand,
-  RepositoryCreationResult,
   RepositoryOwnerOption,
 } from "@line_bot_v1/repository/contracts/repositories/creation";
 import { useState } from "react";
@@ -14,6 +13,11 @@ import {
   writePendingRepositoryCreate,
 } from "./repository-create-pending-storage";
 import { repositoryPath } from "./resource-navigation";
+import { errorMessage, isCreationResult, isOwnerOption, isRecord } from "./response-validation";
+
+function isVisibility(value: string): value is RepositoryCreateCommand["visibility"] {
+  return value === "private" || value === "internal" || value === "public";
+}
 
 export default function RepositoryCreate({ liffId }: { liffId: string }) {
   const [owners, setOwners] = useState<readonly RepositoryOwnerOption[] | null>(null);
@@ -46,15 +50,19 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
         signal: AbortSignal.timeout(20_000),
         headers: { "X-App-Session-Generation": token },
       });
-      const payload = await response.json();
+      const payload: unknown = await response.json();
       if (!response.ok) {
-        throw Object.assign(new Error(payload.error ?? "Repository owner 讀取失敗。"), {
+        throw Object.assign(new Error(errorMessage(payload, "Repository owner 讀取失敗。")), {
           status: response.status,
         });
       }
-      if (!payload || !Array.isArray(payload.items))
+      if (
+        !isRecord(payload) ||
+        !Array.isArray(payload.items) ||
+        !payload.items.every(isOwnerOption)
+      )
         throw new Error("Repository owner 回應不完整。");
-      const items = payload.items as RepositoryOwnerOption[];
+      const items = payload.items;
       setOwners(items);
       setOwnerAccountId((current) => current || items[0]?.id || "");
       const stored = readPendingRepositoryCreate(window.localStorage);
@@ -65,7 +73,8 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
         setVisibility(stored.visibility);
       }
     } catch (cause) {
-      const status = (cause as { status?: number }).status;
+      const status =
+        cause !== null && typeof cause === "object" && "status" in cause ? cause.status : undefined;
       if (status === 401 || status === 403) clear();
       setError(cause instanceof Error ? cause.message : "Repository owner 讀取失敗。");
     } finally {
@@ -90,23 +99,22 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
         },
         body: JSON.stringify(command),
       });
-      const payload = await response.json();
+      const payload: unknown = await response.json();
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) {
           clearPendingRepositoryCreate(window.localStorage);
           setPending(null);
         }
-        throw Object.assign(new Error(payload.error ?? "Repository 建立失敗。"), {
+        throw Object.assign(new Error(errorMessage(payload, "Repository 建立失敗。")), {
           status: response.status,
         });
       }
-      const created = payload as RepositoryCreationResult;
-      if (!created.ownerLogin || !created.name || !created.id) {
+      if (!isCreationResult(payload) || !payload.ownerLogin || !payload.name || !payload.id) {
         throw new Error("Repository 建立回應不完整。");
       }
       clearPendingRepositoryCreate(window.localStorage);
       setPending(null);
-      window.location.assign(repositoryPath(created.ownerLogin, created.name));
+      window.location.assign(repositoryPath(payload.ownerLogin, payload.name));
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Repository 建立結果尚待確認，請重試原操作。",
@@ -190,9 +198,9 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
               <select
                 value={visibility}
                 disabled={busy}
-                onChange={(event) =>
-                  setVisibility(event.target.value as RepositoryCreateCommand["visibility"])
-                }
+                onChange={(event) => {
+                  if (isVisibility(event.target.value)) setVisibility(event.target.value);
+                }}
               >
                 <option
                   value="private"

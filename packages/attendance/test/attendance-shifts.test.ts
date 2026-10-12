@@ -81,8 +81,7 @@ test("reject missing start, double start, overlap, reversed clock, invalid and u
     /重疊/,
   );
   assert.throws(() => taipeiDay(NaN), /時間/);
-  assert.throws(
-    () => summarizeAttendance({ ...r, ruleVersion: "unknown" as never }, r.startedAt),
-    /規則/,
-  );
+  const invalidRule = structuredClone(r);
+  Object.defineProperty(invalidRule, "ruleVersion", { value: "unknown" });
+  assert.throws(() => summarizeAttendance(invalidRule, r.startedAt), /規則/);
 });

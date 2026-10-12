@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createSql, type Database, type SqlResult } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createGoogleLink, createUser, type UserDependencies } from "../src/application/user.js";
 import type { GoogleLinkRepository, UserRepository } from "../src/contracts/repositories/user.js";
@@ -16,9 +17,44 @@ const memberView = {
 
 function dependencies(repository: Partial<UserRepository>): UserDependencies {
   return {
-    repository: () => repository as UserRepository,
+    repository: () => userRepository(repository),
     lineProvider: () => "line:provider",
   };
+}
+
+function unimplementedRepositoryMethod(): Promise<never> {
+  return Promise.reject(new Error("Unexpected repository call in test."));
+}
+
+function userRepository(overrides: Partial<UserRepository>): UserRepository {
+  return {
+    find: unimplementedRepositoryMethod,
+    viewByIdentity: unimplementedRepositoryMethod,
+    view: unimplementedRepositoryMethod,
+    publicById: unimplementedRepositoryMethod,
+    updateLogin: unimplementedRepositoryMethod,
+    registerLine: unimplementedRepositoryMethod,
+    restoreLine: unimplementedRepositoryMethod,
+    bind: unimplementedRepositoryMethod,
+    pause: unimplementedRepositoryMethod,
+    ...overrides,
+  };
+}
+
+function isPostgresCheckError(error: unknown, constraint: string): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    error.code === "23514" &&
+    error.message.includes(constraint)
+  );
+}
+
+function databaseWith(
+  responder: (text: string, values?: unknown[]) => Promise<SqlResult>,
+): Database {
+  const sql = createSql(responder);
+  return { transaction: (work) => work(sql) };
 }
 
 test("membership rejects anonymous and suspended provider subjects before protected ports", async () => {
@@ -120,12 +156,19 @@ test("deactivate fails closed and lifecycle commands return their Account transa
 test("Google unlink stays an explicit optional identity operation", async () => {
   const calls: unknown[][] = [];
   const service = createGoogleLink({
-    repository: () =>
-      ({
+    repository: () => {
+      const repository: GoogleLinkRepository = {
+        start: unimplementedRepositoryMethod,
+        stage: unimplementedRepositoryMethod,
+        pending: unimplementedRepositoryMethod,
+        confirm: unimplementedRepositoryMethod,
+        cancel: unimplementedRepositoryMethod,
         unlink: async (...args: unknown[]) => {
           calls.push(args);
         },
-      }) as GoogleLinkRepository,
+      };
+      return repository;
+    },
     lineProvider: () => "line:provider",
     now: () => 123,
   });
@@ -172,9 +215,7 @@ test("a User and login commit atomically while incomplete creation and login rem
       "active",
       1,
     ]),
-    (error) =>
-      (error as { code?: string; message?: string }).code === "23514" &&
-      Boolean((error as Error).message.includes("user_login_missing")),
+    (error) => isPostgresCheckError(error, "user_login_missing"),
   );
   const rolledBack = await pg.query(
     "select count(*)::int as count from app_private.users where id='incomplete-user'",
@@ -195,9 +236,7 @@ test("a User and login commit atomically while incomplete creation and login rem
   });
   await assert.rejects(
     pg.query("delete from app_private.account_logins where account_id='complete-user'"),
-    (error) =>
-      (error as { code?: string; message?: string }).code === "23514" &&
-      Boolean((error as Error).message.includes("user_login_missing")),
+    (error) => isPostgresCheckError(error, "user_login_missing"),
   );
   const locator = await pg.query(
     "select login from app_private.account_logins where account_id='complete-user'",
@@ -223,9 +262,7 @@ test("a User and login commit atomically while incomplete creation and login rem
         "update app_private.account_logins set account_id='second-user' where account_id='complete-user'",
       );
     }),
-    (error) =>
-      (error as { code?: string; message?: string }).code === "23514" &&
-      Boolean((error as Error).message.includes("user_login_missing")),
+    (error) => isPostgresCheckError(error, "user_login_missing"),
   );
   const preserved = await pg.query(
     "select account_id,login from app_private.account_logins where account_id in ('complete-user','second-user') order by account_id",
@@ -250,33 +287,27 @@ test("a User and login commit atomically while incomplete creation and login rem
 test("Account identity projection resolves in one transaction and one query", async () => {
   let transactions = 0;
   let queries = 0;
-  const store = new PostgresUserStore({
-    transaction: async (
-      work: (sql: { query: (text: string, values?: unknown[]) => Promise<unknown> }) => unknown,
-    ) => {
+  const store = new PostgresUserStore(
+    databaseWith(async (text, values) => {
       transactions++;
-      return work({
-        query: async (text: string, values?: unknown[]) => {
-          queries++;
-          assert.match(text, /FROM user_identities i/);
-          assert.match(text, /LEFT JOIN user_namespace_projection p/);
-          assert.deepEqual(values, ["line:test", "subject"]);
-          return {
-            rows: [
-              {
-                identity_user_id: "member-1",
-                id: "member-1",
-                status: "active",
-                createdAt: 1,
-                login: "alice",
-                google_email: null,
-              },
-            ],
-          };
-        },
-      });
-    },
-  } as never);
+      queries++;
+      assert.match(text, /FROM user_identities i/);
+      assert.match(text, /LEFT JOIN user_namespace_projection p/);
+      assert.deepEqual(values, ["line:test", "subject"]);
+      return {
+        rows: [
+          {
+            identity_user_id: "member-1",
+            id: "member-1",
+            status: "active",
+            createdAt: 1,
+            login: "alice",
+            google_email: null,
+          },
+        ],
+      };
+    }),
+  );
 
   assert.deepEqual(await store.viewByIdentity("line:test", "subject"), memberView);
   assert.equal(transactions, 1);
@@ -288,10 +319,9 @@ test("Account identity projection distinguishes unknown identity from broken pro
     [[], null],
     [[{ identity_user_id: "member-1" }], "integrity"],
   ] as const) {
-    const store = new PostgresUserStore({
-      transaction: async (work: (sql: { query: () => Promise<unknown> }) => unknown) =>
-        work({ query: async () => ({ rows }) }),
-    } as never);
+    const store = new PostgresUserStore(
+      databaseWith(async () => ({ rows: rows.map((row) => ({ ...row })) })),
+    );
     if (expected === null) {
       assert.equal(await store.viewByIdentity("line:test", "subject"), null);
     } else {
@@ -308,26 +338,23 @@ test("Account identity projection distinguishes unknown identity from broken pro
 
 test("Account projection uses one joined read and reports missing login as integrity failure", async () => {
   let queries = 0;
-  const store = new PostgresUserStore({
-    transaction: async (work: (sql: { query: (text: string) => Promise<unknown> }) => unknown) =>
-      work({
-        query: async (text: string) => {
-          queries++;
-          assert.match(text, /FROM user_namespace_projection/);
-          return {
-            rows: [
-              {
-                id: "member-1",
-                status: "active",
-                createdAt: 1,
-                login: null,
-                google_email: null,
-              },
-            ],
-          };
-        },
-      }),
-  } as never);
+  const store = new PostgresUserStore(
+    databaseWith(async (text) => {
+      queries++;
+      assert.match(text, /FROM user_namespace_projection/);
+      return {
+        rows: [
+          {
+            id: "member-1",
+            status: "active",
+            createdAt: 1,
+            login: null,
+            google_email: null,
+          },
+        ],
+      };
+    }),
+  );
 
   await assert.rejects(
     store.view("member-1"),
@@ -341,20 +368,17 @@ test("Account projection uses one joined read and reports missing login as integ
 
 test("registration retry reports missing login integrity instead of fabricating a repair", async () => {
   const statements: string[] = [];
-  const store = new PostgresUserStore({
-    transaction: async (work: (sql: { query: (text: string) => Promise<unknown> }) => unknown) =>
-      work({
-        query: async (text: string) => {
-          statements.push(text);
-          if (text.includes("FROM users m JOIN user_identities")) {
-            return {
-              rows: [{ id: "member-1", status: "active", createdAt: 1, auth_user_id: null }],
-            };
-          }
-          return { rows: [] };
-        },
-      }),
-  } as never);
+  const store = new PostgresUserStore(
+    databaseWith(async (text) => {
+      statements.push(text);
+      if (text.includes("FROM users m JOIN user_identities")) {
+        return {
+          rows: [{ id: "member-1", status: "active", createdAt: 1, auth_user_id: null }],
+        };
+      }
+      return { rows: [] };
+    }),
+  );
 
   await assert.rejects(
     store.registerLine("line:test", `U${"1".repeat(32)}`, "alice", 10),

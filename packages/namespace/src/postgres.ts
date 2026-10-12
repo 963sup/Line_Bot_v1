@@ -1,4 +1,5 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { isRecord, literalValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { NamespaceStore } from "./contracts/namespace.js";
 import {
   type NamespaceBinding,
@@ -6,6 +7,14 @@ import {
   type NamespaceKind,
   type NamespaceTarget,
 } from "./domain/namespace.js";
+
+function decodeBinding(row: Record<string, unknown>): NamespaceBinding {
+  return {
+    id: stringValue(row.id),
+    kind: literalValue(row.kind, ["USER", "ORGANIZATION"]),
+    login: stringValue(row.login),
+  };
+}
 
 export async function resolveAccountLogin(
   sql: Sql,
@@ -17,8 +26,9 @@ export async function resolveAccountLogin(
        FROM account_logins
        WHERE login=$1`,
       [login],
+      decodeBinding,
     )
-  ).rows[0] as NamespaceBinding | undefined;
+  ).rows[0];
   return row ?? null;
 }
 
@@ -38,8 +48,9 @@ export async function readAccountLogins(
          ON requested.account_id=l.account_id AND requested.account_kind=l.account_kind
        ORDER BY l.account_id,l.account_kind`,
       [requested.map((owner) => owner.id), requested.map((owner) => owner.kind)],
+      decodeBinding,
     )
-  ).rows as NamespaceBinding[];
+  ).rows;
 }
 
 export async function readAccountLogin(
@@ -53,13 +64,14 @@ export async function readAccountLogin(
        FROM account_logins
        WHERE account_id=$1 AND account_kind=$2`,
       [accountId, accountKind],
+      decodeBinding,
     )
-  ).rows[0] as NamespaceBinding | undefined;
+  ).rows[0];
   return row ?? null;
 }
 
 function namespaceWriteError(error: unknown): never {
-  const code = (error as { code?: string }).code;
+  const code = isRecord(error) ? error.code : undefined;
   if (code === "23505" || code === "40001") {
     throw new NamespaceError(409, "Account login changed or is already claimed.");
   }

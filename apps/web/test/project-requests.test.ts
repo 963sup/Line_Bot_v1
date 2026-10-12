@@ -14,15 +14,48 @@ test("Project API requests use app-session generation instead of a LINE token", 
   const responses: unknown[] = [
     { member: { id: "member-id", login: "member", status: "active" } },
     { items: [] },
-    {},
+    {
+      project: {
+        id: "project-id",
+        ownerAccountId: "member-id",
+        ownerKind: "USER",
+        number: 1,
+        creator: "member-id",
+        title: "Test project",
+        shortDescription: "",
+        readme: "",
+        public: false,
+        closed: false,
+        closedAt: null,
+        deleted: false,
+        version: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      role: "ADMIN",
+      collaborators: [],
+      items: [],
+      fields: [],
+      fieldValues: [],
+      views: [],
+      statusUpdates: [],
+    },
     { users: [] },
     { user: { id: "candidate-id", login: "candidate" } },
-    {},
+    {
+      requestId: "11111111-1111-4111-8111-111111111111",
+      action: "create-project",
+      projectId: "project-id",
+      resourceId: null,
+      version: 1,
+      at: 1,
+      data: {},
+    },
   ];
   const requests: Array<{ url: string; init: RequestInit | undefined }> = [];
   const originalFetch = globalThis.fetch;
 
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     requests.push({ url: String(input), init });
     const body = responses.shift();
     if (body === undefined) throw new Error("Unexpected Project API request.");
@@ -30,7 +63,7 @@ test("Project API requests use app-session generation instead of a LINE token", 
       status: 200,
       headers: { "content-type": "application/json" },
     });
-  }) as typeof fetch;
+  };
 
   try {
     await requestProjectActor(sessionGeneration);
@@ -38,7 +71,17 @@ test("Project API requests use app-session generation instead of a LINE token", 
     await requestProjectView(sessionGeneration, "project-id");
     await requestProjectUsers(sessionGeneration, "project-id", ["user-id"]);
     await requestProjectUserByLogin(sessionGeneration, "project-id", "candidate");
-    await postProjectCommand(sessionGeneration, {} as never);
+    await postProjectCommand(sessionGeneration, {
+      action: "create-project",
+      requestId: "11111111-1111-4111-8111-111111111111",
+      ownerAccountId: "member-id",
+      ownerKind: "USER",
+      expectedVersion: 0,
+      title: "Test project",
+      public: false,
+      repositoryId: null,
+      teamId: null,
+    });
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -53,7 +96,7 @@ test("Project API requests use app-session generation instead of a LINE token", 
 
 test("Project owner options consume Organization create capability, not ADMIN role", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async () =>
+  globalThis.fetch = async () =>
     new Response(
       JSON.stringify({
         items: [
@@ -76,7 +119,7 @@ test("Project owner options consume Organization create capability, not ADMIN ro
         ],
       }),
       { status: 200, headers: { "content-type": "application/json" } },
-    )) as typeof fetch;
+    );
   try {
     assert.deepEqual(await requestProjectOwnerOrganizations("generation"), [
       { id: "allowed", kind: "ORGANIZATION", login: "allowed" },

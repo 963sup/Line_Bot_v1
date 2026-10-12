@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { record, stringArray, stringValue } from "@line_bot_v1/platform/validation";
 
 type Locator = Readonly<{
   id: string;
@@ -10,36 +11,43 @@ type Locator = Readonly<{
   status: string;
 }>;
 
-type SemanticModel = Readonly<{
-  locators: Locator[];
-}>;
-
-type ImplementationTopology = Readonly<{
-  modules: Record<string, { allowedWorkspaceDependencies?: string[] }>;
-}>;
-
 function readRepoFile(path: string): string {
   return readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 }
 
-function readRepoJson<T>(path: string): T {
-  return JSON.parse(readRepoFile(path)) as T;
+function readRepoJson(path: string): Record<string, unknown> {
+  return record(JSON.parse(readRepoFile(path)));
 }
 
-const semantic = readRepoJson<SemanticModel>("architecture/semantic-model.json");
-const topology = readRepoJson<ImplementationTopology>("architecture/implementation-topology.json");
+const semantic = readRepoJson("architecture/semantic-model.json");
+const rawLocators = semantic.locators;
+assert.ok(Array.isArray(rawLocators));
+const locators: Locator[] = rawLocators.map((value) => {
+  const item = record(value);
+  return {
+    id: stringValue(item.id),
+    fields: stringArray(item.fields),
+    scope: stringValue(item.scope),
+    scopeAuthority: stringValue(item.scopeAuthority),
+    status: stringValue(item.status),
+  };
+});
+const topology = readRepoJson("architecture/implementation-topology.json");
+const modules = record(topology.modules);
 
 function locator(id: string): Locator {
-  const value = semantic.locators.find((item) => item.id === id);
+  const value = locators.find((item) => item.id === id);
   assert.ok(value, `semantic locator ${id} must exist`);
   assert.equal(value.status, "active");
   return value;
 }
 
 function workspaceDependencies(moduleName: string): string[] {
-  const module = topology.modules[moduleName];
+  const module = record(modules[moduleName]);
   assert.ok(module, `implementation module ${moduleName} must exist`);
-  return module.allowedWorkspaceDependencies ?? [];
+  return module.allowedWorkspaceDependencies === undefined
+    ? []
+    : stringArray(module.allowedWorkspaceDependencies);
 }
 
 test("User and Organization share the global Account Namespace authority", () => {

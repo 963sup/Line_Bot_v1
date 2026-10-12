@@ -1,3 +1,4 @@
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../../shared/server/http";
 import { RequestIdentityError } from "../../../shared/server/request-identity-error";
 import {
@@ -74,16 +75,10 @@ async function accessToken(request: Request) {
     if (error instanceof BodyTooLargeError) throw new SessionRouteError(413, "資料過大。");
     throw new SessionRouteError(400, "資料格式不正確。");
   }
-  if (
-    !body ||
-    typeof body !== "object" ||
-    Array.isArray(body) ||
-    Object.keys(body).length !== 1 ||
-    typeof (body as Record<string, unknown>).accessToken !== "string"
-  ) {
+  if (!isRecord(body) || Object.keys(body).length !== 1 || typeof body.accessToken !== "string") {
     throw new SessionRouteError(400, "LINE 登入憑證格式不正確。");
   }
-  return (body as { accessToken: string }).accessToken;
+  return body.accessToken;
 }
 
 export async function POST(request: Request) {

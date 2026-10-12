@@ -3,6 +3,15 @@ import { hasUserIdentity, readUserQualification } from "@line_bot_v1/account/pos
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
 import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numberValue,
+  numericValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { repositoryAdministeredIds } from "@line_bot_v1/repository/postgres/access";
 import { repositoryAttendanceSites } from "@line_bot_v1/repository/postgres/address";
 import type {
@@ -14,6 +23,11 @@ import type {
   AttendanceStore,
   NotificationOutcome,
 } from "../../../contracts/clock.js";
+import {
+  parseAttendanceNotification,
+  parseAttendanceResult,
+} from "../../../contracts/dto/attendance-client.js";
+import { parseAttendanceSupplementReceipt } from "../../../contracts/dto/attendance-supplement.js";
 import type { AttendanceInput } from "../../../contracts/input/attendance-command.js";
 import type {
   AttendanceSupplementReview,
@@ -58,6 +72,44 @@ type AttendanceSupplementRow = {
   review_reason: string | null;
 };
 
+function attendancePointValue(value: unknown, repositoryIdFallback?: null): AttendancePoint {
+  const point = record(value);
+  const address = point.address ?? point.description ?? null;
+  return {
+    id: stringValue(point.id),
+    repositoryId:
+      point.repositoryId === undefined
+        ? (repositoryIdFallback ?? null)
+        : nullableString(point.repositoryId),
+    name: stringValue(point.name),
+    address: nullableString(address),
+    latitude: numberValue(point.latitude),
+    longitude: numberValue(point.longitude),
+    radius: numberValue(point.radius),
+    version: numberValue(point.version),
+  };
+}
+
+function attendanceSupplementRow(row: Record<string, unknown>): AttendanceSupplementRow {
+  return {
+    id: stringValue(row.id),
+    uid: stringValue(row.uid),
+    repository_id: stringValue(row.repository_id),
+    kind: literalValue(row.kind, ["new-session", "close-session"]),
+    session_id: nullableString(row.session_id),
+    started_at: nullableNumericValue(row.started_at),
+    ended_at: numericValue(row.ended_at),
+    site_snapshot: attendancePointValue(row.site_snapshot),
+    reason: stringValue(row.reason),
+    submitted_at: numericValue(row.submitted_at),
+    status: literalValue(row.status, ["PENDING", "APPROVED", "REJECTED"]),
+    version: numberValue(row.version),
+    reviewer_uid: nullableString(row.reviewer_uid),
+    reviewed_at: nullableNumericValue(row.reviewed_at),
+    review_reason: nullableString(row.review_reason),
+  };
+}
+
 function attendanceSupplement(row: AttendanceSupplementRow): AttendanceSupplement {
   return {
     id: row.id,
@@ -85,7 +137,7 @@ function commandFingerprint(command: unknown) {
 }
 
 function replaySupplementReceipt(value: unknown): AttendanceSupplementReceipt {
-  const receipt = value as AttendanceSupplementReceipt;
+  const receipt = parseAttendanceSupplementReceipt(value);
   return { ...receipt, replayed: true };
 }
 
@@ -105,20 +157,83 @@ const session = (r: AttendanceSessionRow): AttendanceSession => ({
   ruleVersion: r.rule_version,
 });
 
+function attendanceSessionRow(row: Record<string, unknown>): AttendanceSessionRow {
+  return {
+    id: stringValue(row.id),
+    day: stringValue(row.day),
+    started_at: numericValue(row.started_at),
+    ended_at: nullableNumericValue(row.ended_at),
+    rule_version: literalValue(row.rule_version, [ATTENDANCE_RULE_VERSION]),
+  };
+}
+
+function commandReceiptRow(row: Record<string, unknown>) {
+  return { fingerprint: stringValue(row.fingerprint), result: row.result };
+}
+
+function menuJobRow(row: Record<string, unknown>) {
+  return {
+    uid: stringValue(row.uid),
+    subject: stringValue(row.subject),
+    state: literalValue(row.state, ["ready", "working"]),
+    revision: numericValue(row.revision),
+  };
+}
+
+function notificationJobRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    uid: stringValue(row.uid),
+    subject: stringValue(row.subject),
+    payload: parseAttendanceNotification(row.payload),
+  };
+}
+
+function supplementOpenSessionRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    uid: stringValue(row.uid),
+    repository_id: nullableString(row.repository_id),
+    started_at: numericValue(row.started_at),
+    ended_at: nullableNumericValue(row.ended_at),
+    point_snapshot: row.point_snapshot === null ? null : attendancePointValue(row.point_snapshot),
+  };
+}
+
+function reviewOpenSessionRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    started_at: numericValue(row.started_at),
+    point_snapshot: row.point_snapshot === null ? null : attendancePointValue(row.point_snapshot),
+  };
+}
+
+function replayAttendanceResult(value: unknown): AttendanceResult {
+  const result = record(value);
+  if (!Array.isArray(result.sites)) throw new AttendanceError(500, "出勤重播資料不完整。");
+  return parseAttendanceResult({
+    ...result,
+    sites: result.sites.map((point) => attendancePointValue(point)),
+    credited: 0,
+    replayed: true,
+  });
+}
+
 export class PostgresAttendanceStore implements AttendanceStore, AttendanceSupplementStore {
   constructor(private db: Database = businessDatabase()) {}
 
   menuSubjects(provider: string, now: number): Promise<string[]> {
     return this.db.transaction(async (sql) =>
       (
-        await sql.query(
+        await sql.query<{ subject: string }>(
           `SELECT i.subject FROM attendance_identity_bindings i
          WHERE i.provider=$1
            AND (i.auth_user_id IS NULL OR attendance_account_active(i.auth_user_id,$2::bigint))
          ORDER BY i.subject`,
           [provider, now],
+          (row) => ({ subject: stringValue(row.subject) }),
         )
-      ).rows.map((row) => row.subject as string),
+      ).rows.map((row) => row.subject),
     );
   }
 
@@ -219,13 +334,18 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       await sql.query(
         "SELECT * FROM attendance_sessions WHERE uid=$1 AND (ended_at >= $2 OR ended_at IS NULL) ORDER BY started_at,id",
         [id, now - 30 * 86400000],
+        attendanceSessionRow,
       )
-    ).rows.map((row) => session(row as AttendanceSessionRow));
+    ).rows.map(session);
   }
 
   private async sites(sql: Sql, id: string): Promise<AttendancePoint[]> {
     const active = (
-      await sql.query(
+      await sql.query<{
+        id: string;
+        point_snapshot: unknown;
+        historical_point: unknown;
+      }>(
         `SELECT s.id,s.point_snapshot,e.details->'site' AS historical_point
        FROM attendance_sessions s
        LEFT JOIN LATERAL (
@@ -235,17 +355,20 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
        ) e ON true
        WHERE s.uid=$1 AND s.ended_at IS NULL`,
         [id],
+        (row) => ({
+          id: stringValue(row.id),
+          point_snapshot: row.point_snapshot,
+          historical_point: row.historical_point,
+        }),
       )
     ).rows[0];
     if (active) {
-      if (active.point_snapshot) return [active.point_snapshot as AttendancePoint];
+      if (active.point_snapshot) return [attendancePointValue(active.point_snapshot)];
       // Pre-cutover sessions already own their original location in their clock-in event.
       // Read that evidence, never infer a Repository or current membership from old names.
-      const point = active.historical_point;
-      if (!point) throw new AttendanceError(409, "此筆出勤缺少原始打卡點紀錄，請聯絡服務維護者。");
-      return [
-        { ...point, repositoryId: null, address: point.description ?? null } as AttendancePoint,
-      ];
+      if (!active.historical_point)
+        throw new AttendanceError(409, "此筆出勤缺少原始打卡點紀錄，請聯絡服務維護者。");
+      return [attendancePointValue(active.historical_point, null)];
     }
     return (await repositoryAttendanceSites(sql, id)).map((point) => ({
       ...point,
@@ -310,24 +433,16 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         throw new AttendanceError(403, "LINE 會員關聯已變更。");
       }
       const old = (
-        await sql.query(
+        await sql.query<{ fingerprint: string; result: unknown }>(
           "SELECT fingerprint,result FROM attendance_commands WHERE uid=$1 AND request_id=$2",
           [id, input.requestId],
+          commandReceiptRow,
         )
       ).rows[0];
       if (old) {
         if (old.fingerprint !== fingerprint)
           throw new AttendanceError(409, "請求編號已用於不同操作。");
-        return {
-          ...old.result,
-          sites: old.result.sites.map((point: AttendancePoint & { description?: string }) => ({
-            ...point,
-            repositoryId: point.repositoryId ?? null,
-            address: point.address ?? point.description ?? null,
-          })),
-          credited: 0,
-          replayed: true,
-        } as AttendanceResult;
+        return replayAttendanceResult(old.result);
       }
       if (version !== input.expectedVersion)
         throw new AttendanceError(409, "出勤狀態已變更，請重新整理後確認。");
@@ -416,7 +531,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         throw new AttendanceError(403, "LINE 會員關聯已變更。");
       }
       const reviewRepositoryIds = await repositoryAdministeredIds(sql, id);
-      const mine = await sql.query(
+      const mine = await sql.query<AttendanceSupplementRow>(
         `SELECT * FROM (
            SELECT * FROM attendance_supplement_requests
            WHERE uid=$1 AND status='PENDING'
@@ -429,19 +544,21 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
          ) AS applicant_requests
          ORDER BY submitted_at DESC,id DESC`,
         [id],
+        attendanceSupplementRow,
       );
       const review = reviewRepositoryIds.length
-        ? await sql.query(
+        ? await sql.query<AttendanceSupplementRow>(
             `SELECT * FROM attendance_supplement_requests
              WHERE repository_id=ANY($1::text[]) AND status='PENDING' AND uid<>$2
              ORDER BY submitted_at,id`,
             [reviewRepositoryIds, id],
+            attendanceSupplementRow,
           )
         : { rows: [] };
       return {
         viewerId: id,
-        mine: (mine.rows as AttendanceSupplementRow[]).map(attendanceSupplement),
-        review: (review.rows as AttendanceSupplementRow[]).map(attendanceSupplement),
+        mine: mine.rows.map(attendanceSupplement),
+        review: review.rows.map(attendanceSupplement),
       };
     });
   }
@@ -475,11 +592,12 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         throw new AttendanceError(403, "LINE 會員關聯已變更。");
       }
       const previous = (
-        await sql.query(
+        await sql.query<{ fingerprint: string; result: unknown }>(
           "SELECT fingerprint,result FROM attendance_commands WHERE uid=$1 AND request_id=$2",
           [id, command.requestId],
+          commandReceiptRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       if (previous) {
         if (previous.fingerprint !== fingerprint) {
           throw new AttendanceError(409, "補登請求編號已用於不同操作。");
@@ -519,17 +637,9 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
             `SELECT id,uid,repository_id,started_at,ended_at,point_snapshot
              FROM attendance_sessions WHERE id=$1 AND uid=$2 FOR UPDATE`,
             [command.sessionId, id],
+            supplementOpenSessionRow,
           )
-        ).rows[0] as
-          | {
-              id: string;
-              uid: string;
-              repository_id: string | null;
-              started_at: number | string;
-              ended_at: number | string | null;
-              point_snapshot: AttendancePoint | null;
-            }
-          | undefined;
+        ).rows[0];
         if (!open || open.ended_at !== null || !open.repository_id) {
           throw new AttendanceError(409, "這筆出勤已結束或無法補登下班時間。");
         }
@@ -606,10 +716,13 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       );
 
       const request = (
-        await sql.query("SELECT * FROM attendance_supplement_requests WHERE id=$1", [
-          command.requestId,
-        ])
-      ).rows[0] as AttendanceSupplementRow;
+        await sql.query(
+          "SELECT * FROM attendance_supplement_requests WHERE id=$1",
+          [command.requestId],
+          attendanceSupplementRow,
+        )
+      ).rows[0];
+      if (!request) throw new AttendanceError(500, "補登申請建立結果不完整。");
       const receipt = { supplement: attendanceSupplement(request), replayed: false };
       await sql.query(
         "INSERT INTO attendance_commands(uid,request_id,fingerprint,result,at) VALUES($1,$2,$3,$4::jsonb,$5)",
@@ -635,10 +748,12 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
       const pending = (
-        await sql.query("SELECT * FROM attendance_supplement_requests WHERE id=$1 FOR UPDATE", [
-          command.supplementId,
-        ])
-      ).rows[0] as AttendanceSupplementRow | undefined;
+        await sql.query<AttendanceSupplementRow>(
+          "SELECT * FROM attendance_supplement_requests WHERE id=$1 FOR UPDATE",
+          [command.supplementId],
+          attendanceSupplementRow,
+        )
+      ).rows[0];
       if (!pending) throw new AttendanceError(404, "找不到補登申請。");
       await this.lockForSupplementReview(sql, reviewerId, pending.uid, now);
       await this.lock(sql, reviewerId, now);
@@ -650,11 +765,12 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       }
 
       const previous = (
-        await sql.query(
+        await sql.query<{ fingerprint: string; result: unknown }>(
           "SELECT fingerprint,result FROM attendance_commands WHERE uid=$1 AND request_id=$2",
           [reviewerId, command.commandId],
+          commandReceiptRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       if (previous) {
         if (previous.fingerprint !== fingerprint) {
           throw new AttendanceError(409, "審核請求編號已用於不同操作。");
@@ -715,10 +831,9 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
               `SELECT id,started_at,point_snapshot FROM attendance_sessions
                WHERE id=$1 AND uid=$2 AND repository_id=$3 AND ended_at IS NULL FOR UPDATE`,
               [pending.session_id, pending.uid, pending.repository_id],
+              reviewOpenSessionRow,
             )
-          ).rows[0] as
-            | { id: string; started_at: number | string; point_snapshot: AttendancePoint | null }
-            | undefined;
+          ).rows[0];
           if (!open || !open.point_snapshot || Number(pending.ended_at) < Number(open.started_at)) {
             throw new AttendanceError(409, "原出勤紀錄已變更，無法核准補登下班時間。");
           }
@@ -784,8 +899,9 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
             command.reason ?? null,
             command.expectedVersion,
           ],
+          attendanceSupplementRow,
         )
-      ).rows[0] as AttendanceSupplementRow | undefined;
+      ).rows[0];
       if (!updated) throw new AttendanceError(409, "補登申請已由其他管理者處理。");
       if (command.decision === "approve") await this.view(sql, pending.uid, now);
 
@@ -813,6 +929,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       AND (i.auth_user_id IS NULL OR attendance_account_active(i.auth_user_id,$1::bigint))
       AND ($3::text IS NULL OR i.subject=$3) ORDER BY o.available_at LIMIT 1 FOR UPDATE OF o SKIP LOCKED`,
           [now, provider, subject ?? null],
+          menuJobRow,
         )
       ).rows[0];
       if (!r) return null;
@@ -885,6 +1002,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         AND NOT EXISTS(SELECT 1 FROM attendance_notification_outbox earlier WHERE earlier.uid=o.uid AND earlier.revision<o.revision AND earlier.status='pending')
         ORDER BY o.available_at,o.uid,o.revision LIMIT 1 FOR UPDATE OF o SKIP LOCKED`,
           [now, provider, subject ?? null],
+          notificationJobRow,
         )
       ).rows[0];
       if (!r) return null;

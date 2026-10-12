@@ -4,6 +4,7 @@ import { type Permission, permissions } from "@line_bot_v1/identity-access/domai
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { errorStatus } from "../../shared/presentation/unknown-value";
 import { PageHeading } from "../../shared/ui/page-layout";
 import {
   clearPendingPermissionOperation,
@@ -13,7 +14,15 @@ import {
   savePendingPermissionOperation,
 } from "./permission-operations";
 
-const label = (p: string) => permissions[p as Permission] ?? p;
+function isPermission(value: string): value is Permission {
+  return (
+    value === "users.read" ||
+    value === "users.suspend" ||
+    value === "partners.manage" ||
+    value === "partners.review"
+  );
+}
+const label = (value: string) => (isPermission(value) ? permissions[value] : value);
 export default function PermissionsPanel({
   liffId,
   manage = false,
@@ -133,7 +142,7 @@ export default function PermissionsPanel({
       success = true;
     } catch (e) {
       if (ticket === generation.current) {
-        const status = (e as { status?: number }).status;
+        const status = errorStatus(e);
         if (status && status < 500 && status !== 429) {
           clearPendingPermissionOperation(sessionStorage);
           setPending(null);
@@ -242,7 +251,9 @@ export default function PermissionsPanel({
                         <select
                           id="permission-kind"
                           value={permission}
-                          onChange={(e) => setPermission(e.target.value as Permission)}
+                          onChange={(e) => {
+                            if (isPermission(e.target.value)) setPermission(e.target.value);
+                          }}
                         >
                           {Object.entries(permissions).map(([key, name]) => (
                             <option key={key} value={key}>

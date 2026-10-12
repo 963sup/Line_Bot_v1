@@ -23,10 +23,13 @@ export type UserStatusCommand = {
   reason: string;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function parseUserStatusCommand(raw: unknown): UserStatusCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw))
-    throw new UserError(400, "使用者操作格式不正確。");
-  const v = raw as Record<string, unknown>;
+  if (!isRecord(raw)) throw new UserError(400, "使用者操作格式不正確。");
+  const v = raw;
   if (
     Object.keys(v).some(
       (key) => !["action", "requestId", "target", "expectedVersion", "reason"].includes(key),

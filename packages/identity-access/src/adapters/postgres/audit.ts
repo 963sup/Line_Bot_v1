@@ -1,4 +1,10 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   GovernanceAuditEvent,
   GovernanceAuditQuery,
@@ -11,6 +17,30 @@ import {
   requireEnterpriseOwner,
   requireOrganizationOwner,
 } from "../../postgres/typed-role-assignments.js";
+
+function auditRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    actor_user_id: stringValue(row.actor_user_id),
+    action: stringValue(row.action),
+    scope_kind: literalValue(row.scope_kind, ["enterprise", "organization"]),
+    scope_id: stringValue(row.scope_id),
+    subject_kind:
+      row.subject_kind === null
+        ? null
+        : literalValue(row.subject_kind, [
+            "user",
+            "organization",
+            "organization-team",
+            "enterprise-team",
+          ]),
+    subject_id: nullableString(row.subject_id),
+    request_id: stringValue(row.request_id),
+    created_at: numericValue(row.created_at),
+    outcome: stringValue(row.outcome),
+    version: numericValue(row.version),
+  };
+}
 
 export class PostgresGovernanceAuditReader implements GovernanceAuditReader {
   constructor(private readonly db?: Database) {}
@@ -38,10 +68,11 @@ export class PostgresGovernanceAuditReader implements GovernanceAuditReader {
             query.before?.id ?? null,
             Math.min(101, Math.max(1, query.limit)),
           ],
+          auditRow,
         )
       ).rows;
       return rows.map((row) => ({
-        id: String(row.id),
+        id: row.id,
         actorUserId: row.actor_user_id,
         action: row.action,
         scopeKind: row.scope_kind,

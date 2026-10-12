@@ -11,9 +11,9 @@ type RepositoryAddressService = ReturnType<typeof createRepositoryAddress>;
 
 test("Repository address HTTP translates canonical selector and authenticated command", async () => {
   const calls: unknown[][] = [];
-  const address = {
-    view: async (...args: unknown[]) => {
-      calls.push(["view", ...args]);
+  const address: Pick<RepositoryAddressService, "view" | "execute"> = {
+    view: async (subject, selector) => {
+      calls.push(["view", subject, selector]);
       return {
         repository: {
           id: "repo",
@@ -27,11 +27,17 @@ test("Repository address HTTP translates canonical selector and authenticated co
         address: null,
       };
     },
-    execute: async (...args: unknown[]) => {
-      calls.push(["execute", ...args]);
-      return { ok: true };
+    execute: async (subject, raw) => {
+      calls.push(["execute", subject, raw]);
+      return {
+        requestId: "11111111-1111-4111-8111-111111111111",
+        repositoryId: "repo",
+        address: null,
+        version: 3,
+        at: 10,
+      };
     },
-  } as unknown as RepositoryAddressService;
+  };
   const identity = async () => "subject";
 
   const view = await repositoryAddressViewRequest(
@@ -69,11 +75,11 @@ test("Repository address HTTP translates canonical selector and authenticated co
 });
 
 test("Repository address HTTP fails closed on malformed selectors and owner errors", async () => {
-  const address = {
+  const address: Pick<RepositoryAddressService, "view"> = {
     view: async () => {
       throw new RepositoryError(403, "forbidden");
     },
-  } as unknown as RepositoryAddressService;
+  };
   const identity = async () => "subject";
   const forbidden = await repositoryAddressViewRequest(
     new Request("https://example.com/api/repository-address?owner=octo&name=Shared"),

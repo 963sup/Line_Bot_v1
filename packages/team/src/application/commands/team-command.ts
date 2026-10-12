@@ -58,9 +58,13 @@ export function buildTeamCommand(
 const stableId = /^[\w-]{1,128}$/;
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function parseTeamCommand(input: unknown): TeamCommand {
-  teamAssert(input && typeof input === "object" && !Array.isArray(input), 400, "資料格式錯誤。");
-  const value = input as Record<string, unknown>;
+  teamAssert(isRecord(input), 400, "資料格式錯誤。");
+  const value = input;
   teamAssert(
     value.action === "create-team" ||
       value.action === "join" ||

@@ -1,17 +1,16 @@
 import type {
   RepositoryCreateCommand,
   RepositoryCreationStore,
-  RepositoryOwnerKind,
 } from "../contracts/repositories/creation.js";
-import { normalizeRepositoryName, RepositoryError, type RepositoryVisibility } from "../domain.js";
+import { normalizeRepositoryName, RepositoryError } from "../domain.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
 function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository 建立資料格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   const allowed = ["requestId", "ownerAccountId", "ownerKind", "name", "visibility"];
   if (Object.keys(value).some((key) => !allowed.includes(key))) {
     throw new RepositoryError(400, "Repository 建立資料包含不支援的欄位。");
@@ -42,9 +41,9 @@ function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
   return {
     requestId: value.requestId.toLowerCase(),
     ownerAccountId: value.ownerAccountId,
-    ownerKind: value.ownerKind as RepositoryOwnerKind,
+    ownerKind: value.ownerKind,
     name,
-    visibility: visibility as RepositoryVisibility,
+    visibility,
   };
 }
 
@@ -63,3 +62,5 @@ export function createRepositoryCreation(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

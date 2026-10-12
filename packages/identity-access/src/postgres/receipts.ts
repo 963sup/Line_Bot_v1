@@ -1,10 +1,43 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numberValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { GovernanceReceipt, GovernanceSubjectKind } from "../contracts/governance.js";
 import { GovernanceAccessError } from "../domain/role-assignment.js";
 
 export function governanceFingerprint(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+function governanceReceipt(value: unknown): GovernanceReceipt {
+  const result = record(value);
+  return {
+    requestId: stringValue(result.requestId),
+    action: stringValue(result.action),
+    scopeId: stringValue(result.scopeId),
+    subjectKind:
+      result.subjectKind === null
+        ? null
+        : literalValue(result.subjectKind, [
+            "user",
+            "organization",
+            "organization-team",
+            "enterprise-team",
+          ]),
+    subjectId: nullableString(result.subjectId),
+    status: stringValue(result.status),
+    version: numberValue(result.version),
+    at: numberValue(result.at),
+  };
+}
+
+function governanceReplayRow(row: Record<string, unknown>) {
+  return { fingerprint: stringValue(row.fingerprint), result: governanceReceipt(row.result) };
 }
 
 export async function readGovernanceReplay(
@@ -16,8 +49,9 @@ export async function readGovernanceReplay(
   const row = (
     await sql.query(
       `SELECT fingerprint,result FROM governance_command_receipts
-       WHERE actor_user_id=$1 AND request_id=$2`,
+      WHERE actor_user_id=$1 AND request_id=$2`,
       [actorUserId, requestId],
+      governanceReplayRow,
     )
   ).rows[0];
   if (!row) return null;
@@ -25,7 +59,7 @@ export async function readGovernanceReplay(
   if (!accepted.includes(row.fingerprint)) {
     throw new GovernanceAccessError(409, "replay-conflict", "請求編號已用於不同操作。");
   }
-  return row.result as GovernanceReceipt;
+  return row.result;
 }
 
 export async function recordGovernanceResult(

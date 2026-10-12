@@ -1,7 +1,18 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  isRecord,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   RepositoryManagementCommand,
   RepositoryManagementReceipt,
@@ -15,6 +26,13 @@ import {
   type RepositoryPermission,
   type RepositoryVisibility,
 } from "../domain.js";
+import {
+  decodeCommandRow,
+  decodePermissionsRow,
+  postgresErrorCode,
+  repositoryOwnerKind,
+  repositoryVisibility,
+} from "./decode.js";
 
 type RepositoryRow = {
   id: string;
@@ -40,6 +58,18 @@ const fingerprint = (command: RepositoryManagementCommand) =>
 
 const columns = "id,owner_account_id,owner_account_kind,name,visibility,is_archived,version";
 
+function decodeRepositoryRow(row: SqlRow): RepositoryRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+    visibility: repositoryVisibility(row.visibility),
+    is_archived: booleanValue(row.is_archived),
+    version: Number(numericValue(row.version)),
+  };
+}
+
 async function repositoryBySelector(
   sql: Sql,
   selector: RepositorySelector,
@@ -51,8 +81,9 @@ async function repositoryBySelector(
         `SELECT ${columns} FROM repositories
          WHERE id=$1 ${lock ? "FOR UPDATE" : ""}`,
         [selector.repositoryId],
+        decodeRepositoryRow,
       )
-    ).rows[0] as RepositoryRow | undefined;
+    ).rows[0];
     if (!row) throw new RepositoryError(404, "找不到 Repository。");
     return row;
   }
@@ -68,8 +99,9 @@ async function repositoryBySelector(
          AND lower(name)=lower($3)
        ${lock ? "FOR UPDATE" : ""}`,
       [owner.id, owner.kind, selector.repositoryName],
+      decodeRepositoryRow,
     )
-  ).rows[0] as RepositoryRow | undefined;
+  ).rows[0];
   if (current) return current;
   if (selector.followRenames === false) {
     throw new RepositoryError(404, "找不到 Repository。");
@@ -89,8 +121,9 @@ async function repositoryBySelector(
        ORDER BY h.renamed_at DESC,r.id
        LIMIT 2`,
       [owner.id, owner.kind, selector.repositoryName],
+      decodeRepositoryRow,
     )
-  ).rows as RepositoryRow[];
+  ).rows;
   if (!historical.length) throw new RepositoryError(404, "找不到 Repository。");
   if (historical.length > 1) {
     throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
@@ -99,10 +132,12 @@ async function repositoryBySelector(
   if (!historicalRepository) throw new RepositoryError(404, "找不到 Repository。");
   if (lock) {
     const locked = (
-      await sql.query(`SELECT ${columns} FROM repositories WHERE id=$1 FOR UPDATE`, [
-        historicalRepository.id,
-      ])
-    ).rows[0] as RepositoryRow | undefined;
+      await sql.query(
+        `SELECT ${columns} FROM repositories WHERE id=$1 FOR UPDATE`,
+        [historicalRepository.id],
+        decodeRepositoryRow,
+      )
+    ).rows[0];
     if (!locked) throw new RepositoryError(404, "找不到 Repository。");
     return locked;
   }
@@ -118,8 +153,9 @@ async function actorPermissions(
     await sql.query(
       "SELECT permissions FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
       [repositoryId, userId],
+      decodePermissionsRow,
     )
-  ).rows[0] as { permissions: RepositoryPermission[] } | undefined;
+  ).rows[0];
   return row?.permissions ?? [];
 }
 
@@ -140,8 +176,9 @@ async function internalEnterpriseId(sql: Sql, repository: RepositoryRow): Promis
        WHERE organization_account_id=$1
        LIMIT 1`,
       [repository.owner_account_id],
+      (row) => ({ enterprise_account_id: stringValue(row.enterprise_account_id) }),
     )
-  ).rows[0] as { enterprise_account_id: string } | undefined;
+  ).rows[0];
   return row?.enterprise_account_id ?? null;
 }
 
@@ -186,8 +223,14 @@ function readReceipt(
   if (previous.fingerprint !== commandFingerprint) {
     throw new RepositoryError(409, "此請求編號已用於不同 Repository 操作。");
   }
-  const receipt = previous.result as Partial<Receipt>;
-  const result = receipt.result as Partial<RepositoryManagementReceipt> | undefined;
+  if (!isRecord(previous.result)) {
+    throw new RepositoryError(503, "Repository 管理回執無法讀取。");
+  }
+  const receipt = previous.result;
+  if (!isRecord(receipt.result)) {
+    throw new RepositoryError(503, "Repository 管理回執無法讀取。");
+  }
+  const result = receipt.result;
   if (
     receipt.receiptVersion !== 1 ||
     receipt.family !== "repository-management" ||
@@ -195,19 +238,29 @@ function readReceipt(
       receipt.action !== "visibility" &&
       receipt.action !== "archive" &&
       receipt.action !== "unarchive") ||
-    !result ||
     typeof result.requestId !== "string" ||
     typeof result.repositoryId !== "string" ||
     result.action !== receipt.action ||
     typeof result.name !== "string" ||
     !validVisibility(result.visibility) ||
     typeof result.archived !== "boolean" ||
+    typeof result.version !== "number" ||
     !Number.isSafeInteger(result.version) ||
+    typeof result.at !== "number" ||
     !Number.isSafeInteger(result.at)
   ) {
     throw new RepositoryError(503, "Repository 管理回執無法讀取。");
   }
-  return result as RepositoryManagementReceipt;
+  return {
+    requestId: result.requestId,
+    repositoryId: result.repositoryId,
+    action: receipt.action,
+    name: result.name,
+    visibility: result.visibility,
+    archived: result.archived,
+    version: result.version,
+    at: result.at,
+  };
 }
 
 async function nameReserved(sql: Sql, repository: RepositoryRow, name: string): Promise<boolean> {
@@ -292,8 +345,9 @@ export class PostgresRepositoryManagementStore implements RepositoryManagementSt
         await sql.query(
           "SELECT fingerprint,result FROM repository_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeCommandRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
@@ -316,18 +370,20 @@ export class PostgresRepositoryManagementStore implements RepositoryManagementSt
           [repository.id, repository.name, now],
         );
         try {
-          repository = (
+          const changed = (
             await sql.query(
               `UPDATE repositories
                SET name=$2,version=version+1
                WHERE id=$1 AND version=$3
                RETURNING ${columns}`,
               [repository.id, command.name, command.expectedVersion],
+              decodeRepositoryRow,
             )
-          ).rows[0] as RepositoryRow;
+          ).rows[0];
+          if (!changed) throw new RepositoryError(409, "Repository 狀態已變更，請重新載入。");
+          repository = changed;
         } catch (error) {
-          const postgres = error as { code?: string; constraint?: string };
-          if (postgres.code === "23505") {
+          if (postgresErrorCode(error) === "23505") {
             throw new RepositoryError(409, "此 owner 已有相同名稱的 Repository。");
           }
           throw error;
@@ -347,15 +403,18 @@ export class PostgresRepositoryManagementStore implements RepositoryManagementSt
             );
           }
         }
-        repository = (
+        const changed = (
           await sql.query(
             `UPDATE repositories
              SET visibility=$2,version=version+1
              WHERE id=$1 AND version=$3
              RETURNING ${columns}`,
             [repository.id, command.visibility, command.expectedVersion],
+            decodeRepositoryRow,
           )
-        ).rows[0] as RepositoryRow;
+        ).rows[0];
+        if (!changed) throw new RepositoryError(409, "Repository 狀態已變更，請重新載入。");
+        repository = changed;
       } else {
         const archived = command.action === "archive";
         if (Boolean(repository.is_archived) === archived) {
@@ -364,15 +423,18 @@ export class PostgresRepositoryManagementStore implements RepositoryManagementSt
             archived ? "Repository 已封存。" : "Repository 尚未封存。",
           );
         }
-        repository = (
+        const changed = (
           await sql.query(
             `UPDATE repositories
              SET is_archived=$2,version=version+1
              WHERE id=$1 AND version=$3
              RETURNING ${columns}`,
             [repository.id, archived, command.expectedVersion],
+            decodeRepositoryRow,
           )
-        ).rows[0] as RepositoryRow;
+        ).rows[0];
+        if (!changed) throw new RepositoryError(409, "Repository 狀態已變更，請重新載入。");
+        repository = changed;
       }
 
       if (!repository) throw new RepositoryError(409, "Repository 狀態已變更，請重新載入。");

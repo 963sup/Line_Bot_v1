@@ -9,19 +9,9 @@ import { protectPermissionAdministrator } from "@line_bot_v1/identity-access/pos
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
-import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";
 import { idempotencyFixture } from "./idempotency-fixture";
 
-type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
 let fixture: Awaited<ReturnType<typeof postgresFixture>>;
-const state = globalThis as typeof globalThis & {
-  userStore?: PostgresUserStore;
-  dailyCheckInStore?: ReturnType<typeof createPostgresDailyCheckInStore>;
-  walletStore?: PostgresWalletStore;
-  attendanceStore?: AttendancePersistence;
-  expenseStore?: ReturnType<typeof createPostgresExpenseStore>;
-  lineIdempotency?: WebhookIdempotencyStore;
-};
 const identities = new Map<string, { id: string; sub: string; email: string }>();
 export function identityFor(user: string) {
   let value = identities.get(user);
@@ -32,15 +22,15 @@ export function identityFor(user: string) {
   return value;
 }
 export async function mockSupabase() {
-  state.lineIdempotency = idempotencyFixture();
+  globalThis.lineIdempotency = idempotencyFixture();
   fixture = await postgresFixture();
-  state.userStore = new PostgresUserStore(fixture.db, {
+  globalThis.userStore = new PostgresUserStore(fixture.db, {
     protectPermissionAdministrator,
   });
-  state.dailyCheckInStore = createPostgresDailyCheckInStore(fixture.db);
-  state.walletStore = new PostgresWalletStore(fixture.db);
-  state.attendanceStore = createPostgresAttendanceStore(fixture.db);
-  state.expenseStore = createPostgresExpenseStore(fixture.db);
+  globalThis.dailyCheckInStore = createPostgresDailyCheckInStore(fixture.db);
+  globalThis.walletStore = new PostgresWalletStore(fixture.db);
+  globalThis.attendanceStore = createPostgresAttendanceStore(fixture.db);
+  globalThis.expenseStore = createPostgresExpenseStore(fixture.db);
   mock.method(supabaseIdentity(), "verify", async (token: string) => {
     const response = await fetch("https://api.line.me/v2/profile", {
       headers: { Authorization: `Bearer ${token}` },
@@ -54,13 +44,13 @@ function requireFixtureValue<T>(value: T | undefined, name: string): T {
   return value;
 }
 export function memberStore() {
-  return requireFixtureValue(state.userStore, "User store");
+  return requireFixtureValue(globalThis.userStore, "User store");
 }
 export function walletStore() {
-  return requireFixtureValue(state.walletStore, "Wallet store");
+  return requireFixtureValue(globalThis.walletStore, "Wallet store");
 }
 export function expenseStore() {
-  return requireFixtureValue(state.expenseStore, "Expense store");
+  return requireFixtureValue(globalThis.expenseStore, "Expense store");
 }
 export async function prepareGoogle(user: string) {
   const identity = identityFor(user);

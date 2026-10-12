@@ -1,12 +1,13 @@
 "use client";
 
 import { buildNamespacePath } from "@line_bot_v1/namespace";
-import type { TeamView } from "@line_bot_v1/team/contracts";
+import { parseTeamView, type TeamView } from "@line_bot_v1/team/contracts";
 import type { TeamCommand } from "@line_bot_v1/team/contracts/input/team-command";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { errorMessage } from "../../shared/presentation/unknown-value";
 import styles from "./team.module.css";
 import type { TeamDraft } from "./team-command";
 import { teamActionLabels } from "./team-command";
@@ -99,22 +100,13 @@ export default function TeamPanel({
       cache: "no-store",
       signal: AbortSignal.timeout(20_000),
     });
-    const value = await response.json();
+    const value: unknown = await response.json();
     if (!response.ok) {
       if (ticket === generation.current && (response.status === 401 || response.status === 403))
         clear();
-      throw new Error(value.error || "讀取失敗。");
+      throw new Error(errorMessage(value, "讀取失敗。"));
     }
-    if (
-      !value ||
-      typeof value.userId !== "string" ||
-      typeof value.viewerCanCreateTeams !== "boolean" ||
-      !Array.isArray(value.organizations) ||
-      !Array.isArray(value.teams)
-    ) {
-      throw new Error("回應不完整，請重新載入。");
-    }
-    return value as TeamView;
+    return parseTeamView(value);
   }
 
   async function load(
@@ -187,12 +179,12 @@ export default function TeamPanel({
         headers: { "X-App-Session-Generation": access, "content-type": "application/json" },
         body: JSON.stringify(command),
       });
-      const result = await response.json();
+      const result: unknown = await response.json();
       if (ticket !== generation.current) return;
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           clear();
-          setError(result.error);
+          setError(errorMessage(result, "操作失敗。"));
           return;
         }
         if (response.status < 500 && response.status !== 429) setPending(null);
@@ -200,19 +192,29 @@ export default function TeamPanel({
           setData(null);
           setDraft(null);
         }
-        throw new Error(result.error || "操作結果尚未確認，請重試原操作。");
+        throw new Error(errorMessage(result, "操作結果尚未確認，請重試原操作。"));
       }
       setPending(null);
       setDraft(null);
       setNotice(`${teamActionLabels[command.action]}已保存。`);
-      const organizationAccountId = result.organizationAccountId as string;
+      if (
+        !result ||
+        typeof result !== "object" ||
+        !("organizationAccountId" in result) ||
+        typeof result.organizationAccountId !== "string"
+      ) {
+        throw new Error("操作回應不完整，請重試原操作。");
+      }
+      const organizationAccountId = result.organizationAccountId;
       const teamId =
         command.action === "join" ||
         (command.action === "membership" &&
           command.targetUserId === data?.userId &&
           command.status === "removed")
           ? ""
-          : (result.teamId as string);
+          : "teamId" in result && typeof result.teamId === "string"
+            ? result.teamId
+            : "";
       selectedOrganization.current = organizationAccountId;
       selectedTeam.current = teamId;
       const fresh = await read(ticket, access, organizationAccountId, teamId);

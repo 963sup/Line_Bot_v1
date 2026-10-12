@@ -34,8 +34,14 @@ await context.addInitScript(() => {
   window.liff = {
     init: async () => {},
     isLoggedIn: () => true,
+    getProfile: async () => ({
+      userId: "U11111111111111111111111111111111",
+      displayName: "Repository Address Tester",
+    }),
     getAccessToken: () => "synthetic",
     isInClient: () => false,
+    closeWindow: () => {},
+    openWindow: () => {},
     login: () => {},
   };
 });
@@ -154,6 +160,7 @@ await context.route("**/*", async (route) => {
             ownerLogin: "alice",
             name: "Operations",
             version,
+            actorIsOwner: actorUserId === "owner",
             actorPermissions: [capability],
           },
           address,
@@ -280,12 +287,75 @@ try {
     await expect(page.getByLabel("緯度", { exact: true })).toHaveCount(0);
     await expect(page.getByLabel("經度", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "使用目前位置" }).click();
+    assert.equal(
+      await page.evaluate(() => window.__syntheticMaps.geocodes[0].input.fulfillOnZeroResults),
+      true,
+      "reverse geocoding must fulfill zero results so it remains distinct from provider failure",
+    );
     await page.evaluate(() => {
       window.__syntheticMaps.geocodes[0].resolve({ results: [] });
     });
+    await expect(page.getByRole("status").filter({ hasText: "未找到地址描述" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "重試地址查詢" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "使用目前位置" }).click();
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[1].reject({
+        code: "REQUEST_DENIED",
+        message: "provider details must not reach the UI",
+      });
+    });
+    await expect(page.getByRole("status").filter({ hasText: "地址查詢服務未授權" })).toBeVisible();
+    await expect(page.getByText("provider details must not reach the UI")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "重試地址查詢" })).toBeEnabled();
+
+    await page.getByRole("button", { name: "重試地址查詢" }).click();
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[2].reject({ code: "OVER_QUERY_LIMIT" });
+    });
+    await expect(page.getByRole("status").filter({ hasText: "已達使用上限" })).toBeVisible();
+
+    await page.getByRole("button", { name: "重試地址查詢" }).click();
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[3].reject({ code: "UNKNOWN_ERROR" });
+    });
+    await expect(page.getByRole("status").filter({ hasText: "暫時無法回應" })).toBeVisible();
+
+    await page.getByRole("button", { name: "重試地址查詢" }).click();
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[4].reject({ code: "ERROR" });
+    });
+    await expect(page.getByRole("status").filter({ hasText: "暫時無法回應" })).toBeVisible();
+    await page.getByLabel("地址", { exact: true }).fill("查詢失敗後手填地址");
+    await page.getByRole("button", { name: "重試地址查詢" }).click();
+    assert.deepEqual(
+      await page.evaluate(() => window.__syntheticMaps.geocodes[5].input.location),
+      { lat: 25.01, lng: 121.54 },
+      "retry must preserve the selected coordinates",
+    );
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[5].resolve({
+        results: [{ formatted_address: "重試取得的地址" }],
+      });
+    });
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("查詢失敗後手填地址");
+    await expect(page.getByRole("button", { name: "重試地址查詢" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "使用目前位置" }).click();
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[6].resolve({
+        results: [{ formatted_address: "目前位置地址" }],
+      });
+    });
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("目前位置地址");
+
+    await page.getByRole("button", { name: "使用目前位置" }).click();
+    await page.evaluate(() => {
+      window.__syntheticMaps.geocodes[7].resolve({ results: [] });
+    });
     await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
-    assert.equal(await page.evaluate(() => window.__syntheticMaps.geocodes.length), 1);
+    assert.equal(await page.evaluate(() => window.__syntheticMaps.geocodes.length), 8);
     await page.getByRole("button", { name: "儲存打卡點" }).click();
     await expect(page.getByText("打卡點已更新。", { exact: true })).toBeVisible();
     assert.equal(posts[0].address.address, null);
@@ -528,7 +598,10 @@ try {
               "Places New selection payload",
               "map point with hidden coordinates",
               "denied and successful geolocation",
-              "empty and failed reverse geocoding save a null description",
+              "reverse geocoding distinguishes zero results, denial, quota, and transient errors",
+              "reverse geocoding retry preserves coordinates and manual address edits",
+              "successful reverse geocoding displays the address",
+              "empty and failed reverse geocoding still allow a null description",
               "address autocomplete selects the result coordinates on the map",
               "programmatic map centering is not an explicit selection",
               "map click and drag end commit selected coordinates",

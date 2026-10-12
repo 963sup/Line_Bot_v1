@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositorySubscription } from "../src/application/subscription.js";
 import type { RepositorySubscriptionStore } from "../src/contracts/repositories/subscription.js";
 import { RepositoryError } from "../src/domain.js";
@@ -210,5 +211,7 @@ test("first-time Watch writes serialize by User and Repository", async (t) => {
     "select state,version from app_private.repository_subscriptions where repository_id='repo-race' and user_id='viewer'",
   );
   assert.equal(row.rows.length, 1);
-  assert.equal((row.rows[0] as { version: number }).version, 1);
+  const subscriptionRow: unknown = row.rows[0];
+  assert.ok(isRecord(subscriptionRow));
+  assert.equal(subscriptionRow.version, 1);
 });

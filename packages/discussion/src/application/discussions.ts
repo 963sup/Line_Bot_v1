@@ -36,7 +36,9 @@ function cursor(after: string | undefined): DiscussionCursor | undefined {
   if (after === undefined) return undefined;
   try {
     if (!after || after.length > maxCursorLength) throw new Error();
-    const value = JSON.parse(after) as Record<string, unknown>;
+    const parsed: unknown = JSON.parse(after);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+    const value = Object.fromEntries(Object.entries(parsed));
     if (
       !Number.isSafeInteger(value.at) ||
       Number(value.at) < 0 ||

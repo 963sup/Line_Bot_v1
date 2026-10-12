@@ -8,6 +8,12 @@ import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryPath, repositoryStarListsPath } from "./resource-navigation";
 import {
+  errorMessage,
+  isRecord,
+  isStarListDetail,
+  isStarredRepository,
+} from "./response-validation";
+import {
   clearPendingRepositoryStarListCommand,
   type RepositoryStarListCommandBody,
   readPendingRepositoryStarListCommand,
@@ -60,12 +66,9 @@ export default function RepositoryStarListDetail({
       signal: AbortSignal.timeout(20_000),
       headers: { "X-App-Session-Generation": current.token },
     });
-    const payload = (await response.json()) as {
-      item?: RepositoryStarListDetailValue;
-      error?: string;
-    };
-    if (!response.ok || !payload.item) {
-      throw Object.assign(new Error(payload.error ?? "List 讀取失敗。"), {
+    const payload: unknown = await response.json();
+    if (!response.ok || !isRecord(payload) || !isStarListDetail(payload.item)) {
+      throw Object.assign(new Error(errorMessage(payload, "List 讀取失敗。")), {
         status: response.status,
       });
     }
@@ -76,12 +79,14 @@ export default function RepositoryStarListDetail({
         signal: AbortSignal.timeout(20_000),
         headers: { "X-App-Session-Generation": current.token },
       });
-      const starredPayload = (await starredResponse.json()) as {
-        items?: StarredRepository[];
-        error?: string;
-      };
-      if (!starredResponse.ok || !Array.isArray(starredPayload.items)) {
-        throw new Error(starredPayload.error ?? "Starred Repositories 讀取失敗。");
+      const starredPayload: unknown = await starredResponse.json();
+      if (
+        !starredResponse.ok ||
+        !isRecord(starredPayload) ||
+        !Array.isArray(starredPayload.items) ||
+        !starredPayload.items.every(isStarredRepository)
+      ) {
+        throw new Error(errorMessage(starredPayload, "Starred Repositories 讀取失敗。"));
       }
       stars = starredPayload.items;
     }
@@ -136,10 +141,7 @@ export default function RepositoryStarListDetail({
         },
         body: JSON.stringify(command),
       });
-      const payload = (await response.json()) as {
-        deleted?: boolean;
-        error?: string;
-      };
+      const payload: unknown = await response.json();
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) {
           if (
@@ -154,7 +156,7 @@ export default function RepositoryStarListDetail({
           }
           if (response.status === 409) await read(current);
         }
-        throw Object.assign(new Error(payload.error ?? "List 操作失敗。"), {
+        throw Object.assign(new Error(errorMessage(payload, "List 操作失敗。")), {
           status: response.status,
         });
       }
@@ -173,7 +175,7 @@ export default function RepositoryStarListDetail({
         clear();
         return;
       }
-      if (payload.deleted) {
+      if (isRecord(payload) && payload.deleted === true) {
         window.location.assign(repositoryStarListsPath());
         return;
       }

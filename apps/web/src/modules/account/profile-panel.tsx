@@ -4,9 +4,11 @@ import type {
   UserProfile,
   UserProfileVisibility,
 } from "@line_bot_v1/account/contracts/repositories/profile";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { readProfile, responseError } from "./wire-response";
 
 type Draft = {
   displayName: string;
@@ -64,10 +66,11 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
         headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
-      const value = (await response.json()) as { profile?: UserProfile | null; error?: string };
-      if (!response.ok) throw new Error(value.error ?? "個人資料讀取失敗。");
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(responseError(value, "個人資料讀取失敗。"));
       if (ticket !== generation.current) return;
-      const next = value.profile ?? null;
+      if (!isRecord(value)) throw new Error("個人資料回應格式不正確。");
+      const next = value.profile == null ? null : readProfile(value.profile);
       setProfile(next);
       setDraft(draftFrom(next));
       setLoaded(true);
@@ -103,13 +106,13 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
           expectedVersion: draft.expectedVersion,
         }),
       });
-      const value = (await response.json()) as { profile?: UserProfile; error?: string };
-      if (!response.ok || !value.profile) {
-        throw new Error(value.error ?? "個人資料保存失敗。");
-      }
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(responseError(value, "個人資料保存失敗。"));
+      if (!isRecord(value) || !("profile" in value)) throw new Error("個人資料回應格式不正確。");
+      const saved = readProfile(value.profile);
       if (ticket !== generation.current) return;
-      setProfile(value.profile);
-      setDraft(draftFrom(value.profile));
+      setProfile(saved);
+      setDraft(draftFrom(saved));
       setLoaded(true);
       setNotice("個人資料已保存。");
     } catch (cause) {
@@ -171,12 +174,15 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
             Profile 可見範圍
             <select
               value={draft.visibility}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  visibility: event.target.value as UserProfileVisibility,
-                })
-              }
+              onChange={(event) => {
+                const visibility = event.target.value;
+                if (
+                  visibility === "private" ||
+                  visibility === "organization" ||
+                  visibility === "public"
+                )
+                  setDraft({ ...draft, visibility });
+              }}
             >
               <option value="private">僅自己</option>
               <option value="organization">Organization</option>

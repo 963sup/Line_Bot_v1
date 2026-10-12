@@ -27,6 +27,11 @@
   color: var(--green-strong);
 }
 
+.resourceLink:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--green-strong) 38%, transparent);
+  outline-offset: 2px;
+}
+
 @media (max-width: 360px) {
   .resourceNav {
     gap: 6px;
@@ -34,7 +39,7 @@
 
   .resourceLink {
     flex-basis: calc(50% - 3px);
-    min-height: 42px;
+    min-height: 44px;
     padding-inline: 8px;
     font-size: 12px;
   }

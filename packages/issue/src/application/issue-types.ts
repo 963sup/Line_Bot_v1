@@ -17,7 +17,7 @@ function objectInput(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new IssueError(400, "IssueType 操作格式不正確。");
   }
-  return value as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(value));
 }
 
 function exactKeys(value: Record<string, unknown>, allowed: readonly string[]) {
@@ -60,10 +60,11 @@ function description(value: unknown): string | null {
 }
 
 function color(value: unknown): IssueTypeColor {
-  if (!colors.includes(value as IssueTypeColor)) {
+  const selected = colors.find((candidate) => candidate === value);
+  if (!selected) {
     throw new IssueError(400, "IssueType 顏色不正確。");
   }
-  return value as IssueTypeColor;
+  return selected;
 }
 
 function enabled(value: unknown): boolean {

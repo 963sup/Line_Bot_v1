@@ -1,5 +1,6 @@
 import { readAccountLogins } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { readableRepositoriesByIds } from "@line_bot_v1/repository/postgres/access";
 import type { IssueActivityItem, IssueActivityStore } from "../../contracts/activity.js";
 import { IssueError } from "../../domain.js";
@@ -14,6 +15,19 @@ type ActivityRow = {
   title: string;
   repository_id: string;
 };
+
+function decodeActivityRow(row: Record<string, unknown>): ActivityRow {
+  return {
+    issue_id: stringValue(row.issue_id),
+    version: numberValue(row.version),
+    actor: stringValue(row.actor),
+    action: stringValue(row.action),
+    at: numericValue(row.at),
+    number: numericValue(row.number),
+    title: stringValue(row.title),
+    repository_id: stringValue(row.repository_id),
+  };
+}
 
 export class PostgresIssueActivityStore implements IssueActivityStore {
   constructor(private db: Database = businessDatabase()) {}
@@ -37,8 +51,9 @@ export class PostgresIssueActivityStore implements IssueActivityStore {
            ORDER BY e.at DESC,e.issue_id,e.version DESC
            LIMIT $2`,
           [userId, limit],
+          decodeActivityRow,
         )
-      ).rows as ActivityRow[];
+      ).rows;
       if (!rows.length) return [];
 
       const repositories = await readableRepositoriesByIds(sql, userId, [

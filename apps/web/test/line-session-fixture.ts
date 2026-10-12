@@ -1,3 +1,4 @@
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { POST as createLineSession } from "../src/app/api/auth/route";
 
 export async function lineSessionHeaders(
@@ -20,13 +21,17 @@ export async function lineSessionHeaders(
     else process.env.APP_ORIGIN = previousOrigin;
   }
   if (!response.ok) {
-    const body = (await response.json()) as { error?: string };
-    throw new Error(body.error ?? `Unable to establish a test session (${response.status}).`);
+    const body: unknown = await response.json();
+    throw new Error(
+      isRecord(body) && typeof body.error === "string"
+        ? body.error
+        : `Unable to establish a test session (${response.status}).`,
+    );
   }
   const setCookie = response.headers.get("set-cookie") ?? "";
   const cookie = setCookie.split(";", 1)[0];
-  const body = (await response.json()) as { generation?: unknown };
-  if (!cookie || typeof body.generation !== "string")
+  const body: unknown = await response.json();
+  if (!cookie || !isRecord(body) || typeof body.generation !== "string")
     throw new Error("The session endpoint did not issue its cookie and generation.");
   if (
     !setCookie.includes("HttpOnly") ||

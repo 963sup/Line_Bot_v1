@@ -11,16 +11,39 @@ type Management = ReturnType<typeof createRepositoryManagement>;
 
 test("Repository management HTTP maps canonical selector and authenticated command", async () => {
   const calls: unknown[][] = [];
-  const management = {
-    view: async (...args: unknown[]) => {
-      calls.push(["view", ...args]);
-      return { repository: { id: "repo", actorUserId: "actor" } };
+  const management: Pick<Management, "view" | "execute"> = {
+    view: async (subject, selector) => {
+      calls.push(["view", subject, selector]);
+      return {
+        repository: {
+          id: "repo",
+          actorUserId: "actor",
+          ownerAccountId: "org",
+          ownerKind: "ORGANIZATION",
+          ownerLogin: "octo",
+          name: "Shared",
+          visibility: "private",
+          archived: false,
+          version: 2,
+          actorPermissions: ["admin"],
+          internalEnterpriseId: null,
+        },
+      };
     },
-    execute: async (...args: unknown[]) => {
-      calls.push(["execute", ...args]);
-      return { ok: true };
+    execute: async (subject, raw) => {
+      calls.push(["execute", subject, raw]);
+      return {
+        requestId: "11111111-1111-4111-8111-111111111111",
+        repositoryId: "repo",
+        action: "archive",
+        name: "Shared",
+        visibility: "private",
+        archived: true,
+        version: 3,
+        at: 10,
+      };
     },
-  } as unknown as Management;
+  };
   const identity = async () => "subject";
 
   const view = await repositoryManagementViewRequest(
@@ -58,11 +81,11 @@ test("Repository management HTTP maps canonical selector and authenticated comma
 });
 
 test("Repository management HTTP fails closed on malformed selector and owner errors", async () => {
-  const management = {
+  const management: Pick<Management, "view"> = {
     view: async () => {
       throw new RepositoryError(403, "forbidden");
     },
-  } as unknown as Management;
+  };
   const identity = async () => "subject";
 
   assert.equal(

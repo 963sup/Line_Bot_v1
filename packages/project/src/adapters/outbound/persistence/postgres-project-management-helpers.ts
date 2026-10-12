@@ -1,6 +1,15 @@
 import { createHash } from "node:crypto";
 import { readOrganizationViewerCapabilities } from "@line_bot_v1/organization/postgres";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  isRecord,
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import {
   readActiveProjectTeamIds,
   readProjectTeamOrganization,
@@ -37,19 +46,88 @@ type StoredReceipt = Readonly<{
   result: ProjectManagementReceipt;
 }>;
 
+const projectManagementActions: readonly ProjectManagementCommand["action"][] = [
+  "create-project",
+  "adopt-project",
+  "update-project",
+  "close-project",
+  "reopen-project",
+  "delete-project",
+  "copy-project",
+  "update-collaborators",
+  "add-issue-item",
+  "add-draft-item",
+  "update-draft-item",
+  "archive-item",
+  "unarchive-item",
+  "delete-item",
+  "move-item",
+  "convert-draft-item",
+  "create-field",
+  "update-field",
+  "delete-field",
+  "set-field-value",
+  "clear-field-value",
+  "create-view",
+  "update-view",
+  "delete-view",
+  "create-status-update",
+  "update-status-update",
+  "delete-status-update",
+];
+
 const roleRank: Readonly<Record<ProjectAccessRole, number>> = {
   READ: 1,
   WRITE: 2,
   ADMIN: 3,
 };
 
+const projectAccessRoles: readonly ProjectAccessRole[] = ["READ", "WRITE", "ADMIN"];
+const projectOwnerKinds: readonly ProjectOwnerKind[] = ["USER", "ORGANIZATION"];
+
+const roleRow = (row: SqlRow): { role: ProjectAccessRole } => ({
+  role: literalValue(row.role, projectAccessRoles),
+});
+
+const numberRow = (row: SqlRow): { number: number | string } => ({
+  number: numericValue(row.number),
+});
+
+const receiptRow = (row: SqlRow): { fingerprint: string; result: unknown } => ({
+  fingerprint: stringValue(row.fingerprint),
+  result: row.result,
+});
+
+export function decodeProjectRow(row: SqlRow): ProjectRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: literalValue(row.owner_account_kind, projectOwnerKinds),
+    number: nullableNumericValue(row.number),
+    creator: nullableString(row.creator),
+    name: stringValue(row.name),
+    short_description: stringValue(row.short_description),
+    readme: stringValue(row.readme),
+    is_public: booleanValue(row.is_public),
+    closed: booleanValue(row.closed),
+    closed_at: nullableNumericValue(row.closed_at),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
 export const projectFingerprint = (command: ProjectManagementCommand) =>
   createHash("sha256")
     .update(JSON.stringify({ family: "project-management", command }))
     .digest("hex");
 
-function record(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+function projectManagementAction(value: unknown): ProjectManagementCommand["action"] | null {
+  for (const action of projectManagementActions) {
+    if (value === action) return action;
+  }
+  return null;
 }
 
 export function projectRoot(row: ProjectRow): ProjectRoot {
@@ -101,11 +179,12 @@ async function effectiveProjectRole(
   }
 
   const direct = (
-    await sql.query("SELECT role FROM project_user_access WHERE project_id=$1 AND user_id=$2", [
-      row.id,
-      userId,
-    ])
-  ).rows[0] as { role: ProjectAccessRole } | undefined;
+    await sql.query(
+      "SELECT role FROM project_user_access WHERE project_id=$1 AND user_id=$2",
+      [row.id, userId],
+      roleRow,
+    )
+  ).rows[0];
   if (direct) roles.push(direct.role);
 
   const teamIds = await readActiveProjectTeamIds(sql, userId);
@@ -116,8 +195,9 @@ async function effectiveProjectRole(
          FROM project_team_access
          WHERE project_id=$1 AND team_id=ANY($2::text[])`,
         [row.id, teamIds],
+        roleRow,
       )
-    ).rows as Array<{ role: ProjectAccessRole }>;
+    ).rows;
     roles.push(...teamRoles.map((item) => item.role));
   }
 
@@ -130,9 +210,8 @@ export async function readProjectScope(
   projectId: string,
   includeDeleted = false,
 ): Promise<{ row: ProjectRow; role: ProjectAccessRole }> {
-  const row = (await sql.query("SELECT * FROM projects WHERE id=$1", [projectId])).rows[0] as
-    | ProjectRow
-    | undefined;
+  const row = (await sql.query("SELECT * FROM projects WHERE id=$1", [projectId], decodeProjectRow))
+    .rows[0];
   if (!row || (!includeDeleted && row.deleted_at !== null)) {
     throw new ProjectError(404, "找不到 Project。");
   }
@@ -148,8 +227,9 @@ export async function lockProjectScope(
   includeDeleted = false,
 ): Promise<{ row: ProjectRow; role: ProjectAccessRole }> {
   await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`project:${projectId}`]);
-  const row = (await sql.query("SELECT * FROM projects WHERE id=$1 FOR UPDATE", [projectId]))
-    .rows[0] as ProjectRow | undefined;
+  const row = (
+    await sql.query("SELECT * FROM projects WHERE id=$1 FOR UPDATE", [projectId], decodeProjectRow)
+  ).rows[0];
   if (!row || (!includeDeleted && row.deleted_at !== null)) {
     throw new ProjectError(404, "找不到 Project。");
   }
@@ -216,8 +296,10 @@ export async function allocateProjectNumber(
        FROM projects
        WHERE owner_account_id=$1 AND owner_account_kind=$2`,
       [ownerAccountId, ownerKind],
+      numberRow,
     )
-  ).rows[0] as { number: number | string };
+  ).rows[0];
+  if (!row) throw new ProjectError(503, "Project number 無法配置。");
   return Number(row.number);
 }
 
@@ -265,8 +347,9 @@ export async function advanceProject(
         "deletedAt" in patch ? patch.deletedAt : row.deleted_at,
         now,
       ],
+      decodeProjectRow,
     )
-  ).rows[0] as ProjectRow | undefined;
+  ).rows[0];
   if (!updated) throw new ProjectError(409, "Project 已更新，請重新讀取後再操作。");
   return updated;
 }
@@ -297,28 +380,40 @@ export async function readProjectReceipt(
     await sql.query(
       "SELECT fingerprint,result FROM project_commands WHERE actor=$1 AND request_id=$2",
       [userId, requestId],
+      receiptRow,
     )
-  ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+  ).rows[0];
   if (!previous) return null;
   if (previous.fingerprint !== fingerprint) {
     throw new ProjectError(409, "此請求編號已用於不同 Project 操作。");
   }
-  if (!record(previous.result)) throw new ProjectError(503, "Project 回執無法讀取。");
-  const envelope = previous.result as Partial<StoredReceipt>;
+  if (!isRecord(previous.result)) throw new ProjectError(503, "Project 回執無法讀取。");
+  const envelope = previous.result;
   const result = envelope.result;
+  const action = isRecord(result) ? projectManagementAction(result.action) : null;
   if (
     envelope.receiptVersion !== 1 ||
     envelope.family !== "project-management" ||
-    !record(result) ||
+    !isRecord(result) ||
     typeof result.requestId !== "string" ||
-    typeof result.action !== "string" ||
+    action === null ||
     typeof result.projectId !== "string" ||
+    (result.resourceId !== null && typeof result.resourceId !== "string") ||
     !Number.isSafeInteger(result.version) ||
-    !Number.isSafeInteger(result.at)
+    !Number.isSafeInteger(result.at) ||
+    !isRecord(result.data)
   ) {
     throw new ProjectError(503, "Project 回執無法讀取。");
   }
-  return result as ProjectManagementReceipt;
+  return {
+    requestId: result.requestId,
+    action,
+    projectId: result.projectId,
+    resourceId: result.resourceId,
+    version: Number(result.version),
+    at: Number(result.at),
+    data: result.data,
+  };
 }
 
 export async function storeProjectReceipt(

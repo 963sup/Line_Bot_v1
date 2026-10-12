@@ -10,6 +10,26 @@ import {
 
 type PublicationClient = Parameters<typeof createRichMenuBatch>[0];
 
+function publicationClient(overrides: Partial<PublicationClient>): PublicationClient {
+  return {
+    validate: async () => new Response(null, { status: 200 }),
+    create: async () => ({ richMenuId: "richmenu-default" }),
+    upload: async () => new Response(null, { status: 200 }),
+    get: async () => ({}),
+    delete: async () => new Response(null, { status: 200 }),
+    getAlias: async () => null,
+    createAlias: async () => {},
+    updateAlias: async () => {},
+    deleteAlias: async () => {},
+    getUserMenu: async () => null,
+    getDefault: async () => null,
+    activate: async () => new Response(null, { status: 200 }),
+    deleteDefault: async () => new Response(null, { status: 200 }),
+    linkUser: async () => {},
+    ...overrides,
+  };
+}
+
 const legacyAliasPrefix = ["work", "assistant"].join("-");
 const legacyHomeAlias = `${legacyAliasPrefix}-home`;
 const legacyTasksAlias = `${legacyAliasPrefix}-tasks`;
@@ -35,7 +55,7 @@ test("all six aliases survive publication and submenu targets activate before ma
   );
   const updates: string[] = [];
   let defaultId: string | null = "old-attendance-in";
-  const client = {
+  const client = publicationClient({
     get: async (id: string) => {
       const found = configs.find(({ page }) => id === `new-${page}`);
       assert.ok(found);
@@ -52,8 +72,9 @@ test("all six aliases survive publication and submenu targets activate before ma
     getDefault: async () => defaultId,
     activate: async (id: string) => {
       defaultId = id;
+      return new Response(null, { status: 200 });
     },
-  } as unknown as PublicationClient;
+  });
   await activateRichMenuBatch(client, configs, created);
   for (const page of MENU_PAGES) assert.equal(aliases.get(`line_bot_v1-${page}`), `new-${page}`);
   assert.deepEqual(
@@ -69,7 +90,7 @@ test("create batch removes every known menu created in a failed operation", asyn
   assert.ok(firstConfig);
   const deleted: string[] = [];
   let creates = 0;
-  const client = {
+  const client = publicationClient({
     validate: async () => new Response(null, { status: 200 }),
     create: async () => ({ richMenuId: `richmenu-0000000${++creates}` }),
     upload: async (id: string) => {
@@ -81,7 +102,7 @@ test("create batch removes every known menu created in a failed operation", asyn
       deleted.push(id);
       return new Response(null, { status: 200 });
     },
-  } as unknown as PublicationClient;
+  });
 
   await assert.rejects(createRichMenuBatch(client, configs), /newly created menus were removed/);
   assert.deepEqual(deleted, ["richmenu-00000002", "richmenu-00000001"]);
@@ -99,7 +120,7 @@ test("activation failure restores default and aliases while retaining new menus"
   let defaultId: string | null = oldId;
   let failDeprecatedDelete = true;
   const deletedMenus: string[] = [];
-  const client = {
+  const client = publicationClient({
     get: async () => home.menu,
     getAlias: async (alias: string) => aliases.get(alias) ?? null,
     createAlias: async (alias: string, id: string) => {
@@ -128,7 +149,7 @@ test("activation failure restores default and aliases while retaining new menus"
       deletedMenus.push(id);
       return new Response(null, { status: 200 });
     },
-  } as unknown as PublicationClient;
+  });
 
   await assert.rejects(
     activateRichMenuBatch(client, [home], [{ page: "attendance-in", richMenuId: newId }]),
@@ -156,7 +177,7 @@ test("publish keeps preflight before creation and activation in one process", as
   const aliases = new Map<string, string>(
     retiredAliases.map((alias) => [alias, "richmenu-old0abcd"]),
   );
-  const client = {
+  const client = publicationClient({
     validate: async () => {
       events.push("validate");
       return new Response(null, { status: 200 });
@@ -189,7 +210,7 @@ test("publish keeps preflight before creation and activation in one process", as
     },
     deleteDefault: async () => new Response(null, { status: 200 }),
     delete: async () => new Response(null, { status: 200 }),
-  } as unknown as PublicationClient;
+  });
 
   const result = await publishRichMenuBatch(client, [home]);
 

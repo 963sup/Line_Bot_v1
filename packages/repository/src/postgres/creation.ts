@@ -5,17 +5,41 @@ import {
   listOrganizationRepositoryCreationScopeIds,
   readOrganizationViewerCapabilities,
 } from "@line_bot_v1/organization/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import { isRecord, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationResult,
   RepositoryCreationStore,
   RepositoryOwnerOption,
 } from "../contracts/repositories/creation.js";
-import { RepositoryError, type RepositoryVisibility } from "../domain.js";
+import { RepositoryError } from "../domain.js";
+import {
+  decodeCommandRow,
+  postgresErrorCode,
+  postgresErrorConstraint,
+  repositoryOwnerKind,
+  repositoryVisibility,
+} from "./decode.js";
 
 const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
+
+function decodeRepositoryResultRow(row: SqlRow) {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+    visibility: repositoryVisibility(row.visibility),
+    version: Number(numericValue(row.version)),
+  };
+}
 
 async function currentOwner(
   sql: Sql,
@@ -82,21 +106,10 @@ async function repositoryResult(
        FROM repositories
        WHERE id=$1`,
       [repositoryId],
+      decodeRepositoryResultRow,
     )
-  ).rows[0] as
-    | {
-        id: string;
-        owner_account_id: string;
-        owner_account_kind: "USER" | "ORGANIZATION";
-        name: string;
-        visibility: RepositoryVisibility;
-        version: number;
-      }
-    | undefined;
-  if (
-    !row ||
-    (row.visibility !== "private" && row.visibility !== "internal" && row.visibility !== "public")
-  ) {
+  ).rows[0];
+  if (!row) {
     throw new RepositoryError(503, "Repository 建立回執無法讀取。");
   }
   return {
@@ -186,8 +199,9 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
         await sql.query(
           "SELECT fingerprint,result FROM repository_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeCommandRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       if (previous) {
         if (
           previous.fingerprint !== commandFingerprint &&
@@ -195,7 +209,10 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
         ) {
           throw new RepositoryError(409, "此 Repository 建立請求編號已用於不同內容。");
         }
-        const receipt = previous.result as { receiptVersion?: number; repositoryId?: string };
+        if (!isRecord(previous.result)) {
+          throw new RepositoryError(503, "Repository 建立回執無法讀取。");
+        }
+        const receipt = previous.result;
         if (receipt.receiptVersion !== 1 || typeof receipt.repositoryId !== "string") {
           throw new RepositoryError(503, "Repository 建立回執無法讀取。");
         }
@@ -220,21 +237,19 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
           command.visibility,
         ]);
       } catch (error) {
-        const postgres = error as { code?: string; constraint?: string };
+        const code = postgresErrorCode(error);
+        const constraint = postgresErrorConstraint(error);
         if (
-          postgres.code === "23505" &&
-          (postgres.constraint === "repositories_owner_name" ||
-            postgres.constraint === "repository_name_history_reserved")
+          code === "23505" &&
+          (constraint === "repositories_owner_name" ||
+            constraint === "repository_name_history_reserved")
         ) {
           throw new RepositoryError(409, "此 owner 已有相同或保留的 Repository 名稱。");
         }
-        if (
-          postgres.code === "23514" &&
-          postgres.constraint === "repository_internal_scope_missing"
-        ) {
+        if (code === "23514" && constraint === "repository_internal_scope_missing") {
           throw new RepositoryError(409, "INTERNAL Repository 的 Enterprise scope 已變更。");
         }
-        if (postgres.code === "42501") {
+        if (code === "42501") {
           throw new RepositoryError(403, "目前 owner 資格不能建立 Repository。");
         }
         throw error;

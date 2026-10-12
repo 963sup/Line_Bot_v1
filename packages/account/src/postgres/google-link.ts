@@ -1,5 +1,11 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  nullableString,
+  numberValue,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { VerifiedGoogleIdentity } from "../contracts/output/identity-provider.js";
 import type { GoogleLinkRepository } from "../contracts/repositories/user.js";
 import { UserError } from "../domain/user.js";
@@ -7,6 +13,39 @@ import { PostgresUserStore } from "./user.js";
 
 const digest = (token: string) => createHash("sha256").update(token).digest("hex");
 const expired = () => new UserError(410, "綁定請求已失效，請從帳號設定重新開始。");
+
+function ownerRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    status: stringValue(row.status),
+    status_version: numberValue(row.status_version),
+    auth_user_id: nullableString(row.auth_user_id),
+  };
+}
+
+function stagedLinkRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    google_id: nullableString(row.google_id),
+    google_sub: nullableString(row.google_sub),
+  };
+}
+
+function pendingLinkRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    google_email: nullableString(row.google_email),
+    expires_at: numericValue(row.expires_at),
+  };
+}
+
+function confirmedLinkRow(row: Record<string, unknown>) {
+  return {
+    google_id: nullableString(row.google_id),
+    google_sub: nullableString(row.google_sub),
+    google_email: nullableString(row.google_email),
+  };
+}
 
 export class PostgresGoogleLinkStore implements GoogleLinkRepository {
   constructor(private db: Database = businessDatabase()) {}
@@ -20,6 +59,7 @@ export class PostgresGoogleLinkStore implements GoogleLinkRepository {
       await sql.query(
         "SELECT m.* FROM users m JOIN user_identities i ON i.user_id=m.id WHERE i.provider=$1 AND i.subject=$2 FOR UPDATE OF m",
         [provider, subject],
+        ownerRow,
       )
     ).rows[0];
     if (!row || row.status !== "active") {
@@ -54,6 +94,7 @@ export class PostgresGoogleLinkStore implements GoogleLinkRepository {
         await sql.query(
           "SELECT r.* FROM google_link_requests r JOIN users m ON m.id=r.user_id WHERE token_hash=$1 AND expires_at>$2 AND m.status='active' AND m.status_version=r.user_version FOR UPDATE OF r,m",
           [digest(token), now],
+          stagedLinkRow,
         )
       ).rows[0];
       if (!row) throw expired();
@@ -76,12 +117,13 @@ export class PostgresGoogleLinkStore implements GoogleLinkRepository {
         await sql.query(
           "SELECT id,google_email,expires_at FROM google_link_requests WHERE user_id=$1 AND user_version=$2 AND expires_at>$3",
           [user.id, user.status_version, now],
+          pendingLinkRow,
         )
       ).rows[0];
       return row
         ? {
-            id: String(row.id),
-            email: row.google_email as string | null,
+            id: row.id,
+            email: row.google_email,
             expiresAt: Number(row.expires_at),
           }
         : null;
@@ -96,10 +138,13 @@ export class PostgresGoogleLinkStore implements GoogleLinkRepository {
         await sql.query(
           "SELECT * FROM google_link_requests WHERE id=$1 AND user_id=$2 AND user_version=$3 AND expires_at>$4 FOR UPDATE",
           [id, user.id, user.status_version, now],
+          confirmedLinkRow,
         )
       ).rows[0];
       if (!row) throw expired();
-      if (!row.google_id) throw new UserError(409, "請先完成 Google 登入。");
+      if (!row.google_id || !row.google_sub || !row.google_email) {
+        throw new UserError(409, "請先完成 Google 登入。");
+      }
       const users = new PostgresUserStore({ transaction: (work) => work(sql) });
       await users.bind(
         provider,

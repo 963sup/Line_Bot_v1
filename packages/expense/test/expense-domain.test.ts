@@ -4,6 +4,7 @@ import {
   applyExpenseCommand,
   type Expense,
   ExpenseError,
+  parsePersistedExpense,
   validateExpenseFields,
 } from "../src/domain/aggregates/expense.js";
 
@@ -43,17 +44,26 @@ test("Expense no longer authors a free-text Project surrogate", () => {
 });
 
 test("legacy persisted project text survives unrelated Expense updates without becoming editable", () => {
-  const legacy = { ...draft(), project: "historical-project-label" } as Expense & {
+  const legacy: Expense & {
     project: string;
-  };
+  } = { ...draft(), project: "historical-project-label" };
   const next = applyExpenseCommand(legacy, {
     type: "save",
     revision: legacy.revision,
     fields: { ...editable, merchant: "Updated" },
   });
 
-  assert.equal((next as Expense & { project?: string }).project, "historical-project-label");
+  assert.deepEqual(next, { ...legacy, merchant: "Updated", revision: legacy.revision + 1 });
   assert.equal(next.merchant, "Updated");
+});
+
+test("persisted Expense decoding validates the JSONB aggregate and retains legacy fields", () => {
+  const legacy = { ...draft(), project: "historical-project-label" };
+  assert.deepEqual(parsePersistedExpense(legacy), legacy);
+  assert.throws(
+    () => parsePersistedExpense({ ...legacy, revision: "1" }),
+    (error) => error instanceof ExpenseError && error.status === 500,
+  );
 });
 
 test("explicit owner commands, not AI recognition, move pending Expense state", () => {

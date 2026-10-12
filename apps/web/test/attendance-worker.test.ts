@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mock, test } from "node:test";
-import type { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import { showAttendanceMenu } from "../src/app/api/_composition/attendance.server";
 import { GET, POST } from "../src/app/api/internal/attendance-maintenance/route";
 import { closeFixture, mockSupabase } from "./member-fixture";
@@ -62,9 +61,7 @@ test("attendance worker redacts provider failures and preserves queued-work reco
 
 test("private menu navigation refreshes authoritative state, delivers only menus, and reads back each target", async () => {
   await mockSupabase();
-  type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
-  const store = (globalThis as typeof globalThis & { attendanceStore?: AttendancePersistence })
-    .attendanceStore;
+  const store = globalThis.attendanceStore;
   assert.ok(store);
   const previous = {
     fetch: globalThis.fetch,
@@ -77,7 +74,7 @@ test("private menu navigation refreshes authoritative state, delivers only menus
   const lineCalls: Array<{ method: string; path: string }> = [];
   let linkedId = "richmenu-f0"; // The member starts on a submenu.
   let missingAlias = false;
-  globalThis.fetch = (async (input, init) => {
+  globalThis.fetch = async (input, init) => {
     const url = new URL(String(input));
     const method = init?.method ?? "GET";
     lineCalls.push({ method, path: url.pathname });
@@ -93,31 +90,43 @@ test("private menu navigation refreshes authoritative state, delivers only menus
     }
     if (!linkedId) return new Response(null, { status: 404 });
     return Response.json({ richMenuId: linkedId });
-  }) as typeof fetch;
+  };
   const states = ["ready", "working", "working", "ready"] as const;
   let refreshes = 0;
   let claims = 0;
   const completed: boolean[] = [];
   let failRefresh = false;
-  mock.method(store, "refreshMenu", async (provider, actor) => {
-    assert.equal(provider, "line:primary");
-    assert.equal(actor, subject);
-    refreshes++;
-    if (failRefresh) throw Error("authoritative refresh failed");
-  });
+  mock.method(
+    store,
+    "refreshMenu",
+    async (...[provider, actor]: Parameters<typeof store.refreshMenu>) => {
+      assert.equal(provider, "line:primary");
+      assert.equal(actor, subject);
+      refreshes++;
+      if (failRefresh) throw Error("authoritative refresh failed");
+    },
+  );
   mock.method(store, "snapshot", async () => {
     assert.fail("menu navigation must not read an attendance snapshot");
   });
-  mock.method(store, "claimMenu", async (_now, provider, actor) => {
-    assert.equal(provider, "line:primary");
-    assert.equal(actor, subject);
-    const state = states[claims++];
-    return { uid: "member", subject, state, revision: claims, token: `lease-${claims}` };
-  });
-  mock.method(store, "completeMenu", async (_job, success) => {
-    completed.push(success);
-    return success;
-  });
+  mock.method(
+    store,
+    "claimMenu",
+    async (...[_now, provider, actor]: Parameters<typeof store.claimMenu>) => {
+      assert.equal(provider, "line:primary");
+      assert.equal(actor, subject);
+      const state = states[claims++];
+      return { uid: "member", subject, state, revision: claims, token: `lease-${claims}` };
+    },
+  );
+  mock.method(
+    store,
+    "completeMenu",
+    async (...[_job, success]: Parameters<typeof store.completeMenu>) => {
+      completed.push(success);
+      return success;
+    },
+  );
   mock.method(store, "claimNotification", async () => {
     assert.fail("menu navigation must not claim notifications");
   });

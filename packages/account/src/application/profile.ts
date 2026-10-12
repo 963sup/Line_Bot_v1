@@ -7,7 +7,13 @@ import type {
 } from "../contracts/repositories/profile.js";
 import { UserError } from "../domain/user.js";
 
-const visibilities = new Set<UserProfileVisibility>(["private", "organization", "public"]);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isUserProfileVisibility(value: unknown): value is UserProfileVisibility {
+  return value === "private" || value === "organization" || value === "public";
+}
 
 function nullableText(value: unknown, maxLength: number, label: string): string | null {
   if (value === null) return null;
@@ -19,10 +25,10 @@ function nullableText(value: unknown, maxLength: number, label: string): string 
 }
 
 export function parseUserProfileUpdate(input: unknown): UserProfileUpdate {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
+  if (!isRecord(input)) {
     throw new UserError(400, "個人資料格式不正確。");
   }
-  const value = input as Record<string, unknown>;
+  const value = input;
   const allowed = new Set(["displayName", "bio", "visibility", "expectedVersion"]);
   if (Object.keys(value).some((key) => !allowed.has(key))) {
     throw new UserError(400, "個人資料包含不支援的欄位。");
@@ -30,7 +36,7 @@ export function parseUserProfileUpdate(input: unknown): UserProfileUpdate {
 
   const displayName = nullableText(value.displayName, 120, "顯示名稱");
   const bio = nullableText(value.bio, 2000, "自我介紹");
-  if (!visibilities.has(value.visibility as UserProfileVisibility)) {
+  if (!isUserProfileVisibility(value.visibility)) {
     throw new UserError(400, "個人資料可見範圍不正確。");
   }
   if (!Number.isSafeInteger(value.expectedVersion) || Number(value.expectedVersion) < 0) {
@@ -40,7 +46,7 @@ export function parseUserProfileUpdate(input: unknown): UserProfileUpdate {
   return {
     displayName,
     bio,
-    visibility: value.visibility as UserProfileVisibility,
+    visibility: value.visibility,
     expectedVersion: Number(value.expectedVersion),
   };
 }

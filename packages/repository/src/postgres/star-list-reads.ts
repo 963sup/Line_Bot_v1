@@ -1,4 +1,6 @@
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
+import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
+import { repositoryOwnerKind, repositoryVisibility } from "./decode.js";
 
 export type VisibleStarListRepositoryRow = Readonly<{
   list_id: string;
@@ -9,6 +11,18 @@ export type VisibleStarListRepositoryRow = Readonly<{
   repository_visibility: string;
   added_at: number | string;
 }>;
+
+function decodeVisibleStarListRepositoryRow(row: SqlRow): VisibleStarListRepositoryRow {
+  return {
+    list_id: stringValue(row.list_id),
+    repository_id: stringValue(row.repository_id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    repository_name: stringValue(row.repository_name),
+    repository_visibility: repositoryVisibility(row.repository_visibility),
+    added_at: numericValue(row.added_at),
+  };
+}
 
 export async function readVisibleStarListRepositoryRows(
   sql: Sql,
@@ -32,6 +46,7 @@ export async function readVisibleStarListRepositoryRows(
          )
        ORDER BY i.list_id,i.added_at DESC,i.repository_id`,
       [viewerUserId, listIds],
+      decodeVisibleStarListRepositoryRow,
     )
-  ).rows as VisibleStarListRepositoryRow[];
+  ).rows;
 }

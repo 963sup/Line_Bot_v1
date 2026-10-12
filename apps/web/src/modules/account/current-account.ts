@@ -1,13 +1,13 @@
 "use client";
 
-import type { UserUseCases } from "@line_bot_v1/account/application/user";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { liffClient } from "../../shared/browser/liff-client";
 import type { AppSessionGeneration } from "../../shared/browser/line-service-session";
+import { type AccountView, readAccount } from "./wire-response";
 
-type CurrentAccount = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 export type CurrentAccountSession = Readonly<{
   token: AppSessionGeneration;
-  member: CurrentAccount | null;
+  member: AccountView | null;
 }>;
 
 type PendingRequest = {
@@ -20,20 +20,15 @@ let cached: CurrentAccountSession | undefined;
 let pending: PendingRequest | undefined;
 
 function readError(value: unknown) {
-  return value && typeof value === "object" && "error" in value && typeof value.error === "string"
-    ? value.error
-    : "會員資料讀取失敗。";
+  return isRecord(value) && typeof value.error === "string" ? value.error : "會員資料讀取失敗。";
 }
 
-function readMember(value: unknown): CurrentAccount | null {
-  if (!value || typeof value !== "object" || !("member" in value)) {
+function readMember(value: unknown): AccountView | null {
+  if (!isRecord(value) || !("member" in value)) {
     throw new Error("會員資料回應格式不正確。");
   }
   const member = value.member;
-  if (member !== null && (typeof member !== "object" || Array.isArray(member))) {
-    throw new Error("會員資料回應格式不正確。");
-  }
-  return member as CurrentAccount | null;
+  return member === null ? null : readAccount(member);
 }
 
 /**
@@ -71,7 +66,7 @@ export async function readCurrentAccount(
       cache: "no-store",
       signal: controller.signal,
     });
-    const body = (await response.json().catch(() => undefined)) as unknown;
+    const body: unknown = await response.json().catch(() => undefined);
     if (!response.ok) throw new Error(readError(body));
     const result = { token, member: readMember(body) } satisfies CurrentAccountSession;
     cached = result;

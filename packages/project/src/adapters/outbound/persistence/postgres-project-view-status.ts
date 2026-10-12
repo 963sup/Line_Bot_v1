@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   ProjectManagementCommand,
   ProjectStatusUpdate,
@@ -33,6 +40,59 @@ type StatusRow = {
   updated_at: number | string;
 };
 
+const layouts: readonly ProjectViewLayout[] = ["BOARD_LAYOUT", "ROADMAP_LAYOUT", "TABLE_LAYOUT"];
+const statuses: readonly ProjectStatusUpdateStatus[] = [
+  "AT_RISK",
+  "COMPLETE",
+  "INACTIVE",
+  "OFF_TRACK",
+  "ON_TRACK",
+];
+
+const visibleFieldRow = (row: SqlRow): { view_id: string; field_id: string } => ({
+  view_id: stringValue(row.view_id),
+  field_id: stringValue(row.field_id),
+});
+
+const idRow = (row: SqlRow): { id: string } => ({ id: stringValue(row.id) });
+
+const numberRow = (row: SqlRow): { number: number | string } => ({
+  number: numericValue(row.number),
+});
+
+const versionRow = (row: SqlRow): { version: number | string } => ({
+  version: numericValue(row.version),
+});
+
+function decodeViewRow(row: SqlRow): ViewRow {
+  return {
+    id: stringValue(row.id),
+    project_id: stringValue(row.project_id),
+    number: numericValue(row.number),
+    name: stringValue(row.name),
+    layout: literalValue(row.layout, layouts),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+function decodeStatusRow(row: SqlRow): StatusRow {
+  return {
+    id: stringValue(row.id),
+    project_id: stringValue(row.project_id),
+    author: stringValue(row.author),
+    body: nullableString(row.body),
+    status: row.status === null ? null : literalValue(row.status, statuses),
+    start_date: nullableString(row.start_date),
+    target_date: nullableString(row.target_date),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
 async function visibleFields(sql: Sql, viewIds: readonly string[]) {
   const result = new Map<string, string[]>();
   if (!viewIds.length) return result;
@@ -43,8 +103,9 @@ async function visibleFields(sql: Sql, viewIds: readonly string[]) {
        WHERE view_id=ANY($1::text[])
        ORDER BY view_id,position,field_id`,
       [viewIds],
+      visibleFieldRow,
     )
-  ).rows as Array<{ view_id: string; field_id: string }>;
+  ).rows;
   for (const row of rows) {
     const values = result.get(row.view_id) ?? [];
     values.push(row.field_id);
@@ -61,8 +122,9 @@ export async function readProjectViews(sql: Sql, projectId: string): Promise<Pro
        WHERE project_id=$1
        ORDER BY number,id`,
       [projectId],
+      decodeViewRow,
     )
-  ).rows as ViewRow[];
+  ).rows;
   const fields = await visibleFields(
     sql,
     rows.map((row) => row.id),
@@ -91,8 +153,9 @@ export async function readProjectStatusUpdates(
        WHERE project_id=$1 AND deleted_at IS NULL
        ORDER BY created_at DESC,id`,
       [projectId],
+      decodeStatusRow,
     )
-  ).rows as StatusRow[];
+  ).rows;
   return rows.map((row) => ({
     id: row.id,
     projectId: row.project_id,
@@ -115,8 +178,9 @@ async function requireFieldIds(sql: Sql, projectId: string, fieldIds: readonly s
        FROM project_fields
        WHERE project_id=$1 AND id=ANY($2::text[])`,
       [projectId, fieldIds],
+      idRow,
     )
-  ).rows as Array<{ id: string }>;
+  ).rows;
   if (rows.length !== new Set(fieldIds).size) {
     throw new ProjectError(409, "Project view visible fields 必須屬於同一 Project。");
   }
@@ -144,8 +208,10 @@ async function nextViewNumber(sql: Sql, projectId: string): Promise<number> {
     await sql.query(
       "SELECT COALESCE(MAX(number),0)+1 AS number FROM project_views WHERE project_id=$1",
       [projectId],
+      numberRow,
     )
-  ).rows[0] as { number: number | string };
+  ).rows[0];
+  if (!row) throw new ProjectError(503, "Project view number 無法配置。");
   return Number(row.number);
 }
 
@@ -157,8 +223,9 @@ async function currentView(sql: Sql, projectId: string, viewId: string): Promise
        WHERE project_id=$1 AND id=$2
        FOR UPDATE`,
       [projectId, viewId],
+      decodeViewRow,
     )
-  ).rows[0] as ViewRow | undefined;
+  ).rows[0];
   if (!row) throw new ProjectError(404, "找不到 Project view。");
   return row;
 }
@@ -175,8 +242,9 @@ async function currentStatus(
        WHERE project_id=$1 AND id=$2
        FOR UPDATE`,
       [projectId, statusUpdateId],
+      decodeStatusRow,
     )
-  ).rows[0] as StatusRow | undefined;
+  ).rows[0];
   if (!row || row.deleted_at !== null)
     throw new ProjectError(404, "找不到 Project status update。");
   return row;
@@ -245,8 +313,9 @@ export async function executeProjectViewStatusCommand(
          WHERE project_id=$1 AND id=$2 AND version=$6
          RETURNING version`,
         [projectId, before.id, name, layout, now, command.viewVersion],
+        versionRow,
       )
-    ).rows[0] as { version: number | string } | undefined;
+    ).rows[0];
     if (!updated) throw new ProjectError(409, "Project view 已更新。");
     if (command.visibleFieldIds !== undefined) {
       await replaceVisibleFields(sql, projectId, before.id, fields);
@@ -336,8 +405,9 @@ export async function executeProjectViewStatusCommand(
           now,
           command.statusUpdateVersion,
         ],
+        versionRow,
       )
-    ).rows[0] as { version: number | string } | undefined;
+    ).rows[0];
     if (!updated) throw new ProjectError(409, "Project status update 已更新。");
     return {
       resourceId: before.id,
@@ -362,8 +432,9 @@ export async function executeProjectViewStatusCommand(
          WHERE project_id=$1 AND id=$2 AND version=$4 AND deleted_at IS NULL
          RETURNING version`,
         [projectId, before.id, now, command.statusUpdateVersion],
+        versionRow,
       )
-    ).rows[0] as { version: number | string } | undefined;
+    ).rows[0];
     if (!updated) throw new ProjectError(409, "Project status update 已更新。");
     return {
       resourceId: before.id,

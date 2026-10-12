@@ -1,6 +1,13 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableNumericValue,
+  numericValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type {
   Partner,
@@ -18,6 +25,127 @@ type PartnerPermissionCheck = (
   actor: string,
   permission: "partners.manage" | "partners.review",
 ) => Promise<boolean>;
+
+const partnerStatuses = ["published", "unlisted"] as const;
+const contactMethods = ["phone", "email", "line"] as const;
+const referralStatuses = ["pending", "successful", "rejected", "withdrawn"] as const;
+
+function integer(value: unknown): number {
+  const result = Number(numericValue(value));
+  if (!Number.isSafeInteger(result)) throw new TypeError("Expected a safe integer");
+  return result;
+}
+
+function nullableInteger(value: unknown): number | null {
+  const result = nullableNumericValue(value);
+  return result === null ? null : integer(result);
+}
+
+function decodePartner(row: Record<string, unknown>): Omit<Partner, "contacts"> {
+  return {
+    id: stringValue(row.id),
+    name: stringValue(row.name),
+    category: stringValue(row.category),
+    region: stringValue(row.region),
+    status: literalValue(row.status, partnerStatuses),
+    version: integer(row.version),
+  };
+}
+
+function decodeContact(row: Record<string, unknown>): PartnerContact {
+  return {
+    id: stringValue(row.id),
+    partnerId: stringValue(row.partnerId),
+    name: stringValue(row.name),
+    responsibility: stringValue(row.responsibility),
+    phone: stringValue(row.phone),
+    email: stringValue(row.email),
+    line: stringValue(row.line),
+    status: literalValue(row.status, partnerStatuses),
+  };
+}
+
+function decodeNews(row: Record<string, unknown>): PartnerNewsItem {
+  return {
+    referralId: stringValue(row.referralId),
+    partnerId: stringValue(row.partnerId),
+    contactId: stringValue(row.contactId),
+    partnerName: stringValue(row.partnerName),
+    category: stringValue(row.category),
+    contactName: stringValue(row.contactName),
+    responsibility: stringValue(row.responsibility),
+    successfulAt: integer(row.successfulAt),
+  };
+}
+
+function decodeReferral(row: Record<string, unknown>): PartnerReferral {
+  return {
+    id: stringValue(row.id),
+    partnerName: stringValue(row.partnerName),
+    category: stringValue(row.category),
+    region: stringValue(row.region),
+    contactName: stringValue(row.contactName),
+    responsibility: stringValue(row.responsibility),
+    method: literalValue(row.method, contactMethods),
+    value: stringValue(row.value),
+    reason: stringValue(row.reason),
+    status: literalValue(row.status, referralStatuses),
+    submittedAt: integer(row.submittedAt),
+    reviewedAt: nullableInteger(row.reviewedAt),
+    reviewNote: stringValue(row.reviewNote),
+  };
+}
+
+function decodeResult(value: unknown): Record<string, unknown> & { id: string } {
+  const result = record(value);
+  return { ...result, id: stringValue(result.id) };
+}
+
+function decodeReceipt(row: Record<string, unknown>) {
+  return { fingerprint: stringValue(row.fingerprint), result: decodeResult(row.result) };
+}
+
+function decodeVersion(row: Record<string, unknown>) {
+  return { version: integer(row.version) };
+}
+
+type StoredContact = { id: string; partnerId: string; phone: string; email: string; line: string };
+
+function decodeStoredContact(row: Record<string, unknown>): StoredContact {
+  return {
+    id: stringValue(row.id),
+    partnerId: stringValue(row.partner_id),
+    phone: stringValue(row.phone),
+    email: stringValue(row.email),
+    line: stringValue(row.line),
+  };
+}
+
+type StoredReferral = {
+  submitter: string;
+  status: (typeof referralStatuses)[number];
+  method: (typeof contactMethods)[number];
+  value: string;
+  partnerName: string;
+  category: string;
+  region: string;
+  contactName: string;
+  responsibility: string;
+};
+
+function decodeStoredReferral(row: Record<string, unknown>): StoredReferral {
+  return {
+    submitter: stringValue(row.submitter),
+    status: literalValue(row.status, referralStatuses),
+    method: literalValue(row.method, contactMethods),
+    value: stringValue(row.value),
+    partnerName: stringValue(row.partner_name),
+    category: stringValue(row.category),
+    region: stringValue(row.region),
+    contactName: stringValue(row.contact_name),
+    responsibility: stringValue(row.responsibility),
+  };
+}
 
 export class PostgresPartnerRepository implements PartnerRepository {
   constructor(
@@ -41,26 +169,28 @@ export class PostgresPartnerRepository implements PartnerRepository {
       const partners =
         view && !paginated
           ? []
-          : ((
+          : (
               await sql.query(
                 `SELECT p.id,p.name,p.category,p.region,p.status,p.version FROM partners p WHERE ($4::boolean OR (p.status='published'
             AND EXISTS (SELECT 1 FROM partner_contacts c WHERE c.partner_id=p.id AND c.status='published')))
             AND ($1::text IS NULL OR (p.name,p.id)>($1,$2::uuid)) ORDER BY p.name,p.id LIMIT $3`,
                 [cursor?.name ?? null, cursor?.id ?? null, paginated ? 21 : null, managing],
+                decodePartner,
               )
-            ).rows as Omit<Partner, "contacts">[]);
+            ).rows;
       const hasMore = paginated && partners.length > 20;
       if (hasMore) partners.pop();
       const contacts =
         view && !paginated
           ? []
-          : ((
+          : (
               await sql.query(
                 `SELECT id,partner_id AS "partnerId",name,responsibility,phone,email,line,status
         FROM partner_contacts WHERE ($2::boolean OR status='published') AND partner_id=ANY($1::uuid[]) ORDER BY partner_id,name,id`,
                 [partners.map((partner) => partner.id), managing],
+                decodeContact,
               )
-            ).rows as PartnerContact[]);
+            ).rows;
       const byPartner = new Map<string, PartnerContact[]>();
       for (const contact of contacts) {
         byPartner.set(contact.partnerId, [...(byPartner.get(contact.partnerId) ?? []), contact]);
@@ -71,26 +201,29 @@ export class PostgresPartnerRepository implements PartnerRepository {
       const news =
         view && view !== "news"
           ? []
-          : ((
+          : (
               await sql.query(
                 `SELECT r.id AS "referralId",p.id AS "partnerId",c.id AS "contactId",
         p.name AS "partnerName",p.category,c.name AS "contactName",c.responsibility,r.reviewed_at AS "successfulAt"
         FROM partner_referrals r JOIN partners p ON p.id=r.partner_id JOIN partner_contacts c ON c.id=r.contact_id
-        WHERE r.status='successful' AND p.status='published' AND c.status='published'
+                WHERE r.status='successful' AND p.status='published' AND c.status='published'
         ORDER BY r.reviewed_at DESC,r.id DESC LIMIT 20`,
+                undefined,
+                decodeNews,
               )
-            ).rows as PartnerNewsItem[]);
+            ).rows;
       const referrals =
         view && view !== "referrals"
           ? []
-          : ((
+          : (
               await sql.query(
                 `SELECT id,partner_name AS "partnerName",category,region,contact_name AS "contactName",
         responsibility,method,value,reason,status,submitted_at AS "submittedAt",reviewed_at AS "reviewedAt",
         review_note AS "reviewNote" FROM partner_referrals WHERE submitter=$1 ORDER BY submitted_at DESC,id DESC LIMIT 50`,
                 [userId],
+                decodeReferral,
               )
-            ).rows as PartnerReferral[]);
+            ).rows;
       const last = partners.at(-1);
       return {
         userId,
@@ -117,11 +250,12 @@ export class PostgresPartnerRepository implements PartnerRepository {
         await sql.query(
           "SELECT result,fingerprint FROM partner_referral_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeReceipt,
         )
       ).rows[0];
       if (old) {
         partnerAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
-        return old.result as { id: string };
+        return old.result;
       }
       const result = await this.apply(sql, userId, user.canReview, command, now);
       await sql.query(
@@ -150,14 +284,19 @@ export class PostgresPartnerRepository implements PartnerRepository {
         await sql.query(
           "SELECT fingerprint,result FROM partner_management_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeReceipt,
         )
       ).rows[0];
       if (old) {
         partnerAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
-        return old.result as { id: string };
+        return old.result;
       }
       const current = (
-        await sql.query("SELECT version FROM partners WHERE id=$1 FOR UPDATE", [command.id])
+        await sql.query(
+          "SELECT version FROM partners WHERE id=$1 FOR UPDATE",
+          [command.id],
+          decodeVersion,
+        )
       ).rows[0];
       partnerAssert(
         (current?.version ?? 0) === command.expectedVersion,
@@ -168,11 +307,12 @@ export class PostgresPartnerRepository implements PartnerRepository {
         await sql.query(
           "SELECT id,partner_id,phone,email,line FROM partner_contacts WHERE partner_id=$1 OR id=ANY($2::uuid[])",
           [command.id, command.contacts.map((c) => c.id)],
+          decodeStoredContact,
         )
       ).rows;
       partnerAssert(
         existing.every(
-          (c) => c.partner_id === command.id && command.contacts.some((next) => next.id === c.id),
+          (c) => c.partnerId === command.id && command.contacts.some((next) => next.id === c.id),
         ),
         409,
         "既有窗口不可刪除或移至其他夥伴，請改為下架。",
@@ -304,9 +444,11 @@ export class PostgresPartnerRepository implements PartnerRepository {
       return { id };
     }
     const referral = (
-      await sql.query("SELECT * FROM partner_referrals WHERE id=$1 FOR UPDATE", [
-        command.referralId,
-      ])
+      await sql.query(
+        "SELECT * FROM partner_referrals WHERE id=$1 FOR UPDATE",
+        [command.referralId],
+        decodeStoredReferral,
+      )
     ).rows[0];
     partnerAssert(referral, 404, "推薦案件不存在。");
     if (command.action === "withdraw") {
@@ -333,8 +475,8 @@ export class PostgresPartnerRepository implements PartnerRepository {
     const line = referral.method === "line" ? referral.value : "";
     await rejectDuplicateContact(
       sql,
-      referral.partner_name,
-      referral.contact_name,
+      referral.partnerName,
+      referral.contactName,
       phone,
       email,
       line,
@@ -343,7 +485,7 @@ export class PostgresPartnerRepository implements PartnerRepository {
     const contactId = randomUUID();
     await sql.query(
       "INSERT INTO partners(id,name,category,region,status,created_at,created_by) VALUES($1,$2,$3,$4,'published',$5,$6)",
-      [partnerId, referral.partner_name, referral.category, referral.region, now, userId],
+      [partnerId, referral.partnerName, referral.category, referral.region, now, userId],
     );
     await sql.query(
       `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
@@ -351,7 +493,7 @@ export class PostgresPartnerRepository implements PartnerRepository {
       [
         contactId,
         partnerId,
-        referral.contact_name,
+        referral.contactName,
         referral.responsibility,
         phone,
         email,

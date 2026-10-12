@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import { createSql } from "@line_bot_v1/platform/postgres";
 import {
   executeEnterpriseTeamMutation,
   isEnterpriseTeamCommand,
@@ -8,20 +8,18 @@ import {
 
 test("enterprise team rename preserves lock-before-update query order and receipt", async () => {
   const queries: Array<{ text: string; values?: unknown[] }> = [];
-  const sql: Sql = {
-    async query(text, values) {
-      queries.push({ text, ...(values === undefined ? {} : { values }) });
-      if (text.includes("FROM enterprise_teams") && text.includes("FOR UPDATE")) {
-        return {
-          rows: [{ id: "team-1", name: "Old", slug: "old", version: 4 }],
-        };
-      }
-      if (text.includes("UPDATE enterprise_teams")) {
-        return { rows: [{ version: 5 }] };
-      }
-      throw new Error(`unexpected query: ${text}`);
-    },
-  };
+  const sql = createSql(async (text, values) => {
+    queries.push({ text, ...(values === undefined ? {} : { values }) });
+    if (text.includes("FROM enterprise_teams") && text.includes("FOR UPDATE")) {
+      return {
+        rows: [{ id: "team-1", name: "Old", slug: "old", version: 4 }],
+      };
+    }
+    if (text.includes("UPDATE enterprise_teams")) {
+      return { rows: [{ version: 5 }] };
+    }
+    throw new Error(`unexpected query: ${text}`);
+  });
   const command = {
     action: "rename-enterprise-team" as const,
     requestId: "request-1",

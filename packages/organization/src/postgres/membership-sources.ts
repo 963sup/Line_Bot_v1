@@ -1,10 +1,18 @@
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numberValue } from "@line_bot_v1/platform/validation";
 import {
   hasOrganizationOwnerAssignment,
   hasReplacementOrganizationOwner,
   revokeOrganizationOwnerForMembershipRemoval,
 } from "./owner-roles.js";
+
+function refreshedMembershipRow(row: Record<string, unknown>) {
+  return {
+    membership_status: literalValue(row.membership_status, ["active", "removed"]),
+    membership_version: numberValue(row.membership_version),
+  };
+}
 
 export async function assertOrganizationMembershipSourceRemovable(
   sql: Sql,
@@ -48,8 +56,9 @@ export async function refreshOrganizationMembershipFromSources(
       `SELECT membership_status,membership_version
        FROM refresh_organization_membership($1,$2,$3)`,
       [organizationAccountId, userId, at],
+      refreshedMembershipRow,
     )
-  ).rows[0] as { membership_status: "active" | "removed"; membership_version: number } | undefined;
+  ).rows[0];
   if (row?.membership_status === "removed") {
     await revokeOrganizationOwnerForMembershipRemoval(sql, organizationAccountId, userId);
   }

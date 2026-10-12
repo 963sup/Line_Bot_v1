@@ -1,6 +1,7 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { EnterpriseCommand } from "../contracts/enterprise-governance.js";
 
 type EnterpriseOwnerCommand = Extract<
@@ -9,6 +10,26 @@ type EnterpriseOwnerCommand = Extract<
 >;
 
 type AssignmentResult = Readonly<{ status: "active" | "revoked"; version: number }>;
+
+function idRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id) };
+}
+
+function ownerAssignmentRow(row: Record<string, unknown>) {
+  return { userId: stringValue(row.userId), version: numberValue(row.version) };
+}
+
+function assignmentRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "revoked"]),
+    version: numberValue(row.version),
+    user_status_version: numberValue(row.user_status_version),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
 
 export async function hasEnterpriseOwnerAssignment(
   sql: Sql,
@@ -69,10 +90,11 @@ export async function readEnterpriseOwnerScopeIds(sql: Sql, userId: string): Pro
          AND r.role='EnterpriseOwner' AND r.status='active'
          AND a.status='active' AND u.status='active'
          AND r.user_status_version=u.status_version
-       ORDER BY r.enterprise_account_id`,
+      ORDER BY r.enterprise_account_id`,
       [userId],
+      idRow,
     )
-  ).rows as Array<{ id: string }>;
+  ).rows;
   return rows.map((row) => row.id);
 }
 
@@ -94,10 +116,11 @@ export async function readEnterpriseOwnerAssignments(
          AND a.status='active' AND u.status='active'
          AND r.user_status_version=u.status_version
          AND ($2::text[] IS NULL OR r.user_id=ANY($2::text[]))
-       ORDER BY r.user_id`,
+      ORDER BY r.user_id`,
       [enterpriseAccountId, userIds ?? null],
+      ownerAssignmentRow,
     )
-  ).rows as Array<{ userId: string; version: number }>;
+  ).rows;
   return rows.map((row) => ({ userId: row.userId, version: Number(row.version) }));
 }
 
@@ -129,8 +152,9 @@ export async function mutateEnterpriseOwnerAssignment(
   const assignment = (
     await sql.query(
       `SELECT status,version,user_status_version FROM enterprise_role_assignments
-       WHERE enterprise_account_id=$1 AND user_id=$2 AND role='EnterpriseOwner' FOR UPDATE`,
+      WHERE enterprise_account_id=$1 AND user_id=$2 AND role='EnterpriseOwner' FOR UPDATE`,
       [command.enterpriseAccountId, command.targetUserId],
+      assignmentRow,
     )
   ).rows[0];
 
@@ -153,8 +177,9 @@ export async function mutateEnterpriseOwnerAssignment(
           `UPDATE enterprise_role_assignments
            SET status='active',version=version+1,user_status_version=$3,granted_at=$4
            WHERE enterprise_account_id=$1 AND user_id=$2 AND role='EnterpriseOwner'
-           RETURNING version`,
+          RETURNING version`,
           [command.enterpriseAccountId, command.targetUserId, target.statusVersion, now],
+          versionRow,
         )
       ).rows[0];
       if (!row) {
@@ -196,6 +221,7 @@ export async function mutateEnterpriseOwnerAssignment(
        WHERE enterprise_account_id=$1 AND user_id=$2 AND role='EnterpriseOwner'
        RETURNING version`,
       [command.enterpriseAccountId, command.targetUserId],
+      versionRow,
     )
   ).rows[0];
   if (!row) {

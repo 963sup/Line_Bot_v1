@@ -98,8 +98,13 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
           if (window.profileMode === "fail") throw new Error("profile unavailable");
           if (window.profileMode === "hold")
             return new Promise((resolve) => window.releaseProfiles.push(resolve));
-          return { displayName: "測試會員" };
+          return {
+            userId: "U11111111111111111111111111111111",
+            displayName: "測試會員",
+          };
         },
+        closeWindow: () => {},
+        openWindow: () => {},
         login: () => {},
       };
     },
@@ -158,6 +163,7 @@ async function fixture(status = "active", signedIn = false, profileMode = "ready
           id: "synthetic-line",
           login: state.login,
           status: state.status,
+          createdAt: 1,
           googleEmail: state.linked,
         }
       : null;
@@ -447,7 +453,11 @@ try {
       await button("重新整理狀態").click();
       await expect(button("重新整理狀態")).toBeEnabled();
       await page.evaluate(async () => {
-        for (const resolve of window.releaseProfiles) resolve({ displayName: "過期會員名稱" });
+        for (const resolve of window.releaseProfiles)
+          resolve({
+            userId: "U11111111111111111111111111111111",
+            displayName: "過期會員名稱",
+          });
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       });
       await expect(page.getByText("LINE：過期會員名稱", { exact: true })).toHaveCount(0);

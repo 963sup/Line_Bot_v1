@@ -1,7 +1,13 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import { isRecord, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
   RepositoryAddressCommand,
   RepositoryAddressReceipt,
@@ -16,6 +22,7 @@ import {
   type RepositoryPermission,
 } from "../domain.js";
 import { resolveAuthorizedRepositoryId } from "./access.js";
+import { decodeCommandRow, decodePermissionsRow, repositoryOwnerKind } from "./decode.js";
 
 type RepositoryRow = {
   id: string;
@@ -48,6 +55,17 @@ const fingerprint = (command: RepositoryAddressCommand) =>
     .update(JSON.stringify({ family: "repository-address", command }))
     .digest("hex");
 
+function decodeRepositoryRow(row: SqlRow): RepositoryRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+    version: Number(numericValue(row.version)),
+    address: row.address,
+  };
+}
+
 function addressFromRow(row: RepositoryRow): RepositoryAddress | null {
   if (row.address === null) return null;
   if (!validAddress(row.address)) {
@@ -77,8 +95,9 @@ async function repositoryRow(
       await sql.query(
         `SELECT ${columns} FROM repositories WHERE id=$1 ${lock ? "FOR UPDATE" : ""}`,
         [selector.repositoryId],
+        decodeRepositoryRow,
       )
-    ).rows[0] as RepositoryRow | undefined;
+    ).rows[0];
     if (!row) throw new RepositoryError(404, "找不到 Repository。");
     return row;
   }
@@ -91,8 +110,9 @@ async function repositoryRow(
        WHERE owner_account_id=$1 AND owner_account_kind=$2 AND lower(name)=lower($3)
        ${lock ? "FOR UPDATE" : ""}`,
       [owner.id, owner.kind, selector.repositoryName],
+      decodeRepositoryRow,
     )
-  ).rows[0] as RepositoryRow | undefined;
+  ).rows[0];
   if (!row) throw new RepositoryError(404, "找不到 Repository。");
   return row;
 }
@@ -106,8 +126,9 @@ async function actorPermissions(
     await sql.query(
       "SELECT permissions FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
       [repositoryId, userId],
+      decodePermissionsRow,
     )
-  ).rows[0] as { permissions: RepositoryPermission[] } | undefined;
+  ).rows[0];
   return row?.permissions ?? null;
 }
 
@@ -146,8 +167,8 @@ async function snapshot(
 
 function validAddress(value: unknown): value is RepositoryAddress | null {
   if (value === null) return true;
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const address = value as Partial<RepositoryAddress>;
+  if (!isRecord(value)) return false;
+  const address = value;
   return (
     Object.keys(address).length === 4 &&
     Object.keys(address).every((key) =>
@@ -181,22 +202,35 @@ function readReceipt(
   if (previous.fingerprint !== commandFingerprint) {
     throw new RepositoryError(409, "此請求編號已用於不同 Repository 操作。");
   }
-  const receipt = previous.result as Partial<Receipt>;
-  const result = receipt.result as Partial<RepositoryAddressReceipt> | undefined;
+  if (!isRecord(previous.result)) {
+    throw new RepositoryError(503, "Repository 地址回執無法讀取。");
+  }
+  const receipt = previous.result;
+  if (!isRecord(receipt.result)) {
+    throw new RepositoryError(503, "Repository 地址回執無法讀取。");
+  }
+  const result = receipt.result;
   if (
     receipt.receiptVersion !== 1 ||
     receipt.family !== "repository-address" ||
     (receipt.action !== "set" && receipt.action !== "remove") ||
-    !result ||
     typeof result.requestId !== "string" ||
     typeof result.repositoryId !== "string" ||
     !validAddress(result.address) ||
+    typeof result.version !== "number" ||
     !Number.isSafeInteger(result.version) ||
+    typeof result.at !== "number" ||
     !Number.isSafeInteger(result.at)
   ) {
     throw new RepositoryError(503, "Repository 地址回執無法讀取。");
   }
-  return result as RepositoryAddressReceipt;
+  return {
+    requestId: result.requestId,
+    repositoryId: result.repositoryId,
+    address: result.address,
+    version: result.version,
+    at: result.at,
+  };
 }
 
 export async function repositoryAttendanceSites(
@@ -212,13 +246,19 @@ export async function repositoryAttendanceSites(
        WHERE a.user_id=$1 AND r.address IS NOT NULL AND NOT r.is_archived
        ORDER BY r.id`,
       [userId],
+      (row) => {
+        if (!validAddress(row.address) || row.address === null) {
+          throw new RepositoryError(503, "Repository 地址資料不完整。");
+        }
+        return {
+          id: stringValue(row.id),
+          name: stringValue(row.name),
+          address: row.address,
+          version: Number(numericValue(row.version)),
+        };
+      },
     )
-  ).rows as Array<{
-    id: string;
-    name: string;
-    address: RepositoryAddress;
-    version: number;
-  }>;
+  ).rows;
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
@@ -263,8 +303,9 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
         await sql.query(
           "SELECT fingerprint,result FROM repository_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeCommandRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
@@ -288,8 +329,9 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
             nextAddress === null ? null : JSON.stringify(nextAddress),
             command.expectedVersion,
           ],
+          (row) => ({ version: Number(numericValue(row.version)) }),
         )
-      ).rows[0] as { version: number } | undefined;
+      ).rows[0];
       if (!changed) throw new RepositoryError(409, "Repository 地址狀態已變更，請重新載入。");
 
       const result: RepositoryAddressReceipt = {

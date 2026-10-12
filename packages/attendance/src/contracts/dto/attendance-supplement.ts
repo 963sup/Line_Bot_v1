@@ -8,15 +8,19 @@ import type {
 
 type ObjectValue = Record<string, unknown>;
 
+function isObjectValue(value: unknown): value is ObjectValue {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function objectValue(value: unknown): ObjectValue {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!isObjectValue(value)) {
     throw new AttendanceError(502, "補登回應格式不完整，請重新整理。");
   }
-  return value as ObjectValue;
+  return value;
 }
 
 function integer(value: unknown): value is number {
-  return Number.isSafeInteger(value) && (value as number) >= 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 function parseSite(value: unknown): AttendancePoint {
@@ -77,17 +81,17 @@ function parseAttendanceSupplement(value: unknown): AttendanceSupplement {
     userId: row.userId,
     repositoryId: row.repositoryId,
     kind: row.kind,
-    sessionId: row.sessionId as string | null,
-    startedAt: row.startedAt as number | null,
+    sessionId: row.sessionId,
+    startedAt: row.startedAt,
     endedAt: row.endedAt,
     site,
     reason: row.reason,
     submittedAt: row.submittedAt,
     status: row.status,
     version: row.version,
-    reviewerId: row.reviewerId as string | null,
-    reviewedAt: row.reviewedAt as number | null,
-    reviewReason: row.reviewReason as string | null,
+    reviewerId: row.reviewerId,
+    reviewedAt: row.reviewedAt,
+    reviewReason: row.reviewReason,
   };
 }
 

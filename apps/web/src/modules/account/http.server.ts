@@ -1,5 +1,6 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { DailyCheckInError } from "@line_bot_v1/daily-check-in/domain/error";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
@@ -86,8 +87,8 @@ export async function readJsonBody(
 
   try {
     const data: unknown = JSON.parse(text);
-    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
-    return data as Record<string, unknown>;
+    if (!isRecord(data)) throw new Error();
+    return data;
   } catch {
     throw new UserError(400, "資料格式不正確。");
   }

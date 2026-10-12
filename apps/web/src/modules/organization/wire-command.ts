@@ -16,7 +16,7 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]) {
 
 export function normalizeOrganizationWireCommand(raw: unknown): unknown {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
-  const value = raw as Record<string, unknown>;
+  const value = Object.fromEntries(Object.entries(raw));
   if (
     !hasExactKeys(value, legacyKeys) ||
     (value.action !== "grant" && value.action !== "revoke") ||
@@ -28,7 +28,7 @@ export function normalizeOrganizationWireCommand(raw: unknown): unknown {
   ) {
     return raw;
   }
-  const principal = value.principal as Record<string, unknown>;
+  const principal = Object.fromEntries(Object.entries(value.principal));
   if (!hasExactKeys(principal, ["kind", "id"]) || principal.kind !== "user") {
     return raw;
   }

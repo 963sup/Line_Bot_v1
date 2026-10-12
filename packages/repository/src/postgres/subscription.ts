@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
+import { isRecord, literalValue, numericValue } from "@line_bot_v1/platform/validation";
 import type {
   RepositorySubscriptionCommand,
   RepositorySubscriptionReceipt,
@@ -11,6 +12,7 @@ import type {
 import type { RepositorySelector } from "../contracts/selectors.js";
 import { RepositoryError } from "../domain.js";
 import { authorizedRepository } from "./access.js";
+import { decodeCommandRow } from "./decode.js";
 
 type Receipt = Readonly<{
   receiptVersion: 1;
@@ -28,6 +30,16 @@ function validState(value: unknown): value is RepositorySubscriptionState {
   return value === "SUBSCRIBED" || value === "UNSUBSCRIBED" || value === "IGNORED";
 }
 
+function decodeSubscriptionRow(row: SqlRow): {
+  state: RepositorySubscriptionState;
+  version: number;
+} {
+  return {
+    state: literalValue(row.state, ["SUBSCRIBED", "UNSUBSCRIBED", "IGNORED"]),
+    version: Number(numericValue(row.version)),
+  };
+}
+
 function readReceipt(
   previous: { fingerprint: string; result: unknown } | undefined,
   commandFingerprint: string,
@@ -36,22 +48,35 @@ function readReceipt(
   if (previous.fingerprint !== commandFingerprint) {
     throw new RepositoryError(409, "此請求編號已用於不同 Repository 操作。");
   }
-  const receipt = previous.result as Partial<Receipt>;
-  const result = receipt.result as Partial<RepositorySubscriptionReceipt> | undefined;
+  if (!isRecord(previous.result)) {
+    throw new RepositoryError(503, "Repository subscription 回執無法讀取。");
+  }
+  const receipt = previous.result;
+  if (!isRecord(receipt.result)) {
+    throw new RepositoryError(503, "Repository subscription 回執無法讀取。");
+  }
+  const result = receipt.result;
   if (
     receipt.receiptVersion !== 1 ||
     receipt.family !== "repository-subscription" ||
     receipt.action !== "set" ||
-    !result ||
     typeof result.requestId !== "string" ||
     typeof result.repositoryId !== "string" ||
     !validState(result.state) ||
+    typeof result.version !== "number" ||
     !Number.isSafeInteger(result.version) ||
+    typeof result.at !== "number" ||
     !Number.isSafeInteger(result.at)
   ) {
     throw new RepositoryError(503, "Repository subscription 回執無法讀取。");
   }
-  return result as RepositorySubscriptionReceipt;
+  return {
+    requestId: result.requestId,
+    repositoryId: result.repositoryId,
+    state: result.state,
+    version: result.version,
+    at: result.at,
+  };
 }
 
 export class PostgresRepositorySubscriptionStore implements RepositorySubscriptionStore {
@@ -70,8 +95,9 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
            FROM repository_subscriptions
            WHERE repository_id=$1 AND user_id=$2`,
           [repository.id, userId],
+          decodeSubscriptionRow,
         )
-      ).rows[0] as { state: RepositorySubscriptionState; version: number } | undefined;
+      ).rows[0];
       return {
         repository: {
           id: repository.id,
@@ -109,8 +135,9 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
         await sql.query(
           "SELECT fingerprint,result FROM repository_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeCommandRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
@@ -125,8 +152,9 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
            WHERE repository_id=$1 AND user_id=$2
            FOR UPDATE`,
           [repository.id, userId],
+          decodeSubscriptionRow,
         )
-      ).rows[0] as { state: RepositorySubscriptionState; version: number } | undefined;
+      ).rows[0];
       const currentVersion = current ? Number(current.version) : 0;
       if (currentVersion !== command.expectedVersion) {
         throw new RepositoryError(409, "Repository subscription 已更新，請重新載入。");
@@ -143,6 +171,7 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
                WHERE repository_id=$1 AND user_id=$2 AND version=$5
                RETURNING state,version`,
               [repository.id, userId, command.state, now, command.expectedVersion],
+              decodeSubscriptionRow,
             )
           ).rows[0]
         : (
@@ -152,6 +181,7 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
                ) VALUES($1,$2,$3,1,$4)
                RETURNING state,version`,
               [repository.id, userId, command.state, now],
+              decodeSubscriptionRow,
             )
           ).rows[0];
       if (!changed) {
@@ -161,7 +191,7 @@ export class PostgresRepositorySubscriptionStore implements RepositorySubscripti
       const result: RepositorySubscriptionReceipt = {
         requestId: command.requestId,
         repositoryId: repository.id,
-        state: changed.state as RepositorySubscriptionState,
+        state: changed.state,
         version: Number(changed.version),
         at: now,
       };

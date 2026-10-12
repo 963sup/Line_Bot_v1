@@ -17,6 +17,12 @@ import {
 } from "@line_bot_v1/identity-access/postgres";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numberValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   EnterpriseCommand,
   EnterpriseDetail,
@@ -37,11 +43,38 @@ import {
   isEnterpriseTeamCommand,
 } from "./postgres-team-mutations.js";
 
+function enterpriseRow(row: Record<string, unknown>) {
+  return {
+    account_id: stringValue(row.account_id),
+    name: nullableString(row.name),
+    slug: nullableString(row.slug),
+    status: literalValue(row.status, ["active", "inactive"]),
+    version: numberValue(row.version),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
+
+function provisionedScopeRow(row: Record<string, unknown>) {
+  return { scope_version: numberValue(row.scope_version) };
+}
+
+function statusVersionRow(row: Record<string, unknown>) {
+  return { status: stringValue(row.status), version: numberValue(row.version) };
+}
+
+function hasPostgresCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}
+
 async function lockEnterprise(sql: Sql, id: string) {
   const row = (
     await sql.query(
       "SELECT account_id,name,slug,status,version FROM enterprises WHERE account_id=$1 FOR UPDATE",
       [id],
+      enterpriseRow,
     )
   ).rows[0];
   if (!row) throw new GovernanceAccessError(404, "not-found", "找不到 Enterprise。");
@@ -103,10 +136,11 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
             await sql.query(
               "SELECT scope_version FROM app_private.provision_enterprise_scope($1,$2,$3,$4,$5)",
               [enterpriseAccountId, principal.userId, command.slug, command.name, now],
+              provisionedScopeRow,
             )
           ).rows[0];
         } catch (error) {
-          if ((error as { code?: string }).code === "23505") {
+          if (hasPostgresCode(error, "23505")) {
             throw new GovernanceAccessError(409, "conflict", "Enterprise slug 已被使用。");
           }
           throw error;
@@ -168,12 +202,13 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
               `UPDATE enterprises
                SET name=$2,slug=$3,version=version+1
                WHERE account_id=$1 AND name IS NULL AND slug IS NULL
-               RETURNING version`,
+              RETURNING version`,
               [command.enterpriseAccountId, command.name, command.slug],
+              versionRow,
             )
           ).rows[0];
         } catch (error) {
-          if ((error as { code?: string }).code === "23505") {
+          if (hasPostgresCode(error, "23505")) {
             throw new GovernanceAccessError(409, "conflict", "Enterprise slug 已被使用。");
           }
           throw error;
@@ -302,6 +337,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
             `UPDATE enterprises SET status=$2,version=version+1
              WHERE account_id=$1 RETURNING version`,
             [command.enterpriseAccountId, wanted],
+            versionRow,
           )
         ).rows[0];
         if (!changed) {
@@ -336,6 +372,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
             `SELECT status,version FROM enterprise_organizations
              WHERE enterprise_account_id=$1 AND organization_account_id=$2 FOR UPDATE`,
             [command.enterpriseAccountId, command.organizationAccountId],
+            statusVersionRow,
           )
         ).rows[0];
         if (command.action === "attach-organization") {
@@ -350,7 +387,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                 [command.enterpriseAccountId, command.organizationAccountId, now],
               );
             } catch (error) {
-              if ((error as { code?: string }).code === "23505")
+              if (hasPostgresCode(error, "23505"))
                 throw new GovernanceAccessError(
                   409,
                   "scope-conflict",
@@ -373,6 +410,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                    SET status='active',version=version+1,detached_at=null
                    WHERE enterprise_account_id=$1 AND organization_account_id=$2 RETURNING version`,
                   [command.enterpriseAccountId, command.organizationAccountId],
+                  versionRow,
                 )
               ).rows[0];
               if (!changed) {
@@ -384,7 +422,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
               }
               result = makeEnterpriseReceipt(command, "active", changed.version, now);
             } catch (error) {
-              if ((error as { code?: string }).code === "23505")
+              if (hasPostgresCode(error, "23505"))
                 throw new GovernanceAccessError(
                   409,
                   "scope-conflict",
@@ -422,6 +460,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                SET status='detached',version=version+1,detached_at=$3
                WHERE enterprise_account_id=$1 AND organization_account_id=$2 RETURNING version`,
               [command.enterpriseAccountId, command.organizationAccountId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -432,7 +471,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
       } else if (isEnterpriseTeamCommand(command)) {
         result = await executeEnterpriseTeamMutation(
           sql,
-          enterprise as { status: "active" | "inactive" },
+          enterprise,
           principal.userId,
           command,
           now,
@@ -453,6 +492,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
             `SELECT status,version FROM enterprise_direct_affiliations
              WHERE enterprise_account_id=$1 AND user_id=$2 FOR UPDATE`,
             [command.enterpriseAccountId, targetUserId],
+            statusVersionRow,
           )
         ).rows[0];
         const invitation = (
@@ -460,6 +500,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
             `SELECT status,version FROM enterprise_invitations
              WHERE enterprise_account_id=$1 AND user_id=$2 FOR UPDATE`,
             [command.enterpriseAccountId, targetUserId],
+            statusVersionRow,
           )
         ).rows[0];
 
@@ -494,6 +535,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                  SET status='pending',version=version+1,created_at=$3,resolved_at=null
                  WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
                 [command.enterpriseAccountId, command.targetUserId, now],
+                versionRow,
               )
             ).rows[0];
             if (!changed) {
@@ -548,6 +590,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                SET status='accepted',version=version+1,resolved_at=$3
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, command.targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -572,6 +615,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                SET status='declined',version=version+1,resolved_at=$3
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -596,6 +640,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
                SET status='cancelled',version=version+1,resolved_at=$3
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, command.targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -657,6 +702,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
               `UPDATE enterprise_direct_affiliations SET status='removed',version=version+1
                WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.enterpriseAccountId, targetUserId],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {

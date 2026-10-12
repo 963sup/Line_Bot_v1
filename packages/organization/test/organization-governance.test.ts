@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { organizationGovernance } from "../src/application/organization-governance.js";
 import type { OrganizationGovernancePort } from "../src/contracts/input/organization-governance.js";
 
@@ -59,6 +60,6 @@ test("OrganizationOwner mutation is owned by the Organization command contract",
         expectedVersion: 0,
         reason: "legacy writer",
       }),
-    (error: unknown) => (error as { status?: number }).status === 400,
+    (error: unknown) => error instanceof GovernanceAccessError && error.status === 400,
   );
 });

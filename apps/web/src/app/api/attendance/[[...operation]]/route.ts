@@ -70,7 +70,7 @@ async function readAttendanceJsonBody(request: Request, maxBytes = 2048): Promis
   }
 
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(text);
   } catch {
     throw new AttendanceError(400, "資料格式不正確。");
   }

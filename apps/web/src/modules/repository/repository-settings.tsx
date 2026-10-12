@@ -9,6 +9,7 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import GoogleMapPicker, { type MapPoint } from "./google-map-picker";
+import { errorMessage, isRecord } from "./response-validation";
 
 type PendingAddressOperation = Readonly<{
   owner: string;
@@ -19,6 +20,57 @@ function pendingKey(ownerLogin: string, repositoryName: string) {
   return `repository-address:${ownerLogin.toLowerCase()}/${repositoryName.toLowerCase()}`;
 }
 
+function isAddress(value: unknown): value is NonNullable<RepositoryAddressReceipt["address"]> {
+  return (
+    isRecord(value) &&
+    (value.address === null || typeof value.address === "string") &&
+    typeof value.latitude === "number" &&
+    Number.isFinite(value.latitude) &&
+    typeof value.longitude === "number" &&
+    Number.isFinite(value.longitude) &&
+    typeof value.radius === "number" &&
+    Number.isFinite(value.radius)
+  );
+}
+
+function isAddressCommand(value: unknown): value is RepositoryAddressCommand {
+  return (
+    isRecord(value) &&
+    typeof value.requestId === "string" &&
+    typeof value.repositoryId === "string" &&
+    Number.isSafeInteger(value.expectedVersion) &&
+    (value.action === "remove" || (value.action === "set" && isAddress(value.address)))
+  );
+}
+
+function isPendingAddress(value: unknown): value is PendingAddressOperation {
+  return isRecord(value) && typeof value.owner === "string" && isAddressCommand(value.command);
+}
+
+function isAddressSnapshot(value: unknown): value is RepositoryAddressSnapshot {
+  return (
+    isRecord(value) &&
+    isRecord(value.repository) &&
+    typeof value.repository.id === "string" &&
+    typeof value.repository.actorUserId === "string" &&
+    typeof value.repository.ownerLogin === "string" &&
+    typeof value.repository.name === "string" &&
+    Number.isSafeInteger(value.repository.version) &&
+    typeof value.repository.actorIsOwner === "boolean" &&
+    Array.isArray(value.repository.actorPermissions) &&
+    value.repository.actorPermissions.every(
+      (permission) =>
+        permission === "read" ||
+        permission === "triage" ||
+        permission === "triage_plus" ||
+        permission === "write" ||
+        permission === "maintain" ||
+        permission === "admin",
+    ) &&
+    (value.address === null || isAddress(value.address))
+  );
+}
+
 function restorePending(
   key: string,
   owner: string,
@@ -27,17 +79,12 @@ function restorePending(
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
-    const value = JSON.parse(raw) as PendingAddressOperation;
+    const value: unknown = JSON.parse(raw);
     if (
-      !value ||
+      !isPendingAddress(value) ||
       value.owner !== owner ||
-      !value.command ||
       value.command.repositoryId !== repositoryId ||
-      (value.command.action !== "set" && value.command.action !== "remove") ||
-      typeof value.command.requestId !== "string" ||
-      typeof value.command.repositoryId !== "string" ||
-      !Number.isSafeInteger(value.command.expectedVersion) ||
-      (value.command.action === "set" && !value.command.address)
+      (value.command.action !== "set" && value.command.action !== "remove")
     ) {
       throw new Error();
     }
@@ -114,9 +161,9 @@ export default function RepositorySettings({
       signal: AbortSignal.timeout(20_000),
       headers: { "X-App-Session-Generation": token },
     });
-    const payload = (await response.json()) as RepositoryAddressSnapshot & { error?: string };
-    if (!response.ok || !payload?.repository?.actorUserId) {
-      throw Object.assign(new Error(payload.error ?? "Repository 地址讀取失敗。"), {
+    const payload: unknown = await response.json();
+    if (!response.ok || !isAddressSnapshot(payload)) {
+      throw Object.assign(new Error(errorMessage(payload, "Repository 地址讀取失敗。")), {
         status: response.status,
       });
     }
@@ -221,9 +268,7 @@ export default function RepositorySettings({
         },
         body: JSON.stringify(operation.command),
       });
-      const payload = (await response.json()) as Partial<RepositoryAddressReceipt> & {
-        error?: string;
-      };
+      const payload: unknown = await response.json();
       if (ticket !== generation.current) return;
       if ((await liffClient.ensureSession(liffId)) !== token) {
         throw new Error("LINE 身分已變更；請重新讀取並確認原操作結果。");
@@ -234,17 +279,20 @@ export default function RepositorySettings({
           sessionStorage.removeItem(storageKey);
           setPending(null);
         }
-        throw Object.assign(new Error(payload.error ?? "Repository 地址更新失敗。"), {
+        throw Object.assign(new Error(errorMessage(payload, "Repository 地址更新失敗。")), {
           status: response.status,
         });
       }
       const expectedAddress =
         operation.command.action === "set" ? (operation.command.address ?? null) : null;
       if (
+        !isRecord(payload) ||
         payload.requestId !== operation.command.requestId ||
         payload.repositoryId !== operation.command.repositoryId ||
         !Number.isSafeInteger(payload.version) ||
+        typeof payload.at !== "number" ||
         !Number.isFinite(payload.at) ||
+        !(payload.address === null || isAddress(payload.address)) ||
         !sameAddress(payload.address, expectedAddress)
       ) {
         throw new Error("更新結果不完整，請重試原操作。");

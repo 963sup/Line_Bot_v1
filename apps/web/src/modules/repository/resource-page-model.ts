@@ -24,24 +24,168 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+const permissionValues = new Set(["read", "triage", "triage_plus", "write", "maintain", "admin"]);
+
+function isRepository(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.ownerLogin === "string" &&
+    typeof value.name === "string" &&
+    Array.isArray(value.permissions) &&
+    value.permissions.every(
+      (permission) => typeof permission === "string" && permissionValues.has(permission),
+    )
+  );
+}
+
+function isNullableString(value: unknown) {
+  return value === null || typeof value === "string";
+}
+
+function isDiscussionSummary(value: unknown): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.repositoryId === "string" &&
+    (value.number === null || Number.isSafeInteger(value.number)) &&
+    typeof value.author === "string" &&
+    typeof value.title === "string" &&
+    typeof value.category === "string" &&
+    isNullableString(value.categoryId) &&
+    (value.state === "OPEN" || value.state === "CLOSED") &&
+    (value.stateReason === null ||
+      value.stateReason === "DUPLICATE" ||
+      value.stateReason === "OUTDATED" ||
+      value.stateReason === "REOPENED" ||
+      value.stateReason === "RESOLVED") &&
+    typeof value.locked === "boolean" &&
+    (value.lockReason === null ||
+      value.lockReason === "OFF_TOPIC" ||
+      value.lockReason === "RESOLVED" ||
+      value.lockReason === "SPAM" ||
+      value.lockReason === "TOO_HEATED") &&
+    typeof value.deleted === "boolean" &&
+    Number.isSafeInteger(value.version) &&
+    typeof value.createdAt === "number" &&
+    typeof value.updatedAt === "number"
+  );
+}
+
+function isDiscussion(value: unknown) {
+  return isDiscussionSummary(value) && "body" in value && isNullableString(value.body);
+}
+
+function isDiscussionComment(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.discussionId === "string" &&
+    typeof value.author === "string" &&
+    isNullableString(value.body) &&
+    isNullableString(value.replyToId) &&
+    typeof value.deleted === "boolean" &&
+    Number.isSafeInteger(value.version) &&
+    typeof value.createdAt === "number" &&
+    typeof value.updatedAt === "number"
+  );
+}
+
+function isLabel(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.repositoryId === "string" &&
+    typeof value.name === "string" &&
+    typeof value.color === "string" &&
+    typeof value.description === "string" &&
+    Number.isSafeInteger(value.version)
+  );
+}
+
+function isMilestone(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.repositoryId === "string" &&
+    Number.isSafeInteger(value.number) &&
+    typeof value.title === "string" &&
+    typeof value.description === "string" &&
+    (value.status === "open" || value.status === "closed") &&
+    (value.dueAt === null || typeof value.dueAt === "number") &&
+    Number.isSafeInteger(value.version) &&
+    typeof value.createdAt === "number" &&
+    typeof value.updatedAt === "number"
+  );
+}
+
+function hasNext(value: Record<string, unknown>) {
+  return value.next === null || typeof value.next === "string";
+}
+
+function isDiscussionsResult(value: unknown): value is DiscussionsResult {
+  return (
+    isRecord(value) &&
+    isRepository(value.repository) &&
+    Array.isArray(value.discussions) &&
+    value.discussions.every(isDiscussionSummary) &&
+    hasNext(value)
+  );
+}
+
+function isDiscussionResult(value: unknown): value is DiscussionResult {
+  return (
+    isRecord(value) &&
+    isRepository(value.repository) &&
+    isDiscussion(value.discussion) &&
+    Array.isArray(value.comments) &&
+    value.comments.every(isDiscussionComment) &&
+    hasNext(value)
+  );
+}
+
+function isLabelsResult(value: unknown): value is RepositoryLabelsResult {
+  return (
+    isRecord(value) &&
+    isRepository(value.repository) &&
+    Array.isArray(value.labels) &&
+    value.labels.every(isLabel) &&
+    hasNext(value)
+  );
+}
+
+function isMilestonesResult(value: unknown): value is RepositoryMilestonesResult {
+  return (
+    isRecord(value) &&
+    isRepository(value.repository) &&
+    Array.isArray(value.milestones) &&
+    value.milestones.every(isMilestone) &&
+    hasNext(value)
+  );
+}
+
+function isMilestoneResult(value: unknown): value is RepositoryMilestoneResult {
+  return isRecord(value) && isRepository(value.repository) && isMilestone(value.milestone);
+}
+
 export function parseRepositoryResourcePage(kind: ResourcesKind, value: unknown): PageData {
   if (!isRecord(value) || !isRecord(value.repository)) {
     throw { status: 503, message: "Repository 資源回應格式不正確。" };
   }
-  if (kind === "discussions" && Array.isArray(value.discussions)) {
-    return { ...(value as DiscussionsResult), kind };
+  if (kind === "discussions" && isDiscussionsResult(value)) {
+    return { ...value, kind };
   }
-  if (kind === "discussion" && isRecord(value.discussion) && Array.isArray(value.comments)) {
-    return { ...(value as DiscussionResult), kind };
+  if (kind === "discussion" && isDiscussionResult(value)) {
+    return { ...value, kind };
   }
-  if (kind === "labels" && Array.isArray(value.labels)) {
-    return { ...(value as RepositoryLabelsResult), kind };
+  if (kind === "labels" && isLabelsResult(value)) {
+    return { ...value, kind };
   }
-  if (kind === "milestones" && Array.isArray(value.milestones)) {
-    return { ...(value as RepositoryMilestonesResult), kind };
+  if (kind === "milestones" && isMilestonesResult(value)) {
+    return { ...value, kind };
   }
-  if (kind === "milestone" && isRecord(value.milestone)) {
-    return { ...(value as RepositoryMilestoneResult), kind };
+  if (kind === "milestone" && isMilestoneResult(value)) {
+    return { ...value, kind };
   }
   throw { status: 503, message: "Repository 資源回應格式不正確。" };
 }

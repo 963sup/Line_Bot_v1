@@ -60,6 +60,9 @@
         "useAsConstAssertion": "error",
         "noEnum": "error",
         "noNamespace": "error"
+      },
+      "nursery": {
+        "noUnsafeTypeAssertion": "error"
       }
     }
   },

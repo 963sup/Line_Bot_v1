@@ -171,7 +171,10 @@ export default function ProjectCollaborators({
                 Project 權限
                 <select
                   value={role}
-                  onChange={(event) => setRole(event.target.value as typeof role)}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    if (next === "READER" || next === "WRITER" || next === "ADMIN") setRole(next);
+                  }}
                   disabled={busy || pending}
                 >
                   <option value="READER">讀取</option>
@@ -211,7 +214,9 @@ export default function ProjectCollaborators({
                     value={commandRole(item.role)}
                     disabled={busy || pending}
                     onChange={(event) => {
-                      const nextRole = event.target.value as ProjectCollaboratorInput["role"];
+                      const value = event.target.value;
+                      if (value !== "READER" && value !== "WRITER" && value !== "ADMIN") return;
+                      const nextRole: ProjectCollaboratorInput["role"] = value;
                       if (item.kind === "USER") updateUser(item.id, nextRole);
                       else updateTeam(item.id, nextRole);
                     }}

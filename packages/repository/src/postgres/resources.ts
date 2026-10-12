@@ -1,4 +1,15 @@
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableNumericValue,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   RepositoryLabel,
   RepositoryLabelCursor,
@@ -36,6 +47,32 @@ type MilestoneRow = {
   created_at: number | string;
   updated_at: number | string;
 };
+
+function decodeLabelRow(row: SqlRow): LabelRow {
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    name: stringValue(row.name),
+    color: stringValue(row.color),
+    description: stringValue(row.description),
+    version: Number(numericValue(row.version)),
+  };
+}
+
+function decodeMilestoneRow(row: SqlRow): MilestoneRow {
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    number: numericValue(row.number),
+    title: stringValue(row.title),
+    description: stringValue(row.description),
+    status: literalValue(row.status, ["open", "closed"]),
+    due_at: nullableNumericValue(row.due_at),
+    version: Number(numericValue(row.version)),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
 
 function label(row: LabelRow): RepositoryLabel {
   return {
@@ -107,8 +144,9 @@ export class PostgresRepositoryResourceStore implements RepositoryResourceStore 
            ORDER BY name ASC,id ASC
            LIMIT 101`,
           [repository.id, after?.name ?? null, after?.id ?? null],
+          decodeLabelRow,
         )
-      ).rows as LabelRow[];
+      ).rows;
       const labels = rows.map(label);
       const hasMore = labels.length > 100;
       if (hasMore) labels.pop();
@@ -134,8 +172,9 @@ export class PostgresRepositoryResourceStore implements RepositoryResourceStore 
            ORDER BY number DESC,id ASC
            LIMIT 51`,
           [repository.id, status ?? null, after?.number ?? null, after?.id ?? null],
+          decodeMilestoneRow,
         )
-      ).rows as MilestoneRow[];
+      ).rows;
       const milestones = rows.map(milestone);
       const hasMore = milestones.length > 50;
       if (hasMore) milestones.pop();
@@ -154,8 +193,9 @@ export class PostgresRepositoryResourceStore implements RepositoryResourceStore 
         await sql.query(
           "SELECT * FROM repository_milestones WHERE repository_id=$1 AND number=$2",
           [repository.id, number],
+          decodeMilestoneRow,
         )
-      ).rows[0] as MilestoneRow | undefined;
+      ).rows[0];
       if (!row) throw new RepositoryError(404, "找不到 Milestone。");
       return { repository, milestone: milestone(row) };
     });

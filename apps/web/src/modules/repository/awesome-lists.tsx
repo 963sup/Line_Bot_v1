@@ -6,6 +6,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryPath, repositoryStarListPath } from "./resource-navigation";
+import { errorMessage, isRecord, isStarListDiscovery } from "./response-validation";
 
 export default function AwesomeLists({ liffId }: { liffId: string }) {
   const [items, setItems] = useState<RepositoryStarListDiscovery[] | null>(null);
@@ -32,12 +33,14 @@ export default function AwesomeLists({ liffId }: { liffId: string }) {
         signal: AbortSignal.timeout(20_000),
         headers: { "X-App-Session-Generation": token },
       });
-      const payload = (await response.json()) as {
-        items?: RepositoryStarListDiscovery[];
-        error?: string;
-      };
-      if (!response.ok || !Array.isArray(payload.items)) {
-        throw new Error(payload.error ?? "Awesome Lists 暫不可用。");
+      const payload: unknown = await response.json();
+      if (
+        !response.ok ||
+        !isRecord(payload) ||
+        !Array.isArray(payload.items) ||
+        !payload.items.every(isStarListDiscovery)
+      ) {
+        throw new Error(errorMessage(payload, "Awesome Lists 暫不可用。"));
       }
       if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
         return;

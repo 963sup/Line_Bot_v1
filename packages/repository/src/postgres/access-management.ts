@@ -1,7 +1,13 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import { booleanValue, isRecord, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
   RepositoryAccessCommand,
   RepositoryAccessReceipt,
@@ -10,6 +16,13 @@ import type {
 } from "../contracts/repositories/access.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import { hasRepositoryPermission, RepositoryError, type RepositoryPermission } from "../domain.js";
+import {
+  decodeCommandRow,
+  decodePermissionsRow,
+  postgresErrorCode,
+  repositoryOwnerKind,
+  repositoryPermission,
+} from "./decode.js";
 
 type RepositoryRow = {
   id: string;
@@ -24,6 +37,15 @@ type Receipt = Readonly<{
   action: RepositoryAccessCommand["action"];
   result: RepositoryAccessReceipt;
 }>;
+
+function decodeRepositoryRow(row: SqlRow): RepositoryRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+  };
+}
 
 const fingerprint = (command: RepositoryAccessCommand) =>
   createHash("sha256")
@@ -41,8 +63,9 @@ async function repositoryRow(
         `SELECT id,owner_account_id,owner_account_kind,name
          FROM repositories WHERE id=$1 ${lock ? "FOR UPDATE" : ""}`,
         [selector.repositoryId],
+        decodeRepositoryRow,
       )
-    ).rows[0] as RepositoryRow | undefined;
+    ).rows[0];
     if (!row) throw new RepositoryError(404, "找不到 Repository。");
     return row;
   }
@@ -55,8 +78,9 @@ async function repositoryRow(
        WHERE owner_account_id=$1 AND owner_account_kind=$2 AND lower(name)=lower($3)
        ${lock ? "FOR UPDATE" : ""}`,
       [owner.id, owner.kind, selector.repositoryName],
+      decodeRepositoryRow,
     )
-  ).rows[0] as RepositoryRow | undefined;
+  ).rows[0];
   if (row) return row;
 
   const historical = (
@@ -70,8 +94,9 @@ async function repositoryRow(
        ORDER BY h.renamed_at DESC,r.id
        LIMIT 2`,
       [owner.id, owner.kind, selector.repositoryName],
+      decodeRepositoryRow,
     )
-  ).rows as RepositoryRow[];
+  ).rows;
   if (historical.length !== 1) throw new RepositoryError(404, "找不到 Repository。");
   const repository = historical[0];
   if (!repository) throw new RepositoryError(404, "找不到 Repository。");
@@ -87,8 +112,9 @@ async function actorPermissions(
     await sql.query(
       "SELECT permissions FROM repository_effective_access WHERE repository_id=$1 AND user_id=$2",
       [repositoryId, userId],
+      decodePermissionsRow,
     )
-  ).rows[0] as { permissions: RepositoryPermission[] } | undefined;
+  ).rows[0];
   return row?.permissions ?? null;
 }
 
@@ -127,24 +153,26 @@ async function snapshot(
        WHERE a.repository_id=$1
        ORDER BY a.principal_id`,
       [repository.id, repository.owner_account_kind],
+      (row) => ({
+        userId: stringValue(row.userId),
+        capability: repositoryPermission(row.capability),
+        version: numberValue(row.version),
+        isOutsideCollaborator: booleanValue(row.isOutsideCollaborator),
+      }),
     )
-  ).rows.map((row) => ({
-    userId: String(row.userId),
-    capability: row.capability as RepositoryPermission,
-    version: Number(row.version),
-    isOutsideCollaborator: Boolean(row.isOutsideCollaborator),
-  }));
+  ).rows;
   const teamGrants = (
     await sql.query(
       `SELECT team_id AS "teamId",capability,version
        FROM repository_team_access WHERE repository_id=$1 ORDER BY team_id`,
       [repository.id],
+      (row) => ({
+        teamId: stringValue(row.teamId),
+        capability: repositoryPermission(row.capability),
+        version: numberValue(row.version),
+      }),
     )
-  ).rows.map((row) => ({
-    teamId: String(row.teamId),
-    capability: row.capability as RepositoryPermission,
-    version: Number(row.version),
-  }));
+  ).rows;
   return {
     repository: {
       id: repository.id,
@@ -167,13 +195,18 @@ function readReceipt(
   if (previous.fingerprint !== commandFingerprint) {
     throw new RepositoryError(409, "此請求編號已用於不同 Repository 操作。");
   }
-  const receipt = previous.result as Partial<Receipt>;
-  const result = receipt.result as Partial<RepositoryAccessReceipt> | undefined;
+  if (!isRecord(previous.result)) {
+    throw new RepositoryError(503, "Repository access 回執無法讀取。");
+  }
+  const receipt = previous.result;
+  if (!isRecord(receipt.result)) {
+    throw new RepositoryError(503, "Repository access 回執無法讀取。");
+  }
+  const result = receipt.result;
   if (
     receipt.receiptVersion !== 1 ||
     receipt.family !== "repository-access" ||
     (receipt.action !== "grant" && receipt.action !== "revoke") ||
-    !result ||
     typeof result.requestId !== "string" ||
     typeof result.repositoryId !== "string" ||
     (result.subjectKind !== "USER" && result.subjectKind !== "TEAM") ||
@@ -185,16 +218,26 @@ function readReceipt(
       result.capability !== "write" &&
       result.capability !== "maintain" &&
       result.capability !== "admin") ||
-    (result.version !== null && !Number.isSafeInteger(result.version)) ||
+    (result.version !== null &&
+      (typeof result.version !== "number" || !Number.isSafeInteger(result.version))) ||
+    typeof result.at !== "number" ||
     !Number.isSafeInteger(result.at)
   ) {
     throw new RepositoryError(503, "Repository access 回執無法讀取。");
   }
-  return result as RepositoryAccessReceipt;
+  return {
+    requestId: result.requestId,
+    repositoryId: result.repositoryId,
+    subjectKind: result.subjectKind,
+    subjectId: result.subjectId,
+    capability: result.capability,
+    version: result.version,
+    at: result.at,
+  };
 }
 
 function accessMutationError(error: unknown): never {
-  const code = (error as { code?: string }).code;
+  const code = postgresErrorCode(error);
   if (code === "22023") throw new RepositoryError(400, "Repository access 操作格式不正確。");
   if (code === "42501") throw new RepositoryError(403, "Repository access 資格不符。");
   if (code === "P0002") throw new RepositoryError(404, "找不到 Repository。");
@@ -238,8 +281,9 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
         await sql.query(
           "SELECT fingerprint,result FROM repository_commands WHERE actor=$1 AND request_id=$2",
           [userId, command.requestId],
+          decodeCommandRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
@@ -259,10 +303,13 @@ export class PostgresRepositoryAccessStore implements RepositoryAccessStore {
               command.action === "grant" ? command.capability : null,
               command.expectedVersion,
             ],
+            (row) => ({
+              result_capability:
+                row.result_capability === null ? null : repositoryPermission(row.result_capability),
+              result_version: row.result_version === null ? null : numberValue(row.result_version),
+            }),
           )
-        ).rows[0] as
-          | { result_capability: RepositoryPermission | null; result_version: number | null }
-          | undefined;
+        ).rows[0];
       } catch (error) {
         accessMutationError(error);
       }

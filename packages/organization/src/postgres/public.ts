@@ -1,11 +1,42 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  nullableNumericValue,
+  numberValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   OrganizationPublicStore,
   OrganizationViewerCapabilities,
   PublicOrganization,
 } from "../contracts/output/public.js";
+
+function publicOrganizationRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id), name: stringValue(row.name) };
+}
+
+function viewerCapabilitiesRow(row: Record<string, unknown>) {
+  return {
+    organization_version: numberValue(row.organization_version),
+    membership_version: numberValue(row.membership_version),
+    owner_role_version: nullableNumericValue(row.owner_role_version),
+    member_can_create_public_repositories: booleanValue(row.member_can_create_public_repositories),
+    member_can_create_private_repositories: booleanValue(
+      row.member_can_create_private_repositories,
+    ),
+    member_can_create_internal_repositories: booleanValue(
+      row.member_can_create_internal_repositories,
+    ),
+    member_can_create_project_v2: booleanValue(row.member_can_create_project_v2),
+    member_can_create_teams: booleanValue(row.member_can_create_teams),
+  };
+}
+
+function accountIdRow(row: Record<string, unknown>) {
+  return { account_id: stringValue(row.account_id) };
+}
 
 export class PostgresOrganizationPublicStore implements OrganizationPublicStore {
   constructor(private db: Database = businessDatabase()) {}
@@ -18,10 +49,11 @@ export class PostgresOrganizationPublicStore implements OrganizationPublicStore 
         await sql.query(
           `SELECT account_id AS id,name
            FROM organizations
-           WHERE account_id=$1 AND status='active'`,
+          WHERE account_id=$1 AND status='active'`,
           [owner.id],
+          publicOrganizationRow,
         )
-      ).rows[0] as { id: string; name: string } | undefined;
+      ).rows[0];
       return row ? { ...row, login: owner.login } : null;
     });
   }
@@ -60,21 +92,11 @@ export async function readOrganizationViewerCapabilities(
            AND r.membership_version=m.version
          LIMIT 1
        ) owner_role ON true
-       WHERE o.account_id=$1 AND o.status='active'`,
+      WHERE o.account_id=$1 AND o.status='active'`,
       [organizationAccountId, userId, user.statusVersion],
+      viewerCapabilitiesRow,
     )
-  ).rows[0] as
-    | {
-        organization_version: number;
-        membership_version: number;
-        owner_role_version: number | null;
-        member_can_create_public_repositories: boolean;
-        member_can_create_private_repositories: boolean;
-        member_can_create_internal_repositories: boolean;
-        member_can_create_project_v2: boolean;
-        member_can_create_teams: boolean;
-      }
-    | undefined;
+  ).rows[0];
   if (!row) return null;
 
   const isOrganizationOwner = row.owner_role_version !== null;
@@ -108,10 +130,11 @@ async function activeOrganizationIds(sql: Sql, userId: string): Promise<string[]
        JOIN organization_memberships m
          ON m.organization_account_id=o.account_id AND m.user_id=$1
        WHERE o.status='active' AND m.status='active'
-       ORDER BY o.account_id`,
+      ORDER BY o.account_id`,
       [userId],
+      accountIdRow,
     )
-  ).rows as Array<{ account_id: string }>;
+  ).rows;
   return rows.map((row) => row.account_id);
 }
 

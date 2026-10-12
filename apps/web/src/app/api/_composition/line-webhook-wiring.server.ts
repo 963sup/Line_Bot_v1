@@ -16,10 +16,7 @@ import { agentText, aiTestText, answer } from "./assistant.server";
 import { showAttendanceMenu } from "./attendance.server";
 import { receiptIntake } from "./expense.server";
 import { createLineWebhookIngress } from "./line-webhook.server";
-import {
-  createLineWebhookRouter,
-  type WebhookIdempotencyStore,
-} from "./line-webhook-router.server";
+import { createLineWebhookRouter } from "./line-webhook-router.server";
 
 function webhookRedisTransport() {
   const url = process.env.KV_REST_API_URL;
@@ -36,10 +33,7 @@ export function createLineWebhookHandler(channelSecret: string) {
   const handleEvents = createLineWebhookRouter({
     idempotency: () => {
       try {
-        const state = globalThis as typeof globalThis & {
-          lineIdempotency?: WebhookIdempotencyStore;
-        };
-        return (state.lineIdempotency ??= new RedisIdempotencyStore(
+        return (globalThis.lineIdempotency ??= new RedisIdempotencyStore(
           redisNamespace(),
           webhookRedisTransport(),
         ));

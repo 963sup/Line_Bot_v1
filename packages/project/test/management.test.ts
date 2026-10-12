@@ -4,6 +4,11 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresProjectManagementStore } from "../src/adapters/outbound/persistence/postgres-project-management-store.js";
+import {
+  parseProjectManagementCommand,
+  parseProjectManagementReceipt,
+  parseProjectManagementView,
+} from "../src/application/management.js";
 import { ProjectError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string) {
@@ -47,7 +52,17 @@ test("Project management composes access, draft conversion, typed fields, views 
     repositoryId: null,
     teamId: null,
   };
+  assert.deepEqual(parseProjectManagementCommand(create), create);
+  assert.throws(
+    () => parseProjectManagementCommand({ ...create, action: "unknown-project-action" }),
+    (error: unknown) => error instanceof ProjectError && error.status === 400,
+  );
   const created = await store.execute(owner, create, 10);
+  assert.deepEqual(parseProjectManagementReceipt(created), created);
+  assert.throws(
+    () => parseProjectManagementReceipt({ ...created, data: [] }),
+    (error: unknown) => error instanceof ProjectError && error.status === 503,
+  );
   assert.equal(created.version, 1);
   assert.deepEqual(await store.execute(owner, create, 10), created);
 
@@ -211,6 +226,24 @@ test("Project management composes access, draft conversion, typed fields, views 
   assert.ok(status.resourceId);
 
   const full = await store.view(writer, created.projectId);
+  assert.deepEqual(parseProjectManagementView(full), full);
+  assert.throws(
+    () =>
+      parseProjectManagementView({
+        ...full,
+        fields: full.fields.map((entry, index) =>
+          index === 0
+            ? {
+                ...entry,
+                options: entry.options.map((option, optionIndex) =>
+                  optionIndex === 0 ? { ...option, color: "INVISIBLE" } : option,
+                ),
+              }
+            : entry,
+        ),
+      }),
+    (error: unknown) => error instanceof ProjectError && error.status === 503,
+  );
   assert.equal(full.project.version, 9);
   assert.equal(full.items.length, 1);
   assert.equal(full.items[0]?.id, draftItemId);

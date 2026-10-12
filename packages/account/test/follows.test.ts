@@ -7,9 +7,16 @@ import { UserError } from "../src/domain/user.js";
 import { PostgresFollowStore } from "../src/postgres/follows.js";
 
 function service(store: Partial<FollowStore>, userId = "user-a") {
+  const completeStore: FollowStore = {
+    follow: async () => {},
+    unfollow: async () => {},
+    followers: async () => [],
+    following: async () => [],
+    ...store,
+  };
   return createFollows({
     activeUser: async () => ({ id: userId }),
-    store: () => store as FollowStore,
+    store: () => completeStore,
     now: () => 123,
   });
 }

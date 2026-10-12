@@ -13,6 +13,7 @@ import {
   attendanceOperationLabel,
   isAttendanceOperation,
 } from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -30,18 +31,11 @@ function readAttempt(): Attempt | null {
   const raw = sessionStorage.getItem(key);
   if (!raw) return null;
   const value: unknown = JSON.parse(raw);
-  if (
-    !value ||
-    typeof value !== "object" ||
-    Array.isArray(value) ||
-    typeof (value as Record<string, unknown>).owner !== "string" ||
-    !(value as Record<string, unknown>).owner ||
-    !isAttendanceOperation((value as Record<string, unknown>).operation)
-  )
+  if (!isRecord(value)) throw new Error("打卡暫存無法辨識，請先查看出勤紀錄。");
+  const { owner, operation } = value;
+  if (typeof owner !== "string" || !owner || !isAttendanceOperation(operation))
     throw new Error("打卡暫存無法辨識，請先查看出勤紀錄。");
-  const stored = value as Record<string, unknown>;
-  const owner = stored.owner as string;
-  const operation = stored.operation as AttendanceOperation;
+  const stored = value;
   if (stored.phase === "pending")
     return { owner, operation, phase: "pending", body: parseAttendanceInput(stored.body) };
   if (stored.phase === "started") return { owner, operation, phase: "started" };

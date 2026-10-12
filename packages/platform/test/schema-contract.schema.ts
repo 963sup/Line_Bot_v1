@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "../src/testing/postgres.js";
+import { booleanValue, numberValue, record, stringValue } from "../src/validation.js";
 
 test("declarative schemas clean-build from current sources", async (t) => {
   const { pg } = await postgresFixture();
@@ -9,9 +10,10 @@ test("declarative schemas clean-build from current sources", async (t) => {
   const result = await pg.query(
     "select count(*)::int as count from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='app_private' and c.relkind in ('r','v')",
   );
-  const [row] = result.rows as Array<{ count: number }>;
+  const [value] = result.rows;
+  const row = record(value);
   assert.ok(row);
-  assert.ok(row.count > 0);
+  assert.ok(numberValue(row.count) > 0);
 });
 
 test("runtime role cannot login, bypass RLS, or become superuser", async (t) => {
@@ -65,14 +67,14 @@ test("Auth dependencies stay constrained behind FK and SECURITY DEFINER boundari
   const fk = await pg.query(
     "select count(*)::int as count from pg_constraint where conname='users_auth_user_id_fkey' and conrelid='app_private.users'::regclass and confrelid='auth.users'::regclass",
   );
-  assert.equal((fk.rows[0] as { count: number }).count, 1);
+  assert.equal(numberValue(record(fk.rows[0]).count), 1);
 
   const fn = await pg.query(
     "select p.prosecdef, r.rolname as owner from pg_proc p join pg_roles r on r.oid=p.proowner where p.oid=to_regprocedure('app_private.attendance_account_active(uuid,bigint)')",
   );
   assert.equal(fn.rows.length, 1);
-  assert.equal((fn.rows[0] as { prosecdef: boolean }).prosecdef, true);
-  assert.notEqual((fn.rows[0] as { owner: string }).owner, "line_app");
+  assert.equal(booleanValue(record(fn.rows[0]).prosecdef), true);
+  assert.notEqual(stringValue(record(fn.rows[0]).owner), "line_app");
 });
 
 test("runtime provisioning creates governance roots only through narrow coordinators", async (t) => {

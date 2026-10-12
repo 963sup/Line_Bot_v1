@@ -1,6 +1,13 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  numberValue,
+  numericValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { PermissionStore } from "../application/permissions/ports.js";
 import type { PermissionGrant, PermissionView } from "../contracts/permissions.js";
 import {
@@ -10,13 +17,50 @@ import {
   permissions,
 } from "../domain/permission.js";
 
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
+
+function userVersionRow(row: Record<string, unknown>) {
+  return { user_version: numberValue(row.user_version) };
+}
+
+function administratorRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id), user_version: numberValue(row.user_version) };
+}
+
+function grantRow(row: Record<string, unknown>) {
+  return { permission: stringValue(row.permission), user_version: numberValue(row.user_version) };
+}
+
+function historyRow(row: Record<string, unknown>): PermissionView["history"][number] {
+  return {
+    requestId: stringValue(row.requestId),
+    actor: stringValue(row.actor),
+    permission: stringValue(row.permission),
+    enabled: booleanValue(row.enabled),
+    reason: stringValue(row.reason),
+    at: Number(numericValue(row.at)),
+  };
+}
+
+function permissionChangeResult(value: unknown) {
+  const result = record(value);
+  return { requestId: stringValue(result.requestId), version: numberValue(result.version) };
+}
+
+function previousCommandRow(row: Record<string, unknown>) {
+  return { matches: booleanValue(row.matches), result: permissionChangeResult(row.result) };
+}
+
 async function permissionVersion(sql: Sql, userId: string, lock = false): Promise<number> {
   const row = (
     await sql.query(
       `SELECT version FROM permission_subject_versions WHERE user_id=$1${lock ? " FOR UPDATE" : ""}`,
       [userId],
+      versionRow,
     )
-  ).rows[0] as { version: number } | undefined;
+  ).rows[0];
   return Number(row?.version ?? 0);
 }
 
@@ -50,8 +94,12 @@ export async function hasPermission(sql: Sql, actor: string, permission: Permiss
 
 async function manager(sql: Sql, actor: string) {
   const assignment = (
-    await sql.query("SELECT user_version FROM permission_administrators WHERE user_id=$1", [actor])
-  ).rows[0] as { user_version: number } | undefined;
+    await sql.query(
+      "SELECT user_version FROM permission_administrators WHERE user_id=$1",
+      [actor],
+      userVersionRow,
+    )
+  ).rows[0];
   if (!assignment) return false;
   const user = await readActiveUserQualification(sql, actor, "share");
   return Boolean(user && user.statusVersion === Number(assignment.user_version));
@@ -59,8 +107,12 @@ async function manager(sql: Sql, actor: string) {
 
 export async function protectPermissionAdministrator(sql: Sql, userId: string) {
   const assignment = (
-    await sql.query("SELECT user_version FROM permission_administrators WHERE user_id=$1", [userId])
-  ).rows[0] as { user_version: number } | undefined;
+    await sql.query(
+      "SELECT user_version FROM permission_administrators WHERE user_id=$1",
+      [userId],
+      userVersionRow,
+    )
+  ).rows[0];
   if (!assignment) return;
 
   const current = await readActiveUserQualification(sql, userId, "share");
@@ -70,8 +122,9 @@ export async function protectPermissionAdministrator(sql: Sql, userId: string) {
     await sql.query(
       "SELECT user_id,user_version FROM permission_administrators WHERE user_id<>$1 ORDER BY user_id",
       [userId],
+      administratorRow,
     )
-  ).rows as Array<{ user_id: string; user_version: number }>;
+  ).rows;
   for (const other of others) {
     const qualification = await readActiveUserQualification(sql, other.user_id, "share");
     if (qualification?.statusVersion === Number(other.user_version)) return;
@@ -86,13 +139,11 @@ async function grants(sql: Sql, id: string): Promise<PermissionGrant[]> {
       `SELECT permission,user_version
        FROM permission_grants
        WHERE user_id=$1 AND permission=ANY($2::text[])
-       ORDER BY permission`,
+      ORDER BY permission`,
       [id, Object.keys(permissions)],
+      grantRow,
     )
-  ).rows as Array<{
-    permission: string;
-    user_version: number;
-  }>;
+  ).rows;
   return rows.map((row) => ({
     permission: row.permission,
     effective:
@@ -135,8 +186,9 @@ export class PostgresPermissionStore implements PermissionStore {
            FROM permission_commands
            WHERE target=$1 AND command->>'permission'=ANY($2::text[])
            ORDER BY at DESC,request_id DESC
-           LIMIT 21`,
+          LIMIT 21`,
           [target, Object.keys(permissions)],
+          historyRow,
         )
       ).rows;
       return {
@@ -149,11 +201,7 @@ export class PostgresPermissionStore implements PermissionStore {
           version,
           grants: await grants(sql, target),
         },
-        history: rows.slice(0, 20).map((row) => ({
-          ...row,
-          permission: row.permission,
-          at: Number(row.at),
-        })) as PermissionView["history"],
+        history: rows.slice(0, 20),
         moreHistory: rows.length > 20,
       };
     });
@@ -176,11 +224,12 @@ export class PostgresPermissionStore implements PermissionStore {
         await sql.query(
           "SELECT command=$3::jsonb AS matches,result FROM permission_commands WHERE actor=$1 AND request_id=$2",
           [actor, c.requestId, JSON.stringify(c)],
+          previousCommandRow,
         )
       ).rows[0];
       if (previous) {
         if (!previous.matches) throw new PermissionError(409, "操作編號已用於不同內容。");
-        return previous.result as { requestId: string; version: number };
+        return previous.result;
       }
 
       const target = qualifications.get(c.target);

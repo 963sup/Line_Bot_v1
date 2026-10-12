@@ -19,21 +19,24 @@ async function activeUser(db: Database, id: string, login: string) {
 }
 
 test("Repository Star List application canonicalizes commands before persistence", async () => {
-  const calls: unknown[][] = [];
-  const store = {
+  const calls: (
+    | Parameters<RepositoryStarListStore["create"]>
+    | Parameters<RepositoryStarListStore["execute"]>
+  )[] = [];
+  const store: RepositoryStarListStore = {
     mine: async () => [],
     detail: async () => {
       throw new Error("not used");
     },
-    create: async (...args: unknown[]) => {
+    create: async (...args) => {
       calls.push(args);
       return { id: "list", version: 1, visibility: "private", deleted: false } as const;
     },
-    execute: async (...args: unknown[]) => {
+    execute: async (...args) => {
       calls.push(args);
       return { id: "list", version: 2, visibility: "private", deleted: false } as const;
     },
-  } as RepositoryStarListStore;
+  };
   const lists = createRepositoryStarLists({
     activeUser: async () => ({ id: "user-a" }),
     store: () => store,

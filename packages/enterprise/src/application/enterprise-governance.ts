@@ -8,11 +8,15 @@ import { normalizeEnterpriseSlug } from "../domain.js";
 const governanceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const governanceId = /^[\w-]{1,128}$/;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function governanceInput(raw: unknown, allowed: string[]) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new GovernanceAccessError(400, "invalid-input", "治理操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (Object.keys(value).some((key) => !allowed.includes(key))) {
     throw new GovernanceAccessError(400, "invalid-input", "治理操作含有未知欄位。");
   }

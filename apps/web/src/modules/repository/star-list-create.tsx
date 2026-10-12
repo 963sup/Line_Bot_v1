@@ -1,13 +1,11 @@
 "use client";
 
-import type {
-  RepositoryStarListCreateCommand,
-  RepositoryStarListMutationResult,
-} from "@line_bot_v1/repository/contracts/repositories/star-lists";
+import type { RepositoryStarListCreateCommand } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 import { useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryStarListPath } from "./resource-navigation";
+import { errorMessage, isStarListMutation } from "./response-validation";
 import {
   clearPendingRepositoryStarListCreate,
   readPendingRepositoryStarListCreate,
@@ -73,9 +71,7 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
         },
         body: JSON.stringify(command),
       });
-      const payload = (await response.json()) as RepositoryStarListMutationResult & {
-        error?: string;
-      };
+      const payload: unknown = await response.json();
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) {
           if (
@@ -88,11 +84,13 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
             setPending(null);
           }
         }
-        throw Object.assign(new Error(payload.error ?? "List 建立失敗。"), {
+        throw Object.assign(new Error(errorMessage(payload, "List 建立失敗。")), {
           status: response.status,
         });
       }
-      if (!payload.id || payload.deleted) throw new Error("List 建立回應不完整。");
+      if (!isStarListMutation(payload) || !payload.id || payload.deleted) {
+        throw new Error("List 建立回應不完整。");
+      }
       if (
         clearPendingRepositoryStarListCreate(
           window.localStorage,

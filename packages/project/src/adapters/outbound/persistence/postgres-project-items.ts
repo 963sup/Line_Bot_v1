@@ -3,7 +3,14 @@ import {
   createIssueFromProjectDraft,
   readProjectIssueReference,
 } from "@line_bot_v1/issue/postgres/project-reference";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   ProjectDraftIssue,
   ProjectItem,
@@ -37,9 +44,51 @@ type DraftRow = {
   updated_at: number | string;
 };
 
+const userIdRow = (row: SqlRow): { user_id: string } => ({ user_id: stringValue(row.user_id) });
+
+const positionRow = (row: SqlRow): { position: number | string } => ({
+  position: numericValue(row.position),
+});
+
+const orderedItemRow = (row: SqlRow): { id: string; position: number | string } => ({
+  id: stringValue(row.id),
+  position: numericValue(row.position),
+});
+
+function decodeItemRow(row: SqlRow): ItemRow {
+  return {
+    id: stringValue(row.id),
+    project_id: stringValue(row.project_id),
+    repository_id: nullableString(row.repository_id),
+    issue_id: nullableString(row.issue_id),
+    draft_issue_id: nullableString(row.draft_issue_id),
+    source_version: nullableNumericValue(row.source_version),
+    position: numericValue(row.position),
+    archived: booleanValue(row.archived),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+function decodeDraftRow(row: SqlRow): DraftRow {
+  return {
+    id: stringValue(row.id),
+    project_id: stringValue(row.project_id),
+    creator: stringValue(row.creator),
+    title: stringValue(row.title),
+    body: stringValue(row.body),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
 function postgresConflict(error: unknown, message: string): never {
-  const postgres = error as { code?: string };
-  if (postgres.code === "23503" || postgres.code === "23505" || postgres.code === "23514") {
+  const code =
+    error !== null && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (code === "23503" || code === "23505" || code === "23514") {
     throw new ProjectError(409, message);
   }
   throw error;
@@ -53,8 +102,9 @@ async function draftAssignees(sql: Sql, draftIssueId: string): Promise<string[]>
        WHERE draft_issue_id=$1
        ORDER BY user_id`,
       [draftIssueId],
+      userIdRow,
     )
-  ).rows as Array<{ user_id: string }>;
+  ).rows;
   return rows.map((row) => row.user_id);
 }
 
@@ -79,8 +129,9 @@ async function readDraft(sql: Sql, projectId: string, draftIssueId: string): Pro
        FROM project_draft_issues
        WHERE project_id=$1 AND id=$2`,
       [projectId, draftIssueId],
+      decodeDraftRow,
     )
-  ).rows[0] as DraftRow | undefined;
+  ).rows[0];
   if (!row) throw new ProjectError(503, "Project DraftIssue reference 無法讀取。");
   return row;
 }
@@ -93,8 +144,9 @@ async function currentItem(sql: Sql, projectId: string, itemId: string): Promise
        WHERE project_id=$1 AND id=$2
        FOR UPDATE`,
       [projectId, itemId],
+      decodeItemRow,
     )
-  ).rows[0] as ItemRow | undefined;
+  ).rows[0];
   if (!row) throw new ProjectError(404, "找不到 Project item。");
   return row;
 }
@@ -112,8 +164,10 @@ async function nextPosition(sql: Sql, projectId: string): Promise<number> {
        FROM project_items
        WHERE project_id=$1`,
       [projectId],
+      positionRow,
     )
-  ).rows[0] as { position: number | string };
+  ).rows[0];
+  if (!row) throw new ProjectError(503, "Project item position 無法配置。");
   return Number(row.position);
 }
 
@@ -133,8 +187,10 @@ async function ensureRepositoryReference(sql: Sql, projectId: string, repository
        FROM project_repository_references
        WHERE project_id=$1`,
       [projectId],
+      positionRow,
     )
-  ).rows[0] as { position: number | string };
+  ).rows[0];
+  if (!row) throw new ProjectError(503, "Project repository position 無法配置。");
   await sql.query(
     `INSERT INTO project_repository_references(
        project_id,repository_id,position,version
@@ -155,8 +211,9 @@ export async function readProjectItems(
        WHERE project_id=$1
        ORDER BY position,id`,
       [projectId],
+      decodeItemRow,
     )
-  ).rows as ItemRow[];
+  ).rows;
   const result: ProjectItem[] = [];
   for (const row of rows) {
     if (row.issue_id !== null) {
@@ -269,8 +326,9 @@ export async function executeProjectItemCommand(
          WHERE project_id=$1 AND id=$2
          FOR UPDATE`,
         [projectId, item.draft_issue_id],
+        decodeDraftRow,
       )
-    ).rows[0] as DraftRow | undefined;
+    ).rows[0];
     if (!draftRow || draftRow.deleted_at !== null) {
       throw new ProjectError(409, "DraftIssue 已刪除或無法更新。");
     }
@@ -383,8 +441,9 @@ export async function executeProjectItemCommand(
          WHERE project_id=$1
          ORDER BY position,id`,
         [projectId],
+        orderedItemRow,
       )
-    ).rows as Array<{ id: string; position: number | string }>;
+    ).rows;
     const ordered = rows.map((row) => row.id);
     const from = ordered.indexOf(item.id);
     if (from < 0) throw new ProjectError(404, "找不到 Project item。");
@@ -422,8 +481,9 @@ export async function executeProjectItemCommand(
          WHERE project_id=$1 AND id=$2
          FOR UPDATE`,
         [projectId, item.draft_issue_id],
+        decodeDraftRow,
       )
-    ).rows[0] as DraftRow | undefined;
+    ).rows[0];
     if (!draftRow || draftRow.deleted_at !== null) {
       throw new ProjectError(409, "DraftIssue 已刪除或無法轉換。");
     }

@@ -19,7 +19,7 @@ function objectInput(raw: unknown): Record<string, unknown> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     throw new DiscussionError(400, "Discussion 操作格式不正確。");
   }
-  return raw as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(raw));
 }
 
 function exactKeys(value: Record<string, unknown>, allowed: readonly string[]) {
@@ -53,6 +53,11 @@ function version(value: unknown, create = false): number {
     throw new DiscussionError(400, "建立操作必須從版本 0 開始。");
   }
   return normalized;
+}
+
+function initialVersion(value: unknown): 0 {
+  version(value, true);
+  return 0;
 }
 
 function base(value: Record<string, unknown>) {
@@ -115,7 +120,7 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
     return {
       ...base(value),
       action,
-      expectedVersion: version(value.expectedVersion, true) as 0,
+      expectedVersion: initialVersion(value.expectedVersion),
       name: text(value.name, "Category 名稱", 120),
       slug,
       description: text(value.description ?? "", "Category 描述", 500, true),
@@ -193,7 +198,7 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
     return {
       ...base(value),
       action,
-      expectedVersion: version(value.expectedVersion, true) as 0,
+      expectedVersion: initialVersion(value.expectedVersion),
       categoryId: id(value.categoryId, "Category 識別碼"),
       title: text(value.title, "Discussion title", 160),
       body: text(value.body, "Discussion body", 20_000),
@@ -251,10 +256,10 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
       "stateReason",
     ]);
     const reason = value.stateReason;
-    if (reason !== null && !closeReasons.includes(reason as DiscussionCloseReason)) {
-      throw new DiscussionError(400, "Discussion close reason 不正確。");
-    }
-    return { ...current, action, stateReason: reason as DiscussionCloseReason | null };
+    if (reason === null) return { ...current, action, stateReason: null };
+    const closeReason = closeReasons.find((candidate) => candidate === reason);
+    if (!closeReason) throw new DiscussionError(400, "Discussion close reason 不正確。");
+    return { ...current, action, stateReason: closeReason };
   }
 
   if (
@@ -449,10 +454,11 @@ function parseCommand(raw: unknown): DiscussionManagementCommand {
       "expectedVersion",
       "reason",
     ]);
-    if (!lockReasons.includes(value.reason as DiscussionLockReason)) {
+    const reason = lockReasons.find((candidate) => candidate === value.reason);
+    if (!reason) {
       throw new DiscussionError(400, "Discussion lock reason 不正確。");
     }
-    return { ...current, action, reason: value.reason as DiscussionLockReason };
+    return { ...current, action, reason };
   }
 
   if (action === "unlock") {

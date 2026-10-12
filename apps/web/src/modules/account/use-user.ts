@@ -1,10 +1,12 @@
 "use client";
 
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import type { AppSessionGeneration } from "../../shared/browser/line-service-session";
 import { clearCurrentAccount, readCurrentAccount } from "./current-account";
+import { responseError } from "./wire-response";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type MembershipWireResponse = { member: AccountView | null };
@@ -178,9 +180,10 @@ export function useUser(liffId: string) {
         ),
         signal,
       });
-      const data = (await result.json()) as MembershipWireResponse & { error?: string };
+      const data: unknown = await result.json();
       signal.throwIfAborted();
-      if (!result.ok) throw new Error(data.error ?? "操作失敗，請重試。");
+      if (!result.ok) throw new Error(responseError(data, "操作失敗，請重試。"));
+      if (!isRecord(data) || !("member" in data)) throw new Error("會員回應格式不完整。");
       if (action === "register" || action === "restore")
         setNotice("會員已開通，可以使用工作功能。");
       clearCurrentAccount();

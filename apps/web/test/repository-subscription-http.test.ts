@@ -11,20 +11,26 @@ type Subscription = ReturnType<typeof createRepositorySubscription>;
 
 test("Repository subscription HTTP maps canonical selector and authenticated command", async () => {
   const calls: unknown[][] = [];
-  const subscription = {
-    view: async (...args: unknown[]) => {
-      calls.push(["view", ...args]);
+  const subscription: Pick<Subscription, "view" | "execute"> = {
+    view: async (subject, selector) => {
+      calls.push(["view", subject, selector]);
       return {
-        repository: { id: "repo", actorUserId: "actor" },
+        repository: { id: "repo", actorUserId: "actor", ownerLogin: "octo", name: "Shared" },
         state: "UNSUBSCRIBED",
         version: 0,
       };
     },
-    execute: async (...args: unknown[]) => {
-      calls.push(["execute", ...args]);
-      return { ok: true };
+    execute: async (subject, raw) => {
+      calls.push(["execute", subject, raw]);
+      return {
+        requestId: "11111111-1111-4111-8111-111111111111",
+        repositoryId: "repo",
+        state: "SUBSCRIBED",
+        version: 1,
+        at: 10,
+      };
     },
-  } as unknown as Subscription;
+  };
   const identity = async () => "subject";
 
   const view = await repositorySubscriptionViewRequest(
@@ -63,11 +69,11 @@ test("Repository subscription HTTP maps canonical selector and authenticated com
 });
 
 test("Repository subscription HTTP fails closed on malformed selector and owner errors", async () => {
-  const subscription = {
+  const subscription: Pick<Subscription, "view"> = {
     view: async () => {
       throw new RepositoryError(403, "forbidden");
     },
-  } as unknown as Subscription;
+  };
   const identity = async () => "subject";
 
   assert.equal(

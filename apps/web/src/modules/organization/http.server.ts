@@ -42,19 +42,24 @@ export async function organizationRequest(
     }
     return jsonResponse(await execute(actor, body));
   } catch (error) {
+    const status =
+      error instanceof OrganizationHttpError
+        ? error.status
+        : error instanceof UserError ||
+            error instanceof GovernanceAccessError ||
+            error instanceof RequestIdentityError
+          ? error.status
+          : error instanceof OrganizationError
+            ? 400
+            : error instanceof BodyTooLargeError
+              ? 413
+              : 503;
     const known =
+      error instanceof OrganizationHttpError ||
       error instanceof OrganizationError ||
       error instanceof UserError ||
       error instanceof GovernanceAccessError ||
       error instanceof RequestIdentityError;
-    const status =
-      error instanceof OrganizationHttpError
-        ? error.status
-        : known
-          ? ((error as { status?: number }).status ?? 400)
-          : error instanceof BodyTooLargeError
-            ? 413
-            : 503;
     captureHandledServerError(error, {
       service: "organization-api",
       operation: "request",
@@ -62,12 +67,11 @@ export async function organizationRequest(
     });
     return jsonResponse(
       {
-        error:
-          error instanceof OrganizationHttpError || known
-            ? (error as Error).message
-            : status === 413
-              ? "內容過大。"
-              : "組織服務暫不可用，請稍後重試。",
+        error: known
+          ? error.message
+          : status === 413
+            ? "內容過大。"
+            : "組織服務暫不可用，請稍後重試。",
         retryable: status >= 500 || status === 429,
       },
       status,

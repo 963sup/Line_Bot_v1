@@ -17,6 +17,17 @@ export interface ReceiptRecognitionDependencies {
   cooldownMs: number;
 }
 
+function deferred<T>() {
+  let resolve: ((value: T | PromiseLike<T>) => void) | undefined;
+  let reject: ((reason?: unknown) => void) | undefined;
+  const promise = new Promise<T>((done, failed) => {
+    resolve = done;
+    reject = failed;
+  });
+  if (!resolve || !reject) throw new Error("Promise executor did not initialize synchronously");
+  return { promise, resolve, reject };
+}
+
 /**
  * Recognizes one pending receipt without mutating Expense state.
  * The model result stays an untrusted transient reading until the owner explicitly saves or confirms it.
@@ -38,12 +49,7 @@ export function createRecognizeReceipt(deps: ReceiptRecognitionDependencies) {
       throw new ExpenseError(429, "辨識冷卻中，請 30 秒後重試。");
     deps.setNextReceiptAt(now + deps.cooldownMs);
 
-    let resolve!: (reading: ReceiptReading) => void;
-    let reject!: (reason: unknown) => void;
-    const inFlight = new Promise<ReceiptReading>((done, failed) => {
-      resolve = done;
-      reject = failed;
-    });
+    const { promise: inFlight, resolve, reject } = deferred<ReceiptReading>();
     deps.recognition.set(id, inFlight);
 
     void (async () => {

@@ -8,6 +8,12 @@ import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { SectionHeading } from "../../shared/ui/page-layout";
 import { repositoryIssuePath, repositoryPath } from "./resource-navigation";
+import {
+  errorMessage,
+  isIssueActivity,
+  isRecord,
+  isTrendingRepository,
+} from "./response-validation";
 
 type DiscoverySnapshot = {
   items: TrendingRepository[];
@@ -69,13 +75,16 @@ export default function DiscoveryPanel({
       headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
-    const value = (await response.json()) as {
-      items?: TrendingRepository[];
-      activity?: IssueActivityItem[];
-      error?: string;
-    };
-    if (!response.ok || !Array.isArray(value.items) || !Array.isArray(value.activity)) {
-      throw new Error(value.error ?? "儲存庫探索暫不可用。");
+    const value: unknown = await response.json();
+    if (
+      !response.ok ||
+      !isRecord(value) ||
+      !Array.isArray(value.items) ||
+      !value.items.every(isTrendingRepository) ||
+      !Array.isArray(value.activity) ||
+      !value.activity.every(isIssueActivity)
+    ) {
+      throw new Error(errorMessage(value, "儲存庫探索暫不可用。"));
     }
     return { items: value.items, activity: value.activity };
   }
@@ -119,8 +128,8 @@ export default function DiscoveryPanel({
           repositoryId: item.id,
         }),
       });
-      const value = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(value.error ?? "儲存庫 Star 操作失敗。");
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(errorMessage(value, "儲存庫 Star 操作失敗。"));
       if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
         return;
       setSnapshot(await read(token));

@@ -1,12 +1,24 @@
 "use client";
 
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
+import { parseAccountView } from "@line_bot_v1/account/application/user";
 import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
+import { errorMessage } from "../../shared/presentation/unknown-value";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type DailyCheckInView = Awaited<ReturnType<DailyCheckIn["currentView"]>>;
+const DAILY_CHECK_IN_POLICY: DailyCheckInView["policy"] = {
+  version: "wheel-v1",
+  totalWeight: 100,
+  prizes: [
+    { code: "coin-half", amount: 0.5, weight: 60 },
+    { code: "coin-one", amount: 1, weight: 30 },
+    { code: "coin-four", amount: 4, weight: 10 },
+  ],
+};
 export type CoinView = DailyCheckInView & { balance: number };
 type CoinProjection = CoinView | { unavailable: true };
 export type DailyCheckInClaim = NonNullable<Awaited<ReturnType<DailyCheckIn["readClaim"]>>>;
@@ -36,6 +48,77 @@ class MembershipRequestError extends Error {
     super(message);
     this.name = "MembershipRequestError";
   }
+}
+
+function readClaim(value: unknown): DailyCheckInClaim | null {
+  if (value === null) return null;
+  if (
+    !isRecord(value) ||
+    typeof value.day !== "string" ||
+    (value.prizeCode !== "coin-half" &&
+      value.prizeCode !== "coin-one" &&
+      value.prizeCode !== "coin-four") ||
+    typeof value.reward !== "number" ||
+    value.policyVersion !== "wheel-v1" ||
+    typeof value.decidedAt !== "number"
+  )
+    throw new Error("簽到回應格式不完整。");
+  return {
+    day: value.day,
+    prizeCode: value.prizeCode,
+    reward: value.reward,
+    policyVersion: value.policyVersion,
+    decidedAt: value.decidedAt,
+  };
+}
+
+function readCoins(value: unknown): CoinProjection {
+  if (isRecord(value) && value.unavailable === true) return { unavailable: true };
+  if (
+    !isRecord(value) ||
+    typeof value.day !== "string" ||
+    typeof value.claimedToday !== "boolean" ||
+    typeof value.balance !== "number" ||
+    JSON.stringify(value.policy) !== JSON.stringify(DAILY_CHECK_IN_POLICY)
+  )
+    throw new Error("簽到回應格式不完整。");
+  return {
+    day: value.day,
+    claimedToday: value.claimedToday,
+    claim: readClaim(value.claim),
+    policy: DAILY_CHECK_IN_POLICY,
+    balance: value.balance,
+  };
+}
+
+function readMembership(value: unknown): MembershipWireResponse {
+  if (!isRecord(value) || !("member" in value)) throw new Error("會員回應格式不完整。");
+  if (value.member === null) return { member: null };
+  if (!isRecord(value.member)) throw new Error("會員回應格式不完整。");
+  return { member: { ...parseAccountView(value.member), coins: readCoins(value.member.coins) } };
+}
+
+function readCheckIn(value: unknown): { member: View | null; checkIn: CheckInWireOutcome } {
+  const membership = readMembership(value);
+  if (!isRecord(value) || !isRecord(value.checkIn)) throw new Error("簽到回應格式不完整。");
+  const result = value.checkIn;
+  if (
+    typeof result.credited !== "number" ||
+    typeof result.replayed !== "boolean" ||
+    !("claim" in result)
+  )
+    throw new Error("簽到回應格式不完整。");
+  const claim = readClaim(result.claim);
+  if (!claim) throw new Error("簽到回應格式不完整。");
+  return {
+    member: membership.member,
+    checkIn: {
+      claim,
+      credited: result.credited,
+      replayed: result.replayed,
+      coins: readCoins(result.coins),
+    },
+  };
 }
 
 export function useDailyCheckIn(liffId: string) {
@@ -77,9 +160,10 @@ export function useDailyCheckIn(liffId: string) {
     const headers = { "X-App-Session-Generation": access };
     signal.throwIfAborted();
     const response = await fetch("/api/membership", { headers, cache: "no-store", signal });
-    const data = (await response.json()) as MembershipWireResponse & { error?: string };
+    const raw: unknown = await response.json();
     signal.throwIfAborted();
-    if (!response.ok) throw new Error(data.error ?? "每日簽到資料讀取失敗。");
+    if (!response.ok) throw new Error(errorMessage(raw, "每日簽到資料讀取失敗。"));
+    const data = readMembership(raw);
     const nextIdentity = data.member?.id ?? null;
     if (identity.current !== nextIdentity) clearUnknownResult();
     identity.current = nextIdentity;
@@ -135,12 +219,13 @@ export function useDailyCheckIn(liffId: string) {
       cache: "no-store",
       signal,
     });
-    const data = (await response.json()) as { claim?: DailyCheckInClaim | null; error?: string };
+    const data: unknown = await response.json();
     signal.throwIfAborted();
     if (!response.ok)
-      throw new MembershipRequestError(data.error ?? "簽到結果讀取失敗。", response.status);
+      throw new MembershipRequestError(errorMessage(data, "簽到結果讀取失敗。"), response.status);
+    if (!isRecord(data) || !("claim" in data)) throw new Error("簽到回應格式不完整。");
     await load(access, signal);
-    return data.claim ?? null;
+    return readClaim(data.claim);
   }
 
   async function readPending(day: string, signal: AbortSignal): Promise<CheckInOutcome> {
@@ -223,14 +308,11 @@ export function useDailyCheckIn(liffId: string) {
         body: JSON.stringify({ action: "checkIn", expectedDay }),
         signal,
       });
-      const data = (await response.json()) as MembershipWireResponse & {
-        checkIn?: CheckInWireOutcome;
-        error?: string;
-      };
+      const raw: unknown = await response.json();
       signal.throwIfAborted();
       if (!response.ok)
-        throw new MembershipRequestError(data.error ?? "簽到操作失敗。", response.status);
-      if (!data.checkIn) throw new Error("簽到回應不完整。");
+        throw new MembershipRequestError(errorMessage(raw, "簽到操作失敗。"), response.status);
+      const data = readCheckIn(raw);
       setUser(data.member);
       clearUnknownResult();
       setNotice(

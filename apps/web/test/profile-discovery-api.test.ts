@@ -92,7 +92,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
         "Content-Type": "application/json",
         ...authenticated,
       },
-      body,
+      ...(body === undefined ? {} : { body }),
     });
 
   try {

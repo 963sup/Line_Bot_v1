@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { createRichMenuClient, type RichMenuDefinition } from "@line_bot_v1/line/rich-menu";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { MENU_PAGES, type MenuPage, menuAlias, SUBMENU_PAGES } from "./definition";
 import type { DesiredRichMenu } from "./desired-state.server";
 
@@ -27,15 +28,14 @@ async function assertRemoteDefinition(
 ) {
   const actual = await client.get(id);
   if (
-    !actual ||
-    typeof actual !== "object" ||
+    !isRecord(actual) ||
     !isDeepStrictEqual(
       {
-        size: (actual as RichMenuDefinition).size,
-        selected: (actual as RichMenuDefinition).selected,
-        name: (actual as RichMenuDefinition).name,
-        chatBarText: (actual as RichMenuDefinition).chatBarText,
-        areas: (actual as RichMenuDefinition).areas,
+        size: actual.size,
+        selected: actual.selected,
+        name: actual.name,
+        chatBarText: actual.chatBarText,
+        areas: actual.areas,
       },
       menu,
     )

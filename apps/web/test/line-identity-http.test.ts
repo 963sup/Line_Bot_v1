@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import {
   POST as auth,
   DELETE as logout,
@@ -142,7 +143,7 @@ test("app sessions authenticate protected APIs without another LINE verification
   delete process.env.KV_REST_API_URL;
   delete process.env.KV_REST_API_TOKEN;
   let proofCalls = 0;
-  globalThis.fetch = (async (input, init) => {
+  globalThis.fetch = async (input, init) => {
     proofCalls++;
     const url = String(input);
     if (url.startsWith("https://api.line.me/oauth2/v2.1/verify?"))
@@ -159,7 +160,7 @@ test("app sessions authenticate protected APIs without another LINE verification
       return Response.json({ userId: subject });
     }
     throw Error("Unexpected outbound request");
-  }) as typeof fetch;
+  };
   mock.method(expenseStore(), "get", async () => {
     assert.fail("rejected requests must not read an expense");
   });
@@ -184,10 +185,8 @@ test("app sessions authenticate protected APIs without another LINE verification
       }),
     );
     assert.equal(exchanged.status, 200);
-    const exchangedBody = (await exchanged.json()) as {
-      generation?: unknown;
-      sessionChanged?: unknown;
-    };
+    const exchangedBody: unknown = await exchanged.json();
+    assert.ok(isRecord(exchangedBody));
     assert.deepEqual(Object.keys(exchangedBody).sort(), ["generation", "sessionChanged"]);
     assert.equal(exchangedBody.sessionChanged, true);
     assert.match(
@@ -276,13 +275,12 @@ test("app sessions authenticate protected APIs without another LINE verification
       }),
     );
     assert.equal(switched.status, 200);
-    const switchedBody = (await switched.json()) as {
-      generation?: string;
-      sessionChanged?: boolean;
-    };
+    const switchedBody: unknown = await switched.json();
+    assert.ok(isRecord(switchedBody));
     assert.equal(switchedBody.sessionChanged, true);
     assert.equal(typeof switchedBody.generation, "string");
-    const switchedGeneration = switchedBody.generation;
+    const switchedGeneration =
+      typeof switchedBody.generation === "string" ? switchedBody.generation : "";
     assert.ok(switchedGeneration);
     assert.match(
       switchedGeneration,

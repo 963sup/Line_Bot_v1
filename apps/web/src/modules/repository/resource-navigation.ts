@@ -14,6 +14,52 @@ export function repositoryIssuesPath(ownerLogin: string, repositoryName: string)
   return `${repositoryPath(ownerLogin, repositoryName)}/issues`;
 }
 
+export type RepositoryResourceSection =
+  | "overview"
+  | "issues"
+  | "discussions"
+  | "labels"
+  | "milestones"
+  | "settings"
+  | "access";
+
+export function repositoryResourceNavigationItems(
+  ownerLogin: string,
+  repositoryName: string,
+  canManage: boolean,
+) {
+  const items: { href: string; label: string; section: RepositoryResourceSection }[] = [
+    { href: repositoryPath(ownerLogin, repositoryName), label: "Overview", section: "overview" },
+    { href: repositoryIssuesPath(ownerLogin, repositoryName), label: "Issues", section: "issues" },
+    {
+      href: repositoryDiscussionsPath(ownerLogin, repositoryName),
+      label: "Discussions",
+      section: "discussions",
+    },
+    { href: repositoryLabelsPath(ownerLogin, repositoryName), label: "Labels", section: "labels" },
+    {
+      href: repositoryMilestonesPath(ownerLogin, repositoryName),
+      label: "Milestones",
+      section: "milestones",
+    },
+  ];
+  if (canManage) {
+    items.push(
+      {
+        href: repositorySettingsPath(ownerLogin, repositoryName),
+        label: "Settings",
+        section: "settings",
+      },
+      {
+        href: repositoryAccessPath(ownerLogin, repositoryName),
+        label: "Access",
+        section: "access",
+      },
+    );
+  }
+  return items;
+}
+
 export function repositoryIssueCreatePath(ownerLogin: string, repositoryName: string) {
   return `${repositoryIssuesPath(ownerLogin, repositoryName)}?create=1`;
 }

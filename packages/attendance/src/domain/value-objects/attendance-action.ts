@@ -2,6 +2,7 @@ const attendanceActionDefinitions = {
   clockIn: { operation: "clock-in", label: "上班" },
   clockOut: { operation: "clock-out", label: "下班" },
 } as const;
+const attendanceActions = ["clockIn", "clockOut"] as const;
 
 export type AttendanceAction = keyof typeof attendanceActionDefinitions;
 export type AttendanceOperation =
@@ -9,7 +10,7 @@ export type AttendanceOperation =
 
 export function attendanceActionFromOperation(value: unknown): AttendanceAction | null {
   if (typeof value !== "string") return null;
-  for (const action of Object.keys(attendanceActionDefinitions) as AttendanceAction[]) {
+  for (const action of attendanceActions) {
     if (attendanceActionDefinitions[action].operation === value) return action;
   }
   return null;

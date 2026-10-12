@@ -1,5 +1,6 @@
 "use client";
 
+import { isRecord } from "@line_bot_v1/platform/validation";
 import type { ProjectSummary } from "@line_bot_v1/project/contracts/dto/project-collection";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -28,14 +29,41 @@ export function useProjectCollection(liffId: string) {
         headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
-      const value = (await response.json()) as {
-        items?: ProjectSummary[];
-        error?: string;
-      };
-      if (!response.ok || !Array.isArray(value.items)) {
-        throw new Error(value.error ?? "Project 列表暫不可用。");
+      const value: unknown = await response.json();
+      if (!isRecord(value) || !response.ok || !Array.isArray(value.items)) {
+        throw new Error(
+          isRecord(value) && typeof value.error === "string"
+            ? value.error
+            : "Project 列表暫不可用。",
+        );
       }
-      if (ticket === generation.current) setItems(value.items);
+      const items: ProjectSummary[] = value.items.map((item) => {
+        if (
+          !isRecord(item) ||
+          typeof item.id !== "string" ||
+          typeof item.ownerLogin !== "string" ||
+          (item.ownerKind !== "USER" && item.ownerKind !== "ORGANIZATION") ||
+          (item.number !== null && typeof item.number !== "number") ||
+          typeof item.name !== "string" ||
+          typeof item.public !== "boolean" ||
+          typeof item.closed !== "boolean" ||
+          (item.role !== "READ" && item.role !== "WRITE" && item.role !== "ADMIN") ||
+          typeof item.version !== "number"
+        )
+          throw new Error("Project 列表回應格式不完整。");
+        return {
+          id: item.id,
+          ownerLogin: item.ownerLogin,
+          ownerKind: item.ownerKind,
+          number: item.number,
+          name: item.name,
+          public: item.public,
+          closed: item.closed,
+          role: item.role,
+          version: item.version,
+        };
+      });
+      if (ticket === generation.current) setItems(items);
     } catch (cause) {
       if (ticket === generation.current) {
         setItems(null);

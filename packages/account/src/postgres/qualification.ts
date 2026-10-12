@@ -1,4 +1,11 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numberValue,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { requireActiveUser, type User, UserError } from "../domain/user.js";
 
 export type UserQualification = Readonly<{
@@ -9,13 +16,13 @@ export type UserQualification = Readonly<{
   authUserId: string | null;
 }>;
 
-function mapQualification(row: Record<string, unknown>): UserQualification {
+function qualificationRow(row: Record<string, unknown>): UserQualification {
   return {
-    id: String(row.id),
-    status: row.status as User["status"],
-    statusVersion: Number(row.status_version),
-    createdAt: Number(row.createdAt),
-    authUserId: row.auth_user_id === null ? null : String(row.auth_user_id),
+    id: stringValue(row.id),
+    status: literalValue(row.status, ["paused", "active", "suspended"]),
+    statusVersion: numberValue(row.status_version),
+    createdAt: Number(numericValue(row.createdAt)),
+    authUserId: nullableString(row.auth_user_id),
   };
 }
 
@@ -29,9 +36,10 @@ export async function readUserQualification(
     await sql.query(
       `SELECT id,status,status_version,auth_user_id,"createdAt" FROM users WHERE id=$1${suffix}`,
       [id],
+      qualificationRow,
     )
-  ).rows[0] as Record<string, unknown> | undefined;
-  return row ? mapQualification(row) : null;
+  ).rows[0];
+  return row ?? null;
 }
 
 export async function readActiveUserQualification(
@@ -93,7 +101,8 @@ export async function readUserByIdentity(
        JOIN users u ON u.id=i.user_id
        WHERE i.provider=$1 AND i.subject=$2${suffix}`,
       [provider, subject],
+      qualificationRow,
     )
-  ).rows[0] as Record<string, unknown> | undefined;
-  return row ? mapQualification(row) : null;
+  ).rows[0];
+  return row ?? null;
 }

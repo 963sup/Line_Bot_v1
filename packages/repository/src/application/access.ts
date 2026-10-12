@@ -14,7 +14,9 @@ import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
-const permissions = new Set<RepositoryPermission>(repositoryPermissions);
+function isRepositoryPermission(value: unknown): value is RepositoryPermission {
+  return repositoryPermissions.some((permission) => permission === value);
+}
 
 function repositorySelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
@@ -32,10 +34,10 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
 }
 
 function parseCommand(raw: unknown): RepositoryAccessCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository access 操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (value.action !== "grant" && value.action !== "revoke") {
     throw new RepositoryError(400, "Repository access 動作不正確。");
   }
@@ -63,6 +65,7 @@ function parseCommand(raw: unknown): RepositoryAccessCommand {
   if (value.subjectKind !== "USER" && value.subjectKind !== "TEAM") {
     throw new RepositoryError(400, "Repository access 對象類型不正確。");
   }
+  const subjectKind: RepositoryAccessSubjectKind = value.subjectKind;
   if (typeof value.subjectId !== "string" || !identifierPattern.test(value.subjectId)) {
     throw new RepositoryError(400, "Repository access 對象不正確。");
   }
@@ -76,21 +79,18 @@ function parseCommand(raw: unknown): RepositoryAccessCommand {
   const base = {
     requestId: value.requestId.toLowerCase(),
     repositoryId: value.repositoryId,
-    subjectKind: value.subjectKind as RepositoryAccessSubjectKind,
+    subjectKind,
     subjectId: value.subjectId,
     expectedVersion: value.expectedVersion,
   };
   if (value.action === "revoke") return { ...base, action: "revoke" };
-  if (
-    typeof value.capability !== "string" ||
-    !permissions.has(value.capability as RepositoryPermission)
-  ) {
+  if (!isRepositoryPermission(value.capability)) {
     throw new RepositoryError(400, "Repository permission 不正確。");
   }
   return {
     ...base,
     action: "grant",
-    capability: value.capability as RepositoryPermission,
+    capability: value.capability,
   };
 }
 
@@ -111,3 +111,5 @@ export function createRepositoryAccess(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

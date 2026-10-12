@@ -9,10 +9,8 @@ import { createRichMenuClient } from "@line_bot_v1/line/rich-menu";
 import { syncUserRichMenu } from "../../../modules/assistant/rich-menu/user-menu.server";
 import { activeLineUser } from "./account.server";
 
-type AttendancePersistence = ReturnType<typeof createPostgresAttendanceStore>;
-const state = globalThis as typeof globalThis & { attendanceStore?: AttendancePersistence };
 function attendanceStore() {
-  return (state.attendanceStore ??= createPostgresAttendanceStore());
+  return (globalThis.attendanceStore ??= createPostgresAttendanceStore());
 }
 
 export const clockAttendance = createClockAttendance({

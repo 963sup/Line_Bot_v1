@@ -18,7 +18,7 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
   process.env.LINE_PROVIDER_ID = "test-provider";
   const originalFetch = globalThis.fetch;
   let apiCalls = 0;
-  globalThis.fetch = (async (input) => {
+  globalThis.fetch = async (input) => {
     const url = String(input);
     if (url.startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
@@ -29,7 +29,7 @@ test("HTTP surface rejects anonymous, forged origin, other owner, invalid comman
     if (url === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     apiCalls++;
     throw new Error("Unexpected external side effect");
-  }) as typeof fetch;
+  };
   let authenticated: HeadersInit = {};
   const owner = await activateMember(user);
   const store = expenseStore();
