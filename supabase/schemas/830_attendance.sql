@@ -51,6 +51,7 @@ create table app_private."attendance_sessions" (
     (repository_id IS NOT NULL AND point_snapshot IS NOT NULL
       AND jsonb_typeof(point_snapshot)='object'
       AND point_snapshot ?& array['repositoryId','id','name','address','latitude','longitude','radius','version']
+      AND jsonb_typeof(point_snapshot->'address') IN ('string','null')
       AND (point_snapshot->>'repositoryId') IS NOT DISTINCT FROM repository_id
       AND (point_snapshot->>'id') IS NOT DISTINCT FROM repository_id)
   ),

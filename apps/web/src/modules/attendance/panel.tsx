@@ -387,7 +387,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       return;
     }
     if (!site?.repositoryId) {
-      setSupplementError("目前沒有可提出補登的 Repository 地址。");
+      setSupplementError("目前沒有可提出補登的 Repository 打卡點。");
       return;
     }
     void sendSupplement({
@@ -515,7 +515,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
                 {data.sites.map((s) => `${s.name}（${s.radius} 公尺）`).join("、")}。
               </p>
             ) : (
-              <p>尚未加入已設定地址的儲存庫，請聯絡儲存庫管理者。</p>
+              <p>尚未加入有可用打卡點的 Repository，請聯絡管理者。</p>
             )}
             <button
               className="attendance-primary"
@@ -588,8 +588,8 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
               你只能提出補登；核准前不會新增或變更出勤紀錄。核准後會保留申請內容與審核人，補登不會產生打卡獎勵或薪資計算。
             </p>
             <p>
-              申請時間以台灣時間填寫；地址是送出申請時的 Repository 地址快照，不代表系統取得了當時的
-              GPS 證明。
+              申請時間以台灣時間填寫；地點是送出申請時的 Repository
+              打卡點快照，地址描述可能為空，也不代表系統取得了當時的 GPS 證明。
             </p>
             {supplementError && <p role="alert">{supplementError}</p>}
             {supplementNotice && <p role="status">{supplementNotice}</p>}
@@ -638,7 +638,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
               {supplementKind === "new-session" ? (
                 <>
                   <label>
-                    Repository 地址
+                    Repository 打卡點
                     <select
                       value={selectedRepository?.id ?? ""}
                       onChange={(event) => setRepositoryId(event.target.value)}

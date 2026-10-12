@@ -77,6 +77,56 @@ test("Repository member can clock; public visibility does not grant attendance; 
   assert.equal(snapshot.point_snapshot.address, address.address);
 });
 
+test("coordinates and radius authorize attendance when the Repository description is null", async (t) => {
+  const { pg, store } = await fixture();
+  t.after(() => pg.close());
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo'", [
+    JSON.stringify({ ...address, address: null }),
+  ]);
+  const recipient = { provider: "line:test", subject: "U11111111111111111111111111111111" };
+
+  const prepared = await store.prepare("member", now);
+  assert.equal(prepared.sites[0]?.address, null);
+  await assert.rejects(
+    store.execute(
+      "member",
+      "clockIn",
+      {
+        ...input(0),
+        location: { latitude: 25.01, longitude: 121, accuracy: 5 },
+      },
+      now,
+      recipient,
+    ),
+    /範圍/,
+  );
+
+  const started = await store.execute("member", "clockIn", input(0), now, recipient);
+  assert.equal(started.sites[0]?.address, null);
+  const persisted = await pg.query(
+    "SELECT point_snapshot FROM app_private.attendance_sessions WHERE uid='member'",
+  );
+  assert.equal(
+    (persisted.rows[0] as { point_snapshot: { address: string | null } }).point_snapshot.address,
+    null,
+  );
+
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo'", [
+    JSON.stringify({ ...address, address: "後續新增的地址描述" }),
+  ]);
+  const active = await store.prepare("member", now + 1_000);
+  assert.equal(active.sites[0]?.address, null);
+  const ended = await store.execute("member", "clockOut", input(1), now + 3_600_000, recipient);
+  assert.equal(ended.attendance.active, null);
+  const unchanged = await pg.query(
+    "SELECT point_snapshot FROM app_private.attendance_sessions WHERE uid='member'",
+  );
+  assert.equal(
+    (unchanged.rows[0] as { point_snapshot: { address: string | null } }).point_snapshot.address,
+    null,
+  );
+});
+
 test("clock-out checks original geofence, replay fingerprint and state version", async (t) => {
   const { pg, store } = await fixture();
   t.after(() => pg.close());

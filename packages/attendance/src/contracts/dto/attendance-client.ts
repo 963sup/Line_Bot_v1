@@ -46,7 +46,7 @@ function parsePoint(value: unknown): AttendancePoint {
     typeof point.id !== "string" ||
     !(point.repositoryId === null || typeof point.repositoryId === "string") ||
     typeof point.name !== "string" ||
-    typeof point.address !== "string" ||
+    !(point.address === null || typeof point.address === "string") ||
     !finite(point.latitude) ||
     !finite(point.longitude) ||
     !nonNegative(point.radius) ||

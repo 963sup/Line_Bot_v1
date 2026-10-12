@@ -11,9 +11,9 @@ Routing and module overview for `@line_bot_v1/attendance`.
 
 This package is the single implementation owner for the Attendance capability.
 
-It owns Attendance actions and vocabulary, session lifecycle, clock-in / clock-out rules, time/location classification, Repository-address eligibility interpretation, reward policy, application orchestration, public command/query/result contracts, replay/version/receipt semantics, and Attendance-derived read/menu/notification expectations.
+It owns Attendance actions and vocabulary, session lifecycle, clock-in / clock-out rules, time/location classification, Repository-point eligibility interpretation, reward policy, application orchestration, public command/query/result contracts, replay/version/receipt semantics, and Attendance-derived read/menu/notification expectations.
 
-Current clock points are Repository address properties. Legacy Workplace relations are retained persistence history only and are not a second runtime Attendance owner.
+Current clock points are Repository-owned coordinates and radius with an optional address description. Legacy Workplace relations are retained persistence history only and are not a second runtime Attendance owner.
 
 ## Boundaries
 

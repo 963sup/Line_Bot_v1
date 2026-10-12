@@ -235,7 +235,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       const point = active.historical_point;
       if (!point) throw new AttendanceError(409, "此筆出勤缺少原始打卡點紀錄，請聯絡服務維護者。");
       return [
-        { ...point, repositoryId: null, address: point.description ?? "" } as AttendancePoint,
+        { ...point, repositoryId: null, address: point.description ?? null } as AttendancePoint,
       ];
     }
     return (await repositoryAttendanceSites(sql, id)).map((point) => ({
@@ -313,7 +313,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
           sites: old.result.sites.map((point: AttendancePoint & { description?: string }) => ({
             ...point,
             repositoryId: point.repositoryId ?? null,
-            address: point.address ?? point.description ?? "",
+            address: point.address ?? point.description ?? null,
           })),
           credited: 0,
           replayed: true,
@@ -324,7 +324,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
       const plan = planAttendance(await this.records(sql, id, now), action, now);
       const sites = await this.sites(sql, id);
       if (!sites.length)
-        throw new AttendanceError(403, "尚未加入已設定地址的儲存庫，請聯絡儲存庫管理者。");
+        throw new AttendanceError(403, "尚未加入已設定打卡點的儲存庫，請聯絡儲存庫管理者。");
       if (sites.every((s) => location.accuracy > s.radius)) {
         throw new AttendanceError(422, "定位精度不足，請移至訊號良好處再試。");
       }
@@ -499,7 +499,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
           (point) => point.id === repositoryId,
         );
         if (!currentSite) {
-          throw new AttendanceError(403, "只能向目前可打卡地址所屬的 Repository 提出補登。");
+          throw new AttendanceError(403, "只能向目前可打卡點所屬的 Repository 提出補登。");
         }
         site = { ...currentSite, repositoryId: currentSite.id };
       } else {
