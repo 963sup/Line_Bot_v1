@@ -68,8 +68,12 @@ const report = {
 let server;
 let serverExit;
 let active;
-function launch(args, cwd, logfile) {
-  const child = spawn(process.execPath, args, { cwd, env, windowsHide: true });
+function launch(args, cwd, logfile, extraEnv = {}) {
+  const child = spawn(process.execPath, args, {
+    cwd,
+    env: { ...env, ...extraEnv },
+    windowsHide: true,
+  });
   for (const stream of [child.stdout, child.stderr]) {
     stream.on("data", (chunk) => {
       appendFileSync(path.join(output, logfile), chunk);
@@ -78,8 +82,8 @@ function launch(args, cwd, logfile) {
   }
   return child;
 }
-async function command(args, cwd, logfile) {
-  active = launch(args, cwd, logfile);
+async function command(args, cwd, logfile, extraEnv = {}) {
+  active = launch(args, cwd, logfile, extraEnv);
   const [code] = await once(active, "exit");
   active = undefined;
   if (code !== 0) throw new Error(`${logfile} failed with exit code ${code}.`);
@@ -87,6 +91,26 @@ async function command(args, cwd, logfile) {
 function stop() {
   active?.kill();
   server?.kill();
+}
+async function startServer(logfile, extraEnv = {}) {
+  server = launch(
+    [next, "start", "--hostname", "127.0.0.1", "--port", String(port)],
+    web,
+    logfile,
+    extraEnv,
+  );
+  serverExit = once(server, "exit");
+  for (let attempt = 0; attempt < 60; attempt++) {
+    if (server.exitCode !== null) throw new Error("Local server exited before readiness.");
+    try {
+      const response = await fetch(base, { signal: AbortSignal.timeout(1000) });
+      if (response.ok) return;
+    } catch {
+      // Readiness polling only; test assertions use Playwright's observable state.
+    }
+    await delay(500);
+  }
+  throw new Error("Local Web did not become ready.");
 }
 process.once("SIGINT", stop);
 process.once("SIGTERM", stop);
@@ -107,27 +131,7 @@ try {
   console.log("Building isolated local Web…");
   await command([next, "build"], web, "build.log");
   report.build = "passed";
-  server = launch(
-    [next, "start", "--hostname", "127.0.0.1", "--port", String(port)],
-    web,
-    "server.log",
-  );
-  serverExit = once(server, "exit");
-  let ready = false;
-  for (let attempt = 0; attempt < 60; attempt++) {
-    if (server.exitCode !== null) throw new Error("Local server exited before readiness.");
-    try {
-      const response = await fetch(base, { signal: AbortSignal.timeout(1000) });
-      if (response.ok) {
-        ready = true;
-        break;
-      }
-    } catch {
-      // Readiness polling only; test assertions use Playwright's observable state.
-    }
-    await delay(500);
-  }
-  if (!ready) throw new Error("Local Web did not become ready.");
+  await startServer("server.log");
   await command([path.join(root, "scripts/browser/check-navigation.mjs")], root, "browser.log");
   await command([path.join(root, "scripts/browser/check-profile.mjs")], root, "profile.log");
   await command(
@@ -156,6 +160,17 @@ try {
     [path.join(root, "scripts/browser/check-permissions.mjs")],
     root,
     "permissions.log",
+  );
+  server.kill();
+  await serverExit;
+  server = undefined;
+  serverExit = undefined;
+  await startServer("server-no-maps.log", { GOOGLE_MAPS_API_KEY: "" });
+  await command(
+    [path.join(root, "scripts/browser/check-repository-address.mjs")],
+    root,
+    "repository-address-no-maps.log",
+    { NAVIGATION_NO_MAPS_KEY: "1" },
   );
   report.status = "passed";
 } catch (error) {

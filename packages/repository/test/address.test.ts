@@ -105,7 +105,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
     repositoryId: "repo",
     expectedVersion: 1,
     address: {
-      address: "台北市信義區市府路 1 號",
+      address: "座標 25.037500, 121.563700",
       latitude: 25.0375,
       longitude: 121.5637,
       radius: 100,
@@ -128,7 +128,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
         address: {
           radius: 100,
           longitude: 121.5637,
-          address: "台北市信義區市府路 1 號",
+          address: "座標 25.037500, 121.563700",
           latitude: 25.0375,
         },
       },

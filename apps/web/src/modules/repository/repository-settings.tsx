@@ -82,6 +82,7 @@ export default function RepositorySettings({
   const [address, setAddress] = useState("");
   const [radius, setRadius] = useState(100);
   const addressEdited = useRef(false);
+  const selectedPoint = useRef<MapPoint | null>(null);
   const generation = useRef(0);
   const locked = useRef(false);
   const storageKey = pendingKey(ownerLogin, repositoryName);
@@ -94,6 +95,7 @@ export default function RepositorySettings({
     setError("");
     setNotice("");
     setPoint(null);
+    selectedPoint.current = null;
     setAddress("");
     setRadius(100);
     addressEdited.current = false;
@@ -143,6 +145,9 @@ export default function RepositorySettings({
           ? { latitude: payload.address.latitude, longitude: payload.address.longitude }
           : null,
       );
+      selectedPoint.current = payload.address
+        ? { latitude: payload.address.latitude, longitude: payload.address.longitude }
+        : null;
       setAddress(payload.address?.address ?? "");
       setRadius(payload.address?.radius ?? 100);
       addressEdited.current = false;
@@ -158,10 +163,28 @@ export default function RepositorySettings({
     }
   }
 
-  const selectPoint = useCallback((next: MapPoint, suggestedAddress: string | null) => {
-    setPoint(next);
-    if (!addressEdited.current) setAddress(suggestedAddress ?? "");
-  }, []);
+  const selectPoint = useCallback(
+    (next: MapPoint, suggestedAddress: string | null, source: "selection" | "geocode") => {
+      if (source === "geocode") {
+        if (
+          selectedPoint.current?.latitude === next.latitude &&
+          selectedPoint.current.longitude === next.longitude &&
+          !addressEdited.current &&
+          suggestedAddress
+        ) {
+          setAddress(suggestedAddress);
+        }
+        return;
+      }
+      selectedPoint.current = next;
+      addressEdited.current = false;
+      setPoint(next);
+      setAddress(
+        suggestedAddress || `座標 ${next.latitude.toFixed(6)}, ${next.longitude.toFixed(6)}`,
+      );
+    },
+    [],
+  );
 
   async function execute(operation: PendingAddressOperation) {
     if (locked.current) return;
@@ -320,17 +343,13 @@ export default function RepositorySettings({
                 });
               }}
             >
-              {mapsApiKey ? (
-                <GoogleMapPicker
-                  apiKey={mapsApiKey}
-                  point={point}
-                  radius={radius}
-                  disabled={busy || Boolean(pending)}
-                  onChange={selectPoint}
-                />
-              ) : (
-                <p role="alert">Google Maps 尚未設定，暫時無法選擇新的打卡位置。</p>
-              )}
+              <GoogleMapPicker
+                apiKey={mapsApiKey}
+                point={point}
+                radius={radius}
+                disabled={busy || Boolean(pending)}
+                onChange={selectPoint}
+              />
               <label>
                 地址
                 <input
