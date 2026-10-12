@@ -251,8 +251,16 @@ export function validate(root) {
     if (biome.assist?.actions?.source?.organizeImports !== "on")
       errors.push("biome.json: organizeImports must remain enabled");
     for (const [group, rules] of Object.entries({
-      suspicious: ["noExplicitAny", "noTsIgnore"],
-      style: ["noNonNullAssertion", "noEnum", "noNamespace"],
+      correctness: ["noUnsafeOptionalChaining"],
+      complexity: ["noBannedTypes"],
+      suspicious: [
+        "noExplicitAny",
+        "noTsIgnore",
+        "noEvolvingTypes",
+        "noImplicitAnyLet",
+        "noUnsafeDeclarationMerging",
+      ],
+      style: ["noNonNullAssertion", "noEnum", "noNamespace", "useAsConstAssertion"],
     })) {
       for (const rule of rules) {
         if (biome.linter?.rules?.[group]?.[rule] !== "error")

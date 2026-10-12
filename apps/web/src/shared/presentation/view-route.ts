@@ -7,7 +7,9 @@ export function viewFromSearchParams<T extends string>(
   fallback: T,
 ): T {
   const values = searchParams.getAll(name);
-  return values.length === 1 && allowed.includes(values[0] as T) ? (values[0] as T) : fallback;
+  return values.length === 1
+    ? (allowed.find((value) => value === values[0]) ?? fallback)
+    : fallback;
 }
 
 export function viewRouteChange<T extends string>({

@@ -60,6 +60,48 @@ test("rejects repeated page tokens and malformed items", async () => {
   );
 });
 
+test("rejects malformed optional event fields with a provider boundary error", async () => {
+  const malformedEvents: unknown[] = [
+    { id: "event", etag: null },
+    { id: "event", status: 1 },
+    { id: "event", summary: {} },
+    { id: "event", recurringEventId: false },
+    { id: "event", start: "2026-09-01" },
+    { id: "event", end: [] },
+    { id: "event", originalStartTime: null },
+    { id: "event", start: { date: 1 } },
+    { id: "event", end: { dateTime: false } },
+    { id: "event", originalStartTime: { timeZone: [] } },
+  ];
+
+  for (const event of malformedEvents) {
+    await assert.rejects(
+      readCalendarEvents(input, async () => Response.json({ items: [event] })),
+      (error: unknown) => error instanceof GoogleCalendarError && error.status === 502,
+    );
+  }
+});
+
+test("preserves valid optional fields, absent fields, and provider extras", async () => {
+  const providerEvent = {
+    id: "event",
+    etag: '"provider-etag"',
+    status: "confirmed",
+    summary: "Planning",
+    start: { date: "2026-09-01", timeZone: "Asia/Taipei" },
+    end: { dateTime: "2026-09-01T10:00:00+08:00", timeZone: "Asia/Taipei" },
+    recurringEventId: "series",
+    originalStartTime: { dateTime: "2026-09-01T09:00:00+08:00" },
+    providerOnly: { retained: true },
+  };
+
+  const result = await readCalendarEvents(input, async () =>
+    Response.json({ items: [providerEvent, { id: "minimal", start: {} }] }),
+  );
+
+  assert.deepEqual(result, [providerEvent, { id: "minimal", start: {} }]);
+});
+
 test("rejects invalid windows and preserves caller cancellation before network", async () => {
   const request: typeof fetch = async () => {
     throw new Error("must not fetch");

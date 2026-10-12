@@ -33,8 +33,12 @@
   "linter": {
     "rules": {
       "preset": "none",
+      "complexity": {
+        "noBannedTypes": "error"
+      },
       "correctness": {
         "noUnreachable": "error",
+        "noUnsafeOptionalChaining": "error",
         "noInvalidUseBeforeDeclaration": "error",
         "noUnusedImports": "error",
         "useHookAtTopLevel": "error",
@@ -42,6 +46,9 @@
       },
       "suspicious": {
         "noExplicitAny": "error",
+        "noEvolvingTypes": "error",
+        "noImplicitAnyLet": "error",
+        "noUnsafeDeclarationMerging": "error",
         "noTsIgnore": "error",
         "noDuplicateCase": "error",
         "noDuplicateObjectKeys": "error",
@@ -50,6 +57,7 @@
       },
       "style": {
         "noNonNullAssertion": "error",
+        "useAsConstAssertion": "error",
         "noEnum": "error",
         "noNamespace": "error"
       }
