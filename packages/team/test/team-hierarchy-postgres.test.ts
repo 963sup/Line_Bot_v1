@@ -248,6 +248,10 @@ test("Team hierarchy derives membership and Repository access without copying me
   await pg.query(
     "update app_private.organizations set member_can_create_teams=false,version=version+1 where account_id='organization-team'",
   );
+  const restrictedMemberView = await store.view(childActor, "organization-team", "");
+  assert.equal(restrictedMemberView.viewerCanCreateTeams, false);
+  const ownerView = await store.view(owner, "organization-team", "");
+  assert.equal(ownerView.viewerCanCreateTeams, true);
   await assert.rejects(
     store.execute(
       childActor,

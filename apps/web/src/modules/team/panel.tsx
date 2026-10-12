@@ -108,6 +108,7 @@ export default function TeamPanel({
     if (
       !value ||
       typeof value.userId !== "string" ||
+      typeof value.viewerCanCreateTeams !== "boolean" ||
       !Array.isArray(value.organizations) ||
       !Array.isArray(value.teams)
     ) {

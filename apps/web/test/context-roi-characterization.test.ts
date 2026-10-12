@@ -148,6 +148,7 @@ test("team command construction keeps current scope, stable team id and version"
     organizations: [],
     organizationAccountId: "org-1",
     organizationLogin: "org",
+    viewerCanCreateTeams: true,
     teams: [],
     team: {
       id: "team-1",

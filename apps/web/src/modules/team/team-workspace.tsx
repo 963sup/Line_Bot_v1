@@ -35,12 +35,17 @@ export function TeamWorkspace({
           <div className="crud-section-head">
             <div>
               <h2>團隊</h2>
-              <p>選擇組織，查看或建立團隊。</p>
+              <p>
+                選擇組織，查看或建立團隊。
+                {data.organizationAccountId &&
+                  !data.viewerCanCreateTeams &&
+                  " 目前帳號沒有此組織的建立團隊資格。"}
+              </p>
             </div>
             <button
               type="button"
               className="crud-create"
-              disabled={!data.organizationAccountId}
+              disabled={!data.organizationAccountId || !data.viewerCanCreateTeams}
               onClick={() => setDraft({ action: "create-team", name: "" })}
             >
               新增團隊

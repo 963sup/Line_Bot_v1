@@ -37,6 +37,7 @@ export type TeamView = {
   organizations: TeamOrganizationSummary[];
   organizationAccountId: string | null;
   organizationLogin: string | null;
+  viewerCanCreateTeams: boolean;
   teams: TeamSummary[];
   team: TeamSummary | null;
   childTeams: TeamSummary[];

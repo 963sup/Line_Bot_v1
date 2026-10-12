@@ -190,6 +190,7 @@ async function readTeamView(
       organizations,
       organizationAccountId: null,
       organizationLogin: null,
+      viewerCanCreateTeams: false,
       teams: [],
       team: null,
       childTeams: [],
@@ -204,20 +205,31 @@ async function readTeamView(
     organizations,
     organizationAccountId,
     organizationLogin: actor.organizationLogin,
+    viewerCanCreateTeams: false,
     teams,
     team: null,
     childTeams: [],
     members: [],
   };
-  if (!teamId) return empty;
+  if (!teamId) {
+    const capabilities = await readOrganizationViewerCapabilities(
+      sql,
+      actor.userId,
+      organizationAccountId,
+    );
+    return { ...empty, viewerCanCreateTeams: capabilities?.viewerCanCreateTeams === true };
+  }
 
   const team = await lockTeam(sql, organizationAccountId, teamId);
   const directMembers = await directTeamMembers(sql, teamId);
   const effectiveMembers = await effectiveTeamMembers(sql, teamId);
   const me = effectiveMembers.find((member) => member.userId === actor.userId);
-  const owner =
-    (await readOrganizationViewerCapabilities(sql, actor.userId, organizationAccountId))
-      ?.viewerCanAdminister === true;
+  const capabilities = await readOrganizationViewerCapabilities(
+    sql,
+    actor.userId,
+    organizationAccountId,
+  );
+  const owner = capabilities?.viewerCanAdminister === true;
   teamAssert(team.privacy === "VISIBLE" || me || owner, 404, "找不到可存取的 Organization Team。");
   const directMe = directMembers.find((member) => member.userId === actor.userId);
   const maintainer = await isTeamMaintainer(sql, teamId, actor.userId);
@@ -232,6 +244,7 @@ async function readTeamView(
       : effectiveMembers;
   return {
     ...empty,
+    viewerCanCreateTeams: capabilities?.viewerCanCreateTeams === true,
     team: {
       id: team.id,
       organizationAccountId: team.organization_account_id,
