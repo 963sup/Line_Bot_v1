@@ -67,7 +67,7 @@ Canonical create surface is `/repositories/new`; API is `POST /api/repositories`
 - Rename changes only `name`; old aliases stay in `repository_name_history`.
 - Visibility does not alter Direct User/Team grants. PUBLIC/INTERNAL can add read visibility without adding RepositoryPermission；switching back to PRIVATE removes that visibility immediately.
 - INTERNAL derives same-Enterprise viewers from the owner Organization's one current active Enterprise attachment plus current Enterprise affiliation. Detach removes INTERNAL-only visibility immediately；an independent explicit grant still works.
-- Archive preserves locator/content reads and current access. Issue commands and Repository Label/Milestone definition mutations reject writes while archived. Discussion writer remains inactive. Repository address remains stored/readable/manageable, but archived Repositories are excluded from new Attendance clock-in sites.
+- Archive preserves locator/content reads and current access. Issue commands and Repository Label/Milestone definition mutations reject writes while archived. Discussion writer remains inactive. Repository clock points remain stored/readable/manageable, but archived Repositories are excluded from new Attendance clock-in sites.
 
 ## Watch / Subscribable
 

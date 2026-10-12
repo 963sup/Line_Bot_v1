@@ -17,7 +17,7 @@ FPT `OrganizationMemberRole.ADMIN | MEMBER` 不是 global Permission catalog：`
 
 `members.read`／`members.suspend` 已退出 current contract，且 persistence 不再接受 legacy alias。`permission_grants` 與 `permission_administrators` 使用 `user_id` / `user_version`，Permission source、public contract 與 database constraint 使用同一組名稱，不設 dual-write、compatibility view 或 adapter mapping。
 
-`workplaces.manage` 已退出 runtime catalog；舊 enum/grant scope 僅為保留資料，RLS 不允許 runtime 讀寫舊授權。Repository 地址由 effective Repository admin 管理。
+`workplaces.manage` 已退出 runtime catalog；舊 enum/grant scope 僅為保留資料，RLS 不允許 runtime 讀寫舊授權。Repository 打卡點由 effective Repository admin 管理。
 
 沒有列在 current catalog 的能力，不因頁面、選單或 target 文件存在而自動成為 feature permission。
 ## 授權來源

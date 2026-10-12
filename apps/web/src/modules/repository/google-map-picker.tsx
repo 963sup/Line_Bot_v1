@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type MapPoint = Readonly<{ latitude: number; longitude: number }>;
 
@@ -113,13 +113,6 @@ function validPoint(point: MapPoint) {
   );
 }
 
-function sameCenter(left: MapPoint, right: MapPoint) {
-  return (
-    Math.abs(left.latitude - right.latitude) < 0.000001 &&
-    Math.abs(left.longitude - right.longitude) < 0.000001
-  );
-}
-
 export default function GoogleMapPicker({
   apiKey,
   point,
@@ -144,20 +137,43 @@ export default function GoogleMapPicker({
   const disabledRef = useRef(disabled);
   const initialPoint = useRef(point);
   const initialRadius = useRef(radius);
-  const programmaticTarget = useRef<MapPoint | null>(null);
-  const committedPoint = useRef<MapPoint | null>(point);
-  const movedSinceIdle = useRef(false);
   const [status, setStatus] = useState(
     apiKey ? "載入地圖中…" : "Google Maps 尚未設定；仍可使用目前位置設定打卡點。",
   );
   const [locating, setLocating] = useState(false);
   const [retryableError, setRetryableError] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [locationAccuracyUnknown, setLocationAccuracyUnknown] = useState(false);
 
   onChangeRef.current = onChange;
   disabledRef.current = disabled;
   initialPoint.current = point;
   initialRadius.current = radius;
+
+  const commitSelection = useCallback((selected: MapPoint, suggestedAddress: string | null) => {
+    if (!validPoint(selected)) return;
+    setLocating(false);
+    setLocationAccuracy(null);
+    setLocationAccuracyUnknown(false);
+    circle.current?.setMap(map.current);
+    circle.current?.setCenter(coordinates(selected));
+    const selection = ++selectionGeneration.current;
+    onChangeRef.current(selected, suggestedAddress, "selection");
+    if (suggestedAddress || !geocoder.current) return;
+    void geocoder.current
+      .geocode({ location: coordinates(selected) })
+      .then((response) => {
+        if (selection !== selectionGeneration.current || disabledRef.current) return;
+        const address = response.results[0]?.formatted_address?.trim();
+        if (address) onChangeRef.current(selected, address, "geocode");
+        else setStatus("未找到地址描述；打卡點仍可使用座標與半徑儲存。");
+      })
+      .catch(() => {
+        if (selection === selectionGeneration.current && !disabledRef.current)
+          setStatus("地址查詢失敗；打卡點仍可使用座標與半徑儲存。");
+      });
+  }, []);
 
   useEffect(() => {
     const report = (message: string) => {
@@ -182,9 +198,6 @@ export default function GoogleMapPicker({
         if (ticket !== lifecycleGeneration.current || !mapElement.current || !searchElement.current)
           return;
         const center = initialPoint.current ?? { latitude: 25.033, longitude: 121.5654 };
-        committedPoint.current = initialPoint.current;
-        programmaticTarget.current = null;
-        movedSinceIdle.current = false;
         const instance = new google.maps.Map(mapElement.current, {
           center: coordinates(center),
           zoom: initialPoint.current ? 17 : 13,
@@ -209,45 +222,29 @@ export default function GoogleMapPicker({
         });
         geocoder.current = new google.maps.Geocoder();
         listeners.push(
-          instance.addListener("center_changed", () => {
+          instance.addListener("dragend", () => {
+            if (disabledRef.current) return;
             const centerValue = instance.getCenter();
             if (!centerValue) return;
             const selected = { latitude: centerValue.lat(), longitude: centerValue.lng() };
-            if (!validPoint(selected)) return;
-            circle.current?.setCenter(coordinates(selected));
-            const target = programmaticTarget.current;
-            if (target && sameCenter(target, selected)) return;
-            if (committedPoint.current && sameCenter(committedPoint.current, selected)) return;
-            if (disabledRef.current) return;
-            setLocating(false);
-            programmaticTarget.current = null;
-            movedSinceIdle.current = true;
-            committedPoint.current = selected;
-            circle.current?.setMap(instance);
-            selectionGeneration.current += 1;
-            onChangeRef.current(selected, null, "selection");
-          }),
-          instance.addListener("idle", () => {
-            programmaticTarget.current = null;
-            if (!movedSinceIdle.current || disabledRef.current) return;
-            movedSinceIdle.current = false;
-            const selected = committedPoint.current;
-            if (!selected) return;
-            const lookup = selectionGeneration.current;
-            void geocoder.current
-              ?.geocode({ location: coordinates(selected) })
-              .then((response) => {
-                const address = response.results[0]?.formatted_address?.trim();
-                if (lookup === selectionGeneration.current && !disabledRef.current && address)
-                  onChangeRef.current(selected, address, "geocode");
-              })
-              .catch(() => {
-                // Coordinates remain usable; the editable address field is the fallback.
-              });
+            if (!validPoint(selected)) {
+              setStatus("地圖回傳無效座標，請重新選點。");
+              return;
+            }
+            commitSelection(selected, null);
           }),
           instance.addListener("click", (event) => {
             if (event?.latLng && !disabledRef.current) {
-              instance.panTo({ lat: event.latLng.lat(), lng: event.latLng.lng() });
+              const selected = {
+                latitude: event.latLng.lat(),
+                longitude: event.latLng.lng(),
+              };
+              if (!validPoint(selected)) {
+                setStatus("地圖回傳無效座標，請重新選點。");
+                return;
+              }
+              instance.panTo(coordinates(selected));
+              commitSelection(selected, null);
             }
           }),
         );
@@ -280,14 +277,10 @@ export default function GoogleMapPicker({
                 setStatus("地點資料沒有有效座標，請改用其他位置。");
                 return;
               }
-              programmaticTarget.current = selected;
-              committedPoint.current = selected;
-              movedSinceIdle.current = false;
               instance.setCenter(coordinates(selected));
               instance.setZoom(17);
-              circle.current?.setMap(instance);
-              circle.current?.setCenter(coordinates(selected));
-              onChangeRef.current(selected, place.formattedAddress?.trim() || null, "selection");
+              commitSelection(selected, place.formattedAddress?.trim() || null);
+              setStatus("已選取搜尋結果；地址描述可編輯。");
             } catch {
               setStatus("地點資料讀取失敗，請移動地圖選點。");
             }
@@ -313,7 +306,7 @@ export default function GoogleMapPicker({
       geocoder.current = null;
       placeElement?.remove();
     };
-  }, [apiKey, retry]);
+  }, [apiKey, commitSelection, retry]);
 
   useEffect(() => circle.current?.setRadius(radius), [radius]);
 
@@ -340,31 +333,32 @@ export default function GoogleMapPicker({
           setStatus("定位回傳無效座標，請重試或改用地圖選點。");
           return;
         }
-        programmaticTarget.current = selected;
-        committedPoint.current = selected;
-        movedSinceIdle.current = false;
         map.current?.setCenter(coordinates(selected));
         map.current?.setZoom(18);
-        circle.current?.setMap(map.current);
-        circle.current?.setCenter(coordinates(selected));
-        const lookup = ++selectionGeneration.current;
-        onChangeRef.current(selected, null, "selection");
-        setStatus("已取得目前位置；可編輯座標標籤並儲存。");
-        void geocoder.current
-          ?.geocode({ location: coordinates(selected) })
-          .then((response) => {
-            const address = response.results[0]?.formatted_address?.trim();
-            if (lookup === selectionGeneration.current && !disabledRef.current && address)
-              onChangeRef.current(selected, address, "geocode");
-          })
-          .catch(() => {
-            // The coordinate label remains the editable fallback.
-          });
+        commitSelection(selected, null);
+        setStatus("已取得目前位置；地址描述選填，座標可直接儲存。");
+        if (
+          typeof coords.accuracy === "number" &&
+          Number.isFinite(coords.accuracy) &&
+          coords.accuracy >= 0
+        ) {
+          setLocationAccuracy(coords.accuracy);
+          setLocationAccuracyUnknown(false);
+        } else {
+          setLocationAccuracy(null);
+          setLocationAccuracyUnknown(true);
+        }
       },
-      () => {
+      (error) => {
         if (ticket === selectionGeneration.current) {
           setLocating(false);
-          setStatus("無法取得目前位置，請確認定位權限後重試。");
+          setStatus(
+            error.code === 1
+              ? "定位權限遭拒絕，請允許定位後重試或改用地圖／地址搜尋。"
+              : error.code === 3
+                ? "取得目前位置逾時，請重試或改用地圖／地址搜尋。"
+                : "目前位置無法使用，請重試或改用地圖／地址搜尋。",
+          );
         }
       },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
@@ -404,6 +398,15 @@ export default function GoogleMapPicker({
           </button>
         )}
         <p role="status">{status}</p>
+        {locationAccuracy !== null && locationAccuracy > radius && (
+          <p role="status">
+            目前定位精度約 ±{Math.ceil(locationAccuracy)} 公尺，大於打卡半徑 {radius} 公尺；
+            可在定位較佳處重試，或使用地圖／地址搜尋調整打卡點。
+          </p>
+        )}
+        {locationAccuracyUnknown && (
+          <p role="status">無法確認目前定位精度；可重新定位，或使用地圖／地址搜尋調整打卡點。</p>
+        )}
       </div>
     </div>
   );

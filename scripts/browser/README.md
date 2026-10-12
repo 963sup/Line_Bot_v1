@@ -23,7 +23,7 @@ pnpm test:browser
 | `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
 | `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |
 | `check-partner-management.mjs` | Partner 名錄/管理、版本衝突、換帳號與 unknown-result handling。 |
-| `check-repository-address.mjs` | Repository 地址設定／移除、有效成員讀取、撤權與原命令重試。 |
+| `check-repository-address.mjs` | Repository 打卡點設定／移除、有效成員讀取、撤權與原命令重試。 |
 | `check-auto-clock.mjs` | 自動打卡、定位拒絕、unknown-result resend、首次成功/重播刷新。 |
 | `check-permissions.mjs` | 權限確認、重試、撤銷、禁止自改與功能授權隔離。 |
 | `measure-loading.mjs` | 在相同 build/browser 下量測 script 解壓 bytes 與 request counts；不是 Web Vitals。 |

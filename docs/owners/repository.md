@@ -6,7 +6,7 @@ Read this file for Repository ownership and invariants. Load [detailed reference
 
 Repository owns:
 
-- Optional address property (address text, coordinates, radius), also the clock point for effective members;
+- Optional attendance point (coordinates and radius, with an optional descriptive address), used for effective members;
 - Repository stable identity、current name、owner-scoped rename history、visibility、archive state；
 - Direct User / Organization Team access grants、User → Repository Star and User → Repository Watch subscription；
 - Repository Star List / List membership；
@@ -17,7 +17,7 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 
 ## Invariants
 
-- Address mutation requires current effective Repository `admin`, expected version and exact replay. Visibility、Star and Watch do not grant clock eligibility. Address remains readable/manageable while archived, but archived Repository is excluded from new Attendance clock-in sites; existing Attendance snapshots are immutable.
+- Clock-point mutation requires current effective Repository `admin`, expected version and exact replay. Coordinates and radius determine clock eligibility; the descriptive address is optional. Visibility、Star and Watch do not grant clock eligibility. The point remains readable/manageable while archived, but archived Repository is excluded from new Attendance clock-in sites; existing Attendance snapshots are immutable.
 - RepositoryId is stable across rename、visibility and archive lifecycle. Rename changes only the owner-scoped locator and increments Repository version; Issue/Discussion/Project references keep the same RepositoryId.
 - Current owner/name always wins. Historical names are retained as owner-scoped aliases. `followRenames=true` resolves an old alias to the same Repository；`false` rejects it. An old alias stays reserved against every other Repository under that owner, while the same Repository may reclaim its own historical name.
 - Visibility is read authority, not RepositoryPermission：`PRIVATE` requires explicit current access；`PUBLIC` is readable without a User grant；`INTERNAL` is Organization-only and readable by current active Users in the same current active Enterprise scope. INTERNAL is not Organization membership, every logged-in User, or public.

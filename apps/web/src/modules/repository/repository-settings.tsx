@@ -179,9 +179,7 @@ export default function RepositorySettings({
       selectedPoint.current = next;
       addressEdited.current = false;
       setPoint(next);
-      setAddress(
-        suggestedAddress || `座標 ${next.latitude.toFixed(6)}, ${next.longitude.toFixed(6)}`,
-      );
+      setAddress(suggestedAddress?.trim() ?? "");
     },
     [],
   );
@@ -309,7 +307,7 @@ export default function RepositorySettings({
             {data.repository.ownerLogin}/{data.repository.name}
           </h2>
           <p>
-            Repository 地址就是打卡點；你目前是
+            Repository 打卡點由座標與半徑決定；地址描述僅供辨識。你目前是
             {data.repository.actorIsOwner
               ? "擁有者"
               : data.repository.actorPermissions.includes("admin")
@@ -326,6 +324,10 @@ export default function RepositorySettings({
                   setError("請先在地圖選擇打卡位置。");
                   return;
                 }
+                if (!Number.isFinite(radius) || radius <= 0 || radius > 10_000) {
+                  setError("打卡半徑必須大於 0 且不可超過 10,000 公尺。");
+                  return;
+                }
                 void execute({
                   owner: data.repository.actorUserId,
                   command: {
@@ -334,7 +336,7 @@ export default function RepositorySettings({
                     repositoryId: data.repository.id,
                     expectedVersion: data.repository.version,
                     address: {
-                      address: address.trim(),
+                      address: address.trim() || null,
                       latitude: point.latitude,
                       longitude: point.longitude,
                       radius,
@@ -354,7 +356,6 @@ export default function RepositorySettings({
                 地址
                 <input
                   name="address"
-                  required
                   maxLength={500}
                   value={address}
                   onChange={(event) => {
@@ -363,19 +364,21 @@ export default function RepositorySettings({
                   }}
                 />
               </label>
+              <p className="field-help">地址描述選填；沒有地址或地理編碼失敗，不影響座標打卡點。</p>
               <label>
                 打卡半徑（公尺）
                 <input
                   name="radius"
                   type="number"
                   required
-                  min={1}
+                  min={0}
                   max={10000}
                   step="any"
                   value={radius}
                   onChange={(event) => setRadius(Number(event.currentTarget.value))}
                 />
               </label>
+              <p className="field-help">必須大於 0 且不超過 10,000 公尺。</p>
               <div className="repository-radius-choices" aria-label="常用打卡半徑">
                 {[50, 100, 200].map((value) => (
                   <button
@@ -391,7 +394,14 @@ export default function RepositorySettings({
               </div>
               <button
                 type="submit"
-                disabled={busy || Boolean(pending) || !point || !address.trim()}
+                disabled={
+                  busy ||
+                  Boolean(pending) ||
+                  !point ||
+                  !Number.isFinite(radius) ||
+                  radius <= 0 ||
+                  radius > 10_000
+                }
               >
                 儲存打卡點
               </button>
@@ -418,7 +428,8 @@ export default function RepositorySettings({
             </form>
           ) : data.address ? (
             <p>
-              {data.address.address} · {data.address.radius} 公尺
+              {data.address.address ? `${data.address.address} · ` : "未提供地址描述 · "}
+              {data.address.radius} 公尺
             </p>
           ) : (
             <p className="empty-copy">此 Repository 尚未設定打卡點。</p>

@@ -3,7 +3,7 @@ import type { RepositoryPermission } from "../value-objects/repository-capabilit
 export type RepositoryVisibility = "private" | "internal" | "public";
 
 export type RepositoryAddress = Readonly<{
-  address: string;
+  address: string | null;
   latitude: number;
   longitude: number;
   radius: number;

@@ -30,9 +30,16 @@ create table app_private."repositories" (
       jsonb_typeof(address) = 'object'
       and address ?& array['address','latitude','longitude','radius']
       and address - array['address','latitude','longitude','radius'] = '{}'::jsonb
-      and jsonb_typeof(address->'address') = 'string'
-      and (address->>'address') = btrim(address->>'address')
-      and length(address->>'address') between 1 and 500
+      and
+      (
+        address->'address' = 'null'::jsonb
+        or
+        (
+          jsonb_typeof(address->'address') = 'string'
+          and (address->>'address') = btrim(address->>'address')
+          and length(address->>'address') between 1 and 500
+        )
+      )
       and jsonb_typeof(address->'latitude') = 'number'
       and (address->>'latitude')::double precision between -90 and 90
       and jsonb_typeof(address->'longitude') = 'number'

@@ -209,7 +209,7 @@ await page.addInitScript(() => {
           _success({ coords: window.__syntheticGeolocation });
           return;
         }
-        failure({ code: 1, message: "synthetic denial" });
+        failure(window.__syntheticGeolocationError ?? { code: 1, message: "synthetic denial" });
       },
     },
   });
@@ -223,26 +223,26 @@ try {
       page.getByRole("status").filter({ hasText: "Google Maps 尚未設定" }),
     ).toBeVisible();
     await page.evaluate(() => {
-      window.__syntheticGeolocation = { latitude: Number.NaN, longitude: 121.54 };
+      window.__syntheticGeolocation = { latitude: Number.NaN, longitude: 121.54, accuracy: 20 };
     });
     await page.getByRole("button", { name: "使用目前位置" }).click();
     await expect(page.getByRole("status").filter({ hasText: "無效座標" })).toBeVisible();
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeDisabled();
     await page.evaluate(() => {
-      window.__syntheticGeolocation = { latitude: 25.01, longitude: 121.54 };
+      window.__syntheticGeolocation = { latitude: 25.01, longitude: 121.54, accuracy: 0.1 };
     });
     await page.getByRole("button", { name: "使用目前位置" }).click();
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.010000, 121.540000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
+    await page.getByLabel("打卡半徑（公尺）", { exact: true }).fill("0");
+    await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeDisabled();
+    await page.getByLabel("打卡半徑（公尺）", { exact: true }).fill("0.5");
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
     await page.getByRole("button", { name: "儲存打卡點" }).click();
     await expect(page.getByText("打卡點已更新。", { exact: true })).toBeVisible();
-    assert.equal(posts[0].address.address, "座標 25.010000, 121.540000");
+    assert.equal(posts[0].address.address, null);
+    assert.equal(posts[0].address.radius, 0.5);
     await page.reload();
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.010000, 121.540000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     assert.equal(mapsLoads, 0);
     assert.deepEqual(errors, []);
     if (output) {
@@ -261,14 +261,19 @@ try {
     await expect(page.getByRole("heading", { name: "alice/Operations" })).toBeVisible();
     await expect(page.getByRole("button", { name: "重新載入地圖" })).toBeEnabled();
     await page.getByRole("button", { name: "使用目前位置" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "無法取得目前位置" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "定位權限遭拒絕" })).toBeVisible();
     await page.evaluate(() => {
-      window.__syntheticGeolocation = { latitude: 25.01, longitude: 121.54 };
+      window.__syntheticGeolocationError = { code: 3, message: "synthetic timeout" };
     });
     await page.getByRole("button", { name: "使用目前位置" }).click();
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.010000, 121.540000",
-    );
+    await expect(page.getByRole("status").filter({ hasText: "逾時" })).toBeVisible();
+    await page.evaluate(() => {
+      delete window.__syntheticGeolocationError;
+      window.__syntheticGeolocation = { latitude: 25.01, longitude: 121.54, accuracy: 250 };
+    });
+    await page.getByRole("button", { name: "使用目前位置" }).click();
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
+    await expect(page.getByRole("status").filter({ hasText: "大於打卡半徑" })).toBeVisible();
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
     await page.getByRole("button", { name: "重新載入地圖" }).click();
     await expect(page.getByLabel("打卡點地圖")).toHaveAttribute("data-map-ready", "true");
@@ -278,17 +283,13 @@ try {
     await page.evaluate(() => {
       window.__syntheticMaps.geocodes[0].resolve({ results: [] });
     });
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.010000, 121.540000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
     assert.equal(await page.evaluate(() => window.__syntheticMaps.geocodes.length), 1);
     await page.getByRole("button", { name: "儲存打卡點" }).click();
     await expect(page.getByText("打卡點已更新。", { exact: true })).toBeVisible();
-    assert.equal(posts[0].address.address, "座標 25.010000, 121.540000");
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.010000, 121.540000",
-    );
+    assert.equal(posts[0].address.address, null);
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await expect(page.locator("gmp-place-autocomplete")).toHaveCount(1);
     await page.evaluate(() => {
       const autocomplete = document.querySelector("gmp-place-autocomplete");
@@ -308,6 +309,19 @@ try {
     assert.equal(posts[1].address.latitude, 25.02);
     assert.equal(posts[1].address.longitude, 121.55);
     assert.equal(posts[1].address.address, "搜尋選取地址");
+    assert.equal(
+      await page
+        .evaluate(() => {
+          const center = window.__syntheticMaps.maps.at(-1).getCenter();
+          return [center.lat(), center.lng()];
+        })
+        .then(
+          ([latitude, longitude]) =>
+            Math.abs(latitude - 25.02) < 0.000001 && Math.abs(longitude - 121.55) < 0.000001,
+        ),
+      true,
+      "selecting an address result must center the map on its coordinates",
+    );
     await expect(page.getByLabel("打卡點地圖")).toHaveAttribute("data-map-ready", "true");
     await page.evaluate(() => {
       const maps = window.__syntheticMaps;
@@ -319,6 +333,17 @@ try {
     await expect(page.getByLabel("地址", { exact: true })).toHaveValue("台北市信義區市府路 1 號");
     await page.getByLabel("地址", { exact: true }).fill("自訂入口地址");
     await page.evaluate(() => {
+      const map = window.__syntheticMaps.maps.at(-1);
+      map.setCenter({ lat: 26, lng: 122 });
+      map.emit("idle");
+    });
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("自訂入口地址");
+    assert.deepEqual(
+      await page.evaluate(() => window.__syntheticMaps.circles.at(-1).center),
+      { lat: 25.0375, lng: 121.5637 },
+      "programmatic map movement must not move the committed point",
+    );
+    await page.evaluate(() => {
       window.__syntheticMaps.geocodes[0].resolve({
         results: [{ formatted_address: "遲到的舊地址" }],
       });
@@ -329,9 +354,21 @@ try {
         latLng: { lat: () => 25.04, lng: () => 121.57 },
       });
     });
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.040000, 121.570000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
+    await page.evaluate(() => {
+      const map = window.__syntheticMaps.maps.at(-1);
+      map.center = { lat: 25.041, lng: 121.571 };
+      map.emit("center_changed");
+    });
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
+    await page.evaluate(() => window.__syntheticMaps.maps.at(-1).emit("dragend"));
+    await page.evaluate(() => {
+      const geocodes = window.__syntheticMaps.geocodes;
+      geocodes[2].resolve({ results: [{ formatted_address: "拖曳前的舊位置" }] });
+      geocodes[3].reject(new Error("synthetic reverse geocode failure"));
+    });
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
+    await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
     await page.getByLabel("打卡半徑（公尺）", { exact: true }).fill("100");
     assert.equal(await page.evaluate(() => window.__syntheticMaps.circles.at(-1).radius), 100);
     if (output) {
@@ -345,11 +382,11 @@ try {
     assert.equal(posts.length, 3);
     assert.equal(
       posts[2].address.latitude,
-      25.04,
+      25.041,
       "save must use the latest map point immediately",
     );
-    assert.equal(posts[2].address.longitude, 121.57);
-    assert.equal(posts[2].address.address, "座標 25.040000, 121.570000");
+    assert.equal(posts[2].address.longitude, 121.571);
+    assert.equal(posts[2].address.address, null);
 
     await page.reload();
     await expect(page.getByRole("button", { name: "重試原操作" })).toBeEnabled();
@@ -358,18 +395,14 @@ try {
     await expect(page.getByText("打卡點已更新。", { exact: true })).toBeVisible();
     assert.deepEqual(posts[3], posts[2], "retry must preserve the original UUID and payload");
     assert.equal(receipts.size, 3);
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.040000, 121.570000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
 
     await page.getByLabel("地址", { exact: true }).fill("舊位置手填地址");
     await page.evaluate(() => {
-      window.__syntheticGeolocation = { latitude: 25.06, longitude: 121.59 };
+      window.__syntheticGeolocation = { latitude: 25.06, longitude: 121.59, accuracy: 20 };
     });
     await page.getByRole("button", { name: "使用目前位置" }).click();
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.060000, 121.590000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await page.evaluate(() => {
       window.__syntheticMaps.geocodes.at(-1).resolve({
         results: [{ formatted_address: "重新定位街道地址" }],
@@ -378,12 +411,10 @@ try {
     await expect(page.getByLabel("地址", { exact: true })).toHaveValue("重新定位街道地址");
     await page.getByLabel("地址", { exact: true }).fill("舊位置再次手填");
     await page.evaluate(() => {
-      window.__syntheticGeolocation = { latitude: 25.07, longitude: 121.6 };
+      window.__syntheticGeolocation = { latitude: 25.07, longitude: 121.6, accuracy: 20 };
     });
     await page.getByRole("button", { name: "使用目前位置" }).click();
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.070000, 121.600000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await page.getByLabel("地址", { exact: true }).fill("新位置自訂地址");
     await page.evaluate(() => {
       window.__syntheticMaps.geocodes.at(-1).resolve({
@@ -392,15 +423,13 @@ try {
     });
     await expect(page.getByLabel("地址", { exact: true })).toHaveValue("新位置自訂地址");
     await page.evaluate(() => {
-      window.__syntheticGeolocation = { latitude: 25.08, longitude: 121.61 };
+      window.__syntheticGeolocation = { latitude: 25.08, longitude: 121.61, accuracy: 20 };
     });
     await page.getByRole("button", { name: "使用目前位置" }).click();
     await page.evaluate(() =>
       window.__syntheticMaps.geocodes.at(-1).reject(new Error("synthetic")),
     );
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.080000, 121.610000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
 
     await page.evaluate(() => window.gm_authFailure());
@@ -432,14 +461,10 @@ try {
         latLng: { lat: () => 25.05, lng: () => 121.58 },
       });
     });
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.050000, 121.580000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "儲存打卡點" })).toBeEnabled();
     await page.evaluate(() => window.__syntheticMaps.geocodes[0].reject(new Error("synthetic")));
-    await expect(page.getByLabel("地址", { exact: true })).toHaveValue(
-      "座標 25.050000, 121.580000",
-    );
+    await expect(page.getByLabel("地址", { exact: true })).toHaveValue("");
     await page.getByLabel("地址", { exact: true }).fill("第二入口");
     await page.getByLabel("打卡半徑（公尺）", { exact: true }).fill("120");
     lose = true;
@@ -503,8 +528,12 @@ try {
               "Places New selection payload",
               "map point with hidden coordinates",
               "denied and successful geolocation",
-              "empty and failed geocoding retain coordinate draft",
-              "programmatic center normalization does not replace selection",
+              "empty and failed reverse geocoding save a null description",
+              "address autocomplete selects the result coordinates on the map",
+              "programmatic map centering is not an explicit selection",
+              "map click and drag end commit selected coordinates",
+              "GPS accuracy warning follows the configured radius",
+              "positive fractional radius is accepted and zero is rejected",
               "new location replaces stale manual address",
               "late geocode and manual address protection",
               "radius circle synchronization",

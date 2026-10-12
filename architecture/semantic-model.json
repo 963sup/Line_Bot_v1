@@ -942,7 +942,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current",
-      "definition": "Actual attendance lifecycle, Repository-member clock eligibility, immutable address snapshots and attendance facts.",
+      "definition": "Actual attendance lifecycle, Repository-member clock eligibility, immutable point snapshots and attendance facts.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -962,7 +962,7 @@
       "kind": "authoritative",
       "owner": "attendance",
       "lifecycle": "current-data-only",
-      "definition": "Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository address properties.",
+      "definition": "Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository-owned coordinates and radius with an optional address description.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1723,7 +1723,7 @@
       "id": "repository-attendance-address-eligibility",
       "provider": "repository",
       "consumer": "attendance",
-      "meaning": "Attendance consumes Repository address and current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal.",
+      "meaning": "Attendance consumes a Repository point (coordinates and radius with an optional address description) plus current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal.",
       "integrationMode": "query",
       "authority": "repository",
       "consistency": "current-state"
@@ -2881,7 +2881,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository address clock-in for effective members; clock-out uses original session point snapshot even after member removal.",
+        "scope": "Clock-in validates Repository coordinates, radius, current GPS accuracy and effective member access; clock-out uses the original immutable point snapshot even after member removal.",
         "sourcePaths": [
           "packages/attendance/src/application/clock.ts",
           "packages/attendance/src/contracts/clock.ts",
@@ -2918,7 +2918,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "The submitting User can propose a closed session for a currently eligible Repository address, or propose only an end time for their own open Repository session; each proposal is durable and remains pending until reviewed.",
+        "scope": "The submitting User can propose a closed session for a currently eligible Repository point, or propose only an end time for their own open Repository session; each proposal snapshot is durable and remains pending until reviewed.",
         "sourcePaths": [
           "packages/attendance/src/application/supplements.ts",
           "packages/attendance/src/contracts/supplements.ts",
@@ -3143,7 +3143,7 @@
       "id": "manage-repository-address",
       "owner": "repository",
       "kind": "leaf",
-      "intent": "Maintain the Repository address property used as the attendance clock point for current effective members.",
+      "intent": "Maintain the Repository attendance point, consisting of coordinates and radius with an optional address description.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -3155,7 +3155,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Optional single Repository address; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
+        "scope": "Optional single Repository point with required coordinates and radius and a nullable address description; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
         "sourcePaths": [
           "packages/repository/src/application/address.ts",
           "packages/repository/src/contracts/repositories/address.ts",
