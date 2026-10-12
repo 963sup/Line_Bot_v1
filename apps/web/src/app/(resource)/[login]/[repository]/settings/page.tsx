@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import RepositoryManagementSettings from "../../../../../modules/repository/repository-management-settings";
 import styles from "../../../../../modules/repository/repository-resource.module.css";
 import RepositorySettings from "../../../../../modules/repository/repository-settings";
-import AppShell from "../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +20,7 @@ export default async function Page({
     notFound();
   }
   return (
-    <AppShell>
+    <>
       <RepositoryManagementSettings
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
@@ -35,6 +34,6 @@ export default async function Page({
           repositoryName={repository}
         />
       </div>
-    </AppShell>
+    </>
   );
 }

@@ -29,9 +29,10 @@ export async function startRepositoryOverviewFixture(output) {
       contents: `import React from 'react';
         import {createRoot} from 'react-dom/client';
         import Page from '../../apps/web/src/app/(resource)/[login]/[repository]/page.tsx';
+        import Layout from '../../apps/web/src/app/(resource)/[login]/[repository]/layout.tsx';
         import '../../apps/web/src/app/globals.css';
         const page=await Page({params:Promise.resolve({login:'acme',repository:'Operations'})});
-        createRoot(document.getElementById('root')).render(page);`,
+        createRoot(document.getElementById('root')).render(<Layout>{page}</Layout>);`,
       resolveDir: fileURLToPath(new URL(".", import.meta.url)),
       loader: "tsx",
     },

@@ -32,6 +32,8 @@ pnpm test:browser
 
 此套件不屬於 validate／CI；結果只證明本機 Web 與合成流程，不能代替真實 LINE、DB、手機 GPS 或 OAuth 驗收。
 
+設定 `REPOSITORY_BENCHMARK=1` 可額外量測六個 Repository 子頁各 20 次軟導覽，先暖機一輪，再記錄資料可見時間、外殼 DOM 保留、業務 API 次數與解壓後的 RSC／script bytes。結果保存在 `repository-resources-results.json`；這是本機、合成即時 API 的受控比較，時間包含 Playwright 操作／斷言成本，不能當作 production Web Vitals。Overview 的 server query 使用獨立合成 fixture，因此不混入 Next 路由效能數據。
+
 ## 個別執行與量測
 
 已有相符的本機正式服務時，設定 `NAVIGATION_BASE=http://127.0.0.1:4117`，用上述 Playwright 環境執行 `node scripts/browser/<腳本>.mjs`；只接受 loopback origin。標準入口優先於手動建置／啟動。

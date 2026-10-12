@@ -670,6 +670,78 @@ try {
     beforePublicReads,
     "Public Overview must stay passive before interaction",
   );
+  // Controlled local navigation experiment, not production Web Vitals.
+  if (process.env.REPOSITORY_BENCHMARK === "1") {
+    await gotoPath("/acme/Operations/labels");
+    await expect(page.getByText("bug", { exact: true })).toBeVisible();
+    const samples = [];
+    let responses = [];
+    const recordResponse = (response) => {
+      const request = response.request();
+      if (
+        request.resourceType() === "script" ||
+        response.headers()["content-type"]?.includes("text/x-component")
+      ) {
+        responses.push(
+          response
+            .body()
+            .then((body) => ({ type: request.resourceType(), decodedBytes: body.length }))
+            .catch(() => ({ type: request.resourceType(), decodedBytes: 0 })),
+        );
+      }
+    };
+    page.on("response", recordResponse);
+    const ready = {
+      Issues: () => page.getByRole("heading", { name: "目前沒有 Issues", exact: true }),
+      Discussions: () => linkWithText(firstDiscussion.title),
+      Labels: () => page.getByText("bug", { exact: true }),
+      Milestones: () => linkWithText("#1 v1.0"),
+      Settings: () => page.getByRole("heading", { name: "acme/Operations", exact: true }),
+      Access: () => page.getByRole("heading", { name: "Direct User access", exact: true }),
+    };
+    for (let cycle = 0; cycle <= 20; cycle++) {
+      for (const section of sections.slice(1)) {
+        await page
+          .locator(".app-shell")
+          .evaluate((element) => (element.dataset.benchmarkShell = "retained"));
+        const before = requests.length;
+        responses = [];
+        const started = performance.now();
+        await page
+          .getByRole("navigation", { name: "Repository resources" })
+          .getByRole("link", { name: section, exact: true })
+          .click();
+        await expect(ready[section]()).toBeVisible();
+        await expect(
+          page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
+        ).toHaveCount(7);
+        const readyMs = performance.now() - started;
+        const retained = await page
+          .locator(".app-shell")
+          .evaluate((element) => element.dataset.benchmarkShell === "retained");
+        const bodies = await Promise.all(responses);
+        if (cycle)
+          samples.push({
+            section,
+            readyMs,
+            retained,
+            apiRequests: requests.length - before,
+            decodedScriptBytes: bodies
+              .filter((item) => item.type === "script")
+              .reduce((sum, item) => sum + item.decodedBytes, 0),
+            decodedRscBytes: bodies
+              .filter((item) => item.type !== "script")
+              .reduce((sum, item) => sum + item.decodedBytes, 0),
+          });
+      }
+    }
+    page.off("response", recordResponse);
+    result.navigationBenchmark = {
+      scope:
+        "120 warmed soft navigations, 20 per section; synthetic immediate APIs; browser routing disables HTTP cache; client router cache/prefetch unchanged; excludes database-backed Overview; timings include Playwright click/assertion overhead and are not Web Vitals",
+      samples,
+    };
+  }
   result.checks.push(
     "all seven Repository sections share shell/header/navigation geometry at 1280, 390 and 320px; 44px targets and no overflow",
   );
@@ -707,9 +779,20 @@ try {
     "discussions direct load, reload, detail, back, pagination, no duplicate data, mobile layout",
   );
 
-  await gotoPath("/acme/Operations/labels");
+  await page
+    .locator(".app-shell")
+    .evaluate((element) => (element.dataset.sharedLayoutCheck = "retained"));
+  await page
+    .getByRole("navigation", { name: "Repository resources" })
+    .getByRole("link", { name: "Labels", exact: true })
+    .click();
   await expect(page.getByRole("heading", { name: "Labels", exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toBeVisible();
+  assert.equal(
+    await page.locator(".app-shell").evaluate((element) => element.dataset.sharedLayoutCheck),
+    "retained",
+    "Sibling soft navigation must preserve the Repository layout",
+  );
   await expect(page.getByText("help wanted", { exact: true })).toBeVisible();
   result.checks.push("labels direct load");
 

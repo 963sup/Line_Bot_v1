@@ -3,7 +3,6 @@ import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { normalizeRepositoryMilestoneNumber } from "@line_bot_v1/repository/domain";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";
-import AppShell from "../../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +21,13 @@ export default async function Page({
   const number = normalizeRepositoryMilestoneNumber(milestoneNumber);
   if (number === null) notFound();
   return (
-    <AppShell>
-      <RepositoryResourcesPanel
-        key={`${ownerLogin}/${repository}/milestone/${number}`}
-        liffId={lineMiniApp().liffId}
-        ownerLogin={ownerLogin}
-        repositoryName={repository}
-        kind="milestone"
-        milestoneNumber={number}
-      />
-    </AppShell>
+    <RepositoryResourcesPanel
+      key={`${ownerLogin}/${repository}/milestone/${number}`}
+      liffId={lineMiniApp().liffId}
+      ownerLogin={ownerLogin}
+      repositoryName={repository}
+      kind="milestone"
+      milestoneNumber={number}
+    />
   );
 }

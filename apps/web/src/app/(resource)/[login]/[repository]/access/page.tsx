@@ -2,7 +2,6 @@ import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
 import RepositoryAccess from "../../../../../modules/repository/repository-access";
-import AppShell from "../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +18,10 @@ export default async function Page({
     notFound();
   }
   return (
-    <AppShell>
-      <RepositoryAccess
-        liffId={lineMiniApp().liffId}
-        ownerLogin={ownerLogin}
-        repositoryName={repository}
-      />
-    </AppShell>
+    <RepositoryAccess
+      liffId={lineMiniApp().liffId}
+      ownerLogin={ownerLogin}
+      repositoryName={repository}
+    />
   );
 }

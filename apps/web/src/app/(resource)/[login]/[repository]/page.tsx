@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import IssueBoard from "../../../../modules/repository/issue-board";
 import RepositoryPageHeader from "../../../../modules/repository/repository-page-header";
 import RepositorySubscriptionControl from "../../../../modules/repository/repository-subscription-control";
-import AppShell from "../../../(mobile)/_shell/app-shell";
 import { publicRepositories } from "../../_composition/repository.server";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +24,7 @@ export default async function Page({
 
   if (publicRepository) {
     return (
-      <AppShell>
+      <>
         <RepositoryPageHeader
           ownerLogin={publicRepository.ownerLogin}
           repositoryName={publicRepository.name}
@@ -38,26 +37,24 @@ export default async function Page({
           repositoryName={publicRepository.name}
           explicitInteraction
         />
-      </AppShell>
+      </>
     );
   }
 
   return (
-    <AppShell>
-      <IssueBoard
-        key={`${ownerLogin}/${repository}`}
-        liffId={lineMiniApp().liffId}
-        ownerLogin={ownerLogin}
-        repositoryName={repository}
-        navigationActive="overview"
-        overviewContent={
-          <RepositorySubscriptionControl
-            liffId={lineMiniApp().liffId}
-            ownerLogin={ownerLogin}
-            repositoryName={repository}
-          />
-        }
-      />
-    </AppShell>
+    <IssueBoard
+      key={`${ownerLogin}/${repository}`}
+      liffId={lineMiniApp().liffId}
+      ownerLogin={ownerLogin}
+      repositoryName={repository}
+      navigationActive="overview"
+      overviewContent={
+        <RepositorySubscriptionControl
+          liffId={lineMiniApp().liffId}
+          ownerLogin={ownerLogin}
+          repositoryName={repository}
+        />
+      }
+    />
   );
 }
