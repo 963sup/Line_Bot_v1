@@ -905,7 +905,13 @@ test("imports cannot escape by relative path or directory junction", (t) => {
   outside.write("target.mjs", "");
   write("scripts/check.mjs", importing("../../outside.mjs"));
   rejects(root, "import outside repository");
-  symlinkSync(outside.root, resolve(root, "scripts/link"), "junction");
+  try {
+    symlinkSync(outside.root, resolve(root, "scripts/link"), "junction");
+  } catch (error) {
+    if (error?.code !== "EPERM") throw error;
+    t.skip("Windows denied junction creation (EPERM)");
+    return;
+  }
   write("scripts/check.mjs", importing("./link/target.mjs"));
   rejects(root, "import outside repository");
   write("scripts/check.mjs", importing("./link/missing.mjs"));
