@@ -43,21 +43,21 @@ const claimFixtures = {
     prizeCode: "coin-half",
     reward: 0.5,
     policyVersion: "wheel-v1",
-    decidedAt: "2026-09-10T01:00:00.000Z",
+    decidedAt: Date.parse("2026-09-10T01:00:00.000Z"),
   },
   "coin-one": {
     day: "2026-09-10",
     prizeCode: "coin-one",
     reward: 1,
     policyVersion: "wheel-v1",
-    decidedAt: "2026-09-10T01:01:00.000Z",
+    decidedAt: Date.parse("2026-09-10T01:01:00.000Z"),
   },
   "coin-four": {
     day: "2026-09-10",
     prizeCode: "coin-four",
     reward: 4,
     policyVersion: "wheel-v1",
-    decidedAt: "2026-09-10T01:02:00.000Z",
+    decidedAt: Date.parse("2026-09-10T01:02:00.000Z"),
   },
 };
 const session = (name) => ({
