@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
 import { recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
-import type { Database, Sql } from "@line_bot_v1/platform/postgres";
+import { createSql, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresDailyCheckInStore } from "../src/adapters/outbound/persistence/postgres-daily-check-in-store.js";
 import { createDailyCheckIn } from "../src/application/daily-check-in.js";
@@ -94,12 +94,11 @@ test("Postgres DailyCheckIn rolls back claim outcome when Ledger posting fails",
     transaction: (work) =>
       pg.transaction(async (tx) => {
         await tx.exec("SET LOCAL ROLE line_app; SET LOCAL search_path=app_private,pg_catalog;");
-        const guarded: Sql = {
-          query: (text, values) => {
-            if (String(text).includes("post_asset_credit")) throw new Error("ledger unavailable");
-            return tx.query(text, values);
-          },
-        };
+        const guarded = createSql(async (text, values) => {
+          if (String(text).includes("post_asset_credit")) throw new Error("ledger unavailable");
+          const result = await tx.query<SqlRow>(text, values);
+          return { rows: result.rows, rowCount: result.affectedRows ?? null };
+        });
         return work(guarded);
       }),
   };

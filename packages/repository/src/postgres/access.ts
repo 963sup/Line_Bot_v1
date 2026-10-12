@@ -3,9 +3,11 @@ import {
   readAccountLogins,
   resolveAccountLogin,
 } from "@line_bot_v1/namespace/postgres";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
+import { booleanValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import { RepositoryError, type RepositoryPermission, type RepositorySummary } from "../domain.js";
+import { decodeIdRow, repositoryOwnerKind, repositoryPermissionArray } from "./decode.js";
 
 export type RepositoryIdentity = { userId: string };
 
@@ -16,6 +18,24 @@ type RepositoryAccessRow = {
   name: string;
   permissions: RepositoryPermission[];
 };
+
+function decodeRepositoryAccessRow(row: SqlRow): RepositoryAccessRow {
+  return {
+    id: stringValue(row.id),
+    owner_account_id: stringValue(row.owner_account_id),
+    owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+    name: stringValue(row.name),
+    permissions: repositoryPermissionArray(row.permissions),
+  };
+}
+
+function decodeRepositoryIdRow(row: SqlRow): { repository_id: string } {
+  return { repository_id: stringValue(row.repository_id) };
+}
+
+function decodeUserIdRow(row: SqlRow): { user_id: string } {
+  return { user_id: stringValue(row.user_id) };
+}
 
 async function repositorySummaries(
   sql: Sql,
@@ -53,8 +73,9 @@ export async function accessibleRepositories(
        WHERE a.user_id=$1
        ORDER BY lower(r.name),r.id`,
       [userId],
+      decodeRepositoryAccessRow,
     )
-  ).rows as RepositoryAccessRow[];
+  ).rows;
   return repositorySummaries(sql, rows);
 }
 
@@ -68,8 +89,9 @@ export async function repositoryAdministeredIds(sql: Sql, userId: string): Promi
        WHERE user_id=$1 AND 'admin'=ANY(permissions)
        ORDER BY repository_id`,
       [userId],
+      decodeRepositoryIdRow,
     )
-  ).rows as Array<{ repository_id: string }>;
+  ).rows;
   return rows.map((row) => row.repository_id);
 }
 
@@ -99,8 +121,9 @@ export async function readableRepositoriesByIds(
          )
        ORDER BY r.id`,
       [userId, repositoryIds],
+      decodeRepositoryAccessRow,
     )
-  ).rows as RepositoryAccessRow[];
+  ).rows;
   return repositorySummaries(sql, rows);
 }
 
@@ -111,15 +134,16 @@ export async function repositoryScope(
 ) {
   const access = await repositoryAccess(sql, identity, repositoryId);
   const participants = access.permissions.length
-    ? ((
+    ? (
         await sql.query(
           `SELECT user_id
            FROM repository_effective_access
            WHERE repository_id=$1
            ORDER BY user_id`,
           [repositoryId],
+          decodeUserIdRow,
         )
-      ).rows as Array<{ user_id: string }>)
+      ).rows
     : [];
   return {
     repository: access,
@@ -154,8 +178,9 @@ async function repositoryAccess(
              AND (v.user_id=$2 OR v.user_id IS NULL)
          )`,
       [repositoryId, identity.userId],
+      decodeRepositoryAccessRow,
     )
-  ).rows[0] as RepositoryAccessRow | undefined;
+  ).rows[0];
   if (!row) throw new RepositoryError(403, "沒有此 Repository 的讀取權限。");
   const owner = await readAccountLogin(sql, row.owner_account_id, row.owner_account_kind);
   if (!owner) throw new RepositoryError(409, "Repository owner locator 不可用。");
@@ -188,8 +213,9 @@ async function currentRepositoryId(
              AND (v.user_id=$4 OR v.user_id IS NULL)
          )`,
       [ownerId, ownerKind, repositoryName, userId],
+      decodeIdRow,
     )
-  ).rows[0] as { id: string } | undefined;
+  ).rows[0];
   return row?.id ?? null;
 }
 
@@ -233,8 +259,9 @@ export async function resolveAuthorizedRepositoryId(
        ORDER BY h.renamed_at DESC,r.id
        LIMIT 2`,
       [owner.id, owner.kind, selector.repositoryName, identity.userId],
+      decodeIdRow,
     )
-  ).rows as Array<{ id: string }>;
+  ).rows;
   if (!rows.length) throw new RepositoryError(404, "找不到可存取的 Repository。");
   if (rows.length > 1) {
     throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
@@ -265,19 +292,25 @@ export async function repositoryOwnerIdentity(
 ): Promise<RepositoryOwnerIdentity> {
   await repositoryAccess(sql, identity, repositoryId);
   const row = (
-    await sql.query("SELECT owner_account_id,owner_account_kind FROM repositories WHERE id=$1", [
-      repositoryId,
-    ])
-  ).rows[0] as
-    | { owner_account_id: string; owner_account_kind: "USER" | "ORGANIZATION" }
-    | undefined;
+    await sql.query(
+      "SELECT owner_account_id,owner_account_kind FROM repositories WHERE id=$1",
+      [repositoryId],
+      (row) => ({
+        owner_account_id: stringValue(row.owner_account_id),
+        owner_account_kind: repositoryOwnerKind(row.owner_account_kind),
+      }),
+    )
+  ).rows[0];
   if (!row) throw new RepositoryError(404, "找不到 Repository。");
   return { id: row.owner_account_id, kind: row.owner_account_kind };
 }
 
 export async function repositoryArchived(sql: Sql, repositoryId: string): Promise<boolean> {
-  const row = (await sql.query("SELECT is_archived FROM repositories WHERE id=$1", [repositoryId]))
-    .rows[0] as { is_archived: boolean } | undefined;
+  const row = (
+    await sql.query("SELECT is_archived FROM repositories WHERE id=$1", [repositoryId], (row) => ({
+      is_archived: booleanValue(row.is_archived),
+    }))
+  ).rows[0];
   if (!row) throw new RepositoryError(404, "找不到 Repository。");
   return Boolean(row.is_archived);
 }

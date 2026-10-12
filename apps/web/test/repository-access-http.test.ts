@@ -11,9 +11,9 @@ type RepositoryAccess = ReturnType<typeof createRepositoryAccess>;
 
 test("Repository access HTTP translates owner/name and authenticated command transport", async () => {
   const calls: unknown[][] = [];
-  const access = {
-    view: async (...args: unknown[]) => {
-      calls.push(["view", ...args]);
+  const access: Pick<RepositoryAccess, "view" | "execute"> = {
+    view: async (subject, selector) => {
+      calls.push(["view", subject, selector]);
       return {
         repository: {
           id: "repo",
@@ -27,11 +27,19 @@ test("Repository access HTTP translates owner/name and authenticated command tra
         teamGrants: [],
       };
     },
-    execute: async (...args: unknown[]) => {
-      calls.push(["execute", ...args]);
-      return { ok: true };
+    execute: async (subject, raw) => {
+      calls.push(["execute", subject, raw]);
+      return {
+        requestId: "11111111-1111-4111-8111-111111111111",
+        repositoryId: "repo",
+        subjectKind: "USER",
+        subjectId: "member",
+        capability: "read",
+        version: 1,
+        at: 10,
+      };
     },
-  } as unknown as RepositoryAccess;
+  };
   const identity = async () => "subject";
 
   const view = await repositoryAccessViewRequest(
@@ -72,11 +80,11 @@ test("Repository access HTTP translates owner/name and authenticated command tra
 });
 
 test("Repository access HTTP fails closed on malformed selectors and owner errors", async () => {
-  const access = {
+  const access: Pick<RepositoryAccess, "view"> = {
     view: async () => {
       throw new RepositoryError(403, "forbidden");
     },
-  } as unknown as RepositoryAccess;
+  };
   const identity = async () => "subject";
   const forbidden = await repositoryAccessViewRequest(
     new Request("https://example.com/api/repository-access?owner=octo&name=Shared"),

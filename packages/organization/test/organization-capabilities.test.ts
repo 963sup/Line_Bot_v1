@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { organizationGovernance } from "../src/application/organization-governance.js";
@@ -58,14 +59,14 @@ test("Owner can restrict member creation and members observe the current policy"
       { provider: "line:test", subject: "member" },
       { ...command, requestId: "23456789-1234-4234-8234-123456789abc", expectedVersion: 2 },
     ),
-    (error: unknown) => (error as { status?: number }).status === 403,
+    (error: unknown) => error instanceof GovernanceAccessError && error.status === 403,
   );
   await assert.rejects(
     governance.execute(
       { provider: "line:test", subject: "owner" },
       { ...command, requestId: "34567890-1234-4234-8234-123456789abc" },
     ),
-    (error: unknown) => (error as { status?: number }).status === 409,
+    (error: unknown) => error instanceof GovernanceAccessError && error.status === 409,
   );
   const detail = await governance.detail({ provider: "line:test", subject: "owner" }, "org");
   assert.equal(detail.memberCreationPolicy.memberCanCreateProjectV2, false);

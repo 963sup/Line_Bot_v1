@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
-import type { Sql } from "@line_bot_v1/platform/postgres";
+import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   ProjectField,
   ProjectFieldIteration,
@@ -56,6 +63,89 @@ type ValueRow = {
   updated_at: number | string;
 };
 
+const fieldDataTypes: readonly ProjectFieldDataType[] = [
+  "DATE",
+  "ITERATION",
+  "MULTI_SELECT",
+  "NUMBER",
+  "SINGLE_SELECT",
+  "TEXT",
+];
+const optionKinds: readonly OptionRow["option_kind"][] = ["SINGLE_SELECT", "MULTI_SELECT"];
+const optionColors: readonly ProjectOptionColor[] = [
+  "BLUE",
+  "GRAY",
+  "GREEN",
+  "ORANGE",
+  "PINK",
+  "PURPLE",
+  "RED",
+  "YELLOW",
+];
+
+function decodeFieldRow(row: SqlRow): FieldRow {
+  return {
+    id: stringValue(row.id),
+    project_id: stringValue(row.project_id),
+    name: stringValue(row.name),
+    data_type: literalValue(row.data_type, fieldDataTypes),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+function decodeOptionRow(row: SqlRow): OptionRow {
+  return {
+    id: stringValue(row.id),
+    field_id: stringValue(row.field_id),
+    option_kind: literalValue(row.option_kind, optionKinds),
+    name: stringValue(row.name),
+    color: literalValue(row.color, optionColors),
+    description: stringValue(row.description),
+    position: numericValue(row.position),
+    version: numericValue(row.version),
+  };
+}
+
+function decodeIterationRow(row: SqlRow): IterationRow {
+  return {
+    id: stringValue(row.id),
+    field_id: stringValue(row.field_id),
+    title: stringValue(row.title),
+    start_date: stringValue(row.start_date),
+    duration: numericValue(row.duration),
+    position: numericValue(row.position),
+    version: numericValue(row.version),
+  };
+}
+
+function decodeValueRow(row: SqlRow): ValueRow {
+  return {
+    project_id: stringValue(row.project_id),
+    item_id: stringValue(row.item_id),
+    field_id: stringValue(row.field_id),
+    value_type: literalValue(row.value_type, fieldDataTypes),
+    date_value: nullableString(row.date_value),
+    iteration_id: nullableString(row.iteration_id),
+    number_value: nullableNumericValue(row.number_value),
+    single_select_option_id: nullableString(row.single_select_option_id),
+    text_value: nullableString(row.text_value),
+    version: numericValue(row.version),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+const multiValueRow = (row: SqlRow): { item_id: string; field_id: string; option_id: string } => ({
+  item_id: stringValue(row.item_id),
+  field_id: stringValue(row.field_id),
+  option_id: stringValue(row.option_id),
+});
+
+const versionRow = (row: SqlRow): { version: number | string } => ({
+  version: numericValue(row.version),
+});
+
 function fieldOption(row: OptionRow): ProjectFieldOption {
   return {
     id: row.id,
@@ -104,8 +194,9 @@ async function fieldRows(sql: Sql, projectId: string): Promise<FieldRow[]> {
        WHERE project_id=$1
        ORDER BY lower(name),id`,
       [projectId],
+      decodeFieldRow,
     )
-  ).rows as FieldRow[];
+  ).rows;
 }
 
 async function optionRows(sql: Sql, fieldIds: readonly string[]): Promise<OptionRow[]> {
@@ -117,8 +208,9 @@ async function optionRows(sql: Sql, fieldIds: readonly string[]): Promise<Option
        WHERE field_id=ANY($1::text[])
        ORDER BY field_id,position,id`,
       [fieldIds],
+      decodeOptionRow,
     )
-  ).rows as OptionRow[];
+  ).rows;
 }
 
 async function iterationRows(sql: Sql, fieldIds: readonly string[]): Promise<IterationRow[]> {
@@ -130,8 +222,9 @@ async function iterationRows(sql: Sql, fieldIds: readonly string[]): Promise<Ite
        WHERE field_id=ANY($1::text[])
        ORDER BY field_id,position,id`,
       [fieldIds],
+      decodeIterationRow,
     )
-  ).rows as IterationRow[];
+  ).rows;
 }
 
 export async function readProjectFields(sql: Sql, projectId: string): Promise<ProjectField[]> {
@@ -168,8 +261,9 @@ export async function readProjectFieldValues(
        WHERE project_id=$1 AND item_id=ANY($2::text[])
        ORDER BY item_id,field_id`,
       [projectId, visibleItemIds],
+      decodeValueRow,
     )
-  ).rows as ValueRow[];
+  ).rows;
   const multiRows = (
     await sql.query(
       `SELECT item_id,field_id,option_id
@@ -177,8 +271,9 @@ export async function readProjectFieldValues(
        WHERE project_id=$1 AND item_id=ANY($2::text[])
        ORDER BY item_id,field_id,option_id`,
       [projectId, visibleItemIds],
+      multiValueRow,
     )
-  ).rows as Array<{ item_id: string; field_id: string; option_id: string }>;
+  ).rows;
   const multi = new Map<string, string[]>();
   for (const row of multiRows) {
     const key = `${row.item_id}\0${row.field_id}`;
@@ -225,8 +320,9 @@ async function currentField(sql: Sql, projectId: string, fieldId: string): Promi
        WHERE project_id=$1 AND id=$2
        FOR UPDATE`,
       [projectId, fieldId],
+      decodeFieldRow,
     )
-  ).rows[0] as FieldRow | undefined;
+  ).rows[0];
   if (!row) throw new ProjectError(404, "找不到 Project field。");
   return row;
 }
@@ -490,8 +586,9 @@ async function currentValueVersion(
        WHERE project_id=$1 AND item_id=$2 AND field_id=$3
        FOR UPDATE`,
       [projectId, itemId, fieldId],
+      versionRow,
     )
-  ).rows[0] as { version: number | string } | undefined;
+  ).rows[0];
   return row ? Number(row.version) : 0;
 }
 
@@ -631,8 +728,9 @@ export async function executeProjectFieldCommand(
          WHERE project_id=$1 AND id=$2 AND version=$5
          RETURNING version`,
         [projectId, before.id, name, now, command.fieldVersion],
+        versionRow,
       )
-    ).rows[0] as { version: number | string } | undefined;
+    ).rows[0];
     if (!updated) throw new ProjectError(409, "Project field 已更新。");
     return {
       resourceId: before.id,

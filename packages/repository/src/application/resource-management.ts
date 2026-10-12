@@ -8,15 +8,17 @@ const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
 const colorPattern = /^[0-9a-fA-F]{6}$/;
 
-const actions = new Set<RepositoryResourceManagementCommand["action"]>([
-  "create-label",
-  "update-label",
-  "delete-label",
-  "create-milestone",
-  "update-milestone",
-  "open-milestone",
-  "close-milestone",
-]);
+function isAction(value: unknown): value is RepositoryResourceManagementCommand["action"] {
+  return (
+    value === "create-label" ||
+    value === "update-label" ||
+    value === "delete-label" ||
+    value === "create-milestone" ||
+    value === "update-milestone" ||
+    value === "open-milestone" ||
+    value === "close-milestone"
+  );
+}
 
 function stringField(value: unknown, field: string, maximum: number, trim = false) {
   if (typeof value !== "string") {
@@ -73,14 +75,11 @@ function exactKeys(value: Record<string, unknown>, allowed: readonly string[]) {
 }
 
 function parseCommand(raw: unknown): RepositoryResourceManagementCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository resource 操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
-  if (
-    typeof value.action !== "string" ||
-    !actions.has(value.action as RepositoryResourceManagementCommand["action"])
-  ) {
+  const value = raw;
+  if (!isAction(value.action)) {
     throw new RepositoryError(400, "Repository resource 動作不正確。");
   }
 
@@ -229,3 +228,5 @@ export function createRepositoryResourceManagement(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

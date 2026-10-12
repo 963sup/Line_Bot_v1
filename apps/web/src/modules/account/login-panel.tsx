@@ -1,12 +1,11 @@
 "use client";
 
-import type { UserUseCases } from "@line_bot_v1/account/application/user";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { clearCurrentAccount, ensureCurrentAccount } from "./current-account";
-
-type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
+import { readAccount, responseError } from "./wire-response";
 
 export default function LoginPanel({ liffId }: { liffId: string }) {
   const [login, setLogin] = useState("");
@@ -67,12 +66,14 @@ export default function LoginPanel({ liffId }: { liffId: string }) {
         },
         body: JSON.stringify({ action: "updateLogin", login, expectedLogin }),
       });
-      const value = (await response.json()) as { member?: AccountView; error?: string };
-      if (!response.ok || !value.member) throw new Error(value.error ?? "登入名稱保存失敗。");
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(responseError(value, "登入名稱保存失敗。"));
+      if (!isRecord(value) || !("member" in value)) throw new Error("登入名稱回應格式不正確。");
+      const member = readAccount(value.member);
       if (ticket !== generation.current) return;
       clearCurrentAccount();
-      setLogin(value.member.login ?? "");
-      setExpectedLogin(value.member.login ?? "");
+      setLogin(member.login);
+      setExpectedLogin(member.login);
       setLoaded(true);
       setNotice("登入名稱已保存。");
     } catch (cause) {

@@ -23,38 +23,28 @@ import {
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
 
-const state = globalThis as typeof globalThis & {
-  userStore?: PostgresUserStore;
-  walletStore?: PostgresWalletStore;
-  dailyCheckInStore?: ReturnType<typeof createPostgresDailyCheckInStore>;
-  followStore?: PostgresFollowStore;
-  achievementStore?: PostgresUserAchievementStore;
-  profileStore?: PostgresUserProfileStore;
-  userManagementStore?: PostgresUserManagement;
-};
-
 const accountAdministration = { hasPermission, protectPermissionAdministrator };
 
 function userStore() {
-  return (state.userStore ??= new PostgresUserStore(undefined, accountAdministration));
+  return (globalThis.userStore ??= new PostgresUserStore(undefined, accountAdministration));
 }
 function walletStore() {
-  return (state.walletStore ??= new PostgresWalletStore());
+  return (globalThis.walletStore ??= new PostgresWalletStore());
 }
 function dailyCheckInStore() {
-  return (state.dailyCheckInStore ??= createPostgresDailyCheckInStore());
+  return (globalThis.dailyCheckInStore ??= createPostgresDailyCheckInStore());
 }
 function followStore() {
-  return (state.followStore ??= new PostgresFollowStore());
+  return (globalThis.followStore ??= new PostgresFollowStore());
 }
 function achievementStore() {
-  return (state.achievementStore ??= new PostgresUserAchievementStore());
+  return (globalThis.achievementStore ??= new PostgresUserAchievementStore());
 }
 function profileStore() {
-  return (state.profileStore ??= new PostgresUserProfileStore());
+  return (globalThis.profileStore ??= new PostgresUserProfileStore());
 }
 function userManagementStore() {
-  return (state.userManagementStore ??= new PostgresUserManagement(
+  return (globalThis.userManagementStore ??= new PostgresUserManagement(
     undefined,
     accountAdministration,
   ));

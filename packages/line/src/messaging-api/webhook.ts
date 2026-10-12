@@ -66,10 +66,10 @@ export function parseLineSource(source: unknown) {
     !object(source) ||
     typeof source.userId !== "string" ||
     !/^U[a-f0-9]{32}$/i.test(source.userId) ||
-    !["user", "group", "room"].includes(String(source.type))
+    (source.type !== "user" && source.type !== "group" && source.type !== "room")
   )
     return null;
-  const type = source.type as "user" | "group" | "room";
+  const type = source.type;
   const scopeId =
     type === "user" ? source.userId : type === "group" ? source.groupId : source.roomId;
   if (typeof scopeId !== "string" || !scopeId) return null;

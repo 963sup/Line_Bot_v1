@@ -20,6 +20,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import {
   createLineWebhookIngress,
   type LineWebhookIngressOutcome,
@@ -39,7 +40,7 @@ const createTestWebhook = (config: TestWebhookConfig) => {
   return createLineWebhookIngress({
     channelSecret,
     handleEvents: createLineWebhookRouterImpl(routerConfig),
-    report: ingressReport,
+    ...(ingressReport ? { report: ingressReport } : {}),
   });
 };
 const event = (id = "one") => ({
@@ -51,7 +52,12 @@ const event = (id = "one") => ({
 });
 const request = (body: unknown, valid = true, destination = bot) => {
   const raw =
-    typeof body === "string" ? body : JSON.stringify({ destination, ...(body as object) });
+    typeof body === "string"
+      ? body
+      : JSON.stringify({
+          destination,
+          ...(isRecord(body) ? body : {}),
+        });
   return new Request("http://localhost/api/line/webhook", {
     method: "POST",
     body: raw,
@@ -332,14 +338,10 @@ test("concurrent deliveries and partial success never repeat an attempted reply 
 
 test("two webhook instances share claims, and Redis outages prevent side effects", async () => {
   const shared = idempotencyFixture();
-  let release!: () => void;
-  const pending = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  let entered!: () => void;
-  const started = new Promise<void>((resolve) => {
-    entered = resolve;
-  });
+  const pendingGate = Promise.withResolvers<void>();
+  const pending = pendingGate.promise;
+  const startedGate = Promise.withResolvers<void>();
+  const started = startedGate.promise;
   let calls = 0;
   const config = {
     channelSecret: secret,
@@ -347,7 +349,7 @@ test("two webhook instances share claims, and Redis outages prevent side effects
     idempotency: () => shared,
     reply: async () => {
       calls++;
-      entered();
+      startedGate.resolve();
       await pending;
     },
   };
@@ -356,7 +358,7 @@ test("two webhook instances share claims, and Redis outages prevent side effects
   const work = first(request({ events: [event("shared")] }));
   await started;
   assert.equal((await second(request({ events: [event("shared")] }))).status, 503);
-  release();
+  pendingGate.resolve();
   assert.equal((await work).status, 200);
   assert.equal((await second(request({ events: [event("shared")] }))).status, 200);
   assert.equal(calls, 1);

@@ -13,19 +13,19 @@ import { RequestIdentityError } from "../src/shared/server/request-identity-erro
 
 type Discussions = ReturnType<typeof createDiscussions>;
 
-const repository = {
+const repository: Awaited<ReturnType<Discussions["list"]>>["repository"] = {
   id: "repo-1",
   ownerLogin: "octo",
   name: "hello-world",
-  permissions: ["read"] as const,
+  permissions: ["read"],
 };
 
 test("Discussion HTTP reads Repository path selector and cursor from query", async () => {
   let received:
     | {
         subject: string;
-        selector: { ownerLogin: string; repositoryName: string };
-        after?: string;
+        selector: Parameters<Discussions["list"]>[1];
+        after: string | undefined;
       }
     | undefined;
   const discussions: Pick<Discussions, "list"> = {
@@ -115,10 +115,17 @@ test("Repository-scoped HTTP exposes Discussion and Milestone detail contracts",
         discussion: {
           id,
           repositoryId: repository.id,
+          number: 1,
           author: subject,
-          title: selector.repositoryName,
+          title: "repositoryName" in selector ? selector.repositoryName : selector.repositoryId,
           body: "body",
           category: "general",
+          categoryId: null,
+          state: "OPEN",
+          stateReason: null,
+          locked: false,
+          lockReason: null,
+          deleted: false,
           version: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -130,7 +137,29 @@ test("Repository-scoped HTTP exposes Discussion and Milestone detail contracts",
     async () => "line-user",
   );
   assert.equal(discussion.status, 200);
-  assert.equal(((await discussion.json()) as { next: string }).next, "c1");
+  assert.deepEqual(await discussion.json(), {
+    repository,
+    discussion: {
+      id: "d1",
+      repositoryId: repository.id,
+      number: 1,
+      author: "line-user",
+      title: "repo",
+      body: "body",
+      category: "general",
+      categoryId: null,
+      state: "OPEN",
+      stateReason: null,
+      locked: false,
+      lockReason: null,
+      deleted: false,
+      version: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+    comments: [],
+    next: "c1",
+  });
 
   const milestone = await repositoryMilestoneRequest(
     new Request("https://example.com/api/repository-milestones/2?owner=octo&name=repo"),
@@ -155,7 +184,21 @@ test("Repository-scoped HTTP exposes Discussion and Milestone detail contracts",
     async () => "line-user",
   );
   assert.equal(milestone.status, 200);
-  assert.equal(((await milestone.json()) as { milestone: { number: number } }).milestone.number, 2);
+  assert.deepEqual(await milestone.json(), {
+    repository,
+    milestone: {
+      id: "m1",
+      repositoryId: repository.id,
+      number: 2,
+      title: "Release",
+      description: "",
+      status: "open",
+      dueAt: null,
+      version: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  });
 });
 
 test("Repository resource login continuation keeps resource paths and drops unrelated state", () => {

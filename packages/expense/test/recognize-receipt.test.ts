@@ -4,6 +4,16 @@ import { createCommandExpense } from "../src/application/command-expense.js";
 import { createGetExpense } from "../src/application/get-expense.js";
 import { createRecognizeReceipt } from "../src/application/recognize-receipt.js";
 import type { ReceiptReading } from "../src/contracts/receipt-reading.js";
+
+function deferred() {
+  let resolve: (() => void) | undefined;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  if (!resolve) throw new Error("Promise executor did not initialize synchronously");
+  return { promise, resolve };
+}
+
 import type { ExpenseRepository } from "../src/contracts/repositories/expense-repository.js";
 import {
   type Expense,
@@ -149,14 +159,8 @@ test("recognition returns transient reading without an Expense mutation", async 
 
 test("recognition merges concurrent calls, enforces cooldown, wraps failures, and allows retry", async () => {
   const { store } = repository();
-  let release!: () => void;
-  const blocked = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  let entered!: () => void;
-  const started = new Promise<void>((resolve) => {
-    entered = resolve;
-  });
+  const { promise: blocked, resolve: release } = deferred();
+  const { promise: started, resolve: entered } = deferred();
   let runs = 0;
   let nextReceiptAt: number | undefined;
   const recognition = new Map<string, Promise<ReceiptReading>>();

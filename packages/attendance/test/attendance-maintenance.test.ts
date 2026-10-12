@@ -16,7 +16,25 @@ test("notification delivery remains independent of menu failure, with durable re
     uid: "a",
     subject: "u1",
     token: "lease",
-    payload: null as never,
+    payload: {
+      action: "clockOut",
+      record: {
+        id: "session-one",
+        day: "1970-01-01",
+        startedAt: 0,
+        endedAt: 1,
+        ruleVersion: "taipei-window-v1",
+        summary: {
+          elapsedMs: 1,
+          beforeMs: 1,
+          scheduledMs: 0,
+          afterMs: 0,
+          crossesMidnight: false,
+          provisional: false,
+          days: [{ day: "1970-01-01", elapsedMs: 1, beforeMs: 1, scheduledMs: 0, afterMs: 0 }],
+        },
+      },
+    },
   };
   const run = createAttendanceMaintenance({
     now: () => 100,

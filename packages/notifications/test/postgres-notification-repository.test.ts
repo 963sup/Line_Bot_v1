@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Database, Sql } from "@line_bot_v1/platform/postgres";
+import { createSql, type Database, type SqlResult } from "@line_bot_v1/platform/postgres";
 import { PostgresNotificationRepository } from "../src/adapters/outbound/persistence/postgres-notification-repository.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -33,8 +33,8 @@ const row: TestNotificationRow = {
   version: 1,
 };
 
-function database(query: Sql["query"]): Database {
-  return { transaction: (work) => work({ query }) };
+function database(execute: (text: string, values?: unknown[]) => Promise<SqlResult>): Database {
+  return { transaction: (work) => work(createSql(execute)) };
 }
 
 test("read adapter maps rows and scopes the query to the recipient", async () => {

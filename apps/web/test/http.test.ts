@@ -5,6 +5,11 @@ import { membershipFailureCode } from "../src/modules/account/failure-code.serve
 import { apiError, readJsonBody } from "../src/modules/account/http.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../src/shared/server/http";
 
+function streamingRequest(body: ReadableStream<Uint8Array<ArrayBuffer>>) {
+  const init: RequestInit & { duplex: "half" } = { method: "POST", body, duplex: "half" };
+  return new Request("https://example.test", init);
+}
+
 test("shared HTTP responses retain status, error codes and private response headers", async () => {
   const response = jsonResponse({ value: 1 }, 202);
   assert.equal(response.status, 202);
@@ -105,7 +110,7 @@ test("bounded transport preserves byte boundaries, cancels overflow and propagat
     assert.equal(Buffer.byteLength(input), maxBytes);
     assert.equal(await readBodyText(request, maxBytes), input);
     let cancelled = false;
-    const body = new ReadableStream<Uint8Array>({
+    const body = new ReadableStream<Uint8Array<ArrayBuffer>>({
       start(controller) {
         controller.enqueue(new TextEncoder().encode(input));
         controller.enqueue(new Uint8Array([1]));
@@ -114,15 +119,15 @@ test("bounded transport preserves byte boundaries, cancels overflow and propagat
         cancelled = true;
       },
     });
-    const streamingRequest = { body } as Request;
-    await assert.rejects(readBodyText(streamingRequest, maxBytes), BodyTooLargeError);
+    await assert.rejects(readBodyText(streamingRequest(body), maxBytes), BodyTooLargeError);
     assert.equal(cancelled, true);
   }
   const failure = new Error("stream failed");
-  const body = new ReadableStream<Uint8Array>({
+  const body = new ReadableStream<Uint8Array<ArrayBuffer>>({
     start(controller) {
       controller.error(failure);
     },
   });
-  await assert.rejects(readBodyText({ body } as Request, 2048), (error) => error === failure);
+  const failedRequest = streamingRequest(body);
+  await assert.rejects(readBodyText(failedRequest, 2048), (error) => error === failure);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -55,9 +56,13 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
         },
         body: JSON.stringify({ mode, input: value }),
       });
-      const payload = (await response.json()) as { text?: string; error?: string };
-      if (!response.ok || typeof payload.text !== "string") {
-        throw new Error(payload.error ?? "AI 暫時不可用。");
+      const payload: unknown = await response.json();
+      if (!isRecord(payload) || !response.ok || typeof payload.text !== "string") {
+        throw new Error(
+          isRecord(payload) && typeof payload.error === "string"
+            ? payload.error
+            : "AI 暫時不可用。",
+        );
       }
       if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
         return;

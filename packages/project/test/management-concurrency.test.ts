@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Database, Sql } from "@line_bot_v1/platform/postgres";
+import { createSql, type Database } from "@line_bot_v1/platform/postgres";
+import { readProjectReceipt } from "../src/adapters/outbound/persistence/postgres-project-management-helpers.js";
 import { PostgresProjectManagementStore } from "../src/adapters/outbound/persistence/postgres-project-management-store.js";
 import { ProjectError } from "../src/domain.js";
 
@@ -15,12 +16,10 @@ function databaseWith(
   }>,
   queries: QueryRecord[],
 ): Database {
-  const sql: Sql = {
-    async query(text, values) {
-      queries.push({ text, ...(values === undefined ? {} : { values }) });
-      return responder(text, values);
-    },
-  };
+  const sql = createSql(async (text, values) => {
+    queries.push({ text, ...(values === undefined ? {} : { values }) });
+    return responder(text, values);
+  });
   return {
     transaction: (work) => work(sql),
   };
@@ -74,5 +73,37 @@ test("Project management takes a shared governance lock before replay and capabi
   assert.deepEqual(
     order,
     [...order].sort((left, right) => left - right),
+  );
+});
+
+test("Project management rejects a stored replay receipt with an incomplete result contract", async () => {
+  const db = databaseWith(async (text) => {
+    if (text.includes("FROM project_commands")) {
+      return {
+        rows: [
+          {
+            fingerprint: "fingerprint",
+            result: {
+              receiptVersion: 1,
+              family: "project-management",
+              result: {
+                requestId: "request-1",
+                action: "update-project",
+                projectId: "project-1",
+                resourceId: null,
+                version: 1,
+                at: 100,
+              },
+            },
+          },
+        ],
+      };
+    }
+    throw new Error(`unexpected query: ${text}`);
+  }, []);
+
+  await assert.rejects(
+    db.transaction((sql) => readProjectReceipt(sql, "user-1", "request-1", "fingerprint")),
+    (error: unknown) => error instanceof ProjectError && error.status === 503,
   );
 });

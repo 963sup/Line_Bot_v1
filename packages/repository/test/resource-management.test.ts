@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryResourceManagement } from "../src/application/resource-management.js";
 import type { RepositoryResourceManagementStore } from "../src/contracts/output/resource-management.js";
 import { RepositoryError } from "../src/domain.js";
@@ -29,9 +30,9 @@ async function repositoryFixture() {
 }
 
 test("Repository resource application canonicalizes definitions before persistence", async () => {
-  const calls: unknown[][] = [];
-  const store = {
-    execute: async (...args: unknown[]) => {
+  const calls: Parameters<RepositoryResourceManagementStore["execute"]>[] = [];
+  const store: RepositoryResourceManagementStore = {
+    execute: async (...args) => {
       calls.push(args);
       return {
         requestId: "11111111-1111-4111-8111-111111111111",
@@ -47,9 +48,9 @@ test("Repository resource application canonicalizes definitions before persisten
         },
         deleted: false,
         at: 10,
-      } as const;
+      };
     },
-  } as RepositoryResourceManagementStore;
+  };
   const management = createRepositoryResourceManagement({
     activeUser: async () => ({ id: "owner" }),
     store: () => store,
@@ -165,19 +166,13 @@ test("Label management preserves stable identity, replay, current authority and 
     store.execute("owner", remove, 15),
     (error) => error instanceof RepositoryError && error.status === 409,
   );
-  assert.equal(
-    Number(
-      (
-        (
-          await pg.query(
-            "select count(*)::int as count from app_private.repository_labels where id=$1",
-            [created.label.id],
-          )
-        ).rows[0] as { count?: number }
-      )?.count,
-    ),
-    1,
+  const countResult = await pg.query(
+    "select count(*)::int as count from app_private.repository_labels where id=$1",
+    [created.label.id],
   );
+  const countRow: unknown = countResult.rows[0];
+  assert.ok(isRecord(countRow));
+  assert.equal(countRow.count, 1);
 
   await pg.query("delete from app_private.issue_labels where issue_id='issue' and label_id=$1", [
     created.label.id,
@@ -191,10 +186,13 @@ test("Label management preserves stable identity, replay, current authority and 
   const events = await pg.query(
     "select action from app_private.repository_events where repository_id='repo' order by id",
   );
-  assert.deepEqual(
-    (events.rows as Array<{ action: string }>).map((row) => row.action),
-    ["create-label", "update-label", "delete-label"],
-  );
+  const actions = events.rows.map((row) => {
+    const value: unknown = row;
+    assert.ok(isRecord(value));
+    assert.equal(typeof value.action, "string");
+    return value.action;
+  });
+  assert.deepEqual(actions, ["create-label", "update-label", "delete-label"]);
 });
 
 test("Milestone management allocates repository-local numbers and enforces version/archive state", async (t) => {

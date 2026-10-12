@@ -239,7 +239,13 @@ try {
       getProfile: async () =>
         window.holdProvider
           ? new Promise(() => {})
-          : { displayName: "LINE Viewer", statusMessage: "Ready to work" },
+          : {
+              userId: "U11111111111111111111111111111111",
+              displayName: "LINE Viewer",
+              statusMessage: "Ready to work",
+            },
+      closeWindow: () => {},
+      openWindow: () => {},
       login: () => {},
     };
   });
@@ -247,7 +253,14 @@ try {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  let member = { id: "user-1", login: "viewer", status: "active" };
+  const accountMember = (id, login, status) => ({
+    id,
+    login,
+    status,
+    createdAt: 1,
+    googleEmail: null,
+  });
+  let member = accountMember("user-1", "viewer", "active");
   let failAchievements = false;
   let heldProfile;
   let holdProfile = false;
@@ -286,9 +299,14 @@ try {
       return route.fulfill({
         json: {
           profile: {
+            userId: "user-1",
             displayName: "Private viewer",
             bio: "Private biography",
+            avatarRef: null,
             visibility: "private",
+            version: 1,
+            createdAt: 1,
+            updatedAt: 1,
           },
         },
       });
@@ -299,7 +317,19 @@ try {
         status: failAchievements ? 503 : 200,
         json: failAchievements
           ? { error: "unavailable" }
-          : { items: [{ id: "a", name: "First achievement", description: "Synthetic" }] },
+          : {
+              items: [
+                {
+                  id: "a",
+                  name: "First achievement",
+                  description: "Synthetic",
+                  iconRef: null,
+                  sourceKind: "repository",
+                  sourceId: "repository-1",
+                  awardedAt: 1,
+                },
+              ],
+            },
       });
     }
     if (url.pathname.startsWith("/api/"))
@@ -418,7 +448,7 @@ try {
 
   const beforeVisitor = privateReads.length;
   const beforeMembership = membershipReads;
-  member = { id: "other", login: "other", status: "active" };
+  member = accountMember("other", "other", "active");
   await page.evaluate(() => window.renderProfile({ instance: 2 }));
   await expect.poll(() => membershipReads).toBeGreaterThan(beforeMembership);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Public viewer");
@@ -428,7 +458,7 @@ try {
   assert.equal(privateReads.length, beforeVisitor);
   results.push("other viewer cannot load or retain private sections");
 
-  member = { id: "user-1", login: "viewer", status: "active" };
+  member = accountMember("user-1", "viewer", "active");
   const beforeOrganization = membershipReads;
   await page.evaluate(() =>
     window.renderProfile({
@@ -445,7 +475,7 @@ try {
   holdProfile = true;
   await page.evaluate(() => window.renderProfile({ instance: 4 }));
   await expect.poll(() => Boolean(heldProfile)).toBe(true);
-  member = { id: "other", login: "other", status: "active" };
+  member = accountMember("other", "other", "active");
   await page.evaluate(() =>
     window.renderProfile({
       instance: 5,
@@ -456,23 +486,36 @@ try {
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Other profile");
   await heldProfile
-    .fulfill({ json: { profile: { displayName: "STALE PRIVATE NAME", bio: "STALE PRIVATE BIO" } } })
+    .fulfill({
+      json: {
+        profile: {
+          userId: "user-1",
+          displayName: "STALE PRIVATE NAME",
+          bio: "STALE PRIVATE BIO",
+          avatarRef: null,
+          visibility: "private",
+          version: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+    })
     .catch(() => {});
   await expect(page.getByText("STALE PRIVATE NAME")).toHaveCount(0);
   await expect(page.getByText("STALE PRIVATE BIO")).toHaveCount(0);
   results.push("late private response cannot overwrite another User route");
 
-  member = { id: "user-1", login: "viewer", status: "active" };
+  member = accountMember("user-1", "viewer", "active");
   await page.evaluate(() => window.renderEntry(6));
   await expect.poll(() => page.evaluate(() => window.resolvedTarget)).toBe("/viewer");
-  member = { id: "user-1", login: "viewer", status: "paused" };
+  member = accountMember("user-1", "viewer", "paused");
   await page.evaluate(() => window.renderEntry(7));
   await expect.poll(() => page.evaluate(() => window.resolvedTarget)).toBe("/membership/restore");
   member = null;
   await page.evaluate(() => window.renderEntry(8));
   await expect.poll(() => page.evaluate(() => window.resolvedTarget)).toBe("/membership/register");
   results.push("real entry component replaces with canonical login or lifecycle destination");
-  member = { id: "user-1", login: "viewer", status: "active" };
+  member = accountMember("user-1", "viewer", "active");
   const beforeAvatar = membershipReads;
   await page.evaluate(() => {
     window.holdProvider = true;
@@ -488,7 +531,7 @@ try {
   );
   await page.screenshot({ path: path.join(output, "profile-avatar-direct.png") });
 
-  member = { id: "user-1", login: "viewer", status: "paused" };
+  member = accountMember("user-1", "viewer", "paused");
   await page.evaluate(() => window.renderAvatar(10));
   await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
     "href",
@@ -520,7 +563,7 @@ try {
   });
   await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveCount(0);
   holdMembership = false;
-  member = { id: "other", login: "other", status: "active" };
+  member = accountMember("other", "other", "active");
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     document.dispatchEvent(new Event("visibilitychange"));
@@ -530,7 +573,7 @@ try {
     "/other",
   );
   await heldMembership
-    .fulfill({ json: { member: { id: "user-1", login: "viewer", status: "active" } } })
+    .fulfill({ json: { member: accountMember("user-1", "viewer", "active") } })
     .catch(() => {});
   await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
     "href",

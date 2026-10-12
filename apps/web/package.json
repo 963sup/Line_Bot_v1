@@ -7,7 +7,7 @@
     "test": "node --test ../../scripts/runtime/load-env.test.mjs && tsx --test test/*.test.ts",
     "dev": "node ../../scripts/runtime/next.mjs dev --hostname 127.0.0.1",
     "build": "node ../../scripts/runtime/next.mjs build",
-    "typecheck": "node ../../scripts/runtime/next.mjs typegen && tsc --noEmit",
+    "typecheck": "node ../../scripts/runtime/next.mjs typegen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "start": "node ../../scripts/runtime/next.mjs start --hostname 127.0.0.1"
   },
   "dependencies": {

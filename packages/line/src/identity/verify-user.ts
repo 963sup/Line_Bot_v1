@@ -15,6 +15,10 @@ export class LineIdentityUnavailableError extends Error {
 const unavailableMessage = "LINE 身分驗證服務暫不可用，請稍後重試。";
 const invalidMessage = "LINE 登入已失效，請重新開啟。";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 async function lineRequest(request: typeof fetch, input: string, init: RequestInit) {
   try {
     return await request(input, init);
@@ -25,7 +29,9 @@ async function lineRequest(request: typeof fetch, input: string, init: RequestIn
 
 async function providerJson(response: Response) {
   try {
-    return (await response.json()) as Record<string, unknown>;
+    const value: unknown = await response.json();
+    if (!isRecord(value)) throw new TypeError("Invalid provider response");
+    return value;
   } catch (error) {
     throw new LineIdentityUnavailableError(unavailableMessage, { cause: error });
   }

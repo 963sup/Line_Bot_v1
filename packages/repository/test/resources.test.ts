@@ -44,7 +44,7 @@ async function repositoryFixture() {
 test("Repository resources validate selectors and typed cursors before persistence", async () => {
   const calls: unknown[][] = [];
   let storeFactories = 0;
-  const store = {
+  const store: RepositoryResourceStore = {
     labels: async (...args: Parameters<RepositoryResourceStore["labels"]>) => {
       calls.push(args);
       return {
@@ -53,7 +53,13 @@ test("Repository resources validate selectors and typed cursors before persisten
         next: null,
       };
     },
-  } as unknown as RepositoryResourceStore;
+    milestones: async () => {
+      throw new Error("not used");
+    },
+    milestone: async () => {
+      throw new Error("not used");
+    },
+  };
   const resources = createRepositoryResources({
     activeUser: async (subject) => ({ id: `${subject}-user` }),
     store: () => {

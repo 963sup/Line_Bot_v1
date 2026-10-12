@@ -8,6 +8,7 @@ import {
   refreshOrganizationMembershipFromSources,
 } from "@line_bot_v1/organization/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { EnterpriseCommand, EnterpriseReceipt } from "../contracts/enterprise-governance.js";
 import { enterpriseTeamSlugFromName } from "../domain.js";
 import { makeEnterpriseReceipt } from "./postgres-receipt.js";
@@ -16,6 +17,51 @@ type EnterpriseTeamCommand = Extract<
   EnterpriseCommand,
   { action: "create-enterprise-team" } | { teamId: string }
 >;
+
+function teamRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    name: stringValue(row.name),
+    slug: stringValue(row.slug),
+    version: numberValue(row.version),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
+
+function userIdRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id) };
+}
+
+function organizationIdRow(row: Record<string, unknown>) {
+  return { organization_account_id: stringValue(row.organization_account_id) };
+}
+
+function membershipRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "removed"]),
+    version: numberValue(row.version),
+  };
+}
+
+function assignmentRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "detached"]),
+    version: numberValue(row.version),
+  };
+}
+
+function hasPostgresError(error: unknown, code: string, constraint: string): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    error.code === code &&
+    "constraint" in error &&
+    error.constraint === constraint
+  );
+}
 
 export function isEnterpriseTeamCommand(
   command: EnterpriseCommand,
@@ -39,8 +85,9 @@ async function lockEnterpriseTeam(sql: Sql, enterpriseAccountId: string, teamId:
   const row = (
     await sql.query(
       `SELECT id,name,slug,version FROM enterprise_teams
-       WHERE enterprise_account_id=$1 AND id=$2 FOR UPDATE`,
+      WHERE enterprise_account_id=$1 AND id=$2 FOR UPDATE`,
       [enterpriseAccountId, teamId],
+      teamRow,
     )
   ).rows[0];
   if (!row) throw new GovernanceAccessError(404, "not-found", "找不到 Enterprise Team。");
@@ -80,11 +127,12 @@ async function activeEnterpriseTeamMemberIds(
     await sql.query(
       `SELECT user_id FROM enterprise_team_memberships
        WHERE enterprise_account_id=$1 AND team_id=$2 AND status='active'
-       ORDER BY user_id FOR SHARE`,
+      ORDER BY user_id FOR SHARE`,
       [enterpriseAccountId, teamId],
+      userIdRow,
     )
   ).rows;
-  return rows.map((row) => row.user_id as string);
+  return rows.map((row) => row.user_id);
 }
 
 async function activeEnterpriseTeamOrganizationIds(
@@ -96,11 +144,12 @@ async function activeEnterpriseTeamOrganizationIds(
     await sql.query(
       `SELECT organization_account_id FROM enterprise_team_organizations
        WHERE enterprise_account_id=$1 AND team_id=$2 AND status='active'
-       ORDER BY organization_account_id FOR SHARE`,
+      ORDER BY organization_account_id FOR SHARE`,
       [enterpriseAccountId, teamId],
+      organizationIdRow,
     )
   ).rows;
-  return rows.map((row) => row.organization_account_id as string);
+  return rows.map((row) => row.organization_account_id);
 }
 
 export async function executeEnterpriseTeamMutation(
@@ -110,7 +159,7 @@ export async function executeEnterpriseTeamMutation(
   command: EnterpriseTeamCommand,
   now: number,
 ): Promise<EnterpriseReceipt> {
-  let result!: EnterpriseReceipt;
+  let result: EnterpriseReceipt | undefined;
   if (command.action === "create-enterprise-team") {
     if (enterprise.status !== "active") {
       throw new GovernanceAccessError(409, "inactive", "Enterprise 已停用。");
@@ -125,8 +174,7 @@ export async function executeEnterpriseTeamMutation(
         [teamId, command.enterpriseAccountId, command.name, slug, actorUserId, now],
       );
     } catch (error) {
-      const postgres = error as { code?: string; constraint?: string };
-      if (postgres.code === "23505" && postgres.constraint === "enterprise_teams_enterprise_slug") {
+      if (hasPostgresError(error, "23505", "enterprise_teams_enterprise_slug")) {
         throw new GovernanceAccessError(
           409,
           "conflict",
@@ -153,22 +201,26 @@ export async function executeEnterpriseTeamMutation(
         );
       }
       const slug = enterpriseTeamSlugFromName(command.name);
-      let changed: { version: number };
+      let changed: { version: number } | undefined;
       try {
         changed = (
           await sql.query(
             `UPDATE enterprise_teams
              SET name=$3,slug=$4,version=version+1
-             WHERE enterprise_account_id=$1 AND id=$2 RETURNING version`,
+            WHERE enterprise_account_id=$1 AND id=$2 RETURNING version`,
             [command.enterpriseAccountId, command.teamId, command.name, slug],
+            versionRow,
           )
-        ).rows[0] as { version: number };
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(
+            503,
+            "unknown-result",
+            "Enterprise Team 更新結果不完整。",
+          );
+        }
       } catch (error) {
-        const postgres = error as { code?: string; constraint?: string };
-        if (
-          postgres.code === "23505" &&
-          postgres.constraint === "enterprise_teams_enterprise_slug"
-        ) {
+        if (hasPostgresError(error, "23505", "enterprise_teams_enterprise_slug")) {
           throw new GovernanceAccessError(
             409,
             "conflict",
@@ -185,8 +237,9 @@ export async function executeEnterpriseTeamMutation(
       const membership = (
         await sql.query(
           `SELECT status,version FROM enterprise_team_memberships
-           WHERE enterprise_account_id=$1 AND team_id=$2 AND user_id=$3 FOR UPDATE`,
+          WHERE enterprise_account_id=$1 AND team_id=$2 AND user_id=$3 FOR UPDATE`,
           [command.enterpriseAccountId, command.teamId, command.targetUserId],
+          membershipRow,
         )
       ).rows[0];
       if (command.action === "add-enterprise-team-member") {
@@ -220,8 +273,9 @@ export async function executeEnterpriseTeamMutation(
               `UPDATE enterprise_team_memberships
                SET status='active',version=version+1,joined_at=$4
                WHERE enterprise_account_id=$1 AND team_id=$2 AND user_id=$3
-               RETURNING version`,
+              RETURNING version`,
               [command.enterpriseAccountId, command.teamId, command.targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -285,6 +339,7 @@ export async function executeEnterpriseTeamMutation(
              WHERE enterprise_account_id=$1 AND team_id=$2 AND user_id=$3
              RETURNING version`,
             [command.enterpriseAccountId, command.teamId, command.targetUserId],
+            versionRow,
           )
         ).rows[0];
         if (!changed) {
@@ -315,6 +370,7 @@ export async function executeEnterpriseTeamMutation(
            WHERE enterprise_account_id=$1 AND team_id=$2 AND organization_account_id=$3
            FOR UPDATE`,
           [command.enterpriseAccountId, command.teamId, command.organizationAccountId],
+          assignmentRow,
         )
       ).rows[0];
       if (command.action === "assign-enterprise-team-organization") {
@@ -338,8 +394,9 @@ export async function executeEnterpriseTeamMutation(
               `UPDATE enterprise_team_organizations
                SET status='active',version=version+1,assigned_at=$4,detached_at=null
                WHERE enterprise_account_id=$1 AND team_id=$2 AND organization_account_id=$3
-               RETURNING version`,
+              RETURNING version`,
               [command.enterpriseAccountId, command.teamId, command.organizationAccountId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -404,6 +461,7 @@ export async function executeEnterpriseTeamMutation(
              WHERE enterprise_account_id=$1 AND team_id=$2 AND organization_account_id=$3
              RETURNING version`,
             [command.enterpriseAccountId, command.teamId, command.organizationAccountId, now],
+            versionRow,
           )
         ).rows[0];
         if (!changed) {
@@ -422,6 +480,9 @@ export async function executeEnterpriseTeamMutation(
     } else {
       throw new GovernanceAccessError(400, "invalid-input", "Enterprise Team 操作格式不正確。");
     }
+  }
+  if (!result) {
+    throw new GovernanceAccessError(503, "unknown-result", "Enterprise Team 操作結果不完整。");
   }
   return result;
 }

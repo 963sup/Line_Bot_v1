@@ -42,7 +42,7 @@ test("LINE-only membership preserves ownership and rewards; retired direct Googl
     other = `U${"2".repeat(32)}`,
     original = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = (async (input, init) => {
+  globalThis.fetch = async (input, init) => {
     calls++;
     if (String(input).startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
@@ -55,7 +55,7 @@ test("LINE-only membership preserves ownership and rewards; retired direct Googl
         userId: new Headers(init?.headers).get("authorization") === "Bearer other" ? other : user,
       });
     throw new Error("Unexpected outbound request");
-  }) as typeof fetch;
+  };
   const sessions = new Map<string, HeadersInit>();
   const request = (
     body?: unknown,

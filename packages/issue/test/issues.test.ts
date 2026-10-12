@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { numberValue, record, stringValue } from "@line_bot_v1/platform/validation";
 import { PostgresIssueStore } from "../src/adapters/postgres.js";
 import { createIssues } from "../src/application/issues.js";
 import type { IssueRepository } from "../src/contracts/repositories/issues.js";
@@ -44,7 +45,13 @@ test("Issue RepositoryPermission policy keeps open/workflow separate from generi
 
 test("Issue application canonicalizes body, assignee sets and exact FPT close reasons", async () => {
   const commands: unknown[] = [];
-  const store = {
+  const store: IssueRepository = {
+    snapshot: async () => {
+      throw new Error("Unexpected snapshot call");
+    },
+    detail: async () => {
+      throw new Error("Unexpected detail call");
+    },
     execute: async (_identity: unknown, command: unknown) => {
       commands.push(command);
       return {
@@ -64,7 +71,7 @@ test("Issue application canonicalizes body, assignee sets and exact FPT close re
         updatedAt: 1,
       };
     },
-  } as unknown as IssueRepository;
+  };
   const issues = createIssues({
     activeUser: async () => ({ id: "actor" }),
     store: () => store,
@@ -215,7 +222,7 @@ test("Issue number is monotonic within each Repository and independent across Re
 });
 
 test("Issue state, assignment, content and local workflow remain separate axes", async (t) => {
-  const { pg, db } = await postgresFixture();
+  const { pg, db, sql } = await postgresFixture();
   t.after(() => pg.close());
 
   for (const id of ["owner", "reader", "assignee", "second", "manager", "stranger"]) {
@@ -452,11 +459,12 @@ test("Issue state, assignment, content and local workflow remain separate axes",
   );
   assert.equal(mineSecond.issues.length, 0);
 
-  const eventRows = await pg.query(
+  const eventRows = await sql.query(
     "select action,data from app_private.issue_events where issue_id=$1 order by version",
     [created.id],
+    (row) => ({ action: stringValue(row.action), data: row.data }),
   );
-  const events = eventRows.rows as Array<{ action: string; data: unknown }>;
+  const events = eventRows.rows;
   const actions = events.map((row) => row.action);
   assert.deepEqual(actions, [
     "create",
@@ -469,18 +477,16 @@ test("Issue state, assignment, content and local workflow remain separate axes",
     "reopen",
     "remove-assignees",
   ]);
-  const editEvent = events.find((row) => row.action === "edit") as
-    | { data: { changes?: Record<string, unknown> } }
-    | undefined;
-  assert.deepEqual(Object.keys(editEvent?.data.changes ?? {}).sort(), [
-    "body",
-    "criteria",
-    "title",
-  ]);
-  const closeEvent = events.find((row) => row.action === "close") as
-    | { data: { to?: { state?: string; stateReason?: string } } }
-    | undefined;
-  assert.deepEqual(closeEvent?.data.to, { state: "CLOSED", stateReason: "COMPLETED" });
+  const editEvent = events.find((row) => row.action === "edit");
+  assert.ok(editEvent);
+  const changes = record(record(editEvent.data).changes);
+  assert.deepEqual(Object.keys(changes).sort(), ["body", "criteria", "title"]);
+  const closeEvent = events.find((row) => row.action === "close");
+  assert.ok(closeEvent);
+  assert.deepEqual(record(record(closeEvent.data).to), {
+    state: "CLOSED",
+    stateReason: "COMPLETED",
+  });
 
   const secondIssue = await store.execute(
     { userId: "reader" },
@@ -591,7 +597,8 @@ test("Issue stateReason and assignee scope are enforced by persistence invariant
     pg.query(
       "update app_private.issues set state='CLOSED',state_reason='REOPENED' where id='issue'",
     ),
-    (error: unknown) => (error as { code?: string }).code === "23514",
+    (error: unknown) =>
+      error !== null && typeof error === "object" && "code" in error && error.code === "23514",
   );
   await pg.query(
     "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue','owner',2)",
@@ -600,7 +607,8 @@ test("Issue stateReason and assignee scope are enforced by persistence invariant
     pg.query(
       "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue','missing',2)",
     ),
-    (error: unknown) => (error as { code?: string }).code === "23503",
+    (error: unknown) =>
+      error !== null && typeof error === "object" && "code" in error && error.code === "23503",
   );
   const rows = await pg.query(
     "select user_id from app_private.issue_assignees where issue_id='issue' order by user_id",
@@ -609,7 +617,7 @@ test("Issue stateReason and assignee scope are enforced by persistence invariant
 });
 
 test("pre-parity Issue rows stay readable and materialize without invented history", async (t) => {
-  const { pg, db } = await postgresFixture();
+  const { pg, db, sql } = await postgresFixture();
   t.after(() => pg.close());
   await activeUser(db, "legacy-owner");
   await activeUser(db, "legacy-assignee");
@@ -688,10 +696,16 @@ test("pre-parity Issue rows stay readable and materialize without invented histo
   );
   assert.deepEqual(assignments.rows, [{ user_id: "legacy-assignee", assigned_at: null }]);
 
-  const events = await pg.query(
+  const events = await sql.query(
     "select version,action,data from app_private.issue_events where issue_id='legacy-issue' order by version",
+    undefined,
+    (row) => ({
+      version: numberValue(row.version),
+      action: stringValue(row.action),
+      data: row.data,
+    }),
   );
   assert.deepEqual(events.rows[0], { version: 1, action: "create", data: {} });
-  assert.equal((events.rows[1] as { version: number }).version, 2);
-  assert.equal((events.rows[1] as { action: string }).action, "edit");
+  assert.equal(events.rows[1]?.version, 2);
+  assert.equal(events.rows[1]?.action, "edit");
 });

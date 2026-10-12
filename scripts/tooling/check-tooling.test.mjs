@@ -84,6 +84,7 @@ function fixture(t) {
         rules: {
           correctness: { noUnsafeOptionalChaining: "error" },
           complexity: { noBannedTypes: "error" },
+          nursery: { noUnsafeTypeAssertion: "error" },
           suspicious: {
             noExplicitAny: "error",
             noTsIgnore: "error",
@@ -206,6 +207,7 @@ test("unsafe syntax rules must fail checks rather than warn", (t) => {
   const { root, write } = fixture(t);
   const original = readFileSync(resolve(root, "biome.json"), "utf8");
   for (const [group, rule] of [
+    ["nursery", "noUnsafeTypeAssertion"],
     ["correctness", "noUnsafeOptionalChaining"],
     ["complexity", "noBannedTypes"],
     ["suspicious", "noImplicitAnyLet"],
@@ -234,6 +236,11 @@ test("type drift rules reject unsafe syntax and accept contract-preserving repla
   write("biome.json", JSON.stringify(config));
   const biome = resolve(repo, "node_modules/@biomejs/biome/bin/biome");
   for (const [rule, invalid, repaired] of [
+    [
+      "noUnsafeTypeAssertion",
+      "const value = input as string;",
+      'const value = typeof input === "string" ? input : "";',
+    ],
     ["noEvolvingTypes", "let value; value = 1;", "let value: number; value = 1;"],
     ["noImplicitAnyLet", "let value;", "let value: unknown;"],
     ["noBannedTypes", "const value: String = input;", "const value: string = input;"],
@@ -265,6 +272,37 @@ test("type drift rules reject unsafe syntax and accept contract-preserving repla
     const accepted = lint(repaired);
     assert.equal(accepted.status, 0, accepted.stderr);
   }
+});
+
+test("definite assignment escapes require explicit initialization", (t) => {
+  const { root, write } = fixture(t);
+  for (const source of ["let ready!: () => void;", "class Value { name!: string; }"]) {
+    write("apps/web/src/declaration.ts", source);
+    rejects(root, "definite assignment assertions must use explicit initialization");
+  }
+  write("apps/web/src/declaration.ts", 'class Value { name = "value"; }');
+  assert.deepEqual(validate(root), []);
+});
+
+test("Web tests remain part of the compiler contract", (t) => {
+  const { root, write } = fixture(t);
+  const typecheck = "tsc --noEmit -p tsconfig.test.json";
+  write(
+    "apps/web/package.json",
+    JSON.stringify({ name: "@line_bot_v1/web", scripts: { typecheck } }),
+  );
+  write("apps/web/instrumentation.ts", "export {};\n");
+  write("apps/web/instrumentation-client.ts", "export {};\n");
+  write("apps/web/test/example.test.ts", "export {};\n");
+  write("apps/web/tsconfig.test.json", JSON.stringify({ include: ["src/**/*.ts"] }));
+  rejects(root, "every Web TypeScript test must participate in typecheck");
+  write("apps/web/tsconfig.test.json", JSON.stringify({ include: ["test/**/*.ts"] }));
+  assert.deepEqual(validate(root), []);
+  write(
+    "apps/web/package.json",
+    JSON.stringify({ name: "@line_bot_v1/web", scripts: { typecheck: "tsc --noEmit" } }),
+  );
+  rejects(root, "typecheck must compile the Web test project");
 });
 
 test("shared TypeScript configuration participates in every Turbo task cache", (t) => {
@@ -459,7 +497,15 @@ test("product test cache remains coupled to declarative schemas", (t) => {
 
 test("Next and Sentry instrumentation entrypoints stay at the Web project root", (t) => {
   const { root, write } = fixture(t);
-  write("apps/web/package.json", '{"name":"@line_bot_v1/web"}');
+  write(
+    "apps/web/package.json",
+    JSON.stringify({
+      name: "@line_bot_v1/web",
+      scripts: { typecheck: "tsc --noEmit -p tsconfig.test.json" },
+    }),
+  );
+  write("apps/web/test/example.test.ts", "export {};\n");
+  write("apps/web/tsconfig.test.json", JSON.stringify({ include: ["test/**/*.ts"] }));
   rejects(root, "Next/Sentry framework entrypoint must live at project root");
 
   write("apps/web/instrumentation.ts", "export function register() {}\n");

@@ -8,6 +8,7 @@ import type {
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { errorMessage, isRecord } from "./response-validation";
 
 type PendingSubscription = Readonly<{
   owner: string;
@@ -18,19 +19,46 @@ function storageKey(ownerLogin: string, repositoryName: string) {
   return "repository-subscription:" + ownerLogin.toLowerCase() + "/" + repositoryName.toLowerCase();
 }
 
+function isSubscriptionState(value: unknown): value is RepositorySubscriptionState {
+  return value === "SUBSCRIBED" || value === "UNSUBSCRIBED" || value === "IGNORED";
+}
+
+function isPendingSubscription(value: unknown): value is PendingSubscription {
+  return (
+    isRecord(value) &&
+    typeof value.owner === "string" &&
+    isRecord(value.command) &&
+    value.command.action === "set" &&
+    typeof value.command.requestId === "string" &&
+    typeof value.command.repositoryId === "string" &&
+    Number.isSafeInteger(value.command.expectedVersion) &&
+    isSubscriptionState(value.command.state)
+  );
+}
+
+function isSubscriptionSnapshot(value: unknown): value is RepositorySubscriptionSnapshot {
+  return (
+    isRecord(value) &&
+    isRecord(value.repository) &&
+    typeof value.repository.id === "string" &&
+    typeof value.repository.actorUserId === "string" &&
+    typeof value.repository.ownerLogin === "string" &&
+    typeof value.repository.name === "string" &&
+    isSubscriptionState(value.state) &&
+    Number.isSafeInteger(value.version)
+  );
+}
+
 function readPending(key: string, owner: string, repositoryId: string): PendingSubscription | null {
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
-    const value = JSON.parse(raw) as PendingSubscription;
+    const value: unknown = JSON.parse(raw);
     if (
-      !value ||
+      !isPendingSubscription(value) ||
       value.owner !== owner ||
-      value.command?.action !== "set" ||
       value.command.repositoryId !== repositoryId ||
-      typeof value.command.requestId !== "string" ||
-      !Number.isSafeInteger(value.command.expectedVersion) ||
-      !["SUBSCRIBED", "UNSUBSCRIBED", "IGNORED"].includes(value.command.state)
+      !isSubscriptionState(value.command.state)
     ) {
       throw new Error();
     }
@@ -45,19 +73,23 @@ export default function RepositorySubscriptionControl({
   liffId,
   ownerLogin,
   repositoryName,
+  explicitInteraction = false,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
+  explicitInteraction?: boolean;
 }) {
   const [data, setData] = useState<RepositorySubscriptionSnapshot | null>(null);
   const [pending, setPending] = useState<PendingSubscription | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [activated, setActivated] = useState(false);
   const generation = useRef(0);
   const locked = useRef(false);
   const key = storageKey(ownerLogin, repositoryName);
+  const runtimeEnabled = !explicitInteraction || activated;
 
   function clear() {
     generation.current += 1;
@@ -81,9 +113,9 @@ export default function RepositorySubscriptionControl({
       signal: AbortSignal.timeout(20_000),
       headers: { "X-App-Session-Generation": token },
     });
-    const payload = (await response.json()) as RepositorySubscriptionSnapshot & { error?: string };
-    if (!response.ok || !payload?.repository?.id) {
-      throw Object.assign(new Error(payload.error ?? "Repository subscription 讀取失敗。"), {
+    const payload: unknown = await response.json();
+    if (!response.ok || !isSubscriptionSnapshot(payload)) {
+      throw Object.assign(new Error(errorMessage(payload, "Repository subscription 讀取失敗。")), {
         status: response.status,
       });
     }
@@ -148,13 +180,7 @@ export default function RepositorySubscriptionControl({
         },
         body: JSON.stringify(operation.command),
       });
-      const payload = (await response.json()) as Partial<RepositorySubscriptionSnapshot> & {
-        requestId?: string;
-        repositoryId?: string;
-        state?: RepositorySubscriptionState;
-        version?: number;
-        error?: string;
-      };
+      const payload: unknown = await response.json();
       if (ticket !== generation.current || (await liffClient.ensureSession(liffId)) !== token) {
         throw new Error("LINE 身分已變更；請重新讀取並確認原操作結果。");
       }
@@ -163,11 +189,15 @@ export default function RepositorySubscriptionControl({
           sessionStorage.removeItem(key);
           setPending(null);
         }
-        throw Object.assign(new Error(payload.error ?? "Repository subscription 更新失敗。"), {
-          status: response.status,
-        });
+        throw Object.assign(
+          new Error(errorMessage(payload, "Repository subscription 更新失敗。")),
+          {
+            status: response.status,
+          },
+        );
       }
       if (
+        !isRecord(payload) ||
         payload.requestId !== operation.command.requestId ||
         payload.repositoryId !== operation.command.repositoryId ||
         payload.state !== operation.command.state ||
@@ -192,7 +222,7 @@ export default function RepositorySubscriptionControl({
 
   const onVisibilityChange = useEffectEvent(() => {
     clear();
-    if (document.visibilityState === "visible") void load();
+    if (runtimeEnabled && document.visibilityState === "visible") void load();
   });
   const onPageHide = useEffectEvent(clear);
   useEffect(() => {
@@ -223,8 +253,16 @@ export default function RepositorySubscriptionControl({
 
   return (
     <section className="crud-detail">
-      <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />
+      {runtimeEnabled && <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />}
       <h2>Watch</h2>
+      {!runtimeEnabled && (
+        <>
+          <p className="crud-lifecycle-note">登入後可設定這個 Repository 的追蹤偏好。</p>
+          <button type="button" className="secondary" onClick={() => setActivated(true)}>
+            設定追蹤偏好
+          </button>
+        </>
+      )}
       {busy && <p role="status">處理中…</p>}
       {notice && <p role="status">{notice}</p>}
       {error && <p role="alert">{error}</p>}
@@ -233,24 +271,24 @@ export default function RepositorySubscriptionControl({
           重試原 subscription 操作
         </button>
       )}
-      {data && (
+      {runtimeEnabled && data && (
         <>
           <label>
             Subscription
             <select
               value={data.state}
               disabled={busy || Boolean(pending)}
-              onChange={(event) => setState(event.target.value as RepositorySubscriptionState)}
+              onChange={(event) => {
+                if (isSubscriptionState(event.target.value)) setState(event.target.value);
+              }}
             >
-              <option value="SUBSCRIBED">SUBSCRIBED · 儲存「訂閱」偏好</option>
-              <option value="UNSUBSCRIBED">UNSUBSCRIBED · 儲存「一般未訂閱」偏好</option>
-              <option value="IGNORED">IGNORED · 儲存「忽略」偏好</option>
+              <option value="SUBSCRIBED">追蹤</option>
+              <option value="UNSUBSCRIBED">一般</option>
+              <option value="IGNORED">忽略</option>
             </select>
           </label>
           <p className="crud-lifecycle-note">
-            Watch 不授予 Repository access，也不是 Star、Team notification setting 或 Notification
-            delivery。現在只會持久化偏好；Repository conversation 的 subscription fan-out producer
-            尚未啟用，因此這些選項目前不會改變獨立產生的 Notification。
+            儲存你的追蹤偏好，不會改變 Repository 存取權。通知功能尚未啟用。
           </p>
         </>
       )}

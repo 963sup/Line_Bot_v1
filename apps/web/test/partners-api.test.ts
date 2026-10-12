@@ -18,7 +18,7 @@ test("partner management HTTP uses verified LINE User, not supplied identity or 
   });
   const original = globalThis.fetch;
   const user = "U" + "2".repeat(32);
-  globalThis.fetch = (async (input) => {
+  globalThis.fetch = async (input) => {
     if (String(input).startsWith("https://api.line.me/oauth2/v2.1/verify?"))
       return Response.json({
         client_id: lineMiniApp("developing").channelId,
@@ -27,7 +27,7 @@ test("partner management HTTP uses verified LINE User, not supplied identity or 
       });
     if (String(input) === "https://api.line.me/v2/profile") return Response.json({ userId: user });
     throw Error("Unexpected outbound request");
-  }) as typeof fetch;
+  };
   const sessions = new Map<string, HeadersInit>();
   const request = (token = "proof", query = "view=manage&userId=forged&role=admin") =>
     new Request(`https://app.example/api/partners?${query}`, {

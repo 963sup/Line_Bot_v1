@@ -2,9 +2,11 @@
 
 import type { UserAchievement } from "@line_bot_v1/account/contracts/output/achievements";
 import type { UserProfile } from "@line_bot_v1/account/contracts/repositories/profile";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { readAchievements, readProfile } from "../../../modules/account/wire-response";
 import { liffClient } from "../../../shared/browser/liff-client";
 import styles from "./profile-viewer-shell.module.css";
 
@@ -26,13 +28,13 @@ type ProfileResource = Readonly<{
   count?: ReactNode;
 }>;
 
-async function readJson<T>(path: string, token: string, signal: AbortSignal): Promise<T> {
+async function readJson(path: string, token: string, signal: AbortSignal): Promise<unknown> {
   const response = await fetch(path, {
     headers: { "X-App-Session-Generation": token },
     cache: "no-store",
     signal,
   });
-  const value = (await response.json()) as T;
+  const value: unknown = await response.json();
   signal.throwIfAborted();
   if (!response.ok) throw new Error("private profile read failed");
   return value;
@@ -107,23 +109,20 @@ export default function ProfileOverview({
         if (!controller.signal.aborted) setProvider({ state: "error" });
       },
     );
-    void readJson<{ profile?: UserProfile | null }>("/api/profile", token, controller.signal).then(
+    void readJson("/api/profile", token, controller.signal).then(
       (value) => {
-        if (!controller.signal.aborted)
-          setProfile({ state: "ready", value: value.profile ?? null });
+        if (!isRecord(value)) throw new Error("private profile read failed");
+        const profile = value.profile == null ? null : readProfile(value.profile);
+        if (!controller.signal.aborted) setProfile({ state: "ready", value: profile });
       },
       () => {
         if (!controller.signal.aborted) setProfile({ state: "error" });
       },
     );
-    void readJson<{ items?: UserAchievement[] }>(
-      "/api/profile/achievements",
-      token,
-      controller.signal,
-    ).then(
+    void readJson("/api/profile/achievements", token, controller.signal).then(
       (value) => {
-        if (!controller.signal.aborted)
-          setAchievements({ state: "ready", value: value.items ?? [] });
+        const achievements = readAchievements(value);
+        if (!controller.signal.aborted) setAchievements({ state: "ready", value: achievements });
       },
       () => {
         if (!controller.signal.aborted) setAchievements({ state: "error" });

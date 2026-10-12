@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { governanceFingerprint } from "@line_bot_v1/identity-access/postgres";
-import type { Database, Sql } from "@line_bot_v1/platform/postgres";
+import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { PostgresEnterpriseGovernance } from "../src/adapters/postgres.js";
 import type {
   EnterpriseCommand,
@@ -30,12 +31,10 @@ function databaseWith(
   queries: QueryRecord[],
 ) {
   let transactions = 0;
-  const sql: Sql = {
-    async query(text, values) {
-      queries.push({ text, ...(values === undefined ? {} : { values }) });
-      return responder(text, values);
-    },
-  };
+  const sql = createSql(async (text, values) => {
+    queries.push({ text, ...(values === undefined ? {} : { values }) });
+    return responder(text, values);
+  });
   const db: Database = {
     async transaction(work) {
       transactions++;
@@ -55,6 +54,16 @@ function activeActorRow() {
   };
 }
 
+function activeEnterpriseRow() {
+  return {
+    account_id: "enterprise-1",
+    name: "Enterprise",
+    slug: "enterprise",
+    status: "active",
+    version: 2,
+  };
+}
+
 function queryIndex(queries: QueryRecord[], fragment: string) {
   return queries.findIndex((query) => query.text.includes(fragment));
 }
@@ -65,7 +74,7 @@ test("enterprise execute authorizes current owner before replay lookup", async (
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
-      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+      return { rows: [activeEnterpriseRow()] };
     }
     if (
       text.includes("FROM enterprise_role_assignments") &&
@@ -83,7 +92,8 @@ test("enterprise execute authorizes current owner before replay lookup", async (
   await assert.rejects(
     () => governance.execute(actor, renameCommand, 100),
     (error: unknown) => {
-      assert.equal((error as { status?: number }).status, 403);
+      assert.ok(error instanceof GovernanceAccessError);
+      assert.equal(error.status, 403);
       return true;
     },
   );
@@ -110,7 +120,7 @@ test("enterprise execute replay hit short-circuits before team lock and write", 
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
-      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+      return { rows: [activeEnterpriseRow()] };
     }
     if (
       text.includes("FROM enterprise_role_assignments") &&
@@ -138,7 +148,7 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
-      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+      return { rows: [activeEnterpriseRow()] };
     }
     if (
       text.includes("FROM enterprise_role_assignments") &&
@@ -233,7 +243,7 @@ test("Enterprise owns EnterpriseOwner grant mutation and durable evidence", asyn
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
-      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+      return { rows: [activeEnterpriseRow()] };
     }
     if (
       text.includes("FROM enterprise_role_assignments") &&
@@ -308,7 +318,7 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
-      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+      return { rows: [activeEnterpriseRow()] };
     }
     if (
       text.includes("FROM enterprise_role_assignments") &&
@@ -344,7 +354,8 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
 
   await assert.rejects(
     () => governance.execute(actor, command, 100),
-    (error: unknown) => (error as { code?: string }).code === "last-effective-role-holder",
+    (error: unknown) =>
+      error instanceof GovernanceAccessError && error.code === "last-effective-role-holder",
   );
   assert.equal(queryIndex(queries, "UPDATE enterprise_role_assignments"), -1);
   assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);
@@ -402,7 +413,7 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
     if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM enterprises WHERE account_id=$1 FOR UPDATE")) {
-      return { rows: [{ account_id: "enterprise-1", status: "active", version: 2 }] };
+      return { rows: [activeEnterpriseRow()] };
     }
     if (
       text.includes("FROM enterprise_role_assignments") &&

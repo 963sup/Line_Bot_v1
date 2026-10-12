@@ -6,6 +6,7 @@ import type {
 } from "@line_bot_v1/account/contracts/user-management";
 import type { UserStatusCommand } from "@line_bot_v1/account/domain/user";
 import { parseUserStatusCommand } from "@line_bot_v1/account/domain/user";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -24,6 +25,95 @@ const eventLabels: Record<string, string> = {
   suspension_lifted: "解除停權",
 };
 const date = (at: number) => new Date(at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
+function readManagedUser(value: unknown): UserManagementView["users"][number] {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    (value.status !== "active" && value.status !== "paused" && value.status !== "suspended") ||
+    typeof value.createdAt !== "number" ||
+    typeof value.version !== "number" ||
+    typeof value.googleLinked !== "boolean" ||
+    (value.restoreStatus !== "active" && value.restoreStatus !== "paused")
+  )
+    throw new Error("會員資料回應格式不完整。");
+  return {
+    id: value.id,
+    status: value.status,
+    createdAt: value.createdAt,
+    version: value.version,
+    googleLinked: value.googleLinked,
+    restoreStatus: value.restoreStatus,
+  };
+}
+function readManagementView(value: unknown): UserManagementView {
+  if (
+    !isRecord(value) ||
+    typeof value.actorId !== "string" ||
+    typeof value.canSuspend !== "boolean" ||
+    !Array.isArray(value.users) ||
+    (value.next !== null && typeof value.next !== "string")
+  )
+    throw new Error("會員資料回應格式不完整。");
+  let detail: UserManagementView["detail"] = null;
+  if (value.detail !== null) {
+    if (!isRecord(value.detail)) throw new Error("會員資料回應格式不完整。");
+    const current = value.detail;
+    if (
+      !Array.isArray(current.events) ||
+      !Array.isArray(current.operations) ||
+      !Array.isArray(current.openAttendance) ||
+      !current.openAttendance.every((item) => typeof item === "string") ||
+      !Array.isArray(current.unfinishedIssues) ||
+      !current.unfinishedIssues.every((item) => typeof item === "string") ||
+      typeof current.unfinishedIssueCount !== "number" ||
+      typeof current.moreEvents !== "boolean" ||
+      typeof current.moreOperations !== "boolean"
+    )
+      throw new Error("會員資料回應格式不完整。");
+    const events = current.events.map((event) => {
+      if (!isRecord(event) || typeof event.type !== "string" || typeof event.at !== "number")
+        throw new Error("會員資料回應格式不完整。");
+      return { type: event.type, at: event.at };
+    });
+    const operations = current.operations.map((operation) => {
+      if (
+        !isRecord(operation) ||
+        typeof operation.actor !== "string" ||
+        typeof operation.action !== "string" ||
+        typeof operation.reason !== "string" ||
+        typeof operation.status !== "string" ||
+        typeof operation.version !== "number" ||
+        typeof operation.at !== "number"
+      )
+        throw new Error("會員資料回應格式不完整。");
+      return {
+        actor: operation.actor,
+        action: operation.action,
+        reason: operation.reason,
+        status: operation.status,
+        version: operation.version,
+        at: operation.at,
+      };
+    });
+    detail = {
+      user: readManagedUser(current.user),
+      events,
+      moreEvents: current.moreEvents,
+      operations,
+      moreOperations: current.moreOperations,
+      openAttendance: current.openAttendance,
+      unfinishedIssues: current.unfinishedIssues,
+      unfinishedIssueCount: current.unfinishedIssueCount,
+    };
+  }
+  return {
+    actorId: value.actorId,
+    canSuspend: value.canSuspend,
+    users: value.users.map(readManagedUser),
+    next: value.next,
+    detail,
+  };
+}
 export default function UserManagement({ liffId }: { liffId: string }) {
   const [data, setData] = useState<UserManagementView | null>(null);
   const [query, setQuery] = useState<UserManagementQuery>({});
@@ -45,9 +135,12 @@ export default function UserManagement({ liffId }: { liffId: string }) {
       headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error ?? "會員資料暫不可用。");
-    return result as UserManagementView;
+    const result: unknown = await response.json();
+    if (!response.ok)
+      throw new Error(
+        isRecord(result) && typeof result.error === "string" ? result.error : "會員資料暫不可用。",
+      );
+    return readManagementView(result);
   }
   async function load(
     filter: UserManagementQuery = {},
@@ -70,8 +163,8 @@ export default function UserManagement({ liffId }: { liffId: string }) {
       if (ticket !== sequence.current) return;
       const saved = sessionStorage.getItem(key);
       if (saved) {
-        const old = JSON.parse(saved) as Pending;
-        if (old.owner === result.actorId)
+        const old: unknown = JSON.parse(saved);
+        if (isRecord(old) && old.owner === result.actorId)
           setPending({ owner: old.owner, command: parseUserStatusCommand(old.command) });
         else sessionStorage.removeItem(key);
       }
@@ -218,9 +311,10 @@ export default function UserManagement({ liffId }: { liffId: string }) {
               const id = String(form.get("id") ?? "").trim();
               const status = String(form.get("status") ?? "");
               setReceipt(null);
-              const selectedStatus = ["active", "paused", "suspended"].includes(status)
-                ? (status as NonNullable<UserManagementQuery["status"]>)
-                : undefined;
+              const selectedStatus =
+                status === "active" || status === "paused" || status === "suspended"
+                  ? status
+                  : undefined;
               void load(id ? { id } : selectedStatus ? { status: selectedStatus } : {});
             }}
           >

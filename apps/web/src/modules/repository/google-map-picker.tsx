@@ -24,14 +24,18 @@ type Place = {
   formattedAddress?: string;
   location?: LatLng;
 };
-type PlaceSelectEvent = Event & { placePrediction?: { toPlace(): Place } };
+type PlaceSelectEvent = Event & { placePrediction: { toPlace(): Place } };
 type PlaceElement = HTMLElement & { placeholder: string };
+type GeocoderFailureCode = "REQUEST_DENIED" | "OVER_QUERY_LIMIT" | "UNKNOWN_ERROR" | "ERROR";
 type MapsRuntime = {
   maps: {
     Map: new (element: HTMLElement, options: Record<string, unknown>) => MapInstance;
     Circle: new (options: Record<string, unknown>) => CircleInstance;
     Geocoder: new () => {
-      geocode(input: { location: { lat: number; lng: number } }): Promise<{
+      geocode(input: {
+        location: { lat: number; lng: number };
+        fulfillOnZeroResults: boolean;
+      }): Promise<{
         results: Array<{ formatted_address?: string }>;
       }>;
     };
@@ -113,6 +117,49 @@ function validPoint(point: MapPoint) {
   );
 }
 
+function isPlaceSelectEvent(event: Event): event is PlaceSelectEvent {
+  if (!("placePrediction" in event)) return false;
+  const prediction = event.placePrediction;
+  return (
+    typeof prediction === "object" &&
+    prediction !== null &&
+    "toPlace" in prediction &&
+    typeof prediction.toPlace === "function"
+  );
+}
+
+function isGeocoderFailureCode(value: unknown): value is GeocoderFailureCode {
+  return (
+    value === "REQUEST_DENIED" ||
+    value === "OVER_QUERY_LIMIT" ||
+    value === "UNKNOWN_ERROR" ||
+    value === "ERROR"
+  );
+}
+
+function geocoderFailureCode(cause: unknown): GeocoderFailureCode {
+  if (isGeocoderFailureCode(cause)) return cause;
+  if (typeof cause === "object" && cause !== null) {
+    const code = Reflect.get(cause, "code");
+    if (isGeocoderFailureCode(code)) return code;
+    const status = Reflect.get(cause, "status");
+    if (isGeocoderFailureCode(status)) return status;
+  }
+  return "ERROR";
+}
+
+function geocoderFailureMessage(code: GeocoderFailureCode) {
+  switch (code) {
+    case "REQUEST_DENIED":
+      return "地址查詢服務未授權；請聯絡管理員檢查 Google Maps 設定。打卡點仍可使用座標與半徑儲存。";
+    case "OVER_QUERY_LIMIT":
+      return "地址查詢服務已達使用上限；請稍後重試。打卡點仍可使用座標與半徑儲存。";
+    case "UNKNOWN_ERROR":
+    case "ERROR":
+      return "地址查詢服務暫時無法回應；請重試。打卡點仍可使用座標與半徑儲存。";
+  }
+}
+
 export default function GoogleMapPicker({
   apiKey,
   point,
@@ -143,6 +190,10 @@ export default function GoogleMapPicker({
   const [locating, setLocating] = useState(false);
   const [retryableError, setRetryableError] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [reverseGeocodeRetry, setReverseGeocodeRetry] = useState<{
+    point: MapPoint;
+    selection: number;
+  } | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [locationAccuracyUnknown, setLocationAccuracyUnknown] = useState(false);
 
@@ -151,33 +202,49 @@ export default function GoogleMapPicker({
   initialPoint.current = point;
   initialRadius.current = radius;
 
-  const commitSelection = useCallback((selected: MapPoint, suggestedAddress: string | null) => {
-    if (!validPoint(selected)) return;
-    setLocating(false);
-    setLocationAccuracy(null);
-    setLocationAccuracyUnknown(false);
-    circle.current?.setMap(map.current);
-    circle.current?.setCenter(coordinates(selected));
-    const selection = ++selectionGeneration.current;
-    onChangeRef.current(selected, suggestedAddress, "selection");
-    if (suggestedAddress || !geocoder.current) return;
-    void geocoder.current
-      .geocode({ location: coordinates(selected) })
+  const reverseGeocode = useCallback((selected: MapPoint, selection: number) => {
+    const currentGeocoder = geocoder.current;
+    if (!currentGeocoder) return;
+    setReverseGeocodeRetry(null);
+    void currentGeocoder
+      .geocode({ location: coordinates(selected), fulfillOnZeroResults: true })
       .then((response) => {
         if (selection !== selectionGeneration.current || disabledRef.current) return;
         const address = response.results[0]?.formatted_address?.trim();
-        if (address) onChangeRef.current(selected, address, "geocode");
-        else setStatus("未找到地址描述；打卡點仍可使用座標與半徑儲存。");
+        if (address) {
+          onChangeRef.current(selected, address, "geocode");
+          setStatus("地址查詢完成；地址描述可編輯。");
+        } else {
+          setStatus("未找到地址描述；打卡點仍可使用座標與半徑儲存。");
+        }
       })
-      .catch(() => {
-        if (selection === selectionGeneration.current && !disabledRef.current)
-          setStatus("地址查詢失敗；打卡點仍可使用座標與半徑儲存。");
+      .catch((cause: unknown) => {
+        if (selection !== selectionGeneration.current || disabledRef.current) return;
+        setReverseGeocodeRetry({ point: selected, selection });
+        setStatus(geocoderFailureMessage(geocoderFailureCode(cause)));
       });
   }, []);
+
+  const commitSelection = useCallback(
+    (selected: MapPoint, suggestedAddress: string | null) => {
+      if (!validPoint(selected)) return;
+      setLocating(false);
+      setLocationAccuracy(null);
+      setLocationAccuracyUnknown(false);
+      setReverseGeocodeRetry(null);
+      circle.current?.setMap(map.current);
+      circle.current?.setCenter(coordinates(selected));
+      const selection = ++selectionGeneration.current;
+      onChangeRef.current(selected, suggestedAddress, "selection");
+      if (!suggestedAddress && geocoder.current) reverseGeocode(selected, selection);
+    },
+    [reverseGeocode],
+  );
 
   useEffect(() => {
     const report = (message: string) => {
       setRetryableError(false);
+      setReverseGeocodeRetry(null);
       setStatus(message);
     };
     authFailureSubscribers.add(report);
@@ -190,6 +257,7 @@ export default function GoogleMapPicker({
     if (!apiKey || !mapElement.current || !searchElement.current) return;
     setStatus(retry > 0 ? "重新載入地圖中…" : "載入地圖中…");
     setRetryableError(false);
+    setReverseGeocodeRetry(null);
     const ticket = ++lifecycleGeneration.current;
     const listeners: Listener[] = [];
     let placeElement: PlaceElement | undefined;
@@ -256,8 +324,8 @@ export default function GoogleMapPicker({
           placeElement.placeholder = "搜尋地址或地標";
           placeElement.setAttribute("aria-label", "搜尋地址或地標");
           placeElement.addEventListener("gmp-select", async (rawEvent) => {
-            const event = rawEvent as PlaceSelectEvent;
-            const place = event.placePrediction?.toPlace();
+            if (!isPlaceSelectEvent(rawEvent)) return;
+            const place = rawEvent.placePrediction.toPlace();
             if (!place || disabledRef.current) return;
             setLocating(false);
             const selection = ++selectionGeneration.current;
@@ -395,6 +463,16 @@ export default function GoogleMapPicker({
             onClick={() => setRetry((value) => value + 1)}
           >
             重新載入地圖
+          </button>
+        )}
+        {reverseGeocodeRetry && (
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled}
+            onClick={() => reverseGeocode(reverseGeocodeRetry.point, reverseGeocodeRetry.selection)}
+          >
+            重試地址查詢
           </button>
         )}
         <p role="status">{status}</p>

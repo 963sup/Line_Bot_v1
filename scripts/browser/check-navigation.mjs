@@ -52,6 +52,8 @@ async function run() {
         displayName: "測試使用者",
         statusMessage: "Ready to work",
       }),
+      closeWindow: () => {},
+      openWindow: () => {},
       login: () => {},
     };
   });
@@ -128,7 +130,13 @@ async function run() {
     if (url.pathname === "/api/membership") {
       return route.fulfill({
         json: {
-          member: { id: "user-1", login: membershipLogin || null, status: membershipStatus },
+          member: {
+            id: "user-1",
+            login: membershipLogin,
+            status: membershipStatus,
+            createdAt: 1,
+            googleEmail: null,
+          },
         },
       });
     }
@@ -151,6 +159,7 @@ async function run() {
         membershipStatus: "active",
         membershipType: "IMMEDIATE",
         isMaintainer: false,
+        canManage: false,
       };
       return route.fulfill({
         json: {
@@ -214,6 +223,8 @@ async function run() {
               actorInvitationStatus: null,
               actorInvitationVersion: null,
               actorIsOwner: false,
+              actorMemberRole: "MEMBER",
+              actorCanCreateProjectV2: false,
             },
           ],
           next: null,
@@ -282,7 +293,11 @@ async function run() {
               id: "project-1",
               ownerLogin: "viewer",
               ownerKind: "USER",
+              number: 1,
               name: "Operations Plan",
+              public: false,
+              closed: false,
+              role: "ADMIN",
               version: 1,
             },
           ],

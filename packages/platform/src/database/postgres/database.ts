@@ -1,12 +1,39 @@
-import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { supabaseCa } from "./ca.js";
 import { normalizePostgresConnectionUrl } from "./connection.js";
 
+export type SqlRow = Record<string, unknown>;
+export type SqlResult<Row extends object = SqlRow> = {
+  rows: Row[];
+  rowCount?: number | null;
+};
+
 export interface Sql {
-  query(
+  query<Row extends object>(
+    text: string,
+    values: unknown[] | undefined,
+    decodeRow: (row: SqlRow) => Row,
+  ): Promise<SqlResult<Row>>;
+  query(text: string, values?: unknown[]): Promise<SqlResult>;
+}
+
+/** Both PostgreSQL runtimes cross the same unknown-row boundary before owner decoding. */
+export function createSql(execute: (text: string, values?: unknown[]) => Promise<SqlResult>): Sql {
+  function query<Row extends object>(
+    text: string,
+    values: unknown[] | undefined,
+    decodeRow: (row: SqlRow) => Row,
+  ): Promise<SqlResult<Row>>;
+  function query(text: string, values?: unknown[]): Promise<SqlResult>;
+  async function query(
     text: string,
     values?: unknown[],
-  ): Promise<{ rows: QueryResultRow[]; rowCount?: number | null }>;
+    decodeRow?: (row: SqlRow) => object,
+  ): Promise<SqlResult<object>> {
+    const result = await execute(text, values);
+    return decodeRow ? { ...result, rows: result.rows.map(decodeRow) } : result;
+  }
+  return { query };
 }
 export interface Database {
   transaction<T>(work: (sql: Sql) => Promise<T>): Promise<T>;
@@ -32,12 +59,10 @@ export class PostgresDatabase implements Database {
       await client.query("SET LOCAL ROLE line_app");
       await client.query("SET LOCAL search_path = app_private, pg_catalog");
       await client.query("SET LOCAL statement_timeout = '10s'");
-      const sql: Sql = {
-        async query(text: string, values?: unknown[]) {
-          const result = await client.query(text, values);
-          return { rows: result.rows, rowCount: result.rowCount };
-        },
-      };
+      const sql = createSql(async (text, values) => {
+        const result = await client.query<SqlRow>(text, values);
+        return { rows: result.rows, rowCount: result.rowCount };
+      });
       const value = await work(sql);
       await client.query("COMMIT");
       return value;

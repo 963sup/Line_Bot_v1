@@ -20,15 +20,12 @@ import {
   savePendingIssueCommand,
 } from "./issue-pending-storage";
 import { postIssueCommand, requestIssueSnapshot } from "./issue-requests";
+import RepositoryResourceNavigation from "./repository-resource-navigation";
 import {
-  repositoryDiscussionsPath,
+  type RepositoryResourceSection,
   repositoryIssuePath,
   repositoryIssuesPath,
-  repositoryLabelsPath,
-  repositoryMilestonesPath,
-  repositorySettingsPath,
 } from "./resource-navigation";
-import styles from "./resource-navigation.module.css";
 
 const workflowStatusLabel: Record<IssueWorkflowStatus, string> = {
   pending: "待承接",
@@ -44,6 +41,18 @@ const actionLabel: Record<IssueAction, string> = {
   approve: "驗收通過",
 };
 
+function issueEventLabel(action: string) {
+  switch (action) {
+    case "accept":
+    case "report":
+    case "reject":
+    case "approve":
+      return actionLabel[action];
+    default:
+      return action;
+  }
+}
+
 type IssueView = "all" | "mine" | "created";
 
 export default function IssueBoard({
@@ -53,6 +62,7 @@ export default function IssueBoard({
   repositoryName,
   issueNumber,
   initialCreating = false,
+  navigationActive = "issues",
 }: {
   liffId: string;
   repositoryId?: string;
@@ -60,6 +70,7 @@ export default function IssueBoard({
   repositoryName?: string;
   issueNumber?: number;
   initialCreating?: boolean;
+  navigationActive?: RepositoryResourceSection;
 }) {
   const detailMode = issueNumber !== undefined;
   const canonicalRepository = Boolean(ownerLogin && repositoryName);
@@ -246,39 +257,12 @@ export default function IssueBoard({
         actions={headingActions}
       />
       {canonicalRepository && ownerLogin && repositoryName && (
-        <nav className={styles.resourceNav} aria-label="Repository resources">
-          <Link
-            className={styles.resourceLink}
-            href={repositoryIssuesPath(ownerLogin, repositoryName)}
-            aria-current="page"
-          >
-            Issues
-          </Link>
-          <Link
-            className={styles.resourceLink}
-            href={repositoryDiscussionsPath(ownerLogin, repositoryName)}
-          >
-            Discussions
-          </Link>
-          <Link
-            className={styles.resourceLink}
-            href={repositoryLabelsPath(ownerLogin, repositoryName)}
-          >
-            Labels
-          </Link>
-          <Link
-            className={styles.resourceLink}
-            href={repositoryMilestonesPath(ownerLogin, repositoryName)}
-          >
-            Milestones
-          </Link>
-          <Link
-            className={styles.resourceLink}
-            href={repositorySettingsPath(ownerLogin, repositoryName)}
-          >
-            Settings
-          </Link>
-        </nav>
+        <RepositoryResourceNavigation
+          ownerLogin={ownerLogin}
+          repositoryName={repositoryName}
+          active={navigationActive}
+          canManage={currentRepository?.permissions.includes("admin") ?? false}
+        />
       )}
       <MiniAppRuntime
         key={routeKey}
@@ -700,9 +684,7 @@ export default function IssueBoard({
               .filter((event) => event.issueId === current.id)
               .map((event) => (
                 <li key={event.version}>
-                  {event.action === "create"
-                    ? "建立 Issue"
-                    : (actionLabel[event.action as IssueAction] ?? event.action)}
+                  {event.action === "create" ? "建立 Issue" : issueEventLabel(event.action)}
                   {event.note ? `：${event.note}` : ""}
                 </li>
               ))}

@@ -4,22 +4,25 @@ const key = "repository-create-pending:v1";
 
 function normalize(value: unknown): RepositoryCreateCommand | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const command = value as Record<string, unknown>;
-  const visibility = command.visibility ?? "private";
+  const visibility = "visibility" in value ? value.visibility : "private";
   if (
-    typeof command.requestId !== "string" ||
-    typeof command.ownerAccountId !== "string" ||
-    (command.ownerKind !== "USER" && command.ownerKind !== "ORGANIZATION") ||
-    typeof command.name !== "string" ||
+    !("requestId" in value) ||
+    typeof value.requestId !== "string" ||
+    !("ownerAccountId" in value) ||
+    typeof value.ownerAccountId !== "string" ||
+    !("ownerKind" in value) ||
+    (value.ownerKind !== "USER" && value.ownerKind !== "ORGANIZATION") ||
+    !("name" in value) ||
+    typeof value.name !== "string" ||
     (visibility !== "private" && visibility !== "internal" && visibility !== "public")
   ) {
     return null;
   }
   return {
-    requestId: command.requestId,
-    ownerAccountId: command.ownerAccountId,
-    ownerKind: command.ownerKind,
-    name: command.name,
+    requestId: value.requestId,
+    ownerAccountId: value.ownerAccountId,
+    ownerKind: value.ownerKind,
+    name: value.name,
     visibility,
   };
 }

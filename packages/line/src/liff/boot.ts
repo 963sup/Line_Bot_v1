@@ -1,5 +1,8 @@
 "use client";
 
+import type { Liff } from "@line/liff";
+
+/** The exact provider methods consumed by the application and its synthetic browser harness. */
 export type LiffSdk = {
   init: (options: { liffId: string; mock?: boolean }) => Promise<void>;
   isLoggedIn: () => boolean;
@@ -9,7 +12,7 @@ export type LiffSdk = {
   isInClient: () => boolean;
   closeWindow: () => void;
   openWindow: (options: { url: string; external: boolean }) => void;
-  use?: (plugin: unknown) => void;
+  use?: Liff["use"];
 };
 
 type LiffBootState = "initializing" | "ready" | "failed";

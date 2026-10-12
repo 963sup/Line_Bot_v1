@@ -3,6 +3,7 @@
 import type { RepositorySummary } from "@line_bot_v1/repository/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
+import { errorMessage, isRecord, isRepositorySummary } from "./response-validation";
 
 export function useRepositoryCollection(liffId: string) {
   const [items, setItems] = useState<RepositorySummary[] | null>(null);
@@ -28,9 +29,14 @@ export function useRepositoryCollection(liffId: string) {
         headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
-      const value = (await response.json()) as { items?: RepositorySummary[]; error?: string };
-      if (!response.ok || !Array.isArray(value.items)) {
-        throw new Error(value.error ?? "Repository 列表暫不可用。");
+      const value: unknown = await response.json();
+      if (
+        !response.ok ||
+        !isRecord(value) ||
+        !Array.isArray(value.items) ||
+        !value.items.every(isRepositorySummary)
+      ) {
+        throw new Error(errorMessage(value, "Repository 列表暫不可用。"));
       }
       if (ticket === generation.current) setItems(value.items);
     } catch (cause) {

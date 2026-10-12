@@ -36,10 +36,20 @@ test("only canonical commands use verified actor, provider and server time/site;
         assert.equal(now, 123);
         return { version: 0, working: false, sites: [] };
       },
-      snapshot: async () => ({ attendance: null as never, version: 0, sites: [] }),
+      snapshot: async () => ({
+        attendance: { records: [], active: null, menuState: "ready", computedAt: 123 },
+        version: 0,
+        sites: [],
+      }),
       execute: async (...args) => {
         calls.push(args);
-        return { attendance: null as never, version: 1, credited: 0, replayed: false, sites: [] };
+        return {
+          attendance: { records: [], active: null, menuState: "ready", computedAt: 123 },
+          version: 1,
+          credited: 0,
+          replayed: false,
+          sites: [],
+        };
       },
     }),
   };

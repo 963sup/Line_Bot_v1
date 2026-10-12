@@ -1,15 +1,18 @@
 "use client";
 
-import type {
-  EnterpriseCommand,
-  EnterpriseDetail,
-  EnterpriseList,
+import {
+  type EnterpriseCommand,
+  type EnterpriseDetail,
+  type EnterpriseList,
+  parseEnterpriseDetail,
+  parseEnterpriseList,
 } from "@line_bot_v1/enterprise/contracts/enterprise-governance";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { errorStatus } from "../../shared/presentation/unknown-value";
 import { EnterpriseTeamsSection } from "./enterprise-teams-section";
 
 function affiliationLabel(sources: EnterpriseDetail["actorAffiliations"]) {
@@ -92,18 +95,7 @@ export default function EnterprisePanel({
       const payload = await request("GET");
       if (ticket !== epoch.current) return;
       if (routedDetail) {
-        if (
-          !payload ||
-          !Array.isArray(payload.users) ||
-          !Array.isArray(payload.directAffiliations) ||
-          !Array.isArray(payload.invitations) ||
-          !Array.isArray(payload.organizations) ||
-          !Array.isArray(payload.outsideRepositoryCollaborators) ||
-          !Array.isArray(payload.teams)
-        ) {
-          throw new Error("回應不完整，請重新載入。");
-        }
-        const detail = payload as EnterpriseDetail;
+        const detail = parseEnterpriseDetail(payload);
         selected.current = detail.id;
         routedSlug.current = "";
         if (canonicalTeam) {
@@ -120,8 +112,7 @@ export default function EnterprisePanel({
         setDetail(detail);
         return;
       }
-      if (!payload || !Array.isArray(payload.items)) throw new Error("回應不完整，請重新載入。");
-      setList(payload as EnterpriseList);
+      setList(parseEnterpriseList(payload));
       setDetail(null);
     } catch (cause) {
       if (ticket === epoch.current) setError(cause instanceof Error ? cause.message : "讀取失敗。");
@@ -153,7 +144,7 @@ export default function EnterprisePanel({
       );
     } catch (cause) {
       if (ticket === epoch.current) {
-        const status = (cause as { status?: number }).status;
+        const status = errorStatus(cause);
         if (status && status < 500 && status !== 429) setPending(null);
         setError(cause instanceof Error ? cause.message : "操作結果尚待確認，請重試原操作。");
       }

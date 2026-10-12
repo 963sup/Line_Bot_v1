@@ -1,4 +1,5 @@
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { nullableString } from "@line_bot_v1/platform/validation";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
 import { RepositoryError, type RepositorySummary } from "@line_bot_v1/repository/domain";
 import { authorizedRepository } from "@line_bot_v1/repository/postgres/access";
@@ -11,13 +12,18 @@ import type {
 } from "../contracts/output/discussion-read.js";
 import { DiscussionError, type DiscussionSummary } from "../domain.js";
 import {
-  type CommentRow,
   comment,
   type DiscussionRow,
+  decodeCommentRow,
+  decodeDiscussionRow,
   discussion,
 } from "./postgres-management-helpers.js";
 
 type ReadDiscussionRow = DiscussionRow & { category_name: string | null };
+
+function decodeReadDiscussionRow(row: Record<string, unknown>): ReadDiscussionRow {
+  return { ...decodeDiscussionRow(row), category_name: nullableString(row.category_name) };
+}
 
 function discussionSummary(row: ReadDiscussionRow): DiscussionSummary {
   const value = discussion(row, row.category_name ?? undefined);
@@ -83,8 +89,9 @@ async function detailRows(
          AND d.${predicate}=$2
          AND d.deleted_at IS NULL`,
       [repositoryId, value],
+      decodeReadDiscussionRow,
     )
-  ).rows[0] as ReadDiscussionRow | undefined;
+  ).rows[0];
   if (!row) throw new DiscussionError(404, "找不到 Discussion。");
 
   const commentRows = (
@@ -96,8 +103,9 @@ async function detailRows(
        ORDER BY created_at ASC,id ASC
        LIMIT 51`,
       [row.id, commentsAfter?.at ?? null, commentsAfter?.id ?? null],
+      decodeCommentRow,
     )
-  ).rows as CommentRow[];
+  ).rows;
   const comments = commentRows.map(comment);
   const hasMore = comments.length > 50;
   if (hasMore) comments.pop();
@@ -125,8 +133,9 @@ export class PostgresDiscussionReadStore implements DiscussionReadStore {
            ORDER BY d.created_at DESC,d.id ASC
            LIMIT 21`,
           [selected.id, after?.at ?? null, after?.id ?? null],
+          decodeReadDiscussionRow,
         )
-      ).rows as ReadDiscussionRow[];
+      ).rows;
       const discussions = rows.map(discussionSummary);
       const hasMore = discussions.length > 20;
       if (hasMore) discussions.pop();

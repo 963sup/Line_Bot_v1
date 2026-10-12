@@ -8,6 +8,13 @@ import {
   readOrganizationViewerCapabilities,
 } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableString,
+  numberValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { TeamCommand } from "../contracts/input/team-command.js";
 import type { TeamActor, TeamRepository } from "../contracts/repositories/team.js";
 import type {
@@ -37,6 +44,92 @@ type TeamRow = {
   version: number;
 };
 
+function teamRow(row: Record<string, unknown>): TeamRow {
+  return {
+    id: stringValue(row.id),
+    organization_account_id: stringValue(row.organization_account_id),
+    name: stringValue(row.name),
+    slug: stringValue(row.slug),
+    parent_team_id: nullableString(row.parent_team_id),
+    privacy: literalValue(row.privacy, ["SECRET", "VISIBLE"]),
+    notification_setting: literalValue(row.notification_setting, [
+      "NOTIFICATIONS_DISABLED",
+      "NOTIFICATIONS_ENABLED",
+    ]),
+    version: numberValue(row.version),
+  };
+}
+
+function directMemberRow(row: Record<string, unknown>) {
+  return {
+    userId: stringValue(row.userId),
+    name: stringValue(row.name),
+    status: literalValue(row.status, ["pending", "active", "removed"]),
+  };
+}
+
+function effectiveMemberRow(row: Record<string, unknown>) {
+  return {
+    userId: stringValue(row.userId),
+    name: stringValue(row.name),
+    membershipType: literalValue(row.membershipType, ["IMMEDIATE", "CHILD_TEAM"]),
+    sourceTeamId: stringValue(row.sourceTeamId),
+  };
+}
+
+function teamSummaryRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    organizationAccountId: stringValue(row.organizationAccountId),
+    name: stringValue(row.name),
+    slug: stringValue(row.slug),
+    parentTeamId: nullableString(row.parentTeamId),
+    privacy: literalValue(row.privacy, ["SECRET", "VISIBLE"]),
+    notificationSetting: literalValue(row.notificationSetting, [
+      "NOTIFICATIONS_DISABLED",
+      "NOTIFICATIONS_ENABLED",
+    ]),
+    version: numberValue(row.version),
+    membershipStatus: literalValue(row.membershipStatus, ["none", "pending", "active", "removed"]),
+    membershipType:
+      row.membershipType === null
+        ? null
+        : literalValue(row.membershipType, ["IMMEDIATE", "CHILD_TEAM"]),
+  };
+}
+
+function idRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id) };
+}
+
+function teamCommandReceipt(value: unknown): TeamCommandReceipt {
+  const result = record(value);
+  return {
+    organizationAccountId: stringValue(result.organizationAccountId),
+    teamId: stringValue(result.teamId),
+    userId: stringValue(result.userId),
+  };
+}
+
+function previousCommandRow(row: Record<string, unknown>) {
+  return {
+    fingerprint: stringValue(row.fingerprint),
+    result: teamCommandReceipt(row.result),
+    team_id: stringValue(row.team_id),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
+
+function hasPostgresProperty(error: unknown, key: "code" | "constraint", value: string): boolean {
+  if (!(error instanceof Error)) return false;
+  return key === "code"
+    ? "code" in error && error.code === value
+    : "constraint" in error && error.constraint === value;
+}
+
 function requireTeamManager(allowed: boolean) {
   teamAssert(allowed, 403, "需要 TeamMaintainer 或 OrganizationOwner 權限。");
 }
@@ -45,10 +138,11 @@ async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string)
   const row = (
     await sql.query(
       `SELECT id,organization_account_id,name,slug,parent_team_id,privacy,notification_setting,version FROM teams
-       WHERE id=$1 AND organization_account_id=$2 FOR UPDATE`,
+      WHERE id=$1 AND organization_account_id=$2 FOR UPDATE`,
       [teamId, organizationAccountId],
+      teamRow,
     )
-  ).rows[0] as TeamRow | undefined;
+  ).rows[0];
   teamAssert(row, 404, "團隊不存在或不屬於所選組織。");
   return row;
 }
@@ -60,12 +154,11 @@ async function directTeamMembers(sql: Sql, teamId: string): Promise<TeamMembersh
        FROM team_memberships
        WHERE team_id=$1
        ORDER BY user_id
-       FOR SHARE`,
+      FOR SHARE`,
       [teamId],
+      directMemberRow,
     )
-  ).rows as Array<
-    Omit<TeamMembershipView, "isMaintainer" | "userStatus" | "membershipType" | "sourceTeamId">
-  >;
+  ).rows;
   const members: TeamMembershipView[] = [];
   for (const row of rows) {
     const user = await readUserQualification(sql, row.userId);
@@ -99,8 +192,9 @@ async function effectiveTeamMembers(sql: Sql, teamId: string): Promise<TeamMembe
                 em.depth,
                 em.source_team_id`,
       [teamId],
+      effectiveMemberRow,
     )
-  ).rows as Array<Pick<TeamMembershipView, "userId" | "name" | "membershipType" | "sourceTeamId">>;
+  ).rows;
   const members: TeamMembershipView[] = [];
   for (const row of rows) {
     const user = await readUserQualification(sql, row.userId);
@@ -156,8 +250,9 @@ async function teamSummaries(
          AND ($3::boolean OR t.privacy='VISIBLE' OR em.user_id IS NOT NULL)
        ORDER BY t.created_at,t.id`,
       [organizationAccountId, userId, owner],
+      teamSummaryRow,
     )
-  ).rows as Array<Omit<TeamSummary, "isMaintainer" | "canManage">>;
+  ).rows;
   const teams: TeamSummary[] = [];
   for (const row of rows) {
     const isMaintainer = await isTeamMaintainer(sql, row.id, userId);
@@ -285,8 +380,9 @@ export class PostgresTeamRepository implements TeamRepository {
           `SELECT id FROM teams
            WHERE organization_account_id=$1 AND slug=$2`,
           [organization.organizationAccountId, teamSlug],
+          idRow,
         )
-      ).rows[0] as { id: string } | undefined;
+      ).rows[0];
       teamAssert(team, 404, "找不到可存取的 Organization Team。");
       return readTeamView(sql, proof, organization.organizationAccountId, team.id, organizations);
     });
@@ -308,6 +404,7 @@ export class PostgresTeamRepository implements TeamRepository {
           `SELECT fingerprint,result,team_id FROM team_commands
            WHERE actor_user_id=$1 AND request_id=$2`,
           [actor.userId, command.requestId],
+          previousCommandRow,
         )
       ).rows[0];
       if (old) {
@@ -345,7 +442,7 @@ export class PostgresTeamRepository implements TeamRepository {
             actorIsOwner || (await isTeamMaintainer(sql, command.parentTeamId, actor.userId)),
           );
         }
-        return old.result as TeamCommandReceipt;
+        return old.result;
       }
 
       const teamId = command.action === "create-team" ? randomUUID() : command.teamId;
@@ -385,8 +482,10 @@ export class PostgresTeamRepository implements TeamRepository {
             ],
           );
         } catch (error) {
-          const postgres = error as { code?: string; constraint?: string };
-          if (postgres.code === "23505" && postgres.constraint === "teams_organization_slug") {
+          if (
+            hasPostgresProperty(error, "code", "23505") &&
+            hasPostgresProperty(error, "constraint", "teams_organization_slug")
+          ) {
             throw new TeamError(409, "此 Organization 已有相同 Team slug。");
           }
           throw error;
@@ -421,8 +520,10 @@ export class PostgresTeamRepository implements TeamRepository {
               slug,
             ]);
           } catch (error) {
-            const postgres = error as { code?: string; constraint?: string };
-            if (postgres.code === "23505" && postgres.constraint === "teams_organization_slug") {
+            if (
+              hasPostgresProperty(error, "code", "23505") &&
+              hasPostgresProperty(error, "constraint", "teams_organization_slug")
+            ) {
               throw new TeamError(409, "此 Organization 已有相同 Team slug。");
             }
             throw error;
@@ -469,11 +570,10 @@ export class PostgresTeamRepository implements TeamRepository {
               command.parentTeamId,
             ]);
           } catch (error) {
-            const postgres = error as { code?: string; constraint?: string; message?: string };
             if (
-              postgres.code === "23514" ||
-              postgres.constraint === "teams_parent_scope_fkey" ||
-              postgres.message?.includes("team_hierarchy_cycle")
+              hasPostgresProperty(error, "code", "23514") ||
+              hasPostgresProperty(error, "constraint", "teams_parent_scope_fkey") ||
+              (error instanceof Error && error.message.includes("team_hierarchy_cycle"))
             ) {
               throw new TeamError(409, "Team hierarchy 無效或形成 cycle。");
             }
@@ -584,9 +684,11 @@ export class PostgresTeamRepository implements TeamRepository {
       }
 
       const updated = (
-        await sql.query("UPDATE teams SET version=version+1 WHERE id=$1 RETURNING version", [
-          teamId,
-        ])
+        await sql.query(
+          "UPDATE teams SET version=version+1 WHERE id=$1 RETURNING version",
+          [teamId],
+          versionRow,
+        )
       ).rows[0];
       if (!updated) throw new TeamError(409, "團隊版本已更新，請重新讀取。");
       const result: TeamCommandReceipt = {

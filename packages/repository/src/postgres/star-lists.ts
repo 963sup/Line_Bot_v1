@@ -1,7 +1,18 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { readAccountLogin, readAccountLogins } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import {
+  isRecord,
+  literalValue,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   RepositoryStarListCommand,
   RepositoryStarListCreateCommand,
@@ -13,6 +24,7 @@ import type {
   RepositoryStarListVisibility,
 } from "../contracts/repositories/star-lists.js";
 import { RepositoryError } from "../domain.js";
+import { decodeCommandRow } from "./decode.js";
 import { readVisibleStarListRepositoryRows } from "./star-list-reads.js";
 
 type ListRow = {
@@ -38,6 +50,24 @@ const fingerprint = (command: unknown) =>
     .update(JSON.stringify({ family: "repository-star-list", command }))
     .digest("hex");
 
+function decodeListRow(row: SqlRow): ListRow {
+  return {
+    id: stringValue(row.id),
+    owner_user_id: stringValue(row.owner_user_id),
+    name: stringValue(row.name),
+    description: stringValue(row.description),
+    visibility: literalValue(row.visibility, ["private", "public"]),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+function changedList(row: ListRow | undefined): ListRow {
+  if (!row) throw new RepositoryError(409, "List 狀態已變更，請重新載入。");
+  return row;
+}
+
 function mutationResult(row: ListRow, deleted = false): RepositoryStarListMutationResult {
   return {
     id: row.id,
@@ -55,20 +85,32 @@ function readReceipt(
   if (previous.fingerprint !== commandFingerprint) {
     throw new RepositoryError(409, "此請求編號已用於不同 Repository 操作。");
   }
-  const receipt = previous.result as Partial<Receipt>;
+  if (!isRecord(previous.result)) {
+    throw new RepositoryError(503, "List 操作回執無法讀取。");
+  }
+  const receipt = previous.result;
+  if (!isRecord(receipt.result)) {
+    throw new RepositoryError(503, "List 操作回執無法讀取。");
+  }
+  const result = receipt.result;
   if (
     receipt.receiptVersion !== 1 ||
     receipt.family !== "repository-star-list" ||
     typeof receipt.action !== "string" ||
-    !receipt.result ||
-    typeof receipt.result.id !== "string" ||
-    !Number.isSafeInteger(receipt.result.version) ||
-    (receipt.result.visibility !== "private" && receipt.result.visibility !== "public") ||
-    typeof receipt.result.deleted !== "boolean"
+    typeof result.id !== "string" ||
+    typeof result.version !== "number" ||
+    !Number.isSafeInteger(result.version) ||
+    (result.visibility !== "private" && result.visibility !== "public") ||
+    typeof result.deleted !== "boolean"
   ) {
     throw new RepositoryError(503, "List 操作回執無法讀取。");
   }
-  return receipt.result;
+  return {
+    id: result.id,
+    version: result.version,
+    visibility: result.visibility,
+    deleted: result.deleted,
+  };
 }
 
 async function previousReceipt(sql: Sql, userId: string, requestId: string) {
@@ -76,8 +118,9 @@ async function previousReceipt(sql: Sql, userId: string, requestId: string) {
     await sql.query(
       "SELECT fingerprint,result FROM repository_commands WHERE actor=$1 AND request_id=$2",
       [userId, requestId],
+      decodeCommandRow,
     )
-  ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+  ).rows[0];
 }
 
 async function writeReceipt(
@@ -163,8 +206,9 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
            WHERE owner_user_id=$1
            ORDER BY updated_at DESC,id`,
           [userId],
+          decodeListRow,
         )
-      ).rows as ListRow[];
+      ).rows;
       if (!rows.length) return [];
       const visibleRows = await readVisibleStarListRepositoryRows(
         sql,
@@ -199,8 +243,9 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
            FROM repository_star_lists
            WHERE id=$1`,
           [listId],
+          decodeListRow,
         )
-      ).rows[0] as ListRow | undefined;
+      ).rows[0];
       if (!row || (row.owner_user_id !== userId && row.visibility !== "public")) {
         throw new RepositoryError(404, "找不到 List。");
       }
@@ -240,8 +285,10 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
            ) VALUES($1,$2,$3,$4,'private',1,$5,$5)
            RETURNING id,owner_user_id,name,description,visibility,version,created_at,updated_at`,
           [randomUUID(), userId, command.name, command.description, at],
+          decodeListRow,
         )
-      ).rows[0] as ListRow;
+      ).rows[0];
+      if (!row) throw new RepositoryError(503, "List 建立結果不完整。");
       const result = mutationResult(row);
       await writeReceipt(sql, userId, command.requestId, commandFingerprint, "create", result, at);
       return result;
@@ -272,8 +319,9 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
            WHERE id=$1
            FOR UPDATE`,
           [command.listId],
+          decodeListRow,
         )
-      ).rows[0] as ListRow | undefined;
+      ).rows[0];
       if (!row || row.owner_user_id !== userId) throw new RepositoryError(404, "找不到 List。");
       if (Number(row.version) !== command.expectedVersion) {
         throw new RepositoryError(409, "List 已更新，請重新讀取後再操作。");
@@ -282,29 +330,35 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
       let deleted = false;
       if (command.action === "update") {
         if (row.name !== command.name || row.description !== command.description) {
-          row = (
-            await sql.query(
-              `UPDATE repository_star_lists
+          row = changedList(
+            (
+              await sql.query(
+                `UPDATE repository_star_lists
                SET name=$2,description=$3,version=version+1,updated_at=$4
                WHERE id=$1
                RETURNING id,owner_user_id,name,description,visibility,version,created_at,updated_at`,
-              [row.id, command.name, command.description, at],
-            )
-          ).rows[0] as ListRow;
+                [row.id, command.name, command.description, at],
+                decodeListRow,
+              )
+            ).rows[0],
+          );
         }
       } else if (command.action === "publish" || command.action === "unpublish") {
         const visibility: RepositoryStarListVisibility =
           command.action === "publish" ? "public" : "private";
         if (row.visibility !== visibility) {
-          row = (
-            await sql.query(
-              `UPDATE repository_star_lists
+          row = changedList(
+            (
+              await sql.query(
+                `UPDATE repository_star_lists
                SET visibility=$2,version=version+1,updated_at=$3
                WHERE id=$1
                RETURNING id,owner_user_id,name,description,visibility,version,created_at,updated_at`,
-              [row.id, visibility, at],
-            )
-          ).rows[0] as ListRow;
+                [row.id, visibility, at],
+                decodeListRow,
+              )
+            ).rows[0],
+          );
         }
       } else if (command.action === "add") {
         const star = (
@@ -335,15 +389,18 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
           )
         ).rows[0];
         if (inserted) {
-          row = (
-            await sql.query(
-              `UPDATE repository_star_lists
+          row = changedList(
+            (
+              await sql.query(
+                `UPDATE repository_star_lists
                SET version=version+1,updated_at=$2
                WHERE id=$1
                RETURNING id,owner_user_id,name,description,visibility,version,created_at,updated_at`,
-              [row.id, at],
-            )
-          ).rows[0] as ListRow;
+                [row.id, at],
+                decodeListRow,
+              )
+            ).rows[0],
+          );
         }
       } else if (command.action === "remove") {
         const removed = (
@@ -353,15 +410,18 @@ export class PostgresRepositoryStarListStore implements RepositoryStarListStore 
           )
         ).rows[0];
         if (removed) {
-          row = (
-            await sql.query(
-              `UPDATE repository_star_lists
+          row = changedList(
+            (
+              await sql.query(
+                `UPDATE repository_star_lists
                SET version=version+1,updated_at=$2
                WHERE id=$1
                RETURNING id,owner_user_id,name,description,visibility,version,created_at,updated_at`,
-              [row.id, at],
-            )
-          ).rows[0] as ListRow;
+                [row.id, at],
+                decodeListRow,
+              )
+            ).rows[0],
+          );
         }
       } else {
         await sql.query("DELETE FROM repository_star_lists WHERE id=$1", [row.id]);

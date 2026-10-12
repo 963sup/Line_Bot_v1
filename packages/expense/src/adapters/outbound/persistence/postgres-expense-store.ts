@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { numericValue } from "@line_bot_v1/platform/validation";
 import type { ReceiptIntakeStore } from "../../../contracts/ports/receipt-intake.js";
 import type { ExpenseRepository } from "../../../contracts/repositories/expense-repository.js";
 import {
@@ -8,7 +9,16 @@ import {
   type Expense,
   type ExpenseCommand,
   ExpenseError,
+  parsePersistedExpense,
 } from "../../../domain/aggregates/expense.js";
+
+function expenseNumber(value: unknown): number {
+  const number = Number(numericValue(value));
+  if (!Number.isSafeInteger(number) || number < 0) {
+    throw new ExpenseError(500, "支出編號格式不完整。");
+  }
+  return number;
+}
 
 export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseRepository {
   constructor(private db: Database = businessDatabase()) {}
@@ -88,9 +98,10 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
         payment: "",
       };
       const row = (
-        await sql.query(
+        await sql.query<{ number: number }>(
           "INSERT INTO expenses(id,owner,scope,image_id,body) VALUES($1,$2,$3,$4,$5::jsonb) RETURNING number",
           [d.id, owner, scope, imageId, JSON.stringify(d)],
+          (value) => ({ number: expenseNumber(value.number) }),
         )
       ).rows[0];
       if (!row) throw new ExpenseError(500, "支出建立結果不完整。");
@@ -102,13 +113,14 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
   }
   private async getFrom(sql: Sql, id: string, owner: string, lock = false): Promise<Expense> {
     const row = (
-      await sql.query(
+      await sql.query<{ body: Expense }>(
         `SELECT body FROM expenses WHERE id=$1 AND owner=$2${lock ? " FOR UPDATE" : ""}`,
         [id, owner],
+        (value) => ({ body: parsePersistedExpense(value.body) }),
       )
     ).rows[0];
     if (!row) throw new ExpenseError(404, "資料不存在或你無權處理。");
-    return row.body as Expense;
+    return row.body;
   }
   get(id: string, owner: string) {
     return this.db.transaction((sql) => this.getFrom(sql, id, owner));

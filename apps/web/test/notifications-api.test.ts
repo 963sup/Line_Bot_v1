@@ -42,7 +42,7 @@ test("notification HTTP verifies LINE, bounds JSON and does not leak failures", 
         "Content-Type": "application/json",
         ...auth,
       },
-      body,
+      ...(body === undefined ? {} : { body }),
     });
   try {
     authenticated = await lineSessionHeaders("offline-notification");
@@ -57,13 +57,13 @@ test("notification HTTP verifies LINE, bounds JSON and does not leak failures", 
     assert.equal(inbox.headers.get("cache-control"), "no-store");
     assert.deepEqual(await inbox.json(), { items: [] });
     assert.equal(read.mock.callCount(), 1);
-    assert.deepEqual(read.mock.calls[0].arguments, [user, { unreadOnly: false }]);
+    assert.deepEqual(read.mock.calls.at(0)?.arguments, [user, { unreadOnly: false }]);
     const id = "11111111-1111-4111-8111-111111111111";
     const failed = await POST(request(JSON.stringify({ id, recipient: "forged-user" })));
     assert.equal(failed.status, 503);
     assert.equal((await failed.text()).includes("secret"), false);
     assert.equal(markRead.mock.callCount(), 1);
-    assert.deepEqual(markRead.mock.calls[0].arguments, [user, { id }]);
+    assert.deepEqual(markRead.mock.calls.at(0)?.arguments, [user, { id }]);
   } finally {
     fetch.mock.restore();
     read.mock.restore();

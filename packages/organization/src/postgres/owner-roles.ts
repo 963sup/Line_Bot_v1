@@ -1,6 +1,7 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { OrganizationCommand } from "../contracts/organization-governance.js";
 
 type OrganizationOwnerCommand = Extract<
@@ -9,6 +10,34 @@ type OrganizationOwnerCommand = Extract<
 >;
 
 type AssignmentResult = Readonly<{ status: "active" | "revoked"; version: number }>;
+
+function idRow(row: Record<string, unknown>) {
+  return { id: stringValue(row.id) };
+}
+
+function ownerAssignmentRow(row: Record<string, unknown>) {
+  return { userId: stringValue(row.userId), version: numberValue(row.version) };
+}
+
+function membershipRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "removed"]),
+    version: numberValue(row.version),
+  };
+}
+
+function assignmentRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "revoked"]),
+    version: numberValue(row.version),
+    user_status_version: numberValue(row.user_status_version),
+    membership_version: numberValue(row.membership_version),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
 
 export async function hasOrganizationOwnerAssignment(
   sql: Sql,
@@ -72,10 +101,11 @@ export async function readOrganizationOwnerScopeIds(sql: Sql, userId: string): P
          AND m.status='active' AND u.status='active'
          AND r.user_status_version=u.status_version
          AND r.membership_version=m.version
-       ORDER BY r.organization_account_id`,
+      ORDER BY r.organization_account_id`,
       [userId],
+      idRow,
     )
-  ).rows as Array<{ id: string }>;
+  ).rows;
   return rows.map((row) => row.id);
 }
 
@@ -98,10 +128,11 @@ export async function readOrganizationOwnerAssignments(
          AND r.user_status_version=u.status_version
          AND r.membership_version=m.version
          AND ($2::text[] IS NULL OR r.user_id=ANY($2::text[]))
-       ORDER BY r.user_id`,
+      ORDER BY r.user_id`,
       [organizationAccountId, userIds ?? null],
+      ownerAssignmentRow,
     )
-  ).rows as Array<{ userId: string; version: number }>;
+  ).rows;
   return rows.map((row) => ({ userId: row.userId, version: Number(row.version) }));
 }
 
@@ -113,8 +144,9 @@ export async function mutateOrganizationOwnerAssignment(
   const membership = (
     await sql.query(
       `SELECT status,version FROM organization_memberships
-       WHERE organization_account_id=$1 AND user_id=$2`,
+      WHERE organization_account_id=$1 AND user_id=$2`,
       [command.organizationAccountId, command.targetUserId],
+      membershipRow,
     )
   ).rows[0];
   if (!membership || membership.status !== "active") {
@@ -129,8 +161,9 @@ export async function mutateOrganizationOwnerAssignment(
     await sql.query(
       `SELECT status,version,user_status_version,membership_version
        FROM organization_role_assignments
-       WHERE organization_account_id=$1 AND user_id=$2 AND role='OrganizationOwner' FOR UPDATE`,
+      WHERE organization_account_id=$1 AND user_id=$2 AND role='OrganizationOwner' FOR UPDATE`,
       [command.organizationAccountId, command.targetUserId],
+      assignmentRow,
     )
   ).rows[0];
 
@@ -165,6 +198,7 @@ export async function mutateOrganizationOwnerAssignment(
             membership.version,
             now,
           ],
+          versionRow,
         )
       ).rows[0];
       if (!row) {
@@ -228,6 +262,7 @@ export async function mutateOrganizationOwnerAssignment(
        WHERE organization_account_id=$1 AND user_id=$2 AND role='OrganizationOwner'
        RETURNING version`,
       [command.organizationAccountId, command.targetUserId],
+      versionRow,
     )
   ).rows[0];
   if (!row) {

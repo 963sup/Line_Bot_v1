@@ -1,14 +1,24 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { FollowItem, FollowStore } from "../contracts/output/follows.js";
 import { UserError } from "../domain/user.js";
+
+function statusRow(row: Record<string, unknown>) {
+  return { status: stringValue(row.status) };
+}
+
+function followRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id), created_at: numericValue(row.created_at) };
+}
 
 export class PostgresFollowStore implements FollowStore {
   constructor(private db: Database = businessDatabase()) {}
 
   follow(followerUserId: string, followedUserId: string, at: number): Promise<void> {
     return this.db.transaction(async (sql) => {
-      const target = (await sql.query("SELECT status FROM users WHERE id=$1", [followedUserId]))
-        .rows[0] as { status: string } | undefined;
+      const target = (
+        await sql.query("SELECT status FROM users WHERE id=$1", [followedUserId], statusRow)
+      ).rows[0];
       if (!target || target.status !== "active") {
         throw new UserError(404, "找不到可追蹤的使用者。");
       }
@@ -34,8 +44,9 @@ export class PostgresFollowStore implements FollowStore {
         await sql.query(
           "SELECT follower_user_id AS user_id,created_at FROM user_follows WHERE followed_user_id=$1 ORDER BY created_at DESC,follower_user_id",
           [userId],
+          followRow,
         )
-      ).rows as Array<{ user_id: string; created_at: number | string }>;
+      ).rows;
       return rows.map((row) => ({ userId: row.user_id, followedAt: Number(row.created_at) }));
     });
   }
@@ -46,8 +57,9 @@ export class PostgresFollowStore implements FollowStore {
         await sql.query(
           "SELECT followed_user_id AS user_id,created_at FROM user_follows WHERE follower_user_id=$1 ORDER BY created_at DESC,followed_user_id",
           [userId],
+          followRow,
         )
-      ).rows as Array<{ user_id: string; created_at: number | string }>;
+      ).rows;
       return rows.map((row) => ({ userId: row.user_id, followedAt: Number(row.created_at) }));
     });
   }

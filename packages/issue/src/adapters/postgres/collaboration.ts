@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { repositoryOwnerIdentity } from "@line_bot_v1/repository/postgres/access";
 import {
   repositoryLabelIdsExist,
@@ -18,9 +26,10 @@ import type { IssueTypeDefinition } from "../../contracts/issue-types.js";
 import { IssueError } from "../../domain.js";
 import {
   advance,
-  type CommentRow,
   comment,
   currentIssue,
+  decodeCommentRow,
+  decodeNumericVersionRow,
   dependencyWouldCycle,
   duplicateRelation,
   fingerprint,
@@ -50,6 +59,60 @@ type AssignedIssueTypeRow = {
   updated_at: number | string;
 };
 
+const issueTypeColors: readonly IssueTypeDefinition["color"][] = [
+  "BLUE",
+  "GRAY",
+  "GREEN",
+  "ORANGE",
+  "PINK",
+  "PURPLE",
+  "RED",
+  "YELLOW",
+];
+const lockReasons: readonly IssueLockReason[] = ["OFF_TOPIC", "RESOLVED", "SPAM", "TOO_HEATED"];
+
+function decodeAssignedIssueTypeRow(row: Record<string, unknown>): AssignedIssueTypeRow {
+  return {
+    id: stringValue(row.id),
+    organization_account_id: stringValue(row.organization_account_id),
+    name: stringValue(row.name),
+    description: nullableString(row.description),
+    color: literalValue(row.color, issueTypeColors),
+    is_enabled: booleanValue(row.is_enabled),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+function decodeViewIssueRow(row: Record<string, unknown>) {
+  const lockReason = nullableString(row.lock_reason);
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    version: numericValue(row.version),
+    milestone_id: nullableString(row.milestone_id),
+    is_locked: booleanValue(row.is_locked),
+    lock_reason: lockReason === null ? null : literalValue(lockReason, lockReasons),
+  };
+}
+
+const decodeLabelRow = (row: Record<string, unknown>) => ({
+  label_id: stringValue(row.label_id),
+});
+const decodeIdRow = (row: Record<string, unknown>) => ({ id: stringValue(row.id) });
+const decodeReceiptRow = (row: Record<string, unknown>) => ({
+  fingerprint: stringValue(row.fingerprint),
+  result: row.result,
+});
+const decodePositionRow = (row: Record<string, unknown>) => ({
+  position: numericValue(row.position),
+});
+const decodeChildIssueRow = (row: Record<string, unknown>) => ({
+  child_issue_id: stringValue(row.child_issue_id),
+});
+
 function issueTypeDefinition(row: AssignedIssueTypeRow): IssueTypeDefinition {
   return {
     id: row.id,
@@ -75,8 +138,9 @@ async function assignedIssueType(sql: Sql, issueId: string): Promise<IssueTypeDe
        JOIN issue_types t ON t.id=a.issue_type_id
        WHERE a.issue_id=$1`,
       [issueId],
+      decodeAssignedIssueTypeRow,
     )
-  ).rows[0] as AssignedIssueTypeRow | undefined;
+  ).rows[0];
   if (!row) return null;
   if (row.deleted_at !== null) {
     throw new IssueError(503, "IssueType assignment 指向已刪除的 type。");
@@ -99,17 +163,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           `SELECT id,repository_id,version,milestone_id,is_locked,lock_reason
            FROM issues WHERE repository_id=$1 AND id=$2`,
           [repositoryId, issueId],
+          decodeViewIssueRow,
         )
-      ).rows[0] as
-        | {
-            id: string;
-            repository_id: string;
-            version: number | string;
-            milestone_id: string | null;
-            is_locked: boolean;
-            lock_reason: IssueLockReason | null;
-          }
-        | undefined;
+      ).rows[0];
       if (!issue) throw new IssueError(404, "找不到 Issue。");
 
       const [
@@ -127,10 +183,13 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
           `SELECT id,issue_id,author,body,deleted_at,version,created_at,updated_at
            FROM issue_comments WHERE issue_id=$1 ORDER BY created_at,id`,
           [issueId],
+          decodeCommentRow,
         ),
-        sql.query("SELECT label_id FROM issue_labels WHERE issue_id=$1 ORDER BY label_id", [
-          issueId,
-        ]),
+        sql.query(
+          "SELECT label_id FROM issue_labels WHERE issue_id=$1 ORDER BY label_id",
+          [issueId],
+          decodeLabelRow,
+        ),
         sql.query(
           `SELECT p.parent_issue_id AS id
            FROM issue_sub_issues p
@@ -141,6 +200,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
                WHERE v.repository_id=target.repository_id AND (v.user_id=$2 OR v.user_id IS NULL)
              )`,
           [issueId, who.userId],
+          decodeIdRow,
         ),
         visibleRelatedIds(
           sql,
@@ -209,9 +269,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         lockReason: issue.lock_reason,
         milestoneId: issue.milestone_id,
         issueType,
-        labelIds: (labelRows.rows as Array<{ label_id: string }>).map((row) => row.label_id),
-        comments: (commentRows.rows as CommentRow[]).map(comment),
-        parentIssueId: (parentRows.rows[0] as { id: string } | undefined)?.id ?? null,
+        labelIds: labelRows.rows.map((row) => row.label_id),
+        comments: commentRows.rows.map(comment),
+        parentIssueId: parentRows.rows[0]?.id ?? null,
         subIssueIds,
         blockedByIssueIds,
         blockingIssueIds,
@@ -237,8 +297,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         await sql.query(
           "SELECT fingerprint,result FROM issue_commands WHERE actor=$1 AND request_id=$2",
           [who.userId, command.requestId],
+          decodeReceiptRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
@@ -289,8 +350,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
             `SELECT id,issue_id,author,body,deleted_at,version,created_at,updated_at
              FROM issue_comments WHERE issue_id=$1 AND id=$2 FOR UPDATE`,
             [issue.id, command.commentId],
+            decodeCommentRow,
           )
-        ).rows[0] as CommentRow | undefined;
+        ).rows[0];
         if (!row) throw new IssueError(404, "找不到 Issue 留言。");
         if (Number(row.version) !== command.commentVersion) {
           throw new IssueError(409, "Issue 留言已更新，請重新讀取後再操作。");
@@ -312,8 +374,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
                WHERE issue_id=$1 AND id=$2 AND version=$5 AND deleted_at IS NULL
                RETURNING version`,
               [issue.id, row.id, command.body, now, command.commentVersion],
+              decodeNumericVersionRow,
             )
-          ).rows[0] as { version: number | string } | undefined;
+          ).rows[0];
           if (!updated) throw new IssueError(409, "Issue 留言已更新，請重新讀取後再操作。");
           data = { commentId: row.id, commentVersion: Number(updated.version) };
         } else {
@@ -324,8 +387,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
                WHERE issue_id=$1 AND id=$2 AND version=$4 AND deleted_at IS NULL
                RETURNING version`,
               [issue.id, row.id, now, command.commentVersion],
+              decodeNumericVersionRow,
             )
-          ).rows[0] as { version: number | string } | undefined;
+          ).rows[0];
           if (!deleted) throw new IssueError(409, "Issue 留言已更新，請重新讀取後再操作。");
           data = { commentId: row.id, commentVersion: Number(deleted.version), deleted: true };
         }
@@ -340,8 +404,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
              ON CONFLICT DO NOTHING
              RETURNING label_id`,
             [issue.repository_id, issue.id, command.labelIds, who.userId, now],
+            decodeLabelRow,
           )
-        ).rows as Array<{ label_id: string }>;
+        ).rows;
         if (!added.length) throw new IssueError(409, "Issue labels 沒有變更。");
         data = { addedLabelIds: added.map((row) => row.label_id).sort() };
       } else if (command.action === "remove-labels") {
@@ -351,16 +416,19 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
              WHERE issue_id=$1 AND label_id=ANY($2::text[])
              RETURNING label_id`,
             [issue.id, command.labelIds],
+            decodeLabelRow,
           )
-        ).rows as Array<{ label_id: string }>;
+        ).rows;
         if (!removed.length) throw new IssueError(409, "Issue labels 沒有變更。");
         data = { removedLabelIds: removed.map((row) => row.label_id).sort() };
       } else if (command.action === "clear-labels") {
         const removed = (
-          await sql.query("DELETE FROM issue_labels WHERE issue_id=$1 RETURNING label_id", [
-            issue.id,
-          ])
-        ).rows as Array<{ label_id: string }>;
+          await sql.query(
+            "DELETE FROM issue_labels WHERE issue_id=$1 RETURNING label_id",
+            [issue.id],
+            decodeLabelRow,
+          )
+        ).rows;
         if (!removed.length) throw new IssueError(409, "Issue labels 已是空集合。");
         data = { removedLabelIds: removed.map((row) => row.label_id).sort() };
       } else if (command.action === "set-milestone") {
@@ -390,8 +458,10 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
             await sql.query(
               "SELECT COALESCE(MAX(position),-1)+1 AS position FROM issue_sub_issues WHERE parent_issue_id=$1",
               [issue.id],
+              decodePositionRow,
             )
-          ).rows[0] as { position: number | string };
+          ).rows[0];
+          if (!positionRow) throw new IssueError(503, "Sub-issue position 無法讀取。");
           try {
             await sql.query(
               `INSERT INTO issue_sub_issues(
@@ -410,8 +480,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
                WHERE parent_issue_id=$1 AND child_issue_id=$2
                RETURNING position`,
               [issue.id, target.id],
+              decodePositionRow,
             )
-          ).rows[0] as { position: number | string } | undefined;
+          ).rows[0];
           if (!removed) throw new IssueError(409, "此 Sub-issue 關係不存在。");
           data = { subIssueId: target.id, previousPosition: Number(removed.position) };
         } else {
@@ -429,8 +500,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
               `SELECT child_issue_id FROM issue_sub_issues
                WHERE parent_issue_id=$1 ORDER BY position,child_issue_id`,
               [issue.id],
+              decodeChildIssueRow,
             )
-          ).rows as Array<{ child_issue_id: string }>;
+          ).rows;
           const ordered = rows.map((row) => row.child_issue_id);
           const currentIndex = ordered.indexOf(target.id);
           if (currentIndex < 0) throw new IssueError(409, "此 Sub-issue 關係不存在。");
@@ -563,8 +635,9 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
                FROM issue_types
                WHERE id=$1 AND organization_account_id=$2`,
               [command.issueTypeId, owner.id],
+              decodeAssignedIssueTypeRow,
             )
-          ).rows[0] as AssignedIssueTypeRow | undefined;
+          ).rows[0];
           if (!row || row.deleted_at !== null) {
             throw new IssueError(409, "IssueType 不屬於此 Repository Organization scope。");
           }
@@ -582,7 +655,11 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
               [issue.id, row.id, who.userId, now],
             );
           } catch (error) {
-            if ((error as { code?: string }).code === "23514") {
+            const code =
+              error !== null && typeof error === "object" && "code" in error
+                ? error.code
+                : undefined;
+            if (code === "23514") {
               throw new IssueError(409, "IssueType 與 Repository Organization scope 不相容。");
             }
             throw error;

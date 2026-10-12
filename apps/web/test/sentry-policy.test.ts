@@ -16,7 +16,7 @@ test("Sentry telemetry removes user, extra and request payload data", () => {
       url: "https://user:secret@example.com/api/issues/private-record?code=secret#token",
       method: "POST",
       headers: { authorization: "Bearer secret" },
-      cookies: "session=secret",
+      cookies: { session: "secret" },
       data: { employeeId: "private" },
       query_string: "code=secret",
       env: { AUTH_TOKEN: "secret" },

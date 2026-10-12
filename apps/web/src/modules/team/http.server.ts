@@ -29,7 +29,7 @@ export function teamQuery(request: Request) {
   return { kind: "id" as const, organizationAccountId, teamId };
 }
 
-export async function teamBody(request: Request) {
+export async function teamBody(request: Request): Promise<unknown> {
   const origin = process.env.APP_ORIGIN ?? "";
   if (!origin || !origin.startsWith("https://") || new URL(origin).origin !== origin)
     throw new TeamError(503, "服務網址尚未設定。");
@@ -38,7 +38,7 @@ export async function teamBody(request: Request) {
     throw new TeamError(415, "需要 JSON 格式。");
   const text = await readBodyText(request, 65536);
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(text);
   } catch {
     throw new TeamError(400, "JSON 格式錯誤。");
   }

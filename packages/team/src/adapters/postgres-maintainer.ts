@@ -1,7 +1,37 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { activeOrganizationParticipantIds } from "@line_bot_v1/organization/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import { TeamError } from "../domain/errors/team-error.js";
+
+function maintainerFactRow(row: Record<string, unknown>) {
+  return {
+    organization_account_id: stringValue(row.organization_account_id),
+    user_status_version: numberValue(row.user_status_version),
+    membership_version: numberValue(row.membership_version),
+    version: numberValue(row.version),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
+
+function assignmentRow(row: Record<string, unknown>) {
+  return {
+    status: literalValue(row.status, ["active", "revoked"]),
+    user_status_version: numberValue(row.user_status_version),
+    membership_version: numberValue(row.membership_version),
+  };
+}
+
+function statusRow(row: Record<string, unknown>) {
+  return { status: literalValue(row.status, ["active", "revoked"]) };
+}
+
+function userIdRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id) };
+}
 
 export async function isTeamMaintainer(sql: Sql, teamId: string, userId: string): Promise<boolean> {
   const fact = (
@@ -15,15 +45,9 @@ export async function isTeamMaintainer(sql: Sql, teamId: string, userId: string)
          AND r.role='TeamMaintainer' AND r.status='active'
          AND m.status='active'`,
       [teamId, userId],
+      maintainerFactRow,
     )
-  ).rows[0] as
-    | {
-        organization_account_id: string;
-        user_status_version: number;
-        membership_version: number;
-        version: number;
-      }
-    | undefined;
+  ).rows[0];
   if (!fact || Number(fact.membership_version) !== Number(fact.version)) return false;
 
   const user = await readActiveUserQualification(sql, userId, "share");
@@ -60,6 +84,7 @@ export async function grantTeamMaintainer(
       `SELECT version FROM team_memberships
        WHERE team_id=$1 AND user_id=$2 AND status='active'`,
       [input.teamId, input.targetUserId],
+      versionRow,
     )
   ).rows[0];
   if (!membership) {
@@ -70,6 +95,7 @@ export async function grantTeamMaintainer(
       `SELECT status,user_status_version,membership_version FROM team_role_assignments
        WHERE team_id=$1 AND user_id=$2 AND role='TeamMaintainer' FOR UPDATE`,
       [input.teamId, input.targetUserId],
+      assignmentRow,
     )
   ).rows[0];
   if (
@@ -105,6 +131,7 @@ export async function revokeTeamMaintainer(
       `SELECT status FROM team_role_assignments
        WHERE team_id=$1 AND user_id=$2 AND role='TeamMaintainer' FOR UPDATE`,
       [input.teamId, input.targetUserId],
+      statusRow,
     )
   ).rows[0];
   if (!assignment) {
@@ -121,8 +148,9 @@ export async function revokeTeamMaintainer(
            AND role='TeamMaintainer' AND status='active'
          ORDER BY user_id`,
         [input.teamId, input.targetUserId],
+        userIdRow,
       )
-    ).rows as Array<{ user_id: string }>;
+    ).rows;
     let replacement = false;
     for (const candidate of candidates) {
       if (await isTeamMaintainer(sql, input.teamId, candidate.user_id)) {

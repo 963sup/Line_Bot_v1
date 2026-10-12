@@ -23,14 +23,26 @@ test("every published operation survives LINE login and resolves to the canonica
     clockOut: "/attendance/clock-out",
     expense: "/expenses",
   } as const;
-  for (const [intent, path] of Object.entries(destinations)) {
+  const intents = [
+    "home",
+    "repositories",
+    "partners",
+    "feedback",
+    "membership",
+    "profile",
+    "records",
+    "register",
+    "restore",
+    "attendance",
+    "clockIn",
+    "clockOut",
+    "expense",
+  ] as const;
+  for (const intent of intents) {
+    const path = destinations[intent];
     const id = "00000000-0000-4000-8000-000000000000";
     const entry = new URL(
-      miniAppEntryUrl(
-        "https://miniapp.line.me/123-test",
-        intent as keyof typeof destinations,
-        intent === "expense" ? id : "1",
-      ),
+      miniAppEntryUrl("https://miniapp.line.me/123-test", intent, intent === "expense" ? id : "1"),
     );
     const returned = loginReturnUrl(
       `https://app.example/${entry.search}${entry.search ? "&" : "?"}access_token=secret&returnUrl=https://evil.test#token`,

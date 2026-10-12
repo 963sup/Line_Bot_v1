@@ -37,8 +37,8 @@ function parseJsonCursor(after: string | undefined): Record<string, unknown> | u
   if (after === undefined) return undefined;
   try {
     if (!after || after.length > maxCursorLength) throw new Error();
-    const value = JSON.parse(after) as Record<string, unknown>;
-    if (!value || typeof value !== "object") throw new Error();
+    const value: unknown = JSON.parse(after);
+    if (!isRecord(value)) throw new Error();
     return value;
   } catch {
     throw new RepositoryError(400, "Repository 分頁不正確，請重新讀取。");
@@ -111,3 +111,5 @@ export function createRepositoryResources(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

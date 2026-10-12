@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryManagement } from "../src/application/management.js";
 import type { RepositoryManagementStore } from "../src/contracts/repositories/management.js";
 import { RepositoryError } from "../src/domain.js";
@@ -19,12 +20,12 @@ async function activeUser(db: Database, id: string, login = id) {
 }
 
 test("Repository management application canonicalizes lifecycle commands", async () => {
-  const calls: unknown[][] = [];
-  const store = {
+  const calls: Parameters<RepositoryManagementStore["execute"]>[] = [];
+  const store: RepositoryManagementStore = {
     view: async () => {
       throw new Error("not used");
     },
-    execute: async (...args: unknown[]) => {
+    execute: async (...args) => {
       calls.push(args);
       return {
         requestId: "11111111-1111-4111-8111-111111111111",
@@ -35,9 +36,9 @@ test("Repository management application canonicalizes lifecycle commands", async
         archived: false,
         version: 2,
         at: 10,
-      } as const;
+      };
     },
-  } as RepositoryManagementStore;
+  };
   const management = createRepositoryManagement({
     activeUser: async () => ({ id: "owner" }),
     store: () => store,
@@ -80,7 +81,21 @@ test("Repository management view preserves explicit locator rename policy", asyn
   const store = {
     view: async (...args: Parameters<RepositoryManagementStore["view"]>) => {
       calls.push(args);
-      return {} as Awaited<ReturnType<RepositoryManagementStore["view"]>>;
+      return {
+        repository: {
+          id: "repo",
+          actorUserId: "owner",
+          ownerAccountId: "owner",
+          ownerKind: "USER",
+          ownerLogin: "alice",
+          name: "Alpha",
+          visibility: "private",
+          archived: false,
+          version: 1,
+          actorPermissions: ["admin"],
+          internalEnterpriseId: null,
+        },
+      };
     },
     execute: async () => {
       throw new Error("not used");
@@ -182,8 +197,9 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
       "private",
     ]),
     (error: unknown) =>
-      (error as { code?: string; constraint?: string }).code === "23505" &&
-      (error as { constraint?: string }).constraint === "repository_name_history_reserved",
+      isRecord(error) &&
+      error.code === "23505" &&
+      error.constraint === "repository_name_history_reserved",
   );
 
   const publicResult = await store.execute(
@@ -268,8 +284,18 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
   const events = await pg.query(
     "select action from app_private.repository_events where repository_id='repo' order by id",
   );
-  assert.deepEqual(
-    (events.rows as Array<{ action: string }>).map((row) => row.action),
-    ["rename", "rename", "visibility", "visibility", "archive", "unarchive"],
-  );
+  const actions = events.rows.map((row) => {
+    const value: unknown = row;
+    assert.ok(isRecord(value));
+    assert.equal(typeof value.action, "string");
+    return value.action;
+  });
+  assert.deepEqual(actions, [
+    "rename",
+    "rename",
+    "visibility",
+    "visibility",
+    "archive",
+    "unarchive",
+  ]);
 });

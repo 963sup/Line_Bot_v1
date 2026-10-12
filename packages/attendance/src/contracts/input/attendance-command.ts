@@ -10,19 +10,26 @@ export type AttendanceInput = {
   location: Location;
 };
 
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function parseAttendanceInput(raw: unknown): AttendanceInput {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw))
-    throw new AttendanceError(400, "出勤 API 資料格式不正確。");
-  const value = raw as Record<string, unknown>;
+  if (!isObjectValue(raw)) throw new AttendanceError(400, "出勤 API 資料格式不正確。");
+  const value = raw;
   if (Object.keys(value).some((key) => !attendanceInputFields.has(key)))
     throw new AttendanceError(400, "出勤 API 含不支援的欄位。");
   if (typeof value.requestId !== "string" || !requestIdPattern.test(value.requestId))
     throw new AttendanceError(400, "出勤請求編號不正確。");
-  if (!Number.isSafeInteger(value.expectedVersion) || (value.expectedVersion as number) < 0)
+  if (
+    typeof value.expectedVersion !== "number" ||
+    !Number.isSafeInteger(value.expectedVersion) ||
+    value.expectedVersion < 0
+  )
     throw new AttendanceError(400, "請重新整理出勤狀態後操作。");
   return {
     requestId: value.requestId,
-    expectedVersion: value.expectedVersion as number,
+    expectedVersion: value.expectedVersion,
     location: parseLocation(value.location),
   };
 }

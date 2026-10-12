@@ -1,5 +1,13 @@
 import type { GovernanceReceipt } from "@line_bot_v1/identity-access/contracts/governance";
-import type { RepositoryPermission } from "@line_bot_v1/repository/domain";
+import {
+  booleanValue,
+  literalValue,
+  nullableString,
+  numberValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
+import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
 
 export type EnterpriseAffiliationSource = Readonly<{
   kind: "direct" | "organization";
@@ -85,6 +93,143 @@ export type EnterpriseDetail = EnterpriseSummary &
     outsideRepositoryCollaborators: readonly EnterpriseOutsideRepositoryCollaboratorProjection[];
     teams: readonly EnterpriseTeamProjection[];
   }>;
+
+function arrayValue<T>(value: unknown, decode: (item: unknown) => T): T[] {
+  if (!Array.isArray(value)) throw new TypeError("Expected an array");
+  return value.map((item: unknown) => decode(item));
+}
+
+function nullableNumber(value: unknown): number | null {
+  return value === null ? null : numberValue(value);
+}
+
+function nullableLiteral<const T extends string>(value: unknown, allowed: readonly T[]): T | null {
+  return value === null ? null : literalValue(value, allowed);
+}
+
+function parseAffiliationSource(value: unknown): EnterpriseAffiliationSource {
+  const source = record(value);
+  return {
+    kind: literalValue(source.kind, ["direct", "organization"]),
+    id: stringValue(source.id),
+    version: numberValue(source.version),
+  };
+}
+
+function parseEnterpriseSummary(value: unknown): EnterpriseSummary {
+  const summary = record(value);
+  return {
+    id: stringValue(summary.id),
+    name: nullableString(summary.name),
+    slug: nullableString(summary.slug),
+    status: literalValue(summary.status, ["active", "inactive"]),
+    version: numberValue(summary.version),
+    actorAffiliations: arrayValue(summary.actorAffiliations, parseAffiliationSource),
+    actorInvitationStatus: nullableLiteral(summary.actorInvitationStatus, [
+      "pending",
+      "accepted",
+      "cancelled",
+      "declined",
+    ]),
+    actorInvitationVersion: nullableNumber(summary.actorInvitationVersion),
+    actorIsOwner: booleanValue(summary.actorIsOwner),
+  };
+}
+
+function parseEnterpriseUser(value: unknown): EnterpriseUserProjection {
+  const user = record(value);
+  return {
+    userId: stringValue(user.userId),
+    sources: arrayValue(user.sources, parseAffiliationSource),
+    effectiveOwner: booleanValue(user.effectiveOwner),
+    assignmentVersion: nullableNumber(user.assignmentVersion),
+  };
+}
+
+function parseDirectAffiliation(value: unknown): EnterpriseDirectAffiliationProjection {
+  const affiliation = record(value);
+  return {
+    userId: stringValue(affiliation.userId),
+    status: literalValue(affiliation.status, ["active", "removed"]),
+    version: numberValue(affiliation.version),
+  };
+}
+
+function parseInvitation(value: unknown): EnterpriseInvitationProjection {
+  const invitation = record(value);
+  return {
+    userId: stringValue(invitation.userId),
+    status: literalValue(invitation.status, ["pending", "accepted", "cancelled", "declined"]),
+    version: numberValue(invitation.version),
+  };
+}
+
+function parseTeamMembership(value: unknown): EnterpriseTeamMembershipProjection {
+  const membership = record(value);
+  return {
+    userId: stringValue(membership.userId),
+    status: literalValue(membership.status, ["active", "removed"]),
+    version: numberValue(membership.version),
+  };
+}
+
+function parseTeamOrganization(value: unknown): EnterpriseTeamOrganizationProjection {
+  const organization = record(value);
+  return {
+    organizationAccountId: stringValue(organization.organizationAccountId),
+    status: literalValue(organization.status, ["active", "detached"]),
+    version: numberValue(organization.version),
+  };
+}
+
+function parseTeam(value: unknown): EnterpriseTeamProjection {
+  const team = record(value);
+  return {
+    id: stringValue(team.id),
+    name: stringValue(team.name),
+    slug: stringValue(team.slug),
+    version: numberValue(team.version),
+    members: arrayValue(team.members, parseTeamMembership),
+    organizations: arrayValue(team.organizations, parseTeamOrganization),
+  };
+}
+
+function parseOutsideRepositoryCollaborator(
+  value: unknown,
+): EnterpriseOutsideRepositoryCollaboratorProjection {
+  const collaborator = record(value);
+  return {
+    organizationAccountId: stringValue(collaborator.organizationAccountId),
+    repositoryId: stringValue(collaborator.repositoryId),
+    userId: stringValue(collaborator.userId),
+    capability: literalValue(collaborator.capability, repositoryPermissions),
+    grantVersion: numberValue(collaborator.grantVersion),
+  };
+}
+
+export function parseEnterpriseList(value: unknown): EnterpriseList {
+  const list = record(value);
+  return {
+    items: arrayValue(list.items, parseEnterpriseSummary),
+    next: nullableString(list.next),
+  };
+}
+
+export function parseEnterpriseDetail(value: unknown): EnterpriseDetail {
+  const detail = record(value);
+  return {
+    ...parseEnterpriseSummary(detail),
+    users: arrayValue(detail.users, parseEnterpriseUser),
+    directAffiliations: arrayValue(detail.directAffiliations, parseDirectAffiliation),
+    invitations: arrayValue(detail.invitations, parseInvitation),
+    organizations: arrayValue(detail.organizations, parseTeamOrganization),
+    outsideRepositoryCollaborators: arrayValue(
+      detail.outsideRepositoryCollaborators,
+      parseOutsideRepositoryCollaborator,
+    ),
+    teams: arrayValue(detail.teams, parseTeam),
+  };
+}
 
 export type EnterpriseCommand =
   | Readonly<{

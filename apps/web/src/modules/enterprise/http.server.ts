@@ -53,19 +53,24 @@ export async function enterpriseRequest(
     }
     return jsonResponse(await execute(actor, body));
   } catch (error) {
+    const status =
+      error instanceof EnterpriseHttpError
+        ? error.status
+        : error instanceof UserError ||
+            error instanceof GovernanceAccessError ||
+            error instanceof RequestIdentityError
+          ? error.status
+          : error instanceof EnterpriseError
+            ? 400
+            : error instanceof BodyTooLargeError
+              ? 413
+              : 503;
     const known =
+      error instanceof EnterpriseHttpError ||
       error instanceof EnterpriseError ||
       error instanceof UserError ||
       error instanceof GovernanceAccessError ||
       error instanceof RequestIdentityError;
-    const status =
-      error instanceof EnterpriseHttpError
-        ? error.status
-        : known
-          ? ((error as { status?: number }).status ?? 400)
-          : error instanceof BodyTooLargeError
-            ? 413
-            : 503;
     captureHandledServerError(error, {
       service: "enterprise-api",
       operation: "request",
@@ -73,12 +78,11 @@ export async function enterpriseRequest(
     });
     return jsonResponse(
       {
-        error:
-          error instanceof EnterpriseHttpError || known
-            ? (error as Error).message
-            : status === 413
-              ? "內容過大。"
-              : "企業服務暫不可用，請稍後重試。",
+        error: known
+          ? error.message
+          : status === 413
+            ? "內容過大。"
+            : "企業服務暫不可用，請稍後重試。",
         retryable: status >= 500 || status === 429,
       },
       status,

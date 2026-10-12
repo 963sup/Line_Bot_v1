@@ -55,6 +55,10 @@ export type IssueDraft = {
   questions: string[];
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 /**
  * Agent 嚴格工具宣告表
  */
@@ -100,8 +104,8 @@ const tools: FunctionDeclaration[] = [
  * 確保標題非空、無不可見控制字元、日期符合 ISO 日曆規範、待辦項在 1~5 項之間。
  */
 export function validateIssueDraft(value: unknown): IssueDraft {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid draft");
-  const v = value as Record<string, unknown>;
+  if (!isRecord(value)) throw new Error("Invalid draft");
+  const v = value;
   const fields = ["title", "dueDate", "timeHint", "checklist", "questions"];
   if (Object.keys(v).some((key) => !fields.includes(key)))
     throw new Error("Unexpected draft fields");

@@ -1,6 +1,7 @@
 import type { AccountId } from "@line_bot_v1/account/domain";
 import type { AssetCode } from "@line_bot_v1/asset/domain/value-objects/asset-code";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { nullableString, numericValue } from "@line_bot_v1/platform/validation";
 import type { LedgerCredit, LedgerSource } from "../domain/value-objects/ledger-credit.js";
 
 export async function recordLedgerCredit(sql: Sql, credit: LedgerCredit): Promise<number> {
@@ -39,10 +40,13 @@ export async function readLedgerCreditFact(
       `SELECT amount_units,business_day,at FROM asset_ledger_entries
        WHERE member_id=$1 AND asset_code::text=$2 AND source_context=$3 AND source_type=$4 AND source_ref=$5`,
       [holderAccountId, asset, source.context, source.type, sourceRef],
+      (row) => ({
+        amount_units: numericValue(row.amount_units),
+        business_day: nullableString(row.business_day),
+        at: numericValue(row.at),
+      }),
     )
-  ).rows[0] as
-    | { amount_units: number | string; business_day: string | null; at: number | string }
-    | undefined;
+  ).rows[0];
   return row
     ? {
         amountUnits: Number(row.amount_units),
@@ -61,7 +65,8 @@ export async function sumLedgerUnits(
     await sql.query(
       "SELECT COALESCE(SUM(amount_units),0) AS units FROM asset_ledger_entries WHERE member_id=$1 AND asset_code::text=$2",
       [holderAccountId, asset],
+      (row) => ({ units: numericValue(row.units) }),
     )
-  ).rows[0] as { units: number | string } | undefined;
+  ).rows[0];
   return Number(row?.units ?? 0);
 }

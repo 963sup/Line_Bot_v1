@@ -306,7 +306,7 @@ export function buildNamespacePath<
   return `/${compiled.segments
     .map((segment, index) => {
       if ("literal" in segment) return segment.literal;
-      const value = parameters[segment.parameter as keyof Parameters];
+      const value = Object.entries(parameters).find(([name]) => name === segment.parameter)?.[1];
       if (
         index === 0 &&
         segment.parameter === "login" &&

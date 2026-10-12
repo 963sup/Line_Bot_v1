@@ -119,16 +119,39 @@ test("repository resource parser rejects malformed responses with the existing 5
 test("repository resource pagination appends unseen ids and keeps incoming cursor", () => {
   const current = {
     kind: "labels" as const,
-    repository: { id: "repo-1", ownerLogin: "octo", name: "repo" },
-    labels: [{ id: "label-1", name: "one", color: "111111", description: "", version: 1 }],
+    repository: { id: "repo-1", ownerLogin: "octo", name: "repo", permissions: ["read"] as const },
+    labels: [
+      {
+        id: "label-1",
+        repositoryId: "repo-1",
+        name: "one",
+        color: "111111",
+        description: "",
+        version: 1,
+      },
+    ],
     next: "old",
   };
   const incoming = {
     kind: "labels" as const,
     repository: current.repository,
     labels: [
-      { id: "label-1", name: "one", color: "111111", description: "", version: 1 },
-      { id: "label-2", name: "two", color: "222222", description: "", version: 1 },
+      {
+        id: "label-1",
+        repositoryId: "repo-1",
+        name: "one",
+        color: "111111",
+        description: "",
+        version: 1,
+      },
+      {
+        id: "label-2",
+        repositoryId: "repo-1",
+        name: "two",
+        color: "222222",
+        description: "",
+        version: 1,
+      },
     ],
     next: "next",
   };
@@ -155,10 +178,16 @@ test("team command construction keeps current scope, stable team id and version"
       organizationAccountId: "org-1",
       name: "Core",
       slug: "core",
+      parentTeamId: null,
+      privacy: "VISIBLE",
+      notificationSetting: "NOTIFICATIONS_ENABLED",
       version: 7,
       membershipStatus: "active",
+      membershipType: "IMMEDIATE",
       isMaintainer: true,
+      canManage: true,
     },
+    childTeams: [],
     members: [],
   };
   const rename = buildOwnedTeamCommand(

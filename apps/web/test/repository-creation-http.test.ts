@@ -13,19 +13,61 @@ import {
 
 type Creation = ReturnType<typeof createRepositoryCreation>;
 
+class MemoryStorage implements Storage {
+  #values = new Map<string, string>();
+
+  get length() {
+    return this.#values.size;
+  }
+
+  clear() {
+    this.#values.clear();
+  }
+
+  getItem(key: string) {
+    return this.#values.get(key) ?? null;
+  }
+
+  key(index: number) {
+    return [...this.#values.keys()][index] ?? null;
+  }
+
+  removeItem(key: string) {
+    this.#values.delete(key);
+  }
+
+  setItem(key: string, value: string) {
+    this.#values.set(key, value);
+  }
+}
+
 test("Repository create HTTP exposes owner options and a 201 create result", async () => {
   const owners = await repositoryOwnersRequest(
     new Request("https://example.com/api/repositories/owners"),
     {
       owners: async (subject) => [
-        { id: subject, kind: "USER", login: "alice", internalEligible: false },
+        {
+          id: subject,
+          kind: "USER",
+          login: "alice",
+          internalEligible: false,
+          creatableVisibilities: ["private", "public"],
+        },
       ],
     },
     async () => "user-1",
   );
   assert.equal(owners.status, 200);
   assert.deepEqual(await owners.json(), {
-    items: [{ id: "user-1", kind: "USER", login: "alice", internalEligible: false }],
+    items: [
+      {
+        id: "user-1",
+        kind: "USER",
+        login: "alice",
+        internalEligible: false,
+        creatableVisibilities: ["private", "public"],
+      },
+    ],
   });
 
   const previous = process.env.APP_ORIGIN;
@@ -56,7 +98,7 @@ test("Repository create HTTP exposes owner options and a 201 create result", asy
             version: 1,
           };
         },
-      } as Pick<Creation, "create">,
+      } satisfies Pick<Creation, "create">,
       async () => "user-1",
     );
     assert.equal(response.status, 201);
@@ -88,7 +130,7 @@ test("Repository create HTTP rejects cross-origin mutation before owner use case
           called = true;
           throw new Error("not reached");
         },
-      } as Pick<Creation, "create">,
+      } satisfies Pick<Creation, "create">,
       async () => "user-1",
     );
     assert.equal(response.status, 403);
@@ -100,18 +142,13 @@ test("Repository create HTTP rejects cross-origin mutation before owner use case
 });
 
 test("Repository create pending storage preserves exact retry identity", () => {
-  const data = new Map<string, string>();
-  const storage = {
-    getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => void data.set(key, value),
-    removeItem: (key: string) => void data.delete(key),
-  } as Storage;
-  const command = {
+  const storage = new MemoryStorage();
+  const command: Parameters<typeof writePendingRepositoryCreate>[1] = {
     requestId: "11111111-1111-4111-8111-111111111111",
     ownerAccountId: "user-1",
-    ownerKind: "USER" as const,
+    ownerKind: "USER",
     name: "Repo",
-    visibility: "private" as const,
+    visibility: "private",
   };
   writePendingRepositoryCreate(storage, command);
   assert.deepEqual(readPendingRepositoryCreate(storage), command);

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   clearPendingIssueCommand,
   legacyPendingIssueCommandKey,
+  type PendingIssueCommand,
   restorePendingIssueCommand,
   savePendingIssueCommand,
 } from "../src/modules/repository/issue-pending-storage";
@@ -35,7 +36,11 @@ class MemoryStorage implements Storage {
   }
 }
 
-function pending(repositoryId: string, owner = "user-a", requestId = `request-${repositoryId}`) {
+function pending(
+  repositoryId: string,
+  owner = "user-a",
+  requestId = `request-${repositoryId}`,
+): PendingIssueCommand {
   return {
     owner,
     command: {
@@ -46,7 +51,7 @@ function pending(repositoryId: string, owner = "user-a", requestId = `request-${
       action: "accept",
       note: "",
     },
-  } as const;
+  };
 }
 
 test("pending issue command restores only for the same verified user and repository", () => {

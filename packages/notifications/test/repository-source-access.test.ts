@@ -4,6 +4,11 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresNotificationRepository } from "../src/adapters/outbound/persistence/postgres-notification-repository.js";
 
+function postgresCode(error: unknown) {
+  if (error === null || typeof error !== "object" || !("code" in error)) return undefined;
+  return typeof error.code === "string" ? error.code : undefined;
+}
+
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
     await sql.query(
@@ -56,7 +61,7 @@ test("Repository-backed notifications recheck source access on create and read",
   );
   await assert.rejects(
     insertIssueNotification("22222222-2222-4222-8222-222222222222", "viewer", 12),
-    (error: unknown) => (error as { code?: string }).code === "42501",
+    (error: unknown) => postgresCode(error) === "42501",
   );
 
   await pg.query("update app_private.repositories set visibility='public' where id='repo'");

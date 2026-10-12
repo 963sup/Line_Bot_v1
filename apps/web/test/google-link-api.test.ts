@@ -30,6 +30,9 @@ test("external Google handoff verifies Google without LINE and cannot confirm wi
       cancel: async () => {
         throw new Error("unexpected");
       },
+      unlink: async () => {
+        throw new Error("unexpected");
+      },
     },
     {
       requestIdentity: async () => {

@@ -2,6 +2,7 @@
 import type { Partner, PartnerContact, PartnersView } from "@line_bot_v1/partners/contracts";
 import type { PartnerCommand } from "@line_bot_v1/partners/domain";
 import { parsePartnerCommand } from "@line_bot_v1/partners/domain";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -65,8 +66,8 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       if (ticket !== sequence.current) return;
       const saved = sessionStorage.getItem(storageKey);
       if (saved) {
-        const old = JSON.parse(saved) as Pending;
-        if (old.userId === value.userId) {
+        const old: unknown = JSON.parse(saved);
+        if (isRecord(old) && old.userId === value.userId) {
           const command = parsePartnerCommand(old.command);
           if (command.action !== "save-partner") throw new Error("待確認操作格式不正確。");
           setPending({ userId: old.userId, command });
@@ -331,9 +332,11 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
               夥伴狀態
               <select
                 value={draft.status}
-                onChange={(e) =>
-                  setDraft({ ...draft, status: e.target.value as Partner["status"] })
-                }
+                onChange={(e) => {
+                  const status = e.target.value;
+                  if (status === "published" || status === "unlisted")
+                    setDraft({ ...draft, status });
+                }}
               >
                 <option value="published">刊登</option>
                 <option value="unlisted">下架</option>
@@ -372,16 +375,16 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
                   窗口狀態
                   <select
                     value={contact.status}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const status = e.target.value;
+                      if (status !== "published" && status !== "unlisted") return;
                       setDraft({
                         ...draft,
                         contacts: draft.contacts.map((c) =>
-                          c.id === contact.id
-                            ? { ...c, status: e.target.value as Partner["status"] }
-                            : c,
+                          c.id === contact.id ? { ...c, status } : c,
                         ),
-                      })
-                    }
+                      });
+                    }}
                   >
                     <option value="published">刊登</option>
                     <option value="unlisted">下架</option>

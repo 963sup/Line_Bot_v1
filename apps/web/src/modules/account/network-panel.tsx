@@ -4,6 +4,7 @@ import type { FollowItem } from "@line_bot_v1/account/contracts/output/follows";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { readNetwork, responseError } from "./wire-response";
 
 type NetworkData = {
   followers: FollowItem[];
@@ -33,9 +34,9 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
       headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
-    const value = (await response.json()) as NetworkData & { error?: string };
-    if (!response.ok) throw new Error(value.error ?? "追蹤關係讀取失敗。");
-    return value;
+    const value: unknown = await response.json();
+    if (!response.ok) throw new Error(responseError(value, "追蹤關係讀取失敗。"));
+    return readNetwork(value);
   }
 
   async function load() {
@@ -74,8 +75,8 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
         },
         body: JSON.stringify({ action, targetUserId }),
       });
-      const value = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(value.error ?? "追蹤操作失敗。");
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error(responseError(value, "追蹤操作失敗。"));
       if ((await liffClient.ensureSession(liffId)) !== token || ticket !== generation.current)
         return;
       setData(await read(token));

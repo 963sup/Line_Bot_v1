@@ -1,3 +1,8 @@
+import { isRecord } from "@line_bot_v1/platform/validation";
+import {
+  parseProjectManagementReceipt,
+  parseProjectManagementView,
+} from "@line_bot_v1/project/application/management";
 import type {
   ProjectManagementCommand,
   ProjectManagementReceipt,
@@ -22,7 +27,7 @@ export class ProjectRequestError extends Error {
   }
 }
 
-async function payload<T>(response: Response, fallback: string): Promise<T> {
+async function payload(response: Response, fallback: string): Promise<unknown> {
   let value: unknown;
   try {
     value = await response.json();
@@ -36,7 +41,7 @@ async function payload<T>(response: Response, fallback: string): Promise<T> {
         : fallback;
     throw new ProjectRequestError(message, response.status);
   }
-  return value as T;
+  return value;
 }
 
 export async function requestProjectActor(token: string): Promise<ProjectActor> {
@@ -45,11 +50,11 @@ export async function requestProjectActor(token: string): Promise<ProjectActor> 
     signal: AbortSignal.timeout(20_000),
     headers: { "X-App-Session-Generation": token },
   });
-  const value = await payload<{
-    member?: { id?: unknown; login?: unknown; status?: unknown } | null;
-  }>(response, "會員資料讀取失敗。");
+  const value = await payload(response, "會員資料讀取失敗。");
   if (
-    value.member?.status !== "active" ||
+    !isRecord(value) ||
+    !isRecord(value.member) ||
+    value.member.status !== "active" ||
     typeof value.member.id !== "string" ||
     typeof value.member.login !== "string"
   ) {
@@ -66,18 +71,12 @@ export async function requestProjectOwnerOrganizations(
     signal: AbortSignal.timeout(20_000),
     headers: { "X-App-Session-Generation": token },
   });
-  const value = await payload<{
-    items?: readonly {
-      id?: unknown;
-      login?: unknown;
-      status?: unknown;
-      actorCanCreateProjectV2?: unknown;
-    }[];
-  }>(response, "Organization 清單讀取失敗。");
-  if (!Array.isArray(value.items)) {
+  const value = await payload(response, "Organization 清單讀取失敗。");
+  if (!isRecord(value) || !Array.isArray(value.items)) {
     throw new ProjectRequestError("Organization 清單回應不完整。", 503);
   }
   return value.items.flatMap((item) =>
+    isRecord(item) &&
     item.status === "active" &&
     item.actorCanCreateProjectV2 === true &&
     typeof item.id === "string" &&
@@ -97,7 +96,12 @@ export async function requestProjectView(
     signal: AbortSignal.timeout(20_000),
     headers: { "X-App-Session-Generation": token },
   });
-  return payload<ProjectManagementView>(response, "Project 讀取失敗。");
+  const value = await payload(response, "Project 讀取失敗。");
+  try {
+    return parseProjectManagementView(value);
+  } catch {
+    throw new ProjectRequestError("Project 回應不完整。", 503);
+  }
 }
 
 export async function requestProjectUsers(
@@ -112,14 +116,11 @@ export async function requestProjectUsers(
     signal: AbortSignal.timeout(20_000),
     headers: { "X-App-Session-Generation": token },
   });
-  const value = await payload<{ users?: readonly ProjectDirectoryUser[] }>(
-    response,
-    "Project 使用者資料讀取失敗。",
-  );
-  if (!Array.isArray(value.users)) {
+  const value = await payload(response, "Project 使用者資料讀取失敗。");
+  if (!isRecord(value) || !Array.isArray(value.users)) {
     throw new ProjectRequestError("Project 使用者資料回應不完整。", 503);
   }
-  return value.users;
+  return value.users.map(readProjectDirectoryUser);
 }
 
 export async function requestProjectUserByLogin(
@@ -133,14 +134,13 @@ export async function requestProjectUserByLogin(
     signal: AbortSignal.timeout(20_000),
     headers: { "X-App-Session-Generation": token },
   });
-  const value = await payload<{ user?: ProjectDirectoryUser }>(
-    response,
-    "找不到可使用的 User，請確認登入名稱。",
-  );
-  if (!value.user || typeof value.user.id !== "string" || typeof value.user.login !== "string") {
+  const value = await payload(response, "找不到可使用的 User，請確認登入名稱。");
+  if (!isRecord(value)) {
     throw new ProjectRequestError("使用者資料回應不完整。", 503);
   }
-  return value.user;
+  const user = readProjectDirectoryUser(value.user);
+  if (user.login === null) throw new ProjectRequestError("使用者資料回應不完整。", 503);
+  return user;
 }
 
 export async function postProjectCommand(
@@ -157,5 +157,21 @@ export async function postProjectCommand(
     },
     body: JSON.stringify(command),
   });
-  return payload<ProjectManagementReceipt>(response, "Project 操作失敗。");
+  const value = await payload(response, "Project 操作失敗。");
+  try {
+    return parseProjectManagementReceipt(value);
+  } catch {
+    throw new ProjectRequestError("Project 操作回應不完整。", 503);
+  }
+}
+
+function readProjectDirectoryUser(value: unknown): ProjectDirectoryUser {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    (value.login !== null && typeof value.login !== "string")
+  ) {
+    throw new ProjectRequestError("使用者資料回應不完整。", 503);
+  }
+  return { id: value.id, login: value.login };
 }

@@ -50,13 +50,12 @@ function routeTemplateFromAppFile(
 }
 
 test("active descriptors match the current Web delivery route contract", () => {
-  const descriptors = new Map(
+  const descriptors = new Map<string, (typeof NAMESPACE_ROUTES)[number]>(
     NAMESPACE_ROUTES.filter((route) => route.state === "active").map((route) => [route.id, route]),
   );
   assert.deepEqual([...descriptors.keys()], Object.keys(activeDeliveryRoutes));
 
-  for (const id of Object.keys(activeDeliveryRoutes) as (keyof typeof activeDeliveryRoutes)[]) {
-    const delivery = activeDeliveryRoutes[id];
+  for (const [id, delivery] of Object.entries(activeDeliveryRoutes)) {
     accessSync(new URL(`../../../apps/web/src/app/${delivery.file}`, import.meta.url));
     assert.equal(
       descriptors.get(id)?.pathTemplate,
@@ -87,7 +86,10 @@ test("planned routes describe the target topology without becoming buildable", (
     assert.equal(NAMESPACE_ROUTES.find((route) => route.id === id)?.state, "planned");
   }
 
-  assert.throws(() => buildNamespacePath("repository-pull" as never, {} as never), /is not active/);
+  assert.throws(
+    () => Reflect.apply(buildNamespacePath, undefined, ["repository-pull", {}]),
+    /is not active/,
+  );
   if (false) {
     // @ts-expect-error planned route ids are excluded from the runtime builder contract
     buildNamespacePath("repository-pull", {
@@ -162,9 +164,13 @@ test("rejects unsafe raw path components and numeric locators", () => {
     );
   }
 
-  assert.throws(() => buildNamespacePath("account", {} as never), /missing: login/);
   assert.throws(
-    () => buildNamespacePath("account", { login: "alice", extra: "value" } as never),
+    () => Reflect.apply(buildNamespacePath, undefined, ["account", {}]),
+    /missing: login/,
+  );
+  assert.throws(
+    () =>
+      Reflect.apply(buildNamespacePath, undefined, ["account", { login: "alice", extra: "value" }]),
     /extra: extra/,
   );
 });

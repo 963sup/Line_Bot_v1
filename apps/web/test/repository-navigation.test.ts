@@ -9,6 +9,7 @@ import {
   repositoryLabelsPath,
   repositoryMilestonesPath,
   repositoryPath,
+  repositoryResourceNavigationItems,
   repositorySettingsPath,
   repositoryStarListCreatePath,
   repositoryStarListDiscoverPath,
@@ -40,4 +41,15 @@ test("Repository Star List navigation stays under the existing repositories root
   assert.equal(repositoryStarListCreatePath(), "/repositories/lists/new");
   assert.equal(repositoryStarListDiscoverPath(), "/repositories/lists/discover");
   assert.equal(repositoryStarListPath("list / 1"), "/repositories/lists/list%20%2F%201");
+});
+
+test("repository resource navigation exposes one ordered map and gates management links", () => {
+  assert.deepEqual(
+    repositoryResourceNavigationItems("acme", "Operations", false).map((item) => item.section),
+    ["overview", "issues", "discussions", "labels", "milestones"],
+  );
+  assert.deepEqual(
+    repositoryResourceNavigationItems("acme", "Operations", true).map((item) => item.section),
+    ["overview", "issues", "discussions", "labels", "milestones", "settings", "access"],
+  );
 });

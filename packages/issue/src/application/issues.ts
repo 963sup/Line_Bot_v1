@@ -103,12 +103,13 @@ function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
   }
 
   const base = existingIssueBase(value);
-  if (workflowActions.includes(action as IssueAction)) {
+  const workflowAction = workflowActions.find((candidate) => candidate === action);
+  if (workflowAction) {
     return {
       ...base,
-      action: action as IssueAction,
+      action: workflowAction,
       note:
-        action === "report" || action === "reject"
+        workflowAction === "report" || workflowAction === "reject"
           ? issueText(value.note, 1000)
           : optionalText(value.note ?? "", 1000, "Issue note"),
     };
@@ -130,10 +131,11 @@ function parseIssueCommand(value: Record<string, unknown>): IssueCommand {
   if (action === "close") {
     let stateReason: IssueClosedStateReason | null = null;
     if (value.stateReason !== undefined && value.stateReason !== null) {
-      if (!closedReasons.includes(value.stateReason as IssueClosedStateReason)) {
+      const closedReason = closedReasons.find((candidate) => candidate === value.stateReason);
+      if (!closedReason) {
         throw new IssueError(400, "Issue close stateReason 不正確。");
       }
-      stateReason = value.stateReason as IssueClosedStateReason;
+      stateReason = closedReason;
     }
     return {
       ...base,
@@ -201,14 +203,19 @@ export function createIssues(deps: {
     ) => {
       const actor = await identity(subject);
       const selected = selector(repository);
-      if (workflowStatus && !workflowStatuses.includes(workflowStatus as IssueWorkflowStatus)) {
+      const selectedWorkflowStatus = workflowStatuses.find(
+        (candidate) => candidate === workflowStatus,
+      );
+      if (workflowStatus && !selectedWorkflowStatus) {
         throw new IssueError(400, "Issue 工作流程狀態不正確。");
       }
       let cursor: { at: number; id: string } | undefined;
       if (after !== undefined) {
         try {
           if (!list || after.length > 240) throw new Error();
-          const value = JSON.parse(after) as Record<string, unknown>;
+          const parsed: unknown = JSON.parse(after);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+          const value = Object.fromEntries(Object.entries(parsed));
           if (
             !Number.isSafeInteger(value.at) ||
             Number(value.at) < 0 ||
@@ -224,9 +231,7 @@ export function createIssues(deps: {
       }
       return deps.store().snapshot(actor, selected, list, view, {
         ...(cursor === undefined ? {} : { after: cursor }),
-        ...(workflowStatus === undefined
-          ? {}
-          : { workflowStatus: workflowStatus as IssueWorkflowStatus }),
+        ...(selectedWorkflowStatus === undefined ? {} : { workflowStatus: selectedWorkflowStatus }),
       });
     },
     detail: async (subject: string, issueNumber: number, repository: RepositorySelector) => {

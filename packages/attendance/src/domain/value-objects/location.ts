@@ -3,11 +3,22 @@ import { AttendanceError } from "../error.js";
 export type Location = { latitude: number; longitude: number; accuracy: number };
 export type AttendanceSite = { latitude: number; longitude: number; radius: number };
 
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function parseLocation(value: unknown): Location {
-  if (!value || typeof value !== "object") throw new AttendanceError(400, "請提供本次定位。");
-  const { latitude, longitude, accuracy } = value as Location;
+  if (!isObjectValue(value)) {
+    throw new AttendanceError(400, "請提供本次定位。");
+  }
+  const { latitude, longitude, accuracy } = value;
   if (
-    ![latitude, longitude, accuracy].every((v) => typeof v === "number" && Number.isFinite(v)) ||
+    typeof latitude !== "number" ||
+    !Number.isFinite(latitude) ||
+    typeof longitude !== "number" ||
+    !Number.isFinite(longitude) ||
+    typeof accuracy !== "number" ||
+    !Number.isFinite(accuracy) ||
     Math.abs(latitude) > 90 ||
     Math.abs(longitude) > 180 ||
     accuracy < 0

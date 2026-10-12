@@ -8,6 +8,7 @@ import {
 import { COIN_ASSET_CODE } from "@line_bot_v1/asset/domain/value-objects/asset-code";
 import { readLedgerCreditFact, recordLedgerCredit } from "@line_bot_v1/ledger/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { DailyCheckInStore } from "../../../contracts/daily-check-in.js";
 import { DailyCheckInError } from "../../../domain/error.js";
 import {
@@ -96,16 +97,9 @@ async function readClaim(
        FROM daily_check_in_claims
        WHERE user_id=$1 AND business_day=$2`,
       [memberId, day],
+      decodeClaimRow,
     )
-  ).rows[0] as
-    | {
-        business_day: string;
-        prize_code: DailyCheckInPrizeCode;
-        reward_amount_units: number | string;
-        policy_version: typeof DAILY_CHECK_IN_POLICY.version;
-        decided_at: number | string;
-      }
-    | undefined;
+  ).rows[0];
   if (!row) return null;
   const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
   if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
@@ -181,16 +175,9 @@ async function insertClaim(
         DAILY_CHECK_IN_POLICY.version,
         claim.decidedAt,
       ],
+      decodeClaimRow,
     )
-  ).rows[0] as
-    | {
-        business_day: string;
-        prize_code: DailyCheckInPrizeCode;
-        reward_amount_units: number | string;
-        policy_version: typeof DAILY_CHECK_IN_POLICY.version;
-        decided_at: number | string;
-      }
-    | undefined;
+  ).rows[0];
   return row ? mapClaim(row, definition) : null;
 }
 
@@ -210,5 +197,18 @@ function mapClaim(
     reward: assetAmount(definition, Number(row.reward_amount_units)),
     policyVersion: row.policy_version,
     decidedAt: Number(row.decided_at),
+  };
+}
+
+function decodeClaimRow(row: Record<string, unknown>) {
+  return {
+    business_day: stringValue(row.business_day),
+    prize_code: literalValue(
+      row.prize_code,
+      DAILY_CHECK_IN_POLICY.prizes.map((prize) => prize.code),
+    ),
+    reward_amount_units: numericValue(row.reward_amount_units),
+    policy_version: literalValue(row.policy_version, [DAILY_CHECK_IN_POLICY.version]),
+    decided_at: numericValue(row.decided_at),
   };
 }

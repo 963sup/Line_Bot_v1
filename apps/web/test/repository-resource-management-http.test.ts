@@ -1,17 +1,20 @@
 import assert from "node:assert/strict";
-import { beforeEach, test } from "node:test";
+import { afterEach, beforeEach, test } from "node:test";
 import type { createRepositoryResourceManagement } from "@line_bot_v1/repository/application/resource-management";
 import { repositoryResourceManagementRequest } from "../src/modules/repository/resource-management-http.server";
 
 type Management = ReturnType<typeof createRepositoryResourceManagement>;
 
-beforeEach((context) => {
-  const previous = process.env.APP_ORIGIN;
+let previousOrigin: string | undefined;
+
+beforeEach(() => {
+  previousOrigin = process.env.APP_ORIGIN;
   process.env.APP_ORIGIN = "https://example.com";
-  context.after(() => {
-    if (previous === undefined) delete process.env.APP_ORIGIN;
-    else process.env.APP_ORIGIN = previous;
-  });
+});
+
+afterEach(() => {
+  if (previousOrigin === undefined) delete process.env.APP_ORIGIN;
+  else process.env.APP_ORIGIN = previousOrigin;
 });
 
 test("Repository resource HTTP keeps Label and Milestone mutation families separate", async () => {

@@ -8,7 +8,10 @@ import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
-const visibilities = new Set<RepositoryVisibility>(["private", "internal", "public"]);
+
+function isRepositoryVisibility(value: unknown): value is RepositoryVisibility {
+  return value === "private" || value === "internal" || value === "public";
+}
 
 function repositorySelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
@@ -30,10 +33,10 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
 }
 
 function parseCommand(raw: unknown): RepositoryManagementCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository 管理操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (
     value.action !== "rename" &&
     value.action !== "visibility" &&
@@ -79,16 +82,13 @@ function parseCommand(raw: unknown): RepositoryManagementCommand {
     return { ...base, action: "rename", name };
   }
   if (value.action === "visibility") {
-    if (
-      typeof value.visibility !== "string" ||
-      !visibilities.has(value.visibility as RepositoryVisibility)
-    ) {
+    if (!isRepositoryVisibility(value.visibility)) {
       throw new RepositoryError(400, "Repository visibility 不正確。");
     }
     return {
       ...base,
       action: "visibility",
-      visibility: value.visibility as RepositoryVisibility,
+      visibility: value.visibility,
     };
   }
   return { ...base, action: value.action };
@@ -111,3 +111,5 @@ export function createRepositoryManagement(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

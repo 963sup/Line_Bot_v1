@@ -134,9 +134,26 @@ function status(value: unknown): "published" | "unlisted" {
   return value;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function record(value: unknown, message: string): Record<string, unknown> {
+  if (!isRecord(value)) throw new PartnerError(400, message);
+  return value;
+}
+
+function nonnegativeInteger(value: unknown): number {
+  partnerAssert(
+    typeof value === "number" && Number.isSafeInteger(value) && value >= 0,
+    400,
+    "版本不正確。",
+  );
+  return value;
+}
+
 export function parsePartnerCommand(input: unknown): PartnerCommand {
-  partnerAssert(input && typeof input === "object" && !Array.isArray(input), 400, "資料格式錯誤。");
-  const x = input as Record<string, unknown>;
+  const x = record(input, "資料格式錯誤。");
   partnerAssert(
     x.action === "refer" ||
       x.action === "review" ||
@@ -167,11 +184,8 @@ export function parsePartnerCommand(input: unknown): PartnerCommand {
       "包含不支援的管理欄位。",
     );
     const id = text(x, "id", 36).toLowerCase();
-    partnerAssert(
-      uuid(id) && Number.isSafeInteger(x.expectedVersion) && (x.expectedVersion as number) >= 0,
-      400,
-      "夥伴編號或版本不正確。",
-    );
+    partnerAssert(uuid(id), 400, "夥伴編號或版本不正確。");
+    const expectedVersion = nonnegativeInteger(x.expectedVersion);
     partnerAssert(x.consentConfirmed === true, 400, "請確認已核實聯繫方式與分享同意。");
     partnerAssert(
       Array.isArray(x.contacts) && x.contacts.length > 0 && x.contacts.length <= 20,
@@ -179,8 +193,7 @@ export function parsePartnerCommand(input: unknown): PartnerCommand {
       "每個夥伴需有 1 至 20 位窗口。",
     );
     const contacts = x.contacts.map((raw) => {
-      partnerAssert(raw && typeof raw === "object" && !Array.isArray(raw), 400, "窗口格式不正確。");
-      const c = raw as Record<string, unknown>;
+      const c = record(raw, "窗口格式不正確。");
       partnerAssert(
         Object.keys(c).every((key) =>
           ["id", "name", "responsibility", "phone", "email", "line", "status"].includes(key),
@@ -220,7 +233,7 @@ export function parsePartnerCommand(input: unknown): PartnerCommand {
       action: "save-partner",
       requestId,
       id,
-      expectedVersion: x.expectedVersion as number,
+      expectedVersion,
       name: text(x, "name", 120),
       category: text(x, "category", 80),
       region: text(x, "region", 80, false),

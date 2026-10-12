@@ -1,6 +1,86 @@
 import type { IssueCommand } from "@line_bot_v1/issue/contracts/input/issues";
 import type { IssueSnapshot } from "@line_bot_v1/issue/contracts/repositories/issues";
 
+const permissions = new Set(["read", "triage", "triage_plus", "write", "maintain", "admin"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function strings(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isRepository(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.ownerLogin === "string" &&
+    typeof value.name === "string" &&
+    strings(value.permissions) &&
+    value.permissions.every((permission) => permissions.has(permission))
+  );
+}
+
+function isIssue(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.repositoryId === "string" &&
+    Number.isSafeInteger(value.number) &&
+    typeof value.publisher === "string" &&
+    strings(value.assignees) &&
+    typeof value.title === "string" &&
+    typeof value.body === "string" &&
+    typeof value.criteria === "string" &&
+    (value.state === "OPEN" || value.state === "CLOSED") &&
+    (value.stateReason === null ||
+      value.stateReason === "COMPLETED" ||
+      value.stateReason === "DUPLICATE" ||
+      value.stateReason === "NOT_PLANNED" ||
+      value.stateReason === "REOPENED") &&
+    (value.workflowStatus === "pending" ||
+      value.workflowStatus === "active" ||
+      value.workflowStatus === "review" ||
+      value.workflowStatus === "completed") &&
+    Number.isSafeInteger(value.version) &&
+    typeof value.createdAt === "number" &&
+    typeof value.updatedAt === "number"
+  );
+}
+
+function isIssueSnapshot(value: unknown): value is IssueSnapshot {
+  return (
+    isRecord(value) &&
+    typeof value.userId === "string" &&
+    Array.isArray(value.repositories) &&
+    value.repositories.every(isRepository) &&
+    Array.isArray(value.participants) &&
+    value.participants.every(
+      (item) => isRecord(item) && typeof item.userId === "string" && typeof item.name === "string",
+    ) &&
+    Array.isArray(value.issues) &&
+    value.issues.every(isIssue) &&
+    Array.isArray(value.events) &&
+    value.events.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.issueId === "string" &&
+        typeof item.actor === "string" &&
+        typeof item.action === "string" &&
+        typeof item.note === "string" &&
+        isRecord(item.data) &&
+        Number.isSafeInteger(item.version) &&
+        typeof item.at === "number",
+    ) &&
+    (!("next" in value) || value.next === null || typeof value.next === "string")
+  );
+}
+
+function errorMessage(value: unknown, fallback: string) {
+  return isRecord(value) && typeof value.error === "string" ? value.error : fallback;
+}
+
 export async function requestIssueSnapshot({
   token,
   issueNumber,
@@ -29,9 +109,10 @@ export async function requestIssueSnapshot({
       headers: { "X-App-Session-Generation": token },
       cache: "no-store",
     });
-    const value = await response.json();
-    if (!response.ok) throw new Error(value.error || "Issue 讀取失敗。");
-    const snapshot = value as IssueSnapshot;
+    const value: unknown = await response.json();
+    if (!response.ok) throw new Error(errorMessage(value, "Issue 讀取失敗。"));
+    if (!isIssueSnapshot(value)) throw new Error("Issue 回應格式不正確。");
+    const snapshot = value;
     if (repositoryId && snapshot.issues[0]?.repositoryId !== repositoryId) {
       throw new Error("Issue 不屬於指定儲存庫。");
     }
@@ -49,9 +130,10 @@ export async function requestIssueSnapshot({
     headers: { "X-App-Session-Generation": token },
     cache: "no-store",
   });
-  const value = await response.json();
-  if (!response.ok) throw new Error(value.error || "Issue 讀取失敗。");
-  return value as IssueSnapshot;
+  const value: unknown = await response.json();
+  if (!response.ok) throw new Error(errorMessage(value, "Issue 讀取失敗。"));
+  if (!isIssueSnapshot(value)) throw new Error("Issue 回應格式不正確。");
+  return value;
 }
 
 export async function postIssueCommand(token: string, command: IssueCommand) {
@@ -63,5 +145,6 @@ export async function postIssueCommand(token: string, command: IssueCommand) {
     },
     body: JSON.stringify(command),
   });
-  return { response, value: await response.json() };
+  const value: unknown = await response.json();
+  return { response, value: { error: errorMessage(value, "") } };
 }

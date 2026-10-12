@@ -181,7 +181,9 @@ test("transport rejects origin, type, malformed input and oversized bodies befor
     { request: post("x".repeat(4097)), status: 413 },
   ];
   for (const example of cases) {
-    const { route, calls } = loadRoute({ origin: example.origin });
+    const { route, calls } = loadRoute({
+      ...(example.origin === undefined ? {} : { origin: example.origin }),
+    });
     assert.equal((await route.POST(example.request)).status, example.status);
     assert.deepEqual(calls, []);
   }

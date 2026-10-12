@@ -12,7 +12,7 @@ function objectInput(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new IssueError(400, "Issue collaboration 操作格式不正確。");
   }
-  return value as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(value));
 }
 
 function exactKeys(value: Record<string, unknown>, allowed: readonly string[]) {
@@ -212,10 +212,11 @@ function parseCommand(raw: unknown): IssueCollaborationCommand {
       "expectedVersion",
       "reason",
     ]);
-    if (!lockReasons.includes(value.reason as IssueLockReason)) {
+    const reason = lockReasons.find((candidate) => candidate === value.reason);
+    if (!reason) {
       throw new IssueError(400, "Conversation lock reason 不正確。");
     }
-    return { ...base, action, reason: value.reason as IssueLockReason };
+    return { ...base, action, reason };
   }
 
   if (action === "unlock") {

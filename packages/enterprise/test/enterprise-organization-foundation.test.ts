@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
   createOrganization,
   createOrganizationDirectMembership,
@@ -261,7 +262,7 @@ test("EnterpriseOwner mutation is owned by the Enterprise command contract", asy
         expectedVersion: 0,
         reason: "legacy writer",
       }),
-    (error: unknown) => (error as { status?: number }).status === 400,
+    (error: unknown) => error instanceof GovernanceAccessError && error.status === 400,
   );
 });
 

@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
-import type { Database, Sql } from "../database/postgres/database.js";
+import { createSql, type Database, type SqlRow } from "../database/postgres/database.js";
 
 function schemaFiles() {
   const directory = new URL("../../../../supabase/schemas/", import.meta.url);
@@ -26,8 +26,17 @@ export async function postgresFixture() {
     transaction: (work) =>
       pg.transaction(async (tx) => {
         await tx.exec("SET LOCAL ROLE line_app; SET LOCAL search_path=app_private,pg_catalog;");
-        return work(tx as unknown as Sql);
+        return work(
+          createSql(async (text, values) => {
+            const result = await tx.query<SqlRow>(text, values);
+            return { rows: result.rows, rowCount: result.affectedRows ?? null };
+          }),
+        );
       }),
   };
-  return { pg, db };
+  const sql = createSql(async (text, values) => {
+    const result = await pg.query<SqlRow>(text, values);
+    return { rows: result.rows, rowCount: result.affectedRows ?? null };
+  });
+  return { pg, db, sql };
 }

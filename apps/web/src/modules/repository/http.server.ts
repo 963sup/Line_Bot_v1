@@ -19,6 +19,10 @@ export function repositoryPathSelector(owner: string, repository: string) {
   return { ownerLogin, repositoryName };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 async function jsonObjectBody(
   request: Request,
   failure: (status: number, message: string) => Error,
@@ -47,8 +51,8 @@ async function jsonObjectBody(
   }
   try {
     const body: unknown = JSON.parse(text);
-    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error();
-    return body as Record<string, unknown>;
+    if (!isRecord(body)) throw new Error();
+    return body;
   } catch {
     throw failure(400, "資料格式不正確。");
   }

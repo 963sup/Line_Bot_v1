@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import {
+  nullableString,
+  numericValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { PostgresAttendanceStore } from "../src/adapters/outbound/persistence/postgres-attendance-store.js";
 
 const now = Date.parse("2026-09-28T08:00:00+08:00");
@@ -11,6 +17,19 @@ const input = (expectedVersion: number) => ({
   expectedVersion,
   location: { latitude: 25, longitude: 121, accuracy: 5 },
 });
+
+function attendanceSnapshotRow(value: unknown) {
+  const row = record(value);
+  const point = record(row.point_snapshot);
+  return {
+    repositoryId: stringValue(row.repository_id),
+    address: nullableString(point.address),
+  };
+}
+
+function pointSnapshotAddress(value: unknown) {
+  return nullableString(record(record(value).point_snapshot).address);
+}
 
 async function fixture() {
   const fixture = await postgresFixture();
@@ -70,12 +89,13 @@ test("Repository member can clock; public visibility does not grant attendance; 
     store.execute("member", "clockIn", input(2), now + 3600200, recipient),
     /儲存庫/,
   );
-  const snapshot = (
+  const snapshotValue = (
     await pg.query("SELECT repository_id,point_snapshot FROM app_private.attendance_sessions")
-  ).rows[0] as { repository_id: string; point_snapshot: { address: string | null } } | undefined;
+  ).rows[0];
+  const snapshot = snapshotValue ? attendanceSnapshotRow(snapshotValue) : undefined;
   assert.ok(snapshot);
-  assert.equal(snapshot.repository_id, "repo");
-  assert.equal(snapshot.point_snapshot.address, address.address);
+  assert.equal(snapshot.repositoryId, "repo");
+  assert.equal(snapshot.address, address.address);
 });
 
 test("coordinates and radius authorize attendance when the Repository description is null", async (t) => {
@@ -107,10 +127,7 @@ test("coordinates and radius authorize attendance when the Repository descriptio
   const persisted = await pg.query(
     "SELECT point_snapshot FROM app_private.attendance_sessions WHERE uid='member'",
   );
-  assert.equal(
-    (persisted.rows[0] as { point_snapshot: { address: string | null } }).point_snapshot.address,
-    null,
-  );
+  assert.equal(pointSnapshotAddress(persisted.rows[0]), null);
 
   await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo'", [
     JSON.stringify({ ...address, address: "後續新增的地址描述" }),
@@ -122,10 +139,7 @@ test("coordinates and radius authorize attendance when the Repository descriptio
   const unchanged = await pg.query(
     "SELECT point_snapshot FROM app_private.attendance_sessions WHERE uid='member'",
   );
-  assert.equal(
-    (unchanged.rows[0] as { point_snapshot: { address: string | null } }).point_snapshot.address,
-    null,
-  );
+  assert.equal(pointSnapshotAddress(unchanged.rows[0]), null);
 });
 
 test("clock-out checks original geofence, replay fingerprint and state version", async (t) => {
@@ -355,7 +369,7 @@ test("review inbox shows all pending requests and repository submissions enforce
   const visibleCount = await pg.query(
     "SELECT count(*) AS count FROM app_private.attendance_supplement_requests WHERE repository_id=ANY(ARRAY['repo','repo-2']::text[]) AND status='PENDING' AND uid<>'outsider'",
   );
-  const expectedVisible = Number((visibleCount.rows[0] as { count: string }).count);
+  const expectedVisible = Number(numericValue(record(visibleCount.rows[0]).count));
   assert.equal(fullInbox.review.length, expectedVisible);
   assert.ok(fullInbox.review.length > 100);
 });

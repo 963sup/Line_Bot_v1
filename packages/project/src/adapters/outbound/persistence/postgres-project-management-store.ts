@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
-import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  businessDatabase,
+  type Database,
+  type Sql,
+  type SqlRow,
+} from "@line_bot_v1/platform/postgres";
+import { literalValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import type {
@@ -23,6 +29,7 @@ import {
   advanceProject,
   allocateProjectNumber,
   appendProjectEvent,
+  decodeProjectRow,
   lockProjectScope,
   type ProjectRow,
   projectFingerprint,
@@ -40,6 +47,19 @@ import {
   readProjectStatusUpdates,
   readProjectViews,
 } from "./postgres-project-view-status.js";
+
+const projectAccessRoles: readonly ProjectAccessRole[] = ["READ", "WRITE", "ADMIN"];
+
+const collaboratorRow = (row: SqlRow): { id: string; role: ProjectAccessRole } => ({
+  id: stringValue(row.id),
+  role: literalValue(row.role, projectAccessRoles),
+});
+
+const decodePositionRow = (row: SqlRow): { position: number | string } => ({
+  position: numericValue(row.position),
+});
+
+const idRow = (row: SqlRow): { id: string } => ({ id: stringValue(row.id) });
 
 function collaboratorRole(
   role: Extract<
@@ -61,8 +81,9 @@ async function projectCollaborators(sql: Sql, projectId: string): Promise<Projec
        WHERE project_id=$1
        ORDER BY user_id`,
       [projectId],
+      collaboratorRow,
     )
-  ).rows as Array<{ id: string; role: ProjectAccessRole }>;
+  ).rows;
   const teamRows = (
     await sql.query(
       `SELECT team_id AS id,role
@@ -70,8 +91,9 @@ async function projectCollaborators(sql: Sql, projectId: string): Promise<Projec
        WHERE project_id=$1
        ORDER BY team_id`,
       [projectId],
+      collaboratorRow,
     )
-  ).rows as Array<{ id: string; role: ProjectAccessRole }>;
+  ).rows;
   return [
     ...userRows.map((row) => ({ kind: "USER" as const, id: row.id, role: row.role })),
     ...teamRows.map((row) => ({ kind: "TEAM" as const, id: row.id, role: row.role })),
@@ -111,8 +133,10 @@ async function addRepositoryReference(
        FROM project_repository_references
        WHERE project_id=$1`,
       [projectId],
+      decodePositionRow,
     )
-  ).rows[0] as { position: number | string };
+  ).rows[0];
+  if (!positionRow) throw new ProjectError(503, "Project repository position 無法配置。");
   await sql.query(
     `INSERT INTO project_repository_references(
        project_id,repository_id,position,version
@@ -169,8 +193,10 @@ async function createProject(
         input.public,
         now,
       ],
+      decodeProjectRow,
     )
-  ).rows[0] as ProjectRow;
+  ).rows[0];
+  if (!row) throw new ProjectError(503, "Project 建立結果無法讀取。");
 
   if (input.ownerKind === "ORGANIZATION" && !viewerCanAdminister) {
     await sql.query(
@@ -232,8 +258,9 @@ async function mutateCollaborators(
            WHERE project_id=$1 AND user_id=$2
            FOR UPDATE`,
           [row.id, id],
+          collaboratorRow,
         )
-      ).rows[0] as { role: ProjectAccessRole } | undefined;
+      ).rows[0];
       if (role === null) {
         if (before) {
           await sql.query("DELETE FROM project_user_access WHERE project_id=$1 AND user_id=$2", [
@@ -272,8 +299,9 @@ async function mutateCollaborators(
          WHERE project_id=$1 AND team_id=$2
          FOR UPDATE`,
         [row.id, id],
+        collaboratorRow,
       )
-    ).rows[0] as { role: ProjectAccessRole } | undefined;
+    ).rows[0];
     if (role === null) {
       if (before) {
         await sql.query("DELETE FROM project_team_access WHERE project_id=$1 AND team_id=$2", [
@@ -399,8 +427,9 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
              AND number=$3
              AND deleted_at IS NULL`,
           [owner.id, owner.kind, projectNumber],
+          idRow,
         )
-      ).rows[0] as { id: string } | undefined;
+      ).rows[0];
       if (!row) throw new ProjectError(404, "找不到 Project。");
       const selected = await readProjectScope(sql, identity.userId, row.id);
       const items = await readProjectItems(sql, identity.userId, row.id);

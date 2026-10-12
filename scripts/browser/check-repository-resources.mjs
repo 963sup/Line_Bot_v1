@@ -46,7 +46,12 @@ await context.addInitScript((key) => {
     isLoggedIn: () => true,
     getAccessToken: () => window.localStorage.getItem(key) || "token-a",
     isInClient: () => false,
-    getProfile: async () => ({ displayName: "Repository Tester" }),
+    getProfile: async () => ({
+      userId: "U11111111111111111111111111111111",
+      displayName: "Repository Tester",
+    }),
+    closeWindow: () => {},
+    openWindow: () => {},
     login: () => {},
   };
 }, syntheticProofStorageKey);

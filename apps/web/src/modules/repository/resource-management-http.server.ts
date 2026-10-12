@@ -20,12 +20,7 @@ export async function repositoryResourceManagementRequest(
 ) {
   try {
     const body = await repositoryBody(request);
-    if (
-      !body ||
-      typeof body !== "object" ||
-      Array.isArray(body) ||
-      !familyActions[family].has(String((body as Record<string, unknown>).action ?? ""))
-    ) {
+    if (!familyActions[family].has(String(body.action ?? ""))) {
       throw new RepositoryError(400, "Repository resource API 動作不正確。");
     }
     return jsonResponse(await management.execute(await identity(request), body));

@@ -340,12 +340,11 @@ export function TeamWorkspace({
                   Privacy
                   <select
                     value={draft.privacy}
-                    onChange={(event) =>
-                      setDraft({
-                        ...draft,
-                        privacy: event.target.value as typeof draft.privacy,
-                      })
-                    }
+                    onChange={(event) => {
+                      const privacy = event.target.value;
+                      if (privacy === "SECRET" || privacy === "VISIBLE")
+                        setDraft({ ...draft, privacy });
+                    }}
                   >
                     <option value="SECRET">SECRET</option>
                     <option value="VISIBLE">VISIBLE</option>
@@ -355,12 +354,14 @@ export function TeamWorkspace({
                   Notification setting
                   <select
                     value={draft.notificationSetting}
-                    onChange={(event) =>
-                      setDraft({
-                        ...draft,
-                        notificationSetting: event.target.value as typeof draft.notificationSetting,
-                      })
-                    }
+                    onChange={(event) => {
+                      const notificationSetting = event.target.value;
+                      if (
+                        notificationSetting === "NOTIFICATIONS_DISABLED" ||
+                        notificationSetting === "NOTIFICATIONS_ENABLED"
+                      )
+                        setDraft({ ...draft, notificationSetting });
+                    }}
                   >
                     <option value="NOTIFICATIONS_DISABLED">NOTIFICATIONS_DISABLED</option>
                     <option value="NOTIFICATIONS_ENABLED">NOTIFICATIONS_ENABLED</option>

@@ -1,13 +1,16 @@
 "use client";
 
-import type {
-  OrganizationCommand,
-  OrganizationDetail,
-  OrganizationList,
+import {
+  type OrganizationCommand,
+  type OrganizationDetail,
+  type OrganizationList,
+  parseOrganizationDetail,
+  parseOrganizationList,
 } from "@line_bot_v1/organization/contracts/organization-governance";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { errorStatus } from "../../shared/presentation/unknown-value";
 import { OrganizationDetailSection } from "./organization-detail-section";
 
 type Pending = OrganizationCommand;
@@ -69,14 +72,10 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       const payload = await request("GET");
       if (ticket !== epoch.current) return;
       if (id) {
-        if (!payload || !Array.isArray(payload.members) || !Array.isArray(payload.invitations)) {
-          throw new Error("回應不完整，請重新載入。");
-        }
-        setDetail(payload as OrganizationDetail);
+        setDetail(parseOrganizationDetail(payload));
         return;
       }
-      if (!payload || !Array.isArray(payload.items)) throw new Error("回應不完整，請重新載入。");
-      setList(payload as OrganizationList);
+      setList(parseOrganizationList(payload));
       setDetail(null);
     } catch (cause) {
       if (ticket === epoch.current) setError(cause instanceof Error ? cause.message : "讀取失敗。");
@@ -108,7 +107,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       );
     } catch (cause) {
       if (ticket === epoch.current) {
-        const status = (cause as { status?: number }).status;
+        const status = errorStatus(cause);
         if (status && status < 500 && status !== 429) setPending(null);
         setError(cause instanceof Error ? cause.message : "操作結果尚待確認，請重試原操作。");
       }

@@ -1,15 +1,9 @@
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import IssueBoard from "../../../../modules/repository/issue-board";
+import RepositoryResourceNavigation from "../../../../modules/repository/repository-resource-navigation";
 import RepositorySubscriptionControl from "../../../../modules/repository/repository-subscription-control";
-import {
-  repositoryDiscussionsPath,
-  repositoryIssuesPath,
-  repositoryLabelsPath,
-  repositoryMilestonesPath,
-} from "../../../../modules/repository/resource-navigation";
 import AppShell from "../../../(mobile)/_shell/app-shell";
 import { publicRepositories } from "../../_composition/repository.server";
 
@@ -35,36 +29,16 @@ export default async function Page({
         <p className="eyebrow">儲存庫</p>
         <h1>{publicRepository.name}</h1>
         <p>@{publicRepository.ownerLogin}</p>
-        <nav className="page-heading-actions" aria-label="Repository resources">
-          <Link
-            className="button-link button-link-primary"
-            href={repositoryIssuesPath(publicRepository.ownerLogin, publicRepository.name)}
-          >
-            Issues
-          </Link>
-          <Link
-            className="button-link button-link-secondary"
-            href={repositoryDiscussionsPath(publicRepository.ownerLogin, publicRepository.name)}
-          >
-            Discussions
-          </Link>
-          <Link
-            className="button-link button-link-secondary"
-            href={repositoryLabelsPath(publicRepository.ownerLogin, publicRepository.name)}
-          >
-            Labels
-          </Link>
-          <Link
-            className="button-link button-link-secondary"
-            href={repositoryMilestonesPath(publicRepository.ownerLogin, publicRepository.name)}
-          >
-            Milestones
-          </Link>
-        </nav>
+        <RepositoryResourceNavigation
+          ownerLogin={publicRepository.ownerLogin}
+          repositoryName={publicRepository.name}
+          active="overview"
+        />
         <RepositorySubscriptionControl
           liffId={lineMiniApp().liffId}
           ownerLogin={publicRepository.ownerLogin}
           repositoryName={publicRepository.name}
+          explicitInteraction
         />
       </main>
     );
@@ -82,6 +56,7 @@ export default async function Page({
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
         repositoryName={repository}
+        navigationActive="overview"
       />
     </AppShell>
   );

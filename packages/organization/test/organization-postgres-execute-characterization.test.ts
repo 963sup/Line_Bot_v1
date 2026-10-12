@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { governanceFingerprint } from "@line_bot_v1/identity-access/postgres";
-import type { Database, Sql } from "@line_bot_v1/platform/postgres";
+import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import type {
   OrganizationCommand,
   OrganizationReceipt,
@@ -20,12 +21,10 @@ function databaseWith(
   queries: QueryRecord[],
 ) {
   let transactions = 0;
-  const sql: Sql = {
-    async query(text, values) {
-      queries.push({ text, ...(values === undefined ? {} : { values }) });
-      return responder(text, values);
-    },
-  };
+  const sql = createSql(async (text, values) => {
+    queries.push({ text, ...(values === undefined ? {} : { values }) });
+    return responder(text, values);
+  });
   const db: Database = {
     async transaction(work) {
       transactions++;
@@ -83,7 +82,8 @@ test("organization execute authorizes current owner before replay lookup", async
   await assert.rejects(
     () => governance.execute(actor, command, 100),
     (error: unknown) => {
-      assert.equal((error as { status?: number }).status, 403);
+      assert.ok(error instanceof GovernanceAccessError);
+      assert.equal(error.status, 403);
       return true;
     },
   );
@@ -336,7 +336,8 @@ test("OrganizationOwner revoke preserves the last-effective-owner invariant", as
 
   await assert.rejects(
     () => governance.execute(actor, command, 100),
-    (error: unknown) => (error as { code?: string }).code === "last-effective-role-holder",
+    (error: unknown) =>
+      error instanceof GovernanceAccessError && error.code === "last-effective-role-holder",
   );
   assert.equal(queryIndex(queries, "UPDATE organization_role_assignments"), -1);
   assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);

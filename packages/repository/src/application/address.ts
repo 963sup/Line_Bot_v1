@@ -24,17 +24,17 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
   return { ownerLogin, repositoryName };
 }
 
-function finiteNumber(value: unknown, minimum: number, maximum: number) {
+function finiteNumber(value: unknown, minimum: number, maximum: number): value is number {
   return (
     typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum
   );
 }
 
 function parseCommand(raw: unknown): RepositoryAddressCommand {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository 地址操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (value.action !== "set" && value.action !== "remove") {
     throw new RepositoryError(400, "Repository 地址動作不正確。");
   }
@@ -64,10 +64,10 @@ function parseCommand(raw: unknown): RepositoryAddressCommand {
     expectedVersion: value.expectedVersion,
   } as const;
   if (value.action === "remove") return { ...base, action: "remove" };
-  if (!value.address || typeof value.address !== "object" || Array.isArray(value.address)) {
+  if (!isRecord(value.address)) {
     throw new RepositoryError(400, "Repository 地址不正確。");
   }
-  const address = value.address as Record<string, unknown>;
+  const address = value.address;
   if (
     Object.keys(address).some(
       (key) => !["address", "latitude", "longitude", "radius"].includes(key),
@@ -89,10 +89,10 @@ function parseCommand(raw: unknown): RepositoryAddressCommand {
     ...base,
     action: "set",
     address: {
-      address: address.address as string | null,
-      latitude: address.latitude as number,
-      longitude: address.longitude as number,
-      radius: address.radius as number,
+      address: address.address,
+      latitude: address.latitude,
+      longitude: address.longitude,
+      radius: address.radius,
     },
   };
 }
@@ -114,3 +114,5 @@ export function createRepositoryAddress(deps: {
     },
   };
 }
+
+import { isRecord } from "@line_bot_v1/platform/validation";

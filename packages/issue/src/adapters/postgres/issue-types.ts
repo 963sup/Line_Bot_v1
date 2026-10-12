@@ -4,6 +4,14 @@ import {
   readOrganizationQualification,
 } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type {
   IssueTypeCommand,
   IssueTypeDefinition,
@@ -32,6 +40,43 @@ type StoredReceipt = Readonly<{
   family: "issue-type-management";
   result: IssueTypeReceipt;
 }>;
+
+const colorValues: readonly IssueTypeDefinition["color"][] = [
+  "BLUE",
+  "GRAY",
+  "GREEN",
+  "ORANGE",
+  "PINK",
+  "PURPLE",
+  "RED",
+  "YELLOW",
+];
+
+function decodeIssueTypeRow(row: Record<string, unknown>): IssueTypeRow {
+  return {
+    id: stringValue(row.id),
+    organization_account_id: stringValue(row.organization_account_id),
+    name: stringValue(row.name),
+    description: nullableString(row.description),
+    color: literalValue(row.color, colorValues),
+    is_enabled: booleanValue(row.is_enabled),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+const decodeReceiptRow = (row: Record<string, unknown>) => ({
+  fingerprint: stringValue(row.fingerprint),
+  result: row.result,
+});
+
+const receiptActions: readonly IssueTypeReceipt["action"][] = [
+  "create-issue-type",
+  "update-issue-type",
+  "delete-issue-type",
+];
 
 function definition(row: IssueTypeRow): IssueTypeDefinition {
   return {
@@ -66,8 +111,11 @@ function readReceipt(
     throw new IssueError(409, "此請求編號已用於不同 Issue 操作。");
   }
   if (!record(previous.result)) throw new IssueError(503, "IssueType 回執無法讀取。");
-  const envelope = previous.result as Partial<StoredReceipt>;
+  const envelope = previous.result;
   const result = envelope.result;
+  const action = record(result)
+    ? receiptActions.find((candidate) => candidate === result.action)
+    : undefined;
   if (
     envelope.receiptVersion !== 1 ||
     envelope.family !== "issue-type-management" ||
@@ -75,13 +123,24 @@ function readReceipt(
     typeof result.requestId !== "string" ||
     typeof result.organizationAccountId !== "string" ||
     typeof result.issueTypeId !== "string" ||
-    typeof result.action !== "string" ||
+    !action ||
+    typeof result.version !== "number" ||
     !Number.isSafeInteger(result.version) ||
-    !Number.isSafeInteger(result.at)
+    typeof result.at !== "number" ||
+    !Number.isSafeInteger(result.at) ||
+    !record(result.data)
   ) {
     throw new IssueError(503, "IssueType 回執無法讀取。");
   }
-  return result as IssueTypeReceipt;
+  return {
+    requestId: result.requestId,
+    organizationAccountId: result.organizationAccountId,
+    issueTypeId: result.issueTypeId,
+    action,
+    version: result.version,
+    at: result.at,
+    data: result.data,
+  };
 }
 
 function storedReceipt(result: IssueTypeReceipt): StoredReceipt {
@@ -105,11 +164,12 @@ async function requireOrganizationOwner(
 }
 
 function postgresConflict(error: unknown): never {
-  const postgres = error as { code?: string };
-  if (postgres.code === "23505") {
+  const code =
+    error !== null && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (code === "23505") {
     throw new IssueError(409, "此 Organization 已有相同名稱的 IssueType。");
   }
-  if (postgres.code === "23503" || postgres.code === "23514") {
+  if (code === "23503" || code === "23514") {
     throw new IssueError(409, "IssueType 關係或狀態不合法。");
   }
   throw error;
@@ -126,8 +186,9 @@ async function currentType(
        WHERE organization_account_id=$1 AND id=$2
        FOR UPDATE`,
       [organizationAccountId, issueTypeId],
+      decodeIssueTypeRow,
     )
-  ).rows[0] as IssueTypeRow | undefined;
+  ).rows[0];
   if (!row) throw new IssueError(404, "找不到 IssueType。");
   if (row.deleted_at !== null) throw new IssueError(409, "IssueType 已刪除。");
   return row;
@@ -145,8 +206,9 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
            WHERE organization_account_id=$1 AND deleted_at IS NULL
            ORDER BY lower(name),id`,
           [organizationAccountId],
+          decodeIssueTypeRow,
         )
-      ).rows as IssueTypeRow[];
+      ).rows;
       return { organizationAccountId, items: rows.map(definition) };
     });
   }
@@ -166,8 +228,9 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
         await sql.query(
           "SELECT fingerprint,result FROM issue_commands WHERE actor=$1 AND request_id=$2",
           [identity.userId, command.requestId],
+          decodeReceiptRow,
         )
-      ).rows[0] as { fingerprint: string; result: unknown } | undefined;
+      ).rows[0];
       const replay = readReceipt(previous, commandFingerprint);
       if (replay) return replay;
 
@@ -193,8 +256,9 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
                 command.isEnabled,
                 now,
               ],
+              decodeIssueTypeRow,
             )
-          ).rows[0] as IssueTypeRow;
+          ).rows[0];
         } catch (error) {
           postgresConflict(error);
         }
@@ -238,8 +302,9 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
                   now,
                   command.expectedVersion,
                 ],
+                decodeIssueTypeRow,
               )
-            ).rows[0] as IssueTypeRow;
+            ).rows[0];
           } catch (error) {
             postgresConflict(error);
           }
@@ -261,8 +326,9 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
                WHERE organization_account_id=$1 AND id=$2 AND version=$4
                RETURNING *`,
               [command.organizationAccountId, command.issueTypeId, now, command.expectedVersion],
+              decodeIssueTypeRow,
             )
-          ).rows[0] as IssueTypeRow | undefined;
+          ).rows[0];
           if (!row) throw new IssueError(409, "IssueType 已更新，請重新讀取後再操作。");
           data = { before: definition(before), after: definition(row) };
         }

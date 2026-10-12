@@ -22,12 +22,12 @@ test("real webhook composition: mentions answer, ordinary images are silent, one
   const memberId = await activateMember(user);
   const fetchOriginal = globalThis.fetch;
   const sent: { messages: unknown[] }[] = [];
-  globalThis.fetch = (async (input, init) => {
+  globalThis.fetch = async (input, init) => {
     if (!String(input).endsWith("/message/reply"))
       throw new Error("No AI or image download expected");
     sent.push(JSON.parse(String(init?.body)));
     return Response.json({ sentMessages: [] });
-  }) as typeof fetch;
+  };
   let index = 0;
   const deliver = async (
     message: unknown,

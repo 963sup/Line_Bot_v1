@@ -1,4 +1,5 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { nullableString, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { UserAchievement, UserAchievementStore } from "../contracts/output/achievements.js";
 
 type AchievementRow = {
@@ -10,6 +11,18 @@ type AchievementRow = {
   source_id: string;
   awarded_at: number | string;
 };
+
+function achievementRow(row: Record<string, unknown>): AchievementRow {
+  return {
+    achievement_id: stringValue(row.achievement_id),
+    name: stringValue(row.name),
+    description: stringValue(row.description),
+    icon_ref: nullableString(row.icon_ref),
+    source_kind: stringValue(row.source_kind),
+    source_id: stringValue(row.source_id),
+    awarded_at: numericValue(row.awarded_at),
+  };
+}
 
 export class PostgresUserAchievementStore implements UserAchievementStore {
   constructor(private db: Database = businessDatabase()) {}
@@ -23,11 +36,12 @@ export class PostgresUserAchievementStore implements UserAchievementStore {
            FROM user_achievements ua
            JOIN achievement_definitions d ON d.id=ua.achievement_id
            WHERE ua.user_id=$1 AND d.status<>'draft'
-           ORDER BY ua.awarded_at DESC,ua.achievement_id
+          ORDER BY ua.awarded_at DESC,ua.achievement_id
            LIMIT $2`,
           [userId, limit],
+          achievementRow,
         )
-      ).rows as AchievementRow[];
+      ).rows;
       return rows.map((row) => ({
         id: row.achievement_id,
         name: row.name,

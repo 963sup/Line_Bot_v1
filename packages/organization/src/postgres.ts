@@ -14,6 +14,14 @@ import {
 } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  nullableNumericValue,
+  numberValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import type { OrganizationGovernancePort } from "./contracts/input/organization-governance.js";
 import type {
   OrganizationCommand,
@@ -35,6 +43,87 @@ import {
   readOrganizationOwnerScopeIds,
 } from "./postgres/owner-roles.js";
 import { readOrganizationViewerCapabilities } from "./postgres/public.js";
+
+function nullableNumber(value: unknown): number | null {
+  const numeric = nullableNumericValue(value);
+  return numeric === null ? null : Number(numeric);
+}
+
+function organizationRow(row: Record<string, unknown>) {
+  return {
+    account_id: stringValue(row.account_id),
+    status: literalValue(row.status, ["active", "inactive"]),
+    version: numberValue(row.version),
+  };
+}
+
+function organizationListRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    name: stringValue(row.name),
+    status: literalValue(row.status, ["active", "inactive"]),
+    version: numberValue(row.version),
+    membership_status:
+      row.membership_status === null
+        ? null
+        : literalValue(row.membership_status, ["active", "removed"]),
+    direct_membership_version: nullableNumber(row.direct_membership_version),
+    invitation_status:
+      row.invitation_status === null
+        ? null
+        : literalValue(row.invitation_status, ["pending", "accepted", "cancelled", "declined"]),
+    invitation_version: nullableNumber(row.invitation_version),
+  };
+}
+
+function organizationDetailRow(row: Record<string, unknown>) {
+  return {
+    ...organizationListRow(row),
+    member_can_create_public_repositories: booleanValue(row.member_can_create_public_repositories),
+    member_can_create_private_repositories: booleanValue(
+      row.member_can_create_private_repositories,
+    ),
+    member_can_create_internal_repositories: booleanValue(
+      row.member_can_create_internal_repositories,
+    ),
+    member_can_create_project_v2: booleanValue(row.member_can_create_project_v2),
+    member_can_create_teams: booleanValue(row.member_can_create_teams),
+  };
+}
+
+function organizationMemberRow(row: Record<string, unknown>) {
+  return {
+    user_id: stringValue(row.user_id),
+    status: literalValue(row.status, ["active", "removed"]),
+    version: numberValue(row.version),
+    sources: row.sources,
+    direct_membership_version: nullableNumber(row.direct_membership_version),
+  };
+}
+
+function organizationInvitationRow(row: Record<string, unknown>) {
+  return {
+    user_id: stringValue(row.user_id),
+    status: literalValue(row.status, ["pending", "accepted", "cancelled", "declined"]),
+    version: numberValue(row.version),
+  };
+}
+
+function versionRow(row: Record<string, unknown>) {
+  return { version: numberValue(row.version) };
+}
+
+function provisionedScopeRow(row: Record<string, unknown>) {
+  return { scope_version: numberValue(row.scope_version) };
+}
+
+function statusVersionRow(row: Record<string, unknown>) {
+  return { status: stringValue(row.status), version: numberValue(row.version) };
+}
+
+function hasPostgresCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}
 
 function receipt(
   command: OrganizationCommand,
@@ -62,6 +151,7 @@ async function lockOrganization(sql: Sql, organizationAccountId: string) {
     await sql.query(
       "SELECT account_id,status,version FROM organizations WHERE account_id=$1 FOR UPDATE",
       [organizationAccountId],
+      organizationRow,
     )
   ).rows[0];
   if (!row) throw new GovernanceAccessError(404, "not-found", "找不到 Organization。");
@@ -69,10 +159,14 @@ async function lockOrganization(sql: Sql, organizationAccountId: string) {
 }
 
 function membershipSources(value: unknown): OrganizationMembershipSource[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) throw new TypeError("Expected membership sources");
   return value.map((source) => {
-    const row = source as { kind: "direct" | "enterprise-team"; id: string; version: number };
-    return { kind: row.kind, id: row.id, version: row.version };
+    const row = record(source);
+    return {
+      kind: literalValue(row.kind, ["direct", "enterprise-team"]),
+      id: stringValue(row.id),
+      version: numberValue(row.version),
+    };
   });
 }
 
@@ -124,6 +218,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
              AND (o.status='active' OR o.account_id=ANY($4::text[]))
            ORDER BY o.account_id LIMIT 21`,
           [principal.userId, query.id ?? null, query.after ?? null, ownerScopeIds],
+          organizationListRow,
         )
       ).rows;
       const items: Array<OrganizationList["items"][number]> = [];
@@ -199,6 +294,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
              ON i.organization_account_id=o.account_id AND i.user_id=$1
            WHERE o.account_id=$2 AND (m.status='active' OR i.status='pending')`,
           [principal.userId, organizationAccountId],
+          organizationDetailRow,
         )
       ).rows[0];
       if (!scope || (scope.status !== "active" && !actorIsOwner)) {
@@ -229,6 +325,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
            WHERE m.organization_account_id=$1 AND ($2::boolean OR m.user_id=$3)
            ORDER BY m.user_id`,
           [organizationAccountId, actorCanAdminister, principal.userId],
+          organizationMemberRow,
         )
       ).rows;
       const ownerAssignments = new Map(
@@ -246,6 +343,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
            WHERE organization_account_id=$1 AND ($2::boolean OR user_id=$3)
            ORDER BY user_id`,
           [organizationAccountId, actorCanAdminister, principal.userId],
+          organizationInvitationRow,
         )
       ).rows;
 
@@ -321,10 +419,11 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             await sql.query(
               "SELECT scope_version FROM app_private.provision_organization_scope($1,$2,$3,$4,$5)",
               [organizationAccountId, principal.userId, command.login, command.name, now],
+              provisionedScopeRow,
             )
           ).rows[0];
         } catch (error) {
-          if ((error as { code?: string }).code === "23505") {
+          if (hasPostgresCode(error, "23505")) {
             throw new GovernanceAccessError(409, "conflict", "Organization login 已被使用。");
           }
           throw error;
@@ -429,6 +528,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
               command.memberCanCreateProjectV2,
               command.memberCanCreateTeams,
             ],
+            versionRow,
           )
         ).rows[0];
         if (!changed) {
@@ -452,6 +552,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           await sql.query(
             "UPDATE organizations SET status=$2,version=version+1 WHERE account_id=$1 RETURNING version",
             [command.organizationAccountId, wanted],
+            versionRow,
           )
         ).rows[0];
         if (!changed) {
@@ -484,6 +585,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             `SELECT status,version FROM organization_memberships
              WHERE organization_account_id=$1 AND user_id=$2 FOR UPDATE`,
             [command.organizationAccountId, targetUserId],
+            statusVersionRow,
           )
         ).rows[0];
         const directMembership = (
@@ -491,6 +593,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             `SELECT status,version FROM organization_direct_memberships
              WHERE organization_account_id=$1 AND user_id=$2 FOR UPDATE`,
             [command.organizationAccountId, targetUserId],
+            statusVersionRow,
           )
         ).rows[0];
         const invitation = (
@@ -498,6 +601,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             `SELECT status,version FROM organization_invitations
              WHERE organization_account_id=$1 AND user_id=$2 FOR UPDATE`,
             [command.organizationAccountId, targetUserId],
+            statusVersionRow,
           )
         ).rows[0];
 
@@ -529,8 +633,9 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
               await sql.query(
                 `UPDATE organization_invitations
                  SET status='pending',version=version+1,created_at=$3,resolved_at=null
-                 WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
+                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
                 [command.organizationAccountId, command.targetUserId, now],
+                versionRow,
               )
             ).rows[0];
             if (!changed) {
@@ -589,6 +694,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                SET status='accepted',version=version+1,resolved_at=$3
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, command.targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -617,6 +723,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                SET status='declined',version=version+1,resolved_at=$3
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -645,6 +752,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                SET status='cancelled',version=version+1,resolved_at=$3
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, command.targetUserId, now],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {
@@ -707,6 +815,7 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
                SET status='removed',version=version+1
                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
               [command.organizationAccountId, targetUserId],
+              versionRow,
             )
           ).rows[0];
           if (!changed) {

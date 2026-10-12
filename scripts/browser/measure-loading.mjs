@@ -25,7 +25,12 @@ try {
         isLoggedIn: () => true,
         getAccessToken: () => "synthetic",
         isInClient: () => false,
-        getProfile: async () => ({ displayName: "測試會員" }),
+        getProfile: async () => ({
+          userId: "U11111111111111111111111111111111",
+          displayName: "測試會員",
+        }),
+        closeWindow: () => {},
+        openWindow: () => {},
         login: () => {},
       };
     });

@@ -1,5 +1,7 @@
 "use client";
 
+import { isRecord } from "@line_bot_v1/platform/validation";
+import { parseProjectManagementCommand } from "@line_bot_v1/project/application/management";
 import type { ProjectManagementCommand } from "@line_bot_v1/project/contracts/management";
 import { useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -24,8 +26,12 @@ function readPending(actorUserId: string): PendingCreate | null {
   try {
     const raw = sessionStorage.getItem(pendingKey(actorUserId));
     if (!raw) return null;
-    const value = JSON.parse(raw) as PendingCreate;
-    const command = value?.command;
+    const value: unknown = JSON.parse(raw);
+    if (!isRecord(value) || typeof value.actorUserId !== "string") {
+      sessionStorage.removeItem(pendingKey(actorUserId));
+      return null;
+    }
+    const command = parseProjectManagementCommand(value.command);
     if (
       value.actorUserId !== actorUserId ||
       command?.action !== "create-project" ||
@@ -42,7 +48,7 @@ function readPending(actorUserId: string): PendingCreate | null {
       sessionStorage.removeItem(pendingKey(actorUserId));
       return null;
     }
-    return value;
+    return { actorUserId: value.actorUserId, command };
   } catch {
     sessionStorage.removeItem(pendingKey(actorUserId));
     return null;

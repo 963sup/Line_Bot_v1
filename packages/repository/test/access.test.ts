@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryAccess } from "../src/application/access.js";
 import type { RepositoryAccessStore } from "../src/contracts/repositories/access.js";
 import { RepositoryError } from "../src/domain.js";
@@ -18,12 +19,12 @@ async function activeUser(db: Database, id: string, login = id) {
 }
 
 test("Repository access application validates commands before persistence", async () => {
-  const calls: unknown[][] = [];
-  const store = {
+  const calls: Parameters<RepositoryAccessStore["execute"]>[] = [];
+  const store: RepositoryAccessStore = {
     view: async () => {
       throw new Error("not used");
     },
-    execute: async (...args: unknown[]) => {
+    execute: async (...args) => {
       calls.push(args);
       return {
         requestId: "11111111-1111-4111-8111-111111111111",
@@ -33,9 +34,9 @@ test("Repository access application validates commands before persistence", asyn
         capability: "read",
         version: 1,
         at: 10,
-      } as const;
+      };
     },
-  } as RepositoryAccessStore;
+  };
   const service = createRepositoryAccess({
     activeUser: async () => ({ id: "actor" }),
     store: () => store,
@@ -69,7 +70,7 @@ test("Repository access application validates commands before persistence", asyn
     });
   }
   assert.deepEqual(
-    calls.slice(1, 3).map((call) => (call[1] as { capability?: string }).capability),
+    calls.slice(1, 3).map((call) => (call[1].action === "grant" ? call[1].capability : undefined)),
     ["maintain", "triage_plus"],
   );
 
@@ -129,7 +130,9 @@ test("Repository access management supports direct and Team grants with Owner im
     "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,$5)",
     ["repo", "owner", "org", "Shared", "private"],
   );
-  assert.equal((created.rows[0] as { repository_id?: string } | undefined)?.repository_id, "repo");
+  const createdRow: unknown = created.rows[0];
+  assert.ok(isRecord(createdRow));
+  assert.equal(createdRow.repository_id, "repo");
 
   const store = new PostgresRepositoryAccessStore(db);
   const initial = await store.view("owner", { ownerLogin: "octo", repositoryName: "shared" });
@@ -343,7 +346,9 @@ test("Repository access management supports direct and Team grants with Owner im
   const commands = await pg.query(
     "select count(*)::int as count from app_private.repository_commands where actor='owner'",
   );
-  assert.equal((commands.rows[0] as { count?: number } | undefined)?.count, 9);
+  const commandCount: unknown = commands.rows[0];
+  assert.ok(isRecord(commandCount));
+  assert.equal(commandCount.count, 9);
 
   await assert.rejects(
     db.transaction((sql) =>
@@ -351,7 +356,7 @@ test("Repository access management supports direct and Team grants with Owner im
         "insert into repository_access(repository_id,principal_id,capability,version) values('repo','member','read',1)",
       ),
     ),
-    (error: unknown) => (error as { code?: string }).code === "42501",
+    (error: unknown) => isRecord(error) && error.code === "42501",
   );
 });
 
@@ -379,7 +384,7 @@ test("Organization Owner implicit Repository admin disappears when its current r
   );
   await assert.rejects(
     store.view("owner", { repositoryId: "repo-owner" }),
-    (error: unknown) => (error as { status?: number }).status === 403,
+    (error: unknown) => error instanceof RepositoryError && error.status === 403,
   );
 });
 

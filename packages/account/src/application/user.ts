@@ -1,7 +1,41 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import type { VerifiedGoogleIdentity } from "../contracts/output/identity-provider.js";
 import type { GoogleLinkRepository, UserRepository } from "../contracts/repositories/user.js";
-import { requireActiveUser, UserError } from "../domain/user.js";
+import { requireActiveUser, type User, UserError } from "../domain/user.js";
+
+export type AccountView = User & {
+  login: string;
+  googleEmail: string | null;
+};
+
+/** Decodes the Account-owned projection at an untrusted transport boundary. */
+export function parseAccountView(value: unknown): AccountView {
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    !("id" in value) ||
+    typeof value.id !== "string" ||
+    !("status" in value) ||
+    (value.status !== "active" && value.status !== "paused" && value.status !== "suspended") ||
+    !("createdAt" in value) ||
+    typeof value.createdAt !== "number" ||
+    !Number.isFinite(value.createdAt) ||
+    !("login" in value) ||
+    typeof value.login !== "string" ||
+    !("googleEmail" in value) ||
+    (value.googleEmail !== null && typeof value.googleEmail !== "string")
+  ) {
+    throw new TypeError("Account view is invalid");
+  }
+  return {
+    id: value.id,
+    status: value.status,
+    createdAt: value.createdAt,
+    login: value.login,
+    googleEmail: value.googleEmail,
+  };
+}
 
 export interface UserDependencies {
   repository(): UserRepository;

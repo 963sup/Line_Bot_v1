@@ -44,7 +44,7 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
     body: { to: string; messages: { type: string; text: string }[] };
   }[] = [];
   let pushUnavailable = false;
-  globalThis.fetch = (async (input, init) => {
+  globalThis.fetch = async (input, init) => {
     if (String(input) === "https://api.line.me/v2/bot/message/push") {
       assert.equal(new Headers(init?.headers).get("authorization"), "Bearer synthetic-bot-token");
       pushes.push({
@@ -64,7 +64,7 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
         userId: new Headers(init?.headers).get("authorization") === "Bearer other" ? other : user,
       });
     throw Error("Unexpected outbound request");
-  }) as typeof fetch;
+  };
   const sessions = new Map<string, HeadersInit>();
   const body = (expectedVersion: number, extra = {}) => ({
     requestId: randomUUID(),

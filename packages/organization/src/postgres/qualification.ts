@@ -4,6 +4,7 @@ import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-
 import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 
 export type OrganizationTeamQualification = Readonly<{
   userId: string;
@@ -19,6 +20,29 @@ export type OrganizationQualification = Readonly<{
   version: number;
 }>;
 
+function organizationRow(row: Record<string, unknown>): OrganizationQualification {
+  return {
+    id: stringValue(row.account_id),
+    status: literalValue(row.status, ["active", "inactive"]),
+    version: numberValue(row.version),
+  };
+}
+
+function organizationAccountRow(row: Record<string, unknown>) {
+  return { organizationAccountId: stringValue(row.organizationAccountId) };
+}
+
+function userIdRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id) };
+}
+
+function teamQualificationRow(row: Record<string, unknown>) {
+  return {
+    organization_version: numberValue(row.organization_version),
+    membership_version: numberValue(row.membership_version),
+  };
+}
+
 export async function readOrganizationQualification(
   sql: Sql,
   organizationAccountId: string,
@@ -28,11 +52,12 @@ export async function readOrganizationQualification(
   const row = (
     await sql.query(
       `SELECT account_id,status,version FROM organizations
-       WHERE account_id=$1${suffix}`,
+      WHERE account_id=$1${suffix}`,
       [organizationAccountId],
+      organizationRow,
     )
-  ).rows[0] as { account_id: string; status: "active" | "inactive"; version: number } | undefined;
-  return row ? { id: row.account_id, status: row.status, version: Number(row.version) } : null;
+  ).rows[0];
+  return row ?? null;
 }
 
 export async function listOrganizationTeamScopes(
@@ -46,10 +71,11 @@ export async function listOrganizationTeamScopes(
        FROM organizations o
        JOIN organization_memberships m ON m.organization_account_id=o.account_id
        WHERE m.user_id=$1 AND o.status='active' AND m.status='active'
-       ORDER BY o.account_id`,
+      ORDER BY o.account_id`,
       [resolved.userId],
+      organizationAccountRow,
     )
-  ).rows as Array<{ organizationAccountId: string }>;
+  ).rows;
   const result: Array<{ organizationAccountId: string; login: string }> = [];
   for (const row of rows) {
     const locator = await readAccountLogin(sql, row.organizationAccountId, "ORGANIZATION");
@@ -72,8 +98,9 @@ export async function activeOrganizationParticipantIds(
          AND o.status='active' AND m.status='active'
        ORDER BY m.user_id`,
       [organizationAccountId, [...new Set(userIds)].sort()],
+      userIdRow,
     )
-  ).rows as Array<{ user_id: string }>;
+  ).rows;
   const active = new Set<string>();
   for (const row of rows) {
     if (await readActiveUserQualification(sql, row.user_id, "share")) active.add(row.user_id);
@@ -96,6 +123,7 @@ export async function qualifyOrganizationTeamScope(
          AND o.status='active' AND m.status='active'
        FOR SHARE OF o,m`,
       [organizationAccountId, resolved.userId],
+      teamQualificationRow,
     )
   ).rows[0];
   if (!row) {

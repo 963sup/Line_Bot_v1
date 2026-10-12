@@ -16,16 +16,44 @@ import {
 } from "../src/modules/repository/star-list-pending-storage";
 import { lineSessionHeaders } from "./line-session-fixture";
 
+class MemoryStorage implements Storage {
+  #values = new Map<string, string>();
+
+  get length() {
+    return this.#values.size;
+  }
+
+  clear() {
+    this.#values.clear();
+  }
+
+  getItem(key: string) {
+    return this.#values.get(key) ?? null;
+  }
+
+  key(index: number) {
+    return [...this.#values.keys()][index] ?? null;
+  }
+
+  removeItem(key: string) {
+    this.#values.delete(key);
+  }
+
+  setItem(key: string, value: string) {
+    this.#values.set(key, value);
+  }
+}
+
 test("Repository Star List HTTP uses verified LINE identity and owner use cases", async () => {
   const previousOrigin = process.env.APP_ORIGIN;
   process.env.APP_ORIGIN = "https://app.example";
   const lineUser = `U${"6".repeat(32)}`;
-  const list = {
+  const list: Awaited<ReturnType<typeof repositoryStarLists.mine>>[number] = {
     id: "list-a",
     ownerLogin: "alice",
     name: "Operations",
     description: "",
-    visibility: "private" as const,
+    visibility: "private",
     version: 1,
     visibleRepositoryCount: 0,
     createdAt: 1,
@@ -43,23 +71,25 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
     },
   ]);
   const mine = mock.method(repositoryStarLists, "mine", async () => [list]);
-  const create = mock.method(repositoryStarLists, "create", async () => ({
+  const created: Awaited<ReturnType<typeof repositoryStarLists.create>> = {
     id: "list-a",
     version: 1,
-    visibility: "private" as const,
+    visibility: "private",
     deleted: false,
-  }));
+  };
+  const create = mock.method(repositoryStarLists, "create", async () => created);
   const detail = mock.method(repositoryStarLists, "detail", async () => ({
     ...list,
     editable: true,
     repositories: [],
   }));
-  const command = mock.method(repositoryStarLists, "command", async () => ({
+  const commanded: Awaited<ReturnType<typeof repositoryStarLists.command>> = {
     id: "list-a",
     version: 2,
-    visibility: "public" as const,
+    visibility: "public",
     deleted: false,
-  }));
+  };
+  const command = mock.method(repositoryStarLists, "command", async () => commanded);
   const fetch = mock.method(globalThis, "fetch", async (input: unknown) => {
     const url = String(input);
     if (url.startsWith("https://api.line.me/oauth2/v2.1/verify?")) {
@@ -74,16 +104,18 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
   });
 
   let authenticated: HeadersInit = {};
-  const request = (path: string, body?: unknown) =>
-    new Request(`https://app.example${path}`, {
+  const request = (path: string, body?: unknown) => {
+    const init: RequestInit = {
       method: body === undefined ? "GET" : "POST",
       headers: {
         Origin: "https://app.example",
         "Content-Type": "application/json",
         ...authenticated,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    };
+    return new Request(`https://app.example${path}`, init);
+  };
 
   try {
     authenticated = await lineSessionHeaders("offline-list");
@@ -134,12 +166,7 @@ test("Repository Star List HTTP uses verified LINE identity and owner use cases"
 });
 
 test("Repository Star List pending storage scopes retries and clears only acknowledged requests", () => {
-  const data = new Map<string, string>();
-  const storage = {
-    getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => void data.set(key, value),
-    removeItem: (key: string) => void data.delete(key),
-  } as Storage;
+  const storage = new MemoryStorage();
 
   const create = {
     requestId: "11111111-1111-4111-8111-111111111111",
@@ -163,9 +190,9 @@ test("Repository Star List pending storage scopes retries and clears only acknow
   );
   assert.equal(readPendingRepositoryStarListCreate(storage, "subject-a"), null);
 
-  const command = {
+  const command: Parameters<typeof writePendingRepositoryStarListCommand>[3] = {
     requestId: "22222222-2222-4222-8222-222222222222",
-    action: "publish" as const,
+    action: "publish",
     expectedVersion: 3,
   };
   writePendingRepositoryStarListCommand(storage, "subject-a", "list-a", command);

@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "@line_bot_v1/platform/postgres";
+import {
+  booleanValue,
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
 import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import type {
@@ -43,6 +51,73 @@ type StoredReceipt = Readonly<{
   result: IssueCollaborationReceipt;
 }>;
 
+const lockReasonValues: readonly IssueLockReason[] = [
+  "OFF_TOPIC",
+  "RESOLVED",
+  "SPAM",
+  "TOO_HEATED",
+];
+
+function decodeIssueHead(row: Record<string, unknown>): IssueHead {
+  const lockReason = nullableString(row.lock_reason);
+  return {
+    id: stringValue(row.id),
+    repository_id: stringValue(row.repository_id),
+    assignee: nullableString(row.assignee),
+    status: nullableString(row.status),
+    body: nullableString(row.body),
+    state: nullableString(row.state),
+    state_reason: nullableString(row.state_reason),
+    workflow_status: nullableString(row.workflow_status),
+    version: numericValue(row.version),
+    milestone_id: nullableString(row.milestone_id),
+    is_locked: booleanValue(row.is_locked),
+    lock_reason: lockReason === null ? null : literalValue(lockReason, lockReasonValues),
+  };
+}
+
+export function decodeCommentRow(row: Record<string, unknown>): CommentRow {
+  return {
+    id: stringValue(row.id),
+    issue_id: stringValue(row.issue_id),
+    author: stringValue(row.author),
+    body: stringValue(row.body),
+    deleted_at: nullableNumericValue(row.deleted_at),
+    version: numericValue(row.version),
+    created_at: numericValue(row.created_at),
+    updated_at: numericValue(row.updated_at),
+  };
+}
+
+const decodeIdRow = (row: Record<string, unknown>) => ({ id: stringValue(row.id) });
+const decodeIssueLocatorRow = (row: Record<string, unknown>) => ({
+  id: stringValue(row.id),
+  repository_id: stringValue(row.repository_id),
+});
+export const decodeNumericVersionRow = (row: Record<string, unknown>) => ({
+  version: numericValue(row.version),
+});
+
+const receiptActions: readonly IssueCollaborationReceipt["action"][] = [
+  "add-comment",
+  "edit-comment",
+  "delete-comment",
+  "add-labels",
+  "remove-labels",
+  "clear-labels",
+  "set-milestone",
+  "set-issue-type",
+  "add-sub-issue",
+  "remove-sub-issue",
+  "add-blocked-by",
+  "remove-blocked-by",
+  "add-related",
+  "remove-related",
+  "reprioritize-sub-issue",
+  "lock",
+  "unlock",
+];
+
 export const fingerprint = (command: IssueCollaborationCommand) =>
   createHash("sha256")
     .update(JSON.stringify({ family: "issue-collaboration", command }))
@@ -61,8 +136,11 @@ export function readReceipt(
     throw new IssueError(409, "此請求編號已用於不同 Issue collaboration 操作。");
   }
   if (!record(previous.result)) throw new IssueError(503, "Issue collaboration 回執無法讀取。");
-  const envelope = previous.result as Partial<StoredReceipt>;
+  const envelope = previous.result;
   const result = envelope.result;
+  const action = record(result)
+    ? receiptActions.find((candidate) => candidate === result.action)
+    : undefined;
   if (
     envelope.receiptVersion !== 1 ||
     envelope.family !== "issue-collaboration" ||
@@ -70,13 +148,26 @@ export function readReceipt(
     typeof result.requestId !== "string" ||
     typeof result.repositoryId !== "string" ||
     typeof result.issueId !== "string" ||
-    typeof result.action !== "string" ||
+    !action ||
+    typeof result.version !== "number" ||
     !Number.isSafeInteger(result.version) ||
-    !Number.isSafeInteger(result.at)
+    typeof result.at !== "number" ||
+    !Number.isSafeInteger(result.at) ||
+    (result.resourceId !== null && typeof result.resourceId !== "string") ||
+    !record(result.data)
   ) {
     throw new IssueError(503, "Issue collaboration 回執無法讀取。");
   }
-  return result as IssueCollaborationReceipt;
+  return {
+    requestId: result.requestId,
+    repositoryId: result.repositoryId,
+    issueId: result.issueId,
+    action,
+    version: result.version,
+    at: result.at,
+    resourceId: result.resourceId,
+    data: result.data,
+  };
 }
 
 export function storedReceipt(result: IssueCollaborationReceipt): StoredReceipt {
@@ -116,8 +207,9 @@ export async function currentIssue(
        WHERE repository_id=$1 AND id=$2
        FOR UPDATE`,
       [repositoryId, issueId],
+      decodeIssueHead,
     )
-  ).rows[0] as IssueHead | undefined;
+  ).rows[0];
   if (!row) throw new IssueError(404, "找不到 Issue。");
   if (row.assignee === null) return row;
   if (!row.status) throw new IssueError(503, "Issue legacy 工作流程資料不完整。");
@@ -180,8 +272,13 @@ export async function targetIssue(
   if (sourceIssueId === targetIssueId) {
     throw new IssueError(409, "Issue 關係不能指向自己。");
   }
-  const row = (await sql.query("SELECT id,repository_id FROM issues WHERE id=$1", [targetIssueId]))
-    .rows[0] as { id: string; repository_id: string } | undefined;
+  const row = (
+    await sql.query(
+      "SELECT id,repository_id FROM issues WHERE id=$1",
+      [targetIssueId],
+      decodeIssueLocatorRow,
+    )
+  ).rows[0];
   if (!row) throw new IssueError(404, "找不到目標 Issue。");
   const selected = await sourceScope(sql, who, row.repository_id);
   if (!canIssueRepositoryOperation(selected.repository.permissions, "triage")) {
@@ -213,7 +310,7 @@ export async function visibleRelatedIds(
   query: string,
   issueId: string,
 ): Promise<string[]> {
-  const rows = (await sql.query(query, [issueId, userId])).rows as Array<{ id: string }>;
+  const rows = (await sql.query(query, [issueId, userId], decodeIdRow)).rows;
   return rows.map((row) => row.id);
 }
 
@@ -238,8 +335,9 @@ export async function advance(
        WHERE id=$1 AND version=$2
        RETURNING version`,
       [issue.id, expectedVersion, milestoneId, locked, lockReason, now],
+      decodeNumericVersionRow,
     )
-  ).rows[0] as { version: number | string } | undefined;
+  ).rows[0];
   if (!row) throw new IssueError(409, "Issue 已更新，請重新讀取後再操作。");
   return Number(row.version);
 }
@@ -283,11 +381,12 @@ export async function dependencyWouldCycle(
 }
 
 export function duplicateRelation(error: unknown): never {
-  const postgres = error as { code?: string };
-  if (postgres.code === "23505") {
+  const code =
+    error !== null && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (code === "23505") {
     throw new IssueError(409, "Issue 關係已存在或目標已有 parent。");
   }
-  if (postgres.code === "23514") {
+  if (code === "23514") {
     throw new IssueError(409, "Issue 關係不合法。");
   }
   throw error;

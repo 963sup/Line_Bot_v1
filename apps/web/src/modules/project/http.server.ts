@@ -1,4 +1,5 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { ProjectError } from "@line_bot_v1/project/domain";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
@@ -30,8 +31,8 @@ export async function projectBody(request: Request): Promise<Record<string, unkn
   }
   try {
     const body: unknown = JSON.parse(text);
-    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error();
-    return body as Record<string, unknown>;
+    if (!isRecord(body)) throw new Error();
+    return body;
   } catch {
     throw new ProjectError(400, "資料格式不正確。");
   }
@@ -42,7 +43,7 @@ export function projectFailure(error: unknown) {
     error instanceof ProjectError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;
-  const status = known ? ((error as { status?: number }).status ?? 400) : 503;
+  const status = known ? error.status : 503;
   captureHandledServerError(error, {
     service: "project-api",
     operation: "request",
@@ -50,7 +51,7 @@ export function projectFailure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? (error as Error).message : "Project 服務暫不可用，請稍後重試。",
+      error: known ? error.message : "Project 服務暫不可用，請稍後重試。",
       retryable: status >= 500 || status === 429,
     },
     status,

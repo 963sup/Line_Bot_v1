@@ -2,18 +2,22 @@ import { AttendanceError } from "../../domain/error.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function objectValue(raw: unknown): Record<string, unknown> {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isObjectValue(raw)) {
     throw new AttendanceError(400, "補登資料格式不正確。");
   }
-  return raw as Record<string, unknown>;
+  return raw;
 }
 
 function timestamp(value: unknown, label: string) {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
     throw new AttendanceError(400, `${label}時間不正確。`);
   }
-  return value as number;
+  return value;
 }
 
 function requestId(value: unknown) {
@@ -112,7 +116,7 @@ export function parseAttendanceSupplementReview(raw: unknown): AttendanceSupplem
     !requestIdPattern.test(value.supplementId) ||
     typeof value.expectedVersion !== "number" ||
     !Number.isSafeInteger(value.expectedVersion) ||
-    (value.expectedVersion as number) < 0 ||
+    value.expectedVersion < 0 ||
     (value.decision !== "approve" && value.decision !== "reject")
   ) {
     throw new AttendanceError(400, "審核資料格式不正確。");
@@ -124,7 +128,7 @@ export function parseAttendanceSupplementReview(raw: unknown): AttendanceSupplem
   return {
     commandId: requestId(value.commandId),
     supplementId: value.supplementId,
-    expectedVersion: value.expectedVersion as number,
+    expectedVersion: value.expectedVersion,
     decision: value.decision,
     ...(reviewReason ? { reason: reviewReason } : {}),
   };

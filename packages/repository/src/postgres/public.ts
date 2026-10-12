@@ -2,6 +2,7 @@ import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
+import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
   PopularPublicRepositoryList,
   PublicRepository,
@@ -38,8 +39,9 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
            WHERE owner_account_id=$1 AND owner_account_kind=$2
              AND lower(name)=lower($3) AND visibility='public'`,
           [owner.id, owner.kind, name],
+          (row) => ({ id: stringValue(row.id), name: stringValue(row.name) }),
         )
-      ).rows[0] as { id: string; name: string } | undefined;
+      ).rows[0];
       if (row) return { ...row, ownerLogin: owner.login };
       if (!followRenames) return null;
 
@@ -55,8 +57,9 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
            ORDER BY h.renamed_at DESC,r.id
            LIMIT 2`,
           [owner.id, owner.kind, name],
+          (row) => ({ id: stringValue(row.id), name: stringValue(row.name) }),
         )
-      ).rows as Array<{ id: string; name: string }>;
+      ).rows;
       const repository = historical.length === 1 ? historical[0] : undefined;
       return repository ? { ...repository, ownerLogin: owner.login } : null;
     });
@@ -75,8 +78,13 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
            ORDER BY lower(name),id
            LIMIT $3`,
           [owner.id, owner.kind, limit],
+          (row) => ({
+            id: stringValue(row.id),
+            name: stringValue(row.name),
+            total_count: numericValue(row.total_count),
+          }),
         )
-      ).rows as Array<{ id: string; name: string; total_count: number | string }>;
+      ).rows;
       return {
         items: rows.map((row) => ({ id: row.id, ownerLogin: owner.login, name: row.name })),
         totalCount: rows[0] ? Number(rows[0].total_count) : 0,
@@ -100,13 +108,14 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
            ORDER BY count(s.user_id) DESC,lower(r.name),r.id
            LIMIT $3`,
           [owner.id, owner.kind, limit],
+          (row) => ({
+            id: stringValue(row.id),
+            name: stringValue(row.name),
+            star_count: numericValue(row.star_count),
+            total_count: numericValue(row.total_count),
+          }),
         )
-      ).rows as Array<{
-        id: string;
-        name: string;
-        star_count: number | string;
-        total_count: number | string;
-      }>;
+      ).rows;
       return {
         items: rows.map((row) => ({
           id: row.id,

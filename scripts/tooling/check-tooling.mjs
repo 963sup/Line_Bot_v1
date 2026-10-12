@@ -82,6 +82,22 @@ export function validate(root) {
       if (source.startsWith("\uFEFF"))
         errors.push(`${path}: repository text must be UTF-8 without BOM`);
       if (source.includes("\r")) errors.push(`${path}: repository text must use LF line endings`);
+      if (/\.[cm]?tsx?$/.test(path) && !/\.d\.[cm]?ts$/.test(path)) {
+        const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+        const checkDeclaration = (node) => {
+          if (
+            (ts.isVariableDeclaration(node) || ts.isPropertyDeclaration(node)) &&
+            node.exclamationToken
+          ) {
+            const { line } = ast.getLineAndCharacterOfPosition(node.getStart(ast));
+            errors.push(
+              `${path}:${line + 1}: definite assignment assertions must use explicit initialization`,
+            );
+          }
+          ts.forEachChild(node, checkDeclaration);
+        };
+        checkDeclaration(ast);
+      }
       for (const retired of retiredProjectIdentities) {
         if (source.includes(retired.value))
           errors.push(`${path}: retired project ${retired.label} is forbidden in current surfaces`);
@@ -251,6 +267,7 @@ export function validate(root) {
     if (biome.assist?.actions?.source?.organizeImports !== "on")
       errors.push("biome.json: organizeImports must remain enabled");
     for (const [group, rules] of Object.entries({
+      nursery: ["noUnsafeTypeAssertion"],
       correctness: ["noUnsafeOptionalChaining"],
       complexity: ["noBannedTypes"],
       suspicious: [
@@ -491,6 +508,27 @@ export function validate(root) {
 
     const webProject = resolve(root, "apps/web/package.json");
     if (existsSync(webProject)) {
+      const webManifest = JSON.parse(read(webProject));
+      if (webManifest.name === "@line_bot_v1/web") {
+        if (!webManifest.scripts?.typecheck?.includes("tsc --noEmit -p tsconfig.test.json")) {
+          errors.push("apps/web/package.json: typecheck must compile the Web test project");
+        }
+        const configPath = resolve(root, "apps/web/tsconfig.test.json");
+        const config = existsSync(configPath)
+          ? ts.getParsedCommandLineOfConfigFile(
+              configPath,
+              {},
+              { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} },
+            )
+          : undefined;
+        const compiled = new Set(config?.fileNames.map((file) => resolve(file)) ?? []);
+        const tests = files("apps/web/test/**/*.{ts,tsx}");
+        if (!config || tests.some((file) => !compiled.has(file))) {
+          errors.push(
+            "apps/web/tsconfig.test.json: every Web TypeScript test must participate in typecheck",
+          );
+        }
+      }
       for (const name of ["instrumentation.ts", "instrumentation-client.ts"]) {
         if (!existsSync(resolve(root, "apps/web", name)))
           errors.push(

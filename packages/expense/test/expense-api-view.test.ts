@@ -4,7 +4,10 @@ import { type ExpenseApiView, toExpenseApiView } from "../src/contracts/dto/expe
 import type { Expense } from "../src/domain/aggregates/expense.js";
 
 test("Expense API view serializes only its explicit allowlist", () => {
-  const aggregate = {
+  const aggregate: Expense & {
+    project: { legacy: boolean };
+    futureInternalField: string;
+  } = {
     id: "00000000-0000-4000-8000-000000000001",
     number: 4,
     merchant: "Demo",
@@ -21,7 +24,7 @@ test("Expense API view serializes only its explicit allowlist", () => {
     imageId: "private-image-id",
     project: { legacy: true },
     futureInternalField: "must not escape",
-  } as Expense;
+  };
 
   const view = toExpenseApiView(aggregate);
   const expected: ExpenseApiView = {

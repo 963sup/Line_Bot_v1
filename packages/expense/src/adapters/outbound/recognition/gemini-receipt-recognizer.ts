@@ -27,6 +27,22 @@ import type { GenerateContentParameters } from "@google/genai";
 import type { ReceiptReading } from "../../../contracts/receipt-reading.js";
 
 const fields = ["merchant", "date", "amount", "currency", "invoiceNumber"] as const;
+type ReceiptField = (typeof fields)[number];
+
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isReceiptField(value: unknown): value is ReceiptField {
+  return fields.some((field) => field === value);
+}
+
+function receiptText(value: unknown): value is string | null {
+  return (
+    value === null ||
+    (typeof value === "string" && value.length <= 120 && !/[\u0000-\u001f]/.test(value))
+  );
+}
 
 /**
  * 第一性驗證：嚴格校驗多模態大模型返回之 JSON 結構
@@ -38,38 +54,36 @@ const fields = ["merchant", "date", "amount", "currency", "invoiceNumber"] as co
  * - 正規表達式過濾格式瑕疵。
  */
 export function validateReceiptReading(value: unknown): ReceiptReading {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!isObjectValue(value)) {
     throw new Error("Invalid receipt result");
   }
-  const v = value as Record<string, unknown>;
+  const { isReceipt, merchant, date, amount, currency, invoiceNumber, uncertainFields } = value;
   if (
-    typeof v.isReceipt !== "boolean" ||
-    fields.some(
-      (f) =>
-        v[f] !== null &&
-        (typeof v[f] !== "string" ||
-          (v[f] as string).length > 120 ||
-          /[\u0000-\u001f]/.test(v[f] as string)),
-    )
+    typeof isReceipt !== "boolean" ||
+    !receiptText(merchant) ||
+    !receiptText(date) ||
+    !receiptText(amount) ||
+    !receiptText(currency) ||
+    !receiptText(invoiceNumber)
   ) {
     throw new Error("Invalid receipt fields");
   }
   if (
-    !Array.isArray(v.uncertainFields) ||
-    v.uncertainFields.length > 5 ||
-    v.uncertainFields.some((f) => !fields.includes(f as (typeof fields)[number]))
+    !Array.isArray(uncertainFields) ||
+    uncertainFields.length > fields.length ||
+    !uncertainFields.every(isReceiptField)
   ) {
     throw new Error("Invalid receipt uncertainty");
   }
 
   const out: ReceiptReading = {
-    isReceipt: v.isReceipt,
-    merchant: v.merchant as string | null,
-    date: v.date as string | null,
-    amount: v.amount as string | null,
-    currency: v.currency as string | null,
-    invoiceNumber: v.invoiceNumber as string | null,
-    uncertainFields: [...new Set(v.uncertainFields as string[])],
+    isReceipt,
+    merchant,
+    date,
+    amount,
+    currency,
+    invoiceNumber,
+    uncertainFields: [...new Set(uncertainFields)],
   };
 
   // 零幻覺原則：不確定欄位由人工填寫，絕不接受猜測

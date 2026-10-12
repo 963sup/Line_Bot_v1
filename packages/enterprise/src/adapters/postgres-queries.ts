@@ -5,6 +5,15 @@ import type {
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
+import {
+  literalValue,
+  nullableNumericValue,
+  nullableString,
+  numberValue,
+  record,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
+import { repositoryPermissions } from "@line_bot_v1/repository/domain";
 import type {
   EnterpriseAffiliationSource,
   EnterpriseDetail,
@@ -23,35 +32,116 @@ import {
 } from "./postgres-owner-roles.js";
 
 function teamMemberships(value: unknown): EnterpriseTeamMembershipProjection[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) throw new TypeError("Expected Enterprise Team memberships");
   return value.map((member) => {
-    const row = member as { userId: string; status: "active" | "removed"; version: number };
-    return { userId: row.userId, status: row.status, version: row.version };
+    const row = record(member);
+    return {
+      userId: stringValue(row.userId),
+      status: literalValue(row.status, ["active", "removed"]),
+      version: numberValue(row.version),
+    };
   });
 }
 
 function teamOrganizations(value: unknown): EnterpriseTeamOrganizationProjection[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) throw new TypeError("Expected Enterprise Team organizations");
   return value.map((organization) => {
-    const row = organization as {
-      organizationAccountId: string;
-      status: "active" | "detached";
-      version: number;
-    };
+    const row = record(organization);
     return {
-      organizationAccountId: row.organizationAccountId,
-      status: row.status,
-      version: row.version,
+      organizationAccountId: stringValue(row.organizationAccountId),
+      status: literalValue(row.status, ["active", "detached"]),
+      version: numberValue(row.version),
     };
   });
 }
 
 function affiliationSources(value: unknown): EnterpriseAffiliationSource[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) throw new TypeError("Expected Enterprise affiliations");
   return value.map((source) => {
-    const row = source as { kind: "direct" | "organization"; id: string; version: number };
-    return { kind: row.kind, id: row.id, version: row.version };
+    const row = record(source);
+    return {
+      kind: literalValue(row.kind, ["direct", "organization"]),
+      id: stringValue(row.id),
+      version: numberValue(row.version),
+    };
   });
+}
+
+function nullableNumber(value: unknown): number | null {
+  const numeric = nullableNumericValue(value);
+  return numeric === null ? null : Number(numeric);
+}
+
+function enterpriseSummaryRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    name: nullableString(row.name),
+    slug: nullableString(row.slug),
+    status: literalValue(row.status, ["active", "inactive"]),
+    version: numberValue(row.version),
+    actor_affiliations: row.actor_affiliations,
+    invitation_status:
+      row.invitation_status === null
+        ? null
+        : literalValue(row.invitation_status, ["pending", "accepted", "cancelled", "declined"]),
+    invitation_version: nullableNumber(row.invitation_version),
+  };
+}
+
+function enterpriseIdentityRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    status: literalValue(row.status, ["active", "inactive"]),
+  };
+}
+
+function enterpriseUserRow(row: Record<string, unknown>) {
+  return { user_id: stringValue(row.user_id), sources: row.sources };
+}
+
+function directAffiliationRow(row: Record<string, unknown>) {
+  return {
+    user_id: stringValue(row.user_id),
+    status: literalValue(row.status, ["active", "removed"]),
+    version: numberValue(row.version),
+  };
+}
+
+function invitationRow(row: Record<string, unknown>) {
+  return {
+    user_id: stringValue(row.user_id),
+    status: literalValue(row.status, ["pending", "accepted", "cancelled", "declined"]),
+    version: numberValue(row.version),
+  };
+}
+
+function enterpriseOrganizationRow(row: Record<string, unknown>) {
+  return {
+    organizationAccountId: stringValue(row.organizationAccountId),
+    status: literalValue(row.status, ["active", "detached"]),
+    version: numberValue(row.version),
+  };
+}
+
+function outsideCollaboratorRow(row: Record<string, unknown>) {
+  return {
+    organizationAccountId: stringValue(row.organizationAccountId),
+    repositoryId: stringValue(row.repositoryId),
+    userId: stringValue(row.userId),
+    capability: literalValue(row.capability, repositoryPermissions),
+    grantVersion: numberValue(row.grantVersion),
+  };
+}
+
+function enterpriseTeamRow(row: Record<string, unknown>) {
+  return {
+    id: stringValue(row.id),
+    name: stringValue(row.name),
+    slug: stringValue(row.slug),
+    version: numberValue(row.version),
+    members: row.members,
+    organizations: row.organizations,
+  };
 }
 
 const actorAffiliationSql = `COALESCE((
@@ -91,6 +181,7 @@ export function listEnterprises(
            AND (e.status='active' OR e.account_id=ANY($4::text[]))
          ORDER BY e.account_id LIMIT 21`,
         [principal.userId, query.id ?? null, query.after ?? null, ownerScopeIds],
+        enterpriseSummaryRow,
       )
     ).rows;
     const nextEnterprise = rows.length > 20 ? rows[19] : undefined;
@@ -138,8 +229,9 @@ export function detailEnterpriseBySlug(
              )
            LIMIT 1`,
           [principal.userId, slug],
+          enterpriseIdentityRow,
         )
-      ).rows[0] as { id: string; status: "active" | "inactive" } | undefined;
+      ).rows[0];
       if (!row || (row.status !== "active" && !ownerScopeIds.includes(row.id))) {
         throw new GovernanceAccessError(403, "forbidden", "你不能檢視此 Enterprise。");
       }
@@ -176,6 +268,7 @@ export function detailEnterprise(
            ) OR i.status='pending'
          )`,
         [principal.userId, enterpriseAccountId],
+        enterpriseSummaryRow,
       )
     ).rows[0];
     if (!scope || (scope.status !== "active" && !actorIsOwner)) {
@@ -194,6 +287,7 @@ export function detailEnterprise(
          GROUP BY a.user_id
          ORDER BY a.user_id`,
         [enterpriseAccountId, actorIsOwner, principal.userId],
+        enterpriseUserRow,
       )
     ).rows;
     const ownerAssignments = new Map(
@@ -212,6 +306,7 @@ export function detailEnterprise(
             `SELECT user_id,status,version FROM enterprise_direct_affiliations
              WHERE enterprise_account_id=$1 ORDER BY user_id`,
             [enterpriseAccountId],
+            directAffiliationRow,
           )
         ).rows
       : (
@@ -219,6 +314,7 @@ export function detailEnterprise(
             `SELECT user_id,status,version FROM enterprise_direct_affiliations
              WHERE enterprise_account_id=$1 AND user_id=$2`,
             [enterpriseAccountId, principal.userId],
+            directAffiliationRow,
           )
         ).rows;
     const invitationRows = actorIsOwner
@@ -227,6 +323,7 @@ export function detailEnterprise(
             `SELECT user_id,status,version FROM enterprise_invitations
              WHERE enterprise_account_id=$1 ORDER BY user_id`,
             [enterpriseAccountId],
+            invitationRow,
           )
         ).rows
       : (
@@ -234,6 +331,7 @@ export function detailEnterprise(
             `SELECT user_id,status,version FROM enterprise_invitations
              WHERE enterprise_account_id=$1 AND user_id=$2`,
             [enterpriseAccountId, principal.userId],
+            invitationRow,
           )
         ).rows;
 
@@ -244,12 +342,9 @@ export function detailEnterprise(
              FROM enterprise_organizations WHERE enterprise_account_id=$1
              ORDER BY organization_account_id`,
             [enterpriseAccountId],
+            enterpriseOrganizationRow,
           )
-        ).rows.map((row) => ({
-          organizationAccountId: row.organizationAccountId as string,
-          status: row.status as "active" | "detached",
-          version: row.version as number,
-        }))
+        ).rows
       : [];
     const outsideRepositoryCollaborators: EnterpriseDetail["outsideRepositoryCollaborators"] =
       actorIsOwner
@@ -263,17 +358,11 @@ export function detailEnterprise(
                  grant_version AS "grantVersion"
                FROM enterprise_repository_outside_collaborators
                WHERE enterprise_account_id=$1
-               ORDER BY organization_account_id,repository_id,user_id`,
+              ORDER BY organization_account_id,repository_id,user_id`,
               [enterpriseAccountId],
+              outsideCollaboratorRow,
             )
-          ).rows.map((row) => ({
-            organizationAccountId: String(row.organizationAccountId),
-            repositoryId: String(row.repositoryId),
-            userId: String(row.userId),
-            capability:
-              row.capability as EnterpriseDetail["outsideRepositoryCollaborators"][number]["capability"],
-            grantVersion: Number(row.grantVersion),
-          }))
+          ).rows
         : [];
     const teamRows = (
       await sql.query(
@@ -299,6 +388,7 @@ export function detailEnterprise(
            ))
          ORDER BY t.id`,
         [enterpriseAccountId, actorIsOwner, principal.userId],
+        enterpriseTeamRow,
       )
     ).rows;
 

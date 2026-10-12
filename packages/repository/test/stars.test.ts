@@ -7,9 +7,15 @@ import { RepositoryError } from "../src/domain.js";
 import { PostgresRepositoryStarStore } from "../src/postgres/stars.js";
 
 function service(store: Partial<RepositoryStarStore>) {
+  const completeStore: RepositoryStarStore = {
+    star: async () => {},
+    unstar: async () => {},
+    starred: async () => [],
+    ...store,
+  };
   return createRepositoryStars({
     activeUser: async () => ({ id: "user-a" }),
-    store: () => store as RepositoryStarStore,
+    store: () => completeStore,
     now: () => 456,
   });
 }

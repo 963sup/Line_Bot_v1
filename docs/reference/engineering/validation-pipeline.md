@@ -60,7 +60,9 @@ TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace sour
 | SQL driver 的未驗證 row 型別 | 對照 SQL projection／schema，在 owner adapter mapping | TypeScript 不會驗證 SQL；泛型 query 也不等於資料驗證 |
 | 未處理 Promise／union 新增分支 | 由 owner 確認 await、錯誤處理及 exhaustive decision | 保留 TypeScript／測試；需先驗證型別 lint 的偵測限制 |
 
-目前不全庫啟用 nursery `noUnsafeTypeAssertion`：固定版本 Biome 2.5.14 的規則禁止所有非 const 斷言，包含已驗證的 adapter 與第三方 SDK 邊界，不能用全庫禁令迫使程式改成未驗證的 type predicate。也不直接啟用 `noMisusedPromises`：對 `Map.get()` 取得 `Promise | undefined` 後檢查是否已有進行中請求，必須保留存在檢查，不能自動改成 await。`noFloatingPromises`／`useExhaustiveSwitchCases` 可在獨立變更中評估；新增規則前先用固定版本實測，再補對應 regression fixture，不加 ignore 或引進第二套重複 linter。
+全庫啟用 nursery `noUnsafeTypeAssertion` 為 error，保留 `as const`，禁止其他型別斷言。資料庫透過 `Sql.query(text, values, decodeRow)` 在各 Owner adapter 驗證 projection；無 decoder 的查詢只回傳 unknown-valued row，不能以泛型宣稱資料已驗證。HTTP、JSONB、storage 與 SDK 邊界使用真實 narrowing 或重建已驗證資料，不得改成說謊的 type predicate。Web tests 也納入 TypeScript 檢查，測試 fake 必須符合正式契約。Biome 尚未涵蓋宣告上的 definite assignment `!`，由現有 `tooling:check` AST 檢查補足，要求明確初始化。
+
+不直接啟用 `noMisusedPromises`：對 `Map.get()` 取得 `Promise | undefined` 後檢查是否已有進行中請求，必須保留存在檢查，不能自動改成 await。`noFloatingPromises`／`useExhaustiveSwitchCases` 可在獨立變更中評估；新增規則前先用固定版本實測，再補對應 regression fixture，不加 ignore 或引進第二套重複 linter。
 
 ## Concurrency
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { isRecord } from "@line_bot_v1/platform/validation";
+
 export type AppSessionGeneration = string & { readonly __appSessionGeneration: unique symbol };
 export type SessionBlockReason = "signed-out" | "session-changed";
 
@@ -106,8 +108,8 @@ function setBlocked(reason: SessionBlockReason, notify: boolean) {
 }
 
 channel?.addEventListener("message", (event: MessageEvent<unknown>) => {
-  const message = event.data as { type?: unknown } | null;
-  if (message?.type === "signed-out" || message?.type === "session-changed") {
+  const message = event.data;
+  if (isRecord(message) && (message.type === "signed-out" || message.type === "session-changed")) {
     setBlocked(message.type, false);
     // Drop private React state held by pages that do not own session controls.
     window.location.reload();
@@ -151,8 +153,8 @@ async function tokenFingerprint(lineAccessToken: string) {
 
 async function responseError(response: Response) {
   try {
-    const body = (await response.json()) as { error?: unknown };
-    if (typeof body.error === "string") return new Error(body.error);
+    const body: unknown = await response.json();
+    if (isRecord(body) && typeof body.error === "string") return new Error(body.error);
   } catch {
     // Keep a bounded user-facing fallback for non-JSON failures.
   }
@@ -167,8 +169,9 @@ async function readSessionGeneration() {
   });
   if (response.status === 401) return null;
   if (!response.ok) throw await responseError(response);
-  const body = (await response.json()) as { generation?: unknown };
-  if (!isGeneration(body.generation)) throw new Error("登入服務回應格式不正確。");
+  const body: unknown = await response.json();
+  if (!isRecord(body) || !isGeneration(body.generation))
+    throw new Error("登入服務回應格式不正確。");
   return body.generation;
 }
 
@@ -181,8 +184,8 @@ async function renewSession(current: AppSessionGeneration) {
   });
   if (response.status === 401) return false;
   if (!response.ok) throw await responseError(response);
-  const body = (await response.json()) as { generation?: unknown };
-  if (!isGeneration(body.generation) || body.generation !== current)
+  const body: unknown = await response.json();
+  if (!isRecord(body) || !isGeneration(body.generation) || body.generation !== current)
     throw new Error("登入狀態已變更，請重新登入。");
   renewAfter = Date.now() + renewAfterMs;
   return true;
@@ -197,11 +200,9 @@ async function exchangeLineProof(lineAccessToken: string, expectedTransition: nu
     body: JSON.stringify({ accessToken: lineAccessToken }),
   });
   if (!response.ok) throw await responseError(response);
-  const body = (await response.json()) as {
-    generation?: unknown;
-    sessionChanged?: unknown;
-  };
-  if (!isGeneration(body.generation)) throw new Error("登入服務回應格式不正確。");
+  const body: unknown = await response.json();
+  if (!isRecord(body) || !isGeneration(body.generation))
+    throw new Error("登入服務回應格式不正確。");
   if (transition !== expectedTransition) {
     const reason = savedBlockReason();
     if (reason === "signed-out") {

@@ -1,6 +1,6 @@
 import type { RepositoryVisibility } from "../../domain.js";
 
-export type RepositoryOwnerKind = "USER" | "ORGANIZATION";
+type RepositoryOwnerKind = "USER" | "ORGANIZATION";
 
 export type RepositoryOwnerOption = Readonly<{
   id: string;

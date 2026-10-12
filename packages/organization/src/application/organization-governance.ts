@@ -8,11 +8,22 @@ import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 const governanceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const governanceId = /^[\w-]{1,128}$/;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function booleanValue(value: unknown, message: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new GovernanceAccessError(400, "invalid-input", message);
+  }
+  return value;
+}
+
 function governanceInput(raw: unknown, allowed: string[]) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isRecord(raw)) {
     throw new GovernanceAccessError(400, "invalid-input", "治理操作格式不正確。");
   }
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (Object.keys(value).some((key) => !allowed.includes(key))) {
     throw new GovernanceAccessError(400, "invalid-input", "治理操作含有未知欄位。");
   }
@@ -111,23 +122,26 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
       "reason",
       ...policyKeys,
     ]);
-    if (policyKeys.some((key) => typeof base[key] !== "boolean")) {
-      throw new GovernanceAccessError(
-        400,
-        "invalid-input",
-        "Organization member creation policy 不正確。",
-      );
-    }
+    const invalidPolicyMessage = "Organization member creation policy 不正確。";
     return {
       ...evidence,
       action: base.action,
       organizationAccountId,
       expectedVersion: parseVersion(base.expectedVersion, "Organization"),
-      memberCanCreatePublicRepositories: base.memberCanCreatePublicRepositories as boolean,
-      memberCanCreatePrivateRepositories: base.memberCanCreatePrivateRepositories as boolean,
-      memberCanCreateInternalRepositories: base.memberCanCreateInternalRepositories as boolean,
-      memberCanCreateProjectV2: base.memberCanCreateProjectV2 as boolean,
-      memberCanCreateTeams: base.memberCanCreateTeams as boolean,
+      memberCanCreatePublicRepositories: booleanValue(
+        base.memberCanCreatePublicRepositories,
+        invalidPolicyMessage,
+      ),
+      memberCanCreatePrivateRepositories: booleanValue(
+        base.memberCanCreatePrivateRepositories,
+        invalidPolicyMessage,
+      ),
+      memberCanCreateInternalRepositories: booleanValue(
+        base.memberCanCreateInternalRepositories,
+        invalidPolicyMessage,
+      ),
+      memberCanCreateProjectV2: booleanValue(base.memberCanCreateProjectV2, invalidPolicyMessage),
+      memberCanCreateTeams: booleanValue(base.memberCanCreateTeams, invalidPolicyMessage),
     };
   }
 
