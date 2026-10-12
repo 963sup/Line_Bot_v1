@@ -227,7 +227,15 @@ export async function runIntakeAgent(config: {
     // 保留模型完整 content 結構（包含思維簽名），回傳時間結果
     contents.push(content, {
       role: "user",
-      parts: [{ functionResponse: { id: call.id, name: call.name, response: time } }],
+      parts: [
+        {
+          functionResponse: {
+            ...(call.id === undefined ? {} : { id: call.id }),
+            name: call.name,
+            response: time,
+          },
+        },
+      ],
     });
 
     if (controller.signal.aborted) throw new Error("Agent timed out");

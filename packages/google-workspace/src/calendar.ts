@@ -63,7 +63,10 @@ export async function readCalendarEvents(
   const rows = await readPages(
     url,
     "items",
-    { accessToken: input.accessToken, signal: input.signal },
+    {
+      accessToken: input.accessToken,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
+    },
     request,
   ).catch(asCalendarError);
   if (

@@ -37,7 +37,7 @@ export function createAuditQuery(reader: GovernanceAuditReader) {
         const rows = await reader.read(actor, {
           scopeKind: input.scopeKind,
           scopeId: input.scopeId,
-          before,
+          ...(before === undefined ? {} : { before }),
           limit: limit + 1,
         });
         const events = rows.slice(0, limit);

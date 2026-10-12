@@ -10,7 +10,7 @@ test("enterprise team rename preserves lock-before-update query order and receip
   const queries: Array<{ text: string; values?: unknown[] }> = [];
   const sql: Sql = {
     async query(text, values) {
-      queries.push({ text, values });
+      queries.push({ text, ...(values === undefined ? {} : { values }) });
       if (text.includes("FROM enterprise_teams") && text.includes("FOR UPDATE")) {
         return {
           rows: [{ id: "team-1", name: "Old", slug: "old", version: 4 }],
@@ -42,9 +42,12 @@ test("enterprise team rename preserves lock-before-update query order and receip
   );
 
   assert.equal(queries.length, 2);
-  assert.match(queries[0]!.text, /FOR UPDATE/);
-  assert.match(queries[1]!.text, /UPDATE enterprise_teams/);
-  assert.deepEqual(queries[1]!.values, ["enterprise-1", "team-1", "Platform", "platform"]);
+  const [lockQuery, updateQuery] = queries;
+  assert.ok(lockQuery);
+  assert.ok(updateQuery);
+  assert.match(lockQuery.text, /FOR UPDATE/);
+  assert.match(updateQuery.text, /UPDATE enterprise_teams/);
+  assert.deepEqual(updateQuery.values, ["enterprise-1", "team-1", "Platform", "platform"]);
   assert.deepEqual(receipt, {
     requestId: "request-1",
     action: "rename-enterprise-team",

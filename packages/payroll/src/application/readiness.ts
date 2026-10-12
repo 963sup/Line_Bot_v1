@@ -30,7 +30,9 @@ export function createPayrollReadiness(sources: PayrollReadinessSources) {
       workforceVersion,
       attendancePeriodVersion,
       ruleVersions,
-      requiredRuleKeys: query.requiredRuleKeys,
+      ...(query.requiredRuleKeys === undefined
+        ? {}
+        : { requiredRuleKeys: query.requiredRuleKeys }),
     });
   };
 }

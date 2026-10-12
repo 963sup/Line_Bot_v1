@@ -43,7 +43,7 @@ export function createNotifications(
       }
       const user = await deps.activeUser(subject);
       const page = await deps.repository().read(user.id, {
-        id: id ?? undefined,
+        ...(id === null || id === undefined ? {} : { id }),
         unreadOnly: input.unreadOnly === true,
       });
       if (id && page.items.length === 0) {

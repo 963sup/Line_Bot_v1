@@ -16,13 +16,13 @@ function databaseWith(
   responder: (
     text: string,
     values: unknown[] | undefined,
-  ) => Promise<{ rows: Record<string, any>[] }>,
+  ) => Promise<{ rows: Record<string, unknown>[] }>,
   queries: QueryRecord[],
 ) {
   let transactions = 0;
   const sql: Sql = {
     async query(text, values) {
-      queries.push({ text, values });
+      queries.push({ text, ...(values === undefined ? {} : { values }) });
       return responder(text, values);
     },
   };
@@ -203,7 +203,9 @@ test("organization lifecycle mutation keeps lock authorization replay update and
     order,
     [...order].sort((a, b) => a - b),
   );
-  assert.deepEqual(queries[requestLock]!.values, ["user-1:request-deactivate-1"]);
+  const requestQuery = queries[requestLock];
+  assert.ok(requestQuery);
+  assert.deepEqual(requestQuery.values, ["user-1:request-deactivate-1"]);
 });
 
 test("Organization owns OrganizationOwner grant mutation and durable evidence", async () => {

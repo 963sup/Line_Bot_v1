@@ -41,10 +41,17 @@
         "useExhaustiveDependencies": "error"
       },
       "suspicious": {
+        "noExplicitAny": "error",
+        "noTsIgnore": "error",
         "noDuplicateCase": "error",
         "noDuplicateObjectKeys": "error",
         "noDoubleEquals": "error",
         "noDebugger": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "noEnum": "error",
+        "noNamespace": "error"
       }
     }
   },

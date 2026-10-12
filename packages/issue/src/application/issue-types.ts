@@ -117,13 +117,12 @@ function parseCommand(raw: unknown): IssueTypeCommand {
       "color",
       "isEnabled",
     ]);
-    const patch = {
-      name: value.name === undefined ? undefined : name(value.name),
-      description: value.description === undefined ? undefined : description(value.description),
-      color: value.color === undefined ? undefined : color(value.color),
-      isEnabled: value.isEnabled === undefined ? undefined : enabled(value.isEnabled),
-    };
-    if (Object.values(patch).every((item) => item === undefined)) {
+    if (
+      value.name === undefined &&
+      value.description === undefined &&
+      value.color === undefined &&
+      value.isEnabled === undefined
+    ) {
       throw new IssueError(400, "IssueType 更新至少需要一個欄位。");
     }
     return {
@@ -131,7 +130,12 @@ function parseCommand(raw: unknown): IssueTypeCommand {
       action: value.action,
       issueTypeId: identifier(value.issueTypeId, "IssueType 識別碼"),
       expectedVersion: expectedVersion(value.expectedVersion),
-      ...patch,
+      ...(value.name === undefined ? {} : { name: name(value.name) }),
+      ...(value.description === undefined
+        ? {}
+        : { description: description(value.description) }),
+      ...(value.color === undefined ? {} : { color: color(value.color) }),
+      ...(value.isEnabled === undefined ? {} : { isEnabled: enabled(value.isEnabled) }),
     };
   }
 

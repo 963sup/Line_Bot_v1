@@ -11,13 +11,13 @@ function databaseWith(
     text: string,
     values: unknown[] | undefined,
   ) => Promise<{
-    rows: Record<string, any>[];
+    rows: Record<string, unknown>[];
   }>,
   queries: QueryRecord[],
 ): Database {
   const sql: Sql = {
     async query(text, values) {
-      queries.push({ text, values });
+      queries.push({ text, ...(values === undefined ? {} : { values }) });
       return responder(text, values);
     },
   };
