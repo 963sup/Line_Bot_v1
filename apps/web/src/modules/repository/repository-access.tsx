@@ -9,7 +9,7 @@ import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/r
 import { useCallback, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import RepositoryResourceNavigation from "./repository-resource-navigation";
+import RepositoryPageHeader from "./repository-page-header";
 
 const permissions: readonly RepositoryPermission[] = repositoryPermissions;
 
@@ -233,145 +233,72 @@ export default function RepositoryAccess({
   }
 
   return (
-    <div className="crud-manager">
-      <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
-      {busy && <p role="status">處理中…</p>}
-      {notice && <p role="status">{notice}</p>}
-      {error && <p role="alert">{error}</p>}
-      {pending && !busy && (
-        <section className="crud-guidance">
-          <p>上一筆 access 操作結果尚待確認；重試會沿用同一 requestId。</p>
-          <button type="button" onClick={() => void execute(pending)}>
-            重試原操作
-          </button>
-        </section>
-      )}
-      {data && (
-        <>
-          <RepositoryResourceNavigation
-            ownerLogin={data.repository.ownerLogin}
-            repositoryName={data.repository.name}
-            active="access"
-            canManage={data.repository.actorPermissions.includes("admin")}
-          />
-          <fieldset disabled={busy || Boolean(pending)}>
-            <section className="crud-detail">
-              <h2>
-                {data.repository.ownerLogin}/{data.repository.name}
-              </h2>
-              <p>
-                所有權：{data.repository.ownerKind === "USER" ? "Personal User" : "Organization"}
-              </p>
-              <p>
-                Current permissions：
-                {data.repository.actorPermissions.length
-                  ? data.repository.actorPermissions.join(", ")
-                  : "無"}
-              </p>
-              <p className="crud-lifecycle-note">
-                有效 OrganizationOwner 具有 implicit Repository ADMIN，不會寫入重複 direct grant。
-                Organization/Team membership remains owned by those scopes；Grant 不會建立
-                Organization 或 Team membership。
-              </p>
-            </section>
-
-            <section className="crud-detail">
-              <h2>Direct User access</h2>
-              {data.repository.ownerKind === "USER" ? (
-                <p className="crud-lifecycle-note">
-                  User owner 的 admin access 為固有權限，不建立重複 direct grant。
-                </p>
-              ) : (
-                <p className="crud-lifecycle-note">
-                  Direct User grant 可授權 active User，不要求先加入 owner Organization；未加入者是
-                  outside collaborator。Current flow 是 Repository admin 的立即 direct grant，沒有用
-                  Organization membership 模擬 invitation/acceptance。
-                </p>
-              )}
-              {!data.directUserGrants.length && (
-                <p className="empty-copy">目前沒有 direct User grant。</p>
-              )}
-              {data.directUserGrants.map((item) => (
-                <article key={item.userId}>
-                  <strong>{item.userId}</strong>
-                  <p>
-                    {item.capability} · v{item.version}
-                    {data.repository.ownerKind === "ORGANIZATION" &&
-                      ` · ${item.isOutsideCollaborator ? "outside collaborator" : "organization member"}`}
-                  </p>
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      const capability = permissionFromForm(
-                        new FormData(event.currentTarget).get("capability"),
-                      );
-                      grant("USER", item.userId, capability, item.version);
-                    }}
-                  >
-                    <label>
-                      Permission
-                      <select name="capability" defaultValue={item.capability}>
-                        {permissions.map((capability) => (
-                          <option key={capability} value={capability}>
-                            {capability}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button type="submit">更新</button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => revoke("USER", item.userId, item.version)}
-                    >
-                      撤銷
-                    </button>
-                  </form>
-                </article>
-              ))}
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const form = new FormData(event.currentTarget);
-                  grant(
-                    "USER",
-                    String(form.get("subjectId") ?? ""),
-                    permissionFromForm(form.get("capability")),
-                    0,
-                  );
-                }}
-              >
-                <h3>新增 User access</h3>
-                <label>
-                  User ID
-                  <input name="subjectId" required maxLength={128} />
-                </label>
-                <label>
-                  Permission
-                  <select name="capability" defaultValue="read">
-                    {permissions.map((capability) => (
-                      <option key={capability} value={capability}>
-                        {capability}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button type="submit">授權 User</button>
-              </form>
-            </section>
-
-            {data.repository.ownerKind === "ORGANIZATION" && (
+    <>
+      <RepositoryPageHeader
+        ownerLogin={data?.repository.ownerLogin ?? ownerLogin}
+        repositoryName={data?.repository.name ?? repositoryName}
+        active="access"
+        canManage={data?.repository.actorPermissions.includes("admin") === true}
+      />
+      <div className="crud-manager">
+        <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
+        {busy && <p role="status">處理中…</p>}
+        {notice && <p role="status">{notice}</p>}
+        {error && <p role="alert">{error}</p>}
+        {pending && !busy && (
+          <section className="crud-guidance">
+            <p>上一筆 access 操作結果尚待確認；重試會沿用同一 requestId。</p>
+            <button type="button" onClick={() => void execute(pending)}>
+              重試原操作
+            </button>
+          </section>
+        )}
+        {data && (
+          <>
+            <fieldset disabled={busy || Boolean(pending)}>
               <section className="crud-detail">
-                <h2>Organization Team access</h2>
-                <p className="crud-lifecycle-note">
-                  Team 必須屬於 Repository owner Organization；TeamMembership 仍由 Team owner 管理。
+                <h2>
+                  {data.repository.ownerLogin}/{data.repository.name}
+                </h2>
+                <p>
+                  所有權：{data.repository.ownerKind === "USER" ? "Personal User" : "Organization"}
                 </p>
-                {!data.teamGrants.length && <p className="empty-copy">目前沒有 Team grant。</p>}
-                {data.teamGrants.map((item) => (
-                  <article key={item.teamId}>
-                    <strong>{item.teamId}</strong>
+                <p>
+                  Current permissions：
+                  {data.repository.actorPermissions.length
+                    ? data.repository.actorPermissions.join(", ")
+                    : "無"}
+                </p>
+                <p className="crud-lifecycle-note">
+                  有效 OrganizationOwner 具有 implicit Repository ADMIN，不會寫入重複 direct grant。
+                  Organization/Team membership remains owned by those scopes；Grant 不會建立
+                  Organization 或 Team membership。
+                </p>
+              </section>
+
+              <section className="crud-detail">
+                <h2>Direct User access</h2>
+                {data.repository.ownerKind === "USER" ? (
+                  <p className="crud-lifecycle-note">
+                    User owner 的 admin access 為固有權限，不建立重複 direct grant。
+                  </p>
+                ) : (
+                  <p className="crud-lifecycle-note">
+                    Direct User grant 可授權 active User，不要求先加入 owner
+                    Organization；未加入者是 outside collaborator。Current flow 是 Repository admin
+                    的立即 direct grant，沒有用 Organization membership 模擬 invitation/acceptance。
+                  </p>
+                )}
+                {!data.directUserGrants.length && (
+                  <p className="empty-copy">目前沒有 direct User grant。</p>
+                )}
+                {data.directUserGrants.map((item) => (
+                  <article key={item.userId}>
+                    <strong>{item.userId}</strong>
                     <p>
                       {item.capability} · v{item.version}
+                      {data.repository.ownerKind === "ORGANIZATION" &&
+                        ` · ${item.isOutsideCollaborator ? "outside collaborator" : "organization member"}`}
                     </p>
                     <form
                       onSubmit={(event) => {
@@ -379,7 +306,7 @@ export default function RepositoryAccess({
                         const capability = permissionFromForm(
                           new FormData(event.currentTarget).get("capability"),
                         );
-                        grant("TEAM", item.teamId, capability, item.version);
+                        grant("USER", item.userId, capability, item.version);
                       }}
                     >
                       <label>
@@ -396,7 +323,7 @@ export default function RepositoryAccess({
                       <button
                         type="button"
                         className="secondary"
-                        onClick={() => revoke("TEAM", item.teamId, item.version)}
+                        onClick={() => revoke("USER", item.userId, item.version)}
                       >
                         撤銷
                       </button>
@@ -408,16 +335,16 @@ export default function RepositoryAccess({
                     event.preventDefault();
                     const form = new FormData(event.currentTarget);
                     grant(
-                      "TEAM",
+                      "USER",
                       String(form.get("subjectId") ?? ""),
                       permissionFromForm(form.get("capability")),
                       0,
                     );
                   }}
                 >
-                  <h3>新增 Team access</h3>
+                  <h3>新增 User access</h3>
                   <label>
-                    Team ID
+                    User ID
                     <input name="subjectId" required maxLength={128} />
                   </label>
                   <label>
@@ -430,13 +357,89 @@ export default function RepositoryAccess({
                       ))}
                     </select>
                   </label>
-                  <button type="submit">授權 Team</button>
+                  <button type="submit">授權 User</button>
                 </form>
               </section>
-            )}
-          </fieldset>
-        </>
-      )}
-    </div>
+
+              {data.repository.ownerKind === "ORGANIZATION" && (
+                <section className="crud-detail">
+                  <h2>Organization Team access</h2>
+                  <p className="crud-lifecycle-note">
+                    Team 必須屬於 Repository owner Organization；TeamMembership 仍由 Team owner
+                    管理。
+                  </p>
+                  {!data.teamGrants.length && <p className="empty-copy">目前沒有 Team grant。</p>}
+                  {data.teamGrants.map((item) => (
+                    <article key={item.teamId}>
+                      <strong>{item.teamId}</strong>
+                      <p>
+                        {item.capability} · v{item.version}
+                      </p>
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          const capability = permissionFromForm(
+                            new FormData(event.currentTarget).get("capability"),
+                          );
+                          grant("TEAM", item.teamId, capability, item.version);
+                        }}
+                      >
+                        <label>
+                          Permission
+                          <select name="capability" defaultValue={item.capability}>
+                            {permissions.map((capability) => (
+                              <option key={capability} value={capability}>
+                                {capability}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button type="submit">更新</button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => revoke("TEAM", item.teamId, item.version)}
+                        >
+                          撤銷
+                        </button>
+                      </form>
+                    </article>
+                  ))}
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const form = new FormData(event.currentTarget);
+                      grant(
+                        "TEAM",
+                        String(form.get("subjectId") ?? ""),
+                        permissionFromForm(form.get("capability")),
+                        0,
+                      );
+                    }}
+                  >
+                    <h3>新增 Team access</h3>
+                    <label>
+                      Team ID
+                      <input name="subjectId" required maxLength={128} />
+                    </label>
+                    <label>
+                      Permission
+                      <select name="capability" defaultValue="read">
+                        {permissions.map((capability) => (
+                          <option key={capability} value={capability}>
+                            {capability}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="submit">授權 Team</button>
+                  </form>
+                </section>
+              )}
+            </fieldset>
+          </>
+        )}
+      </div>
+    </>
   );
 }

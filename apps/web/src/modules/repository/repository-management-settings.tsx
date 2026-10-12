@@ -7,7 +7,7 @@ import type {
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import RepositoryResourceNavigation from "./repository-resource-navigation";
+import RepositoryPageHeader from "./repository-page-header";
 import { repositorySettingsPath } from "./resource-navigation";
 import { errorMessage, isRecord } from "./response-validation";
 
@@ -296,117 +296,117 @@ export default function RepositoryManagementSettings({
   }
 
   return (
-    <section className="crud-detail">
-      <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />
-      {repository && (
-        <RepositoryResourceNavigation
-          ownerLogin={repository.ownerLogin}
-          repositoryName={repository.name}
-          active="settings"
-          canManage={canManage}
-        />
-      )}
-      <h2>Repository lifecycle</h2>
-      {busy && <p role="status">處理中…</p>}
-      {notice && <p role="status">{notice}</p>}
-      {error && <p role="alert">{error}</p>}
-      {pending && !busy && (
-        <section className="crud-guidance">
-          <p>上一筆 Repository 設定操作結果尚待確認；重試會沿用原 requestId。</p>
-          <button type="button" onClick={() => void execute(pending)}>
-            重試原操作
-          </button>
-        </section>
-      )}
-      {repository && (
-        <>
-          <p>
-            Visibility：{repository.visibility.toUpperCase()} ·{" "}
-            {repository.archived ? "ARCHIVED" : "ACTIVE"}
-          </p>
-          <p>
-            所有權：{repository.ownerKind === "USER" ? "Personal User" : "Organization"} ·{" "}
-            {repository.ownerLogin}
-          </p>
-          <p className="crud-lifecycle-note">
-            Repository lifecycle 只由當下有效的 Repository ADMIN 管理；Organization-owned Repository
-            的有效 OrganizationOwner 具有隱含 ADMIN 權限。
-          </p>
-          {repository.internalEnterpriseId && (
-            <p>INTERNAL scope：Enterprise {repository.internalEnterpriseId}</p>
-          )}
-          {canManage ? (
-            <>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (name.trim() && name.trim() !== repository.name) {
-                    command({ action: "rename", name: name.trim() });
-                  }
-                }}
-              >
-                <label>
-                  Repository name
-                  <input
-                    value={name}
-                    maxLength={100}
-                    required
-                    disabled={busy || Boolean(pending)}
-                    onChange={(event) => setName(event.target.value)}
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={
-                    busy || Boolean(pending) || !name.trim() || name.trim() === repository.name
-                  }
-                >
-                  重新命名
-                </button>
-              </form>
-
-              <label>
-                Visibility
-                <select
-                  value={visibility}
-                  disabled={busy || Boolean(pending)}
-                  onChange={(event) => {
-                    if (isVisibility(event.target.value)) setVisibility(event.target.value);
+    <>
+      <RepositoryPageHeader
+        ownerLogin={repository?.ownerLogin ?? ownerLogin}
+        repositoryName={repository?.name ?? repositoryName}
+        active="settings"
+        canManage={canManage}
+      />
+      <section className="crud-detail">
+        <MiniAppRuntime liffId={liffId} onReady={() => load()} onWait={clear} />
+        <h2>Repository lifecycle</h2>
+        {busy && <p role="status">處理中…</p>}
+        {notice && <p role="status">{notice}</p>}
+        {error && <p role="alert">{error}</p>}
+        {pending && !busy && (
+          <section className="crud-guidance">
+            <p>上一筆 Repository 設定操作結果尚待確認；重試會沿用原 requestId。</p>
+            <button type="button" onClick={() => void execute(pending)}>
+              重試原操作
+            </button>
+          </section>
+        )}
+        {repository && (
+          <>
+            <p>
+              Visibility：{repository.visibility.toUpperCase()} ·{" "}
+              {repository.archived ? "ARCHIVED" : "ACTIVE"}
+            </p>
+            <p>
+              所有權：{repository.ownerKind === "USER" ? "Personal User" : "Organization"} ·{" "}
+              {repository.ownerLogin}
+            </p>
+            <p className="crud-lifecycle-note">
+              Repository lifecycle 只由當下有效的 Repository ADMIN 管理；Organization-owned
+              Repository 的有效 OrganizationOwner 具有隱含 ADMIN 權限。
+            </p>
+            {repository.internalEnterpriseId && (
+              <p>INTERNAL scope：Enterprise {repository.internalEnterpriseId}</p>
+            )}
+            {canManage ? (
+              <>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (name.trim() && name.trim() !== repository.name) {
+                      command({ action: "rename", name: name.trim() });
+                    }
                   }}
                 >
-                  <option value="private">PRIVATE</option>
-                  <option value="public">PUBLIC</option>
-                  <option value="internal" disabled={!internalAllowed}>
-                    INTERNAL
-                  </option>
-                </select>
-              </label>
-              <button
-                type="button"
-                disabled={busy || Boolean(pending) || visibility === repository.visibility}
-                onClick={() => command({ action: "visibility", visibility })}
-              >
-                更新 Visibility
-              </button>
+                  <label>
+                    Repository name
+                    <input
+                      value={name}
+                      maxLength={100}
+                      required
+                      disabled={busy || Boolean(pending)}
+                      onChange={(event) => setName(event.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={
+                      busy || Boolean(pending) || !name.trim() || name.trim() === repository.name
+                    }
+                  >
+                    重新命名
+                  </button>
+                </form>
 
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy || Boolean(pending)}
-                onClick={() => command({ action: repository.archived ? "unarchive" : "archive" })}
-              >
-                {repository.archived ? "解除封存" : "封存 Repository"}
-              </button>
-              <p className="crud-lifecycle-note">
-                封存後內容仍依目前 visibility/access 可讀，但 Issue
-                協作與新打卡會停止；解除封存不會恢復已撤銷的 grant。
-              </p>
-            </>
-          ) : (
-            <p>只有 current Repository admin 可以修改 lifecycle 設定。</p>
-          )}
-        </>
-      )}
-    </section>
+                <label>
+                  Visibility
+                  <select
+                    value={visibility}
+                    disabled={busy || Boolean(pending)}
+                    onChange={(event) => {
+                      if (isVisibility(event.target.value)) setVisibility(event.target.value);
+                    }}
+                  >
+                    <option value="private">PRIVATE</option>
+                    <option value="public">PUBLIC</option>
+                    <option value="internal" disabled={!internalAllowed}>
+                      INTERNAL
+                    </option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={busy || Boolean(pending) || visibility === repository.visibility}
+                  onClick={() => command({ action: "visibility", visibility })}
+                >
+                  更新 Visibility
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy || Boolean(pending)}
+                  onClick={() => command({ action: repository.archived ? "unarchive" : "archive" })}
+                >
+                  {repository.archived ? "解除封存" : "封存 Repository"}
+                </button>
+                <p className="crud-lifecycle-note">
+                  封存後內容仍依目前 visibility/access 可讀，但 Issue
+                  協作與新打卡會停止；解除封存不會恢復已撤銷的 grant。
+                </p>
+              </>
+            ) : (
+              <p>只有 current Repository admin 可以修改 lifecycle 設定。</p>
+            )}
+          </>
+        )}
+      </section>
+    </>
   );
 }

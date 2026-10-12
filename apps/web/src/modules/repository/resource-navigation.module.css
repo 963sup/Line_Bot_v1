@@ -1,13 +1,12 @@
 .resourceNav {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  margin: -12px 0 22px;
+  margin: 0 0 24px;
 }
 
 .resourceLink {
   display: inline-flex;
-  flex: 1 1 118px;
   min-height: 44px;
   align-items: center;
   justify-content: center;
@@ -22,7 +21,7 @@
 }
 
 .resourceLink[aria-current="page"] {
-  border-color: #b9d8c4;
+  border-color: var(--green-strong);
   background: var(--green-soft);
   color: var(--green-strong);
 }
@@ -32,14 +31,12 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .resourceNav {
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .resourceLink {
-    flex-basis: calc(50% - 3px);
-    min-height: 44px;
     padding-inline: 8px;
     font-size: 12px;
   }

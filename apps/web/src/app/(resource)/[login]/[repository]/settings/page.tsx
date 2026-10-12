@@ -2,9 +2,8 @@ import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { notFound } from "next/navigation";
 import RepositoryManagementSettings from "../../../../../modules/repository/repository-management-settings";
+import styles from "../../../../../modules/repository/repository-resource.module.css";
 import RepositorySettings from "../../../../../modules/repository/repository-settings";
-import { repositoryPath } from "../../../../../modules/repository/resource-navigation";
-import { PageHeading } from "../../../../../shared/ui/page-layout";
 import AppShell from "../../../../(mobile)/_shell/app-shell";
 
 export const dynamic = "force-dynamic";
@@ -23,22 +22,19 @@ export default async function Page({
   }
   return (
     <AppShell>
-      <PageHeading
-        title="Repository Settings"
-        description="管理 Repository lifecycle、visibility 與打卡點。"
-        back={repositoryPath(ownerLogin, repository)}
-      />
       <RepositoryManagementSettings
         liffId={lineMiniApp().liffId}
         ownerLogin={ownerLogin}
         repositoryName={repository}
       />
-      <RepositorySettings
-        liffId={lineMiniApp().liffId}
-        mapsApiKey={process.env.GOOGLE_MAPS_API_KEY?.trim() ?? ""}
-        ownerLogin={ownerLogin}
-        repositoryName={repository}
-      />
+      <div className={styles.settingsSection}>
+        <RepositorySettings
+          liffId={lineMiniApp().liffId}
+          mapsApiKey={process.env.GOOGLE_MAPS_API_KEY?.trim() ?? ""}
+          ownerLogin={ownerLogin}
+          repositoryName={repository}
+        />
+      </div>
     </AppShell>
   );
 }
