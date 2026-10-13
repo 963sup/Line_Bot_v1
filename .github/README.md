@@ -3,6 +3,24 @@
 GitHub 是執行入口；`scripts/` 擁有可執行流程，`package.json#scripts` 是共用命令介面。
 YAML 只設定 event、runner、權限、checkout/setup、job 相依、resource concurrency、step-scoped secrets 與 artifacts。
 
+## Agent entrypoints
+
+Task prompts collect intent; `docs/tasks/` defines the task workflow; `docs/owners/README.md` routes to the business owner. Codex TOML owns Codex runtime/model settings. Copilot agent frontmatter owns Copilot tool access. Both follow the root and nearest `AGENTS.md` contracts. Tool availability does not authorize external writes.
+
+| Task | Prompt | Task contract / owner routing | Validation |
+| --- | --- | --- | --- |
+| Feature | [change-feature](prompts/change-feature.prompt.md) | [feature-change](../docs/tasks/feature-change.md) → [owners](../docs/owners/README.md) | `pnpm check` |
+| API or route | [change-api](prompts/change-api.prompt.md) | [api-change](../docs/tasks/api-change.md) → [owners](../docs/owners/README.md) | `pnpm check` |
+| Bug | [fix-bug](prompts/fix-bug.prompt.md) | [bug-fix](../docs/tasks/bug-fix.md) → [owners](../docs/owners/README.md) | Focused test, then `pnpm check` |
+| Authentication / authorization | [change-auth](prompts/change-auth.prompt.md) | [auth-change](../docs/tasks/auth-change.md) → [owners](../docs/owners/README.md) | Affected tests, then `pnpm check` |
+| Database / schema | [change-database](prompts/change-database.prompt.md) | [database-change](../docs/tasks/database-change.md) → [owners](../docs/owners/README.md) | `pnpm schema:check`, then `pnpm check` |
+| Architecture / ownership | [change-architecture](prompts/change-architecture.prompt.md) | [architecture-change](../docs/tasks/architecture-change.md) → [owners](../docs/owners/README.md) | `pnpm boundaries`, then `pnpm check` |
+| Business rule | [change-business-rule](prompts/change-business-rule.prompt.md) | [business-rule](../docs/tasks/business-rule.md) → [owners](../docs/owners/README.md) | Owner tests, then `pnpm check` |
+| Deployment / remote failure | [debug-deployment](prompts/debug-deployment.prompt.md) | [deployment-debug](../docs/tasks/deployment-debug.md) → [owners](../docs/owners/README.md) | `gh run view <run-id> --log-failed` or provider readback; `pnpm check` only for code changes |
+| Markdown knowledge | [converge-markdown](prompts/converge-markdown.prompt.md) | [docs task router](../docs/README.md) → [sources of truth](../docs/facts/sources-of-truth.md) | `pnpm docs:check` |
+
+Review agents receive only read/search tools. The root-cause debugger also receives edit/execute tools for requested code fixes; this grants no permission to push, merge, deploy, or mutate providers. Repository PR, validation, and merge workflow is defined in [development workflow](../docs/reference/engineering/development-workflow.md).
+
 | Workflow | 觸發 | 工作 |
 | --- | --- | --- |
 | `workflows/validate.yml` | non-draft PR 每個 current head（含 synchronize）/ Release reusable call | 平行執行完整 validation groups；architecture group 會驗 exact vendored FPT domain truth、semantic overlay、implementation/data topology，最後由 aggregate gate 要求全部成功。 |

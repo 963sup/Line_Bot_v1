@@ -116,6 +116,36 @@
       "problemMatcher": []
     },
     {
+      "label": "repo: tooling doctor",
+      "type": "process",
+      "command": "pnpm",
+      "args": ["tooling:doctor"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "repo: tooling check",
+      "type": "process",
+      "command": "pnpm",
+      "args": ["tooling:check"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "repo: tooling rules",
+      "type": "process",
+      "command": "pnpm",
+      "args": ["tooling:rules"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "semantic: context",
       "type": "process",
       "command": "pnpm",

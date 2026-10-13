@@ -91,3 +91,7 @@ description: '依 repository evidence 蒸餾全域 Markdown、釐清 authority �
 只有範圍內主要重複真相已消除、authority / responsibility / invariants / dependencies / validation 清楚、引用有效、文件符合目前實作且沒有語意缺失或新增隱性依賴，才能宣告完成。剩餘例外須明列，不能聲稱全庫已驗證。
 
 分開陳述文件檢查、靜態檢查、測試、建置、部署、外部 readback 與實機驗收；未執行的項目不宣稱通過。
+
+## Delivery
+
+回報修改的 authority／owner、引用與文件驗證結果，以及未執行或未能驗證的項目。
