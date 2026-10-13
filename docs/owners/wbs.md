@@ -33,6 +33,7 @@ Current schema: [Repository WBS](../../supabase/schemas/609_repository_wbs.sql).
 - First Baseline requires a reviewed proposal. Mandatory checks enforce a valid tree, at least one work package and each work package's nonempty deliverable/acceptance requirements. Incomplete drafts and proposals may be saved but cannot be published.
 - Publication atomically persists immutable Baseline (including counted review IDs and policy version), marks Proposal published, advances the formal pointer and writes the exact-replay receipt. A changed formal base requires an explicit proposal update and fresh review. Two competing publications cannot overwrite each other.
 - Baseline records approved scope, not completion or work-package acceptance. Immutable policy/review/Baseline/receipt relations grant no UPDATE/DELETE to the application role. Structural comparison reports changes by stable node identity, including parent/order/content.
+- Historical proposal reads resolve publication by the reviewed proposal version, retaining the publication-time policy and approval evidence even after policy changes; the old OPEN snapshot status does not erase its published Baseline association.
 
 Verification: owner domain/persistence tests, HTTP tests, browser checks and a CI-only disposable PostgreSQL 17 multi-session race test. Local runs without `WBS_TEST_DATABASE_URL` explicitly skip that race test; CI requires it and disables WBS test-result caching. The test only accepts a loopback server and never uses production credentials.
 

@@ -238,6 +238,10 @@ try {
   await governance.getByLabel("必要核准人數").fill("2");
   await governance.getByRole("button", { name: "更新治理政策" }).click();
   await expect(governance.getByText(/政策 v2：至少 2 位核准/)).toBeVisible();
+  await governance.getByRole("button", { name: "查看審查的提案 v1" }).click();
+  await expect(governance.getByText(/已發布 Baseline #.*採用提案 v1 與政策 v1/)).toBeVisible();
+  await expect(governance.getByText(/候選內容版本 3 · 發布時有效核准 1 筆/)).toBeVisible();
+  await governance.getByRole("button", { name: "返回最新提案" }).click();
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 844 });
     await page.evaluate(() => window.scrollTo(0, 0));

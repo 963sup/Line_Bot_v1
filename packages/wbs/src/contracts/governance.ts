@@ -67,6 +67,7 @@ export type WbsGovernanceView = Readonly<{
   proposal: {
     proposal: WbsProposal;
     currentVersion: number;
+    publication: WbsBaseline | null;
     candidate: WbsRevision;
     base: WbsRevision | null;
     differences: readonly WbsDifference[];

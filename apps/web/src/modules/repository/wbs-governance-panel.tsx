@@ -422,8 +422,15 @@ export default function WbsGovernancePanel({
               <p>{item.reason}</p>
               <p>
                 候選內容版本 {selected.candidate.version} ·{" "}
-                {item.status === "PUBLISHED" ? "發布時" : "目前"}有效核准 {selected.approvals} 筆
+                {selected.publication ? "發布時" : "目前"}有效核准 {selected.approvals} 筆
               </p>
+              {selected.publication && (
+                <p>
+                  已發布 Baseline #{selected.publication.number}：採用提案 v
+                  {selected.publication.proposalVersion} 與政策 v
+                  {selected.publication.policy.version}。
+                </p>
+              )}
               {!selected.baseIsCurrent && item.status === "OPEN" && currentProposal && (
                 <p role="status">正式基底已變更，需更新提案並重新審查。</p>
               )}

@@ -311,16 +311,13 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
           ? await loadBaseline(sql, repository.id, selected.baseBaselineId)
           : null;
         const base = previous ? await loadRevision(sql, repository.id, previous.revisionId) : null;
-        const published =
-          selected.status === "PUBLISHED"
-            ? (
-                await sql.query(
-                  `${baselineSelect} WHERE b.repository_id=$1 AND b.proposal_id=$2`,
-                  [repository.id, selected.id],
-                  baseline,
-                )
-              ).rows[0]
-            : undefined;
+        const published = (
+          await sql.query(
+            `${baselineSelect} WHERE b.repository_id=$1 AND b.proposal_id=$2 AND (b.proposal_version=$3 OR $4::boolean)`,
+            [repository.id, selected.id, selected.version, selected.status === "PUBLISHED"],
+            baseline,
+          )
+        ).rows[0];
         const reviewed = published
           ? await loadProposal(sql, repository.id, selected.id, published.proposalVersion)
           : found;
@@ -343,6 +340,7 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
         detail = {
           proposal: selected,
           currentVersion: found.currentVersion,
+          publication: published ?? null,
           candidate,
           base,
           differences: compareWbsDocuments(base?.document ?? null, candidate.document),

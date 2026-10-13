@@ -99,6 +99,7 @@ export function wbsGovernanceView(value: unknown): WbsGovernanceView {
     detail = {
       proposal: proposal(d.proposal),
       currentVersion: numberValue(d.currentVersion),
+      publication: d.publication === null ? null : baseline(d.publication),
       candidate,
       base,
       differences: compareWbsDocuments(base?.document ?? null, candidate.document),

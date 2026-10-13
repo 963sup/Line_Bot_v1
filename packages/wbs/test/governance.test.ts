@@ -399,6 +399,21 @@ test("governance preserves frozen review, current authority, publication atomici
     candidateRevisionId: draft.revision.id,
     baseBaselineId: published.baselineId,
   });
+  const historicalPublication = await governance.view(
+    "owner",
+    { repositoryId: "repo" },
+    { proposalId: aId, proposalVersion: 2 },
+  );
+  assert.equal(historicalPublication.policy.version, 3);
+  assert.equal(historicalPublication.proposal?.proposal.status, "OPEN");
+  assert.equal(historicalPublication.proposal?.publication?.policy.version, 2);
+  assert.equal(historicalPublication.proposal?.approvals, 2);
+  const unpublishedVersion = await governance.view(
+    "owner",
+    { repositoryId: "repo" },
+    { proposalId: aId, proposalVersion: 1 },
+  );
+  assert.equal(unpublishedVersion.proposal?.publication, null);
   assert.ok(c.proposalId);
   await assert.rejects(review(c.proposalId, 1, 3));
   await review(c.proposalId, 1, 3, "maintainer");
