@@ -7,6 +7,7 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import RepositoryPageHeader from "./repository-page-header";
+import WbsGovernancePanel from "./wbs-governance-panel";
 import styles from "./wbs-panel.module.css";
 import { wbsHistory, wbsReceipt, wbsView } from "./wbs-response";
 
@@ -192,7 +193,7 @@ export default function WbsPanel({
       remember(null);
       setDraft(null);
       setHistory(null);
-      setNotice("已儲存。此版本尚未經過正式範圍驗收。");
+      setNotice("草稿已儲存；正式範圍須經提案審查後發布。");
       await load();
     } catch (cause) {
       if (ticket !== generation.current) return;
@@ -211,7 +212,7 @@ export default function WbsPanel({
       if (ticket === generation.current) setBusy(false);
     }
   }
-  function clear() {
+  const clear = useCallback(() => {
     generation.current++;
     current.current = null;
     pendingRef.current = null;
@@ -223,7 +224,14 @@ export default function WbsPanel({
     setNotice("");
     setBusy(false);
     setHistorical(false);
-  }
+  }, []);
+  const governanceAccessLost = useCallback(
+    (message: string) => {
+      clear();
+      setError(message);
+    },
+    [clear],
+  );
   const onVisibility = useEffectEvent(() => {
     clear();
     if (document.visibilityState === "visible") void load();
@@ -577,6 +585,19 @@ export default function WbsPanel({
             </section>
           </div>
         </>
+      )}
+      {view?.revision && !historical && (
+        <WbsGovernancePanel
+          key={`${view.actorUserId}:${view.repository.id}`}
+          liffId={liffId}
+          ownerLogin={ownerLogin}
+          repositoryName={repositoryName}
+          repositoryId={view.repository.id}
+          actorUserId={view.actorUserId}
+          draftRevisionId={view.revision.id}
+          disabled={busy || Boolean(pending)}
+          onAccessLost={governanceAccessLost}
+        />
       )}
       {view && history && (
         <section className={styles.panel} aria-label="WBS 歷史">

@@ -4,6 +4,18 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/governance": {
+      "types": "./dist/application/governance.d.ts",
+      "default": "./dist/application/governance.js"
+    },
+    "./contracts/governance": {
+      "types": "./dist/contracts/governance.d.ts",
+      "default": "./dist/contracts/governance.js"
+    },
+    "./domain/governance": {
+      "types": "./dist/domain/governance.d.ts",
+      "default": "./dist/domain/governance.js"
+    },
     "./domain": {
       "types": "./dist/domain.d.ts",
       "default": "./dist/domain.js"
@@ -34,6 +46,8 @@
     "@line_bot_v1/repository": "workspace:*"
   },
   "devDependencies": {
+    "pg": "catalog:",
+    "@types/pg": "catalog:",
     "@types/node": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"

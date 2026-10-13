@@ -1426,6 +1426,76 @@
       "definition": "Durable exact-replay identity referencing the committed WBS revision.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-governance",
+      "canonicalName": "WBSGovernance",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Repository-WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-governance-policy",
+      "canonicalName": "WBSGovernancePolicy",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Immutable versioned approval policy, controlled by current Repository ADMIN.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-change-proposal",
+      "canonicalName": "WBSChangeProposal",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Versioned local scope proposal binding an immutable candidate Revision and explicit base Baseline.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-proposal-review",
+      "canonicalName": "WBSProposalReview",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Append-only review binding exact proposal version, candidate Revision, policy version and reviewer identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-baseline",
+      "canonicalName": "WBSBaseline",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Immutable published scope and counted approval evidence; not deliverable acceptance or GitHub Commit.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-governance-receipt",
+      "canonicalName": "WBSGovernanceReceipt",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Durable exact-replay result for an atomic WBS governance command.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-proposal-version",
+      "canonicalName": "WBSProposalVersion",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Immutable proposal content and base snapshot selected by a proposal head; old reviews resolve their exact reviewed proposal version.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -3409,6 +3479,47 @@
         ],
         "testPaths": ["packages/wbs/test/wbs.test.ts", "apps/web/test/wbs-http.test.ts"],
         "note": "Saved Revision is not approval or Baseline. Legacy project_wbs remains Project-owned current-data-only and is never auto-mapped."
+      }
+    },
+    {
+      "id": "govern-repository-wbs",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Propose frozen WBS scope, review exact candidate and policy versions, and atomically publish immutable Baselines without overwriting drafts; recheck current reviewer authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Versioned policy, proposals, immutable reviews, mandatory publication checks, structural differences, Baseline publication and exact replay.",
+        "sourcePaths": [
+          "packages/wbs/src/domain/governance.ts",
+          "packages/wbs/src/application/governance.ts",
+          "packages/wbs/src/contracts/governance.ts",
+          "packages/wbs/src/adapters/outbound/persistence/governance.ts"
+        ],
+        "publicExports": [
+          "./domain/governance",
+          "./application/governance",
+          "./contracts/governance",
+          "./composition/bootstrap/store"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-wbs/governance/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/wbs/page.tsx"
+        ],
+        "testPaths": [
+          "packages/wbs/test/governance.test.ts",
+          "packages/wbs/test/governance-postgres.test.ts",
+          "apps/web/test/wbs-governance-http.test.ts"
+        ],
+        "note": "Baseline is published scope, not work-package acceptance. Draft head and immutable content history are preserved; no collaboration, attachments, fan-out, branches or Fork runtime is enabled."
       }
     }
   ],

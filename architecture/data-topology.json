@@ -1446,6 +1446,62 @@
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-command-receipt"
+    },
+    {
+      "name": "repository_wbs_governance",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance"
+    },
+    {
+      "name": "repository_wbs_policies",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance-policy"
+    },
+    {
+      "name": "repository_wbs_proposals",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-change-proposal"
+    },
+    {
+      "name": "repository_wbs_reviews",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-proposal-review"
+    },
+    {
+      "name": "repository_wbs_baselines",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-baseline"
+    },
+    {
+      "name": "repository_wbs_governance_commands",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance-receipt"
+    },
+    {
+      "name": "repository_wbs_proposal_versions",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-proposal-version"
     }
   ]
 }
