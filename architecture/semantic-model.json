@@ -237,13 +237,19 @@
       "id": "search",
       "kind": "application-capability-owner",
       "lifecycle": "selected-target"
+    },
+    {
+      "id": "wbs",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/wbs.md"
     }
   ],
   "subdomains": [
     {
       "id": "collaboration",
       "classification": "core",
-      "owners": ["repository", "issue", "discussion", "project"],
+      "owners": ["repository", "issue", "discussion", "project", "wbs"],
       "rationale": "企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -427,6 +433,11 @@
         ],
         "rationale": "Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。"
       }
+    },
+    {
+      "id": "wbs",
+      "owner": "wbs",
+      "status": "selected"
     }
   ],
   "concepts": [
@@ -1385,6 +1396,36 @@
       "definition": "Unique global login bound to a stable User or Organization Account, independently of qualification and resource authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-wbs",
+      "canonicalName": "RepositoryWBS",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Repository-scoped versioned scope document; separate from legacy Project-owned WBS.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-revision",
+      "canonicalName": "WBSRevision",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Immutable typed WBS scope snapshot with command-time actor and parent revision evidence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-command-receipt",
+      "canonicalName": "WBSCommandReceipt",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Durable exact-replay identity referencing the committed WBS revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -1864,6 +1905,19 @@
       "integrationMode": "query",
       "authority": "repository",
       "consistency": "current-state"
+    },
+    {
+      "id": "wbs-repository-scope",
+      "from": "repository-wbs",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "wbs",
+      "meaning": "Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned.",
+      "provider": "repository",
+      "consumer": "wbs",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
     }
   ],
   "capabilities": [
@@ -3318,6 +3372,44 @@
         ],
         "note": "Address remains Repository-owned and readable/manageable by current effective members/admins even while archived. Attendance excludes archived Repositories from new clock-in sites; existing Attendance sessions keep their immutable snapshot. Source and local tests do not prove remote deployment."
       }
+    },
+    {
+      "id": "manage-repository-wbs",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Single-head WBS content initialization, node edit/move/delete, authorized history and exact-replay persistence.",
+        "sourcePaths": [
+          "packages/wbs/src/application.ts",
+          "packages/wbs/src/domain.ts",
+          "packages/wbs/src/contracts.ts",
+          "packages/wbs/src/adapters/outbound/persistence/store.ts"
+        ],
+        "publicExports": [
+          "./application",
+          "./contracts",
+          "./domain",
+          "./composition/bootstrap/store"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-wbs/route.ts",
+          "apps/web/src/app/api/repository-wbs/history/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/wbs/page.tsx"
+        ],
+        "testPaths": ["packages/wbs/test/wbs.test.ts", "apps/web/test/wbs-http.test.ts"],
+        "note": "Saved Revision is not approval or Baseline. Legacy project_wbs remains Project-owned current-data-only and is never auto-mapped."
+      }
     }
   ],
   "invariants": [
@@ -3647,6 +3739,10 @@
       "semanticOwner": "search",
       "targetModule": "@line_bot_v1/search",
       "note": "Selected FPT target application boundary only; Search composes provider-owned resources without acquiring their authority."
+    },
+    {
+      "semanticOwner": "wbs",
+      "module": "@line_bot_v1/wbs"
     }
   ],
   "policies": [

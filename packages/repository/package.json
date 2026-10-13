@@ -159,6 +159,10 @@
     "./contracts/repositories/subscription": {
       "types": "./dist/contracts/repositories/subscription.d.ts",
       "default": "./dist/contracts/repositories/subscription.js"
+    },
+    "./postgres/content-scope": {
+      "types": "./dist/postgres/content-scope.d.ts",
+      "default": "./dist/postgres/content-scope.js"
     }
   },
   "files": [

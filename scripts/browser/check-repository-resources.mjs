@@ -605,7 +605,7 @@ try {
       const main = page.getByRole("main");
       await expect(main.getByRole("heading", { name: section, exact: true })).toBeVisible();
       const navigation = main.getByRole("navigation", { name: "Repository resources" });
-      await expect(navigation.getByRole("link")).toHaveCount(7);
+      await expect(navigation.getByRole("link")).toHaveCount(8);
       await expect(navigation.getByRole("link", { name: section, exact: true })).toHaveAttribute(
         "aria-current",
         "page",
@@ -675,7 +675,7 @@ try {
   await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
   await expect(
     page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
-  ).toHaveCount(5);
+  ).toHaveCount(6);
   await expect(
     page.getByText("登入後可設定這個 Repository 的追蹤偏好。", {
       exact: true,
@@ -730,7 +730,7 @@ try {
         await expect(ready[section]()).toBeVisible();
         await expect(
           page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
-        ).toHaveCount(7);
+        ).toHaveCount(8);
         const readyMs = performance.now() - started;
         const retained = await page
           .locator(".app-shell")
@@ -851,7 +851,7 @@ try {
   await expect(page.getByText("private-visible", { exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);
   const readerNavigation = page.getByRole("navigation", { name: "Repository resources" });
-  await expect(readerNavigation.getByRole("link")).toHaveCount(5);
+  await expect(readerNavigation.getByRole("link")).toHaveCount(6);
   await expect(readerNavigation.getByRole("link", { name: "Settings", exact: true })).toHaveCount(
     0,
   );

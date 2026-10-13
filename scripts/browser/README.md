@@ -19,6 +19,7 @@ pnpm test:browser
 | `run-local.mjs` | 標準本機 browser suite 入口：build 一次、啟動 loopback production Web、依序執行案例、保存 evidence 並關閉服務。 |
 | `check-navigation.mjs` | 列表/詳情、query、前進返回、直接開啟與讀寫途中導覽。 |
 | `check-profile.mjs` | Profile client lifecycle、換帳號、遲到回應與 server-page composition。 |
+| `check-wbs.mjs` | WBS 初始化、編輯、衝突保留輸入、重新整理後原命令重試、歷史唯讀、刪除、手機版面與私人狀態清除；真實 Next/browser，合成 LINE/API。 |
 | `check-repository-resources.mjs` | Repository 七頁桌面／手機版面、Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類與換帳號清除。Overview 使用真實 route/component 與合成 server query，其餘六頁使用 Next production routes。 |
 | `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
 | `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |

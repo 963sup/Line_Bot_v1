@@ -66,8 +66,15 @@ export function discussionBody(request: Request): Promise<Record<string, unknown
   return jsonObjectBody(request, (status, message) => new DiscussionError(status, message), 65_536);
 }
 
-export function repositoryBody(request: Request): Promise<Record<string, unknown>> {
-  return jsonObjectBody(request, (status, message) => new RepositoryError(status, message));
+export function repositoryBody(
+  request: Request,
+  maxBytes = 8192,
+): Promise<Record<string, unknown>> {
+  return jsonObjectBody(
+    request,
+    (status, message) => new RepositoryError(status, message),
+    maxBytes,
+  );
 }
 
 export function issueFailure(error: unknown) {

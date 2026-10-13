@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import IssueBoard from "../../../../modules/repository/issue-board";
 import RepositoryPageHeader from "../../../../modules/repository/repository-page-header";
 import RepositorySubscriptionControl from "../../../../modules/repository/repository-subscription-control";
+import { PrimaryLink } from "../../../../shared/ui/page-layout";
 import { publicRepositories } from "../../_composition/repository.server";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,11 @@ export default async function Page({
           repositoryName={publicRepository.name}
           explicitInteraction
         />
+        <PrimaryLink
+          href={`/${encodeURIComponent(publicRepository.ownerLogin)}/${encodeURIComponent(publicRepository.name)}/wbs`}
+        >
+          開啟 WBS
+        </PrimaryLink>
       </>
     );
   }
@@ -49,11 +55,18 @@ export default async function Page({
       repositoryName={repository}
       navigationActive="overview"
       overviewContent={
-        <RepositorySubscriptionControl
-          liffId={lineMiniApp().liffId}
-          ownerLogin={ownerLogin}
-          repositoryName={repository}
-        />
+        <>
+          <PrimaryLink
+            href={`/${encodeURIComponent(ownerLogin)}/${encodeURIComponent(repository)}/wbs`}
+          >
+            開啟 WBS
+          </PrimaryLink>
+          <RepositorySubscriptionControl
+            liffId={lineMiniApp().liffId}
+            ownerLogin={ownerLogin}
+            repositoryName={repository}
+          />
+        </>
       }
     />
   );

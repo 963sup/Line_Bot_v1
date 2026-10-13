@@ -366,6 +366,10 @@
     {
       "path": "supabase/schemas/930_access_enforcement.sql",
       "role": "access-enforcement"
+    },
+    {
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "role": "authoritative"
     }
   ],
   "relations": [
@@ -1418,6 +1422,30 @@
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "namespace"]
+    },
+    {
+      "name": "repository_wbs",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "repository-wbs"
+    },
+    {
+      "name": "repository_wbs_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-revision"
+    },
+    {
+      "name": "repository_wbs_commands",
+      "kind": "table",
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-command-receipt"
     }
   ]
 }

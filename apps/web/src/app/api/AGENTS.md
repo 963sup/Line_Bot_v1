@@ -1,5 +1,7 @@
 # Web API transport boundary
 
+`/api/repository-wbs` GET/POST and `/api/repository-wbs/history` GET are WBS owner transports. They use verified LINE identity and owner-side current Repository access; initialization is an explicit version-zero command. Revision is immutable saved content, not a Baseline or acceptance decision.
+
 
 ## 現行 URL 與 invariant
 

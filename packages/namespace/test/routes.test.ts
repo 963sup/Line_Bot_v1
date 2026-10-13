@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { buildNamespacePath, NAMESPACE_ROUTES } from "../src/domain/routes.js";
 
 const activeDeliveryRoutes = {
+  "repository-wbs": { file: "(resource)/[login]/[repository]/wbs/page.tsx" },
   account: { file: "(public)/[login]/page.tsx" },
   repository: { file: "(resource)/[login]/[repository]/page.tsx" },
   "repository-issues": { file: "(resource)/[login]/[repository]/issues/page.tsx" },

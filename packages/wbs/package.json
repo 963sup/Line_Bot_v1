@@ -1,0 +1,41 @@
+{
+  "name": "@line_bot_v1/wbs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain": {
+      "types": "./dist/domain.d.ts",
+      "default": "./dist/domain.js"
+    },
+    "./application": {
+      "types": "./dist/application.d.ts",
+      "default": "./dist/application.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./composition/bootstrap/store": {
+      "types": "./dist/composition/bootstrap/store.d.ts",
+      "default": "./dist/composition/bootstrap/store.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
