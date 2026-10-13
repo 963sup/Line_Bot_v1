@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import {
   classifyChangedFiles,
+  describeFastPlan,
   detectFastScope,
   fastTaskArgs,
   selectValidationStages,
@@ -16,6 +17,36 @@ import {
 function git(directory, args) {
   execFileSync("git", args, { cwd: directory, stdio: "ignore" });
 }
+
+test("fast plan explains skips and conservative workspace selection without changing execution", () => {
+  const stages = [
+    ["lockfile", ["install"]],
+    ["docs:check", ["docs"]],
+    ["typecheck+test", ["turbo", "run", "typecheck", "test"]],
+    ["build", ["build"]],
+  ];
+  for (const scope of [
+    null,
+    classifyChangedFiles(["README.md"]),
+    classifyChangedFiles(["supabase/schemas/600_repositories.sql"]),
+    { ...classifyChangedFiles(["packages/account/src/new.ts"]), hasUntrackedFiles: true },
+  ]) {
+    const plan = describeFastPlan(stages, scope, ["--affected"]);
+    for (const stage of plan.stages) {
+      assert.equal(stage.run, shouldRunFast(stage.task, scope));
+      assert.ok(stage.reason);
+    }
+    const product = plan.stages.find((stage) => stage.task === "typecheck+test");
+    if (scope?.schemaAffected || scope?.hasUntrackedFiles) {
+      assert.equal(product.selection, "all workspaces");
+    }
+    assert.equal(plan.stages.find((stage) => stage.task === "build").run, false);
+  }
+  const schema = classifyChangedFiles(["supabase/schemas/600_repositories.sql"]);
+  const filtered = describeFastPlan(stages, schema, ["--filter=@line_bot_v1/account"], true);
+  assert.deepEqual(filtered.stages[2].selection, ["--filter=@line_bot_v1/account"]);
+  assert.match(filtered.stages[2].selectionReason, /caller must cover all consumers/);
+});
 
 function gitFixture(t) {
   const directory = mkdtempSync(join(tmpdir(), "line-bot-fast-scope-"));

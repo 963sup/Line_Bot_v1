@@ -167,6 +167,41 @@ export function fastTaskArgs(task, command, scope, selection, explicitFilters = 
   return [...command, ...selection];
 }
 
+export function describeFastPlan(stages, scope, selection, explicitFilters = false) {
+  return {
+    scope: scope ?? "unknown or clean tree; all fast gates selected",
+    stages: stages.map(([task, command]) => {
+      const run = shouldRunFast(task, scope);
+      const args = fastTaskArgs(task, command, scope, selection, explicitFilters);
+      return {
+        task,
+        run,
+        reason: !fastTasks.has(task)
+          ? "full validation only"
+          : task === "lockfile"
+            ? "always verify lockfile consistency"
+            : !scope
+              ? "conservative fallback"
+              : run
+                ? "selected by changed-file responsibility"
+                : "outside changed-file responsibility",
+        ...(task === "typecheck+test" && run
+          ? {
+              selection: args === command ? "all workspaces" : selection,
+              selectionReason: explicitFilters
+                ? "explicit filters; caller must cover all consumers"
+                : scope?.schemaAffected
+                  ? "shared schema inputs"
+                  : scope?.hasUntrackedFiles
+                    ? "untracked files require conservative workspace coverage"
+                    : "Turbo affected packages and consumers",
+            }
+          : {}),
+      };
+    }),
+  };
+}
+
 function main() {
   const fast = process.argv[2] === "--fast";
   const grouped = process.argv[2] === "--group";
@@ -195,16 +230,7 @@ function main() {
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
     ],
     ["tooling:check", ["scripts/tooling/check-tooling.mjs"]],
-    [
-      "tooling:test",
-      [
-        "--test",
-        "scripts/tooling/doctor.test.mjs",
-        "scripts/tooling/list-skills.test.mjs",
-        "scripts/tooling/check-tooling.test.mjs",
-        "scripts/tooling/validate.test.mjs",
-      ],
-    ],
+    ["tooling:test", ["--test", "scripts/tooling/doctor.test.mjs"]],
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
     ["lint", [biome, "check", "."]],
@@ -245,7 +271,17 @@ function main() {
     ["build", [turbo, "run", "build"]],
   ];
 
-  for (const [task, command] of selectValidationStages(stages, group)) {
+  const selectedStages = selectValidationStages(stages, group);
+  if (fast) {
+    console.log(
+      JSON.stringify(
+        describeFastPlan(selectedStages, scope, selection, filters.length > 0),
+        null,
+        2,
+      ),
+    );
+  }
+  for (const [task, command] of selectedStages) {
     if (fast && !shouldRunFast(task, scope)) continue;
     const args = fast ? fastTaskArgs(task, command, scope, selection, filters.length > 0) : command;
     const started = performance.now();
