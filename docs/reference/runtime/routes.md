@@ -6,6 +6,8 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 
 正式 URL 只有一個 route owner。Route Group 只表達 layout/runtime 分區，不改 URL，也不授予 business permission。
 
+共用 frame 與主要導覽由 `app/_shell` 提供。Mobile 的 `(tabs)`／`(secondary)` layout 在各自 group 的軟導覽保留外殼；跨 group 允許重建。外層 mobile layout 只擁有原有 LineSessionGate。Profile resolver、自動打卡、compatibility redirect 不套工作頁外殼；Expense 由 EntryResolver 完成後才顯示外殼。Public canonical Profile 重用 frame，但本人控制項與導覽仍由 Profile 的可信 viewer 判斷，公開內容不受 mobile gate 阻擋。Repository 維持自己的共同 layout。
+
 ## Public / onboarding / system
 
 | Route | Responsibility |

@@ -1,0 +1,18 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import PartnersPanel from "../../../../../modules/partners/panel";
+import { PageHeading } from "../../../../../shared/ui/page-layout";
+
+export const dynamic = "force-dynamic";
+
+export default function Page() {
+  return (
+    <>
+      <PageHeading
+        title="夥伴推薦"
+        description="推薦新的合作夥伴窗口，成功後更新通訊錄與最新消息。"
+        back="/team"
+      />
+      <PartnersPanel liffId={lineMiniApp().liffId} mode="referrals" />
+    </>
+  );
+}

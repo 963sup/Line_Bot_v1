@@ -12,7 +12,7 @@ import {
   readVerifiedProfileEntry,
 } from "../../../modules/account/profile-entry-handoff";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
-import WorkNavigation from "../../_shell/work-navigation";
+import AppShell from "../../_shell/app-shell";
 import ProfileOverview from "./profile-overview";
 import ProfileShare from "./profile-share";
 import { isVerifiedSelfUser } from "./profile-viewer";
@@ -103,12 +103,14 @@ export default function ProfileViewerShell({
   );
 
   return (
-    <div className={`app-shell app-shell-tabs ${styles.shell}`}>
+    <>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} silent />
-      <a className="skip-link" href="#main-content">
-        跳至主要內容
-      </a>
-      <main id="main-content" className={`app-content ${styles.content}`}>
+      <AppShell
+        className={styles.shell ?? ""}
+        contentClassName={styles.content ?? ""}
+        showNavigation={ownProfile}
+        activeHref="/home"
+      >
         <header className={styles.toolbar}>
           {ownProfile ? (
             <Link
@@ -171,8 +173,7 @@ export default function ProfileViewerShell({
         >
           {children}
         </ProfileOverview>
-      </main>
-      {ownProfile && <WorkNavigation activeHref="/home" />}
-    </div>
+      </AppShell>
+    </>
   );
 }

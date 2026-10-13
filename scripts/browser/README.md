@@ -34,6 +34,8 @@ pnpm test:browser
 
 標準 suite 同時執行 `measure-loading.mjs`，產生 `loading-results.json` 與 `loading.log`。每個 route 使用新 context，再以同一 context 重新整理，區分首次憑證交換與 Cookie 恢復；合成 API 即時回覆、業務資格拒絕、攔截停用 HTTP cache，因此時間不能當作成功載入私人內容或 Rich Menu 點擊到可操作的延遲。
 
+`check-navigation.mjs` 同時量測 Home → Explore → Inbox → Home：暖機一輪後執行 20 輪，保存 `shell-navigation.json` 的 p50／p95、各次 API 路徑、RSC／script 解壓 bytes，並斷言共同外殼保留、不增加 document／LIFF 初始化。時間包含 Playwright 操作及斷言，不能當作正式 LINE 延遲或 Web Vitals。`shell-evidence.mjs` 由現有案例共用，保存 Home、Settings、Repository 與本人／訪客／Organization Profile 在 320／390／1280px 的 `shell-*.png` 與版面 JSON；Profile 使用獨立元件 fixture，與 Next production 導覽證據分開。
+
 設定 `REPOSITORY_BENCHMARK=1` 可額外量測六個 Repository 子頁各 20 次軟導覽，先暖機一輪，再記錄資料可見時間、外殼 DOM 保留、業務 API 次數與解壓後的 RSC／script bytes。結果保存在 `repository-resources-results.json`；這是本機、合成即時 API 的受控比較，時間包含 Playwright 操作／斷言成本，不能當作 production Web Vitals。Overview 的 server query 使用獨立合成 fixture，因此不混入 Next 路由效能數據。
 
 ## 個別執行與量測

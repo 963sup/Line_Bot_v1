@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fulfillLineSessionMock } from "./line-session-mock.mjs";
+import { captureShell, measureShellNavigation } from "./shell-evidence.mjs";
 
 const require = createRequire(import.meta.url);
 const packagePath = process.env.PLAYWRIGHT_PACKAGE_PATH;
@@ -482,6 +483,76 @@ async function run() {
       "/acme/Operations/issues/1",
     );
     assert.equal(await page.evaluate(() => window.liffInitializations), 1);
+    await captureShell(page, artifactDir, "home", 1);
+    const shellNavigation = await measureShellNavigation(page, artifactDir, [
+      {
+        label: "Explore",
+        pathname: "/explore",
+        heading: "Explore",
+        ready: () =>
+          expect(page.getByRole("link", { name: new RegExp(issue.title) })).toBeVisible(),
+      },
+      {
+        label: "Inbox",
+        pathname: "/notifications",
+        heading: "Inbox",
+        ready: () =>
+          expect(page.getByRole("link", { name: new RegExp(notification.title) })).toBeVisible(),
+      },
+      {
+        label: "Home",
+        pathname: "/home",
+        heading: "Home",
+        ready: () =>
+          expect(
+            page
+              .getByRole("region", { name: "Starred repositories", exact: true })
+              .getByRole("link", { name: /acme\/Operations/ }),
+          ).toBeVisible(),
+      },
+    ]);
+    assert.ok(
+      shellNavigation.samples.every((sample) => sample.retained),
+      "tabs navigation must preserve the shared shell",
+    );
+    await page.goto(`${base}/settings`);
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await captureShell(page, artifactDir, "settings", 0);
+    await page.locator(".app-shell").evaluate((element) => {
+      element.dataset.secondaryEvidence = "retained";
+    });
+    await page.getByRole("link", { name: /Account & Connections/ }).click();
+    await expect(page).toHaveURL(`${base}/settings/account`);
+    await expect(
+      page.getByRole("heading", { name: "Account & Connections", exact: true }),
+    ).toBeVisible();
+    assert.equal(
+      await page.locator(".app-shell").getAttribute("data-secondary-evidence"),
+      "retained",
+      "secondary navigation preserves its shared shell",
+    );
+    await expect(page.getByRole("navigation", { name: "主要導覽", exact: true })).toHaveCount(0);
+    await page.goBack();
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    assert.equal(
+      await page.locator(".app-shell").getAttribute("data-secondary-evidence"),
+      "retained",
+    );
+    const secondaryInitializations = await page.evaluate(() => window.liffInitializations);
+    await page.locator(".back-link").click();
+    await expect(page).toHaveURL(`${base}/home`);
+    await expect(page.getByRole("navigation", { name: "主要導覽", exact: true })).toHaveCount(1);
+    assert.equal(
+      await page.evaluate(() => window.liffInitializations),
+      secondaryInitializations,
+      "cross-group navigation does not initialize LIFF again",
+    );
+    await page.goto(`${base}/home`);
+    await expect(
+      page
+        .getByRole("region", { name: "Starred repositories", exact: true })
+        .getByRole("link", { name: /acme\/Operations/ }),
+    ).toBeVisible();
     await expect(
       page.locator('script[src="https://static.line-scdn.net/liff/edge/2/sdk.js"]'),
     ).toHaveCount(0);

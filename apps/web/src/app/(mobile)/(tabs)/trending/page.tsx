@@ -1,0 +1,18 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import DiscoveryPanel from "../../../../modules/repository/discovery-panel";
+import { PageHeading } from "../../../../shared/ui/page-layout";
+
+export const dynamic = "force-dynamic";
+
+export default function Page() {
+  return (
+    <>
+      <PageHeading title="Top Repositories" back="/explore" />
+      <div className="trending-filters" aria-label="Trending filters">
+        <span>最近 7 天</span>
+        <span>目前可存取</span>
+      </div>
+      <DiscoveryPanel liffId={lineMiniApp().liffId} sections="trending" />
+    </>
+  );
+}

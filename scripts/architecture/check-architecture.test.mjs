@@ -395,6 +395,14 @@ test("architecture checks source exports, types, ports, browser reachability and
       "rich-menu must remain independent from the authenticated mobile shell",
     );
     write(root, "apps/web/src/app/(rich-menu)/page.tsx", "export default function Page() {}");
+    write(root, "apps/web/src/app/_shell/app-shell.tsx", "export default function Frame() {}");
+    write(root, "apps/web/src/app/(public)/layout.tsx", importing("../_shell/app-shell"));
+    write(root, "apps/web/src/app/(mobile)/(tabs)/layout.tsx", importing("../../_shell/app-shell"));
+    assert.deepEqual(
+      (await checkArchitecture(root)).errors,
+      [],
+      "public and mobile may reuse the neutral app frame without borrowing a mobile-owned shell",
+    );
     write(root, "apps/web/src/modules/diary/form.ts", "export const url = 'https://example.test';");
     write(root, "apps/web/src/modules/diary/private.ts", "export const privateValue = 1;");
     write(root, "apps/web/src/shared/browser/session.ts", "export const session = 1;");
