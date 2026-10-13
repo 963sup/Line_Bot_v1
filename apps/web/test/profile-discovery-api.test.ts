@@ -146,7 +146,28 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
 
     assert.equal((await repositoriesGet(request("/api/repositories"))).status, 200);
     assert.equal((await exploreGet(request("/api/repositories/explore"))).status, 200);
+    const activityOnly = await exploreGet(request("/api/repositories/explore?view=activity"));
+    assert.equal(activityOnly.status, 200);
+    assert.deepEqual(await activityOnly.json(), { activity: [] });
+    assert.equal(discover.mock.callCount(), 1, "Home Recent must not run Trending discovery");
+    assert.equal((await exploreGet(request("/api/repositories/explore?view=unknown"))).status, 400);
+    assert.equal(
+      (await exploreGet(request("/api/repositories/explore?view=activity&view=activity"))).status,
+      400,
+    );
+    assert.equal(
+      (await exploreGet(new Request("https://app.example/api/repositories/explore?view=activity")))
+        .status,
+      401,
+    );
     assert.equal((await starredGet(request("/api/repositories/starred"))).status, 200);
+    discover.mock.mockImplementation(async () => {
+      throw new Error("Trending unavailable");
+    });
+    assert.equal(
+      (await exploreGet(request("/api/repositories/explore?view=activity"))).status,
+      200,
+    );
     assert.equal(
       (
         await explorePost(
@@ -167,7 +188,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(follow.mock.callCount(), 1);
     assert.equal(accessible.mock.callCount(), 1);
     assert.equal(discover.mock.callCount(), 1);
-    assert.equal(activity.mock.callCount(), 1);
+    assert.equal(activity.mock.callCount(), 3);
     assert.equal(starred.mock.callCount(), 1);
     assert.equal(star.mock.callCount(), 1);
   } finally {

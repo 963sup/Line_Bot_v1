@@ -24,6 +24,18 @@ export async function fulfillLineSessionMock(route, onRequest = () => {}) {
 
   if (request.method() === "POST") {
     const body = request.postDataJSON();
+    if (body.action === "restore") {
+      assert.deepEqual(body, { action: "restore" });
+      const hasSession = (request.headers().cookie ?? "")
+        .split(";")
+        .some((part) => part.trim() === "__Host-line_bot_v1_session=synthetic-session");
+      await route.fulfill({
+        status: hasSession ? 200 : 401,
+        json: hasSession ? { generation } : { error: "服務登入已失效，請重新登入。" },
+        ...(hasSession ? { headers: { "Set-Cookie": cookie } } : {}),
+      });
+      return true;
+    }
     assert.deepEqual(Object.keys(body).sort(), ["accessToken"]);
     assert.equal(typeof body.accessToken, "string");
     assert.ok(body.accessToken.length > 0);

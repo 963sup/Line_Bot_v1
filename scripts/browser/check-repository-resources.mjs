@@ -492,7 +492,12 @@ await context.route("**/*", async (route) => {
   if (!url.pathname.startsWith("/api/")) return route.continue();
 
   if (url.pathname === "/api/auth") {
-    if (request.method() === "GET") {
+    if (
+      request.method() === "GET" ||
+      (request.method() === "POST" && request.postDataJSON().action === "restore")
+    ) {
+      if (request.method() === "POST")
+        assert.deepEqual(request.postDataJSON(), { action: "restore" });
       const cookies = request.headers().cookie ?? "";
       const proof = Object.keys(sessionGenerations).find((candidate) =>
         cookies
@@ -504,7 +509,16 @@ await context.route("**/*", async (route) => {
           status: 401,
           json: { error: "服務登入已失效，請重新登入。" },
         });
-      return route.fulfill({ json: { generation: sessionGenerations[proof] } });
+      return route.fulfill({
+        json: { generation: sessionGenerations[proof] },
+        ...(request.method() === "POST"
+          ? {
+              headers: {
+                "Set-Cookie": `__Host-line_bot_v1_session=synthetic-${proof}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+              },
+            }
+          : {}),
+      });
     }
     if (request.method() === "POST") {
       const body = request.postDataJSON();

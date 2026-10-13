@@ -321,6 +321,21 @@ async function run() {
     }
     if (url.pathname === "/api/repositories/explore") {
       if (request.method() === "POST") return route.fulfill({ json: { ok: true } });
+      if (url.searchParams.get("view") === "activity")
+        return route.fulfill({
+          json: {
+            activity: [
+              {
+                id: `${issueId}:1`,
+                occurredAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
+                actorLogin: "viewer",
+                action: "create",
+                repository: { id: repositoryId, ownerLogin: "acme", name: "Operations" },
+                issue: { number: issueNumber, title: issue.title },
+              },
+            ],
+          },
+        });
       return route.fulfill({
         json: {
           items: [

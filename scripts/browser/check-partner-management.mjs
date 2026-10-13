@@ -78,7 +78,12 @@ await context.route("**/*", async (route) => {
         .split(";")
         .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
     );
-    if (request.method() === "GET") {
+    if (
+      request.method() === "GET" ||
+      (request.method() === "POST" && request.postDataJSON().action === "restore")
+    ) {
+      if (request.method() === "POST")
+        assert.deepEqual(request.postDataJSON(), { action: "restore" });
       if (!cookieProof)
         return route.fulfill({
           status: 401,
@@ -86,6 +91,13 @@ await context.route("**/*", async (route) => {
         });
       return route.fulfill({
         json: { generation: partnerSessionGenerations.get(cookieProof) },
+        ...(request.method() === "POST"
+          ? {
+              headers: {
+                "Set-Cookie": `__Host-line_bot_v1_session=synthetic-${cookieProof}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+              },
+            }
+          : {}),
       });
     }
     if (request.method() === "POST") {

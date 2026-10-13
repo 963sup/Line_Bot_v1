@@ -277,7 +277,7 @@ try {
     if (
       await fulfillLineSessionMock(route, ({ method }) => {
         authMethods.push(method);
-        if (method === "POST") authProofExchanges++;
+        if (method === "POST" && route.request().postDataJSON().accessToken) authProofExchanges++;
       })
     )
       return;
@@ -357,7 +357,11 @@ try {
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Private viewer");
   assert.equal(authProofExchanges, 1, "a valid cookie restores the app session without LINE proof");
-  assert.equal(authMethods[1], "GET", "a reload restores the existing service session");
+  assert.deepEqual(
+    authMethods,
+    ["POST", "POST"],
+    "reload restores and renews in one request without a GET/PATCH chain",
+  );
   assert.equal(
     await page.evaluate(() => sessionStorage.getItem("profile-line-access-token-reads")),
     tokenReads,
