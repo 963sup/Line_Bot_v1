@@ -10,7 +10,7 @@
 | URL | Owner / scope |
 | --- | --- |
 | `/api/membership`、`/api/membership/register`、`/api/membership/restore`、`/api/membership/manage`、`/api/membership/google-link` | Account 與明確組裝的既有 membership wire contract；GET `view=account` 是 Account-only projection，default/readback/checkIn 仍保留既有 DailyCheckIn composition；Google protocol 由 integration 擁有 |
-| `/api/auth` | GET 以有效 HttpOnly cookie 恢復產品 session generation；POST 以伺服器驗證的 LINE access token 建立／切換產品 session；PATCH 續期，DELETE 撤銷產品 session；不承載 Account qualification 或 business permission |
+| `/api/auth` | GET 只讀有效 HttpOnly cookie 的 session generation，供續期失敗後核對；POST `{action:"restore"}` 一次驗證並續期既有 cookie session，或 `{accessToken}` 以伺服器驗證的 LINE proof 建立／切換 session；PATCH 以已知 generation 續期，DELETE 撤銷；不承載 Account qualification 或 business permission |
 | `/api/profile`、`/api/profile/achievements`、`/api/follows` | Account Profile / earned Achievement read projection / Follow |
 | `/api/permissions` | Identity/Access；不能因 Web presenter 在 account 目錄就歸為 Account domain |
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
@@ -26,7 +26,7 @@
 | `/api/repository-access` | GET：Repository access management projection；POST：replay-safe Direct User / Organization Team grant mutation；owner/name/request body 只定位與表達 intent，不授權 |
 | `/api/repository-address` | GET：current effective Repository member address projection；POST：current effective Repository admin replay-safe address set/remove；public visibility does not grant this read |
 | `/api/repositories/owners` | Repository create owner options：current User 本人 + Organization scopes with at least one allowed visibility under current Owner/member creation policy；Organization option 回 allowed visibilities 與 current INTERNAL eligibility |
-| `/api/repositories/explore` | GET：Repository Trending + current-access-filtered Issue Activity projection；POST：Repository Star/unstar transport |
+| `/api/repositories/explore` | GET：Repository Trending + current-access-filtered Issue Activity；`view=activity` 只讀 Issue Activity，不執行 Trending；POST：Repository Star/unstar transport |
 | `/api/repositories/starred` | Current User 的 Repository Star projection；仍由 Repository owner 授權與查詢 |\n| `/api/repositories/lists`、`/api/repositories/lists/{listId}` | Repository Star List owner lifecycle；create預設 private，mutation使用 stable requestId + expectedVersion，item add 仍由 Repository owner重驗 Star/access |\n| `/api/repositories/lists/discover` | Published Repository Star List discovery projection；只計算並預覽 viewer 當下可見的 Repository items |
 | `/api/audit` | Audit read query over Identity/Access governance evidence; exact current EnterpriseOwner / OrganizationOwner scope required |
 | `/api/notifications` | recipient-scoped Notifications；Issue/Discussion-backed source 在 create/read/mark-read 都需 current Repository source access |

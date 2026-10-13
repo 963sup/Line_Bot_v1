@@ -321,6 +321,8 @@ async function run() {
     }
     if (url.pathname === "/api/repositories/explore") {
       if (request.method() === "POST") return route.fulfill({ json: { ok: true } });
+      if (url.searchParams.get("view") === "activity")
+        return route.fulfill({ json: { activity: [] } });
       return route.fulfill({
         json: {
           items: [

@@ -214,6 +214,31 @@ test("app sessions authenticate protected APIs without another LINE verification
     assert.deepEqual(await restored.json(), { generation: session["X-App-Session-Generation"] });
     assert.equal(restored.headers.get("cache-control"), "no-store");
     assert.equal(proofCalls, 2, "cookie restoration returns the generation without calling LINE");
+    const restoreRequest = (
+      cookie: string,
+      origin = "https://example.test",
+      body = { action: "restore" },
+    ) =>
+      new Request("https://example.test/api/auth", {
+        method: "POST",
+        headers: { Cookie: cookie, Origin: origin, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const restoredAndRenewed = await auth(restoreRequest(session.Cookie));
+    assert.equal(restoredAndRenewed.status, 200);
+    assert.deepEqual(await restoredAndRenewed.json(), {
+      generation: session["X-App-Session-Generation"],
+    });
+    assert.equal(restoredAndRenewed.headers.get("set-cookie")?.split(";", 1)[0], session.Cookie);
+    assert.match(restoredAndRenewed.headers.get("set-cookie") ?? "", /Max-Age=604800/);
+    assert.equal(proofCalls, 2, "atomic restore/renew must not reverify LINE proof");
+    assert.equal((await auth(restoreRequest(""))).status, 401);
+    assert.equal((await auth(restoreRequest(session.Cookie, "https://evil.example"))).status, 403);
+    assert.equal(
+      (await auth(restoreRequest(session.Cookie, "https://example.test", { action: "unknown" })))
+        .status,
+      400,
+    );
 
     const sameSubjectExchange = await auth(
       new Request("https://example.test/api/auth", {
@@ -294,6 +319,11 @@ test("app sessions authenticate protected APIs without another LINE verification
       "X-App-Session-Generation": switchedGeneration,
     };
     assert.equal((await expense(request(session), context)).status, 401);
+    assert.equal(
+      (await auth(restoreRequest(session.Cookie))).status,
+      401,
+      "old cookie cannot restore after account switch",
+    );
     assert.equal(proofCalls, 6, "account switching verifies the new proof once");
 
     const logoutHeaders = new Headers(switchedSession);
@@ -305,6 +335,11 @@ test("app sessions authenticate protected APIs without another LINE verification
     assert.equal(signedOut.status, 204);
     assert.match(signedOut.headers.get("set-cookie") ?? "", /Max-Age=0/);
     assert.equal((await expense(request(switchedSession), context)).status, 401);
+    assert.equal(
+      (await auth(restoreRequest(switchedSession.Cookie))).status,
+      401,
+      "revoked cookie cannot restore",
+    );
     assert.equal(proofCalls, 6, "logout and later protected requests do not reverify LINE");
     assert.equal(
       (

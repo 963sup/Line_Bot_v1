@@ -12,6 +12,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const subject = await requestLineIdentity(request);
+    const views = new URL(request.url).searchParams.getAll("view");
+    if (views.length > 1 || (views.length === 1 && views[0] !== "activity"))
+      throw new RepositoryError(400, "Repository 探索投影格式不正確。");
+    if (views[0] === "activity")
+      return jsonResponse({ activity: await issueActivity.read(subject) });
     const [snapshot, activity] = await Promise.all([
       repositoryDiscovery.discover(subject),
       issueActivity.read(subject),

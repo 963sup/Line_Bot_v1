@@ -161,11 +161,17 @@ async function responseError(response: Response) {
   return new Error("登入服務暫不可用，請稍後重試。");
 }
 
-async function readSessionGeneration() {
+async function readSessionGeneration(renew = false) {
   const response = await fetch(endpoint, {
-    method: "GET",
+    method: renew ? "POST" : "GET",
     credentials: "same-origin",
     cache: "no-store",
+    ...(renew
+      ? {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "restore" }),
+        }
+      : {}),
   });
   if (response.status === 401) return null;
   if (!response.ok) throw await responseError(response);
@@ -271,7 +277,7 @@ export async function ensureLineServiceSession() {
       if (Date.now() < renewAfter) return generation;
       return renewOrRecover(generation, expectedTransition);
     }
-    const restored = await readSessionGeneration();
+    const restored = await readSessionGeneration(true);
     if (transition !== expectedTransition)
       throw new SessionBlockedError(savedBlockReason() ?? "session-changed");
     if (!restored) {
@@ -279,9 +285,9 @@ export async function ensureLineServiceSession() {
       return null;
     }
     generation = restored;
-    renewAfter = 0;
+    renewAfter = Date.now() + renewAfterMs;
     markSessionHint();
-    return renewOrRecover(restored, expectedTransition);
+    return restored;
   })();
   pending = { fingerprint: null, transition: expectedTransition, promise };
   try {

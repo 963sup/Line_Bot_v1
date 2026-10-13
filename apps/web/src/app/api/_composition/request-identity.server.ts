@@ -253,6 +253,15 @@ async function currentSession(request: Request): Promise<StoredSession> {
 /** Extend a valid service session without reusing or resending the LINE credential. */
 export async function renewLineSession(request: Request) {
   const current = await currentSession(request);
+  return renewStoredSession(current);
+}
+
+/** Bootstrap a fresh document from its existing cookie and renew that exact session atomically. */
+export async function restoreAndRenewLineSession(request: Request) {
+  return renewStoredSession(await sessionFromCookie(request));
+}
+
+async function renewStoredSession(current: StoredSession) {
   try {
     const renewed = await sessionStore().update(
       current.id,

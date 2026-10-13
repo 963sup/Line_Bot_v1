@@ -4,6 +4,7 @@ import { RequestIdentityError } from "../../../shared/server/request-identity-er
 import {
   createLineSession,
   renewLineSession,
+  restoreAndRenewLineSession,
   restoreLineSession,
   revokeLineSession,
 } from "../_composition/request-identity.server";
@@ -65,7 +66,7 @@ function errorResponse(error: unknown) {
   return jsonResponse({ error: "登入服務暫不可用，請稍後重試。" }, 503);
 }
 
-async function accessToken(request: Request) {
+async function sessionIntent(request: Request) {
   if (request.headers.get("content-type")?.split(";")[0]?.trim() !== "application/json")
     throw new SessionRouteError(415, "資料格式不正確。");
   let body: unknown;
@@ -75,17 +76,24 @@ async function accessToken(request: Request) {
     if (error instanceof BodyTooLargeError) throw new SessionRouteError(413, "資料過大。");
     throw new SessionRouteError(400, "資料格式不正確。");
   }
-  if (!isRecord(body) || Object.keys(body).length !== 1 || typeof body.accessToken !== "string") {
+  if (!isRecord(body) || Object.keys(body).length !== 1) {
     throw new SessionRouteError(400, "LINE 登入憑證格式不正確。");
   }
-  return body.accessToken;
+  if (body.action === "restore") return { kind: "restore" } as const;
+  if (typeof body.accessToken === "string")
+    return { kind: "exchange", accessToken: body.accessToken } as const;
+  throw new SessionRouteError(400, "LINE 登入憑證格式不正確。");
 }
 
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    const lineToken = await accessToken(request);
-    const session = await createLineSession(lineToken, request);
+    const intent = await sessionIntent(request);
+    if (intent.kind === "restore") {
+      const session = await restoreAndRenewLineSession(request);
+      return sessionResponse({ generation: session.generation }, session.cookie);
+    }
+    const session = await createLineSession(intent.accessToken, request);
     return sessionResponse(
       { generation: session.generation, sessionChanged: session.sessionChanged },
       session.cookie,

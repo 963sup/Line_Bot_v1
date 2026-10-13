@@ -71,22 +71,33 @@ export default function DiscoveryPanel({
   }
 
   async function read(token: string): Promise<DiscoverySnapshot> {
-    const response = await fetch("/api/repositories/explore", {
-      headers: { "X-App-Session-Generation": token },
-      cache: "no-store",
-    });
+    const response = await fetch(
+      sections === "activity"
+        ? "/api/repositories/explore?view=activity"
+        : "/api/repositories/explore",
+      {
+        headers: { "X-App-Session-Generation": token },
+        cache: "no-store",
+      },
+    );
     const value: unknown = await response.json();
     if (
       !response.ok ||
       !isRecord(value) ||
-      !Array.isArray(value.items) ||
-      !value.items.every(isTrendingRepository) ||
+      (sections !== "activity" &&
+        (!Array.isArray(value.items) || !value.items.every(isTrendingRepository))) ||
       !Array.isArray(value.activity) ||
       !value.activity.every(isIssueActivity)
     ) {
       throw new Error(errorMessage(value, "儲存庫探索暫不可用。"));
     }
-    return { items: value.items, activity: value.activity };
+    return {
+      items:
+        sections !== "activity" && Array.isArray(value.items)
+          ? value.items.filter(isTrendingRepository)
+          : [],
+      activity: value.activity,
+    };
   }
 
   async function load() {
