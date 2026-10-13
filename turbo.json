@@ -50,6 +50,15 @@
         "$TURBO_ROOT$/scripts/runtime/next.mjs"
       ]
     },
+    "@line_bot_v1/namespace#test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/supabase/schemas/*.sql",
+        "$TURBO_ROOT$/apps/web/src/app/**"
+      ]
+    },
     "@line_bot_v1/web#test": {
       "dependsOn": ["^build"],
       "outputs": [],
