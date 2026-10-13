@@ -223,6 +223,12 @@
       "moduleKind": "domain-module",
       "semanticOwner": "workforce",
       "allowedWorkspaceDependencies": []
+    },
+    "@line_bot_v1/wbs": {
+      "path": "packages/wbs",
+      "moduleKind": "domain-module",
+      "semanticOwner": "wbs",
+      "allowedWorkspaceDependencies": ["@line_bot_v1/platform", "@line_bot_v1/repository"]
     }
   },
   "targetModules": {
@@ -583,7 +589,8 @@
         "@line_bot_v1/team",
         "@line_bot_v1/wallet",
         "@line_bot_v1/explore",
-        "@line_bot_v1/audit"
+        "@line_bot_v1/audit",
+        "@line_bot_v1/wbs"
       ]
     }
   }

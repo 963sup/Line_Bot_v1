@@ -81,6 +81,7 @@ References support the existing status; listed tests are evidence locations, not
 | provides | issue | query | repository | transaction-recheck | Issue classification and milestone assignment reference Repository-owned Label and Milestone definitions in the same Repository; Issue owns only the association fact. |
 | provides | issue | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
 | provides | notifications | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
+| provides | wbs | stable-identity+query | repository | transaction-recheck | Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned. |
 
 ## Tactical Model Boundary
 

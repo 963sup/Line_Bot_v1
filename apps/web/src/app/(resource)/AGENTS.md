@@ -1,5 +1,7 @@
 # Resource route group
 
+`/{login}/{repository}/wbs` is the Repository-WBS content entry; current and historical content are authorized through the WBS owner contract. Existing root and collaboration routes remain available.
+
 
 ## 現行 URL 與 invariant
 

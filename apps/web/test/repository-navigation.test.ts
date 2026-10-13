@@ -46,10 +46,10 @@ test("Repository Star List navigation stays under the existing repositories root
 test("repository resource navigation exposes one ordered map and gates management links", () => {
   assert.deepEqual(
     repositoryResourceNavigationItems("acme", "Operations", false).map((item) => item.section),
-    ["overview", "issues", "discussions", "labels", "milestones"],
+    ["wbs", "overview", "issues", "discussions", "labels", "milestones"],
   );
   assert.deepEqual(
     repositoryResourceNavigationItems("acme", "Operations", true).map((item) => item.section),
-    ["overview", "issues", "discussions", "labels", "milestones", "settings", "access"],
+    ["wbs", "overview", "issues", "discussions", "labels", "milestones", "settings", "access"],
   );
 });
