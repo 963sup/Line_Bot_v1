@@ -49,7 +49,11 @@ Object.assign(env, {
   NAVIGATION_BASE: base,
   NAVIGATION_ARTIFACT_DIR: output,
 });
-for (const key of ["PLAYWRIGHT_PACKAGE_PATH", "NAVIGATION_BROWSER_CHANNEL"]) {
+for (const key of [
+  "PLAYWRIGHT_PACKAGE_PATH",
+  "NAVIGATION_BROWSER_CHANNEL",
+  "REPOSITORY_BENCHMARK",
+]) {
   if (process.env[key]) env[key] = process.env[key];
 }
 const report = {

@@ -19,7 +19,7 @@ pnpm test:browser
 | `run-local.mjs` | 標準本機 browser suite 入口：build 一次、啟動 loopback production Web、依序執行案例、保存 evidence 並關閉服務。 |
 | `check-navigation.mjs` | 列表/詳情、query、前進返回、直接開啟與讀寫途中導覽。 |
 | `check-profile.mjs` | Profile client lifecycle、換帳號、遲到回應與 server-page composition。 |
-| `check-repository-resources.mjs` | Repository Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類與換帳號清除。 |
+| `check-repository-resources.mjs` | Repository 七頁桌面／手機版面、Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類與換帳號清除。Overview 使用真實 route/component 與合成 server query，其餘六頁使用 Next production routes。 |
 | `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
 | `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |
 | `check-partner-management.mjs` | Partner 名錄/管理、版本衝突、換帳號與 unknown-result handling。 |
@@ -31,6 +31,8 @@ pnpm test:browser
 每次產物位於 `.artifacts/browser/<時間>/`：report.json、各案例結果、建置／服務日誌、截圖與 trace。失敗保留證據並回非零；可用所選 Playwright 的 show-trace 查看。操作約束見 [AGENTS](AGENTS.md)。
 
 此套件不屬於 validate／CI；結果只證明本機 Web 與合成流程，不能代替真實 LINE、DB、手機 GPS 或 OAuth 驗收。
+
+設定 `REPOSITORY_BENCHMARK=1` 可額外量測六個 Repository 子頁各 20 次軟導覽，先暖機一輪，再記錄資料可見時間、外殼 DOM 保留、業務 API 次數與解壓後的 RSC／script bytes。結果保存在 `repository-resources-results.json`；這是本機、合成即時 API 的受控比較，時間包含 Playwright 操作／斷言成本，不能當作 production Web Vitals。Overview 的 server query 使用獨立合成 fixture，因此不混入 Next 路由效能數據。
 
 ## 個別執行與量測
 

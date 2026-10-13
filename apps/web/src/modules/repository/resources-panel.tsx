@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { PageHeading, PageState } from "../../shared/ui/page-layout";
-import RepositoryResourceNavigation from "./repository-resource-navigation";
+import { PageState } from "../../shared/ui/page-layout";
+import RepositoryPageHeader from "./repository-page-header";
 import { ResourceContent } from "./resource-content";
-import { repositoryPath } from "./resource-navigation";
 import {
   type MilestoneStatus,
   mergeRepositoryResourcePage,
@@ -42,7 +41,6 @@ export default function RepositoryResourcesPanel({
   const generation = useRef(0);
   const dataRef = useRef<PageData | null>(null);
   const readyRef = useRef(false);
-  const repositoryHref = repositoryPath(ownerLogin, repositoryName);
 
   const clear = useCallback(() => {
     generation.current++;
@@ -156,22 +154,11 @@ export default function RepositoryResourcesPanel({
     };
   }, [clear, load]);
 
-  const title =
-    kind === "labels"
-      ? "Labels"
-      : kind === "milestones" || kind === "milestone"
-        ? "Milestones"
-        : "Discussions";
   const restricted = error && (error.status === 401 || error.status === 403);
 
   return (
     <>
-      <PageHeading
-        title={title}
-        description="查看這個儲存庫的討論、標籤與里程碑。"
-        back={repositoryHref}
-      />
-      <RepositoryResourceNavigation
+      <RepositoryPageHeader
         ownerLogin={ownerLogin}
         repositoryName={repositoryName}
         active={

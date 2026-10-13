@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageState } from "../../shared/ui/page-layout";
+import styles from "./repository-resource.module.css";
 import {
   repositoryDiscussionPath,
   repositoryDiscussionsPath,
@@ -33,11 +34,11 @@ export function ResourceContent({
       return <PageState title="目前沒有 Discussions">這個儲存庫目前沒有可讀取的討論。</PageState>;
     }
     return (
-      <ul className="notification-list">
+      <ul className={styles.list}>
         {data.discussions.map((discussion) => (
           <li key={discussion.id}>
             <Link
-              className="notification-item"
+              className={styles.row}
               href={repositoryDiscussionPath(
                 ownerLogin,
                 repositoryName,
@@ -45,13 +46,13 @@ export function ResourceContent({
                 discussion.number,
               )}
             >
-              <span>
+              <span className={styles.copy}>
                 <strong>{discussion.title}</strong>
                 <small>
                   {discussion.category} · {discussion.author} · {dateTime(discussion.updatedAt)}
                 </small>
               </span>
-              <span className="notification-state">v{discussion.version}</span>
+              <span className={styles.badge}>v{discussion.version}</span>
             </Link>
           </li>
         ))}
@@ -89,31 +90,27 @@ export function ResourceContent({
       return <PageState title="目前沒有 Labels">這個儲存庫目前沒有可讀取的標籤。</PageState>;
     }
     return (
-      <div className="discovery-list">
+      <ul className={styles.list}>
         {data.labels.map((label) => (
-          <article className="discovery-item" key={label.id}>
-            <div className="discovery-copy">
+          <li className={styles.row} key={label.id}>
+            <div className={styles.copy}>
               <h2>
                 <span
                   aria-hidden="true"
+                  className={styles.swatch}
                   style={{
                     backgroundColor: swatch(label.color),
-                    display: "inline-block",
-                    height: 12,
-                    width: 12,
                   }}
                 />{" "}
                 {label.name}
               </h2>
               <p>{label.description || "沒有描述。"}</p>
-              <div className="discovery-meta">
-                <span>{label.color}</span>
-                <span>v{label.version}</span>
-              </div>
+              <small>{label.color}</small>
             </div>
-          </article>
+            <span className={styles.badge}>v{label.version}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     );
   }
   if (data.kind === "milestones") {
@@ -121,14 +118,14 @@ export function ResourceContent({
       return <PageState title="目前沒有 Milestones">這個狀態下沒有可讀取的 milestone。</PageState>;
     }
     return (
-      <ul className="notification-list">
+      <ul className={styles.list}>
         {data.milestones.map((milestone) => (
           <li key={milestone.id}>
             <Link
-              className="notification-item"
+              className={styles.row}
               href={milestonePath(ownerLogin, repositoryName, milestone.number)}
             >
-              <span>
+              <span className={styles.copy}>
                 <strong>
                   #{milestone.number} {milestone.title}
                 </strong>
@@ -137,7 +134,7 @@ export function ResourceContent({
                   {milestone.dueAt ? `到期 ${dateTime(milestone.dueAt)}` : "無到期日"}
                 </small>
               </span>
-              <span className="notification-state">v{milestone.version}</span>
+              <span className={styles.badge}>v{milestone.version}</span>
             </Link>
           </li>
         ))}

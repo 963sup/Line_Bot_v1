@@ -9,10 +9,10 @@ import {
   type IssueWorkflowStatus,
 } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { PageHeading, PrimaryLink } from "../../shared/ui/page-layout";
+import { PageHeading, PageState, PrimaryLink } from "../../shared/ui/page-layout";
 import {
   clearPendingIssueCommand,
   type PendingIssueCommand,
@@ -20,7 +20,8 @@ import {
   savePendingIssueCommand,
 } from "./issue-pending-storage";
 import { postIssueCommand, requestIssueSnapshot } from "./issue-requests";
-import RepositoryResourceNavigation from "./repository-resource-navigation";
+import RepositoryPageHeader from "./repository-page-header";
+import styles from "./repository-resource.module.css";
 import {
   type RepositoryResourceSection,
   repositoryIssuePath,
@@ -63,6 +64,7 @@ export default function IssueBoard({
   issueNumber,
   initialCreating = false,
   navigationActive = "issues",
+  overviewContent,
 }: {
   liffId: string;
   repositoryId?: string;
@@ -71,6 +73,7 @@ export default function IssueBoard({
   issueNumber?: number;
   initialCreating?: boolean;
   navigationActive?: RepositoryResourceSection;
+  overviewContent?: ReactNode;
 }) {
   const detailMode = issueNumber !== undefined;
   const canonicalRepository = Boolean(ownerLogin && repositoryName);
@@ -251,19 +254,18 @@ export default function IssueBoard({
 
   return (
     <>
-      <PageHeading
-        title={detailMode ? "Issue" : canonicalRepository ? "Issues" : "儲存庫"}
-        description="Issue state 與本地工作流程分開管理；儲存庫提供範圍與存取，Project 只引用工作。"
-        actions={headingActions}
-      />
-      {canonicalRepository && ownerLogin && repositoryName && (
-        <RepositoryResourceNavigation
+      {canonicalRepository && ownerLogin && repositoryName ? (
+        <RepositoryPageHeader
           ownerLogin={ownerLogin}
           repositoryName={repositoryName}
           active={navigationActive}
           canManage={currentRepository?.permissions.includes("admin") ?? false}
+          {...(detailMode ? { title: "Issue" } : {})}
         />
+      ) : (
+        <PageHeading title={detailMode ? "Issue" : "儲存庫"} actions={headingActions} />
       )}
+      {overviewContent}
       <MiniAppRuntime
         key={routeKey}
         liffId={liffId}
@@ -403,8 +405,10 @@ export default function IssueBoard({
                   <button disabled={busy || Boolean(pending)}>建立</button>
                 </form>
               )}
-              {!data.issues.length && <p className="empty-copy">目前沒有符合條件的 Issue。</p>}
-              <ul className="issue-list">
+              {!data.issues.length && (
+                <PageState title="目前沒有 Issues">目前沒有符合條件的 Issue。</PageState>
+              )}
+              <ul className={`issue-list ${styles.list}`}>
                 {data.issues.map((issue) => {
                   const issueRepository =
                     data.repositories.find((item) => item.id === issue.repositoryId) ??
@@ -413,7 +417,7 @@ export default function IssueBoard({
                   return (
                     <li key={issue.id}>
                       <Link
-                        className="issue-list-item"
+                        className={`issue-list-item ${styles.row}`}
                         href={repositoryIssuePath(
                           issueRepository.ownerLogin,
                           issueRepository.name,

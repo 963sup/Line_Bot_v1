@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { startRepositoryOverviewFixture } from "./repository-overview-fixture.mjs";
 
 const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
@@ -24,6 +25,9 @@ if (
 const base = target.origin;
 const output = process.env.NAVIGATION_ARTIFACT_DIR;
 if (output) mkdirSync(output, { recursive: true });
+const overviewFixture = await startRepositoryOverviewFixture(
+  output ?? ".artifacts/browser/repository-resources",
+);
 
 const browser = await chromium.launch({
   headless: true,
@@ -64,7 +68,7 @@ let delayNextPrivateLabels = false;
 let releaseDelayedPrivateLabels;
 const result = {
   status: "failed",
-  scope: "Repository Discussions, Labels, Milestones URLs with synthetic LINE/API.",
+  scope: "All seven Repository sections and resource URLs with synthetic LINE/API.",
   base,
   urls: [],
   requests,
@@ -261,6 +265,37 @@ function routeOwner(url) {
 }
 
 function payloadFor(url, request) {
+  const managedRepository = {
+    ...repository,
+    actorUserId: "user-alpha",
+    ownerAccountId: "account-acme",
+    ownerKind: "ORGANIZATION",
+    visibility: "private",
+    archived: false,
+    version: 1,
+    actorPermissions: repository.permissions,
+    internalEnterpriseId: null,
+  };
+  if (url.pathname === "/api/issues") {
+    return {
+      json: {
+        userId: "user-alpha",
+        repositories: [repository],
+        participants: [],
+        issues: [],
+        events: [],
+        next: null,
+      },
+    };
+  }
+  if (url.pathname === "/api/repository-management")
+    return { json: { repository: managedRepository } };
+  if (url.pathname === "/api/repository-address")
+    return { json: { repository: { ...managedRepository, actorIsOwner: false }, address: null } };
+  if (url.pathname === "/api/repository-access")
+    return { json: { repository: managedRepository, directUserGrants: [], teamGrants: [] } };
+  if (url.pathname === "/api/repository-subscription")
+    return { json: { repository: managedRepository, state: "UNSUBSCRIBED", version: 1 } };
   const kind = routeKind(url);
   const owner = routeOwner(url);
   const generation = readSessionGeneration(request);
@@ -453,7 +488,7 @@ page.on("pageerror", (error) => errors.push(error.message));
 await context.route("**/*", async (route) => {
   const request = route.request();
   const url = new URL(request.url());
-  if (url.origin !== base) return route.abort();
+  if (url.origin !== base && url.origin !== overviewFixture.origin) return route.abort();
   if (!url.pathname.startsWith("/api/")) return route.continue();
 
   if (url.pathname === "/api/auth") {
@@ -536,6 +571,180 @@ await context.route("**/*", async (route) => {
 });
 
 try {
+  const sections = [
+    "Overview",
+    "Issues",
+    "Discussions",
+    "Labels",
+    "Milestones",
+    "Settings",
+    "Access",
+  ];
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    let expectedGeometry;
+    for (const section of sections) {
+      const suffix = section === "Overview" ? "" : `/${section.toLowerCase()}`;
+      if (section === "Overview") await page.goto(`${overviewFixture.origin}/acme/Operations`);
+      else await gotoPath(`/acme/Operations${suffix}`);
+      const main = page.getByRole("main");
+      await expect(main.getByRole("heading", { name: section, exact: true })).toBeVisible();
+      const navigation = main.getByRole("navigation", { name: "Repository resources" });
+      await expect(navigation.getByRole("link")).toHaveCount(7);
+      await expect(navigation.getByRole("link", { name: section, exact: true })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      const metrics = await main.evaluate((element) => {
+        const heading = element.querySelector(".page-heading");
+        const nav = element.querySelector('nav[aria-label="Repository resources"]');
+        const headingBox = heading.getBoundingClientRect();
+        const navBox = nav.getBoundingClientRect();
+        const links = Array.from(nav.querySelectorAll("a"), (link) => {
+          const box = link.getBoundingClientRect();
+          return { left: box.left, right: box.right, width: box.width, height: box.height };
+        });
+        return {
+          geometry: [
+            headingBox.x,
+            headingBox.y,
+            headingBox.width,
+            navBox.x,
+            navBox.y,
+            navBox.width,
+            navBox.height,
+          ],
+          overflow: document.documentElement.scrollWidth - innerWidth,
+          links,
+          shell: Boolean(element.closest(".app-shell")),
+        };
+      });
+      assert.equal(metrics.shell, true, `${section} must use AppShell`);
+      assert.ok(metrics.overflow <= 1, `${section} overflows at ${width}px`);
+      for (const link of metrics.links) {
+        assert.ok(
+          link.width >= 44 && link.height >= 44,
+          `${section} has a small navigation target`,
+        );
+        assert.ok(link.left >= -1 && link.right <= width + 1, `${section} navigation is clipped`);
+      }
+      if (expectedGeometry)
+        assert.deepEqual(
+          metrics.geometry,
+          expectedGeometry,
+          `${section} header differs at ${width}px`,
+        );
+      expectedGeometry = metrics.geometry;
+      if (section === "Settings") {
+        await expect(
+          main.getByRole("heading", { name: "acme/Operations", exact: true }),
+        ).toBeVisible();
+        const cardGap = await main.evaluate((element) => {
+          const cards = element.querySelectorAll("section.crud-detail");
+          return cards[1].getBoundingClientRect().top - cards[0].getBoundingClientRect().bottom;
+        });
+        assert.ok(cardGap >= 18, "Settings command families must have consistent card spacing");
+      }
+      if (output && width === 390)
+        await page.screenshot({
+          path: path.join(output, `repository-${section.toLowerCase()}-layout.png`),
+          fullPage: true,
+        });
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const beforePublicReads = requests.length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
+  await expect(
+    page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
+  ).toHaveCount(5);
+  await expect(
+    page.getByText("登入後可設定這個 Repository 的追蹤偏好。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  assert.equal(
+    requests.length,
+    beforePublicReads,
+    "Public Overview must stay passive before interaction",
+  );
+  // Controlled local navigation experiment, not production Web Vitals.
+  if (process.env.REPOSITORY_BENCHMARK === "1") {
+    await gotoPath("/acme/Operations/labels");
+    await expect(page.getByText("bug", { exact: true })).toBeVisible();
+    const samples = [];
+    let responses = [];
+    const recordResponse = (response) => {
+      const request = response.request();
+      if (
+        request.resourceType() === "script" ||
+        response.headers()["content-type"]?.includes("text/x-component")
+      ) {
+        responses.push(
+          response
+            .body()
+            .then((body) => ({ type: request.resourceType(), decodedBytes: body.length }))
+            .catch(() => ({ type: request.resourceType(), decodedBytes: 0 })),
+        );
+      }
+    };
+    page.on("response", recordResponse);
+    const ready = {
+      Issues: () => page.getByRole("heading", { name: "目前沒有 Issues", exact: true }),
+      Discussions: () => linkWithText(firstDiscussion.title),
+      Labels: () => page.getByText("bug", { exact: true }),
+      Milestones: () => linkWithText("#1 v1.0"),
+      Settings: () => page.getByRole("heading", { name: "acme/Operations", exact: true }),
+      Access: () => page.getByRole("heading", { name: "Direct User access", exact: true }),
+    };
+    for (let cycle = 0; cycle <= 20; cycle++) {
+      for (const section of sections.slice(1)) {
+        await page
+          .locator(".app-shell")
+          .evaluate((element) => (element.dataset.benchmarkShell = "retained"));
+        const before = requests.length;
+        responses = [];
+        const started = performance.now();
+        await page
+          .getByRole("navigation", { name: "Repository resources" })
+          .getByRole("link", { name: section, exact: true })
+          .click();
+        await expect(ready[section]()).toBeVisible();
+        await expect(
+          page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
+        ).toHaveCount(7);
+        const readyMs = performance.now() - started;
+        const retained = await page
+          .locator(".app-shell")
+          .evaluate((element) => element.dataset.benchmarkShell === "retained");
+        const bodies = await Promise.all(responses);
+        if (cycle)
+          samples.push({
+            section,
+            readyMs,
+            retained,
+            apiRequests: requests.length - before,
+            decodedScriptBytes: bodies
+              .filter((item) => item.type === "script")
+              .reduce((sum, item) => sum + item.decodedBytes, 0),
+            decodedRscBytes: bodies
+              .filter((item) => item.type !== "script")
+              .reduce((sum, item) => sum + item.decodedBytes, 0),
+          });
+      }
+    }
+    page.off("response", recordResponse);
+    result.navigationBenchmark = {
+      scope:
+        "120 warmed soft navigations, 20 per section; synthetic immediate APIs; browser routing disables HTTP cache; client router cache/prefetch unchanged; excludes database-backed Overview; timings include Playwright click/assertion overhead and are not Web Vitals",
+      samples,
+    };
+  }
+  result.checks.push(
+    "all seven Repository sections share shell/header/navigation geometry at 1280, 390 and 320px; 44px targets and no overflow",
+  );
   const firstDiscussionPath = `/acme/Operations/discussions/${firstDiscussion.id}`;
   const secondDiscussionPath = `/acme/Operations/discussions/${secondDiscussion.id}`;
   const firstMilestonePath = "/acme/Operations/milestones/1";
@@ -570,9 +779,20 @@ try {
     "discussions direct load, reload, detail, back, pagination, no duplicate data, mobile layout",
   );
 
-  await gotoPath("/acme/Operations/labels");
+  await page
+    .locator(".app-shell")
+    .evaluate((element) => (element.dataset.sharedLayoutCheck = "retained"));
+  await page
+    .getByRole("navigation", { name: "Repository resources" })
+    .getByRole("link", { name: "Labels", exact: true })
+    .click();
   await expect(page.getByRole("heading", { name: "Labels", exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toBeVisible();
+  assert.equal(
+    await page.locator(".app-shell").evaluate((element) => element.dataset.sharedLayoutCheck),
+    "retained",
+    "Sibling soft navigation must preserve the Repository layout",
+  );
   await expect(page.getByText("help wanted", { exact: true })).toBeVisible();
   result.checks.push("labels direct load");
 
@@ -614,6 +834,12 @@ try {
   await gotoPath("/private/Operations/labels");
   await expect(page.getByText("private-visible", { exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);
+  const readerNavigation = page.getByRole("navigation", { name: "Repository resources" });
+  await expect(readerNavigation.getByRole("link")).toHaveCount(5);
+  await expect(readerNavigation.getByRole("link", { name: "Settings", exact: true })).toHaveCount(
+    0,
+  );
+  await expect(readerNavigation.getByRole("link", { name: "Access", exact: true })).toHaveCount(0);
   result.checks.push("identity and visibility changes isolate private state and late responses");
 
   assert.deepEqual(errors, []);
@@ -650,4 +876,5 @@ try {
   }
   await context.close();
   await browser.close();
+  await overviewFixture.close();
 }
