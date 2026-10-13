@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { startRepositoryOverviewFixture } from "./repository-overview-fixture.mjs";
+import { captureShell } from "./shell-evidence.mjs";
 
 const require = createRequire(import.meta.url);
 const load = process.env.PLAYWRIGHT_PACKAGE_PATH
@@ -670,6 +671,7 @@ try {
   const beforePublicReads = requests.length;
   await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
   await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await captureShell(page, output, "repository-public", 1);
   await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
   await expect(
     page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),

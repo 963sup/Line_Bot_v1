@@ -1828,7 +1828,7 @@
         "publicExports": ["./application/profile", "./contracts/repositories/profile"],
         "entrypoints": [
           "apps/web/src/app/api/profile/route.ts",
-          "apps/web/src/app/(mobile)/settings/profile/page.tsx"
+          "apps/web/src/app/(mobile)/(secondary)/settings/profile/page.tsx"
         ],
         "testPaths": ["packages/account/test/profile.test.ts"],
         "note": "Profile source and public exports exist; tests are evidence locations, not proof unless executed."
@@ -1892,7 +1892,7 @@
         "publicExports": ["./application/follows", "./contracts/output/follows"],
         "entrypoints": [
           "apps/web/src/app/api/follows/route.ts",
-          "apps/web/src/app/(mobile)/settings/network/page.tsx"
+          "apps/web/src/app/(mobile)/(secondary)/settings/network/page.tsx"
         ],
         "testPaths": ["packages/account/test/follows.test.ts"],
         "note": "Follow source/export evidence is current; runtime availability is separately validated."
@@ -1928,8 +1928,8 @@
           "./domain"
         ],
         "entrypoints": [
-          "apps/web/src/app/(mobile)/enterprises/page.tsx",
-          "apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/enterprises/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"
         ],
         "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
         "note": "Enterprise source/export evidence exists; slug locator stability is distinct from authorization."
@@ -1957,7 +1957,9 @@
           "packages/enterprise/src/domain.ts"
         ],
         "publicExports": ["./application/enterprise-governance", "./domain"],
-        "entrypoints": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
+        ],
         "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
         "note": "Enterprise Team is current domain behavior; route locator does not grant access by itself."
       }
@@ -1992,7 +1994,7 @@
           "./contracts/organization-governance",
           "./domain"
         ],
-        "entrypoints": ["apps/web/src/app/(mobile)/organizations/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx"],
         "testPaths": [
           "packages/organization/test/organization-capabilities.test.ts",
           "packages/organization/test/organization-postgres-execute-characterization.test.ts"
@@ -2023,7 +2025,7 @@
         "publicExports": ["./domain", "./application/organization-governance"],
         "entrypoints": [
           "apps/web/src/app/api/organization/route.ts",
-          "apps/web/src/app/(mobile)/organizations/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx",
           "apps/web/src/modules/organization/panel.tsx"
         ],
         "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
@@ -2069,8 +2071,8 @@
           "./domain/value-objects/team-slug"
         ],
         "entrypoints": [
-          "apps/web/src/app/(mobile)/team/page.tsx",
-          "apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/team/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"
         ],
         "testPaths": [
           "packages/team/test/team.test.ts",
@@ -2138,7 +2140,7 @@
         "entrypoints": [
           "apps/web/src/app/api/repositories/route.ts",
           "apps/web/src/app/api/repositories/owners/route.ts",
-          "apps/web/src/app/(mobile)/repositories/new/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/repositories/new/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/creation.test.ts",
@@ -2173,7 +2175,7 @@
         "publicExports": ["./application/public", "./contracts/output/public"],
         "entrypoints": [
           "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
-          "apps/web/src/app/(mobile)/repositories/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/management.test.ts",
@@ -2292,7 +2294,7 @@
         "entrypoints": [
           "apps/web/src/app/api/repository-access/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/access/page.tsx",
-          "apps/web/src/app/(mobile)/repositories/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/access.test.ts",
@@ -2326,9 +2328,9 @@
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/api/repositories/starred/route.ts",
-          "apps/web/src/app/(mobile)/stars/page.tsx",
-          "apps/web/src/app/(mobile)/explore/page.tsx",
-          "apps/web/src/app/(mobile)/home/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/stars/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/explore/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/home/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/stars.test.ts",
@@ -2367,9 +2369,9 @@
         "entrypoints": [
           "apps/web/src/app/api/repositories/lists/route.ts",
           "apps/web/src/app/api/repositories/lists/[listId]/route.ts",
-          "apps/web/src/app/(mobile)/repositories/lists/page.tsx",
-          "apps/web/src/app/(mobile)/repositories/lists/new/page.tsx",
-          "apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/new/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/[listId]/page.tsx"
         ],
         "testPaths": [
           "packages/repository/test/star-lists.test.ts",
@@ -2402,9 +2404,9 @@
         "publicExports": ["./contracts/discovery", "./postgres/discovery"],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
-          "apps/web/src/app/(mobile)/explore/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/explore/page.tsx",
           "apps/web/src/app/api/repositories/lists/discover/route.ts",
-          "apps/web/src/app/(mobile)/repositories/lists/discover/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/discover/page.tsx",
           "packages/explore/src/application/queries/repository-discovery.ts"
         ],
         "testPaths": [
@@ -2451,7 +2453,7 @@
           "apps/web/src/app/api/issues/route.ts",
           "apps/web/src/app/api/issues/[issueNumber]/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/issues/page.tsx",
-          "apps/web/src/app/(mobile)/issues/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/issues/page.tsx",
           "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
         ],
         "testPaths": [
@@ -2824,7 +2826,7 @@
         ],
         "entrypoints": [
           "apps/web/src/app/api/projects/route.ts",
-          "apps/web/src/app/(mobile)/projects/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/projects/page.tsx"
         ],
         "testPaths": ["packages/project/test/collection.test.ts"],
         "note": "Project collection reads combine current Organization viewerCanAdminister capability, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
@@ -2900,7 +2902,7 @@
           "./domain/value-objects/location"
         ],
         "entrypoints": [
-          "apps/web/src/app/(mobile)/attendance/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/attendance/page.tsx",
           "apps/web/src/app/(mobile)/attendance/clock-in/page.tsx",
           "apps/web/src/app/(mobile)/attendance/clock-out/page.tsx"
         ],
@@ -3005,7 +3007,7 @@
           "./composition/bootstrap/postgres-daily-check-in-store",
           "./domain/error"
         ],
-        "entrypoints": ["apps/web/src/app/(mobile)/home/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/(tabs)/home/page.tsx"],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",
           "packages/daily-check-in/test/daily-check-in-policy.test.ts",
@@ -3074,7 +3076,7 @@
           "./application/permissions/ports",
           "./domain/permission"
         ],
-        "entrypoints": ["apps/web/src/app/(mobile)/settings/permissions/page.tsx"],
+        "entrypoints": ["apps/web/src/app/(mobile)/(secondary)/settings/permissions/page.tsx"],
         "testPaths": [],
         "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
       }
@@ -3926,7 +3928,7 @@
       "fields": ["slug"],
       "scope": "enterprise-slug-namespace",
       "scopeAuthority": "enterprise",
-      "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"],
       "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
       "fpt": {
         "file": "schema-enterprise-admin.json",
@@ -3956,7 +3958,7 @@
       "fields": ["listId"],
       "scope": "repository-star-list-global-id",
       "scopeAuthority": "repository",
-      "routeFiles": ["apps/web/src/app/(mobile)/repositories/lists/[listId]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/repositories/lists/[listId]/page.tsx"],
       "note": "Repository Star List uses its opaque stable ListId as the detail locator under the already-reserved /repositories root; the locator never grants Repository or List authority."
     },
     {
@@ -4029,7 +4031,7 @@
       "fields": ["organizationLogin", "teamSlug"],
       "scope": "organization-scoped-team-slug",
       "scopeAuthority": "team",
-      "routeFiles": ["apps/web/src/app/(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx"],
+      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"],
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "fpt": {
         "file": "schema-teams.json",
@@ -4044,7 +4046,9 @@
       "fields": ["enterpriseSlug", "teamSlug"],
       "scope": "enterprise-scoped-team-slug",
       "scopeAuthority": "enterprise",
-      "routeFiles": ["apps/web/src/app/(mobile)/enterprises/[slug]/teams/[teamSlug]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
+      ],
       "note": "Enterprise Team slug is scoped to Enterprise and is independent from Organization Team slug.",
       "fpt": {
         "file": "schema-enterprise-admin.json",

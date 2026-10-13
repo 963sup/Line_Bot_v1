@@ -1,0 +1,23 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import Inbox from "../../../../../modules/notifications/inbox";
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ notificationId: string }>;
+  searchParams: Promise<{ notificationView?: string | string[] }>;
+}) {
+  const [{ notificationId }, { notificationView }] = await Promise.all([params, searchParams]);
+  const view = notificationView === "unread" ? "unread" : "all";
+  return (
+    <>
+      <Inbox
+        key={`${notificationId}:${view}`}
+        liffId={lineMiniApp().liffId}
+        notificationId={notificationId}
+        view={view}
+      />
+    </>
+  );
+}

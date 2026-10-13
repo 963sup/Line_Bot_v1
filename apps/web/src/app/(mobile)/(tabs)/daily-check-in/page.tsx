@@ -1,0 +1,18 @@
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import DailyCheckInPanel from "../../../../modules/daily-check-in/panel";
+import { PageHeading } from "../../../../shared/ui/page-layout";
+
+export const dynamic = "force-dynamic";
+
+export default function Page() {
+  return (
+    <>
+      <PageHeading
+        title="Daily Check-in"
+        description="每日獎勵由 DailyCheckIn owner 決定；轉盤只呈現 server 已提交的結果。"
+        back="/home"
+      />
+      <DailyCheckInPanel liffId={lineMiniApp().liffId} />
+    </>
+  );
+}

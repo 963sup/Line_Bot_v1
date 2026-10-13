@@ -78,7 +78,9 @@ export default function WorkNavigation({ activeHref }: { activeHref?: Destinatio
       {items.map(({ href, label, icon, exact }) => {
         const active = activeHref
           ? href === activeHref
-          : pathname === href || (!exact && pathname.startsWith(`${href}/`));
+          : pathname === href ||
+            (!exact && pathname.startsWith(`${href}/`)) ||
+            (href === "/explore" && pathname === "/trending");
         return (
           <Link key={href} href={href} aria-current={active ? "page" : undefined}>
             <span className="nav-icon">{icon}</span>

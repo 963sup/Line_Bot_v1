@@ -1,0 +1,28 @@
+import { normalizeEnterpriseSlug } from "@line_bot_v1/enterprise/domain";
+import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import { notFound } from "next/navigation";
+import EnterprisePanel from "../../../../../modules/enterprise/panel";
+import { PageHeading } from "../../../../../shared/ui/page-layout";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  let enterpriseSlug: string;
+  try {
+    enterpriseSlug = normalizeEnterpriseSlug(slug);
+  } catch {
+    notFound();
+  }
+
+  return (
+    <>
+      <PageHeading
+        title="企業管理"
+        description="以 Enterprise slug 定位同一個治理範圍；實際可見內容仍由目前 LINE User 的 affiliation 與 owner policy 決定。"
+        back="/enterprises"
+      />
+      <EnterprisePanel liffId={lineMiniApp().liffId} initialSlug={enterpriseSlug} />
+    </>
+  );
+}

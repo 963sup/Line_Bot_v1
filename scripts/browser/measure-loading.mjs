@@ -68,7 +68,18 @@ try {
         return route.fulfill({ status: 403, json: { error: "合成資格拒絕" } });
       return route.continue();
     });
+    const homeActivity =
+      pathname === "/home"
+        ? page.waitForRequest(
+            (request) => new URL(request.url()).pathname === "/api/repositories/explore",
+          )
+        : null;
+    const initialAuth = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/auth",
+    );
     await page.goto(new URL(pathname, base).href);
+    await initialAuth;
+    if (homeActivity) await homeActivity;
     // This bounded quiet period measures initial resources, not interaction readiness.
     await page.waitForLoadState("networkidle");
     await Promise.all(pending);
@@ -77,7 +88,9 @@ try {
       (!apiRequests.includes("/api/repositories/explore?view=activity") ||
         apiRequests.includes("/api/repositories/explore"))
     )
-      throw new Error("Home Recent must request only the activity projection.");
+      throw new Error(
+        `Home Recent must request only the activity projection: ${JSON.stringify(apiRequests)}`,
+      );
     const navigation = await page.evaluate(() => {
       const entry = performance.getEntriesByType("navigation")[0];
       return { ttfbMs: entry.responseStart, domContentLoadedMs: entry.domContentLoadedEventEnd };
@@ -93,7 +106,11 @@ try {
       ...navigation,
     });
     authRequests.length = 0;
+    const restored = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/auth",
+    );
     await page.reload();
+    await restored;
     await page.waitForLoadState("networkidle");
     if (authRequests.length !== 1 || authRequests[0].action !== "restore")
       throw new Error(`${pathname}: cookie restore must use exactly one auth request.`);

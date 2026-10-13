@@ -19,6 +19,8 @@
 
 AppShell 只擁有所有 mobile destinations 都需要的共用 frame/navigation/accessibility mechanism。Page-specific heading、action、owner query、error/empty state 留在各自 destination/module。
 
+共用實作位於 `app/_shell`；`(tabs)` 與 `(secondary)` layout 分別擁有一般工作頁與次要設定頁的 frame。Page 不再重包 AppShell。Profile resolver、自動打卡與 compatibility redirect 保留入口流程；Expense 仍在 EntryResolver 完成後才顯示共用 AppShell。Public canonical Profile 保持自己的身分驗證生命週期，不借用 mobile gate。
+
 Private data 與 command 必須沿：
 
 ```text

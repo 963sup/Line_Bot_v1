@@ -8,6 +8,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fulfillLineSessionMock } from "./line-session-mock.mjs";
+import { captureShell } from "./shell-evidence.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const web = path.join(root, "apps/web");
@@ -404,6 +405,7 @@ try {
     assert.ok(popularCard.x >= 15, "Popular card keeps the page inset after resizing");
   }
   await page.screenshot({ path: path.join(output, "profile-self.png") });
+  await captureShell(page, output, "profile-self", 1);
   await page.evaluate(() =>
     Object.defineProperty(navigator, "share", {
       configurable: true,
@@ -460,6 +462,7 @@ try {
   await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Projects", exact: true })).toHaveCount(0);
   assert.equal(privateReads.length, beforeVisitor);
+  await captureShell(page, output, "profile-visitor", 0);
   results.push("other viewer cannot load or retain private sections");
 
   member = accountMember("user-1", "viewer", "active");
@@ -475,6 +478,7 @@ try {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Organization");
   assert.equal(privateReads.length, beforeVisitor);
   results.push("Organization never receives User self controls or private requests");
+  await captureShell(page, output, "profile-organization", 0);
 
   holdProfile = true;
   await page.evaluate(() => window.renderProfile({ instance: 4 }));
