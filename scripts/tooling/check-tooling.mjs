@@ -961,6 +961,110 @@ export function validate(root) {
       errors.push(`${relative(root, file)}: ${error.message}`);
     }
   }
+  const copilotReviewers = [
+    "architecture-reviewer.agent.md",
+    "database-reviewer.agent.md",
+    "security-reviewer.agent.md",
+  ];
+  const copilotAgents = [...copilotReviewers, "root-cause-debugger.agent.md"];
+  for (const name of copilotAgents) {
+    const path = `.github/agents/${name}`;
+    const file = resolve(root, path);
+    if (!existsSync(file)) {
+      errors.push(`${path}: required Copilot agent is missing`);
+      continue;
+    }
+    try {
+      const source = read(file);
+      const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+      if (!frontmatter) throw new Error("YAML frontmatter is required");
+      const metadata = YAML.parse(frontmatter[1]);
+      const expectedName = name.replace(/\.agent\.md$/, "");
+      if (metadata.name !== expectedName) throw new Error(`name must be ${expectedName}`);
+      if (typeof metadata.description !== "string" || !metadata.description.trim())
+        throw new Error("description is required");
+      if (metadata["include-custom-instructions"] !== true)
+        throw new Error("include-custom-instructions must be true");
+      if (!Array.isArray(metadata.tools)) throw new Error("tools must be an explicit list");
+      const tools = new Set(metadata.tools.map((tool) => String(tool).toLowerCase()));
+      if (!tools.has("read") || !tools.has("search"))
+        throw new Error("read and search tools are required");
+      if (
+        copilotReviewers.includes(name) &&
+        (tools.size !== 2 || tools.has("edit") || tools.has("execute"))
+      )
+        throw new Error("reviewer tools must be limited to read/search");
+      if (name === "root-cause-debugger.agent.md" && (!tools.has("edit") || !tools.has("execute")))
+        throw new Error("debugger must grant edit and execute tools");
+      const taskContracts = [...source.matchAll(/`docs\/tasks\/([\w-]+\.md)`/g)];
+      for (const [, contract] of taskContracts) {
+        if (!existsSync(resolve(root, "docs/tasks", contract)))
+          throw new Error(`task contract docs/tasks/${contract} does not exist`);
+      }
+    } catch (error) {
+      errors.push(`${path}: ${error.message}`);
+    }
+  }
+  const promptFiles = files(".github/prompts/*.prompt.md");
+  if (promptFiles.length !== 9)
+    errors.push(`.github/prompts: expected 9 task entrypoints, found ${promptFiles.length}`);
+  for (const file of promptFiles) {
+    const path = relative(root, file).split(sep).join("/");
+    try {
+      const source = read(file);
+      const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+      if (!frontmatter) throw new Error("YAML frontmatter is required");
+      const metadata = YAML.parse(frontmatter[1]);
+      if (metadata.agent !== "agent") throw new Error("agent must reference the default agent");
+      if (typeof metadata.description !== "string" || !metadata.description.trim())
+        throw new Error("description is required");
+      if (!source.includes("## Delivery")) throw new Error("Delivery section is required");
+      const taskContracts = [...source.matchAll(/`docs\/tasks\/([\w-]+\.md)`/g)];
+      for (const [, contract] of taskContracts) {
+        if (!existsSync(resolve(root, "docs/tasks", contract)))
+          throw new Error(`task contract docs/tasks/${contract} does not exist`);
+      }
+      if (taskContracts.length === 0 && !source.includes("docs/README.md"))
+        throw new Error("a local task contract or docs router is required");
+    } catch (error) {
+      errors.push(`${path}: ${error.message}`);
+    }
+  }
+  for (const [path, requiredHeadings] of [
+    [".github/ISSUE_TEMPLATE/bug_report.md", ["## 影響範圍", "## 不在範圍"]],
+    [".github/ISSUE_TEMPLATE/feature_request.md", ["## 影響範圍", "## 不在範圍"]],
+  ]) {
+    const file = resolve(root, path);
+    if (!existsSync(file)) {
+      errors.push(`${path}: issue template is required`);
+      continue;
+    }
+    const source = read(file);
+    for (const heading of requiredHeadings) {
+      if (!source.includes(heading)) errors.push(`${path}: ${heading} section is required`);
+    }
+  }
+  try {
+    const packageJson = JSON.parse(read(resolve(root, "package.json")));
+    const taskFile = resolve(root, ".vscode/tasks.json");
+    const tasks = JSON.parse(read(taskFile)).tasks;
+    for (const [label, script] of [
+      ["repo: tooling doctor", "tooling:doctor"],
+      ["repo: tooling check", "tooling:check"],
+      ["repo: tooling rules", "tooling:rules"],
+    ]) {
+      const task = tasks.find((candidate) => candidate.label === label);
+      if (
+        task?.command !== "pnpm" ||
+        task.args?.length !== 1 ||
+        task.args[0] !== script ||
+        typeof packageJson.scripts?.[script] !== "string"
+      )
+        errors.push(`.vscode/tasks.json: ${label} must call the package script ${script}`);
+    }
+  } catch (error) {
+    errors.push(`.vscode/tasks.json: ${error.message}`);
+  }
   for (const file of files("scripts/**/*.mjs")) {
     // Parse actual module syntax so fixture strings and prose cannot masquerade as dependencies.
     for (const specifier of literalModuleSpecifiers(file).filter((value) =>

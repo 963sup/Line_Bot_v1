@@ -60,6 +60,8 @@ function fixture(t) {
         "change:preflight": "node scripts/changes/preflight.mjs",
         "change:finalize": "node scripts/changes/finalize.mjs",
         "tooling:doctor": "node scripts/tooling/doctor.mjs",
+        "tooling:check": "node scripts/tooling/check-tooling.mjs",
+        "tooling:rules": "node scripts/tooling/check-rules.mjs",
         "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
         "github:current-main": "node scripts/github/current-main.mjs",
         "github:release-plan": "node scripts/github/release-plan.mjs",
@@ -126,6 +128,68 @@ function fixture(t) {
     }),
   );
   write(".vscode/extensions.json", JSON.stringify({ recommendations: ["biomejs.biome"] }));
+  const requiredAgentTasks = [
+    ["repo: tooling doctor", "tooling:doctor"],
+    ["repo: tooling check", "tooling:check"],
+    ["repo: tooling rules", "tooling:rules"],
+  ];
+  write(
+    ".vscode/tasks.json",
+    JSON.stringify({
+      tasks: requiredAgentTasks.map(([label, script]) => ({
+        label,
+        command: "pnpm",
+        args: [script],
+      })),
+    }),
+  );
+  const taskContracts = [
+    "api-change",
+    "architecture-change",
+    "auth-change",
+    "bug-fix",
+    "business-rule",
+    "database-change",
+    "deployment-debug",
+    "feature-change",
+  ];
+  for (const contract of taskContracts) write(`docs/tasks/${contract}.md`, "# Task\n");
+  write("docs/README.md", "# Documentation\n");
+  for (const [file, name, tools] of [
+    ["architecture-reviewer.agent.md", "architecture-reviewer", "[read, search]"],
+    ["database-reviewer.agent.md", "database-reviewer", "[read, search]"],
+    ["security-reviewer.agent.md", "security-reviewer", "[read, search]"],
+    ["root-cause-debugger.agent.md", "root-cause-debugger", "[read, search, edit, execute]"],
+  ]) {
+    write(
+      `.github/agents/${file}`,
+      `---\nname: ${name}\ndescription: Fixture agent\ninclude-custom-instructions: true\ntools: ${tools}\n---\nFollow \`docs/tasks/bug-fix.md\`.\n`,
+    );
+  }
+  const promptContracts = [
+    ["change-api", "api-change"],
+    ["change-architecture", "architecture-change"],
+    ["change-auth", "auth-change"],
+    ["change-business-rule", "business-rule"],
+    ["change-database", "database-change"],
+    ["change-feature", "feature-change"],
+    ["debug-deployment", "deployment-debug"],
+    ["fix-bug", "bug-fix"],
+    ["converge-markdown", "docs-router"],
+  ];
+  for (const [name, contract] of promptContracts) {
+    if (contract === "docs-router") continue;
+    write(
+      `.github/prompts/${name}.prompt.md`,
+      `---\nagent: agent\ndescription: Fixture prompt\n---\n\nFollow \`docs/tasks/${contract}.md\`.\n\n## Delivery\n\nReport results.\n`,
+    );
+  }
+  write(
+    ".github/prompts/converge-markdown.prompt.md",
+    "---\nagent: agent\ndescription: Fixture prompt\n---\n\nUse docs/README.md.\n\n## Delivery\n\nReport results.\n",
+  );
+  write(".github/ISSUE_TEMPLATE/bug_report.md", "## 影響範圍\n## 不在範圍\n");
+  write(".github/ISSUE_TEMPLATE/feature_request.md", "## 影響範圍\n## 不在範圍\n");
   write(
     ".env.example",
     "POSTGRES_URL=\nPOSTGRES_URL_NON_POOLING=\nSUPABASE_URL=\nKV_REST_API_URL=\nKV_REST_API_TOKEN=\n",
@@ -877,6 +941,48 @@ test("package AGENTS use parent scope instead of duplicated boilerplate", (t) =>
     "# @line_bot_v1/demo\n\n- 本 package 是 owning context 的公開入口；Web 與其他 consumer 只可使用 package.json 已宣告 exports。\n- domain / application / contracts / adapters / agents surface 依需求存在，不預建空 layer。\n- 目前 facade 只為無行為變更遷移；新增功能直接放入此 context，禁止新增 legacy horizontal export。\n- 移除 facade 前必須保留型別、授權、交易、重播、隔離與既有測試。\n",
   );
   rejects(root, "duplicated package boilerplate belongs in packages/AGENTS.md");
+});
+
+test("Copilot review agents cannot gain tools beyond read and search", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".github/agents/security-reviewer.agent.md";
+  const source = readFileSync(resolve(root, path), "utf8");
+  write(path, source.replace("tools: [read, search]", "tools: [read, search, execute]"));
+  rejects(root, "reviewer tools must be limited to read/search");
+});
+
+test("Copilot root-cause debugger retains tools needed to reproduce and fix bugs", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".github/agents/root-cause-debugger.agent.md";
+  const source = readFileSync(resolve(root, path), "utf8");
+  write(path, source.replace(", execute", ""));
+  rejects(root, "debugger must grant edit and execute tools");
+});
+
+test("Copilot task prompts require valid frontmatter, local routing, and delivery output", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".github/prompts/fix-bug.prompt.md";
+  const source = readFileSync(resolve(root, path), "utf8");
+  write(path, source.replace("docs/tasks/bug-fix.md", "docs/tasks/missing.md"));
+  rejects(root, "task contract docs/tasks/missing.md does not exist");
+
+  write(path, source.replace("## Delivery", "## Result"));
+  rejects(root, "Delivery section is required");
+});
+
+test("VS Code tooling tasks must call existing package scripts", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".vscode/tasks.json";
+  const tasks = JSON.parse(readFileSync(resolve(root, path), "utf8"));
+  tasks.tasks.find((task) => task.label === "repo: tooling rules").args = ["tooling:unknown"];
+  write(path, JSON.stringify(tasks));
+  rejects(root, "repo: tooling rules must call the package script tooling:rules");
+});
+
+test("issue templates retain impact and excluded-scope fields", (t) => {
+  const { root, write } = fixture(t);
+  write(".github/ISSUE_TEMPLATE/feature_request.md", "## 影響範圍\n");
+  rejects(root, ".github/ISSUE_TEMPLATE/feature_request.md: ## 不在範圍 section is required");
 });
 
 test("AGENTS hot path rejects target or proposal sections", (t) => {

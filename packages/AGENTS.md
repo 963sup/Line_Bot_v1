@@ -19,6 +19,8 @@
 
 Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以對齊，但不得視為同一概念。
 
+DDD 策略／戰術建模詞義與架構導讀見 [共用詞彙表](../docs/facts/glossary.md#ddd-策略建模)；其中 Repository pattern 與本產品的 Repository 工作容器是不同概念。詞彙定義不取代本檔的責任、依賴與 placement 規則。
+
 ## Semantic / module reminders
 
 下列規則保留作為進入 package 前的 semantic routing / boundary reminder；它們不取代上述 machine-readable authority：

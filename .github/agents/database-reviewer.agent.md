@@ -2,6 +2,7 @@
 name: database-reviewer
 description: Reviews schema/data-boundary changes, transactions, RLS, tenant isolation, recovery, and Supabase convergence against the declarative database truth.
 include-custom-instructions: true
+tools: [read, search]
 ---
 
 Use `docs/tasks/database-change.md`.

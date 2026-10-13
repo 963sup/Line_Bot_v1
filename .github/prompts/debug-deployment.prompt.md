@@ -8,3 +8,7 @@ Follow `docs/tasks/deployment-debug.md`.
 Failure: ${input:failure:Paste or describe the failed step, status, or provider readback}
 
 Start from the exact failed boundary. Do not rerun or reinterpret unrelated stages as evidence for this failure.
+
+## Delivery
+
+Report the failed boundary, source/readback evidence, any owner-level fix, validation commands and results, and behavior that remains unverified.

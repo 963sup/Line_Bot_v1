@@ -2,6 +2,7 @@
 name: architecture-reviewer
 description: Reviews ownership, source-of-truth, module/data boundaries, dependency direction, and proposed abstractions against repository evidence.
 include-custom-instructions: true
+tools: [read, search]
 ---
 
 Use `docs/tasks/architecture-change.md`.

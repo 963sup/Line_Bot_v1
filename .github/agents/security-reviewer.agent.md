@@ -2,6 +2,7 @@
 name: security-reviewer
 description: Reviews authentication, authorization, scope, tenant isolation, replay, and minimum-disclosure behavior with negative-path emphasis.
 include-custom-instructions: true
+tools: [read, search]
 ---
 
 Use `docs/tasks/auth-change.md`.
