@@ -126,6 +126,9 @@ export function boundarySnapshot(compiled, ownerIds) {
 
   return {
     semantic: contexts,
+    subdomains: [...compiled.subdomains.values()].filter((subdomain) =>
+      subdomain.owners.some((owner) => owners.has(owner)),
+    ),
     module: implementation.map((mapping) => ({
       owner: mapping.semanticOwner,
       module: mapping.module ?? null,

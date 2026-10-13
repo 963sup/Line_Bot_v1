@@ -35,7 +35,12 @@ function classifyChanged(label, before, after) {
     breaking = properties.some((property) =>
       ["provider", "consumer", "authority", "integrationMode"].includes(property),
     );
-  } else if (label === "boundedContexts" || label === "boundaryTypes") {
+  } else if (label === "subdomains") {
+    classification = "subdomain-classification-change";
+  } else if (label === "boundedContexts") {
+    breaking = properties.some((property) => ["owner", "owners", "status"].includes(property));
+    classification = breaking ? "boundary-change" : "boundary-evidence-change";
+  } else if (label === "boundaryTypes") {
     classification = "boundary-change";
     breaking = true;
   } else if (label === "invariants") {
@@ -137,6 +142,7 @@ export function diffSemanticModels(before, after) {
     ...diffSingleton(before.language, after.language, "language"),
     ...diffSingleton(before.contractModel, after.contractModel, "contractModel"),
     ...diffCollection(before.semanticOwners, after.semanticOwners, "semanticOwners"),
+    ...diffCollection(before.subdomains, after.subdomains, "subdomains"),
     ...diffCollection(before.conceptTypes, after.conceptTypes, "conceptTypes"),
     ...diffCollection(before.boundaryTypes, after.boundaryTypes, "boundaryTypes"),
     ...diffCollection(before.integrationModes, after.integrationModes, "integrationModes"),

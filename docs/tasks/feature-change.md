@@ -9,6 +9,8 @@
 
 ## Decide
 
+先依 [mandatory package resolution](../../packages/AGENTS.md#mandatory-package-resolution) 的共用決策路徑完成 Owner、模型邊界與既有 package 承接判斷。
+
 先定義可觀察 business result、hard invariants與真實 consumer。再判斷：
 
 ```text

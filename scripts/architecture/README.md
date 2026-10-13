@@ -25,7 +25,9 @@
 | `semantic-drift.mjs` | 比較兩版 FPT provenance，標示被本地 overlay 直接引用之 truth file drift。 |
 | `semantic-feedback.mjs` | 將 runtime observation bundle 與 capability expectation 對照。 |
 | `semantic-planning.mjs` | 將 change intent resolve 到 owner/concept，建立 impact/boundary/context。 |
-| `semantic-projection.mjs` | 產生 ownership/glossary/context/implementation projections。 |
+| `semantic-projection.mjs` | 產生 ownership/subdomain/context evidence/glossary/implementation projections 與 package SEMANTICS。 |
 | `semantic-query.mjs` | 執行 owner/concept/path/contracts/consumers/invariants/evidence 查詢。 |
 
 一般入口使用 `pnpm architecture`、`pnpm boundaries`、`pnpm semantic <verb>`；FPT references 只允許 exact `file` / `symbol` / optional `field`，不得在 overlay 再保存 category/adoption 摘要。修改前遵守同層 `AGENTS.md`。
+
+子域分類使用 `pnpm semantic view subdomains`，context status 與證據使用 `pnpm semantic view contexts`。`plan` / `context` / `explain` 從相同 canonical model 取得相關分類與邊界證據；`pnpm semantic package-docs` 更新各 package 的 generated projection。

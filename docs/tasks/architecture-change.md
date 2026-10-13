@@ -9,17 +9,7 @@
 
 ## Decision sequence
 
-```text
-business result
-→ hard invariants
-→ consumer need
-→ current owner
-→ source of truth
-→ semantic / module / data / consistency boundary
-→ dependency direction
-→ correct change
-→ validation
-```
+先依 [mandatory package resolution](../../packages/AGENTS.md#mandatory-package-resolution) 的共用決策路徑確認 business result、invariants、子域／模型邊界、Owner、既有 package 承接能力、Aggregate／用例與 public/data/dependency contract，再提出最小必要變更。
 
 Bounded Context ≠ Module Boundary ≠ Data Boundary ≠ Consistency Boundary。
 
