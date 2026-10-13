@@ -239,6 +239,89 @@
       "lifecycle": "selected-target"
     }
   ],
+  "subdomains": [
+    {
+      "id": "collaboration",
+      "classification": "core",
+      "owners": ["repository", "issue", "discussion", "project"],
+      "rationale": "企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/repository.md",
+        "docs/owners/issue.md",
+        "docs/owners/discussion.md",
+        "docs/owners/project.md"
+      ]
+    },
+    {
+      "id": "organization-governance",
+      "classification": "supporting",
+      "owners": ["enterprise", "organization", "team"],
+      "rationale": "企業、組織與團隊的治理及參與資格支援協作；直接沿用 GitHub 模型，不因共同上層 scope 合併 owner。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/enterprise.md",
+        "docs/owners/organization.md",
+        "docs/owners/team.md"
+      ]
+    },
+    {
+      "id": "participation-incentives",
+      "classification": "supporting",
+      "owners": ["daily-check-in", "asset", "wallet", "ledger"],
+      "rationale": "簽到與獎勵支援協作參與；獎勵政策、資產定義、持有量與不可變價值紀錄保留既有責任與一致性邊界，不再宣稱獎勵是核心競爭定位。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/daily-check-in.md",
+        "docs/owners/asset.md",
+        "docs/owners/wallet.md",
+        "docs/owners/ledger.md"
+      ]
+    },
+    {
+      "id": "workforce-operations",
+      "classification": "supporting",
+      "owners": ["workforce", "attendance", "payroll", "expense"],
+      "rationale": "出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/workforce.md",
+        "docs/owners/attendance.md",
+        "docs/owners/payroll.md",
+        "docs/owners/expense.md"
+      ]
+    },
+    {
+      "id": "partner-network",
+      "classification": "supporting",
+      "owners": ["partner-directory"],
+      "rationale": "合作夥伴名錄與推薦流程支援企業協作，不取得 Team participation 或 Repository access authority。",
+      "sources": ["docs/reference/architecture/strategic-design.md", "docs/owners/partners.md"]
+    },
+    {
+      "id": "identity-and-access",
+      "classification": "generic",
+      "owners": ["account", "namespace", "identity-access"],
+      "rationale": "主體身分、名稱解析與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、membership 與 permission。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/account.md",
+        "docs/owners/namespace.md",
+        "docs/owners/identity-access.md"
+      ]
+    },
+    {
+      "id": "notification-and-audit",
+      "classification": "generic",
+      "owners": ["notifications", "audit"],
+      "rationale": "通知、投遞與治理證據查閱是共通業務需求；來源事實與授權仍由原 owner 決定，不因通用分類轉移資料 authority。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/notifications.md",
+        "docs/owners/audit.md"
+      ]
+    }
+  ],
   "boundedContexts": [
     {
       "id": "daily-check-in",
@@ -263,33 +346,87 @@
     {
       "id": "account",
       "owner": "account",
-      "status": "strong-candidate"
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/account.md"],
+        "sourcePaths": ["packages/account/src/domain/user.ts"],
+        "testPaths": ["packages/account/test/user.test.ts"],
+        "rationale": "User lifecycle 與 qualification 有獨立模型和測試；與 Organization membership、Namespace login 與獎勵 owner 分開。這證明責任邊界，不自動完成 context 選定。"
+      }
     },
     {
       "id": "attendance",
       "owner": "attendance",
-      "status": "strong-candidate"
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/attendance.md"],
+        "sourcePaths": ["packages/attendance/src/domain/aggregates/attendance-session.ts"],
+        "testPaths": [
+          "packages/attendance/test/attendance.test.ts",
+          "packages/attendance/test/repository-attendance.test.ts"
+        ],
+        "rationale": "出勤 session、時間與重播規則由 Attendance 擁有；Repository 提供當下存取與打卡點。跨 owner 原子交易不代表合併模型，保留既有 context status。"
+      }
     },
     {
       "id": "expense",
       "owner": "expense",
-      "status": "strong-candidate"
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/expense.md"],
+        "sourcePaths": ["packages/expense/src/domain/aggregates/expense.ts"],
+        "testPaths": [
+          "packages/expense/test/expense-domain.test.ts",
+          "packages/expense/test/postgres-expense-store.test.ts"
+        ],
+        "rationale": "收據整理與 confirmed/cancelled 終態有獨立 revision 模型；confirmed 不等於審批、付款或會計入帳。證據支持現有責任，不宣告更大費用管理上下文。"
+      }
     },
     {
       "id": "partner-directory",
       "owner": "partner-directory",
-      "status": "strong-candidate"
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/partners.md"],
+        "sourcePaths": [
+          "packages/partners/src/domain.ts",
+          "packages/partners/src/application/partners.ts"
+        ],
+        "testPaths": ["apps/web/test/partners-api.test.ts"],
+        "rationale": "名錄與推薦案件有獨立模型及 consumer 測試；Team participation 與權限授予不是名錄 owner 的責任。測試路徑不等於遠端或實機驗收。"
+      }
     },
     {
       "id": "notifications",
       "owner": "notifications",
-      "status": "strong-candidate"
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/notifications.md"],
+        "sourcePaths": ["packages/notifications/src/domain/aggregates/notification.ts"],
+        "testPaths": [
+          "packages/notifications/test/notifications.test.ts",
+          "packages/notifications/test/repository-source-access.test.ts"
+        ],
+        "rationale": "收件人通知與已讀狀態獨立於來源事實，存取須重驗 Repository authority；與 Team notification setting 及 Repository Watch 分開，保留現有 context status。"
+      }
     },
     {
       "id": "work-collaboration",
       "owners": ["team", "repository"],
       "status": "candidate",
-      "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners."
+      "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners.",
+      "evidence": {
+        "ownerContracts": ["docs/owners/team.md", "docs/owners/repository.md"],
+        "sourcePaths": [
+          "packages/team/src/domain/policies/team-maintenance.ts",
+          "packages/repository/src/domain/repository/entities/repository.ts"
+        ],
+        "testPaths": [
+          "packages/team/test/team-maintainer-postgres.test.ts",
+          "packages/repository/test/access.test.ts"
+        ],
+        "rationale": "Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。"
+      }
     }
   ],
   "concepts": [

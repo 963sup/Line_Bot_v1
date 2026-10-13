@@ -17,21 +17,21 @@ const activeDeliveryRoutes = {
     file: "(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx",
   },
   "organization-team": {
-    file: "(mobile)/orgs/[login]/teams/[teamSlug]/page.tsx",
+    file: "(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx",
     aliases: { login: "organization" },
   },
   enterprise: {
-    file: "(mobile)/enterprises/[slug]/page.tsx",
+    file: "(mobile)/(tabs)/enterprises/[slug]/page.tsx",
     aliases: { slug: "enterpriseSlug" },
   },
-  settings: { file: "(mobile)/settings/page.tsx" },
-  "settings-account": { file: "(mobile)/settings/account/page.tsx" },
-  "settings-profile": { file: "(mobile)/settings/profile/page.tsx" },
-  "settings-network": { file: "(mobile)/settings/network/page.tsx" },
-  "settings-permissions": { file: "(mobile)/settings/permissions/page.tsx" },
-  notifications: { file: "(mobile)/notifications/page.tsx" },
-  stars: { file: "(mobile)/stars/page.tsx" },
-  issues: { file: "(mobile)/issues/page.tsx" },
+  settings: { file: "(mobile)/(secondary)/settings/page.tsx" },
+  "settings-account": { file: "(mobile)/(secondary)/settings/account/page.tsx" },
+  "settings-profile": { file: "(mobile)/(secondary)/settings/profile/page.tsx" },
+  "settings-network": { file: "(mobile)/(secondary)/settings/network/page.tsx" },
+  "settings-permissions": { file: "(mobile)/(secondary)/settings/permissions/page.tsx" },
+  notifications: { file: "(mobile)/(tabs)/notifications/page.tsx" },
+  stars: { file: "(mobile)/(tabs)/stars/page.tsx" },
+  issues: { file: "(mobile)/(tabs)/issues/page.tsx" },
 } as const;
 
 function routeTemplateFromAppFile(

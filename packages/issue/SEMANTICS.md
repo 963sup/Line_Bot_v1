@@ -12,7 +12,9 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md) |
 
 ## Bounded Context
 

@@ -440,6 +440,20 @@ Business intent
 
 ## Mandatory package resolution
 
+任何新增功能、模型／Owner／邊界調整或 package 變更，先依序確認：
+
+```text
+業務結果與不變條件
+→ 子域／模型適用邊界
+→ 責任 Owner
+→ 現有 package 能否承接
+→ Aggregate 與用例
+→ Public Contract／資料所有權／依賴
+→ 實作與驗證
+```
+
+這是決策順序，不要求每次新增 Aggregate、Port、事件或 package。GitHub 非程式碼業務模型優先直接沿用 pinned FPT 與既有 owner contracts；Member 是 Organization／Team 的成員關係，Collaborator 是 Repository 存取關係，不因名詞存在而建立獨立 package。子域分類與 candidate context 證據由 `architecture/semantic-model.json` 擁有；不能以分類或參考 GitHub 為理由自動升級 context status 或啟用 code/SCM capability。
+
 修改前至少確認：
 
 `Responsibility / Owner / Consumer / Public Contract / Dependency Direction / Data Boundary / Existing Reuse / Validation`

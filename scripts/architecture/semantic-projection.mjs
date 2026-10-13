@@ -95,6 +95,10 @@ function ownerContexts(compiled, ownerId) {
   });
 }
 
+function packageReferences(paths) {
+  return paths.map((path) => "[" + path + "](../../" + path + ")").join("; ");
+}
+
 function renderPackageSemanticDoc(compiled, moduleName) {
   if (compiled.errors.length) {
     throw new Error("Semantic architecture is invalid:\n" + compiled.errors.join("\n"));
@@ -114,6 +118,9 @@ function renderPackageSemanticDoc(compiled, moduleName) {
     .filter((capability) => capability.owner === ownerId)
     .sort((a, b) => a.id.localeCompare(b.id));
   const contexts = ownerContexts(compiled, ownerId).sort((a, b) => a.id.localeCompare(b.id));
+  const subdomains = [...compiled.subdomains.values()]
+    .filter((subdomain) => subdomain.owners.includes(ownerId))
+    .sort((a, b) => a.id.localeCompare(b.id));
   const relationships = [...compiled.relationships.values()]
     .filter(
       (relationship) => relationship.provider === ownerId || relationship.consumer === ownerId,
@@ -135,6 +142,39 @@ function renderPackageSemanticDoc(compiled, moduleName) {
         ]),
       )
     : "No Bounded Context is selected or declared for this owner in the canonical semantic model.";
+
+  const subdomainSection = subdomains.length
+    ? markdownTable(
+        ["Subdomain", "Classification", "Rationale", "Sources"],
+        subdomains.map((subdomain) => [
+          markdownCell(subdomain.id),
+          markdownCell(subdomain.classification),
+          markdownCell(subdomain.rationale),
+          markdownCell(packageReferences(subdomain.sources)),
+        ]),
+      )
+    : "No business subdomain is assigned to this owner. Technical and application-only modules are not classified as business subdomains by package existence.";
+
+  const contextEvidence = contexts.filter((context) => context.evidence);
+  const contextEvidenceSection = contextEvidence.length
+    ? [
+        "### Boundary evidence",
+        "",
+        "References support the existing status; listed tests are evidence locations, not a claim that runtime or deployment acceptance passed.",
+        "",
+        markdownTable(
+          ["Context", "Owner contracts", "Source", "Tests", "Rationale"],
+          contextEvidence.map((context) => [
+            markdownCell(context.id),
+            markdownCell(packageReferences(context.evidence.ownerContracts)),
+            markdownCell(packageReferences(context.evidence.sourcePaths)),
+            markdownCell(packageReferences(context.evidence.testPaths)),
+            markdownCell(context.evidence.rationale),
+          ]),
+        ),
+        "",
+      ].join("\n")
+    : "";
 
   const languageSection = concepts.length
     ? markdownTable(
@@ -193,12 +233,13 @@ function renderPackageSemanticDoc(compiled, moduleName) {
     "",
     "## Subdomain",
     "",
-    "Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.",
+    subdomainSection,
     "",
     "## Bounded Context",
     "",
     contextSection,
     "",
+    ...(contextEvidenceSection ? [contextEvidenceSection] : []),
     "## Ubiquitous Language",
     "",
     languageSection,
@@ -484,6 +525,18 @@ function docs(compiled) {
     JSON.stringify(ownership(compiled), null, 2),
     fence,
     "",
+    "## Subdomains",
+    "",
+    fence + "json",
+    JSON.stringify(compiled.model.subdomains, null, 2),
+    fence,
+    "",
+    "## Bounded contexts and evidence",
+    "",
+    fence + "json",
+    JSON.stringify(compiled.model.boundedContexts, null, 2),
+    fence,
+    "",
     glossary(compiled),
     "",
     contracts(compiled),
@@ -521,6 +574,8 @@ export function renderSemanticView(compiled, view = "ownership") {
   if (view === "context-map") return contextMap(compiled);
   if (view === "implementation-map") return implementationMap(compiled);
   if (view === "ownership") return JSON.stringify(ownership(compiled), null, 2);
+  if (view === "subdomains") return JSON.stringify(compiled.model.subdomains, null, 2);
+  if (view === "contexts") return JSON.stringify(compiled.model.boundedContexts, null, 2);
   if (view === "truth-registry") return JSON.stringify(compiled.model.truthRegistry, null, 2);
   if (view === "glossary") return glossary(compiled);
   if (view === "contracts") return contracts(compiled);
@@ -532,6 +587,6 @@ export function renderSemanticView(compiled, view = "ownership") {
   if (view === "evidence") return evidence(compiled);
   if (view === "docs") return docs(compiled);
   throw new Error(
-    "Unknown semantic view. Expected ownership, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, modules, locators, fpt-references, evidence, or docs.",
+    "Unknown semantic view. Expected ownership, subdomains, contexts, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, modules, locators, fpt-references, evidence, or docs.",
   );
 }

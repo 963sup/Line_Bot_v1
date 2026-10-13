@@ -12,13 +12,23 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| notification-and-audit | generic | 通知、投遞與治理證據查閱是共通業務需求；來源事實與授權仍由原 owner 決定，不因通用分類轉移資料 authority。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/notifications.md](../../docs/owners/notifications.md); [docs/owners/audit.md](../../docs/owners/audit.md) |
 
 ## Bounded Context
 
 | Context | Status | Ownership | Note |
 | --- | --- | --- | --- |
 | notifications | strong-candidate | owner: notifications |  |
+
+### Boundary evidence
+
+References support the existing status; listed tests are evidence locations, not a claim that runtime or deployment acceptance passed.
+
+| Context | Owner contracts | Source | Tests | Rationale |
+| --- | --- | --- | --- | --- |
+| notifications | [docs/owners/notifications.md](../../docs/owners/notifications.md) | [packages/notifications/src/domain/aggregates/notification.ts](../../packages/notifications/src/domain/aggregates/notification.ts) | [packages/notifications/test/notifications.test.ts](../../packages/notifications/test/notifications.test.ts); [packages/notifications/test/repository-source-access.test.ts](../../packages/notifications/test/repository-source-access.test.ts) | 收件人通知與已讀狀態獨立於來源事實，存取須重驗 Repository authority；與 Team notification setting 及 Repository Watch 分開，保留現有 context status。 |
 
 ## Ubiquitous Language
 

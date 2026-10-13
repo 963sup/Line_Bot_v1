@@ -13,7 +13,7 @@ import { diffSemanticModels } from "./semantic-diff.mjs";
 import { diffFptDomainTruth } from "./semantic-drift.mjs";
 import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
-import { renderSemanticView, routeFileToUrl } from "./semantic-projection.mjs";
+import { packageSemanticDocs, renderSemanticView, routeFileToUrl } from "./semantic-projection.mjs";
 import { querySemanticArchitecture } from "./semantic-query.mjs";
 
 function fixture() {
@@ -76,6 +76,7 @@ function fixture() {
   const model = {
     version: 2,
     role: "product-domain-overlay",
+    system: { domain: "fixture-domain" },
     sources: {
       githubFptDomainTruth: "architecture/domain/fpt/*.json",
       githubFptProvenance: "architecture/domain/fpt-source.json",
@@ -123,10 +124,36 @@ function fixture() {
       },
     },
     semanticOwners: [
-      { id: "repository", lifecycle: "current" },
-      { id: "project", lifecycle: "current-data-only" },
+      {
+        id: "repository",
+        kind: "business-owner",
+        lifecycle: "current",
+        doc: "docs/owners/repository.md",
+      },
+      { id: "project", kind: "business-owner", lifecycle: "current-data-only" },
     ],
-    boundedContexts: [{ id: "work", owner: "repository", status: "candidate" }],
+    subdomains: [
+      {
+        id: "collaboration",
+        classification: "core",
+        owners: ["repository", "project"],
+        rationale: "Fixture collaboration strategy.",
+        sources: ["docs/strategy.md"],
+      },
+    ],
+    boundedContexts: [
+      {
+        id: "work",
+        owner: "repository",
+        status: "candidate",
+        evidence: {
+          ownerContracts: ["docs/owners/repository.md"],
+          sourcePaths: ["packages/repository/src/application/issues.ts"],
+          testPaths: ["packages/repository/test/issues.test.ts"],
+          rationale: "Fixture evidence preserves candidate status.",
+        },
+      },
+    ],
     concepts: [
       {
         id: "repository",
@@ -266,6 +293,124 @@ function fixture() {
 test("accepts separated semantic, implementation and fpt authority", () => {
   const { model, fpt, topology } = fixture();
   assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
+test("business subdomain classification rejects unknown, duplicate and unclassified owners", () => {
+  const { model, fpt, topology } = fixture();
+  model.subdomains[0].owners.push("missing");
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unknown owner missing/,
+  );
+  model.subdomains[0].owners.pop();
+  model.subdomains.push({ ...model.subdomains[0], id: "duplicate" });
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /owner already classified/,
+  );
+  model.subdomains.pop();
+  model.subdomains[0].owners = ["repository"];
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /project: current business\/policy owner requires a subdomain/,
+  );
+  model.subdomains[0].owners.push("project");
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
+test("technical module kinds cannot become business subdomains through a classification label", () => {
+  const { model, fpt, topology } = fixture();
+  const module = topology.modules["@line_bot_v1/repository"];
+  for (const kind of ["support-module", "integration-adapter", "application-module"]) {
+    module.moduleKind = kind;
+    assert.match(
+      validateSemanticArchitecture(model, fpt, topology).join("\n"),
+      /only current business\/policy owners may be classified/,
+    );
+  }
+  module.moduleKind = "domain-module";
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
+test("subdomains require an explicit classification, rationale and safe source reference", () => {
+  const { model, fpt, topology } = fixture();
+  const subdomain = model.subdomains[0];
+  subdomain.classification = "technical";
+  subdomain.rationale = "";
+  subdomain.sources = ["../outside.md"];
+  const errors = validateSemanticArchitecture(model, fpt, topology).join("\n");
+  assert.match(errors, /classification must be core, supporting or generic/);
+  assert.match(errors, /classification rationale is required/);
+  assert.match(errors, /sources must be normalized relative files/);
+  subdomain.classification = "core";
+  subdomain.rationale = "Fixture strategy.";
+  subdomain.sources = ["docs/strategy.md"];
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
+test("candidate contexts require contracts, source and tests without automatically promoting status", () => {
+  const { model, fpt, topology } = fixture();
+  const context = model.boundedContexts[0];
+  const evidence = context.evidence;
+  delete context.evidence;
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /evidence sourcePaths/,
+  );
+  context.evidence = { ...evidence, ownerContracts: ["docs/owners/other.md"] };
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /must reference owner contract/,
+  );
+  for (const ownerContracts of [42, {}, "docs/owners/repository.md"]) {
+    context.evidence = { ...evidence, ownerContracts };
+    assert.match(
+      validateSemanticArchitecture(model, fpt, topology).join("\n"),
+      /evidence ownerContracts must be a non-empty unique list/,
+    );
+  }
+  context.evidence = evidence;
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+  assert.equal(context.status, "candidate");
+});
+
+test("strategy queries and package projections derive classification and evidence from the model", () => {
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
+  assert.deepEqual(JSON.parse(renderSemanticView(compiled, "subdomains")), model.subdomains);
+  assert.deepEqual(JSON.parse(renderSemanticView(compiled, "contexts")), model.boundedContexts);
+  assert.deepEqual(
+    querySemanticArchitecture(compiled, "explain", ["repository"]).subdomains,
+    model.subdomains,
+  );
+  assert.deepEqual(
+    compileAgentContext(compiled, "Repository").boundaries.subdomains,
+    model.subdomains,
+  );
+  const document = packageSemanticDocs(compiled).get("packages/repository/SEMANTICS.md");
+  assert.match(document, /collaboration \| core/);
+  assert.match(document, /Boundary evidence/);
+  assert.match(document, /docs\/owners\/repository.md/);
+  assert.match(document, /work \| candidate/);
+});
+
+test("semantic diff reports strategy changes and distinguishes evidence updates from boundary changes", () => {
+  const { model } = fixture();
+  const next = structuredClone(model);
+  next.subdomains[0].classification = "supporting";
+  next.boundedContexts[0].evidence.rationale = "Additional evidence.";
+  const changes = diffSemanticModels(model, next);
+  assert.equal(
+    changes.find((change) => change.collection === "subdomains").classification,
+    "subdomain-classification-change",
+  );
+  assert.equal(changes.find((change) => change.collection === "boundedContexts").breaking, false);
+  next.boundedContexts[0].status = "selected";
+  assert.equal(
+    diffSemanticModels(model, next).find((change) => change.collection === "boundedContexts")
+      .breaking,
+    true,
+  );
 });
 
 test("current FPT-backed concepts reject deprecated fields while a current replacement is legal", () => {
@@ -831,6 +976,11 @@ test("query surface exposes contracts and boundaries from canonical semantic dat
 test("filesystem guard rejects fake source, public export and route evidence", async () => {
   const root = await mkdtemp(join(tmpdir(), "semantic-fs-"));
   const { model, fpt, topology } = fixture();
+  await mkdir(join(root, "docs/owners"), { recursive: true });
+  await mkdir(join(root, "packages/repository/test"), { recursive: true });
+  await writeFile(join(root, "docs/strategy.md"), "# Fixture strategy\n");
+  await writeFile(join(root, "docs/owners/repository.md"), "# Fixture owner\n");
+  await writeFile(join(root, "packages/repository/test/issues.test.ts"), "export {};\n");
   model.locators = [
     {
       id: "repository-route",
@@ -867,6 +1017,20 @@ test("filesystem guard rejects fake source, public export and route evidence", a
     join(root, "apps/web/src/app/(resource)/[owner]/[name]/page.tsx"),
     "export {};\n",
   );
+  assert.deepEqual(
+    await validateSemanticFilesystem(compileSemanticArchitecture(model, fpt, topology), root),
+    [],
+  );
+  model.subdomains[0].sources = ["docs/missing.md"];
+  model.boundedContexts[0].evidence.sourcePaths = ["packages/another/src/domain.ts"];
+  const missingReferences = await validateSemanticFilesystem(
+    compileSemanticArchitecture(model, fpt, topology),
+    root,
+  );
+  assert.match(missingReferences.join("\n"), /missing reference docs\/missing.md/);
+  assert.match(missingReferences.join("\n"), /source must belong to a context owner module/);
+  model.subdomains[0].sources = ["docs/strategy.md"];
+  model.boundedContexts[0].evidence.sourcePaths = ["packages/repository/src/application/issues.ts"];
   assert.deepEqual(
     await validateSemanticFilesystem(compileSemanticArchitecture(model, fpt, topology), root),
     [],

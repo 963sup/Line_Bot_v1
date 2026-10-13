@@ -12,7 +12,9 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| notification-and-audit | generic | 通知、投遞與治理證據查閱是共通業務需求；來源事實與授權仍由原 owner 決定，不因通用分類轉移資料 authority。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/notifications.md](../../docs/owners/notifications.md); [docs/owners/audit.md](../../docs/owners/audit.md) |
 
 ## Bounded Context
 

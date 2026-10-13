@@ -12,13 +12,23 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md) |
 
 ## Bounded Context
 
 | Context | Status | Ownership | Note |
 | --- | --- | --- | --- |
 | work-collaboration | candidate | owners: team, repository | Candidate semantic boundary; Team and Repository remain separate responsibility owners. |
+
+### Boundary evidence
+
+References support the existing status; listed tests are evidence locations, not a claim that runtime or deployment acceptance passed.
+
+| Context | Owner contracts | Source | Tests | Rationale |
+| --- | --- | --- | --- | --- |
+| work-collaboration | [docs/owners/team.md](../../docs/owners/team.md); [docs/owners/repository.md](../../docs/owners/repository.md) | [packages/team/src/domain/policies/team-maintenance.ts](../../packages/team/src/domain/policies/team-maintenance.ts); [packages/repository/src/domain/repository/entities/repository.ts](../../packages/repository/src/domain/repository/entities/repository.ts) | [packages/team/test/team-maintainer-postgres.test.ts](../../packages/team/test/team-maintainer-postgres.test.ts); [packages/repository/test/access.test.ts](../../packages/repository/test/access.test.ts) | Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。 |
 
 ## Ubiquitous Language
 

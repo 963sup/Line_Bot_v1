@@ -12,7 +12,7 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+No business subdomain is assigned to this owner. Technical and application-only modules are not classified as business subdomains by package existence.
 
 ## Bounded Context
 

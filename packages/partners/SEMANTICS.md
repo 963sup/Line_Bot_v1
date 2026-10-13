@@ -12,13 +12,23 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| partner-network | supporting | 合作夥伴名錄與推薦流程支援企業協作，不取得 Team participation 或 Repository access authority。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/partners.md](../../docs/owners/partners.md) |
 
 ## Bounded Context
 
 | Context | Status | Ownership | Note |
 | --- | --- | --- | --- |
 | partner-directory | strong-candidate | owner: partner-directory |  |
+
+### Boundary evidence
+
+References support the existing status; listed tests are evidence locations, not a claim that runtime or deployment acceptance passed.
+
+| Context | Owner contracts | Source | Tests | Rationale |
+| --- | --- | --- | --- | --- |
+| partner-directory | [docs/owners/partners.md](../../docs/owners/partners.md) | [packages/partners/src/domain.ts](../../packages/partners/src/domain.ts); [packages/partners/src/application/partners.ts](../../packages/partners/src/application/partners.ts) | [apps/web/test/partners-api.test.ts](../../apps/web/test/partners-api.test.ts) | 名錄與推薦案件有獨立模型及 consumer 測試；Team participation 與權限授予不是名錄 owner 的責任。測試路徑不等於遠端或實機驗收。 |
 
 ## Ubiquitous Language
 

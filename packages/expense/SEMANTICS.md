@@ -12,13 +12,23 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| workforce-operations | supporting | 出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/workforce.md](../../docs/owners/workforce.md); [docs/owners/attendance.md](../../docs/owners/attendance.md); [docs/owners/payroll.md](../../docs/owners/payroll.md); [docs/owners/expense.md](../../docs/owners/expense.md) |
 
 ## Bounded Context
 
 | Context | Status | Ownership | Note |
 | --- | --- | --- | --- |
 | expense | strong-candidate | owner: expense |  |
+
+### Boundary evidence
+
+References support the existing status; listed tests are evidence locations, not a claim that runtime or deployment acceptance passed.
+
+| Context | Owner contracts | Source | Tests | Rationale |
+| --- | --- | --- | --- | --- |
+| expense | [docs/owners/expense.md](../../docs/owners/expense.md) | [packages/expense/src/domain/aggregates/expense.ts](../../packages/expense/src/domain/aggregates/expense.ts) | [packages/expense/test/expense-domain.test.ts](../../packages/expense/test/expense-domain.test.ts); [packages/expense/test/postgres-expense-store.test.ts](../../packages/expense/test/postgres-expense-store.test.ts) | 收據整理與 confirmed/cancelled 終態有獨立 revision 模型；confirmed 不等於審批、付款或會計入帳。證據支持現有責任，不宣告更大費用管理上下文。 |
 
 ## Ubiquitous Language
 

@@ -111,6 +111,12 @@ function explain(compiled, id) {
     concept: concept ?? null,
     owner: compiled.owners.get(ownerId),
     impact: buildOwnerImpact(compiled, ownerId),
+    subdomains: [...compiled.subdomains.values()].filter((subdomain) =>
+      subdomain.owners.includes(ownerId),
+    ),
+    boundedContexts: (compiled.model.boundedContexts ?? []).filter((context) =>
+      (context.owners ?? [context.owner]).includes(ownerId),
+    ),
     boundaries: boundarySnapshot(compiled, [ownerId]),
     contracts: contractsFor(compiled, ownerId),
     invariants: ownerInvariants(compiled, ownerId),

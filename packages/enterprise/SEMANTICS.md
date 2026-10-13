@@ -12,7 +12,9 @@
 
 ## Subdomain
 
-Subdomain classification is not currently modeled in `architecture/semantic-model.json`; this projection does not invent one.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| organization-governance | supporting | 企業、組織與團隊的治理及參與資格支援協作；直接沿用 GitHub 模型，不因共同上層 scope 合併 owner。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/enterprise.md](../../docs/owners/enterprise.md); [docs/owners/organization.md](../../docs/owners/organization.md); [docs/owners/team.md](../../docs/owners/team.md) |
 
 ## Bounded Context
 

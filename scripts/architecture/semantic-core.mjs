@@ -93,6 +93,7 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
 
   for (const key of [
     "semanticOwners",
+    "subdomains",
     "conceptTypes",
     "boundaryTypes",
     "integrationModes",
@@ -107,6 +108,7 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
   }
 
   const owners = indexById(model?.semanticOwners, "Semantic owner", errors);
+  const subdomains = indexById(model?.subdomains, "Subdomain", errors);
   const contexts = indexById(model?.boundedContexts, "Bounded context", errors);
   const conceptTypes = indexById(model?.conceptTypes, "Concept type", errors);
   const boundaryTypes = indexById(model?.boundaryTypes, "Boundary type", errors);
@@ -144,12 +146,97 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
     }
   }
 
+  const classifiedOwners = new Set();
+  for (const subdomain of subdomains.values()) {
+    const label = "Subdomain " + subdomain.id;
+    if (!["core", "supporting", "generic"].includes(subdomain.classification))
+      errors.push(label + ": classification must be core, supporting or generic");
+    if (typeof subdomain.rationale !== "string" || !subdomain.rationale.trim())
+      errors.push(label + ": classification rationale is required");
+    for (const key of ["owners", "sources"]) {
+      if (!Array.isArray(subdomain[key]) || !subdomain[key].length || !unique(subdomain[key]))
+        errors.push(label + ": " + key + " must be a non-empty unique list");
+    }
+    if (
+      Array.isArray(subdomain.sources) &&
+      subdomain.sources.some((path) => !safeRelativeFilePath(path))
+    )
+      errors.push(label + ": sources must be normalized relative files");
+    for (const ownerId of Array.isArray(subdomain.owners) ? subdomain.owners : []) {
+      const owner = owners.get(ownerId);
+      if (!owner) errors.push(label + ": unknown owner " + ownerId);
+      else if (
+        !["business-owner", "policy-owner"].includes(owner.kind) ||
+        owner.lifecycle === "selected-target" ||
+        (Object.values(topology.modules ?? {}).some(
+          (module) =>
+            module.semanticOwner === ownerId &&
+            ["support-module", "integration-adapter", "application-module"].includes(
+              module.moduleKind,
+            ),
+        ) &&
+          !Object.values(topology.modules ?? {}).some(
+            (module) => module.semanticOwner === ownerId && module.moduleKind === "domain-module",
+          ))
+      )
+        errors.push(label + ": only current business/policy owners may be classified: " + ownerId);
+      if (classifiedOwners.has(ownerId))
+        errors.push(label + ": owner already classified: " + ownerId);
+      classifiedOwners.add(ownerId);
+    }
+  }
+  for (const owner of owners.values()) {
+    if (
+      ["business-owner", "policy-owner"].includes(owner.kind) &&
+      owner.lifecycle !== "selected-target" &&
+      !classifiedOwners.has(owner.id)
+    )
+      errors.push(
+        "Semantic owner " + owner.id + ": current business/policy owner requires a subdomain",
+      );
+  }
+
   for (const context of contexts.values()) {
     const contextOwners = context.owners ?? (context.owner ? [context.owner] : []);
     if (!contextOwners.length) errors.push("Bounded context " + context.id + ": owner is required");
+    if (!["selected", "strong-candidate", "candidate"].includes(context.status))
+      errors.push("Bounded context " + context.id + ": unsupported status " + context.status);
     for (const owner of contextOwners) {
       if (!owners.has(owner)) {
         errors.push("Bounded context " + context.id + ": unknown owner " + owner);
+      }
+    }
+    if (["candidate", "strong-candidate"].includes(context.status) || context.evidence) {
+      const evidence = context.evidence;
+      for (const key of ["ownerContracts", "sourcePaths", "testPaths"]) {
+        if (
+          !Array.isArray(evidence?.[key]) ||
+          !evidence[key].length ||
+          evidence[key].some((path) => !safeRelativeFilePath(path)) ||
+          !unique(evidence[key])
+        )
+          errors.push(
+            "Bounded context " +
+              context.id +
+              ": evidence " +
+              key +
+              " must be a non-empty unique list of relative files",
+          );
+      }
+      if (typeof evidence?.rationale !== "string" || !evidence.rationale.trim())
+        errors.push("Bounded context " + context.id + ": evidence rationale is required");
+      for (const ownerId of contextOwners) {
+        const contract = owners.get(ownerId)?.doc;
+        if (
+          contract &&
+          (!Array.isArray(evidence?.ownerContracts) || !evidence.ownerContracts.includes(contract))
+        )
+          errors.push(
+            "Bounded context " +
+              context.id +
+              ": evidence must reference owner contract " +
+              contract,
+          );
       }
     }
   }
@@ -790,6 +877,41 @@ export async function validateSemanticFilesystem(compiled, root) {
     }
   }
 
+  const references = [];
+  for (const subdomain of compiled.model.subdomains ?? []) {
+    for (const path of Array.isArray(subdomain.sources) ? subdomain.sources : [])
+      references.push({ label: "Subdomain " + subdomain.id, path });
+  }
+  for (const context of compiled.model.boundedContexts ?? []) {
+    const contextOwners = context.owners ?? (context.owner ? [context.owner] : []);
+    const modulePaths = Object.values(compiled.topology.modules ?? {})
+      .filter((module) => contextOwners.includes(module.semanticOwner))
+      .map((module) => module.path);
+    for (const key of ["ownerContracts", "sourcePaths", "testPaths"]) {
+      for (const path of Array.isArray(context.evidence?.[key]) ? context.evidence[key] : []) {
+        const label = "Bounded context " + context.id + " evidence " + key;
+        references.push({ label, path });
+        if (
+          key === "sourcePaths" &&
+          (typeof path !== "string" ||
+            !modulePaths.some((prefix) => path.startsWith(prefix + "/src/")))
+        )
+          errors.push(label + ": source must belong to a context owner module");
+        if (
+          key === "testPaths" &&
+          (typeof path !== "string" || !/\/(test|tests)\/.*\.test\.[cm]?[jt]sx?$/.test(path))
+        )
+          errors.push(label + ": test must be a test file");
+      }
+    }
+  }
+  for (const { label, path } of references) {
+    if (!safeRelativeFilePath(path))
+      errors.push(label + ": reference must be a normalized relative file");
+    else if (!(await exists(resolve(root, path))))
+      errors.push(label + ": missing reference " + path);
+  }
+
   for (const capability of compiled.capabilities.values()) {
     if (capability.kind !== "leaf") continue;
     const implementation = capability.implementation;
@@ -872,6 +994,7 @@ export function compileSemanticArchitecture(
     : { errors: [], dataTopology: null, surfaces: new Map(), byOwner: new Map(), schemaFiles: [] };
   errors.push(...data.errors);
   const owners = new Map((model.semanticOwners ?? []).map((item) => [item.id, item]));
+  const subdomains = new Map((model.subdomains ?? []).map((item) => [item.id, item]));
   const concepts = new Map((model.concepts ?? []).map((item) => [item.id, item]));
   const relationships = new Map((model.relationships ?? []).map((item) => [item.id, item]));
   const capabilities = new Map((model.capabilities ?? []).map((item) => [item.id, item]));
@@ -898,6 +1021,7 @@ export function compileSemanticArchitecture(
     topology,
     commandManifest,
     owners,
+    subdomains,
     concepts,
     relationships,
     capabilities,

@@ -4,9 +4,15 @@ import { test } from "node:test";
 import { isReservedRootNamespaceKey, ROOT_NAMESPACE_RESERVED_KEYS } from "../src/domain/root.js";
 
 const appRoot = new URL("../../../apps/web/src/app/", import.meta.url);
-const routeGroups = readdirSync(appRoot, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && entry.name.startsWith("("))
-  .map((entry) => entry.name);
+
+function staticRootSegments(directory: URL): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (!entry.isDirectory() || entry.name.startsWith("_") || entry.name.startsWith("[")) return [];
+    if (/^\(.+\)$/.test(entry.name))
+      return staticRootSegments(new URL(`${entry.name}/`, directory));
+    return [entry.name];
+  });
+}
 
 function sqlReservedKeys(pattern: RegExp): string[] {
   const sql = readFileSync(
@@ -48,14 +54,9 @@ test("global account surfaces are reserved without over-reserving nested resourc
 });
 
 test("every current static root route is reserved before Account may claim it", () => {
-  const staticRoots = new Set(["api"]);
-  for (const group of routeGroups) {
-    for (const entry of readdirSync(new URL(`${group}/`, appRoot), { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      if (entry.name.startsWith("_") || entry.name.startsWith("[")) continue;
-      staticRoots.add(entry.name);
-    }
-  }
+  const staticRoots = new Set(staticRootSegments(appRoot));
+  for (const key of ["api", "home", "settings", "issues", "stars"])
+    assert.ok(staticRoots.has(key), `${key} must remain visible through nested route groups`);
 
   const missing = [...staticRoots].filter((key) => !isReservedRootNamespaceKey(key)).sort();
   assert.deepEqual(missing, []);
