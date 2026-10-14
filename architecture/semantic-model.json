@@ -249,6 +249,12 @@
       "kind": "business-owner",
       "lifecycle": "current",
       "doc": "docs/owners/wiki.md"
+    },
+    {
+      "id": "insights",
+      "kind": "application-capability-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/insights.md"
     }
   ],
   "subdomains": [
@@ -1532,6 +1538,17 @@
       "definition": "Durable exact-replay command identity referencing the committed Wiki revision.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "repository-pulse",
+      "canonicalName": "RepositoryPulse",
+      "kind": "derived-projection",
+      "owner": "insights",
+      "lifecycle": "current",
+      "definition": "Authorized Repository-scoped composition of Issue activity/current workflow and WBS scope-governance metrics with explicit coverage.",
+      "authorityMode": "derived",
+      "persistenceExpectation": "none",
+      "derivedFrom": ["issue", "repository-wbs"]
     }
   ],
   "relationships": [
@@ -2037,6 +2054,45 @@
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck"
+    },
+    {
+      "id": "insights-repository-metrics",
+      "from": "repository-pulse",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "insights",
+      "meaning": "Insights consumes repository-owned authorized current queries; source facts and authorization remain with the provider.",
+      "provider": "repository",
+      "consumer": "insights",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "current-state"
+    },
+    {
+      "id": "insights-issue-metrics",
+      "from": "repository-pulse",
+      "to": "issue",
+      "kind": "reference",
+      "owner": "insights",
+      "meaning": "Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider.",
+      "provider": "issue",
+      "consumer": "insights",
+      "integrationMode": "query",
+      "authority": "issue",
+      "consistency": "current-state"
+    },
+    {
+      "id": "insights-wbs-metrics",
+      "from": "repository-pulse",
+      "to": "repository-wbs",
+      "kind": "reference",
+      "owner": "insights",
+      "meaning": "Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider.",
+      "provider": "wbs",
+      "consumer": "insights",
+      "integrationMode": "query",
+      "authority": "wbs",
+      "consistency": "current-state"
     }
   ],
   "capabilities": [
@@ -3616,6 +3672,69 @@
         "testPaths": ["packages/wiki/test/wiki.test.ts"],
         "note": "Internal package capability only; no HTTP endpoint, UI, rendering, attachments or page-specific grants. Provider/device evidence remains separate."
       }
+    },
+    {
+      "id": "read-repository-pulse",
+      "owner": "insights",
+      "kind": "leaf",
+      "intent": "Compose authorized Repository Pulse from owner-published Issue/WBS metrics, preserving time boundaries, source coverage and explicit unavailability.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Internal Repository Pulse query for Issue period events/current workflow and current WBS baseline/proposal/draft metrics.",
+        "sourcePaths": ["packages/insights/src/application/use-cases/repository-pulse.ts"],
+        "publicExports": [
+          "./application/use-cases/repository-pulse",
+          "./contracts/dto/repository-pulse",
+          "./contracts/output/repository-metrics"
+        ],
+        "entrypoints": ["scripts/insights/run.mjs"],
+        "testPaths": ["packages/insights/test/repository-pulse.test.ts"],
+        "note": "No independent writable domain or metric persistence. Event counts describe recorded evidence only, never fabricated historical completeness or work-package acceptance."
+      }
+    },
+    {
+      "id": "read-issue-metrics",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Read authorized issue-owned Repository metrics without transferring source or authorization authority to Insights.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-scoped issue metrics through an owner public query.",
+        "sourcePaths": ["packages/issue/src/adapters/outbound/persistence/metrics.ts"],
+        "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
+        "entrypoints": ["scripts/insights/run.mjs"],
+        "testPaths": ["packages/issue/test/metrics.test.ts"],
+        "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
+      }
+    },
+    {
+      "id": "read-wbs-metrics",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Read authorized wbs-owned Repository metrics without transferring source or authorization authority to Insights.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-scoped wbs metrics through an owner public query.",
+        "sourcePaths": ["packages/wbs/src/adapters/outbound/persistence/metrics.ts"],
+        "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
+        "entrypoints": ["scripts/insights/run.mjs"],
+        "testPaths": ["packages/wbs/test/metrics.test.ts"],
+        "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
+      }
     }
   ],
   "invariants": [
@@ -3953,6 +4072,10 @@
     {
       "semanticOwner": "wiki",
       "module": "@line_bot_v1/wiki"
+    },
+    {
+      "semanticOwner": "insights",
+      "module": "@line_bot_v1/insights"
     }
   ],
   "policies": [

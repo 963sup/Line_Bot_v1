@@ -95,12 +95,24 @@ importers:
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:packages/account
+      '@line_bot_v1/insights':
+        specifier: workspace:*
+        version: link:packages/insights
+      '@line_bot_v1/issue':
+        specifier: workspace:*
+        version: link:packages/issue
       '@line_bot_v1/line':
         specifier: workspace:*
         version: link:packages/line
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:packages/platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:packages/repository
+      '@line_bot_v1/wbs':
+        specifier: workspace:*
+        version: link:packages/wbs
       '@line_bot_v1/wiki':
         specifier: workspace:*
         version: link:packages/wiki
@@ -466,6 +478,25 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/insights:
+    dependencies:
+      '@line_bot_v1/issue':
+        specifier: workspace:*
+        version: link:../issue
+      '@line_bot_v1/wbs':
+        specifier: workspace:*
+        version: link:../wbs
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

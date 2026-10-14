@@ -1,5 +1,7 @@
 # WBS
 
+The owner-published metrics query reports current OPEN proposals, the published Baseline and structural draft differences under current Repository access. Missing content remains uninitialized; without a published Baseline, differences are null rather than an invented approved scope. Insights consumes these facts without acquiring WBS authority.
+
 Repository-WBS owns a Repository-scoped work decomposition document, its head version, immutable Revision content/history and durable exact-replay receipts. It is a local extension, not GitHub Commit, PullRequest or ProjectItem semantics.
 
 ## Authority and invariants

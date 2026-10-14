@@ -63,6 +63,14 @@
     "./contracts/repositories/issues": {
       "types": "./dist/contracts/repositories/issues.d.ts",
       "default": "./dist/contracts/repositories/issues.js"
+    },
+    "./contracts/output/metrics": {
+      "types": "./dist/contracts/output/metrics.d.ts",
+      "default": "./dist/contracts/output/metrics.js"
+    },
+    "./composition/bootstrap/metrics": {
+      "types": "./dist/composition/bootstrap/metrics.d.ts",
+      "default": "./dist/composition/bootstrap/metrics.js"
     }
   },
   "files": [

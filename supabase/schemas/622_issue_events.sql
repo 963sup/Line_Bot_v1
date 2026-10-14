@@ -14,6 +14,7 @@ create table app_private."issue_events" (
   constraint "issue_events_data_check" check (jsonb_typeof(data) = 'object')
 );
 create index issue_events_actor on app_private.issue_events (actor);
+create index issue_events_issue_time on app_private.issue_events (issue_id, at);
 alter table app_private."issue_events" enable row level security;
 revoke all on app_private."issue_events" from public, anon, authenticated, line_app;
 grant insert, select on app_private.issue_events to line_app;

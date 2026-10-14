@@ -1,5 +1,7 @@
 # Issue
 
+The owner-published metrics query counts persisted creation timestamps and recorded close/reopen events over `[from,to)`, separately from current local workflow distribution. Coverage explicitly reports legacy Issues and unstructured events; it never reconstructs absent history. Each query rechecks current Repository scope/access. Insights consumes this projection without acquiring Issue authority.
+
 Read this file for Issue ownership and invariants.
 
 ## Responsibility
