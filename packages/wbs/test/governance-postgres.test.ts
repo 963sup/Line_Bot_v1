@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { setTimeout } from "node:timers/promises";
-import { createSql, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
-import { Pool } from "pg";
+import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { executeWbsCommand } from "../src/application/use-cases/content.js";
 import { executeWbsGovernanceCommand } from "../src/application/use-cases/governance.js";
 import {
@@ -23,50 +21,8 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
     ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname),
     "Concurrency tests only use a local disposable server",
   );
-  const admin = new Pool({ connectionString: url.href, max: 1 });
-  const name = `wbs_test_${randomUUID().replaceAll("-", "")}`;
-  await admin.query(`CREATE DATABASE ${name}`);
-  url.pathname = `/${name}`;
-  const pool = new Pool({ connectionString: url.href, max: 5 });
-  t.after(async () => {
-    await pool.end();
-    try {
-      await admin.query(`DROP DATABASE ${name}`);
-    } finally {
-      await admin.end();
-    }
-  });
-  await pool.query(
-    "DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF; END $$; CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid primary key,banned_until timestamptz,deleted_at timestamptz,is_anonymous boolean); CREATE TABLE auth.identities(user_id uuid,provider text,provider_id text)",
-  );
-  const directory = new URL("../../../supabase/schemas/", import.meta.url);
-  for (const file of readdirSync(directory)
-    .filter((f) => f.endsWith(".sql"))
-    .sort())
-    await pool.query(`BEGIN;${readFileSync(new URL(file, directory), "utf8")}COMMIT;`);
-  const db: Database = {
-    async transaction(work) {
-      const client = await pool.connect();
-      try {
-        await client.query(
-          "BEGIN;SET LOCAL ROLE line_app;SET LOCAL search_path=app_private,pg_catalog;SET LOCAL statement_timeout='10s'",
-        );
-        const result = await work(
-          createSql(async (text, values) => {
-            const query = await client.query<SqlRow>(text, values);
-            return { rows: query.rows, rowCount: query.rowCount };
-          }),
-        );
-        await client.query("COMMIT");
-        return result;
-      } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-      } finally {
-        client.release();
-      }
-    },
-  };
+  const { pool, db, close } = await postgresSessions(databaseUrl);
+  t.after(close);
   await db.transaction(async (sql) => {
     await sql.query(
       "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES('owner','active',1,1)",

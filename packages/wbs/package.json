@@ -70,8 +70,6 @@
     "@line_bot_v1/repository": "workspace:*"
   },
   "devDependencies": {
-    "pg": "catalog:",
-    "@types/pg": "catalog:",
     "@types/node": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
