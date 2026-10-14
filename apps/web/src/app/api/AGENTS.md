@@ -1,5 +1,7 @@
 # Web API transport boundary
 
+`GET /api/repository-insights` transports Insights Repository Pulse. `owner`/`name` locate current Repository scope; optional `from`/`to` are nonnegative epoch milliseconds with `[from,to)` semantics. Verified LINE identity maps to an active User, and each source rechecks authorization. Authorization fails closed; infrastructure source failure stays explicitly unavailable. No mutation endpoint.
+
 `/api/repository-wbs` GET/POST and `/api/repository-wbs/history` GET are WBS owner transports. They use verified LINE identity and owner-side current Repository access; initialization is an explicit version-zero command. Revision is immutable saved content, not a Baseline or acceptance decision.
 
 `/api/repository-wbs/governance` GET/POST transports WBS policy, proposal, exact-version review and atomic Baseline publication. Governance version is separate from draft content version. Owner-side current permissions, policy/version gates, origin checks and exact replay remain authoritative; publication is not deliverable acceptance.

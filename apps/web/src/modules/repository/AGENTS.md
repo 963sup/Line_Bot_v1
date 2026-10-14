@@ -1,5 +1,7 @@
 # Web repository module
 
+Insights at `/{login}/{repository}/insights` and `GET /api/repository-insights` presents the Insights-owned Repository Pulse. Source authorization/metrics remain with Repository, Issue and WBS. Period activity, current workflow and current formal scope are separate; unavailable sources and incomplete event coverage must remain explicit. Clear private metrics on session block, hidden/pagehide and failed refresh; stale responses cannot restore them.
+
 WBS presentation at `/{login}/{repository}/wbs`, `/api/repository-wbs` and `/api/repository-wbs/governance` consumes `@line_bot_v1/wbs`; Repository owns access, WBS owns immutable scope revisions, version-bound proposals/reviews/policies and published Baselines. Draft and formal scope remain explicit and independent. Pending commands bind exact retries to verified User/Repository; hidden/session-invalidated views clear private state. Baseline publication is not work-package acceptance; execution, attachments and notifications remain subsequent work.
 ## 現行 surface 與 invariant
 URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `access`、`settings`、`issues`、`discussions`、`labels`、`milestones` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。

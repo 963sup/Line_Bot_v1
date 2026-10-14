@@ -182,6 +182,9 @@ importers:
       '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../../packages/identity-access
+      '@line_bot_v1/insights':
+        specifier: workspace:*
+        version: link:../../packages/insights
       '@line_bot_v1/issue':
         specifier: workspace:*
         version: link:../../packages/issue

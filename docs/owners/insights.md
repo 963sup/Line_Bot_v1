@@ -8,4 +8,4 @@ Insights owns Repository Pulse query composition and metric presentation contrac
 - Every source query rechecks current active qualification and Repository access. Source authorization/not-found failures fail closed; infrastructure failure returns an explicit unavailable source while preserving other authorized results.
 - Observed time is not a cross-owner atomic snapshot; each owner query has its own transaction. No writable metric store, cache or derived completion rate exists.
 
-Runtime consumer is `pnpm insights:run`, an authenticated internal stdin command. No HTTP endpoint or UI is added.
+Runtime consumers are `pnpm insights:run` and the authenticated Repository page `/{login}/{repository}/insights` through read-only `GET /api/repository-insights`. Web resolves the current Repository locator through Repository's contract and supplies the verified active User to the existing Pulse query. The page defaults to seven days, supports thirty days, and separates period activity from current Issue/WBS state. No additional persistence or completion rate is introduced.

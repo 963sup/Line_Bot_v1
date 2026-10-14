@@ -14,6 +14,19 @@ const webRequire = createRequire(new URL("../../apps/web/package.json", import.m
 const { postgresFixture } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/platform/testing/postgres")).href
 );
+const { createRepositoryPulse } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/insights/application/use-cases/repository-pulse"))
+    .href
+);
+const { createPostgresIssueMetrics } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/issue/composition/bootstrap/metrics")).href
+);
+const { createPostgresWbsMetrics } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/composition/bootstrap/metrics")).href
+);
+const { repositoryContentScope } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/repository/postgres/content-scope")).href
+);
 const { createPostgresWbsStore, createPostgresWbsGovernanceStore } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/composition/bootstrap/store")).href
 );
@@ -38,6 +51,20 @@ await fixture.pg.query(
 );
 const contentStore = createPostgresWbsStore(fixture.db),
   governanceStore = createPostgresWbsGovernanceStore(fixture.db);
+let insightsUnavailable = false;
+const insightsPeriods = [];
+const pulse = createRepositoryPulse({
+  qualify: async (userId, repositoryId) =>
+    fixture.db.transaction((sql) => repositoryContentScope(sql, userId, { repositoryId })),
+  issues: {
+    read: async (...args) => {
+      if (insightsUnavailable) throw new Error("Synthetic source unavailable");
+      return createPostgresIssueMetrics(fixture.db).read(...args);
+    },
+  },
+  wbs: createPostgresWbsMetrics(fixture.db),
+  now: Date.now,
+});
 const target = new URL(process.env.NAVIGATION_BASE ?? "http://127.0.0.1:4117");
 if (
   target.protocol !== "http:" ||
@@ -95,6 +122,34 @@ await context.route("**/*", async (route) => {
   if (!url.pathname.startsWith("/api/")) return route.continue();
   if (url.pathname === "/api/auth")
     return route.fulfill({ json: { generation, sessionChanged: false } });
+  if (url.pathname === "/api/repository-insights") {
+    assert.equal(request.method(), "GET");
+    assert.equal(request.headers()["x-app-session-generation"], generation);
+    assert.equal(url.searchParams.get("owner"), "alice");
+    assert.equal(url.searchParams.get("name"), "Alpha");
+    insightsPeriods.push(Number(url.searchParams.get("to")) - Number(url.searchParams.get("from")));
+    try {
+      return route.fulfill({
+        json: {
+          ...(await pulse.read(actor, {
+            repositoryId: "repo",
+            from: Number(url.searchParams.get("from")),
+            to: Number(url.searchParams.get("to")),
+          })),
+          canManageRepository: (
+            await fixture.db.transaction((sql) =>
+              repositoryContentScope(sql, actor, { repositoryId: "repo" }),
+            )
+          ).repository.permissions.includes("admin"),
+        },
+      });
+    } catch (error) {
+      return route.fulfill({
+        status: error.status ?? 503,
+        json: { error: "Insights 存取已撤銷。" },
+      });
+    }
+  }
   if (!url.pathname.startsWith("/api/repository-wbs"))
     return route.fulfill({ status: 404, json: { error: "Synthetic route not provided" } });
   assert.equal(request.headers()["x-app-session-generation"], generation);
@@ -325,6 +380,49 @@ try {
   });
   await expect(page.getByRole("main").getByRole("alert")).toContainText("WBS 存取已撤銷");
   await expect(page.getByText("門市開幕第二版", { exact: true })).toHaveCount(0);
+  actor = "owner";
+  forbidden = false;
+  const expectedMetrics = await createPostgresWbsMetrics(fixture.db).read("owner", "repo");
+  assert.ok(expectedMetrics.baseline);
+  const baselineText = `正式基準 #${expectedMetrics.baseline.number}`;
+  await page.goto(`${base}/alice/Alpha/insights`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Issue 活動", exact: true })).toBeVisible();
+  await expect(page.getByText(baselineText, { exact: false })).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Repository resources" })
+      .getByRole("link", { name: "Settings", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/^移除：/)).toBeVisible();
+  await page.getByLabel("Issue 活動期間").selectOption("30");
+  await expect.poll(() => insightsPeriods.at(-1)).toBe(30 * 86400000);
+  await expect(page.getByText(/更新時間：/)).toBeVisible();
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.ok(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      `Insights overflow at ${width}`,
+    );
+    await page.screenshot({ path: path.join(output, `insights-${width}.png`), fullPage: true });
+  }
+  insightsUnavailable = true;
+  await page.getByRole("button", { name: "重新整理", exact: true }).click();
+  await expect(
+    page.getByText("Issue 來源暫時不可用，無法顯示指標。", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(baselineText, { exact: false })).toBeVisible();
+  await fixture.pg.query("UPDATE app_private.users SET status='paused' WHERE id='owner'");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByText(baselineText, { exact: false })).toHaveCount(0);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Insights 存取已撤銷");
+  await expect(page.getByText(/更新時間：/)).toHaveCount(0);
   assert.deepEqual(errors, []);
   writeFileSync(
     path.join(output, "wbs-results.json"),
@@ -346,6 +444,7 @@ try {
           "subtree delete",
           "mobile layout",
           "private state clear",
+          "Insights period/current state, real owner metrics, partial source failure and qualification revocation",
         ],
         posts: posts.length,
       },
