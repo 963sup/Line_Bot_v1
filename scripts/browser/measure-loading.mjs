@@ -43,6 +43,11 @@ try {
     const authRequests = [];
     const apiRequests = [];
     const pending = [];
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.origin === base.origin && url.pathname.startsWith("/api/"))
+        apiRequests.push(url.pathname + url.search);
+    });
     page.on("response", (response) => {
       if (response.request().resourceType() === "document") documents++;
       if (response.request().resourceType() === "script") {
@@ -53,7 +58,6 @@ try {
     await context.route("**/*", async (route) => {
       const url = new URL(route.request().url());
       if (url.origin !== base.origin) return route.abort();
-      if (url.pathname.startsWith("/api/")) apiRequests.push(url.pathname + url.search);
       if (
         await fulfillLineSessionMock(route, ({ method }) => {
           authRequests.push({
