@@ -11,6 +11,7 @@
     "start": "node ../../scripts/runtime/next.mjs start --hostname 127.0.0.1"
   },
   "dependencies": {
+    "@line_bot_v1/insights": "workspace:*",
     "@line_bot_v1/account": "workspace:*",
     "@line_bot_v1/namespace": "workspace:*",
     "@line_bot_v1/notifications": "workspace:*",

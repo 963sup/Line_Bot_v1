@@ -618,7 +618,8 @@
         "@line_bot_v1/wallet",
         "@line_bot_v1/explore",
         "@line_bot_v1/audit",
-        "@line_bot_v1/wbs"
+        "@line_bot_v1/wbs",
+        "@line_bot_v1/insights"
       ]
     }
   }

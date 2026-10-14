@@ -3855,15 +3855,22 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Internal Repository Pulse query for Issue period events/current workflow and current WBS baseline/proposal/draft metrics.",
+        "scope": "Repository Pulse query through authenticated internal CLI and read-only Web delivery for Issue period events/current workflow and current WBS baseline/proposal/draft metrics.",
         "sourcePaths": ["packages/insights/src/application/use-cases/repository-pulse.ts"],
         "publicExports": [
           "./application/use-cases/repository-pulse",
           "./contracts/dto/repository-pulse",
           "./contracts/output/repository-metrics"
         ],
-        "entrypoints": ["scripts/insights/run.mjs"],
-        "testPaths": ["packages/insights/test/repository-pulse.test.ts"],
+        "entrypoints": [
+          "scripts/insights/run.mjs",
+          "apps/web/src/app/api/repository-insights/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/insights/page.tsx"
+        ],
+        "testPaths": [
+          "packages/insights/test/repository-pulse.test.ts",
+          "apps/web/test/insights-http.test.ts"
+        ],
         "note": "No independent writable domain or metric persistence. Event counts describe recorded evidence only, never fabricated historical completeness or work-package acceptance."
       }
     },
