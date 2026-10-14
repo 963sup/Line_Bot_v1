@@ -15,6 +15,8 @@ Repository-WBS owns a Repository-scoped work decomposition document, its head ve
 
 ## Delivery
 
+Source roles are explicit: `domain/document.ts` and `domain/content.ts` own scope content; `domain/governance.ts`, `domain/scope-governance.ts` and `domain/policies/access.ts` own governance rules and transitions. `application/commands`, `application/queries` and `application/use-cases` separate parsing from coordination. `contracts/dto` contains exchange models; `contracts/repositories` contains the technology-independent transaction/load/save ports. PostgreSQL adapters implement those ports; composition exposes only their contract types. Root-level forwarding entries are absent. Public consumers were migrated together with the exports and semantic implementation paths.
+
 Runtime owner: `packages/wbs`. Web presentation is Repository-scoped. `/{login}/{repository}/wbs` reads/edits current content and displays read-only historical revisions. `/api/repository-wbs` provides authorized GET/POST; `/api/repository-wbs/history` provides version-keyset pagination (20 per page).
 
 Commands require `requestId`, `repositoryId`, `expectedVersion` and exactly the fields of the selected action. Actions: initialize, create-node, update-node, move-node, delete-subtree. Initialization expects version zero. All other commands require an existing WBS. Update-node edits content/type only; structural changes use move-node. Errors distinguish input, access, missing resource, version/replay conflict and unavailable/unknown result.

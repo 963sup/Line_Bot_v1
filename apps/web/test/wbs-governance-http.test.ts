@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createWbsGovernance } from "@line_bot_v1/wbs/application/governance";
-import type { WbsGovernanceStore } from "@line_bot_v1/wbs/contracts/governance";
-import { WbsError } from "@line_bot_v1/wbs/domain";
+import { createWbsGovernance } from "@line_bot_v1/wbs/application/use-cases/governance";
+import type { WbsGovernanceStore } from "@line_bot_v1/wbs/contracts/repositories/governance";
+import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { wbsGovernanceRequest } from "../src/modules/repository/wbs-governance-http.server";
 
 test("WBS governance transport rejects spoofing, wrong origins, invalid versions and preserves error classes", async (t) => {
@@ -19,7 +19,7 @@ test("WBS governance transport rejects spoofing, wrong origins, invalid versions
       calls.push(args);
       throw new WbsError(status, "source error");
     },
-    execute: async (...args) => {
+    transact: async (...args) => {
       calls.push(args);
       throw new WbsError(status, "transition error");
     },

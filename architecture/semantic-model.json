@@ -3461,15 +3461,21 @@
         "status": "implemented",
         "scope": "Single-head WBS content initialization, node edit/move/delete, authorized history and exact-replay persistence.",
         "sourcePaths": [
-          "packages/wbs/src/application.ts",
-          "packages/wbs/src/domain.ts",
-          "packages/wbs/src/contracts.ts",
+          "packages/wbs/src/domain/document.ts",
+          "packages/wbs/src/domain/content.ts",
+          "packages/wbs/src/application/commands/content.ts",
+          "packages/wbs/src/application/use-cases/content.ts",
+          "packages/wbs/src/contracts/dto/content.ts",
+          "packages/wbs/src/contracts/repositories/content.ts",
           "packages/wbs/src/adapters/outbound/persistence/store.ts"
         ],
         "publicExports": [
-          "./application",
-          "./contracts",
-          "./domain",
+          "./domain/document",
+          "./domain/content",
+          "./application/commands/content",
+          "./application/use-cases/content",
+          "./contracts/dto/content",
+          "./contracts/repositories/content",
           "./composition/bootstrap/store"
         ],
         "entrypoints": [
@@ -3500,14 +3506,20 @@
         "scope": "Versioned policy, proposals, immutable reviews, mandatory publication checks, structural differences, Baseline publication and exact replay.",
         "sourcePaths": [
           "packages/wbs/src/domain/governance.ts",
-          "packages/wbs/src/application/governance.ts",
-          "packages/wbs/src/contracts/governance.ts",
+          "packages/wbs/src/domain/scope-governance.ts",
+          "packages/wbs/src/application/commands/governance.ts",
+          "packages/wbs/src/application/use-cases/governance.ts",
+          "packages/wbs/src/contracts/dto/governance.ts",
+          "packages/wbs/src/contracts/repositories/governance.ts",
           "packages/wbs/src/adapters/outbound/persistence/governance.ts"
         ],
         "publicExports": [
           "./domain/governance",
-          "./application/governance",
-          "./contracts/governance",
+          "./domain/scope-governance",
+          "./application/commands/governance",
+          "./application/use-cases/governance",
+          "./contracts/dto/governance",
+          "./contracts/repositories/governance",
           "./composition/bootstrap/store"
         ],
         "entrypoints": [

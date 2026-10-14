@@ -1,4 +1,4 @@
-import { parseWbsDocument, type WbsDocument, type WbsNode } from "../domain.js";
+import { parseWbsDocument, type WbsDocument, type WbsNode } from "./document.js";
 
 export type WbsPolicy = Readonly<{
   version: number;

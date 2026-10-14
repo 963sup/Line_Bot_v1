@@ -1,5 +1,5 @@
-import type { createWbs } from "@line_bot_v1/wbs/application";
-import { WbsError } from "@line_bot_v1/wbs/domain";
+import type { createWbs } from "@line_bot_v1/wbs/application/use-cases/content";
+import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryBody, repositoryFailure, repositoryPathSelector } from "./http.server";
 

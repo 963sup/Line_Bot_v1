@@ -1,5 +1,5 @@
-import { createWbs } from "@line_bot_v1/wbs/application";
-import { createWbsGovernance } from "@line_bot_v1/wbs/application/governance";
+import { createWbs } from "@line_bot_v1/wbs/application/use-cases/content";
+import { createWbsGovernance } from "@line_bot_v1/wbs/application/use-cases/governance";
 import {
   createPostgresWbsGovernanceStore,
   createPostgresWbsStore,
