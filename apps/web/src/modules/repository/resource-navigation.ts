@@ -30,8 +30,8 @@ export function repositoryResourceNavigationItems(
   canManage: boolean,
 ) {
   const items: { href: string; label: string; section: RepositoryResourceSection }[] = [
-    { href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`, label: "WBS", section: "wbs" },
     { href: repositoryPath(ownerLogin, repositoryName), label: "Overview", section: "overview" },
+    { href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`, label: "WBS", section: "wbs" },
     { href: repositoryIssuesPath(ownerLogin, repositoryName), label: "Issues", section: "issues" },
     {
       href: repositoryDiscussionsPath(ownerLogin, repositoryName),
