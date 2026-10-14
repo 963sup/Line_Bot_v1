@@ -96,10 +96,14 @@
     },
     "@line_bot_v1/actions#test": {
       "cache": false,
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "@line_bot_v1/actions#build", "@line_bot_v1/line#build"],
       "outputs": [],
       "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/supabase/schemas/*.sql",
+        "$TURBO_ROOT$/scripts/actions/*.mjs"
+      ]
     }
   }
 }
