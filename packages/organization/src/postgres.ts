@@ -8,7 +8,6 @@ import {
   readGovernanceReplay,
   recordGovernanceResult,
   requireActiveTargetUser,
-  requireOrganizationLifecycleOwner,
   requireOrganizationOwner,
   resolveVerifiedLineActor,
 } from "@line_bot_v1/identity-access/postgres";
@@ -467,12 +466,6 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
             "只能接受自己的 Organization invitation。",
           );
         }
-      } else if (command.action === "reactivate") {
-        await requireOrganizationLifecycleOwner(
-          sql,
-          command.organizationAccountId,
-          principal.userId,
-        );
       } else if (command.action !== "leave-organization") {
         await requireOrganizationOwner(sql, command.organizationAccountId, principal.userId);
       }
@@ -535,30 +528,6 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
           throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
         }
         result = receipt(command, "active", Number(changed.version), now);
-      } else if (command.action === "deactivate" || command.action === "reactivate") {
-        if (organization.version !== command.expectedVersion) {
-          throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
-        }
-        const wanted = command.action === "deactivate" ? "inactive" : "active";
-        const from = command.action === "deactivate" ? "active" : "inactive";
-        if (organization.status !== from) {
-          throw new GovernanceAccessError(
-            409,
-            "invalid-transition",
-            "Organization 狀態不適用此操作。",
-          );
-        }
-        const changed = (
-          await sql.query(
-            "UPDATE organizations SET status=$2,version=version+1 WHERE account_id=$1 RETURNING version",
-            [command.organizationAccountId, wanted],
-            versionRow,
-          )
-        ).rows[0];
-        if (!changed) {
-          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
-        }
-        result = receipt(command, wanted, changed.version, now);
       } else {
         const targetUserId =
           command.action === "leave-organization"

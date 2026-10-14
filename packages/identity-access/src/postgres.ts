@@ -14,6 +14,5 @@ export {
   isOrganizationOwner,
   requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
-  requireOrganizationLifecycleOwner,
   requireOrganizationOwner,
 } from "./postgres/typed-role-assignments.js";

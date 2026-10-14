@@ -191,13 +191,6 @@ export type OrganizationCommand =
       reason: string;
     }>
   | Readonly<{
-      action: "deactivate" | "reactivate";
-      requestId: string;
-      organizationAccountId: string;
-      expectedVersion: number;
-      reason: string;
-    }>
-  | Readonly<{
       action: "leave-organization";
       requestId: string;
       organizationAccountId: string;

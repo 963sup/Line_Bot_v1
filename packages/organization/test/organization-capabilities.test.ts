@@ -3,7 +3,7 @@ import test from "node:test";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { organizationGovernance } from "../src/application/organization-governance.js";
+import { createPostgresOrganizationGovernance } from "../src/composition/bootstrap/organization-governance.js";
 import { readOrganizationViewerCapabilities } from "../src/postgres/public.js";
 import { PostgresOrganizationGovernance } from "../src/postgres.js";
 
@@ -35,7 +35,7 @@ test("Owner can restrict member creation and members observe the current policy"
   await pg.query(
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values ('org','member','active',1,3)",
   );
-  const governance = organizationGovernance(new PostgresOrganizationGovernance(db), () => 4);
+  const governance = createPostgresOrganizationGovernance(db, () => 4);
   const command = {
     action: "update-member-creation-policy",
     requestId: "12345678-1234-4234-8234-123456789abc",

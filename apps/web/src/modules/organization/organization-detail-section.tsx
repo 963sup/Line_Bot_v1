@@ -1,9 +1,10 @@
+import type { OrganizationLifecycleCommand } from "@line_bot_v1/organization/application/commands/organization-lifecycle";
 import type {
   OrganizationCommand,
   OrganizationDetail,
 } from "@line_bot_v1/organization/contracts/organization-governance";
 
-type PendingOrganizationCommand = OrganizationCommand;
+type PendingOrganizationCommand = OrganizationCommand | OrganizationLifecycleCommand;
 
 export function OrganizationDetailSection({
   detail,

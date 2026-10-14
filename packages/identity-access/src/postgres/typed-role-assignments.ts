@@ -104,13 +104,3 @@ export async function requireOrganizationOwner(
     throw new GovernanceAccessError(403, "forbidden", "你沒有此 Organization 的 owner 權限。");
   }
 }
-
-export async function requireOrganizationLifecycleOwner(
-  sql: Sql,
-  organizationAccountId: string,
-  userId: string,
-) {
-  if (!(await hasOrganizationOwnerAssignment(sql, organizationAccountId, userId))) {
-    throw new GovernanceAccessError(403, "forbidden", "你沒有此 Organization 的生命週期權限。");
-  }
-}
