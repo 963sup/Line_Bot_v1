@@ -31,7 +31,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
-    "test": "tsx --test test/*.test.ts",
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts",
     "schema:check": "node --test ../../scripts/supabase/schema-source.test.mjs && node --no-wasm-code-gc --import tsx --test test/schema-contract.schema.ts"
   },
   "dependencies": {

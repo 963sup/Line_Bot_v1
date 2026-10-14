@@ -139,7 +139,11 @@ try {
   await command([path.join(root, "scripts/browser/check-navigation.mjs")], root, "browser.log");
   await command([path.join(root, "scripts/browser/measure-loading.mjs")], root, "loading.log");
   await command([path.join(root, "scripts/browser/check-profile.mjs")], root, "profile.log");
-  await command([path.join(root, "scripts/browser/check-wbs.mjs")], root, "wbs.log");
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-wbs.mjs")],
+    root,
+    "wbs.log",
+  );
   await command(
     [path.join(root, "scripts/browser/check-repository-resources.mjs")],
     root,

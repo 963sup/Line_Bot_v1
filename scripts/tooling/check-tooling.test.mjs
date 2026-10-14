@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  globSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -12,6 +20,53 @@ const manifest = JSON.parse(readFileSync(resolve(repo, "package.json"), "utf8"))
 const exactNodeVersion = readFileSync(resolve(repo, ".node-version"), "utf8").trim();
 // Generated fixture imports must not be mistaken for this test's actual imports.
 const importing = (specifier) => `import ${JSON.stringify(specifier)};`;
+
+test("every PGlite test consumer launches Node with the WASM code GC protection", () => {
+  const consumers = new Set(
+    globSync(["packages/*/test/**/*.ts", "apps/web/test/**/*.ts"], { cwd: repo })
+      .filter((file) =>
+        /platform\/testing\/postgres|src\/testing\/postgres|@electric-sql\/pglite/.test(
+          readFileSync(resolve(repo, file), "utf8"),
+        ),
+      )
+      .map((file) => file.split(/[\\/]/).slice(0, 2).join("/")),
+  );
+  assert.ok(consumers.size > 0);
+  for (const consumer of consumers) {
+    const manifest = JSON.parse(readFileSync(resolve(repo, consumer, "package.json"), "utf8"));
+    assert.match(
+      manifest.scripts.test,
+      /(?:^|&&\s*)node --no-wasm-code-gc --import tsx --test\b/,
+      consumer,
+    );
+    assert.match(manifest.scripts.test, /--test --test-concurrency=2\b/, consumer);
+  }
+});
+test("PGlite browser script consumers receive the flag in their actual launch command", () => {
+  const consumers = globSync(["scripts/**/*.mjs", "scripts/**/*.ts"], { cwd: repo }).filter(
+    (file) =>
+      !file.includes(".test.") &&
+      /platform\/testing\/postgres|@electric-sql\/pglite/.test(
+        readFileSync(resolve(repo, file), "utf8"),
+      ),
+  );
+  assert.ok(consumers.length > 0);
+  const runner = readFileSync(resolve(repo, "scripts/browser/run-local.mjs"), "utf8");
+  for (const file of consumers) {
+    const literal = JSON.stringify(file.replaceAll("\\", "/")).replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
+    );
+    assert.match(
+      runner,
+      new RegExp(
+        `await command\\(\\s*\\[\\s*"--no-wasm-code-gc",\\s*path\\.join\\(root,\\s*${literal}\\)\\s*\\]`,
+      ),
+      file,
+    );
+  }
+});
+
 function fixture(t) {
   const artifacts = resolve(repo, ".artifacts");
   mkdirSync(artifacts, { recursive: true });

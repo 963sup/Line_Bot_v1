@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test ../../scripts/runtime/load-env.test.mjs && tsx --test test/*.test.ts",
+    "test": "node --test ../../scripts/runtime/load-env.test.mjs && node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts",
     "dev": "node ../../scripts/runtime/next.mjs dev --hostname 127.0.0.1",
     "build": "node ../../scripts/runtime/next.mjs build",
     "typecheck": "node ../../scripts/runtime/next.mjs typegen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
