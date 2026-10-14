@@ -1,11 +1,4 @@
-export class WikiError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+import { WikiError } from "./wiki-error.js";
 
 export type WikiEdit =
   | Readonly<{ action: "create" | "edit"; title: string; body: string }>

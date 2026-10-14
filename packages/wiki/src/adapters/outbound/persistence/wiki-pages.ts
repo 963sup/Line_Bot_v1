@@ -15,7 +15,8 @@ import {
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type { WikiCommand, WikiQuery } from "../../../contracts/dto/wiki.js";
 import type { WikiStore, WikiTransaction } from "../../../contracts/repositories/wiki-pages.js";
-import { WikiError, type WikiRevision } from "../../../domain/wiki-page.js";
+import { WikiError } from "../../../domain/wiki-error.js";
+import type { WikiRevision } from "../../../domain/wiki-page.js";
 
 function decode(row: SqlRow): WikiRevision {
   return {

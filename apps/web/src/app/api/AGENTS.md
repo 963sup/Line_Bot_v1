@@ -1,5 +1,7 @@
 # Web API transport boundary
 
+`GET/POST /api/repository-wiki` resolves `owner`/`name` through current Repository access after verified LINE identity/active Account mapping. GET transports list/page/history/compare queries; POST transports existing Wiki commands, with exact resolved RepositoryId matching, origin/JSON/size checks and owner-side replay/version authorization. Actor/role in input never authorizes; archived Repository is read-only.
+
 `GET /api/repository-insights` transports Insights Repository Pulse. `owner`/`name` locate current Repository scope; optional `from`/`to` are nonnegative epoch milliseconds with `[from,to)` semantics. Verified LINE identity maps to an active User, and each source rechecks authorization. Authorization fails closed; infrastructure source failure stays explicitly unavailable. No mutation endpoint.
 
 `/api/repository-wbs` GET/POST and `/api/repository-wbs/history` GET are WBS owner transports. They use verified LINE identity and owner-side current Repository access; initialization is an explicit version-zero command. Revision is immutable saved content, not a Baseline or acceptance decision.

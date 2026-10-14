@@ -1,5 +1,7 @@
 # Resource route group
 
+`/{login}/{repository}/wiki` lists authorized Wiki pages; `/wiki/{pageId}` uses stable page identity across rename and revision restore. Historical content rechecks current source access; Markdown stays escaped raw text. URLs never grant access.
+
 `/{login}/{repository}/insights` is the authenticated read-only Repository Pulse entry. The locator is resolved under current Repository access; no public metrics are server-rendered.
 
 `/{login}/{repository}/wbs` is the Repository-WBS content entry; current and historical content are authorized through the WBS owner contract. Existing root and collaboration routes remain available.
