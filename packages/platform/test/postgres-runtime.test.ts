@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
+import { PostgresDatabase } from "../src/postgres.js";
+
+test("operator entries can own and close a database through the public Postgres export", () => {
+  assert.equal(typeof PostgresDatabase, "function");
+  assert.equal(typeof PostgresDatabase.prototype.transaction, "function");
+  assert.equal(typeof PostgresDatabase.prototype.close, "function");
+});
 
 test("PGlite refuses an unsafe Node process before allocating WASM", () => {
   const result = spawnSync(
