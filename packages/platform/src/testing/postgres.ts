@@ -11,6 +11,10 @@ function schemaFiles() {
 }
 
 export async function postgresFixture() {
+  // Node 24 can double-free WASM import wrappers during code GC (nodejs/node#66366).
+  // Fail before allocating PGlite rather than intermittently aborting the whole runner.
+  if (!process.execArgv.includes("--no-wasm-code-gc"))
+    throw new Error("PGlite requires --no-wasm-code-gc; use the owning package test command.");
   const pg = new PGlite();
   await pg.exec(
     "CREATE ROLE anon;CREATE ROLE authenticated;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid primary key,banned_until timestamptz,deleted_at timestamptz,is_anonymous boolean);CREATE TABLE auth.identities(user_id uuid,provider text,provider_id text);",
