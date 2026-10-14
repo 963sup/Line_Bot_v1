@@ -1,5 +1,5 @@
-import type { createWbsGovernance } from "@line_bot_v1/wbs/application/governance";
-import { WbsError } from "@line_bot_v1/wbs/domain";
+import type { createWbsGovernance } from "@line_bot_v1/wbs/application/use-cases/governance";
+import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryBody, repositoryFailure, repositoryPathSelector } from "./http.server";
 

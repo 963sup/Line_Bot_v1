@@ -3,13 +3,15 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { parseWbsGovernanceCommand } from "../src/application/governance.js";
+import { parseWbsGovernanceCommand } from "../src/application/commands/governance.js";
+import { executeWbsCommand } from "../src/application/use-cases/content.js";
+import { executeWbsGovernanceCommand } from "../src/application/use-cases/governance.js";
 import {
   createPostgresWbsGovernanceStore,
   createPostgresWbsStore,
 } from "../src/composition/bootstrap/store.js";
+import { WbsError, type WbsNode } from "../src/domain/document.js";
 import { checkWbsPublication, compareWbsDocuments } from "../src/domain/governance.js";
-import { WbsError, type WbsNode } from "../src/domain.js";
 
 const packageNode: WbsNode = {
   id: "package",
@@ -95,17 +97,20 @@ test("governance preserves frozen review, current authority, publication atomici
     ),
     0,
   );
-  await content.execute(
+  await executeWbsCommand(
+    content,
     "owner",
     { action: "initialize", repositoryId: "repo", requestId: randomUUID(), expectedVersion: 0 },
     1,
   );
-  await content.execute(
+  await executeWbsCommand(
+    content,
     "owner",
     { action: "initialize", repositoryId: "other", requestId: randomUUID(), expectedVersion: 0 },
     1,
   );
-  let draft = await content.execute(
+  let draft = await executeWbsCommand(
+    content,
     "owner",
     {
       action: "create-node",
@@ -118,7 +123,8 @@ test("governance preserves frozen review, current authority, publication atomici
   );
   async function run(input: Record<string, unknown>, user = "owner", store = governance) {
     const state = await governance.view(user, { repositoryId: "repo" }, {});
-    return store.execute(
+    return executeWbsGovernanceCommand(
+      store,
       user,
       parseWbsGovernanceCommand({
         repositoryId: "repo",
@@ -196,7 +202,8 @@ test("governance preserves frozen review, current authority, publication atomici
     (await governance.view("owner", { repositoryId: "repo" }, {})).publishedBaseline,
     null,
   );
-  draft = await content.execute(
+  draft = await executeWbsCommand(
+    content,
     "owner",
     {
       action: "update-node",
@@ -273,7 +280,8 @@ test("governance preserves frozen review, current authority, publication atomici
     "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES('repo','maintainer','maintain',2)",
   );
   const frozen = draft.revision;
-  draft = await content.execute(
+  draft = await executeWbsCommand(
+    content,
     "owner",
     {
       action: "update-node",
@@ -333,8 +341,11 @@ test("governance preserves frozen review, current authority, publication atomici
     expectedProposalVersion: 2,
     expectedPolicyVersion: 2,
   });
-  const published = await governance.execute("owner", publishCommand, 20);
-  assert.deepEqual(await governance.execute("owner", publishCommand, 99), published);
+  const published = await executeWbsGovernanceCommand(governance, "owner", publishCommand, 20);
+  assert.deepEqual(
+    await executeWbsGovernanceCommand(governance, "owner", publishCommand, 99),
+    published,
+  );
   const official = await governance.view("owner", { repositoryId: "repo" }, { proposalId: aId });
   assert.equal(official.baseline?.revision.id, frozen.id);
   assert.equal(official.baseline?.baseline.approvalReviewIds.length, 2);
@@ -351,11 +362,12 @@ test("governance preserves frozen review, current authority, publication atomici
   );
   await assert.rejects(publish(bId, 1, 2), conflict);
   await assert.rejects(
-    governance.execute("owner", { ...publishCommand, expectedVersion: 0 }, 21),
+    executeWbsGovernanceCommand(governance, "owner", { ...publishCommand, expectedVersion: 0 }, 21),
     conflict,
   );
   await assert.rejects(
-    content.execute(
+    executeWbsCommand(
+      content,
       "owner",
       {
         action: "update-node",
@@ -434,7 +446,10 @@ test("governance preserves frozen review, current authority, publication atomici
   await run({ action: "close-proposal", proposalId: c.proposalId, expectedProposalVersion: 2 });
   await assert.rejects(publish(c.proposalId, 3, 3), conflict);
   await pg.query("UPDATE app_private.repositories SET is_archived=true WHERE id='repo'");
-  assert.deepEqual(await governance.execute("owner", publishCommand, 100), published);
+  assert.deepEqual(
+    await executeWbsGovernanceCommand(governance, "owner", publishCommand, 100),
+    published,
+  );
   await assert.rejects(
     run({
       action: "set-policy",

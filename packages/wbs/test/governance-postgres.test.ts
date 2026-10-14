@@ -5,11 +5,13 @@ import { test } from "node:test";
 import { setTimeout } from "node:timers/promises";
 import { createSql, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
 import { Pool } from "pg";
+import { executeWbsCommand } from "../src/application/use-cases/content.js";
+import { executeWbsGovernanceCommand } from "../src/application/use-cases/governance.js";
 import {
   createPostgresWbsGovernanceStore,
   createPostgresWbsStore,
 } from "../src/composition/bootstrap/store.js";
-import { WbsError } from "../src/domain.js";
+import { WbsError } from "../src/domain/document.js";
 
 const databaseUrl = process.env.WBS_TEST_DATABASE_URL;
 test("real PostgreSQL sessions serialize competing publication and exact retries", {
@@ -76,12 +78,14 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
   );
   const content = createPostgresWbsStore(db),
     governance = createPostgresWbsGovernanceStore(db);
-  await content.execute(
+  await executeWbsCommand(
+    content,
     "owner",
     { action: "initialize", repositoryId: "repo", requestId: randomUUID(), expectedVersion: 0 },
     1,
   );
-  const draft = await content.execute(
+  const draft = await executeWbsCommand(
+    content,
     "owner",
     {
       action: "create-node",
@@ -104,7 +108,8 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
   const ids: string[] = [];
   for (let index = 0; index < 2; index++) {
     const view = await governance.view("owner", { repositoryId: "repo" }, {});
-    const receipt = await governance.execute(
+    const receipt = await executeWbsGovernanceCommand(
+      governance,
       "owner",
       {
         action: "create-proposal",
@@ -120,7 +125,8 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
     );
     assert.ok(receipt.proposalId);
     ids.push(receipt.proposalId);
-    await governance.execute(
+    await executeWbsGovernanceCommand(
+      governance,
       "owner",
       {
         action: "review-proposal",
@@ -149,7 +155,9 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
   // Hold the real row lock until both independent pool sessions are waiting on it.
   const blocker = await pool.connect();
   await blocker.query("BEGIN;SELECT 1 FROM app_private.repositories WHERE id='repo' FOR UPDATE");
-  const competing = commands.map((command) => governance.execute("owner", command, 5));
+  const competing = commands.map((command) =>
+    executeWbsGovernanceCommand(governance, "owner", command, 5),
+  );
   try {
     let waiting = 0;
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -184,8 +192,8 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
   const winning = commands[successfulIndex];
   assert.ok(winning);
   const receipts = await Promise.all([
-    governance.execute("owner", winning, 6),
-    governance.execute("owner", winning, 7),
+    executeWbsGovernanceCommand(governance, "owner", winning, 6),
+    executeWbsGovernanceCommand(governance, "owner", winning, 7),
   ]);
   assert.deepEqual(receipts[0], receipts[1]);
   assert.equal(

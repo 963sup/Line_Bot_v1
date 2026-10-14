@@ -1,45 +1,7 @@
-import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import type { WbsRevision } from "../contracts.js";
-import type { WbsCheck, WbsDifference, WbsPolicy } from "../domain/governance.js";
+import type { WbsRevision } from "../../domain/content.js";
+import type { WbsCheck, WbsDifference, WbsPolicy } from "../../domain/governance.js";
+import type { WbsBaseline, WbsProposal, WbsReview } from "../../domain/scope-governance.js";
 
-export type WbsProposal = Readonly<{
-  id: string;
-  number: number;
-  title: string;
-  reason: string;
-  status: "OPEN" | "CLOSED" | "PUBLISHED";
-  version: number;
-  candidateRevisionId: string;
-  baseBaselineId: string | null;
-  authorUserId: string;
-  proposerUserId: string;
-  createdAt: number;
-  updatedAt: number;
-}>;
-export type WbsReview = Readonly<{
-  id: string;
-  proposalVersion: number;
-  candidateRevisionId: string;
-  policyVersion: number;
-  reviewerUserId: string;
-  decision: "APPROVE" | "REQUEST_CHANGES";
-  note: string;
-  at: number;
-  eligible: boolean;
-  sequence: number;
-}>;
-export type WbsBaseline = Readonly<{
-  id: string;
-  number: number;
-  proposalId: string;
-  proposalVersion: number;
-  revisionId: string;
-  previousBaselineId: string | null;
-  policy: WbsPolicy;
-  approvalReviewIds: readonly string[];
-  publishedBy: string;
-  at: number;
-}>;
 export type WbsGovernanceQuery = Readonly<{
   proposalId?: string;
   baselineId?: string;
@@ -122,15 +84,3 @@ export type WbsGovernanceReceipt = Readonly<{
   proposalId: string | null;
   baselineId: string | null;
 }>;
-export interface WbsGovernanceStore {
-  view(
-    userId: string,
-    selector: RepositorySelector,
-    query: WbsGovernanceQuery,
-  ): Promise<WbsGovernanceView>;
-  execute(
-    userId: string,
-    command: WbsGovernanceCommand,
-    now: number,
-  ): Promise<WbsGovernanceReceipt>;
-}

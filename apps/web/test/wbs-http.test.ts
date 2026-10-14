@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createWbs } from "@line_bot_v1/wbs/application";
-import type { WbsStore } from "@line_bot_v1/wbs/contracts";
-import { WbsError } from "@line_bot_v1/wbs/domain";
+import { createWbs } from "@line_bot_v1/wbs/application/use-cases/content";
+import type { WbsStore } from "@line_bot_v1/wbs/contracts/repositories/content";
+import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { wbsRequest } from "../src/modules/repository/wbs-http.server";
 
 test("WBS HTTP checks origin, parses commands and keeps failure classes distinct", async (t) => {
@@ -19,7 +19,7 @@ test("WBS HTTP checks origin, parses commands and keeps failure classes distinct
       throw new WbsError(404, "missing");
     },
     history: async () => ({ revisions: [], next: null }),
-    execute: async () => {
+    transact: async () => {
       throw new WbsError(409, "stale");
     },
   };

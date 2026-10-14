@@ -1,10 +1,5 @@
-import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import type {
-  WbsGovernanceCommand,
-  WbsGovernanceQuery,
-  WbsGovernanceStore,
-} from "../contracts/governance.js";
-import { WbsError } from "../domain.js";
+import type { WbsGovernanceCommand } from "../../contracts/dto/governance.js";
+import { WbsError } from "../../domain/document.js";
 
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 function id(value: unknown): string {
@@ -94,38 +89,4 @@ export function parseWbsGovernanceCommand(input: unknown): WbsGovernanceCommand 
   if (Object.keys(v).some((key) => !Object.hasOwn(result, key)))
     throw new WbsError(400, "治理操作包含未知欄位。");
   return result;
-}
-export function createWbsGovernance(deps: {
-  activeUser(subject: string): Promise<{ id: string }>;
-  store(): WbsGovernanceStore;
-  now(): number;
-}) {
-  return {
-    async view(subject: string, selector: RepositorySelector, query: WbsGovernanceQuery = {}) {
-      const parsed: WbsGovernanceQuery = {
-        ...(query.proposalVersion === undefined
-          ? {}
-          : { proposalVersion: version(query.proposalVersion) }),
-        ...(query.beforeReview === undefined ? {} : { beforeReview: version(query.beforeReview) }),
-        ...(query.proposalId === undefined ? {} : { proposalId: id(query.proposalId) }),
-        ...(query.baselineId === undefined ? {} : { baselineId: id(query.baselineId) }),
-        ...(query.beforeProposal === undefined
-          ? {}
-          : { beforeProposal: version(query.beforeProposal) }),
-        ...(query.beforeBaseline === undefined
-          ? {}
-          : { beforeBaseline: version(query.beforeBaseline) }),
-      };
-      if (
-        (parsed.proposalVersion !== undefined || parsed.beforeReview !== undefined) &&
-        !parsed.proposalId
-      )
-        throw new WbsError(400, "提案歷史查詢需要 proposalId。");
-      return deps.store().view((await deps.activeUser(subject)).id, selector, parsed);
-    },
-    async execute(subject: string, input: unknown) {
-      const command = parseWbsGovernanceCommand(input);
-      return deps.store().execute((await deps.activeUser(subject)).id, command, deps.now());
-    },
-  };
 }

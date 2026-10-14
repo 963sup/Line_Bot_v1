@@ -4,29 +4,53 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/governance": {
-      "types": "./dist/application/governance.d.ts",
-      "default": "./dist/application/governance.js"
+    "./domain/document": {
+      "types": "./dist/domain/document.d.ts",
+      "default": "./dist/domain/document.js"
     },
-    "./contracts/governance": {
-      "types": "./dist/contracts/governance.d.ts",
-      "default": "./dist/contracts/governance.js"
+    "./domain/content": {
+      "types": "./dist/domain/content.d.ts",
+      "default": "./dist/domain/content.js"
     },
     "./domain/governance": {
       "types": "./dist/domain/governance.d.ts",
       "default": "./dist/domain/governance.js"
     },
-    "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
+    "./domain/scope-governance": {
+      "types": "./dist/domain/scope-governance.d.ts",
+      "default": "./dist/domain/scope-governance.js"
     },
-    "./application": {
-      "types": "./dist/application.d.ts",
-      "default": "./dist/application.js"
+    "./application/commands/content": {
+      "types": "./dist/application/commands/content.d.ts",
+      "default": "./dist/application/commands/content.js"
     },
-    "./contracts": {
-      "types": "./dist/contracts.d.ts",
-      "default": "./dist/contracts.js"
+    "./application/commands/governance": {
+      "types": "./dist/application/commands/governance.d.ts",
+      "default": "./dist/application/commands/governance.js"
+    },
+    "./application/use-cases/content": {
+      "types": "./dist/application/use-cases/content.d.ts",
+      "default": "./dist/application/use-cases/content.js"
+    },
+    "./application/use-cases/governance": {
+      "types": "./dist/application/use-cases/governance.d.ts",
+      "default": "./dist/application/use-cases/governance.js"
+    },
+    "./contracts/dto/content": {
+      "types": "./dist/contracts/dto/content.d.ts",
+      "default": "./dist/contracts/dto/content.js"
+    },
+    "./contracts/dto/governance": {
+      "types": "./dist/contracts/dto/governance.d.ts",
+      "default": "./dist/contracts/dto/governance.js"
+    },
+    "./contracts/repositories/content": {
+      "types": "./dist/contracts/repositories/content.d.ts",
+      "default": "./dist/contracts/repositories/content.js"
+    },
+    "./contracts/repositories/governance": {
+      "types": "./dist/contracts/repositories/governance.d.ts",
+      "default": "./dist/contracts/repositories/governance.js"
     },
     "./composition/bootstrap/store": {
       "types": "./dist/composition/bootstrap/store.d.ts",

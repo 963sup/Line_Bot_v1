@@ -1,11 +1,11 @@
 "use client";
 
-import { parseWbsGovernanceCommand } from "@line_bot_v1/wbs/application/governance";
+import { parseWbsGovernanceCommand } from "@line_bot_v1/wbs/application/commands/governance";
 import type {
   WbsGovernanceCommand,
   WbsGovernanceQuery,
   WbsGovernanceView,
-} from "@line_bot_v1/wbs/contracts/governance";
+} from "@line_bot_v1/wbs/contracts/dto/governance";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import { wbsGovernanceReceipt, wbsGovernanceView } from "./wbs-governance-response";

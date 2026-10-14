@@ -16,32 +16,29 @@ import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selec
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type {
-  WbsBaseline,
   WbsGovernanceCommand,
   WbsGovernanceQuery,
   WbsGovernanceReceipt,
-  WbsGovernanceStore,
   WbsGovernanceView,
-  WbsProposal,
-  WbsReview,
-} from "../../../contracts/governance.js";
-import type { WbsRevision } from "../../../contracts.js";
+} from "../../../contracts/dto/governance.js";
+import type {
+  WbsGovernanceStore,
+  WbsGovernanceTransaction,
+} from "../../../contracts/repositories/governance.js";
+import type { WbsRevision } from "../../../domain/content.js";
+import { parseWbsDocument, WbsError } from "../../../domain/document.js";
 import {
   checkWbsPublication,
   compareWbsDocuments,
   defaultWbsPolicy,
   type WbsPolicy,
 } from "../../../domain/governance.js";
-import { parseWbsDocument, WbsError } from "../../../domain.js";
+import { canEditWbs, canReviewWbs } from "../../../domain/policies/access.js";
+import type { WbsBaseline, WbsProposal, WbsReview } from "../../../domain/scope-governance.js";
+import { isWbsReviewerEligible, summarizeWbsReviews } from "../../../domain/scope-governance.js";
 
 function nullable(value: unknown) {
   return value === null ? null : stringValue(value);
-}
-function canPropose(permissions: readonly string[]) {
-  return permissions.some((p) => ["write", "maintain", "admin"].includes(p));
-}
-function canReview(permissions: readonly string[]) {
-  return permissions.some((p) => p === "maintain" || p === "admin");
 }
 function policy(row: SqlRow): WbsPolicy {
   return {
@@ -111,29 +108,6 @@ async function appendProposalVersion(
       now,
     ],
   );
-}
-async function advanceProposal(
-  sql: Sql,
-  repositoryId: string,
-  item: WbsProposal,
-  updates: Partial<
-    Pick<WbsProposal, "title" | "reason" | "status" | "candidateRevisionId" | "baseBaselineId">
-  >,
-  actor: string,
-  now: number,
-) {
-  await appendProposalVersion(
-    sql,
-    repositoryId,
-    { ...item, ...updates, version: item.version + 1 },
-    actor,
-    now,
-  );
-  const result = await sql.query(
-    "UPDATE repository_wbs_proposals SET version=version+1 WHERE repository_id=$1 AND id=$2 AND version=$3 RETURNING version",
-    [repositoryId, item.id, item.version],
-  );
-  if (!result.rows.length) throw new WbsError(409, "提案版本衝突。");
 }
 function decodeReview(row: SqlRow, eligible: boolean): WbsReview {
   const decision = stringValue(row.decision);
@@ -248,10 +222,12 @@ async function reviews(
     let eligible = false;
     try {
       const scope = await repositoryContentScope(sql, reviewerUserId, { repositoryId });
-      eligible =
-        canReview(scope.repository.permissions) &&
-        (currentPolicy.allowSelfApproval ||
-          (reviewerUserId !== item.authorUserId && reviewerUserId !== item.proposerUserId));
+      eligible = isWbsReviewerEligible(
+        item,
+        currentPolicy,
+        reviewerUserId,
+        canReviewWbs(scope.repository.permissions),
+      );
     } catch (error) {
       if (!(error instanceof RepositoryError) || (error.status !== 403 && error.status !== 404))
         throw error;
@@ -351,11 +327,16 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
           nextReview: history.length > 20 ? numberValue(history[19]?.sequence) : null,
           approvals:
             published?.approvalReviewIds.length ??
-            currentReviews.filter((review) => review.eligible && review.decision === "APPROVE")
-              .length,
-          blocked: currentReviews.some(
-            (review) => review.eligible && review.decision === "REQUEST_CHANGES",
-          ),
+            summarizeWbsReviews(
+              reviewed.proposal,
+              published?.policy ?? state.policy,
+              currentReviews,
+            ).approvalReviewIds.length,
+          blocked: summarizeWbsReviews(
+            reviewed.proposal,
+            published?.policy ?? state.policy,
+            currentReviews,
+          ).blocked,
           baseIsCurrent: selected.baseBaselineId === state.baselineId,
         };
       }
@@ -363,8 +344,8 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
         repository: { id: repository.id, name: repository.name, ownerLogin: repository.ownerLogin },
         actorUserId: userId,
         archived,
-        canPropose: !archived && canPropose(repository.permissions),
-        canReview: !archived && canReview(repository.permissions),
+        canPropose: !archived && canEditWbs(repository.permissions),
+        canReview: !archived && canReviewWbs(repository.permissions),
         canSetPolicy: !archived && repository.permissions.includes("admin"),
         version: state.version,
         policy: state.policy,
@@ -384,11 +365,11 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
       };
     });
   }
-  execute(
+  transact<T>(
     userId: string,
     command: WbsGovernanceCommand,
-    now: number,
-  ): Promise<WbsGovernanceReceipt> {
+    operation: (transaction: WbsGovernanceTransaction) => Promise<T>,
+  ): Promise<T> {
     const fingerprint = createHash("sha256")
       .update(
         JSON.stringify(
@@ -400,247 +381,182 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
       const { repository, archived } = await repositoryContentScope(sql, userId, {
         repositoryId: command.repositoryId,
       });
-      const authorized =
-        command.action === "set-policy"
-          ? repository.permissions.includes("admin")
-          : command.action === "review-proposal" || command.action === "publish-proposal"
-            ? canReview(repository.permissions)
-            : canPropose(repository.permissions);
-      if (!authorized) throw new WbsError(403, "目前 Repository 權限不能執行此治理操作。");
-      await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-        `wbs-command:${userId}:${command.requestId}`,
-      ]);
-      if (
-        (
-          await sql.query(
-            "SELECT 1 FROM repository_wbs_commands WHERE actor_user_id=$1 AND request_id=$2",
-            [userId, command.requestId],
+      return operation({
+        scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
+        nextId: randomUUID,
+        replay: async () => {
+          await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+            `wbs-command:${userId}:${command.requestId}`,
+          ]);
+          if (
+            (
+              await sql.query(
+                "SELECT 1 FROM repository_wbs_commands WHERE actor_user_id=$1 AND request_id=$2",
+                [userId, command.requestId],
+              )
+            ).rows.length
           )
-        ).rows.length
-      )
-        throw new WbsError(409, "此 requestId 已用於 WBS 內容操作。");
-      const prior = (
-        await sql.query(
-          "SELECT repository_id,fingerprint,result FROM repository_wbs_governance_commands WHERE actor_user_id=$1 AND request_id=$2",
-          [userId, command.requestId],
-        )
-      ).rows[0];
-      if (prior) {
-        if (prior.repository_id !== repository.id || prior.fingerprint !== fingerprint)
-          throw new WbsError(409, "此 requestId 已用於不同治理操作。");
-        const value = prior.result;
-        if (
-          !isRecord(value) ||
-          value.requestId !== command.requestId ||
-          value.repositoryId !== repository.id ||
-          value.action !== command.action
-        )
-          throw new WbsError(503, "治理回執無法讀取。");
-        return {
-          requestId: command.requestId,
-          repositoryId: repository.id,
-          action: command.action,
-          version: numberValue(value.version),
-          proposalId: nullable(value.proposalId),
-          baselineId: nullable(value.baselineId),
-        };
-      }
-      if (archived) throw new WbsError(409, "Repository 已封存，不能修改治理資料。");
-      const content = (
-        await sql.query("SELECT 1 FROM repository_wbs WHERE repository_id=$1", [repository.id])
-      ).rows[0];
-      if (!content) throw new WbsError(409, "請先初始化 WBS 草稿。");
-      const state = await root(sql, repository.id);
-      if (state.version !== command.expectedVersion)
-        throw new WbsError(409, "治理資料已更新，請重新確認。");
-      if (
-        "expectedPolicyVersion" in command &&
-        command.expectedPolicyVersion !== state.policy.version
-      )
-        throw new WbsError(409, "治理政策已更新，請重新審查。");
-      if (!state.exists) {
-        await sql.query(
-          "INSERT INTO repository_wbs_policies(repository_id,version,minimum_approvals,allow_self_approval,actor_user_id,at) VALUES($1,1,1,true,$2,$3)",
-          [repository.id, userId, now],
-        );
-        await sql.query(
-          "INSERT INTO repository_wbs_governance(repository_id,version,policy_version) VALUES($1,0,1)",
-          [repository.id],
-        );
-      }
-      const nextVersion = state.version + 1;
-      let proposalId: string | null = null,
-        baselineId: string | null = null;
-      if (command.action === "set-policy") {
-        if (
-          command.minimumApprovals === state.policy.minimumApprovals &&
-          command.allowSelfApproval === state.policy.allowSelfApproval
-        )
-          throw new WbsError(409, "政策沒有變更。");
-        await sql.query(
-          "INSERT INTO repository_wbs_policies(repository_id,version,minimum_approvals,allow_self_approval,actor_user_id,at) VALUES($1,$2,$3,$4,$5,$6)",
-          [
-            repository.id,
-            state.policy.version + 1,
-            command.minimumApprovals,
-            command.allowSelfApproval,
-            userId,
-            now,
-          ],
-        );
-        await sql.query(
-          "UPDATE repository_wbs_governance SET policy_version=$2 WHERE repository_id=$1",
-          [repository.id, state.policy.version + 1],
-        );
-      } else {
-        let item: WbsProposal | undefined;
-        if (command.action !== "create-proposal") {
-          item = (await loadProposal(sql, repository.id, command.proposalId, undefined, true))
-            ?.proposal;
-          if (!item) throw new WbsError(404, "找不到此 Repository 的提案。");
-          if (item.version !== command.expectedProposalVersion || item.status !== "OPEN")
-            throw new WbsError(409, "提案已更新或已結束。");
-          proposalId = item.id;
-        }
-        if (command.action === "create-proposal" || command.action === "revise-proposal") {
-          if (command.baseBaselineId !== state.baselineId)
-            throw new WbsError(409, "正式基底已更新，請重新確認差異。");
-          const candidate = await loadRevision(sql, repository.id, command.candidateRevisionId);
-          const base = state.baselineId
-            ? await loadBaseline(sql, repository.id, state.baselineId)
-            : null;
-          const previous = base ? await loadRevision(sql, repository.id, base.revisionId) : null;
-          if (previous && !compareWbsDocuments(previous.document, candidate.document).length)
-            throw new WbsError(409, "候選版本與正式範圍沒有差異。");
-          if (command.action === "create-proposal") {
-            proposalId = randomUUID();
+            throw new WbsError(409, "此 requestId 已用於 WBS 內容操作。");
+          const prior = (
             await sql.query(
-              "INSERT INTO repository_wbs_proposals(id,repository_id,number,version,author_user_id,created_at) VALUES($1,$2,$3,1,$4,$5)",
-              [proposalId, repository.id, nextVersion, userId, now],
+              "SELECT repository_id,fingerprint,result FROM repository_wbs_governance_commands WHERE actor_user_id=$1 AND request_id=$2",
+              [userId, command.requestId],
+            )
+          ).rows[0];
+          if (!prior) return null;
+          if (prior.repository_id !== repository.id || prior.fingerprint !== fingerprint)
+            throw new WbsError(409, "此 requestId 已用於不同治理操作。");
+          const value = prior.result;
+          if (
+            !isRecord(value) ||
+            value.requestId !== command.requestId ||
+            value.repositoryId !== repository.id ||
+            value.action !== command.action
+          )
+            throw new WbsError(503, "治理回執無法讀取。");
+          return {
+            requestId: command.requestId,
+            repositoryId: repository.id,
+            action: command.action,
+            version: numberValue(value.version),
+            proposalId: nullable(value.proposalId),
+            baselineId: nullable(value.baselineId),
+          };
+        },
+        hasContent: async () =>
+          Boolean(
+            (
+              await sql.query("SELECT 1 FROM repository_wbs WHERE repository_id=$1", [
+                repository.id,
+              ])
+            ).rows.length,
+          ),
+        loadState: () => root(sql, repository.id),
+        loadProposal: async (id) =>
+          (await loadProposal(sql, repository.id, id, undefined, true))?.proposal ?? null,
+        loadRevision: (id) => loadRevision(sql, repository.id, id),
+        loadBaseline: (id) => loadBaseline(sql, repository.id, id),
+        loadReviews: (item, policy) => reviews(sql, repository.id, item, policy),
+        save: async (change) => {
+          const state = await root(sql, repository.id);
+          if (!state.exists) {
+            await sql.query(
+              "INSERT INTO repository_wbs_policies(repository_id,version,minimum_approvals,allow_self_approval,actor_user_id,at) VALUES($1,$2,$3,$4,$5,$6)",
+              [
+                repository.id,
+                state.policy.version,
+                state.policy.minimumApprovals,
+                state.policy.allowSelfApproval,
+                userId,
+                change.at,
+              ],
             );
+            await sql.query(
+              "INSERT INTO repository_wbs_governance(repository_id,version,policy_version) VALUES($1,0,1)",
+              [repository.id],
+            );
+          }
+          if (change.policy) {
+            await sql.query(
+              "INSERT INTO repository_wbs_policies(repository_id,version,minimum_approvals,allow_self_approval,actor_user_id,at) VALUES($1,$2,$3,$4,$5,$6)",
+              [
+                repository.id,
+                change.policy.version,
+                change.policy.minimumApprovals,
+                change.policy.allowSelfApproval,
+                userId,
+                change.at,
+              ],
+            );
+            await sql.query(
+              "UPDATE repository_wbs_governance SET policy_version=$2 WHERE repository_id=$1",
+              [repository.id, change.policy.version],
+            );
+          }
+          const item = change.proposal;
+          if (item) {
+            if (item.version === 1)
+              await sql.query(
+                "INSERT INTO repository_wbs_proposals(id,repository_id,number,version,author_user_id,created_at) VALUES($1,$2,$3,1,$4,$5)",
+                [item.id, repository.id, item.number, item.authorUserId, item.createdAt],
+              );
             await appendProposalVersion(
               sql,
               repository.id,
-              {
-                id: proposalId,
-                version: 1,
-                status: "OPEN",
-                title: command.title,
-                reason: command.reason,
-                candidateRevisionId: command.candidateRevisionId,
-                baseBaselineId: command.baseBaselineId,
-              },
-              userId,
-              now,
-            );
-          } else if (item) {
-            if (
-              item.candidateRevisionId === command.candidateRevisionId &&
-              item.baseBaselineId === command.baseBaselineId &&
-              item.title === command.title &&
-              item.reason === command.reason
-            )
-              throw new WbsError(409, "提案沒有變更。");
-            await advanceProposal(
-              sql,
-              repository.id,
               item,
-              {
-                title: command.title,
-                reason: command.reason,
-                candidateRevisionId: command.candidateRevisionId,
-                baseBaselineId: command.baseBaselineId,
-              },
-              userId,
-              now,
+              item.proposerUserId,
+              item.updatedAt,
+            );
+            if (item.version !== 1) {
+              const updated = await sql.query(
+                "UPDATE repository_wbs_proposals SET version=$4 WHERE repository_id=$1 AND id=$2 AND version=$3 RETURNING version",
+                [repository.id, item.id, item.version - 1, item.version],
+              );
+              if (!updated.rows.length) throw new WbsError(409, "提案版本衝突。");
+            }
+          }
+          if (change.review) {
+            const review = change.review.value;
+            await sql.query(
+              "INSERT INTO repository_wbs_reviews(id,repository_id,proposal_id,proposal_version,candidate_revision_id,policy_version,reviewer_user_id,decision,note,sequence,at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+              [
+                review.id,
+                repository.id,
+                change.review.proposalId,
+                review.proposalVersion,
+                review.candidateRevisionId,
+                review.policyVersion,
+                review.reviewerUserId,
+                review.decision,
+                review.note,
+                review.sequence,
+                review.at,
+              ],
             );
           }
-        } else if (item && command.action === "close-proposal") {
-          await advanceProposal(sql, repository.id, item, { status: "CLOSED" }, userId, now);
-        } else if (item && command.action === "review-proposal") {
-          if (
-            !state.policy.allowSelfApproval &&
-            (item.authorUserId === userId || item.proposerUserId === userId)
-          )
-            throw new WbsError(403, "目前政策不允許自我審查。");
-          await sql.query(
-            "INSERT INTO repository_wbs_reviews(id,repository_id,proposal_id,proposal_version,candidate_revision_id,policy_version,reviewer_user_id,decision,note,sequence,at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
-            [
-              randomUUID(),
-              repository.id,
-              item.id,
-              item.version,
-              item.candidateRevisionId,
-              state.policy.version,
-              userId,
-              command.decision,
-              command.note,
-              nextVersion,
-              now,
-            ],
+          if (change.baseline) {
+            const baseline = change.baseline;
+            await sql.query(
+              "INSERT INTO repository_wbs_baselines(id,repository_id,number,proposal_id,proposal_version,revision_id,previous_baseline_id,policy_version,published_by,at,approval_review_ids) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::uuid[])",
+              [
+                baseline.id,
+                repository.id,
+                baseline.number,
+                baseline.proposalId,
+                baseline.proposalVersion,
+                baseline.revisionId,
+                baseline.previousBaselineId,
+                baseline.policy.version,
+                baseline.publishedBy,
+                baseline.at,
+                baseline.approvalReviewIds,
+              ],
+            );
+            await sql.query(
+              "UPDATE repository_wbs_governance SET published_baseline_id=$2 WHERE repository_id=$1",
+              [repository.id, baseline.id],
+            );
+          }
+          const changed = await sql.query(
+            "UPDATE repository_wbs_governance SET version=$2 WHERE repository_id=$1 AND version=$3 RETURNING version",
+            [repository.id, change.version, command.expectedVersion],
           );
-        } else if (item && command.action === "publish-proposal") {
-          if (item.baseBaselineId !== state.baselineId)
-            throw new WbsError(409, "正式基底已更新，請更新提案並重新審查。");
-          const candidate = await loadRevision(sql, repository.id, item.candidateRevisionId);
-          const failures = checkWbsPublication(candidate.document);
-          if (failures.length) throw new WbsError(409, failures[0]?.message ?? "必要檢查未通過。");
-          const currentReviews = await reviews(sql, repository.id, item, state.policy);
-          if (
-            currentReviews.some(
-              (review) => review.eligible && review.decision === "REQUEST_CHANGES",
-            )
-          )
-            throw new WbsError(409, "仍有有效的要求修改審查。");
-          if (
-            currentReviews.filter((review) => review.eligible && review.decision === "APPROVE")
-              .length < state.policy.minimumApprovals
-          )
-            throw new WbsError(409, "有效核准數不足，請重新確認審查者目前權限。");
-          baselineId = randomUUID();
+          if (!changed.rows.length) throw new WbsError(409, "治理版本衝突。");
+          const result: WbsGovernanceReceipt = {
+            requestId: command.requestId,
+            repositoryId: repository.id,
+            action: command.action,
+            version: change.version,
+            proposalId: change.proposal?.id ?? change.review?.proposalId ?? null,
+            baselineId: change.baseline?.id ?? null,
+          };
           await sql.query(
-            "INSERT INTO repository_wbs_baselines(id,repository_id,number,proposal_id,proposal_version,revision_id,previous_baseline_id,policy_version,published_by,at,approval_review_ids) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::uuid[])",
-            [
-              baselineId,
-              repository.id,
-              nextVersion,
-              item.id,
-              item.version,
-              item.candidateRevisionId,
-              state.baselineId,
-              state.policy.version,
-              userId,
-              now,
-              currentReviews
-                .filter((review) => review.eligible && review.decision === "APPROVE")
-                .map((review) => review.id),
-            ],
+            "INSERT INTO repository_wbs_governance_commands(actor_user_id,request_id,repository_id,fingerprint,result) VALUES($1,$2,$3,$4,$5::jsonb)",
+            [userId, command.requestId, repository.id, fingerprint, JSON.stringify(result)],
           );
-          await advanceProposal(sql, repository.id, item, { status: "PUBLISHED" }, userId, now);
-          await sql.query(
-            "UPDATE repository_wbs_governance SET published_baseline_id=$2 WHERE repository_id=$1",
-            [repository.id, baselineId],
-          );
-        }
-      }
-      const changed = await sql.query(
-        "UPDATE repository_wbs_governance SET version=$2 WHERE repository_id=$1 AND version=$3 RETURNING version",
-        [repository.id, nextVersion, state.version],
-      );
-      if (!changed.rows.length) throw new WbsError(409, "治理版本衝突。");
-      const result: WbsGovernanceReceipt = {
-        requestId: command.requestId,
-        repositoryId: repository.id,
-        action: command.action,
-        version: nextVersion,
-        proposalId,
-        baselineId,
-      };
-      await sql.query(
-        "INSERT INTO repository_wbs_governance_commands(actor_user_id,request_id,repository_id,fingerprint,result) VALUES($1,$2,$3,$4,$5::jsonb)",
-        [userId, command.requestId, repository.id, fingerprint, JSON.stringify(result)],
-      );
-      return result;
+          return result;
+        },
+      });
     });
   }
 }

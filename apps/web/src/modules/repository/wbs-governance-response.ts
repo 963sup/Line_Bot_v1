@@ -1,16 +1,14 @@
 import { isRecord, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
-  WbsBaseline,
   WbsGovernanceReceipt,
   WbsGovernanceView,
-  WbsProposal,
-  WbsReview,
-} from "@line_bot_v1/wbs/contracts/governance";
+} from "@line_bot_v1/wbs/contracts/dto/governance";
 import {
   checkWbsPublication,
   compareWbsDocuments,
   type WbsPolicy,
 } from "@line_bot_v1/wbs/domain/governance";
+import type { WbsBaseline, WbsProposal, WbsReview } from "@line_bot_v1/wbs/domain/scope-governance";
 import { wbsRevision } from "./wbs-response";
 
 function object(value: unknown) {

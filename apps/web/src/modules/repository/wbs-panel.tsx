@@ -1,8 +1,8 @@
 "use client";
 
-import { parseWbsCommand } from "@line_bot_v1/wbs/application";
-import type { WbsCommand, WbsHistory, WbsView } from "@line_bot_v1/wbs/contracts";
-import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain";
+import { parseWbsCommand } from "@line_bot_v1/wbs/application/commands/content";
+import type { WbsCommand, WbsHistory, WbsView } from "@line_bot_v1/wbs/contracts/dto/content";
+import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

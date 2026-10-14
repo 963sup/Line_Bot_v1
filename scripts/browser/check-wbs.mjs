@@ -18,7 +18,13 @@ const { createPostgresWbsStore, createPostgresWbsGovernanceStore } = await impor
   pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/composition/bootstrap/store")).href
 );
 const { parseWbsGovernanceCommand } = await import(
-  pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/application/governance")).href
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/application/commands/governance")).href
+);
+const { executeWbsCommand } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/application/use-cases/content")).href
+);
+const { executeWbsGovernanceCommand } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/application/use-cases/governance")).href
 );
 const fixture = await postgresFixture();
 await fixture.db.transaction(async (sql) => {
@@ -125,7 +131,12 @@ await context.route("**/*", async (route) => {
         return route.fulfill({ status: 403, json: { error: "WBS 存取在寫入時已撤銷。" } });
       }
       governancePosts.push(command);
-      const receipt = await governanceStore.execute(actor, command, Date.now());
+      const receipt = await executeWbsGovernanceCommand(
+        governanceStore,
+        actor,
+        command,
+        Date.now(),
+      );
       if (governanceUnknown) {
         governanceUnknown = false;
         return route.fulfill({ status: 503, json: { error: "治理結果未知，請重試原操作。" } });
@@ -160,7 +171,7 @@ await context.route("**/*", async (route) => {
       json: { error: "WBS 已更新；請重新讀取並確認你的修改。" },
     });
   }
-  const receipt = await contentStore.execute(actor, command, Date.now());
+  const receipt = await executeWbsCommand(contentStore, actor, command, Date.now());
   if (!revisions.some((r) => r.id === receipt.revision.id)) revisions.push(receipt.revision);
   receipts.set(command.requestId, receipt);
   if (unknown) {

@@ -3,9 +3,10 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { numberValue, record } from "@line_bot_v1/platform/validation";
-import { createWbs, parseWbsCommand } from "../src/application.js";
+import { parseWbsCommand } from "../src/application/commands/content.js";
+import { createWbs, executeWbsCommand } from "../src/application/use-cases/content.js";
 import { createPostgresWbsStore } from "../src/composition/bootstrap/store.js";
-import { applyWbsEdit, parseWbsDocument, WbsError, type WbsNode } from "../src/domain.js";
+import { applyWbsEdit, parseWbsDocument, WbsError, type WbsNode } from "../src/domain/document.js";
 
 function node(
   id: string,
@@ -103,17 +104,22 @@ test("WBS persistence preserves authority, replay, atomicity and immutable histo
   const first = await service.execute("subject", init);
   assert.deepEqual(await service.execute("subject", init), first);
   await assert.rejects(
-    store.execute("owner", { ...init, repositoryId: "other" }, 101),
+    executeWbsCommand(store, "owner", { ...init, repositoryId: "other" }, 101),
     (e) => e instanceof WbsError && e.status === 409,
   );
   const create = command({ action: "create-node", node: node("group", null, "DELIVERABLE") }, 1);
   const second = await service.execute("subject", create);
   await assert.rejects(
-    store.execute("owner", { ...create, node: node("different") }, 102),
+    executeWbsCommand(store, "owner", { ...create, node: node("different") }, 102),
     (e) => e instanceof WbsError && e.status === 409,
   );
   await assert.rejects(
-    store.execute("owner", command({ action: "create-node", node: node("stale") }, 1), 102),
+    executeWbsCommand(
+      store,
+      "owner",
+      command({ action: "create-node", node: node("stale") }, 1),
+      102,
+    ),
     (e) => e instanceof WbsError && e.status === 409,
   );
   await service.execute(
@@ -145,12 +151,12 @@ test("WBS persistence preserves authority, replay, atomicity and immutable histo
   await assert.rejects(store.read("viewer", { repositoryId: "repo" }));
   assert.equal((await store.read("viewer", { repositoryId: "other" })).canEdit, false);
   await assert.rejects(
-    store.execute("viewer", command({ action: "initialize" }, 0, "other"), 100),
+    executeWbsCommand(store, "viewer", command({ action: "initialize" }, 0, "other"), 100),
     (e) => e instanceof WbsError && e.status === 403,
   );
   const races = await Promise.allSettled([
-    store.execute("owner", command({ action: "create-node", node: node("a") }, 4), 105),
-    store.execute("owner", command({ action: "create-node", node: node("b") }, 4), 105),
+    executeWbsCommand(store, "owner", command({ action: "create-node", node: node("a") }, 4), 105),
+    executeWbsCommand(store, "owner", command({ action: "create-node", node: node("b") }, 4), 105),
   ]);
   assert.equal(races.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal((await store.read("owner", { repositoryId: "repo" })).version, 5);
@@ -159,7 +165,12 @@ test("WBS persistence preserves authority, replay, atomicity and immutable histo
     "CREATE FUNCTION app_private.fail_wbs_receipt() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'receipt failure'; END $$; CREATE TRIGGER fail_wbs_receipt BEFORE INSERT ON app_private.repository_wbs_commands FOR EACH ROW EXECUTE FUNCTION app_private.fail_wbs_receipt();",
   );
   await assert.rejects(
-    store.execute("owner", command({ action: "create-node", node: node("rollback") }, 5), 106),
+    executeWbsCommand(
+      store,
+      "owner",
+      command({ action: "create-node", node: node("rollback") }, 5),
+      106,
+    ),
   );
   await pg.exec(
     "DROP TRIGGER fail_wbs_receipt ON app_private.repository_wbs_commands; DROP FUNCTION app_private.fail_wbs_receipt();",
@@ -167,7 +178,8 @@ test("WBS persistence preserves authority, replay, atomicity and immutable histo
   assert.equal((await store.read("owner", { repositoryId: "repo" })).version, 5);
   assert.equal((await store.history("owner", { repositoryId: "repo" })).revisions.length, 5);
   for (let version = 5; version < 26; version++)
-    await store.execute(
+    await executeWbsCommand(
+      store,
       "owner",
       command({ action: "create-node", node: node(`history-${version}`) }, version),
       106,
@@ -198,7 +210,8 @@ test("WBS persistence preserves authority, replay, atomicity and immutable histo
     assert.equal((await store.read("viewer", { repositoryId: "repo" })).canEdit, canEdit);
     if (!canEdit)
       await assert.rejects(
-        store.execute(
+        executeWbsCommand(
+          store,
           "viewer",
           command({ action: "create-node", node: node("role-denied") }, 26),
           106,
@@ -207,22 +220,27 @@ test("WBS persistence preserves authority, replay, atomicity and immutable histo
       );
   }
   const viewerCommand = command({ action: "create-node", node: node("maintainer") }, 26);
-  await store.execute("viewer", viewerCommand, 106);
+  await executeWbsCommand(store, "viewer", viewerCommand, 106);
   await pg.query(
     "DELETE FROM app_private.repository_access WHERE repository_id='repo' AND principal_id='viewer'",
   );
-  await assert.rejects(store.execute("viewer", viewerCommand, 107));
+  await assert.rejects(executeWbsCommand(store, "viewer", viewerCommand, 107));
   await assert.rejects(
     db.transaction((sql) => sql.query("UPDATE repository_wbs_revisions SET document='{}'")),
   );
   await pg.query("UPDATE app_private.repositories SET is_archived=true WHERE id='repo'");
   await assert.rejects(
-    store.execute("owner", command({ action: "create-node", node: node("blocked") }, 5), 106),
+    executeWbsCommand(
+      store,
+      "owner",
+      command({ action: "create-node", node: node("blocked") }, 5),
+      106,
+    ),
     (e) => e instanceof WbsError && e.status === 409,
   );
   assert.equal((await store.read("owner", { repositoryId: "repo" })).canEdit, false);
-  assert.deepEqual(await store.execute("owner", init, 106), first);
+  assert.deepEqual(await executeWbsCommand(store, "owner", init, 106), first);
   await pg.query("UPDATE app_private.users SET status='suspended' WHERE id='owner'");
-  await assert.rejects(store.execute("owner", init, 107));
+  await assert.rejects(executeWbsCommand(store, "owner", init, 107));
   await assert.rejects(store.history("owner", { repositoryId: "repo" }));
 });
