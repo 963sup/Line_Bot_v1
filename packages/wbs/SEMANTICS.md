@@ -43,11 +43,13 @@
 | --- | --- | --- | --- |
 | govern-repository-wbs | required | implemented | Propose frozen WBS scope, review exact candidate and policy versions, and atomically publish immutable Baselines without overwriting drafts; recheck current reviewer authority. |
 | manage-repository-wbs | required | implemented | Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning. |
+| read-wbs-metrics | required | implemented | Read authorized wbs-owned Repository metrics without transferring source or authorization authority to Insights. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | insights | query | wbs | current-state | Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned. |
 
 ## Tactical Model Boundary

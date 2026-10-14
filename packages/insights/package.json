@@ -1,0 +1,37 @@
+{
+  "name": "@line_bot_v1/insights",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application/use-cases/repository-pulse": {
+      "types": "./dist/application/use-cases/repository-pulse.d.ts",
+      "default": "./dist/application/use-cases/repository-pulse.js"
+    },
+    "./contracts/dto/repository-pulse": {
+      "types": "./dist/contracts/dto/repository-pulse.d.ts",
+      "default": "./dist/contracts/dto/repository-pulse.js"
+    },
+    "./contracts/output/repository-metrics": {
+      "types": "./dist/contracts/output/repository-metrics.d.ts",
+      "default": "./dist/contracts/output/repository-metrics.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/issue": "workspace:*",
+    "@line_bot_v1/wbs": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsx": "catalog:"
+  }
+}

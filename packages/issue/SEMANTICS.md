@@ -42,11 +42,13 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | manage-issue-types | required | implemented | Manage Organization-scoped IssueType definitions and the optional Issue-to-IssueType relation without granting Repository permission or changing Issue workflow. |
 | manage-issues | required | implemented | Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow. |
 | read-issue-activity | required | implemented | Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority. |
+| read-issue-metrics | required | implemented | Read authorized issue-owned Repository metrics without transferring source or authorization authority to Insights. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | insights | query | issue | current-state | Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider. |
 | consumes | namespace | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
 | consumes | organization | stable-identity+query | organization | transaction-recheck | IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority. |
 | provides | project | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |
