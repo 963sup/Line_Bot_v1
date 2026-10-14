@@ -15,6 +15,7 @@ export function repositoryIssuesPath(ownerLogin: string, repositoryName: string)
 }
 
 export type RepositoryResourceSection =
+  | "wiki"
   | "insights"
   | "wbs"
   | "overview"
@@ -33,6 +34,7 @@ export function repositoryResourceNavigationItems(
   const items: { href: string; label: string; section: RepositoryResourceSection }[] = [
     { href: repositoryPath(ownerLogin, repositoryName), label: "Overview", section: "overview" },
     { href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`, label: "WBS", section: "wbs" },
+    { href: `${repositoryPath(ownerLogin, repositoryName)}/wiki`, label: "Wiki", section: "wiki" },
     {
       href: `${repositoryPath(ownerLogin, repositoryName)}/insights`,
       label: "Insights",

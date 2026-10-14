@@ -1,5 +1,5 @@
 import type { WikiQuery } from "../../contracts/dto/wiki.js";
-import { WikiError } from "../../domain/wiki-page.js";
+import { WikiError } from "../../domain/wiki-error.js";
 
 export function wikiId(value: string) {
   if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value))

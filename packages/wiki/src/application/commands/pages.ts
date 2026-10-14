@@ -1,5 +1,5 @@
 import type { WikiCommand } from "../../contracts/dto/wiki.js";
-import { WikiError } from "../../domain/wiki-page.js";
+import { WikiError } from "../../domain/wiki-error.js";
 
 export function parseWikiCommand(input: unknown): WikiCommand {
   if (!input || typeof input !== "object" || Array.isArray(input))

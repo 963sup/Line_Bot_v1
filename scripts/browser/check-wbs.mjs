@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -27,6 +28,18 @@ const { createPostgresWbsMetrics } = await import(
 const { repositoryContentScope } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/repository/postgres/content-scope")).href
 );
+const { createWiki } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wiki/application/use-cases/pages")).href
+);
+const { createWikiHistory } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wiki/application/use-cases/history")).href
+);
+const { createPostgresWikiStore } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wiki/composition/bootstrap/wiki-pages")).href
+);
+const { canEditWiki } = await import(
+  pathToFileURL(webRequire.resolve("@line_bot_v1/wiki/domain/policies/wiki-access")).href
+);
 const { createPostgresWbsStore, createPostgresWbsGovernanceStore } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/composition/bootstrap/store")).href
 );
@@ -51,6 +64,11 @@ await fixture.pg.query(
 );
 const contentStore = createPostgresWbsStore(fixture.db),
   governanceStore = createPostgresWbsGovernanceStore(fixture.db);
+const wikiStore = createPostgresWikiStore(fixture.db);
+const wikiContent = createWiki({ store: wikiStore, now: Date.now });
+const wikiVersions = createWikiHistory(wikiStore);
+const wikiPosts = [];
+let wikiUnknown = false;
 let insightsUnavailable = false;
 const insightsPeriods = [];
 const pulse = createRepositoryPulse({
@@ -122,6 +140,87 @@ await context.route("**/*", async (route) => {
   if (!url.pathname.startsWith("/api/")) return route.continue();
   if (url.pathname === "/api/auth")
     return route.fulfill({ json: { generation, sessionChanged: false } });
+  if (url.pathname === "/api/repository-wiki") {
+    assert.equal(request.headers()["x-app-session-generation"], generation);
+    try {
+      const { repository: source, archived } = await fixture.db.transaction((sql) =>
+        repositoryContentScope(sql, actor, {
+          ownerLogin: url.searchParams.get("owner"),
+          repositoryName: url.searchParams.get("name"),
+        }),
+      );
+      const scope = {
+        actorUserId: actor,
+        repository: { id: source.id, name: source.name, ownerLogin: "alice" },
+        archived,
+        canEdit: !archived && canEditWiki(source.permissions),
+        canManageRepository: source.permissions.includes("admin"),
+      };
+      if (request.method() === "POST") {
+        const command = request.postDataJSON();
+        assert.equal(command.repositoryId, source.id);
+        wikiPosts.push(command);
+        const receipt = await wikiContent.execute(actor, command);
+        if (wikiUnknown) {
+          wikiUnknown = false;
+          return route.fulfill({
+            status: 503,
+            json: { error: "Wiki 儲存結果未知，請重試原操作。" },
+          });
+        }
+        return route.fulfill({ json: receipt });
+      }
+      const pageId = url.searchParams.get("pageId"),
+        view = url.searchParams.get("view") ?? (pageId ? "page" : "list");
+      const selector = { repositoryId: source.id, pageId };
+      if (view === "history")
+        return route.fulfill({
+          json: {
+            ...scope,
+            ...(await wikiVersions.history(
+              actor,
+              selector,
+              url.searchParams.has("before") ? Number(url.searchParams.get("before")) : undefined,
+            )),
+          },
+        });
+      if (view === "compare")
+        return route.fulfill({
+          json: {
+            ...scope,
+            ...(await wikiVersions.compare(
+              actor,
+              selector,
+              url.searchParams.get("beforeId"),
+              url.searchParams.get("afterId"),
+            )),
+          },
+        });
+      if (pageId)
+        return route.fulfill({
+          json: {
+            ...scope,
+            revision: await wikiContent.read(actor, {
+              ...selector,
+              ...(url.searchParams.has("revisionId")
+                ? { revisionId: url.searchParams.get("revisionId") }
+                : {}),
+            }),
+          },
+        });
+      return route.fulfill({
+        json: {
+          ...scope,
+          ...(await wikiContent.list(actor, source.id, url.searchParams.get("after") ?? undefined)),
+        },
+      });
+    } catch (error) {
+      return route.fulfill({
+        status: error.status ?? 503,
+        json: { error: error.status === 409 ? error.message : "Wiki 存取失敗。" },
+      });
+    }
+  }
   if (url.pathname === "/api/repository-insights") {
     assert.equal(request.method(), "GET");
     assert.equal(request.headers()["x-app-session-generation"], generation);
@@ -423,6 +522,101 @@ try {
   });
   await expect(page.getByRole("main").getByRole("alert")).toContainText("Insights 存取已撤銷");
   await expect(page.getByText(/更新時間：/)).toHaveCount(0);
+  await fixture.pg.query("UPDATE app_private.users SET status='active' WHERE id='owner'");
+  await page.goto(`${base}/alice/Alpha/wiki`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("尚無 Wiki 頁面。", { exact: true })).toBeVisible();
+  assert.equal(wikiPosts.length, 0);
+  await page.getByRole("button", { name: "建立頁面", exact: true }).click();
+  await page.getByLabel("標題", { exact: true }).fill("Wiki Guide");
+  const originalWiki = "# Markdown 原文\n<script>window.__wikiInjected=true</script>";
+  await page.getByLabel("Markdown 原文", { exact: true }).fill(originalWiki);
+  await page.getByRole("button", { name: "儲存頁面", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Wiki Guide", exact: true })).toBeVisible();
+  const wikiPath = new URL(page.url()).pathname;
+  assert.match(wikiPath, /^\/alice\/Alpha\/wiki\/[0-9a-f-]{36}$/);
+  assert.equal(await page.evaluate(() => Reflect.get(window, "__wikiInjected")), undefined);
+  await page.getByRole("button", { name: "編輯頁面", exact: true }).click();
+  await page.getByLabel("標題", { exact: true }).fill("Wiki Guide updated");
+  await page.getByLabel("Markdown 原文", { exact: true }).fill("Updated raw Markdown");
+  wikiUnknown = true;
+  await page.getByRole("button", { name: "儲存頁面", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Wiki 儲存結果未知");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: "重試原操作", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "重試原操作", exact: true }).click();
+  await expect(page.getByText("目前版本：2", { exact: true })).toBeVisible();
+  assert.deepEqual(wikiPosts.at(-1), wikiPosts.at(-2));
+  assert.equal(new URL(page.url()).pathname, wikiPath);
+  await page.getByRole("button", { name: "查看歷史", exact: true }).click();
+  await page.getByRole("button", { name: "比較版本 1 與目前版本", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "版本差異", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "查看版本 1", exact: true }).click();
+  await expect(page.getByText("歷史版本（唯讀）：1", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "編輯頁面", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "還原此版本為新版本", exact: true }).click();
+  await expect(page.getByText("目前版本：3", { exact: true })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "封存頁面", exact: true }).click();
+  await expect(page.getByText("目前版本：4 · 已封存", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "編輯頁面", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "查看歷史", exact: true }).click();
+  await page.getByRole("button", { name: "查看版本 1", exact: true }).click();
+  await page.getByRole("button", { name: "還原此版本為新版本", exact: true }).click();
+  await expect(page.getByText("目前版本：5", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "編輯頁面", exact: true }).click();
+  await page.getByLabel("標題", { exact: true }).fill("Local stale draft");
+  await page.getByLabel("Markdown 原文", { exact: true }).fill("Local stale content");
+  const stableWikiPageId = wikiPath.split("/").at(-1);
+  await wikiContent.execute("owner", {
+    action: "edit",
+    repositoryId: "repo",
+    pageId: stableWikiPageId,
+    requestId: randomUUID(),
+    expectedVersion: 5,
+    title: "Concurrent server update",
+    body: "Server content",
+  });
+  await page.getByRole("button", { name: "重新讀取 Wiki", exact: true }).click();
+  await expect(page.getByText("目前版本：6", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("標題", { exact: true })).toHaveValue("Local stale draft");
+  await page.getByRole("button", { name: "儲存頁面", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("version conflict");
+  assert.equal(wikiPosts.at(-1).expectedVersion, 5);
+  const preservedWiki = await wikiContent.read("owner", {
+    repositoryId: "repo",
+    pageId: stableWikiPageId,
+  });
+  assert.equal(preservedWiki.version, 6);
+  assert.equal(preservedWiki.body, "Server content");
+  await expect(page.getByLabel("Markdown 原文", { exact: true })).toHaveValue(
+    "Local stale content",
+  );
+  await page.getByRole("button", { name: "取消編輯", exact: true }).click();
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.ok(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      `Wiki overflow at ${width}`,
+    );
+    await page.screenshot({ path: path.join(output, `wiki-${width}.png`), fullPage: true });
+  }
+  await fixture.pg.query("UPDATE app_private.repositories SET is_archived=true WHERE id='repo'");
+  await page.getByRole("button", { name: "重新讀取 Wiki", exact: true }).click();
+  await expect(page.getByText("Repository 已封存，Wiki 為唯讀。", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "編輯頁面", exact: true })).toHaveCount(0);
+  await fixture.pg.query("UPDATE app_private.users SET status='paused' WHERE id='owner'");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(
+    page.getByRole("heading", { name: "Concurrent server update", exact: true }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Wiki 存取失敗");
   assert.deepEqual(errors, []);
   writeFileSync(
     path.join(output, "wbs-results.json"),
@@ -444,6 +638,7 @@ try {
           "subtree delete",
           "mobile layout",
           "private state clear",
+          "Wiki raw content, stable page identity, durable exact retry after reload, immutable history, compare/restore, archive and current access",
           "Insights period/current state, real owner metrics, partial source failure and qualification revocation",
         ],
         posts: posts.length,

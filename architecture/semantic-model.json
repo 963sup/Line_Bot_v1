@@ -3822,7 +3822,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository Wiki page lifecycle, history, comparison and restoration through an authenticated internal CLI.",
+        "scope": "Repository Wiki lifecycle, history, comparison and restoration through authenticated internal CLI and Web delivery.",
         "sourcePaths": [
           "packages/wiki/src/domain/wiki-page.ts",
           "packages/wiki/src/application/use-cases/pages.ts",
@@ -3833,11 +3833,19 @@
           "./application/use-cases/history",
           "./contracts/dto/wiki",
           "./contracts/repositories/wiki-pages",
-          "./composition/bootstrap/wiki-pages"
+          "./composition/bootstrap/wiki-pages",
+          "./domain/wiki-error",
+          "./domain/policies/wiki-access",
+          "./application/commands/pages"
         ],
-        "entrypoints": ["scripts/wiki/run.mjs"],
-        "testPaths": ["packages/wiki/test/wiki.test.ts"],
-        "note": "Internal package capability only; no HTTP endpoint, UI, rendering, attachments or page-specific grants. Provider/device evidence remains separate."
+        "entrypoints": [
+          "scripts/wiki/run.mjs",
+          "apps/web/src/app/api/repository-wiki/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/wiki/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/wiki/[pageId]/page.tsx"
+        ],
+        "testPaths": ["packages/wiki/test/wiki.test.ts", "apps/web/test/wiki-http.test.ts"],
+        "note": "Authenticated CLI/Web capability; no Markdown HTML rendering, attachments or page-specific grants. Current Repository authorization and atomic immutable revisions/replay remain owner authority."
       }
     },
     {

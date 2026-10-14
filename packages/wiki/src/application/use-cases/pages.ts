@@ -1,7 +1,8 @@
 import type { WikiQuery } from "../../contracts/dto/wiki.js";
 import type { WikiStore } from "../../contracts/repositories/wiki-pages.js";
 import { canEditWiki } from "../../domain/policies/wiki-access.js";
-import { reviseWikiPage, WikiError } from "../../domain/wiki-page.js";
+import { WikiError } from "../../domain/wiki-error.js";
+import { reviseWikiPage } from "../../domain/wiki-page.js";
 import { parseWikiCommand } from "../commands/pages.js";
 import { wikiId, wikiQuery } from "../queries/pages.js";
 

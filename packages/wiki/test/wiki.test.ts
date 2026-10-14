@@ -5,7 +5,8 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createWikiHistory } from "../src/application/use-cases/history.js";
 import { createWiki } from "../src/application/use-cases/pages.js";
 import { createPostgresWikiStore } from "../src/composition/bootstrap/wiki-pages.js";
-import { reviseWikiPage, WikiError } from "../src/domain/wiki-page.js";
+import { WikiError } from "../src/domain/wiki-error.js";
+import { reviseWikiPage } from "../src/domain/wiki-page.js";
 
 test("Wiki page transitions preserve identity and restore creates a new revision", () => {
   const context = {

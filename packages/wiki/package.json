@@ -4,6 +4,18 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./domain/wiki-error": {
+      "types": "./dist/domain/wiki-error.d.ts",
+      "default": "./dist/domain/wiki-error.js"
+    },
+    "./domain/policies/wiki-access": {
+      "types": "./dist/domain/policies/wiki-access.d.ts",
+      "default": "./dist/domain/policies/wiki-access.js"
+    },
+    "./application/commands/pages": {
+      "types": "./dist/application/commands/pages.d.ts",
+      "default": "./dist/application/commands/pages.js"
+    },
     "./application/use-cases/pages": {
       "types": "./dist/application/use-cases/pages.d.ts",
       "default": "./dist/application/use-cases/pages.js"

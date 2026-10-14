@@ -619,7 +619,8 @@
         "@line_bot_v1/explore",
         "@line_bot_v1/audit",
         "@line_bot_v1/wbs",
-        "@line_bot_v1/insights"
+        "@line_bot_v1/insights",
+        "@line_bot_v1/wiki"
       ]
     }
   }

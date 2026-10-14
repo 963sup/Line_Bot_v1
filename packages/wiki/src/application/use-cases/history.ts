@@ -1,6 +1,6 @@
 import type { WikiQuery } from "../../contracts/dto/wiki.js";
 import type { WikiStore } from "../../contracts/repositories/wiki-pages.js";
-import { WikiError } from "../../domain/wiki-page.js";
+import { WikiError } from "../../domain/wiki-error.js";
 import { compareWikiRevisions } from "../../domain/wiki-revision.js";
 import { wikiId, wikiQuery } from "../queries/pages.js";
 
