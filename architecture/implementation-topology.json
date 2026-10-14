@@ -25,7 +25,11 @@
       "path": "packages/notifications",
       "moduleKind": "domain-module",
       "semanticOwner": "notifications",
-      "allowedWorkspaceDependencies": ["@line_bot_v1/platform"]
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/platform",
+        "@line_bot_v1/account",
+        "@line_bot_v1/repository"
+      ]
     },
     "@line_bot_v1/namespace": {
       "path": "packages/namespace",
@@ -241,6 +245,18 @@
       "moduleKind": "application-module",
       "semanticOwner": "insights",
       "allowedWorkspaceDependencies": ["@line_bot_v1/issue", "@line_bot_v1/wbs"]
+    },
+    "@line_bot_v1/actions": {
+      "path": "packages/actions",
+      "moduleKind": "domain-module",
+      "semanticOwner": "actions",
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/account",
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/wbs",
+        "@line_bot_v1/notifications"
+      ]
     }
   },
   "targetModules": {

@@ -1,6 +1,6 @@
 # Owner router
 
-Repository scope content: [WBS](wbs.md) · [Wiki](wiki.md). Execution remains [Issue](issue.md); cross-source planning remains [Project](project.md). Read-only metrics: [Insights](insights.md).
+Repository scope content: [WBS](wbs.md) · [Wiki](wiki.md). Execution remains [Issue](issue.md); cross-source planning remains [Project](project.md). Read-only metrics: [Insights](insights.md). Business automation: [Actions](actions.md).
 
 Use one owner contract for the affected responsibility. Exact current owner/status remains authoritative in `architecture/semantic-model.json`.
 

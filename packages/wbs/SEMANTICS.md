@@ -28,6 +28,7 @@
 | --- | --- | --- | --- | --- |
 | RepositoryWBS | repository-wbs | authoritative | current | Repository-scoped versioned scope document; separate from legacy Project-owned WBS. |
 | WBSBaseline | wbs-baseline | authoritative | current | Immutable published scope and counted approval evidence; not deliverable acceptance or GitHub Commit. |
+| WbsBaselineEvent | wbs-baseline-event | authoritative | current | Version-bound Baseline publication fact and transactional outbox acknowledgment. |
 | WBSChangeProposal | wbs-change-proposal | authoritative | current | Versioned local scope proposal binding an immutable candidate Revision and explicit base Baseline. |
 | WBSCommandReceipt | wbs-command-receipt | authoritative | current | Durable exact-replay identity referencing the committed WBS revision. |
 | WBSGovernance | wbs-governance | authoritative | current | Repository-WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version. |
@@ -43,13 +44,16 @@
 | --- | --- | --- | --- |
 | govern-repository-wbs | required | implemented | Propose frozen WBS scope, review exact candidate and policy versions, and atomically publish immutable Baselines without overwriting drafts; recheck current reviewer authority. |
 | manage-repository-wbs | required | implemented | Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning. |
+| publish-wbs-baseline-events | required | implemented | Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge. |
 | read-wbs-metrics | required | implemented | Read authorized wbs-owned Repository metrics without transferring source or authorization authority to Insights. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | actions | event | wbs | durable-event-replay | WBS publishes version-bound outbox events; Actions accepts once before acknowledge. |
 | provides | insights | query | wbs | current-state | Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider. |
+| provides | notifications | reference | wbs | current-source-access | Inbox creation/read/mark-read and dispatch reference an exact WBS Baseline and Revision. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned. |
 
 ## Tactical Model Boundary

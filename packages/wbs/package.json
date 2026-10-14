@@ -63,6 +63,14 @@
     "./composition/bootstrap/metrics": {
       "types": "./dist/composition/bootstrap/metrics.d.ts",
       "default": "./dist/composition/bootstrap/metrics.js"
+    },
+    "./contracts/output/baseline-events": {
+      "types": "./dist/contracts/output/baseline-events.d.ts",
+      "default": "./dist/contracts/output/baseline-events.js"
+    },
+    "./composition/bootstrap/baseline-events": {
+      "types": "./dist/composition/bootstrap/baseline-events.d.ts",
+      "default": "./dist/composition/bootstrap/baseline-events.js"
     }
   },
   "files": [

@@ -1,5 +1,7 @@
 # Account
 
+The narrow `readUserDeliveryTarget` PostgreSQL query returns only a currently active User's binding for the requested provider. Notifications owns target snapshots and delivery state; LINE owns provider protocol.
+
 Read this file for the Account owner boundary and invariants. Load [detailed reference](../reference/domains/account.md) only for lifecycle / command / locator / policy details.
 
 ## Current responsibility

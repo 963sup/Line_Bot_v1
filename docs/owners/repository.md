@@ -1,5 +1,7 @@
 # Repository
 
+The public `explicitRepositoryRecipient` query combines current active qualification, Repository access and Watch for explicitly addressed notifications. UNSUBSCRIBED remains eligible; IGNORED does not. It grants neither subscription fan-out nor source ownership to the caller.
+
 Read this file for Repository ownership and invariants. Load [detailed reference](../reference/domains/repository.md) only for runtime capability status, locator, create, Star List or discovery details.
 
 ## Responsibility

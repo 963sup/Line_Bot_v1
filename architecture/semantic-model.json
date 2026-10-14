@@ -255,13 +255,19 @@
       "kind": "application-capability-owner",
       "lifecycle": "current",
       "doc": "docs/owners/insights.md"
+    },
+    {
+      "id": "actions",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/actions.md"
     }
   ],
   "subdomains": [
     {
       "id": "collaboration",
       "classification": "core",
-      "owners": ["repository", "issue", "discussion", "project", "wbs", "wiki"],
+      "owners": ["repository", "issue", "discussion", "project", "wbs", "wiki", "actions"],
       "rationale": "企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -1549,6 +1555,76 @@
       "authorityMode": "derived",
       "persistenceExpectation": "none",
       "derivedFrom": ["issue", "repository-wbs"]
+    },
+    {
+      "id": "action-rule",
+      "canonicalName": "ActionRule",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Versioned fixed business automation definition with explicit recipients and revocable current delegation.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-run",
+      "canonicalName": "ActionRun",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Source-version-bound automation execution with immutable rule snapshot and durable progress.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-attempt",
+      "canonicalName": "ActionAttempt",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Fenced execution lease and durable per-step recovery evidence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-command-receipt",
+      "canonicalName": "ActionCommandReceipt",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Durable exact replay for authenticated automation commands.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-event-receipt",
+      "canonicalName": "ActionEventReceipt",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "First accepted source event fixes the complete rule fan-out, including no matching rule.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wbs-baseline-event",
+      "canonicalName": "WbsBaselineEvent",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Version-bound Baseline publication fact and transactional outbox acknowledgment.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "notification-receipt",
+      "canonicalName": "NotificationReceipt",
+      "kind": "authoritative",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Exact notification intent receipt and cancellation barrier; no source authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -2093,6 +2169,97 @@
       "integrationMode": "query",
       "authority": "wbs",
       "consistency": "current-state"
+    },
+    {
+      "id": "actions-repository-scope",
+      "from": "action-rule",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "repository",
+      "consumer": "actions",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck",
+      "meaning": "Current Repository access, archive and maintain/admin authority gate automation commands and each fixed step."
+    },
+    {
+      "id": "actions-delegation",
+      "from": "action-rule",
+      "to": "user",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "account",
+      "consumer": "actions",
+      "integrationMode": "query",
+      "authority": "account",
+      "consistency": "current-state",
+      "meaning": "Active Account qualification version binds revocable execution delegation."
+    },
+    {
+      "id": "actions-wbs-events",
+      "from": "action-run",
+      "to": "repository-wbs",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "wbs",
+      "consumer": "actions",
+      "integrationMode": "event",
+      "authority": "wbs",
+      "consistency": "durable-event-replay",
+      "meaning": "WBS publishes version-bound outbox events; Actions accepts once before acknowledge."
+    },
+    {
+      "id": "actions-notifications",
+      "from": "action-run",
+      "to": "notification",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "notifications",
+      "consumer": "actions",
+      "integrationMode": "command",
+      "authority": "notifications",
+      "consistency": "idempotent-command",
+      "meaning": "Stable per-run recipient intent creates Inbox and LINE effects through Notifications."
+    },
+    {
+      "id": "notifications-explicit-recipients",
+      "from": "notification",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "notifications",
+      "provider": "repository",
+      "consumer": "notifications",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck",
+      "meaning": "Current source access and explicit-recipient Watch eligibility are Repository-owned."
+    },
+    {
+      "id": "notifications-account-target",
+      "from": "notification",
+      "to": "user",
+      "kind": "reference",
+      "owner": "notifications",
+      "provider": "account",
+      "consumer": "notifications",
+      "integrationMode": "query",
+      "authority": "account",
+      "consistency": "current-state",
+      "meaning": "Account supplies current active provider binding; Notifications retains the first delivery target snapshot."
+    },
+    {
+      "id": "notifications-wbs-source",
+      "from": "notification",
+      "to": "wbs-baseline",
+      "kind": "reference",
+      "owner": "notifications",
+      "provider": "wbs",
+      "consumer": "notifications",
+      "integrationMode": "reference",
+      "authority": "wbs",
+      "consistency": "current-source-access",
+      "meaning": "Inbox creation/read/mark-read and dispatch reference an exact WBS Baseline and Revision."
     }
   ],
   "capabilities": [
@@ -3735,6 +3902,104 @@
         "testPaths": ["packages/wbs/test/metrics.test.ts"],
         "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
       }
+    },
+    {
+      "id": "manage-business-actions",
+      "owner": "actions",
+      "kind": "leaf",
+      "intent": "Manage and recover two fixed, delegated Repository business automations.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage and recover two fixed, delegated Repository business automations.",
+        "sourcePaths": [
+          "packages/actions/src/domain/automation.ts",
+          "packages/actions/src/application/use-cases/automation.ts",
+          "packages/actions/src/application/use-cases/worker.ts",
+          "packages/actions/src/adapters/outbound/persistence/automation.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/automation",
+          "./application/use-cases/worker",
+          "./contracts/dto/automation",
+          "./contracts/repositories/automation",
+          "./contracts/output/fixed-steps",
+          "./composition/bootstrap/automation"
+        ],
+        "entrypoints": ["scripts/actions/run.mjs", "scripts/actions/worker.mjs"],
+        "testPaths": [
+          "packages/actions/test/actions.test.ts",
+          "packages/actions/test/actions-postgres.test.ts"
+        ],
+        "note": "Internal execution evidence; production activation and real LINE device delivery require separate evidence."
+      }
+    },
+    {
+      "id": "publish-wbs-baseline-events",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge.",
+        "sourcePaths": ["packages/wbs/src/adapters/outbound/persistence/baseline-events.ts"],
+        "publicExports": [
+          "./contracts/output/baseline-events",
+          "./composition/bootstrap/baseline-events"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/wbs/test/metrics.test.ts"],
+        "note": "Internal execution evidence; production activation and real LINE device delivery require separate evidence."
+      }
+    },
+    {
+      "id": "deliver-explicit-baseline-notifications",
+      "owner": "notifications",
+      "kind": "leaf",
+      "intent": "Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents.",
+        "sourcePaths": [
+          "packages/notifications/src/application/use-cases/baseline-delivery.ts",
+          "packages/notifications/src/adapters/outbound/persistence/baseline-delivery.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/baseline-delivery",
+          "./contracts/output/baseline-delivery",
+          "./contracts/repositories/baseline-delivery",
+          "./composition/bootstrap/baseline-delivery"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/notifications/test/baseline-delivery.test.ts"],
+        "note": "Internal execution evidence; production activation and real LINE device delivery require separate evidence."
+      }
     }
   ],
   "invariants": [
@@ -4076,6 +4341,10 @@
     {
       "semanticOwner": "insights",
       "module": "@line_bot_v1/insights"
+    },
+    {
+      "semanticOwner": "actions",
+      "module": "@line_bot_v1/actions"
     }
   ],
   "policies": [

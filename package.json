@@ -50,7 +50,9 @@
     "github:current-main": "node scripts/github/current-main.mjs",
     "github:release-plan": "node scripts/github/release-plan.mjs",
     "wiki:run": "node scripts/wiki/run.mjs",
-    "insights:run": "node scripts/insights/run.mjs"
+    "insights:run": "node scripts/insights/run.mjs",
+    "actions:run": "node scripts/actions/run.mjs",
+    "actions:worker": "node scripts/actions/worker.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -69,6 +71,8 @@
     "@line_bot_v1/insights": "workspace:*",
     "@line_bot_v1/issue": "workspace:*",
     "@line_bot_v1/wbs": "workspace:*",
-    "@line_bot_v1/repository": "workspace:*"
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/actions": "workspace:*",
+    "@line_bot_v1/notifications": "workspace:*"
   }
 }
