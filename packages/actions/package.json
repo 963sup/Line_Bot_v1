@@ -1,0 +1,52 @@
+{
+  "name": "@line_bot_v1/actions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application/use-cases/automation": {
+      "types": "./dist/application/use-cases/automation.d.ts",
+      "default": "./dist/application/use-cases/automation.js"
+    },
+    "./application/use-cases/worker": {
+      "types": "./dist/application/use-cases/worker.d.ts",
+      "default": "./dist/application/use-cases/worker.js"
+    },
+    "./contracts/dto/automation": {
+      "types": "./dist/contracts/dto/automation.d.ts",
+      "default": "./dist/contracts/dto/automation.js"
+    },
+    "./contracts/repositories/automation": {
+      "types": "./dist/contracts/repositories/automation.d.ts",
+      "default": "./dist/contracts/repositories/automation.js"
+    },
+    "./contracts/output/fixed-steps": {
+      "types": "./dist/contracts/output/fixed-steps.d.ts",
+      "default": "./dist/contracts/output/fixed-steps.js"
+    },
+    "./composition/bootstrap/automation": {
+      "types": "./dist/composition/bootstrap/automation.d.ts",
+      "default": "./dist/composition/bootstrap/automation.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/wbs": "workspace:*",
+    "@line_bot_v1/notifications": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

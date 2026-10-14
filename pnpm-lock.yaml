@@ -95,6 +95,9 @@ importers:
       '@line_bot_v1/account':
         specifier: workspace:*
         version: link:packages/account
+      '@line_bot_v1/actions':
+        specifier: workspace:*
+        version: link:packages/actions
       '@line_bot_v1/insights':
         specifier: workspace:*
         version: link:packages/insights
@@ -104,6 +107,9 @@ importers:
       '@line_bot_v1/line':
         specifier: workspace:*
         version: link:packages/line
+      '@line_bot_v1/notifications':
+        specifier: workspace:*
+        version: link:packages/notifications
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:packages/platform
@@ -264,6 +270,34 @@ importers:
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.115.0(@opentelemetry/api@1.9.1)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/actions:
+    dependencies:
+      '@line_bot_v1/account':
+        specifier: workspace:*
+        version: link:../account
+      '@line_bot_v1/notifications':
+        specifier: workspace:*
+        version: link:../notifications
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
+      '@line_bot_v1/wbs':
+        specifier: workspace:*
+        version: link:../wbs
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -586,9 +620,15 @@ importers:
 
   packages/notifications:
     dependencies:
+      '@line_bot_v1/account':
+        specifier: workspace:*
+        version: link:../account
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

@@ -61,8 +61,10 @@ References support the existing status; listed tests are evidence locations, not
 | provides | repository | stable-identity+query | account | current-state | Repository owner locators and User principals reference Account-owned identity and current User qualification. |
 | provides | team | stable-identity+query | account | current-state | Current User qualification and participation identity. |
 | provides | wallet | stable-identity+query | account | current-state | Wallet balance projection consumes current User holder qualification and stable Account identity. |
+| provides | actions | query | account | current-state | Active Account qualification version binds revocable execution delegation. |
 | consumes | line-integration | external-proof | line-integration | verified-request | Verified LINE identity proof consumed for account mapping/qualification. |
 | consumes | namespace | query | namespace | current-policy | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
+| provides | notifications | query | account | current-state | Account supplies current active provider binding; Notifications retains the first delivery target snapshot. |
 | provides | project | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |
 
 ## Tactical Model Boundary

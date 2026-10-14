@@ -330,7 +330,9 @@ as
 select distinct
   'issue'::text as source_type,
   issue.id as source_id,
-  visibility.user_id
+  visibility.user_id,
+  null::text as source_version,
+  issue.repository_id
 from app_private.issues issue
 join app_private.repository_visibility_access visibility
   on visibility.repository_id=issue.repository_id
@@ -340,10 +342,19 @@ union
 select distinct
   'discussion'::text as source_type,
   discussion.id as source_id,
-  visibility.user_id
+  visibility.user_id,
+  null::text as source_version,
+  discussion.repository_id
 from app_private.discussions discussion
 join app_private.repository_visibility_access visibility
-  on visibility.repository_id=discussion.repository_id;
+  on visibility.repository_id=discussion.repository_id
+union
+select distinct 'wbs-baseline'::text, baseline.id::text, recipient.id,
+  baseline.revision_id::text, baseline.repository_id
+from app_private.repository_wbs_baselines baseline
+join app_private.repository_visibility_access visibility on visibility.repository_id=baseline.repository_id
+join app_private.users recipient on recipient.status='active'
+  and (visibility.user_id=recipient.id or visibility.user_id is null);
 
 
 -- Organization collaborator affiliation is a rebuildable projection over Repository-owned direct

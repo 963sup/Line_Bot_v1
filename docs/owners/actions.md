@@ -1,0 +1,12 @@
+# Actions
+Actions owns two fixed Repository business automations: manual checks of a specified WBS Revision, and explicit-recipient notifications after WBS Baseline publication. WBS owns scope facts and publication events; Notifications owns Inbox and LINE delivery; Account/Repository own identity, qualification, access and Watch. GitHub SCM/CI Workflow remains separate.
+
+Rule creation/update/enable/disable and manual execute/retry/cancel require current maintain/admin and a non-archived Repository. Commands use request identity and expected version with durable exact replay. Enabling establishes a qualification-version-bound delegation and captures the current WBS event cursor; re-enabling only admits newer events. Updating an enabled definition retains its delegation when the same qualified delegate updates it. Definition versions are immutable.
+
+First event acceptance atomically fixes every matching rule version and recipient list, including no matching rule. Redelivery cannot add newly created rules or change recipients. Acceptance commits before WBS acknowledge. Each Run has durable attempts, progress and a lease; expired workers cannot save results. The bounded worker claims one event or executes one fixed step per budget unit. It rechecks current delegate qualification/version, Repository scope/archive, enabled generation and its live lease before initiating a step.
+
+Checks return WBS findings without granting approval or publishing a Baseline. Notification results distinguish Inbox creation, provider acceptance, unavailability, failure and uncertainty; Run completion means the fixed steps finished, not device delivery. Retry resumes the same step/intent/provider key. Cancellation stops future steps, repeats idempotent intent suppression on command replay, and preserves prior effects. A request already initiated at the cancellation boundary may have an uncertain external outcome.
+
+Delivery recovery is Notifications-owned: target/payload/retry key persist before attempting, current binding and recipient eligibility are rechecked, retries back off and stop before 23 hours. No arbitrary scripts, schedule builder, generic graph engine or automatic subscription fan-out.
+
+Validation: owner unit/persistence tests, disposable PostgreSQL concurrency, mock LINE, schema/architecture/docs checks, repository check/validate and exact-head CI. Internal entries are [documented here](../../scripts/actions/README.md). Production worker enablement and real LINE recipient/device evidence are separate.

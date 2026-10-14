@@ -18,9 +18,10 @@ Notifications owns user-facing Notification facts, recipient read state, and del
 ## Invariants
 
 - A notification references a source fact by type, id, and source version; it does not copy source authority.
-- For `issue` / `discussion` sources, insert must prove the recipient can currently read the source Repository；Inbox read and mark-read recheck the same current access. Later grant revoke、visibility change or Enterprise detach therefore hides the old Notification instead of treating historical receipt as access.
+- For `issue` / `discussion` / `wbs-baseline` sources, insert must prove the recipient can currently read the source Repository；Inbox read and mark-read recheck the same current access. WBS binds the exact Baseline and Revision, with current active qualification. Later grant revoke、visibility change or Enterprise detach therefore hides the old Notification instead of treating historical receipt as access.
 - Repository Watch subscription never grants source access. `SUBSCRIBED / UNSUBSCRIBED / IGNORED` is Repository-owned intent；Repository conversation fan-out is not enabled until a producer can apply subscription policy and current source access together.
 - Delivery retry is idempotent per notification, channel, and delivery key.
+- Explicit WBS recipients may be UNSUBSCRIBED; IGNORED excludes them. Creation atomically stores Inbox, LINE intent and exact-replay receipt. Account supplies the current active LINE binding; Notifications persists target/payload/retry key before first attempt and refuses changed bindings. Timeout/crash stays unknown until an exact retry is accepted or the 23-hour window ends. Cancellation suppresses pending effects and preserves uncertainty for in-flight requests. LINE acceptance is provider evidence, not device delivery.
 - Read state is recipient-scoped and cannot mutate the source issue or discussion.
 - Missing or unavailable source data is not reported as an empty inbox without an explicit error boundary.
 - Team `NOTIFICATIONS_ENABLED` is neither a User subscription nor a delivery receipt. A Team @mention producer must re-resolve current effective Team membership before creating recipient Notifications; `NOTIFICATIONS_DISABLED` yields no Team-wide recipients.

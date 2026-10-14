@@ -533,6 +533,10 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
               ],
             );
             await sql.query(
+              "INSERT INTO repository_wbs_outbox(id,repository_id,baseline_id,revision_id,at) VALUES($1,$2,$1,$3,$4)",
+              [baseline.id, repository.id, baseline.revisionId, baseline.at],
+            );
+            await sql.query(
               "UPDATE repository_wbs_governance SET published_baseline_id=$2 WHERE repository_id=$1",
               [repository.id, baseline.id],
             );

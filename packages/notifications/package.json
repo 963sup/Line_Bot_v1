@@ -31,6 +31,22 @@
     "./composition/bootstrap/postgres-notification-repository": {
       "types": "./dist/composition/bootstrap/postgres-notification-repository.d.ts",
       "default": "./dist/composition/bootstrap/postgres-notification-repository.js"
+    },
+    "./application/use-cases/baseline-delivery": {
+      "types": "./dist/application/use-cases/baseline-delivery.d.ts",
+      "default": "./dist/application/use-cases/baseline-delivery.js"
+    },
+    "./contracts/output/baseline-delivery": {
+      "types": "./dist/contracts/output/baseline-delivery.d.ts",
+      "default": "./dist/contracts/output/baseline-delivery.js"
+    },
+    "./contracts/repositories/baseline-delivery": {
+      "types": "./dist/contracts/repositories/baseline-delivery.d.ts",
+      "default": "./dist/contracts/repositories/baseline-delivery.js"
+    },
+    "./composition/bootstrap/baseline-delivery": {
+      "types": "./dist/composition/bootstrap/baseline-delivery.d.ts",
+      "default": "./dist/composition/bootstrap/baseline-delivery.js"
     }
   },
   "files": [
@@ -42,7 +58,9 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line_bot_v1/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

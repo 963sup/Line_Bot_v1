@@ -82,12 +82,13 @@ export class PostgresNotificationRepository implements NotificationRepository {
            AND ($2::uuid IS NULL OR id=$2::uuid)
            AND ($3::boolean IS FALSE OR read_at IS NULL)
            AND (
-             source_type NOT IN ('issue','discussion')
+             source_type NOT IN ('issue','discussion','wbs-baseline')
              OR EXISTS (
                SELECT 1
                FROM notification_repository_source_access access
                WHERE access.source_type=notifications.source_type
                  AND access.source_id=notifications.source_id
+                 AND (notifications.source_type<>'wbs-baseline' OR access.source_version=notifications.source_version)
                  AND (access.user_id=$1 OR access.user_id IS NULL)
              )
            )
@@ -107,12 +108,13 @@ export class PostgresNotificationRepository implements NotificationRepository {
          FROM notifications
          WHERE id=$1::uuid AND recipient=$2
            AND (
-             source_type NOT IN ('issue','discussion')
+             source_type NOT IN ('issue','discussion','wbs-baseline')
              OR EXISTS (
                SELECT 1
                FROM notification_repository_source_access access
                WHERE access.source_type=notifications.source_type
                  AND access.source_id=notifications.source_id
+                 AND (notifications.source_type<>'wbs-baseline' OR access.source_version=notifications.source_version)
                  AND (access.user_id=$2 OR access.user_id IS NULL)
              )
            )
@@ -132,12 +134,13 @@ export class PostgresNotificationRepository implements NotificationRepository {
          SET read_at=$3,version=version+1
          WHERE id=$1::uuid AND recipient=$2
            AND (
-             source_type NOT IN ('issue','discussion')
+             source_type NOT IN ('issue','discussion','wbs-baseline')
              OR EXISTS (
                SELECT 1
                FROM notification_repository_source_access access
                WHERE access.source_type=notifications.source_type
                  AND access.source_id=notifications.source_id
+                 AND (notifications.source_type<>'wbs-baseline' OR access.source_version=notifications.source_version)
                  AND (access.user_id=$2 OR access.user_id IS NULL)
              )
            )

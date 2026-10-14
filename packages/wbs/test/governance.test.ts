@@ -332,6 +332,7 @@ test("governance preserves frozen review, current authority, publication atomici
     ),
     0,
   );
+  assert.equal((await pg.query("SELECT * FROM app_private.repository_wbs_outbox")).rows.length, 0);
   const publishCommand = parseWbsGovernanceCommand({
     action: "publish-proposal",
     repositoryId: "repo",

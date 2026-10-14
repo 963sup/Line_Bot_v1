@@ -163,6 +163,10 @@
     "./postgres/content-scope": {
       "types": "./dist/postgres/content-scope.d.ts",
       "default": "./dist/postgres/content-scope.js"
+    },
+    "./postgres/explicit-recipient": {
+      "types": "./dist/postgres/explicit-recipient.d.ts",
+      "default": "./dist/postgres/explicit-recipient.js"
     }
   },
   "files": [

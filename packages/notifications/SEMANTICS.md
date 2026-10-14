@@ -36,15 +36,22 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- | --- |
 | Inbox | notification-inbox | derived-projection | current | Recipient-scoped read projection over Notifications for navigation and presentation. Inbox is not a second notification authority or package owner. |
 | Notification | notification | authoritative | current | Recipient-addressed notification fact that references source identity/version and carries recipient read state without taking source authority. |
+| NotificationReceipt | notification-receipt | authoritative | current | Exact notification intent receipt and cancellation barrier; no source authority. |
 
 ## Capabilities
 
-No owner capability is currently declared in the canonical semantic model.
+| Capability | Runtime | Implementation | Intent |
+| --- | --- | --- | --- |
+| deliver-explicit-baseline-notifications | required | implemented | Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | actions | command | notifications | idempotent-command | Stable per-run recipient intent creates Inbox and LINE effects through Notifications. |
+| consumes | account | query | account | current-state | Account supplies current active provider binding; Notifications retains the first delivery target snapshot. |
+| consumes | repository | query | repository | transaction-recheck | Current source access and explicit-recipient Watch eligibility are Repository-owned. |
+| consumes | wbs | reference | wbs | current-source-access | Inbox creation/read/mark-read and dispatch reference an exact WBS Baseline and Revision. |
 | consumes | repository | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
 
 ## Tactical Model Boundary

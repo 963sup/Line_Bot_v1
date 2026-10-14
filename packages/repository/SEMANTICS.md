@@ -69,9 +69,11 @@ References support the existing status; listed tests are evidence locations, not
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | Repository owner locators and User principals reference Account-owned identity and current User qualification. |
+| provides | actions | stable-identity+query | repository | transaction-recheck | Current Repository access, archive and maintain/admin authority gate automation commands and each fixed step. |
 | consumes | identity-access | query | identity-access | transaction-recheck | Repository consumes current IdentityAccess authorization decisions for Repository-owned access and protected operations; IdentityAccess does not own or mutate Repository grant truth. |
 | provides | insights | query | repository | current-state | Insights consumes repository-owned authorized current queries; source facts and authorization remain with the provider. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| provides | notifications | query | repository | transaction-recheck | Current source access and explicit-recipient Watch eligibility are Repository-owned. |
 | consumes | organization | query | organization | transaction-recheck | Repository creation under an Organization consumes the Organization-owned visibility-specific member creation policy; current OrganizationOwner also projects implicit admin on Organization-owned Repositories without copying grants. |
 | consumes | organization | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and viewerCanCreateRepositories/viewerCanAdminister capabilities. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant. |
 | provides | project | reference | repository | current-access-and-identity | Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access. |

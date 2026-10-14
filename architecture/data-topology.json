@@ -374,6 +374,18 @@
     {
       "path": "supabase/schemas/610_wiki.sql",
       "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/611_wbs_outbox.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/612_actions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/852_notification_receipts.sql",
+      "role": "authoritative"
     }
   ],
   "relations": [
@@ -1345,7 +1357,7 @@
       "path": "supabase/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
-      "participants": ["issue", "discussion", "repository", "notifications"]
+      "participants": ["issue", "discussion", "repository", "notifications", "wbs", "account"]
     },
     {
       "name": "organization_repository_collaborators",
@@ -1530,6 +1542,70 @@
       "authority": true,
       "semanticOwner": "wiki",
       "concept": "wiki-command-receipt"
+    },
+    {
+      "name": "repository_wbs_outbox",
+      "kind": "table",
+      "path": "supabase/schemas/611_wbs_outbox.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-baseline-event"
+    },
+    {
+      "name": "action_rules",
+      "kind": "table",
+      "path": "supabase/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-rule"
+    },
+    {
+      "name": "action_rule_versions",
+      "kind": "table",
+      "path": "supabase/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-rule"
+    },
+    {
+      "name": "action_runs",
+      "kind": "table",
+      "path": "supabase/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-run"
+    },
+    {
+      "name": "action_attempts",
+      "kind": "table",
+      "path": "supabase/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-attempt"
+    },
+    {
+      "name": "action_commands",
+      "kind": "table",
+      "path": "supabase/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-command-receipt"
+    },
+    {
+      "name": "action_events",
+      "kind": "table",
+      "path": "supabase/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-event-receipt"
+    },
+    {
+      "name": "notification_receipts",
+      "kind": "table",
+      "path": "supabase/schemas/852_notification_receipts.sql",
+      "authority": true,
+      "semanticOwner": "notifications",
+      "concept": "notification-receipt"
     }
   ]
 }
