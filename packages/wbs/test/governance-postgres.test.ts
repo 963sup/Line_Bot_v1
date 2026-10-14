@@ -1,0 +1,209 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { test } from "node:test";
+import { setTimeout } from "node:timers/promises";
+import { createSql, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
+import { Pool } from "pg";
+import {
+  createPostgresWbsGovernanceStore,
+  createPostgresWbsStore,
+} from "../src/composition/bootstrap/store.js";
+import { WbsError } from "../src/domain.js";
+
+const databaseUrl = process.env.WBS_TEST_DATABASE_URL;
+test("real PostgreSQL sessions serialize competing publication and exact retries", {
+  skip: !databaseUrl && !process.env.CI,
+}, async (t) => {
+  assert.ok(databaseUrl, "CI must supply its disposable PostgreSQL service");
+  const url = new URL(databaseUrl);
+  assert.ok(
+    ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname),
+    "Concurrency tests only use a local disposable server",
+  );
+  const admin = new Pool({ connectionString: url.href, max: 1 });
+  const name = `wbs_test_${randomUUID().replaceAll("-", "")}`;
+  await admin.query(`CREATE DATABASE ${name}`);
+  url.pathname = `/${name}`;
+  const pool = new Pool({ connectionString: url.href, max: 5 });
+  t.after(async () => {
+    await pool.end();
+    try {
+      await admin.query(`DROP DATABASE ${name}`);
+    } finally {
+      await admin.end();
+    }
+  });
+  await pool.query(
+    "DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF; END $$; CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid primary key,banned_until timestamptz,deleted_at timestamptz,is_anonymous boolean); CREATE TABLE auth.identities(user_id uuid,provider text,provider_id text)",
+  );
+  const directory = new URL("../../../supabase/schemas/", import.meta.url);
+  for (const file of readdirSync(directory)
+    .filter((f) => f.endsWith(".sql"))
+    .sort())
+    await pool.query(`BEGIN;${readFileSync(new URL(file, directory), "utf8")}COMMIT;`);
+  const db: Database = {
+    async transaction(work) {
+      const client = await pool.connect();
+      try {
+        await client.query(
+          "BEGIN;SET LOCAL ROLE line_app;SET LOCAL search_path=app_private,pg_catalog;SET LOCAL statement_timeout='10s'",
+        );
+        const result = await work(
+          createSql(async (text, values) => {
+            const query = await client.query<SqlRow>(text, values);
+            return { rows: query.rows, rowCount: query.rowCount };
+          }),
+        );
+        await client.query("COMMIT");
+        return result;
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+  };
+  await db.transaction(async (sql) => {
+    await sql.query(
+      "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES('owner','active',1,1)",
+    );
+    await sql.query("SELECT app_private.claim_account_login('owner','USER','owner',1)");
+  });
+  await pool.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
+  );
+  const content = createPostgresWbsStore(db),
+    governance = createPostgresWbsGovernanceStore(db);
+  await content.execute(
+    "owner",
+    { action: "initialize", repositoryId: "repo", requestId: randomUUID(), expectedVersion: 0 },
+    1,
+  );
+  const draft = await content.execute(
+    "owner",
+    {
+      action: "create-node",
+      repositoryId: "repo",
+      requestId: randomUUID(),
+      expectedVersion: 1,
+      node: {
+        id: "work",
+        parentId: null,
+        position: 0,
+        kind: "WORK_PACKAGE",
+        title: "Work",
+        description: "",
+        deliverable: "Result",
+        acceptanceCriteria: "Checked",
+      },
+    },
+    2,
+  );
+  const ids: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const view = await governance.view("owner", { repositoryId: "repo" }, {});
+    const receipt = await governance.execute(
+      "owner",
+      {
+        action: "create-proposal",
+        repositoryId: "repo",
+        requestId: randomUUID(),
+        expectedVersion: view.version,
+        title: `Scope ${index}`,
+        reason: "",
+        candidateRevisionId: draft.revision.id,
+        baseBaselineId: null,
+      },
+      3,
+    );
+    assert.ok(receipt.proposalId);
+    ids.push(receipt.proposalId);
+    await governance.execute(
+      "owner",
+      {
+        action: "review-proposal",
+        repositoryId: "repo",
+        requestId: randomUUID(),
+        expectedVersion: receipt.version,
+        proposalId: receipt.proposalId,
+        expectedProposalVersion: 1,
+        expectedPolicyVersion: 1,
+        decision: "APPROVE",
+        note: "",
+      },
+      4,
+    );
+  }
+  const state = await governance.view("owner", { repositoryId: "repo" }, {});
+  const commands = ids.map((proposalId) => ({
+    action: "publish-proposal" as const,
+    repositoryId: "repo",
+    requestId: randomUUID(),
+    expectedVersion: state.version,
+    proposalId,
+    expectedProposalVersion: 1,
+    expectedPolicyVersion: 1,
+  }));
+  // Hold the real row lock until both independent pool sessions are waiting on it.
+  const blocker = await pool.connect();
+  await blocker.query("BEGIN;SELECT 1 FROM app_private.repositories WHERE id='repo' FOR UPDATE");
+  const competing = commands.map((command) => governance.execute("owner", command, 5));
+  try {
+    let waiting = 0;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      waiting = Number(
+        (
+          await pool.query(
+            "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT is_archived FROM repositories%'",
+          )
+        ).rows[0]?.count,
+      );
+      if (waiting === 2) break;
+      await setTimeout(20);
+    }
+    assert.equal(
+      waiting,
+      2,
+      "Both independent PostgreSQL sessions must reach the held transition lock",
+    );
+  } finally {
+    await blocker.query("COMMIT");
+    blocker.release();
+  }
+  const results = await Promise.allSettled(competing);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const rejected = results.find((result) => result.status === "rejected");
+  assert.ok(
+    rejected?.status === "rejected" &&
+      rejected.reason instanceof WbsError &&
+      rejected.reason.status === 409,
+  );
+  const successfulIndex = results.findIndex((result) => result.status === "fulfilled");
+  const winning = commands[successfulIndex];
+  assert.ok(winning);
+  const receipts = await Promise.all([
+    governance.execute("owner", winning, 6),
+    governance.execute("owner", winning, 7),
+  ]);
+  assert.deepEqual(receipts[0], receipts[1]);
+  assert.equal(
+    Number(
+      (await pool.query("SELECT count(*) FROM app_private.repository_wbs_baselines")).rows[0]
+        ?.count,
+    ),
+    1,
+  );
+  assert.equal(
+    Number(
+      (
+        await pool.query(
+          "SELECT count(*) FROM app_private.repository_wbs_governance_commands WHERE request_id=$1",
+          [winning.requestId],
+        )
+      ).rows[0]?.count,
+    ),
+    1,
+  );
+});

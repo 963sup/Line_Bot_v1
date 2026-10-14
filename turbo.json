@@ -59,6 +59,13 @@
         "$TURBO_ROOT$/apps/web/src/app/**"
       ]
     },
+    "@line_bot_v1/wbs#test": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "env": ["WBS_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
+    },
     "@line_bot_v1/web#test": {
       "dependsOn": ["^build"],
       "outputs": [],

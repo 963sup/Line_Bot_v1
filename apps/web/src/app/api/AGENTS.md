@@ -2,6 +2,8 @@
 
 `/api/repository-wbs` GET/POST and `/api/repository-wbs/history` GET are WBS owner transports. They use verified LINE identity and owner-side current Repository access; initialization is an explicit version-zero command. Revision is immutable saved content, not a Baseline or acceptance decision.
 
+`/api/repository-wbs/governance` GET/POST transports WBS policy, proposal, exact-version review and atomic Baseline publication. Governance version is separate from draft content version. Owner-side current permissions, policy/version gates, origin checks and exact replay remain authoritative; publication is not deliverable acceptance.
+
 
 ## 現行 URL 與 invariant
 

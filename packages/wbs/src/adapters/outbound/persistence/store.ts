@@ -119,6 +119,15 @@ export class PostgresWbsStore implements WbsStore {
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `wbs-command:${userId}:${command.requestId}`,
       ]);
+      if (
+        (
+          await sql.query(
+            "SELECT 1 FROM repository_wbs_governance_commands WHERE actor_user_id=$1 AND request_id=$2",
+            [userId, command.requestId],
+          )
+        ).rows.length
+      )
+        throw new WbsError(409, "此 requestId 已用於 WBS 治理操作。");
       const receipt = (
         await sql.query(
           "SELECT fingerprint,revision_id,repository_id FROM repository_wbs_commands WHERE actor_user_id=$1 AND request_id=$2",

@@ -22,7 +22,7 @@ function metadata(value: unknown): Omit<WbsRevision, "document"> {
     at: numberValue(value.at),
   };
 }
-function revision(value: unknown): WbsRevision {
+export function wbsRevision(value: unknown): WbsRevision {
   if (!isRecord(value)) throw new Error("WBS Revision 不正確。");
   return { ...metadata(value), document: parseWbsDocument(value.document) };
 }
@@ -46,7 +46,7 @@ export function wbsView(value: unknown): WbsView {
     canManageRepository: value.canManageRepository,
     archived: value.archived,
     version: numberValue(value.version),
-    revision: value.revision === null ? null : revision(value.revision),
+    revision: value.revision === null ? null : wbsRevision(value.revision),
   };
 }
 export function wbsReceipt(value: unknown): WbsReceipt {
@@ -54,7 +54,7 @@ export function wbsReceipt(value: unknown): WbsReceipt {
   return {
     requestId: stringValue(value.requestId),
     repositoryId: stringValue(value.repositoryId),
-    revision: revision(value.revision),
+    revision: wbsRevision(value.revision),
   };
 }
 export function wbsHistory(value: unknown): WbsHistory {

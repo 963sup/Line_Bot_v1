@@ -27,13 +27,21 @@
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | RepositoryWBS | repository-wbs | authoritative | current | Repository-scoped versioned scope document; separate from legacy Project-owned WBS. |
+| WBSBaseline | wbs-baseline | authoritative | current | Immutable published scope and counted approval evidence; not deliverable acceptance or GitHub Commit. |
+| WBSChangeProposal | wbs-change-proposal | authoritative | current | Versioned local scope proposal binding an immutable candidate Revision and explicit base Baseline. |
 | WBSCommandReceipt | wbs-command-receipt | authoritative | current | Durable exact-replay identity referencing the committed WBS revision. |
+| WBSGovernance | wbs-governance | authoritative | current | Repository-WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version. |
+| WBSGovernancePolicy | wbs-governance-policy | authoritative | current | Immutable versioned approval policy, controlled by current Repository ADMIN. |
+| WBSGovernanceReceipt | wbs-governance-receipt | authoritative | current | Durable exact-replay result for an atomic WBS governance command. |
+| WBSProposalReview | wbs-proposal-review | authoritative | current | Append-only review binding exact proposal version, candidate Revision, policy version and reviewer identity. |
+| WBSProposalVersion | wbs-proposal-version | authoritative | current | Immutable proposal content and base snapshot selected by a proposal head; old reviews resolve their exact reviewed proposal version. |
 | WBSRevision | wbs-revision | authoritative | current | Immutable typed WBS scope snapshot with command-time actor and parent revision evidence. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
+| govern-repository-wbs | required | implemented | Propose frozen WBS scope, review exact candidate and policy versions, and atomically publish immutable Baselines without overwriting drafts; recheck current reviewer authority. |
 | manage-repository-wbs | required | implemented | Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning. |
 
 ## Context Relationships

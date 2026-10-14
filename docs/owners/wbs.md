@@ -21,13 +21,29 @@ Commands require `requestId`, `repositoryId`, `expectedVersion` and exactly the 
 
 Current schema: [Repository WBS](../../supabase/schemas/609_repository_wbs.sql). Machine facts: [semantic model](../../architecture/semantic-model.json), [module topology](../../architecture/implementation-topology.json), [data topology](../../architecture/data-topology.json).
 
+## Scope governance
+
+`/api/repository-wbs/governance` GET/POST owns proposal, policy, review and Baseline transport. GET accepts owner/name and optional proposalId, baselineId, beforeProposal or beforeBaseline; proposalVersion and beforeReview require proposalId. Proposal/Baseline/review lists use 20-row keyset pages; detail reads always remain Repository-scoped. Reads never initialize governance state.
+
+- Draft content head/version stays independent from governance version. Governance commands never fabricate a content Revision or overwrite a later draft.
+- Create/revise Proposal freezes a same-Repository candidate Revision and the current nullable base Baseline. Immutable ProposalVersion snapshots preserve the exact title/reason/base/candidate/status and actor reviewed previously; the Proposal head selects one snapshot. Revise increments proposal version and invalidates older reviews; close and publish are terminal. Historical proposal versions remain read-only. Proposal numbers and Baseline numbers are stable governance sequence locators and may contain gaps.
+- Review binds proposal version, candidate Revision and policy version. Only the latest review by each reviewer for that tuple counts. A currently eligible request-changes review blocks publication. Publication rechecks active qualification and current maintain/admin permission for every counted reviewer under the Repository transaction locks.
+- Default policy is at least one approval with self-approval allowed. When disabled, neither the original creator nor the current proposal version's proposer may supply approval. Current Repository admin may change the approval count (1–10) and self-approval policy; immutable policy versions remain readable and old-policy reviews do not authorize a new publication.
+- Write/maintain/admin may create/revise/close proposals. Maintain/admin may review/publish. All commands require requestId and expected governance version; proposal commands additionally bind expected proposal version, and review/publish/policy commands bind expected policy version. Exact replay rechecks current operation authority and may return its receipt while archived; new mutations fail while archived.
+- First Baseline requires a reviewed proposal. Mandatory checks enforce a valid tree, at least one work package and each work package's nonempty deliverable/acceptance requirements. Incomplete drafts and proposals may be saved but cannot be published.
+- Publication atomically persists immutable Baseline (including counted review IDs and policy version), marks Proposal published, advances the formal pointer and writes the exact-replay receipt. A changed formal base requires an explicit proposal update and fresh review. Two competing publications cannot overwrite each other.
+- Baseline records approved scope, not completion or work-package acceptance. Immutable policy/review/Baseline/receipt relations grant no UPDATE/DELETE to the application role. Structural comparison reports changes by stable node identity, including parent/order/content.
+- Historical proposal reads resolve publication by the reviewed proposal version, retaining the publication-time policy and approval evidence even after policy changes; the old OPEN snapshot status does not erase its published Baseline association.
+
+Verification: owner domain/persistence tests, HTTP tests, browser checks and a CI-only disposable PostgreSQL 17 multi-session race test. Local runs without `WBS_TEST_DATABASE_URL` explicitly skip that race test; CI requires it and disables WBS test-result caching. The test only accepts a loopback server and never uses production credentials.
+
 ## Subsequent delivery contract
 
-1. Change Proposal binds base Revision; review binds the exact proposal version. Atomic acceptance and immutable Baseline follow. Self-approval is permitted subject to current policy and checks.
+1. Scope governance above is implemented; subsequent work-package acceptance remains separate.
 2. WBS references Issue execution and Discussion decisions by stable identity/version; reads recheck source access. Issue completion never automatically accepts a work package.
 3. Project adds a local WBS reference without extending the FPT ProjectItem union. Legacy Project-WBS cutover requires explicit mapping and recovery evidence.
 4. Evidence adds version-bound decisions, source references and protected attachments. Asset is a monetary value definition owner, not file storage.
 5. Watch retains its three-state intent; committed-event outbox, deduplicated fan-out and current source access are required before notification delivery is claimed.
 6. Structural comparison precedes branches/three-way conflict handling and same-Owner independent Forks. Fork never copies grants or private attachment access. Automation starts with fixed checks, without arbitrary code execution.
 
-These are delivery targets, not current runtime capabilities. No empty tables, writer surfaces or disabled UI shells are created for them.
+Items 2–6 are delivery targets, not current runtime capabilities. No empty tables, writer surfaces or disabled UI shells are created for them.
