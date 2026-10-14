@@ -19,6 +19,10 @@
     "./testing/postgres": {
       "types": "./dist/testing/postgres.d.ts",
       "default": "./dist/testing/postgres.js"
+    },
+    "./testing/postgres-sessions": {
+      "types": "./dist/testing/postgres-sessions.d.ts",
+      "default": "./dist/testing/postgres-sessions.js"
     }
   },
   "files": [

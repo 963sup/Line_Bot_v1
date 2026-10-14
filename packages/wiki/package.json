@@ -1,0 +1,45 @@
+{
+  "name": "@line_bot_v1/wiki",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application/use-cases/pages": {
+      "types": "./dist/application/use-cases/pages.d.ts",
+      "default": "./dist/application/use-cases/pages.js"
+    },
+    "./application/use-cases/history": {
+      "types": "./dist/application/use-cases/history.d.ts",
+      "default": "./dist/application/use-cases/history.js"
+    },
+    "./contracts/dto/wiki": {
+      "types": "./dist/contracts/dto/wiki.d.ts",
+      "default": "./dist/contracts/dto/wiki.js"
+    },
+    "./contracts/repositories/wiki-pages": {
+      "types": "./dist/contracts/repositories/wiki-pages.d.ts",
+      "default": "./dist/contracts/repositories/wiki-pages.js"
+    },
+    "./composition/bootstrap/wiki-pages": {
+      "types": "./dist/composition/bootstrap/wiki-pages.d.ts",
+      "default": "./dist/composition/bootstrap/wiki-pages.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsx": "catalog:"
+  }
+}

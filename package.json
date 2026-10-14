@@ -48,7 +48,8 @@
     "change:preflight": "node scripts/changes/preflight.mjs",
     "change:finalize": "node scripts/changes/finalize.mjs",
     "github:current-main": "node scripts/github/current-main.mjs",
-    "github:release-plan": "node scripts/github/release-plan.mjs"
+    "github:release-plan": "node scripts/github/release-plan.mjs",
+    "wiki:run": "node scripts/wiki/run.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -59,6 +60,10 @@
     "turbo": "catalog:",
     "typescript": "catalog:",
     "yaml": "catalog:",
-    "pg": "catalog:"
+    "pg": "catalog:",
+    "@line_bot_v1/wiki": "workspace:*",
+    "@line_bot_v1/account": "workspace:*",
+    "@line_bot_v1/line": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*"
   }
 }

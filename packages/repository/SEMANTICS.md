@@ -82,6 +82,7 @@ References support the existing status; listed tests are evidence locations, not
 | provides | issue | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
 | provides | notifications | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
 | provides | wbs | stable-identity+query | repository | transaction-recheck | Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned. |
+| provides | wiki | stable-identity+query | repository | transaction-recheck | Wiki consumes current Repository scope, qualification, archive state and explicit write authority without owning Repository facts. |
 
 ## Tactical Model Boundary
 
