@@ -639,6 +639,31 @@ test("multi-session test consumers declare their environment and cannot replay c
   task.cache = false;
   write("turbo.json", JSON.stringify(turbo));
   assert.deepEqual(validate(root), []);
+  write(
+    "packages/platform/package.json",
+    JSON.stringify({
+      name: "@line_bot_v1/platform",
+      private: true,
+      scripts: { "schema:check": "node --test" },
+    }),
+  );
+  write("packages/platform/AGENTS.md", "# Platform\n");
+  write("packages/platform/README.md", "# Platform\n");
+  write("packages/platform/src/testing/postgres-sessions.ts", "export {};\n");
+  write(
+    "packages/platform/test/concurrency.test.ts",
+    `${importing("../src/testing/postgres-sessions.js")}\nconst url = process.env.CAPABILITY_TEST_DATABASE_URL;\nconst ci = process.env.CI;\n`,
+  );
+  const platformTask = { cache: false, env: ["CAPABILITY_TEST_DATABASE_URL", "CI"] };
+  turbo.tasks["@line_bot_v1/platform#test"] = platformTask;
+  write("turbo.json", JSON.stringify(turbo));
+  assert.deepEqual(validate(root), []);
+  platformTask.env = ["CI"];
+  write("turbo.json", JSON.stringify(turbo));
+  rejects(root, "multi-session tests must declare CAPABILITY_TEST_DATABASE_URL");
+  platformTask.env = ["CAPABILITY_TEST_DATABASE_URL", "CI"];
+  write("turbo.json", JSON.stringify(turbo));
+  assert.deepEqual(validate(root), []);
 });
 
 test("Next and Sentry instrumentation entrypoints stay at the Web project root", (t) => {

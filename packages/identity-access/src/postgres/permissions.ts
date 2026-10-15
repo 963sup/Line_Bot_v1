@@ -209,7 +209,7 @@ export class PostgresPermissionStore implements PermissionStore {
 
   change(actor: string, c: PermissionCommand, now: number) {
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
 
       const qualifications = new Map<string, Awaited<ReturnType<typeof readUserQualification>>>();
       for (const userId of [...new Set([actor, c.target])].sort()) {

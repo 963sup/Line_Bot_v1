@@ -189,7 +189,7 @@ export class PostgresRepositoryCreationStore implements RepositoryCreationStore 
           })
         : null;
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('shared')");
       const owner = await currentOwner(sql, userId, command);
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `repository-command:${userId}:${command.requestId}`,

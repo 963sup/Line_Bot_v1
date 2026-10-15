@@ -168,7 +168,7 @@ set search_path to 'app_private', 'pg_catalog'
 as $function$
 begin
   if old.status='active' and new.status<>'active' then
-    perform pg_advisory_xact_lock(71020260912::bigint);
+    perform app_private.lock_governance('exclusive');
     if exists(
       select 1 from app_private.permission_administrators
       where user_id=old.id and user_version=old.status_version
@@ -206,7 +206,7 @@ language plpgsql
 set search_path to 'app_private', 'pg_catalog'
 as $function$
 begin
-  perform pg_advisory_xact_lock(71020260912::bigint);
+  perform app_private.lock_governance('exclusive');
   if tg_op='UPDATE' and new.user_id=old.user_id and new.user_version=old.user_version then
     return new;
   end if;

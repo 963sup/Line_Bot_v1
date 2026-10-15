@@ -18,7 +18,7 @@ as $function$
 declare
   current_user_status_version integer;
 begin
-  perform pg_advisory_xact_lock(71020260912::bigint);
+  perform app_private.lock_governance('exclusive');
   if p_requested_at is null or p_requested_at < 0
      or length(trim(coalesce(p_target_id, ''))) = 0 or p_target_id <> trim(p_target_id)
      or length(trim(coalesce(p_user_id, ''))) = 0 or p_user_id <> trim(p_user_id)
@@ -70,7 +70,7 @@ as $function$
 declare
   current_user_status_version integer;
 begin
-  perform pg_advisory_xact_lock(71020260912::bigint);
+  perform app_private.lock_governance('exclusive');
   if p_requested_at is null or p_requested_at < 0
      or length(trim(coalesce(p_target_id, ''))) = 0 or p_target_id <> trim(p_target_id)
      or length(trim(coalesce(p_user_id, ''))) = 0 or p_user_id <> trim(p_user_id)
@@ -339,7 +339,7 @@ begin
     raise exception 'provision_repository_input_invalid' using errcode = '22023';
   end if;
 
-  perform pg_catalog.pg_advisory_xact_lock_shared(71020260912::bigint);
+  perform app_private.lock_governance('shared');
 
   perform 1 from app_private.users
     where id=p_actor_user_id and status='active'
@@ -489,7 +489,7 @@ begin
     raise exception 'repository_access_input_invalid' using errcode = '22023';
   end if;
 
-  perform pg_catalog.pg_advisory_xact_lock(71020260912::bigint);
+  perform app_private.lock_governance('exclusive');
 
   perform 1
   from app_private.users
