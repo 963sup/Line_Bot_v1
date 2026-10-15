@@ -166,6 +166,64 @@ export function requireNoDerivedEnterpriseAffiliation(hasOtherSource: boolean) {
     );
 }
 
+export type EnterpriseOrganizationScopeState = Readonly<{
+  status: "active" | "inactive";
+  version: number;
+}>;
+export type EnterpriseOrganizationRelationState = Readonly<{
+  status: "active" | "detached";
+  version: number;
+}>;
+
+export function requireEnterpriseOrganizationScopes(
+  enterprise: EnterpriseOrganizationScopeState,
+  organization: EnterpriseOrganizationScopeState,
+  expectedEnterpriseVersion: number,
+  expectedOrganizationVersion: number,
+  operation: "attach" | "detach",
+) {
+  if (
+    enterprise.version !== expectedEnterpriseVersion ||
+    organization.version !== expectedOrganizationVersion
+  )
+    throw new EnterpriseError("conflict", "Enterprise 或 Organization 版本已更新。");
+  if (
+    operation === "attach" &&
+    (enterprise.status !== "active" || organization.status !== "active")
+  )
+    throw new EnterpriseError("inactive", "停用的範圍不能建立治理關係。");
+}
+
+export function attachEnterpriseOrganization(
+  current: EnterpriseOrganizationRelationState | null,
+  expectedVersion: number,
+): EnterpriseOrganizationRelationState {
+  if (!current) {
+    if (expectedVersion !== 0) throw new EnterpriseError("conflict", "治理關係版本不符。");
+    return { status: "active", version: 1 };
+  }
+  if (current.version !== expectedVersion || current.status !== "detached")
+    throw new EnterpriseError("conflict", "治理關係狀態或版本不符。");
+  return { status: "active", version: current.version + 1 };
+}
+
+export function detachEnterpriseOrganization(
+  current: EnterpriseOrganizationRelationState | null,
+  expectedVersion: number,
+): EnterpriseOrganizationRelationState {
+  if (!current || current.status !== "active" || current.version !== expectedVersion)
+    throw new EnterpriseError("conflict", "找不到指定版本的有效治理關係。");
+  return { status: "detached", version: current.version + 1 };
+}
+
+export function requireNoEnterpriseTeamAssignments(assigned: boolean) {
+  if (assigned)
+    throw new EnterpriseError(
+      "invalid-transition",
+      "請先解除所有 Enterprise Team 對此 Organization 的 assignment。",
+    );
+}
+
 export function normalizeEnterpriseSlug(value: string) {
   const slug = value.trim().toLowerCase();
   if (slug.length < 1 || slug.length > 39 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug)) {
