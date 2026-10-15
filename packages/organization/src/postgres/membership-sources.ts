@@ -1,6 +1,7 @@
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { literalValue, numberValue } from "@line_bot_v1/platform/validation";
+import { OrganizationError, requireOrganizationOwnerAfterSourceRemoval } from "../domain.js";
 import {
   hasOrganizationOwnerAssignment,
   hasReplacementOrganizationOwner,
@@ -20,7 +21,9 @@ export async function assertOrganizationMembershipSourceRemovable(
   userId: string,
   sourceKind: "direct" | "enterprise-team",
   sourceId: string,
+  affectedUserIds: readonly string[] | undefined = undefined,
 ) {
+  // A batch supplies its complete population; single-user removals leave the other users intact.
   const hasOtherSource = Boolean(
     (
       await sql.query(
@@ -32,16 +35,21 @@ export async function assertOrganizationMembershipSourceRemovable(
       )
     ).rows[0],
   );
-  if (hasOtherSource) return;
-  if (
-    (await hasOrganizationOwnerAssignment(sql, organizationAccountId, userId)) &&
-    !(await hasReplacementOrganizationOwner(sql, organizationAccountId, userId))
-  ) {
-    throw new GovernanceAccessError(
-      409,
-      "last-effective-role-holder",
-      "不能移除最後一位有效 OrganizationOwner 的最後 membership source。",
-    );
+  const targetEffective =
+    !hasOtherSource && (await hasOrganizationOwnerAssignment(sql, organizationAccountId, userId));
+  const anotherEffective =
+    targetEffective &&
+    (await hasReplacementOrganizationOwner(
+      sql,
+      organizationAccountId,
+      userId,
+      affectedUserIds ? { affectedUserIds, sourceKind, sourceId } : undefined,
+    ));
+  try {
+    requireOrganizationOwnerAfterSourceRemoval(hasOtherSource, targetEffective, anotherEffective);
+  } catch (error) {
+    if (!(error instanceof OrganizationError)) throw error;
+    throw new GovernanceAccessError(409, error.code, error.message);
   }
 }
 

@@ -67,6 +67,11 @@ export async function hasReplacementOrganizationOwner(
   sql: Sql,
   organizationAccountId: string,
   excludedUserId: string,
+  removal?: {
+    affectedUserIds: readonly string[];
+    sourceKind: "direct" | "enterprise-team";
+    sourceId: string;
+  },
 ) {
   return Boolean(
     (
@@ -81,8 +86,19 @@ export async function hasReplacementOrganizationOwner(
            AND m.status='active' AND u.status='active'
            AND r.user_status_version=u.status_version
            AND r.membership_version=m.version
+           AND ($3::text[] IS NULL OR NOT (r.user_id=ANY($3::text[])) OR EXISTS (
+             SELECT 1 FROM organization_membership_sources s
+             WHERE s.organization_account_id=r.organization_account_id AND s.user_id=r.user_id
+               AND NOT (s.source_kind=$4 AND s.source_id=$5)
+           ))
          LIMIT 1`,
-        [organizationAccountId, excludedUserId],
+        [
+          organizationAccountId,
+          excludedUserId,
+          removal?.affectedUserIds ?? null,
+          removal?.sourceKind ?? null,
+          removal?.sourceId ?? null,
+        ],
       )
     ).rows[0],
   );
