@@ -8,14 +8,17 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import type { PermissionStore } from "../application/permissions/ports.js";
-import type { PermissionGrant, PermissionView } from "../contracts/permissions.js";
+import type {
+  PermissionChangeTransaction,
+  PermissionPersistence,
+} from "../../../contracts/output/permission-transactions.js";
+import type { PermissionGrant, PermissionView } from "../../../contracts/permissions.js";
 import {
   type Permission,
   type PermissionCommand,
   PermissionError,
   permissions,
-} from "../domain/permission.js";
+} from "../../../domain/permission.js";
 
 function versionRow(row: Record<string, unknown>) {
   return { version: numberValue(row.version) };
@@ -138,7 +141,7 @@ async function grants(sql: Sql, id: string): Promise<PermissionGrant[]> {
     await sql.query(
       `SELECT permission,user_version
        FROM permission_grants
-       WHERE user_id=$1 AND permission=ANY($2::text[])
+       WHERE user_id=$1 AND permission::text=ANY($2::text[])
       ORDER BY permission`,
       [id, Object.keys(permissions)],
       grantRow,
@@ -152,7 +155,7 @@ async function grants(sql: Sql, id: string): Promise<PermissionGrant[]> {
   }));
 }
 
-export class PostgresPermissionStore implements PermissionStore {
+export class PostgresPermissionPersistence implements PermissionPersistence {
   constructor(private db: Database = businessDatabase()) {}
 
   read(actor: string, target: string): Promise<PermissionView> {
@@ -207,101 +210,92 @@ export class PostgresPermissionStore implements PermissionStore {
     });
   }
 
-  change(actor: string, c: PermissionCommand, now: number) {
+  transact<T>(
+    actor: string,
+    c: PermissionCommand,
+    work: (transaction: PermissionChangeTransaction) => Promise<T>,
+  ): Promise<T> {
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT app_private.lock_governance('exclusive')");
-
       const qualifications = new Map<string, Awaited<ReturnType<typeof readUserQualification>>>();
       for (const userId of [...new Set([actor, c.target])].sort()) {
         qualifications.set(userId, await readUserQualification(sql, userId, "update"));
       }
-
-      if (!(await manager(sql, actor))) throw new PermissionError(403, "沒有權限管理資格。");
-      if (actor === c.target) {
-        throw new PermissionError(403, "不能修改自己的業務權限，請由另一位權限管理員處理。");
-      }
-      const previous = (
-        await sql.query(
-          "SELECT command=$3::jsonb AS matches,result FROM permission_commands WHERE actor=$1 AND request_id=$2",
-          [actor, c.requestId, JSON.stringify(c)],
-          previousCommandRow,
-        )
-      ).rows[0];
-      if (previous) {
-        if (!previous.matches) throw new PermissionError(409, "操作編號已用於不同內容。");
-        return previous.result;
-      }
-
+      const canManage = await manager(sql, actor);
       const target = qualifications.get(c.target);
-      if (!target) throw new UserError(404, "使用者不存在。");
-      const currentVersion = await permissionVersion(sql, c.target, true);
-      if (currentVersion !== c.expectedVersion) {
-        throw new PermissionError(409, "權限已更新，請重新讀取後確認。");
-      }
-      if (c.enabled && target.status !== "active") {
-        throw new PermissionError(409, "只能授權有效使用者。");
-      }
-
-      if (
-        c.enabled &&
-        c.permission === "users.suspend" &&
-        !(await hasPermission(sql, c.target, "users.read"))
-      ) {
-        throw new PermissionError(409, "請先授予使用者查詢權限。");
-      }
-      if (
-        !c.enabled &&
-        c.permission === "users.read" &&
-        (
+      return work({
+        canManage,
+        target: target ? { active: target.status === "active" } : null,
+        replay: async () =>
+          (
+            await sql.query(
+              "SELECT command=$3::jsonb AS matches,result FROM permission_commands WHERE actor=$1 AND request_id=$2",
+              [actor, c.requestId, JSON.stringify(c)],
+              previousCommandRow,
+            )
+          ).rows[0] ?? null,
+        version: () => permissionVersion(sql, c.target, true),
+        dependencies: async () => {
+          const row = (
+            await sql.query(
+              `SELECT $3::boolean AND EXISTS(
+               SELECT 1 FROM permission_grants WHERE user_id=$1 AND user_version=$2 AND permission='users.read'
+             ) AS can_read_users,
+             EXISTS(SELECT 1 FROM permission_grants WHERE user_id=$1 AND permission='users.suspend') AS has_suspend_grant`,
+              [c.target, target?.statusVersion ?? 0, target?.status === "active"],
+              (row) => ({
+                canReadUsers: booleanValue(row.can_read_users),
+                hasSuspendGrant: booleanValue(row.has_suspend_grant),
+              }),
+            )
+          ).rows[0];
+          if (!row) throw new Error("Permission dependency projection is missing");
+          return row;
+        },
+        save: async (currentVersion, now) => {
+          if (!target) throw new Error("Permission target is missing");
+          const before = (
+            await sql.query(
+              "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
+              [c.target],
+            )
+          ).rows;
+          await sql.query("DELETE FROM permission_grants WHERE user_id=$1 AND permission=$2", [
+            c.target,
+            c.permission,
+          ]);
+          if (c.enabled) {
+            await sql.query(
+              `INSERT INTO permission_grants(user_id,permission,user_version,granted_by,granted_at)
+               VALUES($1,$2,$3,$4,$5)`,
+              [c.target, c.permission, target.statusVersion, actor, now],
+            );
+          }
+          const version = await advancePermissionVersion(sql, c.target, currentVersion);
+          const result = { requestId: c.requestId, version };
           await sql.query(
-            "SELECT 1 FROM permission_grants WHERE user_id=$1 AND permission='users.suspend'",
-            [c.target],
-          )
-        ).rows.length
-      ) {
-        throw new PermissionError(409, "請先撤銷使用者停權權限。");
-      }
-
-      const before = (
-        await sql.query(
-          "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
-          [c.target],
-        )
-      ).rows;
-      await sql.query("DELETE FROM permission_grants WHERE user_id=$1 AND permission=$2", [
-        c.target,
-        c.permission,
-      ]);
-      if (c.enabled) {
-        await sql.query(
-          `INSERT INTO permission_grants(user_id,permission,user_version,granted_by,granted_at)
-           VALUES($1,$2,$3,$4,$5)`,
-          [c.target, c.permission, target.statusVersion, actor, now],
-        );
-      }
-      const version = await advancePermissionVersion(sql, c.target, currentVersion);
-      const result = { requestId: c.requestId, version };
-      await sql.query(
-        "INSERT INTO permission_commands(actor,request_id,target,command,before_grants,after_grants,result,at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
-        [
-          actor,
-          c.requestId,
-          c.target,
-          JSON.stringify(c),
-          JSON.stringify(before),
-          JSON.stringify(
-            (
-              await sql.query(
-                "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
-                [c.target],
-              )
-            ).rows,
-          ),
-          JSON.stringify(result),
-          now,
-        ],
-      );
-      return result;
+            "INSERT INTO permission_commands(actor,request_id,target,command,before_grants,after_grants,result,at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
+            [
+              actor,
+              c.requestId,
+              c.target,
+              JSON.stringify(c),
+              JSON.stringify(before),
+              JSON.stringify(
+                (
+                  await sql.query(
+                    "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
+                    [c.target],
+                  )
+                ).rows,
+              ),
+              JSON.stringify(result),
+              now,
+            ],
+          );
+          return result;
+        },
+      });
     });
   }
 }

@@ -24,6 +24,36 @@ export type PermissionCommand = {
   reason: string;
 };
 
+export function assertPermissionChangeActor(
+  actor: string,
+  command: PermissionCommand,
+  canManage: boolean,
+) {
+  if (!canManage) throw new PermissionError(403, "沒有權限管理資格。");
+  if (actor === command.target)
+    throw new PermissionError(403, "不能修改自己的業務權限，請由另一位權限管理員處理。");
+}
+
+export function assertPermissionChangeState(
+  command: PermissionCommand,
+  version: number,
+  targetActive: boolean,
+) {
+  if (version !== command.expectedVersion)
+    throw new PermissionError(409, "權限已更新，請重新讀取後確認。");
+  if (command.enabled && !targetActive) throw new PermissionError(409, "只能授權有效使用者。");
+}
+
+export function assertPermissionDependencies(
+  command: PermissionCommand,
+  facts: { canReadUsers: boolean; hasSuspendGrant: boolean },
+) {
+  if (command.enabled && command.permission === "users.suspend" && !facts.canReadUsers)
+    throw new PermissionError(409, "請先授予使用者查詢權限。");
+  if (!command.enabled && command.permission === "users.read" && facts.hasSuspendGrant)
+    throw new PermissionError(409, "請先撤銷使用者停權權限。");
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }

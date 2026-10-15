@@ -17,3 +17,5 @@ It does not own User identity proof/lifecycle, OrganizationMembership, Employmen
 - RLS/grants are defense in depth, not the policy owner.
 
 Runtime package: `packages/identity-access`.
+
+Feature permission changes use a Contracts-owned input capability and transaction output Port. Application checks current administration before exact replay, then coordinates target/version/dependency decisions owned by Domain. PostgreSQL retains the governance lock, sorted User locks, current qualification facts and atomic grant/version/receipt persistence. The public `PostgresPermissionStore` composition entry assembles these responsibilities and preserves its constructor and prototype methods for existing host consumers.
