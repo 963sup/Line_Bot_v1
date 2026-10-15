@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   classifyChangedFiles,
   describeFastPlan,
@@ -17,6 +18,47 @@ import {
 function git(directory, args) {
   execFileSync("git", args, { cwd: directory, stdio: "ignore" });
 }
+
+test("CI bounds the actual typecheck/test invocation without changing its coverage or local execution", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-validation-command-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const preload = join(directory, "capture.mjs");
+  writeFileSync(
+    preload,
+    `
+    import childProcess from 'node:child_process';
+    import { syncBuiltinESMExports } from 'node:module';
+    childProcess.spawnSync = (_file, args) => {
+      console.log(JSON.stringify(args));
+      return { status: 0 };
+    };
+    syncBuiltinESMExports();
+  `,
+  );
+  for (const ci of ["true", "false", ""]) {
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--import",
+        pathToFileURL(preload).href,
+        fileURLToPath(new URL("./validate.mjs", import.meta.url)),
+        "--group",
+        "typecheck-test",
+      ],
+      {
+        encoding: "utf8",
+        env: { ...process.env, CI: ci, npm_execpath: "fixture-pnpm.js" },
+      },
+    );
+    const calls = output
+      .split("\n")
+      .filter((line) => line.startsWith("["))
+      .map((line) => JSON.parse(line));
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].slice(1, 4), ["run", "typecheck", "test"]);
+    assert.deepEqual(calls[0].slice(4), ci === "true" ? ["--concurrency=2"] : []);
+  }
+});
 
 test("fast plan explains skips and conservative workspace selection without changing execution", () => {
   const stages = [
