@@ -29,11 +29,10 @@ import type {
   EnterpriseList,
   EnterpriseReceipt,
 } from "../contracts/enterprise-governance.js";
-import type { EnterpriseGovernancePort } from "../contracts/input/enterprise-governance.js";
+import type { EnterpriseOwnerCommand } from "../contracts/output/enterprise-owner.js";
 import {
   hasEnterpriseOwnerAssignment,
   hasReplacementEnterpriseOwner,
-  mutateEnterpriseOwnerAssignment,
   revokeEnterpriseOwnerForAffiliationRemoval,
 } from "./postgres-owner-roles.js";
 import { detailEnterprise, detailEnterpriseBySlug, listEnterprises } from "./postgres-queries.js";
@@ -93,7 +92,7 @@ async function hasEffectiveAffiliation(sql: Sql, enterpriseId: string, userId: s
   );
 }
 
-export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
+export class PostgresEnterpriseGovernance {
   constructor(private readonly db: Database = businessDatabase()) {}
 
   list(actor: VerifiedLineActor, query: GovernanceQuery): Promise<EnterpriseList> {
@@ -110,7 +109,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
 
   execute(
     actor: VerifiedLineActor,
-    command: EnterpriseCommand,
+    command: Exclude<EnterpriseCommand, EnterpriseOwnerCommand>,
     now: number,
   ): Promise<EnterpriseReceipt> {
     return this.db.transaction(async (sql) => {
@@ -306,23 +305,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
       if (replay) return replay;
 
       let result: EnterpriseReceipt;
-      if (
-        command.action === "grant-enterprise-owner" ||
-        command.action === "revoke-enterprise-owner"
-      ) {
-        if (enterprise.status !== "active") {
-          throw new GovernanceAccessError(
-            409,
-            "inactive",
-            "停用的 Enterprise 不能變更 owner role。",
-          );
-        }
-        const changed = await mutateEnterpriseOwnerAssignment(sql, command, now);
-        result = makeEnterpriseReceipt(command, changed.status, changed.version, now);
-      } else if (
-        command.action === "attach-organization" ||
-        command.action === "detach-organization"
-      ) {
+      if (command.action === "attach-organization" || command.action === "detach-organization") {
         if (!organization) {
           throw new GovernanceAccessError(404, "not-found", "找不到 Organization。");
         }

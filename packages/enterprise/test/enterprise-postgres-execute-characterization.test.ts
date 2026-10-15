@@ -239,7 +239,7 @@ test("Enterprise owns EnterpriseOwner grant mutation and durable evidence", asyn
   const queries: QueryRecord[] = [];
   const command: EnterpriseCommand = {
     action: "grant-enterprise-owner",
-    requestId: "request-owner-grant-1",
+    requestId: "33333333-3333-4333-8333-000000000001",
     enterpriseAccountId: "enterprise-1",
     targetUserId: "user-2",
     expectedVersion: 0,
@@ -286,9 +286,9 @@ test("Enterprise owns EnterpriseOwner grant mutation and durable evidence", asyn
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
     throw new Error(`unexpected owner mutation query: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
-  assert.deepEqual(await governance.execute(actor, command, 100), {
+  assert.deepEqual(await governance.execute(actor, command), {
     requestId: command.requestId,
     action: command.action,
     scopeId: command.enterpriseAccountId,
@@ -315,7 +315,7 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
   const queries: QueryRecord[] = [];
   const command: EnterpriseCommand = {
     action: "revoke-enterprise-owner",
-    requestId: "request-owner-revoke-1",
+    requestId: "33333333-3333-4333-8333-000000000002",
     enterpriseAccountId: "enterprise-1",
     targetUserId: "user-1",
     expectedVersion: 1,
@@ -358,10 +358,10 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
     }
     throw new Error(`unexpected last-owner query: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
   await assert.rejects(
-    () => governance.execute(actor, command, 100),
+    () => governance.execute(actor, command),
     (error: unknown) =>
       error instanceof GovernanceAccessError && error.code === "last-effective-role-holder",
   );
