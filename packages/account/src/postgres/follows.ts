@@ -1,11 +1,8 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { FollowItem, FollowStore } from "../contracts/output/follows.js";
-import { UserError } from "../domain/user.js";
-
-function statusRow(row: Record<string, unknown>) {
-  return { status: stringValue(row.status) };
-}
+import { requireActiveUser, requireFollowableUser } from "../domain/user.js";
+import { readUserQualification } from "./qualification.js";
 
 function followRow(row: Record<string, unknown>) {
   return { user_id: stringValue(row.user_id), created_at: numericValue(row.created_at) };
@@ -16,12 +13,13 @@ export class PostgresFollowStore implements FollowStore {
 
   follow(followerUserId: string, followedUserId: string, at: number): Promise<void> {
     return this.db.transaction(async (sql) => {
-      const target = (
-        await sql.query("SELECT status FROM users WHERE id=$1", [followedUserId], statusRow)
-      ).rows[0];
-      if (!target || target.status !== "active") {
-        throw new UserError(404, "找不到可追蹤的使用者。");
+      await sql.query("SELECT app_private.lock_governance('shared')");
+      const users = new Map<string, Awaited<ReturnType<typeof readUserQualification>>>();
+      for (const id of [...new Set([followerUserId, followedUserId])].sort()) {
+        users.set(id, await readUserQualification(sql, id, "share"));
       }
+      requireActiveUser(users.get(followerUserId) ?? null);
+      requireFollowableUser(users.get(followedUserId) ?? null);
       await sql.query(
         "INSERT INTO user_follows(follower_user_id,followed_user_id,created_at) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",
         [followerUserId, followedUserId, at],
@@ -31,6 +29,8 @@ export class PostgresFollowStore implements FollowStore {
 
   unfollow(followerUserId: string, followedUserId: string): Promise<void> {
     return this.db.transaction(async (sql) => {
+      await sql.query("SELECT app_private.lock_governance('shared')");
+      requireActiveUser(await readUserQualification(sql, followerUserId, "share"));
       await sql.query(
         "DELETE FROM user_follows WHERE follower_user_id=$1 AND followed_user_id=$2",
         [followerUserId, followedUserId],

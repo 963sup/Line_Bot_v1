@@ -1,5 +1,5 @@
 import type { FollowStore } from "../contracts/output/follows.js";
-import { UserError } from "../domain/user.js";
+import { assertUserFollowTarget, UserError } from "../domain/user.js";
 
 function targetUserId(value: string): string {
   const id = value.trim();
@@ -20,18 +20,14 @@ export function createFollows(deps: {
     follow: async (subject: string, target: string) => {
       const followerUserId = await actor(subject);
       const followedUserId = targetUserId(target);
-      if (followerUserId === followedUserId) {
-        throw new UserError(400, "不能追蹤自己。");
-      }
+      assertUserFollowTarget(followerUserId, followedUserId, "follow");
       await deps.store().follow(followerUserId, followedUserId, deps.now());
     },
 
     unfollow: async (subject: string, target: string) => {
       const followerUserId = await actor(subject);
       const followedUserId = targetUserId(target);
-      if (followerUserId === followedUserId) {
-        throw new UserError(400, "不能取消追蹤自己。");
-      }
+      assertUserFollowTarget(followerUserId, followedUserId, "unfollow");
       await deps.store().unfollow(followerUserId, followedUserId);
     },
 

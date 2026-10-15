@@ -6,6 +6,19 @@
 export type UserStatus = "paused" | "active" | "suspended";
 export type User = { id: string; status: UserStatus; createdAt: number };
 
+export function assertUserFollowTarget(
+  actor: string,
+  target: string,
+  action: "follow" | "unfollow",
+) {
+  if (actor === target)
+    throw new UserError(400, action === "follow" ? "不能追蹤自己。" : "不能取消追蹤自己。");
+}
+
+export function requireFollowableUser(user: User | null) {
+  if (!user || user.status !== "active") throw new UserError(404, "找不到可追蹤的使用者。");
+}
+
 export function registerUser(id: string, at: number) {
   return { user: { id, status: "active" as const, createdAt: at }, event: "registered" };
 }
