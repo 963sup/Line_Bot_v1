@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type {
   GovernanceQuery,
   VerifiedLineActor,
@@ -29,6 +28,7 @@ import type {
   EnterpriseReceipt,
 } from "../contracts/enterprise-governance.js";
 import type { EnterpriseAffiliationCommand } from "../contracts/output/enterprise-affiliation.js";
+import type { EnterpriseIdentityCommand } from "../contracts/output/enterprise-identity.js";
 import type { EnterpriseOwnerCommand } from "../contracts/output/enterprise-owner.js";
 import { detailEnterprise, detailEnterpriseBySlug, listEnterprises } from "./postgres-queries.js";
 import { makeEnterpriseReceipt } from "./postgres-receipt.js";
@@ -49,10 +49,6 @@ function enterpriseRow(row: Record<string, unknown>) {
 
 function versionRow(row: Record<string, unknown>) {
   return { version: numberValue(row.version) };
-}
-
-function provisionedScopeRow(row: Record<string, unknown>) {
-  return { scope_version: numberValue(row.scope_version) };
 }
 
 function statusVersionRow(row: Record<string, unknown>) {
@@ -92,7 +88,10 @@ export class PostgresEnterpriseGovernance {
 
   execute(
     actor: VerifiedLineActor,
-    command: Exclude<EnterpriseCommand, EnterpriseOwnerCommand | EnterpriseAffiliationCommand>,
+    command: Exclude<
+      EnterpriseCommand,
+      EnterpriseOwnerCommand | EnterpriseAffiliationCommand | EnterpriseIdentityCommand
+    >,
     now: number,
   ): Promise<EnterpriseReceipt> {
     return this.db.transaction(async (sql) => {
@@ -103,131 +102,7 @@ export class PostgresEnterpriseGovernance {
       ]);
       const fingerprint = governanceFingerprint(command);
 
-      if (command.action === "create-enterprise") {
-        const replay = await readGovernanceReplay(
-          sql,
-          principal.userId,
-          command.requestId,
-          fingerprint,
-        );
-        if (replay) return replay;
-        const enterpriseAccountId = randomUUID();
-        let provisioned: Record<string, unknown> | undefined;
-        try {
-          provisioned = (
-            await sql.query(
-              "SELECT scope_version FROM app_private.provision_enterprise_scope($1,$2,$3,$4,$5)",
-              [enterpriseAccountId, principal.userId, command.slug, command.name, now],
-              provisionedScopeRow,
-            )
-          ).rows[0];
-        } catch (error) {
-          if (hasPostgresCode(error, "23505")) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise slug 已被使用。");
-          }
-          throw error;
-        }
-        if (!provisioned)
-          throw new GovernanceAccessError(503, "unknown-result", "Enterprise 建立結果不完整。");
-        const result: EnterpriseReceipt = {
-          requestId: command.requestId,
-          action: command.action,
-          scopeId: enterpriseAccountId,
-          subjectKind: null,
-          subjectId: null,
-          status: "active",
-          version: Number(provisioned.scope_version),
-          at: now,
-        };
-        await recordGovernanceResult(sql, {
-          actorUserId: principal.userId,
-          actorStatusVersion: principal.userStatusVersion,
-          requestId: command.requestId,
-          fingerprint,
-          action: command.action,
-          scopeKind: "enterprise",
-          scopeId: enterpriseAccountId,
-          subjectKind: null,
-          subjectId: null,
-          reason: command.reason,
-          at: now,
-          result,
-        });
-        return result;
-      }
-
       const enterprise = await lockEnterprise(sql, command.enterpriseAccountId);
-
-      if (command.action === "complete-enterprise-identity") {
-        await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
-        const replay = await readGovernanceReplay(
-          sql,
-          principal.userId,
-          command.requestId,
-          fingerprint,
-        );
-        if (replay) return replay;
-        if (enterprise.version !== command.expectedVersion) {
-          throw new GovernanceAccessError(409, "conflict", "Enterprise 版本已更新。");
-        }
-        if (enterprise.name !== null || enterprise.slug !== null) {
-          throw new GovernanceAccessError(
-            409,
-            "invalid-transition",
-            "Enterprise identity 已完成，不能再次以 recovery command 修改。",
-          );
-        }
-        let changed: Record<string, unknown> | undefined;
-        try {
-          changed = (
-            await sql.query(
-              `UPDATE enterprises
-               SET name=$2,slug=$3,version=version+1
-               WHERE account_id=$1 AND name IS NULL AND slug IS NULL
-              RETURNING version`,
-              [command.enterpriseAccountId, command.name, command.slug],
-              versionRow,
-            )
-          ).rows[0];
-        } catch (error) {
-          if (hasPostgresCode(error, "23505")) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise slug 已被使用。");
-          }
-          throw error;
-        }
-        if (!changed) {
-          throw new GovernanceAccessError(
-            409,
-            "conflict",
-            "Enterprise identity 已被其他操作完成，請重新載入。",
-          );
-        }
-        const result: EnterpriseReceipt = {
-          requestId: command.requestId,
-          action: command.action,
-          scopeId: command.enterpriseAccountId,
-          subjectKind: null,
-          subjectId: null,
-          status: enterprise.status,
-          version: Number(changed.version),
-          at: now,
-        };
-        await recordGovernanceResult(sql, {
-          actorUserId: principal.userId,
-          actorStatusVersion: principal.userStatusVersion,
-          requestId: command.requestId,
-          fingerprint,
-          action: command.action,
-          scopeKind: "enterprise",
-          scopeId: command.enterpriseAccountId,
-          subjectKind: null,
-          subjectId: null,
-          reason: command.reason,
-          at: now,
-          result,
-        });
-        return result;
-      }
 
       let organization: { id: string; status: "active" | "inactive"; version: number } | null =
         null;

@@ -4,7 +4,7 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseLifecycleTransactions } from "../contracts/output/enterprise-lifecycle.js";
-import { normalizeEnterpriseSlug } from "../domain.js";
+import { normalizeEnterpriseName, normalizeEnterpriseSlug } from "../domain.js";
 import type { EnterpriseLifecycleCommand } from "./commands/enterprise-lifecycle.js";
 import { executeEnterpriseLifecycle } from "./use-cases/enterprise-lifecycle.js";
 
@@ -80,6 +80,14 @@ function parseTeamName(value: unknown) {
   return value;
 }
 
+function parseEnterpriseName(value: string) {
+  try {
+    return normalizeEnterpriseName(value);
+  } catch {
+    throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 或 name 不正確。");
+  }
+}
+
 function parseEnterpriseCommand(raw: unknown): EnterpriseCommand | EnterpriseLifecycleCommand {
   const base = governanceInput(raw, [
     "action",
@@ -99,20 +107,16 @@ function parseEnterpriseCommand(raw: unknown): EnterpriseCommand | EnterpriseLif
   const evidence = parseMutationEvidence(base);
   if (base.action === "create-enterprise") {
     requireExactGovernanceKeys(base, ["action", "requestId", "slug", "name", "reason"]);
-    if (
-      typeof base.slug !== "string" ||
-      typeof base.name !== "string" ||
-      !base.name.trim() ||
-      base.name.trim().length > 120
-    ) {
+    if (typeof base.slug !== "string" || typeof base.name !== "string") {
       throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 或 name 不正確。");
     }
+    const name = parseEnterpriseName(base.name);
     try {
       return {
         ...evidence,
         action: base.action,
         slug: normalizeEnterpriseSlug(base.slug),
-        name: base.name.trim(),
+        name,
       };
     } catch {
       throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 不正確。");
@@ -129,21 +133,17 @@ function parseEnterpriseCommand(raw: unknown): EnterpriseCommand | EnterpriseLif
       "expectedVersion",
       "reason",
     ]);
-    if (
-      typeof base.slug !== "string" ||
-      typeof base.name !== "string" ||
-      !base.name.trim() ||
-      base.name.trim().length > 120
-    ) {
+    if (typeof base.slug !== "string" || typeof base.name !== "string") {
       throw new GovernanceAccessError(400, "invalid-input", "Enterprise slug 或 name 不正確。");
     }
+    const name = parseEnterpriseName(base.name);
     try {
       return {
         ...evidence,
         action: base.action,
         enterpriseAccountId,
         slug: normalizeEnterpriseSlug(base.slug),
-        name: base.name.trim(),
+        name,
         expectedVersion: parseVersion(base.expectedVersion, "Enterprise"),
       };
     } catch {
