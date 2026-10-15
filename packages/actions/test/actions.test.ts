@@ -7,7 +7,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createPostgresWbsBaselineEvents } from "@line_bot_v1/wbs/composition/bootstrap/baseline-events";
 import { createActions } from "../src/application/use-cases/automation.js";
 import { createActionsWorker } from "../src/application/use-cases/worker.js";
-import { createPostgresActionStore } from "../src/composition/bootstrap/automation.js";
+import { createPostgresActionDependencies } from "../src/composition/bootstrap/automation.js";
 import { ActionsError, ruleDefinition } from "../src/domain/automation.js";
 import { seedCapability } from "./fixture.js";
 
@@ -47,9 +47,9 @@ test("event replay freezes all rule versions, commands replay exactly and worker
       return { findings: [] };
     },
   };
-  const store = createPostgresActionStore(db),
-    actions = createActions({ store, steps, now: () => now }),
-    worker = createActionsWorker({ store, steps, now: () => now });
+  const store = createPostgresActionDependencies(db),
+    actions = createActions({ ...store, steps, now: () => now }),
+    worker = createActionsWorker({ ...store, steps, now: () => now });
   const definition = {
     action: "define",
     id: randomUUID(),
@@ -62,6 +62,33 @@ test("event replay freezes all rule versions, commands replay exactly and worker
   };
   const saved = await actions.execute("owner", definition);
   assert.deepEqual(await actions.execute("owner", definition), saved);
+  await assert.rejects(
+    store.transactions.transact("owner", "repo", async (tx) => {
+      const current = await tx.rules.load(definition.id);
+      assert.ok(current);
+      await tx.rules.save({ ...current, version: 3 }, 2);
+    }),
+    (error) => error instanceof ActionsError && error.status === 409,
+  );
+  // Receipt insertion failure rolls back the rule head and immutable definition version.
+  await assert.rejects(
+    store.transactions.transact("owner", "repo", async (tx) => {
+      const current = await tx.rules.load(definition.id);
+      assert.ok(current);
+      const next = { ...current, version: 2, enabled: false };
+      await tx.rules.save(next, 1);
+      await tx.receipt(definition.requestId, JSON.stringify(definition), { rule: next }, now);
+    }),
+  );
+  assert.deepEqual(await actions.rules("owner", "repo"), "rule" in saved ? [saved.rule] : []);
+  assert.equal(
+    (
+      await pg.query("SELECT * FROM app_private.action_rule_versions WHERE rule_id=$1", [
+        definition.id,
+      ])
+    ).rows.length,
+    1,
+  );
   await assert.rejects(actions.execute("owner", { ...definition, enabled: false }), ActionsError);
   await assert.rejects(
     actions.execute("viewer", { ...definition, id: randomUUID(), requestId: randomUUID() }),

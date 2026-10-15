@@ -1,14 +1,18 @@
-import type { ActionLease } from "../../contracts/dto/automation.js";
 import type { FixedSteps } from "../../contracts/output/fixed-steps.js";
-import type { ActionStore } from "../../contracts/repositories/automation.js";
-import { type ActionRun, executionAllowed } from "../../domain/automation.js";
+import type { ActionLease, ActionRunQueue } from "../../contracts/output/worker.js";
+import {
+  type ActionStepOutcome,
+  executionAllowed,
+  finishActionStep,
+  startBaselineActionRun,
+} from "../../domain/automation.js";
 export function createActionsWorker(deps: {
-  store: ActionStore;
+  queue: ActionRunQueue;
   steps: FixedSteps;
   now: () => number;
 }) {
   const live = async (lease: ActionLease) => {
-    const state = await deps.store.inspect(lease, deps.now());
+    const state = await deps.queue.inspect(lease, deps.now());
     return Boolean(state && executionAllowed(state.run, state.rule, state.scope));
   };
   return {
@@ -25,50 +29,38 @@ export function createActionsWorker(deps: {
         const event = await deps.steps.events.claim(deps.now());
         if (!event) break;
         eventClaims++;
-        await deps.store.accept(event, async (rules, insert, id) => {
+        await deps.queue.accept(event, async (rules, insert, id) => {
           for (const rule of rules) {
-            if (
-              !rule.enabled ||
-              rule.kind !== "notify-wbs-baseline" ||
-              event.cursor <= rule.enabledAfter
-            )
-              continue;
-            const run: ActionRun = {
-              id: id(),
-              repositoryId: event.repositoryId,
+            const run = startBaselineActionRun(
               rule,
-              revisionId: event.revisionId,
-              baselineId: event.baselineId,
-              status: "queued",
-              version: 1,
-              step: 0,
-              attempt: 0,
-              due: deps.now(),
-              createdAt: deps.now(),
-              results: [],
-            };
-            await insert(run);
+              {
+                repositoryId: event.repositoryId,
+                revisionId: event.revisionId,
+                baselineId: event.baselineId,
+                cursor: event.cursor,
+              },
+              id(),
+              deps.now(),
+            );
+            if (run) await insert(run);
           }
         });
         if (await deps.steps.events.acknowledge(event, deps.now())) events++;
       }
       for (let i = eventClaims; i < limit; i++) {
-        const lease = await deps.store.claim(deps.now());
+        const lease = await deps.queue.claim(deps.now());
         if (!lease) break;
         claimed++;
-        let value: unknown,
-          status: ActionRun["status"] = "succeeded",
-          advance = true,
-          due = deps.now();
-        if (!(await live(lease))) {
-          status = "failed";
-          advance = false;
-          value = { reason: "delegation-unavailable" };
-        } else
+        const at = deps.now();
+        let outcome: ActionStepOutcome = { kind: "delegation-unavailable" };
+        if (await live(lease))
           try {
             const run = lease.run;
             if (run.rule.kind === "check-wbs-revision")
-              value = await deps.steps.check(run.rule.delegate, run.repositoryId, run.revisionId);
+              outcome = {
+                kind: "checked",
+                value: await deps.steps.check(run.rule.delegate, run.repositoryId, run.revisionId),
+              };
             else {
               const recipient = run.rule.recipients[run.step];
               if (!recipient || !run.baselineId) throw new Error("Invalid fixed step.");
@@ -82,26 +74,14 @@ export function createActionsWorker(deps: {
                 },
                 () => live(lease),
               );
-              value = result;
-              if (result.nextAt !== null) {
-                status = "waiting";
-                advance = false;
-                due = result.nextAt;
-              } else if (run.step + 1 < run.rule.recipients.length) status = "queued";
+              outcome = { kind: "notified", value: result, nextAt: result.nextAt };
             }
           } catch {
-            status = "failed";
-            advance = false;
-            value = { reason: "source-or-delivery-unavailable" };
+            outcome = { kind: "source-or-delivery-unavailable" };
           }
-        const saved = await deps.store.finish(lease, deps.now(), (run) => ({
-          ...run,
-          status,
-          version: run.version + 1,
-          step: run.step + (advance ? 1 : 0),
-          due,
-          results: [...run.results.filter((r) => r.step !== run.step), { step: run.step, value }],
-        }));
+        const saved = await deps.queue.finish(lease, deps.now(), (run) =>
+          finishActionStep(run, outcome, at),
+        );
         if (saved) finished++;
         else stale++;
       }
