@@ -1094,6 +1094,40 @@ test("agent context is a derived task slice, not a second semantic authority", (
   assert.equal(context.evidenceRule, null);
 });
 
+test("agent context derives documentation, owner and schema reading paths with explicit uncertainty", async () => {
+  const compiled = await loadSemanticArchitecture();
+  const docs = compileAgentContext(compiled, "修正文件連結", { task: "docs" });
+  const owner = compileAgentContext(compiled, "attendance application", { task: "source" });
+  const schema = compileAgentContext(compiled, "Repository Attendance", { task: "schema" });
+  const paths = (context) => context.reading.required.map((entry) => entry.path);
+  assert.ok(paths(docs).includes("docs/AGENTS.md"));
+  assert.deepEqual(
+    docs.validation.map((profile) => profile.command),
+    ["pnpm docs:check"],
+  );
+  assert.equal(
+    paths(docs).some((path) => path.startsWith("architecture/")),
+    false,
+  );
+  assert.ok(paths(owner).includes("packages/attendance/AGENTS.md"));
+  assert.ok(paths(owner).includes("docs/owners/attendance.md"));
+  assert.equal(paths(owner).includes("architecture/domain/fpt/changelog.json"), false);
+  assert.ok(paths(schema).includes("architecture/data-topology.json"));
+  assert.equal(paths(schema).includes("supabase/schemas/702_project_wbs.sql"), false);
+  assert.ok(
+    paths(schema).some((path) => path.startsWith("supabase/schemas/") && path.endsWith(".sql")),
+  );
+  for (const context of [docs, owner, schema]) {
+    assert.equal(context.reading.authority, "AGENTS.md#effective-context-contract");
+    assert.equal(context.reading.unresolved.length, 0);
+    assert.ok(context.reading.required.every((entry) => entry.reasons.length > 0));
+  }
+  const unknown = compileAgentContext(compiled, "application");
+  assert.equal(unknown.reading.unresolved[0].kind, "owner-resolution");
+  assert.match(unknown.reading.fallback, /Mandatory governing set/);
+  assert.throws(() => compileAgentContext(compiled, "attendance", { task: "unknown" }), /task/);
+});
+
 test("FPT drift flags removal of a referenced truth file for review", () => {
   const { model, fpt } = fixture();
   const before = structuredClone(fpt.manifest);

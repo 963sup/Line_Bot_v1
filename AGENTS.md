@@ -4,7 +4,7 @@
 
 ## Mandatory governing set
 
-任何 repository analysis、design、implementation、refactor、debug、CI fix 前，必須先讀取 target ref 的 current version 並遵守：
+以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
 
 - `architecture/README.md`
 - `architecture/data-topology.json`
@@ -22,6 +22,24 @@
 - 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
 - `architecture/domain/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由 `semantic-model.json` 覆蓋。`semantic-model.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
 - Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
+
+## Effective context contract
+
+1. 一律先讀 root 與沿目標路徑適用的 `AGENTS.md`、[system invariants](docs/rules/system-invariants.md)，再由 [task router](docs/README.md) 取任務入口。子 AGENTS 只補 local constraints，引用本契約，不複製完整 authority 清單。
+2. 先定義 task、Owner、consumer 與觸及的 contract；已知 Owner 直接讀其 contract、相關 source/tests 及 package exports。未知 Owner 才用 `pnpm semantic resolve/plan/context`；候選、歧義與 no-match 不授予修改範圍。
+3. 依實際責任載入下表來源。JSON 可讀必要 entries，FPT 必須定位 exact file/symbol/field；記錄來源與 revision，working-tree 修改不能冒充 HEAD 內容。Generated projection／工具選取結果僅供定位，不取代 authority。
+
+| 觸發條件 | 必須具體讀取的來源 |
+| --- | --- |
+| 純文件／連結修正，未改業務或治理語意 | 目標文件、引用的真實來源、root + nearest AGENTS；不預載無關 Domain／FPT。 |
+| 單一 Owner source／純業務規則 | Owner contract、public exports、相關 source/tests；semantic model 的 Owner/invariant/capability entries、implementation topology 的 module/dependency entries，以及 Dependency Cruiser、Biome、Knip。 |
+| Public contract、跨 Owner 或 authorization 變更 | 上項加實際 provider/consumer 契約、relationship/qualification/trust entries 與受影響 consumers；沿真實依賴擴展，不把 review candidate 當 mutation authority。 |
+| Persistence、schema、transaction／replay／recovery 變更 | 上項加 data topology 的 relations/participants、對應 executable SQL、database-write/authorization rules 與必要競爭／rollback tests。 |
+| GitHub-derived meaning／FPT-backed contract | 對應 pinned FPT exact file/symbol/field 與 provenance；語意改動同步受影響 overlay/consumer，不能由本地摘要取代。 |
+| Governing input／guard 本身變更 | 完整讀取被修改的 authority/guard，以及實際 consumers/tests；先證明 authority/contract 需要改，保留全部 enforcement。 |
+
+4. Owner/語意不明、來源缺失、無法追溯 revision 或選取結果與 source 衝突時，明示 unresolved；先定位或保守展開完整 governing set，不能把空結果解讀為沒有約束。未解決會影響正確性的缺口前不修改該範圍。
+5. Context materialization 不改 validation scope：architecture/FPT/schema/security guards 繼續檢查完整 canonical inputs；一般 `pnpm check`、merge/release exact-head `pnpm validate` 的契約維持。
 
 ## Invariants
 

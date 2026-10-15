@@ -4,17 +4,7 @@
 
 ## Governing files
 
-修改本目錄前必須先讀取並遵守：
-
-- `architecture/README.md`
-- `architecture/data-topology.json`
-- `architecture/implementation-topology.json`
-- `architecture/domain/fpt/*.json`
-- `architecture/domain/fpt-source.json`
-- `architecture/semantic-model.json`
-- `.dependency-cruiser.mjs`
-- `biome.json`
-- `knip.jsonc`
+完整 authority 與讀取條件繼承 [root context contract](../AGENTS.md#effective-context-contract)。本 scope 修改 authority/guard 時，完整讀取受影響 input 與 consumers/tests；不得以按需載入削弱約束。
 
 ## Local constraints
 
