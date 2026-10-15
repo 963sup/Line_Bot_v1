@@ -3,10 +3,19 @@ import type {
   VerifiedLineActor,
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import type { EnterpriseLifecycleTransactions } from "../contracts/output/enterprise-lifecycle.js";
 import { normalizeEnterpriseSlug } from "../domain.js";
+import type { EnterpriseLifecycleCommand } from "./commands/enterprise-lifecycle.js";
+import { executeEnterpriseLifecycle } from "./use-cases/enterprise-lifecycle.js";
 
 const governanceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const governanceId = /^[\w-]{1,128}$/;
+
+function isLifecycleCommand(
+  command: EnterpriseCommand | EnterpriseLifecycleCommand,
+): command is EnterpriseLifecycleCommand {
+  return command.action === "deactivate" || command.action === "reactivate";
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -71,7 +80,7 @@ function parseTeamName(value: unknown) {
   return value;
 }
 
-function parseEnterpriseCommand(raw: unknown): EnterpriseCommand {
+function parseEnterpriseCommand(raw: unknown): EnterpriseCommand | EnterpriseLifecycleCommand {
   const base = governanceInput(raw, [
     "action",
     "requestId",
@@ -337,6 +346,7 @@ function parseEnterpriseCommand(raw: unknown): EnterpriseCommand {
 
 export function enterpriseGovernance(
   port: EnterpriseGovernancePort,
+  lifecycle: EnterpriseLifecycleTransactions,
   clock: () => number = Date.now,
 ) {
   return {
@@ -350,7 +360,11 @@ export function enterpriseGovernance(
       return port.detailBySlug(actor, normalizeEnterpriseSlug(value));
     },
     execute(actor: VerifiedLineActor, raw: unknown) {
-      return port.execute(actor, parseEnterpriseCommand(raw), clock());
+      const command = parseEnterpriseCommand(raw);
+      const now = clock();
+      if (isLifecycleCommand(command))
+        return executeEnterpriseLifecycle(lifecycle, actor, command, now);
+      return port.execute(actor, command, now);
     },
   };
 }

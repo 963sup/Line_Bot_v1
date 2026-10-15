@@ -38,4 +38,6 @@ EnterpriseAccountId 是同一 AccountId 值的 ENTERPRISE identity facet，不�
 
 ## Failure / replay / persistence
 
+Deactivate/reactivate commands use the existing Enterprise Domain transitions through an Application-owned transaction flow. The Repository contract only loads/saves the aggregate with its expected version; an Output Port carries current lifecycle-owner qualification, replay and durable evidence. Persistence owns locking and atomic state/receipt/audit writes. Exact replay remains available to the current lifecycle owner while the Enterprise is inactive. Other Enterprise commands have not yet been migrated to this flow.
+
 至少區分 not-found、forbidden、inactive、scope-conflict、consent-required、stale-version、replay-conflict、unknown-result。Mutation 保存 requestId/fingerprint、expectedVersion、必要 reason、audit/receipt；same request 只可 exact replay，different payload 不可重用 requestId。Membership source、Team membership、Team assignment 與 owner protection 必須在同一 transaction 內完成，不接受先寫 projection 再補 invariant 的 workaround。

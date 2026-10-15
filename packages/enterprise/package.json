@@ -4,9 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
+    "./application/commands/enterprise-lifecycle": {
+      "types": "./dist/application/commands/enterprise-lifecycle.d.ts",
+      "default": "./dist/application/commands/enterprise-lifecycle.js"
+    },
+    "./composition/bootstrap/enterprise-governance": {
+      "types": "./dist/composition/bootstrap/enterprise-governance.d.ts",
+      "default": "./dist/composition/bootstrap/enterprise-governance.js"
     },
     "./application/enterprise-governance": {
       "types": "./dist/application/enterprise-governance.d.ts",

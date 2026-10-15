@@ -195,7 +195,11 @@ test("enterprise canonical slug lookup normalizes locator before governance look
       throw new Error("not used");
     },
   };
-  const service = enterpriseGovernance(port);
+  const service = enterpriseGovernance(port, {
+    async transact() {
+      throw new Error("not used");
+    },
+  });
   const actor = { provider: "line:test", subject: `U${"1".repeat(32)}` };
 
   assert.equal(await service.detailBySlug(actor, " ACME-Enterprise "), expected);
@@ -229,7 +233,15 @@ test("EnterpriseOwner mutation is owned by the Enterprise command contract", asy
       };
     },
   };
-  const service = enterpriseGovernance(port, () => 100);
+  const service = enterpriseGovernance(
+    port,
+    {
+      async transact() {
+        throw new Error("not used");
+      },
+    },
+    () => 100,
+  );
   const actor = { provider: "line:test", subject: `U${"1".repeat(32)}` };
   const requestId = "11111111-1111-4111-8111-111111111111";
 

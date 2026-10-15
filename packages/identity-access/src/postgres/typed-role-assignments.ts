@@ -1,7 +1,7 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { GovernanceAccessError } from "../domain/role-assignment.js";
 
-async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {
+export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: string, userId: string) {
   return Boolean(
     (
       await sql.query(

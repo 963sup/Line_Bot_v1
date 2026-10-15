@@ -257,13 +257,6 @@ export type EnterpriseCommand =
       reason: string;
     }>
   | Readonly<{
-      action: "deactivate" | "reactivate";
-      requestId: string;
-      enterpriseAccountId: string;
-      expectedVersion: number;
-      reason: string;
-    }>
-  | Readonly<{
       action: "leave-enterprise";
       requestId: string;
       enterpriseAccountId: string;

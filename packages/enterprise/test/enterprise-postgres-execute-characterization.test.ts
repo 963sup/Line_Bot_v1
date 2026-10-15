@@ -4,6 +4,8 @@ import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-
 import { governanceFingerprint } from "@line_bot_v1/identity-access/postgres";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { PostgresEnterpriseGovernance } from "../src/adapters/postgres.js";
+import type { EnterpriseLifecycleCommand } from "../src/application/commands/enterprise-lifecycle.js";
+import { createPostgresEnterpriseGovernance } from "../src/composition/bootstrap/enterprise-governance.js";
 import type {
   EnterpriseCommand,
   EnterpriseReceipt,
@@ -402,9 +404,9 @@ test("enterprise create replay short-circuits before provisioning", async () => 
 
 test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay update and recording order", async () => {
   const queries: QueryRecord[] = [];
-  const command: EnterpriseCommand = {
+  const command: EnterpriseLifecycleCommand = {
     action: "deactivate",
-    requestId: "request-deactivate-1",
+    requestId: "11111111-1111-4111-8111-111111111111",
     enterpriseAccountId: "enterprise-1",
     expectedVersion: 2,
     reason: "characterization",
@@ -428,9 +430,9 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
     throw new Error(`unexpected lifecycle query: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
-  assert.deepEqual(await governance.execute(actor, command, 100), {
+  assert.deepEqual(await governance.execute(actor, command), {
     requestId: command.requestId,
     action: command.action,
     scopeId: command.enterpriseAccountId,
@@ -457,6 +459,7 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
   assert.ok(replayLookup < lifecycleUpdate);
   assert.ok(lifecycleUpdate < receiptInsert);
   assert.ok(receiptInsert < auditInsert);
+  assert.deepEqual(queries[lifecycleUpdate]?.values, ["enterprise-1", "inactive", 3, 2, "active"]);
 });
 
 test("legacy Enterprise identity completion is owner-authorized, versioned, replay-safe, and one-time", async () => {

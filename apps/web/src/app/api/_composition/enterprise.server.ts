@@ -1,6 +1,6 @@
-import { enterpriseGovernance } from "@line_bot_v1/enterprise/application/enterprise-governance";
-import { PostgresEnterpriseGovernance } from "@line_bot_v1/enterprise/postgres";
+import { createPostgresEnterpriseGovernance } from "@line_bot_v1/enterprise/composition/bootstrap/enterprise-governance";
+import { businessDatabase } from "@line_bot_v1/platform/postgres";
 
 export function enterpriseService() {
-  return enterpriseGovernance(new PostgresEnterpriseGovernance());
+  return createPostgresEnterpriseGovernance(businessDatabase());
 }
