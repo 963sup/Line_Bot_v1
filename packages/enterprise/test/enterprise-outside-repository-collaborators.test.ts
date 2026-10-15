@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresEnterpriseGovernance } from "../src/adapters/postgres.js";
+import { createPostgresEnterpriseGovernance } from "../src/composition/bootstrap/enterprise-governance.js";
 
 test("Enterprise owner reads outside Repository collaborators from the derived Repository projection", async (t) => {
   const { pg, db } = await postgresFixture();
@@ -27,7 +27,7 @@ test("Enterprise owner reads outside Repository collaborators from the derived R
     COMMIT;
   `);
 
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db);
   const actor = { provider: "line:test", subject: "enterprise-owner" };
 
   const outside = await governance.detail(actor, "enterprise");

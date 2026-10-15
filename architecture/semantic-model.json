@@ -2526,13 +2526,22 @@
         "scope": "current Enterprise Team domain and governance surface",
         "sourcePaths": [
           "packages/enterprise/src/application/enterprise-governance.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-team.ts",
+          "packages/enterprise/src/contracts/output/enterprise-team.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-team.ts",
+          "packages/enterprise/src/composition/bootstrap/enterprise-governance.ts",
           "packages/enterprise/src/domain.ts"
         ],
         "publicExports": ["./application/enterprise-governance", "./domain"],
         "entrypoints": [
           "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
         ],
-        "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
+        "testPaths": [
+          "packages/enterprise/test/enterprise-organization-foundation.test.ts",
+          "packages/enterprise/test/enterprise-team-governance.test.ts",
+          "packages/enterprise/test/enterprise-team-membership.test.ts",
+          "packages/enterprise/test/enterprise-postgres-execute-characterization.test.ts"
+        ],
         "note": "Enterprise Team is current domain behavior; route locator does not grant access by itself."
       }
     },

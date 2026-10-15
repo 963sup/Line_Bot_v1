@@ -3,7 +3,6 @@ import test from "node:test";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { governanceFingerprint } from "@line_bot_v1/identity-access/postgres";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
-import { PostgresEnterpriseGovernance } from "../src/adapters/postgres.js";
 import type { EnterpriseLifecycleCommand } from "../src/application/commands/enterprise-lifecycle.js";
 import { createPostgresEnterpriseGovernance } from "../src/composition/bootstrap/enterprise-governance.js";
 import type {
@@ -18,7 +17,7 @@ const actor = { provider: "line:test", subject: "line-subject" };
 
 const renameCommand: EnterpriseCommand = {
   action: "rename-enterprise-team",
-  requestId: "request-rename-1",
+  requestId: "bbbbbbbb-bbbb-4bbb-8bbb-000000000001",
   enterpriseAccountId: "enterprise-1",
   teamId: "team-1",
   name: "Platform",
@@ -91,10 +90,10 @@ test("enterprise execute authorizes current owner before replay lookup", async (
     }
     throw new Error(`unexpected query: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
   await assert.rejects(
-    () => governance.execute(actor, renameCommand, 100),
+    () => governance.execute(actor, renameCommand),
     (error: unknown) => {
       assert.ok(error instanceof GovernanceAccessError);
       assert.equal(error.status, 403);
@@ -119,7 +118,15 @@ test("enterprise execute replay hit short-circuits before team lock and write", 
     version: 5,
     at: 90,
   };
-  const fingerprint = governanceFingerprint(renameCommand);
+  const fingerprint = governanceFingerprint({
+    requestId: renameCommand.requestId,
+    reason: renameCommand.reason,
+    action: renameCommand.action,
+    enterpriseAccountId: renameCommand.enterpriseAccountId,
+    teamId: renameCommand.teamId,
+    name: renameCommand.name,
+    expectedVersion: renameCommand.expectedVersion,
+  });
   const { db } = databaseWith(async (text) => {
     if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
       return { rows: [{}] };
@@ -138,9 +145,9 @@ test("enterprise execute replay hit short-circuits before team lock and write", 
     }
     throw new Error(`unexpected query after replay: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
-  assert.deepEqual(await governance.execute(actor, renameCommand, 100), replay);
+  assert.deepEqual(await governance.execute(actor, renameCommand), replay);
   assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
   assert.equal(queryIndex(queries, "FROM enterprise_teams"), -1);
   assert.equal(queryIndex(queries, "UPDATE enterprise_teams"), -1);
@@ -171,9 +178,9 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
     throw new Error(`unexpected query: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
-  const receipt = await governance.execute(actor, renameCommand, 100);
+  const receipt = await governance.execute(actor, renameCommand);
 
   assert.equal(transactions(), 1);
   assert.deepEqual(receipt, {
@@ -232,7 +239,8 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
   assert.ok(globalLock >= 0);
   const requestQuery = queries[requestLock];
   assert.ok(requestQuery);
-  assert.deepEqual(requestQuery.values, ["user-1:request-rename-1"]);
+  assert.deepEqual(requestQuery.values, [`user-1:${renameCommand.requestId}`]);
+  assert.deepEqual(queries[teamUpdate]?.values, ["enterprise-1", "team-1", "Platform", "platform"]);
 });
 
 test("Enterprise owns EnterpriseOwner grant mutation and durable evidence", async () => {
