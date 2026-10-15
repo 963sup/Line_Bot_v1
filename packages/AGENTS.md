@@ -1,65 +1,57 @@
 # Packages scope
 
-`packages/<owner>` 是正式 Module Boundary。每個 package 都必須以 DDD + Hexagonal Architecture 分類責任、維持依賴方向，並能回答 Ownership、Source of Truth、Boundary / Dependency 與 Validation / Evidence。
+每個 package 是正式 Module Boundary。開發必須以 DDD + Hexagonal Architecture 分清業務決策、用例協調、交換契約、外部實作與組裝；folder shape 不構成符合架構的證據。
+
+精簡只去重；保留可直接套用的放置、流程與驗收標準，降低每次重新推理成本。變更規則須有 authority/contract 理由，不以篇幅為由刪除約束。
 
 ## Authority
 
-修改任何 package 前，必須先讀取並遵守 root `AGENTS.md#Mandatory governing set`；不得把 governing files 當成修 local violation 的 escape hatch。依序確認：
+- 完整繼承 [root contract](../AGENTS.md)，尤其是 Mandatory governing set、禁止弱化 governing files 與 system invariants；本檔不減少其讀取或驗證要求。
+- GitHub GraphQL meaning 直接取 pinned [FPT JSON](../architecture/domain/fpt/) 的 file/symbol/field；provenance 不取得語意 authority，不手改 vendored truth。
+- Product Owner、invariant、relationship、capability 與 implementation expectation 由 [semantic model](../architecture/semantic-model.json) 決定；module kind/dependency 由 [implementation topology](../architecture/implementation-topology.json) 決定；persisted relation owner 由 [data topology](../architecture/data-topology.json) 決定。
+- Public surface 由各 package 的 `package.json#exports` 決定；runtime behavior 以 source、tests、declarative schemas 確認。Dependency Cruiser、Biome、Knip 是 governing inputs，不是消除 violation 的 escape hatch。
+- [SEMANTICS](./SEMANTICS.md) 與各 Owner 的 SEMANTICS 是 generated projection，不取代 canonical authority；[README](./README.md) 只導覽。
 
-1. `architecture/domain/fpt/*.json`：GitHub GraphQL domain truth；由 pinned github/docs FPT JSON 原樣 vendoring，禁止本地改寫。
-2. `architecture/semantic-model.json`：Line_Bot_v1 semantic owner、relationship、capability、invariant、policy 與 implementation expectation overlay。
-3. `architecture/implementation-topology.json`：module path、`moduleKind`、`semanticOwner`、`allowedWorkspaceDependencies`。
-4. `architecture/data-topology.json`：persisted relation owner、projection / reference 與 data boundary。
-5. `package.json#exports`：package public boundary。
-6. source / tests / `supabase/schemas/*.sql`：runtime behavior、database truth 與 enforcement evidence。
+## Mandatory package resolution
 
-任何 GitHub-derived concept/locator claim 必須直接引用 FPT file/symbol/field；不得另外維護 benchmark/adoption summary 來覆蓋 FPT。未實作 code/SCM capability 只代表 product scope，不改變 domain truth。
+修改前依序確認：
 
-`.dependency-cruiser.mjs`、`biome.json`、`knip.jsonc` 是 governing configs。一般 feature、refactor、CI fix 不得修改它們來消除 violation；應修正 source、dependency、export、placement 或真正的 architecture truth。
+```text
+業務結果與 invariant → 子域／模型適用邊界 → Owner → 既有 package 能否承接
+→ Aggregate／用例 → public contract／dependency／data／consistency boundary → 實作與證據
+```
 
-Bounded Context、Module Boundary、Data Boundary、Consistency Boundary 可以對齊，但不得視為同一概念。
-
-DDD 策略／戰術建模詞義與架構導讀見 [共用詞彙表](../docs/facts/glossary.md#ddd-策略建模)；其中 Repository pattern 與本產品的 Repository 工作容器是不同概念。詞彙定義不取代本檔的責任、依賴與 placement 規則。
-
-## Semantic / module reminders
-
-下列規則保留作為進入 package 前的 semantic routing / boundary reminder；它們不取代上述 machine-readable authority：
-
-- \packages\attendance = reference implementation
-- packages/* = = * capability 的唯一 implementation owner
-- packages/attendance = = Attendance capability 的唯一 implementation owner
-- apps/web = host / delivery
-- API = host / delivery
-- LINE = external adapter
-- Business meaning / owner / relationship 以 `architecture/semantic-model.json` 為 structured authority。
-- 現有 module path、module kind 與 workspace dependency allowlist 以 `architecture/implementation-topology.json` 為 machine authority。
-- 新 responsibility 只有在現有 owner 無法正確承接，而且具有真實 language / lifecycle / invariant / consumer 時，才考慮新的 owner 或 package。
-- Application host（如 `apps/web`）只能依賴 `architecture/implementation-topology.json` 開放的 Workspace packages；底層一致性邊界（如 `ledger`）由 Aggregate Root（如 `wallet`、`daily-check-in`）封裝，禁止直接向 Web 暴露。
-- 預留或基礎模組（如 `payroll`、`workforce`）在有真實可執行 Consumer 與測試契約前保持 inactive，不得提早開放 Web 依賴。
-- Owner-specific adapter 留在 owner；LINE / Google 等 provider protocol 留在 integration owner；只有無 business authority 的中立 runtime mechanism 才進 `platform`。
-- Consumer 不得直接讀另一 owner 的 private schema / table 來繞過 public contract。
+- 以簡短責任聲明交代：business result、Owner、invariant、真實 consumer、public contract、transaction/recovery boundary 與 validation；引用 authority，不另建重複設計或 review database。
+- Boundaries 分開判斷：Subdomain、Bounded Context、Module、Data、Consistency、Trust、Runtime 不因同 package、folder、table 或 provider 就等同。詞義見 [glossary](../docs/facts/glossary.md#ddd-策略建模)。
+- 先追 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger，再決定刪除、合併、簡化、重用、搬移或拆分。
+- 只有既有 Owner 無法正確承接，而且有真實 language、lifecycle、invariant 與 consumer，才考慮新 Owner/package；FPT category、feature 數、檔案數與目錄對稱不構成理由。
+- 新 abstraction 必須有真實 consumer、variation、technology/policy、transaction/recovery 或 isolation responsibility，不能為套架構而建立。
+- Member 是 Organization/Team 的成員關係；Collaborator 是 Repository 存取關係，不因名詞存在就新增 package。Code/SCM 未實作只代表產品 scope，不改 FPT truth。
+- Selected target 不建立空 workspace、source、route 或 schema；預留/inactive 模組沒有真實 consumer 與測試契約前，不開放 host 依賴。Promotion 必須同步真正 ownership、consumer 與 runtime evidence。
 
 ## Canonical DDD + Hexagonal structure
 
-每個 production source 必須有且只有一個 primary architecture role。若一個檔案無法唯一回答「誰負責、真相在哪、依賴方向是什麼」，先解 ambiguity，再新增功能。
+每個 production source 必須有且只有一個 primary role。先解責任混合，再新增功能；不以搬檔、改名、介面或 folder 數宣稱已修正。
 
-### Architecture roles are semantic, not mandatory folders
+先用角色總覽快速定位，再用下方 placement 表檢查細項與禁止位置。
 
-Canonical production roles are `Domain / Application / Contracts / Adapters / Composition / Testing`.
+| Role | 責任 | 需要展開時的 canonical placement |
+| --- | --- | --- |
+| Domain | Entity、Value Object、Aggregate、Domain Service/Event、Policy/Specification；業務規則與合法轉移 | `domain/**` |
+| Application | Use Case、Command、Query；協調資格、load/decision/save、必要 Port 與結果 | `application/use-cases/**`、`application/commands/**`、`application/queries/**` |
+| Contracts | Repository、Input/Output Port、Published DTO；Ports 與穩定交換語意 | `contracts/repositories/**`、`contracts/input/**`、`contracts/output/**`、`contracts/dto/**` |
+| Adapters | Inbound transport；outbound persistence/provider implementation | `adapters/inbound/**`、`adapters/outbound/**` |
+| Composition | 建立 Adapter、注入 Port、組裝 Use Case/worker dependency graph | `composition/bootstrap/**` |
+| Testing | test-only helper；production 不依賴它 | `testing/**` |
 
-它們是 responsibility taxonomy，不是所有 `moduleKind` 都必須具備的 physical template。先由 `architecture/implementation-topology.json#moduleKind` 與實際 source responsibility 判斷角色，再決定最小充分的檔案結構。
-
-- `domain-module`：只有一個單一責任時可保留直接檔案（例如單一 domain model / contract / named provider entry）；責任成長到多個 source 或子責任時才展開對應 directory。
-- `application-module`：只擁有 orchestration / read composition，不因 DDD 外觀建立自己的 business Domain truth。
-- `integration-adapter`：本身就是 external technology boundary；不建立假的 `domain/`。Provider protocol source 可依真實責任直接存在，或在責任成長後分組。
-- `support-module`：只擁有 neutral runtime mechanism，可使用能直接表達 technology / mechanism responsibility 的結構（例如 `database/`、`redis/`），不得吸收 owner-specific business adapter。
-- `adapters/`、`composition/`、`testing/` 只在真實 responsibility 存在時建立；沒有責任就不建立 folder、interface、wrapper、facade 或 `.gitkeep`。
-
-Physical path 只是 responsibility 的 projection，不是 architecture authority。不得為了資料夾對稱搬動本來責任清楚的 source；也不得以 root file / directory 名稱替代 Owner、Contract、Dependency 與 tests 的判斷。
+- 這是責任分類，不是 mandatory folders。單一清楚責任可維持單一 source；責任成長或混合時才展開 directory。同一 responsibility 只有一個 canonical location。
+- `domain-module` 依實際業務責任建模；`application-module` 只擁有 orchestration/read composition；`integration-adapter` 擁有 provider protocol；`support-module` 只放中立 mechanism。後三者不建立假的 business Domain。
+- 不建立空 folder、`.gitkeep`、pass-through service、facade、wrapper 或平行 compatibility 路徑。真需要搬移時，直接同步 consumer 與 exports。
+- Root named entry 只有自身 narrow public/composition contract 且有實際 consumer 時保留；單純舊路徑 forwarding 刪除。任何 package 都不是免檢查的全面樣板。
 
 ### Canonical maximum shape
 
-只有 responsibility 成長到需要分類時才展開：
+責任需要展開時直接使用下列標準位置；只建立真實存在的部分，不逐案另想一套目錄，也不預先建立空模板。
 
 ```text
 packages/<owner>/src/
@@ -70,18 +62,15 @@ packages/<owner>/src/
 │  ├─ services/
 │  ├─ events/
 │  └─ policies/
-│
 ├─ application/
 │  ├─ use-cases/
 │  ├─ commands/
 │  └─ queries/
-│
 ├─ contracts/
 │  ├─ repositories/
 │  ├─ input/
 │  ├─ output/
 │  └─ dto/
-│
 ├─ adapters/
 │  ├─ inbound/
 │  │  ├─ http/
@@ -94,22 +83,18 @@ packages/<owner>/src/
 │     ├─ payment/
 │     ├─ cache/
 │     └─ external-api/
-│
 ├─ composition/
 │  └─ bootstrap/
-│
 └─ testing/
 ```
 
-這是責任成長後可採用的 maximum shape，不是 target template。單一責任不因「已有 role 名稱」就必須展開 directory；只有當同一 role 已出現多個 source / 子責任、或單檔開始混合責任時才拆分。Root named entry 若只是為舊路徑 forwarding、沒有自己的 public / composition contract，就刪除；若它本身是刻意的 narrow public entry，則以 consumer contract 與 `package.json#exports` 證明其存在。Folder 數量不是 architecture goal。
-
 ## Single-owner placement when a role is expanded
 
-同一 responsibility 只能有一個 canonical location。下表是 role 已展開為 directory 時的 placement；單一 source 不必為了表格形式先拆 folder：
+同一 responsibility 只有一個 canonical location；單一清楚責任可維持單一 source。下表供直接分類與審查，不用檔名代替責任判斷。
 
-| Responsibility | Canonical placement | 禁止平行位置 |
+| Responsibility | Canonical placement | 禁止平行位置／責任 |
 | --- | --- | --- |
-| Entity / Value Object / Aggregate / Domain Event / Policy | `domain/**` | Application / Contract / Adapter |
+| Entity / Value Object / Aggregate / Domain Event / Policy / Specification | `domain/**` | Application / Contracts / Adapter |
 | Domain Service | `domain/services/**` | `application/services/**`、generic manager/helper |
 | Use Case | `application/use-cases/**` | Adapter / Domain Service |
 | Command / Query | `application/commands/**` / `application/queries/**` | DTO / Domain Entity |
@@ -118,370 +103,187 @@ packages/<owner>/src/
 | Outbound Port | `contracts/output/**` | Domain / Adapter duplicate interface |
 | Published / boundary DTO | `contracts/dto/**` | persistence row / Domain model duplicate |
 | Inbound transport | `adapters/inbound/**` | Application / Composition |
-| Concrete outbound implementation | `adapters/outbound/**` | Contract / Composition / Infrastructure |
+| Concrete outbound implementation | `adapters/outbound/**` | Contracts / Composition / Infrastructure |
 | Dependency wiring | `composition/bootstrap/**` | service locator / hidden registry |
 | Test-only helper | `testing/**` | production runtime |
 
-只有在 evidence 證明 source 混合 responsibility、public contract 錯置或同一 responsibility 已需要拆分時才做 physical convergence；不得只為目錄對稱搬檔。真正需要搬移時直接更新 consumer 與 public contract，不使用 alias、barrel facade、compatibility wrapper 或雙路徑長期共存。
-
 ## Domain
 
-Domain 擁有 business truth、invariant、state transition、Aggregate boundary 與 ubiquitous language。
-
-允許：
-
-- Entity：有 identity 與 lifecycle。
-- Value Object：以 value equality 表達 business meaning，建立時即維持自身 invariant。
-- Aggregate / Aggregate Root：transaction consistency boundary 與唯一 mutation entry。
-- Domain Service：純 business operation，且無自然 Entity / Value Object / Aggregate owner。
-- Domain Event：描述已成立的 Domain fact。
-- Policy / Specification：可命名、可組合的 business decision rule。
-
-禁止：
-
-- SQL、Supabase、PostgreSQL、SDK、HTTP、LINE、Google、Next.js、env、framework。
-- Application orchestration、retry、transport mapping。
-- Repository implementation。
-- 以 persistence row / provider DTO 取代 Domain model。
+- Domain 擁有 ubiquitous language、invariant、合法 state transition、Aggregate boundary；建立與轉移後的模型必須有效。純函數或物件皆可，不為套模式強制 class/factory。
+- Entity 有 identity/lifecycle；Value Object 以 value equality 表達 meaning；Aggregate Root 是保護同一組 consistency invariants 的唯一 mutation entry。不能以 SQL row/provider DTO 代替模型。
+- Domain Event 描述已成立事實；發布、傳遞、排程與 I/O 不屬 Domain。
+- Policy / Specification 是可命名、可組合的純 business decision rule；有自然 Entity/Value Object/Aggregate owner 的行為留在該模型，不改放 generic service。
+- 禁止依賴 Application、Contracts、Adapters、Composition、testing、SQL、SDK、HTTP、LINE/Google protocol、framework、network、environment 或 runtime mechanism。
+- 禁止用例協調、transport mapping、技術重送與退避。業務上的重新執行、重試、取消或重新申請，其合法轉移仍由 Domain 決定。
+- 不把整套資格查詢或 transaction 搬入 Domain；Domain 接受必要 facts/value，Application 透過 Port 取得目前 facts 再呼叫 Policy。
 
 ### Domain Service rule
 
-整套 package structure 只有 `domain/services/**` 可以出現 Service。
+只有 `domain/services/**` 可以出現 Service；Application 不建立 `services/`。
 
 Domain Service 必須同時滿足：
 
-1. 是 business behavior。
-2. 無自然 Entity / Value Object / Aggregate owner。
+1. 是純 business behavior。
+2. 無自然 Entity/Value Object/Aggregate owner。
 3. 不做 use-case orchestration。
-4. 不依賴 Repository / Port / Adapter / network / environment。
-5. 名稱使用 domain language，不使用 `Manager`、`Helper`、`CommonService`。
-
-Application 不建立 `services/`。需要 orchestration → Use Case；需要 external capability → Port；需要 pure business rule → Domain。
+4. 不依賴 Repository/Port/Adapter/network/environment，不做 I/O。
+5. 使用 domain language 命名，不使用 Manager、Helper、CommonService。
 
 ## Contracts
 
-`contracts/**` 是 Hexagonal Ports 與 stable exchange semantics 的唯一 owner。Contracts 可以依賴 Domain type，但不能依賴 Application 或 Adapter。
+Contracts 是 Ports 與 stable exchange semantics 的唯一 owner，可以依賴 Domain type，不能依賴 Application、Adapter 或 Composition。
 
 ### repositories/
 
-Repository contract 是一種 Outbound Port，但因 Aggregate persistence 語意穩定而固定放 `contracts/repositories/**`。
+- Aggregate Repository 只表達 Domain ID/Value/Aggregate 的 load、save、existence、expected-version 等 persistence capability；不暴露 SQL row、SDK 或 Supabase type。
+- 禁止以 Repository `execute/apply/dispatch` 承接整套命令、資格決策、Domain transition、receipt 協調或 worker 流程；判斷依實際責任，不只依方法名稱。
+- Transaction、qualification/read query、durable replay/receipt、event acceptance、claim/lease/fenced completion 是 Output Port capability，不塞回 Aggregate Repository。
+- Contract 不實作 transaction、lock、retry 或 mapping；Persistence Adapter 實作原子保存與條件寫入。
+- 不在 `domain/repositories/**`、`application/ports/**` 再建立同義 Repository/Store。
 
-Repository contract 必須：
+### input/ 與 output/
 
-- 以 Aggregate / Domain ID / Value Object 說話。
-- 表達 load / save / existence / expected-version 等 persistence capability。
-- 不暴露 SQL row、Supabase type、SDK type。
-- 不實作 transaction、lock、retry、mapping。
-
-禁止在 `domain/repositories/**` 或 `application/ports/**` 再建立同義 Repository / Store。
-
-### input/
-
-只有需要穩定 public application capability、第二個 inbound adapter 或明確 inbound variation 時才建立 Input Port。若 Use Case 本身已是唯一入口，不建立 pass-through interface。
-
-### output/
-
-只描述 Application 需要、但不應知道 concrete technology 的 capability，例如：
-
-- clock / time source。
-- authorization / qualification query。
-- notification / email / payment。
-- object storage / cache。
-- external provider API。
-- durable idempotency receipt。
-- cross-owner query / published capability。
-
-若核心問題是「load/save Aggregate」，改放 `contracts/repositories/**`。
+- Input Port 只在真實 stable public application capability、第二個 inbound adapter 或明確 inbound variation 時建立；Use Case 已足夠時不建立 pass-through interface。
+- Output Port 只描述 Application 真正需要的外部能力：資格、clock、跨 Owner query/command、通知、provider、storage/cache、transaction、receipt 或 worker recovery。
+- Port 使用必要 Domain values、scope 與 evidence；不得反向 import Application Command，或複製同形 Command/Query、改名 DTO 來掩蓋錯誤依賴。
+- Repository 與其他 Output Port 可共享同一個 concrete transaction；不為分層拆壞 atomicity，也不暴露 SQL/SDK transaction 給 Application。
 
 ### dto/
 
-DTO 只表達 boundary exchange semantics。不得把 persistence row、provider DTO 或 Domain Entity 原樣當 Published DTO。
+- DTO 只表達 boundary exchange semantics；Published DTO 不直接別名、展開或序列化 Domain Entity、persistence row 或 provider DTO。
+- 依公開 contract 明確投影欄位；mapping 位於相應 Application/Adapter。必要時隔離 nested mutable state，不能只靠 TypeScript readonly 宣稱隔離。
+- 可重用 Domain ID/Value Object/value type；不得複製 enum/invariant 形成另一份 business truth。無實際 translation 需求，不新增同形 DTO/mapper 層。
 
 ## Application
 
-Application 只負責 use-case orchestration，不建立新的 business truth。
-
 ### use-cases/
 
-Use Case 對應一個明確 business intent，負責：
-
-- command/query coordination。
-- authorization / qualification coordination。
-- 透過 Repository contract load Aggregate。
-- 呼叫 Aggregate / Domain Policy。
-- 呼叫必要 Port。
-- transaction / result / error coordination。
-
-Use Case 禁止：
-
-- 複製 Aggregate invariant。
-- SQL / SDK / provider protocol。
-- 直接依賴 concrete Adapter。
-- 以 pre-read check 作 concurrency correctness。
+- 一個 Use Case 對應明確 business intent；協調 Command/Query、目前資格、Repository、Domain、必要 Port、transaction 與 result/error。
+- Application 決定呼叫次序；Domain 決定業務上允許什麼與下一狀態。不得在 Application 複製 invariant，或以自行組裝／改寫 state 取代 Domain 的建立、轉移與 step result 決策。
+- 透過 Repository load/save，透過 Output Port 取得 external capability；不依賴 concrete Adapter/Composition、SQL、SDK、provider protocol 或另一 Owner 的 private implementation。
+- Pre-read 可作 UX/optimization；不可作 concurrency correctness 的唯一依據。
+- Read-only Query 消費授權後 projection，不載入無必要的肥大 Aggregate，不偷偷初始化 authoritative state。
 
 ### commands/ 與 queries/
 
-- Command = 有 business intent、可能改變 state 的 request model。
-- Query = read intent；不得偷偷修改 authoritative state。
-- Command / Query 不擁有 orchestration。
+- Command 是可能改變 state 的 business request model；Query 是 read intent；兩者的 canonical owner 是 Application，不放 Domain Entity 或 Contracts DTO。
+- 可共用的 unknown input → canonical Command/Query 正規化留在 Application；framework/transport decoding 留在 Inbound Adapter，business validity 留在 Domain。
+- Command/Query model 與 parser 不承接 use-case orchestration、SQL、I/O 或另一套業務決策。
 
 ## Adapters
 
-Adapter 只把外部世界轉成 inner contract，或把 inner contract轉成 concrete technology。
-
 ### inbound/
 
-HTTP / GraphQL / CLI / webhook / queue consumer 負責：
-
-- transport parsing / validation。
-- authentication context extraction。
-- idempotency / request identity extraction。
-- transport DTO → Command / Query。
-- 呼叫 Input Port / Use Case。
-- Result / DomainError → transport response。
-
-禁止 business invariant、SQL、cross-owner private-table query。
-
-Application host 的 framework route 可以直接扮演 Inbound Adapter。若 host-local `*.server.ts` 只服務單一 route family、只做 Request/Response parsing、error mapping 或 pass-through orchestration，先把可重用的 business/input contract 收回 owner package，再由 route 直接吸收該 transport responsibility；不得為減少 route 行數保留無獨立責任的中介 server wrapper。
-
-`Request` / `Response` / Next.js / LIFF / browser API 仍屬 host delivery，不搬進 package。只有第二個真實 transport consumer、獨立 protocol responsibility 或真實 variation 存在時，才建立 package-level `adapters/inbound/**`。
+- HTTP/GraphQL/CLI/webhook/queue consumer 負責 transport decoding、authentication proof/context、request identity、transport DTO → Command/Query、呼叫 Use Case、result/error 投影。
+- 輸入 UserId/role 只能表達定位或 intent，不能成為身分或資格憑證。資格與 scope 由真正 Owner 的 current contract 重驗。
+- 禁止 business invariant、SQL 與 cross-owner private-table query。
+- Host framework route 可以直接當 Inbound Adapter；Request/Response、Next.js、LIFF、browser API 留在 host delivery。
+- 單一 route family 的 server wrapper 若只有 parsing/error mapping/pass-through，將共用 input/business contract 收回 Owner，由 route 承接 transport；不為減少行數保留中介層。
+- 只有第二個真實 transport consumer、獨立 protocol responsibility 或 variation，才建立 package-level inbound adapter。
 
 ### outbound/
 
-Outbound Adapter 實作 `contracts/repositories/**` 或 `contracts/output/**`。
-
-- `persistence/`：PostgreSQL / Supabase Repository implementation、mapping、transaction-specific persistence。
-- `email/`、`payment/`、`cache/`、`external-api/`：只有真實 provider responsibility 存在時才建立。
-
-Adapter 可以知道 technology 與 inner contract；Domain / Contracts / Application 不得反向知道 Adapter。
+- Concrete implementation 實作 Repository/Output Port；負責 row/provider mapping、SQL、conditional write、lock、transaction、receipt/outbox 與 fencing persistence。
+- Adapter 可 enforce Domain invariant 的原子 predicate、取得 qualification facts 並實作 Owner query，但不取得 business semantic authority；不得自行定義資格 policy、案件轉移或藏整套用例。
+- Owner-specific implementation 留在 owner；LINE/Google provider protocol 留在 integration owner；不以平台層吸收業務 Adapter。
 
 ## Infrastructure policy
 
-Owner package 不建立獨立 `infrastructure/` layer。
-
-Neutral database client、connection pool、generic transaction runner、generic runtime/config/framework mechanism 若可跨 owner 重用，由 `@line_bot_v1/platform` 擁有。
-
-Owner-specific technology code只放 `adapters/**`。因此：
-
-```text
-知道 Attendance / Project / Repository domain
-→ Adapter
-
-不知道任何 business owner，只提供 neutral runtime mechanism
-→ platform
-```
-
-這條規則用來避免 `adapters/` 與 `infrastructure/` 形成兩套 concrete implementation source of truth。
+Owner package 不另建 `infrastructure/`。中立 database client、pool、generic transaction runner、runtime/config/framework mechanism 由 `@line_bot_v1/platform` 承接；知道業務 Owner 的 technology implementation 屬該 Owner 的 Adapter。
 
 ## Composition
 
-`composition/bootstrap/**` 是唯一 concrete dependency wiring responsibility。
-
-允許：
-
-- 建立 concrete Adapter。
-- 注入 Repository / Port。
-- 建立 Use Case dependency graph。
-- 啟動 worker / runtime dependency graph。
-
-禁止：
-
-- business invariant。
-- SQL / business query。
-- service locator。
-- global registry。
-- 第二套 Application flow。
-
-Library package 不需要 `main.ts`。Executable runtime 若真的存在，由 application host / runtime owner 提供 entry；package public surface 仍由 `package.json#exports` 定義。
+- 只組裝 concrete dependencies、注入 Repository/Port、建立 Use Case/worker graph；library 不必有 `main.ts`，executable entry 由真正 host/runtime owner 提供。
+- 禁止 business invariant、SQL/business query、第二套 Application flow、service locator 或 global registry。組裝必須顯式，import 不觸發外部副作用。
 
 ## Hexagonal dependency direction
 
-Canonical source dependency：
-
 ```text
-Inbound Adapter
-      │
-      ▼
-Input Port / Use Case
-      │
-      ▼
- Application
-      │
-      ├──────────────► Domain
-      │
-      ├──────────────► Repository Contract
-      └──────────────► Output Port
-                          ▲
-                          │
-                  Outbound Adapter
-
-Composition
-  └─ wires Use Cases + Adapters
-
-platform
-  └─ neutral technical mechanism only
+Inbound Adapter → Input Port / Use Case → Application → Domain
+                                            ├──────→ Repository Contract
+                                            └──────→ Output Port ← Outbound Adapter
+Composition wires Application + Adapters; platform provides neutral mechanisms.
 ```
 
-禁止反向：
-
-- Domain → Application / Contracts / Adapters / Composition。
-- Contracts → Application / Adapters / Composition。
-- Application → concrete Adapter / Composition。
-- Inner layers → SQL / SDK / provider implementation。
-- Package → another package private source / `dist` / testing-only surface。
-- Production runtime → `testing/**`。
+- Domain 不依賴外層；Contracts 不依賴 Application/implementation；Application 不依賴 concrete Adapter/Composition；production 不依賴 testing-only surface。
+- 跨 package 含 type-only import 都只用 exact public exports；禁止 private source、dist、testing-only surface、internal generated artifact 與其他 Owner private schema/table。
+- Host 只使用 topology 開放的 workspace dependencies；ledger 等底層一致性機制由 wallet/daily-check-in 等真正 Aggregate owner 封裝，不直接向 Web 開放。
 
 ## Correctness ownership
 
-Concurrency、idempotency、transaction、outbox 是 Essential Complexity；每項都必須有唯一 responsibility owner。
-
-| Concern | Owner responsibility |
+| Concern | 決策／協調／enforcement owner |
 | --- | --- |
-| Domain | invariant、合法 transition、Aggregate consistency rule |
-| Application | use-case orchestration、request identity / expected version 傳遞 |
-| Repository Contract | load/save capability 與 expected-version semantics |
-| Persistence Adapter | conditional update / lock / transaction / mapping / receipt / outbox persistence |
-| Database / Schema | atomicity、constraint、unique key、lock / optimistic concurrency predicate |
-| Inbound Adapter | 接收與驗證 idempotency/request identity；不能成為唯一 durability truth |
-| Durable idempotency persistence | same identity + same fingerprint → replay；same identity + different fingerprint → conflict |
-| Domain Event | 已成立的 Domain fact |
-| Transactional Outbox | state + publication intent 同 transaction |
-| Consumer Adapter | claim / retry / publish / downstream dedupe |
-| Saga / Process Manager | 真實跨 Aggregate / Bounded Context 長流程才存在 |
+| 合法 transition、invariant、Domain Event | Domain |
+| 資格與 replay 次序、request identity/version 傳遞、用例協調 | Application，依 Owner contract |
+| Aggregate load/save 與 expected-version semantics | Repository Contract |
+| Qualification/query、transaction、receipt、worker recovery capability | Output Port |
+| Lock、conditional write、atomic state/receipt/outbox、lease fencing | Persistence Adapter + Database constraint/predicate |
+| Authentication/request identity extraction、transport projection | Inbound Adapter |
+| Provider protocol 與 retry outcome | Provider Adapter；業務 recovery 由其真正 Owner 協調 |
 
-Canonical mutation flow：
+業務 mutation 的典型流程：
 
 ```text
-Inbound Adapter
-    │ establish request identity
-    ▼
-Application Use Case
-    ▼
+Inbound Adapter: verified proof / scope / requestId
+  ↓
+Application / transaction Output Port
+  ↓ current qualification / archive / exact replay（依 Owner 契約排序）
 Repository.load()
-    ▼
-Aggregate
-    │ enforce invariant
-    │ produce Domain Event
-    ▼
-Repository.save(expectedVersion, events)
-    ▼
-Persistence Adapter
-    │ conditional write / lock
-    │ persist state
-    │ persist durable receipt
-    │ persist outbox
-    ▼
-DB transaction commit
-    ▼
-Consumer / Outbox Worker
-    ▼
-Other Bounded Contexts
+  ↓
+Aggregate / Domain Policy: valid transition + required Domain Event
+  ↓
+Repository.save(expectedVersion)
+  ↓
+Persistence Adapter: conditional state write + durable receipt + required outbox
+  ↓ atomic commit / rollback
+Consumer / worker: external effect + stable dedupe / retry / fenced completion
 ```
 
-Mandatory rules：
-
-- 禁止用 `check → if → update` 保證 concurrency correctness。Pre-read 只能作 UX / optimization；race-sensitive invariant 最終必須由 expected version、atomic predicate、lock、constraint 或 unique key enforce。
-- `save(expectedVersion)` affected rows = 0 / version mismatch → conflict；禁止 silent overwrite。
-- Idempotency 必須 durable；memory / middleware-only dedupe 不是 correctness evidence。
-- Aggregate state + outbox intent 必須同 transaction commit/rollback。
-- External publish 在 commit 後由 worker retry；provider timeout 不回滾已成立的 Domain fact。
-- Application 不複製 Domain invariant。
-- Database mechanism 可以 enforce invariant，但不得取得 business semantic ownership。
+- 此流程是責任分工，不是所有用例的固定順序；Owner 明定 qualification、archive 與 replay 的先後。授權 replay 不繞過目前資格；不得改變既有封存/撤權/replay semantics。
+- Mutable conditional state 必須由 expected version、atomic predicate、lock、constraint 或 unique key enforce；affected rows = 0/version mismatch 必須 conflict，禁止 silent overwrite。
+- 命令有 durable request identity 或天然業務複合鍵；same identity + same fingerprint replay，different fingerprint conflict；memory/middleware dedupe 不作 durability truth。Event consumer 強制去重。
+- 共同維持 invariant 的 state、receipt 與必要 outbox 同 transaction commit/rollback。只有真實 async publication/consumer 才建立 event/outbox；既有可靠發布責任不可省略。
+- External publish 在 commit 後由 worker 恢復；timeout 不回滾已成立的 Domain fact。Worker 的 claim/lease/fenced save 與 bounded retry 必須有 durable owner；失效 worker 不得保存結果。
+- Cancellation 不宣稱撤銷已成立效果；retry/resume 保留穩定 effect identity。Provider acceptance、unknown outcome 與 device delivery 分開表達。
 
 ## Cross-package boundary
 
-跨 package 前先回答：
-
-1. Consumer 真正需要什麼 capability？
-2. `semantic-model.json` 中真正 semantic owner 是誰？
-3. 是否存在對應 relationship / integration contract？
-4. `implementation-topology.json` 是否允許 dependency direction？
-5. Owner 是否已提供足夠的 `package.json#exports` public contract？
-6. 是否正在依賴 private source、`dist`、testing-only surface 或另一 owner 的 private schema？
-
-跨 package 只能使用 exact public exports。Consumer need 不會轉移 provider authority。
-
-固定推理鏈：
-
-```text
-Business intent
-  → Semantic owner
-  → Relationship / Contract
-  → Module owner
-  → Data owner
-  → Public surface
-  → Adapter / Runtime implementation
-  → Validation evidence
-```
+- 先確認 consumer need → semantic owner → relationship/integration contract → module allowlist → data owner → public export → implementation/evidence。
+- Owner 分離不隔離 Capability；用明確 public query/command、stable ID/value、committed event 或 read projection 合作。Consumer need 不轉移 Provider authority。
+- Relationship contract 明確交代 Provider、Consumer、Meaning、Integration mode、Authority、Consistency；實際值與必填欄位仍由 semantic model 擁有。
+- 不以 common、alias、facade、wrapper、compatibility surface、ignore 或 exception 隱藏 cycle、ownership 或 dependency 問題；需要 translation 時必須有真實 upstream/local model 差異。
+- Workspace dependency 新增/刪除/改變，同 changeset 更新 owner manifest、implementation topology 與 lockfile；ownership/capability/data 語意變更同步 canonical model、consumer、guard、tests、docs 與證據。
 
 ## Data / consistency invariants
 
-- 每個 authoritative persisted relation 只能有一個 semantic owner。
-- relation owner 必須對齊 authoritative concept owner；projection / reference 不會取得 authority。
-- cross-owner mechanism 不得擁有 business truth。
-- 一個 transaction / consistency boundary 只在 invariant 必須 atomic 成立時存在；不得只因 package 或 folder 相同就假設一致性邊界相同。
-- authorization、tenant/data isolation、replay / idempotency、version、recovery、audit、transaction correctness 不得為了簡化 layer、CI 或 UI 而削弱。
-- pure placement / naming / dependency refactor 必須保持 [Invariant kernel](../docs/rules/system-invariants.md) 的既有 semantics。
-- **Consistency boundary first**：預設讓單一 Aggregate 擁有自己的 consistency boundary；跨 Aggregate / owner 優先以 Domain Event + Transactional Outbox 解耦。只有 business invariant 必須 atomic 成立、拆開會降低 correctness 時，才使用明確 owner 的 cross-owner transaction coordinator / DB transaction，並以 schema constraint / transaction tests 證明必要性。不得為了「一律 eventual consistency」拆壞 atomic invariant。
-- **錯誤處理**：business failure semantics 必須 explicit、typed 且由真正 owner 定義；可使用既有 `Result<T, DomainError>` 或 owner-defined typed / domain error。Provider / infrastructure 的 uncontrolled exception 不得直接成為 public business contract；「一定使用 Result」不是 architecture invariant。
-- **冪等防重放**：寫入命令支援 Idempotency Key 或天然業務複合主鍵；事件 Consumer 強制去重。
-- **讀寫分離**：探索、統計與清單等唯讀查詢直接消費 Read Projections，不載入肥大 Domain Aggregate。
-- 新能力直接進真正 owner；不得用 alias、facade、compatibility package 或 pass-through service 掩蓋 responsibility 問題。
-- Generated / reference data 若存在，必須能追到 canonical source；generated output、history、target design 與 current business truth 不得互相取代。
+- 每個 authoritative persisted relation 只有一個 semantic owner，必須對齊 concept owner；projection/reference/cache/cross-owner mechanism 不取得 writable authority。
+- 預設單一 Aggregate 保護自己的 consistency boundary；跨 Aggregate/Owner 優先 committed event + transactional outbox。只有拆開會破壞必要 atomic invariant 時，才用明確 owner 的 cross-owner transaction coordinator，並以 constraint/transaction tests 證明。
+- Saga/Process Manager 只在真實跨 Aggregate/Context 長流程存在；不為架構外觀新增，也不為一律 eventual consistency 拆壞 atomicity。
+- Authorization、isolation、replay/version、audit、recovery、privacy 不因 placement/refactor 簡化而降低；保持 [system invariants](../docs/rules/system-invariants.md)。
+- Business failure 由真正 Owner 定義 explicit typed semantics；可用既有 Result/DomainError，不強制特定包裝。Uncontrolled provider/infrastructure exception 不直接成為 public business contract。
+- Generated/reference data 追到 canonical source；history、proposal、target、runtime feedback 或 validation success 都不能取代 current authority。
 
 ## Child package docs
 
-每個 `packages/<owner>/` 保有 `AGENTS.md`、`README.md` 與 generated `SEMANTICS.md`：
-
-- Child `AGENTS.md` 只增加 owner-local constraint，不複製本檔。
-- Child `README.md` 只 routing，不建立第二份 owner、schema、export、capability 或 validation truth。
-- Child `SEMANTICS.md` 是 `architecture/semantic-model.json` + `architecture/implementation-topology.json` 的 owner-local generated projection；不得手工作為 semantic authority。
-- 語意變更先修改 canonical model，再執行 `pnpm semantic package-docs`。Architecture validation 會拒絕缺失或 drift 的 package semantic projection。
-
-## Mandatory package resolution
-
-任何新增功能、模型／Owner／邊界調整或 package 變更，先依序確認：
-
-```text
-業務結果與不變條件
-→ 子域／模型適用邊界
-→ 責任 Owner
-→ 現有 package 能否承接
-→ Aggregate 與用例
-→ Public Contract／資料所有權／依賴
-→ 實作與驗證
-```
-
-這是決策順序，不要求每次新增 Aggregate、Port、事件或 package。GitHub 非程式碼業務模型優先直接沿用 pinned FPT 與既有 owner contracts；Member 是 Organization／Team 的成員關係，Collaborator 是 Repository 存取關係，不因名詞存在而建立獨立 package。子域分類與 candidate context 證據由 `architecture/semantic-model.json` 擁有；不能以分類或參考 GitHub 為理由自動升級 context status 或啟用 code/SCM capability。
-
-修改前至少確認：
-
-`Responsibility / Owner / Consumer / Public Contract / Dependency Direction / Data Boundary / Existing Reuse / Validation`
-
-先追：
-
-`Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger`
-
-確認 Root Cause 後，再依 responsibility 決定 Delete、Merge、Simplify、Reuse、Refactor、Move、Rename、Split 或 Add。Change size、folder count、layer count、CI 變綠速度都不是 architecture goal。
-
-若修法需要多個 exception、alias、wrapper、ignore、fallback 才成立，重新檢查 Owner / Truth / Boundary，而不是繼續堆 compatibility surface。
-
-- 新增、刪除或改變 workspace dependency 時，同 changeset 同步 owner `package.json`、`architecture/implementation-topology.json` 與 root `pnpm-lock.yaml`。
-- 不以目錄對稱、檔案數、FPT category、GitHub Mobile surface 或「看起來像 DDD」作 package existence evidence。
+- 每個 package 保有 AGENTS、README 與 generated SEMANTICS。
+- Child AGENTS 只增加 owner-local constraints，不能削弱本檔/root；README 只 routing，不複製 inventory、schema、exports、capability 或 validation truth。
+- Root/child SEMANTICS 是 canonical models 的 generated projection；語意修改先改真正 authority，再執行 `pnpm semantic package-docs`。
+- `pnpm architecture` 檢查缺檔與 drift；generated projection 不證明 source 已符合 DDD，也不證明 runtime/deployment/device acceptance。
 
 ## Validation
 
-依 root canonical commands：
+| Change | 必要驗證入口 |
+| --- | --- |
+| 文件 | `pnpm docs:check` |
+| 一般 source / use case | owner tests + `pnpm check` |
+| Dependency / public export / boundary | `pnpm boundaries` + `pnpm architecture` |
+| Semantic / architecture / guard | `pnpm semantic check` + `pnpm architecture` + `pnpm architecture:test` |
+| Schema | `pnpm schema:check` |
+| Merge / release | exact-head `pnpm validate` + CI；base 前進後更新並重驗 |
 
-- `pnpm lint`
-- `pnpm boundaries`
-- `pnpm architecture`
-- `pnpm architecture:test`
-- `pnpm deadcode`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- 一般修改：`pnpm check`
-- merge / release 前：`pnpm validate`
-
-Evidence 必須精確描述實際執行內容；Lint、Typecheck、Test、Build、Architecture、Schema、Deployment、Provider Readback 與 Device Verification 不互相替代。
+分項 canonical commands：`pnpm lint`、`pnpm boundaries`、`pnpm architecture`、`pnpm architecture:test`、`pnpm deadcode`、`pnpm typecheck`、`pnpm test`、`pnpm build`。執行範圍與 evidence 規則見 [validation rules](../docs/rules/validation-evidence.md)。
+- 新增/修正 guard 要有 legal、deliberately violating、repaired cases；不以方法/檔名關鍵字代替語意判斷，不加 broad ignore 或路徑例外。
+- 本次觸及用例沿 consumer → Command/Query → Application → Domain → Port → Adapter → composition → tests 完整核對；不留下只是換位置的混合責任或平行 writer。
+- 依實際風險驗證非法轉移、目前資格/跨 scope isolation、version/replay、rollback/recovery、競爭與 stale-worker fencing；無關既有債明示，不強制重構整個 package。
+- 完成證據同時包含 responsibility/dependency review 與對應 behavior evidence；CI green 不單獨證明語意分層正確。Lint、typecheck、test、build、schema、deployment、provider、device 證據不互相替代。
+- 回報精確到本次 flow/capability、revision 與實際 checks；部分流程完成不可宣稱整包或全部 packages 已清理。未知明示，不以 generated docs 或待實作 target 宣稱能力已完成。
