@@ -14,6 +14,7 @@ import type {
 } from "../../../contracts/output/permission-transactions.js";
 import type { PermissionGrant, PermissionView } from "../../../contracts/permissions.js";
 import {
+  assertPermissionAdministratorDeactivation,
   type Permission,
   type PermissionCommand,
   PermissionError,
@@ -116,23 +117,26 @@ export async function protectPermissionAdministrator(sql: Sql, userId: string) {
       userVersionRow,
     )
   ).rows[0];
-  if (!assignment) return;
-
-  const current = await readActiveUserQualification(sql, userId, "share");
-  if (!current || current.statusVersion !== Number(assignment.user_version)) return;
-
-  const others = (
-    await sql.query(
-      "SELECT user_id,user_version FROM permission_administrators WHERE user_id<>$1 ORDER BY user_id",
-      [userId],
-      administratorRow,
-    )
-  ).rows;
-  for (const other of others) {
-    const qualification = await readActiveUserQualification(sql, other.user_id, "share");
-    if (qualification?.statusVersion === Number(other.user_version)) return;
+  const current = assignment ? await readActiveUserQualification(sql, userId, "share") : null;
+  const targetEffective = Boolean(assignment && current?.statusVersion === assignment.user_version);
+  let anotherEffective = false;
+  if (targetEffective) {
+    const others = (
+      await sql.query(
+        "SELECT user_id,user_version FROM permission_administrators WHERE user_id<>$1 ORDER BY user_id",
+        [userId],
+        administratorRow,
+      )
+    ).rows;
+    for (const other of others) {
+      const qualification = await readActiveUserQualification(sql, other.user_id, "share");
+      if (qualification?.statusVersion === Number(other.user_version)) {
+        anotherEffective = true;
+        break;
+      }
+    }
   }
-  throw new PermissionError(409, "不能停用最後一位有效權限管理員，請先指定另一位管理員。");
+  assertPermissionAdministratorDeactivation(targetEffective, anotherEffective);
 }
 
 async function grants(sql: Sql, id: string): Promise<PermissionGrant[]> {

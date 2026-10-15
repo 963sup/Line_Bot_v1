@@ -15,6 +15,14 @@ export const permissions = {
   "partners.review": "推薦審核",
 } as const;
 export type Permission = keyof typeof permissions;
+
+export function assertPermissionAdministratorDeactivation(
+  targetEffective: boolean,
+  anotherEffective: boolean,
+) {
+  if (targetEffective && !anotherEffective)
+    throw new PermissionError(409, "不能停用最後一位有效權限管理員，請先指定另一位管理員。");
+}
 export type PermissionCommand = {
   requestId: string;
   target: string;

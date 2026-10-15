@@ -5,6 +5,7 @@ import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresPermissionStore } from "../src/composition/bootstrap/permissions.js";
 import type { PermissionCommand } from "../src/domain/permission.js";
+import { protectPermissionAdministrator } from "../src/postgres.js";
 
 function command(
   expectedVersion: number,
@@ -20,6 +21,28 @@ function command(
     reason: "test",
   };
 }
+
+test("administrator protection counts only current User-bound assignments, including after restoration", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('manager','active',1),('backup','active',1);
+    INSERT INTO account_logins VALUES ('manager','USER','manager',1),('backup','USER','backup',1);
+    INSERT INTO permission_administrators(user_id,user_version,granted_by) VALUES ('manager',1,'seed'),('backup',1,'seed');`);
+  const protect = (id: string) =>
+    db.transaction(async (sql) => {
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
+      await protectPermissionAdministrator(sql, id);
+    });
+  await protect("manager");
+  await protect("not-an-administrator");
+  await pg.exec("UPDATE users SET status='paused' WHERE id='backup'");
+  await assert.rejects(protect("manager"), { status: 409 });
+  await pg.exec("UPDATE users SET status='active' WHERE id='backup'");
+  await assert.rejects(protect("manager"), { status: 409 });
+  await protect("backup"); // Its old assignment is not effective after User restoration.
+  await pg.exec("UPDATE permission_administrators SET user_version=3 WHERE user_id='backup'");
+  await protect("manager");
+});
 
 test("permission grants preserve version, dependencies, current qualification and exact replay", async (t) => {
   const { pg, db } = await postgresFixture();
