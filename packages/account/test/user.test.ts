@@ -3,9 +3,9 @@ import { test } from "node:test";
 import { createSql, type Database, type SqlResult } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createGoogleLink, createUser, type UserDependencies } from "../src/application/user.js";
-import type { GoogleLinkRepository, UserRepository } from "../src/contracts/repositories/user.js";
+import { PostgresUserStore } from "../src/composition/bootstrap/user.js";
+import type { GoogleLinkRepository, UserRepository } from "../src/contracts/input/user.js";
 import { UserError } from "../src/domain/user.js";
-import { PostgresUserStore } from "../src/postgres/user.js";
 
 const memberView = {
   id: "member-1",

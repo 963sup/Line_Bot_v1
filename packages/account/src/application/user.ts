@@ -1,12 +1,9 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
+import type { GoogleLinkRepository, UserRepository, UserView } from "../contracts/input/user.js";
 import type { VerifiedGoogleIdentity } from "../contracts/output/identity-provider.js";
-import type { GoogleLinkRepository, UserRepository } from "../contracts/repositories/user.js";
-import { requireActiveUser, type User, UserError } from "../domain/user.js";
+import { requireActiveUser, UserError } from "../domain/user.js";
 
-export type AccountView = User & {
-  login: string;
-  googleEmail: string | null;
-};
+export type AccountView = UserView;
 
 /** Decodes the Account-owned projection at an untrusted transport boundary. */
 export function parseAccountView(value: unknown): AccountView {

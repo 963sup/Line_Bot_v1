@@ -2329,12 +2329,26 @@
         "scope": "current account qualification use case and login identity surface",
         "sourcePaths": [
           "packages/account/src/application/user.ts",
-          "packages/account/src/contracts/repositories/user.ts"
+          "packages/account/src/contracts/input/user.ts",
+          "packages/account/src/contracts/output/user-transactions.ts",
+          "packages/account/src/application/use-cases/user-lifecycle.ts",
+          "packages/account/src/domain/user.ts",
+          "packages/account/src/adapters/outbound/persistence/user.ts",
+          "packages/account/src/composition/bootstrap/user.ts",
+          "packages/account/src/domain/google-link.ts",
+          "packages/account/src/application/use-cases/google-link.ts",
+          "packages/account/src/contracts/output/google-link-transactions.ts",
+          "packages/account/src/adapters/outbound/persistence/google-link.ts",
+          "packages/account/src/composition/bootstrap/google-link.ts"
         ],
         "publicExports": ["./application/user", "./contracts/repositories/user"],
         "entrypoints": [],
-        "testPaths": ["packages/account/test/user.test.ts"],
-        "note": "Static source/export evidence only; runtime success still requires executed tests or runtime evidence."
+        "testPaths": [
+          "packages/account/test/user.test.ts",
+          "packages/account/test/user-lifecycle.test.ts",
+          "packages/account/test/google-link.test.ts"
+        ],
+        "note": "Source/export and User lifecycle/identity-link test locations are recorded; executed test evidence and provider/device acceptance remain distinct."
       }
     },
     {
@@ -3650,7 +3664,7 @@
         ],
         "publicExports": [".", "./postgres"],
         "entrypoints": [
-          "packages/account/src/postgres/user.ts",
+          "packages/account/src/adapters/outbound/persistence/user.ts",
           "apps/web/src/app/api/_composition/namespace.server.ts"
         ],
         "testPaths": [
