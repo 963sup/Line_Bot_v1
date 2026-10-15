@@ -4,12 +4,18 @@ import { PostgresEnterpriseIdentity } from "../../adapters/outbound/persistence/
 import { PostgresEnterpriseLifecycle } from "../../adapters/outbound/persistence/enterprise-lifecycle.js";
 import { PostgresEnterpriseOrganization } from "../../adapters/outbound/persistence/enterprise-organization.js";
 import { PostgresEnterpriseOwner } from "../../adapters/outbound/persistence/enterprise-owner.js";
-import { PostgresEnterpriseGovernance } from "../../adapters/postgres.js";
+import { PostgresEnterpriseTeam } from "../../adapters/outbound/persistence/enterprise-team.js";
+import {
+  detailEnterprise,
+  detailEnterpriseBySlug,
+  listEnterprises,
+} from "../../adapters/postgres-queries.js";
 import { enterpriseGovernance } from "../../application/enterprise-governance.js";
 import { executeEnterpriseAffiliation } from "../../application/use-cases/enterprise-affiliation.js";
 import { executeEnterpriseIdentity } from "../../application/use-cases/enterprise-identity.js";
 import { executeEnterpriseOrganization } from "../../application/use-cases/enterprise-organization.js";
 import { executeEnterpriseOwner } from "../../application/use-cases/enterprise-owner.js";
+import { executeEnterpriseTeam } from "../../application/use-cases/enterprise-team.js";
 import type { EnterpriseCommand } from "../../contracts/enterprise-governance.js";
 import type { EnterpriseAffiliationCommand } from "../../contracts/output/enterprise-affiliation.js";
 import type { EnterpriseIdentityCommand } from "../../contracts/output/enterprise-identity.js";
@@ -23,16 +29,16 @@ function isOwnerCommand(command: EnterpriseCommand): command is EnterpriseOwnerC
 }
 
 export function createPostgresEnterpriseGovernance(db: Database, clock = Date.now) {
-  const persistence = new PostgresEnterpriseGovernance(db);
   const owner = new PostgresEnterpriseOwner(db);
   const affiliation = new PostgresEnterpriseAffiliation(db);
   const identity = new PostgresEnterpriseIdentity(db);
   const organization = new PostgresEnterpriseOrganization(db);
+  const team = new PostgresEnterpriseTeam(db);
   return enterpriseGovernance(
     {
-      list: (actor, query) => persistence.list(actor, query),
-      detail: (actor, id) => persistence.detail(actor, id),
-      detailBySlug: (actor, slug) => persistence.detailBySlug(actor, slug),
+      list: (actor, query) => listEnterprises(db, actor, query),
+      detail: (actor, id) => detailEnterprise(db, actor, id),
+      detailBySlug: (actor, slug) => detailEnterpriseBySlug(db, actor, slug),
       execute: (actor, command, at) =>
         isOwnerCommand(command)
           ? executeEnterpriseOwner(owner, actor, command, at)
@@ -42,7 +48,7 @@ export function createPostgresEnterpriseGovernance(db: Database, clock = Date.no
               ? executeEnterpriseIdentity(identity, actor, command, at)
               : isOrganizationCommand(command)
                 ? executeEnterpriseOrganization(organization, actor, command, at)
-                : persistence.execute(actor, command, at),
+                : executeEnterpriseTeam(team, actor, command, at),
     },
     new PostgresEnterpriseLifecycle(db),
     clock,

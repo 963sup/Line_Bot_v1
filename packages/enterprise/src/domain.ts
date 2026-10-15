@@ -293,7 +293,7 @@ function requireId(value: string, field: string) {
   return id;
 }
 
-function requireName(value: string) {
+export function normalizeEnterpriseTeamName(value: string) {
   const name = value.trim();
   if (name.length < 1 || name.length > 80) {
     throw new EnterpriseError("invalid-input", "Enterprise team name is invalid.");
@@ -319,7 +319,7 @@ function requireExpectedVersion(actual: number, expected: number, field: string)
 function requireEnterpriseTeamIdentity(team: EnterpriseTeam) {
   requireId(team.id, "Enterprise team id");
   requireId(team.enterpriseAccountId, "Enterprise id");
-  requireName(team.name);
+  normalizeEnterpriseTeamName(team.name);
   normalizeEnterpriseTeamSlug(team.slug);
   requireVersion(team.version);
 }
@@ -356,7 +356,7 @@ export function createEnterpriseTeam(
   return {
     id: requireId(teamId, "Enterprise team id"),
     enterpriseAccountId: requireId(enterpriseAccountId, "Enterprise id"),
-    name: requireName(name),
+    name: normalizeEnterpriseTeamName(name),
     slug: enterpriseTeamSlugFromName(name),
     version: 1,
   };
@@ -369,7 +369,7 @@ export function renameEnterpriseTeam(
 ): EnterpriseTeam {
   requireEnterpriseTeamIdentity(team);
   requireExpectedVersion(team.version, expectedVersion, "Enterprise team");
-  const nextName = requireName(name);
+  const nextName = normalizeEnterpriseTeamName(name);
   if (team.name === nextName) {
     throw new EnterpriseError("invalid-transition", "Enterprise team name is unchanged.");
   }
@@ -412,6 +412,24 @@ export function removeEnterpriseTeamMembership(
   return { ...membership, status: "removed", version: membership.version + 1 };
 }
 
+export function requireEnterpriseTeamAffiliation(affiliated: boolean) {
+  if (!affiliated)
+    throw new EnterpriseError("forbidden", "Enterprise Team member 必須是目前 Enterprise user。");
+}
+
+export function activateEnterpriseTeamMembership(
+  team: EnterpriseTeam,
+  userId: UserId,
+  current: EnterpriseTeamMembership | null,
+  expectedVersion: number,
+): EnterpriseTeamMembership {
+  if ((current?.version ?? 0) !== expectedVersion)
+    throw new EnterpriseError("conflict", "Enterprise Team membership 版本不符。");
+  if (current?.status === "active")
+    throw new EnterpriseError("invalid-transition", "使用者已在 Enterprise Team。");
+  return { ...createEnterpriseTeamMembership(team, userId), version: (current?.version ?? 0) + 1 };
+}
+
 export function assignEnterpriseTeamToOrganization(
   team: EnterpriseTeam,
   organizationAccountId: AccountId,
@@ -445,4 +463,31 @@ export function detachEnterpriseTeamFromOrganization(
     );
   }
   return { ...assignment, status: "detached", version: assignment.version + 1 };
+}
+
+export function requireEnterpriseTeamOrganization(
+  attached: boolean,
+  organizationStatus: "active" | "inactive" | null,
+) {
+  if (!attached || organizationStatus !== "active")
+    throw new EnterpriseError(
+      "scope-conflict",
+      "Enterprise Team 只能指派到目前由此 Enterprise 治理的 active Organization。",
+    );
+}
+
+export function activateEnterpriseTeamOrganization(
+  team: EnterpriseTeam,
+  organizationAccountId: AccountId,
+  current: EnterpriseTeamOrganizationAssignment | null,
+  expectedVersion: number,
+): EnterpriseTeamOrganizationAssignment {
+  if ((current?.version ?? 0) !== expectedVersion)
+    throw new EnterpriseError("conflict", "Enterprise Team assignment 版本不符。");
+  if (current?.status === "active")
+    throw new EnterpriseError("invalid-transition", "Enterprise Team 已指派到 Organization。");
+  return {
+    ...assignEnterpriseTeamToOrganization(team, organizationAccountId),
+    version: (current?.version ?? 0) + 1,
+  };
 }

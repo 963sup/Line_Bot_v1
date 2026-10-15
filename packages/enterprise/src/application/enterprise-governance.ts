@@ -4,7 +4,11 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseLifecycleTransactions } from "../contracts/output/enterprise-lifecycle.js";
-import { normalizeEnterpriseName, normalizeEnterpriseSlug } from "../domain.js";
+import {
+  normalizeEnterpriseName,
+  normalizeEnterpriseSlug,
+  normalizeEnterpriseTeamName,
+} from "../domain.js";
 import type { EnterpriseLifecycleCommand } from "./commands/enterprise-lifecycle.js";
 import { executeEnterpriseLifecycle } from "./use-cases/enterprise-lifecycle.js";
 
@@ -69,15 +73,14 @@ import type { EnterpriseCommand } from "../contracts/enterprise-governance.js";
 import type { EnterpriseGovernancePort } from "../contracts/input/enterprise-governance.js";
 
 function parseTeamName(value: unknown) {
-  if (
-    typeof value !== "string" ||
-    value !== value.trim() ||
-    value.length < 1 ||
-    value.length > 80
-  ) {
+  if (typeof value !== "string" || value !== value.trim()) {
     throw new GovernanceAccessError(400, "invalid-input", "Enterprise Team 名稱格式不正確。");
   }
-  return value;
+  try {
+    return normalizeEnterpriseTeamName(value);
+  } catch {
+    throw new GovernanceAccessError(400, "invalid-input", "Enterprise Team 名稱格式不正確。");
+  }
 }
 
 function parseEnterpriseName(value: string) {
