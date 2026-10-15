@@ -34,7 +34,14 @@ export type EnterpriseTeamOrganizationAssignment = Readonly<{
   version: number;
 }>;
 
-type EnterpriseFailureCode = "invalid-input" | "conflict" | "invalid-transition";
+type EnterpriseFailureCode =
+  | "invalid-input"
+  | "conflict"
+  | "invalid-transition"
+  | "inactive"
+  | "forbidden"
+  | "not-found"
+  | "last-effective-role-holder";
 
 export class EnterpriseError extends Error {
   constructor(
@@ -43,6 +50,60 @@ export class EnterpriseError extends Error {
   ) {
     super(message);
   }
+}
+
+export type EnterpriseOwnerAssignment = Readonly<{
+  status: "active" | "revoked";
+  version: number;
+  userStatusVersion: number;
+}>;
+
+export function requireActiveEnterprise(status: "active" | "inactive") {
+  if (status !== "active")
+    throw new EnterpriseError("inactive", "停用的 Enterprise 不能變更 owner role。");
+}
+
+export function requireDirectEnterpriseOwnerAffiliation(active: boolean) {
+  if (!active)
+    throw new EnterpriseError(
+      "forbidden",
+      "EnterpriseOwner 對象必須有 active direct Enterprise affiliation。",
+    );
+}
+
+export function grantEnterpriseOwner(
+  current: EnterpriseOwnerAssignment | null,
+  expectedVersion: number,
+  userStatusVersion: number,
+): EnterpriseOwnerAssignment {
+  if ((current?.version ?? 0) !== expectedVersion)
+    throw new EnterpriseError("conflict", "EnterpriseOwner 指派版本已更新。");
+  if (current?.status === "active" && current.userStatusVersion === userStatusVersion)
+    throw new EnterpriseError("invalid-transition", "EnterpriseOwner 已生效。");
+  return { status: "active", version: (current?.version ?? 0) + 1, userStatusVersion };
+}
+
+export function revokeEnterpriseOwner(
+  current: EnterpriseOwnerAssignment | null,
+  expectedVersion: number,
+): EnterpriseOwnerAssignment {
+  if (!current) throw new EnterpriseError("not-found", "找不到 EnterpriseOwner 指派。");
+  if (current.version !== expectedVersion)
+    throw new EnterpriseError("conflict", "EnterpriseOwner 指派版本已更新。");
+  if (current.status !== "active")
+    throw new EnterpriseError("invalid-transition", "EnterpriseOwner 已撤銷。");
+  return { ...current, status: "revoked", version: current.version + 1 };
+}
+
+export function requireReplacementEnterpriseOwner(
+  targetEffective: boolean,
+  anotherEffective: boolean,
+) {
+  if (targetEffective && !anotherEffective)
+    throw new EnterpriseError(
+      "last-effective-role-holder",
+      "不能撤銷最後一位有效 EnterpriseOwner。",
+    );
 }
 
 export function normalizeEnterpriseSlug(value: string) {
