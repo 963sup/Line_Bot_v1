@@ -1,4 +1,6 @@
-export type UserProfileVisibility = "private" | "organization" | "public";
+import type { UserProfileVisibility } from "../../domain/profile.js";
+
+export type { UserProfileVisibility } from "../../domain/profile.js";
 
 export type UserProfile = Readonly<{
   userId: string;

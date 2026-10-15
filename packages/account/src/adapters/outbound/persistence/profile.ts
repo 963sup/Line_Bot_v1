@@ -10,8 +10,13 @@ import type {
   UserProfile,
   UserProfileStore,
   UserProfileUpdate,
-} from "../contracts/repositories/profile.js";
-import { UserError } from "../domain/user.js";
+} from "../../../contracts/repositories/profile.js";
+import {
+  decideProfileSave,
+  requireProfileWriter,
+  USER_PROFILE_VISIBILITIES,
+} from "../../../domain/profile.js";
+import { UserError } from "../../../domain/user.js";
 
 type ProfileRow = {
   user_id: string;
@@ -30,7 +35,7 @@ function profileRow(row: Record<string, unknown>): ProfileRow {
     display_name: nullableString(row.display_name),
     bio: nullableString(row.bio),
     avatar_ref: nullableString(row.avatar_ref),
-    visibility: literalValue(row.visibility, ["private", "organization", "public"]),
+    visibility: literalValue(row.visibility, USER_PROFILE_VISIBILITIES),
     version: numberValue(row.version),
     created_at: numericValue(row.created_at),
     updated_at: numericValue(row.updated_at),
@@ -57,14 +62,6 @@ function profile(row: ProfileRow): UserProfile {
   };
 }
 
-function same(current: ProfileRow, update: UserProfileUpdate) {
-  return (
-    current.display_name === update.displayName &&
-    current.bio === update.bio &&
-    current.visibility === update.visibility
-  );
-}
-
 export class PostgresUserProfileStore implements UserProfileStore {
   constructor(private db: Database = businessDatabase()) {}
 
@@ -86,9 +83,7 @@ export class PostgresUserProfileStore implements UserProfileStore {
       const user = (
         await sql.query("SELECT status FROM users WHERE id=$1 FOR SHARE", [userId], statusRow)
       ).rows[0];
-      if (!user || user.status !== "active") {
-        throw new UserError(403, "目前會員資格無法更新個人資料。");
-      }
+      requireProfileWriter(user?.status ?? null);
 
       const current = (
         await sql.query(
@@ -98,10 +93,13 @@ export class PostgresUserProfileStore implements UserProfileStore {
         )
       ).rows[0];
 
-      if (!current) {
-        if (update.expectedVersion !== 0) {
-          throw new UserError(409, "個人資料已更新，請重新載入。");
-        }
+      const decision = decideProfileSave(
+        current ? profile(current) : null,
+        update,
+        update.expectedVersion,
+      );
+      if (current && decision === "retry") return profile(current);
+      if (decision === "create") {
         const created = (
           await sql.query(
             `INSERT INTO user_profiles(
@@ -114,13 +112,6 @@ export class PostgresUserProfileStore implements UserProfileStore {
         ).rows[0];
         if (!created) throw new UserError(500, "個人資料建立結果不完整。");
         return profile(created);
-      }
-
-      if (current.version === update.expectedVersion + 1 && same(current, update)) {
-        return profile(current);
-      }
-      if (current.version !== update.expectedVersion) {
-        throw new UserError(409, "個人資料已更新，請重新載入。");
       }
 
       const saved = (
