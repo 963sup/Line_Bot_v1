@@ -10,7 +10,6 @@ import {
   isOrganizationOwner,
   readGovernanceReplay,
   recordGovernanceResult,
-  requireActiveTargetUser,
   requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
   resolveVerifiedLineActor,
@@ -29,12 +28,8 @@ import type {
   EnterpriseList,
   EnterpriseReceipt,
 } from "../contracts/enterprise-governance.js";
+import type { EnterpriseAffiliationCommand } from "../contracts/output/enterprise-affiliation.js";
 import type { EnterpriseOwnerCommand } from "../contracts/output/enterprise-owner.js";
-import {
-  hasEnterpriseOwnerAssignment,
-  hasReplacementEnterpriseOwner,
-  revokeEnterpriseOwnerForAffiliationRemoval,
-} from "./postgres-owner-roles.js";
 import { detailEnterprise, detailEnterpriseBySlug, listEnterprises } from "./postgres-queries.js";
 import { makeEnterpriseReceipt } from "./postgres-receipt.js";
 import {
@@ -80,18 +75,6 @@ async function lockEnterprise(sql: Sql, id: string) {
   return row;
 }
 
-async function hasEffectiveAffiliation(sql: Sql, enterpriseId: string, userId: string) {
-  return Boolean(
-    (
-      await sql.query(
-        `SELECT 1 FROM enterprise_user_affiliations
-         WHERE enterprise_account_id=$1 AND user_id=$2 LIMIT 1`,
-        [enterpriseId, userId],
-      )
-    ).rows[0],
-  );
-}
-
 export class PostgresEnterpriseGovernance {
   constructor(private readonly db: Database = businessDatabase()) {}
 
@@ -109,7 +92,7 @@ export class PostgresEnterpriseGovernance {
 
   execute(
     actor: VerifiedLineActor,
-    command: Exclude<EnterpriseCommand, EnterpriseOwnerCommand>,
+    command: Exclude<EnterpriseCommand, EnterpriseOwnerCommand | EnterpriseAffiliationCommand>,
     now: number,
   ): Promise<EnterpriseReceipt> {
     return this.db.transaction(async (sql) => {
@@ -281,18 +264,7 @@ export class PostgresEnterpriseGovernance {
             );
           }
         }
-      } else if (
-        command.action === "accept-invitation" ||
-        command.action === "decline-invitation"
-      ) {
-        if (command.targetUserId !== principal.userId) {
-          throw new GovernanceAccessError(
-            403,
-            "forbidden",
-            "只能接受自己的 Enterprise invitation。",
-          );
-        }
-      } else if (command.action !== "leave-enterprise") {
+      } else {
         await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
       }
 
@@ -435,253 +407,7 @@ export class PostgresEnterpriseGovernance {
           now,
         );
       } else {
-        const targetUserId =
-          command.action === "leave-enterprise"
-            ? principal.userId
-            : "targetUserId" in command
-              ? command.targetUserId
-              : null;
-        if (!targetUserId)
-          throw new GovernanceAccessError(400, "invalid-input", "Enterprise 人員操作格式不正確。");
-        if (enterprise.status !== "active")
-          throw new GovernanceAccessError(409, "inactive", "Enterprise 已停用。");
-        const direct = (
-          await sql.query(
-            `SELECT status,version FROM enterprise_direct_affiliations
-             WHERE enterprise_account_id=$1 AND user_id=$2 FOR UPDATE`,
-            [command.enterpriseAccountId, targetUserId],
-            statusVersionRow,
-          )
-        ).rows[0];
-        const invitation = (
-          await sql.query(
-            `SELECT status,version FROM enterprise_invitations
-             WHERE enterprise_account_id=$1 AND user_id=$2 FOR UPDATE`,
-            [command.enterpriseAccountId, targetUserId],
-            statusVersionRow,
-          )
-        ).rows[0];
-
-        if (command.action === "invite-user") {
-          if (
-            await hasEffectiveAffiliation(sql, command.enterpriseAccountId, command.targetUserId)
-          ) {
-            throw new GovernanceAccessError(
-              409,
-              "invalid-transition",
-              "使用者已是 Enterprise user。",
-            );
-          }
-          await requireActiveTargetUser(sql, command.targetUserId);
-          if (!invitation) {
-            if (command.expectedVersion !== 0)
-              throw new GovernanceAccessError(409, "conflict", "Invitation 版本不符。");
-            await sql.query(
-              `INSERT INTO enterprise_invitations(
-                 enterprise_account_id,user_id,status,version,created_at,resolved_at
-               ) VALUES($1,$2,'pending',1,$3,null)`,
-              [command.enterpriseAccountId, command.targetUserId, now],
-            );
-            result = makeEnterpriseReceipt(command, "pending", 1, now);
-          } else {
-            if (invitation.version !== command.expectedVersion || invitation.status === "pending") {
-              throw new GovernanceAccessError(409, "conflict", "Invitation 狀態或版本不符。");
-            }
-            const changed = (
-              await sql.query(
-                `UPDATE enterprise_invitations
-                 SET status='pending',version=version+1,created_at=$3,resolved_at=null
-                 WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
-                [command.enterpriseAccountId, command.targetUserId, now],
-                versionRow,
-              )
-            ).rows[0];
-            if (!changed) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "Enterprise 狀態已更新，請重新讀取。",
-              );
-            }
-            result = makeEnterpriseReceipt(command, "pending", changed.version, now);
-          }
-        } else if (command.action === "accept-invitation") {
-          if (
-            !invitation ||
-            invitation.status !== "pending" ||
-            invitation.version !== command.expectedVersion
-          ) {
-            throw new GovernanceAccessError(
-              409,
-              "conflict",
-              "找不到指定版本的 pending invitation。",
-            );
-          }
-          await requireActiveTargetUser(sql, command.targetUserId);
-          if (
-            await hasEffectiveAffiliation(sql, command.enterpriseAccountId, command.targetUserId)
-          ) {
-            throw new GovernanceAccessError(
-              409,
-              "invalid-transition",
-              "使用者已是 Enterprise user。",
-            );
-          }
-          if (direct) {
-            await sql.query(
-              `UPDATE enterprise_direct_affiliations
-               SET status='active',version=version+1,created_at=$3
-               WHERE enterprise_account_id=$1 AND user_id=$2`,
-              [command.enterpriseAccountId, command.targetUserId, now],
-            );
-          } else {
-            await sql.query(
-              `INSERT INTO enterprise_direct_affiliations(
-                 enterprise_account_id,user_id,status,version,created_at
-               ) VALUES($1,$2,'active',1,$3)`,
-              [command.enterpriseAccountId, command.targetUserId, now],
-            );
-          }
-          const changed = (
-            await sql.query(
-              `UPDATE enterprise_invitations
-               SET status='accepted',version=version+1,resolved_at=$3
-               WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
-              [command.enterpriseAccountId, command.targetUserId, now],
-              versionRow,
-            )
-          ).rows[0];
-          if (!changed) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
-          }
-          result = makeEnterpriseReceipt(command, "accepted", changed.version, now);
-        } else if (command.action === "decline-invitation") {
-          if (
-            !invitation ||
-            invitation.status !== "pending" ||
-            invitation.version !== command.expectedVersion
-          ) {
-            throw new GovernanceAccessError(
-              409,
-              "conflict",
-              "找不到指定版本的 pending invitation。",
-            );
-          }
-          const changed = (
-            await sql.query(
-              `UPDATE enterprise_invitations
-               SET status='declined',version=version+1,resolved_at=$3
-               WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
-              [command.enterpriseAccountId, targetUserId, now],
-              versionRow,
-            )
-          ).rows[0];
-          if (!changed) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
-          }
-          result = makeEnterpriseReceipt(command, "declined", changed.version, now);
-        } else if (command.action === "cancel-invitation") {
-          if (
-            !invitation ||
-            invitation.status !== "pending" ||
-            invitation.version !== command.expectedVersion
-          ) {
-            throw new GovernanceAccessError(
-              409,
-              "conflict",
-              "找不到指定版本的 pending invitation。",
-            );
-          }
-          const changed = (
-            await sql.query(
-              `UPDATE enterprise_invitations
-               SET status='cancelled',version=version+1,resolved_at=$3
-               WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
-              [command.enterpriseAccountId, command.targetUserId, now],
-              versionRow,
-            )
-          ).rows[0];
-          if (!changed) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
-          }
-          result = makeEnterpriseReceipt(command, "cancelled", changed.version, now);
-        } else {
-          if (
-            command.action !== "remove-direct-affiliation" &&
-            command.action !== "leave-enterprise"
-          ) {
-            throw new GovernanceAccessError(
-              400,
-              "invalid-input",
-              "Enterprise 人員移除操作格式不正確。",
-            );
-          }
-          if (!direct || direct.status !== "active" || direct.version !== command.expectedVersion) {
-            throw new GovernanceAccessError(
-              409,
-              "conflict",
-              "找不到指定版本的有效 direct affiliation。",
-            );
-          }
-          if (command.action === "leave-enterprise") {
-            const otherSource = (
-              await sql.query(
-                `SELECT 1 FROM enterprise_user_affiliations
-                 WHERE enterprise_account_id=$1 AND user_id=$2 AND source_kind<>'direct'
-                 LIMIT 1`,
-                [command.enterpriseAccountId, targetUserId],
-              )
-            ).rows[0];
-            if (otherSource) {
-              throw new GovernanceAccessError(
-                409,
-                "scope-conflict",
-                "仍透過 Organization 隸屬此 Enterprise；請先解除對應 Organization participation。",
-              );
-            }
-          }
-          const hasOwner = await hasEnterpriseOwnerAssignment(
-            sql,
-            command.enterpriseAccountId,
-            targetUserId,
-          );
-          if (
-            hasOwner &&
-            !(await hasReplacementEnterpriseOwner(sql, command.enterpriseAccountId, targetUserId))
-          ) {
-            throw new GovernanceAccessError(
-              409,
-              "last-effective-role-holder",
-              "不能移除最後一位有效 EnterpriseOwner 的最後 affiliation。",
-            );
-          }
-          const changed = (
-            await sql.query(
-              `UPDATE enterprise_direct_affiliations SET status='removed',version=version+1
-               WHERE enterprise_account_id=$1 AND user_id=$2 RETURNING version`,
-              [command.enterpriseAccountId, targetUserId],
-              versionRow,
-            )
-          ).rows[0];
-          if (!changed) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
-          }
-          if (hasOwner) {
-            await revokeEnterpriseOwnerForAffiliationRemoval(
-              sql,
-              command.enterpriseAccountId,
-              targetUserId,
-            );
-          }
-          result =
-            command.action === "leave-enterprise"
-              ? {
-                  ...makeEnterpriseReceipt(command, "removed", changed.version, now),
-                  subjectKind: "user",
-                  subjectId: targetUserId,
-                }
-              : makeEnterpriseReceipt(command, "removed", changed.version, now);
-        }
+        throw new GovernanceAccessError(400, "invalid-input", "Enterprise 人員操作格式不正確。");
       }
 
       await recordGovernanceResult(sql, {

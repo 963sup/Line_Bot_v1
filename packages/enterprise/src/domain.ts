@@ -41,6 +41,7 @@ type EnterpriseFailureCode =
   | "inactive"
   | "forbidden"
   | "not-found"
+  | "scope-conflict"
   | "last-effective-role-holder";
 
 export class EnterpriseError extends Error {
@@ -103,6 +104,65 @@ export function requireReplacementEnterpriseOwner(
     throw new EnterpriseError(
       "last-effective-role-holder",
       "不能撤銷最後一位有效 EnterpriseOwner。",
+    );
+}
+
+export type EnterpriseInvitationState = Readonly<{
+  status: "pending" | "accepted" | "declined" | "cancelled";
+  version: number;
+}>;
+export type EnterpriseDirectAffiliationState = Readonly<{
+  status: "active" | "removed";
+  version: number;
+}>;
+
+export function requireNoEffectiveEnterpriseAffiliation(effective: boolean) {
+  if (effective) throw new EnterpriseError("invalid-transition", "使用者已是 Enterprise user。");
+}
+
+export function inviteEnterpriseUser(
+  current: EnterpriseInvitationState | null,
+  expectedVersion: number,
+): EnterpriseInvitationState {
+  if (!current) {
+    if (expectedVersion !== 0) throw new EnterpriseError("conflict", "Invitation 版本不符。");
+    return { status: "pending", version: 1 };
+  }
+  if (current.version !== expectedVersion || current.status === "pending")
+    throw new EnterpriseError("conflict", "Invitation 狀態或版本不符。");
+  return { status: "pending", version: current.version + 1 };
+}
+
+export function resolveEnterpriseInvitation(
+  current: EnterpriseInvitationState | null,
+  expectedVersion: number,
+  status: "accepted" | "declined" | "cancelled",
+): EnterpriseInvitationState {
+  if (!current || current.status !== "pending" || current.version !== expectedVersion)
+    throw new EnterpriseError("conflict", "找不到指定版本的 pending invitation。");
+  return { status, version: current.version + 1 };
+}
+
+export function activateEnterpriseDirectAffiliation(
+  current: EnterpriseDirectAffiliationState | null,
+): EnterpriseDirectAffiliationState {
+  return { status: "active", version: (current?.version ?? 0) + 1 };
+}
+
+export function removeEnterpriseDirectAffiliation(
+  current: EnterpriseDirectAffiliationState | null,
+  expectedVersion: number,
+): EnterpriseDirectAffiliationState {
+  if (!current || current.status !== "active" || current.version !== expectedVersion)
+    throw new EnterpriseError("conflict", "找不到指定版本的有效 direct affiliation。");
+  return { status: "removed", version: current.version + 1 };
+}
+
+export function requireNoDerivedEnterpriseAffiliation(hasOtherSource: boolean) {
+  if (hasOtherSource)
+    throw new EnterpriseError(
+      "scope-conflict",
+      "仍透過 Organization 隸屬此 Enterprise；請先解除對應 Organization participation。",
     );
 }
 
