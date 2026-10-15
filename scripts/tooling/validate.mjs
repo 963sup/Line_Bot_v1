@@ -267,7 +267,16 @@ function main() {
     ["schema:check", [turbo, "run", "schema:check"]],
     ["architecture", ["scripts/architecture/check-all.mjs"]],
     ["deadcode", ["node_modules/knip/bin/knip.js"]],
-    ["typecheck+test", [turbo, "run", "typecheck", "test"]],
+    [
+      "typecheck+test",
+      [
+        turbo,
+        "run",
+        "typecheck",
+        "test",
+        ...(process.env.CI === "true" ? ["--concurrency=2"] : []),
+      ],
+    ],
     ["build", [turbo, "run", "build"]],
   ];
 
