@@ -2370,7 +2370,9 @@
         "scope": "current User profile application surface",
         "sourcePaths": [
           "packages/account/src/application/profile.ts",
-          "packages/account/src/contracts/repositories/profile.ts"
+          "packages/account/src/contracts/repositories/profile.ts",
+          "packages/account/src/domain/profile.ts",
+          "packages/account/src/adapters/outbound/persistence/profile.ts"
         ],
         "publicExports": ["./application/profile", "./contracts/repositories/profile"],
         "entrypoints": [

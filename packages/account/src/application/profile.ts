@@ -3,25 +3,12 @@ import type {
   UserProfile,
   UserProfileStore,
   UserProfileUpdate,
-  UserProfileVisibility,
 } from "../contracts/repositories/profile.js";
+import { canReadPublicUserProfile, userProfileFields } from "../domain/profile.js";
 import { UserError } from "../domain/user.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function isUserProfileVisibility(value: unknown): value is UserProfileVisibility {
-  return value === "private" || value === "organization" || value === "public";
-}
-
-function nullableText(value: unknown, maxLength: number, label: string): string | null {
-  if (value === null) return null;
-  if (typeof value !== "string") throw new UserError(400, `${label}格式不正確。`);
-  const text = value.trim();
-  if (!text) return null;
-  if (text.length > maxLength) throw new UserError(400, `${label}過長。`);
-  return text;
 }
 
 export function parseUserProfileUpdate(input: unknown): UserProfileUpdate {
@@ -34,19 +21,15 @@ export function parseUserProfileUpdate(input: unknown): UserProfileUpdate {
     throw new UserError(400, "個人資料包含不支援的欄位。");
   }
 
-  const displayName = nullableText(value.displayName, 120, "顯示名稱");
-  const bio = nullableText(value.bio, 2000, "自我介紹");
-  if (!isUserProfileVisibility(value.visibility)) {
-    throw new UserError(400, "個人資料可見範圍不正確。");
-  }
+  const fields = userProfileFields(value);
   if (!Number.isSafeInteger(value.expectedVersion) || Number(value.expectedVersion) < 0) {
     throw new UserError(400, "個人資料版本不正確。");
   }
 
   return {
-    displayName,
-    bio,
-    visibility: value.visibility,
+    displayName: fields.displayName,
+    bio: fields.bio,
+    visibility: fields.visibility,
     expectedVersion: Number(value.expectedVersion),
   };
 }
@@ -68,7 +51,9 @@ export function createUserProfiles(deps: {
     get: async (subject: string) => deps.store().read((await deps.activeUser(subject)).id),
     publicByUserId: async (userId: string) => {
       const profile = await deps.store().read(userId);
-      return profile?.visibility === "public" ? publicProfile(profile) : null;
+      return profile && canReadPublicUserProfile(profile.visibility)
+        ? publicProfile(profile)
+        : null;
     },
     update: async (subject: string, input: unknown) =>
       deps
