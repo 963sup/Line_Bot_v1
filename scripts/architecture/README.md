@@ -24,10 +24,12 @@
 | `semantic-diff.mjs` | 比較兩版 product semantic model，分類 breaking semantic changes。 |
 | `semantic-drift.mjs` | 比較兩版 FPT provenance，標示被本地 overlay 直接引用之 truth file drift。 |
 | `semantic-feedback.mjs` | 將 runtime observation bundle 與 capability expectation 對照。 |
-| `semantic-planning.mjs` | 將 change intent resolve 到 owner/concept，建立 impact/boundary/context。 |
+| `semantic-planning.mjs` | 將 change intent resolve 到 owner/concept/capability，建立 impact/boundary/context。 |
 | `semantic-projection.mjs` | 產生 ownership/subdomain/context evidence/glossary/implementation projections 與 package SEMANTICS。 |
 | `semantic-query.mjs` | 執行 owner/concept/path/contracts/consumers/invariants/evidence 查詢。 |
 
 一般入口使用 `pnpm architecture`、`pnpm boundaries`、`pnpm semantic <verb>`；FPT references 只允許 exact `file` / `symbol` / optional `field`，不得在 overlay 再保存 category/adoption 摘要。修改前遵守同層 `AGENTS.md`。
 
 子域分類使用 `pnpm semantic view subdomains`，context status 與證據使用 `pnpm semantic view contexts`。`plan` / `context` / `explain` 從相同 canonical model 取得相關分類與邊界證據；`pnpm semantic package-docs` 更新各 package 的 generated projection。
+
+`resolve` / `plan` / `context` 共用 intent resolver：完整 Owner／Concept／Capability ID 優先，也可使用 `owner:<id>`、`concept:<id>`、`capability:<id>` 明確指定。一般文字只匹配完整名稱／字詞；`application`、`mapping` 不代表 App。輸出區分 `resolved`、`ambiguous`、`candidate`、`no-match`，每個命中附 term/source/reason；歧義與前綴候選不自動成為 primary owner。`currentOwners` 與 `targetOwners` 分開；明確查詢 `app` 仍回傳 selected-target，不代表啟用 runtime module。跨 Owner 的既有 review/security dependency 繼續展開，沒有匹配不能被解讀為沒有治理約束。

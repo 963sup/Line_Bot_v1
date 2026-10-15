@@ -11,56 +11,119 @@ function uniqueById(items) {
   return [...new Map(items.map((item) => [item.id, item])).values()];
 }
 
-function conceptSearchTerms(concept) {
-  return uniqueById(
-    [concept.id, concept.fpt?.symbol ?? concept.canonicalName, ...(concept.aliases ?? [])]
-      .filter(Boolean)
-      .map((value) => ({ id: normalize(value), value: normalize(value) })),
-  ).map((entry) => entry.value);
+function matchesTerm(intent, term) {
+  if (!term) return false;
+  const word = /[\p{Script=Latin}\p{N}]/u;
+  for (let at = intent.indexOf(term); at !== -1; at = intent.indexOf(term, at + 1)) {
+    const end = at + term.length;
+    if (
+      !(at > 0 && word.test(term[0]) && word.test(intent[at - 1])) &&
+      !(end < intent.length && word.test(term.at(-1)) && word.test(intent[end]))
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function resolveSemanticIntent(compiled, intent) {
-  const normalizedIntent = normalize(intent);
-  const matchedConcepts = [];
-  const matchedOwners = [];
-
-  for (const concept of compiled.concepts.values()) {
-    if (conceptSearchTerms(concept).some((term) => term && normalizedIntent.includes(term))) {
-      matchedConcepts.push(concept);
+  const selector = String(intent ?? "")
+    .trim()
+    .match(/^(owner|concept|capability):\s*(.+)$/iu);
+  const normalizedIntent = normalize(selector?.[2] ?? intent);
+  const definitions = [
+    ...[...compiled.owners.values()].map((item) => ({
+      kind: "owner",
+      item,
+      owner: item.id,
+      terms: [item.id, item.name],
+      source: "architecture/semantic-model.json#semanticOwners",
+    })),
+    ...[...compiled.concepts.values()].map((item) => ({
+      kind: "concept",
+      item,
+      owner: item.owner,
+      terms: [item.id, item.fpt?.symbol ?? item.canonicalName, ...(item.aliases ?? [])],
+      source: item.fpt
+        ? `architecture/domain/fpt/${item.fpt.file}#${item.fpt.symbol}`
+        : "architecture/semantic-model.json#concepts",
+    })),
+    ...[...compiled.capabilities.values()].map((item) => ({
+      kind: "capability",
+      item,
+      owner: item.owner,
+      terms: [item.id],
+      source: "architecture/semantic-model.json#capabilities",
+    })),
+  ].filter((entry) => !selector || entry.kind === selector[1].toLowerCase());
+  const exact = definitions.filter((entry) => normalize(entry.item.id) === normalizedIntent);
+  const matches = (exact.length ? exact : selector ? [] : definitions).flatMap((entry) =>
+    [...new Set((exact.length ? [entry.item.id] : entry.terms).filter(Boolean).map(normalize))]
+      .filter((term) => exact.length || matchesTerm(normalizedIntent, term))
+      .map((term) => ({
+        kind: entry.kind,
+        id: entry.item.id,
+        owner: entry.owner,
+        term,
+        source:
+          term === normalize(entry.item.id)
+            ? `architecture/semantic-model.json#${entry.kind === "owner" ? "semanticOwners" : `${entry.kind}s`}`
+            : entry.source,
+        reason: exact.length ? "exact-id" : "bounded-term",
+      })),
+  );
+  const byTerm = new Map();
+  for (const match of matches) {
+    if (!byTerm.has(match.term)) byTerm.set(match.term, []);
+    byTerm.get(match.term).push(match);
+  }
+  const ambiguities = [...byTerm].flatMap(([term, entries]) => {
+    const concepts = [...new Set(entries.filter((m) => m.kind === "concept").map((m) => m.id))];
+    const owners = [...new Set(entries.map((m) => m.owner))];
+    return concepts.length > 1 || owners.length > 1 ? [{ term, concepts, owners }] : [];
+  });
+  const ambiguousTerms = new Set(ambiguities.map((entry) => entry.term));
+  const selected = matches.filter((match) => !ambiguousTerms.has(match.term));
+  const candidates = matches.filter((match) => ambiguousTerms.has(match.term));
+  if (!matches.length && normalizedIntent.length >= 3 && !normalizedIntent.includes(" ")) {
+    for (const entry of definitions) {
+      if (normalize(entry.item.id).startsWith(normalizedIntent)) {
+        candidates.push({
+          kind: entry.kind,
+          id: entry.item.id,
+          owner: entry.owner,
+          term: normalize(entry.item.id),
+          source: "architecture/semantic-model.json",
+          reason: "prefix-candidate",
+        });
+      }
     }
   }
-  for (const owner of compiled.owners.values()) {
-    const terms = [owner.id, owner.name].filter(Boolean).map(normalize);
-    if (terms.some((term) => term && normalizedIntent.includes(term))) matchedOwners.push(owner);
-  }
-  for (const concept of matchedConcepts) {
-    const owner = compiled.owners.get(concept.owner);
-    if (owner) matchedOwners.push(owner);
-  }
-
-  const concepts = uniqueById(matchedConcepts);
-  const owners = uniqueById(matchedOwners);
-  const byCanonicalName = new Map();
-  for (const concept of concepts) {
-    const key = normalize(concept.fpt?.symbol ?? concept.canonicalName ?? concept.id);
-    if (!byCanonicalName.has(key)) byCanonicalName.set(key, []);
-    byCanonicalName.get(key).push(concept.id);
-  }
-  const ambiguities = [...byCanonicalName.entries()]
-    .filter(([, ids]) => ids.length > 1)
-    .map(([term, ids]) => ({ term, concepts: ids }));
+  const concepts = uniqueById(
+    selected
+      .filter((match) => match.kind === "concept")
+      .map((match) => compiled.concepts.get(match.id)),
+  );
+  const owners = uniqueById(
+    selected.map((match) => compiled.owners.get(match.owner)).filter(Boolean),
+  );
 
   return {
     intent,
     normalizedIntent,
-    status:
-      concepts.length || owners.length
-        ? ambiguities.length
-          ? "ambiguous"
-          : "resolved"
-        : "no-match",
+    status: ambiguities.length
+      ? "ambiguous"
+      : owners.length
+        ? "resolved"
+        : candidates.length
+          ? "candidate"
+          : "no-match",
     concepts,
     owners,
+    currentOwners: owners.filter((owner) => owner.lifecycle !== "selected-target"),
+    targetOwners: owners.filter((owner) => owner.lifecycle === "selected-target"),
+    matches,
+    candidates,
     ambiguities,
   };
 }
@@ -221,6 +284,8 @@ export function planSemanticChange(compiled, intent) {
     intent,
     resolution,
     primaryOwners,
+    primaryCurrentOwners: resolution.currentOwners.map((owner) => owner.id),
+    primaryTargetOwners: resolution.targetOwners.map((owner) => owner.id),
     directImpactOwners: [...directOwners].sort(),
     transitiveReviewOwners: [...transitiveOwners.values()].sort(
       (a, b) => a.depth - b.depth || a.owner.localeCompare(b.owner),
@@ -262,6 +327,7 @@ export function compileAgentContext(compiled, intent) {
   return {
     intent,
     status: plan.resolution.status,
+    resolution: plan.resolution,
     ambiguities: plan.resolution.ambiguities,
     concepts,
     owners: [...ownerSet].map((id) => compiled.owners.get(id)).filter(Boolean),
