@@ -5,15 +5,11 @@ import type {
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
   governanceFingerprint,
-  hasOrganizationOwnerAssignment,
-  isOrganizationOwner,
   readGovernanceReplay,
   recordGovernanceResult,
-  requireEnterpriseLifecycleOwner,
   requireEnterpriseOwner,
   resolveVerifiedLineActor,
 } from "@line_bot_v1/identity-access/postgres";
-import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import {
   literalValue,
@@ -29,13 +25,10 @@ import type {
 } from "../contracts/enterprise-governance.js";
 import type { EnterpriseAffiliationCommand } from "../contracts/output/enterprise-affiliation.js";
 import type { EnterpriseIdentityCommand } from "../contracts/output/enterprise-identity.js";
+import type { EnterpriseOrganizationCommand } from "../contracts/output/enterprise-organization.js";
 import type { EnterpriseOwnerCommand } from "../contracts/output/enterprise-owner.js";
 import { detailEnterprise, detailEnterpriseBySlug, listEnterprises } from "./postgres-queries.js";
-import { makeEnterpriseReceipt } from "./postgres-receipt.js";
-import {
-  executeEnterpriseTeamMutation,
-  isEnterpriseTeamCommand,
-} from "./postgres-team-mutations.js";
+import { executeEnterpriseTeamMutation } from "./postgres-team-mutations.js";
 
 function enterpriseRow(row: Record<string, unknown>) {
   return {
@@ -45,18 +38,6 @@ function enterpriseRow(row: Record<string, unknown>) {
     status: literalValue(row.status, ["active", "inactive"]),
     version: numberValue(row.version),
   };
-}
-
-function versionRow(row: Record<string, unknown>) {
-  return { version: numberValue(row.version) };
-}
-
-function statusVersionRow(row: Record<string, unknown>) {
-  return { status: stringValue(row.status), version: numberValue(row.version) };
-}
-
-function hasPostgresCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
 }
 
 async function lockEnterprise(sql: Sql, id: string) {
@@ -90,7 +71,10 @@ export class PostgresEnterpriseGovernance {
     actor: VerifiedLineActor,
     command: Exclude<
       EnterpriseCommand,
-      EnterpriseOwnerCommand | EnterpriseAffiliationCommand | EnterpriseIdentityCommand
+      | EnterpriseOwnerCommand
+      | EnterpriseAffiliationCommand
+      | EnterpriseIdentityCommand
+      | EnterpriseOrganizationCommand
     >,
     now: number,
   ): Promise<EnterpriseReceipt> {
@@ -104,45 +88,7 @@ export class PostgresEnterpriseGovernance {
 
       const enterprise = await lockEnterprise(sql, command.enterpriseAccountId);
 
-      let organization: { id: string; status: "active" | "inactive"; version: number } | null =
-        null;
-      if (command.action === "attach-organization" || command.action === "detach-organization") {
-        organization = await readOrganizationQualification(
-          sql,
-          command.organizationAccountId,
-          "update",
-        );
-        if (!organization)
-          throw new GovernanceAccessError(404, "not-found", "找不到 Organization。");
-        if (command.action === "detach-organization") {
-          await requireEnterpriseLifecycleOwner(sql, command.enterpriseAccountId, principal.userId);
-          if (
-            !(await hasOrganizationOwnerAssignment(
-              sql,
-              command.organizationAccountId,
-              principal.userId,
-            ))
-          ) {
-            throw new GovernanceAccessError(
-              403,
-              "consent-required",
-              "需要目前 OrganizationOwner 同意解除治理關係。",
-            );
-          }
-        } else {
-          await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
-          if (!(await isOrganizationOwner(sql, command.organizationAccountId, principal.userId))) {
-            throw new GovernanceAccessError(
-              403,
-              "consent-required",
-              "需要目前 OrganizationOwner 同意建立治理關係。",
-            );
-          }
-        }
-      } else {
-        await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
-      }
-
+      await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
       const replay = await readGovernanceReplay(
         sql,
         principal.userId,
@@ -150,140 +96,13 @@ export class PostgresEnterpriseGovernance {
         fingerprint,
       );
       if (replay) return replay;
-
-      let result: EnterpriseReceipt;
-      if (command.action === "attach-organization" || command.action === "detach-organization") {
-        if (!organization) {
-          throw new GovernanceAccessError(404, "not-found", "找不到 Organization。");
-        }
-        if (
-          enterprise.version !== command.expectedEnterpriseVersion ||
-          organization.version !== command.expectedOrganizationVersion
-        ) {
-          throw new GovernanceAccessError(
-            409,
-            "conflict",
-            "Enterprise 或 Organization 版本已更新。",
-          );
-        }
-        if (
-          command.action === "attach-organization" &&
-          (enterprise.status !== "active" || organization.status !== "active")
-        ) {
-          throw new GovernanceAccessError(409, "inactive", "停用的範圍不能建立治理關係。");
-        }
-        const relation = (
-          await sql.query(
-            `SELECT status,version FROM enterprise_organizations
-             WHERE enterprise_account_id=$1 AND organization_account_id=$2 FOR UPDATE`,
-            [command.enterpriseAccountId, command.organizationAccountId],
-            statusVersionRow,
-          )
-        ).rows[0];
-        if (command.action === "attach-organization") {
-          if (!relation) {
-            if (command.expectedRelationVersion !== 0)
-              throw new GovernanceAccessError(409, "conflict", "治理關係版本不符。");
-            try {
-              await sql.query(
-                `INSERT INTO enterprise_organizations(
-                   enterprise_account_id,organization_account_id,status,version,attached_at
-                 ) VALUES($1,$2,'active',1,$3)`,
-                [command.enterpriseAccountId, command.organizationAccountId, now],
-              );
-            } catch (error) {
-              if (hasPostgresCode(error, "23505"))
-                throw new GovernanceAccessError(
-                  409,
-                  "scope-conflict",
-                  "Organization 已由其他 Enterprise 治理。",
-                );
-              throw error;
-            }
-            result = makeEnterpriseReceipt(command, "active", 1, now);
-          } else {
-            if (
-              relation.version !== command.expectedRelationVersion ||
-              relation.status !== "detached"
-            ) {
-              throw new GovernanceAccessError(409, "conflict", "治理關係狀態或版本不符。");
-            }
-            try {
-              const changed = (
-                await sql.query(
-                  `UPDATE enterprise_organizations
-                   SET status='active',version=version+1,detached_at=null
-                   WHERE enterprise_account_id=$1 AND organization_account_id=$2 RETURNING version`,
-                  [command.enterpriseAccountId, command.organizationAccountId],
-                  versionRow,
-                )
-              ).rows[0];
-              if (!changed) {
-                throw new GovernanceAccessError(
-                  409,
-                  "conflict",
-                  "Enterprise 狀態已更新，請重新讀取。",
-                );
-              }
-              result = makeEnterpriseReceipt(command, "active", changed.version, now);
-            } catch (error) {
-              if (hasPostgresCode(error, "23505"))
-                throw new GovernanceAccessError(
-                  409,
-                  "scope-conflict",
-                  "Organization 已由其他 Enterprise 治理。",
-                );
-              throw error;
-            }
-          }
-        } else {
-          if (
-            !relation ||
-            relation.status !== "active" ||
-            relation.version !== command.expectedRelationVersion
-          ) {
-            throw new GovernanceAccessError(409, "conflict", "找不到指定版本的有效治理關係。");
-          }
-          const activeTeamAssignment = (
-            await sql.query(
-              `SELECT 1 FROM enterprise_team_organizations
-               WHERE enterprise_account_id=$1 AND organization_account_id=$2 AND status='active'
-               LIMIT 1`,
-              [command.enterpriseAccountId, command.organizationAccountId],
-            )
-          ).rows[0];
-          if (activeTeamAssignment) {
-            throw new GovernanceAccessError(
-              409,
-              "invalid-transition",
-              "請先解除所有 Enterprise Team 對此 Organization 的 assignment。",
-            );
-          }
-          const changed = (
-            await sql.query(
-              `UPDATE enterprise_organizations
-               SET status='detached',version=version+1,detached_at=$3
-               WHERE enterprise_account_id=$1 AND organization_account_id=$2 RETURNING version`,
-              [command.enterpriseAccountId, command.organizationAccountId, now],
-              versionRow,
-            )
-          ).rows[0];
-          if (!changed) {
-            throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
-          }
-          result = makeEnterpriseReceipt(command, "detached", changed.version, now);
-        }
-      } else if (isEnterpriseTeamCommand(command)) {
-        result = await executeEnterpriseTeamMutation(
-          sql,
-          enterprise,
-          principal.userId,
-          command,
-          now,
-        );
-      } else {
-        throw new GovernanceAccessError(400, "invalid-input", "Enterprise 人員操作格式不正確。");
-      }
+      const result = await executeEnterpriseTeamMutation(
+        sql,
+        enterprise,
+        principal.userId,
+        command,
+        now,
+      );
 
       await recordGovernanceResult(sql, {
         actorUserId: principal.userId,

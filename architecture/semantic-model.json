@@ -2482,6 +2482,9 @@
           "packages/enterprise/src/application/use-cases/enterprise-identity.ts",
           "packages/enterprise/src/contracts/output/enterprise-identity.ts",
           "packages/enterprise/src/adapters/outbound/persistence/enterprise-identity.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-organization.ts",
+          "packages/enterprise/src/contracts/output/enterprise-organization.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-organization.ts",
           "packages/enterprise/src/adapters/outbound/persistence/enterprise-governance-transaction.ts",
           "packages/enterprise/src/domain.ts",
           "packages/enterprise/src/contracts/enterprise-governance.ts"
@@ -2498,7 +2501,8 @@
         ],
         "testPaths": [
           "packages/enterprise/test/enterprise-organization-foundation.test.ts",
-          "packages/enterprise/test/enterprise-owner.test.ts"
+          "packages/enterprise/test/enterprise-owner.test.ts",
+          "packages/enterprise/test/enterprise-organization-relation.test.ts"
         ],
         "note": "Enterprise source/export evidence exists; slug locator stability is distinct from authorization."
       }
