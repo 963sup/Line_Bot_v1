@@ -373,7 +373,7 @@ test("enterprise create replay short-circuits before provisioning", async () => 
   const queries: QueryRecord[] = [];
   const command: EnterpriseCommand = {
     action: "create-enterprise",
-    requestId: "request-create-1",
+    requestId: "77777777-7777-4777-8777-000000000001",
     slug: "acme",
     name: "Acme",
     reason: "characterization",
@@ -388,7 +388,13 @@ test("enterprise create replay short-circuits before provisioning", async () => 
     version: 3,
     at: 80,
   };
-  const fingerprint = governanceFingerprint(command);
+  const fingerprint = governanceFingerprint({
+    requestId: command.requestId,
+    reason: command.reason,
+    action: command.action,
+    slug: command.slug,
+    name: command.name,
+  });
   const { db } = databaseWith(async (text) => {
     if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
       return { rows: [{}] };
@@ -401,9 +407,9 @@ test("enterprise create replay short-circuits before provisioning", async () => 
     }
     throw new Error(`unexpected query after create replay: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
-  assert.deepEqual(await governance.execute(actor, command, 100), replay);
+  assert.deepEqual(await governance.execute(actor, command), replay);
   assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
   assert.equal(queryIndex(queries, "provision_enterprise_scope"), -1);
   assert.equal(queryIndex(queries, "INSERT INTO governance_command_receipts"), -1);
@@ -510,9 +516,9 @@ test("legacy Enterprise identity completion is owner-authorized, versioned, repl
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
     throw new Error(`unexpected query: ${text}`);
   }, queries);
-  const governance = new PostgresEnterpriseGovernance(db);
+  const governance = createPostgresEnterpriseGovernance(db, () => 100);
 
-  const receipt = await governance.execute(actor, command, 100);
+  const receipt = await governance.execute(actor, command);
 
   assert.equal(receipt.action, "complete-enterprise-identity");
   assert.equal(receipt.version, 2);

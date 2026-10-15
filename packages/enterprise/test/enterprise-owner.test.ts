@@ -7,6 +7,205 @@ import { createPostgresEnterpriseGovernance } from "../src/composition/bootstrap
 
 const actor = { provider: "line:test", subject: "owner" };
 
+function identityCommand(sequence: number) {
+  return {
+    action: "complete-enterprise-identity",
+    enterpriseAccountId: "ent",
+    name: " Recovered ",
+    slug: " RECOVERED ",
+    expectedVersion: 1,
+    requestId: `55555555-5555-4555-8555-${String(sequence).padStart(12, "0")}`,
+    reason: "identity recovery",
+  };
+}
+
+function createCommand(sequence: number) {
+  return {
+    action: "create-enterprise",
+    name: " Second Enterprise ",
+    slug: " SECOND-ENTERPRISE ",
+    requestId: `66666666-6666-4666-8666-${String(sequence).padStart(12, "0")}`,
+    reason: "create enterprise",
+  };
+}
+
+test("Enterprise creation atomically bootstraps the current actor and preserves replay, uniqueness and input failures", async (t) => {
+  const { pg, governance } = await fixture();
+  t.after(() => pg.close());
+  const create = createCommand(1);
+  const receipt = await governance.execute(actor, create);
+  assert.equal(receipt.status, "active");
+  assert.equal(receipt.version, 1);
+  assert.equal(receipt.subjectKind, null);
+  assert.deepEqual(await governance.execute(actor, create), receipt);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT name,slug,status,version FROM app_private.enterprises WHERE account_id=$1",
+        [receipt.scopeId],
+      )
+    ).rows,
+    [{ name: "Second Enterprise", slug: "second-enterprise", status: "active", version: 1 }],
+  );
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT user_id,status,version,user_status_version FROM app_private.enterprise_role_assignments WHERE enterprise_account_id=$1",
+        [receipt.scopeId],
+      )
+    ).rows,
+    [{ user_id: "owner", status: "active", version: 1, user_status_version: 1 }],
+  );
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT user_id,status,version FROM app_private.enterprise_direct_affiliations WHERE enterprise_account_id=$1",
+        [receipt.scopeId],
+      )
+    ).rows,
+    [{ user_id: "owner", status: "active", version: 1 }],
+  );
+  await assert.rejects(
+    governance.execute(actor, { ...create, reason: "different" }),
+    failsWith(409, "replay-conflict"),
+  );
+  await assert.rejects(governance.execute(actor, createCommand(2)), failsWith(409, "conflict"));
+  for (const name of [" ", "x".repeat(121)])
+    await assert.rejects(
+      async () => governance.execute(actor, { ...createCommand(3), name }),
+      (error: unknown) =>
+        failsWith(400, "invalid-input")(error) &&
+        error instanceof Error &&
+        error.message === "Enterprise slug 或 name 不正確。",
+    );
+  assert.equal(
+    (await pg.query("SELECT * FROM app_private.accounts WHERE kind='ENTERPRISE'")).rows.length,
+    2,
+  );
+  assert.equal(
+    (await pg.query("SELECT * FROM app_private.governance_command_receipts")).rows.length,
+    1,
+  );
+  assert.equal(
+    (await pg.query("SELECT * FROM app_private.governance_audit_events")).rows.length,
+    1,
+  );
+  await pg.exec("UPDATE app_private.users SET status='paused' WHERE id='owner'");
+  await assert.rejects(governance.execute(actor, create), failsWith(403, "forbidden"));
+});
+
+test("legacy Enterprise identity completion preserves current owner, stale-version, one-time and replay semantics", async (t) => {
+  const { pg, governance } = await fixture();
+  t.after(() => pg.close());
+  await pg.exec(
+    "UPDATE app_private.enterprises SET name=null,slug=null WHERE account_id='ent'; SELECT * FROM app_private.provision_enterprise_scope('other','owner','occupied','Occupied',2)",
+  );
+  const complete = identityCommand(1);
+  await assert.rejects(
+    governance.execute({ provider: "line:test", subject: "backup" }, complete),
+    failsWith(403, "forbidden"),
+  );
+  await assert.rejects(
+    governance.execute(actor, { ...complete, expectedVersion: 2 }),
+    failsWith(409, "conflict"),
+  );
+  await assert.rejects(
+    governance.execute(actor, { ...identityCommand(2), slug: "occupied" }),
+    failsWith(409, "conflict"),
+  );
+  await assert.rejects(
+    async () => governance.execute(actor, { ...identityCommand(3), name: " " }),
+    (error: unknown) =>
+      failsWith(400, "invalid-input")(error) &&
+      error instanceof Error &&
+      error.message === "Enterprise slug 或 name 不正確。",
+  );
+  const receipt = await governance.execute(actor, complete);
+  assert.equal(receipt.version, 2);
+  assert.deepEqual(await governance.execute(actor, complete), receipt);
+  await assert.rejects(
+    governance.execute(actor, { ...complete, reason: "changed" }),
+    failsWith(409, "replay-conflict"),
+  );
+  await assert.rejects(
+    governance.execute(actor, { ...identityCommand(4), expectedVersion: 2 }),
+    failsWith(409, "invalid-transition"),
+  );
+  assert.deepEqual(
+    (await pg.query("SELECT name,slug,version FROM app_private.enterprises WHERE account_id='ent'"))
+      .rows,
+    [{ name: "Recovered", slug: "recovered", version: 2 }],
+  );
+  assert.equal(
+    (await pg.query("SELECT * FROM app_private.governance_command_receipts")).rows.length,
+    1,
+  );
+  await pg.exec("UPDATE app_private.enterprises SET status='inactive' WHERE account_id='ent'");
+  await assert.rejects(governance.execute(actor, complete), failsWith(403, "forbidden"));
+});
+
+test("Enterprise provisioning and identity completion roll back all state and evidence on audit failure", async (t) => {
+  for (const mode of ["create", "complete"]) {
+    const { pg, db } = await fixture();
+    t.after(() => pg.close());
+    if (mode === "complete")
+      await pg.exec(
+        "UPDATE app_private.enterprises SET name=null,slug=null WHERE account_id='ent'",
+      );
+    let transactions = 0;
+    const failing: Database = {
+      transaction(work) {
+        transactions++;
+        return db.transaction((sql) =>
+          work(
+            createSql((text, values) => {
+              if (text.includes("INSERT INTO governance_audit_events"))
+                throw new Error("audit failure");
+              return sql.query(text, values);
+            }),
+          ),
+        );
+      },
+    };
+    const governance = createPostgresEnterpriseGovernance(failing, () => 100);
+    await assert.rejects(
+      governance.execute(actor, mode === "create" ? createCommand(1) : identityCommand(1)),
+      /audit failure/,
+    );
+    assert.equal(transactions, 1);
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.accounts WHERE kind='ENTERPRISE'")).rows.length,
+      1,
+    );
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.enterprise_direct_affiliations")).rows.length,
+      2,
+    );
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.enterprise_role_assignments")).rows.length,
+      1,
+    );
+    assert.deepEqual(
+      (await pg.query("SELECT name,slug,version FROM app_private.enterprises")).rows,
+      [
+        {
+          name: mode === "create" ? "Acme" : null,
+          slug: mode === "create" ? "acme" : null,
+          version: 1,
+        },
+      ],
+    );
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.governance_command_receipts")).rows.length,
+      0,
+    );
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.governance_audit_events")).rows.length,
+      0,
+    );
+  }
+});
+
 function command(
   action: "grant-enterprise-owner" | "revoke-enterprise-owner",
   targetUserId: string,

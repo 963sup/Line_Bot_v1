@@ -2479,6 +2479,9 @@
           "packages/enterprise/src/application/use-cases/enterprise-affiliation.ts",
           "packages/enterprise/src/contracts/output/enterprise-affiliation.ts",
           "packages/enterprise/src/adapters/outbound/persistence/enterprise-affiliation.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-identity.ts",
+          "packages/enterprise/src/contracts/output/enterprise-identity.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-identity.ts",
           "packages/enterprise/src/adapters/outbound/persistence/enterprise-governance-transaction.ts",
           "packages/enterprise/src/domain.ts",
           "packages/enterprise/src/contracts/enterprise-governance.ts"

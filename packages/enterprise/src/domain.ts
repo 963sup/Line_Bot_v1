@@ -174,6 +174,39 @@ export function normalizeEnterpriseSlug(value: string) {
   return slug;
 }
 
+export function normalizeEnterpriseName(value: string) {
+  const name = value.trim();
+  if (!name || name.length > 120)
+    throw new EnterpriseError("invalid-input", "Enterprise name is invalid.");
+  return name;
+}
+
+export type EnterpriseIdentityState = Readonly<{
+  name: string | null;
+  slug: string | null;
+  version: number;
+}>;
+
+export function completeEnterpriseIdentity(
+  current: EnterpriseIdentityState,
+  expectedVersion: number,
+  name: string,
+  slug: string,
+) {
+  if (current.version !== expectedVersion)
+    throw new EnterpriseError("conflict", "Enterprise 版本已更新。");
+  if (current.name !== null || current.slug !== null)
+    throw new EnterpriseError(
+      "invalid-transition",
+      "Enterprise identity 已完成，不能再次以 recovery command 修改。",
+    );
+  return {
+    name: normalizeEnterpriseName(name),
+    slug: normalizeEnterpriseSlug(slug),
+    version: current.version + 1,
+  };
+}
+
 const enterpriseTeamSlugPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
 
 export function normalizeEnterpriseTeamSlug(value: string): string {
