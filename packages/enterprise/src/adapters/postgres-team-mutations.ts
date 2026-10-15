@@ -452,6 +452,7 @@ export async function executeEnterpriseTeamMutation(
             userId,
             "enterprise-team",
             command.teamId,
+            memberIds,
           );
         }
         const changed = (

@@ -32,7 +32,11 @@ export type OrganizationInvitation = Readonly<{
   version: number;
 }>;
 
-type OrganizationFailureCode = "invalid-input" | "conflict" | "invalid-transition";
+type OrganizationFailureCode =
+  | "invalid-input"
+  | "conflict"
+  | "invalid-transition"
+  | "last-effective-role-holder";
 
 export class OrganizationError extends Error {
   constructor(
@@ -41,6 +45,18 @@ export class OrganizationError extends Error {
   ) {
     super(message);
   }
+}
+
+export function requireOrganizationOwnerAfterSourceRemoval(
+  hasOtherSource: boolean,
+  targetEffective: boolean,
+  anotherEffective: boolean,
+) {
+  if (!hasOtherSource && targetEffective && !anotherEffective)
+    throw new OrganizationError(
+      "last-effective-role-holder",
+      "不能移除最後一位有效 OrganizationOwner 的最後 membership source。",
+    );
 }
 
 function requireId(value: string, field: string) {

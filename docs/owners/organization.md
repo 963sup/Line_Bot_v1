@@ -38,6 +38,7 @@ OrganizationMembership 與 Employment 分離。Membership active 不授予 Owner
 - direct 與一個以上 Enterprise Team membership sources 可以同時存在；撤銷單一 source 只能移除該 source 帶來的資格，不能誤刪其他 source。
 - 沒有任何 active source 時，effective OrganizationMembership 才能轉為 removed；重新取得有效 source 時可以建立新的 active membership epoch/version。
 - OrganizationOwner principal 必須是 active individual Organization member；Organization Team 不可整體成為 Owner，source removal 也不得繞過 last-owner/replacement protection。
+- 批次解除同一 membership source 時，替代 Owner 必須在整批解除後仍有效；同批也會失去最後 source 的 Owner 不能互相充當替代者。仍有獨立 source 的當前 Owner 可以保留資格，User/membership epoch 失效的 assignment 不計入替代者。
 - Enterprise Team assignment 只能來自 active、同 Enterprise attached Organization；跨 scope reference fail closed。
 - TeamMembership participation 必須符合 Organization qualification；Organization 不直接寫 Organization Team private state。
 - Organization-scoped reference 必須同 scope；只驗 record existence 不足。

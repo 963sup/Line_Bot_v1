@@ -2558,7 +2558,9 @@
           "packages/organization/src/domain.ts",
           "packages/organization/src/contracts/organization-governance.ts",
           "packages/organization/src/contracts/output/public.ts",
-          "packages/organization/src/postgres/public.ts"
+          "packages/organization/src/postgres/public.ts",
+          "packages/organization/src/postgres/membership-sources.ts",
+          "packages/organization/src/postgres/owner-roles.ts"
         ],
         "publicExports": [
           "./application/organization-governance",
@@ -2569,7 +2571,8 @@
         "entrypoints": ["apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx"],
         "testPaths": [
           "packages/organization/test/organization-capabilities.test.ts",
-          "packages/organization/test/organization-postgres-execute-characterization.test.ts"
+          "packages/organization/test/organization-postgres-execute-characterization.test.ts",
+          "packages/enterprise/test/enterprise-team-membership.test.ts"
         ],
         "note": "OrganizationOwner is the sole Organization administrative fact and projects FPT ADMIN; ordinary active membership projects MEMBER. Owner-controlled creation policies default open for members and may restrict Repository visibility, ProjectV2 and Team creation. Viewer capabilities are current projections, not generic Identity/Access permissions."
       }
