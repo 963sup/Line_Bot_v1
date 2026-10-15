@@ -2,13 +2,13 @@ import { businessDatabase } from "@line_bot_v1/platform/postgres";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import { createWikiHistory } from "@line_bot_v1/wiki/application/use-cases/history";
 import { createWiki } from "@line_bot_v1/wiki/application/use-cases/pages";
-import { createPostgresWikiStore } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
+import { createPostgresWikiDependencies } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
 import { canEditWiki } from "@line_bot_v1/wiki/domain/policies/wiki-access";
 import type { WikiWebRuntime } from "../../../modules/repository/wiki-http.server";
 import { activeLineUser } from "./account.server";
 
-let store: ReturnType<typeof createPostgresWikiStore> | undefined;
-const wikiStore = () => (store ??= createPostgresWikiStore());
+let store: ReturnType<typeof createPostgresWikiDependencies> | undefined;
+const wikiStore = () => (store ??= createPostgresWikiDependencies());
 export const wiki: WikiWebRuntime = {
   async scope(subject, selector) {
     const actor = await activeLineUser(subject);
@@ -23,6 +23,6 @@ export const wiki: WikiWebRuntime = {
       canManageRepository: repository.permissions.includes("admin"),
     };
   },
-  pages: () => createWiki({ store: wikiStore(), now: Date.now }),
-  history: () => createWikiHistory(wikiStore()),
+  pages: () => createWiki({ ...wikiStore(), now: Date.now }),
+  history: () => createWikiHistory(wikiStore().reads),
 };

@@ -5,7 +5,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import { createWikiHistory } from "@line_bot_v1/wiki/application/use-cases/history";
 import { createWiki } from "@line_bot_v1/wiki/application/use-cases/pages";
-import { createPostgresWikiStore } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
+import { createPostgresWikiDependencies } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
 import { canEditWiki } from "@line_bot_v1/wiki/domain/policies/wiki-access";
 import { type WikiWebRuntime, wikiRequest } from "../src/modules/repository/wiki-http.server";
 import {
@@ -40,9 +40,9 @@ test("Wiki HTTP preserves URL scope, immutable history, exact retry, restore and
   await pg.query(
     "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES('repo','reader','read',1)",
   );
-  const store = createPostgresWikiStore(db),
-    pages = createWiki({ store, now: () => 100 }),
-    history = createWikiHistory(store);
+  const store = createPostgresWikiDependencies(db),
+    pages = createWiki({ ...store, now: () => 100 }),
+    history = createWikiHistory(store.reads);
   let actor = "owner";
   const runtime: WikiWebRuntime = {
     async scope(subject, selector) {

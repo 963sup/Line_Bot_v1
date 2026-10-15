@@ -1,7 +1,7 @@
 "use client";
 import { record } from "@line_bot_v1/platform/validation";
-import { parseWikiCommand } from "@line_bot_v1/wiki/application/commands/pages";
-import type { WikiCommand, WikiPageSummary } from "@line_bot_v1/wiki/contracts/dto/wiki";
+import { parseWikiCommand, type WikiCommand } from "@line_bot_v1/wiki/application/commands/pages";
+import type { WikiPageSummary } from "@line_bot_v1/wiki/contracts/dto/wiki";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";

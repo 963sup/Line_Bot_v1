@@ -1,4 +1,8 @@
-import type { WikiCommand } from "../../contracts/dto/wiki.js";
+import type { WikiEdit } from "../../domain/wiki-page.js";
+
+export type WikiCommand = WikiEdit &
+  Readonly<{ repositoryId: string; pageId: string; requestId: string; expectedVersion: number }>;
+
 import { WikiError } from "../../domain/wiki-error.js";
 
 export function parseWikiCommand(input: unknown): WikiCommand {
