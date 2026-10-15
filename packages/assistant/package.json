@@ -9,8 +9,8 @@
       "default": "./dist/gemini.js"
     },
     "./agents/intake": {
-      "types": "./dist/agents/intake.d.ts",
-      "default": "./dist/agents/intake.js"
+      "types": "./dist/composition/bootstrap/intake-agent.d.ts",
+      "default": "./dist/composition/bootstrap/intake-agent.js"
     },
     "./application/answer-question": {
       "types": "./dist/application/answer-question.d.ts",
