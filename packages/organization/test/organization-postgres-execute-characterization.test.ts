@@ -3,6 +3,8 @@ import test from "node:test";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { governanceFingerprint } from "@line_bot_v1/identity-access/postgres";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
+import type { OrganizationLifecycleCommand } from "../src/application/commands/organization-lifecycle.js";
+import { createPostgresOrganizationGovernance } from "../src/composition/bootstrap/organization-governance.js";
 import type {
   OrganizationCommand,
   OrganizationReceipt,
@@ -58,9 +60,9 @@ function organizationOwnerQuery(text: string) {
 
 test("organization execute authorizes current owner before replay lookup", async () => {
   const queries: QueryRecord[] = [];
-  const command: OrganizationCommand = {
+  const command: OrganizationLifecycleCommand = {
     action: "deactivate",
-    requestId: "request-deactivate-unauthorized",
+    requestId: "11111111-1111-4111-8111-111111111111",
     organizationAccountId: "organization-1",
     expectedVersion: 3,
     reason: "characterization",
@@ -77,10 +79,10 @@ test("organization execute authorizes current owner before replay lookup", async
     }
     throw new Error(`unexpected query: ${text}`);
   }, queries);
-  const governance = new PostgresOrganizationGovernance(db);
+  const governance = createPostgresOrganizationGovernance(db, () => 100);
 
   await assert.rejects(
-    () => governance.execute(actor, command, 100),
+    () => governance.execute(actor, command),
     (error: unknown) => {
       assert.ok(error instanceof GovernanceAccessError);
       assert.equal(error.status, 403);
@@ -138,9 +140,9 @@ test("organization replay hit short-circuits before membership row locks and wri
 
 test("organization lifecycle mutation keeps lock authorization replay update and recording order", async () => {
   const queries: QueryRecord[] = [];
-  const command: OrganizationCommand = {
+  const command: OrganizationLifecycleCommand = {
     action: "deactivate",
-    requestId: "request-deactivate-1",
+    requestId: "22222222-2222-4222-8222-222222222222",
     organizationAccountId: "organization-1",
     expectedVersion: 3,
     reason: "characterization",
@@ -158,9 +160,9 @@ test("organization lifecycle mutation keeps lock authorization replay update and
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
     throw new Error(`unexpected query: ${text}`);
   }, queries);
-  const governance = new PostgresOrganizationGovernance(db);
+  const governance = createPostgresOrganizationGovernance(db, () => 100);
 
-  const receipt = await governance.execute(actor, command, 100);
+  const receipt = await governance.execute(actor, command);
 
   assert.equal(transactions(), 1);
   assert.deepEqual(receipt, {
@@ -205,7 +207,14 @@ test("organization lifecycle mutation keeps lock authorization replay update and
   );
   const requestQuery = queries[requestLock];
   assert.ok(requestQuery);
-  assert.deepEqual(requestQuery.values, ["user-1:request-deactivate-1"]);
+  assert.deepEqual(requestQuery.values, [`user-1:${command.requestId}`]);
+  assert.deepEqual(queries[lifecycleUpdate]?.values, [
+    "organization-1",
+    "inactive",
+    4,
+    3,
+    "active",
+  ]);
 });
 
 test("Organization owns OrganizationOwner grant mutation and durable evidence", async () => {

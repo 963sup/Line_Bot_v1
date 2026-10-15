@@ -27,7 +27,15 @@ test("OrganizationOwner mutation is owned by the Organization command contract",
       };
     },
   };
-  const service = organizationGovernance(port, () => 100);
+  const service = organizationGovernance(
+    port,
+    {
+      async transact() {
+        throw new Error("not used");
+      },
+    },
+    () => 100,
+  );
   const actor = { provider: "line:test", subject: `U${"1".repeat(32)}` };
   const requestId = "11111111-1111-4111-8111-111111111111";
 

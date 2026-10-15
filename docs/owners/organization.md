@@ -55,6 +55,10 @@ Workforce creates/manages EmploymentId from UserId + OrganizationAccountId。Org
 
 Enterprise 提供上層 governance relation、Enterprise Team 與未來 policy。Direct Enterprise affiliation 或 EnterpriseOwner 不直接取得 Organization private writer；只有明確 Organization participation + scoped authority 才能通過相應 owner gate。
 
+## Lifecycle execution
+
+Deactivate/reactivate commands use an Organization-owned transaction Port. Application checks current owner qualification before replay and invokes the existing Domain transition. Persistence retains the shared governance lock, conditional write, durable receipt and audit in one transaction. Invitation, membership and owner-management command orchestration has not yet been migrated to this flow.
+
 ## Non-goals
 
 Enterprise governance duplicate owner、Organization Team lifecycle duplicate owner、Employment/Payroll 計算、department/grade/position tree、generic tenant/plugin/resource framework。Repository outside collaborator access 由 Repository-owned direct grant 擁有；Organization 只提供 current membership classification，不成為 grant owner。其他 resource 的 outside-collaborator model 仍不得在沒有 owner/consumer 前預建。

@@ -1,5 +1,6 @@
 "use client";
 
+import type { OrganizationLifecycleCommand } from "@line_bot_v1/organization/application/commands/organization-lifecycle";
 import {
   type OrganizationCommand,
   type OrganizationDetail,
@@ -13,7 +14,7 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { errorStatus } from "../../shared/presentation/unknown-value";
 import { OrganizationDetailSection } from "./organization-detail-section";
 
-type Pending = OrganizationCommand;
+type Pending = OrganizationCommand | OrganizationLifecycleCommand;
 
 export default function OrganizationPanel({ liffId }: { liffId: string }) {
   const [list, setList] = useState<OrganizationList | null>(null);

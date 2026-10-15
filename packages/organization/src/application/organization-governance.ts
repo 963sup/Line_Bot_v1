@@ -4,9 +4,18 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
+import type { OrganizationLifecycleTransactions } from "../contracts/output/organization-lifecycle.js";
+import type { OrganizationLifecycleCommand } from "./commands/organization-lifecycle.js";
+import { executeOrganizationLifecycle } from "./use-cases/organization-lifecycle.js";
 
 const governanceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const governanceId = /^[\w-]{1,128}$/;
+
+function isLifecycleCommand(
+  command: OrganizationCommand | OrganizationLifecycleCommand,
+): command is OrganizationLifecycleCommand {
+  return command.action === "deactivate" || command.action === "reactivate";
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -66,7 +75,9 @@ function parseVersion(value: unknown, name: string, allowZero = false) {
 import type { OrganizationGovernancePort } from "../contracts/input/organization-governance.js";
 import type { OrganizationCommand } from "../contracts/organization-governance.js";
 
-function parseOrganizationCommand(raw: unknown): OrganizationCommand {
+function parseOrganizationCommand(
+  raw: unknown,
+): OrganizationCommand | OrganizationLifecycleCommand {
   const base = governanceInput(raw, [
     "action",
     "requestId",
@@ -233,6 +244,7 @@ function parseOrganizationCommand(raw: unknown): OrganizationCommand {
 
 export function organizationGovernance(
   port: OrganizationGovernancePort,
+  lifecycle: OrganizationLifecycleTransactions,
   clock: () => number = Date.now,
 ) {
   return {
@@ -243,7 +255,12 @@ export function organizationGovernance(
       return port.detail(actor, parseId(organizationAccountId, "Organization"));
     },
     execute(actor: VerifiedLineActor, raw: unknown) {
-      return port.execute(actor, parseOrganizationCommand(raw), clock());
+      const command = parseOrganizationCommand(raw);
+      const now = clock();
+      if (isLifecycleCommand(command)) {
+        return executeOrganizationLifecycle(lifecycle, actor, command, now);
+      }
+      return port.execute(actor, command, now);
     },
   };
 }

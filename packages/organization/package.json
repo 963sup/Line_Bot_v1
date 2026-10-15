@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/commands/organization-lifecycle": {
+      "types": "./dist/application/commands/organization-lifecycle.d.ts",
+      "default": "./dist/application/commands/organization-lifecycle.js"
+    },
+    "./composition/bootstrap/organization-governance": {
+      "types": "./dist/composition/bootstrap/organization-governance.d.ts",
+      "default": "./dist/composition/bootstrap/organization-governance.js"
+    },
     "./application/organization-governance": {
       "types": "./dist/application/organization-governance.d.ts",
       "default": "./dist/application/organization-governance.js"

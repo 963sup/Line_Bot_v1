@@ -1,6 +1,6 @@
-import { organizationGovernance } from "@line_bot_v1/organization/application/organization-governance";
-import { PostgresOrganizationGovernance } from "@line_bot_v1/organization/postgres";
+import { createPostgresOrganizationGovernance } from "@line_bot_v1/organization/composition/bootstrap/organization-governance";
+import { businessDatabase } from "@line_bot_v1/platform/postgres";
 
 export function organizationService() {
-  return organizationGovernance(new PostgresOrganizationGovernance());
+  return createPostgresOrganizationGovernance(businessDatabase());
 }
