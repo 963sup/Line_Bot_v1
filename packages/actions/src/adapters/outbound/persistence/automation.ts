@@ -7,8 +7,11 @@ import type {
   WbsBaselineEvent,
   WbsBaselineEvents,
 } from "@line_bot_v1/wbs/contracts/output/baseline-events";
-import type { ActionLease } from "../../../contracts/dto/automation.js";
-import type { ActionStore, ActionTransaction } from "../../../contracts/repositories/automation.js";
+import type {
+  ActionTransaction,
+  ActionTransactions,
+} from "../../../contracts/output/automation.js";
+import type { ActionLease, ActionRunQueue } from "../../../contracts/output/worker.js";
 import { type ActionRule, type ActionRun, ActionsError } from "../../../domain/automation.js";
 import { rule, run } from "./decode.js";
 
@@ -68,7 +71,7 @@ async function saveRun(sql: Sql, value: ActionRun, eventId: string | null = null
   );
   if (!saved.rows.length) throw new ActionsError(409, "執行版本衝突。");
 }
-export class PostgresActionStore implements ActionStore {
+export class PostgresActionPersistence implements ActionTransactions, ActionRunQueue {
   constructor(
     private db: Database,
     private events: (sql: Sql) => WbsBaselineEvents,
@@ -96,7 +99,7 @@ export class PostgresActionStore implements ActionStore {
           const value = row.result;
           if (!isRecord(value)) throw new TypeError("Invalid receipt.");
           if ("rule" in value) return { rule: rule(value.rule) };
-          // The durable receipt stores the public run DTO, mapped back through its row contract.
+          // Durable snapshots are decoded into internal Domain state before Application projection.
           if (!isRecord(value.run)) throw new TypeError("Invalid receipt.");
           const v = value.run;
           return {
@@ -122,46 +125,54 @@ export class PostgresActionStore implements ActionStore {
             [userId, requestId, fingerprint, JSON.stringify(result), now],
           );
         },
-        rules: () => rules(sql, repositoryId),
-        rule: (id) => loadRule(sql, repositoryId, id),
-        async saveRule(value) {
-          const changed = await sql.query(
-            "INSERT INTO action_rules(id,repository_id,version) VALUES($1,$2,$3) ON CONFLICT(id) DO UPDATE SET version=excluded.version WHERE action_rules.repository_id=excluded.repository_id AND action_rules.version=excluded.version-1 RETURNING id",
-            [value.id, repositoryId, value.version],
-          );
-          if (!changed.rows.length) throw new ActionsError(409, "規則版本衝突。");
-          await sql.query(
-            "INSERT INTO action_rule_versions(rule_id,version,snapshot) VALUES($1,$2,$3::jsonb)",
-            [value.id, value.version, JSON.stringify(value)],
-          );
+        rules: {
+          list: () => rules(sql, repositoryId),
+          load: (id) => loadRule(sql, repositoryId, id),
+          async save(value, expectedVersion) {
+            if (value.version !== expectedVersion + 1)
+              throw new ActionsError(409, "規則版本衝突。");
+            const changed = await sql.query(
+              "INSERT INTO action_rules(id,repository_id,version) VALUES($1,$2,$3) ON CONFLICT(id) DO UPDATE SET version=excluded.version WHERE action_rules.repository_id=excluded.repository_id AND action_rules.version=excluded.version-1 RETURNING id",
+              [value.id, repositoryId, value.version],
+            );
+            if (!changed.rows.length) throw new ActionsError(409, "規則版本衝突。");
+            await sql.query(
+              "INSERT INTO action_rule_versions(rule_id,version,snapshot) VALUES($1,$2,$3::jsonb)",
+              [value.id, value.version, JSON.stringify(value)],
+            );
+          },
         },
-        async run(id) {
-          return (
-            (
+        runs: {
+          async load(id) {
+            return (
+              (
+                await sql.query(
+                  "SELECT * FROM action_runs WHERE repository_id=$1 AND id=$2 FOR UPDATE",
+                  [repositoryId, id],
+                  run,
+                )
+              ).rows[0] ?? null
+            );
+          },
+          async save(value, expectedVersion, at) {
+            if (value.version !== expectedVersion + 1)
+              throw new ActionsError(409, "執行版本衝突。");
+            await saveRun(sql, value);
+            if (value.status === "cancelled") {
               await sql.query(
-                "SELECT * FROM action_runs WHERE repository_id=$1 AND id=$2 FOR UPDATE",
-                [repositoryId, id],
-                run,
-              )
-            ).rows[0] ?? null
-          );
-        },
-        async saveRun(value, at) {
-          await saveRun(sql, value);
-          if (value.status === "cancelled") {
-            await sql.query(
-              "UPDATE action_attempts SET finished_at=$2,result=$3::jsonb WHERE run_id=$1 AND finished_at IS NULL",
-              [
-                value.id,
-                at,
-                JSON.stringify({ status: "cancelled", effect: "in-flight-outcome-unknown" }),
-              ],
-            );
-            await sql.query(
-              "UPDATE action_runs SET lease_token=NULL,lease_until=NULL WHERE id=$1",
-              [value.id],
-            );
-          }
+                "UPDATE action_attempts SET finished_at=$2,result=$3::jsonb WHERE run_id=$1 AND finished_at IS NULL",
+                [
+                  value.id,
+                  at,
+                  JSON.stringify({ status: "cancelled", effect: "in-flight-outcome-unknown" }),
+                ],
+              );
+              await sql.query(
+                "UPDATE action_runs SET lease_token=NULL,lease_until=NULL WHERE id=$1",
+                [value.id],
+              );
+            }
+          },
         },
       };
       return work(tx);

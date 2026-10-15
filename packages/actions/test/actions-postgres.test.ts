@@ -5,7 +5,7 @@ import { createPostgresBaselineDeliveryStore } from "@line_bot_v1/notifications/
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { createPostgresWbsBaselineEvents } from "@line_bot_v1/wbs/composition/bootstrap/baseline-events";
 import { createActions } from "../src/application/use-cases/automation.js";
-import { createPostgresActionStore } from "../src/composition/bootstrap/automation.js";
+import { createPostgresActionDependencies } from "../src/composition/bootstrap/automation.js";
 import { seedCapability } from "./fixture.js";
 
 const url = process.env.CAPABILITY_TEST_DATABASE_URL;
@@ -17,7 +17,7 @@ test("independent PostgreSQL workers claim once, fence expired saves and preserv
   t.after(close);
   const fixture = await seedCapability(db, (q, v) => pool.query(q, v));
   let now = 100;
-  const store = createPostgresActionStore(db);
+  const store = createPostgresActionDependencies(db);
   const notifications = {
     deliver: async () => ({
       inbox: "skipped" as const,
@@ -28,7 +28,7 @@ test("independent PostgreSQL workers claim once, fence expired saves and preserv
     cancel: async () => {},
   };
   const actions = createActions({
-    store,
+    ...store,
     steps: {
       events: createPostgresWbsBaselineEvents(db),
       notifications,
@@ -61,16 +61,20 @@ test("independent PostgreSQL workers claim once, fence expired saves and preserv
   };
   const created = await actions.execute("owner", request);
   assert.ok("run" in created);
-  const claims = await Promise.all([store.claim(now), store.claim(now)]);
+  const claims = await Promise.all([store.queue.claim(now), store.queue.claim(now)]);
   assert.equal(claims.filter(Boolean).length, 1);
   const first = claims.find((c) => c !== null);
   assert.ok(first);
   now += 90001;
-  const next = await store.claim(now);
+  const next = await store.queue.claim(now);
   assert.ok(next);
   assert.equal(next.run.id, first.run.id);
   assert.equal(
-    await store.finish(first, now, (r) => ({ ...r, status: "succeeded", version: r.version + 1 })),
+    await store.queue.finish(first, now, (r) => ({
+      ...r,
+      status: "succeeded",
+      version: r.version + 1,
+    })),
     false,
   );
   const cancel = {
@@ -82,11 +86,15 @@ test("independent PostgreSQL workers claim once, fence expired saves and preserv
   };
   await actions.execute("owner", cancel);
   assert.equal(
-    await store.finish(next, now, (r) => ({ ...r, status: "succeeded", version: r.version + 1 })),
+    await store.queue.finish(next, now, (r) => ({
+      ...r,
+      status: "succeeded",
+      version: r.version + 1,
+    })),
     false,
   );
   assert.equal((await actions.run("owner", "repo", next.run.id))?.status, "cancelled");
-  assert.equal(await store.claim(now), null);
+  assert.equal(await store.queue.claim(now), null);
   assert.deepEqual(await actions.execute("owner", cancel), await actions.execute("owner", cancel));
   assert.equal((await pool.query("SELECT * FROM app_private.action_attempts")).rowCount, 2);
   assert.equal(

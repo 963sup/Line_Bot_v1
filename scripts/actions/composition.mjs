@@ -1,6 +1,6 @@
 import { createActions } from "@line_bot_v1/actions/application/use-cases/automation";
 import { createActionsWorker } from "@line_bot_v1/actions/application/use-cases/worker";
-import { createPostgresActionStore } from "@line_bot_v1/actions/composition/bootstrap/automation";
+import { createPostgresActionDependencies } from "@line_bot_v1/actions/composition/bootstrap/automation";
 import { pushLineText } from "@line_bot_v1/line/messaging-api";
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
 import { createBaselineNotifications } from "@line_bot_v1/notifications/application/use-cases/baseline-delivery";
@@ -31,6 +31,6 @@ export function actionRuntime(db) {
       };
     },
   };
-  const deps = { store: createPostgresActionStore(db), steps, now: Date.now };
+  const deps = { ...createPostgresActionDependencies(db), steps, now: Date.now };
   return { actions: createActions(deps), worker: createActionsWorker(deps) };
 }
