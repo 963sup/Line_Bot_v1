@@ -278,6 +278,7 @@ begin
           organization_account_id,user_id,status,version,created_at
         ) values(p_organization_account_id,p_user_id,'active',1,p_at)
         returning status,version;
+      return;
     end if;
     if current_membership.status = 'removed' then
       return query
@@ -286,6 +287,7 @@ begin
         where organization_account_id=p_organization_account_id
           and user_id=p_user_id
         returning status,version;
+      return;
     end if;
     return query select current_membership.status,current_membership.version;
     return;
