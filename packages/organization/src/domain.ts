@@ -36,6 +36,9 @@ type OrganizationFailureCode =
   | "invalid-input"
   | "conflict"
   | "invalid-transition"
+  | "inactive"
+  | "forbidden"
+  | "not-found"
   | "last-effective-role-holder";
 
 export class OrganizationError extends Error {
@@ -45,6 +48,79 @@ export class OrganizationError extends Error {
   ) {
     super(message);
   }
+}
+
+export type OrganizationOwnerAssignment = Readonly<{
+  status: "active" | "revoked";
+  version: number;
+  userStatusVersion: number;
+  membershipVersion: number;
+}>;
+
+export function requireActiveOrganizationForOwner(status: "active" | "inactive") {
+  if (status !== "active")
+    throw new OrganizationError("inactive", "停用的 Organization 不能變更 owner role。");
+}
+
+export function requireOrganizationOwnerMembership(
+  membership: { status: "active" | "removed"; version: number } | null,
+): asserts membership is { status: "active"; version: number } {
+  if (membership?.status !== "active")
+    throw new OrganizationError(
+      "forbidden",
+      "OrganizationOwner 對象必須是有效 Organization member。",
+    );
+}
+
+export function grantOrganizationOwner(
+  current: OrganizationOwnerAssignment | null,
+  expectedVersion: number,
+  userStatusVersion: number,
+  membershipVersion: number,
+): OrganizationOwnerAssignment {
+  const effective =
+    current?.status === "active" &&
+    current.userStatusVersion === userStatusVersion &&
+    current.membershipVersion === membershipVersion;
+  if (expectedVersion !== (effective ? current.version : 0))
+    throw new OrganizationError("conflict", "OrganizationOwner 指派版本已更新。");
+  if (effective) throw new OrganizationError("invalid-transition", "OrganizationOwner 已生效。");
+  return {
+    status: "active",
+    version: (current?.version ?? 0) + 1,
+    userStatusVersion,
+    membershipVersion,
+  };
+}
+
+export function revokeOrganizationOwner(
+  current: OrganizationOwnerAssignment | null,
+  expectedVersion: number,
+  userStatusVersion: number | null,
+  membershipVersion: number,
+): OrganizationOwnerAssignment {
+  if (!current) throw new OrganizationError("not-found", "找不到 OrganizationOwner 指派。");
+  if (
+    userStatusVersion === null ||
+    current.status !== "active" ||
+    current.userStatusVersion !== userStatusVersion ||
+    current.membershipVersion !== membershipVersion
+  )
+    throw new OrganizationError("invalid-transition", "OrganizationOwner 指派已失效。");
+  if (current.version !== expectedVersion)
+    throw new OrganizationError("conflict", "OrganizationOwner 指派版本已更新。");
+  return { ...current, status: "revoked", version: current.version + 1 };
+}
+
+export function requireReplacementOrganizationOwner(
+  targetEffective: boolean,
+  anotherEffective: boolean,
+) {
+  if (targetEffective && !anotherEffective)
+    throw new OrganizationError(
+      "last-effective-role-holder",
+      "不能撤銷最後一位有效 OrganizationOwner。",
+    );
 }
 
 export function requireOrganizationOwnerAfterSourceRemoval(

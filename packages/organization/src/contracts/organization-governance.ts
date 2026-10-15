@@ -1,4 +1,14 @@
 import type { GovernanceReceipt } from "@line_bot_v1/identity-access/contracts/governance";
+
+export type OrganizationMutationEvidence = Readonly<{
+  requestId: string;
+  payload: string;
+  legacyPayload?: string;
+  action: string;
+  reason: string;
+  at: number;
+}>;
+
 import {
   booleanValue,
   literalValue,
