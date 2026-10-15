@@ -23,6 +23,38 @@ export type UserStatusCommand = {
   reason: string;
 };
 
+export type UserManagementState = {
+  status: UserStatus;
+  version: number;
+  restoreStatus: "active" | "paused";
+};
+
+export function requireUserManagementPermissions(
+  facts: { canRead: boolean; canSuspend: boolean },
+  write = false,
+) {
+  if (!facts.canRead || (write && !facts.canSuspend))
+    throw new UserError(403, "你沒有此操作的使用者管理權限。");
+  return facts.canSuspend;
+}
+
+export function assertUserManagementTarget(actor: string, target: string) {
+  if (actor === target) throw new UserError(403, "不能從此頁停權或解除自己的帳號。");
+}
+
+export function decideUserStatusChange(
+  command: UserStatusCommand,
+  target: UserManagementState,
+): { status: UserStatus; event: "suspended" | "suspension_lifted" } {
+  if (target.version !== command.expectedVersion)
+    throw new UserError(409, "使用者狀態已更新，請重新讀取後確認。");
+  if ((command.action === "suspend") === (target.status === "suspended"))
+    throw new UserError(409, "使用者目前狀態不適用此操作。");
+  return command.action === "suspend"
+    ? { status: "suspended", event: "suspended" }
+    : { status: target.restoreStatus, event: "suspension_lifted" };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }

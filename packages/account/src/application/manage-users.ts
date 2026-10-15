@@ -1,4 +1,4 @@
-import type { UserManagementRepository } from "../contracts/repositories/user-management.js";
+import type { UserManagementRepository } from "../contracts/input/user-management.js";
 import type { UserManagementQuery } from "../contracts/user-management.js";
 import { parseUserStatusCommand, UserError } from "../domain/user.js";
 export function createUserManagement(deps: {

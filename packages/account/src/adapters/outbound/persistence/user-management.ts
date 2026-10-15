@@ -8,16 +8,22 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import type { UserManagementRepository } from "../contracts/repositories/user-management.js";
+import type {
+  UserManagementPersistence,
+  UserManagementTransaction,
+} from "../../../contracts/output/user-management-transactions.js";
 import type {
   ManagedUser,
   UserManagementQuery,
   UserManagementView,
   UserStatusReceipt,
-} from "../contracts/user-management.js";
-import type { UserStatusCommand } from "../domain/user.js";
-import { UserError } from "../domain/user.js";
-import { type UserManagementAuthorization, unavailableAccountAuthorization } from "./authority.js";
+} from "../../../contracts/user-management.js";
+import type { UserStatusCommand } from "../../../domain/user.js";
+import { requireUserManagementPermissions, UserError } from "../../../domain/user.js";
+import {
+  type UserManagementAuthorization,
+  unavailableAccountAuthorization,
+} from "../../../postgres/authority.js";
 
 const projection = `m.id,m.status,m."createdAt",m.status_version AS version,
   COALESCE(m.suspended_from,'paused') AS "restoreStatus",
@@ -104,25 +110,22 @@ function statusVersionRow(row: Record<string, unknown>) {
   return { status_version: numberValue(row.status_version) };
 }
 
-export class PostgresUserManagement implements UserManagementRepository {
+export class PostgresUserManagementPersistence implements UserManagementPersistence {
   constructor(
     private db: Database = businessDatabase(),
     private authorization: UserManagementAuthorization = unavailableAccountAuthorization,
   ) {}
 
-  private async access(sql: Sql, actor: string, write = false) {
-    const read = await this.authorization.hasPermission(sql, actor, "users.read");
+  private async permissions(sql: Sql, actor: string) {
+    const canRead = await this.authorization.hasPermission(sql, actor, "users.read");
     const canSuspend = await this.authorization.hasPermission(sql, actor, "users.suspend");
-    if (!read || (write && !canSuspend)) {
-      throw new UserError(403, "你沒有此操作的使用者管理權限。");
-    }
-    return canSuspend;
+    return { canRead, canSuspend };
   }
 
   view(actor: string, query: UserManagementQuery): Promise<UserManagementView> {
     return this.db.transaction(async (sql) => {
       await sql.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-      const canSuspend = await this.access(sql, actor);
+      const canSuspend = requireUserManagementPermissions(await this.permissions(sql, actor));
       const rows = (
         await sql.query(
           `SELECT ${projection} FROM users m
@@ -202,86 +205,88 @@ export class PostgresUserManagement implements UserManagementRepository {
     });
   }
 
-  execute(actor: string, command: UserStatusCommand, now: number): Promise<UserStatusReceipt> {
+  transact<T>(
+    actor: string,
+    command: UserStatusCommand,
+    work: (transaction: UserManagementTransaction) => Promise<T>,
+  ): Promise<T> {
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT app_private.lock_governance('exclusive')");
       await sql.query("SELECT id FROM users WHERE id=ANY($1::text[]) ORDER BY id FOR UPDATE", [
         [actor, command.target],
       ]);
-      await this.access(sql, actor, true);
-      if (actor === command.target) {
-        throw new UserError(403, "不能從此頁停權或解除自己的帳號。");
-      }
-      const fingerprint = createHash("sha256").update(JSON.stringify(command)).digest("hex");
-      const old = (
-        await sql.query(
-          "SELECT fingerprint,result FROM user_management_commands WHERE actor=$1 AND request_id=$2",
-          [actor, command.requestId],
-          storedCommandRow,
-        )
-      ).rows[0];
-      if (old) {
-        if (old.fingerprint !== fingerprint) throw new UserError(409, "操作編號已用於不同內容。");
-        return presentStoredReceipt(old.result);
-      }
-      const target = (
-        await sql.query(
-          "SELECT status,status_version,suspended_from FROM users WHERE id=$1",
-          [command.target],
-          targetStatusRow,
-        )
-      ).rows[0];
-      if (!target) throw new UserError(404, "使用者不存在。");
-      if (target.status_version !== command.expectedVersion) {
-        throw new UserError(409, "使用者狀態已更新，請重新讀取後確認。");
-      }
-      if ((command.action === "suspend") === (target.status === "suspended")) {
-        throw new UserError(409, "使用者目前狀態不適用此操作。");
-      }
-      if (command.action === "suspend") {
-        await this.authorization.protectPermissionAdministrator(sql, command.target);
-      }
-      const status =
-        command.action === "suspend" ? "suspended" : (target.suspended_from ?? "paused");
-      const changed = (
-        await sql.query(
-          "UPDATE users SET status=$2 WHERE id=$1 RETURNING status_version",
-          [command.target, status],
-          statusVersionRow,
-        )
-      ).rows[0];
-      if (!changed) throw new UserError(409, "使用者狀態已更新，請重新讀取後確認。");
-      const result: UserStatusReceipt = {
-        id: command.target,
-        requestId: command.requestId,
-        status,
-        version: changed.status_version,
-        at: now,
-      };
-      await this.access(sql, actor, true);
-      await sql.query(
-        `INSERT INTO user_management_commands(actor,request_id,target,fingerprint,action,reason,previous_status,status,version,at,result)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [
-          actor,
-          command.requestId,
-          command.target,
-          fingerprint,
-          command.action,
-          command.reason,
-          target.status,
-          status,
-          result.version,
-          now,
-          JSON.stringify(result),
-        ],
-      );
-      await sql.query("INSERT INTO user_events(user_id,type,at) VALUES($1,$2,$3)", [
-        command.target,
-        command.action === "suspend" ? "suspended" : "suspension_lifted",
-        now,
-      ]);
-      return result;
+      let fingerprint: string | undefined;
+      return work({
+        permissions: () => this.permissions(sql, actor),
+        replay: async () => {
+          fingerprint = createHash("sha256").update(JSON.stringify(command)).digest("hex");
+          const old = (
+            await sql.query(
+              "SELECT fingerprint,result FROM user_management_commands WHERE actor=$1 AND request_id=$2",
+              [actor, command.requestId],
+              storedCommandRow,
+            )
+          ).rows[0];
+          if (!old) return null;
+          return old.fingerprint === fingerprint
+            ? { matches: true, result: presentStoredReceipt(old.result) }
+            : { matches: false };
+        },
+        target: async () => {
+          const target = (
+            await sql.query(
+              "SELECT status,status_version,suspended_from FROM users WHERE id=$1",
+              [command.target],
+              targetStatusRow,
+            )
+          ).rows[0];
+          return target
+            ? {
+                status: target.status,
+                version: target.status_version,
+                restoreStatus: target.suspended_from ?? "paused",
+              }
+            : null;
+        },
+        protectAdministrator: () =>
+          this.authorization.protectPermissionAdministrator(sql, command.target),
+        writeStatus: async (status) => {
+          const changed = (
+            await sql.query(
+              "UPDATE users SET status=$2 WHERE id=$1 RETURNING status_version",
+              [command.target, status],
+              statusVersionRow,
+            )
+          ).rows[0];
+          if (!changed) throw new UserError(409, "使用者狀態已更新，請重新讀取後確認。");
+          return changed.status_version;
+        },
+        record: async (result, previousStatus, event) => {
+          if (fingerprint === undefined) throw new Error("User management replay was not checked");
+          await sql.query(
+            `INSERT INTO user_management_commands(actor,request_id,target,fingerprint,action,reason,previous_status,status,version,at,result)
+            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+            [
+              actor,
+              command.requestId,
+              command.target,
+              fingerprint,
+              command.action,
+              command.reason,
+              previousStatus,
+              result.status,
+              result.version,
+              result.at,
+              JSON.stringify(result),
+            ],
+          );
+          await sql.query("INSERT INTO user_events(user_id,type,at) VALUES($1,$2,$3)", [
+            command.target,
+            event,
+            result.at,
+          ]);
+        },
+      });
     });
   }
 }

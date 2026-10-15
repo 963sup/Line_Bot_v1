@@ -12,6 +12,8 @@ DailyCheckIn 擁有 business-day/reward policy、use case/query 與 atomic claim
 
 Global User／Organization login 的驗證、綁定、解析與改名由 [Namespace](namespace.md) 集中管理。Account 在原有註冊／資格交易內呼叫 Namespace；Profile 不持有第二套 login lifecycle。
 
+User management suspension/unsuspension uses a Contracts input capability and transaction output Port. Application coordinates current IdentityAccess authority before replay, Domain decides the versioned status transition and its event, and PostgreSQL preserves governance/User locks and atomic status/receipt/event persistence. Authority is rechecked after the status write. The public `PostgresUserManagement` entry assembles these dependencies without changing existing constructor or prototype methods.
+
 ## Invariants
 
 User state 是 current human qualification authority。LINE `destination` 是 Integration 的 signed provider metadata，不是 Account identity 或 business authorization。External link 不轉移歷史 ownership；每個 private request 重新核驗 qualification/permission/scope。Receipt 不作永久授權，Account 不保存可寫 Coin balance，也不修改 Ledger entries。
