@@ -62,6 +62,11 @@ test("unfollow uses the authenticated User identity and remains idempotent at th
 
   await follows.unfollow("line-subject", "user-b");
   assert.deepEqual(calls, [["user-a", "user-b"]]);
+  await assert.rejects(follows.unfollow("line-subject", "user-a"), {
+    status: 400,
+    message: "不能取消追蹤自己。",
+  });
+  assert.equal(calls.length, 1);
 });
 
 test("Postgres follow persistence keeps one directional edge and rejects self-follow", async (t) => {

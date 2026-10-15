@@ -16,6 +16,8 @@ User management suspension/unsuspension uses a Contracts input capability and tr
 
 Registration, restoration, login rename and optional Google binding follow the same ownership split. Application coordinates locked current facts, Domain decides lifecycle/link transitions and event intent, and persistence saves the User, Namespace binding, identity links and events in the existing transaction. Google confirmation reuses the binding use case with a transaction-scoped Port assembled by Composition; it does not create another Store inside the SQL adapter. Public `PostgresUserStore` and `PostgresGoogleLinkStore` constructors and prototype methods remain stable.
 
+Follow/Unfollow writes recheck current User qualification in the relationship transaction, under the shared governance protocol and User row locks. Domain owns self-follow and followable-target decisions. A prior application read does not authorize a write after qualification is lost; lifecycle pause preserves existing relationships.
+
 ## Invariants
 
 User state 是 current human qualification authority。LINE `destination` 是 Integration 的 signed provider metadata，不是 Account identity 或 business authorization。External link 不轉移歷史 ownership；每個 private request 重新核驗 qualification/permission/scope。Receipt 不作永久授權，Account 不保存可寫 Coin balance，也不修改 Ledger entries。

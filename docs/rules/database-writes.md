@@ -29,7 +29,7 @@ semantic-model
 
 | Mode | Current participants / protected facts |
 | --- | --- |
-| shared | Attendance command／supplement review 的目前資格與打卡點；Repository provisioning、access/content-scope/address query；Project management 的目前治理資格 |
+| shared | Attendance command／supplement review 的目前資格與打卡點；Repository provisioning、access/content-scope/address query；Project management 的目前治理資格；Account Follow／Unfollow 的目前 User 資格與關係寫入 |
 | exclusive | Account lifecycle／identity binding／status management、Identity & Access permissions、Enterprise／Organization／Team governance，以及 Repository lifecycle／grant／address writers；對應 SQL provisioning、access mutation 與 permission-administrator constraints |
 
 共用鎖先於競爭的 User/resource row 與 request lock；之後的資格、receipt、row、request 次序依各 Owner 既有契約（例如 Project receipt 後重驗資格），不能用統一模板覆寫。SQL constraint 可在既有 transaction 中重入同一鎖。shared 彼此相容，與 exclusive 互斥；持有到 commit／rollback，不另解鎖，不在持鎖時呼叫外部 provider。Team hierarchy、request identity 等獨立鎖保持自己的用途，不併入此協定。
