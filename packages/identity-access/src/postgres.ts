@@ -1,9 +1,9 @@
-export { requireActiveTargetUser, resolveVerifiedLineActor } from "./postgres/actor.js";
 export {
   hasPermission,
-  PostgresPermissionStore,
   protectPermissionAdministrator,
-} from "./postgres/permissions.js";
+} from "./adapters/outbound/persistence/permissions.js";
+export { PostgresPermissionStore } from "./composition/bootstrap/permissions.js";
+export { requireActiveTargetUser, resolveVerifiedLineActor } from "./postgres/actor.js";
 export {
   governanceFingerprint,
   readGovernanceReplay,

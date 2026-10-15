@@ -1,3 +1,5 @@
+export type PermissionReceipt = { requestId: string; version: number };
+
 export type PermissionGrant = {
   permission: string;
   effective: boolean;

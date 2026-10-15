@@ -9,8 +9,8 @@
       "default": "./dist/application/permissions.js"
     },
     "./application/permissions/ports": {
-      "types": "./dist/application/permissions/ports.d.ts",
-      "default": "./dist/application/permissions/ports.js"
+      "types": "./dist/contracts/input/permissions.d.ts",
+      "default": "./dist/contracts/input/permissions.js"
     },
     "./contracts/governance": {
       "types": "./dist/contracts/governance.d.ts",

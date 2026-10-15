@@ -3601,7 +3601,11 @@
         "scope": "current Identity Access permission application surface",
         "sourcePaths": [
           "packages/identity-access/src/application/permissions.ts",
-          "packages/identity-access/src/application/permissions/ports.ts",
+          "packages/identity-access/src/application/use-cases/change-permission.ts",
+          "packages/identity-access/src/contracts/input/permissions.ts",
+          "packages/identity-access/src/contracts/output/permission-transactions.ts",
+          "packages/identity-access/src/adapters/outbound/persistence/permissions.ts",
+          "packages/identity-access/src/composition/bootstrap/permissions.ts",
           "packages/identity-access/src/domain/permission.ts"
         ],
         "publicExports": [
@@ -3610,8 +3614,14 @@
           "./domain/permission"
         ],
         "entrypoints": ["apps/web/src/app/(mobile)/(secondary)/settings/permissions/page.tsx"],
-        "testPaths": [],
-        "note": "Permission source/export evidence exists; authorization acceptance remains separately validated."
+        "testPaths": [
+          "packages/identity-access/test/permission.test.ts",
+          "packages/identity-access/test/permission-change.test.ts",
+          "packages/identity-access/test/permission-persistence.test.ts",
+          "packages/identity-access/test/permission-postgres.test.ts",
+          "apps/web/test/permissions-api.test.ts"
+        ],
+        "note": "Permission source, exports and transaction/authorization tests are present. PostgreSQL multi-session execution requires the disposable CI service; provider/device acceptance remains separate."
       }
     },
     {
