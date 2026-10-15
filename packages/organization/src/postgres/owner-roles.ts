@@ -1,15 +1,5 @@
-import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { Sql } from "@line_bot_v1/platform/postgres";
-import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
-import type { OrganizationCommand } from "../contracts/organization-governance.js";
-
-type OrganizationOwnerCommand = Extract<
-  OrganizationCommand,
-  { action: "grant-organization-owner" | "revoke-organization-owner" }
->;
-
-type AssignmentResult = Readonly<{ status: "active" | "revoked"; version: number }>;
+import { numberValue, stringValue } from "@line_bot_v1/platform/validation";
 
 function idRow(row: Record<string, unknown>) {
   return { id: stringValue(row.id) };
@@ -17,26 +7,6 @@ function idRow(row: Record<string, unknown>) {
 
 function ownerAssignmentRow(row: Record<string, unknown>) {
   return { userId: stringValue(row.userId), version: numberValue(row.version) };
-}
-
-function membershipRow(row: Record<string, unknown>) {
-  return {
-    status: literalValue(row.status, ["active", "removed"]),
-    version: numberValue(row.version),
-  };
-}
-
-function assignmentRow(row: Record<string, unknown>) {
-  return {
-    status: literalValue(row.status, ["active", "revoked"]),
-    version: numberValue(row.version),
-    user_status_version: numberValue(row.user_status_version),
-    membership_version: numberValue(row.membership_version),
-  };
-}
-
-function versionRow(row: Record<string, unknown>) {
-  return { version: numberValue(row.version) };
 }
 
 export async function hasOrganizationOwnerAssignment(
@@ -150,141 +120,6 @@ export async function readOrganizationOwnerAssignments(
     )
   ).rows;
   return rows.map((row) => ({ userId: row.userId, version: Number(row.version) }));
-}
-
-export async function mutateOrganizationOwnerAssignment(
-  sql: Sql,
-  command: OrganizationOwnerCommand,
-  now: number,
-): Promise<AssignmentResult> {
-  const membership = (
-    await sql.query(
-      `SELECT status,version FROM organization_memberships
-      WHERE organization_account_id=$1 AND user_id=$2`,
-      [command.organizationAccountId, command.targetUserId],
-      membershipRow,
-    )
-  ).rows[0];
-  if (!membership || membership.status !== "active") {
-    throw new GovernanceAccessError(
-      403,
-      "forbidden",
-      "OrganizationOwner 對象必須是有效 Organization member。",
-    );
-  }
-
-  const assignment = (
-    await sql.query(
-      `SELECT status,version,user_status_version,membership_version
-       FROM organization_role_assignments
-      WHERE organization_account_id=$1 AND user_id=$2 AND role='OrganizationOwner' FOR UPDATE`,
-      [command.organizationAccountId, command.targetUserId],
-      assignmentRow,
-    )
-  ).rows[0];
-
-  if (command.action === "grant-organization-owner") {
-    const target = await readActiveUserQualification(sql, command.targetUserId, "share");
-    if (!target) {
-      throw new GovernanceAccessError(404, "not-found", "找不到有效對象使用者。");
-    }
-    const effectiveAssignment =
-      assignment?.status === "active" &&
-      assignment.user_status_version === target.statusVersion &&
-      assignment.membership_version === membership.version;
-    const effectiveVersion = effectiveAssignment ? Number(assignment.version) : 0;
-    if (command.expectedVersion !== effectiveVersion) {
-      throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派版本已更新。");
-    }
-    if (effectiveAssignment) {
-      throw new GovernanceAccessError(409, "invalid-transition", "OrganizationOwner 已生效。");
-    }
-    if (assignment) {
-      const row = (
-        await sql.query(
-          `UPDATE organization_role_assignments
-           SET status='active',version=version+1,user_status_version=$3,
-             membership_version=$4,granted_at=$5
-           WHERE organization_account_id=$1 AND user_id=$2 AND role='OrganizationOwner'
-           RETURNING version`,
-          [
-            command.organizationAccountId,
-            command.targetUserId,
-            target.statusVersion,
-            membership.version,
-            now,
-          ],
-          versionRow,
-        )
-      ).rows[0];
-      if (!row) {
-        throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派已更新。");
-      }
-      return { status: "active", version: Number(row.version) };
-    }
-    await sql.query(
-      `INSERT INTO organization_role_assignments(
-         organization_account_id,user_id,role,status,version,user_status_version,
-         membership_version,granted_at
-       ) VALUES($1,$2,'OrganizationOwner','active',1,$3,$4,$5)`,
-      [
-        command.organizationAccountId,
-        command.targetUserId,
-        target.statusVersion,
-        membership.version,
-        now,
-      ],
-    );
-    return { status: "active", version: 1 };
-  }
-
-  if (!assignment) {
-    throw new GovernanceAccessError(404, "not-found", "找不到 OrganizationOwner 指派。");
-  }
-  const target = await readActiveUserQualification(sql, command.targetUserId, "share");
-  const effectiveAssignment =
-    target !== null &&
-    assignment.status === "active" &&
-    assignment.user_status_version === target.statusVersion &&
-    assignment.membership_version === membership.version;
-  if (!effectiveAssignment) {
-    throw new GovernanceAccessError(409, "invalid-transition", "OrganizationOwner 指派已失效。");
-  }
-  if (Number(assignment.version) !== command.expectedVersion) {
-    throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派版本已更新。");
-  }
-  if (
-    (await hasOrganizationOwnerAssignment(
-      sql,
-      command.organizationAccountId,
-      command.targetUserId,
-    )) &&
-    !(await hasReplacementOrganizationOwner(
-      sql,
-      command.organizationAccountId,
-      command.targetUserId,
-    ))
-  ) {
-    throw new GovernanceAccessError(
-      409,
-      "last-effective-role-holder",
-      "不能撤銷最後一位有效 OrganizationOwner。",
-    );
-  }
-
-  const row = (
-    await sql.query(
-      `UPDATE organization_role_assignments SET status='revoked',version=version+1
-       WHERE organization_account_id=$1 AND user_id=$2 AND role='OrganizationOwner'
-       RETURNING version`,
-      [command.organizationAccountId, command.targetUserId],
-      versionRow,
-    )
-  ).rows[0];
-  if (!row) {
-    throw new GovernanceAccessError(409, "conflict", "OrganizationOwner 指派已更新。");
-  }
-  return { status: "revoked", version: Number(row.version) };
 }
 
 export async function revokeOrganizationOwnerForMembershipRemoval(

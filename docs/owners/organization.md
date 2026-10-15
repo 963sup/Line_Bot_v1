@@ -58,7 +58,9 @@ Enterprise 提供上層 governance relation、Enterprise Team 與未來 policy�
 
 ## Lifecycle execution
 
-Deactivate/reactivate commands use an Organization-owned transaction Port. Application checks current owner qualification before replay and invokes the existing Domain transition. Persistence retains the shared governance lock, conditional write, durable receipt and audit in one transaction. Invitation, membership and owner-management command orchestration has not yet been migrated to this flow.
+Deactivate/reactivate commands use an Organization-owned transaction Port. Application checks current owner qualification before replay and invokes the existing Domain transition. Persistence retains the shared governance lock, conditional write, durable receipt and audit in one transaction.
+
+OrganizationOwner grant/revoke also uses an Application-owned transaction flow. Domain decides current membership eligibility, effective-version grants, epoch-bound revocation and last-effective-owner protection. An ineffective assignment is explicitly re-granted with expectedVersion 0 while its stored version keeps increasing. Application retains current authority before current or legacy replay, then reads target facts and records the result. Persistence reuses the original governance transaction with the remaining commands; the existing public constructor and factory are wired in composition. Invitation, membership, creation and member-policy command orchestration remains to be migrated.
 
 ## Non-goals
 
