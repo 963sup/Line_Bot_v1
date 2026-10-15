@@ -20,7 +20,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GenerateContentResponse } from "@google/genai";
-import { runIntakeAgent, validateIssueDraft } from "../src/agents/intake.js";
+import { runIntakeAgent, validateIssueDraft } from "../src/composition/bootstrap/intake-agent.js";
 
 const draft = {
   title: "檢查設備",
@@ -46,6 +46,8 @@ const result = (name: string, args: Record<string, unknown>) => {
 
 test("two tool calls use actual Taipei clock and preserve model thought signatures", async () => {
   let calls = 0;
+  const clockResponse = result("get_current_time", {});
+  clockResponse.candidates?.[0]?.content?.parts?.push({ text: "provider content retained" });
   const output = await runIntakeAgent({
     model: "offline",
     input: "明天下午檢查設備",
@@ -53,7 +55,9 @@ test("two tool calls use actual Taipei clock and preserve model thought signatur
     models: {
       generateContent: async (parameters) => {
         calls++;
-        if (calls === 1) return result("get_current_time", {});
+        if (calls === 1) return clockResponse;
+        assert.ok(Array.isArray(parameters.contents));
+        assert.equal(parameters.contents[1], clockResponse.candidates?.[0]?.content);
         assert.match(JSON.stringify(parameters.contents), /2026-09-05 22:00:00/);
         assert.match(JSON.stringify(parameters.contents), /offline-signature/);
         assert.deepEqual(
@@ -66,7 +70,20 @@ test("two tool calls use actual Taipei clock and preserve model thought signatur
   });
   assert.equal(calls, 2);
   assert.deepEqual(output.toolCalls, ["get_current_time", "draft_issue"]);
-  assert.match(output.text, /尚未儲存／指派/);
+  assert.deepEqual(output.draft, draft);
+  assert.equal(
+    output.text,
+    [
+      "📝 Issue 草稿（尚未儲存／指派）",
+      draft.title,
+      "日期：2026-09-06 下午",
+      "建議待辦：",
+      "1. 確認設備清單",
+      "待確認：",
+      "• 由誰負責？",
+      "工具：get_current_time → draft_issue",
+    ].join("\n"),
+  );
 });
 
 test("unexpected tools, invalid dates and excessive input are rejected", async () => {

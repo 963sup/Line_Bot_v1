@@ -3,6 +3,8 @@ Assistant 擁有產品內問答與草稿 orchestration，不擁有其他 module 
 ## Implementation
 `createAnswerAssistantQuestion` 與 `AnswerDependencies` 由 `@line_bot_v1/assistant` owner；Web 只用 public application surface。Horizontal application package 不再擁有 Assistant implementation。
 
+Intake 的應用流程透過 model Port 先要求時間、再讀 server clock、產生並驗證 draft；不依賴 Gemini SDK。Provider Adapter 保管每次請求的完整 SDK content、call ID、強制工具選擇與 HTTP budget；12 秒 operation deadline 由應用流程協調。既有 `agents/intake` 公開入口直接組裝 provider、clock、use case 與 text adapter，保留公開 validator／result，不建立舊 source forwarding。Draft contract 與文字呈現各有唯一實作，正式 Issue authority 仍屬 Issue。
+
 Results：empty→help；明確日期/時間→deterministic server `now()`；`建立Issue/Issue/待辦`→Issue draft；general generation 有 input/output bound/cooldown；provider empty/unavailable 與 valid text 分開。Issue draft 不建立正式 Issue。
 ## Conversation activation
 LINE delivery 只提供可信 actor 與 conversation context；Assistant 決定是否把事件視為問答 intent。目前 1:1 `user` scope 的普通文字可直接進 Assistant，`group` / `room` 的普通文字保持沉默，只有 LINE 原生 self mention 才進 Assistant 問答。既有 explicit command 仍由各自 command handler 擁有，不因這個規則改成 generic chat。
