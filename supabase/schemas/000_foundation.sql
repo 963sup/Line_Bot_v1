@@ -13,7 +13,7 @@ grant usage on schema app_private to line_app;
 -- Shared transaction protocol for qualification/access readers and governance writers.
 -- Acquire before User/resource row and request locks; PostgreSQL releases it at transaction end.
 -- Business authorization and replay order remain with each calling Owner.
-create function app_private.lock_governance(p_mode text)
+create or replace function app_private.lock_governance(p_mode text)
 returns void
 language plpgsql
 security invoker

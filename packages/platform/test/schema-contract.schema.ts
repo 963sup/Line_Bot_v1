@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { postgresFixture } from "../src/testing/postgres.js";
 import { booleanValue, numberValue, record, stringValue } from "../src/validation.js";
@@ -14,6 +15,40 @@ test("declarative schemas clean-build from current sources", async (t) => {
   const row = record(value);
   assert.ok(row);
   assert.ok(numberValue(row.count) > 0);
+});
+
+test("existing-target reconciliation can reapply the neutral foundation without changing runtime authority", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  const foundation = readFileSync(
+    new URL("../../../supabase/schemas/000_foundation.sql", import.meta.url),
+    "utf8",
+  );
+  const contract = () =>
+    pg.query(`
+    SELECT p.oid,p.prosecdef,p.proconfig,r.rolname AS owner,
+      has_function_privilege('line_app',p.oid,'EXECUTE') AS runtime_execute,
+      has_function_privilege('anon',p.oid,'EXECUTE') AS anon_execute,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') AS authenticated_execute
+    FROM pg_proc p JOIN pg_roles r ON r.oid=p.proowner
+    WHERE p.oid=to_regprocedure('app_private.lock_governance(text)')`);
+  const before = (await contract()).rows;
+  assert.equal(before.length, 1);
+  const authority = record(before[0]);
+  assert.equal(authority.prosecdef, false);
+  assert.notEqual(authority.owner, "line_app");
+  assert.equal(authority.runtime_execute, true);
+  assert.equal(authority.anon_execute, false);
+  assert.equal(authority.authenticated_execute, false);
+  await pg.exec(`BEGIN;\n${foundation}\nCOMMIT;`);
+  await pg.exec(`BEGIN;\n${foundation}\nCOMMIT;`);
+  assert.deepEqual((await contract()).rows, before);
+  for (const mode of ["shared", "exclusive"])
+    await db.transaction((sql) => sql.query("SELECT app_private.lock_governance($1)", [mode]));
+  await assert.rejects(
+    db.transaction((sql) => sql.query("SELECT app_private.lock_governance('invalid')")),
+    (error: unknown) => error instanceof Error && "code" in error && error.code === "22023",
+  );
 });
 
 test("runtime role cannot login, bypass RLS, or become superuser", async (t) => {
