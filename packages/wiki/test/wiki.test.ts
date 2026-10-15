@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createWikiHistory } from "../src/application/use-cases/history.js";
 import { createWiki } from "../src/application/use-cases/pages.js";
-import { createPostgresWikiStore } from "../src/composition/bootstrap/wiki-pages.js";
+import { createPostgresWikiDependencies } from "../src/composition/bootstrap/wiki-pages.js";
 import { WikiError } from "../src/domain/wiki-error.js";
 import { reviseWikiPage } from "../src/domain/wiki-page.js";
 
@@ -65,9 +65,9 @@ test("Wiki persistence keeps scope, replay, atomic head and immutable historical
   await pg.query(
     "SELECT * FROM app_private.provision_repository('other','owner','owner','USER','Other','private')",
   );
-  const store = createPostgresWikiStore(db),
-    wiki = createWiki({ store, now: () => 100 }),
-    history = createWikiHistory(store);
+  const store = createPostgresWikiDependencies(db),
+    wiki = createWiki({ ...store, now: () => 100 }),
+    history = createWikiHistory(store.reads);
   const pageId = randomUUID();
   const command = {
     action: "create",
@@ -139,6 +139,30 @@ test("Wiki persistence keeps scope, replay, atomic head and immutable historical
       sql.query("UPDATE wiki_revisions SET body='tampered' WHERE id=$1", [first.revision.id]),
     ),
   );
+  // A durable receipt failure must roll back an already saved head and revision.
+  await assert.rejects(
+    store.transactions.transact(
+      "owner",
+      { repositoryId: "repo", pageId },
+      { requestId: command.requestId, payload: JSON.stringify(command) },
+      async (tx) => {
+        const next = reviseWikiPage(
+          await tx.pages.load(),
+          3,
+          { action: "rename", title: "must roll back" },
+          { id: tx.nextId(), pageId, repositoryId: "repo", actorUserId: "owner", at: 101 },
+        );
+        await tx.pages.save(next, 3);
+        await tx.record(next);
+      },
+    ),
+  );
+  assert.equal((await wiki.read("owner", { repositoryId: "repo", pageId })).version, 3);
+  assert.equal(
+    (await history.history("owner", { repositoryId: "repo", pageId })).revisions.length,
+    3,
+  );
+  assert.deepEqual(await wiki.execute("owner", command), first);
   await pg.query("UPDATE app_private.repositories SET is_archived=true WHERE id='repo'");
   assert.deepEqual(await wiki.execute("owner", command), first);
   await assert.rejects(

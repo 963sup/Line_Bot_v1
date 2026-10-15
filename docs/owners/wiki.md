@@ -2,6 +2,8 @@
 
 Wiki owns Repository-scoped page identity, immutable content revisions, page heads and durable exact-replay receipts. Repository remains the authority for scope, qualification, access and archive.
 
+Public reads, command receipts, replay and history use an explicit revision DTO projection. Application maps the internal Domain revision to the published field set; the Aggregate Repository exposes only Domain load/save with expected version. Read/qualification, transaction and durable receipt capabilities are output Ports; Application saves the head/revision and records its receipt in the same transaction. Command and Query models live in Application, and the concrete PostgreSQL adapter depends on scope/evidence rather than an Application command. Domain object identity and future internal fields are not part of the published contract.
+
 - Each page has an independent version. Create expects version zero; subsequent commands require the observed page version.
 - Create/edit supply title and raw Markdown body; rename changes only title. Archive preserves reads. Restore copies a same-page historical title/body into a new active revision.
 - Reads and historical comparisons recheck current Repository access. Write requires current write/maintain/admin; Repository archive blocks new commands. Exact authorized replay may return its original receipt.

@@ -1,4 +1,5 @@
-import type { WikiQuery } from "../../contracts/dto/wiki.js";
+export type WikiQuery = Readonly<{ repositoryId: string; pageId: string; revisionId?: string }>;
+
 import { WikiError } from "../../domain/wiki-error.js";
 
 export function wikiId(value: string) {

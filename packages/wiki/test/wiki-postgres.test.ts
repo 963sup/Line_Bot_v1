@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { createWiki } from "../src/application/use-cases/pages.js";
-import { createPostgresWikiStore } from "../src/composition/bootstrap/wiki-pages.js";
+import { createPostgresWikiDependencies } from "../src/composition/bootstrap/wiki-pages.js";
 
 const url = process.env.CAPABILITY_TEST_DATABASE_URL;
 test("independent PostgreSQL sessions serialize Wiki edits and exact concurrent replay", {
@@ -21,7 +21,7 @@ test("independent PostgreSQL sessions serialize Wiki edits and exact concurrent 
   await pool.query(
     "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Wiki','private')",
   );
-  const wiki = createWiki({ store: createPostgresWikiStore(db), now: () => 1 });
+  const wiki = createWiki({ ...createPostgresWikiDependencies(db), now: () => 1 });
   const command = {
     repositoryId: "repo",
     pageId: randomUUID(),

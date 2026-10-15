@@ -1,7 +1,11 @@
 import type { Database } from "@line_bot_v1/platform/postgres";
-import { PostgresWikiStore } from "../../adapters/outbound/persistence/wiki-pages.js";
-import type { WikiStore } from "../../contracts/repositories/wiki-pages.js";
+import { PostgresWikiPages } from "../../adapters/outbound/persistence/wiki-pages.js";
+import type { WikiReads, WikiTransactions } from "../../contracts/output/wiki-pages.js";
 
-export function createPostgresWikiStore(db?: Database): WikiStore {
-  return new PostgresWikiStore(db);
+export function createPostgresWikiDependencies(db?: Database): {
+  reads: WikiReads;
+  transactions: WikiTransactions;
+} {
+  const persistence = new PostgresWikiPages(db);
+  return { reads: persistence, transactions: persistence };
 }

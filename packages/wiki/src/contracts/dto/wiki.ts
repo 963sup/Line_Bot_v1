@@ -1,8 +1,20 @@
-import type { WikiEdit, WikiRevision } from "../../domain/wiki-page.js";
+import type { WikiEdit } from "../../domain/wiki-page.js";
 
-export type WikiCommand = WikiEdit &
-  Readonly<{ repositoryId: string; pageId: string; requestId: string; expectedVersion: number }>;
-export type WikiReceipt = Readonly<{ requestId: string; revision: WikiRevision }>;
+export type WikiRevisionDto = Readonly<{
+  id: string;
+  pageId: string;
+  repositoryId: string;
+  version: number;
+  parentRevisionId: string | null;
+  actorUserId: string;
+  at: number;
+  action: WikiEdit["action"];
+  title: string;
+  body: string;
+  archived: boolean;
+}>;
+
+export type WikiReceipt = Readonly<{ requestId: string; revision: WikiRevisionDto }>;
 export type WikiPageSummary = Readonly<{
   pageId: string;
   title: string;
@@ -10,5 +22,4 @@ export type WikiPageSummary = Readonly<{
   archived: boolean;
   updatedAt: number;
 }>;
-export type WikiQuery = Readonly<{ repositoryId: string; pageId: string; revisionId?: string }>;
-export type WikiHistory = Readonly<{ revisions: readonly WikiRevision[]; next: number | null }>;
+export type WikiHistory = Readonly<{ revisions: readonly WikiRevisionDto[]; next: number | null }>;

@@ -34,7 +34,7 @@ const { createWiki } = await import(
 const { createWikiHistory } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/wiki/application/use-cases/history")).href
 );
-const { createPostgresWikiStore } = await import(
+const { createPostgresWikiDependencies } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/wiki/composition/bootstrap/wiki-pages")).href
 );
 const { canEditWiki } = await import(
@@ -64,9 +64,9 @@ await fixture.pg.query(
 );
 const contentStore = createPostgresWbsStore(fixture.db),
   governanceStore = createPostgresWbsGovernanceStore(fixture.db);
-const wikiStore = createPostgresWikiStore(fixture.db);
-const wikiContent = createWiki({ store: wikiStore, now: Date.now });
-const wikiVersions = createWikiHistory(wikiStore);
+const wikiStore = createPostgresWikiDependencies(fixture.db);
+const wikiContent = createWiki({ ...wikiStore, now: Date.now });
+const wikiVersions = createWikiHistory(wikiStore.reads);
 const wikiPosts = [];
 let wikiUnknown = false;
 let insightsUnavailable = false;

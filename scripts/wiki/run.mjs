@@ -1,7 +1,7 @@
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
 import { createWikiHistory } from "@line_bot_v1/wiki/application/use-cases/history";
 import { createWiki } from "@line_bot_v1/wiki/application/use-cases/pages";
-import { createPostgresWikiStore } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
+import { createPostgresWikiDependencies } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
 import { internalActor, readInternalInput } from "../runtime/internal-input.mjs";
 import { loadRootEnv } from "../runtime/load-env.mjs";
 
@@ -10,9 +10,9 @@ const db = new PostgresDatabase();
 try {
   const input = await readInternalInput();
   const actor = await internalActor(db, input.proof);
-  const store = createPostgresWikiStore(db);
-  const wiki = createWiki({ store, now: Date.now });
-  const history = createWikiHistory(store);
+  const store = createPostgresWikiDependencies(db);
+  const wiki = createWiki({ ...store, now: Date.now });
+  const history = createWikiHistory(store.reads);
   let result;
   if (input.operation === "execute") result = await wiki.execute(actor, input.command);
   else if (input.operation === "list" && typeof input.repositoryId === "string")

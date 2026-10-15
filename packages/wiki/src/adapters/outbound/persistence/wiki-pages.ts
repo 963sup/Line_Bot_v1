@@ -13,8 +13,11 @@ import {
   stringValue,
 } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
-import type { WikiCommand, WikiQuery } from "../../../contracts/dto/wiki.js";
-import type { WikiStore, WikiTransaction } from "../../../contracts/repositories/wiki-pages.js";
+import type {
+  WikiReads,
+  WikiTransaction,
+  WikiTransactions,
+} from "../../../contracts/output/wiki-pages.js";
 import { WikiError } from "../../../domain/wiki-error.js";
 import type { WikiRevision } from "../../../domain/wiki-page.js";
 
@@ -45,7 +48,7 @@ async function readRevision(sql: Sql, repositoryId: string, pageId: string, revi
   ).rows[0];
   return row ?? null;
 }
-export class PostgresWikiStore implements WikiStore {
+export class PostgresWikiPages implements WikiReads, WikiTransactions {
   constructor(private readonly db: Database = businessDatabase()) {}
   list(userId: string, repositoryId: string, after?: string) {
     return this.db.transaction(async (sql) => {
@@ -67,7 +70,7 @@ export class PostgresWikiStore implements WikiStore {
       return { pages, next: rows.length > 20 ? (pages.at(-1)?.pageId ?? null) : null };
     });
   }
-  read(userId: string, query: WikiQuery) {
+  read(userId: string, query: { repositoryId: string; pageId: string; revisionId?: string }) {
     return this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, userId, { repositoryId: query.repositoryId });
       const found = await readRevision(sql, query.repositoryId, query.pageId, query.revisionId);
@@ -75,7 +78,7 @@ export class PostgresWikiStore implements WikiStore {
       return found;
     });
   }
-  history(userId: string, query: WikiQuery, before?: number) {
+  history(userId: string, query: { repositoryId: string; pageId: string }, before?: number) {
     return this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, userId, { repositoryId: query.repositoryId });
       if (!(await readRevision(sql, query.repositoryId, query.pageId)))
@@ -93,16 +96,17 @@ export class PostgresWikiStore implements WikiStore {
   }
   transact<T>(
     userId: string,
-    command: WikiCommand,
+    scope: { repositoryId: string; pageId: string },
+    evidence: { requestId: string; payload: string },
     operation: (tx: WikiTransaction) => Promise<T>,
   ) {
-    const fingerprint = createHash("sha256").update(JSON.stringify(command)).digest("hex");
+    const fingerprint = createHash("sha256").update(evidence.payload).digest("hex");
     return this.db.transaction(async (sql) => {
       const { repository, archived } = await repositoryContentScope(sql, userId, {
-        repositoryId: command.repositoryId,
+        repositoryId: scope.repositoryId,
       });
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-        `wiki:${userId}:${command.requestId}`,
+        `wiki:${userId}:${evidence.requestId}`,
       ]);
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
@@ -111,7 +115,7 @@ export class PostgresWikiStore implements WikiStore {
           const row = (
             await sql.query(
               "SELECT fingerprint,page_id,revision_id FROM wiki_commands WHERE actor_user_id=$1 AND request_id=$2",
-              [userId, command.requestId],
+              [userId, evidence.requestId],
               (r) => ({
                 fingerprint: stringValue(r.fingerprint),
                 pageId: stringValue(r.page_id),
@@ -124,53 +128,56 @@ export class PostgresWikiStore implements WikiStore {
             throw new WikiError(409, "Wiki request identity reused with different content.");
           const revision = await readRevision(sql, repository.id, row.pageId, row.revisionId);
           if (!revision) throw new WikiError(503, "Wiki receipt unavailable.");
-          return { requestId: command.requestId, revision };
+          return { requestId: evidence.requestId, revision };
         },
-        load: async () => {
-          await sql.query("SELECT id FROM wiki_pages WHERE repository_id=$1 AND id=$2 FOR UPDATE", [
-            repository.id,
-            command.pageId,
-          ]);
-          return readRevision(sql, repository.id, command.pageId);
-        },
-        revision: (id) => readRevision(sql, repository.id, command.pageId, id),
-        save: async (next) => {
-          if (next.parentRevisionId === null)
+        pages: {
+          load: async () => {
             await sql.query(
-              "INSERT INTO wiki_pages(id,repository_id,version,head_revision_id) VALUES($1,$2,$3,$4)",
-              [next.pageId, repository.id, next.version, next.id],
+              "SELECT id FROM wiki_pages WHERE repository_id=$1 AND id=$2 FOR UPDATE",
+              [repository.id, scope.pageId],
             );
-          await sql.query(
-            "INSERT INTO wiki_revisions(id,page_id,repository_id,version,parent_revision_id,actor_user_id,at,action,title,body,archived) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
-            [
-              next.id,
-              next.pageId,
-              repository.id,
-              next.version,
-              next.parentRevisionId,
-              next.actorUserId,
-              next.at,
-              next.action,
-              next.title,
-              next.body,
-              next.archived,
-            ],
-          );
-          if (
-            next.parentRevisionId !== null &&
-            !(
+            return readRevision(sql, repository.id, scope.pageId);
+          },
+          revision: (id) => readRevision(sql, repository.id, scope.pageId, id),
+          save: async (next, expectedVersion) => {
+            if (next.parentRevisionId === null)
               await sql.query(
-                "UPDATE wiki_pages SET version=$3,head_revision_id=$4 WHERE id=$1 AND repository_id=$2 AND version=$5 RETURNING id",
-                [next.pageId, repository.id, next.version, next.id, command.expectedVersion],
-              )
-            ).rows.length
-          )
-            throw new WikiError(409, "Wiki version conflict.");
+                "INSERT INTO wiki_pages(id,repository_id,version,head_revision_id) VALUES($1,$2,$3,$4)",
+                [next.pageId, repository.id, next.version, next.id],
+              );
+            await sql.query(
+              "INSERT INTO wiki_revisions(id,page_id,repository_id,version,parent_revision_id,actor_user_id,at,action,title,body,archived) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+              [
+                next.id,
+                next.pageId,
+                repository.id,
+                next.version,
+                next.parentRevisionId,
+                next.actorUserId,
+                next.at,
+                next.action,
+                next.title,
+                next.body,
+                next.archived,
+              ],
+            );
+            if (
+              next.parentRevisionId !== null &&
+              !(
+                await sql.query(
+                  "UPDATE wiki_pages SET version=$3,head_revision_id=$4 WHERE id=$1 AND repository_id=$2 AND version=$5 RETURNING id",
+                  [next.pageId, repository.id, next.version, next.id, expectedVersion],
+                )
+              ).rows.length
+            )
+              throw new WikiError(409, "Wiki version conflict.");
+          },
+        },
+        record: async (next) => {
           await sql.query(
             "INSERT INTO wiki_commands(actor_user_id,request_id,page_id,repository_id,fingerprint,revision_id) VALUES($1,$2,$3,$4,$5,$6)",
-            [userId, command.requestId, next.pageId, repository.id, fingerprint, next.id],
+            [userId, evidence.requestId, next.pageId, repository.id, fingerprint, next.id],
           );
-          return { requestId: command.requestId, revision: next };
         },
       });
     });

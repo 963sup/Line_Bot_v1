@@ -28,13 +28,13 @@
       "types": "./dist/contracts/dto/wiki.d.ts",
       "default": "./dist/contracts/dto/wiki.js"
     },
-    "./contracts/repositories/wiki-pages": {
-      "types": "./dist/contracts/repositories/wiki-pages.d.ts",
-      "default": "./dist/contracts/repositories/wiki-pages.js"
-    },
     "./composition/bootstrap/wiki-pages": {
       "types": "./dist/composition/bootstrap/wiki-pages.d.ts",
       "default": "./dist/composition/bootstrap/wiki-pages.js"
+    },
+    "./contracts/repositories/wiki-pages": {
+      "types": "./dist/contracts/repositories/wiki-pages.d.ts",
+      "default": "./dist/contracts/repositories/wiki-pages.js"
     }
   },
   "files": [
