@@ -61,7 +61,7 @@ test("enterprise team rename preserves lock-before-update query order and receip
 test("enterprise team command classifier excludes non-team governance commands", () => {
   assert.equal(
     isEnterpriseTeamCommand({
-      action: "deactivate",
+      action: "leave-enterprise",
       requestId: "request-2",
       enterpriseAccountId: "enterprise-1",
       expectedVersion: 1,

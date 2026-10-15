@@ -293,8 +293,6 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
             "只能接受自己的 Enterprise invitation。",
           );
         }
-      } else if (command.action === "deactivate" || command.action === "reactivate") {
-        await requireEnterpriseLifecycleOwner(sql, command.enterpriseAccountId, principal.userId);
       } else if (command.action !== "leave-enterprise") {
         await requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId);
       }
@@ -321,29 +319,6 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
         }
         const changed = await mutateEnterpriseOwnerAssignment(sql, command, now);
         result = makeEnterpriseReceipt(command, changed.status, changed.version, now);
-      } else if (command.action === "deactivate" || command.action === "reactivate") {
-        if (enterprise.version !== command.expectedVersion)
-          throw new GovernanceAccessError(409, "conflict", "Enterprise 版本已更新。");
-        const from = command.action === "deactivate" ? "active" : "inactive";
-        const wanted = command.action === "deactivate" ? "inactive" : "active";
-        if (enterprise.status !== from)
-          throw new GovernanceAccessError(
-            409,
-            "invalid-transition",
-            "Enterprise lifecycle 狀態不適用此操作。",
-          );
-        const changed = (
-          await sql.query(
-            `UPDATE enterprises SET status=$2,version=version+1
-             WHERE account_id=$1 RETURNING version`,
-            [command.enterpriseAccountId, wanted],
-            versionRow,
-          )
-        ).rows[0];
-        if (!changed) {
-          throw new GovernanceAccessError(409, "conflict", "Enterprise 狀態已更新，請重新讀取。");
-        }
-        result = makeEnterpriseReceipt(command, wanted, changed.version, now);
       } else if (
         command.action === "attach-organization" ||
         command.action === "detach-organization"

@@ -1,5 +1,6 @@
 "use client";
 
+import type { EnterpriseLifecycleCommand } from "@line_bot_v1/enterprise/application/commands/enterprise-lifecycle";
 import {
   type EnterpriseCommand,
   type EnterpriseDetail,
@@ -34,7 +35,9 @@ export default function EnterprisePanel({
   const canonicalTeam = Boolean(initialSlug && initialTeamSlug);
   const [list, setList] = useState<EnterpriseList | null>(null);
   const [detail, setDetail] = useState<EnterpriseDetail | null>(null);
-  const [pending, setPending] = useState<EnterpriseCommand | null>(null);
+  const [pending, setPending] = useState<EnterpriseCommand | EnterpriseLifecycleCommand | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -56,7 +59,10 @@ export default function EnterprisePanel({
     setNotice("");
   }
 
-  async function request(method: "GET" | "POST", body?: EnterpriseCommand) {
+  async function request(
+    method: "GET" | "POST",
+    body?: EnterpriseCommand | EnterpriseLifecycleCommand,
+  ) {
     const access = await liffClient.ensureSession(liffId);
     if (!access) throw new Error("請完成 LINE 登入後重試。");
     const selector = selected.current
@@ -121,7 +127,7 @@ export default function EnterprisePanel({
     }
   }
 
-  async function execute(command: EnterpriseCommand) {
+  async function execute(command: EnterpriseCommand | EnterpriseLifecycleCommand) {
     if (locked.current || (pending && pending.requestId !== command.requestId)) return;
     locked.current = true;
     const ticket = epoch.current;
