@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { validatePackageSemanticDocs } from "./check-semantic-architecture.mjs";
 import { indexFptDocuments } from "./fpt-domain-core.mjs";
 import {
   compileSemanticArchitecture,
@@ -15,6 +16,7 @@ import { compareSemanticFeedback } from "./semantic-feedback.mjs";
 import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
 import { packageSemanticDocs, renderSemanticView, routeFileToUrl } from "./semantic-projection.mjs";
 import { querySemanticArchitecture } from "./semantic-query.mjs";
+import { writePackageSemanticDocs } from "./write-package-semantics.mjs";
 
 function fixture() {
   const fptFiles = {
@@ -392,6 +394,55 @@ test("strategy queries and package projections derive classification and evidenc
   assert.match(document, /Boundary evidence/);
   assert.match(document, /docs\/owners\/repository.md/);
   assert.match(document, /work \| candidate/);
+});
+
+test("package index derives module ownership and context status without promoting declared targets", () => {
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
+  const docs = packageSemanticDocs(compiled);
+  const index = docs.get("packages/SEMANTICS.md");
+  assert.ok(index);
+  assert.equal(docs.size, Object.keys(topology.modules).length + 1);
+  assert.match(index, /Product domain: fixture-domain/);
+  assert.match(index, /Registered package modules: 1/);
+  assert.match(index, /collaboration \| core/);
+  assert.match(index, /\.\/repository\/SEMANTICS\.md/);
+  assert.match(index, /\.\.\/docs\/owners\/repository\.md/);
+  assert.match(index, /domain-module.*repository.*current.*work \/ candidate/);
+  assert.match(index, /do not certify package-wide DDD conformance/);
+
+  const next = structuredClone(model);
+  next.boundedContexts[0].status = "selected";
+  const updated = packageSemanticDocs(compileSemanticArchitecture(next, fpt, topology));
+  assert.match(updated.get("packages/SEMANTICS.md"), /work \/ selected/);
+  assert.match(index, /work \/ candidate/);
+  assert.throws(
+    () => packageSemanticDocs({ ...compiled, errors: ["invalid canonical input"] }),
+    /Semantic architecture is invalid/,
+  );
+});
+
+test("package semantic guard rejects missing and altered root projection and accepts regeneration", async () => {
+  const { model, fpt, topology } = fixture();
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
+  const root = await mkdtemp(join(tmpdir(), "package-semantics-"));
+  const index = join(root, "packages", "SEMANTICS.md");
+  await writePackageSemanticDocs(compiled, root);
+  assert.deepEqual(await validatePackageSemanticDocs(compiled, root), []);
+  await writeFile(index, "# Incorrect handwritten semantics\n", "utf8");
+  assert.match(
+    (await validatePackageSemanticDocs(compiled, root)).join("\n"),
+    /Package semantics drift: packages\/SEMANTICS.md/,
+  );
+  await writePackageSemanticDocs(compiled, root);
+  assert.deepEqual(await validatePackageSemanticDocs(compiled, root), []);
+  await unlink(index);
+  assert.match(
+    (await validatePackageSemanticDocs(compiled, root)).join("\n"),
+    /Package semantics missing: packages\/SEMANTICS.md/,
+  );
+  await writePackageSemanticDocs(compiled, root);
+  assert.deepEqual(await validatePackageSemanticDocs(compiled, root), []);
 });
 
 test("semantic diff reports strategy changes and distinguishes evidence updates from boundary changes", () => {

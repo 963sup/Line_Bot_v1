@@ -6,12 +6,12 @@ import { packageSemanticDocs } from "./semantic-projection.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 
-async function validatePackageSemanticDocs(compiled) {
+export async function validatePackageSemanticDocs(compiled, root = repositoryRoot) {
   if (compiled.errors.length) return [];
   const errors = [];
   for (const [path, expected] of packageSemanticDocs(compiled)) {
     try {
-      const actual = await readFile(resolve(repositoryRoot, path), "utf8");
+      const actual = await readFile(resolve(root, path), "utf8");
       if (actual !== expected) {
         errors.push(
           "Package semantics drift: " +
