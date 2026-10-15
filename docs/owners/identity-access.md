@@ -19,3 +19,5 @@ It does not own User identity proof/lifecycle, OrganizationMembership, Employmen
 Runtime package: `packages/identity-access`.
 
 Feature permission changes use a Contracts-owned input capability and transaction output Port. Application checks current administration before exact replay, then coordinates target/version/dependency decisions owned by Domain. PostgreSQL retains the governance lock, sorted User locks, current qualification facts and atomic grant/version/receipt persistence. The public `PostgresPermissionStore` composition entry assembles these responsibilities and preserves its constructor and prototype methods for existing host consumers.
+
+Domain also owns the last-effective-permission-administrator rule. The public transaction-scoped protection query supplies current User-bound assignment facts to that rule; User restoration alone does not make an old administrator assignment effective again.
