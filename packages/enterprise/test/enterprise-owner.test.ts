@@ -35,7 +35,7 @@ async function fixture() {
       VALUES ('owner','active',1,1),('backup','active',1,1),('outsider','active',1,1);
     SELECT app_private.claim_account_login(id,'USER',id,1) FROM app_private.users;
     INSERT INTO app_private.user_identities(provider,subject,user_id)
-      VALUES ('line:test','owner','owner'),('line:test','backup','backup');
+      VALUES ('line:test','owner','owner'),('line:test','backup','backup'),('line:test','outsider','outsider');
     SELECT * FROM app_private.provision_enterprise_scope('ent','owner','acme','Acme',2);
     INSERT INTO app_private.enterprise_direct_affiliations(enterprise_account_id,user_id,status,version,created_at)
       VALUES ('ent','backup','active',1,2);
@@ -94,6 +94,206 @@ test("EnterpriseOwner mutation preserves current qualification, exact replay and
     (await pg.query("SELECT * FROM app_private.governance_audit_events")).rows.length,
     3,
   );
+});
+
+function affiliation(
+  action:
+    | "invite-user"
+    | "accept-invitation"
+    | "decline-invitation"
+    | "cancel-invitation"
+    | "remove-direct-affiliation"
+    | "leave-enterprise",
+  expectedVersion: number,
+  sequence: number,
+  targetUserId = "outsider",
+) {
+  return {
+    action,
+    expectedVersion,
+    enterpriseAccountId: "ent",
+    requestId: `44444444-4444-4444-8444-${String(sequence).padStart(12, "0")}`,
+    reason: "affiliation policy",
+    ...(action === "leave-enterprise" ? {} : { targetUserId }),
+  };
+}
+
+test("Enterprise invitations grant no affiliation until self-acceptance and preserve versioned replay", async (t) => {
+  const { pg, governance } = await fixture();
+  t.after(() => pg.close());
+  const outsider = { provider: "line:test", subject: "outsider" };
+  const invite = affiliation("invite-user", 0, 1);
+  const pending = await governance.execute(actor, invite);
+  assert.equal(pending.status, "pending");
+  assert.deepEqual(await governance.execute(actor, invite), pending);
+  assert.equal(
+    (
+      await pg.query(
+        "SELECT * FROM app_private.enterprise_user_affiliations WHERE user_id='outsider'",
+      )
+    ).rows.length,
+    0,
+  );
+  const accept = affiliation("accept-invitation", 1, 2);
+  await assert.rejects(governance.execute(actor, accept), failsWith(403, "forbidden"));
+  const accepted = await governance.execute(outsider, accept);
+  assert.equal(accepted.status, "accepted");
+  assert.equal(accepted.version, 2);
+  assert.deepEqual(await governance.execute(outsider, accept), accepted);
+  await assert.rejects(
+    governance.execute(outsider, { ...accept, reason: "changed" }),
+    failsWith(409, "replay-conflict"),
+  );
+  await assert.rejects(
+    governance.execute(actor, affiliation("invite-user", 2, 3)),
+    failsWith(409, "invalid-transition"),
+  );
+  const leave = affiliation("leave-enterprise", 1, 4);
+  const removed = await governance.execute(outsider, leave);
+  assert.equal(removed.status, "removed");
+  assert.equal(removed.subjectKind, "user");
+  assert.equal(removed.subjectId, "outsider");
+  assert.deepEqual(await governance.execute(outsider, leave), removed);
+  assert.equal(
+    (
+      await pg.query(
+        "SELECT * FROM app_private.enterprise_user_affiliations WHERE user_id='outsider'",
+      )
+    ).rows.length,
+    0,
+  );
+});
+
+test("Enterprise invitation resolution preserves cancel, decline and reinvite without affiliation", async (t) => {
+  const { pg, governance } = await fixture();
+  t.after(() => pg.close());
+  const outsider = { provider: "line:test", subject: "outsider" };
+  await governance.execute(actor, affiliation("invite-user", 0, 1));
+  await assert.rejects(
+    governance.execute(actor, affiliation("invite-user", 1, 2)),
+    failsWith(409, "conflict"),
+  );
+  await assert.rejects(
+    governance.execute(outsider, affiliation("decline-invitation", 2, 3)),
+    failsWith(409, "conflict"),
+  );
+  assert.equal(
+    (await governance.execute(outsider, affiliation("decline-invitation", 1, 4))).version,
+    2,
+  );
+  assert.equal((await governance.execute(actor, affiliation("invite-user", 2, 5))).version, 3);
+  const cancel = affiliation("cancel-invitation", 3, 6);
+  const cancelled = await governance.execute(actor, cancel);
+  assert.equal(cancelled.status, "cancelled");
+  assert.deepEqual(await governance.execute(actor, cancel), cancelled);
+  assert.equal((await governance.execute(actor, affiliation("invite-user", 4, 7))).version, 5);
+  assert.equal(
+    (
+      await pg.query(
+        "SELECT * FROM app_private.enterprise_user_affiliations WHERE user_id='outsider'",
+      )
+    ).rows.length,
+    0,
+  );
+});
+
+test("Enterprise direct removal protects current owners and leaves independent Organization affiliation intact", async (t) => {
+  const { pg, governance } = await fixture();
+  t.after(() => pg.close());
+  await assert.rejects(
+    governance.execute(actor, affiliation("remove-direct-affiliation", 1, 1, "owner")),
+    failsWith(409, "last-effective-role-holder"),
+  );
+  await pg.exec(`
+    SELECT * FROM app_private.provision_organization_scope('org','backup','org','Org',2);
+    INSERT INTO app_private.enterprise_organizations(enterprise_account_id,organization_account_id,status,version,attached_at) VALUES ('ent','org','active',1,2);
+  `);
+  await assert.rejects(
+    governance.execute(
+      { provider: "line:test", subject: "backup" },
+      affiliation("leave-enterprise", 1, 2),
+    ),
+    failsWith(409, "scope-conflict"),
+  );
+  await governance.execute(actor, affiliation("remove-direct-affiliation", 1, 3, "backup"));
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT source_kind FROM app_private.enterprise_user_affiliations WHERE user_id='backup'",
+      )
+    ).rows,
+    [{ source_kind: "organization" }],
+  );
+  await pg.exec(
+    "UPDATE app_private.enterprise_direct_affiliations SET status='active',version=3 WHERE user_id='backup'",
+  );
+  await governance.execute(actor, command("grant-enterprise-owner", "backup", 0, 1));
+  const leave = affiliation("leave-enterprise", 1, 4);
+  const removed = await governance.execute(actor, leave);
+  assert.deepEqual(await governance.execute(actor, leave), removed);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT status,version FROM app_private.enterprise_role_assignments WHERE user_id='owner'",
+      )
+    ).rows,
+    [{ status: "revoked", version: 2 }],
+  );
+  await assert.rejects(
+    governance.execute(actor, affiliation("remove-direct-affiliation", 3, 5, "backup")),
+    failsWith(403, "forbidden"),
+  );
+});
+
+test("Enterprise acceptance rolls back invitation, direct affiliation and evidence on recording failure", async (t) => {
+  for (const stage of ["governance_command_receipts", "governance_audit_events"]) {
+    const { pg, db, governance } = await fixture();
+    t.after(() => pg.close());
+    await governance.execute(actor, affiliation("invite-user", 0, 1));
+    let transactions = 0;
+    const failing: Database = {
+      transaction(work) {
+        transactions++;
+        return db.transaction((sql) =>
+          work(
+            createSql((text, values) => {
+              if (text.includes(`INSERT INTO ${stage}`)) throw new Error("recording failure");
+              return sql.query(text, values);
+            }),
+          ),
+        );
+      },
+    };
+    const failingGovernance = createPostgresEnterpriseGovernance(failing, () => 100);
+    await assert.rejects(
+      failingGovernance.execute(
+        { provider: "line:test", subject: "outsider" },
+        affiliation("accept-invitation", 1, 2),
+      ),
+      /recording failure/,
+    );
+    assert.equal(transactions, 1);
+    assert.deepEqual(
+      (await pg.query("SELECT status,version FROM app_private.enterprise_invitations")).rows,
+      [{ status: "pending", version: 1 }],
+    );
+    assert.equal(
+      (
+        await pg.query(
+          "SELECT * FROM app_private.enterprise_direct_affiliations WHERE user_id='outsider'",
+        )
+      ).rows.length,
+      0,
+    );
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.governance_command_receipts")).rows.length,
+      1,
+    );
+    assert.equal(
+      (await pg.query("SELECT * FROM app_private.governance_audit_events")).rows.length,
+      1,
+    );
+  }
 });
 
 test("EnterpriseOwner exact replay still requires current owner authority and target checks remain after replay", async (t) => {

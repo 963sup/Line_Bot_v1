@@ -1,13 +1,7 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import {
-  governanceFingerprint,
-  readGovernanceReplay,
-  recordGovernanceResult,
-  requireEnterpriseOwner,
-  resolveVerifiedLineActor,
-} from "@line_bot_v1/identity-access/postgres";
+import { requireEnterpriseOwner } from "@line_bot_v1/identity-access/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { literalValue, numberValue } from "@line_bot_v1/platform/validation";
 import type { EnterpriseReceipt } from "../../../contracts/enterprise-governance.js";
@@ -20,6 +14,7 @@ import {
   hasEnterpriseOwnerAssignment,
   hasReplacementEnterpriseOwner,
 } from "../../postgres-owner-roles.js";
+import { enterpriseGovernanceTransaction } from "./enterprise-governance-transaction.js";
 
 export class PostgresEnterpriseOwner implements EnterpriseOwnerTransactions {
   constructor(private readonly db: Database) {}
@@ -30,26 +25,12 @@ export class PostgresEnterpriseOwner implements EnterpriseOwnerTransactions {
     at: number,
     operation: (transaction: EnterpriseOwnerTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
-    return this.db.transaction(async (sql) => {
-      await sql.query("SELECT app_private.lock_governance('exclusive')");
-      const principal = await resolveVerifiedLineActor(sql, actor);
-      await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-        `${principal.userId}:${command.requestId}`,
-      ]);
-      const fingerprint = governanceFingerprint(command);
-      const enterprise = (
-        await sql.query(
-          "SELECT account_id,name,slug,status,version FROM enterprises WHERE account_id=$1 FOR UPDATE",
-          [command.enterpriseAccountId],
-          (row) => ({ status: literalValue(row.status, ["active", "inactive"]) }),
-        )
-      ).rows[0];
-      if (!enterprise) throw new GovernanceAccessError(404, "not-found", "找不到 Enterprise。");
+    return enterpriseGovernanceTransaction(this.db, actor, command, at, (sql, evidence) => {
       const parameters = [command.enterpriseAccountId, command.targetUserId];
       return operation({
-        enterpriseStatus: enterprise.status,
-        authorize: () => requireEnterpriseOwner(sql, command.enterpriseAccountId, principal.userId),
-        replay: () => readGovernanceReplay(sql, principal.userId, command.requestId, fingerprint),
+        ...evidence,
+        authorize: () =>
+          requireEnterpriseOwner(sql, command.enterpriseAccountId, evidence.actorUserId),
         hasDirectAffiliation: async () =>
           Boolean(
             (
@@ -110,21 +91,6 @@ export class PostgresEnterpriseOwner implements EnterpriseOwnerTransactions {
             throw new GovernanceAccessError(409, "conflict", "EnterpriseOwner 指派已更新。");
           return { status: next.status, version: row.version };
         },
-        record: (result) =>
-          recordGovernanceResult(sql, {
-            actorUserId: principal.userId,
-            actorStatusVersion: principal.userStatusVersion,
-            requestId: command.requestId,
-            fingerprint,
-            action: command.action,
-            scopeKind: "enterprise",
-            scopeId: command.enterpriseAccountId,
-            subjectKind: result.subjectKind,
-            subjectId: result.subjectId,
-            reason: command.reason,
-            at,
-            result,
-          }),
       });
     });
   }
