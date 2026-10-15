@@ -35,11 +35,32 @@ const editable = {
   payment: "advance",
 } as const;
 
+test("Expense failures distinguish invalid fields, revision and terminal state without HTTP", () => {
+  for (const [operation, reason] of [
+    [() => validateExpenseFields(null), "invalid-fields"],
+    [() => parsePersistedExpense(null), "invalid-expense"],
+    [() => applyExpenseCommand(draft(), { type: "save", revision: Number.NaN }), "invalid-command"],
+    [
+      () => applyExpenseCommand(draft(), { type: "save", revision: 0, fields: editable }),
+      "version-conflict",
+    ],
+    [
+      () => applyExpenseCommand(draft({ status: "confirmed" }), { type: "cancel", revision: 1 }),
+      "terminal-conflict",
+    ],
+  ] as const) {
+    assert.throws(
+      operation,
+      (error) => error instanceof ExpenseError && error.reason === reason && !("status" in error),
+    );
+  }
+});
+
 test("Expense no longer authors a free-text Project surrogate", () => {
   assert.deepEqual(validateExpenseFields(editable, true), editable);
   assert.throws(
     () => validateExpenseFields({ ...editable, project: "legacy-project-name" }, true),
-    (error) => error instanceof ExpenseError && error.status === 400,
+    (error) => error instanceof ExpenseError && error.reason === "invalid-fields",
   );
 });
 
@@ -62,7 +83,7 @@ test("persisted Expense decoding validates the JSONB aggregate and retains legac
   assert.deepEqual(parsePersistedExpense(legacy), legacy);
   assert.throws(
     () => parsePersistedExpense({ ...legacy, revision: "1" }),
-    (error) => error instanceof ExpenseError && error.status === 500,
+    (error) => error instanceof ExpenseError && error.reason === "invalid-expense",
   );
 });
 

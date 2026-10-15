@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { createCommandExpense } from "../src/application/command-expense.js";
 import { createGetExpense } from "../src/application/get-expense.js";
 import { createRecognizeReceipt } from "../src/application/recognize-receipt.js";
+import { ExpenseOperationError } from "../src/contracts/dto/expense-failure.js";
 import type { ReceiptReading } from "../src/contracts/receipt-reading.js";
 
 function deferred() {
@@ -82,7 +83,7 @@ test("expense get and command resolve the server-side subject to a stable owner"
 });
 
 test("expense use cases reject before storage when the verified subject has no active member", async () => {
-  const denied = new ExpenseError(403, "inactive");
+  const denied = new ExpenseOperationError("access-denied", "inactive");
   const store = () => {
     throw new Error("storage must not be accessed");
   };
@@ -119,7 +120,7 @@ test("recognition only accepts the exact pending revision before model work", as
     cooldownMs: 30_000,
   });
   await assert.rejects(recognize("subject", "expense-id", 3), (error: unknown) => {
-    return error instanceof ExpenseError && error.status === 409;
+    return error instanceof ExpenseOperationError && error.reason === "recognition-conflict";
   });
   assert.equal(runs, 0);
 
@@ -135,7 +136,7 @@ test("recognition only accepts the exact pending revision before model work", as
     cooldownMs: 30_000,
   });
   await assert.rejects(staleRecognize("subject", "expense-id", 1), (error: unknown) => {
-    return error instanceof ExpenseError && error.status === 409;
+    return error instanceof ExpenseError && error.reason === "version-conflict";
   });
 });
 
@@ -155,6 +156,41 @@ test("recognition returns transient reading without an Expense mutation", async 
   assert.deepEqual(await recognize("subject", "expense-id", 1), reading);
   assert.equal(calls.filter(([name]) => name === "command").length, 0);
   assert.deepEqual(await store.get("expense-id", "stable-owner"), pending());
+});
+
+test("recognition distinguishes a revision or state change after the model returns", async () => {
+  for (const [latest, reason] of [
+    [pending({ revision: 2 }), "version-conflict"],
+    [pending({ status: "draft", revision: 2 }), "recognition-conflict"],
+  ] as const) {
+    let reads = 0;
+    let writes = 0;
+    const store: ExpenseRepository = {
+      get: async () => (++reads === 1 ? pending() : latest),
+      command: async () => {
+        writes++;
+        throw new Error("Recognition cannot write Expense");
+      },
+    };
+    const recognize = createRecognizeReceipt({
+      activeUser: async () => ({ id: "stable-owner" }),
+      store: () => store,
+      recognize: async () => reading,
+      recognition: new Map(),
+      nextReceiptAt: () => undefined,
+      setNextReceiptAt: () => {},
+      now: () => 1,
+      cooldownMs: 30_000,
+    });
+    await assert.rejects(
+      recognize("subject", "expense-id", 1),
+      (error) =>
+        (error instanceof ExpenseError || error instanceof ExpenseOperationError) &&
+        error.reason === reason,
+    );
+    assert.equal(reads, 2);
+    assert.equal(writes, 0);
+  }
 });
 
 test("recognition merges concurrent calls, enforces cooldown, wraps failures, and allows retry", async () => {
@@ -190,7 +226,7 @@ test("recognition merges concurrent calls, enforces cooldown, wraps failures, an
   assert.equal(recognition.size, 0);
 
   await assert.rejects(recognize("subject", "another-id", 1), (error: unknown) => {
-    return error instanceof ExpenseError && error.status === 429;
+    return error instanceof ExpenseOperationError && error.reason === "recognition-cooldown";
   });
 
   const retryStore = repository();
@@ -210,7 +246,7 @@ test("recognition merges concurrent calls, enforces cooldown, wraps failures, an
     cooldownMs: 30_000,
   });
   await assert.rejects(retry("subject", "expense-id", 1), (error: unknown) => {
-    return error instanceof ExpenseError && error.status === 503;
+    return error instanceof ExpenseOperationError && error.reason === "recognition-unavailable";
   });
   assert.deepEqual(await retry("subject", "expense-id", 1), reading);
 });
@@ -229,7 +265,7 @@ test("recognition rejects non-receipt model output without mutating Expense", as
   });
 
   await assert.rejects(recognize("subject", "expense-id", 1), (error: unknown) => {
-    return error instanceof ExpenseError && error.status === 422;
+    return error instanceof ExpenseOperationError && error.reason === "not-a-receipt";
   });
   assert.equal(calls.filter(([name]) => name === "command").length, 0);
 });
