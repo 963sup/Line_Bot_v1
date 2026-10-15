@@ -59,13 +59,17 @@ export type ExpenseCommand = {
   fields?: unknown;
 };
 
-/**
- * 領域專屬異常類型
- * 綁定 HTTP 相容狀態碼以簡化上層傳輸適配，同時隔離底層呼叫堆疊。
- */
+export type ExpenseFailureReason =
+  | "invalid-fields"
+  | "invalid-command"
+  | "invalid-expense"
+  | "version-conflict"
+  | "terminal-conflict";
+
+/** Expense validation and state transitions are independent of transport and I/O. */
 export class ExpenseError extends Error {
   constructor(
-    public status: number,
+    public readonly reason: ExpenseFailureReason,
     message: string,
   ) {
     super(message);
@@ -88,7 +92,7 @@ function isObjectValue(value: unknown): value is Record<string, unknown> {
  */
 export function validateExpenseFields(input: unknown, complete = false): ExpenseFields {
   if (!isObjectValue(input)) {
-    throw new ExpenseError(400, "資料格式不正確。");
+    throw new ExpenseError("invalid-fields", "資料格式不正確。");
   }
   const keys = ["merchant", "amount", "currency", "date", "invoiceNumber", "payment"] as const;
   const { merchant, amount, currency, date, invoiceNumber, payment } = input;
@@ -106,7 +110,7 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
       (field) => field.length > 120 || /[\u0000-\u001f]/.test(field),
     )
   ) {
-    throw new ExpenseError(400, "欄位格式不正確。");
+    throw new ExpenseError("invalid-fields", "欄位格式不正確。");
   }
 
   const normalizedPayment = payment.trim();
@@ -116,7 +120,7 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
     normalizedPayment !== "company" &&
     normalizedPayment !== "unpaid"
   ) {
-    throw new ExpenseError(400, "請選擇付款方式。");
+    throw new ExpenseError("invalid-fields", "請選擇付款方式。");
   }
   const f: ExpenseFields = {
     merchant: merchant.trim(),
@@ -129,12 +133,12 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
 
   // 金額必須為最多兩位小數的正數數值字串
   if (f.amount && (!/^\d{1,9}(?:\.\d{1,2})?$/.test(f.amount) || Number(f.amount) <= 0)) {
-    throw new ExpenseError(400, "金額需大於零，最多兩位小數。");
+    throw new ExpenseError("invalid-fields", "金額需大於零，最多兩位小數。");
   }
 
   // 幣別符合 ISO 4217 三位大寫英文字母標準
   if (f.currency && !/^[A-Z]{3}$/.test(f.currency)) {
-    throw new ExpenseError(400, "幣別請使用三碼，例如 TWD。");
+    throw new ExpenseError("invalid-fields", "幣別請使用三碼，例如 TWD。");
   }
 
   // 日期雙向回環驗證：確保日期存在且合法，避免月份溢位跳轉
@@ -144,20 +148,20 @@ export function validateExpenseFields(input: unknown, complete = false): Expense
       Number.isNaN(Date.parse(f.date)) ||
       new Date(f.date).toISOString().slice(0, 10) !== f.date)
   ) {
-    throw new ExpenseError(400, "日期格式不正確。");
+    throw new ExpenseError("invalid-fields", "日期格式不正確。");
   }
 
   // 若為正式入帳確認 (complete=true)，不可留空關鍵財務欄位
   if (complete && [f.merchant, f.amount, f.currency, f.date, f.payment].some((x) => !x)) {
-    throw new ExpenseError(400, "請補齊商家、金額、幣別、日期與付款方式。");
+    throw new ExpenseError("invalid-fields", "請補齊商家、金額、幣別、日期與付款方式。");
   }
 
   return f;
 }
 
-/** Decodes the persisted JSONB aggregate while retaining unknown legacy fields for lossless rewrites. */
+/** Reconstitutes an Expense while retaining unknown legacy fields for lossless rewrites. */
 export function parsePersistedExpense(value: unknown): Expense {
-  if (!isObjectValue(value)) throw new ExpenseError(500, "支出資料格式不完整。");
+  if (!isObjectValue(value)) throw new ExpenseError("invalid-expense", "支出資料格式不完整。");
   const { id, number, owner, scope, imageId, status, revision, createdAt } = value;
   if (
     typeof id !== "string" ||
@@ -178,7 +182,7 @@ export function parsePersistedExpense(value: unknown): Expense {
     !Number.isSafeInteger(createdAt) ||
     createdAt < 0
   ) {
-    throw new ExpenseError(500, "支出資料格式不完整。");
+    throw new ExpenseError("invalid-expense", "支出資料格式不完整。");
   }
   const fields = validateExpenseFields({
     merchant: value.merchant,
@@ -197,7 +201,7 @@ export function parsePersistedExpense(value: unknown): Expense {
  * 公理推導：
  * 1. 輸入為前一個不可變實體 (Previous Immutable State) 與指令 (Command)。
  * 2. 輸出為新狀態實體 (Next State)，版號 (revision) 遞增 1。
- * 3. 衝突拒絕 (409 Conflict)：若傳入版號與當前版號不一致，說明在傳輸期間已被他人修改，必須拒絕以防「更新遺失 (Lost Update)」。
+ * 3. 版本衝突：若傳入版號與當前版號不一致，說明在傳輸期間已被他人修改，必須拒絕以防「更新遺失 (Lost Update)」。
  * 4. 終態保護：已確認 (confirmed) 或已取消 (cancelled) 的支出屬於終局狀態，拒絕進一步修改。
  */
 export function applyExpenseCommand(expense: Expense, command: ExpenseCommand): Expense {
@@ -206,7 +210,7 @@ export function applyExpenseCommand(expense: Expense, command: ExpenseCommand): 
     !["save", "confirm", "cancel"].includes(command.type) ||
     !Number.isInteger(command.revision)
   ) {
-    throw new ExpenseError(400, "操作格式不正確。");
+    throw new ExpenseError("invalid-command", "操作格式不正確。");
   }
 
   // 等冪性保障：重複收到終態指令時直接返回當前實體，不重複產生審計事件
@@ -219,12 +223,12 @@ export function applyExpenseCommand(expense: Expense, command: ExpenseCommand): 
 
   // 樂觀並發檢查：版本不一致視為衝突
   if (expense.revision !== command.revision) {
-    throw new ExpenseError(409, "資料已更新，請重新載入後再操作。");
+    throw new ExpenseError("version-conflict", "資料已更新，請重新載入後再操作。");
   }
 
   // 終態防護：不可在終態上進行二次變更
   if (["confirmed", "cancelled"].includes(expense.status)) {
-    throw new ExpenseError(409, "這筆支出已結束，不能再修改。");
+    throw new ExpenseError("terminal-conflict", "這筆支出已結束，不能再修改。");
   }
 
   // 取消轉移：直接躍遷為 cancelled 終態

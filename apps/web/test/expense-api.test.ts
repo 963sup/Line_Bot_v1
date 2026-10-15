@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { ExpenseOperationError } from "@line_bot_v1/expense/contracts/dto/expense-failure";
+import { ExpenseError } from "@line_bot_v1/expense/domain/aggregates/expense";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { GET, POST } from "../src/app/api/expenses/[id]/route";
+import { createExpenseRequest } from "../src/modules/expense/api.server";
 import { lineSessionHeaders } from "./line-session-fixture";
 import {
   activateMember,
@@ -10,6 +13,78 @@ import {
   memberStore,
   mockSupabase,
 } from "./member-fixture";
+
+test("Expense delivery maps owner reasons and keeps unknown outcomes private without retry", async () => {
+  process.env.APP_ORIGIN = "https://app.example";
+  let failure: Error = new Error("private write outcome");
+  let writes = 0;
+  const api = createExpenseRequest({
+    requestIdentity: async () => "subject",
+    getExpense: async () => {
+      throw failure;
+    },
+    commandExpense: async () => {
+      writes++;
+      throw failure;
+    },
+    recognizeReceipt: async () => {
+      throw failure;
+    },
+  });
+  const id = "00000000-0000-0000-0000-000000000001";
+  const context = { params: Promise.resolve({ id }) };
+  const request = (
+    body = JSON.stringify({ type: "cancel", revision: 1 }),
+    contentType = "application/json",
+    origin = "https://app.example",
+  ) =>
+    new Request(`https://app.example/api/expenses/${id}`, {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": contentType },
+      body,
+    });
+  for (const [error, status] of [
+    [new ExpenseError("invalid-fields", "owner rejection"), 400],
+    [new ExpenseError("invalid-command", "owner rejection"), 400],
+    [new ExpenseError("invalid-expense", "owner rejection"), 500],
+    [new ExpenseError("version-conflict", "owner rejection"), 409],
+    [new ExpenseError("terminal-conflict", "owner rejection"), 409],
+    [new ExpenseOperationError("invalid-record", "owner rejection"), 500],
+    [new ExpenseOperationError("recognition-conflict", "owner rejection"), 409],
+    [new ExpenseOperationError("access-denied", "owner rejection"), 403],
+    [new ExpenseOperationError("not-found", "owner rejection"), 404],
+    [new ExpenseOperationError("recognition-cooldown", "owner rejection"), 429],
+    [new ExpenseOperationError("not-a-receipt", "owner rejection"), 422],
+    [new ExpenseOperationError("recognition-unavailable", "owner rejection"), 503],
+  ] as const) {
+    failure = error;
+    const response = await api.GET(new Request(`https://app.example/api/expenses/${id}`), context);
+    assert.equal(response.status, status, error.reason);
+    assert.deepEqual(await response.json(), { error: "owner rejection" });
+    assert.equal(response.headers.get("cache-control"), "no-store");
+  }
+  for (const [input, status, message] of [
+    [request("{}", "text/plain"), 415, "資料格式不正確。"],
+    [request("x".repeat(8193)), 413, "資料過大。"],
+    [request("{"), 400, "資料格式不正確。"],
+    [request("{}"), 400, "缺少資料版本。"],
+    [
+      request("{}", "application/json", "https://evil.example"),
+      403,
+      "來源不符，請重新開啟操作頁。",
+    ],
+  ] as const) {
+    const response = await api.POST(input, context);
+    assert.equal(response.status, status);
+    assert.deepEqual(await response.json(), { error: message });
+  }
+  assert.equal(writes, 0);
+  failure = new Error("private write outcome");
+  const unknown = await api.POST(request(), context);
+  assert.equal(unknown.status, 503);
+  assert.deepEqual(await unknown.json(), { error: "服務暫不可用，請稍後重試。" });
+  assert.equal(writes, 1);
+});
 
 test("HTTP surface rejects anonymous, forged origin, other owner, invalid commands; success persists with zero chat calls", async () => {
   await mockSupabase();

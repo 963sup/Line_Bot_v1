@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { numericValue } from "@line_bot_v1/platform/validation";
+import { ExpenseOperationError } from "../../../contracts/dto/expense-failure.js";
 import type { ReceiptIntakeStore } from "../../../contracts/ports/receipt-intake.js";
 import type { ExpenseRepository } from "../../../contracts/repositories/expense-repository.js";
 import {
@@ -15,7 +16,7 @@ import {
 function expenseNumber(value: unknown): number {
   const number = Number(numericValue(value));
   if (!Number.isSafeInteger(number) || number < 0) {
-    throw new ExpenseError(500, "支出編號格式不完整。");
+    throw new ExpenseOperationError("invalid-record", "支出編號格式不完整。");
   }
   return number;
 }
@@ -24,7 +25,7 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
   constructor(private db: Database = businessDatabase()) {}
   private async activeOwner(sql: Sql, owner: string) {
     if (!(await readActiveUserQualification(sql, owner, "update"))) {
-      throw new ExpenseError(403, "會員目前無法操作支出。");
+      throw new ExpenseOperationError("access-denied", "會員目前無法操作支出。");
     }
   }
   arm(scope: string, owner: string, now = Date.now()) {
@@ -104,7 +105,7 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
           (value) => ({ number: expenseNumber(value.number) }),
         )
       ).rows[0];
-      if (!row) throw new ExpenseError(500, "支出建立結果不完整。");
+      if (!row) throw new ExpenseOperationError("invalid-record", "支出建立結果不完整。");
       d.number = Number(row.number);
       await this.write(sql, d);
       await this.event(sql, d, "attention_required");
@@ -116,10 +117,18 @@ export class PostgresExpenseStore implements ReceiptIntakeStore, ExpenseReposito
       await sql.query<{ body: Expense }>(
         `SELECT body FROM expenses WHERE id=$1 AND owner=$2${lock ? " FOR UPDATE" : ""}`,
         [id, owner],
-        (value) => ({ body: parsePersistedExpense(value.body) }),
+        (value) => {
+          try {
+            return { body: parsePersistedExpense(value.body) };
+          } catch (error) {
+            if (error instanceof ExpenseError)
+              throw new ExpenseOperationError("invalid-record", "支出資料格式不完整。");
+            throw error;
+          }
+        },
       )
     ).rows[0];
-    if (!row) throw new ExpenseError(404, "資料不存在或你無權處理。");
+    if (!row) throw new ExpenseOperationError("not-found", "資料不存在或你無權處理。");
     return row.body;
   }
   get(id: string, owner: string) {

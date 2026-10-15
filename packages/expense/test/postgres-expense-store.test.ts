@@ -2,7 +2,46 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createSql, type Database, type SqlResult } from "@line_bot_v1/platform/postgres";
 import { PostgresExpenseStore } from "../src/adapters/outbound/persistence/postgres-expense-store.js";
+import { ExpenseOperationError } from "../src/contracts/dto/expense-failure.js";
 import { type Expense, parsePersistedExpense } from "../src/domain/aggregates/expense.js";
+
+test("persisted field corruption is a storage failure rather than caller input rejection", async () => {
+  const valid = {
+    id: "expense",
+    number: 1,
+    owner: "owner",
+    scope: "group:A",
+    imageId: "image",
+    status: "draft",
+    revision: 1,
+    createdAt: 1,
+    merchant: "Shop",
+    amount: "10",
+    currency: "TWD",
+    date: "2026-10-15",
+    invoiceNumber: "",
+    payment: "advance",
+  };
+  const { merchant: _merchant, ...missingMerchant } = valid;
+  for (const body of [
+    null,
+    { ...valid, revision: "1" },
+    missingMerchant,
+    { ...valid, amount: "-1" },
+    { ...valid, date: "invalid" },
+  ]) {
+    const db: Database = {
+      transaction: async (work) => work(createSql(async () => ({ rows: [{ body }] }))),
+    };
+    await assert.rejects(
+      new PostgresExpenseStore(db).get("expense", "owner"),
+      (error) =>
+        error instanceof ExpenseOperationError &&
+        error.reason === "invalid-record" &&
+        !("status" in error),
+    );
+  }
+});
 
 test("receive decodes node-postgres bigint expense numbers", async () => {
   let persisted: Expense | undefined;
