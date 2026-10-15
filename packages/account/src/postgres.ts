@@ -1,3 +1,4 @@
+export { PostgresUserManagement } from "./composition/bootstrap/user-management.js";
 export { PostgresUserAchievementStore } from "./postgres/achievements.js";
 export { readUserDeliveryTarget } from "./postgres/delivery-target.js";
 export { PostgresFollowStore } from "./postgres/follows.js";
@@ -11,4 +12,3 @@ export {
   readUserQualification,
 } from "./postgres/qualification.js";
 export { PostgresUserStore } from "./postgres/user.js";
-export { PostgresUserManagement } from "./postgres/user-management.js";

@@ -49,8 +49,8 @@
       "default": "./dist/contracts/output/identity-provider.js"
     },
     "./contracts/repositories/user-management": {
-      "types": "./dist/contracts/repositories/user-management.d.ts",
-      "default": "./dist/contracts/repositories/user-management.js"
+      "types": "./dist/contracts/input/user-management.d.ts",
+      "default": "./dist/contracts/input/user-management.js"
     },
     "./contracts/repositories/user": {
       "types": "./dist/contracts/repositories/user.d.ts",
