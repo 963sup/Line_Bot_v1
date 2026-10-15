@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
+import { setTimeout } from "node:timers/promises";
 import { Pool } from "pg";
 import { createSql, type Database, type SqlRow } from "../database/postgres/database.js";
 
@@ -66,5 +67,20 @@ export async function postgresSessions(databaseUrl: string) {
       }
     },
   };
-  return { pool, db, close };
+  /** Observe real lock waiters; polling never decides when a transaction may proceed. */
+  async function waitForBlocked(blockerPid: number, count = 1) {
+    const deadline = Date.now() + 5_000;
+    while (Date.now() < deadline) {
+      const { rows } = await pool.query<{ pid: number; wait_event: string }>(
+        `SELECT pid,wait_event FROM pg_stat_activity
+         WHERE datname=current_database() AND wait_event_type='Lock'
+           AND $1=ANY(pg_blocking_pids(pid)) ORDER BY pid`,
+        [blockerPid],
+      );
+      if (rows.length === count) return rows;
+      await setTimeout(20);
+    }
+    throw new Error(`Expected ${count} sessions blocked by backend ${blockerPid}`);
+  }
+  return { pool, db, close, waitForBlocked };
 }

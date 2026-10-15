@@ -46,7 +46,7 @@ test("PGlite browser script consumers receive the flag in their actual launch co
   const consumers = globSync(["scripts/**/*.mjs", "scripts/**/*.ts"], { cwd: repo }).filter(
     (file) =>
       !file.includes(".test.") &&
-      /platform\/testing\/postgres|@electric-sql\/pglite/.test(
+      /(?:import|require(?:\.resolve)?|[\w$]+\.resolve)\s*\(\s*["'](?:@line_bot_v1\/platform\/testing\/postgres|@electric-sql\/pglite)["']/.test(
         readFileSync(resolve(repo, file), "utf8"),
       ),
   );
@@ -612,6 +612,33 @@ test("product test cache remains coupled to declarative schemas", (t) => {
   delete turbo.tasks.test;
   write("turbo.json", JSON.stringify(turbo));
   rejects(root, "product tests must hash declarative schemas");
+});
+
+test("multi-session test consumers declare their environment and cannot replay cached evidence", (t) => {
+  const { root, write } = fixture(t);
+  write("packages/demo/package.json", JSON.stringify({ name: "@line_bot_v1/demo", private: true }));
+  write(
+    "packages/demo/test/concurrency.test.ts",
+    `${importing("@line_bot_v1/platform/testing/postgres-sessions")}\nconst url = process.env.CAPABILITY_TEST_DATABASE_URL;\nconst ci = process.env.CI;\n`,
+  );
+  const turbo = JSON.parse(readFileSync(resolve(root, "turbo.json"), "utf8"));
+  rejects(root, "multi-session tests must declare CAPABILITY_TEST_DATABASE_URL");
+  const task = { cache: false, env: ["CAPABILITY_TEST_DATABASE_URL", "CI"] };
+  turbo.tasks["@line_bot_v1/demo#test"] = task;
+  write("turbo.json", JSON.stringify(turbo));
+  assert.deepEqual(validate(root), []);
+  for (const omitted of ["CAPABILITY_TEST_DATABASE_URL", "CI"]) {
+    task.env = ["CAPABILITY_TEST_DATABASE_URL", "CI"].filter((name) => name !== omitted);
+    write("turbo.json", JSON.stringify(turbo));
+    rejects(root, `multi-session tests must declare ${omitted}`);
+  }
+  task.env = ["CAPABILITY_TEST_DATABASE_URL", "CI"];
+  task.cache = true;
+  write("turbo.json", JSON.stringify(turbo));
+  rejects(root, "multi-session tests must execute rather than replay cached evidence");
+  task.cache = false;
+  write("turbo.json", JSON.stringify(turbo));
+  assert.deepEqual(validate(root), []);
 });
 
 test("Next and Sentry instrumentation entrypoints stay at the Web project root", (t) => {

@@ -540,6 +540,29 @@ export function validate(root) {
     }
 
     const turbo = JSON.parse(read(resolve(root, "turbo.json")));
+    for (const [file, manifest] of manifests) {
+      const directory = relative(root, dirname(file)).split(sep).join("/");
+      const consumers = files(`${directory ? `${directory}/` : ""}test/**/*.{ts,mts,cts}`).filter(
+        (test) =>
+          literalModuleSpecifiers(test).includes("@line_bot_v1/platform/testing/postgres-sessions"),
+      );
+      if (!consumers.length) continue;
+      const task = turbo.tasks?.[`${manifest.name}#test`] ?? {};
+      if (task.cache !== false)
+        errors.push(
+          `${manifest.name}: multi-session tests must execute rather than replay cached evidence`,
+        );
+      const environment = new Set(
+        consumers.flatMap((test) =>
+          [...read(test).matchAll(/\bprocess\.env\.([A-Z][A-Z0-9_]*)/g)].map((match) => match[1]),
+        ),
+      );
+      for (const name of environment)
+        if (!task.env?.includes(name))
+          errors.push(
+            `${manifest.name}: multi-session tests must declare ${name} in their Turbo task env`,
+          );
+    }
     if (!turbo.globalDependencies?.includes("tsconfig.base.json"))
       errors.push("turbo.json: shared TypeScript configuration must invalidate task caches");
     if ((turbo.globalEnv ?? []).length)

@@ -23,6 +23,10 @@ Domain rule 不需要獨立 horizontal package 才能測試。當新增複雜 pu
 
 ## 測試選擇原則
 
+跨 session 的治理鎖驗證使用 `platform/testing/postgres-sessions` 的隔離資料庫與 `line_app` transaction。Repository access tests 驗 competing expectedVersion、exact replay 與失敗不留回執；Attendance governance tests 驗 Repository 撤權／Account 停權與打卡的 shared/exclusive waiting、commit/rollback、原始打卡點及原子 effects。Account 停權使用真實 Adapter／SQL lifecycle guard，無管理員 fixture 的外部管理員 Port 固定放行，不宣稱驗證該 Port 的政策。CI 的 typecheck-test group 提供 PostgreSQL 17 與 `CAPABILITY_TEST_DATABASE_URL`；本機缺 URL 明示 skip，CI 缺 URL 必須失敗。
+
+`waitForBlocked` 以 `pg_stat_activity` / `pg_blocking_pids` 確認不同 backend 真正等待指定 transaction，再由測試釋放 barrier；20ms polling interval 不是排程依據。等待有期限，finally 先釋放 transaction 並等 pending operations 結束，再清理資料庫。WBS 既有測試亦以可觀測條件輪詢，不因出現 polling timer 就改寫其正確結構。這些案例不代表所有 Owner／交錯排列或 production 已驗收。
+
 - 優先在最靠近 invariant 的層驗證；只有跨 adapter / runtime 的 claim 才往外擴。
 - Authorization、version conflict、replay、tenant/scope isolation 與 recovery 必須有拒絕／衝突反例，不能只測 happy path。
 - 需要 transaction 保護的 invariant 必須由 concrete persistence / concurrency evidence 覆蓋；mock repository 只能證明 application orchestration。
