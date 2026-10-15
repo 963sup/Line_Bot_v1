@@ -6,6 +6,7 @@ import { PostgresProjectManagementStore } from "../src/adapters/outbound/persist
 import { ProjectError } from "../src/domain.js";
 
 type QueryRecord = { text: string; values?: unknown[] };
+const governanceLockQuery = "SELECT app_private.lock_governance('shared')";
 
 function databaseWith(
   responder: (
@@ -32,7 +33,8 @@ function queryIndex(queries: QueryRecord[], fragment: string) {
 test("Project management takes a shared governance lock before replay and capability checks", async () => {
   const queries: QueryRecord[] = [];
   const db = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM project_commands")) return { rows: [] };
     if (text.includes("FROM users")) return { rows: [] };
     throw new Error(`unexpected query: ${text}`);
@@ -59,8 +61,8 @@ test("Project management takes a shared governance lock before replay and capabi
     (error: unknown) => error instanceof ProjectError && error.status === 403,
   );
 
-  const governanceLock = queryIndex(queries, "pg_advisory_xact_lock_shared(71020260912");
-  assert.equal(queryIndex(queries, "pg_advisory_xact_lock(71020260912"), -1);
+  const governanceLock = queryIndex(queries, "lock_governance('shared')");
+  assert.equal(queryIndex(queries, "lock_governance('exclusive')"), -1);
   const requestLock = queries.findIndex(
     (query, index) =>
       index > governanceLock && query.text.includes("pg_advisory_xact_lock(hashtext($1))"),

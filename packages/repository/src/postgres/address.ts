@@ -237,7 +237,7 @@ export async function repositoryAttendanceSites(
   sql: Sql,
   userId: string,
 ): Promise<readonly RepositoryAttendanceSite[]> {
-  await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+  await sql.query("SELECT app_private.lock_governance('shared')");
   const rows = (
     await sql.query(
       `SELECT r.id,r.name,r.address,r.version
@@ -288,7 +288,7 @@ export class PostgresRepositoryAddressStore implements RepositoryAddressStore {
   ): Promise<RepositoryAddressReceipt> {
     const commandFingerprint = fingerprint(command);
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       const actor = await readActiveUserQualification(sql, userId, "update");
       if (!actor) throw new RepositoryError(403, "目前 User 資格不能管理 Repository 地址。");
       const repository = await repositoryRow(sql, { repositoryId: command.repositoryId }, true);

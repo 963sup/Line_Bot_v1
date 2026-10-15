@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { globSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { parse } from "smol-toml";
 import { localSchemaCommands } from "./schema-local.mjs";
@@ -9,6 +9,42 @@ import {
   platformMutationViolations,
   schemaFileNames,
 } from "./schema-source.mjs";
+
+function directGovernanceLockCalls(source) {
+  return [
+    ...source.matchAll(
+      /\b(?:pg_catalog\.)?pg_advisory_xact_lock(?:_shared)?\s*\(\s*71020260912\s*(?:::bigint)?\s*\)/gi,
+    ),
+  ].map((match) => match[0]);
+}
+
+test("governance lock consumers use the named SQL contract rather than repeating its key", () => {
+  const root = new URL("../../", import.meta.url);
+  const sources = globSync(["packages/*/src/**/*.ts", "supabase/schemas/*.sql"], { cwd: root });
+  for (const source of sources)
+    assert.deepEqual(
+      directGovernanceLockCalls(readFileSync(new URL(source.replaceAll("\\", "/"), root), "utf8")),
+      [],
+      source,
+    );
+});
+
+test("governance lock drift check rejects duplicate protocol calls and accepts repaired consumers and independent locks", () => {
+  for (const source of [
+    "SELECT pg_advisory_xact_lock(71020260912::bigint)",
+    "perform pg_catalog.pg_advisory_xact_lock_shared ( 71020260912 ::bigint )",
+  ])
+    assert.notEqual(directGovernanceLockCalls(source).length, 0);
+  for (const source of [
+    "SELECT app_private.lock_governance('exclusive')",
+    "perform app_private.lock_governance('shared')",
+    "SELECT pg_advisory_xact_lock(hashtext($1))",
+    "perform pg_advisory_xact_lock(71020260913::bigint)",
+    "SELECT pg_advisory_xact_lock(hashtextextended($1, 71020260913::bigint))",
+    "perform pg_catalog.pg_advisory_xact_lock(protocol_key)",
+  ])
+    assert.deepEqual(directGovernanceLockCalls(source), []);
+});
 
 function hasTopLevelMutation(sql) {
   const withoutFunctionBodies = sql.replace(

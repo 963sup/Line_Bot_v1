@@ -89,8 +89,8 @@ test("Repository provisioning uses the shared governance lock held by its caller
   assert.ok(typeof definitionRow.definition === "string");
   const definition = definitionRow.definition;
 
-  assert.match(definition, /pg_advisory_xact_lock_shared\(71020260912::bigint\)/);
-  assert.doesNotMatch(definition, /pg_advisory_xact_lock\(71020260912::bigint\)/);
+  assert.match(definition, /lock_governance\('shared'\)/);
+  assert.doesNotMatch(definition, /lock_governance\('exclusive'\)/);
 });
 
 test("Repository creation lists only effective owner scopes and preserves exact replay", async (t) => {

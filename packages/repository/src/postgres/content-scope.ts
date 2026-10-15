@@ -13,7 +13,7 @@ export async function repositoryContentScope(
 ) {
   if (!(await readActiveUserQualification(sql, userId, "share")))
     throw new RepositoryError(403, "目前 User 資格不可用。");
-  await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+  await sql.query("SELECT app_private.lock_governance('shared')");
   const repository = await authorizedRepository(sql, { userId }, selector);
   const row = (
     await sql.query(

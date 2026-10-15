@@ -217,7 +217,7 @@ export class PostgresUserStore implements UserRepository {
       throw new UserError(400, "LINE 身分不正確。");
     }
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       await sql.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
         `${provider}:${subject}`,
       ]);
@@ -291,7 +291,7 @@ export class PostgresUserStore implements UserRepository {
     }
     try {
       return await this.db.transaction(async (sql) => {
-        await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+        await sql.query("SELECT app_private.lock_governance('exclusive')");
         await sql.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
           `${provider}:${subject}`,
         ]);
@@ -381,7 +381,7 @@ export class PostgresUserStore implements UserRepository {
 
   pause(id: string, authId?: string) {
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       await this.administration.protectPermissionAdministrator(sql, id);
       await qualifyActiveUser(sql, id, authId);
       await sql.query("UPDATE users SET status='paused' WHERE id=$1", [id]);
@@ -392,7 +392,7 @@ export class PostgresUserStore implements UserRepository {
 
   suspend(id: string) {
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       await this.administration.protectPermissionAdministrator(sql, id);
       await this.getFrom(sql, id, true);
       await sql.query("UPDATE users SET status='suspended' WHERE id=$1", [id]);

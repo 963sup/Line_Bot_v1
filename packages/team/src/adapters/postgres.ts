@@ -390,7 +390,7 @@ export class PostgresTeamRepository implements TeamRepository {
 
   execute(proof: TeamActor, command: TeamCommand, now: number): Promise<TeamCommandReceipt> {
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       const actor = await qualifyOrganizationTeamScope(sql, proof, command.organizationAccountId);
       const actorIsOwner =
         (await readOrganizationViewerCapabilities(sql, actor.userId, command.organizationAccountId))

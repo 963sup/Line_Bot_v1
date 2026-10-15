@@ -114,7 +114,7 @@ export class PostgresEnterpriseGovernance implements EnterpriseGovernancePort {
     now: number,
   ): Promise<EnterpriseReceipt> {
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       const principal = await resolveVerifiedLineActor(sql, actor);
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `${principal.userId}:${command.requestId}`,

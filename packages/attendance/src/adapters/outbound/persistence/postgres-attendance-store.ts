@@ -274,7 +274,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
 
   private async lock(sql: Sql, id: string, now: number) {
     // Acquire before the User row, matching membership/access and address writers.
-    await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+    await sql.query("SELECT app_private.lock_governance('shared')");
     const m = await readUserQualification(sql, id, "update");
     if (!m || m.status !== "active") {
       throw new AttendanceError(
@@ -304,7 +304,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
     requesterId: string,
     now: number,
   ) {
-    await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+    await sql.query("SELECT app_private.lock_governance('shared')");
     const ids = [...new Set([reviewerId, requesterId])].sort();
     let reviewer: Awaited<ReturnType<typeof readUserQualification>> = null;
     for (const id of ids) {
@@ -746,7 +746,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
     });
 
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('shared')");
       const pending = (
         await sql.query<AttendanceSupplementRow>(
           "SELECT * FROM attendance_supplement_requests WHERE id=$1 FOR UPDATE",

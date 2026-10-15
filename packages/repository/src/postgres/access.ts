@@ -81,7 +81,7 @@ export async function accessibleRepositories(
 
 /** Stable IDs for current effective Repository admins; no owner locator is needed for authorization. */
 export async function repositoryAdministeredIds(sql: Sql, userId: string): Promise<string[]> {
-  await sql.query("SELECT pg_advisory_xact_lock_shared(71020260912::bigint)");
+  await sql.query("SELECT app_private.lock_governance('shared')");
   const rows = (
     await sql.query(
       `SELECT repository_id

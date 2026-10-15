@@ -204,7 +204,7 @@ export class PostgresUserManagement implements UserManagementRepository {
 
   execute(actor: string, command: UserStatusCommand, now: number): Promise<UserStatusReceipt> {
     return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+      await sql.query("SELECT app_private.lock_governance('exclusive')");
       await sql.query("SELECT id FROM users WHERE id=ANY($1::text[]) ORDER BY id FOR UPDATE", [
         [actor, command.target],
       ]);

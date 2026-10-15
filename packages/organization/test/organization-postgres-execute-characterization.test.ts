@@ -12,6 +12,7 @@ import type {
 import { PostgresOrganizationGovernance } from "../src/postgres.js";
 
 type QueryRecord = { text: string; values?: unknown[] };
+const governanceLockQuery = "SELECT app_private.lock_governance('exclusive')";
 
 const actor = { provider: "line:test", subject: "line-subject" };
 
@@ -68,7 +69,8 @@ test("organization execute authorizes current owner before replay lookup", async
     reason: "characterization",
   };
   const { db } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
       return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
@@ -117,7 +119,8 @@ test("organization replay hit short-circuits before membership row locks and wri
   };
   const fingerprint = governanceFingerprint(command);
   const { db } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
       return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
@@ -148,7 +151,8 @@ test("organization lifecycle mutation keeps lock authorization replay update and
     reason: "characterization",
   };
   const { db, transactions } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
       return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
@@ -176,7 +180,7 @@ test("organization lifecycle mutation keeps lock authorization replay update and
     at: 100,
   });
 
-  const globalLock = queryIndex(queries, "pg_advisory_xact_lock(71020260912");
+  const globalLock = queryIndex(queries, "lock_governance('exclusive')");
   const actorLookup = queryIndex(queries, "FROM user_identities");
   const requestLock = queries.findIndex(
     (query, index) =>
@@ -228,7 +232,8 @@ test("Organization owns OrganizationOwner grant mutation and durable evidence", 
     reason: "characterization",
   };
   const { db } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
       return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
@@ -301,7 +306,8 @@ test("OrganizationOwner revoke preserves the last-effective-owner invariant", as
     reason: "characterization",
   };
   const { db } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
       return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
@@ -383,7 +389,8 @@ test("legacy OrganizationOwner fingerprint replays after owner migration", async
     reason: command.reason,
   });
   const { db } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM organizations WHERE account_id=$1 FOR UPDATE")) {
       return { rows: [{ account_id: "organization-1", status: "active", version: 3 }] };
@@ -430,7 +437,8 @@ test("organization create replay short-circuits before provisioning", async () =
   };
   const fingerprint = governanceFingerprint(command);
   const { db } = databaseWith(async (text) => {
-    if (text.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
     if (text.includes("FROM user_identities")) return { rows: [activeActorRow()] };
     if (text.includes("FROM governance_command_receipts")) {
       return { rows: [{ fingerprint, result: replay }] };

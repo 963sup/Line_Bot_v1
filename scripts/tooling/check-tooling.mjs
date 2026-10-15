@@ -544,7 +544,13 @@ export function validate(root) {
       const directory = relative(root, dirname(file)).split(sep).join("/");
       const consumers = files(`${directory ? `${directory}/` : ""}test/**/*.{ts,mts,cts}`).filter(
         (test) =>
-          literalModuleSpecifiers(test).includes("@line_bot_v1/platform/testing/postgres-sessions"),
+          literalModuleSpecifiers(test).some(
+            (specifier) =>
+              specifier === "@line_bot_v1/platform/testing/postgres-sessions" ||
+              (specifier.startsWith(".") &&
+                resolve(dirname(test), specifier).replace(/\.js$/, ".ts") ===
+                  resolve(root, "packages/platform/src/testing/postgres-sessions.ts")),
+          ),
       );
       if (!consumers.length) continue;
       const task = turbo.tasks?.[`${manifest.name}#test`] ?? {};

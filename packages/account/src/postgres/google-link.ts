@@ -51,7 +51,7 @@ export class PostgresGoogleLinkStore implements GoogleLinkRepository {
   constructor(private db: Database = businessDatabase()) {}
 
   private async lock(sql: Sql) {
-    await sql.query("SELECT pg_advisory_xact_lock(71020260912::bigint)");
+    await sql.query("SELECT app_private.lock_governance('exclusive')");
   }
 
   private async owner(sql: Sql, provider: string, subject: string) {
