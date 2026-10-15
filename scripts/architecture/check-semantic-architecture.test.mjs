@@ -7,13 +7,18 @@ import { validatePackageSemanticDocs } from "./check-semantic-architecture.mjs";
 import { indexFptDocuments } from "./fpt-domain-core.mjs";
 import {
   compileSemanticArchitecture,
+  loadSemanticArchitecture,
   validateSemanticArchitecture,
   validateSemanticFilesystem,
 } from "./semantic-core.mjs";
 import { diffSemanticModels } from "./semantic-diff.mjs";
 import { diffFptDomainTruth } from "./semantic-drift.mjs";
 import { compareSemanticFeedback } from "./semantic-feedback.mjs";
-import { compileAgentContext, planSemanticChange } from "./semantic-planning.mjs";
+import {
+  compileAgentContext,
+  planSemanticChange,
+  resolveSemanticIntent,
+} from "./semantic-planning.mjs";
 import { packageSemanticDocs, renderSemanticView, routeFileToUrl } from "./semantic-projection.mjs";
 import { querySemanticArchitecture } from "./semantic-query.mjs";
 import { writePackageSemanticDocs } from "./write-package-semantics.mjs";
@@ -938,6 +943,96 @@ test("semantic planner resolves intent into owners, contracts and bounded change
     plan.candidateChangeSurfaces.some((surface) => surface.owner === "repository"),
     true,
   );
+});
+
+test("semantic intent uses canonical IDs and word boundaries against current owners", async () => {
+  const compiled = await loadSemanticArchitecture();
+  assert.deepEqual(compiled.errors, []);
+  for (const [intent, expected, status] of [
+    ["attendance application", ["attendance"], "resolved"],
+    ["repository mapping", ["repository"], "resolved"],
+    ["application", [], "no-match"],
+    ["attendance", ["attendance"], "resolved"],
+    ["（ATTENDANCE），application", ["attendance"], "resolved"],
+    ["修正attendance應用層", ["attendance"], "resolved"],
+    ["app", ["app"], "resolved"],
+    ["owner:APP", ["app"], "resolved"],
+    ["concept:repository-permission", ["repository"], "resolved"],
+    ["manage-repository-stars", ["repository"], "resolved"],
+    ["capability:manage-repository-stars", ["repository"], "resolved"],
+    ["owner:unknown", [], "no-match"],
+  ]) {
+    const result = resolveSemanticIntent(compiled, intent);
+    assert.deepEqual(result.owners.map((owner) => owner.id).sort(), expected, intent);
+    assert.equal(result.status, status, intent);
+    for (const owner of result.owners) {
+      assert.ok(
+        result.matches.some((match) => match.owner === owner.id),
+        intent,
+      );
+    }
+  }
+  const exact = resolveSemanticIntent(compiled, "manage-repository-stars");
+  assert.equal(
+    exact.matches.every((match) => match.reason === "exact-id"),
+    true,
+  );
+  assert.deepEqual(
+    exact.matches.map((match) => match.kind),
+    ["capability"],
+  );
+  assert.deepEqual(
+    resolveSemanticIntent(compiled, "app").targetOwners.map((o) => o.id),
+    ["app"],
+  );
+  assert.deepEqual(resolveSemanticIntent(compiled, "app").currentOwners, []);
+
+  const plan = planSemanticChange(compiled, "attendance application");
+  const context = compileAgentContext(compiled, "attendance application");
+  assert.deepEqual(plan.primaryOwners, ["attendance"]);
+  assert.deepEqual(plan.primaryCurrentOwners, ["attendance"]);
+  assert.deepEqual(plan.primaryTargetOwners, []);
+  assert.deepEqual(context.resolution, plan.resolution);
+  assert.ok(context.owners.some((owner) => owner.id === "account"));
+  assert.ok(context.contracts.some((contract) => contract.provider === "account"));
+  assert.equal(
+    context.owners.some((owner) => owner.id === "app"),
+    false,
+  );
+});
+
+test("semantic intent keeps suggestions and ambiguous names out of primary owners", () => {
+  const { model, fpt, topology } = fixture();
+  model.concepts.push({
+    ...model.concepts[1],
+    id: "project-repository-work",
+    canonicalName: "協作工作",
+    owner: "repository",
+  });
+  model.concepts.push({
+    ...model.concepts[1],
+    id: "project-planning-work",
+    canonicalName: "協作工作",
+  });
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
+  const ambiguous = resolveSemanticIntent(compiled, "修正協作工作規則");
+  assert.equal(ambiguous.status, "ambiguous");
+  assert.deepEqual(ambiguous.owners, []);
+  assert.equal(ambiguous.ambiguities[0].term, "協作工作");
+  assert.equal(ambiguous.candidates.length, 2);
+  assert.deepEqual(planSemanticChange(compiled, "修正協作工作規則").primaryOwners, []);
+
+  const exact = resolveSemanticIntent(compiled, "concept:project-planning-work");
+  assert.equal(exact.status, "resolved");
+  assert.deepEqual(
+    exact.owners.map((owner) => owner.id),
+    ["project"],
+  );
+  const suggestion = resolveSemanticIntent(compiled, "reposi");
+  assert.equal(suggestion.status, "candidate");
+  assert.deepEqual(suggestion.owners, []);
+  assert.ok(suggestion.candidates.some((candidate) => candidate.owner === "repository"));
+  assert.equal(resolveSemanticIntent(compiled, "unknown capability").status, "no-match");
 });
 
 test("semantic planner keeps owner capability coverage after leaf split", () => {
