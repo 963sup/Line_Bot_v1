@@ -53,8 +53,8 @@
       "default": "./dist/contracts/input/user-management.js"
     },
     "./contracts/repositories/user": {
-      "types": "./dist/contracts/repositories/user.d.ts",
-      "default": "./dist/contracts/repositories/user.js"
+      "types": "./dist/contracts/input/user.d.ts",
+      "default": "./dist/contracts/input/user.js"
     },
     "./contracts/output/follows": {
       "types": "./dist/contracts/output/follows.d.ts",

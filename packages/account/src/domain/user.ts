@@ -6,6 +6,80 @@
 export type UserStatus = "paused" | "active" | "suspended";
 export type User = { id: string; status: UserStatus; createdAt: number };
 
+export function registerUser(id: string, at: number) {
+  return { user: { id, status: "active" as const, createdAt: at }, event: "registered" };
+}
+
+export function decideLineUser(
+  operation: "register" | "restore",
+  user: User | null,
+):
+  | { kind: "create" }
+  | { kind: "confirm" | "read"; user: User }
+  | { kind: "restore"; user: User; event: string } {
+  if (!user) {
+    if (operation === "restore") throw new UserError(404, "會員尚未註冊。");
+    return { kind: "create" };
+  }
+  if (user.status === "suspended") throw new UserError(403, "會員已停權。");
+  if (operation === "register") return { kind: "confirm", user };
+  return user.status === "active"
+    ? { kind: "read", user }
+    : { kind: "restore", user: { ...user, status: "active" }, event: "membership_resumed" };
+}
+
+export function confirmUserRegistration(user: User, login: string, currentLogin: string | null) {
+  if (currentLogin && currentLogin !== login)
+    throw new UserError(409, "此 User 已使用其他登入名稱。");
+  if (!currentLogin) throw new UserError(500, "User 登入名稱資料不完整。");
+  if (user.status !== "active") throw new UserError(409, "會員已存在，請使用恢復功能。");
+}
+
+export function requireRegisteredLineUser(user: User | null) {
+  if (!user) throw new UserError(403, "請使用已註冊的 LINE 會員。");
+  if (user.status === "suspended") throw new UserError(403, "會員已停權。");
+  return user;
+}
+
+export function assertExistingGoogleBinding(
+  authId: string | null,
+  subject: string | null,
+  nextAuthId: string,
+  nextSubject: string,
+) {
+  if ((authId && authId !== nextAuthId) || (subject && subject !== nextSubject))
+    throw new UserError(409, "此 LINE 已綁定其他 Google 帳號，請使用原帳號登入。");
+}
+
+export function decideGoogleUserBinding(
+  user: User,
+  authId: string | null,
+  nextAuthId: string,
+  otherUserId: string | null,
+) {
+  if (otherUserId && otherUserId !== user.id)
+    throw new UserError(409, "此 Google 帳號已綁定其他 LINE 會員。");
+  return {
+    user: { ...user, status: "active" as const },
+    event: authId !== nextAuthId || user.status !== "active" ? "supabase_linked" : null,
+  };
+}
+
+export function assertUserLoginChange(user: User) {
+  if (user.status !== "active") throw new UserError(403, "目前會員資格無法更新登入名稱。");
+}
+
+export function pauseUser(user: User) {
+  return {
+    user: { ...requireActiveUser(user), status: "paused" as const },
+    event: "membership_deactivated",
+  };
+}
+
+export function suspendUser(user: User) {
+  return { user: { ...user, status: "suspended" as const }, event: "suspended" };
+}
+
 export class UserError extends Error {
   constructor(
     public status: number,
