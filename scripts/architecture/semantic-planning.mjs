@@ -312,7 +312,9 @@ export function planSemanticChange(compiled, intent) {
   };
 }
 
-export function compileAgentContext(compiled, intent) {
+export function compileAgentContext(compiled, intent, { task = "source" } = {}) {
+  if (!["docs", "source", "schema"].includes(task))
+    throw new Error(`Unknown context task: ${task}`);
   const plan = planSemanticChange(compiled, intent);
   const ownerSet = new Set([...plan.primaryOwners, ...plan.directImpactOwners]);
   const concepts = [...compiled.concepts.values()].filter((concept) => ownerSet.has(concept.owner));
@@ -323,6 +325,100 @@ export function compileAgentContext(compiled, intent) {
       reference: concept.fpt,
       revision: compiled.fpt.manifest.upstream.revision,
     }));
+  const required = new Map();
+  const add = (path, reason, selector) => {
+    if (!required.has(path)) required.set(path, { path, reasons: [], selectors: [] });
+    const entry = required.get(path);
+    if (!entry.reasons.includes(reason)) entry.reasons.push(reason);
+    if (selector) entry.selectors.push(selector);
+  };
+  add("AGENTS.md", "Complete governing authority and effective context contract");
+  add("docs/README.md", "Task routing");
+  add("docs/rules/system-invariants.md", "Global invariants always apply");
+  if (task === "docs")
+    add(
+      "docs/AGENTS.md",
+      "Documentation constraints; also read nearest AGENTS for the actual target",
+    );
+  else {
+    add("architecture/README.md", "Canonical authority routing");
+    add("architecture/semantic-model.json", "Affected semantic owners, invariants and contracts", {
+      owners: plan.primaryOwners,
+    });
+    add("architecture/implementation-topology.json", "Affected module kinds and dependencies", {
+      owners: plan.primaryOwners,
+    });
+    for (const path of [".dependency-cruiser.mjs", "biome.json", "knip.jsonc"])
+      add(path, "Source dependency, formatting and reachability constraints");
+  }
+  for (const ownerId of plan.primaryOwners) {
+    const owner = compiled.owners.get(ownerId);
+    if (owner.doc) add(owner.doc, `Primary Owner ${ownerId}`);
+    const mapping = compiled.mappings.get(ownerId);
+    const module = compiled.topology.modules?.[mapping?.module];
+    if (module) {
+      add(`${module.path.split("/")[0]}/AGENTS.md`, `Parent constraints for ${ownerId}`);
+      add(
+        `${module.path}/AGENTS.md`,
+        `Local constraints for ${ownerId}; descend to the actual target`,
+      );
+      add(`${module.path}/package.json`, `Exact public exports for ${ownerId}`);
+    }
+    if (task !== "docs") {
+      for (const evidence of fptEvidence.filter(
+        (entry) =>
+          compiled.concepts.get(entry.concept).owner === ownerId &&
+          (!plan.resolution.concepts.length ||
+            plan.resolution.concepts.some((concept) => concept.id === entry.concept)),
+      )) {
+        add(
+          `architecture/domain/fpt/${evidence.reference.file}`,
+          `GitHub meaning for ${evidence.concept}`,
+          evidence.reference,
+        );
+        add("architecture/domain/fpt-source.json", "Pinned upstream revision and integrity");
+      }
+      for (const target of Object.values(compiled.topology.targetModules ?? {}).filter(
+        (entry) => entry.semanticOwner === ownerId,
+      )) {
+        for (const reference of target.fptRoots ?? []) {
+          add(
+            `architecture/domain/fpt/${reference.file}`,
+            `Explicit selected-target ${ownerId}; no runtime promotion`,
+            reference,
+          );
+          add("architecture/domain/fpt-source.json", "Pinned upstream revision and integrity");
+        }
+      }
+    }
+  }
+  if (task === "schema") {
+    add(
+      "architecture/data-topology.json",
+      "Affected relation authority and cross-owner participants",
+      { owners: plan.primaryOwners },
+    );
+    add("supabase/AGENTS.md", "Database scope constraints");
+    add("supabase/schemas/AGENTS.md", "Declarative schema constraints");
+    add("docs/rules/database-writes.md", "Atomicity, replay and recovery");
+    add("docs/rules/request-authorization.md", "Current qualification and isolation");
+    for (const surface of plan.candidateChangeSurfaces.filter(
+      (entry) => entry.tier === "primary",
+    )) {
+      for (const data of surface.data)
+        add(data.path, `Persistence/participants for ${surface.owner}`);
+    }
+  }
+  const unresolved =
+    task !== "docs" && plan.resolution.status !== "resolved"
+      ? [
+          {
+            kind: "owner-resolution",
+            status: plan.resolution.status,
+            candidates: plan.resolution.candidates,
+          },
+        ]
+      : [];
 
   return {
     intent,
@@ -342,8 +438,29 @@ export function compileAgentContext(compiled, intent) {
         module: surface.implementation?.module ?? null,
         data: surface.data ?? [],
       })),
-    validation: plan.requiredValidation,
+    validation:
+      task === "docs"
+        ? [compiled.validationProfiles.get("docs")].filter(Boolean)
+        : plan.requiredValidation,
     evidenceRule: plan.expectedEvidenceRule,
     fptEvidence,
+    reading: {
+      authority: "AGENTS.md#effective-context-contract",
+      task,
+      required: [...required.values()],
+      review: plan.candidateChangeSurfaces
+        .filter((surface) => surface.tier !== "primary")
+        .map((surface) => ({
+          owner: surface.owner,
+          path: surface.ownerDoc,
+          tier: surface.tier,
+          reason:
+            "Expand when this provider/consumer contract, qualification or persistence flow is affected",
+        })),
+      unresolved,
+      fallback: unresolved.length
+        ? "Read the complete Mandatory governing set from AGENTS.md and resolve scope before implementation."
+        : null,
+    },
   };
 }

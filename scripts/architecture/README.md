@@ -33,3 +33,13 @@
 子域分類使用 `pnpm semantic view subdomains`，context status 與證據使用 `pnpm semantic view contexts`。`plan` / `context` / `explain` 從相同 canonical model 取得相關分類與邊界證據；`pnpm semantic package-docs` 更新各 package 的 generated projection。
 
 `resolve` / `plan` / `context` 共用 intent resolver：完整 Owner／Concept／Capability ID 優先，也可使用 `owner:<id>`、`concept:<id>`、`capability:<id>` 明確指定。一般文字只匹配完整名稱／字詞；`application`、`mapping` 不代表 App。輸出區分 `resolved`、`ambiguous`、`candidate`、`no-match`，每個命中附 term/source/reason；歧義與前綴候選不自動成為 primary owner。`currentOwners` 與 `targetOwners` 分開；明確查詢 `app` 仍回傳 selected-target，不代表啟用 runtime module。跨 Owner 的既有 review/security dependency 繼續展開，沒有匹配不能被解讀為沒有治理約束。
+
+`context` 依 [root effective context contract](../../AGENTS.md#effective-context-contract) 輸出 `reading.required`、條件性 `reading.review`、選取理由與 exact FPT selectors；文件、source、schema 任務可明確指定，預設 `source`：
+
+```text
+pnpm semantic context --task docs "修正文件連結"
+pnpm semantic context --task source "attendance application"
+pnpm semantic context --task schema "Repository Attendance"
+```
+
+CLI 同時提供 Git revision、working-tree 狀態與每個 required source 的 SHA-256；dirty bytes 的 hash 不是 HEAD content。Owner/語意無法解析或必要來源缺失會列在 `reading.unresolved` 並要求保守展開；不能把它當「沒有約束」。這是載入建議，仍須讀實際目標 source/tests 與沿路 nearest AGENTS；跨 Owner review 只在實際 contract/qualification/persistence 受影響時展開。`--task docs` 僅適用未改業務／治理語意的純文件修正。機器編譯與完整 validation 仍檢查全量 canonical inputs，沒有縮減 architecture/schema/security gate；`source` / `schema` 輸出的 validation 是 capability-based 最低要求，merge 仍須 `pnpm validate`。

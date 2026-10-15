@@ -1,6 +1,6 @@
 # Knowledge task router
 
-Choose the task first, then load the smallest sufficient knowledge unit.
+依 [Effective context contract](../AGENTS.md#effective-context-contract) 保留完整 authority/invariants，再按任務載入必要來源。下表只路由，不建立第二套讀取或治理規則。
 
 | Task | First load | Add only when needed |
 | --- | --- | --- |

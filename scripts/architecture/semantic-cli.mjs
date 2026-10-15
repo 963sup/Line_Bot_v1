@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { collectChangeState, repositoryRoot } from "../changes/state.mjs";
 import { loadSemanticArchitecture } from "./semantic-core.mjs";
 import { diffSemanticModels } from "./semantic-diff.mjs";
 import { diffFptDomainTruth } from "./semantic-drift.mjs";
@@ -68,9 +70,41 @@ export async function runSemanticCommand(args) {
   }
 
   if (verb === "context") {
-    const intent = rest.join(" ").trim();
+    const words = [];
+    let task = "source";
+    for (let at = 0; at < rest.length; at++) {
+      if (rest[at] === "--task") {
+        task = rest[++at];
+        if (!["docs", "source", "schema"].includes(task))
+          throw new Error("Usage: pnpm semantic context [--task docs|source|schema] <intent>");
+      } else words.push(rest[at]);
+    }
+    const intent = words.join(" ").trim();
     if (!intent) throw new Error('Usage: pnpm semantic context "<change intent>"');
-    return compileAgentContext(compiled, intent);
+    const context = compileAgentContext(compiled, intent, { task });
+    const state = collectChangeState();
+    context.source = {
+      revision: state.head,
+      clean: state.clean,
+      workingTreeFiles: state.workspaceFiles,
+    };
+    context.reading.required = await Promise.all(
+      context.reading.required.map(async (entry) => {
+        try {
+          const bytes = await readFile(resolve(repositoryRoot, entry.path));
+          return { ...entry, sha256: createHash("sha256").update(bytes).digest("hex") };
+        } catch (error) {
+          if (error.code !== "ENOENT") throw error;
+          return { ...entry, sha256: null };
+        }
+      }),
+    );
+    for (const entry of context.reading.required.filter((entry) => entry.sha256 === null))
+      context.reading.unresolved.push({ kind: "missing-source", path: entry.path });
+    if (context.reading.unresolved.length)
+      context.reading.fallback =
+        "Read the complete Mandatory governing set from AGENTS.md and resolve missing or ambiguous sources before implementation.";
+    return context;
   }
 
   if (verb === "diff") {
