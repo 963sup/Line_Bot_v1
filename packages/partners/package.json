@@ -23,6 +23,10 @@
     "./contracts/repositories/partners": {
       "types": "./dist/contracts/repositories/partners.d.ts",
       "default": "./dist/contracts/repositories/partners.js"
+    },
+    "./application/commands/partner-command": {
+      "types": "./dist/application/commands/partner-command.d.ts",
+      "default": "./dist/application/commands/partner-command.js"
     }
   },
   "files": [
