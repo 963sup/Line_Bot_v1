@@ -132,9 +132,7 @@ export function preparePartnerSave(
     const previous = existing.find((saved) => saved.id === contact.id);
     return normalizePartnerContact(
       contact,
-      previous
-        ? { phone: previous.phone, email: previous.email, line: previous.line }
-        : undefined,
+      previous ? { phone: previous.phone, email: previous.email, line: previous.line } : undefined,
     );
   });
   for (const contact of contacts) {
