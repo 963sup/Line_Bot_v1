@@ -1,9 +1,9 @@
+import type { PartnerMutationTransactions } from "../contracts/output/partner-mutations.js";
 import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type { PartnerView } from "../contracts.js";
 import { PartnerError } from "../domain.js";
 import { parsePartnerCommand } from "./commands/partner-command.js";
 import { executePartnerCommand } from "./use-cases/partner-mutations.js";
-import type { PartnerMutationTransactions } from "../contracts/output/partner-mutations.js";
 
 export function createPartners(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
