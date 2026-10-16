@@ -4,7 +4,6 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import {
-  requireActiveTargetUser,
   requireOrganizationOwner,
   resolveVerifiedLineActor,
 } from "@line_bot_v1/identity-access/postgres";
@@ -18,7 +17,6 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import type { OrganizationOwnerCommand } from "../../../application/commands/organization-owner.js";
 import type {
   OrganizationCommand,
   OrganizationDetail,
@@ -28,10 +26,6 @@ import type {
   OrganizationMembershipSource,
   OrganizationReceipt,
 } from "../../../contracts/organization-governance.js";
-import {
-  assertOrganizationMembershipSourceRemovable,
-  refreshOrganizationMembershipFromSources,
-} from "../../../postgres/membership-sources.js";
 import {
   hasOrganizationOwnerAssignment,
   readOrganizationOwnerAssignments,
@@ -106,10 +100,6 @@ function versionRow(row: Record<string, unknown>) {
 
 function provisionedScopeRow(row: Record<string, unknown>) {
   return { scope_version: numberValue(row.scope_version) };
-}
-
-function statusVersionRow(row: Record<string, unknown>) {
-  return { status: stringValue(row.status), version: numberValue(row.version) };
 }
 
 function hasPostgresCode(error: unknown, code: string): boolean {
@@ -350,7 +340,10 @@ export class PostgresOrganizationPersistence {
 
   execute(
     actor: VerifiedLineActor,
-    command: Exclude<OrganizationCommand, OrganizationOwnerCommand>,
+    command: Extract<
+      OrganizationCommand,
+      { action: "create-organization" | "update-member-creation-policy" }
+    >,
     now: number,
   ): Promise<OrganizationReceipt> {
     return organizationCommandTransaction(
@@ -402,347 +395,46 @@ export class PostgresOrganizationPersistence {
 
         const organization = await lockOrganization(sql, command.organizationAccountId);
 
-        if (command.action === "accept-invitation" || command.action === "decline-invitation") {
-          if (command.targetUserId !== evidence.actorUserId) {
-            throw new GovernanceAccessError(
-              403,
-              "forbidden",
-              "只能接受自己的 Organization invitation。",
-            );
-          }
-        } else if (command.action !== "leave-organization") {
-          await requireOrganizationOwner(sql, command.organizationAccountId, evidence.actorUserId);
-        }
+        await requireOrganizationOwner(sql, command.organizationAccountId, evidence.actorUserId);
 
         const replay = await evidence.replay();
         if (replay) return replay;
 
-        let result: OrganizationReceipt;
-        if (command.action === "update-member-creation-policy") {
-          if (organization.status !== "active") {
-            throw new GovernanceAccessError(
-              409,
-              "inactive",
-              "停用的 Organization 不能變更成員建立政策。",
-            );
-          }
-          if (organization.version !== command.expectedVersion) {
-            throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
-          }
-          const changed = (
-            await sql.query(
-              `UPDATE organizations SET
-               member_can_create_public_repositories=$2,
-               member_can_create_private_repositories=$3,
-               member_can_create_internal_repositories=$4,
-               member_can_create_project_v2=$5,
-               member_can_create_teams=$6,
-               version=version+1
-             WHERE account_id=$1 RETURNING version`,
-              [
-                command.organizationAccountId,
-                command.memberCanCreatePublicRepositories,
-                command.memberCanCreatePrivateRepositories,
-                command.memberCanCreateInternalRepositories,
-                command.memberCanCreateProjectV2,
-                command.memberCanCreateTeams,
-              ],
-              versionRow,
-            )
-          ).rows[0];
-          if (!changed) {
-            throw new GovernanceAccessError(
-              409,
-              "conflict",
-              "Organization 狀態已更新，請重新讀取。",
-            );
-          }
-          result = receipt(command, "active", Number(changed.version), now);
-        } else {
-          const targetUserId =
-            command.action === "leave-organization"
-              ? evidence.actorUserId
-              : "targetUserId" in command
-                ? command.targetUserId
-                : null;
-          if (!targetUserId) {
-            throw new GovernanceAccessError(
-              400,
-              "invalid-input",
-              "Organization 人員操作格式不正確。",
-            );
-          }
-          if (organization.status !== "active") {
-            throw new GovernanceAccessError(
-              409,
-              "inactive",
-              "停用的 Organization 不能變更人員關係。",
-            );
-          }
-          const membership = (
-            await sql.query(
-              `SELECT status,version FROM organization_memberships
-             WHERE organization_account_id=$1 AND user_id=$2 FOR UPDATE`,
-              [command.organizationAccountId, targetUserId],
-              statusVersionRow,
-            )
-          ).rows[0];
-          const directMembership = (
-            await sql.query(
-              `SELECT status,version FROM organization_direct_memberships
-             WHERE organization_account_id=$1 AND user_id=$2 FOR UPDATE`,
-              [command.organizationAccountId, targetUserId],
-              statusVersionRow,
-            )
-          ).rows[0];
-          const invitation = (
-            await sql.query(
-              `SELECT status,version FROM organization_invitations
-             WHERE organization_account_id=$1 AND user_id=$2 FOR UPDATE`,
-              [command.organizationAccountId, targetUserId],
-              statusVersionRow,
-            )
-          ).rows[0];
-
-          if (command.action === "invite-member") {
-            if (membership?.status === "active") {
-              throw new GovernanceAccessError(
-                409,
-                "invalid-transition",
-                "使用者已是 Organization member。",
-              );
-            }
-            await requireActiveTargetUser(sql, command.targetUserId);
-            if (!invitation) {
-              if (command.expectedVersion !== 0) {
-                throw new GovernanceAccessError(409, "conflict", "Invitation 版本不符。");
-              }
-              await sql.query(
-                `INSERT INTO organization_invitations(
-                 organization_account_id,user_id,status,version,created_at,resolved_at
-               ) VALUES($1,$2,'pending',1,$3,null)`,
-                [command.organizationAccountId, command.targetUserId, now],
-              );
-              result = receipt(command, "pending", 1, now);
-            } else {
-              if (
-                invitation.version !== command.expectedVersion ||
-                invitation.status === "pending"
-              ) {
-                throw new GovernanceAccessError(409, "conflict", "Invitation 狀態或版本不符。");
-              }
-              const changed = (
-                await sql.query(
-                  `UPDATE organization_invitations
-                 SET status='pending',version=version+1,created_at=$3,resolved_at=null
-                WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
-                  [command.organizationAccountId, command.targetUserId, now],
-                  versionRow,
-                )
-              ).rows[0];
-              if (!changed) {
-                throw new GovernanceAccessError(
-                  409,
-                  "conflict",
-                  "Organization 狀態已更新，請重新讀取。",
-                );
-              }
-              result = receipt(command, "pending", changed.version, now);
-            }
-          } else if (command.action === "accept-invitation") {
-            if (
-              !invitation ||
-              invitation.status !== "pending" ||
-              invitation.version !== command.expectedVersion
-            ) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "找不到指定版本的 pending invitation。",
-              );
-            }
-            await requireActiveTargetUser(sql, command.targetUserId);
-            if (membership?.status === "active") {
-              throw new GovernanceAccessError(
-                409,
-                "invalid-transition",
-                "使用者已是 Organization member。",
-              );
-            }
-            if (directMembership) {
-              await sql.query(
-                `UPDATE organization_direct_memberships
-               SET status='active',version=version+1,created_at=$3
-               WHERE organization_account_id=$1 AND user_id=$2`,
-                [command.organizationAccountId, command.targetUserId, now],
-              );
-            } else {
-              await sql.query(
-                `INSERT INTO organization_direct_memberships(
-                 organization_account_id,user_id,status,version,created_at
-               ) VALUES($1,$2,'active',1,$3)`,
-                [command.organizationAccountId, command.targetUserId, now],
-              );
-            }
-            await refreshOrganizationMembershipFromSources(
-              sql,
-              command.organizationAccountId,
-              command.targetUserId,
-              now,
-            );
-            const changed = (
-              await sql.query(
-                `UPDATE organization_invitations
-               SET status='accepted',version=version+1,resolved_at=$3
-               WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
-                [command.organizationAccountId, command.targetUserId, now],
-                versionRow,
-              )
-            ).rows[0];
-            if (!changed) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "Organization 狀態已更新，請重新讀取。",
-              );
-            }
-            result = receipt(command, "accepted", changed.version, now);
-          } else if (command.action === "decline-invitation") {
-            if (
-              !invitation ||
-              invitation.status !== "pending" ||
-              invitation.version !== command.expectedVersion
-            ) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "找不到指定版本的 pending invitation。",
-              );
-            }
-            const changed = (
-              await sql.query(
-                `UPDATE organization_invitations
-               SET status='declined',version=version+1,resolved_at=$3
-               WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
-                [command.organizationAccountId, targetUserId, now],
-                versionRow,
-              )
-            ).rows[0];
-            if (!changed) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "Organization 狀態已更新，請重新讀取。",
-              );
-            }
-            result = receipt(command, "declined", changed.version, now);
-          } else if (command.action === "cancel-invitation") {
-            if (
-              !invitation ||
-              invitation.status !== "pending" ||
-              invitation.version !== command.expectedVersion
-            ) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "找不到指定版本的 pending invitation。",
-              );
-            }
-            const changed = (
-              await sql.query(
-                `UPDATE organization_invitations
-               SET status='cancelled',version=version+1,resolved_at=$3
-               WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
-                [command.organizationAccountId, command.targetUserId, now],
-                versionRow,
-              )
-            ).rows[0];
-            if (!changed) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "Organization 狀態已更新，請重新讀取。",
-              );
-            }
-            result = receipt(command, "cancelled", changed.version, now);
-          } else {
-            if (
-              command.action !== "remove-direct-membership" &&
-              command.action !== "leave-organization"
-            ) {
-              throw new GovernanceAccessError(
-                400,
-                "invalid-input",
-                "Organization 人員移除操作格式不正確。",
-              );
-            }
-            if (
-              !directMembership ||
-              directMembership.status !== "active" ||
-              directMembership.version !== command.expectedVersion
-            ) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "找不到指定版本的有效 Organization direct membership。",
-              );
-            }
-            if (command.action === "leave-organization") {
-              const otherSource = (
-                await sql.query(
-                  `SELECT 1 FROM organization_membership_sources
-                 WHERE organization_account_id=$1 AND user_id=$2 AND source_kind<>'direct'
-                 LIMIT 1`,
-                  [command.organizationAccountId, targetUserId],
-                )
-              ).rows[0];
-              if (otherSource) {
-                throw new GovernanceAccessError(
-                  409,
-                  "scope-conflict",
-                  "仍透過 Enterprise Team 取得此 Organization membership；請先解除該來源。",
-                );
-              }
-            }
-            await assertOrganizationMembershipSourceRemovable(
-              sql,
-              command.organizationAccountId,
-              targetUserId,
-              "direct",
-              command.organizationAccountId,
-            );
-            const changed = (
-              await sql.query(
-                `UPDATE organization_direct_memberships
-               SET status='removed',version=version+1
-               WHERE organization_account_id=$1 AND user_id=$2 RETURNING version`,
-                [command.organizationAccountId, targetUserId],
-                versionRow,
-              )
-            ).rows[0];
-            if (!changed) {
-              throw new GovernanceAccessError(
-                409,
-                "conflict",
-                "Organization 狀態已更新，請重新讀取。",
-              );
-            }
-            await refreshOrganizationMembershipFromSources(
-              sql,
-              command.organizationAccountId,
-              targetUserId,
-              now,
-            );
-            result =
-              command.action === "leave-organization"
-                ? {
-                    ...receipt(command, "removed", changed.version, now),
-                    subjectKind: "user",
-                    subjectId: targetUserId,
-                  }
-                : receipt(command, "removed", changed.version, now);
-          }
+        if (organization.status !== "active") {
+          throw new GovernanceAccessError(
+            409,
+            "inactive",
+            "停用的 Organization 不能變更成員建立政策。",
+          );
         }
+        if (organization.version !== command.expectedVersion) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
+        }
+        const changed = (
+          await sql.query(
+            `UPDATE organizations SET
+             member_can_create_public_repositories=$2,
+             member_can_create_private_repositories=$3,
+             member_can_create_internal_repositories=$4,
+             member_can_create_project_v2=$5,
+             member_can_create_teams=$6,
+             version=version+1
+           WHERE account_id=$1 RETURNING version`,
+            [
+              command.organizationAccountId,
+              command.memberCanCreatePublicRepositories,
+              command.memberCanCreatePrivateRepositories,
+              command.memberCanCreateInternalRepositories,
+              command.memberCanCreateProjectV2,
+              command.memberCanCreateTeams,
+            ],
+            versionRow,
+          )
+        ).rows[0];
+        if (!changed) {
+          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
+        }
+        const result = receipt(command, "active", Number(changed.version), now);
 
         await evidence.record(result);
         return result;

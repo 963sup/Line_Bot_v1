@@ -5,9 +5,12 @@ import type {
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import { PostgresOrganizationPersistence } from "../../adapters/outbound/persistence/organization-governance.js";
 import { PostgresOrganizationLifecycle } from "../../adapters/outbound/persistence/organization-lifecycle.js";
+import { PostgresOrganizationMembership } from "../../adapters/outbound/persistence/organization-membership.js";
 import { PostgresOrganizationOwner } from "../../adapters/outbound/persistence/organization-owner.js";
+import type { OrganizationMembershipCommand } from "../../application/commands/organization-membership.js";
 import type { OrganizationOwnerCommand } from "../../application/commands/organization-owner.js";
 import { organizationGovernance } from "../../application/organization-governance.js";
+import { executeOrganizationMembership } from "../../application/use-cases/organization-membership.js";
 import { executeOrganizationOwner } from "../../application/use-cases/organization-owner.js";
 import type { OrganizationGovernancePort } from "../../contracts/input/organization-governance.js";
 import type {
@@ -21,12 +24,27 @@ function isOwnerCommand(command: OrganizationCommand): command is OrganizationOw
   );
 }
 
+function isMembershipCommand(
+  command: OrganizationCommand,
+): command is OrganizationMembershipCommand {
+  return (
+    command.action === "invite-member" ||
+    command.action === "accept-invitation" ||
+    command.action === "decline-invitation" ||
+    command.action === "cancel-invitation" ||
+    command.action === "remove-direct-membership" ||
+    command.action === "leave-organization"
+  );
+}
+
 export class PostgresOrganizationGovernance implements OrganizationGovernancePort {
   private readonly persistence: PostgresOrganizationPersistence;
   private readonly owner: PostgresOrganizationOwner;
+  private readonly membership: PostgresOrganizationMembership;
   constructor(db: Database = businessDatabase()) {
     this.persistence = new PostgresOrganizationPersistence(db);
     this.owner = new PostgresOrganizationOwner(db);
+    this.membership = new PostgresOrganizationMembership(db);
   }
   list(actor: VerifiedLineActor, query: GovernanceQuery) {
     return this.persistence.list(actor, query);
@@ -41,7 +59,9 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
   ): Promise<OrganizationReceipt> {
     return isOwnerCommand(command)
       ? executeOrganizationOwner(this.owner, actor, command, at)
-      : this.persistence.execute(actor, command, at);
+      : isMembershipCommand(command)
+        ? executeOrganizationMembership(this.membership, actor, command, at)
+        : this.persistence.execute(actor, command, at);
   }
 }
 
