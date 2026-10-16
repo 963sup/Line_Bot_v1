@@ -1,5 +1,8 @@
 import type { PermissionStore } from "../contracts/input/permissions.js";
-import { PermissionError, parsePermissionCommand } from "../domain/permission.js";
+import { PermissionError } from "../domain/permission.js";
+import { parsePermissionCommand } from "./commands/permission.js";
+
+export { type PermissionCommand, parsePermissionCommand } from "./commands/permission.js";
 export function createPermissions(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   store(): PermissionStore;

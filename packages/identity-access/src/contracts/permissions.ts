@@ -1,3 +1,5 @@
+import type { Permission } from "../domain/permission.js";
+
 export type PermissionReceipt = { requestId: string; version: number };
 
 export type PermissionGrant = {
@@ -18,4 +20,14 @@ export type PermissionView = {
     at: number;
   }[];
   moreHistory: boolean;
+};
+
+/** Published request accepted by the typed permission capability. */
+export type PermissionChangeRequest = {
+  requestId: string;
+  target: string;
+  permission: Permission;
+  enabled: boolean;
+  expectedVersion: number;
+  reason: string;
 };

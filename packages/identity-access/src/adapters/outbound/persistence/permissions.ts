@@ -16,7 +16,6 @@ import type { PermissionGrant, PermissionView } from "../../../contracts/permiss
 import {
   assertPermissionAdministratorDeactivation,
   type Permission,
-  type PermissionCommand,
   PermissionError,
   permissions,
 } from "../../../domain/permission.js";
@@ -216,17 +215,18 @@ export class PostgresPermissionPersistence implements PermissionPersistence {
 
   transact<T>(
     actor: string,
-    c: PermissionCommand,
+    targetId: string,
+    evidence: { requestId: string; payload: string },
     work: (transaction: PermissionChangeTransaction) => Promise<T>,
   ): Promise<T> {
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT app_private.lock_governance('exclusive')");
       const qualifications = new Map<string, Awaited<ReturnType<typeof readUserQualification>>>();
-      for (const userId of [...new Set([actor, c.target])].sort()) {
+      for (const userId of [...new Set([actor, targetId])].sort()) {
         qualifications.set(userId, await readUserQualification(sql, userId, "update"));
       }
       const canManage = await manager(sql, actor);
-      const target = qualifications.get(c.target);
+      const target = qualifications.get(targetId);
       return work({
         canManage,
         target: target ? { active: target.status === "active" } : null,
@@ -234,11 +234,11 @@ export class PostgresPermissionPersistence implements PermissionPersistence {
           (
             await sql.query(
               "SELECT command=$3::jsonb AS matches,result FROM permission_commands WHERE actor=$1 AND request_id=$2",
-              [actor, c.requestId, JSON.stringify(c)],
+              [actor, evidence.requestId, evidence.payload],
               previousCommandRow,
             )
           ).rows[0] ?? null,
-        version: () => permissionVersion(sql, c.target, true),
+        version: () => permissionVersion(sql, targetId, true),
         dependencies: async () => {
           const row = (
             await sql.query(
@@ -246,7 +246,7 @@ export class PostgresPermissionPersistence implements PermissionPersistence {
                SELECT 1 FROM permission_grants WHERE user_id=$1 AND user_version=$2 AND permission='users.read'
              ) AS can_read_users,
              EXISTS(SELECT 1 FROM permission_grants WHERE user_id=$1 AND permission='users.suspend') AS has_suspend_grant`,
-              [c.target, target?.statusVersion ?? 0, target?.status === "active"],
+              [targetId, target?.statusVersion ?? 0, target?.status === "active"],
               (row) => ({
                 canReadUsers: booleanValue(row.can_read_users),
                 hasSuspendGrant: booleanValue(row.has_suspend_grant),
@@ -256,40 +256,40 @@ export class PostgresPermissionPersistence implements PermissionPersistence {
           if (!row) throw new Error("Permission dependency projection is missing");
           return row;
         },
-        save: async (currentVersion, now) => {
+        save: async (permission, enabled, currentVersion, now) => {
           if (!target) throw new Error("Permission target is missing");
           const before = (
             await sql.query(
               "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
-              [c.target],
+              [targetId],
             )
           ).rows;
           await sql.query("DELETE FROM permission_grants WHERE user_id=$1 AND permission=$2", [
-            c.target,
-            c.permission,
+            targetId,
+            permission,
           ]);
-          if (c.enabled) {
+          if (enabled) {
             await sql.query(
               `INSERT INTO permission_grants(user_id,permission,user_version,granted_by,granted_at)
                VALUES($1,$2,$3,$4,$5)`,
-              [c.target, c.permission, target.statusVersion, actor, now],
+              [targetId, permission, target.statusVersion, actor, now],
             );
           }
-          const version = await advancePermissionVersion(sql, c.target, currentVersion);
-          const result = { requestId: c.requestId, version };
+          const version = await advancePermissionVersion(sql, targetId, currentVersion);
+          const result = { requestId: evidence.requestId, version };
           await sql.query(
             "INSERT INTO permission_commands(actor,request_id,target,command,before_grants,after_grants,result,at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
             [
               actor,
-              c.requestId,
-              c.target,
-              JSON.stringify(c),
+              evidence.requestId,
+              targetId,
+              evidence.payload,
               JSON.stringify(before),
               JSON.stringify(
                 (
                   await sql.query(
                     "SELECT * FROM permission_grants WHERE user_id=$1 ORDER BY permission,workplace_id NULLS FIRST",
-                    [c.target],
+                    [targetId],
                   )
                 ).rows,
               ),

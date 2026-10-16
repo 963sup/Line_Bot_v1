@@ -3662,6 +3662,7 @@
         "scope": "current Identity Access permission application surface",
         "sourcePaths": [
           "packages/identity-access/src/application/permissions.ts",
+          "packages/identity-access/src/application/commands/permission.ts",
           "packages/identity-access/src/application/use-cases/change-permission.ts",
           "packages/identity-access/src/contracts/input/permissions.ts",
           "packages/identity-access/src/contracts/output/permission-transactions.ts",

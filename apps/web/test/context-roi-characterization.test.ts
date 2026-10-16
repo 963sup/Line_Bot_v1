@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PermissionCommand } from "@line_bot_v1/identity-access/domain/permission";
+import type { PermissionCommand } from "@line_bot_v1/identity-access/application/permissions";
 import { buildTeamCommand as buildOwnedTeamCommand } from "@line_bot_v1/team/application/commands/team-command";
 import type { TeamView } from "@line_bot_v1/team/contracts";
 import {

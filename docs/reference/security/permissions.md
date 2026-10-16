@@ -2,7 +2,7 @@
 ## 責任
 本文件描述目前已實作的跨模組 feature permissions。它不取代各 module 的 business role，也不把 TeamMaintainer、LINE chat context、OrganizationAdmin 或 Project membership 視為全域管理資格。
 
-現行 Permission catalog、command validation 與 `PermissionError` 的 Domain owner 是 Identity/Access，source 位於 `packages/identity-access/src/domain/permission.ts`，公開入口為 `@line_bot_v1/identity-access/domain/permission`。Business-scoped governance roles 由各 business owner 擁有其 relation fact；Identity/Access 只計算 authorization。EnterpriseOwner、OrganizationOwner、TeamMaintainer 都不再由 IAM 寫入，也不恢復 generic RoleAssignment writer。
+現行 Permission catalog、業務規則與 `PermissionError` 的 Domain owner 是 Identity/Access，source 位於 `packages/identity-access/src/domain/permission.ts`，公開入口為 `@line_bot_v1/identity-access/domain/permission`。PermissionCommand 與 unknown-input normalization 位於 `src/application/commands/permission.ts`，透過既有 `@line_bot_v1/identity-access/application/permissions` 入口公開；Domain 只接收規則所需 facts，transaction Output Port 只持 target、opaque replay evidence 與 grant 寫入值。Business-scoped governance roles 由各 business owner 擁有其 relation fact；Identity/Access 只計算 authorization。EnterpriseOwner、OrganizationOwner、TeamMaintainer 都不再由 IAM 寫入，也不恢復 generic RoleAssignment writer。
 
 FPT `OrganizationMemberRole.ADMIN | MEMBER` 不是 global Permission catalog：`ADMIN` 僅由有效 OrganizationOwner 投影，其他有效成員為 `MEMBER`。Organization 的 `viewerCanAdminister`、按可見度的 Repository 建立資格、`viewerCanCreateTeams` 與本產品 ProjectV2 專用的 `viewerCanCreateProjectV2` 是 scoped capability read contract，受 Owner 的 member creation policy 約束。FPT `viewerCanCreateProjects` 僅指已淘汰的 Projects (classic)，不作 ProjectV2 授權。不要把 `OrganizationAdmin`、RepositoryPermission 或 Project access role 加進此 catalog 來模擬 FPT。
 
