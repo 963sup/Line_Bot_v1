@@ -109,7 +109,6 @@ export function normalizePartnerContact(
   };
 }
 
-
 /** Decide a directory edit from current version and the complete persisted contact set. */
 export function preparePartnerSave(
   command: PartnerSaveDraft,
@@ -147,7 +146,7 @@ export function preparePartnerSave(
           other.status === "published" &&
           other.name.trim().toLowerCase() === contact.name.trim().toLowerCase() &&
           ((contact.phone &&
-            other.phone.replace(/[\\s()-]/g, "") === contact.phone.replace(/[\\s()-]/g, "")) ||
+            other.phone.replace(/[\s()-]/g, "") === contact.phone.replace(/[\s()-]/g, "")) ||
             (contact.email &&
               other.email.trim().toLowerCase() === contact.email.trim().toLowerCase()) ||
             (contact.line && other.line.toLowerCase() === contact.line.toLowerCase())),
