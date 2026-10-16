@@ -6,9 +6,11 @@ import {
 } from "@line_bot_v1/identity-access/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { literalValue, numberValue } from "@line_bot_v1/platform/validation";
-import type { EnterpriseReceipt } from "../../../contracts/enterprise-governance.js";
 import type {
-  EnterpriseAffiliationCommand,
+  EnterpriseMutationEvidence,
+  EnterpriseReceipt,
+} from "../../../contracts/enterprise-governance.js";
+import type {
   EnterpriseAffiliationTransaction,
   EnterpriseAffiliationTransactions,
 } from "../../../contracts/output/enterprise-affiliation.js";
@@ -24,14 +26,15 @@ export class PostgresEnterpriseAffiliation implements EnterpriseAffiliationTrans
 
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseAffiliationCommand,
-    at: number,
+    scope: { enterpriseAccountId: string; targetUserId: string | null },
+    audit: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseAffiliationTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
-    return enterpriseGovernanceTransaction(this.db, actor, command, at, (sql, evidence) => {
-      const targetUserId =
-        command.action === "leave-enterprise" ? evidence.actorUserId : command.targetUserId;
-      const parameters = [command.enterpriseAccountId, targetUserId];
+    const scopeId = scope.enterpriseAccountId;
+    const at = audit.at;
+    return enterpriseGovernanceTransaction(this.db, actor, scopeId, audit, (sql, evidence) => {
+      const targetUserId = scope.targetUserId ?? evidence.actorUserId;
+      const parameters = [scopeId, targetUserId];
       async function versionWrite(text: string, values: unknown[]) {
         const row = (
           await sql.query(text, values, (row) => ({ version: numberValue(row.version) }))
@@ -43,8 +46,7 @@ export class PostgresEnterpriseAffiliation implements EnterpriseAffiliationTrans
       return operation({
         ...evidence,
         targetUserId,
-        authorizeOwner: () =>
-          requireEnterpriseOwner(sql, command.enterpriseAccountId, evidence.actorUserId),
+        authorizeOwner: () => requireEnterpriseOwner(sql, scopeId, evidence.actorUserId),
         loadDirect: async () =>
           (
             await sql.query(
@@ -91,16 +93,9 @@ export class PostgresEnterpriseAffiliation implements EnterpriseAffiliationTrans
               )
             ).rows[0],
           ),
-        isEffectiveOwner: () =>
-          hasEnterpriseOwnerAssignment(sql, command.enterpriseAccountId, targetUserId),
-        hasReplacementOwner: () =>
-          hasReplacementEnterpriseOwner(sql, command.enterpriseAccountId, targetUserId),
-        revokeOwner: () =>
-          revokeEnterpriseOwnerForAffiliationRemoval(
-            sql,
-            command.enterpriseAccountId,
-            targetUserId,
-          ),
+        isEffectiveOwner: () => hasEnterpriseOwnerAssignment(sql, scopeId, targetUserId),
+        hasReplacementOwner: () => hasReplacementEnterpriseOwner(sql, scopeId, targetUserId),
+        revokeOwner: () => revokeEnterpriseOwnerForAffiliationRemoval(sql, scopeId, targetUserId),
         saveDirect: async (next) => {
           if (next.status === "removed")
             return versionWrite(

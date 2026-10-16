@@ -1,11 +1,6 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import type { EnterpriseOwnerAssignment } from "../../domain.js";
-import type { EnterpriseCommand, EnterpriseReceipt } from "../enterprise-governance.js";
-
-export type EnterpriseOwnerCommand = Extract<
-  EnterpriseCommand,
-  { action: "grant-enterprise-owner" | "revoke-enterprise-owner" }
->;
+import type { EnterpriseMutationEvidence, EnterpriseReceipt } from "../enterprise-governance.js";
 
 export interface EnterpriseOwnerTransaction {
   readonly enterpriseStatus: "active" | "inactive";
@@ -23,8 +18,8 @@ export interface EnterpriseOwnerTransaction {
 export interface EnterpriseOwnerTransactions {
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseOwnerCommand,
-    at: number,
+    scope: { enterpriseAccountId: string; targetUserId: string },
+    evidence: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseOwnerTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt>;
 }

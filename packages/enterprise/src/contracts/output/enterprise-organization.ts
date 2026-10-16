@@ -3,12 +3,7 @@ import type {
   EnterpriseOrganizationRelationState,
   EnterpriseOrganizationScopeState,
 } from "../../domain.js";
-import type { EnterpriseCommand, EnterpriseReceipt } from "../enterprise-governance.js";
-
-export type EnterpriseOrganizationCommand = Extract<
-  EnterpriseCommand,
-  { action: "attach-organization" | "detach-organization" }
->;
+import type { EnterpriseMutationEvidence, EnterpriseReceipt } from "../enterprise-governance.js";
 
 export interface EnterpriseOrganizationTransaction {
   readonly enterprise: EnterpriseOrganizationScopeState;
@@ -25,8 +20,8 @@ export interface EnterpriseOrganizationTransaction {
 export interface EnterpriseOrganizationTransactions {
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseOrganizationCommand,
-    at: number,
+    scope: { enterpriseAccountId: string; organizationAccountId: string },
+    evidence: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseOrganizationTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt>;
 }

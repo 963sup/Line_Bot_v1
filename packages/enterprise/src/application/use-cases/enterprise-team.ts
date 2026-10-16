@@ -1,10 +1,7 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseReceipt } from "../../contracts/enterprise-governance.js";
-import type {
-  EnterpriseTeamCommand,
-  EnterpriseTeamTransactions,
-} from "../../contracts/output/enterprise-team.js";
+import type { EnterpriseTeamTransactions } from "../../contracts/output/enterprise-team.js";
 import {
   activateEnterpriseTeamMembership,
   activateEnterpriseTeamOrganization,
@@ -19,14 +16,24 @@ import {
   requireEnterpriseTeamAffiliation,
   requireEnterpriseTeamOrganization,
 } from "../../domain.js";
+import type { EnterpriseTeamCommand } from "../commands/enterprise-governance.js";
 
 export function executeEnterpriseTeam(
   transactions: EnterpriseTeamTransactions,
   actor: VerifiedLineActor,
-  command: EnterpriseTeamCommand,
+  input: EnterpriseTeamCommand,
   at: number,
 ) {
-  return transactions.transact(actor, command, at, async (transaction) => {
+  const command = { ...input };
+  const scope = command.enterpriseAccountId;
+  const evidence = {
+    requestId: command.requestId,
+    payload: JSON.stringify(command),
+    action: command.action,
+    reason: command.reason,
+    at,
+  };
+  return transactions.transact(actor, scope, evidence, async (transaction) => {
     await transaction.authorize();
     const replay = await transaction.replay();
     if (replay) return replay;

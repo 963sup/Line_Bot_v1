@@ -4,12 +4,7 @@ import type {
   EnterpriseTeamMembership,
   EnterpriseTeamOrganizationAssignment,
 } from "../../domain.js";
-import type { EnterpriseCommand, EnterpriseReceipt } from "../enterprise-governance.js";
-
-export type EnterpriseTeamCommand = Extract<
-  EnterpriseCommand,
-  { action: "create-enterprise-team" } | { teamId: string }
->;
+import type { EnterpriseMutationEvidence, EnterpriseReceipt } from "../enterprise-governance.js";
 
 export interface EnterpriseTeamTransaction {
   readonly enterpriseStatus: "active" | "inactive";
@@ -46,8 +41,8 @@ export interface EnterpriseTeamTransaction {
 export interface EnterpriseTeamTransactions {
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseTeamCommand,
-    at: number,
+    enterpriseAccountId: string,
+    evidence: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseTeamTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt>;
 }

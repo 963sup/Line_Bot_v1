@@ -13,9 +13,11 @@ import {
 } from "@line_bot_v1/organization/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
-import type { EnterpriseReceipt } from "../../../contracts/enterprise-governance.js";
 import type {
-  EnterpriseTeamCommand,
+  EnterpriseMutationEvidence,
+  EnterpriseReceipt,
+} from "../../../contracts/enterprise-governance.js";
+import type {
   EnterpriseTeamTransaction,
   EnterpriseTeamTransactions,
 } from "../../../contracts/output/enterprise-team.js";
@@ -30,27 +32,27 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
 
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseTeamCommand,
-    at: number,
+    scopeId: string,
+    audit: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseTeamTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
-    const enterpriseId = command.enterpriseAccountId;
-    return enterpriseGovernanceTransaction(this.db, actor, command, at, async (sql, evidence) =>
+    const at = audit.at;
+    return enterpriseGovernanceTransaction(this.db, actor, scopeId, audit, async (sql, evidence) =>
       operation({
         enterpriseStatus: evidence.enterpriseStatus,
         replay: evidence.replay,
         record: evidence.record,
         nextId: randomUUID,
-        authorize: () => requireEnterpriseOwner(sql, enterpriseId, evidence.actorUserId),
+        authorize: () => requireEnterpriseOwner(sql, scopeId, evidence.actorUserId),
         loadTeam: async (teamId) =>
           (
             await sql.query(
               `SELECT id,name,slug,version FROM enterprise_teams
          WHERE enterprise_account_id=$1 AND id=$2 FOR UPDATE`,
-              [enterpriseId, teamId],
+              [scopeId, teamId],
               (row) => ({
                 id: stringValue(row.id),
-                enterpriseAccountId: enterpriseId,
+                enterpriseAccountId: scopeId,
                 name: stringValue(row.name),
                 slug: stringValue(row.slug),
                 version: numberValue(row.version),
@@ -64,7 +66,7 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
                 `INSERT INTO enterprise_teams(
               id,enterprise_account_id,name,slug,version,created_by_user_id,created_at
             ) VALUES($1,$2,$3,$4,1,$5,$6)`,
-                [team.id, enterpriseId, team.name, team.slug, evidence.actorUserId, at],
+                [team.id, scopeId, team.name, team.slug, evidence.actorUserId, at],
               );
               return 1;
             }
@@ -73,7 +75,7 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
                 `UPDATE enterprise_teams
              SET name=$3,slug=$4,version=version+1
              WHERE enterprise_account_id=$1 AND id=$2 RETURNING version`,
-                [enterpriseId, team.id, team.name, team.slug],
+                [scopeId, team.id, team.name, team.slug],
                 versionRow,
               )
             ).rows[0];
@@ -105,10 +107,10 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
             await sql.query(
               `SELECT status,version FROM enterprise_team_memberships
          WHERE enterprise_account_id=$1 AND team_id=$2 AND user_id=$3 FOR UPDATE`,
-              [enterpriseId, teamId, userId],
+              [scopeId, teamId, userId],
               (row) => ({
                 teamId,
-                enterpriseAccountId: enterpriseId,
+                enterpriseAccountId: scopeId,
                 userId,
                 status: literalValue(row.status, ["active", "removed"]),
                 version: numberValue(row.version),
@@ -124,18 +126,18 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
               await sql.query(
                 `SELECT 1 FROM enterprise_user_affiliations
          WHERE enterprise_account_id=$1 AND user_id=$2 LIMIT 1`,
-                [enterpriseId, userId],
+                [scopeId, userId],
               )
             ).rows[0],
           ),
         saveMembership: async (membership) => {
-          const values = [enterpriseId, membership.teamId, membership.userId];
+          const values = [scopeId, membership.teamId, membership.userId];
           if (membership.version === 1) {
             await sql.query(
               `INSERT INTO enterprise_team_memberships(
              team_id,enterprise_account_id,user_id,status,version,joined_at
            ) VALUES($1,$2,$3,'active',1,$4)`,
-              [membership.teamId, enterpriseId, membership.userId, at],
+              [membership.teamId, scopeId, membership.userId, at],
             );
             return 1;
           }
@@ -163,7 +165,7 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
               `SELECT version FROM enterprise_organizations
           WHERE enterprise_account_id=$1 AND organization_account_id=$2 AND status='active'
           FOR SHARE`,
-              [enterpriseId, organizationId],
+              [scopeId, organizationId],
             )
           ).rows[0];
           const organization = await readOrganizationQualification(sql, organizationId, "share");
@@ -174,10 +176,10 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
             await sql.query(
               `SELECT status,version FROM enterprise_team_organizations
          WHERE enterprise_account_id=$1 AND team_id=$2 AND organization_account_id=$3 FOR UPDATE`,
-              [enterpriseId, teamId, organizationId],
+              [scopeId, teamId, organizationId],
               (row) => ({
                 teamId,
-                enterpriseAccountId: enterpriseId,
+                enterpriseAccountId: scopeId,
                 organizationAccountId: organizationId,
                 status: literalValue(row.status, ["active", "detached"]),
                 version: numberValue(row.version),
@@ -185,13 +187,13 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
             )
           ).rows[0] ?? null,
         saveAssignment: async (assignment) => {
-          const values = [enterpriseId, assignment.teamId, assignment.organizationAccountId];
+          const values = [scopeId, assignment.teamId, assignment.organizationAccountId];
           if (assignment.version === 1) {
             await sql.query(
               `INSERT INTO enterprise_team_organizations(
              team_id,enterprise_account_id,organization_account_id,status,version,assigned_at,detached_at
            ) VALUES($1,$2,$3,'active',1,$4,null)`,
-              [assignment.teamId, enterpriseId, assignment.organizationAccountId, at],
+              [assignment.teamId, scopeId, assignment.organizationAccountId, at],
             );
             return 1;
           }
@@ -214,7 +216,7 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
               `SELECT organization_account_id FROM enterprise_team_organizations
          WHERE enterprise_account_id=$1 AND team_id=$2 AND status='active'
          ORDER BY organization_account_id FOR SHARE`,
-              [enterpriseId, teamId],
+              [scopeId, teamId],
               (row) => ({ id: stringValue(row.organization_account_id) }),
             )
           ).rows.map((row) => row.id),
@@ -224,7 +226,7 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
               `SELECT user_id FROM enterprise_team_memberships
          WHERE enterprise_account_id=$1 AND team_id=$2 AND status='active'
          ORDER BY user_id FOR SHARE`,
-              [enterpriseId, teamId],
+              [scopeId, teamId],
               (row) => ({ id: stringValue(row.user_id) }),
             )
           ).rows.map((row) => row.id),

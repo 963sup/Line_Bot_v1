@@ -1,20 +1,26 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseReceipt } from "../../contracts/enterprise-governance.js";
-import type {
-  EnterpriseIdentityCommand,
-  EnterpriseIdentityTransactions,
-} from "../../contracts/output/enterprise-identity.js";
+import type { EnterpriseIdentityTransactions } from "../../contracts/output/enterprise-identity.js";
 import { completeEnterpriseIdentity, createEnterprise, EnterpriseError } from "../../domain.js";
+import type { EnterpriseIdentityCommand } from "../commands/enterprise-governance.js";
 
 export function executeEnterpriseIdentity(
   transactions: EnterpriseIdentityTransactions,
   actor: VerifiedLineActor,
-  command: EnterpriseIdentityCommand,
+  input: EnterpriseIdentityCommand,
   at: number,
 ) {
+  const command = { ...input };
+  const evidence = {
+    requestId: command.requestId,
+    payload: JSON.stringify(command),
+    action: command.action,
+    reason: command.reason,
+    at,
+  };
   if (command.action === "create-enterprise")
-    return transactions.create(actor, command, at, async (transaction) => {
+    return transactions.create(actor, evidence, async (transaction) => {
       const replay = await transaction.replay();
       if (replay) return replay;
       const enterprise = createEnterprise(transaction.nextId());
@@ -32,7 +38,8 @@ export function executeEnterpriseIdentity(
       await transaction.record(result);
       return result;
     });
-  return transactions.complete(actor, command, at, async (transaction) => {
+  const scope = command.enterpriseAccountId;
+  return transactions.complete(actor, scope, evidence, async (transaction) => {
     await transaction.authorizeOwner();
     const replay = await transaction.replay();
     if (replay) return replay;

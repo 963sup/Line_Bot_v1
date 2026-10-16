@@ -1,11 +1,6 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import type { Enterprise, EnterpriseIdentityState } from "../../domain.js";
-import type { EnterpriseCommand, EnterpriseReceipt } from "../enterprise-governance.js";
-
-export type EnterpriseIdentityCommand = Extract<
-  EnterpriseCommand,
-  { action: "create-enterprise" | "complete-enterprise-identity" }
->;
+import type { EnterpriseMutationEvidence, EnterpriseReceipt } from "../enterprise-governance.js";
 
 export interface EnterpriseProvisionTransaction {
   replay(): Promise<EnterpriseReceipt | null>;
@@ -26,14 +21,13 @@ export interface EnterpriseIdentityTransaction {
 export interface EnterpriseIdentityTransactions {
   create(
     actor: VerifiedLineActor,
-    command: Extract<EnterpriseIdentityCommand, { action: "create-enterprise" }>,
-    at: number,
+    evidence: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseProvisionTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt>;
   complete(
     actor: VerifiedLineActor,
-    command: Extract<EnterpriseIdentityCommand, { action: "complete-enterprise-identity" }>,
-    at: number,
+    enterpriseAccountId: string,
+    evidence: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseIdentityTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt>;
 }
