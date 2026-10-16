@@ -23,6 +23,10 @@
     "./contracts/repositories/partners": {
       "types": "./dist/contracts/repositories/partners.d.ts",
       "default": "./dist/contracts/repositories/partners.js"
+    },
+    "./application/commands/partner-command": {
+      "types": "./dist/application/commands/partner-command.d.ts",
+      "default": "./dist/application/commands/partner-command.js"
     }
   },
   "files": [
@@ -30,7 +34,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
@@ -38,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "tsx": "catalog:"
   }
 }

@@ -15,66 +15,46 @@ export function partnerAssert(
   if (!condition) throw new PartnerError(status, message);
 }
 
-const uuid = (value: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-type ContactMethod = "phone" | "email" | "line";
-export type PartnerCommand =
-  | {
-      action: "save-partner";
-      requestId: string;
-      id: string;
-      expectedVersion: number;
-      name: string;
-      category: string;
-      region: string;
-      status: "published" | "unlisted";
-      contacts: {
-        id: string;
-        name: string;
-        responsibility: string;
-        phone: string;
-        email: string;
-        line: string;
-        status: "published" | "unlisted";
-      }[];
-      consentConfirmed: true;
-      reason: string;
-    }
-  | {
-      action: "refer";
-      requestId: string;
-      partnerName: string;
-      category: string;
-      region?: string;
-      contactName: string;
-      responsibility: string;
-      method: ContactMethod;
-      value: string;
-      reason: string;
-    }
-  | {
-      action: "review";
-      requestId: string;
-      referralId: string;
-      status: "successful" | "rejected";
-      reviewNote?: string;
-    }
-  | { action: "withdraw"; requestId: string; referralId: string };
+export type ContactMethod = "phone" | "email" | "line";
+export type PartnerContactDraft = {
+  id: string;
+  name: string;
+  responsibility: string;
+  phone: string;
+  email: string;
+  line: string;
+  status: "published" | "unlisted";
+};
 
-function text(source: Record<string, unknown>, key: string, max: number, required = true) {
-  const value = source[key] ?? "";
-  partnerAssert(
-    typeof value === "string" && value.length <= max && (!required || value.trim().length > 0),
-    400,
-    `請核對 ${key} 欄位。`,
-  );
-  return value.trim();
-}
+export type PartnerSaveDraft = {
+  id: string;
+  expectedVersion: number;
+  name: string;
+  category: string;
+  region: string;
+  status: "published" | "unlisted";
+  contacts: PartnerContactDraft[];
+};
 
-function method(value: unknown): ContactMethod {
-  partnerAssert(value === "phone" || value === "email" || value === "line", 400, "聯繫方式無效。");
-  return value;
-}
+export type StoredPartnerContact = {
+  id: string;
+  partnerId: string;
+  phone: string;
+  email: string;
+  line: string;
+};
+
+export type PartnerReferralState = {
+  submitter: string;
+  status: "pending" | "successful" | "rejected" | "withdrawn";
+  method: ContactMethod;
+  value: string;
+  partnerName: string;
+  category: string;
+  region: string;
+  contactName: string;
+  responsibility: string;
+};
 
 export function partnerContactHref(method: ContactMethod, value: string): string | null {
   if (!value) return null;
@@ -97,7 +77,7 @@ export function partnerContactHref(method: ContactMethod, value: string): string
   return null;
 }
 
-function contactValue(kind: ContactMethod, value: string) {
+export function normalizePartnerContactValue(kind: ContactMethod, value: string) {
   if (!value) return "";
   partnerAssert(
     Boolean(partnerContactHref(kind, value)) ||
@@ -113,14 +93,14 @@ function contactValue(kind: ContactMethod, value: string) {
 }
 
 /** Only the repository can supply a trusted previous contact for preserving legacy values. */
-export function normalizePartnerContact(
-  contact: Extract<PartnerCommand, { action: "save-partner" }>["contacts"][number],
+function normalizePartnerContact(
+  contact: PartnerContactDraft,
   previous?: { phone: string; email: string; line: string },
 ) {
   const normalize = (kind: ContactMethod) =>
     previous && contact[kind] === previous[kind].trim()
       ? previous[kind]
-      : contactValue(kind, contact[kind]);
+      : normalizePartnerContactValue(kind, contact[kind]);
   return {
     ...contact,
     phone: normalize("phone"),
@@ -129,142 +109,71 @@ export function normalizePartnerContact(
   };
 }
 
-function status(value: unknown): "published" | "unlisted" {
-  partnerAssert(value === "published" || value === "unlisted", 400, "刊登狀態不正確。");
-  return value;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function record(value: unknown, message: string): Record<string, unknown> {
-  if (!isRecord(value)) throw new PartnerError(400, message);
-  return value;
-}
-
-function nonnegativeInteger(value: unknown): number {
+/** Decide a directory edit from current version and the complete persisted contact set. */
+export function preparePartnerSave(
+  command: PartnerSaveDraft,
+  currentVersion: number | null,
+  existing: readonly StoredPartnerContact[],
+): PartnerSaveDraft & { version: number } {
   partnerAssert(
-    typeof value === "number" && Number.isSafeInteger(value) && value >= 0,
-    400,
-    "版本不正確。",
+    (currentVersion ?? 0) === command.expectedVersion,
+    409,
+    "資料已更新，請重新讀取後再編輯。",
   );
-  return value;
-}
-
-export function parsePartnerCommand(input: unknown): PartnerCommand {
-  const x = record(input, "資料格式錯誤。");
   partnerAssert(
-    x.action === "refer" ||
-      x.action === "review" ||
-      x.action === "withdraw" ||
-      x.action === "save-partner",
-    400,
-    "不支援的夥伴操作。",
+    existing.every(
+      (saved) =>
+        saved.partnerId === command.id && command.contacts.some((next) => next.id === saved.id),
+    ),
+    409,
+    "既有窗口不可刪除或移至其他夥伴，請改為下架。",
   );
-  const requestId = text(x, "requestId", 36).toLowerCase();
-  partnerAssert(uuid(requestId), 400, "請求編號無效。");
-  if (x.action === "save-partner") {
-    const allowed = [
-      "action",
-      "requestId",
-      "id",
-      "expectedVersion",
-      "name",
-      "category",
-      "region",
-      "status",
-      "contacts",
-      "consentConfirmed",
-      "reason",
-    ];
-    partnerAssert(
-      Object.keys(x).every((key) => allowed.includes(key)),
-      400,
-      "包含不支援的管理欄位。",
+  const contacts = command.contacts.map((contact) => {
+    const previous = existing.find((saved) => saved.id === contact.id);
+    return normalizePartnerContact(
+      contact,
+      previous ? { phone: previous.phone, email: previous.email, line: previous.line } : undefined,
     );
-    const id = text(x, "id", 36).toLowerCase();
-    partnerAssert(uuid(id), 400, "夥伴編號或版本不正確。");
-    const expectedVersion = nonnegativeInteger(x.expectedVersion);
-    partnerAssert(x.consentConfirmed === true, 400, "請確認已核實聯繫方式與分享同意。");
+  });
+  for (const contact of contacts) {
+    if (command.status !== "published" || contact.status !== "published") continue;
     partnerAssert(
-      Array.isArray(x.contacts) && x.contacts.length > 0 && x.contacts.length <= 20,
-      400,
-      "每個夥伴需有 1 至 20 位窗口。",
+      !contacts.some(
+        (other) =>
+          other.id !== contact.id &&
+          other.status === "published" &&
+          other.name.trim().toLowerCase() === contact.name.trim().toLowerCase() &&
+          ((contact.phone &&
+            other.phone.replace(/[\s()-]/g, "") === contact.phone.replace(/[\s()-]/g, "")) ||
+            (contact.email &&
+              other.email.trim().toLowerCase() === contact.email.trim().toLowerCase()) ||
+            (contact.line && other.line.toLowerCase() === contact.line.toLowerCase())),
+      ),
+      409,
+      "同名窗口與聯繫方式重複，請合併核對。",
     );
-    const contacts = x.contacts.map((raw) => {
-      const c = record(raw, "窗口格式不正確。");
-      partnerAssert(
-        Object.keys(c).every((key) =>
-          ["id", "name", "responsibility", "phone", "email", "line", "status"].includes(key),
-        ),
-        400,
-        "窗口包含不支援欄位。",
-      );
-      const contactId = text(c, "id", 36).toLowerCase();
-      partnerAssert(uuid(contactId), 400, "窗口編號不正確。");
-      // Format validation needs the stored contact to distinguish unchanged legacy values.
-      const phone = text(c, "phone", 160, false);
-      const email = text(c, "email", 160, false);
-      const line = text(c, "line", 160, false);
-      partnerAssert(phone || email || line, 400, "每位窗口至少填一種聯繫方式。");
-      return {
-        id: contactId,
-        name: text(c, "name", 80),
-        responsibility: text(c, "responsibility", 160),
-        phone,
-        email,
-        line,
-        status: status(c.status),
-      };
-    });
-    partnerAssert(
-      new Set(contacts.map((c) => c.id)).size === contacts.length,
-      400,
-      "窗口編號重複。",
-    );
-    const nextStatus = status(x.status);
-    partnerAssert(
-      nextStatus !== "published" || contacts.some((c) => c.status === "published"),
-      400,
-      "刊登夥伴至少需有一位有效窗口。",
-    );
-    return {
-      action: "save-partner",
-      requestId,
-      id,
-      expectedVersion,
-      name: text(x, "name", 120),
-      category: text(x, "category", 80),
-      region: text(x, "region", 80, false),
-      status: nextStatus,
-      contacts,
-      consentConfirmed: true,
-      reason: text(x, "reason", 500),
-    };
   }
-  if (x.action === "refer")
-    return {
-      action: "refer",
-      requestId,
-      partnerName: text(x, "partnerName", 120),
-      category: text(x, "category", 80),
-      region: text(x, "region", 80, false),
-      contactName: text(x, "contactName", 80),
-      responsibility: text(x, "responsibility", 160),
-      method: method(x.method),
-      value: contactValue(method(x.method), text(x, "value", 160)),
-      reason: text(x, "reason", 500),
-    };
-  const referralId = text(x, "referralId", 36).toLowerCase();
-  partnerAssert(uuid(referralId), 400, "推薦案件無效。");
-  if (x.action === "withdraw") return { action: "withdraw", requestId, referralId };
-  partnerAssert(x.status === "successful" || x.status === "rejected", 400, "審核結果無效。");
-  return {
-    action: "review",
-    requestId,
-    referralId,
-    status: x.status,
-    reviewNote: text(x, "reviewNote", 500, false),
-  };
+  return { ...command, contacts, version: command.expectedVersion + 1 };
+}
+
+/** Return the only legal referral transition; SQL may enforce it atomically but not decide it. */
+export function decidePartnerReferral(
+  command: { action: "withdraw" } | { action: "review"; status: "successful" | "rejected" },
+  referral: Pick<PartnerReferralState, "submitter" | "status">,
+  actor: string,
+  canReview: boolean,
+): "withdrawn" | "rejected" | "successful" {
+  if (command.action === "withdraw") {
+    partnerAssert(referral.submitter === actor, 403, "只能撤回自己的推薦。");
+    partnerAssert(referral.status === "pending", 409, "推薦案件已結案。");
+    return "withdrawn";
+  }
+  partnerAssert(canReview, 403, "需要夥伴推薦審核權限。");
+  partnerAssert(referral.status === "pending", 409, "推薦案件已結案。");
+  return command.status;
+}
+
+/** Persisted conflict detection stays in the adapter; its meaning belongs to Partners. */
+export function assertUniquePartnerContact(duplicate: boolean): void {
+  partnerAssert(!duplicate, 409, "同名夥伴的窗口與聯繫方式已存在，請核對既有資料。");
 }

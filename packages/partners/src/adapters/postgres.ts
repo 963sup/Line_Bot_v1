@@ -8,6 +8,13 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
+import type {
+  PartnerMutationRequest,
+  PartnerMutationTransaction,
+  PartnerMutationTransactions,
+  PartnerPublishedContact,
+  PartnerReceipt,
+} from "../contracts/output/partner-mutations.js";
 import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type {
   Partner,
@@ -17,8 +24,8 @@ import type {
   PartnersView,
   PartnerView,
 } from "../contracts.js";
-import type { PartnerCommand } from "../domain.js";
-import { normalizePartnerContact, partnerAssert } from "../domain.js";
+import type { PartnerReferralState, StoredPartnerContact } from "../domain.js";
+import { partnerAssert } from "../domain.js";
 
 type PartnerPermissionCheck = (
   sql: Sql,
@@ -109,9 +116,7 @@ function decodeVersion(row: Record<string, unknown>) {
   return { version: integer(row.version) };
 }
 
-type StoredContact = { id: string; partnerId: string; phone: string; email: string; line: string };
-
-function decodeStoredContact(row: Record<string, unknown>): StoredContact {
+function decodeStoredPartnerContact(row: Record<string, unknown>): StoredPartnerContact {
   return {
     id: stringValue(row.id),
     partnerId: stringValue(row.partner_id),
@@ -121,19 +126,7 @@ function decodeStoredContact(row: Record<string, unknown>): StoredContact {
   };
 }
 
-type StoredReferral = {
-  submitter: string;
-  status: (typeof referralStatuses)[number];
-  method: (typeof contactMethods)[number];
-  value: string;
-  partnerName: string;
-  category: string;
-  region: string;
-  contactName: string;
-  responsibility: string;
-};
-
-function decodeStoredReferral(row: Record<string, unknown>): StoredReferral {
+function decodePartnerReferralState(row: Record<string, unknown>): PartnerReferralState {
   return {
     submitter: stringValue(row.submitter),
     status: literalValue(row.status, referralStatuses),
@@ -147,7 +140,7 @@ function decodeStoredReferral(row: Record<string, unknown>): StoredReferral {
   };
 }
 
-export class PostgresPartnerRepository implements PartnerRepository {
+export class PostgresPartnerRepository implements PartnerRepository, PartnerMutationTransactions {
   constructor(
     private readonly permission: PartnerPermissionCheck,
     private db: Database = businessDatabase(),
@@ -238,288 +231,220 @@ export class PostgresPartnerRepository implements PartnerRepository {
     });
   }
 
-  execute(userId: string, command: PartnerCommand, now: number) {
-    if (command.action === "save-partner") return this.savePartner(userId, command, now);
+  run<T extends PartnerReceipt>(
+    userId: string,
+    request: PartnerMutationRequest,
+    work: (transaction: PartnerMutationTransaction) => Promise<T>,
+  ): Promise<T> {
     return this.db.transaction(async (sql) => {
+      if (request.kind === "management") {
+        await sql.query("SELECT pg_advisory_xact_lock(hashtext('partner-directory'))");
+      }
       const user = await activeUser(sql, userId, this.permission);
-      await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-        `${userId}:${command.requestId}`,
-      ]);
-      const fingerprint = createHash("sha256").update(JSON.stringify(command)).digest("hex");
-      const old = (
-        await sql.query(
-          "SELECT result,fingerprint FROM partner_referral_commands WHERE actor=$1 AND request_id=$2",
-          [userId, command.requestId],
-          decodeReceipt,
-        )
-      ).rows[0];
-      if (old) {
-        partnerAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
-        return old.result;
+      if (request.kind === "referral") {
+        await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `${userId}:${request.requestId}`,
+        ]);
       }
-      const result = await this.apply(sql, userId, user.canReview, command, now);
-      await sql.query(
-        "INSERT INTO partner_referral_commands(actor,request_id,fingerprint,result,action,created_at) VALUES($1,$2,$3,$4,$5,$6)",
-        [userId, command.requestId, fingerprint, JSON.stringify(result), command.action, now],
-      );
-      return result;
-    });
-  }
+      const fingerprint = createHash("sha256").update(request.payload).digest("hex");
+      const receiptTable =
+        request.kind === "management" ? "partner_management_commands" : "partner_referral_commands";
 
-  private savePartner(
-    userId: string,
-    command: Extract<PartnerCommand, { action: "save-partner" }>,
-    now: number,
-  ) {
-    return this.db.transaction(async (sql) => {
-      await sql.query("SELECT pg_advisory_xact_lock(hashtext('partner-directory'))");
-      await activeUser(sql, userId, this.permission);
-      partnerAssert(
-        await this.permission(sql, userId, "partners.manage"),
-        403,
-        "需要合作夥伴管理權限。",
-      );
-      const fingerprint = createHash("sha256").update(JSON.stringify(command)).digest("hex");
-      const old = (
-        await sql.query(
-          "SELECT fingerprint,result FROM partner_management_commands WHERE actor=$1 AND request_id=$2",
-          [userId, command.requestId],
-          decodeReceipt,
-        )
-      ).rows[0];
-      if (old) {
-        partnerAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
-        return old.result;
-      }
-      const current = (
-        await sql.query(
-          "SELECT version FROM partners WHERE id=$1 FOR UPDATE",
-          [command.id],
-          decodeVersion,
-        )
-      ).rows[0];
-      partnerAssert(
-        (current?.version ?? 0) === command.expectedVersion,
-        409,
-        "資料已更新，請重新讀取後再編輯。",
-      );
-      const existing = (
-        await sql.query(
-          "SELECT id,partner_id,phone,email,line FROM partner_contacts WHERE partner_id=$1 OR id=ANY($2::uuid[])",
-          [command.id, command.contacts.map((c) => c.id)],
-          decodeStoredContact,
-        )
-      ).rows;
-      partnerAssert(
-        existing.every(
-          (c) => c.partnerId === command.id && command.contacts.some((next) => next.id === c.id),
-        ),
-        409,
-        "既有窗口不可刪除或移至其他夥伴，請改為下架。",
-      );
-      command = {
-        ...command,
-        contacts: command.contacts.map((contact) => {
-          const previous = existing.find((row) => row.id === contact.id);
-          return normalizePartnerContact(
-            contact,
-            previous
-              ? { phone: previous.phone, email: previous.email, line: previous.line }
-              : undefined,
+      const transaction: PartnerMutationTransaction = {
+        canReview: user.canReview,
+        canManage: () => this.permission(sql, userId, "partners.manage"),
+        async replay() {
+          const old = (
+            await sql.query(
+              `SELECT result,fingerprint FROM ${receiptTable} WHERE actor=$1 AND request_id=$2`,
+              [userId, request.requestId],
+              decodeReceipt,
+            )
+          ).rows[0];
+          if (!old) return null;
+          partnerAssert(old.fingerprint === fingerprint, 409, "請求編號已用於不同內容。");
+          return old.result;
+        },
+        async record(result) {
+          if (request.kind === "management") {
+            if (typeof result.version !== "number") throw new Error("Missing Partner version");
+            await sql.query(
+              `INSERT INTO partner_management_commands(actor,request_id,fingerprint,partner_id,previous_version,version,reason,consent_confirmed,result,created_at)
+              VALUES($1,$2,$3,$4,$5,$6,$7,true,$8,$9)`,
+              [
+                userId,
+                request.requestId,
+                fingerprint,
+                request.partnerId,
+                request.previousVersion,
+                result.version,
+                request.reason,
+                JSON.stringify(result),
+                request.at,
+              ],
+            );
+          } else {
+            await sql.query(
+              "INSERT INTO partner_referral_commands(actor,request_id,fingerprint,result,action,created_at) VALUES($1,$2,$3,$4,$5,$6)",
+              [
+                userId,
+                request.requestId,
+                fingerprint,
+                JSON.stringify(result),
+                request.action,
+                request.at,
+              ],
+            );
+          }
+        },
+        async partnerVersion(id) {
+          const row = (
+            await sql.query(
+              "SELECT version FROM partners WHERE id=$1 FOR UPDATE",
+              [id],
+              decodeVersion,
+            )
+          ).rows[0];
+          return row?.version ?? null;
+        },
+        async existingContacts(id, contactIds) {
+          return (
+            await sql.query(
+              "SELECT id,partner_id,phone,email,line FROM partner_contacts WHERE partner_id=$1 OR id=ANY($2::uuid[])",
+              [id, contactIds],
+              decodeStoredPartnerContact,
+            )
+          ).rows;
+        },
+        duplicateContact: (contact) => duplicatePartnerContact(sql, contact),
+        async lockDirectory() {
+          await sql.query("SELECT pg_advisory_xact_lock(hashtext('partner-directory'))");
+        },
+        async savePartner(next) {
+          await sql.query(
+            `INSERT INTO partners(id,name,category,region,status,created_at,created_by,version)
+             VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,region=excluded.region,status=excluded.status,version=excluded.version`,
+            [
+              next.id,
+              next.name,
+              next.category,
+              next.region,
+              next.status,
+              request.at,
+              userId,
+              next.version,
+            ],
           );
-        }),
+          for (const contact of next.contacts) {
+            await sql.query(
+              `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
+               VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,responsibility=excluded.responsibility,phone=excluded.phone,email=excluded.email,line=excluded.line,status=excluded.status`,
+              [
+                contact.id,
+                next.id,
+                contact.name,
+                contact.responsibility,
+                contact.phone,
+                contact.email,
+                contact.line,
+                contact.status,
+                request.at,
+                userId,
+              ],
+            );
+          }
+        },
+        async refer(input) {
+          const id = randomUUID();
+          await sql.query(
+            `INSERT INTO partner_referrals
+            (id,submitter,partner_name,category,region,contact_name,responsibility,method,value,reason,status,submitted_at)
+            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11)`,
+            [
+              id,
+              userId,
+              input.partnerName,
+              input.category,
+              input.region ?? "",
+              input.contactName,
+              input.responsibility,
+              input.method,
+              input.value,
+              input.reason,
+              request.at,
+            ],
+          );
+          return id;
+        },
+        async referral(id) {
+          return (
+            (
+              await sql.query(
+                "SELECT * FROM partner_referrals WHERE id=$1 FOR UPDATE",
+                [id],
+                decodePartnerReferralState,
+              )
+            ).rows[0] ?? null
+          );
+        },
+        async withdraw(id) {
+          await sql.query(
+            "UPDATE partner_referrals SET status='withdrawn',reviewed_at=$2 WHERE id=$1",
+            [id, request.at],
+          );
+        },
+        async reject(id, note) {
+          await sql.query(
+            "UPDATE partner_referrals SET status='rejected',reviewed_by=$2,reviewed_at=$3,review_note=$4 WHERE id=$1",
+            [id, userId, request.at, note],
+          );
+        },
+        async publish(id, referral, note) {
+          const partnerId = randomUUID();
+          const contactId = randomUUID();
+          await sql.query(
+            "INSERT INTO partners(id,name,category,region,status,created_at,created_by) VALUES($1,$2,$3,$4,'published',$5,$6)",
+            [
+              partnerId,
+              referral.partnerName,
+              referral.category,
+              referral.region,
+              request.at,
+              userId,
+            ],
+          );
+          await sql.query(
+            `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
+             VALUES($1,$2,$3,$4,$5,$6,$7,'published',$8,$9)`,
+            [
+              contactId,
+              partnerId,
+              referral.contactName,
+              referral.responsibility,
+              referral.method === "phone" ? referral.value : "",
+              referral.method === "email" ? referral.value : "",
+              referral.method === "line" ? referral.value : "",
+              request.at,
+              userId,
+            ],
+          );
+          await sql.query(
+            `UPDATE partner_referrals SET status='successful',reviewed_by=$2,reviewed_at=$3,review_note=$4,
+             partner_id=$5,contact_id=$6 WHERE id=$1`,
+            [id, userId, request.at, note, partnerId, contactId],
+          );
+        },
       };
-      for (const c of command.contacts) {
-        if (command.status === "published" && c.status === "published") {
-          await rejectDuplicateContact(
-            sql,
-            command.name,
-            c.name,
-            c.phone,
-            c.email,
-            c.line,
-            command.id,
-          );
-          partnerAssert(
-            !command.contacts.some(
-              (other) =>
-                other.id !== c.id &&
-                other.status === "published" &&
-                other.name.trim().toLowerCase() === c.name.trim().toLowerCase() &&
-                ((c.phone &&
-                  other.phone.replace(/[\s()-]/g, "") === c.phone.replace(/[\s()-]/g, "")) ||
-                  (c.email && other.email.trim().toLowerCase() === c.email.trim().toLowerCase()) ||
-                  (c.line && other.line.toLowerCase() === c.line.toLowerCase())),
-            ),
-            409,
-            "同名窗口與聯繫方式重複，請合併核對。",
-          );
-        }
-      }
-      const version = command.expectedVersion + 1;
-      await sql.query(
-        `INSERT INTO partners(id,name,category,region,status,created_at,created_by,version)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,region=excluded.region,status=excluded.status,version=excluded.version`,
-        [
-          command.id,
-          command.name,
-          command.category,
-          command.region,
-          command.status,
-          now,
-          userId,
-          version,
-        ],
-      );
-      for (const c of command.contacts) {
-        await sql.query(
-          `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,responsibility=excluded.responsibility,phone=excluded.phone,email=excluded.email,line=excluded.line,status=excluded.status`,
-          [
-            c.id,
-            command.id,
-            c.name,
-            c.responsibility,
-            c.phone,
-            c.email,
-            c.line,
-            c.status,
-            now,
-            userId,
-          ],
-        );
-      }
-      partnerAssert(
-        await this.permission(sql, userId, "partners.manage"),
-        403,
-        "合作夥伴管理權限已撤銷。",
-      );
-      const result = { id: command.id, version, at: now, requestId: command.requestId };
-      await sql.query(
-        `INSERT INTO partner_management_commands(actor,request_id,fingerprint,partner_id,previous_version,version,reason,consent_confirmed,result,created_at)
-        VALUES($1,$2,$3,$4,$5,$6,$7,true,$8,$9)`,
-        [
-          userId,
-          command.requestId,
-          fingerprint,
-          command.id,
-          command.expectedVersion,
-          version,
-          command.reason,
-          JSON.stringify(result),
-          now,
-        ],
-      );
-      return result;
+      return work(transaction);
     });
-  }
-
-  private async apply(
-    sql: Sql,
-    userId: string,
-    canReview: boolean,
-    command: Exclude<PartnerCommand, { action: "save-partner" }>,
-    now: number,
-  ) {
-    if (command.action === "refer") {
-      const id = randomUUID();
-      await sql.query(
-        `INSERT INTO partner_referrals
-        (id,submitter,partner_name,category,region,contact_name,responsibility,method,value,reason,status,submitted_at)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11)`,
-        [
-          id,
-          userId,
-          command.partnerName,
-          command.category,
-          command.region ?? "",
-          command.contactName,
-          command.responsibility,
-          command.method,
-          command.value,
-          command.reason,
-          now,
-        ],
-      );
-      return { id };
-    }
-    const referral = (
-      await sql.query(
-        "SELECT * FROM partner_referrals WHERE id=$1 FOR UPDATE",
-        [command.referralId],
-        decodeStoredReferral,
-      )
-    ).rows[0];
-    partnerAssert(referral, 404, "推薦案件不存在。");
-    if (command.action === "withdraw") {
-      partnerAssert(referral.submitter === userId, 403, "只能撤回自己的推薦。");
-      partnerAssert(referral.status === "pending", 409, "推薦案件已結案。");
-      await sql.query(
-        "UPDATE partner_referrals SET status='withdrawn',reviewed_at=$2 WHERE id=$1",
-        [command.referralId, now],
-      );
-      return { id: command.referralId };
-    }
-    partnerAssert(canReview, 403, "需要夥伴推薦審核權限。");
-    partnerAssert(referral.status === "pending", 409, "推薦案件已結案。");
-    if (command.status === "rejected") {
-      await sql.query(
-        "UPDATE partner_referrals SET status='rejected',reviewed_by=$2,reviewed_at=$3,review_note=$4 WHERE id=$1",
-        [command.referralId, userId, now, command.reviewNote ?? ""],
-      );
-      return { id: command.referralId };
-    }
-    await sql.query("SELECT pg_advisory_xact_lock(hashtext('partner-directory'))");
-    const phone = referral.method === "phone" ? referral.value : "";
-    const email = referral.method === "email" ? referral.value : "";
-    const line = referral.method === "line" ? referral.value : "";
-    await rejectDuplicateContact(
-      sql,
-      referral.partnerName,
-      referral.contactName,
-      phone,
-      email,
-      line,
-    );
-    const partnerId = randomUUID();
-    const contactId = randomUUID();
-    await sql.query(
-      "INSERT INTO partners(id,name,category,region,status,created_at,created_by) VALUES($1,$2,$3,$4,'published',$5,$6)",
-      [partnerId, referral.partnerName, referral.category, referral.region, now, userId],
-    );
-    await sql.query(
-      `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
-      VALUES($1,$2,$3,$4,$5,$6,$7,'published',$8,$9)`,
-      [
-        contactId,
-        partnerId,
-        referral.contactName,
-        referral.responsibility,
-        phone,
-        email,
-        line,
-        now,
-        userId,
-      ],
-    );
-    await sql.query(
-      `UPDATE partner_referrals SET status='successful',reviewed_by=$2,reviewed_at=$3,review_note=$4,
-      partner_id=$5,contact_id=$6 WHERE id=$1`,
-      [command.referralId, userId, now, command.reviewNote ?? "", partnerId, contactId],
-    );
-    return { id: command.referralId };
   }
 }
 
-async function rejectDuplicateContact(
+async function duplicatePartnerContact(
   sql: Sql,
-  partnerName: string,
-  contactName: string,
-  phone: string,
-  email: string,
-  line: string,
-  exceptPartnerId?: string,
-) {
+  contact: PartnerPublishedContact,
+): Promise<boolean> {
+  const { partnerName, contactName, phone, email, line, exceptPartnerId } = contact;
   const duplicate = await sql.query(
     `SELECT 1 FROM partner_contacts c JOIN partners p ON p.id=c.partner_id
     WHERE p.status='published' AND c.status='published' AND ($6::uuid IS NULL OR p.id<>$6)
@@ -528,7 +453,7 @@ async function rejectDuplicateContact(
       OR ($4<>'' AND lower(trim(c.email))=lower(trim($4))) OR ($5<>'' AND lower(trim(c.line))=lower(trim($5)))) LIMIT 1`,
     [partnerName, contactName, phone, email, line, exceptPartnerId ?? null],
   );
-  partnerAssert(!duplicate.rows.length, 409, "同名夥伴的窗口與聯繫方式已存在，請核對既有資料。");
+  return duplicate.rows.length > 0;
 }
 
 async function activeUser(sql: Sql, userId: string, permission: PartnerPermissionCheck) {
