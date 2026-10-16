@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { createPartners } from "../src/application/partners.js";
 import { PostgresPartnerRepository } from "../src/adapters/postgres.js";
+import { createPartners } from "../src/application/partners.js";
 import { PartnerError } from "../src/domain.js";
 
 test("Partner writes retain atomic referral publication and exact replay in PostgreSQL", async (t) => {
@@ -17,13 +17,10 @@ test("Partner writes retain atomic referral publication and exact replay in Post
   let now = 100;
   let managing = true;
   let reviewing = true;
-  const repository = new PostgresPartnerRepository(
-    async (_sql, actor, permission) => {
-      assert.equal(actor, "owner");
-      return permission === "partners.manage" ? managing : reviewing;
-    },
-    db,
-  );
+  const repository = new PostgresPartnerRepository(async (_sql, actor, permission) => {
+    assert.equal(actor, "owner");
+    return permission === "partners.manage" ? managing : reviewing;
+  }, db);
   const partners = createPartners({
     activeUser: async () => ({ id: "owner" }),
     repository: () => repository,
@@ -71,11 +68,7 @@ test("Partner writes retain atomic referral publication and exact replay in Post
     [submitted.id],
   );
   assert.deepEqual(
-    [
-      persisted.rows[0]?.status,
-      persisted.rows[0]?.partner_name,
-      persisted.rows[0]?.contact_name,
-    ],
+    [persisted.rows[0]?.status, persisted.rows[0]?.partner_name, persisted.rows[0]?.contact_name],
     ["successful", "東區設備", "窗口"],
   );
   assert.equal(Number(persisted.rows[0]?.submitted_at), 100);
