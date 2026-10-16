@@ -1,15 +1,45 @@
 "use client";
 
 import type { FollowItem } from "@line_bot_v1/account/contracts/output/follows";
+import { buildNamespacePath } from "@line_bot_v1/namespace";
+import { isRecord } from "@line_bot_v1/platform/validation";
+import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { readNetwork, responseError } from "./wire-response";
 
+type NetworkItem = FollowItem & { login: string | null };
 type NetworkData = {
-  followers: FollowItem[];
-  following: FollowItem[];
+  followers: NetworkItem[];
+  following: NetworkItem[];
 };
+
+function readNetworkItem(value: unknown, item: FollowItem): NetworkItem {
+  if (
+    !isRecord(value) ||
+    (value.login !== undefined && value.login !== null && typeof value.login !== "string")
+  ) {
+    throw new Error("追蹤關係回應格式不正確。");
+  }
+  return { ...item, login: typeof value.login === "string" ? value.login : null };
+}
+
+function readNetworkWithLogins(value: unknown): NetworkData {
+  const network = readNetwork(value);
+  if (!isRecord(value)) {
+    throw new Error("追蹤關係回應格式不正確。");
+  }
+  const rawFollowers = value.followers;
+  const rawFollowing = value.following;
+  if (!Array.isArray(rawFollowers) || !Array.isArray(rawFollowing)) {
+    throw new Error("追蹤關係回應格式不正確。");
+  }
+  return {
+    followers: network.followers.map((item, index) => readNetworkItem(rawFollowers[index], item)),
+    following: network.following.map((item, index) => readNetworkItem(rawFollowing[index], item)),
+  };
+}
 
 const date = (value: number) =>
   new Date(value).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
@@ -36,7 +66,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
     });
     const value: unknown = await response.json();
     if (!response.ok) throw new Error(responseError(value, "追蹤關係讀取失敗。"));
-    return readNetwork(value);
+    return readNetworkWithLogins(value);
   }
 
   async function load() {
@@ -59,7 +89,10 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
     }
   }
 
-  async function mutate(action: "follow" | "unfollow", targetUserId: string) {
+  async function mutate(
+    action: "follow" | "unfollow",
+    target: { targetLogin: string } | { targetUserId: string },
+  ) {
     const ticket = ++generation.current;
     setBusy(true);
     setError("");
@@ -73,7 +106,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
           "X-App-Session-Generation": token,
           "content-type": "application/json",
         },
-        body: JSON.stringify({ action, targetUserId }),
+        body: JSON.stringify({ action, ...target }),
       });
       const value: unknown = await response.json();
       if (!response.ok) throw new Error(responseError(value, "追蹤操作失敗。"));
@@ -112,13 +145,13 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
         onSubmit={(event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
-          const target = String(form.get("targetUserId") ?? "").trim();
-          if (target) void mutate("follow", target);
+          const targetLogin = String(form.get("targetLogin") ?? "").trim();
+          if (targetLogin) void mutate("follow", { targetLogin });
         }}
       >
         <label>
-          使用者 ID
-          <input name="targetUserId" required maxLength={128} placeholder="輸入要追蹤的 User ID" />
+          登入名稱
+          <input name="targetLogin" required maxLength={39} placeholder="輸入使用者 login" />
         </label>
         <button disabled={busy}>追蹤使用者</button>
       </form>
@@ -127,23 +160,29 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
       {notice && <p role="status">{notice}</p>}
       {data && (
         <div className="relationship-grid">
-          <section>
+          <section id="following">
             <h2>正在追蹤</h2>
             {data.following.length === 0 ? (
-              <p className="empty-copy">尚未追蹤任何使用者。知道 User ID 後可從上方加入。</p>
+              <p className="empty-copy">尚未追蹤任何使用者。可從上方輸入 login 加入。</p>
             ) : (
               <ul className="relationship-list">
                 {data.following.map((item) => (
                   <li key={item.userId}>
                     <span>
-                      <strong>{item.userId}</strong>
+                      {item.login ? (
+                        <Link href={buildNamespacePath("account", { login: item.login })}>
+                          <strong>@{item.login}</strong>
+                        </Link>
+                      ) : (
+                        <strong>使用者目前不可用</strong>
+                      )}
                       <small>{date(item.followedAt)}</small>
                     </span>
                     <button
                       type="button"
                       className="secondary"
                       disabled={busy}
-                      onClick={() => void mutate("unfollow", item.userId)}
+                      onClick={() => void mutate("unfollow", { targetUserId: item.userId })}
                     >
                       取消追蹤
                     </button>
@@ -152,7 +191,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
               </ul>
             )}
           </section>
-          <section>
+          <section id="followers">
             <h2>追蹤你的人</h2>
             {data.followers.length === 0 ? (
               <p className="empty-copy">目前沒有追蹤者。</p>
@@ -161,7 +200,13 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
                 {data.followers.map((item) => (
                   <li key={item.userId}>
                     <span>
-                      <strong>{item.userId}</strong>
+                      {item.login ? (
+                        <Link href={buildNamespacePath("account", { login: item.login })}>
+                          <strong>@{item.login}</strong>
+                        </Link>
+                      ) : (
+                        <strong>使用者目前不可用</strong>
+                      )}
                       <small>{date(item.followedAt)}</small>
                     </span>
                   </li>

@@ -36,6 +36,7 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- | --- |
 | User | user | authoritative | current | GitHub FPT: schema-users.json#User |
 | User.following | user-follow | authoritative | current | GitHub FPT: schema-users.json#User#following |
+| UserStatus | user-profile-status | authoritative | current | GitHub FPT: schema-users.json#UserStatus |
 
 ## Capabilities
 
@@ -43,6 +44,7 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- |
 | manage-user-follow | required | implemented | Manage directional User follow relationships and their follower/following read projections. |
 | manage-user-profile | required | implemented | Read and update User profile metadata without changing User identity or login authority. |
+| manage-user-profile-status | required | implemented | Read publicly visible User status and let the currently qualified User set or clear their own message, emoji, limited-availability flag, and expiry; organization-scoped audience is unsupported. |
 | qualify-user | required | implemented | Determine current User qualification for a consumer operation. |
 | read-user-achievements | required | implemented | Read the current User's earned Achievement facts without turning recognition into identity or authorization. |
 

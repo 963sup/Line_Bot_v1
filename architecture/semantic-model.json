@@ -1369,6 +1369,18 @@
       }
     },
     {
+      "id": "user-profile-status",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "UserStatus"
+      }
+    },
+    {
       "id": "enterprise-team",
       "kind": "authoritative",
       "owner": "enterprise",
@@ -2384,6 +2396,46 @@
       }
     },
     {
+      "id": "manage-user-profile-status",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read publicly visible User status and let the currently qualified User set or clear their own message, emoji, limited-availability flag, and expiry; organization-scoped audience is unsupported.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "public-only User status with Application-owned self set, clear, version, expiry, and exact-replay orchestration",
+        "sourcePaths": [
+          "packages/account/src/domain/user-profile-status.ts",
+          "packages/account/src/application/user-profile-status.ts",
+          "packages/account/src/contracts/repositories/user-profile-status.ts",
+          "packages/account/src/contracts/output/user-profile-status.ts",
+          "packages/account/src/adapters/outbound/persistence/user-profile-status.ts"
+        ],
+        "publicExports": [
+          "./application/user-profile-status",
+          "./contracts/repositories/user-profile-status"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/status/route.ts",
+          "apps/web/src/app/(public)/[login]/page.tsx",
+          "apps/web/src/modules/account/status-panel.tsx"
+        ],
+        "testPaths": [
+          "packages/account/test/user-profile-status.test.ts",
+          "apps/web/test/profile-status-api.test.ts"
+        ],
+        "note": "Account Application owns mutation orchestration through the persistence output contract; the repository contract is read-only and the PostgreSQL adapter implements atomic version and exact-replay persistence. Organization-scoped audience, deployment, and device acceptance are not asserted."
+      }
+    },
+    {
       "id": "read-user-achievements",
       "owner": "account",
       "kind": "leaf",
@@ -2433,7 +2485,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "current User follow application surface",
+        "scope": "current User follow application surface consumed by Profile and network settings",
         "sourcePaths": [
           "packages/account/src/application/follows.ts",
           "packages/account/src/contracts/output/follows.ts",
@@ -2443,6 +2495,7 @@
         "publicExports": ["./application/follows", "./contracts/output/follows"],
         "entrypoints": [
           "apps/web/src/app/api/follows/route.ts",
+          "apps/web/src/app/(public)/_components/profile-overview.tsx",
           "apps/web/src/app/(mobile)/(secondary)/settings/network/page.tsx"
         ],
         "testPaths": [

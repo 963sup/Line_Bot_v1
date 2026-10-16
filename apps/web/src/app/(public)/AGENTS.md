@@ -13,3 +13,4 @@ Current URL：`/`、`/login`、`/privacy`、`/terms`、`/{login}`。
 - External entry and return URLs are allowlisted intent only; they cannot carry credentials, roles, scopes or mutable server authority.
 - Keep unauthenticated, unavailable and invalid-entry states distinct and avoid leaking private existence through error mapping.
 - Profile identity must not wait for the Popular Repository projection. Stream Popular and its count from the same owner query; projection failure remains an unavailable section rather than an empty result or failed identity page.
+- Account-authored Profile status uses its explicit public-only status projection, independently of Profile metadata visibility and LINE presentation. An active viewer may follow another active User through the Account command; this does not expose that target's private follower/following lists. Self counts link to the existing authenticated Network sections.

@@ -51,6 +51,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/116_user_profile_statuses.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/200_enterprises.sql",
       "role": "authoritative"
     },
@@ -475,6 +479,21 @@
       "authority": true,
       "semanticOwner": "account",
       "concept": "user-follow"
+    },
+    {
+      "name": "user_profile_statuses",
+      "kind": "table",
+      "path": "supabase/schemas/116_user_profile_statuses.sql",
+      "authority": true,
+      "semanticOwner": "account",
+      "concept": "user-profile-status"
+    },
+    {
+      "name": "user_profile_status_change_receipts",
+      "kind": "table",
+      "path": "supabase/schemas/116_user_profile_statuses.sql",
+      "authority": true,
+      "semanticOwner": "account"
     },
     {
       "name": "enterprises",

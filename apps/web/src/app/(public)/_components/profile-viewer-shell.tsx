@@ -11,6 +11,7 @@ import {
   clearVerifiedProfileEntry,
   readVerifiedProfileEntry,
 } from "../../../modules/account/profile-entry-handoff";
+import ProfileFollowControl from "../../../modules/account/profile-follow-control";
 import MiniAppRuntime from "../../../shared/browser/mini-app-runtime";
 import AppShell from "../../_shell/app-shell";
 import ProfileOverview from "./profile-overview";
@@ -27,6 +28,7 @@ export default function ProfileViewerShell({
   profileTitle,
   profileUserId,
   publicRepositoryCount,
+  publicStatus,
 }: {
   children: ReactNode;
   liffId: string;
@@ -36,19 +38,16 @@ export default function ProfileViewerShell({
   profileTitle: string;
   profileUserId?: string;
   publicRepositoryCount?: ReactNode;
+  publicStatus?: ReactNode;
 }) {
   const [viewer, setViewer] = useState<{
-    profileKind: "USER";
-    profileLogin: string;
-    profileUserId: string;
+    member: { id: string; login: string; status: "active" };
     token: string;
   } | null>(null);
   const generation = useRef(0);
-  const ownProfile =
-    profileKind === "USER" &&
-    viewer?.profileKind === profileKind &&
-    viewer.profileLogin === profileLogin &&
-    viewer.profileUserId === profileUserId;
+  const ownProfile = Boolean(
+    profileUserId && isVerifiedSelfUser(viewer?.member, profileUserId, profileLogin, profileKind),
+  );
 
   const clear = useCallback(() => {
     generation.current++;
@@ -66,9 +65,7 @@ export default function ProfileViewerShell({
     if (handoff) {
       clearVerifiedProfileEntry();
       setViewer({
-        profileKind: "USER",
-        profileLogin: handoff.login,
-        profileUserId: handoff.userId,
+        member: { id: handoff.userId, login: handoff.login, status: "active" },
         token: handoff.token,
       });
       return;
@@ -78,12 +75,13 @@ export default function ProfileViewerShell({
       const current = await ensureCurrentAccount(liffId);
       if (!current || ticket !== generation.current) return;
       setViewer(
-        profileUserId &&
-          isVerifiedSelfUser(current.member, profileUserId, profileLogin, profileKind)
+        current.member?.status === "active"
           ? {
-              profileKind: "USER",
-              profileLogin,
-              profileUserId,
+              member: {
+                id: current.member.id,
+                login: current.member.login,
+                status: current.member.status,
+              },
               token: current.token,
             }
           : null,
@@ -163,12 +161,20 @@ export default function ProfileViewerShell({
             )}
           </div>
         </header>
+        {profileKind === "USER" && profileUserId && viewer && !ownProfile ? (
+          <ProfileFollowControl
+            key={`${viewer.token}:${profileUserId}`}
+            token={viewer.token}
+            targetUserId={profileUserId}
+          />
+        ) : null}
         <ProfileOverview
           key={`${profileKind}:${profileUserId ?? ""}:${profileLogin}:${ownProfile ? viewer?.token : "public"}`}
           {...(profileBio !== undefined ? { profileBio } : {})}
           profileLogin={profileLogin}
           profileTitle={profileTitle}
           {...(publicRepositoryCount !== undefined ? { publicRepositoryCount } : {})}
+          {...(publicStatus !== undefined ? { publicStatus } : {})}
           {...(ownProfile && viewer ? { token: viewer.token } : {})}
         >
           {children}
