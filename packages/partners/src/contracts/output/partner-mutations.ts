@@ -44,6 +44,7 @@ export interface PartnerMutationTransaction {
   partnerVersion(id: string): Promise<number | null>;
   existingContacts(id: string, contactIds: readonly string[]): Promise<StoredPartnerContact[]>;
   duplicateContact(contact: PartnerPublishedContact): Promise<boolean>;
+  lockDirectory(): Promise<void>;
   savePartner(next: PartnerSave): Promise<void>;
 
   refer(input: {
