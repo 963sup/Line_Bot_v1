@@ -93,12 +93,12 @@
       "default": "./dist/composition/bootstrap/repository-management.js"
     },
     "./application/subscription": {
-      "types": "./dist/application/subscription.d.ts",
-      "default": "./dist/application/subscription.js"
+      "types": "./dist/application/use-cases/repository-subscription.d.ts",
+      "default": "./dist/application/use-cases/repository-subscription.js"
     },
     "./postgres/subscription": {
-      "types": "./dist/postgres/subscription.d.ts",
-      "default": "./dist/postgres/subscription.js"
+      "types": "./dist/composition/bootstrap/repository-subscription.d.ts",
+      "default": "./dist/composition/bootstrap/repository-subscription.js"
     },
     "./contracts/selectors": {
       "types": "./dist/contracts/selectors.d.ts",
@@ -161,8 +161,8 @@
       "default": "./dist/contracts/input/repository-management.js"
     },
     "./contracts/repositories/subscription": {
-      "types": "./dist/contracts/repositories/subscription.d.ts",
-      "default": "./dist/contracts/repositories/subscription.js"
+      "types": "./dist/contracts/input/repository-subscription.d.ts",
+      "default": "./dist/contracts/input/repository-subscription.js"
     },
     "./postgres/content-scope": {
       "types": "./dist/postgres/content-scope.d.ts",

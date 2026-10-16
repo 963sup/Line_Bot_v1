@@ -1,6 +1,7 @@
 import type { RepositorySelector } from "../../contracts/selectors.js";
+import type { RepositorySubscriptionState } from "../../domain/repository/entities/repository.js";
 
-export type RepositorySubscriptionState = "SUBSCRIBED" | "UNSUBSCRIBED" | "IGNORED";
+export type { RepositorySubscriptionState } from "../../domain/repository/entities/repository.js";
 
 export type RepositorySubscriptionSnapshot = Readonly<{
   repository: {
