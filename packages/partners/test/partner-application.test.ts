@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { executePartnerCommand } from "../src/application/use-cases/partner-mutations.js";
 import type {
-  PartnerMutationTransactions,
   PartnerMutationTransaction,
+  PartnerMutationTransactions,
   PartnerReceipt,
 } from "../src/contracts/output/partner-mutations.js";
 import { PartnerError } from "../src/domain.js";
@@ -152,9 +152,18 @@ test("reviewer cannot approve without permission, and successful approval locks 
       assert.equal(referral.partnerName, state.partnerName);
     },
   };
-  const transactions: PartnerMutationTransactions = { async run(_actor, _r, work) { return work(tx); } };
-  const command = { action: "review" as const, requestId: randomUUID(),
-    referralId, status: "successful" as const, reviewNote: "" };
+  const transactions: PartnerMutationTransactions = {
+    async run(_actor, _r, work) {
+      return work(tx);
+    },
+  };
+  const command = {
+    action: "review" as const,
+    requestId: randomUUID(),
+    referralId,
+    status: "successful" as const,
+    reviewNote: "",
+  };
   await assert.rejects(
     executePartnerCommand(transactions, "reviewer", command, 10),
     (error: unknown) => error instanceof PartnerError && error.status === 403,
@@ -162,6 +171,8 @@ test("reviewer cannot approve without permission, and successful approval locks 
   assert.deepEqual(order, ["replay", "load"]);
   order.length = 0;
   canReview = true;
-  assert.deepEqual(await executePartnerCommand(transactions, "reviewer", command, 10), { id: referralId });
+  assert.deepEqual(await executePartnerCommand(transactions, "reviewer", command, 10), {
+    id: referralId,
+  });
   assert.deepEqual(order, ["replay", "load", "directory-lock", "unique", "publish", "receipt"]);
 });
