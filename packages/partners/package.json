@@ -34,7 +34,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --no-wasm-code-gc --import tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "tsx": "catalog:"
   }
 }
