@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
 import { RepositoryError } from "../src/contracts/repository.js";
 import { authorizedRepository } from "../src/postgres/access.js";
 import { PostgresRepositoryCreationStore } from "../src/postgres/creation.js";
 import { PostgresRepositoryDiscoveryStore } from "../src/postgres/discovery.js";
-import { PostgresRepositoryManagementStore } from "../src/postgres/management.js";
 import { PostgresRepositoryStarListStore } from "../src/postgres/star-lists.js";
 import { PostgresRepositoryStarStore } from "../src/postgres/stars.js";
 

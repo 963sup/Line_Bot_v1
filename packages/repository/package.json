@@ -85,12 +85,12 @@
       "default": "./dist/postgres/address.js"
     },
     "./application/management": {
-      "types": "./dist/application/management.d.ts",
-      "default": "./dist/application/management.js"
+      "types": "./dist/application/use-cases/repository-management.d.ts",
+      "default": "./dist/application/use-cases/repository-management.js"
     },
     "./postgres/management": {
-      "types": "./dist/postgres/management.d.ts",
-      "default": "./dist/postgres/management.js"
+      "types": "./dist/composition/bootstrap/repository-management.d.ts",
+      "default": "./dist/composition/bootstrap/repository-management.js"
     },
     "./application/subscription": {
       "types": "./dist/application/subscription.d.ts",
@@ -157,8 +157,8 @@
       "default": "./dist/contracts/repositories/address.js"
     },
     "./contracts/repositories/management": {
-      "types": "./dist/contracts/repositories/management.d.ts",
-      "default": "./dist/contracts/repositories/management.js"
+      "types": "./dist/contracts/input/repository-management.d.ts",
+      "default": "./dist/contracts/input/repository-management.js"
     },
     "./contracts/repositories/subscription": {
       "types": "./dist/contracts/repositories/subscription.d.ts",

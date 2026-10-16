@@ -2824,9 +2824,15 @@
         "status": "implemented",
         "scope": "Repository admin lifecycle management for rename, PRIVATE/INTERNAL/PUBLIC visibility, archive and unarchive.",
         "sourcePaths": [
-          "packages/repository/src/application/management.ts",
-          "packages/repository/src/contracts/repositories/management.ts",
-          "packages/repository/src/postgres/management.ts"
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/application/commands/repository-management.ts",
+          "packages/repository/src/application/use-cases/repository-management.ts",
+          "packages/repository/src/application/use-cases/repository-lifecycle.ts",
+          "packages/repository/src/contracts/input/repository-management.ts",
+          "packages/repository/src/contracts/output/repository-management.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-management.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-management-query.ts",
+          "packages/repository/src/composition/bootstrap/repository-management.ts"
         ],
         "publicExports": [
           "./application/management",
@@ -2839,11 +2845,13 @@
         ],
         "testPaths": [
           "packages/repository/test/management.test.ts",
+          "packages/repository/test/management-lifecycle.test.ts",
+          "packages/repository/test/management-concurrency-postgres.test.ts",
           "packages/repository/test/visibility.test.ts",
           "packages/issue/test/issues.test.ts",
           "apps/web/test/repository-management-http.test.ts"
         ],
-        "note": "Rename preserves RepositoryId and durable lifecycle events. Archive preserves reads under current visibility but blocks Issue commands; Discussion/Label/Milestone have no write runtime yet. INTERNAL is Organization-only and consumes current active Enterprise scope."
+        "note": "Rename preserves RepositoryId and durable lifecycle events. Archive preserves reads under current visibility but blocks new Issue and Discussion writes and new Repository Label/Milestone definition mutations. INTERNAL is Organization-only and consumes current active Enterprise scope."
       }
     },
     {
