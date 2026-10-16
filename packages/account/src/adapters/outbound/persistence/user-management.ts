@@ -18,7 +18,6 @@ import type {
   UserManagementView,
   UserStatusReceipt,
 } from "../../../contracts/user-management.js";
-import type { UserStatusCommand } from "../../../domain/user.js";
 import { requireUserManagementPermissions, UserError } from "../../../domain/user.js";
 import {
   type UserManagementAuthorization,
@@ -207,23 +206,24 @@ export class PostgresUserManagementPersistence implements UserManagementPersiste
 
   transact<T>(
     actor: string,
-    command: UserStatusCommand,
+    targetId: string,
+    evidence: { requestId: string; payload: string; action: string; reason: string },
     work: (transaction: UserManagementTransaction) => Promise<T>,
   ): Promise<T> {
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT app_private.lock_governance('exclusive')");
       await sql.query("SELECT id FROM users WHERE id=ANY($1::text[]) ORDER BY id FOR UPDATE", [
-        [actor, command.target],
+        [actor, targetId],
       ]);
       let fingerprint: string | undefined;
       return work({
         permissions: () => this.permissions(sql, actor),
         replay: async () => {
-          fingerprint = createHash("sha256").update(JSON.stringify(command)).digest("hex");
+          fingerprint = createHash("sha256").update(evidence.payload).digest("hex");
           const old = (
             await sql.query(
               "SELECT fingerprint,result FROM user_management_commands WHERE actor=$1 AND request_id=$2",
-              [actor, command.requestId],
+              [actor, evidence.requestId],
               storedCommandRow,
             )
           ).rows[0];
@@ -236,7 +236,7 @@ export class PostgresUserManagementPersistence implements UserManagementPersiste
           const target = (
             await sql.query(
               "SELECT status,status_version,suspended_from FROM users WHERE id=$1",
-              [command.target],
+              [targetId],
               targetStatusRow,
             )
           ).rows[0];
@@ -249,12 +249,12 @@ export class PostgresUserManagementPersistence implements UserManagementPersiste
             : null;
         },
         protectAdministrator: () =>
-          this.authorization.protectPermissionAdministrator(sql, command.target),
+          this.authorization.protectPermissionAdministrator(sql, targetId),
         writeStatus: async (status) => {
           const changed = (
             await sql.query(
               "UPDATE users SET status=$2 WHERE id=$1 RETURNING status_version",
-              [command.target, status],
+              [targetId, status],
               statusVersionRow,
             )
           ).rows[0];
@@ -268,11 +268,11 @@ export class PostgresUserManagementPersistence implements UserManagementPersiste
             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
             [
               actor,
-              command.requestId,
-              command.target,
+              evidence.requestId,
+              targetId,
               fingerprint,
-              command.action,
-              command.reason,
+              evidence.action,
+              evidence.reason,
               previousStatus,
               result.status,
               result.version,
@@ -281,7 +281,7 @@ export class PostgresUserManagementPersistence implements UserManagementPersiste
             ],
           );
           await sql.query("INSERT INTO user_events(user_id,type,at) VALUES($1,$2,$3)", [
-            command.target,
+            targetId,
             event,
             result.at,
           ]);

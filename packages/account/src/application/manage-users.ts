@@ -1,6 +1,9 @@
 import type { UserManagementRepository } from "../contracts/input/user-management.js";
 import type { UserManagementQuery } from "../contracts/user-management.js";
-import { parseUserStatusCommand, UserError } from "../domain/user.js";
+import { UserError } from "../domain/user.js";
+import { parseUserStatusCommand } from "./commands/user-status.js";
+
+export { parseUserStatusCommand, type UserStatusCommand } from "./commands/user-status.js";
 export function createUserManagement(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   repository(): UserManagementRepository;

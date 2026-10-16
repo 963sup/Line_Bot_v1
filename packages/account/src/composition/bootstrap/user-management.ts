@@ -1,9 +1,9 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import { PostgresUserManagementPersistence } from "../../adapters/outbound/persistence/user-management.js";
+import type { UserStatusCommand } from "../../application/commands/user-status.js";
 import { changeUserStatus } from "../../application/use-cases/change-user-status.js";
 import type { UserManagementRepository } from "../../contracts/input/user-management.js";
 import type { UserManagementQuery } from "../../contracts/user-management.js";
-import type { UserStatusCommand } from "../../domain/user.js";
 import {
   type UserManagementAuthorization,
   unavailableAccountAuthorization,

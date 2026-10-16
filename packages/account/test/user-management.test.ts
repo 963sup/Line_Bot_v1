@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import type { UserStatusCommand } from "../src/application/commands/user-status.js";
 import { changeUserStatus } from "../src/application/use-cases/change-user-status.js";
 import type {
   UserManagementPersistence,
   UserManagementTransaction,
 } from "../src/contracts/output/user-management-transactions.js";
-import { decideUserStatusChange, type UserStatusCommand } from "../src/domain/user.js";
+import { decideUserStatusChange } from "../src/domain/user.js";
 
 const command: UserStatusCommand = {
   action: "suspend",
@@ -37,7 +38,7 @@ test("User status decisions preserve active and paused restoration and reject st
   );
 });
 
-function fixture(overrides: Partial<UserManagementTransaction> = {}) {
+function fixture(overrides: Partial<UserManagementTransaction> = {}, onBegin = () => {}) {
   const calls: string[] = [];
   const tx: UserManagementTransaction = {
     permissions: async () => {
@@ -68,7 +69,19 @@ function fixture(overrides: Partial<UserManagementTransaction> = {}) {
     },
     ...overrides,
   };
-  const store: UserManagementPersistence = { transact: async (_actor, _command, work) => work(tx) };
+  const store: UserManagementPersistence = {
+    transact: async (_actor, target, evidence, work) => {
+      assert.equal(target, command.target);
+      assert.deepEqual(evidence, {
+        requestId: command.requestId,
+        payload: JSON.stringify(command),
+        action: command.action,
+        reason: command.reason,
+      });
+      onBegin();
+      return work(tx);
+    },
+  };
   return { calls, store };
 }
 test("status changes coordinate authority, replay, decision, write, renewed authority and recording", async () => {
@@ -83,6 +96,19 @@ test("status changes coordinate authority, replay, decision, write, renewed auth
     "authority",
     "record",
   ]);
+});
+
+test("caller mutation cannot change the intent used to authorize the locked User", async () => {
+  command.target = "operator";
+  const f = fixture({}, () => {
+    command.target = "target";
+  });
+  try {
+    await assert.rejects(changeUserStatus(f.store, "operator", command, 10), { status: 403 });
+    assert.deepEqual(f.calls, ["authority"]);
+  } finally {
+    command.target = "target";
+  }
 });
 test("authority and self-target rejection precede replay; exact replay avoids target, version and writes", async () => {
   const denied = fixture({ permissions: async () => ({ canRead: true, canSuspend: false }) });

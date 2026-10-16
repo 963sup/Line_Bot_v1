@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { type UserStatusCommand } from "@line_bot_v1/account/domain/user";
+import type { UserStatusCommand } from "@line_bot_v1/account/application/manage-users";
 import { PostgresUserManagement } from "@line_bot_v1/account/postgres";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
