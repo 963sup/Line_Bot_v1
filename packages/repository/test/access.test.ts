@@ -3,10 +3,10 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
-import { createRepositoryAccess } from "../src/application/access.js";
-import type { RepositoryAccessStore } from "../src/contracts/repositories/access.js";
+import { createRepositoryAccess } from "../src/application/use-cases/repository-access.js";
+import { PostgresRepositoryAccessStore } from "../src/composition/bootstrap/repository-access.js";
+import type { RepositoryAccessStore } from "../src/contracts/input/repository-access.js";
 import { RepositoryError } from "../src/contracts/repository.js";
-import { PostgresRepositoryAccessStore } from "../src/postgres/access-management.js";
 
 async function activeUser(db: Database, id: string, login = id) {
   await db.transaction(async (sql) => {

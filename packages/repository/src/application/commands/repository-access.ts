@@ -1,24 +1,25 @@
+import { isRecord } from "@line_bot_v1/platform/validation";
 import type {
   RepositoryAccessCommand,
-  RepositoryAccessStore,
   RepositoryAccessSubjectKind,
-} from "../contracts/repositories/access.js";
-import { RepositoryError } from "../contracts/repository.js";
-import type { RepositorySelector } from "../contracts/selectors.js";
+} from "../../contracts/input/repository-access.js";
+import { RepositoryError } from "../../contracts/repository.js";
+import type { RepositorySelector } from "../../contracts/selectors.js";
 import {
   type RepositoryPermission,
   repositoryPermissions,
-} from "../domain/repository/value-objects/repository-capability.js";
-import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
-import { accountLoginForRepositoryLocator } from "./owner-locator.js";
+} from "../../domain/repository/value-objects/repository-capability.js";
+import { normalizeRepositoryName } from "../../domain/repository/value-objects/repository-name.js";
+import { accountLoginForRepositoryLocator } from "../owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
+
 function isRepositoryPermission(value: unknown): value is RepositoryPermission {
   return repositoryPermissions.some((permission) => permission === value);
 }
 
-function repositorySelector(value: RepositorySelector): RepositorySelector {
+export function parseRepositoryAccessSelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
     if (!identifierPattern.test(value.repositoryId)) {
       throw new RepositoryError(400, "Repository 識別碼不正確。");
@@ -33,7 +34,7 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
   return { ownerLogin, repositoryName };
 }
 
-function parseCommand(raw: unknown): RepositoryAccessCommand {
+export function parseRepositoryAccessCommand(raw: unknown): RepositoryAccessCommand {
   if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository access 操作格式不正確。");
   }
@@ -93,23 +94,3 @@ function parseCommand(raw: unknown): RepositoryAccessCommand {
     capability: value.capability,
   };
 }
-
-export function createRepositoryAccess(deps: {
-  activeUser(subject: string): Promise<{ id: string }>;
-  store(): RepositoryAccessStore;
-  now(): number;
-}) {
-  return {
-    async view(subject: string, selector: RepositorySelector) {
-      const user = await deps.activeUser(subject);
-      return deps.store().view(user.id, repositorySelector(selector));
-    },
-    async execute(subject: string, raw: unknown) {
-      const command = parseCommand(raw);
-      const user = await deps.activeUser(subject);
-      return deps.store().execute(user.id, command, deps.now());
-    },
-  };
-}
-
-import { isRecord } from "@line_bot_v1/platform/validation";

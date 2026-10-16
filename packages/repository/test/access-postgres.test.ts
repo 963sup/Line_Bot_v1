@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
-import type { RepositoryAccessCommand } from "../src/contracts/repositories/access.js";
+import { PostgresRepositoryAccessStore } from "../src/composition/bootstrap/repository-access.js";
+import type { RepositoryAccessCommand } from "../src/contracts/input/repository-access.js";
 import { RepositoryError } from "../src/contracts/repository.js";
-import { PostgresRepositoryAccessStore } from "../src/postgres/access-management.js";
 
 const databaseUrl = process.env.CAPABILITY_TEST_DATABASE_URL;
 test("PostgreSQL Repository access serializes competing versions, exact replay and failed commands", {

@@ -2919,9 +2919,15 @@
         "status": "implemented",
         "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization including implicit OrganizationOwner admin, expected-version mutation and exact replay.",
         "sourcePaths": [
-          "packages/repository/src/application/access.ts",
-          "packages/repository/src/contracts/repositories/access.ts",
-          "packages/repository/src/postgres/access-management.ts"
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/contracts/input/repository-access.ts",
+          "packages/repository/src/contracts/output/repository-access.ts",
+          "packages/repository/src/application/commands/repository-access.ts",
+          "packages/repository/src/application/use-cases/repository-access.ts",
+          "packages/repository/src/application/use-cases/repository-access-mutation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-access.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-access-query.ts",
+          "packages/repository/src/composition/bootstrap/repository-access.ts"
         ],
         "publicExports": [
           "./application/access",
@@ -2935,6 +2941,8 @@
         ],
         "testPaths": [
           "packages/repository/test/access.test.ts",
+          "packages/repository/test/access-characterization.test.ts",
+          "packages/repository/test/access-postgres.test.ts",
           "apps/web/test/repository-access-http.test.ts"
         ],
         "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access adds current OrganizationOwner implicit ADMIN without persisting a Repository grant; operation policy tests explicit permissions and does not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay."
