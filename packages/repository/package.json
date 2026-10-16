@@ -9,8 +9,12 @@
       "default": "./dist/application/resources.js"
     },
     "./domain": {
-      "types": "./dist/domain.d.ts",
-      "default": "./dist/domain.js"
+      "types": "./dist/contracts/repository.d.ts",
+      "default": "./dist/contracts/repository.js"
+    },
+    "./domain/repository/value-objects/repository-capability": {
+      "types": "./dist/domain/repository/value-objects/repository-capability.d.ts",
+      "default": "./dist/domain/repository/value-objects/repository-capability.js"
     },
     "./application/stars": {
       "types": "./dist/application/stars.d.ts",

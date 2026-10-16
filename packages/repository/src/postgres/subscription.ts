@@ -9,8 +9,8 @@ import type {
   RepositorySubscriptionState,
   RepositorySubscriptionStore,
 } from "../contracts/repositories/subscription.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
-import { RepositoryError } from "../domain.js";
 import { authorizedRepository } from "./access.js";
 import { decodeCommandRow } from "./decode.js";
 

@@ -1,5 +1,6 @@
 import type { RepositorySelector } from "../../contracts/selectors.js";
-import type { RepositoryPermission, RepositoryVisibility } from "../../domain.js";
+import type { RepositoryPermission } from "../../domain/repository/value-objects/repository-capability.js";
+import type { RepositoryVisibility } from "../repository.js";
 
 export type RepositoryManagementSnapshot = Readonly<{
   repository: {

@@ -4,7 +4,7 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createRepositoryAddress } from "../src/application/address.js";
 import type { RepositoryAddressStore } from "../src/contracts/repositories/address.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import {
   PostgresRepositoryAddressStore,
   repositoryAttendanceSites,

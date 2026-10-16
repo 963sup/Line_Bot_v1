@@ -5,7 +5,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryCreation } from "../src/application/creation.js";
 import type { RepositoryCreationStore } from "../src/contracts/repositories/creation.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryCreationStore } from "../src/postgres/creation.js";
 
 test("Repository create application canonicalizes input before the store", async () => {

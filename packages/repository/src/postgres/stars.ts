@@ -7,7 +7,7 @@ import {
 } from "@line_bot_v1/platform/postgres";
 import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { RepositoryStarStore, StarredRepository } from "../contracts/repositories/stars.js";
-import { RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
 import { repositoryOwnerKind, repositoryVisibility } from "./decode.js";
 
 function decodeStarredRow(row: SqlRow) {

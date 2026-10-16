@@ -5,7 +5,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositorySubscription } from "../src/application/subscription.js";
 import type { RepositorySubscriptionStore } from "../src/contracts/repositories/subscription.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryManagementStore } from "../src/postgres/management.js";
 import { PostgresRepositorySubscriptionStore } from "../src/postgres/subscription.js";
 

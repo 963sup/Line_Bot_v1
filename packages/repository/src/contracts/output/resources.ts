@@ -4,7 +4,7 @@ import type {
   RepositoryMilestoneStatus,
 } from "../../contracts/dto/resources.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
-import type { RepositorySummary } from "../../domain.js";
+import type { RepositorySummary } from "../../domain/repository/entities/repository.js";
 
 export type { RepositoryLabel, RepositoryMilestone, RepositoryMilestoneStatus };
 

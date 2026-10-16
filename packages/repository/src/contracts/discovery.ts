@@ -1,4 +1,4 @@
-import type { RepositoryPermission } from "../domain.js";
+import type { RepositoryPermission } from "../domain/repository/value-objects/repository-capability.js";
 
 export type TrendingRepository = Readonly<{
   id: string;

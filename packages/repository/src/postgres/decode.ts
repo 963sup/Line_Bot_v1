@@ -1,10 +1,10 @@
 import type { SqlRow } from "@line_bot_v1/platform/postgres";
 import { isRecord, literalValue, stringArray, stringValue } from "@line_bot_v1/platform/validation";
+import type { RepositoryVisibility } from "../domain/repository/entities/repository.js";
 import {
   type RepositoryPermission,
-  type RepositoryVisibility,
   repositoryPermissions,
-} from "../domain.js";
+} from "../domain/repository/value-objects/repository-capability.js";
 
 type RepositoryOwnerKind = "USER" | "ORGANIZATION";
 

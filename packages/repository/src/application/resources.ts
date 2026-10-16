@@ -4,12 +4,10 @@ import type {
   RepositoryMilestoneStatus,
   RepositoryResourceStore,
 } from "../contracts/output/resources.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
-import {
-  normalizeRepositoryMilestoneNumber,
-  normalizeRepositoryName,
-  RepositoryError,
-} from "../domain.js";
+import { normalizeRepositoryMilestoneNumber } from "../domain/milestone/value-objects/milestone-number.js";
+import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const maxCursorLength = 240;

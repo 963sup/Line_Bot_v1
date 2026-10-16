@@ -1,4 +1,4 @@
-import type { RepositoryVisibility } from "../../domain.js";
+import type { RepositoryVisibility } from "../../domain/repository/entities/repository.js";
 
 type RepositoryOwnerKind = "USER" | "ORGANIZATION";
 

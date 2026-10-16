@@ -1,7 +1,7 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { stringValue } from "@line_bot_v1/platform/validation";
-import { RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
 import { authorizedRepository } from "./access.js";
 
 /** Explicit recipients may be UNSUBSCRIBED; IGNORED and current access always win. */

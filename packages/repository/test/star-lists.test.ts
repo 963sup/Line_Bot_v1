@@ -4,7 +4,7 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createRepositoryStarLists } from "../src/application/star-lists.js";
 import type { RepositoryStarListStore } from "../src/contracts/repositories/star-lists.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryStarListStore } from "../src/postgres/star-lists.js";
 import { PostgresRepositoryStarStore } from "../src/postgres/stars.js";
 

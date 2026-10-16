@@ -1,5 +1,6 @@
 import type { PublicRepositoryStore } from "../contracts/output/public.js";
-import { normalizeRepositoryName, RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
+import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 function publicListLimit(value: number): number {

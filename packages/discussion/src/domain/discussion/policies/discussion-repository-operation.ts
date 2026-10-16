@@ -1,4 +1,7 @@
-import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
+import {
+  type RepositoryPermission,
+  repositoryPermissions,
+} from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 
 type DiscussionRepositoryOperation = "participate" | "triage" | "manage" | "lock-conversation";
 

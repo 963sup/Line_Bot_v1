@@ -5,7 +5,7 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryManagement } from "../src/application/management.js";
 import type { RepositoryManagementStore } from "../src/contracts/repositories/management.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import { authorizedRepository } from "../src/postgres/access.js";
 import { PostgresRepositoryManagementStore } from "../src/postgres/management.js";
 

@@ -3,13 +3,13 @@ import type {
   RepositoryAccessStore,
   RepositoryAccessSubjectKind,
 } from "../contracts/repositories/access.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import {
-  normalizeRepositoryName,
-  RepositoryError,
   type RepositoryPermission,
   repositoryPermissions,
-} from "../domain.js";
+} from "../domain/repository/value-objects/repository-capability.js";
+import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

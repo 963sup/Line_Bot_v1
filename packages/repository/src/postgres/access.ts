@@ -5,8 +5,10 @@ import {
 } from "@line_bot_v1/namespace/postgres";
 import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { booleanValue, stringValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
-import { RepositoryError, type RepositoryPermission, type RepositorySummary } from "../domain.js";
+import type { RepositorySummary } from "../domain/repository/entities/repository.js";
+import type { RepositoryPermission } from "../domain/repository/value-objects/repository-capability.js";
 import { decodeIdRow, repositoryOwnerKind, repositoryPermissionArray } from "./decode.js";
 
 export type RepositoryIdentity = { userId: string };

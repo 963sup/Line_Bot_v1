@@ -14,8 +14,12 @@ import type {
   RepositoryAccessSnapshot,
   RepositoryAccessStore,
 } from "../contracts/repositories/access.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
-import { hasRepositoryPermission, RepositoryError, type RepositoryPermission } from "../domain.js";
+import {
+  hasRepositoryPermission,
+  type RepositoryPermission,
+} from "../domain/repository/value-objects/repository-capability.js";
 import {
   decodeCommandRow,
   decodePermissionsRow,
