@@ -1,4 +1,9 @@
 import { randomUUID } from "node:crypto";
+import {
+  claimScopedName,
+  releaseScopedName,
+  renameScopedName,
+} from "@line_bot_v1/namespace/postgres";
 import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import {
   literalValue,
@@ -363,13 +368,34 @@ async function insertOptions(
     color: ProjectOptionColor;
     description: string;
   }[],
+  now: number,
 ) {
-  for (const [index, item] of values.entries()) {
+  const prepared = values.map((item, index) => ({
+    ...item,
+    id: item.id ?? randomUUID(),
+    position: index,
+  }));
+  for (const item of [...prepared].sort((left, right) =>
+    left.name === right.name
+      ? left.id.localeCompare(right.id)
+      : left.name.localeCompare(right.name),
+  )) {
+    await claimScopedName(sql, {
+      family: "field-option",
+      scopeKind: "PROJECT_FIELD",
+      scopeId: fieldId,
+      targetKind: "FIELD_OPTION",
+      targetId: item.id,
+      name: item.name,
+      at: now,
+    });
+  }
+  for (const item of prepared) {
     await sql.query(
       `INSERT INTO project_field_options(
          id,field_id,option_kind,name,color,description,position,version
        ) VALUES($1,$2,$3,$4,$5,$6,$7,1)`,
-      [item.id ?? randomUUID(), fieldId, kind, item.name, item.color, item.description, index],
+      [item.id, fieldId, kind, item.name, item.color, item.description, item.position],
     );
   }
 }
@@ -403,6 +429,7 @@ async function replaceOptions(
     color: ProjectOptionColor;
     description: string;
   }[],
+  now: number,
 ) {
   if (!values.length) return;
   if (field.data_type !== "SINGLE_SELECT" && field.data_type !== "MULTI_SELECT") {
@@ -411,36 +438,18 @@ async function replaceOptions(
   const existing = await optionRows(sql, [field.id]);
   const existingById = new Map(existing.map((row) => [row.id, row]));
   const keep = new Set<string>();
-  for (const [index, input] of values.entries()) {
-    if (input.id) {
-      const before = existingById.get(input.id);
-      if (!before) throw new ProjectError(409, "Option identity 不屬於此 Project field。");
-      keep.add(before.id);
-      const changed =
-        before.name !== input.name ||
-        before.color !== input.color ||
-        before.description !== input.description ||
-        Number(before.position) !== index;
-      if (changed) {
-        await sql.query(
-          `UPDATE project_field_options
-           SET name=$3,color=$4,description=$5,position=$6,version=version+1
-           WHERE field_id=$1 AND id=$2`,
-          [field.id, before.id, input.name, input.color, input.description, index],
-        );
-      }
-    } else {
-      const id = randomUUID();
-      keep.add(id);
-      await sql.query(
-        `INSERT INTO project_field_options(
-           id,field_id,option_kind,name,color,description,position,version
-         ) VALUES($1,$2,$3,$4,$5,$6,$7,1)`,
-        [id, field.id, field.data_type, input.name, input.color, input.description, index],
-      );
+  const prepared = values.map((input, index) => ({
+    ...input,
+    id: input.id ?? randomUUID(),
+    position: index,
+    isNew: input.id === undefined,
+  }));
+  for (const input of prepared) {
+    if (!input.isNew && !existingById.has(input.id)) {
+      throw new ProjectError(409, "Option identity 不屬於此 Project field。");
     }
+    keep.add(input.id);
   }
-
   const removed = existing.filter((row) => !keep.has(row.id));
   if (removed.length) {
     const removedIds = removed.map((row) => row.id);
@@ -460,10 +469,119 @@ async function replaceOptions(
     if (inUse) {
       throw new ProjectError(409, "Option 仍被 Project item value 使用，不能移除。");
     }
+  }
+
+  // The current schema enforces option name and position uniqueness immediately. Move every
+  // existing row to verified-free transaction-local values so user-provided staging-like names,
+  // swaps, and reuse of a removed name remain atomic while stable option identities are preserved.
+  const occupiedNames = new Set([
+    ...existing.map((item) => item.name),
+    ...prepared.map((item) => item.name),
+  ]);
+  const occupiedPositions = new Set([
+    ...existing.map((item) => Number(item.position)),
+    ...prepared.map((item) => item.position),
+  ]);
+  let stagingNameIndex = 0;
+  let stagingPosition = 2_147_483_647;
+  for (const item of [...existing].sort((left, right) => left.id.localeCompare(right.id))) {
+    let stagingName = `__namespace_stage_${stagingNameIndex}`;
+    while (occupiedNames.has(stagingName)) {
+      stagingNameIndex += 1;
+      stagingName = `__namespace_stage_${stagingNameIndex}`;
+    }
+    occupiedNames.add(stagingName);
+    stagingNameIndex += 1;
+    while (occupiedPositions.has(stagingPosition)) {
+      stagingPosition -= 1;
+    }
+    if (stagingPosition < 0) {
+      throw new ProjectError(503, "Project field option staging position 無法配置。");
+    }
+    occupiedPositions.add(stagingPosition);
+    await sql.query(
+      `UPDATE project_field_options
+       SET name=$3,position=$4
+       WHERE field_id=$1 AND id=$2`,
+      [field.id, item.id, stagingName, stagingPosition],
+    );
+    stagingPosition -= 1;
+  }
+
+  const renamed = prepared.flatMap((item) => {
+    const before = existingById.get(item.id);
+    return !item.isNew && before && before.name !== item.name ? [{ before, after: item }] : [];
+  });
+  const released = [...removed.map((before) => ({ before, after: null })), ...renamed].sort(
+    (left, right) =>
+      left.before.name === right.before.name
+        ? left.before.id.localeCompare(right.before.id)
+        : left.before.name.localeCompare(right.before.name),
+  );
+  for (const item of released) {
+    await releaseScopedName(sql, {
+      family: "field-option",
+      scopeKind: "PROJECT_FIELD",
+      scopeId: field.id,
+      targetKind: "FIELD_OPTION",
+      targetId: item.before.id,
+      expectedName: item.before.name,
+      at: now,
+    });
+  }
+  const claimed = [
+    ...prepared.filter((item) => item.isNew),
+    ...renamed.map((item) => item.after),
+  ].sort((left, right) =>
+    left.name === right.name
+      ? left.id.localeCompare(right.id)
+      : left.name.localeCompare(right.name),
+  );
+  for (const item of claimed) {
+    await claimScopedName(sql, {
+      family: "field-option",
+      scopeKind: "PROJECT_FIELD",
+      scopeId: field.id,
+      targetKind: "FIELD_OPTION",
+      targetId: item.id,
+      name: item.name,
+      at: now,
+    });
+  }
+
+  if (removed.length) {
+    const removedIds = removed.map((row) => row.id);
     await sql.query("DELETE FROM project_field_options WHERE field_id=$1 AND id=ANY($2::text[])", [
       field.id,
       removedIds,
     ]);
+  }
+
+  for (const input of prepared) {
+    const index = input.position;
+    if (!input.isNew) {
+      const before = existingById.get(input.id);
+      if (!before) throw new ProjectError(409, "Option identity 不屬於此 Project field。");
+      const changed =
+        before.name !== input.name ||
+        before.color !== input.color ||
+        before.description !== input.description ||
+        Number(before.position) !== index;
+      await sql.query(
+        `UPDATE project_field_options
+         SET name=$3,color=$4,description=$5,position=$6,
+             version=version+case when $7 then 1 else 0 end
+         WHERE field_id=$1 AND id=$2`,
+        [field.id, before.id, input.name, input.color, input.description, index, changed],
+      );
+    } else {
+      await sql.query(
+        `INSERT INTO project_field_options(
+           id,field_id,option_kind,name,color,description,position,version
+         ) VALUES($1,$2,$3,$4,$5,$6,$7,1)`,
+        [input.id, field.id, field.data_type, input.name, input.color, input.description, index],
+      );
+    }
   }
 }
 
@@ -681,6 +799,15 @@ export async function executeProjectFieldCommand(
   if (command.action === "create-field") {
     validateFieldShape(command.dataType, command.options, command.iterations);
     const fieldId = randomUUID();
+    await claimScopedName(sql, {
+      family: "project-field",
+      scopeKind: "PROJECT",
+      scopeId: projectId,
+      targetKind: "PROJECT_FIELD",
+      targetId: fieldId,
+      name: command.name,
+      at: now,
+    });
     await sql.query(
       `INSERT INTO project_fields(
          id,project_id,name,data_type,version,created_at,updated_at
@@ -691,7 +818,7 @@ export async function executeProjectFieldCommand(
       if (command.options.some((item) => item.id !== undefined)) {
         throw new ProjectError(400, "建立 field 時不能注入既有 option identity。");
       }
-      await insertOptions(sql, fieldId, command.dataType, command.options);
+      await insertOptions(sql, fieldId, command.dataType, command.options, now);
     } else if (command.dataType === "ITERATION") {
       if (command.iterations.some((item) => item.id !== undefined)) {
         throw new ProjectError(400, "建立 field 時不能注入既有 iteration identity。");
@@ -709,7 +836,7 @@ export async function executeProjectFieldCommand(
     requireFieldVersion(before, command.fieldVersion);
     const name = command.name ?? before.name;
     if (command.options !== undefined) {
-      await replaceOptions(sql, before, command.options);
+      await replaceOptions(sql, before, command.options, now);
     }
     if (command.iterations !== undefined) {
       await replaceIterations(sql, before, command.iterations);
@@ -720,6 +847,18 @@ export async function executeProjectFieldCommand(
       (command.iterations !== undefined && command.iterations.length > 0);
     if (!nameChanged && !configChanged) {
       throw new ProjectError(409, "Project field 沒有變更。");
+    }
+    if (nameChanged) {
+      await renameScopedName(sql, {
+        family: "project-field",
+        scopeKind: "PROJECT",
+        scopeId: projectId,
+        targetKind: "PROJECT_FIELD",
+        targetId: before.id,
+        expectedName: before.name,
+        name,
+        at: now,
+      });
     }
     const updated = (
       await sql.query(
@@ -755,6 +894,31 @@ export async function executeProjectFieldCommand(
     if (inUse) {
       throw new ProjectError(409, "Project field 仍被 item value 或 view 使用，不能刪除。");
     }
+    const options = await optionRows(sql, [before.id]);
+    for (const option of [...options].sort((left, right) =>
+      left.name === right.name
+        ? left.id.localeCompare(right.id)
+        : left.name.localeCompare(right.name),
+    )) {
+      await releaseScopedName(sql, {
+        family: "field-option",
+        scopeKind: "PROJECT_FIELD",
+        scopeId: before.id,
+        targetKind: "FIELD_OPTION",
+        targetId: option.id,
+        expectedName: option.name,
+        at: now,
+      });
+    }
+    await releaseScopedName(sql, {
+      family: "project-field",
+      scopeKind: "PROJECT",
+      scopeId: projectId,
+      targetKind: "PROJECT_FIELD",
+      targetId: before.id,
+      expectedName: before.name,
+      at: now,
+    });
     await sql.query("DELETE FROM project_field_options WHERE field_id=$1", [before.id]);
     await sql.query("DELETE FROM project_field_iterations WHERE field_id=$1", [before.id]);
     await sql.query("DELETE FROM project_fields WHERE project_id=$1 AND id=$2 AND version=$3", [

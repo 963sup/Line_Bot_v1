@@ -4,5 +4,6 @@
 
 - [Enterprise / Organization / Workforce / Payroll migration](enterprise-organization-workforce-payroll.md)：仍在進行的 Employment-scoped Attendance、Workforce 與 Payroll activation/cutover。
 - [Issue core parity cutover](issue-core-parity.md)：Issue state/body/assignee expand 已相容；只追蹤經 recovery/preflight 後的 legacy physical backfill 與 contract cleanup。
+- [Scoped Numbering and Namespace cutover](scoped-numbering-namespace.md)：追蹤五個 Numbering family 與十一個 Namespace family 的 production preflight、原子切換及 readback。
 
 Permission/User naming 與早期 management migration 已完成並由 current source/schema/owner contract取代，因此不再留在 migration navigation。

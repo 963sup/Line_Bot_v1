@@ -4,6 +4,7 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryCreationStore } from "../src/composition/bootstrap/repository-creation.js";
+import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
 import type { RepositoryCreateCommand } from "../src/contracts/input/repository-creation.js";
 import { RepositoryError } from "../src/contracts/repository.js";
 
@@ -215,6 +216,51 @@ test("duplicate Repository name rolls back the failed creation receipt", async (
       (select count(*)::int from app_private.repositories) as repositories,
       (select count(*)::int from app_private.repository_commands) as receipts`);
   assert.deepEqual(evidence.rows, [{ repositories: 1, receipts: 1 }]);
+});
+
+test("historical Repository name returns conflict without creating a resource or receipt", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await activeUser(db, "creator", "alice");
+  const store = new PostgresRepositoryCreationStore(db);
+  const command: RepositoryCreateCommand = {
+    requestId: "11111111-1111-4111-8111-111111111111",
+    ownerAccountId: "creator",
+    ownerKind: "USER",
+    name: "Alpha",
+    visibility: "private",
+  };
+  const created = await store.create("creator", command, 10);
+  await new PostgresRepositoryManagementStore(db).execute(
+    "creator",
+    {
+      action: "rename",
+      requestId: "22222222-2222-4222-8222-222222222222",
+      repositoryId: created.id,
+      expectedVersion: 1,
+      name: "Beta",
+    },
+    11,
+  );
+
+  await assert.rejects(
+    store.create(
+      "creator",
+      { ...command, requestId: "33333333-3333-4333-8333-333333333333", name: "alpha" },
+      12,
+    ),
+    (error) =>
+      error instanceof RepositoryError &&
+      error.status === 409 &&
+      error.message === "此 owner 已有相同或保留的 Repository 名稱。",
+  );
+  assert.deepEqual((await pg.query("select id,name,version from app_private.repositories")).rows, [
+    { id: created.id, name: "Beta", version: 2 },
+  ]);
+  assert.deepEqual(
+    (await pg.query("select count(*)::int as count from app_private.repository_commands")).rows,
+    [{ count: 2 }],
+  );
 });
 
 test("creation snapshots a mutable caller command before entering its transaction", async (t) => {

@@ -1,47 +1,73 @@
 # Namespace detailed reference
 
-Owner 與不變量見 [Namespace](../../owners/namespace.md)。
+Owner and invariants: [Namespace](../../owners/namespace.md).
 
-## Implementation
+## Public contract
 
-`packages/namespace/src/` 統一保存 `domain/`、`application/`、`contracts/`、`adapters/` 與 `index.ts`；package 設定、README、AGENTS 與 tests 留在 package 根目錄。
+The root `@line_bot_v1/namespace` export contains Account login use cases, frozen namespace profiles,
+normalization and route construction. `@line_bot_v1/namespace/postgres` contains the `Sql`-bound
+Account and scoped claim/rename/release/resolve functions.
 
-| Layer | Responsibility |
-| --- | --- |
-| domain | 全域 login 格式、target/binding/error、root reservation、結構化路由 |
-| application | claim、resolve、rename 的輸入與流程 |
-| contracts | application 使用的 NamespaceStore port |
-| adapters | PostgreSQL persistence；沿用 caller 的 Sql transaction |
-| index.ts | 實際跨 package 使用的公開能力；server adapter 使用獨立 export |
+The caller owns the transaction and decides lifecycle and authorization. Namespace validates the
+family/scope/target combination, normalizes the name through its versioned profile, and enforces
+occupancy. It never starts a transaction or treats a locator as authorization.
 
-`@line_bot_v1/namespace` 提供 `normalizeAccountLogin`、`claimNamespace`、`resolveNamespace`、`renameNamespace`、`NamespaceError` 與 `buildNamespacePath`。Server consumer 使用 `@line_bot_v1/namespace/postgres`；不透過 Account 轉接。
+## Persistence
 
-## Persistence and transactions
+`namespace_bindings` stores one current versioned name per typed target and scope.
+`namespace_claims` stores current, alias or reserved occupancy keyed by family, scope and canonical
+key. `namespace_binding_history` appends known transitions after verified import/activation.
 
-`account_logins` 是 Namespace 唯一的 global binding truth，保留原有資料及索引。`login` unique index 支援全域查詢，`account_id` primary key 支援 stable target 查詢；批次讀取使用單次 query。沒有額外 registry 或 cache。
+Retained resource columns such as `account_logins.login`, `repositories.name` and
+`project_views.name` are constrained projections needed by current resource APIs and queries. They
+are written in the same transaction and cannot become a second direct writer or naming authority.
+`account_logins` also retains its stable Account foreign-key constraint; Account identity and
+qualification remain Account-owned.
 
-`claim_account_login` 只建立 binding；相同 target/kind/login 重試回原 binding，不同 login 或撞名回衝突。`rename_account_login` 以 account ID、kind 與 `expectedLogin` 做條件更新；過期值回衝突，unique constraint 保護跨帳戶名稱碰撞。
+The runtime role uses narrow functions rather than direct registry table writes. Database constraints
+enforce family/scope/target compatibility and key uniqueness. Same-target claim is idempotent;
+different-target collision conflicts. Conditional rename rejects stale observed state.
 
-User registration 在原交易建立 User、identity 與 Namespace binding；Organization provisioning 同樣使用原交易呼叫 claim。跨 owner 的 User/login 完整性 constraint 位於 `910_cross_owner_constraints.sql`。Account 的 `user_namespace_projection` 位於 `900_cross_owner_projections.sql`，以一次 query 取得 User、login 與 optional Google email；缺 login 仍明確報完整性錯誤。View 是 projection，不新增持久化 authority。
+## Profile semantics
 
-目前不提供 release；pause／suspend 保留名稱。Rename 不改 stable ID、資源 ownership 或 provider binding。
+`packages/namespace/src/domain/profiles.ts` is the executable normalization contract. The profile
+version is stored with registry facts so a future normalization change requires an explicit migration.
+Exact-name families preserve case and spelling. Repository and IssueType use PostgreSQL lowercase
+keys without adding NFKC. Team slugs deliberately use NFKC before lowercase comparison.
 
-## Scoped locators and routes
+Repository name aliases are retained. Other current rename families release the previous occupancy;
+IssueType releases only on tombstone, and Label/Field/Option/View release only after the resource
+Owner authorizes deletion. Pause, suspend, disable, archive and close do not implicitly release names.
 
-Current locator ownership 由 `architecture/semantic-model.json#locators` 管理；完整路徑與 active/planned 由 `packages/namespace/src/domain/routes.ts` 管理。
+## Routes and resolution
 
-| Locator | Current persistence authority |
-| --- | --- |
-| User / Organization global login | Namespace / account_logins |
-| Repository owner-scoped name | Repository |
-| Organization Team slug | Team |
-| Enterprise / EnterpriseTeam slug | Enterprise |
-| Repository Issue / Discussion / Milestone locator | Repository |
+Current locator ownership is declared in `architecture/semantic-model.json#locators`; active/planned
+path shapes remain in `packages/namespace/src/domain/routes.ts`. Path building validates active routes
+and encodes each segment. Resolution yields only target identity, current name and alias status;
+resource visibility and mutation permission are rechecked by the resource Owner.
 
-Web Profile 與 Team navigation 直接使用 Namespace path builder。Builder 驗證 active route 及所需參數，逐段編碼；Repository 合法名稱包含斜線時仍能建立 encoded segment。Planned descriptor 不做 DB lookup，也不預建未定義的功能。
+Repository old-name resolution follows the retained alias only when that consumer operation allows
+renames. Account login rename has no alias. Planned routes cannot be built and do not imply package,
+schema or page activation.
 
-尚未啟用的 Pull、Organization Project／People／Packages／Discussions、Sponsors 等條件見 [selected topology](../../change/decisions/namespace-route-topology.md)。Namespace 的結構化契約集中描述路由；上述 scoped 實體的配置與持久化並未在本次一併搬遷。
+## Cutover and recovery
+
+The operator cutover locks/drains writers, detects collisions, imports only verifiable
+live/retained/alias facts, reconciles every retained projection and atomically establishes central
+database authority. The recovery provider/API must be available before the first business cutover.
+The persisted Platform runtime gate remains frozen after this transaction. Strict `BEFORE` guards
+reject affected `line_app` resource writes with SQLSTATE `55000`; operator reconciliation remains
+possible and must satisfy exact projection parity.
+
+Only after a compatible production deployment has been read back at its exact revision may an
+operator activate the runtime revision. A failed, obsolete or unverified deployment leaves both old
+and new application writers frozen. Legacy rename history is not reconstructed without evidence.
+After database authority activates, there is no database legacy fallback or registry reseed;
+recovery keeps writes frozen and repairs forward with a compatible build.
 
 ## Validation
 
-Package tests 覆蓋 normalization、保留名稱、claim/rename/resolve、衝突與交易 rollback、route inventory 及 scoped locator ownership。`pnpm check` 是一般修改的驗證入口；本機測試與靜態檢查不等於遠端 schema 部署或 LINE 實機驗收。
+Tests must cover concurrent claim and rename collisions, case behavior, retained Repository aliases,
+same-target reclaim, family-specific release, rollback without dangling Claim, retained projection
+consistency and existing governance-lock ordering. Local tests and schema checks do not prove remote
+cutover or current provider state.

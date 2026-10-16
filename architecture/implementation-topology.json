@@ -37,6 +37,12 @@
       "semanticOwner": "namespace",
       "allowedWorkspaceDependencies": ["@line_bot_v1/platform"]
     },
+    "@line_bot_v1/numbering": {
+      "path": "packages/numbering",
+      "moduleKind": "domain-module",
+      "semanticOwner": "numbering",
+      "allowedWorkspaceDependencies": ["@line_bot_v1/platform"]
+    },
     "@line_bot_v1/asset": {
       "path": "packages/asset",
       "moduleKind": "domain-module",
@@ -84,6 +90,7 @@
       "semanticOwner": "discussion",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/namespace",
+        "@line_bot_v1/numbering",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"
       ]
@@ -95,6 +102,7 @@
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/account",
         "@line_bot_v1/identity-access",
+        "@line_bot_v1/namespace",
         "@line_bot_v1/organization",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"
@@ -169,6 +177,7 @@
       "semanticOwner": "repository",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/account",
+        "@line_bot_v1/numbering",
         "@line_bot_v1/organization",
         "@line_bot_v1/platform",
         "@line_bot_v1/namespace"
@@ -180,6 +189,7 @@
       "semanticOwner": "issue",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/namespace",
+        "@line_bot_v1/numbering",
         "@line_bot_v1/organization",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"
@@ -216,6 +226,7 @@
         "@line_bot_v1/account",
         "@line_bot_v1/issue",
         "@line_bot_v1/namespace",
+        "@line_bot_v1/numbering",
         "@line_bot_v1/organization",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository",

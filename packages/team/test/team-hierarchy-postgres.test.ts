@@ -145,7 +145,13 @@ test("Team hierarchy derives membership and Repository access without copying me
   );
 
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repository-team','organization-team','ORGANIZATION','Team Repo','private',1)",
+    `with inserted as (
+       insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values('repository-team','organization-team','ORGANIZATION','Team Repo','private',1)
+       returning id,owner_account_id,name
+     ) select app_private.claim_scoped_namespace_name(
+       'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,1
+     ) from inserted`,
   );
   await pg.query(
     "insert into app_private.repository_team_access(repository_id,organization_id,team_id,capability,version) values('repository-team','organization-team',$1,'read',1),('repository-team','organization-team',$2,'triage',1)",

@@ -1,5 +1,6 @@
 import { readUserQualification } from "@line_bot_v1/account/postgres";
 import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
+import { resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import {
   listOrganizationTeamScopes,
   qualifyOrganizationTeamScope,
@@ -81,10 +82,6 @@ function teamSummaryRow(row: Record<string, unknown>) {
         ? null
         : literalValue(row.membershipType, ["IMMEDIATE", "CHILD_TEAM"]),
   };
-}
-
-function idRow(row: Record<string, unknown>) {
-  return { id: stringValue(row.id) };
 }
 
 async function lockTeam(sql: Sql, organizationAccountId: string, teamId: string): Promise<TeamRow> {
@@ -319,16 +316,23 @@ export class PostgresTeamQuery implements TeamQuery {
       const organizations = await listOrganizationTeamScopes(sql, proof);
       const organization = organizations.find((item) => item.login === organizationLogin);
       teamAssert(organization, 404, "找不到可存取的 Organization Team。");
-      const team = (
-        await sql.query(
-          `SELECT id FROM teams
-           WHERE organization_account_id=$1 AND slug=$2`,
-          [organization.organizationAccountId, teamSlug],
-          idRow,
-        )
-      ).rows[0];
-      teamAssert(team, 404, "找不到可存取的 Organization Team。");
-      return readTeamView(sql, proof, organization.organizationAccountId, team.id, organizations);
+      const binding = await resolveScopedName(
+        sql,
+        {
+          family: "organization-team-slug",
+          scopeKind: "ORGANIZATION",
+          scopeId: organization.organizationAccountId,
+        },
+        teamSlug,
+      );
+      teamAssert(binding?.targetKind === "TEAM", 404, "找不到可存取的 Organization Team。");
+      return readTeamView(
+        sql,
+        proof,
+        organization.organizationAccountId,
+        binding.targetId,
+        organizations,
+      );
     });
   }
 }

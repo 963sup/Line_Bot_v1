@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import { resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createTeamCollaboration } from "../src/application/collaboration.js";
 import { PostgresTeamRepository } from "../src/composition/bootstrap/team.js";
@@ -315,6 +316,55 @@ test("typed Postgres execute preserves raw command values without reparsing", as
       ])
     ).rows,
     [{ name: " Core ", slug: "core", version: 1 }],
+  );
+});
+
+test("Team create and rename move the Organization-scoped Namespace binding atomically", async (t) => {
+  const f = await fixture();
+  t.after(() => f.pg.close());
+  const created = await f.create();
+  const resolve = (slug: string) =>
+    f.db.transaction((sql) =>
+      resolveScopedName(
+        sql,
+        { family: "organization-team-slug", scopeKind: "ORGANIZATION", scopeId: "org" },
+        slug,
+      ),
+    );
+  const initialBinding = await resolve("core");
+  assert.equal(initialBinding?.targetKind, "TEAM");
+  assert.equal(initialBinding?.targetId, created.teamId);
+  assert.equal(initialBinding?.name, "core");
+
+  const rename = f.request({
+    action: "rename-team",
+    teamId: created.teamId,
+    expectedVersion: 1,
+    name: "Platform",
+  });
+  const renamed = await f.execute("owner", rename);
+  assert.equal(await resolve("core"), null);
+  const renamedBinding = await resolve("platform");
+  assert.equal(renamedBinding?.targetKind, "TEAM");
+  assert.equal(renamedBinding?.targetId, created.teamId);
+  assert.equal(renamedBinding?.name, "platform");
+  assert.deepEqual(await f.execute("owner", rename), renamed);
+  const reused = await f.create();
+  const reusedBinding = await resolve("core");
+  assert.equal(reusedBinding?.targetKind, "TEAM");
+  assert.equal(reusedBinding?.targetId, reused.teamId);
+  assert.equal(reusedBinding?.name, "core");
+  await assert.rejects(
+    f.execute(
+      "owner",
+      f.request({
+        action: "create-team",
+        name: "Platform",
+        privacy: "SECRET",
+        notificationSetting: "NOTIFICATIONS_DISABLED",
+      }),
+    ),
+    hasStatus(409),
   );
 });
 

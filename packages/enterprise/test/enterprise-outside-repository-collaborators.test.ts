@@ -19,6 +19,9 @@ test("Enterprise owner reads outside Repository collaborators from the derived R
     INSERT INTO app_private.enterprise_organizations(
       enterprise_account_id,organization_account_id,status,version,attached_at
     ) VALUES ('enterprise','org','active',1,4);
+    SELECT * FROM app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT','org','REPOSITORY','repo','Repository',4
+    );
     INSERT INTO app_private.repositories(
       id,owner_account_id,owner_account_kind,name,visibility,version
     ) VALUES ('repo','org','ORGANIZATION','Repository','private',1);

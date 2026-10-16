@@ -236,7 +236,7 @@ test("a User and login commit atomically while incomplete creation and login rem
   });
   await assert.rejects(
     pg.query("delete from app_private.account_logins where account_id='complete-user'"),
-    (error) => isPostgresCheckError(error, "user_login_missing"),
+    (error) => isPostgresCheckError(error, "resource_namespace_projection_mismatch"),
   );
   const locator = await pg.query(
     "select login from app_private.account_logins where account_id='complete-user'",
@@ -262,7 +262,7 @@ test("a User and login commit atomically while incomplete creation and login rem
         "update app_private.account_logins set account_id='second-user' where account_id='complete-user'",
       );
     }),
-    (error) => isPostgresCheckError(error, "user_login_missing"),
+    (error) => isPostgresCheckError(error, "resource_namespace_projection_mismatch"),
   );
   const preserved = await pg.query(
     "select account_id,login from app_private.account_logins where account_id in ('complete-user','second-user') order by account_id",

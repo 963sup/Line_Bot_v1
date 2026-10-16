@@ -406,21 +406,6 @@ export function requireVersion(actual: number | string, expected: number, label:
   }
 }
 
-export async function nextDiscussionNumber(sql: Sql, repositoryId: string): Promise<number> {
-  await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-    `discussion-number:${repositoryId}`,
-  ]);
-  const row = (
-    await sql.query(
-      "SELECT COALESCE(MAX(number),0)+1 AS number FROM discussions WHERE repository_id=$1",
-      [repositoryId],
-      (row) => ({ number: numericValue(row.number) }),
-    )
-  ).rows[0];
-  if (!row) throw new DiscussionError(503, "Discussion number 無法配置。");
-  return Number(row.number);
-}
-
 export async function advanceDiscussion(
   sql: Sql,
   row: DiscussionRow,

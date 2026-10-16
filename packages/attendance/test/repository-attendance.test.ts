@@ -40,6 +40,9 @@ async function fixture() {
     INSERT INTO app_private.user_identities(provider,subject,user_id) VALUES('line:test','U11111111111111111111111111111111','member'),('line:test','U22222222222222222222222222222222','outsider');
     INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
     VALUES('repo','owner','USER','test','public',1);
+    SELECT app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo','test',1
+    );
     INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version)
     VALUES('repo','owner','admin',1),('repo','member','read',1);
     COMMIT;
@@ -298,10 +301,15 @@ test("review inbox shows all pending requests and repository submissions enforce
   const reviewer = { provider: "line:test", subject: "U22222222222222222222222222222222" };
   const member = { provider: "line:test", subject: "U11111111111111111111111111111111" };
   await pg.exec(`
+    BEGIN;
     INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
     VALUES('repo-2','owner','USER','test-2','public',1);
+    SELECT app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo-2','test-2',1
+    );
     INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version)
     VALUES('repo','outsider','admin',1),('repo-2','outsider','admin',1),('repo-2','member','read',1);
+    COMMIT;
   `);
   await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='repo-2'", [
     JSON.stringify(address),
@@ -378,10 +386,15 @@ test("applicant inbox keeps every pending request visible beyond the recent-hist
   const { pg, store } = await fixture();
   t.after(() => pg.close());
   const member = { provider: "line:test", subject: "U11111111111111111111111111111111" };
-  await pg.query(
-    `INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
-     VALUES('repo-2','owner','USER','test-2','public',1)`,
-  );
+  await pg.exec(`
+    BEGIN;
+    INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+    VALUES('repo-2','owner','USER','test-2','public',1);
+    SELECT app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo-2','test-2',1
+    );
+    COMMIT;
+  `);
   await pg.query(
     `INSERT INTO app_private.attendance_supplement_requests(
        id,uid,repository_id,kind,started_at,ended_at,site_snapshot,reason,submitted_at

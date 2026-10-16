@@ -49,6 +49,9 @@ begin
   ) then
     raise exception 'account_login_owner_not_found' using errcode = '23503';
   end if;
+  perform app_private.claim_scoped_namespace_name(
+    'account-login','GLOBAL','global',p_account_kind,p_account_id,normalized,p_at
+  );
   insert into app_private.account_logins(account_id,account_kind,login,updated_at)
     values(p_account_id,p_account_kind,normalized,p_at)
     on conflict do nothing;
@@ -94,6 +97,9 @@ begin
      or normalized in ('admin','api','assistant','attendance','auth','complete','daily-check-in','diary','enterprises','expenses','explore','feedback','google-link','history','home','issues','login','membership','notifications','organizations','orgs','partners','planned','privacy','profile','projects','pulls','repositories','search','settings','sponsors','stars','team','terms','trending','unavailable') then
     raise exception 'account_login_invalid' using errcode = '22023';
   end if;
+  perform app_private.rename_scoped_namespace_name(
+    'account-login','GLOBAL','global',p_account_kind,p_account_id,expected,normalized,p_at
+  );
   update app_private.account_logins
     set login=normalized,updated_at=p_at
     where account_id=p_account_id

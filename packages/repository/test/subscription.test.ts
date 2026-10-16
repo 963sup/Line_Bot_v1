@@ -69,7 +69,7 @@ test("Watch state is replay-safe, grants no access and survives independent acce
   await activeUser(db, "owner");
   await activeUser(db, "viewer");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Public','public',1)",
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Public','public')",
   );
 
   const store = new PostgresRepositorySubscriptionStore(db);
@@ -170,7 +170,7 @@ test("first-time Watch writes serialize by User and Repository", async (t) => {
   await activeUser(db, "owner");
   await activeUser(db, "viewer");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo-race','owner','USER','Race','public',1)",
+    "select * from app_private.provision_repository('repo-race','owner','owner','USER','Race','public')",
   );
 
   const store = new PostgresRepositorySubscriptionStore(db);

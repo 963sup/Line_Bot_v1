@@ -29,9 +29,20 @@ test("Project management composes access, draft conversion, typed fields, views 
   for (const userId of ["owner", "writer", "reader"]) {
     await activeUser(db, userId);
   }
-  await pg.query(
-    "insert into repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
-  );
+  await pg.transaction(async (tx) => {
+    await tx.query("select app_private.claim_scoped_namespace_name($1,$2,$3,$4,$5,$6,$7)", [
+      "repository-name",
+      "OWNER_ACCOUNT",
+      "owner",
+      "REPOSITORY",
+      "repo",
+      "Repo",
+      2,
+    ]);
+    await tx.query(
+      "insert into repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
+    );
+  });
   await pg.query(
     "insert into repository_access(repository_id,principal_id,capability,version) values('repo','writer','write',1)",
   );
@@ -251,6 +262,7 @@ test("Project management composes access, draft conversion, typed fields, views 
   assert.equal(full.items[0]?.issue?.id, issueId);
   assert.equal(full.fieldValues[0]?.value.type, "SINGLE_SELECT");
   assert.deepEqual(full.views[0]?.visibleFieldIds, [fieldId]);
+  assert.equal(full.views[0]?.number, 1);
   assert.equal(full.statusUpdates[0]?.status, "ON_TRACK");
 
   const hiddenSource = await store.view(reader, created.projectId);
@@ -262,15 +274,153 @@ test("Project management composes access, draft conversion, typed fields, views 
   assert.equal(byNumber.project.id, created.projectId);
   assert.equal(byNumber.project.number, 1);
 
+  const high = full.fields[0]?.options.find((option) => option.name === "High");
+  const low = full.fields[0]?.options.find((option) => option.name === "Low");
+  assert.ok(high);
+  assert.ok(low);
+  await store.execute(
+    writer,
+    {
+      action: "update-field",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 9,
+      fieldId,
+      fieldVersion: 1,
+      name: "Severity",
+      options: [
+        { id: high.id, name: high.name, color: high.color, description: high.description },
+        { name: "Medium", color: "ORANGE", description: "" },
+      ],
+    },
+    20,
+  );
+  const afterFirstOptionReplacement = await store.view(writer, created.projectId);
+  const retainedHigh = afterFirstOptionReplacement.fields[0]?.options.find(
+    (option) => option.name === "High",
+  );
+  assert.equal(retainedHigh?.id, high.id);
+  await store.execute(
+    writer,
+    {
+      action: "update-field",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 10,
+      fieldId,
+      fieldVersion: 2,
+      options: [
+        { id: high.id, name: high.name, color: high.color, description: high.description },
+        { name: low.name, color: low.color, description: low.description },
+      ],
+    },
+    21,
+  );
+  const beforeSwap = await store.view(writer, created.projectId);
+  const recreatedLow = beforeSwap.fields[0]?.options.find((option) => option.name === "Low");
+  assert.ok(recreatedLow);
+  await store.execute(
+    writer,
+    {
+      action: "update-field",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 11,
+      fieldId,
+      fieldVersion: 3,
+      options: [
+        { id: recreatedLow.id, name: "High", color: recreatedLow.color, description: "" },
+        { id: high.id, name: "Low", color: high.color, description: "" },
+      ],
+    },
+    22,
+  );
+  const afterSwap = await store.view(writer, created.projectId);
+  assert.equal(afterSwap.fields[0]?.options[0]?.id, recreatedLow.id);
+  assert.equal(afterSwap.fields[0]?.options[0]?.name, "High");
+  assert.equal(afterSwap.fields[0]?.options[1]?.id, high.id);
+  assert.equal(afterSwap.fields[0]?.options[1]?.name, "Low");
+
+  const secondView = await store.execute(
+    writer,
+    {
+      action: "create-view",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 12,
+      name: "Timeline",
+      layout: "ROADMAP_LAYOUT",
+      visibleFieldIds: [],
+    },
+    24,
+  );
+  assert.equal(secondView.data.number, 2);
+  assert.ok(secondView.resourceId);
+  await store.execute(
+    writer,
+    {
+      action: "update-view",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 13,
+      viewId: secondView.resourceId,
+      viewVersion: 1,
+      name: "Roadmap",
+    },
+    25,
+  );
+  await store.execute(
+    writer,
+    {
+      action: "delete-view",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 14,
+      viewId: secondView.resourceId,
+      viewVersion: 2,
+    },
+    26,
+  );
+  const replacementView = await store.execute(
+    writer,
+    {
+      action: "create-view",
+      requestId: randomUUID(),
+      projectId: created.projectId,
+      expectedVersion: 15,
+      name: "Roadmap",
+      layout: "TABLE_LAYOUT",
+      visibleFieldIds: [],
+    },
+    27,
+  );
+  assert.equal(replacementView.data.number, 3);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select number::int as number,resource_id
+         from app_private.number_allocations
+         where family='project-view' and scope_kind='PROJECT' and scope_id=$1
+         order by number`,
+        [created.projectId],
+      )
+    ).rows,
+    [
+      { number: 1, resource_id: view.resourceId },
+      { number: 2, resource_id: secondView.resourceId },
+      { number: 3, resource_id: replacementView.resourceId },
+    ],
+  );
+
   await store.execute(
     owner,
     {
       action: "close-project",
       requestId: randomUUID(),
       projectId: created.projectId,
-      expectedVersion: 9,
+      expectedVersion: 16,
     },
-    20,
+    28,
   );
   await assert.rejects(
     store.execute(
@@ -279,14 +429,221 @@ test("Project management composes access, draft conversion, typed fields, views 
         action: "add-draft-item",
         requestId: randomUUID(),
         projectId: created.projectId,
-        expectedVersion: 10,
+        expectedVersion: 17,
         title: "Closed",
         body: "",
         assigneeIds: [],
       },
-      21,
+      29,
     ),
     (error) => error instanceof ProjectError && error.status === 409,
+  );
+});
+
+test("Project translates Namespace collisions and rolls back allocation and replay state", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+
+  await activeUser(db, "owner");
+  const store = new PostgresProjectManagementStore(db);
+  const identity = { userId: "owner" };
+  const project = await store.execute(
+    identity,
+    {
+      action: "create-project",
+      requestId: randomUUID(),
+      ownerAccountId: "owner",
+      ownerKind: "USER",
+      expectedVersion: 0,
+      title: "Plan",
+      public: false,
+      repositoryId: null,
+      teamId: null,
+    },
+    10,
+  );
+  await store.execute(
+    identity,
+    {
+      action: "create-field",
+      requestId: randomUUID(),
+      projectId: project.projectId,
+      expectedVersion: 1,
+      name: "Priority",
+      dataType: "TEXT",
+      options: [],
+      iterations: [],
+    },
+    11,
+  );
+
+  const duplicateFieldRequestId = randomUUID();
+  const duplicateField = {
+    action: "create-field" as const,
+    requestId: duplicateFieldRequestId,
+    projectId: project.projectId,
+    expectedVersion: 2,
+    name: "Priority",
+    dataType: "TEXT" as const,
+    options: [],
+    iterations: [],
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await assert.rejects(
+      store.execute(identity, duplicateField, 12),
+      (error) => error instanceof ProjectError && error.status === 409,
+    );
+  }
+
+  await store.execute(
+    identity,
+    {
+      action: "create-view",
+      requestId: randomUUID(),
+      projectId: project.projectId,
+      expectedVersion: 2,
+      name: "Board",
+      layout: "BOARD_LAYOUT",
+      visibleFieldIds: [],
+    },
+    13,
+  );
+  const duplicateViewRequestId = randomUUID();
+  const duplicateView = {
+    action: "create-view" as const,
+    requestId: duplicateViewRequestId,
+    projectId: project.projectId,
+    expectedVersion: 3,
+    name: "Board",
+    layout: "TABLE_LAYOUT" as const,
+    visibleFieldIds: [],
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await assert.rejects(
+      store.execute(identity, duplicateView, 14),
+      (error) => error instanceof ProjectError && error.status === 409,
+    );
+  }
+  const nextView = await store.execute(
+    identity,
+    {
+      ...duplicateView,
+      requestId: randomUUID(),
+      name: "Timeline",
+    },
+    15,
+  );
+  assert.equal(nextView.data.number, 2);
+  assert.deepEqual(
+    (
+      await pg.query(
+        "select request_id from app_private.project_commands where request_id in ($1,$2) order by request_id",
+        [duplicateFieldRequestId, duplicateViewRequestId],
+      )
+    ).rows,
+    [],
+  );
+});
+
+test("Project option replacement avoids collisions with valid staging-like names", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+
+  await activeUser(db, "owner");
+  const store = new PostgresProjectManagementStore(db);
+  const identity = { userId: "owner" };
+  const project = await store.execute(
+    identity,
+    {
+      action: "create-project",
+      requestId: randomUUID(),
+      ownerAccountId: "owner",
+      ownerKind: "USER",
+      expectedVersion: 0,
+      title: "Plan",
+      public: false,
+      repositoryId: null,
+      teamId: null,
+    },
+    10,
+  );
+  const field = await store.execute(
+    identity,
+    {
+      action: "create-field",
+      requestId: randomUUID(),
+      projectId: project.projectId,
+      expectedVersion: 1,
+      name: "Priority",
+      dataType: "SINGLE_SELECT",
+      options: [
+        { name: "First", color: "BLUE", description: "" },
+        { name: "Second", color: "GREEN", description: "" },
+      ],
+      iterations: [],
+    },
+    11,
+  );
+  assert.ok(field.resourceId);
+  const initial = await store.view(identity, project.projectId);
+  const byId = [...(initial.fields[0]?.options ?? [])].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
+  const lowerId = byId[0];
+  const higherId = byId[1];
+  assert.ok(lowerId);
+  assert.ok(higherId);
+
+  await store.execute(
+    identity,
+    {
+      action: "update-field",
+      requestId: randomUUID(),
+      projectId: project.projectId,
+      expectedVersion: 2,
+      fieldId: field.resourceId,
+      fieldVersion: 1,
+      options: [
+        { id: lowerId.id, name: "Lower", color: lowerId.color, description: "" },
+        {
+          id: higherId.id,
+          name: "__namespace_stage_0",
+          color: higherId.color,
+          description: "",
+        },
+      ],
+    },
+    12,
+  );
+  await store.execute(
+    identity,
+    {
+      action: "update-field",
+      requestId: randomUUID(),
+      projectId: project.projectId,
+      expectedVersion: 3,
+      fieldId: field.resourceId,
+      fieldVersion: 2,
+      options: [
+        { id: higherId.id, name: "Lower", color: higherId.color, description: "" },
+        {
+          id: lowerId.id,
+          name: "__namespace_stage_0",
+          color: lowerId.color,
+          description: "",
+        },
+      ],
+    },
+    13,
+  );
+
+  const updated = await store.view(identity, project.projectId);
+  assert.deepEqual(
+    updated.fields[0]?.options.map((option) => ({ id: option.id, name: option.name })),
+    [
+      { id: higherId.id, name: "Lower" },
+      { id: lowerId.id, name: "__namespace_stage_0" },
+    ],
   );
 });
 
@@ -322,11 +679,13 @@ test("Organization members create ProjectV2 by default and Owner policy can rest
   };
   const created = await store.execute({ userId: "org-admin" }, command, 10);
   assert.equal(created.version, 1);
+  assert.equal(created.data.number, 1);
 
   const memberCommand = { ...command, requestId: randomUUID(), title: "Member Plan" };
   const memberIdentity = { userId: "member" };
   const memberCreated = await store.execute(memberIdentity, memberCommand, 11);
   assert.equal(memberCreated.version, 1);
+  assert.equal(memberCreated.data.number, 2);
   assert.equal((await store.view(memberIdentity, memberCreated.projectId)).role, "ADMIN");
   assert.deepEqual(await store.execute(memberIdentity, memberCommand, 11), memberCreated);
   assert.deepEqual(
@@ -356,6 +715,7 @@ test("Organization members create ProjectV2 by default and Owner policy can rest
     13,
   );
   assert.equal(ownerCreated.version, 1);
+  assert.equal(ownerCreated.data.number, 3);
   assert.deepEqual(
     (
       await pg.query(
@@ -364,5 +724,100 @@ test("Organization members create ProjectV2 by default and Owner policy can rest
       )
     ).rows,
     [],
+  );
+});
+
+test("Project numbering is stable across replay, copy, adoption and rollback", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+
+  await activeUser(db, "owner");
+  const store = new PostgresProjectManagementStore(db);
+  const identity = { userId: "owner" };
+  const create = {
+    action: "create-project" as const,
+    requestId: randomUUID(),
+    ownerAccountId: "owner",
+    ownerKind: "USER" as const,
+    expectedVersion: 0 as const,
+    title: "Source",
+    public: false,
+    repositoryId: null,
+    teamId: null,
+  };
+  const source = await store.execute(identity, create, 10);
+  assert.equal(source.data.number, 1);
+  assert.deepEqual(await store.execute(identity, create, 10), source);
+
+  const copy = await store.execute(
+    identity,
+    {
+      action: "copy-project",
+      requestId: randomUUID(),
+      sourceProjectId: source.projectId,
+      sourceExpectedVersion: 1,
+      ownerAccountId: "owner",
+      ownerKind: "USER",
+      expectedVersion: 0,
+      title: "Copy",
+      includeDraftIssues: false,
+    },
+    11,
+  );
+  assert.equal(copy.data.number, 2);
+
+  const legacyProjectId = randomUUID();
+  await pg.query(
+    `insert into app_private.projects(
+       id,owner_account_id,owner_account_kind,number,creator,name,
+       short_description,readme,is_public,closed,closed_at,deleted_at,
+       version,created_at,updated_at
+     ) values($1,'owner','USER',null,'owner','Legacy','','',false,false,null,null,1,12,12)`,
+    [legacyProjectId],
+  );
+  const adopted = await store.execute(
+    identity,
+    {
+      action: "adopt-project",
+      requestId: randomUUID(),
+      projectId: legacyProjectId,
+      expectedVersion: 1,
+    },
+    13,
+  );
+  assert.equal(adopted.data.number, 3);
+
+  await assert.rejects(
+    store.execute(
+      identity,
+      {
+        ...create,
+        requestId: randomUUID(),
+        title: "x".repeat(161),
+      },
+      14,
+    ),
+  );
+  const afterRollback = await store.execute(
+    identity,
+    { ...create, requestId: randomUUID(), title: "After rollback" },
+    15,
+  );
+  assert.equal(afterRollback.data.number, 4);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select number::int as number,resource_id
+         from app_private.number_allocations
+         where family='account-project' and scope_kind='USER' and scope_id='owner'
+         order by number`,
+      )
+    ).rows,
+    [
+      { number: 1, resource_id: source.projectId },
+      { number: 2, resource_id: copy.projectId },
+      { number: 3, resource_id: legacyProjectId },
+      { number: 4, resource_id: afterRollback.projectId },
+    ],
   );
 });

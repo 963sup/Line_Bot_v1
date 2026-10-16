@@ -746,12 +746,14 @@ export function validate(root) {
     const releasePlan = releaseWorkflow.jobs?.release_plan;
     const releaseSupabase = releaseWorkflow.jobs?.supabase;
     const releaseDeployment = releaseWorkflow.jobs?.deployment;
+    const releaseIdentifierActivation = releaseWorkflow.jobs?.identifier_runtime_activation;
     const releaseRich = releaseWorkflow.jobs?.rich_menu;
     const releaseScheduler = releaseWorkflow.jobs?.attendance_scheduler;
     if (
       !releasePlan ||
       !releaseSupabase ||
       !releaseDeployment ||
+      !releaseIdentifierActivation ||
       !releaseRich ||
       !releaseScheduler
     ) {
@@ -781,7 +783,13 @@ export function validate(root) {
     ) {
       errors.push("CI: release_plan must run on main push in parallel with validation");
     }
-    for (const job of [releaseSupabase, releaseDeployment, releaseRich, releaseScheduler]) {
+    for (const job of [
+      releaseSupabase,
+      releaseDeployment,
+      releaseIdentifierActivation,
+      releaseRich,
+      releaseScheduler,
+    ]) {
       if (
         !job?.needs?.includes("validation") ||
         !job?.needs?.includes("release_plan") ||
@@ -861,16 +869,53 @@ export function validate(root) {
       errors.push("CI: automatic Release must use plain declarative schema sync only");
     }
     if (main < 0 || sync <= main) errors.push("CI: Supabase must guard current main before sync");
+    const syncStep = supabaseSteps[sync];
+    const accessTokenReference = "${{ secrets.SUPABASE_ACCESS_TOKEN }}";
+    const accessTokenReferences =
+      releaseWorkflowSource.match(/\$\{\{\s*secrets\.SUPABASE_ACCESS_TOKEN\s*\}\}/g) ?? [];
+    const misplacedAccessToken =
+      Object.hasOwn(releaseWorkflow.env ?? {}, "SUPABASE_ACCESS_TOKEN") ||
+      Object.values(releaseWorkflow.jobs ?? {}).some((job) =>
+        Object.hasOwn(job?.env ?? {}, "SUPABASE_ACCESS_TOKEN"),
+      ) ||
+      Object.values(releaseWorkflow.jobs ?? {}).some((job) =>
+        (job?.steps ?? []).some(
+          (step) => step !== syncStep && Object.hasOwn(step.env ?? {}, "SUPABASE_ACCESS_TOKEN"),
+        ),
+      );
     if (
-      !supabaseSteps.some(
-        (step) =>
-          step.uses === "actions/upload-artifact@v4" &&
-          step.if === "always()" &&
-          JSON.stringify(step.with ?? {}).includes("migration-history.before.txt") &&
-          JSON.stringify(step.with ?? {}).includes("migration-history.after.txt"),
-      )
+      syncStep?.env?.SUPABASE_ACCESS_TOKEN !== accessTokenReference ||
+      accessTokenReferences.length !== 1 ||
+      misplacedAccessToken
     ) {
-      errors.push("CI: Supabase must preserve migration-history evidence even on failure");
+      errors.push(
+        "CI: Supabase access token must be exposed only to the exact declarative schema sync step",
+      );
+    }
+    const evidenceUpload = supabaseSteps.find(
+      (step) => step.uses === "actions/upload-artifact@v4" && step.if === "always()",
+    );
+    const evidencePaths = new Set(
+      typeof evidenceUpload?.with?.path === "string"
+        ? evidenceUpload.with.path
+            .split("\n")
+            .map((path) => path.trim())
+            .filter(Boolean)
+        : [],
+    );
+    const requiredEvidencePaths = [
+      ".artifacts/supabase-remote/plan.sql",
+      ".artifacts/supabase-remote/plan.sha256",
+      ".artifacts/supabase-remote/verification.sql",
+      ".artifacts/supabase-remote/migration-history.before.txt",
+      ".artifacts/supabase-remote/migration-history.after.txt",
+      ".artifacts/supabase-remote/recovery-readback.json",
+      ".artifacts/supabase-remote/scoped-identifier-readback.json",
+    ];
+    if (!evidenceUpload || requiredEvidencePaths.some((path) => !evidencePaths.has(path))) {
+      errors.push(
+        "CI: Supabase must preserve plan, verification, history, recovery and scoped identifier readback evidence even on failure",
+      );
     }
     const schemaReady =
       "(needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))";
@@ -894,6 +939,103 @@ export function validate(root) {
     ) {
       errors.push(
         "CI: production deployment must be Web-affected only, follow Supabase contract convergence or unchanged skip, and invoke the Vercel owner after current-main guard",
+      );
+    }
+    const identifierActivationSteps = releaseIdentifierActivation?.steps ?? [];
+    const identifierActivationMain = currentMainIndex(identifierActivationSteps);
+    const identifierActivation = identifierActivationSteps.findIndex(
+      (step) => step.run === "pnpm schema:remote activate-identifiers",
+    );
+    const expectedIdentifierActivationNeeds = [
+      "release_plan",
+      "validation",
+      "supabase",
+      "deployment",
+    ];
+    if (
+      JSON.stringify(releaseIdentifierActivation?.needs) !==
+        JSON.stringify(expectedIdentifierActivationNeeds) ||
+      !releaseIdentifierActivation?.if?.includes("always()") ||
+      !releaseIdentifierActivation.if.includes("needs.deployment.result == 'success'") ||
+      !releaseIdentifierActivation.if.includes(schemaReady) ||
+      JSON.stringify(releaseIdentifierActivation.env) !==
+        JSON.stringify({ SUPABASE_REMOTE_MUTATION_CONTEXT: "validated-main" }) ||
+      releaseIdentifierActivation.concurrency?.group !== releaseSupabase?.concurrency?.group ||
+      releaseIdentifierActivation.concurrency?.["cancel-in-progress"] !== false ||
+      identifierActivationMain < 0 ||
+      identifierActivation <= identifierActivationMain
+    ) {
+      errors.push(
+        "CI: identifier runtime activation must follow successful exact-SHA production deployment, guard current main and serialize the production database resource",
+      );
+    }
+    const identifierActivationCommands = Object.values(releaseWorkflow.jobs ?? {}).flatMap((job) =>
+      (job?.steps ?? []).filter((step) => step.run === "pnpm schema:remote activate-identifiers"),
+    );
+    const identifierActivationStep = identifierActivationSteps[identifierActivation];
+    const expectedIdentifierActivationEnv = {
+      GITHUB_TOKEN: "${{ github.token }}",
+      GITHUB_REPOSITORY: "${{ github.repository }}",
+      POSTGRES_URL_NON_POOLING: "${{ secrets.POSTGRES_URL_NON_POOLING }}",
+      SUPABASE_RELEASE_SHA: "${{ needs.release_plan.outputs.head_sha }}",
+      SUPABASE_URL: "${{ secrets.SUPABASE_URL }}",
+      SUPABASE_CONFIRM_PROJECT: "nmssogphayjymjpbnrxv",
+    };
+    const identifierActivationEnv = identifierActivationStep?.env ?? {};
+    const identifierActivationCredentialNames = Object.keys(expectedIdentifierActivationEnv);
+    const misplacedIdentifierActivationCredentials =
+      identifierActivationCredentialNames.some((name) =>
+        Object.hasOwn(releaseWorkflow.env ?? {}, name),
+      ) ||
+      identifierActivationCredentialNames.some((name) =>
+        Object.hasOwn(releaseIdentifierActivation?.env ?? {}, name),
+      ) ||
+      identifierActivationSteps.some(
+        (step, index) =>
+          index !== identifierActivation &&
+          index !== identifierActivationMain &&
+          identifierActivationCredentialNames.some((name) => Object.hasOwn(step.env ?? {}, name)),
+      );
+    if (
+      identifierActivationCommands.length !== 1 ||
+      JSON.stringify(Object.entries(identifierActivationEnv).sort()) !==
+        JSON.stringify(Object.entries(expectedIdentifierActivationEnv).sort()) ||
+      misplacedIdentifierActivationCredentials ||
+      Object.hasOwn(identifierActivationStep?.env ?? {}, "SUPABASE_ACCESS_TOKEN")
+    ) {
+      errors.push(
+        "CI: identifier runtime activation must use the canonical command with exact step-scoped production credentials and no management token",
+      );
+    }
+    const identifierActivationEvidence = identifierActivationSteps.find(
+      (step) =>
+        step.uses === "actions/upload-artifact@v4" &&
+        step.if === "always()" &&
+        step.with?.name ===
+          "scoped-identifier-activation-${{ needs.release_plan.outputs.head_sha }}",
+    );
+    const identifierActivationEvidencePaths = new Set(
+      typeof identifierActivationEvidence?.with?.path === "string"
+        ? identifierActivationEvidence.with.path
+            .split("\n")
+            .map((path) => path.trim())
+            .filter(Boolean)
+        : [],
+    );
+    const requiredIdentifierActivationEvidencePaths = [
+      ".artifacts/supabase-remote/activate-identifiers.sql",
+      ".artifacts/supabase-remote/migration-history.before.txt",
+      ".artifacts/supabase-remote/migration-history.after.txt",
+      ".artifacts/supabase-remote/scoped-identifier-readback.json",
+    ];
+    if (
+      !identifierActivationEvidence ||
+      requiredIdentifierActivationEvidencePaths.some(
+        (path) => !identifierActivationEvidencePaths.has(path),
+      )
+    ) {
+      errors.push(
+        "CI: identifier runtime activation must preserve activation SQL, history and scoped identifier readback evidence even on failure",
       );
     }
     const richSteps = releaseRich?.steps ?? [];

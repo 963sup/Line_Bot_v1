@@ -2,6 +2,7 @@ import {
   readAccountLogin,
   readAccountLogins,
   resolveAccountLogin,
+  resolveScopedName,
 } from "@line_bot_v1/namespace/postgres";
 import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { booleanValue, stringValue } from "@line_bot_v1/platform/validation";
@@ -194,33 +195,6 @@ async function repositoryAccess(
   };
 }
 
-async function currentRepositoryId(
-  sql: Sql,
-  ownerId: string,
-  ownerKind: "USER" | "ORGANIZATION",
-  repositoryName: string,
-  userId: string,
-): Promise<string | null> {
-  const row = (
-    await sql.query(
-      `SELECT r.id
-       FROM repositories r
-       WHERE r.owner_account_id=$1
-         AND r.owner_account_kind=$2
-         AND lower(r.name)=lower($3)
-         AND EXISTS (
-           SELECT 1
-           FROM repository_visibility_access v
-           WHERE v.repository_id=r.id
-             AND (v.user_id=$4 OR v.user_id IS NULL)
-         )`,
-      [ownerId, ownerKind, repositoryName, userId],
-      decodeIdRow,
-    )
-  ).rows[0];
-  return row?.id ?? null;
-}
-
 export async function resolveAuthorizedRepositoryId(
   sql: Sql,
   identity: RepositoryIdentity,
@@ -232,43 +206,31 @@ export async function resolveAuthorizedRepositoryId(
   const owner = await resolveAccountLogin(sql, selector.ownerLogin);
   if (!owner) throw new RepositoryError(404, "找不到可存取的 Repository。");
 
-  const currentId = await currentRepositoryId(
+  const binding = await resolveScopedName(
     sql,
-    owner.id,
-    owner.kind,
+    { family: "repository-name", scopeKind: "OWNER_ACCOUNT", scopeId: owner.id },
     selector.repositoryName,
-    identity.userId,
   );
-  if (currentId) return currentId;
-  if (selector.followRenames === false) {
+  if (!binding || (binding.alias && selector.followRenames === false)) {
     throw new RepositoryError(404, "找不到可存取的 Repository。");
   }
-
-  const rows = (
+  const repository = (
     await sql.query(
       `SELECT r.id
-       FROM repository_name_history h
-       JOIN repositories r ON r.id=h.repository_id
-       WHERE r.owner_account_id=$1
-         AND r.owner_account_kind=$2
-         AND lower(h.old_name)=lower($3)
+       FROM repositories r
+       WHERE r.id=$1
+         AND r.owner_account_id=$2
+         AND r.owner_account_kind=$3
          AND EXISTS (
            SELECT 1
            FROM repository_visibility_access v
            WHERE v.repository_id=r.id
              AND (v.user_id=$4 OR v.user_id IS NULL)
-         )
-       ORDER BY h.renamed_at DESC,r.id
-       LIMIT 2`,
-      [owner.id, owner.kind, selector.repositoryName, identity.userId],
+         )`,
+      [binding.targetId, owner.id, owner.kind, identity.userId],
       decodeIdRow,
     )
-  ).rows;
-  if (!rows.length) throw new RepositoryError(404, "找不到可存取的 Repository。");
-  if (rows.length > 1) {
-    throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
-  }
-  const repository = rows[0];
+  ).rows[0];
   if (!repository) throw new RepositoryError(404, "找不到可存取的 Repository。");
   return repository.id;
 }

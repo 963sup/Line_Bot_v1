@@ -4,6 +4,7 @@ import type {
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
+import { resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import {
   literalValue,
@@ -214,13 +215,21 @@ export function detailEnterpriseBySlug(
     .transaction(async (sql) => {
       const principal = await resolveVerifiedLineActor(sql, actor);
       const ownerScopeIds = await readEnterpriseOwnerScopeIds(sql, principal.userId);
+      const binding = await resolveScopedName(
+        sql,
+        { family: "enterprise-slug", scopeKind: "GLOBAL", scopeId: "global" },
+        slug,
+      );
+      if (!binding || binding.targetKind !== "ENTERPRISE") {
+        throw new GovernanceAccessError(403, "forbidden", "你不能檢視此 Enterprise。");
+      }
       const row = (
         await sql.query(
           `SELECT e.account_id AS id,e.status
            FROM enterprises e
            LEFT JOIN enterprise_invitations i
              ON i.enterprise_account_id=e.account_id AND i.user_id=$1
-           WHERE e.slug=$2
+           WHERE e.account_id=$2
              AND (
                EXISTS (
                  SELECT 1 FROM enterprise_user_affiliations a
@@ -228,7 +237,7 @@ export function detailEnterpriseBySlug(
                ) OR i.status='pending'
              )
            LIMIT 1`,
-          [principal.userId, slug],
+          [principal.userId, binding.targetId],
           enterpriseIdentityRow,
         )
       ).rows[0];

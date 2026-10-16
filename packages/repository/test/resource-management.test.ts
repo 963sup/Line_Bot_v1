@@ -145,10 +145,15 @@ test("Label management preserves stable identity, replay, current authority and 
     (error) => error instanceof RepositoryError && error.status === 403,
   );
 
-  await pg.query(
-    `insert into app_private.issues(
+  await pg.exec(
+    `begin;
+     select app_private.allocate_number(
+       'repository-work-item','REPOSITORY','repo','ISSUE','issue',14
+     );
+     insert into app_private.issues(
        id,repository_id,number,publisher,title,body,criteria,state,workflow_status,version,created_at,updated_at
-     ) values('issue','repo',1,'owner','Issue','','','OPEN','pending',1,1,1)`,
+     ) values('issue','repo',1,'owner','Issue','','','OPEN','pending',1,1,1);
+     commit;`,
   );
   await pg.query(
     "insert into app_private.issue_labels(repository_id,issue_id,label_id,added_by,created_at) values('repo','issue',$1,'owner',14)",
@@ -182,6 +187,12 @@ test("Label management preserves stable identity, replay, current authority and 
   if (deleted.action !== "delete-label") throw new Error("unexpected receipt");
   assert.equal(deleted.deleted, true);
   assert.equal(deleted.label.id, created.label.id);
+  const claims = await pg.query(
+    `select name,claim_kind from app_private.namespace_claims
+     where family='repository-label' and target_id=$1`,
+    [created.label.id],
+  );
+  assert.deepEqual(claims.rows, []);
 
   const events = await pg.query(
     "select action from app_private.repository_events where repository_id='repo' order by id",
@@ -231,6 +242,20 @@ test("Milestone management allocates repository-local numbers and enforces versi
   }
   assert.equal(first.milestone.number, 1);
   assert.equal(second.milestone.number, 2);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select number::int as number,resource_id
+         from app_private.number_allocations
+         where family='repository-milestone' and scope_id='repo'
+         order by number`,
+      )
+    ).rows,
+    [
+      { number: 1, resource_id: first.milestone.id },
+      { number: 2, resource_id: second.milestone.id },
+    ],
+  );
 
   const close = {
     action: "close-milestone" as const,

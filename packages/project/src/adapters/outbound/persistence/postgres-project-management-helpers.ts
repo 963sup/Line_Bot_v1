@@ -89,10 +89,6 @@ const roleRow = (row: SqlRow): { role: ProjectAccessRole } => ({
   role: literalValue(row.role, projectAccessRoles),
 });
 
-const numberRow = (row: SqlRow): { number: number | string } => ({
-  number: numericValue(row.number),
-});
-
 const receiptRow = (row: SqlRow): { fingerprint: string; result: unknown } => ({
   fingerprint: stringValue(row.fingerprint),
   result: row.result,
@@ -280,27 +276,6 @@ export async function requireProjectTeamTarget(
   if (ownerKind !== "ORGANIZATION" || organizationAccountId !== ownerAccountId) {
     throw new ProjectError(409, "Team collaborator 必須屬於 Project owner Organization。");
   }
-}
-
-export async function allocateProjectNumber(
-  sql: Sql,
-  ownerAccountId: string,
-  ownerKind: ProjectOwnerKind,
-): Promise<number> {
-  await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-    `project-number:${ownerKind}:${ownerAccountId}`,
-  ]);
-  const row = (
-    await sql.query(
-      `SELECT COALESCE(MAX(number),0)+1 AS number
-       FROM projects
-       WHERE owner_account_id=$1 AND owner_account_kind=$2`,
-      [ownerAccountId, ownerKind],
-      numberRow,
-    )
-  ).rows[0];
-  if (!row) throw new ProjectError(503, "Project number 無法配置。");
-  return Number(row.number);
 }
 
 export async function advanceProject(

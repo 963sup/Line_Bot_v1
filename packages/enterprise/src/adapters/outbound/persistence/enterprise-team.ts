@@ -5,6 +5,8 @@ import {
   requireActiveTargetUser,
   requireEnterpriseOwner,
 } from "@line_bot_v1/identity-access/postgres";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import { claimScopedName, renameScopedName } from "@line_bot_v1/namespace/postgres";
 import {
   assertOrganizationMembershipSourceRemovable,
   cancelPendingOrganizationInvitation,
@@ -59,9 +61,18 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
               }),
             )
           ).rows[0] ?? null,
-        saveTeam: async (team) => {
+        saveTeam: async (team, expectedSlug) => {
           try {
             if (team.version === 1) {
+              await claimScopedName(sql, {
+                family: "enterprise-team-slug",
+                scopeKind: "ENTERPRISE",
+                scopeId,
+                targetKind: "ENTERPRISE_TEAM",
+                targetId: team.id,
+                name: team.slug,
+                at,
+              });
               await sql.query(
                 `INSERT INTO enterprise_teams(
               id,enterprise_account_id,name,slug,version,created_by_user_id,created_at
@@ -70,6 +81,22 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
               );
               return 1;
             }
+            if (expectedSlug === undefined)
+              throw new GovernanceAccessError(
+                503,
+                "unknown-result",
+                "Enterprise Team rename 缺少目前 slug。",
+              );
+            await renameScopedName(sql, {
+              family: "enterprise-team-slug",
+              scopeKind: "ENTERPRISE",
+              scopeId,
+              targetKind: "ENTERPRISE_TEAM",
+              targetId: team.id,
+              expectedName: expectedSlug,
+              name: team.slug,
+              at,
+            });
             const row = (
               await sql.query(
                 `UPDATE enterprise_teams
@@ -88,11 +115,12 @@ export class PostgresEnterpriseTeam implements EnterpriseTeamTransactions {
             return row.version;
           } catch (error) {
             if (
-              error instanceof Error &&
-              "code" in error &&
-              error.code === "23505" &&
-              "constraint" in error &&
-              error.constraint === "enterprise_teams_enterprise_slug"
+              (error instanceof NamespaceError && error.status === 409) ||
+              (error instanceof Error &&
+                "code" in error &&
+                error.code === "23505" &&
+                "constraint" in error &&
+                error.constraint === "enterprise_teams_enterprise_slug")
             )
               throw new GovernanceAccessError(
                 409,

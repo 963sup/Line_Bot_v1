@@ -24,6 +24,14 @@
     },
     {
       "path": "supabase/schemas/101_account_logins.sql",
+      "role": "derived-projection"
+    },
+    {
+      "path": "supabase/schemas/102_numbering.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/103_namespace_bindings.sql",
       "role": "authoritative"
     },
     {
@@ -394,6 +402,13 @@
   ],
   "relations": [
     {
+      "name": "scoped_identifier_authority",
+      "kind": "table",
+      "path": "supabase/schemas/000_foundation.sql",
+      "authority": true,
+      "semanticOwner": "platform"
+    },
+    {
       "name": "accounts",
       "kind": "table",
       "path": "supabase/schemas/100_accounts.sql",
@@ -404,9 +419,49 @@
       "name": "account_logins",
       "kind": "table",
       "path": "supabase/schemas/101_account_logins.sql",
+      "authority": false,
+      "role": "constrained-projection",
+      "participants": ["account", "namespace"]
+    },
+    {
+      "name": "number_series",
+      "kind": "table",
+      "path": "supabase/schemas/102_numbering.sql",
+      "authority": true,
+      "semanticOwner": "numbering",
+      "concept": "number-series"
+    },
+    {
+      "name": "number_allocations",
+      "kind": "table",
+      "path": "supabase/schemas/102_numbering.sql",
+      "authority": true,
+      "semanticOwner": "numbering",
+      "concept": "number-allocation"
+    },
+    {
+      "name": "namespace_bindings",
+      "kind": "table",
+      "path": "supabase/schemas/103_namespace_bindings.sql",
       "authority": true,
       "semanticOwner": "namespace",
-      "concept": "account-namespace-binding"
+      "concept": "namespace-binding"
+    },
+    {
+      "name": "namespace_claims",
+      "kind": "table",
+      "path": "supabase/schemas/103_namespace_bindings.sql",
+      "authority": true,
+      "semanticOwner": "namespace",
+      "concept": "namespace-claim"
+    },
+    {
+      "name": "namespace_binding_history",
+      "kind": "table",
+      "path": "supabase/schemas/103_namespace_bindings.sql",
+      "authority": true,
+      "semanticOwner": "namespace",
+      "concept": "namespace-binding-history"
     },
     {
       "name": "users",

@@ -99,7 +99,7 @@ test("Repository Star Lists preserve replay, versioning, Star dependency and vie
     ["repo-b", "Hidden"],
   ] as const) {
     await pg.query(
-      "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,'owner','USER',$2,'private',1)",
+      "select * from app_private.provision_repository($1,'owner','owner','USER',$2,'private')",
       [id, name],
     );
   }
@@ -214,7 +214,7 @@ test("Repository Star List add requires an existing Star", async (t) => {
   t.after(() => pg.close());
   await activeUser(db, "owner", "owner");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
   );
 
   const store = new PostgresRepositoryStarListStore(db);

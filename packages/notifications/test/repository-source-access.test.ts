@@ -24,17 +24,26 @@ test("Repository-backed notifications recheck source access on create and read",
   t.after(() => pg.close());
   for (const id of ["owner", "assignee", "viewer", "outsider"]) await activeUser(db, id);
 
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
-  );
-  await pg.query(
-    "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('repo','viewer','read',1)",
-  );
-  await pg.query(
-    `insert into app_private.issues(
-       id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
-     ) values('issue','repo',1,'owner','Issue','Body','Done','OPEN',NULL,'pending',1,1,1)`,
-  );
+  await pg.exec(`
+    begin;
+    insert into app_private.repositories(
+      id,owner_account_id,owner_account_kind,name,visibility,version
+    ) values('repo','owner','USER','Repo','private',1);
+    select * from app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo','Repo',1
+    );
+    insert into app_private.repository_access(
+      repository_id,principal_id,capability,version
+    ) values('repo','viewer','read',1);
+    select app_private.allocate_number(
+      'repository-work-item','REPOSITORY','repo','ISSUE','issue',1
+    );
+    insert into app_private.issues(
+      id,repository_id,number,publisher,title,body,criteria,state,state_reason,
+      workflow_status,version,created_at,updated_at
+    ) values('issue','repo',1,'owner','Issue','Body','Done','OPEN',NULL,'pending',1,1,1);
+    commit;
+  `);
   await pg.query(
     "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue','assignee',1)",
   );

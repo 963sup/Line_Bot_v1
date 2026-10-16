@@ -1,4 +1,5 @@
 import type { AccountId, UserId } from "@line_bot_v1/account/domain";
+import { NamespaceError, normalizeNamespaceName } from "@line_bot_v1/namespace";
 
 export type EnterpriseAccountId = AccountId;
 
@@ -225,11 +226,12 @@ export function requireNoEnterpriseTeamAssignments(assigned: boolean) {
 }
 
 export function normalizeEnterpriseSlug(value: string) {
-  const slug = value.trim().toLowerCase();
-  if (slug.length < 1 || slug.length > 39 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug)) {
+  try {
+    return normalizeNamespaceName("enterprise-slug", value);
+  } catch (error) {
+    if (!(error instanceof NamespaceError)) throw error;
     throw new EnterpriseError("invalid-input", "Enterprise slug is invalid.");
   }
-  return slug;
 }
 
 export function normalizeEnterpriseName(value: string) {
@@ -265,14 +267,13 @@ export function completeEnterpriseIdentity(
   };
 }
 
-const enterpriseTeamSlugPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
-
 export function normalizeEnterpriseTeamSlug(value: string): string {
-  const slug = value.normalize("NFKC").trim().toLowerCase();
-  if (slug.length < 1 || slug.length > 80 || !enterpriseTeamSlugPattern.test(slug)) {
+  try {
+    return normalizeNamespaceName("enterprise-team-slug", value);
+  } catch (error) {
+    if (!(error instanceof NamespaceError)) throw error;
     throw new EnterpriseError("invalid-input", "Enterprise team slug is invalid.");
   }
-  return slug;
 }
 
 export function enterpriseTeamSlugFromName(value: string): string {

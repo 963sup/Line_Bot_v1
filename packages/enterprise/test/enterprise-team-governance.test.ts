@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import { createPostgresOrganizationGovernance } from "@line_bot_v1/organization/composition/bootstrap/organization-governance";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createPostgresEnterpriseGovernance } from "../src/composition/bootstrap/enterprise-governance.js";
@@ -53,7 +54,7 @@ async function fixture() {
 }
 
 test("Enterprise Team create and rename preserve stable identity, slug uniqueness, versions and exact replay", async (t) => {
-  const { pg, governance, command } = await fixture();
+  const { pg, db, governance, command } = await fixture();
   t.after(() => pg.close());
   const input = command("create-enterprise-team", { name: "Platform" });
   const created = await governance.execute(actor, input);
@@ -77,6 +78,18 @@ test("Enterprise Team create and rename preserve stable identity, slug uniquenes
     expectedVersion: 1,
   });
   assert.equal((await governance.execute(actor, rename)).version, 2);
+  const resolve = (slug: string) =>
+    db.transaction((sql) =>
+      resolveScopedName(
+        sql,
+        { family: "enterprise-team-slug", scopeKind: "ENTERPRISE", scopeId: "ent" },
+        slug,
+      ),
+    );
+  assert.equal(await resolve("platform"), null);
+  const renamedBinding = await resolve("research");
+  assert.equal(renamedBinding?.targetKind, "ENTERPRISE_TEAM");
+  assert.equal(renamedBinding?.targetId, teamId);
   await assert.rejects(
     governance.execute(
       actor,

@@ -177,6 +177,9 @@ test("direct-source removal protects the last Owner and preserves independent Te
     SELECT * FROM app_private.provision_enterprise_scope('ent','owner','ent','Ent',100);
     INSERT INTO app_private.enterprise_organizations VALUES ('ent','org','active',1,100,null);
     INSERT INTO app_private.enterprise_teams VALUES ('et','ent','Shared','shared',1,'owner',100);
+    SELECT app_private.claim_scoped_namespace_name(
+      'enterprise-team-slug','ENTERPRISE','ent','ENTERPRISE_TEAM','et','shared',100
+    );
     INSERT INTO app_private.enterprise_team_memberships VALUES ('et','ent','target','active',1,100);
     INSERT INTO app_private.enterprise_team_organizations VALUES ('et','ent','org','active',1,100,null);
     SELECT * FROM app_private.refresh_organization_membership('org','target',100);

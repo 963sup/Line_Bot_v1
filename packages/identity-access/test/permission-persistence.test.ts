@@ -26,7 +26,8 @@ test("administrator protection counts only current User-bound assignments, inclu
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('manager','active',1),('backup','active',1);
-    INSERT INTO account_logins VALUES ('manager','USER','manager',1),('backup','USER','backup',1);
+    SELECT app_private.claim_account_login(id,'USER',login,1)
+    FROM (VALUES ('manager','manager'),('backup','backup')) AS fixture(id,login);
     INSERT INTO permission_administrators(user_id,user_version,granted_by) VALUES ('manager',1,'seed'),('backup',1,'seed');`);
   const protect = (id: string) =>
     db.transaction(async (sql) => {
@@ -48,7 +49,8 @@ test("permission grants preserve version, dependencies, current qualification an
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('admin','active',1),('backup','active',1),('target','active',1),('outsider','active',1);
-    INSERT INTO account_logins VALUES ('admin','USER','permission-admin',1),('backup','USER','backup',1),('target','USER','target',1),('outsider','USER','outsider',1);
+    SELECT app_private.claim_account_login(id,'USER',login,1)
+    FROM (VALUES ('admin','permission-admin'),('backup','backup'),('target','target'),('outsider','outsider')) AS fixture(id,login);
     INSERT INTO permission_administrators(user_id,user_version,granted_by) VALUES ('admin',1,'seed'),('backup',1,'seed');`);
   const store = new PostgresPermissionStore(db);
   await assert.rejects(store.change("outsider", command(0), 100), { status: 403 });
@@ -96,7 +98,8 @@ test("permission reads compare the persisted enum and hide stale grants", async 
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('admin','active',1),('target','active',1);
-    INSERT INTO account_logins VALUES ('admin','USER','permission-admin',1),('target','USER','target',1);
+    SELECT app_private.claim_account_login(id,'USER',login,1)
+    FROM (VALUES ('admin','permission-admin'),('target','target')) AS fixture(id,login);
     INSERT INTO permission_administrators(user_id,user_version,granted_by) VALUES ('admin',1,'seed');`);
   const store = new PostgresPermissionStore(db);
   await store.change("admin", command(0), 100);
@@ -113,7 +116,8 @@ test("receipt failure rolls back the real grant and subject version writes", asy
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('admin','active',1),('target','active',1);
-    INSERT INTO account_logins VALUES ('admin','USER','permission-admin',1),('target','USER','target',1);
+    SELECT app_private.claim_account_login(id,'USER',login,1)
+    FROM (VALUES ('admin','permission-admin'),('target','target')) AS fixture(id,login);
     INSERT INTO permission_administrators(user_id,user_version,granted_by) VALUES ('admin',1,'seed');`);
   let reachedReceipt = false;
   const failing: Database = {

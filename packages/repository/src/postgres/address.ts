@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
+import {
+  readAccountLogin,
+  resolveAccountLogin,
+  resolveScopedName,
+} from "@line_bot_v1/namespace/postgres";
 import {
   businessDatabase,
   type Database,
@@ -103,13 +107,21 @@ async function repositoryRow(
   }
   const owner = await resolveAccountLogin(sql, selector.ownerLogin);
   if (!owner) throw new RepositoryError(404, "找不到 Repository。");
+  const binding = await resolveScopedName(
+    sql,
+    { family: "repository-name", scopeKind: "OWNER_ACCOUNT", scopeId: owner.id },
+    selector.repositoryName,
+  );
+  if (!binding || (binding.alias && selector.followRenames === false)) {
+    throw new RepositoryError(404, "找不到 Repository。");
+  }
   const row = (
     await sql.query(
       `SELECT ${columns}
        FROM repositories
-       WHERE owner_account_id=$1 AND owner_account_kind=$2 AND lower(name)=lower($3)
+       WHERE id=$1 AND owner_account_id=$2 AND owner_account_kind=$3
        ${lock ? "FOR UPDATE" : ""}`,
-      [owner.id, owner.kind, selector.repositoryName],
+      [binding.targetId, owner.id, owner.kind],
       decodeRepositoryRow,
     )
   ).rows[0];

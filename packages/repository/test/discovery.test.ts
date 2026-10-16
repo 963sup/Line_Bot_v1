@@ -22,10 +22,11 @@ test("Repository discovery ranks current Stars and rechecks Repository access", 
     }
   });
 
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
-    ["repository-a", "owner", "Operations"],
-  );
+  await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,'private')", [
+    "repository-a",
+    "owner",
+    "Operations",
+  ]);
   for (const userId of ["viewer", "peer"]) {
     await pg.query(
       "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'read',1)",
@@ -37,10 +38,11 @@ test("Repository discovery ranks current Stars and rechecks Repository access", 
     ["repository-a", "viewer", 90, "owner", 95, "peer", 70],
   );
 
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
-    ["repository-b", "owner", "Hidden"],
-  );
+  await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,'private')", [
+    "repository-b",
+    "owner",
+    "Hidden",
+  ]);
   await pg.query(
     "insert into app_private.repository_stars(repository_id,user_id,created_at) values($1,$2,$3)",
     ["repository-b", "owner", 91],

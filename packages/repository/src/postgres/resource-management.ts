@@ -1,5 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import {
+  claimScopedName,
+  releaseScopedName,
+  renameScopedName,
+} from "@line_bot_v1/namespace/postgres";
+import { allocateNumber } from "@line_bot_v1/numbering/postgres";
 import {
   businessDatabase,
   type Database,
@@ -339,6 +346,9 @@ async function storeReceipt(
 }
 
 function labelConflict(error: unknown): never {
+  if (error instanceof NamespaceError && error.status === 409) {
+    throw new RepositoryError(409, "此 Repository 已有相同名稱的 Label。");
+  }
   const code = postgresErrorCode(error);
   if (code === "23505") {
     throw new RepositoryError(409, "此 Repository 已有相同名稱的 Label。");
@@ -389,15 +399,25 @@ export class PostgresRepositoryResourceManagementStore
       let result: RepositoryResourceManagementReceipt;
 
       if (command.action === "create-label") {
+        const labelId = randomUUID();
         let created: LabelRow | undefined;
         try {
+          await claimScopedName(sql, {
+            family: "repository-label",
+            scopeKind: "REPOSITORY",
+            scopeId: repository.id,
+            targetKind: "LABEL",
+            targetId: labelId,
+            name: command.name,
+            at: now,
+          });
           created = (
             await sql.query(
               `INSERT INTO repository_labels(
                  id,repository_id,name,color,description,version
                ) VALUES($1,$2,$3,$4,$5,1)
                RETURNING *`,
-              [randomUUID(), repository.id, command.name, command.color, command.description],
+              [labelId, repository.id, command.name, command.color, command.description],
               decodeLabelRow,
             )
           ).rows[0];
@@ -430,6 +450,18 @@ export class PostgresRepositoryResourceManagementStore
         }
         let updated: LabelRow | undefined;
         try {
+          if (nextName !== before.name) {
+            await renameScopedName(sql, {
+              family: "repository-label",
+              scopeKind: "REPOSITORY",
+              scopeId: repository.id,
+              targetKind: "LABEL",
+              targetId: before.id,
+              expectedName: before.name,
+              name: nextName,
+              at: now,
+            });
+          }
           updated = (
             await sql.query(
               `UPDATE repository_labels
@@ -466,6 +498,15 @@ export class PostgresRepositoryResourceManagementStore
         const before = await currentLabel(sql, repository.id, command.labelId);
         requireVersion(before.version, command.expectedVersion);
         try {
+          await releaseScopedName(sql, {
+            family: "repository-label",
+            scopeKind: "REPOSITORY",
+            scopeId: repository.id,
+            targetKind: "LABEL",
+            targetId: before.id,
+            expectedName: before.name,
+            at: now,
+          });
           const deleted = (
             await sql.query(
               `DELETE FROM repository_labels
@@ -491,14 +532,15 @@ export class PostgresRepositoryResourceManagementStore
           at: now,
         };
       } else if (command.action === "create-milestone") {
-        const numberRow = (
-          await sql.query(
-            "SELECT COALESCE(MAX(number),0)+1 AS number FROM repository_milestones WHERE repository_id=$1",
-            [repository.id],
-            (row) => ({ number: numericValue(row.number) }),
-          )
-        ).rows[0];
-        if (!numberRow) throw new RepositoryError(503, "Milestone number 配置結果不完整。");
+        const milestoneId = randomUUID();
+        const number = await allocateNumber(sql, {
+          family: "repository-milestone",
+          scopeKind: "REPOSITORY",
+          scopeId: repository.id,
+          resourceKind: "MILESTONE",
+          resourceId: milestoneId,
+          at: now,
+        });
         const created = (
           await sql.query(
             `INSERT INTO repository_milestones(
@@ -506,9 +548,9 @@ export class PostgresRepositoryResourceManagementStore
              ) VALUES($1,$2,$3,$4,$5,'open',$6,1,$7,$7)
              RETURNING *`,
             [
-              randomUUID(),
+              milestoneId,
               repository.id,
-              Number(numberRow.number),
+              number,
               command.title,
               command.description,
               command.dueAt,

@@ -14,7 +14,8 @@ function command(action: UserStatusCommand["action"], expectedVersion: number): 
 async function fixture() {
   const fixture = await postgresFixture();
   await fixture.pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('operator','active',1),('target','active',1),('outsider','active',1);
-    INSERT INTO account_logins VALUES ('operator','USER','operator',1),('target','USER','target',1),('outsider','USER','outsider',1);
+    SELECT app_private.claim_account_login(id,'USER',login,1)
+    FROM (VALUES ('operator','operator'),('target','target'),('outsider','outsider')) AS fixture(id,login);
     INSERT INTO permission_grants(user_id,permission,user_version,granted_by,granted_at) VALUES
       ('operator','users.read',1,'seed',1),('operator','users.suspend',1,'seed',1);`);
   return fixture;

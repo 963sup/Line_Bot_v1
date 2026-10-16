@@ -12,7 +12,7 @@ export interface EnterpriseTeamTransaction {
   replay(): Promise<EnterpriseReceipt | null>;
   nextId(): string;
   loadTeam(teamId: string): Promise<EnterpriseTeam | null>;
-  saveTeam(team: EnterpriseTeam): Promise<number>;
+  saveTeam(team: EnterpriseTeam, expectedSlug?: string): Promise<number>;
   loadMembership(teamId: string, userId: string): Promise<EnterpriseTeamMembership | null>;
   requireActiveTarget(userId: string): Promise<void>;
   isAffiliated(userId: string): Promise<boolean>;

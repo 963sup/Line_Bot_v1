@@ -117,11 +117,17 @@ test("Repository access management supports direct and Team grants with Owner im
     "Enterprise",
     4,
   ]);
-  await pg.query(
+  await pg.exec(
     "insert into app_private.enterprise_organizations(enterprise_account_id,organization_account_id,status,version,attached_at) values('enterprise','org','active',1,5)",
   );
-  await pg.query(
-    "insert into app_private.teams(id,organization_account_id,name,slug,version,created_by_user_id,created_at) values('team-a','org','Team A','team-a',1,'owner',6)",
+  await pg.exec(
+    `begin;
+     insert into app_private.teams(id,organization_account_id,name,slug,version,created_by_user_id,created_at)
+       values('team-a','org','Team A','team-a',1,'owner',6);
+     select app_private.claim_scoped_namespace_name(
+       'organization-team-slug','ORGANIZATION','org','TEAM','team-a','team-a',6
+     );
+     commit;`,
   );
   await pg.query(
     "insert into app_private.team_memberships(team_id,user_id,name,status,version) values('team-a','team-member','Team Member','active',1)",
@@ -371,8 +377,14 @@ test("Organization Owner implicit Repository admin disappears when its current r
     "Acme",
     2,
   ]);
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo-owner','org','ORGANIZATION','Owner Repo','private',1)",
+  await pg.exec(
+    `begin;
+     insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values('repo-owner','org','ORGANIZATION','Owner Repo','private',1);
+     select app_private.claim_scoped_namespace_name(
+       'repository-name','OWNER_ACCOUNT','org','REPOSITORY','repo-owner','Owner Repo',2
+     );
+     commit;`,
   );
   const store = new PostgresRepositoryAccessStore(db);
   assert.deepEqual(
@@ -393,7 +405,7 @@ test("User-owned Repository keeps owner implicit admin and rejects redundant own
   t.after(() => pg.close());
   await activeUser(db, "owner", "alice");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo-user','owner','USER','Personal','private',1)",
+    "select * from app_private.provision_repository('repo-user','owner','owner','USER','Personal','private')",
   );
   const store = new PostgresRepositoryAccessStore(db);
   await assert.rejects(

@@ -9,4 +9,6 @@ Routing and module overview for `@line_bot_v1/namespace`.
 
 ## Scope
 
-Global User and Organization login reservation, namespace claiming, renaming, and URL locator contracts.
+Typed global and scoped business-name binding, occupancy, alias/release policy, normalization profiles,
+and URL locator contracts. Resource lifecycle and authorization stay with the consuming Owner; the
+PostgreSQL adapter uses the caller's transaction.

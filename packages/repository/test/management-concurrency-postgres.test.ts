@@ -18,7 +18,10 @@ test("PostgreSQL Repository lifecycle serializes competing versions and concurre
       SELECT app_private.claim_account_login('owner','USER','owner',1);
       INSERT INTO app_private.repositories(
         id,owner_account_id,owner_account_kind,name,visibility,version
-      ) VALUES ('repo','owner','USER','Alpha','private',1);`);
+      ) VALUES ('repo','owner','USER','Alpha','private',1);
+      SELECT * FROM app_private.claim_scoped_namespace_name(
+        'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo','Alpha',1
+      );`);
   const store = new PostgresRepositoryManagementStore(db);
   const first: RepositoryManagementCommand = {
     action: "rename",
@@ -93,8 +96,11 @@ test("PostgreSQL Repository lifecycle serializes competing versions and concurre
     1,
   );
   assert.equal(
-    (await pool.query("SELECT count(*)::int AS count FROM app_private.repository_name_history"))
-      .rows[0]?.count,
+    (
+      await pool.query(
+        "SELECT count(*)::int AS count FROM app_private.namespace_binding_history WHERE family='repository-name' AND action='RENAME'",
+      )
+    ).rows[0]?.count,
     1,
   );
 });

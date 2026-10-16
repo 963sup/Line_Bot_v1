@@ -67,7 +67,7 @@ test("User and Organization share the global Account Namespace authority", () =>
   );
 });
 
-test("Enterprise, Team, and Repository locators preserve their owner-local uniqueness scopes", () => {
+test("Enterprise, Team, and Repository locators use Namespace with their original scopes", () => {
   const enterprise = locator("enterprise-slug");
   const organizationTeam = locator("organization-team-slug");
   const enterpriseTeam = locator("enterprise-team-slug");
@@ -82,7 +82,7 @@ test("Enterprise, Team, and Repository locators preserve their owner-local uniqu
     {
       fields: ["slug"],
       scope: "enterprise-slug-namespace",
-      scopeAuthority: "enterprise",
+      scopeAuthority: "namespace",
     },
   );
   assert.deepEqual(
@@ -94,7 +94,7 @@ test("Enterprise, Team, and Repository locators preserve their owner-local uniqu
     {
       fields: ["organizationLogin", "teamSlug"],
       scope: "organization-scoped-team-slug",
-      scopeAuthority: "team",
+      scopeAuthority: "namespace",
     },
   );
   assert.deepEqual(
@@ -106,7 +106,7 @@ test("Enterprise, Team, and Repository locators preserve their owner-local uniqu
     {
       fields: ["enterpriseSlug", "teamSlug"],
       scope: "enterprise-scoped-team-slug",
-      scopeAuthority: "enterprise",
+      scopeAuthority: "namespace",
     },
   );
   assert.deepEqual(
@@ -118,7 +118,7 @@ test("Enterprise, Team, and Repository locators preserve their owner-local uniqu
     {
       fields: ["ownerLogin", "name"],
       scope: "repository-owner-login-and-name",
-      scopeAuthority: "repository",
+      scopeAuthority: "namespace",
     },
   );
 
@@ -139,10 +139,10 @@ test("Enterprise, Team, and Repository locators preserve their owner-local uniqu
   );
 });
 
-test("Repository child locators remain Repository-scoped instead of becoming global namespaces", () => {
-  for (const id of ["issue-number", "repository-milestone-number", "discussion-opaque-id"]) {
-    assert.equal(locator(id).scopeAuthority, "repository");
-  }
+test("Repository child locators remain scoped while Numbering owns sequential locators", () => {
+  for (const id of ["issue-number", "repository-milestone-number", "discussion-number"])
+    assert.equal(locator(id).scopeAuthority, "numbering");
+  assert.equal(locator("discussion-opaque-id").scopeAuthority, "repository");
   assert.equal(locator("issue-number").scope, "repository-scoped-issue-number");
   assert.equal(locator("repository-milestone-number").scope, "repository-scoped-milestone-number");
   assert.equal(locator("discussion-opaque-id").scope, "repository-scoped-local-discussion-id");

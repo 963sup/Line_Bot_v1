@@ -50,6 +50,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | provides | insights | query | issue | current-state | Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider. |
 | consumes | namespace | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
+| consumes | namespace | command | namespace | same-transaction | Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction. |
+| consumes | numbering | command | numbering | same-transaction | Issue authorizes and creates its stable resource, then obtains an idempotent Repository work-item number in the same transaction; Numbering owns the shared Issue/future Pull Request series. |
 | consumes | organization | stable-identity+query | organization | transaction-recheck | IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority. |
 | provides | project | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |
 | provides | project | reference | issue | current-access-and-identity | Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. |
