@@ -1,3 +1,12 @@
+/** Published request accepted by the typed User administration capability. */
+export type UserStatusRequest = {
+  action: "suspend" | "unsuspend";
+  requestId: string;
+  target: string;
+  expectedVersion: number;
+  reason: string;
+};
+
 export type ManagedUser = {
   id: string;
   status: "active" | "paused" | "suspended";
