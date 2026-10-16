@@ -33,10 +33,12 @@ test("public Repository list and popularity expose only public owner resources d
     ["repository-b", "Beta", "public"],
     ["repository-c", "Private", "private"],
   ] as const) {
-    await pg.query(
-      "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,$4,1)",
-      [id, "public-owner", name, visibility],
-    );
+    await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,$4)", [
+      id,
+      "public-owner",
+      name,
+      visibility,
+    ]);
   }
   await pg.query(
     "insert into app_private.repository_stars(repository_id,user_id,created_at) values($1,$2,$3),($1,$4,$5),($6,$2,$7)",

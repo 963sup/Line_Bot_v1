@@ -58,6 +58,7 @@ export function executeEnterpriseTeam(
         if (command.action === "rename-enterprise-team") {
           version = await transaction.saveTeam(
             renameEnterpriseTeam(team, command.name, command.expectedVersion),
+            team.slug,
           );
           status = "renamed";
         } else if (

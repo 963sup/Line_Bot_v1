@@ -3,7 +3,19 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { requireCurrentMain } from "../github/current-main.mjs";
 import { loadRootEnv } from "../runtime/load-env.mjs";
+import {
+  assertIdentifierAuthorityCounts,
+  assertIdentifierAuthorityMarker,
+  assertIdentifierCutoverRevision,
+  classifyIdentifierAuthorityState,
+  identifierAuthorityCatalogSql,
+  identifierAuthorityCountsSql,
+  identifierAuthorityMarkerSql,
+  identifierCutoverTransactionSql,
+  identifierRuntimeActivationTransactionSql,
+} from "./identifier-cutover.mjs";
 import { executeSql, queryRows, withPostgres } from "./postgres.mjs";
 import { localDatabaseCommands } from "./schema-local.mjs";
 import { declaredSchemaSql, schemaFileNames } from "./schema-source.mjs";
@@ -35,6 +47,19 @@ const foundationStateSql = `
 select
   to_regnamespace('app_private') is not null as app_private_exists,
   exists(select 1 from pg_roles where rolname='line_app') as line_app_exists;
+`;
+const cutoverFoundationSql = `
+select
+  exists(
+    select 1 from pg_roles
+    where rolname='line_app'
+      and not rolcanlogin
+      and not rolsuper
+      and not rolbypassrls
+  ) as line_app_safe,
+  pg_has_role('postgres','line_app','member') as postgres_line_app_member,
+  has_schema_privilege('line_app','app_private','USAGE') as line_app_private_usage,
+  has_schema_privilege('line_app','app_private','CREATE') as line_app_private_create;
 `;
 const acceptanceSql = `
 select
@@ -93,6 +118,8 @@ where to_regclass(format('app_private.%I', relation_name)) is null;
 const apiReadbackTimeoutMs = 10_000;
 const managementApiBaseUrl = "https://api.supabase.com/v1";
 const reconciliationLockName = "line_bot_v1:supabase-schema-reconciliation";
+const identifierAuthorityParitySql =
+  "select app_private.assert_scoped_identifier_parity() as verified;";
 
 export function assertSupabaseRestReadback({ usersStatus, authStatus, googleEnabled }) {
   if (![401, 403, 404].includes(usersStatus)) {
@@ -513,6 +540,18 @@ async function remoteFoundationState() {
   };
 }
 
+async function assertCutoverFoundationReady() {
+  const [state] = await queryRemote(cutoverFoundationSql);
+  if (
+    !state?.line_app_safe ||
+    !state.postgres_line_app_member ||
+    !state.line_app_private_usage ||
+    state.line_app_private_create
+  ) {
+    throw new Error("Remote foundation privileges are not safe for scoped identifier cutover.");
+  }
+}
+
 function localDatabaseUrl() {
   const status = JSON.parse(run(["status", "--output", "json"], { capture: true }));
   if (typeof status.DB_URL !== "string") throw new Error("Supabase local DB_URL is unavailable.");
@@ -556,14 +595,101 @@ function generatePlan(artifactName = "plan.sql") {
   return { path: plan, sql, fingerprint };
 }
 
+export function remoteMutationRevision(env = process.env) {
+  return assertIdentifierCutoverRevision(env.SUPABASE_RELEASE_SHA);
+}
+
+export async function requireMutationAdjacentCurrentMain(
+  env = process.env,
+  fetchImpl = globalThis.fetch,
+) {
+  return requireCurrentMain({
+    sha: remoteMutationRevision(env),
+    repository: env.GITHUB_REPOSITORY,
+    token: env.GITHUB_TOKEN,
+    fetchImpl,
+  });
+}
+
+export async function applyAuthorizedRemoteSql({ sql, query, authorize }) {
+  await authorize();
+  return query(sql);
+}
+
 async function applyRemoteSql(sql, artifactName) {
   const { postgresUrl } = requireRemoteConfig();
   writeFileSync(new URL(artifactName, artifacts), sql);
   if (activeRemoteClient) {
-    await activeRemoteClient.query(sql);
+    await applyAuthorizedRemoteSql({
+      sql,
+      query: (statement) => activeRemoteClient.query(statement),
+      authorize: () => requireMutationAdjacentCurrentMain(),
+    });
     return;
   }
-  await executeSql(postgresUrl, sql, { remote: true });
+  await applyAuthorizedRemoteSql({
+    sql,
+    query: (statement) => executeSql(postgresUrl, statement, { remote: true }),
+    authorize: () => requireMutationAdjacentCurrentMain(),
+  });
+}
+
+async function identifierAuthorityState(query = queryRemote, options) {
+  const [catalog] = await query(identifierAuthorityCatalogSql);
+  const state = classifyIdentifierAuthorityState(catalog ?? {}, options);
+  if (state === "cutover-required") return { state };
+  const [row] = await query(identifierAuthorityMarkerSql);
+  return { state: "active", catalog, marker: assertIdentifierAuthorityMarker(row) };
+}
+
+export function assertIdentifierLifecycleOperatorOnly(catalog) {
+  if (
+    catalog?.line_app_cutover_execute ||
+    catalog?.anon_cutover_execute ||
+    catalog?.authenticated_cutover_execute ||
+    !catalog?.cutover_operator_owned ||
+    catalog?.line_app_runtime_activation_execute ||
+    catalog?.anon_runtime_activation_execute ||
+    catalog?.authenticated_runtime_activation_execute ||
+    !catalog?.runtime_activation_operator_owned
+  ) {
+    throw new Error("Remote acceptance: identifier lifecycle operations are not operator-only.");
+  }
+}
+
+export function identifierRuntimeActivationAction(marker, revision) {
+  const releaseRevision = assertIdentifierCutoverRevision(revision);
+  if (marker.runtimeReady) {
+    return { kind: "noop", runtimeRevision: marker.runtimeRevision };
+  }
+  return { kind: "activate", runtimeRevision: releaseRevision };
+}
+
+async function assertDesiredIdentifierAuthority() {
+  const [catalog] = await queryRows(localDatabaseUrl(), identifierAuthorityCatalogSql, {
+    remote: false,
+  });
+  if (classifyIdentifierAuthorityState(catalog ?? {}) !== "marker-readback-required") {
+    throw new Error("Desired schema is missing the complete scoped identifier authority.");
+  }
+}
+
+async function verifyIdentifierAuthorityReadback() {
+  const authority = await identifierAuthorityState();
+  if (authority.state !== "active") {
+    throw new Error("Remote acceptance: scoped identifier authority is not activated.");
+  }
+  const [catalog] = await queryRemote(identifierAuthorityCatalogSql);
+  assertIdentifierLifecycleOperatorOnly(catalog);
+  await queryRemote(identifierAuthorityParitySql);
+  const [countRow] = await queryRemote(identifierAuthorityCountsSql);
+  const counts = assertIdentifierAuthorityCounts(countRow);
+  const evidence = { ...authority.marker, parityVerified: true, counts };
+  writeFileSync(
+    new URL("scoped-identifier-readback.json", artifacts),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+  );
+  return evidence;
 }
 
 async function verifyRuntimeAuthBoundary() {
@@ -638,7 +764,7 @@ export function assertSupabaseRecoveryReadback(payload) {
   const pitrReady = payload.pitr_enabled === true && payload.walg_enabled === true;
   if (!pitrReady && completed.length === 0) {
     throw new Error(
-      "Supabase provider recovery is unavailable: no PITR/WALG capability and no completed managed backup. Refusing destructive manual reconciliation.",
+      "Supabase provider recovery is unavailable: no PITR/WALG capability and no completed managed backup. Refusing data cutover.",
     );
   }
 
@@ -668,7 +794,7 @@ export async function verifySupabaseRecoveryReadback(
   );
   if (!response.ok) {
     throw new Error(
-      `Supabase recovery readback failed with HTTP ${response.status}; refusing destructive manual reconciliation.`,
+      `Supabase recovery readback failed with HTTP ${response.status}; refusing data cutover.`,
     );
   }
   let payload;
@@ -678,6 +804,17 @@ export async function verifySupabaseRecoveryReadback(
     throw new Error("Supabase recovery readback did not return JSON.");
   }
   return { projectRef: config.projectRef, ...assertSupabaseRecoveryReadback(payload) };
+}
+
+export function requiresIdentifierCutoverRecovery({ command, foundationState, authorityState }) {
+  return command === "sync" && foundationState !== "fresh" && authorityState === "cutover-required";
+}
+
+function persistSupabaseRecoveryEvidence(evidence) {
+  writeFileSync(
+    new URL("recovery-readback.json", artifacts),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+  );
 }
 
 export function supabaseApiReadbackConfig(env = process.env) {
@@ -763,16 +900,21 @@ async function verifyRemoteAcceptance() {
     throw new Error("Remote acceptance: attendance Auth SECURITY DEFINER boundary is invalid.");
   }
   await verifyRuntimeAuthBoundary();
+  return verifyIdentifierAuthorityReadback();
 }
 
 export function parseArgs(argv) {
   const [command = "sync", ...flags] = argv;
-  if (!["plan", "recovery", "sync", "verify"].includes(command)) {
-    throw new Error("Usage: schema:remote [plan|recovery|sync|verify] [--api]");
+  if (!["activate-identifiers", "plan", "recovery", "sync", "verify"].includes(command)) {
+    throw new Error(
+      "Usage: schema:remote [activate-identifiers|plan|recovery|sync|verify] [--api]",
+    );
   }
   for (const flag of flags) {
     if (!["--api"].includes(flag)) {
-      throw new Error("Usage: schema:remote [plan|recovery|sync|verify] [--api]");
+      throw new Error(
+        "Usage: schema:remote [activate-identifiers|plan|recovery|sync|verify] [--api]",
+      );
     }
   }
   const api = flags.includes("--api");
@@ -783,12 +925,51 @@ export function parseArgs(argv) {
 }
 
 export function assertRemoteMutationContext(command, env = process.env) {
-  if (command !== "sync") return;
+  if (!["activate-identifiers", "sync"].includes(command)) return;
   if (env.GITHUB_ACTIONS !== "true" || env.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main") {
     throw new Error(
       "Supabase remote mutation is allowed only from the repository GitHub Actions current-main reconciliation path.",
     );
   }
+}
+
+async function activateIdentifierRuntime(projectRef) {
+  mkdirSync(artifacts, { recursive: true });
+  await assertPlatformPrerequisites();
+  const before = await migrationHistory();
+  writeFileSync(new URL("migration-history.before.txt", artifacts), `${before}\n`);
+
+  const authority = await identifierAuthorityState();
+  if (authority.state !== "active") {
+    throw new Error("Scoped identifier authority must be cut over before runtime activation.");
+  }
+  assertIdentifierLifecycleOperatorOnly(authority.catalog);
+
+  const action = identifierRuntimeActivationAction(authority.marker, remoteMutationRevision());
+  if (action.kind === "activate") {
+    await applyRemoteSql(
+      identifierRuntimeActivationTransactionSql(action.runtimeRevision),
+      "activate-identifiers.sql",
+    );
+  }
+
+  const evidence = await verifyIdentifierAuthorityReadback();
+  if (!evidence.runtimeReady) {
+    throw new Error("Scoped identifier runtime activation did not become ready.");
+  }
+  if (action.kind === "activate" && evidence.runtimeRevision !== action.runtimeRevision) {
+    throw new Error("Scoped identifier runtime activation revision does not match this release.");
+  }
+
+  const after = await migrationHistory();
+  writeFileSync(new URL("migration-history.after.txt", artifacts), `${after}\n`);
+  assertMigrationHistoryUnchanged(before, after);
+  console.log(
+    `Scoped identifier runtime ${
+      action.kind === "noop" ? "already active" : "activated"
+    } for ${projectRef} at revision ${evidence.runtimeRevision}; migration history drift = 0.`,
+  );
+  return evidence;
 }
 
 async function runRemoteCommand({ projectRef, command, api }) {
@@ -799,9 +980,30 @@ async function runRemoteCommand({ projectRef, command, api }) {
   writeFileSync(new URL("migration-history.before.txt", artifacts), `${before}\n`);
 
   let foundationState = classifyRemoteFoundationState(await remoteFoundationState());
+  const initialIdentifierAuthority = await identifierAuthorityState(queryRemote, {
+    allowRegistryOnly: command === "sync",
+  });
+  if (
+    requiresIdentifierCutoverRecovery({
+      command,
+      foundationState,
+      authorityState: initialIdentifierAuthority.state,
+    })
+  ) {
+    if (foundationState === "existing") await assertCutoverFoundationReady();
+    const recoveryEvidence = await verifySupabaseRecoveryReadback();
+    persistSupabaseRecoveryEvidence(recoveryEvidence);
+  }
+  await rebuildDesiredLocal();
+  await assertDesiredIdentifierAuthority();
   if (foundationState === "repairable") {
     if (command === "verify") {
       throw new Error("Remote foundation drift detected: line_app is missing.");
+    }
+    if (initialIdentifierAuthority.state === "active" && command === "sync") {
+      throw new Error(
+        "Remote foundation drift exists after scoped identifier activation; refusing automatic repair.",
+      );
     }
     if (command !== "plan") {
       await applyRemoteSql(`BEGIN;\n${foundationSql}\nCOMMIT;\n`, "foundation-repair.sql");
@@ -809,14 +1011,18 @@ async function runRemoteCommand({ projectRef, command, api }) {
       if (foundationState !== "existing") {
         throw new Error("Remote foundation repair did not converge.");
       }
+      await assertCutoverFoundationReady();
     }
   }
-  await rebuildDesiredLocal();
+  const identifierAuthority =
+    foundationState === "existing" && initialIdentifierAuthority.state === "cutover-required"
+      ? await identifierAuthorityState(queryRemote, { allowRegistryOnly: command === "sync" })
+      : initialIdentifierAuthority;
 
   if (foundationState === "fresh") {
     if (command === "plan") {
       console.log(
-        `Remote target: ${projectRef}; foundation: fresh. Full application bootstrap will apply ${schemaFileNames().join(", ")} in one transaction; Supabase platform state and migration history stay outside the mutation boundary.`,
+        `Remote target: ${projectRef}; foundation: fresh. Full application bootstrap will apply ${schemaFileNames().join(", ")} and activate scoped identifier authority in one transaction; Supabase platform state and migration history stay outside the mutation boundary.`,
       );
       return;
     }
@@ -825,17 +1031,40 @@ async function runRemoteCommand({ projectRef, command, api }) {
         "Remote schema drift detected: app_private and line_app are not bootstrapped.",
       );
     }
-    await applyRemoteSql(`BEGIN;\n${declaredSchemaSql()}\nCOMMIT;\n`, "bootstrap.sql");
+    const revision = remoteMutationRevision();
+    await applyRemoteSql(
+      identifierCutoverTransactionSql({
+        ddl: declaredSchemaSql(),
+        revision,
+        freezeLegacy: false,
+      }),
+      "bootstrap.sql",
+    );
   } else {
     const plan = generatePlan();
     const classification = classifyPlan(plan.sql);
     if (command === "plan") {
-      console.log(`Remote target: ${projectRef}; foundation: existing.`);
+      console.log(`Remote target: ${projectRef}; foundation: ${foundationState}.`);
+      if (foundationState === "repairable") {
+        console.log(
+          "Remote foundation repair is required and will run only during validated-main sync before schema reconciliation.",
+        );
+      }
       console.log(
         `Plan classification: ${classification.mode}; fingerprint: ${plan.fingerprint}; reasons: ${
           classification.reasons.join(", ") || "none"
         }.`,
       );
+      console.log(
+        identifierAuthority.state === "cutover-required"
+          ? "Scoped identifier authority cutover is required and will run only during validated-main sync."
+          : `Scoped identifier authority is active at revision ${identifierAuthority.marker.revision}.`,
+      );
+      if (identifierAuthority.state === "cutover-required") {
+        console.log(
+          "Existing-database cutover requires provider recovery readback before any remote DDL.",
+        );
+      }
       console.log(plan.sql || "Remote app_private schema already matches supabase/schemas.");
       return;
     }
@@ -857,10 +1086,15 @@ async function runRemoteCommand({ projectRef, command, api }) {
     }
 
     assertTransactionalPlan(plan.sql);
-    await applyRemoteSql(
-      `BEGIN;\n${foundationSql}\n${classification.empty ? "" : plan.sql}\nCOMMIT;\n`,
-      "apply.sql",
-    );
+    const sql =
+      identifierAuthority.state === "cutover-required"
+        ? identifierCutoverTransactionSql({
+            ddl: plan.sql,
+            revision: remoteMutationRevision(),
+            freezeLegacy: true,
+          })
+        : `BEGIN;\n${foundationSql}\n${classification.empty ? "" : plan.sql}\nCOMMIT;\n`;
+    await applyRemoteSql(sql, "apply.sql");
   }
 
   const after = await migrationHistory();
@@ -871,9 +1105,9 @@ async function runRemoteCommand({ projectRef, command, api }) {
   if (!classifyPlan(verification.sql).empty) {
     throw new Error(`Remote sync left schema drift; see ${verification.path}`);
   }
-  await verifyRemoteAcceptance();
+  const identifierReadback = await verifyRemoteAcceptance();
   console.log(
-    `Remote sync PASS for ${projectRef}: schema drift = 0; ownership/security readback = PASS; migration history drift = 0.`,
+    `Remote sync PASS for ${projectRef}: schema drift = 0; ownership/security readback = PASS; scoped identifier authority revision = ${identifierReadback.revision}; migration history drift = 0.`,
   );
 }
 
@@ -885,10 +1119,7 @@ export async function main(argv = process.argv.slice(2)) {
   if (command === "recovery") {
     mkdirSync(artifacts, { recursive: true });
     const evidence = await verifySupabaseRecoveryReadback();
-    writeFileSync(
-      new URL("recovery-readback.json", artifacts),
-      `${JSON.stringify(evidence, null, 2)}\n`,
-    );
+    persistSupabaseRecoveryEvidence(evidence);
     console.log(
       `Supabase recovery PASS for ${evidence.projectRef}: PITR = ${evidence.pitrEnabled}; WALG = ${evidence.walgEnabled}; completed managed backups = ${evidence.completedBackupCount}.`,
     );
@@ -896,6 +1127,9 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const { projectRef } = requireRemoteConfig();
+  if (command === "activate-identifiers") {
+    return withRemoteReconciliationLock(() => activateIdentifierRuntime(projectRef));
+  }
   const execute = () => runRemoteCommand({ projectRef, command, api });
 
   if (command === "sync") {

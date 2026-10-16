@@ -108,10 +108,6 @@
       "types": "./dist/postgres/access.d.ts",
       "default": "./dist/postgres/access.js"
     },
-    "./postgres/issue-number": {
-      "types": "./dist/postgres/issue-number.d.ts",
-      "default": "./dist/postgres/issue-number.js"
-    },
     "./application/resource-management": {
       "types": "./dist/application/resource-management.d.ts",
       "default": "./dist/application/resource-management.js"
@@ -185,7 +181,8 @@
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/account": "workspace:*",
     "@line_bot_v1/organization": "workspace:*",
-    "@line_bot_v1/namespace": "workspace:*"
+    "@line_bot_v1/namespace": "workspace:*",
+    "@line_bot_v1/numbering": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

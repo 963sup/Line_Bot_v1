@@ -58,10 +58,9 @@ async function discussionFixture() {
     ["repo-b", "owner-b", "Beta", "private"],
     ["repo-public", "owner-a", "Public Notes", "public"],
   ] as const) {
-    await pg.query(
-      "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,$4,1)",
-      [...repository],
-    );
+    await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,$4)", [
+      ...repository,
+    ]);
   }
   for (const repositoryId of ["repo-a", "repo-b"]) {
     await pg.query(

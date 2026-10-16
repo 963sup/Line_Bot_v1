@@ -89,7 +89,7 @@ test("Repository access rechecks delegated authority before replay and preserves
   t.after(() => pg.close());
   for (const userId of ["owner", "actor", "target"]) await activeUser(db, userId);
   await pg.query(
-    "INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) VALUES('repo','owner','USER','Repo','private',1)",
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
   );
 
   const store = new PostgresRepositoryAccessStore(db);
@@ -225,7 +225,7 @@ test("typed Repository access snapshots caller-owned subject before transaction 
   t.after(() => pg.close());
   for (const userId of ["owner", "before", "after"]) await activeUser(db, userId);
   await pg.query(
-    "INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) VALUES('repo','owner','USER','Repo','private',1)",
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
   );
 
   const caller = {

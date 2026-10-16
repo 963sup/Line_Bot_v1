@@ -122,7 +122,7 @@ test("Repository stores an addressless point without fabricating an address", as
   await activeUser(db, "owner", "alice");
   await activeUser(db, "member");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Operations','private',1)",
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Operations','private')",
   );
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('repo','member','read',1)",
@@ -179,7 +179,7 @@ test("Repository address is admin-managed, replay-safe and visible only to effec
   await activeUser(db, "member");
   await activeUser(db, "visitor");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Operations','public',1)",
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Operations','public')",
   );
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('repo','member','read',1)",

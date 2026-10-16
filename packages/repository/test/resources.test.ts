@@ -29,14 +29,23 @@ async function repositoryFixture() {
     ["repo-a", "owner-a", "Alpha", "private"],
     ["repo-b", "owner-b", "Beta", "private"],
   ] as const) {
-    await pg.query(
-      "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,$4,1)",
-      [...repository],
-    );
-    await pg.query(
-      "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'read',1)",
-      [repository[0], "reader"],
-    );
+    await pg.transaction(async (sql) => {
+      await sql.query(
+        `insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+         values($1,$2,'USER',$3,$4,1)`,
+        [...repository],
+      );
+      await sql.query(
+        `select app_private.claim_scoped_namespace_name(
+           'repository-name','OWNER_ACCOUNT',$2,'REPOSITORY',$1,$3,2
+         )`,
+        [repository[0], repository[1], repository[2]],
+      );
+      await sql.query(
+        "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'read',1)",
+        [repository[0], "reader"],
+      );
+    });
   }
   return fixture;
 }
@@ -141,23 +150,35 @@ test("Repository resource reads recheck Organization Team access qualification",
     "Octo Org",
     2,
   ]);
-  await pg.query(
+  await pg.exec(
     "insert into app_private.organization_memberships(organization_account_id,user_id,status,version,created_at) values('organization-a','team-reader','active',1,3)",
   );
-  await pg.query(
-    "insert into app_private.teams(id,organization_account_id,name,slug,version,created_by_user_id,created_at) values('team-a','organization-a','Readers','readers',1,'org-owner',4)",
+  await pg.exec(
+    `begin;
+     insert into app_private.teams(id,organization_account_id,name,slug,version,created_by_user_id,created_at)
+       values('team-a','organization-a','Readers','readers',1,'org-owner',4);
+     select app_private.claim_scoped_namespace_name(
+       'organization-team-slug','ORGANIZATION','organization-a','TEAM','team-a','readers',4
+     );
+     commit;`,
   );
   await pg.query(
     "insert into app_private.team_memberships(team_id,user_id,name,status,version) values('team-a','team-reader','Team Reader','active',1)",
   );
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo-org','organization-a','ORGANIZATION','Shared','private',1)",
+    "select * from app_private.provision_repository('repo-org','org-owner','organization-a','ORGANIZATION','Shared','private')",
   );
   await pg.query(
     "insert into app_private.repository_team_access(repository_id,organization_id,team_id,capability,version) values('repo-org','organization-a','team-a','read',1)",
   );
-  await pg.query(
-    "insert into app_private.repository_labels(id,repository_id,name,color,description,version) values('label-org','repo-org','team','123abc','Team label',1)",
+  await pg.exec(
+    `begin;
+     insert into app_private.repository_labels(id,repository_id,name,color,description,version)
+       values('label-org','repo-org','team','123abc','Team label',1);
+     select app_private.claim_scoped_namespace_name(
+       'repository-label','REPOSITORY','repo-org','LABEL','label-org','team',4
+     );
+     commit;`,
   );
 
   const store = new PostgresRepositoryResourceStore(db);
@@ -187,22 +208,39 @@ test("Labels and milestones map canonical Repository-owned data", async (t) => {
     ["label-bug", "bug", "ff0000", "Bug report"],
     ["label-docs", "docs", "00ff00", ""],
   ] as const) {
-    await pg.query(
-      "insert into app_private.repository_labels(id,repository_id,name,color,description,version) values($1,'repo-a',$2,$3,$4,1)",
-      [...label],
-    );
+    await pg.transaction(async (sql) => {
+      await sql.query(
+        `insert into app_private.repository_labels(id,repository_id,name,color,description,version)
+         values($1,'repo-a',$2,$3,$4,1)`,
+        [...label],
+      );
+      await sql.query(
+        `select app_private.claim_scoped_namespace_name(
+           'repository-label','REPOSITORY','repo-a','LABEL',$1,$2,10
+         )`,
+        [label[0], label[1]],
+      );
+    });
   }
   for (const milestone of [
     ["milestone-one", 1, "One", "First", "closed", 1000],
     ["milestone-two", 2, "Two", "Second", "open", null],
     ["milestone-three", 3, "Three", "Third", "open", 3000],
   ] as const) {
-    await pg.query(
-      `insert into app_private.repository_milestones(
-         id,repository_id,number,title,description,status,due_at,version,created_at,updated_at
-       ) values($1,'repo-a',$2,$3,$4,$5,$6,1,10,20)`,
-      [...milestone],
-    );
+    await pg.transaction(async (sql) => {
+      await sql.query(
+        `select app_private.allocate_number(
+           'repository-milestone','REPOSITORY','repo-a','MILESTONE',$1,10
+         )`,
+        [milestone[0]],
+      );
+      await sql.query(
+        `insert into app_private.repository_milestones(
+           id,repository_id,number,title,description,status,due_at,version,created_at,updated_at
+         ) values($1,'repo-a',$2,$3,$4,$5,$6,1,10,20)`,
+        [...milestone],
+      );
+    });
   }
 
   const store = new PostgresRepositoryResourceStore(db);

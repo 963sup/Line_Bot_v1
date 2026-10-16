@@ -42,6 +42,27 @@ async function activeUser(db: Database, id: string, login = id) {
   });
 }
 
+async function existingRepository(
+  pg: Awaited<ReturnType<typeof postgresFixture>>["pg"],
+  id: string,
+  ownerAccountId: string,
+  ownerKind: "USER" | "ORGANIZATION",
+) {
+  await pg.transaction(async (sql) => {
+    await sql.query(
+      `insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values($1,$2,$3,'Alpha','private',1)`,
+      [id, ownerAccountId, ownerKind],
+    );
+    await sql.query(
+      `select app_private.claim_scoped_namespace_name(
+         'repository-name','OWNER_ACCOUNT',$1,'REPOSITORY',$2,'Alpha',2
+       )`,
+      [ownerAccountId, id],
+    );
+  });
+}
+
 async function repositoryEvidence(
   pg: Awaited<ReturnType<typeof postgresFixture>>["pg"],
   id: string,
@@ -52,7 +73,10 @@ async function repositoryEvidence(
       [id],
     ),
     pg.query(
-      "select old_name,renamed_at from app_private.repository_name_history where repository_id=$1 order by lower(old_name),renamed_at",
+      `select action,old_name,new_name,changed_at
+       from app_private.namespace_binding_history
+       where family='repository-name' and target_kind='REPOSITORY' and target_id=$1
+       order by binding_version`,
       [id],
     ),
     pg.query(
@@ -91,12 +115,7 @@ test("exact rename replay rechecks current User and OrganizationOwner authority"
       }
       const ownerAccountId = ownerKind === "USER" ? "owner" : "org";
       const repositoryId = ownerKind === "USER" ? "user-repo" : "org-repo";
-      await pg.query(
-        `insert into app_private.repositories(
-           id,owner_account_id,owner_account_kind,name,visibility,version
-         ) values($1,$2,$3,'Alpha','private',1)`,
-        [repositoryId, ownerAccountId, ownerKind],
-      );
+      await existingRepository(pg, repositoryId, ownerAccountId, ownerKind);
 
       const store = new PostgresRepositoryManagementStore(db);
       const command = {
@@ -142,9 +161,7 @@ test("same request with a different rename payload is rejected without side effe
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await activeUser(db, "owner", "alice");
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Alpha','private',1)",
-  );
+  await existingRepository(pg, "repo", "owner", "USER");
 
   const store = new PostgresRepositoryManagementStore(db);
   const command = {
@@ -168,9 +185,7 @@ test("stale rename expectedVersion rolls back all state and durable evidence", a
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await activeUser(db, "owner", "alice");
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Alpha','private',1)",
-  );
+  await existingRepository(pg, "repo", "owner", "USER");
   const beforeConflict = await repositoryEvidence(pg, "repo");
 
   const store = new PostgresRepositoryManagementStore(db);
@@ -195,9 +210,7 @@ test("rename snapshots a mutable caller command before entering its transaction"
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await activeUser(db, "owner", "alice");
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Alpha','private',1)",
-  );
+  await existingRepository(pg, "repo", "owner", "USER");
 
   const command: Extract<RepositoryManagementCommand, { action: "rename" }> = {
     action: "rename",

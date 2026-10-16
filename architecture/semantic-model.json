@@ -151,6 +151,12 @@
       "doc": "docs/owners/namespace.md"
     },
     {
+      "id": "numbering",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/numbering.md"
+    },
+    {
       "id": "platform",
       "kind": "support-owner",
       "lifecycle": "current",
@@ -325,12 +331,13 @@
     {
       "id": "identity-and-access",
       "classification": "generic",
-      "owners": ["account", "namespace", "identity-access"],
-      "rationale": "主體身分、名稱解析與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、membership 與 permission。",
+      "owners": ["account", "namespace", "numbering", "identity-access"],
+      "rationale": "主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
         "docs/owners/account.md",
         "docs/owners/namespace.md",
+        "docs/owners/numbering.md",
         "docs/owners/identity-access.md"
       ]
     },
@@ -1418,12 +1425,52 @@
       }
     },
     {
-      "id": "account-namespace-binding",
-      "canonicalName": "Account Namespace Binding",
+      "id": "namespace-binding",
+      "canonicalName": "Namespace Binding",
       "kind": "authoritative",
       "owner": "namespace",
       "lifecycle": "current",
-      "definition": "Unique global login bound to a stable User or Organization Account, independently of qualification and resource authority.",
+      "definition": "Current versioned binding between a typed stable target and a canonical name inside one typed namespace scope.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "namespace-claim",
+      "canonicalName": "Namespace Claim",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Current, alias, or reserved occupancy of one canonical key inside one typed namespace scope.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "namespace-binding-history",
+      "canonicalName": "Namespace Binding History",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Append-only record of known Namespace binding transitions after activation, without fabricated legacy actors or versions.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "number-series",
+      "canonicalName": "Number Series",
+      "kind": "authoritative",
+      "owner": "numbering",
+      "lifecycle": "current",
+      "definition": "Monotonic allocation state for one typed number family and stable scope, including its explicit legacy high-water cutover checkpoint.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "number-allocation",
+      "canonicalName": "Number Allocation",
+      "kind": "authoritative",
+      "owner": "numbering",
+      "lifecycle": "current",
+      "definition": "Immutable association of one number with one typed resource inside one Number Series; committed allocations are never released or reused.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1648,6 +1695,96 @@
       "integrationMode": "query",
       "authority": "namespace",
       "consistency": "current-policy"
+    },
+    {
+      "id": "namespace-enterprise-naming",
+      "provider": "namespace",
+      "consumer": "enterprise",
+      "meaning": "Enterprise validates lifecycle and authorization, then claims or renames Enterprise and EnterpriseTeam slugs through Namespace in the same transaction; Namespace owns normalization and occupancy.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-repository-naming",
+      "provider": "namespace",
+      "consumer": "repository",
+      "meaning": "Repository retains lifecycle, authorization and rename eligibility while Namespace owns Repository names, retained aliases and Label name occupancy in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-team-naming",
+      "provider": "namespace",
+      "consumer": "team",
+      "meaning": "Team retains lifecycle and authorization while Namespace owns Organization-scoped Team slug normalization and occupancy in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-issue-type-naming",
+      "provider": "namespace",
+      "consumer": "issue",
+      "meaning": "Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-discussion-category-naming",
+      "provider": "namespace",
+      "consumer": "discussion",
+      "meaning": "Discussion retains category lifecycle and deletion rules while Namespace owns Repository-scoped category slug normalization and occupancy in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-project-naming",
+      "provider": "namespace",
+      "consumer": "project",
+      "meaning": "Project retains field, option and view lifecycle while Namespace owns their scoped exact-name occupancy and release in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-issue-allocation",
+      "provider": "numbering",
+      "consumer": "issue",
+      "meaning": "Issue authorizes and creates its stable resource, then obtains an idempotent Repository work-item number in the same transaction; Numbering owns the shared Issue/future Pull Request series.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-discussion-allocation",
+      "provider": "numbering",
+      "consumer": "discussion",
+      "meaning": "Discussion retains lifecycle, authorization and replay while Numbering allocates the Repository Discussion number in the same transaction.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-repository-milestone-allocation",
+      "provider": "numbering",
+      "consumer": "repository",
+      "meaning": "Repository retains Milestone lifecycle, authorization and replay while Numbering allocates the Repository Milestone number in the same transaction.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-project-allocation",
+      "provider": "numbering",
+      "consumer": "project",
+      "meaning": "Project retains Project and View lifecycle, authorization, version and replay while Numbering allocates Account-scoped Project and Project-scoped View numbers in the same transaction.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
     },
     {
       "id": "account-team-qualification",
@@ -3799,10 +3936,10 @@
       }
     },
     {
-      "id": "manage-account-namespace",
+      "id": "manage-namespace-bindings",
       "owner": "namespace",
       "kind": "leaf",
-      "intent": "Claim, resolve and compare-and-set rename the shared User/Organization global login without changing stable identity or authorization.",
+      "intent": "Claim, resolve, conditionally rename and release typed scoped names according to frozen family profiles, without changing resource identity, lifecycle or authorization.",
       "preserves": ["K1", "K2", "K3", "K4", "K5"],
       "validationProfiles": [
         "semantic-architecture",
@@ -3814,9 +3951,10 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Global User/Organization Account naming in existing caller transactions",
+        "scope": "Global and scoped business name occupancy in existing caller transactions, with family-specific normalization, alias and release rules",
         "sourcePaths": [
           "packages/namespace/src/domain/namespace.ts",
+          "packages/namespace/src/domain/profiles.ts",
           "packages/namespace/src/application/claim-namespace.ts",
           "packages/namespace/src/application/rename-namespace.ts",
           "packages/namespace/src/application/resolve-namespace.ts",
@@ -3825,13 +3963,59 @@
         "publicExports": [".", "./postgres"],
         "entrypoints": [
           "packages/account/src/adapters/outbound/persistence/user.ts",
+          "packages/discussion/src/adapters/postgres-management.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-identity.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-team.ts",
+          "packages/issue/src/adapters/postgres/issue-types.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-fields.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts",
+          "packages/repository/src/postgres/resource-management.ts",
+          "packages/team/src/adapters/outbound/persistence/team-mutation.ts",
           "apps/web/src/app/api/_composition/namespace.server.ts"
         ],
         "testPaths": [
           "packages/namespace/test/namespace.test.ts",
           "packages/account/test/user.test.ts"
         ],
-        "note": "Existing account_logins rows retained; no duplicate registry and no release capability. Scoped entity-owned locators are not claimed to have moved persistence."
+        "note": "Namespace owns the binding and occupancy facts; each resource Owner still decides whether the business operation is allowed and supplies the caller transaction. account_logins and retained resource columns are constrained projections. History begins only from verified import or activation and never fabricates legacy actor/version facts."
+      }
+    },
+    {
+      "id": "allocate-scoped-numbers",
+      "owner": "numbering",
+      "kind": "leaf",
+      "intent": "Allocate and resolve positive monotonic numbers inside typed stable scopes with immutable committed allocations and idempotency by resource.",
+      "preserves": ["K1", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository work-item, Discussion and Milestone series; Account Project series; Project View series",
+        "sourcePaths": [
+          "packages/numbering/src/domain/numbering.ts",
+          "packages/numbering/src/index.ts",
+          "packages/numbering/src/postgres.ts"
+        ],
+        "publicExports": [".", "./postgres"],
+        "entrypoints": [
+          "packages/discussion/src/adapters/postgres-management-helpers.ts",
+          "packages/issue/src/adapters/postgres.ts",
+          "packages/issue/src/postgres/project-reference.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-management-helpers.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts",
+          "packages/repository/src/postgres/resource-management.ts"
+        ],
+        "testPaths": [
+          "packages/numbering/test/numbering.test.ts",
+          "packages/numbering/test/numbering-postgres.test.ts"
+        ],
+        "note": "Allocation uses the caller Sql transaction after the resource Owner has validated and locked its scope. Committed allocations are never reset, released or reused; rollback does not commit an allocation. Pull Request is a compatible inactive resource kind sharing repository-work-item, not an activated runtime capability."
       }
     },
     {
@@ -4445,7 +4629,12 @@
     {
       "semanticOwner": "namespace",
       "module": "@line_bot_v1/namespace",
-      "note": "Namespace owns global Account login lifecycle plus structured path contracts; scoped entity locators retain their existing persistence authority."
+      "note": "Namespace owns typed global and scoped business-name binding, occupancy, alias, release and structured path contracts; resource Owners retain lifecycle and authorization."
+    },
+    {
+      "semanticOwner": "numbering",
+      "module": "@line_bot_v1/numbering",
+      "note": "Numbering owns typed Series and immutable Allocation facts; callers retain resource lifecycle, authorization, replay receipts and transaction orchestration."
     },
     {
       "semanticOwner": "platform",
@@ -4961,7 +5150,7 @@
       "status": "active",
       "fields": ["slug"],
       "scope": "enterprise-slug-namespace",
-      "scopeAuthority": "enterprise",
+      "scopeAuthority": "namespace",
       "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"],
       "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
       "fpt": {
@@ -4976,7 +5165,7 @@
       "status": "active",
       "fields": ["ownerLogin", "name"],
       "scope": "repository-owner-login-and-name",
-      "scopeAuthority": "repository",
+      "scopeAuthority": "namespace",
       "routeFiles": ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
       "note": "Repository URL derives from owner login plus Repository name; access still comes from authorization checks.",
       "fpt": {
@@ -5001,7 +5190,7 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "number"],
       "scope": "repository-scoped-issue-number",
-      "scopeAuthority": "repository",
+      "scopeAuthority": "numbering",
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
       ],
@@ -5018,7 +5207,7 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "number"],
       "scope": "repository-scoped-discussion-number",
-      "scopeAuthority": "repository",
+      "scopeAuthority": "numbering",
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/discussions/number/[discussionNumber]/page.tsx"
       ],
@@ -5047,7 +5236,7 @@
       "status": "active",
       "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
       "scope": "repository-scoped-milestone-number",
-      "scopeAuthority": "repository",
+      "scopeAuthority": "numbering",
       "routeFiles": [
         "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
       ],
@@ -5064,7 +5253,7 @@
       "status": "active",
       "fields": ["organizationLogin", "teamSlug"],
       "scope": "organization-scoped-team-slug",
-      "scopeAuthority": "team",
+      "scopeAuthority": "namespace",
       "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"],
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "fpt": {
@@ -5079,7 +5268,7 @@
       "status": "active",
       "fields": ["enterpriseSlug", "teamSlug"],
       "scope": "enterprise-scoped-team-slug",
-      "scopeAuthority": "enterprise",
+      "scopeAuthority": "namespace",
       "routeFiles": [
         "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
       ],

@@ -1,4 +1,10 @@
 import { randomUUID } from "node:crypto";
+import {
+  claimScopedName,
+  releaseScopedName,
+  renameScopedName,
+} from "@line_bot_v1/namespace/postgres";
+import { allocateNumber } from "@line_bot_v1/numbering/postgres";
 import type { Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import {
   literalValue,
@@ -55,10 +61,6 @@ const visibleFieldRow = (row: SqlRow): { view_id: string; field_id: string } => 
 });
 
 const idRow = (row: SqlRow): { id: string } => ({ id: stringValue(row.id) });
-
-const numberRow = (row: SqlRow): { number: number | string } => ({
-  number: numericValue(row.number),
-});
 
 const versionRow = (row: SqlRow): { version: number | string } => ({
   version: numericValue(row.version),
@@ -203,18 +205,6 @@ async function replaceVisibleFields(
   }
 }
 
-async function nextViewNumber(sql: Sql, projectId: string): Promise<number> {
-  const row = (
-    await sql.query(
-      "SELECT COALESCE(MAX(number),0)+1 AS number FROM project_views WHERE project_id=$1",
-      [projectId],
-      numberRow,
-    )
-  ).rows[0];
-  if (!row) throw new ProjectError(503, "Project view number 無法配置。");
-  return Number(row.number);
-}
-
 async function currentView(sql: Sql, projectId: string, viewId: string): Promise<ViewRow> {
   const row = (
     await sql.query(
@@ -266,7 +256,23 @@ export async function executeProjectViewStatusCommand(
   if (command.action === "create-view") {
     await requireFieldIds(sql, projectId, command.visibleFieldIds);
     const viewId = randomUUID();
-    const number = await nextViewNumber(sql, projectId);
+    const number = await allocateNumber(sql, {
+      family: "project-view",
+      scopeKind: "PROJECT",
+      scopeId: projectId,
+      resourceKind: "PROJECT_VIEW",
+      resourceId: viewId,
+      at: now,
+    });
+    await claimScopedName(sql, {
+      family: "project-view",
+      scopeKind: "PROJECT",
+      scopeId: projectId,
+      targetKind: "PROJECT_VIEW",
+      targetId: viewId,
+      name: command.name,
+      at: now,
+    });
     await sql.query(
       `INSERT INTO project_views(
          id,project_id,number,name,layout,version,created_at,updated_at
@@ -306,6 +312,18 @@ export async function executeProjectViewStatusCommand(
     ) {
       throw new ProjectError(409, "Project view 沒有變更。");
     }
+    if (name !== before.name) {
+      await renameScopedName(sql, {
+        family: "project-view",
+        scopeKind: "PROJECT",
+        scopeId: projectId,
+        targetKind: "PROJECT_VIEW",
+        targetId: before.id,
+        expectedName: before.name,
+        name,
+        at: now,
+      });
+    }
     const updated = (
       await sql.query(
         `UPDATE project_views
@@ -335,6 +353,15 @@ export async function executeProjectViewStatusCommand(
   if (command.action === "delete-view") {
     const before = await currentView(sql, projectId, command.viewId);
     requireChildVersion(before.version, command.viewVersion, "Project view");
+    await releaseScopedName(sql, {
+      family: "project-view",
+      scopeKind: "PROJECT",
+      scopeId: projectId,
+      targetKind: "PROJECT_VIEW",
+      targetId: before.id,
+      expectedName: before.name,
+      at: now,
+    });
     await sql.query("DELETE FROM project_view_visible_fields WHERE view_id=$1", [before.id]);
     await sql.query("DELETE FROM project_views WHERE project_id=$1 AND id=$2 AND version=$3", [
       projectId,

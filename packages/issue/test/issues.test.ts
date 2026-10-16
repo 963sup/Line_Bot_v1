@@ -162,10 +162,10 @@ test("Issue number is monotonic within each Repository and independent across Re
     ["repository-b", "Beta"],
   ] as const) {
     await pg.query(
-      "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'ORGANIZATION',$3,'private',1)",
+      "select * from app_private.provision_repository($1,'publisher',$2,'ORGANIZATION',$3,'private')",
       [repository[0], "organization-a", repository[1]],
     );
-    for (const user of ["publisher", "assignee"]) {
+    for (const user of ["assignee"]) {
       await pg.query(
         "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'write',1)",
         [repository[0], user],
@@ -189,10 +189,11 @@ test("Issue number is monotonic within each Repository and independent across Re
       10,
     );
 
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
-    ["repository-user", "publisher", "Personal"],
-  );
+  await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,'private')", [
+    "repository-user",
+    "publisher",
+    "Personal",
+  ]);
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'write',1)",
     ["repository-user", "assignee"],
@@ -202,6 +203,7 @@ test("Issue number is monotonic within each Repository and independent across Re
   const secondA = await create("repository-a", "22222222-2222-4222-8222-222222222222");
   const firstB = await create("repository-b", "33333333-3333-4333-8333-333333333333");
   const firstUser = await create("repository-user", "44444444-4444-4444-8444-444444444444");
+  assert.deepEqual(await create("repository-a", "11111111-1111-4111-8111-111111111111"), firstA);
 
   assert.equal(firstA.number, 1);
   assert.equal(secondA.number, 2);
@@ -211,13 +213,22 @@ test("Issue number is monotonic within each Repository and independent across Re
   assert.equal(firstA.state, "OPEN");
   assert.equal(firstA.workflowStatus, "pending");
 
-  const counters = await pg.query(
-    "select id,next_issue_number::int as next_issue_number from app_private.repositories order by id",
+  const allocations = await pg.query(
+    `select scope_id,number::int as number,resource_kind,resource_id
+     from app_private.number_allocations
+     where family='repository-work-item'
+     order by scope_id,number`,
   );
-  assert.deepEqual(counters.rows, [
-    { id: "repository-a", next_issue_number: 3 },
-    { id: "repository-b", next_issue_number: 2 },
-    { id: "repository-user", next_issue_number: 2 },
+  assert.deepEqual(allocations.rows, [
+    { scope_id: "repository-a", number: 1, resource_kind: "ISSUE", resource_id: firstA.id },
+    { scope_id: "repository-a", number: 2, resource_kind: "ISSUE", resource_id: secondA.id },
+    { scope_id: "repository-b", number: 1, resource_kind: "ISSUE", resource_id: firstB.id },
+    {
+      scope_id: "repository-user",
+      number: 1,
+      resource_kind: "ISSUE",
+      resource_id: firstUser.id,
+    },
   ]);
 });
 
@@ -242,7 +253,7 @@ test("Issue state, assignment, content and local workflow remain separate axes",
     );
   }
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'ORGANIZATION',$3,'public',1)",
+    "select * from app_private.provision_repository($1,'owner',$2,'ORGANIZATION',$3,'public')",
     ["repository-policy", "organization-policy", "Policy"],
   );
   for (const [userId, permission] of [
@@ -585,13 +596,14 @@ test("Issue stateReason and assignee scope are enforced by persistence invariant
   await activeUser(db, "owner");
   await activeUser(db, "other");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
   );
-  await pg.query(
-    `insert into app_private.issues(
-       id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
-     ) values('issue','repo',1,'owner','Title','','','OPEN',NULL,'pending',1,1,1)`,
-  );
+  await pg.exec(`begin;
+    select app_private.allocate_number('repository-work-item','REPOSITORY','repo','ISSUE','issue',1);
+    insert into app_private.issues(
+      id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
+    ) values('issue','repo',1,'owner','Title','','','OPEN',NULL,'pending',1,1,1);
+    commit;`);
 
   await assert.rejects(
     pg.query(
@@ -622,16 +634,17 @@ test("pre-parity Issue rows stay readable and materialize without invented histo
   await activeUser(db, "legacy-owner");
   await activeUser(db, "legacy-assignee");
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('legacy-repo','legacy-owner','USER','Legacy','private',1)",
+    "select * from app_private.provision_repository('legacy-repo','legacy-owner','legacy-owner','USER','Legacy','private')",
   );
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('legacy-repo','legacy-assignee','read',1)",
   );
-  await pg.query(
-    `insert into app_private.issues(
-       id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
-     ) values('legacy-issue','legacy-repo',1,'legacy-owner','legacy-assignee','Legacy work','Original criteria','completed',1,10,10)`,
-  );
+  await pg.exec(`begin;
+    select app_private.allocate_number('repository-work-item','REPOSITORY','legacy-repo','ISSUE','legacy-issue',10);
+    insert into app_private.issues(
+      id,repository_id,number,publisher,assignee,title,criteria,status,version,created_at,updated_at
+    ) values('legacy-issue','legacy-repo',1,'legacy-owner','legacy-assignee','Legacy work','Original criteria','completed',1,10,10);
+    commit;`);
   await pg.query(
     "insert into app_private.issue_events(issue_id,version,actor,action,note,at) values('legacy-issue',1,'legacy-owner','create','',10)",
   );

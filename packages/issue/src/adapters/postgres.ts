@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { allocateNumber } from "@line_bot_v1/numbering/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import {
   literalValue,
@@ -15,7 +16,6 @@ import {
   repositoryScope,
   resolveAuthorizedRepositoryId,
 } from "@line_bot_v1/repository/postgres/access";
-import { allocateRepositoryIssueNumber } from "@line_bot_v1/repository/postgres/issue-number";
 import type { IssueCommand } from "../contracts/input/issues.js";
 import type {
   IssueIdentity,
@@ -531,7 +531,14 @@ export class PostgresIssueStore implements IssueRepository {
         assertAssignableUsers(participantIds, command.assigneeIds);
         const issueId = randomUUID();
         const number = await repositoryOperation(() =>
-          allocateRepositoryIssueNumber(sql, command.repositoryId),
+          allocateNumber(sql, {
+            family: "repository-work-item",
+            scopeKind: "REPOSITORY",
+            scopeId: command.repositoryId,
+            resourceKind: "ISSUE",
+            resourceId: issueId,
+            at: now,
+          }),
         );
         await sql.query(
           `INSERT INTO issues(

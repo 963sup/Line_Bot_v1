@@ -32,7 +32,7 @@ test("IssueType keeps Organization scope separate from Issue permission and work
     ]);
   }
   await pg.query(
-    "insert into repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','org','ORGANIZATION','Repo','private',1)",
+    "select * from app_private.provision_repository('repo','owner','org','ORGANIZATION','Repo','private')",
   );
   await pg.query(
     "insert into repository_access(repository_id,principal_id,capability,version) values('repo','writer','write',1),('repo','reader','read',1)",
@@ -41,13 +41,19 @@ test("IssueType keeps Organization scope separate from Issue permission and work
     ["issue-a", 1],
     ["issue-b", 2],
   ] as const) {
-    await pg.query(
-      `insert into issues(
-         id,repository_id,number,publisher,title,body,criteria,state,state_reason,
-         workflow_status,version,created_at,updated_at
-       ) values($1,'repo',$2,'owner',$1,'','', 'OPEN',null,'pending',1,1,1)`,
-      [id, number],
-    );
+    await pg.transaction(async (sql) => {
+      await sql.query(
+        "select app_private.allocate_number('repository-work-item','REPOSITORY','repo','ISSUE',$1,1)",
+        [id],
+      );
+      await sql.query(
+        `insert into issues(
+           id,repository_id,number,publisher,title,body,criteria,state,state_reason,
+           workflow_status,version,created_at,updated_at
+         ) values($1,'repo',$2,'owner',$1,'','', 'OPEN',null,'pending',1,1,1)`,
+        [id, number],
+      );
+    });
   }
 
   const types = new PostgresIssueTypeStore(db);
@@ -146,6 +152,16 @@ test("IssueType keeps Organization scope separate from Issue permission and work
   );
   assert.equal(disabled.version, 2);
   assert.equal((await collaboration.view(writer, "repo", "issue-a")).issueType?.isEnabled, false);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select name,claim_kind from namespace_claims
+         where family='organization-issue-type' and target_id=$1`,
+        [typeId],
+      )
+    ).rows,
+    [{ name: "Task", claim_kind: "CURRENT" }],
+  );
 
   await assert.rejects(
     collaboration.execute(
@@ -221,6 +237,16 @@ test("IssueType keeps Organization scope separate from Issue permission and work
   );
   assert.equal(deleted.version, 3);
   assert.deepEqual((await types.list(owner, "org")).items, []);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select name,claim_kind from namespace_claims
+         where family='organization-issue-type' and target_id=$1`,
+        [typeId],
+      )
+    ).rows,
+    [],
+  );
 
   const typeEvents = await pg.query(
     "select version,action from issue_type_events where issue_type_id=$1 order by version",

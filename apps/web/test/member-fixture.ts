@@ -71,8 +71,12 @@ export async function closeFixture() {
 export async function allowAttendance(memberId: string) {
   const id = randomUUID();
   await fixture.pg.query(
-    `INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version,address)
-     VALUES($1,$2,'USER',$1,'private',1,$3)`,
+    `WITH inserted AS (
+       INSERT INTO app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version,address)
+       VALUES($1,$2,'USER',$1,'private',1,$3) RETURNING id,owner_account_id,name
+     ) SELECT app_private.claim_scoped_namespace_name(
+       'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,0
+     ) FROM inserted`,
     [
       id,
       memberId,

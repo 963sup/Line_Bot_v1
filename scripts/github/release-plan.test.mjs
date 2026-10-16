@@ -88,8 +88,8 @@ test("release source classifiers preserve owner boundaries", () => {
 
 test("owner baseline advances only on that owner success and ancestry", async () => {
   const runs = [
-    { id: 1, display_title: `Release ${OLD}` },
-    { id: 2, display_title: `Release ${PREVIOUS}` },
+    { id: 1, display_title: `Release ${OLD}`, status: "completed" },
+    { id: 2, display_title: `Release ${PREVIOUS}`, status: "completed" },
   ];
   const jobsByRun = new Map([
     [1, [{ name: "supabase", conclusion: "success" }]],
@@ -114,7 +114,7 @@ test("owner baseline advances only on that owner success and ancestry", async ()
 });
 
 test("Web routing follows Turbo build inputs instead of a scripts denylist", async () => {
-  const runs = [{ id: 6, display_title: `Release ${PREVIOUS}` }];
+  const runs = [{ id: 6, display_title: `Release ${PREVIOUS}`, status: "completed" }];
   const fetchImpl = async (url) => {
     const value = String(url);
     if (value.endsWith("/branches/main")) return json({ commit: { sha: SHA } });
@@ -151,7 +151,7 @@ test("Web routing follows Turbo build inputs instead of a scripts denylist", asy
 });
 
 test("release plan keeps owner cursors independent and rich menu direct when Web is unchanged", async () => {
-  const runs = [{ id: 7, display_title: `Release ${PREVIOUS}` }];
+  const runs = [{ id: 7, display_title: `Release ${PREVIOUS}`, status: "completed" }];
   const fetchImpl = async (url) => {
     const value = String(url);
     if (value.endsWith("/branches/main")) return json({ commit: { sha: SHA } });
@@ -195,7 +195,7 @@ test("release plan keeps owner cursors independent and rich menu direct when Web
 });
 
 test("release plan keeps Rich Menu and Web as independent pending operations", async () => {
-  const runs = [{ id: 8, display_title: `Release ${PREVIOUS}` }];
+  const runs = [{ id: 8, display_title: `Release ${PREVIOUS}`, status: "completed" }];
   const fetchImpl = async (url) => {
     const value = String(url);
     if (value.endsWith("/branches/main")) return json({ commit: { sha: SHA } });
@@ -234,8 +234,15 @@ test("release plan keeps Rich Menu and Web as independent pending operations", a
   assert.equal(plan.scheduler_changed, true);
 });
 
-function plannerFixture({ files = [], previousJobs, runs, byBaseline, affected = false } = {}) {
-  const allRuns = runs ?? [{ id: 1, display_title: `Release ${PREVIOUS}` }];
+function plannerFixture({
+  files = [],
+  previousJobs,
+  jobsByRun,
+  runs,
+  byBaseline,
+  affected = false,
+} = {}) {
+  const allRuns = runs ?? [{ id: 1, display_title: `Release ${PREVIOUS}`, status: "completed" }];
   const jobs =
     previousJobs ??
     ["supabase", "deployment", "rich_menu", "attendance_scheduler"].map((name) => ({
@@ -253,7 +260,10 @@ function plannerFixture({ files = [], previousJobs, runs, byBaseline, affected =
         const page = Number(new URL(value).searchParams.get("page"));
         return json({ workflow_runs: allRuns.slice((page - 1) * 100, page * 100) });
       }
-      if (value.includes("/jobs?")) return json({ jobs });
+      if (value.includes("/jobs?")) {
+        const runId = Number(/\/actions\/runs\/(\d+)\/jobs/.exec(value)?.[1]);
+        return json({ jobs: jobsByRun?.get(runId) ?? jobs });
+      }
       throw Error(`Unexpected URL ${url}`);
     },
     git: {
@@ -343,10 +353,126 @@ test("failed and skipped publications retain pending changes", async () => {
   }
 });
 
+test("failed identifier activation keeps Web deployment pending for a later non-Web commit", async () => {
+  for (const conclusion of ["failure", "cancelled", "skipped"]) {
+    const plan = await planRelease(
+      plannerFixture({
+        runs: [
+          { id: 2, display_title: `Release ${PREVIOUS}`, status: "completed" },
+          { id: 1, display_title: `Release ${OLD}`, status: "completed" },
+        ],
+        jobsByRun: new Map([
+          [
+            2,
+            [
+              { name: "deployment", conclusion: "success" },
+              { name: "identifier_runtime_activation", conclusion },
+            ],
+          ],
+          [1, [{ name: "deployment", conclusion: "success" }]],
+        ]),
+        byBaseline: (baseline) =>
+          baseline === OLD ? ["apps/web/src/app/page.tsx", "README.md"] : ["README.md"],
+        affected: true,
+      }),
+    );
+    assert.equal(plan.baselines.deployment, OLD, conclusion);
+    assert.equal(plan.web_affected, true, conclusion);
+  }
+});
+
+test("successful identifier activation acknowledges the paired Web deployment baseline", async () => {
+  const plan = await planRelease(
+    plannerFixture({
+      runs: [
+        { id: 2, display_title: `Release ${PREVIOUS}`, status: "completed" },
+        { id: 1, display_title: `Release ${OLD}`, status: "completed" },
+      ],
+      jobsByRun: new Map([
+        [
+          2,
+          [
+            { name: "deployment", conclusion: "success" },
+            { name: "identifier_runtime_activation", conclusion: "success" },
+          ],
+        ],
+        [1, [{ name: "deployment", conclusion: "success" }]],
+      ]),
+      byBaseline: (baseline) => (baseline === PREVIOUS ? ["README.md"] : []),
+      affected: false,
+    }),
+  );
+  assert.equal(plan.baselines.deployment, PREVIOUS);
+  assert.equal(plan.web_affected, false);
+});
+
+test("identifier activation cannot record a Web baseline without an actual deployment", async () => {
+  const plan = await planRelease(
+    plannerFixture({
+      runs: [
+        { id: 2, display_title: `Release ${PREVIOUS}`, status: "completed" },
+        { id: 1, display_title: `Release ${OLD}`, status: "completed" },
+      ],
+      jobsByRun: new Map([
+        [
+          2,
+          [
+            { name: "deployment", conclusion: "skipped" },
+            { name: "identifier_runtime_activation", conclusion: "success" },
+          ],
+        ],
+        [1, [{ name: "deployment", conclusion: "success" }]],
+      ]),
+      byBaseline: (baseline) => (baseline === OLD ? ["apps/web/src/app/page.tsx"] : []),
+      affected: true,
+    }),
+  );
+  assert.equal(plan.baselines.deployment, OLD);
+  assert.equal(plan.web_affected, true);
+});
+
+test("an in-progress new Release cannot masquerade as legacy before activation is visible", async () => {
+  const plan = await planRelease(
+    plannerFixture({
+      runs: [
+        { id: 2, display_title: `Release ${PREVIOUS}`, status: "in_progress" },
+        { id: 1, display_title: `Release ${OLD}`, status: "completed" },
+      ],
+      jobsByRun: new Map([
+        [2, [{ name: "deployment", conclusion: "success" }]],
+        [1, [{ name: "deployment", conclusion: "success" }]],
+      ]),
+      byBaseline: (baseline) => (baseline === OLD ? ["apps/web/src/app/page.tsx"] : []),
+      affected: true,
+    }),
+  );
+  assert.equal(plan.baselines.deployment, OLD);
+  assert.equal(plan.web_affected, true);
+});
+
+test("missing Release status cannot masquerade as completed legacy deployment evidence", async () => {
+  const plan = await planRelease(
+    plannerFixture({
+      runs: [
+        { id: 2, display_title: `Release ${PREVIOUS}` },
+        { id: 1, display_title: `Release ${OLD}`, status: "completed" },
+      ],
+      jobsByRun: new Map([
+        [2, [{ name: "deployment", conclusion: "success" }]],
+        [1, [{ name: "deployment", conclusion: "success" }]],
+      ]),
+      byBaseline: (baseline) => (baseline === OLD ? ["apps/web/src/app/page.tsx"] : []),
+      affected: true,
+    }),
+  );
+  assert.equal(plan.baselines.deployment, OLD);
+  assert.equal(plan.web_affected, true);
+});
+
 test("successful same-SHA publication is not repeated on rerun", async () => {
   const plan = await planRelease(
     plannerFixture({
-      runs: [{ id: 1, display_title: `Release ${SHA}` }],
+      runs: [{ id: 1, display_title: `Release ${SHA}`, status: "completed" }],
       byBaseline: (baseline) => (baseline === SHA ? [] : ["supabase/schemas/100.sql"]),
     }),
   );
@@ -356,7 +482,7 @@ test("successful same-SHA publication is not repeated on rerun", async () => {
 
 test("publication cursor survives more than one page of unrelated releases", async () => {
   const runs = Array.from({ length: 100 }, (_, i) => ({ id: i + 2, display_title: "unrelated" }));
-  runs.push({ id: 1, display_title: `Release ${PREVIOUS}` });
+  runs.push({ id: 1, display_title: `Release ${PREVIOUS}`, status: "completed" });
   const plan = await planRelease(plannerFixture({ runs }));
   assert.equal(plan.baselines.supabase, PREVIOUS);
   assert.equal(plan.schema_changed, false);

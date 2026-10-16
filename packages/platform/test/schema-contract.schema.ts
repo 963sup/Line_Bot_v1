@@ -471,7 +471,7 @@ test("Repository runtime privileges match only activated write capabilities", as
     {
       can_select: true,
       can_insert: false,
-      can_allocate_issue_number: true,
+      can_allocate_issue_number: false,
       can_update_name: true,
       can_update_visibility: true,
       can_update_archive: true,
@@ -623,7 +623,12 @@ test("repository effective access combines direct and active same-organization T
   }
 
   await pg.query(
-    "insert into app_private.teams(id,organization_account_id,name,slug,created_by_user_id,created_at) values($1,$2,$3,$4,$5,$6)",
+    `with inserted as (
+       insert into app_private.teams(id,organization_account_id,name,slug,created_by_user_id,created_at)
+       values($1,$2,$3,$4,$5,$6) returning *
+     ) select app_private.claim_scoped_namespace_name(
+       'organization-team-slug','ORGANIZATION',organization_account_id,'TEAM',id,slug,created_at
+     ) from inserted`,
     ["team-a", "organization-a", "Team A", "team-a", "repository-owner", 5],
   );
   for (const userId of ["team-user", "removed-team-user"]) {
@@ -634,11 +639,21 @@ test("repository effective access combines direct and active same-organization T
   }
 
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'ORGANIZATION',$3,'private',1)",
+    `with inserted as (
+       insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values($1,$2,'ORGANIZATION',$3,'private',1) returning *
+     ) select app_private.claim_scoped_namespace_name(
+       'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,5
+     ) from inserted`,
     ["repository-a", "organization-a", "Repository A"],
   );
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'ORGANIZATION',$3,'private',1)",
+    `with inserted as (
+       insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values($1,$2,'ORGANIZATION',$3,'private',1) returning *
+     ) select app_private.claim_scoped_namespace_name(
+       'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,5
+     ) from inserted`,
     ["repository-b", "organization-b", "Repository B"],
   );
   await pg.query(

@@ -14,13 +14,10 @@ function staticRootSegments(directory: URL): string[] {
   });
 }
 
-function sqlReservedKeys(pattern: RegExp): string[] {
-  const sql = readFileSync(
-    new URL("../../../supabase/schemas/101_account_logins.sql", import.meta.url),
-    "utf8",
-  );
+function sqlReservedKeys(path: string, pattern: RegExp): string[] {
+  const sql = readFileSync(new URL(`../../../supabase/schemas/${path}`, import.meta.url), "utf8");
   const body = pattern.exec(sql)?.[1];
-  assert.ok(body, "account login SQL must expose the reserved-key enforcement list");
+  assert.ok(body, "Namespace SQL must expose the reserved-key enforcement list");
   return [...body.matchAll(/'([^']+)'/g)].map((match) => {
     const key = match[1];
     assert.ok(key);
@@ -64,6 +61,16 @@ test("every current static root route is reserved before Account may claim it", 
 
 test("database global-login enforcement mirrors Namespace source of truth", () => {
   const expected = [...ROOT_NAMESPACE_RESERVED_KEYS];
-  assert.deepEqual(sqlReservedKeys(/login not in \(([^)]+)\)/s), expected);
-  assert.deepEqual(sqlReservedKeys(/normalized in \(([^)]+)\)/s), expected);
+  assert.deepEqual(
+    sqlReservedKeys("101_account_logins.sql", /login not in \(([^)]+)\)/s),
+    expected,
+  );
+  assert.deepEqual(
+    sqlReservedKeys("101_account_logins.sql", /normalized in \(([^)]+)\)/s),
+    expected,
+  );
+  assert.deepEqual(
+    sqlReservedKeys("103_namespace_bindings.sql", /v_lower in \(([^)]+)\)/s),
+    expected,
+  );
 });

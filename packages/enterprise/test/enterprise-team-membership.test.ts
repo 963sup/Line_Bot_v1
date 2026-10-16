@@ -25,6 +25,7 @@ async function ownerSourceFixture() {
     SELECT * FROM app_private.provision_organization_scope('org','owner','org','Org',2);
     INSERT INTO app_private.enterprise_direct_affiliations(enterprise_account_id,user_id,status,version,created_at) VALUES ('ent','member1','active',1,2),('ent','member2','active',1,2);
     INSERT INTO app_private.enterprise_organizations(enterprise_account_id,organization_account_id,status,version,attached_at) VALUES ('ent','org','active',1,2);
+    SELECT * FROM app_private.claim_scoped_namespace_name('enterprise-team-slug','ENTERPRISE','ent','ENTERPRISE_TEAM','platform-team','platform',2);
     INSERT INTO app_private.enterprise_teams(id,enterprise_account_id,name,slug,version,created_by_user_id,created_at) VALUES ('platform-team','ent','Platform','platform',1,'owner',2);
     INSERT INTO app_private.enterprise_team_memberships(team_id,enterprise_account_id,user_id,status,version,joined_at) VALUES ('platform-team','ent','member1','active',1,2),('platform-team','ent','member2','active',1,2);
     INSERT INTO app_private.enterprise_team_organizations(team_id,enterprise_account_id,organization_account_id,status,version,assigned_at,detached_at) VALUES ('platform-team','ent','org','active',1,2,null);

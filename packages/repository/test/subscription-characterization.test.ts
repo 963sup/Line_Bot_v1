@@ -24,6 +24,9 @@ test("Watch preserves missing, no-op, stale, replay authorization and archived b
       ('repo-default','owner','USER','Default','public',false,1),
       ('repo-private','owner','USER','Private','private',false,1),
       ('repo-archived','owner','USER','Archived','public',true,1);
+    SELECT app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,1
+    ) FROM app_private.repositories WHERE owner_account_id='owner';
     INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version)
       VALUES ('repo-private','viewer','read',1);
     COMMIT;`);
@@ -187,6 +190,9 @@ test("typed Watch execute snapshots caller-owned command before transaction work
     INSERT INTO app_private.repositories(
       id,owner_account_id,owner_account_kind,name,visibility,is_archived,version
     ) VALUES ('repo','owner','USER','Repo','public',false,1);
+    SELECT app_private.claim_scoped_namespace_name(
+      'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo','Repo',1
+    );
     COMMIT;`);
 
   const caller: {

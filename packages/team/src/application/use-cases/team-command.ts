@@ -185,7 +185,7 @@ export class TeamCommandUseCase {
               requireTeamManager(canManage);
               requireTeamVersion(team.version, command.expectedVersion);
               const next = renameTeam(team, command.name);
-              await transaction.saveTeamName(next.id, next.name, next.slug);
+              await transaction.saveTeamName(next.id, team.slug, next.name, next.slug);
               details = {
                 previousName: team.name,
                 previousSlug: team.slug,

@@ -85,7 +85,11 @@ jobs:
       - name: Synchronize declared schema
         run: pnpm schema:remote sync
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_RELEASE_SHA: ${{ needs.release_plan.outputs.head_sha }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
 
@@ -100,6 +104,8 @@ jobs:
             .artifacts/supabase-remote/verification.sql
             .artifacts/supabase-remote/migration-history.before.txt
             .artifacts/supabase-remote/migration-history.after.txt
+            .artifacts/supabase-remote/recovery-readback.json
+            .artifacts/supabase-remote/scoped-identifier-readback.json
           if-no-files-found: ignore
           retention-days: 7
 
@@ -141,6 +147,65 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: pnpm vercel:deploy:production --live --sha "$SHA"
+
+  identifier_runtime_activation:
+    needs: [release_plan, validation, supabase, deployment]
+    if: >-
+      always() &&
+      needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
+      needs.deployment.result == 'success' &&
+      (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_REMOTE_MUTATION_CONTEXT: validated-main
+    concurrency:
+      group: supabase-production-nmssogphayjymjpbnrxv
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release_plan.outputs.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+
+      - name: Require current main before identifier runtime activation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
+        run: pnpm github:current-main --sha "$SHA"
+
+      - name: Activate scoped identifier runtime
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_RELEASE_SHA: ${{ needs.release_plan.outputs.head_sha }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+        run: pnpm schema:remote activate-identifiers
+
+      - name: Preserve identifier runtime activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoped-identifier-activation-${{ needs.release_plan.outputs.head_sha }}
+          path: |
+            .artifacts/supabase-remote/activate-identifiers.sql
+            .artifacts/supabase-remote/migration-history.before.txt
+            .artifacts/supabase-remote/migration-history.after.txt
+            .artifacts/supabase-remote/scoped-identifier-readback.json
+          if-no-files-found: ignore
+          retention-days: 7
 
   rich_menu:
     concurrency:

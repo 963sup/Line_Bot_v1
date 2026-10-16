@@ -1,4 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import {
+  claimScopedName,
+  releaseScopedName,
+  renameScopedName,
+} from "@line_bot_v1/namespace/postgres";
 import {
   hasOrganizationOwnerAssignment,
   readOrganizationQualification,
@@ -164,6 +170,9 @@ async function requireOrganizationOwner(
 }
 
 function postgresConflict(error: unknown): never {
+  if (error instanceof NamespaceError && error.status === 409) {
+    throw new IssueError(409, "此 Organization 已有相同名稱的 IssueType。");
+  }
   const code =
     error !== null && typeof error === "object" && "code" in error ? error.code : undefined;
   if (code === "23505") {
@@ -240,6 +249,15 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
       if (command.action === "create-issue-type") {
         const issueTypeId = randomUUID();
         try {
+          await claimScopedName(sql, {
+            family: "organization-issue-type",
+            scopeKind: "ORGANIZATION",
+            scopeId: command.organizationAccountId,
+            targetKind: "ISSUE_TYPE",
+            targetId: issueTypeId,
+            name: command.name,
+            at: now,
+          });
           row = (
             await sql.query(
               `INSERT INTO issue_types(
@@ -285,6 +303,18 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
             throw new IssueError(409, "IssueType 沒有變更。");
           }
           try {
+            if (name !== before.name) {
+              await renameScopedName(sql, {
+                family: "organization-issue-type",
+                scopeKind: "ORGANIZATION",
+                scopeId: command.organizationAccountId,
+                targetKind: "ISSUE_TYPE",
+                targetId: before.id,
+                expectedName: before.name,
+                name,
+                at: now,
+              });
+            }
             row = (
               await sql.query(
                 `UPDATE issue_types
@@ -319,6 +349,15 @@ export class PostgresIssueTypeStore implements IssueTypeStore {
           if (assigned) {
             throw new IssueError(409, "IssueType 仍被 Issue 使用，請先清除關係。");
           }
+          await releaseScopedName(sql, {
+            family: "organization-issue-type",
+            scopeKind: "ORGANIZATION",
+            scopeId: command.organizationAccountId,
+            targetKind: "ISSUE_TYPE",
+            targetId: before.id,
+            expectedName: before.name,
+            at: now,
+          });
           row = (
             await sql.query(
               `UPDATE issue_types

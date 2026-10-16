@@ -12,7 +12,8 @@ for (const action of ["follow", "unfollow"] as const) {
     t.after(() => pg.close());
     const subject = `U${"1".repeat(32)}`;
     await pg.exec(`INSERT INTO users(id,status,"createdAt") VALUES ('actor','active',1),('target','active',1);
-      INSERT INTO account_logins VALUES ('actor','USER','actor',1),('target','USER','target',1);
+      SELECT app_private.claim_account_login(id,'USER',login,1)
+      FROM (VALUES ('actor','actor'),('target','target')) AS fixture(id,login);
       INSERT INTO user_identities(provider,subject,user_id) VALUES ('line:test','${subject}','actor');`);
     const users = new PostgresUserStore(db);
     const store = new PostgresFollowStore(db);

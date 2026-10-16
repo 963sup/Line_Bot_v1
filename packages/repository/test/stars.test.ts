@@ -75,9 +75,14 @@ test("Postgres stars require current Repository access and star remains idempote
     "Organization A",
     2,
   ]);
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'ORGANIZATION',$3,'private',1)",
-    ["repository-a", "organization-a", "Repository A"],
+  await pg.exec(
+    `begin;
+     insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values('repository-a','organization-a','ORGANIZATION','Repository A','private',1);
+     select app_private.claim_scoped_namespace_name(
+       'repository-name','OWNER_ACCOUNT','organization-a','REPOSITORY','repository-a','Repository A',3
+     );
+     commit;`,
   );
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'read',1)",
@@ -132,8 +137,8 @@ test("public Repository lookup resolves Organization login plus Repository name"
     2,
   ]);
   await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'ORGANIZATION',$3,'public',1)",
-    ["public-repository", "public-organization", "Payroll"],
+    "select * from app_private.provision_repository($1,$2,$3,'ORGANIZATION',$4,'public')",
+    ["public-repository", "public-repository-owner", "public-organization", "Payroll"],
   );
 
   const { PostgresPublicRepositoryStore } = await import("../src/postgres/public.js");
@@ -157,10 +162,11 @@ test("public Repository lookup resolves Organization login plus Repository name"
       4,
     ]);
   });
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'public',1)",
-    ["public-user-repository", "public-user-owner", "Notes"],
-  );
+  await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,'public')", [
+    "public-user-repository",
+    "public-user-owner",
+    "Notes",
+  ]);
   assert.deepEqual(await store.byOwnerAndName("alice", "notes"), {
     id: "public-user-repository",
     ownerLogin: "alice",

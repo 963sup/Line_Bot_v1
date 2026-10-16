@@ -10,6 +10,7 @@ create table app_private."repositories" (
   "name" text not null,
   "visibility" text not null,
   "is_archived" boolean not null default false,
+  -- Read-only legacy high-water evidence; Numbering is the only allocator.
   "next_issue_number" bigint not null default 1,
   "version" integer not null,
   "address" jsonb,
@@ -56,11 +57,11 @@ create unique index repositories_owner_name on app_private.repositories (owner_a
 alter table app_private."repositories" enable row level security;
 revoke all on app_private."repositories" from public, anon, authenticated, line_app;
 grant select on app_private.repositories to line_app;
-grant update (name,visibility,is_archived,next_issue_number,address,version)
+grant update (name,visibility,is_archived,address,version)
   on app_private.repositories to line_app;
 create policy "backend_read" on app_private.repositories
   for select to line_app using (true);
-create policy "backend_issue_number" on app_private.repositories
+create policy "backend_repository_update" on app_private.repositories
   for update to line_app using (true) with check (true);
 
 -- Direct User grant. Team-derived access is stored separately and combined only by the

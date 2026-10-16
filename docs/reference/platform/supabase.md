@@ -37,7 +37,7 @@ Supabase secret / service-role 類高權限變數即使由 Marketplace 一併注
 
 Web runtime 的 PostgreSQL application connection contract 是 provider-owned `POSTGRES_URL`。Vercel 與 Supabase resource 綁定後由平台同步該值；Vercel serverless runtime 使用 Supavisor transaction pooler（port 6543），business transaction 內立即 `SET LOCAL ROLE line_app`，維持 grants、RLS 與 application data boundary。
 
-Supabase schema/operator reconciliation 與 product runtime 明確解耦：production remote mutation 只由 current `main` 的 GitHub Actions Release 呼叫 `pnpm schema:remote sync`，使用 provider-owned `POSTGRES_URL_NON_POOLING` 並以 `SUPABASE_URL` 驗證 exact project；本機與任意 branch 只允許 `plan`、`verify`、`recovery` 等 read-only diagnosis/readback。不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
+Supabase schema/operator reconciliation 與 product runtime 明確解耦：production remote mutation 只由 current `main` 的 GitHub Actions Release 呼叫 `pnpm schema:remote sync`，或在 exact-revision deployment/readback 成功後呼叫 narrow `pnpm schema:remote activate-identifiers`，使用 provider-owned `POSTGRES_URL_NON_POOLING` 並以 `SUPABASE_URL` 驗證 exact project；本機與任意 branch 只允許 `plan`、`verify`、`recovery` 等 read-only diagnosis/readback。每個 remote SQL write 在 query 前再次要求 release SHA 仍為 GitHub current `main`。不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
 
 ## RLS / application authorization separation
 
@@ -80,7 +80,7 @@ RLS 可以拒絕不合法 database access，但不能回答完整的 Domain 問�
 | `POSTGRES_URL` | server-only PostgreSQL technical connection；Vercel Production 由 Supabase Marketplace resource 自動同步，application transaction 立即降權到 `line_app` |
 | `POSTGRES_URL_NON_POOLING` | server-only schema operator connection；只供 remote reconciliation，不是 Web runtime connection |
 | `SUPABASE_URL` | remote reconciliation 的 project identity guard；必須與 operator connection 指向同一 Supabase project |
-| `SUPABASE_ACCESS_TOKEN` | server-only Management API credential；只注入 manual recovery readback step，不進 browser/runtime，也不作 business authority |
+| `SUPABASE_ACCESS_TOKEN` | server-only Management API credential；只注入可能需要首次 cutover recovery readback 的 schema sync step，不進 browser/runtime、deployment 或 runtime activation，也不作 business authority |
 
 Secret values、project ID、callback origin 等不寫入 docs 範例。
 
@@ -96,8 +96,11 @@ Current commands：
 
 - `plan`：由 clean-local desired state比較 exact remote，產生 plan與 fingerprint；`noop / routine / sensitive`只作診斷。
 - `sync`：對完整 generated diff做 bounded transaction apply，然後要求 second diff = 0與 ownership/security readback PASS。
+- `activate-identifiers`：只在 exact-SHA production deployment/readback 成功後，將已完成 cutover 的 frozen runtime marker 原子切換為 ready；已 ready 時只驗證並 no-op。
 - `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。
 - Business identity/data 不由 Supabase reconciliation 補值；需要 owner confirmation 的資料修正必須走 owning domain command。Schema publication 只接受 validated `main` 的 `supabase/schemas/*.sql` desired state，經 Release 呼叫 plain `schema:remote sync` 收斂 remote。
+
+Numbering / Namespace 首次成為 central authority 是一個明確、不可重播的例外 cutover contract，而非 generic schema backfill。Operator 只在 desired schema 含完整 authority objects、remote 尚無任何 business authority object時判定需要 cutover；existing database 必須先取得 machine-readable recovery readback，才凍結 legacy writers並於同一 transaction 套用 DDL與呼叫 operator-only cutover function。Catalog 證明沒有 application schema 的 fresh bootstrap 沒有 retained business data，可略過 recovery gate。Function 只能從可證明的 current/tombstone/event/high-water facts建立 imported records，通過 parity後寫入 `scoped-identifiers-v1` marker，但保持 `runtime_ready=false`。此狀態是資料庫持有的 stop/drain 維護窗：舊 runtime 與已部署但未驗證的新 runtime 都不能寫入受保護資源。只有 Vercel exact SHA production deployment/readback 成功後的 operator-only activation function能設為 ready；deployment/activation failure 保持 frozen，由後續 compatible current-main Release forward-fix。後續發布只驗 marker、current parity與 readiness，不重 seed；partial deployment、缺 marker或 runtime role 可執行 lifecycle functions 皆 fail closed。
 
 所有 repository-owned remote mutation只允許 current `main` 的 GitHub Actions Release 授權，並共用 PostgreSQL advisory lock與 production resource concurrency。任一 remote write都必須保存必要 plan/readback evidence。
 

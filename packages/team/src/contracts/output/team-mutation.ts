@@ -43,7 +43,7 @@ export interface TeamMutationTransaction {
   activeOrganizationParticipants(userIds: readonly string[]): Promise<ReadonlySet<string>>;
   activeUserStatusVersion(userId: string): Promise<number | null>;
   createTeam(team: TeamState, creatorUserId: string, at: number): Promise<void>;
-  saveTeamName(teamId: string, name: string, slug: string): Promise<void>;
+  saveTeamName(teamId: string, expectedSlug: string, name: string, slug: string): Promise<void>;
   saveTeamSettings(
     teamId: string,
     privacy: TeamState["privacy"],

@@ -9,6 +9,7 @@ const OWNER_JOBS = Object.freeze({
   richMenu: new Set(["rich_menu", "rich_menu_direct", "rich_menu_after_deployment"]),
   scheduler: new Set(["attendance_scheduler"]),
 });
+const IDENTIFIER_RUNTIME_ACTIVATION_JOB = "identifier_runtime_activation";
 
 const PUBLICATION_ONLY_SOURCES = [
   /^assets\/line\/rich-menu\//,
@@ -164,7 +165,17 @@ export async function findOwnerBaseline({
     if (!candidate) continue;
     if (!git.hasCommit(candidate) || !git.isAncestor(candidate, targetSha)) continue;
     const jobs = await loadJobs({ runId: runEvidence.id });
-    if (jobs.some((job) => acceptedJobs.has(job?.name) && job?.conclusion === "success")) {
+    const ownerSucceeded = jobs.some(
+      (job) => acceptedJobs.has(job?.name) && job?.conclusion === "success",
+    );
+    const runtimeActivation = jobs.find((job) => job?.name === IDENTIFIER_RUNTIME_ACTIVATION_JOB);
+    const legacyDeploymentEvidence =
+      runtimeActivation === undefined && runEvidence?.status === "completed";
+    const deploymentReady =
+      owner !== "deployment" ||
+      legacyDeploymentEvidence ||
+      runtimeActivation?.conclusion === "success";
+    if (ownerSucceeded && deploymentReady) {
       return candidate;
     }
   }

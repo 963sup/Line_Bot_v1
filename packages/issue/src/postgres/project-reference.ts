@@ -1,3 +1,4 @@
+import { allocateNumber } from "@line_bot_v1/numbering/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import {
   literalValue,
@@ -7,7 +8,6 @@ import {
 } from "@line_bot_v1/platform/validation";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
-import { allocateRepositoryIssueNumber } from "@line_bot_v1/repository/postgres/issue-number";
 import { canIssueRepositoryOperation, IssueError } from "../domain.js";
 
 export type ProjectIssueReference = Readonly<{
@@ -115,7 +115,14 @@ export async function createIssueFromProjectDraft(
 
   const issueId = crypto.randomUUID();
   const number = await repositoryOperation(() =>
-    allocateRepositoryIssueNumber(sql, input.repositoryId),
+    allocateNumber(sql, {
+      family: "repository-work-item",
+      scopeKind: "REPOSITORY",
+      scopeId: input.repositoryId,
+      resourceKind: "ISSUE",
+      resourceId: issueId,
+      at: input.now,
+    }),
   );
   await sql.query(
     `INSERT INTO issues(

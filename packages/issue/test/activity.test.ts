@@ -21,27 +21,33 @@ test("Issue activity projects only Issues in currently accessible Repositories",
     }
   });
 
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
-    ["repository-a", "owner", "Operations"],
-  );
+  await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,'private')", [
+    "repository-a",
+    "owner",
+    "Operations",
+  ]);
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'read',1)",
     ["repository-a", "viewer"],
   );
-  await pg.query(
-    `insert into app_private.issues(
-       id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
-     ) values($1,$2,1,$3,$4,$5,$6,'OPEN',NULL,'pending',1,90,90)`,
-    [
-      "issue-a",
-      "repository-a",
-      "owner",
-      "Prepare payroll",
-      "Prepare payroll details",
-      "Complete review",
-    ],
-  );
+  await pg.transaction(async (sql) => {
+    await sql.query(
+      "select app_private.allocate_number('repository-work-item','REPOSITORY','repository-a','ISSUE','issue-a',90)",
+    );
+    await sql.query(
+      `insert into app_private.issues(
+         id,repository_id,number,publisher,title,body,criteria,state,state_reason,workflow_status,version,created_at,updated_at
+       ) values($1,$2,1,$3,$4,$5,$6,'OPEN',NULL,'pending',1,90,90)`,
+      [
+        "issue-a",
+        "repository-a",
+        "owner",
+        "Prepare payroll",
+        "Prepare payroll details",
+        "Complete review",
+      ],
+    );
+  });
   await pg.query(
     "insert into app_private.issue_assignees(issue_id,user_id,assigned_at) values('issue-a','viewer',90)",
   );

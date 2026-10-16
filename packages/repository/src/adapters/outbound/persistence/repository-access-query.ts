@@ -1,5 +1,9 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
+import {
+  readAccountLogin,
+  resolveAccountLogin,
+  resolveScopedName,
+} from "@line_bot_v1/namespace/postgres";
 import type { Database, Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { booleanValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { RepositoryAccessSnapshot } from "../../../contracts/input/repository-access.js";
@@ -45,33 +49,23 @@ async function repositoryRow(sql: Sql, selector: RepositorySelector): Promise<Re
   }
   const owner = await resolveAccountLogin(sql, selector.ownerLogin);
   if (!owner) throw new RepositoryError(404, "找不到 Repository。");
-  const row = (
+  const binding = await resolveScopedName(
+    sql,
+    { family: "repository-name", scopeKind: "OWNER_ACCOUNT", scopeId: owner.id },
+    selector.repositoryName,
+  );
+  if (!binding || (binding.alias && selector.followRenames === false)) {
+    throw new RepositoryError(404, "找不到 Repository。");
+  }
+  const repository = (
     await sql.query(
       `SELECT id,owner_account_id,owner_account_kind,name
        FROM repositories
-       WHERE owner_account_id=$1 AND owner_account_kind=$2 AND lower(name)=lower($3)`,
-      [owner.id, owner.kind, selector.repositoryName],
+       WHERE id=$1 AND owner_account_id=$2 AND owner_account_kind=$3`,
+      [binding.targetId, owner.id, owner.kind],
       decodeRepositoryRow,
     )
   ).rows[0];
-  if (row) return row;
-
-  const historical = (
-    await sql.query(
-      `SELECT r.id,r.owner_account_id,r.owner_account_kind,r.name
-       FROM repository_name_history h
-       JOIN repositories r ON r.id=h.repository_id
-       WHERE r.owner_account_id=$1
-         AND r.owner_account_kind=$2
-         AND lower(h.old_name)=lower($3)
-       ORDER BY h.renamed_at DESC,r.id
-       LIMIT 2`,
-      [owner.id, owner.kind, selector.repositoryName],
-      decodeRepositoryRow,
-    )
-  ).rows;
-  if (historical.length !== 1) throw new RepositoryError(404, "找不到 Repository。");
-  const repository = historical[0];
   if (!repository) throw new RepositoryError(404, "找不到 Repository。");
   return repository;
 }

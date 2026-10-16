@@ -2,7 +2,7 @@
 
 Own read-only GitHub evidence, pending-source classification and release planning. Provider transactions and recovery belong to their operation scripts.
 
-- `release-plan.mjs` compares each operation against its own successful ancestor publication; failed/skipped jobs cannot advance that cursor.
+- `release-plan.mjs` compares each operation against its own successful ancestor publication; failed/skipped jobs cannot advance that cursor. For workflow runs that contain the scoped identifier runtime activation job, Web publication is complete only when both deployment and activation succeeded; legacy runs without that job retain their historical deployment evidence.
 - Supabase input is only `supabase/schemas/*.sql`. Rich Menu inputs include assets, operator scripts and executable publication dependencies; documentation/tests alone do not publish.
 - Web affected decisions use the Turbo build graph. Publication-only sources must not force a Web deployment.
 - Rich Menu publication is independent of Supabase/Vercel. Planning returns facts; it never mutates providers.

@@ -50,7 +50,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| consumes | namespace | command | namespace | same-transaction | Project retains field, option and view lifecycle while Namespace owns their scoped exact-name occupancy and release in the caller transaction. |
 | consumes | namespace | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
+| consumes | numbering | command | numbering | same-transaction | Project retains Project and View lifecycle, authorization, version and replay while Numbering allocates Account-scoped Project and Project-scoped View numbers in the same transaction. |
 | consumes | organization | query | organization | transaction-recheck | ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member. A creator without OrganizationOwner authority receives a Project-owned ADMIN grant atomically; OrganizationOwner remains implicit owner authority. The deprecated FPT Projects (classic) field is not its authorization contract. |
 | consumes | organization | query | organization | current-state | ProjectV2 collection and owner-level management consume current Organization-owned viewerCanAdminister for Organization-owned Projects; creation separately consumes viewerCanCreateProjectV2, while personal Projects remain User-owned. |
 | consumes | issue | command | issue | transaction-recheck | Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly. |

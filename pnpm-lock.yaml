@@ -415,6 +415,9 @@ importers:
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
+      '@line_bot_v1/numbering':
+        specifier: workspace:*
+        version: link:../numbering
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
@@ -440,6 +443,9 @@ importers:
       '@line_bot_v1/identity-access':
         specifier: workspace:*
         version: link:../identity-access
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
       '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
@@ -553,6 +559,9 @@ importers:
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
+      '@line_bot_v1/numbering':
+        specifier: workspace:*
+        version: link:../numbering
       '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
@@ -635,6 +644,22 @@ importers:
       '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../repository
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/numbering:
+    dependencies:
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -732,6 +757,9 @@ importers:
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
+      '@line_bot_v1/numbering':
+        specifier: workspace:*
+        version: link:../numbering
       '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
@@ -763,6 +791,9 @@ importers:
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
+      '@line_bot_v1/numbering':
+        specifier: workspace:*
+        version: link:../numbering
       '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization

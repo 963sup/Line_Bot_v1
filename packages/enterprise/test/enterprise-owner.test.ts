@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
+import { resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createPostgresEnterpriseGovernance } from "../src/composition/bootstrap/enterprise-governance.js";
@@ -30,7 +31,7 @@ function createCommand(sequence: number) {
 }
 
 test("Enterprise creation atomically bootstraps the current actor and preserves replay, uniqueness and input failures", async (t) => {
-  const { pg, governance } = await fixture();
+  const { pg, db, governance } = await fixture();
   t.after(() => pg.close());
   const create = createCommand(1);
   const receipt = await governance.execute(actor, create);
@@ -38,6 +39,15 @@ test("Enterprise creation atomically bootstraps the current actor and preserves 
   assert.equal(receipt.version, 1);
   assert.equal(receipt.subjectKind, null);
   assert.deepEqual(await governance.execute(actor, create), receipt);
+  const binding = await db.transaction((sql) =>
+    resolveScopedName(
+      sql,
+      { family: "enterprise-slug", scopeKind: "GLOBAL", scopeId: "global" },
+      "second-enterprise",
+    ),
+  );
+  assert.equal(binding?.targetKind, "ENTERPRISE");
+  assert.equal(binding?.targetId, receipt.scopeId);
   assert.deepEqual(
     (
       await pg.query(
@@ -95,10 +105,10 @@ test("Enterprise creation atomically bootstraps the current actor and preserves 
 });
 
 test("legacy Enterprise identity completion preserves current owner, stale-version, one-time and replay semantics", async (t) => {
-  const { pg, governance } = await fixture();
+  const { pg, governance } = await fixture(true);
   t.after(() => pg.close());
   await pg.exec(
-    "UPDATE app_private.enterprises SET name=null,slug=null WHERE account_id='ent'; SELECT * FROM app_private.provision_enterprise_scope('other','owner','occupied','Occupied',2)",
+    "SELECT * FROM app_private.provision_enterprise_scope('other','owner','occupied','Occupied',2)",
   );
   const complete = identityCommand(1);
   await assert.rejects(
@@ -146,12 +156,8 @@ test("legacy Enterprise identity completion preserves current owner, stale-versi
 
 test("Enterprise provisioning and identity completion roll back all state and evidence on audit failure", async (t) => {
   for (const mode of ["create", "complete"]) {
-    const { pg, db } = await fixture();
+    const { pg, db } = await fixture(mode === "complete");
     t.after(() => pg.close());
-    if (mode === "complete")
-      await pg.exec(
-        "UPDATE app_private.enterprises SET name=null,slug=null WHERE account_id='ent'",
-      );
     let transactions = 0;
     const failing: Database = {
       transaction(work) {
@@ -227,15 +233,24 @@ function failsWith(status: number, code: string) {
     error instanceof GovernanceAccessError && error.status === status && error.code === code;
 }
 
-async function fixture() {
+async function fixture(legacyEnterprise = false) {
   const f = await postgresFixture();
+  const enterpriseSeed = legacyEnterprise
+    ? `INSERT INTO app_private.accounts(id,kind,created_at) VALUES ('ent','ENTERPRISE',2);
+       INSERT INTO app_private.enterprises(account_id,name,slug,status,version,created_at)
+         VALUES ('ent',null,null,'active',1,2);
+       INSERT INTO app_private.enterprise_direct_affiliations(enterprise_account_id,user_id,status,version,created_at)
+         VALUES ('ent','owner','active',1,2);
+       INSERT INTO app_private.enterprise_role_assignments(enterprise_account_id,user_id,role,status,version,user_status_version,granted_at)
+         VALUES ('ent','owner','EnterpriseOwner','active',1,1,2);`
+    : "SELECT * FROM app_private.provision_enterprise_scope('ent','owner','acme','Acme',2);";
   await f.pg.exec(`
     INSERT INTO app_private.users(id,status,status_version,"createdAt")
       VALUES ('owner','active',1,1),('backup','active',1,1),('outsider','active',1,1);
     SELECT app_private.claim_account_login(id,'USER',id,1) FROM app_private.users;
     INSERT INTO app_private.user_identities(provider,subject,user_id)
       VALUES ('line:test','owner','owner'),('line:test','backup','backup'),('line:test','outsider','outsider');
-    SELECT * FROM app_private.provision_enterprise_scope('ent','owner','acme','Acme',2);
+    ${enterpriseSeed}
     INSERT INTO app_private.enterprise_direct_affiliations(enterprise_account_id,user_id,status,version,created_at)
       VALUES ('ent','backup','active',1,2);
   `);

@@ -1,6 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  assertIdentifierAuthorityCounts,
+  assertIdentifierAuthorityMarker,
+  assertIdentifierCutoverRevision,
+  classifyIdentifierAuthorityState,
+  identifierCutoverInvocationSql,
+  identifierCutoverPreludeSql,
+  identifierCutoverTransactionSql,
+  identifierRuntimeActivationInvocationSql,
+  identifierRuntimeActivationTransactionSql,
+} from "./identifier-cutover.mjs";
+import {
+  applyAuthorizedRemoteSql,
   assertConfirmedProject,
   assertMigrationHistoryUnchanged,
   assertRemoteMutationContext,
@@ -10,15 +22,176 @@ import {
   assertTransactionalPlan,
   classifyPlan,
   classifyRemoteFoundationState,
+  identifierRuntimeActivationAction,
   parseArgs,
   planFingerprint,
   projectRefFromSupabaseUrl,
+  remoteMutationRevision,
+  requireMutationAdjacentCurrentMain,
+  requiresIdentifierCutoverRecovery,
   runWithRemoteReconciliationLock,
   supabaseApiReadbackConfig,
   supabaseManagementRecoveryConfig,
   verifySupabaseApiReadback,
   verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
+
+const absentIdentifierAuthority = {
+  namespace_binding_history_exists: false,
+  namespace_bindings_exists: false,
+  namespace_claims_exists: false,
+  number_allocations_exists: false,
+  number_series_exists: false,
+  scoped_identifier_authority_exists: false,
+  cutover_function_exists: false,
+  runtime_activation_function_exists: false,
+};
+
+test("identifier cutover detects only a complete transition boundary", () => {
+  assert.equal(classifyIdentifierAuthorityState(absentIdentifierAuthority), "cutover-required");
+  assert.equal(
+    classifyIdentifierAuthorityState({
+      ...absentIdentifierAuthority,
+      namespace_binding_history_exists: true,
+      namespace_bindings_exists: true,
+      namespace_claims_exists: true,
+      number_allocations_exists: true,
+      number_series_exists: true,
+      scoped_identifier_authority_exists: true,
+      cutover_function_exists: true,
+      runtime_activation_function_exists: true,
+    }),
+    "marker-readback-required",
+  );
+  assert.throws(
+    () =>
+      classifyIdentifierAuthorityState({
+        ...absentIdentifierAuthority,
+        number_series_exists: true,
+      }),
+    /partially deployed/i,
+  );
+  assert.equal(
+    classifyIdentifierAuthorityState(
+      { ...absentIdentifierAuthority, scoped_identifier_authority_exists: true },
+      { allowRegistryOnly: true },
+    ),
+    "cutover-required",
+  );
+});
+
+test("identifier cutover freezes legacy writers before calling the exact revision", () => {
+  const revision = "a".repeat(40);
+  const prelude = identifierCutoverPreludeSql();
+  const invocation = identifierCutoverInvocationSql(revision);
+  assert.match(prelude, /lock_governance\('exclusive'\)/);
+  assert.match(prelude, /order by candidate/);
+  assert.match(prelude, /share row exclusive mode/);
+  assert.match(invocation, new RegExp(revision));
+  assert.match(invocation, /transaction_timestamp/);
+  assert.throws(() => identifierCutoverInvocationSql("main"), /exact lowercase Git commit SHA/);
+  assert.equal(assertIdentifierCutoverRevision(revision), revision);
+
+  const activation = identifierRuntimeActivationInvocationSql(revision);
+  assert.match(activation, /activate_scoped_identifier_runtime/);
+  assert.match(activation, new RegExp(revision));
+  assert.match(identifierRuntimeActivationTransactionSql(revision), /^BEGIN;/);
+
+  const transaction = identifierCutoverTransactionSql({
+    ddl: "create table app_private.new_authority(id bigint);",
+    revision,
+    freezeLegacy: true,
+  });
+  assert.ok(transaction.indexOf("lock_governance") < transaction.indexOf("create table"));
+  assert.ok(
+    transaction.indexOf("create table") < transaction.indexOf("cutover_scoped_identifiers"),
+  );
+  assert.ok(transaction.indexOf("cutover_scoped_identifiers") < transaction.indexOf("COMMIT"));
+});
+
+test("identifier authority readback requires a durable summary and safe counts", () => {
+  const marker = {
+    authority: "scoped-identifiers-v1",
+    revision: "b".repeat(40),
+    activated_at: "1770000000000",
+    runtime_ready: false,
+    runtime_revision: null,
+    runtime_activated_at: null,
+    summary: {
+      numberSeries: 5,
+      numberAllocations: 8,
+      namespaceBindings: 13,
+      namespaceClaims: 13,
+      namespaceHistory: 13,
+    },
+  };
+  assert.deepEqual(assertIdentifierAuthorityMarker(marker), {
+    authority: "scoped-identifiers-v1",
+    revision: "b".repeat(40),
+    activatedAt: 1_770_000_000_000,
+    runtimeReady: false,
+    runtimeRevision: null,
+    runtimeActivatedAt: null,
+    summary: marker.summary,
+  });
+  assert.deepEqual(
+    assertIdentifierAuthorityMarker({
+      ...marker,
+      runtime_ready: true,
+      runtime_revision: "c".repeat(40),
+      runtime_activated_at: "1770000000001",
+    }),
+    {
+      authority: "scoped-identifiers-v1",
+      revision: "b".repeat(40),
+      activatedAt: 1_770_000_000_000,
+      runtimeReady: true,
+      runtimeRevision: "c".repeat(40),
+      runtimeActivatedAt: 1_770_000_000_001,
+      summary: marker.summary,
+    },
+  );
+  assert.deepEqual(
+    assertIdentifierAuthorityCounts({
+      number_series: "5",
+      number_allocations: "8",
+      namespace_bindings: "13",
+      namespace_claims: "13",
+      namespace_history: "13",
+    }),
+    {
+      number_series: 5,
+      number_allocations: 8,
+      namespace_bindings: 13,
+      namespace_claims: 13,
+      namespace_history: 13,
+    },
+  );
+  assert.throws(
+    () => assertIdentifierAuthorityMarker({ ...marker, summary: {} }),
+    /numberSeries is invalid/,
+  );
+  assert.throws(
+    () =>
+      assertIdentifierAuthorityMarker({
+        ...marker,
+        runtime_ready: false,
+        runtime_revision: "c".repeat(40),
+      }),
+    /unexpected runtime activation metadata/,
+  );
+  assert.throws(
+    () =>
+      assertIdentifierAuthorityCounts({
+        number_series: "-1",
+        number_allocations: "0",
+        namespace_bindings: "0",
+        namespace_claims: "0",
+        namespace_history: "0",
+      }),
+    /number_series is invalid/,
+  );
+});
 
 test("remote reconciliation lock preserves the root failure after an aborted transaction", async () => {
   const queries = [];
@@ -165,9 +338,9 @@ test("migration history must remain byte-stable modulo outer whitespace", () => 
   );
 });
 
-test("remote command surface only exposes sync and explicit read-only diagnostics", () => {
+test("remote command surface only exposes bounded mutations and explicit read-only diagnostics", () => {
   assert.deepEqual(parseArgs([]), { command: "sync", api: false });
-  for (const command of ["sync", "plan", "verify", "recovery"]) {
+  for (const command of ["activate-identifiers", "sync", "plan", "verify", "recovery"]) {
     assert.deepEqual(parseArgs([command]), { command, api: false });
   }
   for (const command of ["repair", "prepare", "compat"])
@@ -181,7 +354,7 @@ test("remote command surface only exposes sync and explicit read-only diagnostic
 });
 
 test("remote mutations require the validated-main GitHub Actions context", () => {
-  for (const command of ["sync"]) {
+  for (const command of ["activate-identifiers", "sync"]) {
     assert.throws(
       () => assertRemoteMutationContext(command, {}),
       /GitHub Actions current-main reconciliation path/,
@@ -200,6 +373,79 @@ test("remote mutations require the validated-main GitHub Actions context", () =>
   for (const command of ["plan", "verify", "recovery"]) {
     assert.doesNotThrow(() => assertRemoteMutationContext(command, {}));
   }
+});
+
+test("remote write authorization is adjacent and prevents apply when main advances", async () => {
+  const releaseSha = "d".repeat(40);
+  const env = {
+    SUPABASE_RELEASE_SHA: releaseSha,
+    GITHUB_REPOSITORY: "owner/repository",
+    GITHUB_TOKEN: "token",
+  };
+  let applied = false;
+  await assert.rejects(
+    applyAuthorizedRemoteSql({
+      sql: "select app_private.write();",
+      authorize: () =>
+        requireMutationAdjacentCurrentMain(env, async () =>
+          Response.json({ commit: { sha: "e".repeat(40) } }),
+        ),
+      query: async () => {
+        applied = true;
+      },
+    }),
+    /not current main/,
+  );
+  assert.equal(applied, false);
+});
+
+test("remote write authorization applies only after exact-main readback", async () => {
+  const releaseSha = "d".repeat(40);
+  const events = [];
+  await applyAuthorizedRemoteSql({
+    sql: "select app_private.write();",
+    authorize: async () => events.push("authorized"),
+    query: async () => events.push("applied"),
+  });
+  assert.deepEqual(events, ["authorized", "applied"]);
+  assert.equal(remoteMutationRevision({ SUPABASE_RELEASE_SHA: releaseSha }), releaseSha);
+  assert.throws(() => remoteMutationRevision({}), /exact lowercase Git commit SHA/);
+});
+
+test("runtime activation preserves a frozen cutover until its own release operation", () => {
+  const cutoverRevision = "a".repeat(40);
+  const deploymentRevision = "b".repeat(40);
+  assert.deepEqual(
+    identifierRuntimeActivationAction(
+      { runtimeReady: false, revision: cutoverRevision, runtimeRevision: null },
+      deploymentRevision,
+    ),
+    { kind: "activate", runtimeRevision: deploymentRevision },
+  );
+  assert.deepEqual(
+    identifierRuntimeActivationAction(
+      { runtimeReady: true, revision: cutoverRevision, runtimeRevision: deploymentRevision },
+      "c".repeat(40),
+    ),
+    { kind: "noop", runtimeRevision: deploymentRevision },
+  );
+});
+
+test("opaque remote write failures are propagated without an automatic replay", async () => {
+  let attempts = 0;
+  const opaque = new Error("connection outcome unknown");
+  await assert.rejects(
+    applyAuthorizedRemoteSql({
+      sql: "BEGIN; select app_private.activate(); COMMIT;",
+      authorize: async () => {},
+      query: async () => {
+        attempts += 1;
+        throw opaque;
+      },
+    }),
+    (error) => error === opaque,
+  );
+  assert.equal(attempts, 1);
 });
 
 test("Supabase project URL yields the exact project ref", () => {
@@ -323,6 +569,24 @@ test("Supabase recovery readback accepts PITR/WALG or a completed managed backup
     /recovery is unavailable/i,
   );
   assert.throws(() => assertSupabaseRecoveryReadback({}), /unexpected response/i);
+});
+
+test("identifier cutover requires provider recovery before existing-database DDL", () => {
+  assert.equal(
+    requiresIdentifierCutoverRecovery({
+      command: "sync",
+      foundationState: "existing",
+      authorityState: "cutover-required",
+    }),
+    true,
+  );
+  for (const input of [
+    { command: "plan", foundationState: "existing", authorityState: "cutover-required" },
+    { command: "sync", foundationState: "fresh", authorityState: "cutover-required" },
+    { command: "sync", foundationState: "existing", authorityState: "active" },
+  ]) {
+    assert.equal(requiresIdentifierCutoverRecovery(input), false);
+  }
 });
 
 test("Supabase recovery readback calls the exact Management API target without leaking token", async () => {

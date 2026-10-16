@@ -19,6 +19,20 @@ async function activeUser(db: Database, id: string, login = id) {
   });
 }
 
+async function existingRepository(pg: Awaited<ReturnType<typeof postgresFixture>>["pg"]) {
+  await pg.transaction(async (sql) => {
+    await sql.query(
+      `insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version)
+       values('repo','owner','USER','Alpha','private',1)`,
+    );
+    await sql.query(
+      `select app_private.claim_scoped_namespace_name(
+         'repository-name','OWNER_ACCOUNT','owner','REPOSITORY','repo','Alpha',2
+       )`,
+    );
+  });
+}
+
 test("Repository management application canonicalizes lifecycle commands", async () => {
   const calls: Parameters<RepositoryManagementStore["execute"]>[] = [];
   const store: RepositoryManagementStore = {
@@ -123,9 +137,7 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
   t.after(() => pg.close());
   await activeUser(db, "owner", "alice");
   await activeUser(db, "viewer", "viewer");
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Alpha','private',1)",
-  );
+  await existingRepository(pg);
 
   const store = new PostgresRepositoryManagementStore(db);
   const rename = {
@@ -196,10 +208,7 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
       "Beta",
       "private",
     ]),
-    (error: unknown) =>
-      isRecord(error) &&
-      error.code === "23505" &&
-      error.constraint === "repository_name_history_reserved",
+    (error: unknown) => isRecord(error) && error.code === "23505",
   );
 
   const publicResult = await store.execute(
@@ -278,9 +287,15 @@ test("rename keeps stable identity, follows aliases, preserves history and exact
   assert.equal(unarchived.version, 7);
 
   const history = await pg.query(
-    "select old_name from app_private.repository_name_history where repository_id='repo' order by lower(old_name)",
+    `select name,claim_kind
+     from app_private.namespace_claims
+     where family='repository-name' and target_kind='REPOSITORY' and target_id='repo'
+     order by lower(name)`,
   );
-  assert.deepEqual(history.rows, [{ old_name: "Alpha" }, { old_name: "Beta" }]);
+  assert.deepEqual(history.rows, [
+    { name: "Alpha", claim_kind: "CURRENT" },
+    { name: "Beta", claim_kind: "ALIAS" },
+  ]);
   const events = await pg.query(
     "select action from app_private.repository_events where repository_id='repo' order by id",
   );

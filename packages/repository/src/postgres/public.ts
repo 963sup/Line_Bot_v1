@@ -1,5 +1,5 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
+import { resolveAccountLogin, resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
@@ -33,34 +33,21 @@ export class PostgresPublicRepositoryStore implements PublicRepositoryStore {
     return this.db.transaction(async (sql) => {
       const owner = await qualifiedOwner(sql, ownerLogin);
       if (!owner) return null;
-      const row = (
+      const binding = await resolveScopedName(
+        sql,
+        { family: "repository-name", scopeKind: "OWNER_ACCOUNT", scopeId: owner.id },
+        name,
+      );
+      if (!binding || (binding.alias && !followRenames)) return null;
+      const repository = (
         await sql.query(
           `SELECT id,name FROM repositories
-           WHERE owner_account_id=$1 AND owner_account_kind=$2
-             AND lower(name)=lower($3) AND visibility='public'`,
-          [owner.id, owner.kind, name],
+           WHERE id=$1 AND owner_account_id=$2 AND owner_account_kind=$3
+             AND visibility='public'`,
+          [binding.targetId, owner.id, owner.kind],
           (row) => ({ id: stringValue(row.id), name: stringValue(row.name) }),
         )
       ).rows[0];
-      if (row) return { ...row, ownerLogin: owner.login };
-      if (!followRenames) return null;
-
-      const historical = (
-        await sql.query(
-          `SELECT r.id,r.name
-           FROM repository_name_history h
-           JOIN repositories r ON r.id=h.repository_id
-           WHERE r.owner_account_id=$1
-             AND r.owner_account_kind=$2
-             AND lower(h.old_name)=lower($3)
-             AND r.visibility='public'
-           ORDER BY h.renamed_at DESC,r.id
-           LIMIT 2`,
-          [owner.id, owner.kind, name],
-          (row) => ({ id: stringValue(row.id), name: stringValue(row.name) }),
-        )
-      ).rows;
-      const repository = historical.length === 1 ? historical[0] : undefined;
       return repository ? { ...repository, ownerLogin: owner.login } : null;
     });
   }

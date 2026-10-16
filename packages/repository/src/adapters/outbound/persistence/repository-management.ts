@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import { renameScopedName, resolveScopedName } from "@line_bot_v1/namespace/postgres";
 import type { Database, Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { booleanValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
@@ -92,35 +94,16 @@ class PostgresRepositoryManagementTransaction implements RepositoryManagementTra
   }
 
   async nameReserved(repository: RepositoryLifecycleState, name: string): Promise<boolean> {
-    const current = (
-      await this.sql.query(
-        `SELECT 1
-         FROM repositories
-         WHERE owner_account_id=$1
-           AND owner_account_kind=$2
-           AND id<>$3
-           AND lower(name)=lower($4)
-         LIMIT 1`,
-        [repository.ownerAccountId, repository.ownerKind, repository.id, name],
-      )
-    ).rows[0];
-    if (current) return true;
-    return Boolean(
-      (
-        await this.sql.query(
-          `SELECT 1
-           FROM repository_name_history h
-           JOIN repositories historical_repository
-             ON historical_repository.id=h.repository_id
-           WHERE historical_repository.owner_account_id=$1
-             AND historical_repository.owner_account_kind=$2
-             AND historical_repository.id<>$3
-             AND lower(h.old_name)=lower($4)
-           LIMIT 1`,
-          [repository.ownerAccountId, repository.ownerKind, repository.id, name],
-        )
-      ).rows[0],
+    const binding = await resolveScopedName(
+      this.sql,
+      {
+        family: "repository-name",
+        scopeKind: "OWNER_ACCOUNT",
+        scopeId: repository.ownerAccountId,
+      },
+      name,
     );
+    return binding !== null && binding.targetId !== repository.id;
   }
 
   async internalEnterpriseId(organizationAccountId: string): Promise<string | null> {
@@ -142,6 +125,21 @@ class PostgresRepositoryManagementTransaction implements RepositoryManagementTra
     now: number,
   ): Promise<RepositoryLifecycleSaveResult> {
     if (decision.action === "rename") {
+      try {
+        await renameScopedName(this.sql, {
+          family: "repository-name",
+          scopeKind: "OWNER_ACCOUNT",
+          scopeId: decision.previous.ownerAccountId,
+          targetKind: "REPOSITORY",
+          targetId: decision.previous.id,
+          expectedName: decision.previous.name,
+          name: decision.current.name,
+          at: now,
+        });
+      } catch (error) {
+        if (error instanceof NamespaceError && error.status === 409) return "duplicate-name";
+        throw error;
+      }
       await this.sql.query(
         `INSERT INTO repository_name_history(repository_id,old_name,renamed_at)
          VALUES($1,$2,$3)

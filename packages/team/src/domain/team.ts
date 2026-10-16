@@ -1,3 +1,5 @@
+import { NamespaceError, normalizeNamespaceName } from "@line_bot_v1/namespace";
+
 export type TeamDomainErrorCode =
   | "invalid-slug"
   | "version-conflict"
@@ -87,14 +89,13 @@ export function createTeam(
   };
 }
 
-const teamSlugPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
-
 export function normalizeTeamSlugValue(value: string): string {
-  const slug = value.normalize("NFKC").trim().toLowerCase();
-  if (slug.length < 1 || slug.length > 80 || !teamSlugPattern.test(slug)) {
+  try {
+    return normalizeNamespaceName("organization-team-slug", value);
+  } catch (error) {
+    if (!(error instanceof NamespaceError)) throw error;
     throw new TeamDomainError("invalid-slug", "Team slug 不正確。");
   }
-  return slug;
 }
 
 export function teamSlugFromNameValue(value: string): string {

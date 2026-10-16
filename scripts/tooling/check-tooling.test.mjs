@@ -952,6 +952,155 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
   assert.deepEqual(validate(root), []);
 });
 
+test("Release scopes the Supabase management token and preserves identifier cutover evidence", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".github/workflows/release.yml";
+  const source = readFileSync(resolve(root, path), "utf8");
+  const expectedError =
+    "Supabase access token must be exposed only to the exact declarative schema sync step";
+
+  write(
+    path,
+    source.replace("          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n", ""),
+  );
+  rejects(root, expectedError);
+
+  for (const relocate of [
+    (workflow) => {
+      workflow.env = { SUPABASE_ACCESS_TOKEN: "${{ secrets.SUPABASE_ACCESS_TOKEN }}" };
+    },
+    (workflow) => {
+      workflow.jobs.supabase.env.SUPABASE_ACCESS_TOKEN = "${{ secrets.SUPABASE_ACCESS_TOKEN }}";
+    },
+    (workflow) => {
+      workflow.jobs.supabase.steps.find(
+        (step) => step.run === 'pnpm github:current-main --sha "$SHA"',
+      ).env.SUPABASE_ACCESS_TOKEN = "${{ secrets.SUPABASE_ACCESS_TOKEN }}";
+    },
+  ]) {
+    const workflow = YAML.parse(source);
+    delete workflow.jobs.supabase.steps.find((step) => step.run === "pnpm schema:remote sync").env
+      .SUPABASE_ACCESS_TOKEN;
+    relocate(workflow);
+    write(path, YAML.stringify(workflow));
+    rejects(root, expectedError);
+  }
+
+  for (const evidence of [
+    "plan.sql",
+    "plan.sha256",
+    "verification.sql",
+    "migration-history.before.txt",
+    "migration-history.after.txt",
+    "recovery-readback.json",
+    "scoped-identifier-readback.json",
+  ]) {
+    write(path, source.replace(`            .artifacts/supabase-remote/${evidence}\n`, ""));
+    rejects(root, "preserve plan, verification, history, recovery and scoped identifier readback");
+  }
+
+  write(path, source);
+  assert.deepEqual(validate(root), []);
+});
+
+test("Release activates identifier writers only after compatible production deployment", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".github/workflows/release.yml";
+  const source = readFileSync(resolve(root, path), "utf8");
+  const activationGateError =
+    "identifier runtime activation must follow successful exact-SHA production deployment";
+  const activationCommandError =
+    "identifier runtime activation must use the canonical command with exact step-scoped production credentials and no management token";
+  const activationEvidenceError =
+    "identifier runtime activation must preserve activation SQL, history and scoped identifier readback evidence even on failure";
+
+  const withoutActivation = YAML.parse(source);
+  delete withoutActivation.jobs.identifier_runtime_activation;
+  write(path, YAML.stringify(withoutActivation));
+  rejects(root, "define planning and one job per external operation");
+
+  for (const mutate of [
+    (job) => {
+      job.needs = job.needs.filter((need) => need !== "deployment");
+    },
+    (job) => {
+      job.if = job.if.replace(
+        "needs.deployment.result == 'success'",
+        "needs.deployment.result == 'failure'",
+      );
+    },
+    (job) => {
+      job.concurrency["cancel-in-progress"] = true;
+    },
+    (job) => {
+      job.steps.find((step) => step.run === 'pnpm github:current-main --sha "$SHA"').run =
+        "echo skip-main";
+    },
+  ]) {
+    const workflow = YAML.parse(source);
+    mutate(workflow.jobs.identifier_runtime_activation);
+    write(path, YAML.stringify(workflow));
+    rejects(root, activationGateError);
+  }
+
+  for (const credential of [
+    "GITHUB_TOKEN",
+    "GITHUB_REPOSITORY",
+    "POSTGRES_URL_NON_POOLING",
+    "SUPABASE_RELEASE_SHA",
+    "SUPABASE_URL",
+    "SUPABASE_CONFIRM_PROJECT",
+  ]) {
+    const workflow = YAML.parse(source);
+    const step = workflow.jobs.identifier_runtime_activation.steps.find(
+      (candidate) => candidate.run === "pnpm schema:remote activate-identifiers",
+    );
+    delete step.env[credential];
+    write(path, YAML.stringify(workflow));
+    rejects(root, activationCommandError);
+  }
+
+  const wrongCommand = YAML.parse(source);
+  wrongCommand.jobs.identifier_runtime_activation.steps.find(
+    (step) => step.run === "pnpm schema:remote activate-identifiers",
+  ).run = "pnpm schema:remote activate-identifiers --force";
+  write(path, YAML.stringify(wrongCommand));
+  rejects(root, activationCommandError);
+
+  const managementCredential = YAML.parse(source);
+  managementCredential.jobs.identifier_runtime_activation.steps.find(
+    (step) => step.run === "pnpm schema:remote activate-identifiers",
+  ).env.SUPABASE_ACCESS_TOKEN = "${{ secrets.SUPABASE_ACCESS_TOKEN }}";
+  write(path, YAML.stringify(managementCredential));
+  rejects(root, activationCommandError);
+
+  const jobCredential = YAML.parse(source);
+  jobCredential.jobs.identifier_runtime_activation.env.GITHUB_TOKEN = "${{ github.token }}";
+  write(path, YAML.stringify(jobCredential));
+  rejects(root, activationCommandError);
+
+  for (const evidence of [
+    "activate-identifiers.sql",
+    "migration-history.before.txt",
+    "migration-history.after.txt",
+    "scoped-identifier-readback.json",
+  ]) {
+    const workflow = YAML.parse(source);
+    const upload = workflow.jobs.identifier_runtime_activation.steps.find(
+      (step) => step.uses === "actions/upload-artifact@v4",
+    );
+    upload.with.path = upload.with.path
+      .split("\n")
+      .filter((entry) => !entry.endsWith(evidence))
+      .join("\n");
+    write(path, YAML.stringify(workflow));
+    rejects(root, activationEvidenceError);
+  }
+
+  write(path, source);
+  assert.deepEqual(validate(root), []);
+});
+
 test("parallel validation preserves complete coverage and an unconditional failure gate", (t) => {
   const { root, write } = fixture(t);
   const source = readFileSync(resolve(root, ".github/workflows/validate.yml"), "utf8");
@@ -982,7 +1131,13 @@ test("parallel validation preserves complete coverage and an unconditional failu
 test("parallel releases retain every publication gate and resource lock", (t) => {
   const { root, write } = fixture(t);
   const source = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
-  for (const name of ["supabase", "deployment", "rich_menu", "attendance_scheduler"]) {
+  for (const name of [
+    "supabase",
+    "deployment",
+    "identifier_runtime_activation",
+    "rich_menu",
+    "attendance_scheduler",
+  ]) {
     const data = YAML.parse(source);
     data.jobs[name].needs = data.jobs[name].needs.filter((need) => need !== "validation");
     write(".github/workflows/release.yml", YAML.stringify(data));

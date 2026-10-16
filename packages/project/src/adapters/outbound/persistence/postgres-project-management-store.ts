@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
+import { NamespaceError } from "@line_bot_v1/namespace";
 import { resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
+import { allocateNumber } from "@line_bot_v1/numbering/postgres";
 import {
   businessDatabase,
   type Database,
@@ -27,7 +29,6 @@ import {
 import { executeProjectItemCommand, readProjectItems } from "./postgres-project-items.js";
 import {
   advanceProject,
-  allocateProjectNumber,
   appendProjectEvent,
   decodeProjectRow,
   lockProjectScope,
@@ -172,7 +173,14 @@ async function createProject(
   }
 
   const projectId = randomUUID();
-  const number = await allocateProjectNumber(sql, input.ownerAccountId, input.ownerKind);
+  const number = await allocateNumber(sql, {
+    family: "account-project",
+    scopeKind: input.ownerKind,
+    scopeId: input.ownerAccountId,
+    resourceKind: "PROJECT",
+    resourceId: projectId,
+    at: now,
+  });
   const row = (
     await sql.query(
       `INSERT INTO projects(
@@ -460,7 +468,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
     now: number,
   ): Promise<ProjectManagementReceipt> {
     const fingerprint = projectFingerprint(command);
-    return this.db.transaction(async (sql) => {
+    const transaction = this.db.transaction(async (sql) => {
       await sql.query("SELECT app_private.lock_governance('shared')");
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `project-request:${identity.userId}:${command.requestId}`,
@@ -603,11 +611,14 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         if (selected.row.number !== null) {
           throw new ProjectError(409, "Project 已完成 canonical number adoption。");
         }
-        const number = await allocateProjectNumber(
-          sql,
-          selected.row.owner_account_id,
-          selected.row.owner_account_kind,
-        );
+        const number = await allocateNumber(sql, {
+          family: "account-project",
+          scopeKind: selected.row.owner_account_kind,
+          scopeId: selected.row.owner_account_id,
+          resourceKind: "PROJECT",
+          resourceId: selected.row.id,
+          at: now,
+        });
         next = await advanceProject(sql, selected.row, command.expectedVersion, now, { number });
         data = { number };
       } else if (command.action === "update-project") {
@@ -715,6 +726,12 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       };
       await storeProjectReceipt(sql, identity.userId, fingerprint, result, now);
       return result;
+    });
+    return transaction.catch((error: unknown) => {
+      if (error instanceof NamespaceError) {
+        throw new ProjectError(error.status, error.message);
+      }
+      throw error;
     });
   }
 }

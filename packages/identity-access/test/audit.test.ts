@@ -8,7 +8,8 @@ test("audit reads exact authorized scope, stable pages and safe fields; revoked 
   t.after(() => pg.close());
   await pg.exec(`BEGIN; SET search_path=app_private,pg_catalog;
     INSERT INTO users(id,status,"createdAt") VALUES ('owner','active',1),('outsider','active',1);
-    INSERT INTO account_logins VALUES ('owner','USER','owner',1),('outsider','USER','outsider',1);
+    SELECT app_private.claim_account_login(id,'USER',login,1)
+    FROM (VALUES ('owner','owner'),('outsider','outsider')) AS fixture(id,login);
     INSERT INTO user_identities(provider,subject,user_id) VALUES ('line:test','owner','owner'),('line:test','outsider','outsider');
     INSERT INTO accounts(id,kind,created_at) VALUES ('org','ORGANIZATION',1),('other','ORGANIZATION',1);
     INSERT INTO organizations(account_id,name,status,version,created_at) VALUES ('org','Org','active',1,1),('other','Other','active',1,1);
@@ -49,7 +50,7 @@ test("enterprise history orders numeric IDs and rechecks affiliation and User qu
   t.after(() => pg.close());
   await pg.exec(`BEGIN; SET search_path=app_private,pg_catalog;
     INSERT INTO users(id,status,"createdAt") VALUES ('owner','active',1);
-    INSERT INTO account_logins VALUES ('owner','USER','owner',1);
+    SELECT app_private.claim_account_login('owner','USER','owner',1);
     INSERT INTO user_identities(provider,subject,user_id) VALUES ('line:test','owner','owner');
     INSERT INTO accounts(id,kind,created_at) VALUES ('enterprise','ENTERPRISE',1);
     INSERT INTO enterprises(account_id,status,version,created_at) VALUES ('enterprise','active',1,1);

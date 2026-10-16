@@ -1,5 +1,42 @@
 -- Database-atomic coordinators spanning multiple owned relations.
 
+-- Release calls this only after the compatible exact-SHA production deployment is read back.
+-- A failed deployment leaves the durable runtime write fence closed; retries never reseed facts.
+create function app_private.activate_scoped_identifier_runtime(p_revision text,p_at bigint)
+returns jsonb
+language plpgsql
+security invoker
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+declare
+  marker app_private.scoped_identifier_authority%rowtype;
+begin
+  if p_revision is null or p_revision !~ '^[0-9a-f]{40}$'
+     or p_at is null or p_at not between 0 and 9007199254740991 then
+    raise exception 'scoped_identifier_runtime_input_invalid' using errcode='22023';
+  end if;
+  perform app_private.lock_governance('exclusive');
+  select * into marker from app_private.scoped_identifier_authority
+    where authority='scoped-identifiers-v1' for update;
+  if not found then
+    raise exception 'scoped_identifier_authority_missing' using errcode='23514';
+  end if;
+  perform app_private.assert_scoped_identifier_parity();
+  if not marker.runtime_ready then
+    update app_private.scoped_identifier_authority
+      set runtime_ready=true,runtime_revision=p_revision,runtime_activated_at=p_at
+      where authority=marker.authority returning * into marker;
+  end if;
+  return jsonb_build_object(
+    'authority',marker.authority,'revision',marker.revision,'activatedAt',marker.activated_at,
+    'runtimeReady',marker.runtime_ready,'runtimeRevision',marker.runtime_revision,
+    'runtimeActivatedAt',marker.runtime_activated_at,'counts',app_private.scoped_identifier_counts()
+  );
+end
+$function$;
+revoke all on function app_private.activate_scoped_identifier_runtime(text,bigint)
+  from public, anon, authenticated, line_app;
+
 -- Runtime provisioning is a narrow privileged capability: a current active User may
 -- create a new governance scope and becomes its initial direct participant + Owner.
 -- The function is private-schema SECURITY DEFINER because line_app must not receive
@@ -44,6 +81,9 @@ begin
     values(p_target_id,'ENTERPRISE',p_requested_at);
   insert into app_private.enterprises(account_id,name,slug,status,version,created_at)
     values(p_target_id,trim(p_name),p_slug,'active',1,p_requested_at);
+  perform app_private.claim_scoped_namespace_name(
+    'enterprise-slug','GLOBAL','global','ENTERPRISE',p_target_id,p_slug,p_requested_at
+  );
   insert into app_private.enterprise_direct_affiliations(
     enterprise_account_id,user_id,status,version,created_at
   ) values(p_target_id,p_user_id,'active',1,p_requested_at);
@@ -54,6 +94,316 @@ begin
   return query select p_target_id,current_user_status_version,1;
 end
 $function$;
+
+
+-- Operator-only atomic cutover from the retained resource projections into Numbering and
+-- Namespace authority. It is deliberately not granted to line_app and never reseeds an
+-- already activated authority.
+create function app_private.scoped_identifier_counts()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+  select jsonb_build_object(
+    'numberSeries',(select count(*) from app_private.number_series),
+    'numberAllocations',(select count(*) from app_private.number_allocations),
+    'namespaceBindings',(select count(*) from app_private.namespace_bindings),
+    'namespaceClaims',(select count(*) from app_private.namespace_claims),
+    'namespaceHistory',(select count(*) from app_private.namespace_binding_history)
+  )
+$function$;
+revoke all on function app_private.scoped_identifier_counts()
+  from public, anon, authenticated, line_app;
+
+create function app_private.cutover_scoped_identifiers(
+  p_revision text,
+  p_at bigint
+) returns jsonb
+language plpgsql
+security invoker
+set search_path to 'app_private', 'pg_catalog'
+as $function$
+declare
+  marker app_private.scoped_identifier_authority%rowtype;
+  counts jsonb;
+  collision_count bigint;
+begin
+  if p_revision is null or p_revision !~ '^[0-9a-f]{40}$'
+     or p_at is null or p_at not between 0 and 9007199254740991 then
+    raise exception 'scoped_identifier_cutover_input_invalid' using errcode='22023';
+  end if;
+
+  perform app_private.lock_governance('exclusive');
+  lock table app_private.account_logins in access exclusive mode;
+  lock table app_private.discussion_categories in access exclusive mode;
+  lock table app_private.discussions in access exclusive mode;
+  lock table app_private.enterprise_teams in access exclusive mode;
+  lock table app_private.enterprises in access exclusive mode;
+  lock table app_private.issue_types in access exclusive mode;
+  lock table app_private.issues in access exclusive mode;
+  lock table app_private.namespace_binding_history in access exclusive mode;
+  lock table app_private.namespace_bindings in access exclusive mode;
+  lock table app_private.namespace_claims in access exclusive mode;
+  lock table app_private.number_allocations in access exclusive mode;
+  lock table app_private.number_series in access exclusive mode;
+  lock table app_private.project_commands in access exclusive mode;
+  lock table app_private.project_events in access exclusive mode;
+  lock table app_private.project_field_options in access exclusive mode;
+  lock table app_private.project_fields in access exclusive mode;
+  lock table app_private.project_views in access exclusive mode;
+  lock table app_private.projects in access exclusive mode;
+  lock table app_private.repositories in access exclusive mode;
+  lock table app_private.repository_labels in access exclusive mode;
+  lock table app_private.repository_milestones in access exclusive mode;
+  lock table app_private.repository_name_history in access exclusive mode;
+  lock table app_private.scoped_identifier_authority in access exclusive mode;
+  lock table app_private.teams in access exclusive mode;
+
+  select * into marker
+  from app_private.scoped_identifier_authority
+  where authority='scoped-identifiers-v1'
+  for update;
+  if found then
+    perform app_private.assert_scoped_identifier_parity();
+    return jsonb_build_object(
+      'authority',marker.authority,'revision',marker.revision,'activatedAt',marker.activated_at,
+      'counts',app_private.scoped_identifier_counts(),'activationSummary',marker.summary,
+      'runtimeReady',marker.runtime_ready,'runtimeRevision',marker.runtime_revision
+    );
+  end if;
+
+  if exists(select 1 from app_private.number_series)
+     or exists(select 1 from app_private.number_allocations)
+     or exists(select 1 from app_private.namespace_bindings)
+     or exists(select 1 from app_private.namespace_claims)
+     or exists(select 1 from app_private.namespace_binding_history) then
+    raise exception 'scoped_identifier_cutover_registry_not_empty' using errcode='23514';
+  end if;
+
+  -- Never silently discard observable allocation evidence or infer missing receipt metadata.
+  if exists(
+    select 1 from app_private.project_events e where e.action='create-view' and (
+      jsonb_typeof(e.data->'number')='number'
+      and case when e.data->>'number' ~ '^[1-9][0-9]*$'
+        and length(e.data->>'number')<=10
+        then (e.data->>'number')::bigint between 1 and 2147483647 else false end
+      and jsonb_typeof(e.data->'viewId')='string' and length(e.data->>'viewId')>0
+      and exists(
+        select 1 from app_private.project_commands c
+        where c.actor=e.actor and c.result->>'action'='create-view'
+          and c.result->>'projectId'=e.project_id and c.result->>'version'=e.version::text
+          and c.result->'data'=e.data
+      )
+    ) is not true
+  ) then
+    raise exception 'scoped_identifier_unverifiable_view_history' using errcode='23514';
+  end if;
+
+  -- Preserve the Repository Issue high-water checkpoint even when the highest resource was
+  -- removed outside the current model. The other retained resource families preserve their
+  -- own tombstones, so their live table maximum is the known legacy checkpoint.
+  insert into app_private.number_series(
+    family,scope_kind,scope_id,next_number,legacy_high_water,managed_from,created_at,updated_at
+  )
+  select 'repository-work-item','REPOSITORY',r.id,
+    greatest(r.next_issue_number-1,coalesce(max(i.number),0))+1,
+    greatest(r.next_issue_number-1,coalesce(max(i.number),0)),
+    greatest(r.next_issue_number-1,coalesce(max(i.number),0))+1,p_at,p_at
+  from app_private.repositories r
+  left join app_private.issues i on i.repository_id=r.id
+  group by r.id,r.next_issue_number;
+
+  insert into app_private.number_series(
+    family,scope_kind,scope_id,next_number,legacy_high_water,managed_from,created_at,updated_at
+  )
+  select 'repository-discussion','REPOSITORY',repository_id,max(number)+1,max(number),max(number)+1,p_at,p_at
+  from app_private.discussions where number is not null group by repository_id;
+
+  insert into app_private.number_series(
+    family,scope_kind,scope_id,next_number,legacy_high_water,managed_from,created_at,updated_at
+  )
+  select 'repository-milestone','REPOSITORY',repository_id,max(number)+1,max(number),max(number)+1,p_at,p_at
+  from app_private.repository_milestones group by repository_id;
+
+  insert into app_private.number_series(
+    family,scope_kind,scope_id,next_number,legacy_high_water,managed_from,created_at,updated_at
+  )
+  select 'account-project',owner_account_kind,owner_account_id,
+    max(number)+1,max(number),max(number)+1,p_at,p_at
+  from app_private.projects where number is not null
+  group by owner_account_kind,owner_account_id;
+
+  with valid_view_events as (
+    select e.project_id,(e.data->>'number')::bigint as number
+    from app_private.project_events e
+    where e.action='create-view'
+      and jsonb_typeof(e.data->'number')='number'
+      and e.data->>'number' ~ '^[1-9][0-9]*$'
+      and length(e.data->>'number')<=10
+      and (e.data->>'number')::numeric<=2147483647
+      and jsonb_typeof(e.data->'viewId')='string'
+      and length(e.data->>'viewId')>0
+      and exists (
+        select 1 from app_private.project_commands c
+        where c.actor=e.actor and c.result->>'action'='create-view'
+          and c.result->>'projectId'=e.project_id
+          and c.result->>'version'=e.version::text
+          and c.result->'data'=e.data
+      )
+  ), view_high_water as (
+    select project_id,max(number::bigint) as number
+    from app_private.project_views group by project_id
+    union all
+    select project_id,max(number) from valid_view_events group by project_id
+  )
+  insert into app_private.number_series(
+    family,scope_kind,scope_id,next_number,legacy_high_water,managed_from,created_at,updated_at
+  )
+  select 'project-view','PROJECT',project_id,max(number)+1,max(number),max(number)+1,p_at,p_at
+  from view_high_water group by project_id;
+
+  insert into app_private.number_allocations(
+    family,scope_kind,scope_id,number,resource_kind,resource_id,provenance,allocated_at
+  )
+  select 'repository-work-item','REPOSITORY',repository_id,number,'ISSUE',id,'IMPORTED',created_at
+  from app_private.issues;
+  insert into app_private.number_allocations(
+    family,scope_kind,scope_id,number,resource_kind,resource_id,provenance,allocated_at
+  )
+  select 'repository-discussion','REPOSITORY',repository_id,number,'DISCUSSION',id,'IMPORTED',created_at
+  from app_private.discussions where number is not null;
+  insert into app_private.number_allocations(
+    family,scope_kind,scope_id,number,resource_kind,resource_id,provenance,allocated_at
+  )
+  select 'repository-milestone','REPOSITORY',repository_id,number,'MILESTONE',id,'IMPORTED',created_at
+  from app_private.repository_milestones;
+  insert into app_private.number_allocations(
+    family,scope_kind,scope_id,number,resource_kind,resource_id,provenance,allocated_at
+  )
+  select 'account-project',owner_account_kind,owner_account_id,number,'PROJECT',id,'IMPORTED',created_at
+  from app_private.projects where number is not null;
+  insert into app_private.number_allocations(
+    family,scope_kind,scope_id,number,resource_kind,resource_id,provenance,allocated_at
+  )
+  select 'project-view','PROJECT',project_id,number,'PROJECT_VIEW',id,'IMPORTED',created_at
+  from app_private.project_views;
+
+  -- Current business names are imported as version-one bindings. IMPORT records the known
+  -- cutover provenance; it does not invent a historical actor or rename timeline.
+  insert into app_private.namespace_bindings(
+    family,scope_kind,scope_id,target_kind,target_id,current_name,canonical_key,version,updated_at
+  )
+  select 'account-login','GLOBAL','global',account_kind,account_id,login,lower(login),1,updated_at
+    from app_private.account_logins
+  union all
+  select 'enterprise-slug','GLOBAL','global','ENTERPRISE',account_id,slug,lower(slug),1,p_at
+    from app_private.enterprises where slug is not null
+  union all
+  select 'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,lower(name),1,p_at
+    from app_private.repositories
+  union all
+  select 'organization-team-slug','ORGANIZATION',organization_account_id,'TEAM',id,slug,slug,1,created_at
+    from app_private.teams
+  union all
+  select 'enterprise-team-slug','ENTERPRISE',enterprise_account_id,'ENTERPRISE_TEAM',id,slug,slug,1,created_at
+    from app_private.enterprise_teams
+  union all
+  select 'repository-label','REPOSITORY',repository_id,'LABEL',id,name,name,1,p_at
+    from app_private.repository_labels
+  union all
+  select 'organization-issue-type','ORGANIZATION',organization_account_id,'ISSUE_TYPE',id,name,lower(name),1,created_at
+    from app_private.issue_types where deleted_at is null
+  union all
+  select 'discussion-category','REPOSITORY',repository_id,'DISCUSSION_CATEGORY',id,slug,slug,1,created_at
+    from app_private.discussion_categories
+  union all
+  select 'project-field','PROJECT',project_id,'PROJECT_FIELD',id,name,name,1,created_at
+    from app_private.project_fields
+  union all
+  select 'field-option','PROJECT_FIELD',field_id,'FIELD_OPTION',id,name,name,1,p_at
+    from app_private.project_field_options
+  union all
+  select 'project-view','PROJECT',project_id,'PROJECT_VIEW',id,name,name,1,created_at
+    from app_private.project_views;
+
+  insert into app_private.namespace_claims(
+    family,scope_kind,scope_id,canonical_key,claim_kind,target_kind,target_id,name,created_at,updated_at
+  )
+  select family,scope_kind,scope_id,canonical_key,'CURRENT',target_kind,target_id,current_name,
+    updated_at,updated_at
+  from app_private.namespace_bindings where current_name is not null;
+
+  insert into app_private.namespace_claims(
+    family,scope_kind,scope_id,canonical_key,claim_kind,target_kind,target_id,name,created_at,updated_at
+  )
+  select 'repository-name','OWNER_ACCOUNT',r.owner_account_id,lower(h.old_name),'ALIAS',
+    'REPOSITORY',h.repository_id,h.old_name,h.renamed_at,h.renamed_at
+  from app_private.repository_name_history h
+  join app_private.repositories r on r.id=h.repository_id
+  where not exists(
+    select 1 from app_private.namespace_claims c
+    where c.family='repository-name' and c.scope_kind='OWNER_ACCOUNT'
+      and c.scope_id=r.owner_account_id and c.canonical_key=lower(h.old_name)
+      and c.target_kind='REPOSITORY' and c.target_id=h.repository_id
+  );
+
+  insert into app_private.namespace_binding_history(
+    family,scope_kind,scope_id,target_kind,target_id,binding_version,
+    action,old_name,new_name,changed_at
+  )
+  select family,scope_kind,scope_id,target_kind,target_id,version,
+    'IMPORT',null,current_name,p_at
+  from app_private.namespace_bindings;
+
+  with valid_view_events as (
+    select e.project_id,(e.data->>'number')::bigint as number,e.data->>'viewId' as view_id
+    from app_private.project_events e
+    where e.action='create-view'
+      and jsonb_typeof(e.data->'number')='number'
+      and e.data->>'number' ~ '^[1-9][0-9]*$'
+      and length(e.data->>'number')<=10
+      and (e.data->>'number')::numeric<=2147483647
+      and jsonb_typeof(e.data->'viewId')='string'
+      and length(e.data->>'viewId')>0
+      and exists (
+        select 1 from app_private.project_commands c
+        where c.actor=e.actor and c.result->>'action'='create-view'
+          and c.result->>'projectId'=e.project_id
+          and c.result->>'version'=e.version::text
+          and c.result->'data'=e.data
+      )
+  ), known_bindings as (
+    select project_id,number,id as view_id from app_private.project_views
+    union all
+    select project_id,number,view_id from valid_view_events
+  )
+  select count(*) into collision_count
+  from (
+    select project_id,number
+    from known_bindings
+    group by project_id,number
+    having count(distinct view_id)>1
+  ) collisions;
+
+  perform app_private.assert_scoped_identifier_parity();
+  counts := app_private.scoped_identifier_counts()
+    || jsonb_build_object('knownProjectViewHistoryCollisions',collision_count);
+  insert into app_private.scoped_identifier_authority(authority,revision,activated_at,summary)
+    values('scoped-identifiers-v1',p_revision,p_at,counts);
+  return jsonb_build_object(
+    'authority','scoped-identifiers-v1',
+    'revision',p_revision,
+    'activatedAt',p_at,
+    'runtimeReady',false,
+    'runtimeRevision',null,
+    'counts',counts
+  );
+end
+$function$;
+revoke all on function app_private.cutover_scoped_identifiers(text,bigint)
+  from public, anon, authenticated, line_app;
 
 
 create function app_private.provision_organization_scope(
@@ -324,6 +674,8 @@ language plpgsql
 security definer
 set search_path to 'app_private', 'pg_catalog'
 as $function$
+declare
+  v_created_at bigint := floor(extract(epoch from clock_timestamp()) * 1000)::bigint;
 begin
   if length(trim(coalesce(p_repository_id, ''))) = 0
      or p_repository_id <> trim(p_repository_id)
@@ -438,6 +790,10 @@ begin
     id,owner_account_id,owner_account_kind,name,visibility,version
   ) values(
     p_repository_id,p_owner_account_id,p_owner_account_kind,p_name,p_visibility,1
+  );
+  perform app_private.claim_scoped_namespace_name(
+    'repository-name','OWNER_ACCOUNT',p_owner_account_id,'REPOSITORY',p_repository_id,
+    p_name,v_created_at
   );
 
   if p_owner_account_kind='ORGANIZATION' then

@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readActiveUserQualification, readUserQualification } from "@line_bot_v1/account/postgres";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import { claimScopedName, renameScopedName } from "@line_bot_v1/namespace/postgres";
 import {
   activeOrganizationParticipantIds,
   qualifyOrganizationTeamScope,
@@ -163,6 +165,15 @@ class PostgresTeamMutationTransaction implements TeamMutationTransaction {
 
   async createTeam(team: TeamState, creatorUserId: string, at: number): Promise<void> {
     try {
+      await claimScopedName(this.sql, {
+        family: "organization-team-slug",
+        scopeKind: "ORGANIZATION",
+        scopeId: team.organizationAccountId,
+        targetKind: "TEAM",
+        targetId: team.id,
+        name: team.slug,
+        at,
+      });
       await this.sql.query(
         "INSERT INTO teams(id,organization_account_id,name,slug,parent_team_id,privacy,notification_setting,version,created_by_user_id,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
         [
@@ -180,8 +191,9 @@ class PostgresTeamMutationTransaction implements TeamMutationTransaction {
       );
     } catch (error) {
       if (
-        hasPostgresProperty(error, "code", "23505") &&
-        hasPostgresProperty(error, "constraint", "teams_organization_slug")
+        (error instanceof NamespaceError && error.status === 409) ||
+        (hasPostgresProperty(error, "code", "23505") &&
+          hasPostgresProperty(error, "constraint", "teams_organization_slug"))
       ) {
         throw new TeamError(409, "此 Organization 已有相同 Team slug。");
       }
@@ -189,13 +201,29 @@ class PostgresTeamMutationTransaction implements TeamMutationTransaction {
     }
   }
 
-  async saveTeamName(teamId: string, name: string, slug: string): Promise<void> {
+  async saveTeamName(
+    teamId: string,
+    expectedSlug: string,
+    name: string,
+    slug: string,
+  ): Promise<void> {
     try {
+      await renameScopedName(this.sql, {
+        family: "organization-team-slug",
+        scopeKind: "ORGANIZATION",
+        scopeId: this.scope.organizationAccountId,
+        targetKind: "TEAM",
+        targetId: teamId,
+        expectedName: expectedSlug,
+        name: slug,
+        at: this.evidence.at,
+      });
       await this.sql.query("UPDATE teams SET name=$2,slug=$3 WHERE id=$1", [teamId, name, slug]);
     } catch (error) {
       if (
-        hasPostgresProperty(error, "code", "23505") &&
-        hasPostgresProperty(error, "constraint", "teams_organization_slug")
+        (error instanceof NamespaceError && error.status === 409) ||
+        (hasPostgresProperty(error, "code", "23505") &&
+          hasPostgresProperty(error, "constraint", "teams_organization_slug"))
       ) {
         throw new TeamError(409, "此 Organization 已有相同 Team slug。");
       }

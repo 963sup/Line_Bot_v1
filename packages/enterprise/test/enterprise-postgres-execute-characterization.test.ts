@@ -173,6 +173,19 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
     if (text.includes("FROM enterprise_teams") && text.includes("FOR UPDATE")) {
       return { rows: [{ id: "team-1", name: "Old", slug: "old", version: 4 }] };
     }
+    if (text.includes("rename_scoped_namespace_name")) {
+      return {
+        rows: [
+          {
+            targetKind: "ENTERPRISE_TEAM",
+            targetId: "team-1",
+            name: "platform",
+            currentName: "platform",
+            alias: false,
+          },
+        ],
+      };
+    }
     if (text.includes("UPDATE enterprise_teams")) return { rows: [{ version: 5 }] };
     if (text.includes("INSERT INTO governance_command_receipts")) return { rows: [] };
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
@@ -204,6 +217,7 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
   const authorization = queryIndex(queries, "identity_access_enterprise_scopes");
   const replayLookup = queryIndex(queries, "FROM governance_command_receipts");
   const teamLock = queryIndex(queries, "FROM enterprise_teams");
+  const namespaceRename = queryIndex(queries, "rename_scoped_namespace_name");
   const teamUpdate = queryIndex(queries, "UPDATE enterprise_teams");
   const receiptInsert = queryIndex(queries, "INSERT INTO governance_command_receipts");
   const auditInsert = queryIndex(queries, "INSERT INTO governance_audit_events");
@@ -217,6 +231,7 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
       authorization,
       replayLookup,
       teamLock,
+      namespaceRename,
       teamUpdate,
       receiptInsert,
       auditInsert,
@@ -230,6 +245,7 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
         authorization,
         replayLookup,
         teamLock,
+        namespaceRename,
         teamUpdate,
         receiptInsert,
         auditInsert,
@@ -519,6 +535,19 @@ test("legacy Enterprise identity completion is owner-authorized, versioned, repl
       return { rows: [{ "?column?": 1 }] };
     }
     if (text.includes("FROM governance_command_receipts")) return { rows: [] };
+    if (text.includes("claim_scoped_namespace_name")) {
+      return {
+        rows: [
+          {
+            targetKind: "ENTERPRISE",
+            targetId: "enterprise-1",
+            name: "acme-enterprise",
+            currentName: "acme-enterprise",
+            alias: false,
+          },
+        ],
+      };
+    }
     if (text.includes("UPDATE enterprises")) return { rows: [{ version: 2 }] };
     if (text.includes("INSERT INTO governance_command_receipts")) return { rows: [] };
     if (text.includes("INSERT INTO governance_audit_events")) return { rows: [] };
@@ -532,6 +561,9 @@ test("legacy Enterprise identity completion is owner-authorized, versioned, repl
   assert.equal(receipt.version, 2);
   assert.ok(queryIndex(queries, "FROM enterprise_role_assignments") >= 0);
   assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
+  assert.ok(
+    queryIndex(queries, "claim_scoped_namespace_name") < queryIndex(queries, "UPDATE enterprises"),
+  );
   assert.deepEqual(queries.find((query) => query.text.includes("UPDATE enterprises"))?.values, [
     "enterprise-1",
     "Acme Enterprise",

@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| identity-and-access | generic | 主體身分、名稱解析與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、membership 與 permission。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/account.md](../../docs/owners/account.md); [docs/owners/namespace.md](../../docs/owners/namespace.md); [docs/owners/identity-access.md](../../docs/owners/identity-access.md) |
+| identity-and-access | generic | 主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/account.md](../../docs/owners/account.md); [docs/owners/namespace.md](../../docs/owners/namespace.md); [docs/owners/numbering.md](../../docs/owners/numbering.md); [docs/owners/identity-access.md](../../docs/owners/identity-access.md) |
 
 ## Bounded Context
 
@@ -24,7 +24,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Account Namespace Binding | account-namespace-binding | authoritative | current | Unique global login bound to a stable User or Organization Account, independently of qualification and resource authority. |
+| Namespace Binding | namespace-binding | authoritative | current | Current versioned binding between a typed stable target and a canonical name inside one typed namespace scope. |
+| Namespace Binding History | namespace-binding-history | authoritative | current | Append-only record of known Namespace binding transitions after activation, without fabricated legacy actors or versions. |
+| Namespace Claim | namespace-claim | authoritative | current | Current, alias, or reserved occupancy of one canonical key inside one typed namespace scope. |
 
 ## Capabilities
 
@@ -32,19 +34,25 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- |
 | construct-namespace-paths | required | implemented | Describe cross-owner resource path scopes and construct only active canonical paths from owner-validated locator values. |
 | govern-root-namespace | required | implemented | Define and evaluate shared global-root reservations so product root routes cannot be claimed as Account login locators. |
-| manage-account-namespace | required | implemented | Claim, resolve and compare-and-set rename the shared User/Organization global login without changing stable identity or authorization. |
+| manage-namespace-bindings | required | implemented | Claim, resolve, conditionally rename and release typed scoped names according to frozen family profiles, without changing resource identity, lifecycle or authorization. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | account | query | namespace | current-policy | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
+| provides | discussion | command | namespace | same-transaction | Discussion retains category lifecycle and deletion rules while Namespace owns Repository-scoped category slug normalization and occupancy in the caller transaction. |
 | provides | discussion | query | namespace | current-state | Discussion uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
+| provides | enterprise | command | namespace | same-transaction | Enterprise validates lifecycle and authorization, then claims or renames Enterprise and EnterpriseTeam slugs through Namespace in the same transaction; Namespace owns normalization and occupancy. |
 | provides | issue | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
+| provides | issue | command | namespace | same-transaction | Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction. |
 | provides | organization | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| provides | project | command | namespace | same-transaction | Project retains field, option and view lifecycle while Namespace owns their scoped exact-name occupancy and release in the caller transaction. |
 | provides | project | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
 | provides | repository | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| provides | repository | command | namespace | same-transaction | Repository retains lifecycle, authorization and rename eligibility while Namespace owns Repository names, retained aliases and Label name occupancy in the caller transaction. |
 | provides | team | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| provides | team | command | namespace | same-transaction | Team retains lifecycle and authorization while Namespace owns Organization-scoped Team slug normalization and occupancy in the caller transaction. |
 
 ## Tactical Model Boundary
 

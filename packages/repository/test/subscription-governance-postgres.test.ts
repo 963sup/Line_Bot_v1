@@ -24,6 +24,9 @@ test("PostgreSQL Watch holds shared governance through access validation and rel
       ) VALUES
         ('repo','owner','USER','Repo','public',false,1),
         ('repo-noop','owner','USER','Noop','public',false,1);
+      SELECT app_private.claim_scoped_namespace_name(
+        'repository-name','OWNER_ACCOUNT',owner_account_id,'REPOSITORY',id,name,1
+      ) FROM app_private.repositories WHERE owner_account_id='owner';
       INSERT INTO app_private.repository_subscriptions(
         repository_id,user_id,state,version,updated_at
       ) VALUES

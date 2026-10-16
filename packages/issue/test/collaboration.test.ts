@@ -31,29 +31,37 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
     2,
   ]);
   await pg.query(
-    "insert into repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','org','ORGANIZATION','Repo','private',1)",
+    "select * from app_private.provision_repository('repo','actor','org','ORGANIZATION','Repo','private')",
   );
   await pg.query(
-    "insert into repository_access(repository_id,principal_id,capability,version) values('repo','actor','write',1),('repo','reader','read',1)",
+    "insert into repository_access(repository_id,principal_id,capability,version) values('repo','reader','read',1)",
   );
-  await pg.query(
-    "insert into repository_labels(id,repository_id,name,color,description,version) values('label','repo','bug','ff0000','',1)",
-  );
-  await pg.query(
-    "insert into repository_milestones(id,repository_id,number,title,description,status,due_at,version,created_at,updated_at) values('milestone','repo',1,'M1','','open',null,1,1,1)",
-  );
+  await pg.exec(`begin;
+    insert into repository_labels(id,repository_id,name,color,description,version) values('label','repo','bug','ff0000','',1);
+    select app_private.claim_scoped_namespace_name('repository-label','REPOSITORY','repo','LABEL','label','bug',1);
+    commit;`);
+  await pg.exec(`begin;
+    select app_private.allocate_number('repository-milestone','REPOSITORY','repo','MILESTONE','milestone',1);
+    insert into repository_milestones(id,repository_id,number,title,description,status,due_at,version,created_at,updated_at) values('milestone','repo',1,'M1','','open',null,1,1,1);
+    commit;`);
   for (const [id, number] of [
     ["parent", 1],
     ["child", 2],
     ["blocker", 3],
   ] as const) {
-    await pg.query(
-      `insert into issues(
-         id,repository_id,number,publisher,title,body,criteria,state,state_reason,
-         workflow_status,version,created_at,updated_at
-       ) values($1,'repo',$2,'actor',$1,'','', 'OPEN',null,'pending',1,1,1)`,
-      [id, number],
-    );
+    await pg.transaction(async (sql) => {
+      await sql.query(
+        "select app_private.allocate_number('repository-work-item','REPOSITORY','repo','ISSUE',$1,1)",
+        [id],
+      );
+      await sql.query(
+        `insert into issues(
+           id,repository_id,number,publisher,title,body,criteria,state,state_reason,
+           workflow_status,version,created_at,updated_at
+         ) values($1,'repo',$2,'actor',$1,'','', 'OPEN',null,'pending',1,1,1)`,
+        [id, number],
+      );
+    });
   }
 
   const store = new PostgresIssueCollaborationStore(db);

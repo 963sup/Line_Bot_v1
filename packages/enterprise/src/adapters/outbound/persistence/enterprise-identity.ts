@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { requireEnterpriseOwner } from "@line_bot_v1/identity-access/postgres";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import { claimScopedName } from "@line_bot_v1/namespace/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { numberValue } from "@line_bot_v1/platform/validation";
 import type {
@@ -70,6 +72,15 @@ export class PostgresEnterpriseIdentity implements EnterpriseIdentityTransaction
         save: async (next) => {
           let row: { version: number } | undefined;
           try {
+            await claimScopedName(sql, {
+              family: "enterprise-slug",
+              scopeKind: "GLOBAL",
+              scopeId: "global",
+              targetKind: "ENTERPRISE",
+              targetId: scopeId,
+              name: next.slug,
+              at: audit.at,
+            });
             row = (
               await sql.query(
                 `UPDATE enterprises
@@ -81,7 +92,10 @@ export class PostgresEnterpriseIdentity implements EnterpriseIdentityTransaction
               )
             ).rows[0];
           } catch (error) {
-            if (error instanceof Error && "code" in error && error.code === "23505")
+            if (
+              (error instanceof NamespaceError && error.status === 409) ||
+              (error instanceof Error && "code" in error && error.code === "23505")
+            )
               throw new GovernanceAccessError(409, "conflict", "Enterprise slug 已被使用。");
             throw error;
           }

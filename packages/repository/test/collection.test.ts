@@ -41,10 +41,11 @@ test("Postgres Repository collection returns only current effective access", asy
       2,
     ]);
   });
-  await pg.query(
-    "insert into app_private.repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values($1,$2,'USER',$3,'private',1)",
-    ["repository-a", "repository-viewer", "Operations"],
-  );
+  await pg.query("select * from app_private.provision_repository($1,$2,$2,'USER',$3,'private')", [
+    "repository-a",
+    "repository-viewer",
+    "Operations",
+  ]);
   await pg.query(
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values($1,$2,'admin',1)",
     ["repository-a", "repository-viewer"],

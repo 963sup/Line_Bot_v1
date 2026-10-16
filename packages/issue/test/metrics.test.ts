@@ -15,9 +15,10 @@ test("Issue metrics count [from,to) events and retain separate local completed s
   await pg.query(
     "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Metrics','private')",
   );
-  await pg.query(
-    "INSERT INTO app_private.issues(id,repository_id,number,publisher,title,body,criteria,state,workflow_status,version,created_at,updated_at) VALUES('i','repo',1,'owner','Issue','','','OPEN','completed',3,10,30)",
-  );
+  await pg.exec(`BEGIN;
+    SELECT app_private.allocate_number('repository-work-item','REPOSITORY','repo','ISSUE','i',10);
+    INSERT INTO app_private.issues(id,repository_id,number,publisher,title,body,criteria,state,workflow_status,version,created_at,updated_at) VALUES('i','repo',1,'owner','Issue','','','OPEN','completed',3,10,30);
+    COMMIT;`);
   await pg.query(
     "INSERT INTO app_private.issue_events(issue_id,version,actor,action,note,data,at) VALUES('i',1,'owner','create','','{}',10),('i',2,'owner','close','','{\"state\":\"CLOSED\"}',20),('i',3,'owner','reopen','','{\"state\":\"OPEN\"}',30)",
   );

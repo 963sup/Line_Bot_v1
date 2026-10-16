@@ -46,7 +46,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| consumes | namespace | command | namespace | same-transaction | Discussion retains category lifecycle and deletion rules while Namespace owns Repository-scoped category slug normalization and occupancy in the caller transaction. |
 | consumes | namespace | query | namespace | current-state | Discussion uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
+| consumes | numbering | command | numbering | same-transaction | Discussion retains lifecycle, authorization and replay while Numbering allocates the Repository Discussion number in the same transaction. |
 | consumes | repository | query | repository | transaction-recheck | Discussion label associations reference Repository-owned Label definitions in the same Repository; Discussion owns only the association fact. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads and mutations without acquiring Repository authority. |
 

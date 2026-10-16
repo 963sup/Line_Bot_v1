@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| identity-and-access | generic | 主體身分、名稱解析與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、membership 與 permission。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/account.md](../../docs/owners/account.md); [docs/owners/namespace.md](../../docs/owners/namespace.md); [docs/owners/identity-access.md](../../docs/owners/identity-access.md) |
+| identity-and-access | generic | 主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/account.md](../../docs/owners/account.md); [docs/owners/namespace.md](../../docs/owners/namespace.md); [docs/owners/numbering.md](../../docs/owners/numbering.md); [docs/owners/identity-access.md](../../docs/owners/identity-access.md) |
 
 ## Bounded Context
 

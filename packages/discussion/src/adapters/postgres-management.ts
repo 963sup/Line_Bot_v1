@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { NamespaceError } from "@line_bot_v1/namespace";
+import { claimScopedName, releaseScopedName } from "@line_bot_v1/namespace/postgres";
+import { allocateNumber } from "@line_bot_v1/numbering/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import {
   booleanValue,
@@ -37,7 +40,6 @@ import {
   discussionEvent,
   discussionScope,
   labelsExist,
-  nextDiscussionNumber,
   readableCategory,
   readReceipt,
   requireOperation,
@@ -152,6 +154,9 @@ function requireAuthorOrManager(
 }
 
 function postgresConflict(error: unknown, message: string): never {
+  if (error instanceof NamespaceError && error.status === 409) {
+    throw new DiscussionError(409, message);
+  }
   const code =
     error !== null && typeof error === "object" && "code" in error ? error.code : undefined;
   if (code === "23505" || code === "23503") {
@@ -355,6 +360,15 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
         const id = randomUUID();
         let row: CategoryRow | undefined;
         try {
+          await claimScopedName(sql, {
+            family: "discussion-category",
+            scopeKind: "REPOSITORY",
+            scopeId: command.repositoryId,
+            targetKind: "DISCUSSION_CATEGORY",
+            targetId: id,
+            name: command.slug,
+            at: now,
+          });
           row = (
             await sql.query(
               `INSERT INTO discussion_categories(
@@ -478,6 +492,15 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           { deleted: category(before) },
           now,
         );
+        await releaseScopedName(sql, {
+          family: "discussion-category",
+          scopeKind: "REPOSITORY",
+          scopeId: command.repositoryId,
+          targetKind: "DISCUSSION_CATEGORY",
+          targetId: before.id,
+          expectedName: before.slug,
+          at: now,
+        });
         await sql.query(
           "DELETE FROM discussion_categories WHERE repository_id=$1 AND id=$2 AND version=$3",
           [command.repositoryId, command.categoryId, command.expectedVersion],
@@ -500,7 +523,14 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           command.categoryId,
         );
         const id = randomUUID();
-        const number = await nextDiscussionNumber(sql, command.repositoryId);
+        const number = await allocateNumber(sql, {
+          family: "repository-discussion",
+          scopeKind: "REPOSITORY",
+          scopeId: command.repositoryId,
+          resourceKind: "DISCUSSION",
+          resourceId: id,
+          at: now,
+        });
         const row = (
           await sql.query(
             `INSERT INTO discussions(
@@ -566,7 +596,14 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           );
           const number =
             row.number === null
-              ? await nextDiscussionNumber(sql, command.repositoryId)
+              ? await allocateNumber(sql, {
+                  family: "repository-discussion",
+                  scopeKind: "REPOSITORY",
+                  scopeId: command.repositoryId,
+                  resourceKind: "DISCUSSION",
+                  resourceId: row.id,
+                  at: now,
+                })
               : Number(row.number);
           next = await advanceDiscussion(sql, row, command.expectedVersion, now, {
             number,

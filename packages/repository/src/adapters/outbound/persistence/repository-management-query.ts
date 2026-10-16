@@ -1,5 +1,9 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
-import { readAccountLogin, resolveAccountLogin } from "@line_bot_v1/namespace/postgres";
+import {
+  readAccountLogin,
+  resolveAccountLogin,
+  resolveScopedName,
+} from "@line_bot_v1/namespace/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { stringValue } from "@line_bot_v1/platform/validation";
 import type { RepositoryManagementSnapshot } from "../../../contracts/input/repository-management.js";
@@ -28,44 +32,23 @@ async function repositoryBySelector(
 
   const owner = await resolveAccountLogin(sql, selector.ownerLogin);
   if (!owner) throw new RepositoryError(404, "找不到 Repository。");
-  const current = (
+  const binding = await resolveScopedName(
+    sql,
+    { family: "repository-name", scopeKind: "OWNER_ACCOUNT", scopeId: owner.id },
+    selector.repositoryName,
+  );
+  if (!binding || (binding.alias && selector.followRenames === false)) {
+    throw new RepositoryError(404, "找不到 Repository。");
+  }
+  const repository = (
     await sql.query(
       `SELECT ${repositoryLifecycleColumns}
        FROM repositories
-       WHERE owner_account_id=$1
-         AND owner_account_kind=$2
-         AND lower(name)=lower($3)`,
-      [owner.id, owner.kind, selector.repositoryName],
+       WHERE id=$1 AND owner_account_id=$2 AND owner_account_kind=$3`,
+      [binding.targetId, owner.id, owner.kind],
       decodeRepositoryLifecycle,
     )
   ).rows[0];
-  if (current) return current;
-  if (selector.followRenames === false) {
-    throw new RepositoryError(404, "找不到 Repository。");
-  }
-
-  const historical = (
-    await sql.query(
-      `SELECT ${repositoryLifecycleColumns
-        .split(",")
-        .map((column) => `r.${column}`)
-        .join(",")}
-       FROM repository_name_history h
-       JOIN repositories r ON r.id=h.repository_id
-       WHERE r.owner_account_id=$1
-         AND r.owner_account_kind=$2
-         AND lower(h.old_name)=lower($3)
-       ORDER BY h.renamed_at DESC,r.id
-       LIMIT 2`,
-      [owner.id, owner.kind, selector.repositoryName],
-      decodeRepositoryLifecycle,
-    )
-  ).rows;
-  if (!historical.length) throw new RepositoryError(404, "找不到 Repository。");
-  if (historical.length > 1) {
-    throw new RepositoryError(409, "Repository 舊名稱解析不唯一，請使用目前名稱。");
-  }
-  const repository = historical[0];
   if (!repository) throw new RepositoryError(404, "找不到 Repository。");
   return repository;
 }

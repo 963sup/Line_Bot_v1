@@ -18,16 +18,19 @@ async function setup() {
   const { pg, db } = fixture;
   for (const userId of ["owner", "writer", "reader"]) await activeUser(db, userId);
   await pg.query(
-    "insert into repositories(id,owner_account_id,owner_account_kind,name,visibility,version) values('repo','owner','USER','Repo','private',1)",
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
   );
   await pg.query(
     `insert into repository_access(repository_id,principal_id,capability,version)
      values('repo','writer','write',1),('repo','reader','read',1)`,
   );
-  await pg.query(
-    `insert into repository_labels(id,repository_id,name,color,description,version)
-     values('label','repo','question','0366d6','',1)`,
-  );
+  await pg.exec(`begin;
+    insert into repository_labels(id,repository_id,name,color,description,version)
+      values('label','repo','question','0366d6','',1);
+    select app_private.claim_scoped_namespace_name(
+      'repository-label','REPOSITORY','repo','LABEL','label','question',1
+    );
+    commit;`);
   return fixture;
 }
 
@@ -68,6 +71,16 @@ test("Discussion management composes lifecycle, replies, answer, labels, votes, 
   assert.equal(created.version, 1);
   assert.ok(created.discussionId);
   assert.deepEqual(await store.execute(writer, createCommand, 11), created);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select number::int as number,resource_id
+         from app_private.number_allocations
+         where family='repository-discussion' and scope_id='repo'`,
+      )
+    ).rows,
+    [{ number: 1, resource_id: created.discussionId }],
+  );
 
   const root = await store.execute(
     writer,
@@ -302,4 +315,66 @@ test("Legacy Discussion adoption is explicit and allocates stable repository num
   const after = await store.view({ userId: "writer" }, "repo", "legacy");
   assert.equal(after.discussion?.number, 1);
   assert.equal(after.discussion?.categoryId, category.categoryId);
+  assert.deepEqual(
+    (
+      await pg.query(
+        `select number::int as number,resource_id
+         from app_private.number_allocations
+         where family='repository-discussion' and scope_id='repo'`,
+      )
+    ).rows,
+    [{ number: 1, resource_id: "legacy" }],
+  );
+});
+
+test("Discussion category releases its scoped slug only after a valid delete", async (t) => {
+  const { pg, db } = await setup();
+  t.after(() => pg.close());
+  const store = new PostgresDiscussionManagementStore(db);
+  const writer = { userId: "writer" };
+
+  const created = await store.execute(
+    writer,
+    {
+      action: "create-category",
+      requestId: randomUUID(),
+      repositoryId: "repo",
+      expectedVersion: 0,
+      name: "General",
+      slug: "general",
+      description: "",
+      emoji: "",
+      isAnswerable: false,
+    },
+    10,
+  );
+  assert.ok(created.categoryId);
+  await store.execute(
+    writer,
+    {
+      action: "delete-category",
+      requestId: randomUUID(),
+      repositoryId: "repo",
+      categoryId: created.categoryId,
+      expectedVersion: 1,
+    },
+    11,
+  );
+  const replacement = await store.execute(
+    writer,
+    {
+      action: "create-category",
+      requestId: randomUUID(),
+      repositoryId: "repo",
+      expectedVersion: 0,
+      name: "Replacement",
+      slug: "general",
+      description: "",
+      emoji: "",
+      isAnswerable: false,
+    },
+    12,
+  );
+  assert.ok(replacement.categoryId);
+  assert.notEqual(replacement.categoryId, created.categoryId);
 });
