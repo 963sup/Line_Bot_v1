@@ -35,7 +35,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --no-wasm-code-gc --import tsx --test test/*.test.ts"
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
