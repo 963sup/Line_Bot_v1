@@ -333,7 +333,7 @@ export class PostgresPartnerRepository implements PartnerRepository, PartnerMuta
             (id,submitter,partner_name,category,region,contact_name,responsibility,method,value,reason,status,submitted_at)
             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11)`,
             [
-              id, userId, input.partnerName, input.category, input.region,
+              id, userId, input.partnerName, input.category, input.region ?? "",
               input.contactName, input.responsibility, input.method, input.value, input.reason, request.at,
             ],
           );
