@@ -1,8 +1,4 @@
-import type {
-  PartnerReferralState,
-  PartnerSaveDraft,
-  StoredPartnerContact,
-} from "../../domain.js";
+import type { PartnerReferralState, PartnerSaveDraft, StoredPartnerContact } from "../../domain.js";
 
 export type PartnerReceipt = { id: string; version?: number; at?: number; requestId?: string };
 
