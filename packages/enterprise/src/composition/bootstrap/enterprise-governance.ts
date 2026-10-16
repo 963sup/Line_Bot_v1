@@ -10,6 +10,12 @@ import {
   detailEnterpriseBySlug,
   listEnterprises,
 } from "../../adapters/postgres-queries.js";
+import type {
+  EnterpriseAffiliationCommand,
+  EnterpriseIdentityCommand,
+  EnterpriseOrganizationCommand,
+  EnterpriseOwnerCommand,
+} from "../../application/commands/enterprise-governance.js";
 import { enterpriseGovernance } from "../../application/enterprise-governance.js";
 import { executeEnterpriseAffiliation } from "../../application/use-cases/enterprise-affiliation.js";
 import { executeEnterpriseIdentity } from "../../application/use-cases/enterprise-identity.js";
@@ -17,10 +23,6 @@ import { executeEnterpriseOrganization } from "../../application/use-cases/enter
 import { executeEnterpriseOwner } from "../../application/use-cases/enterprise-owner.js";
 import { executeEnterpriseTeam } from "../../application/use-cases/enterprise-team.js";
 import type { EnterpriseCommand } from "../../contracts/enterprise-governance.js";
-import type { EnterpriseAffiliationCommand } from "../../contracts/output/enterprise-affiliation.js";
-import type { EnterpriseIdentityCommand } from "../../contracts/output/enterprise-identity.js";
-import type { EnterpriseOrganizationCommand } from "../../contracts/output/enterprise-organization.js";
-import type { EnterpriseOwnerCommand } from "../../contracts/output/enterprise-owner.js";
 
 function isOwnerCommand(command: EnterpriseCommand): command is EnterpriseOwnerCommand {
   return (

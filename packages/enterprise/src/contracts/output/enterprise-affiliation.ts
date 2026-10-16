@@ -1,19 +1,6 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import type { EnterpriseDirectAffiliationState, EnterpriseInvitationState } from "../../domain.js";
-import type { EnterpriseCommand, EnterpriseReceipt } from "../enterprise-governance.js";
-
-export type EnterpriseAffiliationCommand = Extract<
-  EnterpriseCommand,
-  {
-    action:
-      | "invite-user"
-      | "accept-invitation"
-      | "decline-invitation"
-      | "cancel-invitation"
-      | "remove-direct-affiliation"
-      | "leave-enterprise";
-  }
->;
+import type { EnterpriseMutationEvidence, EnterpriseReceipt } from "../enterprise-governance.js";
 
 export interface EnterpriseAffiliationTransaction {
   readonly actorUserId: string;
@@ -35,10 +22,11 @@ export interface EnterpriseAffiliationTransaction {
 }
 
 export interface EnterpriseAffiliationTransactions {
+  /** A null target binds the verified actor of this transaction. */
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseAffiliationCommand,
-    at: number,
+    scope: { enterpriseAccountId: string; targetUserId: string | null },
+    evidence: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseAffiliationTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt>;
 }

@@ -1,10 +1,7 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseReceipt } from "../../contracts/enterprise-governance.js";
-import type {
-  EnterpriseAffiliationCommand,
-  EnterpriseAffiliationTransactions,
-} from "../../contracts/output/enterprise-affiliation.js";
+import type { EnterpriseAffiliationTransactions } from "../../contracts/output/enterprise-affiliation.js";
 import {
   activateEnterpriseDirectAffiliation,
   EnterpriseError,
@@ -16,14 +13,27 @@ import {
   requireReplacementEnterpriseOwner,
   resolveEnterpriseInvitation,
 } from "../../domain.js";
+import type { EnterpriseAffiliationCommand } from "../commands/enterprise-governance.js";
 
 export function executeEnterpriseAffiliation(
   transactions: EnterpriseAffiliationTransactions,
   actor: VerifiedLineActor,
-  command: EnterpriseAffiliationCommand,
+  input: EnterpriseAffiliationCommand,
   at: number,
 ) {
-  return transactions.transact(actor, command, at, async (transaction) => {
+  const command = { ...input };
+  const scope = {
+    enterpriseAccountId: command.enterpriseAccountId,
+    targetUserId: command.action === "leave-enterprise" ? null : command.targetUserId,
+  };
+  const evidence = {
+    requestId: command.requestId,
+    payload: JSON.stringify(command),
+    action: command.action,
+    reason: command.reason,
+    at,
+  };
+  return transactions.transact(actor, scope, evidence, async (transaction) => {
     if (command.action === "accept-invitation" || command.action === "decline-invitation") {
       if (transaction.targetUserId !== transaction.actorUserId)
         throw new GovernanceAccessError(403, "forbidden", "只能接受自己的 Enterprise invitation。");

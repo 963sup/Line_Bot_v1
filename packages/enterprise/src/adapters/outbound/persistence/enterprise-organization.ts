@@ -9,9 +9,11 @@ import {
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { literalValue, numberValue } from "@line_bot_v1/platform/validation";
-import type { EnterpriseReceipt } from "../../../contracts/enterprise-governance.js";
 import type {
-  EnterpriseOrganizationCommand,
+  EnterpriseMutationEvidence,
+  EnterpriseReceipt,
+} from "../../../contracts/enterprise-governance.js";
+import type {
   EnterpriseOrganizationTransaction,
   EnterpriseOrganizationTransactions,
 } from "../../../contracts/output/enterprise-organization.js";
@@ -21,24 +23,26 @@ export class PostgresEnterpriseOrganization implements EnterpriseOrganizationTra
   constructor(private readonly db: Database) {}
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseOrganizationCommand,
-    at: number,
+    scope: { enterpriseAccountId: string; organizationAccountId: string },
+    audit: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseOrganizationTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
+    const scopeId = scope.enterpriseAccountId;
+    const at = audit.at;
     return enterpriseGovernanceTransaction(
       this.db,
       actor,
-      command,
-      at,
+      scopeId,
+      audit,
       async (sql, evidence, enterprise) => {
         const organization = await readOrganizationQualification(
           sql,
-          command.organizationAccountId,
+          scope.organizationAccountId,
           "update",
         );
         if (!organization)
           throw new GovernanceAccessError(404, "not-found", "找不到 Organization。");
-        const parameters = [command.enterpriseAccountId, command.organizationAccountId];
+        const parameters = [scopeId, scope.organizationAccountId];
         return operation({
           enterprise,
           organization,
@@ -46,18 +50,14 @@ export class PostgresEnterpriseOrganization implements EnterpriseOrganizationTra
           record: evidence.record,
           authorizeEnterprise: (mode) =>
             mode === "active-scope"
-              ? requireEnterpriseOwner(sql, command.enterpriseAccountId, evidence.actorUserId)
-              : requireEnterpriseLifecycleOwner(
-                  sql,
-                  command.enterpriseAccountId,
-                  evidence.actorUserId,
-                ),
+              ? requireEnterpriseOwner(sql, scopeId, evidence.actorUserId)
+              : requireEnterpriseLifecycleOwner(sql, scopeId, evidence.actorUserId),
           organizationOwnerConsents: (mode) =>
             mode === "active-scope"
-              ? isOrganizationOwner(sql, command.organizationAccountId, evidence.actorUserId)
+              ? isOrganizationOwner(sql, scope.organizationAccountId, evidence.actorUserId)
               : hasOrganizationOwnerAssignment(
                   sql,
-                  command.organizationAccountId,
+                  scope.organizationAccountId,
                   evidence.actorUserId,
                 ),
           load: async () =>

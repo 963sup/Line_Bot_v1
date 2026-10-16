@@ -4,9 +4,11 @@ import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-
 import { requireEnterpriseOwner } from "@line_bot_v1/identity-access/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { literalValue, numberValue } from "@line_bot_v1/platform/validation";
-import type { EnterpriseReceipt } from "../../../contracts/enterprise-governance.js";
 import type {
-  EnterpriseOwnerCommand,
+  EnterpriseMutationEvidence,
+  EnterpriseReceipt,
+} from "../../../contracts/enterprise-governance.js";
+import type {
   EnterpriseOwnerTransaction,
   EnterpriseOwnerTransactions,
 } from "../../../contracts/output/enterprise-owner.js";
@@ -21,16 +23,17 @@ export class PostgresEnterpriseOwner implements EnterpriseOwnerTransactions {
 
   transact(
     actor: VerifiedLineActor,
-    command: EnterpriseOwnerCommand,
-    at: number,
+    scope: { enterpriseAccountId: string; targetUserId: string },
+    audit: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseOwnerTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
-    return enterpriseGovernanceTransaction(this.db, actor, command, at, (sql, evidence) => {
-      const parameters = [command.enterpriseAccountId, command.targetUserId];
+    const scopeId = scope.enterpriseAccountId;
+    const at = audit.at;
+    return enterpriseGovernanceTransaction(this.db, actor, scopeId, audit, (sql, evidence) => {
+      const parameters = [scopeId, scope.targetUserId];
       return operation({
         ...evidence,
-        authorize: () =>
-          requireEnterpriseOwner(sql, command.enterpriseAccountId, evidence.actorUserId),
+        authorize: () => requireEnterpriseOwner(sql, scopeId, evidence.actorUserId),
         hasDirectAffiliation: async () =>
           Boolean(
             (
@@ -42,7 +45,7 @@ export class PostgresEnterpriseOwner implements EnterpriseOwnerTransactions {
             ).rows[0],
           ),
         activeUserVersion: async () =>
-          (await readActiveUserQualification(sql, command.targetUserId, "share"))?.statusVersion ??
+          (await readActiveUserQualification(sql, scope.targetUserId, "share"))?.statusVersion ??
           null,
         load: async () =>
           (
@@ -57,10 +60,8 @@ export class PostgresEnterpriseOwner implements EnterpriseOwnerTransactions {
               }),
             )
           ).rows[0] ?? null,
-        isEffectiveOwner: () =>
-          hasEnterpriseOwnerAssignment(sql, command.enterpriseAccountId, command.targetUserId),
-        hasReplacementOwner: () =>
-          hasReplacementEnterpriseOwner(sql, command.enterpriseAccountId, command.targetUserId),
+        isEffectiveOwner: () => hasEnterpriseOwnerAssignment(sql, scopeId, scope.targetUserId),
+        hasReplacementOwner: () => hasReplacementEnterpriseOwner(sql, scopeId, scope.targetUserId),
         save: async (next) => {
           if (next.version === 1) {
             await sql.query(

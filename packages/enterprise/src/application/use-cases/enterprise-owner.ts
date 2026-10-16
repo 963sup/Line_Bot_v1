@@ -1,10 +1,7 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseReceipt } from "../../contracts/enterprise-governance.js";
-import type {
-  EnterpriseOwnerCommand,
-  EnterpriseOwnerTransactions,
-} from "../../contracts/output/enterprise-owner.js";
+import type { EnterpriseOwnerTransactions } from "../../contracts/output/enterprise-owner.js";
 import {
   EnterpriseError,
   grantEnterpriseOwner,
@@ -13,14 +10,27 @@ import {
   requireReplacementEnterpriseOwner,
   revokeEnterpriseOwner,
 } from "../../domain.js";
+import type { EnterpriseOwnerCommand } from "../commands/enterprise-governance.js";
 
 export function executeEnterpriseOwner(
   transactions: EnterpriseOwnerTransactions,
   actor: VerifiedLineActor,
-  command: EnterpriseOwnerCommand,
+  input: EnterpriseOwnerCommand,
   at: number,
 ) {
-  return transactions.transact(actor, command, at, async (transaction) => {
+  const command = { ...input };
+  const scope = {
+    enterpriseAccountId: command.enterpriseAccountId,
+    targetUserId: command.targetUserId,
+  };
+  const evidence = {
+    requestId: command.requestId,
+    payload: JSON.stringify(command),
+    action: command.action,
+    reason: command.reason,
+    at,
+  };
+  return transactions.transact(actor, scope, evidence, async (transaction) => {
     await transaction.authorize();
     const replay = await transaction.replay();
     if (replay) return replay;

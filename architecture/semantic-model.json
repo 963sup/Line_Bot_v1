@@ -2472,6 +2472,7 @@
         "scope": "current Enterprise governance application surface",
         "sourcePaths": [
           "packages/enterprise/src/application/enterprise-governance.ts",
+          "packages/enterprise/src/application/commands/enterprise-governance.ts",
           "packages/enterprise/src/contracts/input/enterprise-governance.ts",
           "packages/enterprise/src/application/use-cases/enterprise-owner.ts",
           "packages/enterprise/src/contracts/output/enterprise-owner.ts",
@@ -2527,6 +2528,7 @@
         "sourcePaths": [
           "packages/enterprise/src/application/enterprise-governance.ts",
           "packages/enterprise/src/application/use-cases/enterprise-team.ts",
+          "packages/enterprise/src/application/commands/enterprise-governance.ts",
           "packages/enterprise/src/contracts/output/enterprise-team.ts",
           "packages/enterprise/src/adapters/outbound/persistence/enterprise-team.ts",
           "packages/enterprise/src/composition/bootstrap/enterprise-governance.ts",

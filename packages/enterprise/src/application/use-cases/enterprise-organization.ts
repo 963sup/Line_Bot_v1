@@ -1,10 +1,7 @@
 import type { VerifiedLineActor } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import type { EnterpriseReceipt } from "../../contracts/enterprise-governance.js";
-import type {
-  EnterpriseOrganizationCommand,
-  EnterpriseOrganizationTransactions,
-} from "../../contracts/output/enterprise-organization.js";
+import type { EnterpriseOrganizationTransactions } from "../../contracts/output/enterprise-organization.js";
 import {
   attachEnterpriseOrganization,
   detachEnterpriseOrganization,
@@ -12,14 +9,27 @@ import {
   requireEnterpriseOrganizationScopes,
   requireNoEnterpriseTeamAssignments,
 } from "../../domain.js";
+import type { EnterpriseOrganizationCommand } from "../commands/enterprise-governance.js";
 
 export function executeEnterpriseOrganization(
   transactions: EnterpriseOrganizationTransactions,
   actor: VerifiedLineActor,
-  command: EnterpriseOrganizationCommand,
+  input: EnterpriseOrganizationCommand,
   at: number,
 ) {
-  return transactions.transact(actor, command, at, async (transaction) => {
+  const command = { ...input };
+  const scope = {
+    enterpriseAccountId: command.enterpriseAccountId,
+    organizationAccountId: command.organizationAccountId,
+  };
+  const evidence = {
+    requestId: command.requestId,
+    payload: JSON.stringify(command),
+    action: command.action,
+    reason: command.reason,
+    at,
+  };
+  return transactions.transact(actor, scope, evidence, async (transaction) => {
     const detach = command.action === "detach-organization";
     const mode = detach ? "current-assignment" : "active-scope";
     await transaction.authorizeEnterprise(mode);

@@ -4,9 +4,11 @@ import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-
 import { requireEnterpriseOwner } from "@line_bot_v1/identity-access/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { numberValue } from "@line_bot_v1/platform/validation";
-import type { EnterpriseReceipt } from "../../../contracts/enterprise-governance.js";
 import type {
-  EnterpriseIdentityCommand,
+  EnterpriseMutationEvidence,
+  EnterpriseReceipt,
+} from "../../../contracts/enterprise-governance.js";
+import type {
   EnterpriseIdentityTransaction,
   EnterpriseIdentityTransactions,
   EnterpriseProvisionTransaction,
@@ -21,14 +23,13 @@ export class PostgresEnterpriseIdentity implements EnterpriseIdentityTransaction
 
   create(
     actor: VerifiedLineActor,
-    command: Extract<EnterpriseIdentityCommand, { action: "create-enterprise" }>,
-    at: number,
+    audit: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseProvisionTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
-    return enterpriseCommandTransaction(this.db, actor, command, at, (sql, evidence) =>
+    return enterpriseCommandTransaction(this.db, actor, null, audit, (sql, tx) =>
       operation({
-        replay: evidence.replay,
-        record: evidence.record,
+        replay: tx.replay,
+        record: tx.record,
         nextId: randomUUID,
         provisionForActor: async (enterprise, name, slug) => {
           let row: { version: number } | undefined;
@@ -36,7 +37,7 @@ export class PostgresEnterpriseIdentity implements EnterpriseIdentityTransaction
             row = (
               await sql.query(
                 "SELECT scope_version FROM app_private.provision_enterprise_scope($1,$2,$3,$4,$5)",
-                [enterprise.id, evidence.actorUserId, slug, name, at],
+                [enterprise.id, tx.actorUserId, slug, name, audit.at],
                 (row) => ({ version: numberValue(row.scope_version) }),
               )
             ).rows[0];
@@ -55,18 +56,17 @@ export class PostgresEnterpriseIdentity implements EnterpriseIdentityTransaction
 
   complete(
     actor: VerifiedLineActor,
-    command: Extract<EnterpriseIdentityCommand, { action: "complete-enterprise-identity" }>,
-    at: number,
+    scopeId: string,
+    audit: EnterpriseMutationEvidence,
     operation: (transaction: EnterpriseIdentityTransaction) => Promise<EnterpriseReceipt>,
   ): Promise<EnterpriseReceipt> {
-    return enterpriseGovernanceTransaction(this.db, actor, command, at, (sql, evidence, current) =>
+    return enterpriseGovernanceTransaction(this.db, actor, scopeId, audit, (sql, tx, current) =>
       operation({
         current,
         status: current.status,
-        replay: evidence.replay,
-        record: evidence.record,
-        authorizeOwner: () =>
-          requireEnterpriseOwner(sql, command.enterpriseAccountId, evidence.actorUserId),
+        replay: tx.replay,
+        record: tx.record,
+        authorizeOwner: () => requireEnterpriseOwner(sql, scopeId, tx.actorUserId),
         save: async (next) => {
           let row: { version: number } | undefined;
           try {
@@ -76,7 +76,7 @@ export class PostgresEnterpriseIdentity implements EnterpriseIdentityTransaction
                SET name=$2,slug=$3,version=version+1
                WHERE account_id=$1 AND name IS NULL AND slug IS NULL
               RETURNING version`,
-                [command.enterpriseAccountId, next.name, next.slug],
+                [scopeId, next.name, next.slug],
                 (row) => ({ version: numberValue(row.version) }),
               )
             ).rows[0];
