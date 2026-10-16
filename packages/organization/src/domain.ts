@@ -39,6 +39,7 @@ type OrganizationFailureCode =
   | "inactive"
   | "forbidden"
   | "not-found"
+  | "scope-conflict"
   | "last-effective-role-holder";
 
 export class OrganizationError extends Error {
@@ -197,6 +198,38 @@ export function createOrganizationInvitation(
   };
 }
 
+export function requireActiveOrganizationMembershipScope(status: "active" | "inactive") {
+  if (status !== "active")
+    throw new OrganizationError("inactive", "停用的 Organization 不能變更人員關係。");
+}
+
+export function requireNoActiveOrganizationMembership(active: boolean) {
+  if (active) throw new OrganizationError("invalid-transition", "使用者已是 Organization member。");
+}
+
+export function requireNoDerivedOrganizationMembership(hasOtherSource: boolean) {
+  if (hasOtherSource)
+    throw new OrganizationError(
+      "scope-conflict",
+      "仍透過 Enterprise Team 取得此 Organization membership；請先解除該來源。",
+    );
+}
+
+export function inviteOrganizationUser(
+  current: OrganizationInvitation | null,
+  organizationAccountId: OrganizationAccountId,
+  userId: UserId,
+  expectedVersion: number,
+): OrganizationInvitation {
+  if (!current) {
+    if (expectedVersion !== 0) throw new OrganizationError("conflict", "Invitation 版本不符。");
+    return createOrganizationInvitation(organizationAccountId, userId);
+  }
+  if (current.version !== expectedVersion || current.status === "pending")
+    throw new OrganizationError("conflict", "Invitation 狀態或版本不符。");
+  return { ...current, status: "pending", version: current.version + 1 };
+}
+
 export function resolveOrganizationInvitation(
   invitation: OrganizationInvitation,
   status: "accepted" | "cancelled" | "declined",
@@ -223,6 +256,17 @@ export function createOrganizationDirectMembership(
     userId: requireId(userId, "User id"),
     status: "active",
     version: 1,
+  };
+}
+
+export function activateOrganizationDirectMembership(
+  organizationAccountId: OrganizationAccountId,
+  userId: UserId,
+  current: OrganizationDirectMembership | null,
+): OrganizationDirectMembership {
+  return {
+    ...createOrganizationDirectMembership(organizationAccountId, userId),
+    version: (current?.version ?? 0) + 1,
   };
 }
 

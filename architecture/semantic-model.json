@@ -2570,6 +2570,10 @@
           "packages/organization/src/application/commands/organization-owner.ts",
           "packages/organization/src/contracts/output/organization-owner.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-owner.ts",
+          "packages/organization/src/application/commands/organization-membership.ts",
+          "packages/organization/src/application/use-cases/organization-membership.ts",
+          "packages/organization/src/contracts/output/organization-membership.ts",
+          "packages/organization/src/adapters/outbound/persistence/organization-membership.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-governance-transaction.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-governance.ts",
           "packages/organization/src/composition/bootstrap/organization-governance.ts",
@@ -2591,6 +2595,7 @@
         "testPaths": [
           "packages/organization/test/organization-capabilities.test.ts",
           "packages/organization/test/organization-owner.test.ts",
+          "packages/organization/test/organization-membership.test.ts",
           "packages/organization/test/organization-membership-refresh.test.ts",
           "packages/organization/test/organization-postgres-execute-characterization.test.ts",
           "packages/enterprise/test/enterprise-team-membership.test.ts"
@@ -2616,7 +2621,11 @@
         "scope": "current Organization invitation domain and governance surface",
         "sourcePaths": [
           "packages/organization/src/domain.ts",
-          "packages/organization/src/application/organization-governance.ts"
+          "packages/organization/src/application/organization-governance.ts",
+          "packages/organization/src/application/commands/organization-membership.ts",
+          "packages/organization/src/application/use-cases/organization-membership.ts",
+          "packages/organization/src/contracts/output/organization-membership.ts",
+          "packages/organization/src/adapters/outbound/persistence/organization-membership.ts"
         ],
         "publicExports": ["./domain", "./application/organization-governance"],
         "entrypoints": [
@@ -2624,7 +2633,10 @@
           "apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx",
           "apps/web/src/modules/organization/panel.tsx"
         ],
-        "testPaths": ["packages/enterprise/test/enterprise-organization-foundation.test.ts"],
+        "testPaths": [
+          "packages/organization/test/organization-membership.test.ts",
+          "packages/enterprise/test/enterprise-organization-foundation.test.ts"
+        ],
         "note": "Invitation behavior has domain/application source, web/API consumers, and existing governance tests; execution evidence is still separate from metadata."
       }
     },
