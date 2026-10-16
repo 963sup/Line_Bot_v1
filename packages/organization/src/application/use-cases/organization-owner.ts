@@ -15,9 +15,10 @@ import type { OrganizationOwnerCommand } from "../commands/organization-owner.js
 export function executeOrganizationOwner(
   transactions: OrganizationOwnerTransactions,
   actor: VerifiedLineActor,
-  command: OrganizationOwnerCommand,
+  input: OrganizationOwnerCommand,
   at: number,
 ) {
+  const command = { ...input };
   return transactions.transact(
     actor,
     { organizationAccountId: command.organizationAccountId, targetUserId: command.targetUserId },

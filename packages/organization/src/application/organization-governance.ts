@@ -5,6 +5,7 @@ import type {
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import type { OrganizationLifecycleTransactions } from "../contracts/output/organization-lifecycle.js";
+import { normalizeOrganizationName, OrganizationError } from "../domain.js";
 import type { OrganizationLifecycleCommand } from "./commands/organization-lifecycle.js";
 import { executeOrganizationLifecycle } from "./use-cases/organization-lifecycle.js";
 
@@ -96,12 +97,14 @@ function parseOrganizationCommand(
   const evidence = parseMutationEvidence(base);
   if (base.action === "create-organization") {
     requireExactGovernanceKeys(base, ["action", "requestId", "login", "name", "reason"]);
-    if (
-      typeof base.login !== "string" ||
-      typeof base.name !== "string" ||
-      !base.name.trim() ||
-      base.name.trim().length > 120
-    ) {
+    if (typeof base.login !== "string" || typeof base.name !== "string") {
+      throw new GovernanceAccessError(400, "invalid-input", "Organization login 或 name 不正確。");
+    }
+    let name: string;
+    try {
+      name = normalizeOrganizationName(base.name);
+    } catch (error) {
+      if (!(error instanceof OrganizationError)) throw error;
       throw new GovernanceAccessError(400, "invalid-input", "Organization login 或 name 不正確。");
     }
     try {
@@ -109,7 +112,7 @@ function parseOrganizationCommand(
         ...evidence,
         action: base.action,
         login: normalizeAccountLogin(base.login),
-        name: base.name.trim(),
+        name,
       };
     } catch {
       throw new GovernanceAccessError(400, "invalid-input", "Organization login 不正確或已保留。");

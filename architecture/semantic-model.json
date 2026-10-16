@@ -2574,6 +2574,10 @@
           "packages/organization/src/application/use-cases/organization-membership.ts",
           "packages/organization/src/contracts/output/organization-membership.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-membership.ts",
+          "packages/organization/src/application/commands/organization-scope.ts",
+          "packages/organization/src/application/use-cases/organization-scope.ts",
+          "packages/organization/src/contracts/output/organization-scope.ts",
+          "packages/organization/src/adapters/outbound/persistence/organization-scope.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-governance-transaction.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-governance.ts",
           "packages/organization/src/composition/bootstrap/organization-governance.ts",
@@ -2596,6 +2600,7 @@
           "packages/organization/test/organization-capabilities.test.ts",
           "packages/organization/test/organization-owner.test.ts",
           "packages/organization/test/organization-membership.test.ts",
+          "packages/organization/test/organization-scope.test.ts",
           "packages/organization/test/organization-membership-refresh.test.ts",
           "packages/organization/test/organization-postgres-execute-characterization.test.ts",
           "packages/enterprise/test/enterprise-team-membership.test.ts"

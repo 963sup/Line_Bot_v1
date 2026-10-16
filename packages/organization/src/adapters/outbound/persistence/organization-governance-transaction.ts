@@ -62,10 +62,7 @@ export function organizationCommandTransaction(
   });
 }
 
-export async function lockOrganization(
-  sql: Sql,
-  organizationAccountId: string,
-): Promise<Organization> {
+async function lockOrganization(sql: Sql, organizationAccountId: string): Promise<Organization> {
   const row = (
     await sql.query(
       "SELECT account_id,status,version FROM organizations WHERE account_id=$1 FOR UPDATE",

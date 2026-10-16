@@ -3,10 +3,7 @@ import type {
   VerifiedLineActor,
 } from "@line_bot_v1/identity-access/contracts/governance";
 import { GovernanceAccessError } from "@line_bot_v1/identity-access/domain/role-assignment";
-import {
-  requireOrganizationOwner,
-  resolveVerifiedLineActor,
-} from "@line_bot_v1/identity-access/postgres";
+import { resolveVerifiedLineActor } from "@line_bot_v1/identity-access/postgres";
 import { readAccountLogin } from "@line_bot_v1/namespace/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import {
@@ -18,13 +15,11 @@ import {
   stringValue,
 } from "@line_bot_v1/platform/validation";
 import type {
-  OrganizationCommand,
   OrganizationDetail,
   OrganizationInvitationProjection,
   OrganizationList,
   OrganizationMembershipProjection,
   OrganizationMembershipSource,
-  OrganizationReceipt,
 } from "../../../contracts/organization-governance.js";
 import {
   hasOrganizationOwnerAssignment,
@@ -32,10 +27,6 @@ import {
   readOrganizationOwnerScopeIds,
 } from "../../../postgres/owner-roles.js";
 import { readOrganizationViewerCapabilities } from "../../../postgres/public.js";
-import {
-  lockOrganization,
-  organizationCommandTransaction,
-} from "./organization-governance-transaction.js";
 
 function nullableNumber(value: unknown): number | null {
   const numeric = nullableNumericValue(value);
@@ -91,39 +82,6 @@ function organizationInvitationRow(row: Record<string, unknown>) {
     user_id: stringValue(row.user_id),
     status: literalValue(row.status, ["pending", "accepted", "cancelled", "declined"]),
     version: numberValue(row.version),
-  };
-}
-
-function versionRow(row: Record<string, unknown>) {
-  return { version: numberValue(row.version) };
-}
-
-function provisionedScopeRow(row: Record<string, unknown>) {
-  return { scope_version: numberValue(row.scope_version) };
-}
-
-function hasPostgresCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
-function receipt(
-  command: OrganizationCommand,
-  status: string,
-  version: number,
-  at: number,
-): OrganizationReceipt {
-  const organizationAccountId =
-    "organizationAccountId" in command ? command.organizationAccountId : "";
-  const userId = "targetUserId" in command ? command.targetUserId : null;
-  return {
-    requestId: command.requestId,
-    action: command.action,
-    scopeId: organizationAccountId,
-    subjectKind: userId ? "user" : null,
-    subjectId: userId,
-    status,
-    version,
-    at,
   };
 }
 
@@ -336,109 +294,5 @@ export class PostgresOrganizationPersistence {
         ),
       };
     });
-  }
-
-  execute(
-    actor: VerifiedLineActor,
-    command: Extract<
-      OrganizationCommand,
-      { action: "create-organization" | "update-member-creation-policy" }
-    >,
-    now: number,
-  ): Promise<OrganizationReceipt> {
-    return organizationCommandTransaction(
-      this.db,
-      actor,
-      command.action === "create-organization" ? null : command.organizationAccountId,
-      {
-        requestId: command.requestId,
-        payload: JSON.stringify(command),
-        action: command.action,
-        reason: command.reason,
-        at: now,
-      },
-      async (sql, evidence) => {
-        if (command.action === "create-organization") {
-          const replay = await evidence.replay();
-          if (replay) return replay;
-          const organizationAccountId = crypto.randomUUID();
-          let provisioned: Record<string, unknown> | undefined;
-          try {
-            provisioned = (
-              await sql.query(
-                "SELECT scope_version FROM app_private.provision_organization_scope($1,$2,$3,$4,$5)",
-                [organizationAccountId, evidence.actorUserId, command.login, command.name, now],
-                provisionedScopeRow,
-              )
-            ).rows[0];
-          } catch (error) {
-            if (hasPostgresCode(error, "23505")) {
-              throw new GovernanceAccessError(409, "conflict", "Organization login 已被使用。");
-            }
-            throw error;
-          }
-          if (!provisioned)
-            throw new GovernanceAccessError(503, "unknown-result", "Organization 建立結果不完整。");
-          const result: OrganizationReceipt = {
-            requestId: command.requestId,
-            action: command.action,
-            scopeId: organizationAccountId,
-            subjectKind: null,
-            subjectId: null,
-            status: "active",
-            version: Number(provisioned.scope_version),
-            at: now,
-          };
-          await evidence.record(result);
-          return result;
-        }
-
-        const organization = await lockOrganization(sql, command.organizationAccountId);
-
-        await requireOrganizationOwner(sql, command.organizationAccountId, evidence.actorUserId);
-
-        const replay = await evidence.replay();
-        if (replay) return replay;
-
-        if (organization.status !== "active") {
-          throw new GovernanceAccessError(
-            409,
-            "inactive",
-            "停用的 Organization 不能變更成員建立政策。",
-          );
-        }
-        if (organization.version !== command.expectedVersion) {
-          throw new GovernanceAccessError(409, "conflict", "Organization 版本已更新。");
-        }
-        const changed = (
-          await sql.query(
-            `UPDATE organizations SET
-             member_can_create_public_repositories=$2,
-             member_can_create_private_repositories=$3,
-             member_can_create_internal_repositories=$4,
-             member_can_create_project_v2=$5,
-             member_can_create_teams=$6,
-             version=version+1
-           WHERE account_id=$1 RETURNING version`,
-            [
-              command.organizationAccountId,
-              command.memberCanCreatePublicRepositories,
-              command.memberCanCreatePrivateRepositories,
-              command.memberCanCreateInternalRepositories,
-              command.memberCanCreateProjectV2,
-              command.memberCanCreateTeams,
-            ],
-            versionRow,
-          )
-        ).rows[0];
-        if (!changed) {
-          throw new GovernanceAccessError(409, "conflict", "Organization 狀態已更新，請重新讀取。");
-        }
-        const result = receipt(command, "active", Number(changed.version), now);
-
-        await evidence.record(result);
-        return result;
-      },
-    );
   }
 }

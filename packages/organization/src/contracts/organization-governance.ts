@@ -26,7 +26,7 @@ export type OrganizationMembershipSource = Readonly<{
   version: number;
 }>;
 
-type OrganizationMemberCreationPolicy = Readonly<{
+export type OrganizationMemberCreationPolicy = Readonly<{
   memberCanCreatePublicRepositories: boolean;
   memberCanCreatePrivateRepositories: boolean;
   memberCanCreateInternalRepositories: boolean;
