@@ -29,8 +29,8 @@
       "default": "./dist/application/collection.js"
     },
     "./application/creation": {
-      "types": "./dist/application/creation.d.ts",
-      "default": "./dist/application/creation.js"
+      "types": "./dist/application/use-cases/repository-creation.d.ts",
+      "default": "./dist/application/use-cases/repository-creation.js"
     },
     "./contracts/discovery": {
       "types": "./dist/contracts/discovery.d.ts",
@@ -57,8 +57,8 @@
       "default": "./dist/postgres/collection.js"
     },
     "./postgres/creation": {
-      "types": "./dist/postgres/creation.d.ts",
-      "default": "./dist/postgres/creation.js"
+      "types": "./dist/composition/bootstrap/repository-creation.d.ts",
+      "default": "./dist/composition/bootstrap/repository-creation.js"
     },
     "./postgres/discovery": {
       "types": "./dist/postgres/discovery.d.ts",
@@ -141,8 +141,8 @@
       "default": "./dist/contracts/output/collection.js"
     },
     "./contracts/repositories/creation": {
-      "types": "./dist/contracts/repositories/creation.d.ts",
-      "default": "./dist/contracts/repositories/creation.js"
+      "types": "./dist/contracts/input/repository-creation.d.ts",
+      "default": "./dist/contracts/input/repository-creation.js"
     },
     "./contracts/repositories/star-lists": {
       "types": "./dist/contracts/repositories/star-lists.d.ts",

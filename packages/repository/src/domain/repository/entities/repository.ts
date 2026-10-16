@@ -26,6 +26,56 @@ export type RepositoryLifecycleState = Readonly<{
   version: number;
 }>;
 
+export type RepositoryCreationDraft = Pick<
+  RepositoryLifecycleState,
+  "ownerAccountId" | "ownerKind" | "name" | "visibility"
+>;
+
+export class RepositoryCreationError extends Error {
+  constructor(public readonly code: "user-owner-forbidden" | "internal-scope-required") {
+    super(code);
+    this.name = "RepositoryCreationError";
+  }
+}
+
+export function assertRepositoryCreationOwner(
+  actorUserId: string,
+  owner: Pick<RepositoryCreationDraft, "ownerAccountId" | "ownerKind">,
+): void {
+  if (owner.ownerKind === "USER" && owner.ownerAccountId !== actorUserId) {
+    throw new RepositoryCreationError("user-owner-forbidden");
+  }
+}
+
+export function assertRepositoryCreationVisibility(
+  draft: Pick<RepositoryCreationDraft, "ownerKind" | "visibility">,
+  internalEligible: boolean,
+): void {
+  if (
+    draft.visibility === "internal" &&
+    (draft.ownerKind !== "ORGANIZATION" || !internalEligible)
+  ) {
+    throw new RepositoryCreationError("internal-scope-required");
+  }
+}
+
+export function initializeRepository(
+  id: string,
+  draft: RepositoryCreationDraft,
+  internalEligible: boolean,
+): RepositoryLifecycleState {
+  assertRepositoryCreationVisibility(draft, internalEligible);
+  return {
+    id,
+    ownerAccountId: draft.ownerAccountId,
+    ownerKind: draft.ownerKind,
+    name: draft.name,
+    visibility: draft.visibility,
+    archived: false,
+    version: 1,
+  };
+}
+
 export type RepositoryLifecycleChange =
   | Readonly<{ action: "rename"; expectedVersion: number; name: string }>
   | Readonly<{
