@@ -8,14 +8,14 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type {
-  PartnerMutationTransactions,
   PartnerMutationRequest,
   PartnerMutationTransaction,
-  PartnerReceipt,
+  PartnerMutationTransactions,
   PartnerPublishedContact,
+  PartnerReceipt,
 } from "../contracts/output/partner-mutations.js";
+import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type {
   Partner,
   PartnerContact,
@@ -286,13 +286,24 @@ export class PostgresPartnerRepository implements PartnerRepository, PartnerMuta
           } else {
             await sql.query(
               "INSERT INTO partner_referral_commands(actor,request_id,fingerprint,result,action,created_at) VALUES($1,$2,$3,$4,$5,$6)",
-              [userId, request.requestId, fingerprint, JSON.stringify(result), request.action, request.at],
+              [
+                userId,
+                request.requestId,
+                fingerprint,
+                JSON.stringify(result),
+                request.action,
+                request.at,
+              ],
             );
           }
         },
         async partnerVersion(id) {
           const row = (
-            await sql.query("SELECT version FROM partners WHERE id=$1 FOR UPDATE", [id], decodeVersion)
+            await sql.query(
+              "SELECT version FROM partners WHERE id=$1 FOR UPDATE",
+              [id],
+              decodeVersion,
+            )
           ).rows[0];
           return row?.version ?? null;
         },
@@ -313,15 +324,32 @@ export class PostgresPartnerRepository implements PartnerRepository, PartnerMuta
           await sql.query(
             `INSERT INTO partners(id,name,category,region,status,created_at,created_by,version)
              VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,region=excluded.region,status=excluded.status,version=excluded.version`,
-            [next.id, next.name, next.category, next.region, next.status, request.at, userId, next.version],
+            [
+              next.id,
+              next.name,
+              next.category,
+              next.region,
+              next.status,
+              request.at,
+              userId,
+              next.version,
+            ],
           );
           for (const contact of next.contacts) {
             await sql.query(
               `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
                VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,responsibility=excluded.responsibility,phone=excluded.phone,email=excluded.email,line=excluded.line,status=excluded.status`,
               [
-                contact.id, next.id, contact.name, contact.responsibility,
-                contact.phone, contact.email, contact.line, contact.status, request.at, userId,
+                contact.id,
+                next.id,
+                contact.name,
+                contact.responsibility,
+                contact.phone,
+                contact.email,
+                contact.line,
+                contact.status,
+                request.at,
+                userId,
               ],
             );
           }
@@ -333,20 +361,31 @@ export class PostgresPartnerRepository implements PartnerRepository, PartnerMuta
             (id,submitter,partner_name,category,region,contact_name,responsibility,method,value,reason,status,submitted_at)
             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11)`,
             [
-              id, userId, input.partnerName, input.category, input.region ?? "",
-              input.contactName, input.responsibility, input.method, input.value, input.reason, request.at,
+              id,
+              userId,
+              input.partnerName,
+              input.category,
+              input.region ?? "",
+              input.contactName,
+              input.responsibility,
+              input.method,
+              input.value,
+              input.reason,
+              request.at,
             ],
           );
           return id;
         },
         async referral(id) {
           return (
-            await sql.query(
-              "SELECT * FROM partner_referrals WHERE id=$1 FOR UPDATE",
-              [id],
-              decodePartnerReferralState,
-            )
-          ).rows[0] ?? null;
+            (
+              await sql.query(
+                "SELECT * FROM partner_referrals WHERE id=$1 FOR UPDATE",
+                [id],
+                decodePartnerReferralState,
+              )
+            ).rows[0] ?? null
+          );
         },
         async withdraw(id) {
           await sql.query(
@@ -365,17 +404,28 @@ export class PostgresPartnerRepository implements PartnerRepository, PartnerMuta
           const contactId = randomUUID();
           await sql.query(
             "INSERT INTO partners(id,name,category,region,status,created_at,created_by) VALUES($1,$2,$3,$4,'published',$5,$6)",
-            [partnerId, referral.partnerName, referral.category, referral.region, request.at, userId],
+            [
+              partnerId,
+              referral.partnerName,
+              referral.category,
+              referral.region,
+              request.at,
+              userId,
+            ],
           );
           await sql.query(
             `INSERT INTO partner_contacts(id,partner_id,name,responsibility,phone,email,line,status,created_at,created_by)
              VALUES($1,$2,$3,$4,$5,$6,$7,'published',$8,$9)`,
             [
-              contactId, partnerId, referral.contactName, referral.responsibility,
+              contactId,
+              partnerId,
+              referral.contactName,
+              referral.responsibility,
               referral.method === "phone" ? referral.value : "",
               referral.method === "email" ? referral.value : "",
               referral.method === "line" ? referral.value : "",
-              request.at, userId,
+              request.at,
+              userId,
             ],
           );
           await sql.query(
@@ -390,7 +440,10 @@ export class PostgresPartnerRepository implements PartnerRepository, PartnerMuta
   }
 }
 
-async function duplicatePartnerContact(sql: Sql, contact: PartnerPublishedContact): Promise<boolean> {
+async function duplicatePartnerContact(
+  sql: Sql,
+  contact: PartnerPublishedContact,
+): Promise<boolean> {
   const { partnerName, contactName, phone, email, line, exceptPartnerId } = contact;
   const duplicate = await sql.query(
     `SELECT 1 FROM partner_contacts c JOIN partners p ON p.id=c.partner_id
