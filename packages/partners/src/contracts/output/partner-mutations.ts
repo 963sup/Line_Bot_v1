@@ -33,7 +33,7 @@ export type PartnerPublishedContact = {
   exceptPartnerId?: string;
 };
 
-export type PartnerSave = PartnerSaveDraft & { version: number };
+type PartnerSave = PartnerSaveDraft & { version: number };
 
 export interface PartnerMutationTransaction {
   readonly canReview: boolean;
@@ -50,7 +50,7 @@ export interface PartnerMutationTransaction {
   refer(input: {
     partnerName: string;
     category: string;
-    region: string;
+    region?: string;
     contactName: string;
     responsibility: string;
     method: "phone" | "email" | "line";
