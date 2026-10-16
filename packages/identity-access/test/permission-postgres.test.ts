@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
+import type { PermissionCommand } from "../src/application/commands/permission.js";
 import { PostgresPermissionStore } from "../src/composition/bootstrap/permissions.js";
-import { type PermissionCommand, PermissionError } from "../src/domain/permission.js";
+import { PermissionError } from "../src/domain/permission.js";
 
 const databaseUrl = process.env.CAPABILITY_TEST_DATABASE_URL;
 test("PostgreSQL permission changes serialize competing versions and concurrent exact replay", {

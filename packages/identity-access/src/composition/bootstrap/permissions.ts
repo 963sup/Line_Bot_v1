@@ -1,8 +1,8 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import { PostgresPermissionPersistence } from "../../adapters/outbound/persistence/permissions.js";
+import type { PermissionCommand } from "../../application/commands/permission.js";
 import { changePermission } from "../../application/use-cases/change-permission.js";
 import type { PermissionStore } from "../../contracts/input/permissions.js";
-import type { PermissionCommand } from "../../domain/permission.js";
 
 /** Existing public entry assembles the permission use case and concrete transaction/query adapter. */
 export class PostgresPermissionStore implements PermissionStore {

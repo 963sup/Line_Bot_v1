@@ -1,5 +1,5 @@
+import type { PermissionCommand } from "@line_bot_v1/identity-access/application/permissions";
 import type { PermissionView } from "@line_bot_v1/identity-access/contracts/permissions";
-import type { PermissionCommand } from "@line_bot_v1/identity-access/domain/permission";
 
 const storageKey = "permission-operation";
 

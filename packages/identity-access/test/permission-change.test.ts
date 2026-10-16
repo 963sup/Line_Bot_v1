@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import type { PermissionCommand } from "../src/application/commands/permission.js";
 import { changePermission } from "../src/application/use-cases/change-permission.js";
 import type {
   PermissionChangeTransaction,
   PermissionPersistence,
 } from "../src/contracts/output/permission-transactions.js";
-import type { PermissionCommand } from "../src/domain/permission.js";
 
 const command: PermissionCommand = {
   requestId: randomUUID(),
@@ -17,7 +17,7 @@ const command: PermissionCommand = {
   reason: "test",
 };
 
-function fixture(overrides: Partial<PermissionChangeTransaction> = {}) {
+function fixture(overrides: Partial<PermissionChangeTransaction> = {}, onBegin = () => {}) {
   const calls: string[] = [];
   const receipt = { requestId: command.requestId, version: 1 };
   const tx: PermissionChangeTransaction = {
@@ -35,7 +35,9 @@ function fixture(overrides: Partial<PermissionChangeTransaction> = {}) {
       calls.push("dependencies");
       return { canReadUsers: false, hasSuspendGrant: false };
     },
-    save: async (version, now) => {
+    save: async (permission, enabled, version, now) => {
+      assert.equal(permission, command.permission);
+      assert.equal(enabled, command.enabled);
       assert.equal(version, 0);
       assert.equal(now, 123);
       calls.push("save");
@@ -47,10 +49,15 @@ function fixture(overrides: Partial<PermissionChangeTransaction> = {}) {
     read: async () => {
       throw new Error("unexpected read");
     },
-    transact: async (actor, value, work) => {
+    transact: async (actor, target, evidence, work) => {
       assert.equal(actor, "admin");
-      assert.equal(value, command);
+      assert.equal(target, command.target);
+      assert.deepEqual(evidence, {
+        requestId: command.requestId,
+        payload: JSON.stringify(command),
+      });
       calls.push("begin");
+      onBegin();
       const result = await work(tx);
       calls.push("commit");
       return result;
@@ -63,6 +70,19 @@ test("permission changes coordinate current authority, replay, state, dependenci
   const f = fixture();
   assert.deepEqual(await changePermission(f.store, "admin", command, 123), f.receipt);
   assert.deepEqual(f.calls, ["begin", "replay", "version", "dependencies", "save", "commit"]);
+});
+
+test("caller mutation cannot change the intent used to authorize a locked target", async () => {
+  command.target = "admin";
+  const f = fixture({}, () => {
+    command.target = "target";
+  });
+  try {
+    await assert.rejects(changePermission(f.store, "admin", command, 123), { status: 403 });
+    assert.deepEqual(f.calls, ["begin"]);
+  } finally {
+    command.target = "target";
+  }
 });
 
 test("current authority and self-target rejection precede any receipt lookup", async () => {

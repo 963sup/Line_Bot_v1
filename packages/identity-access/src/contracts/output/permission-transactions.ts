@@ -1,4 +1,4 @@
-import type { PermissionCommand } from "../../domain/permission.js";
+import type { Permission } from "../../domain/permission.js";
 import type { PermissionReceipt, PermissionView } from "../permissions.js";
 
 export interface PermissionChangeTransaction {
@@ -7,14 +7,20 @@ export interface PermissionChangeTransaction {
   replay(): Promise<{ matches: boolean; result: PermissionReceipt } | null>;
   version(): Promise<number>;
   dependencies(): Promise<{ canReadUsers: boolean; hasSuspendGrant: boolean }>;
-  save(currentVersion: number, now: number): Promise<PermissionReceipt>;
+  save(
+    permission: Permission,
+    enabled: boolean,
+    currentVersion: number,
+    now: number,
+  ): Promise<PermissionReceipt>;
 }
 
 export interface PermissionPersistence {
   read(actor: string, target: string): Promise<PermissionView>;
   transact<T>(
     actor: string,
-    command: PermissionCommand,
+    target: string,
+    evidence: { requestId: string; payload: string },
     work: (transaction: PermissionChangeTransaction) => Promise<T>,
   ): Promise<T>;
 }

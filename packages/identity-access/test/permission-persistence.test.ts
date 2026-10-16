@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import type { PermissionCommand } from "../src/application/commands/permission.js";
 import { PostgresPermissionStore } from "../src/composition/bootstrap/permissions.js";
-import type { PermissionCommand } from "../src/domain/permission.js";
 import { protectPermissionAdministrator } from "../src/postgres.js";
 
 function command(
