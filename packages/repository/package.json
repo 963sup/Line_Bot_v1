@@ -69,16 +69,16 @@
       "default": "./dist/postgres/star-lists.js"
     },
     "./application/access": {
-      "types": "./dist/application/access.d.ts",
-      "default": "./dist/application/access.js"
+      "types": "./dist/application/use-cases/repository-access.d.ts",
+      "default": "./dist/application/use-cases/repository-access.js"
     },
     "./application/address": {
       "types": "./dist/application/address.d.ts",
       "default": "./dist/application/address.js"
     },
     "./postgres/access-management": {
-      "types": "./dist/postgres/access-management.d.ts",
-      "default": "./dist/postgres/access-management.js"
+      "types": "./dist/composition/bootstrap/repository-access.d.ts",
+      "default": "./dist/composition/bootstrap/repository-access.js"
     },
     "./postgres/address": {
       "types": "./dist/postgres/address.d.ts",
@@ -149,8 +149,8 @@
       "default": "./dist/contracts/repositories/star-lists.js"
     },
     "./contracts/repositories/access": {
-      "types": "./dist/contracts/repositories/access.d.ts",
-      "default": "./dist/contracts/repositories/access.js"
+      "types": "./dist/contracts/input/repository-access.d.ts",
+      "default": "./dist/contracts/input/repository-access.js"
     },
     "./contracts/repositories/address": {
       "types": "./dist/contracts/repositories/address.d.ts",

@@ -76,6 +76,125 @@ export function initializeRepository(
   };
 }
 
+export type RepositoryAccessScope = Pick<
+  RepositoryLifecycleState,
+  "id" | "ownerAccountId" | "ownerKind"
+>;
+
+export type RepositoryAccessChange =
+  | Readonly<{
+      action: "grant";
+      subjectKind: "USER" | "TEAM";
+      subjectId: string;
+      capability: RepositoryPermission;
+      expectedVersion: number;
+    }>
+  | Readonly<{
+      action: "revoke";
+      subjectKind: "USER" | "TEAM";
+      subjectId: string;
+      expectedVersion: number;
+    }>;
+
+export type RepositoryAccessGrantState = Readonly<{
+  capability: RepositoryPermission;
+  version: number;
+}>;
+
+export type RepositoryAccessFacts = Readonly<{
+  currentGrant?: RepositoryAccessGrantState | null;
+  targetUserActive?: boolean;
+}>;
+
+export type RepositoryAccessMutation = Readonly<{
+  subjectKind: RepositoryAccessChange["subjectKind"];
+  subjectId: string;
+  capability: RepositoryPermission | null;
+  expectedVersion: number;
+}>;
+
+export type RepositoryAccessDecision =
+  | Readonly<{
+      kind: "requires-current-grant";
+      subjectKind: RepositoryAccessChange["subjectKind"];
+      subjectId: string;
+    }>
+  | Readonly<{ kind: "requires-active-user"; userId: string }>
+  | Readonly<{ kind: "accepted"; mutation: RepositoryAccessMutation }>;
+
+export class RepositoryAccessDecisionError extends Error {
+  constructor(
+    public readonly code:
+      | "implicit-user-owner"
+      | "team-requires-organization-owner"
+      | "version-conflict"
+      | "target-user-inactive"
+      | "grant-missing"
+      | "grant-unchanged",
+  ) {
+    super(code);
+    this.name = "RepositoryAccessDecisionError";
+  }
+}
+
+export function decideRepositoryAccess(
+  repository: RepositoryAccessScope,
+  change: RepositoryAccessChange,
+  facts: RepositoryAccessFacts = {},
+): RepositoryAccessDecision {
+  if (
+    change.subjectKind === "USER" &&
+    repository.ownerKind === "USER" &&
+    repository.ownerAccountId === change.subjectId
+  ) {
+    throw new RepositoryAccessDecisionError("implicit-user-owner");
+  }
+  if (change.subjectKind === "TEAM") {
+    if (repository.ownerKind !== "ORGANIZATION") {
+      throw new RepositoryAccessDecisionError("team-requires-organization-owner");
+    }
+  }
+
+  if (facts.currentGrant === undefined) {
+    return {
+      kind: "requires-current-grant",
+      subjectKind: change.subjectKind,
+      subjectId: change.subjectId,
+    };
+  }
+  const currentVersion = facts.currentGrant?.version ?? 0;
+  if (currentVersion !== change.expectedVersion) {
+    throw new RepositoryAccessDecisionError("version-conflict");
+  }
+
+  if (
+    change.action === "grant" &&
+    change.subjectKind === "USER" &&
+    facts.targetUserActive === undefined
+  ) {
+    return { kind: "requires-active-user", userId: change.subjectId };
+  }
+  if (change.action === "grant" && change.subjectKind === "USER" && !facts.targetUserActive) {
+    throw new RepositoryAccessDecisionError("target-user-inactive");
+  }
+  if (change.action === "revoke" && !facts.currentGrant) {
+    throw new RepositoryAccessDecisionError("grant-missing");
+  }
+  if (change.action === "grant" && facts.currentGrant?.capability === change.capability) {
+    throw new RepositoryAccessDecisionError("grant-unchanged");
+  }
+
+  return {
+    kind: "accepted",
+    mutation: {
+      subjectKind: change.subjectKind,
+      subjectId: change.subjectId,
+      capability: change.action === "grant" ? change.capability : null,
+      expectedVersion: change.expectedVersion,
+    },
+  };
+}
+
 export type RepositoryLifecycleChange =
   | Readonly<{ action: "rename"; expectedVersion: number; name: string }>
   | Readonly<{
