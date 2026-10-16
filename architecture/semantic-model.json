@@ -442,11 +442,11 @@
       "evidence": {
         "ownerContracts": ["docs/owners/team.md", "docs/owners/repository.md"],
         "sourcePaths": [
-          "packages/team/src/domain/policies/team-maintenance.ts",
+          "packages/team/src/domain/team.ts",
           "packages/repository/src/domain/repository/entities/repository.ts"
         ],
         "testPaths": [
-          "packages/team/test/team-maintainer-postgres.test.ts",
+          "packages/team/test/team-write-postgres.test.ts",
           "packages/repository/test/access.test.ts"
         ],
         "rationale": "Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。"
@@ -2665,14 +2665,19 @@
         "sourcePaths": [
           "packages/team/src/application/collaboration.ts",
           "packages/team/src/application/commands/team-command.ts",
+          "packages/team/src/application/commands/team-slug.ts",
+          "packages/team/src/application/use-cases/team-command.ts",
           "packages/team/src/contracts/input/team-command.ts",
-          "packages/team/src/contracts/repositories/team.ts",
+          "packages/team/src/contracts/input/team-collaboration.ts",
+          "packages/team/src/contracts/output/team-query.ts",
+          "packages/team/src/contracts/output/team-mutation.ts",
+          "packages/team/src/contracts/errors/team-error.ts",
           "packages/team/src/contracts.ts",
-          "packages/team/src/adapters/postgres.ts",
-          "packages/team/src/domain/errors/team-error.ts",
-          "packages/team/src/domain/policies/team-maintenance.ts",
-          "packages/team/src/domain/policies/team-version.ts",
-          "packages/team/src/domain/value-objects/team-slug.ts"
+          "packages/team/src/adapters/outbound/persistence/team-query.ts",
+          "packages/team/src/adapters/outbound/persistence/team-mutation.ts",
+          "packages/team/src/adapters/outbound/persistence/team-maintainer.ts",
+          "packages/team/src/composition/bootstrap/team.ts",
+          "packages/team/src/domain/team.ts"
         ],
         "publicExports": [
           "./application/collaboration",
@@ -2681,7 +2686,8 @@
           "./contracts/repositories/team",
           "./contracts",
           "./domain/errors/team-error",
-          "./domain/value-objects/team-slug"
+          "./domain/value-objects/team-slug",
+          "./postgres"
         ],
         "entrypoints": [
           "apps/web/src/app/(mobile)/(tabs)/team/page.tsx",
@@ -2689,7 +2695,9 @@
         ],
         "testPaths": [
           "packages/team/test/team.test.ts",
-          "packages/team/test/team-hierarchy-postgres.test.ts"
+          "packages/team/test/team-hierarchy-postgres.test.ts",
+          "packages/team/test/team-write-postgres.test.ts",
+          "packages/team/test/team-write-concurrency-postgres.test.ts"
         ],
         "note": "Organization Team keeps direct membership authoritative and derives FPT CHILD_TEAM/ALL semantics with source provenance. TeamPrivacy is SECRET/VISIBLE and TeamNotificationSetting is NOTIFICATIONS_DISABLED/NOTIFICATIONS_ENABLED. Hierarchy never grants Repository access without an explicit Repository Team grant; EnterpriseTeam remains a separate Enterprise-owned identity. Team notification setting is distinct from User subscription, recipient Notification and delivery attempts."
       }

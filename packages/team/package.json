@@ -5,16 +5,16 @@
   "type": "module",
   "exports": {
     "./postgres": {
-      "types": "./dist/postgres.d.ts",
-      "default": "./dist/postgres.js"
+      "types": "./dist/composition/bootstrap/team.d.ts",
+      "default": "./dist/composition/bootstrap/team.js"
     },
     "./application/collaboration": {
       "types": "./dist/application/collaboration.d.ts",
       "default": "./dist/application/collaboration.js"
     },
     "./contracts/repositories/team": {
-      "types": "./dist/contracts/repositories/team.d.ts",
-      "default": "./dist/contracts/repositories/team.js"
+      "types": "./dist/contracts/input/team-collaboration.d.ts",
+      "default": "./dist/contracts/input/team-collaboration.js"
     },
     "./contracts/input/team-command": {
       "types": "./dist/contracts/input/team-command.d.ts",
@@ -29,12 +29,12 @@
       "default": "./dist/application/commands/team-command.js"
     },
     "./domain/errors/team-error": {
-      "types": "./dist/domain/errors/team-error.d.ts",
-      "default": "./dist/domain/errors/team-error.js"
+      "types": "./dist/contracts/errors/team-error.d.ts",
+      "default": "./dist/contracts/errors/team-error.js"
     },
     "./domain/value-objects/team-slug": {
-      "types": "./dist/domain/value-objects/team-slug.d.ts",
-      "default": "./dist/domain/value-objects/team-slug.js"
+      "types": "./dist/application/commands/team-slug.d.ts",
+      "default": "./dist/application/commands/team-slug.js"
     },
     "./postgres/project-access": {
       "types": "./dist/postgres/project-access.d.ts",

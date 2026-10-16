@@ -1,6 +1,6 @@
+import { teamAssert } from "../../contracts/errors/team-error.js";
 import type { TeamCommand, TeamCommandDraft } from "../../contracts/input/team-command.js";
 import type { TeamView } from "../../contracts.js";
-import { teamAssert } from "../../domain/errors/team-error.js";
 
 export function buildTeamCommand(
   data: TeamView | null,
