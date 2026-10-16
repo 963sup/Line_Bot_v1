@@ -35,11 +35,11 @@ test("partner save enforces version, retains historical contacts and normalizes 
   assert.equal(normalized.contacts[0]?.phone, "0212345678");
   fails(() => preparePartnerSave(command, 2, previous), 409);
   fails(
-    () => preparePartnerSave(command, 1, [{ ...previous[0]!, id: randomUUID() }]),
+    () => preparePartnerSave(command, 1, [{ ...previous[0], id: randomUUID() }]),
     409,
   );
   fails(
-    () => preparePartnerSave(command, 1, [{ ...previous[0]!, partnerId: randomUUID() }]),
+    () => preparePartnerSave(command, 1, [{ ...previous[0], partnerId: randomUUID() }]),
     409,
   );
 });
