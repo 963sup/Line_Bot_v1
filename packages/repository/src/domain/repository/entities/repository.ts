@@ -76,6 +76,55 @@ export function initializeRepository(
   };
 }
 
+export const repositorySubscriptionStates = ["SUBSCRIBED", "UNSUBSCRIBED", "IGNORED"] as const;
+
+export type RepositorySubscriptionState = (typeof repositorySubscriptionStates)[number];
+
+export function isRepositorySubscriptionState(
+  value: unknown,
+): value is RepositorySubscriptionState {
+  return repositorySubscriptionStates.some((state) => state === value);
+}
+
+export type RepositorySubscriptionRecord = Readonly<{
+  state: RepositorySubscriptionState;
+  version: number;
+}>;
+
+export type RepositorySubscriptionChange = Readonly<{
+  state: RepositorySubscriptionState;
+  expectedVersion: number;
+}>;
+
+export type RepositorySubscriptionDecision = Readonly<{
+  previous: RepositorySubscriptionRecord | null;
+  current: RepositorySubscriptionRecord;
+}>;
+
+export class RepositorySubscriptionDecisionError extends Error {
+  constructor(public readonly code: "version-conflict" | "unchanged") {
+    super(code);
+    this.name = "RepositorySubscriptionDecisionError";
+  }
+}
+
+export function decideRepositorySubscription(
+  current: RepositorySubscriptionRecord | null,
+  change: RepositorySubscriptionChange,
+): RepositorySubscriptionDecision {
+  const currentVersion = current?.version ?? 0;
+  if (currentVersion !== change.expectedVersion) {
+    throw new RepositorySubscriptionDecisionError("version-conflict");
+  }
+  if (current?.state === change.state) {
+    throw new RepositorySubscriptionDecisionError("unchanged");
+  }
+  return {
+    previous: current,
+    current: { state: change.state, version: currentVersion + 1 },
+  };
+}
+
 export type RepositoryAccessScope = Pick<
   RepositoryLifecycleState,
   "id" | "ownerAccountId" | "ownerKind"

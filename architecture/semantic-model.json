@@ -2880,9 +2880,15 @@
         "status": "implemented",
         "scope": "Repository is the supported non-code Subscribable subject; User state is SUBSCRIBED, UNSUBSCRIBED or IGNORED with current-access recheck and independent versioning.",
         "sourcePaths": [
-          "packages/repository/src/application/subscription.ts",
-          "packages/repository/src/contracts/repositories/subscription.ts",
-          "packages/repository/src/postgres/subscription.ts"
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/contracts/input/repository-subscription.ts",
+          "packages/repository/src/contracts/output/repository-subscription.ts",
+          "packages/repository/src/application/commands/repository-subscription.ts",
+          "packages/repository/src/application/use-cases/repository-subscription.ts",
+          "packages/repository/src/application/use-cases/repository-subscription-mutation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-subscription.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-subscription-query.ts",
+          "packages/repository/src/composition/bootstrap/repository-subscription.ts"
         ],
         "publicExports": [
           "./application/subscription",
@@ -2895,6 +2901,8 @@
         ],
         "testPaths": [
           "packages/repository/test/subscription.test.ts",
+          "packages/repository/test/subscription-characterization.test.ts",
+          "packages/repository/test/subscription-governance-postgres.test.ts",
           "packages/notifications/test/repository-source-access.test.ts",
           "apps/web/test/repository-subscription-http.test.ts"
         ],
