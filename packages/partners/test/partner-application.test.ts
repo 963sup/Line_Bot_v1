@@ -146,6 +146,35 @@ test("reviewer cannot approve without permission, and successful approval locks 
     async record() {
       order.push("receipt");
     },
+    async partnerVersion() {
+      throw Error("unexpected");
+    },
+    async existingContacts() {
+      throw Error("unexpected");
+    },
+    async duplicateContact() {
+      order.push("unique");
+      return false;
+    },
+    async lockDirectory() {
+      order.push("directory-lock");
+    },
+    async savePartner() {
+      throw Error("unexpected");
+    },
+    async refer() {
+      throw Error("unexpected");
+    },
+    async referral() {
+      order.push("load");
+      return state;
+    },
+    async withdraw() {
+      throw Error("unexpected");
+    },
+    async reject() {
+      throw Error("unexpected");
+    },
     async publish(id, referral) {
       order.push("publish");
       assert.equal(id, referralId);
