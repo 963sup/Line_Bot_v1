@@ -15,31 +15,77 @@ test("save mutation owns qualification, replay, version, transition, persistence
   const contactId = randomUUID();
   const command = {
     action: "save-partner" as const,
-    requestId: randomUUID(), id, expectedVersion: 0,
-    name: "夥伴", category: "設備", region: "", status: "published" as const,
-    contacts: [{
-      id: contactId, name: "窗口", responsibility: "聯絡",
-      phone: "0212345678", email: "", line: "", status: "published" as const,
-    }],
-    reason: "已核實", consentConfirmed: true as const,
+    requestId: randomUUID(),
+    id,
+    expectedVersion: 0,
+    name: "夥伴",
+    category: "設備",
+    region: "",
+    status: "published" as const,
+    contacts: [
+      {
+        id: contactId,
+        name: "窗口",
+        responsibility: "聯絡",
+        phone: "0212345678",
+        email: "",
+        line: "",
+        status: "published" as const,
+      },
+    ],
+    reason: "已核實",
+    consentConfirmed: true as const,
   };
   let allowed = true;
   let replay: PartnerReceipt | null = null;
   const tx: PartnerMutationTransaction = {
     canReview: false,
-    async canManage() { order.push("permission"); return allowed; },
-    async replay() { order.push("replay"); return replay; },
-    async record(receipt) { order.push("receipt"); replay = receipt; },
-    async partnerVersion() { order.push("version"); return null; },
-    async existingContacts() { order.push("contacts"); return []; },
-    async duplicateContact() { order.push("unique"); return false; },
-    async lockDirectory() { order.push("directory-lock"); },
-    async savePartner(next) { order.push("save"); assert.equal(next.version, 1); },
-    async refer() { throw Error("unexpected refer"); },
-    async referral() { throw Error("unexpected referral"); },
-    async withdraw() { throw Error("unexpected withdraw"); },
-    async reject() { throw Error("unexpected reject"); },
-    async publish() { throw Error("unexpected publish"); },
+    async canManage() {
+      order.push("permission");
+      return allowed;
+    },
+    async replay() {
+      order.push("replay");
+      return replay;
+    },
+    async record(receipt) {
+      order.push("receipt");
+      replay = receipt;
+    },
+    async partnerVersion() {
+      order.push("version");
+      return null;
+    },
+    async existingContacts() {
+      order.push("contacts");
+      return [];
+    },
+    async duplicateContact() {
+      order.push("unique");
+      return false;
+    },
+    async lockDirectory() {
+      order.push("directory-lock");
+    },
+    async savePartner(next) {
+      order.push("save");
+      assert.equal(next.version, 1);
+    },
+    async refer() {
+      throw Error("unexpected refer");
+    },
+    async referral() {
+      throw Error("unexpected referral");
+    },
+    async withdraw() {
+      throw Error("unexpected withdraw");
+    },
+    async reject() {
+      throw Error("unexpected reject");
+    },
+    async publish() {
+      throw Error("unexpected publish");
+    },
   };
   const transactions: PartnerMutationTransactions = {
     async run(actor, request, work) {
@@ -50,7 +96,14 @@ test("save mutation owns qualification, replay, version, transition, persistence
   };
   const first = await executePartnerCommand(transactions, "actor", command, 100);
   assert.deepEqual(order, [
-    "permission", "replay", "version", "contacts", "unique", "save", "permission", "receipt",
+    "permission",
+    "replay",
+    "version",
+    "contacts",
+    "unique",
+    "save",
+    "permission",
+    "receipt",
   ]);
   assert.deepEqual(first, { id, version: 1, at: 100, requestId: command.requestId });
   order.length = 0;
@@ -68,25 +121,31 @@ test("reviewer cannot approve without permission, and successful approval locks 
   const order: string[] = [];
   const referralId = randomUUID();
   const state = {
-    submitter: "submitter", status: "pending" as const, method: "phone" as const,
-    value: "0212345678", partnerName: "供應商", category: "設備", region: "",
-    contactName: "窗口", responsibility: "聯絡",
+    submitter: "submitter",
+    status: "pending" as const,
+    method: "phone" as const,
+    value: "0212345678",
+    partnerName: "供應商",
+    category: "設備",
+    region: "",
+    contactName: "窗口",
+    responsibility: "聯絡",
   };
   let canReview = false;
   const tx: PartnerMutationTransaction = {
-    get canReview() { return canReview; },
-    async canManage() { throw Error("unexpected"); },
-    async replay() { order.push("replay"); return null; },
-    async record() { order.push("receipt"); },
-    async partnerVersion() { throw Error("unexpected"); },
-    async existingContacts() { throw Error("unexpected"); },
-    async duplicateContact() { order.push("unique"); return false; },
-    async lockDirectory() { order.push("directory-lock"); },
-    async savePartner() { throw Error("unexpected"); },
-    async refer() { throw Error("unexpected"); },
-    async referral() { order.push("load"); return state; },
-    async withdraw() { throw Error("unexpected"); },
-    async reject() { throw Error("unexpected"); },
+    get canReview() {
+      return canReview;
+    },
+    async canManage() {
+      throw Error("unexpected");
+    },
+    async replay() {
+      order.push("replay");
+      return null;
+    },
+    async record() {
+      order.push("receipt");
+    },
     async publish(id, referral) {
       order.push("publish");
       assert.equal(id, referralId);
