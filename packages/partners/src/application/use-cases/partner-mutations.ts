@@ -3,7 +3,6 @@ import {
   assertUniquePartnerContact,
   decidePartnerReferral,
   type PartnerReferralState,
-  PartnerError,
   partnerAssert,
   preparePartnerSave,
 } from "../../domain.js";
@@ -93,6 +92,7 @@ export function executePartnerCommand(
     else if (decision === "rejected") {
       await transaction.reject(command.referralId, command.reviewNote ?? "");
     } else {
+      await transaction.lockDirectory();
       assertUniquePartnerContact(await transaction.duplicateContact(referralContact(referral)));
       await transaction.publish(command.referralId, referral, command.reviewNote ?? "");
     }
