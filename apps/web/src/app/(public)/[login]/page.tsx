@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { repositoryPath } from "../../../modules/repository/resource-navigation";
 import { profiles, publicUserById } from "../../api/_composition/account.server";
+import { profileStatuses } from "../../api/_composition/account-status.server";
 import { resolveAccountNamespace } from "../../api/_composition/namespace.server";
 import ProfileViewerShell from "../_components/profile-viewer-shell";
 import { publicOrganizations } from "../_composition/directory.server";
@@ -11,6 +12,21 @@ import { publicRepositories } from "../_composition/repository.server";
 import styles from "./profile.module.css";
 
 export const dynamic = "force-dynamic";
+
+async function PublicStatus({ userId }: { userId: string }) {
+  try {
+    const status = await profileStatuses.publicByUserId(userId);
+    return status ? (
+      <p aria-label="Profile 狀態">
+        {status.emoji ? `${status.emoji} ` : ""}
+        {status.message}
+        {status.limitedAvailability ? " · 忙碌中" : ""}
+      </p>
+    ) : null;
+  } catch {
+    return <p role="status">Profile 狀態目前不可用。</p>;
+  }
+}
 
 async function popularRepositoryProjection(login: string) {
   try {
@@ -127,6 +143,11 @@ export default async function Page({ params }: { params: Promise<{ login: string
       profileLogin={owner.login}
       profileTitle={profile?.displayName ?? user.login}
       profileUserId={owner.id}
+      publicStatus={
+        <Suspense fallback={null}>
+          <PublicStatus userId={owner.id} />
+        </Suspense>
+      }
       publicRepositoryCount={
         <Suspense fallback={null}>
           <PublicRepositoryCount repositories={repositories} />

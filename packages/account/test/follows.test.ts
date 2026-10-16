@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createFollows } from "../src/application/follows.js";
 import type { FollowStore } from "../src/contracts/output/follows.js";
@@ -74,7 +75,7 @@ test("Postgres follow persistence keeps one directional edge and rejects self-fo
   t.after(() => pg.close());
 
   await pg.transaction(async (sql) => {
-    for (const id of ["user-a", "user-b"]) {
+    for (const id of ["user-a", "user-b", "user-c"]) {
       await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
         id,
         "active",
@@ -87,8 +88,42 @@ test("Postgres follow persistence keeps one directional edge and rejects self-fo
   const store = new PostgresFollowStore(db);
   await store.follow("user-a", "user-b", 10);
   await store.follow("user-a", "user-b", 20);
-  assert.deepEqual(await store.following("user-a"), [{ userId: "user-b", followedAt: 10 }]);
-  assert.deepEqual(await store.followers("user-b"), [{ userId: "user-a", followedAt: 10 }]);
+  await store.follow("user-a", "user-c", 20);
+  await store.follow("user-b", "user-a", 30);
+  await store.follow("user-c", "user-a", 40);
+  await pg.exec("UPDATE users SET status='paused' WHERE id='user-c'");
+
+  let transactions = 0;
+  let queries = 0;
+  const countedDatabase: Database = {
+    transaction: (work) => {
+      transactions++;
+      return db.transaction((sql) =>
+        work(
+          createSql((text, values) => {
+            queries++;
+            return sql.query(text, values);
+          }),
+        ),
+      );
+    },
+  };
+  const countedStore = new PostgresFollowStore(countedDatabase);
+  assert.deepEqual(await countedStore.following("user-a"), [
+    { userId: "user-c", followedAt: 20, login: null },
+    { userId: "user-b", followedAt: 10, login: "user-b" },
+  ]);
+  assert.equal(transactions, 1);
+  assert.equal(queries, 1);
+
+  transactions = 0;
+  queries = 0;
+  assert.deepEqual(await countedStore.followers("user-a"), [
+    { userId: "user-c", followedAt: 40, login: null },
+    { userId: "user-b", followedAt: 30, login: "user-b" },
+  ]);
+  assert.equal(transactions, 1);
+  assert.equal(queries, 1);
 
   await assert.rejects(
     pg.query(

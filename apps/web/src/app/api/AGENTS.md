@@ -19,7 +19,7 @@
 | --- | --- |
 | `/api/membership`、`/api/membership/register`、`/api/membership/restore`、`/api/membership/manage`、`/api/membership/google-link` | Account 與明確組裝的既有 membership wire contract；GET `view=account` 是 Account-only projection，default/readback/checkIn 仍保留既有 DailyCheckIn composition；Google protocol 由 integration 擁有 |
 | `/api/auth` | GET 只讀有效 HttpOnly cookie 的 session generation，供續期失敗後核對；POST `{action:"restore"}` 一次驗證並續期既有 cookie session，或 `{accessToken}` 以伺服器驗證的 LINE proof 建立／切換 session；PATCH 以已知 generation 續期，DELETE 撤銷；不承載 Account qualification 或 business permission |
-| `/api/profile`、`/api/profile/achievements`、`/api/follows` | Account Profile / earned Achievement read projection / Follow |
+| `/api/profile`、`/api/profile/achievements`、`/api/profile/status`、`/api/follows` | Account Profile / earned Achievement read projection / authored Profile status / Follow；status POST 使用 requestId + expectedVersion，Follow 的 login locator 經 Namespace 解析後交 Account 重驗 |
 | `/api/permissions` | Identity/Access；不能因 Web presenter 在 account 目錄就歸為 Account domain |
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
 | `/api/issues`、`/api/issues/{issueNumber}` | Issue owner transport；Repository-scoped read returns canonical `state/stateReason`, local `workflowStatus`, body and assignees；POST carries replay-safe create/workflow/edit/close/reopen/add-remove-assignees commands；GET `workflowStatus` is canonical and legacy `status` remains a temporary alias |

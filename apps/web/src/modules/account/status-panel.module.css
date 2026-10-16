@@ -1,0 +1,77 @@
+.panel {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.panel .summary {
+  align-items: center;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 0.45rem;
+  color: inherit;
+  display: grid;
+  font: inherit;
+  gap: 0.6rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 2.8rem;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  text-align: start;
+  width: 100%;
+}
+
+.panel .summary:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.panel .summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.edit {
+  opacity: 0.75;
+}
+
+.editor {
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.45rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+}
+
+.editor label:not(.checkbox) {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.editor input:not([type="checkbox"]) {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 0.35rem;
+  color: inherit;
+  font: inherit;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.checkbox {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.actions button {
+  margin: 0;
+  min-height: 2.5rem;
+  width: auto;
+}

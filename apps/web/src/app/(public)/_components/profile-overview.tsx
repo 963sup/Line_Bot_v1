@@ -6,14 +6,14 @@ import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { readAchievements, readProfile } from "../../../modules/account/wire-response";
+import StatusPanel from "../../../modules/account/status-panel";
+import { readAchievements, readNetwork, readProfile } from "../../../modules/account/wire-response";
 import { liffClient } from "../../../shared/browser/liff-client";
 import styles from "./profile-viewer-shell.module.css";
 
 type ProviderProfile = Readonly<{
   displayName?: string;
   pictureUrl?: string;
-  statusMessage?: string;
 }>;
 type Loadable<T> =
   | { state: "idle" }
@@ -75,6 +75,7 @@ export default function ProfileOverview({
   profileLogin,
   profileTitle,
   publicRepositoryCount,
+  publicStatus,
   token,
 }: {
   children: ReactNode;
@@ -82,11 +83,15 @@ export default function ProfileOverview({
   profileLogin: string;
   profileTitle: string;
   publicRepositoryCount?: ReactNode;
+  publicStatus?: ReactNode;
   token?: string;
 }) {
   const [provider, setProvider] = useState<Loadable<ProviderProfile>>({ state: "idle" });
   const [profile, setProfile] = useState<Loadable<UserProfile | null>>({ state: "idle" });
   const [achievements, setAchievements] = useState<Loadable<UserAchievement[]>>({ state: "idle" });
+  const [network, setNetwork] = useState<Loadable<ReturnType<typeof readNetwork>>>({
+    state: "idle",
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -94,12 +99,14 @@ export default function ProfileOverview({
       setProvider({ state: "idle" });
       setProfile({ state: "idle" });
       setAchievements({ state: "idle" });
+      setNetwork({ state: "idle" });
       return () => controller.abort();
     }
 
     setProvider({ state: "loading" });
     setProfile({ state: "loading" });
     setAchievements({ state: "loading" });
+    setNetwork({ state: "loading" });
 
     void liffClient.profile().then(
       (value) => {
@@ -109,25 +116,31 @@ export default function ProfileOverview({
         if (!controller.signal.aborted) setProvider({ state: "error" });
       },
     );
-    void readJson("/api/profile", token, controller.signal).then(
-      (value) => {
+    void readJson("/api/profile", token, controller.signal)
+      .then((value) => {
         if (!isRecord(value)) throw new Error("private profile read failed");
         const profile = value.profile == null ? null : readProfile(value.profile);
         if (!controller.signal.aborted) setProfile({ state: "ready", value: profile });
-      },
-      () => {
+      })
+      .catch(() => {
         if (!controller.signal.aborted) setProfile({ state: "error" });
-      },
-    );
-    void readJson("/api/profile/achievements", token, controller.signal).then(
-      (value) => {
+      });
+    void readJson("/api/profile/achievements", token, controller.signal)
+      .then((value) => {
         const achievements = readAchievements(value);
         if (!controller.signal.aborted) setAchievements({ state: "ready", value: achievements });
-      },
-      () => {
+      })
+      .catch(() => {
         if (!controller.signal.aborted) setAchievements({ state: "error" });
-      },
-    );
+      });
+    void readJson("/api/follows", token, controller.signal)
+      .then((value) => {
+        const next = readNetwork(value);
+        if (!controller.signal.aborted) setNetwork({ state: "ready", value: next });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setNetwork({ state: "error" });
+      });
 
     return () => controller.abort();
   }, [token]);
@@ -179,32 +192,25 @@ export default function ProfileOverview({
             私人 Profile 資訊目前不可用，公開內容仍可瀏覽。
           </p>
         ) : null}
-        {token ? (
-          provider.state === "loading" ? (
-            <p className={styles.providerStatus} role="status">
-              正在載入 LINE 狀態…
-            </p>
-          ) : provider.state === "error" ? (
-            <p className={styles.providerStatus} role="status">
-              LINE 顯示資訊目前不可用。
-            </p>
-          ) : (
-            <p className={styles.providerStatus}>
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M8 14a4.5 4.5 0 0 0 8 0M8 9h1m6 0h1" />
-              </svg>
-              <span>{providerValue?.statusMessage?.trim() || "尚未設定 LINE 狀態。"}</span>
-            </p>
-          )
+        {token ? <StatusPanel key={token} token={token} /> : publicStatus}
+        {token && network.state === "ready" ? (
+          <nav className={styles.followSummary} aria-label="Profile 追蹤關係">
+            <Link href="/settings/network#followers">
+              {network.value.followers.length} followers
+            </Link>
+            <span aria-hidden="true"> · </span>
+            <Link href="/settings/network#following">
+              {network.value.following.length} following
+            </Link>
+          </nav>
+        ) : token && network.state === "error" ? (
+          <p className={styles.privateError} role="status">
+            追蹤關係目前不可用，請稍後重試。
+          </p>
+        ) : token && network.state === "loading" ? (
+          <p className={styles.privateError} role="status">
+            正在載入追蹤關係…
+          </p>
         ) : null}
       </section>
 

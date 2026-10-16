@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { PostgresUserStore } from "@line_bot_v1/account/postgres";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
+import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { achievements, follows, profiles } from "../src/app/api/_composition/account.server";
 import { issueActivity } from "../src/app/api/_composition/issue-activity.server";
 import { repositoryCollection } from "../src/app/api/_composition/repository-collection.server";
@@ -33,9 +35,27 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
   const achievementRead = mock.method(achievements, "list", async () => []);
   const profileRead = mock.method(profiles, "get", async () => profile);
   const profileUpdate = mock.method(profiles, "update", async () => profile);
-  const followers = mock.method(follows, "followers", async () => []);
-  const following = mock.method(follows, "following", async () => []);
+  const followers = mock.method(follows, "followers", async () => [
+    { userId: "user-b", followedAt: 10, login: "bob" },
+    { userId: "user-paused", followedAt: 20, login: null },
+  ]);
+  const following = mock.method(follows, "following", async () => [
+    { userId: "user-c", followedAt: 30, login: "carol" },
+  ]);
   const follow = mock.method(follows, "follow", async () => {});
+  const previousUserStore = globalThis.userStore;
+  const unavailableDatabase: Database = {
+    transaction: async <T>(_work: (sql: Sql) => Promise<T>): Promise<T> => {
+      throw new Error("Unexpected database read");
+    },
+  };
+  const userStore = new PostgresUserStore(unavailableDatabase);
+  globalThis.userStore = userStore;
+  const publicById = mock.method(userStore, "publicById", async (userId: string) => {
+    if (userId === "user-b") return { id: userId, login: "bob" };
+    if (userId === "user-c") return { id: userId, login: "carol" };
+    return null;
+  });
   const accessible = mock.method(repositoryCollection, "accessible", async () => [
     {
       id: "repository-a",
@@ -134,7 +154,15 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
       403,
     );
 
-    assert.equal((await followsGet(request("/api/follows"))).status, 200);
+    const network = await followsGet(request("/api/follows"));
+    assert.equal(network.status, 200);
+    assert.deepEqual(await network.json(), {
+      followers: [
+        { userId: "user-b", followedAt: 10, login: "bob" },
+        { userId: "user-paused", followedAt: 20, login: null },
+      ],
+      following: [{ userId: "user-c", followedAt: 30, login: "carol" }],
+    });
     assert.equal(
       (
         await followsPost(
@@ -142,6 +170,25 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
         )
       ).status,
       200,
+    );
+    assert.equal(
+      (
+        await followsPost(
+          request("/api/follows", JSON.stringify({ action: "follow", targetLogin: "Issues" })),
+        )
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await followsPost(
+          request(
+            "/api/follows",
+            JSON.stringify({ action: "follow", targetUserId: "user-b", targetLogin: 1 }),
+          ),
+        )
+      ).status,
+      400,
     );
 
     assert.equal((await repositoriesGet(request("/api/repositories"))).status, 200);
@@ -186,6 +233,7 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     assert.equal(followers.mock.callCount(), 1);
     assert.equal(following.mock.callCount(), 1);
     assert.equal(follow.mock.callCount(), 1);
+    assert.equal(publicById.mock.callCount(), 0, "GET must not perform one User read per edge");
     assert.equal(accessible.mock.callCount(), 1);
     assert.equal(discover.mock.callCount(), 1);
     assert.equal(activity.mock.callCount(), 3);
@@ -199,6 +247,8 @@ test("profile, follow and Repository discovery HTTP surfaces verify LINE and cal
     followers.mock.restore();
     following.mock.restore();
     follow.mock.restore();
+    publicById.mock.restore();
+    globalThis.userStore = previousUserStore;
     accessible.mock.restore();
     discover.mock.restore();
     activity.mock.restore();

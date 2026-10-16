@@ -20,6 +20,8 @@ Follow/Unfollow writes recheck current User qualification in the relationship tr
 
 Profile field validity, public visibility and version/exact-retry decisions belong to Domain. Application keeps command decoding and projection; the existing Repository implements the locked qualification and atomic save predicates without a separate transaction Port.
 
+Authored Profile status is distinct from User qualification and provider status. Account owns its public-only message, emoji, availability and expiry, with Organization-scoped audience currently unsupported. Application coordinates current qualification, exact replay, Domain version decisions and atomic persistence through a transaction output Port. Clearing preserves the durable version; public reads omit cleared, expired and inactive-user status. A historical command receipt does not replace a current-state read for presentation.
+
 ## Invariants
 
 User state 是 current human qualification authority。LINE `destination` 是 Integration 的 signed provider metadata，不是 Account identity 或 business authorization。External link 不轉移歷史 ownership；每個 private request 重新核驗 qualification/permission/scope。Receipt 不作永久授權，Account 不保存可寫 Coin balance，也不修改 Ledger entries。

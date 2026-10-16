@@ -47,7 +47,10 @@ export function ResourceContent({
               )}
             >
               <span className={styles.copy}>
-                <strong>{discussion.title}</strong>
+                <strong>
+                  {discussion.number === null ? "" : `#${discussion.number} `}
+                  {discussion.title}
+                </strong>
                 <small>
                   {discussion.category} · {discussion.author} · {dateTime(discussion.updatedAt)}
                 </small>
@@ -65,7 +68,10 @@ export function ResourceContent({
         <Link className="back-link" href={repositoryDiscussionsPath(ownerLogin, repositoryName)}>
           ← 返回 Discussions
         </Link>
-        <h2>{data.discussion.title}</h2>
+        <h2>
+          {data.discussion.number === null ? "" : `#${data.discussion.number} `}
+          {data.discussion.title}
+        </h2>
         <p>
           {data.discussion.category} · {data.discussion.author} · v{data.discussion.version}
         </p>

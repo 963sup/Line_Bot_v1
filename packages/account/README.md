@@ -9,4 +9,10 @@ Routing and module overview for `@line_bot_v1/account`.
 
 ## Scope
 
-User and Account identity records, profile facts, external identity link states, and achievement records.
+User and Account identity records, profile facts, authored public User status, external identity link
+states, and achievement records.
+
+Authored User status implements the FPT `UserStatus` fields `message`, `emoji`,
+`indicatesLimitedAvailability`, and `expiresAt`. Writes require the current active User, an observed
+version, and a durable request identity. A null organization is the only supported audience; this
+capability does not mutate LINE or GitHub provider status.

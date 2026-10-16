@@ -1,6 +1,6 @@
 # Web account module
 ## 現行 surface 與 invariant
-Module-owned surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/settings/users`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/profile/achievements`、`/api/follows`。`/profile` 只解析本人入口到 `/{login}`；本 module 提供 Account projection/API，不取得跨 owner composition responsibility。
+Module-owned surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/settings/users`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/profile/achievements`、`/api/profile/status`、`/api/follows`。`/profile` 只解析本人入口到 `/{login}`；本 module 提供 Account projection/API，不取得跨 owner composition responsibility。
 
 FPT users 對照 User/Profile/Follow；LINE/Google qualification 是本地 integration contract。`permissions-panel.tsx`、`permissions.server.ts` 目前服務 `/settings/permissions`、`/api/permissions`，其真正 owner 是 `@line_bot_v1/identity-access`；位置不授予 Account domain 權限管理責任。修改時對照各自 DTO，User management 為 `actorId/users/detail.user`，不可用舊 fixture 欄位冒充現行契約。
 
@@ -14,3 +14,4 @@ FPT users 對照 User/Profile/Follow；LINE/Google qualification 是本地 integ
 
 - `/{login}` composes authorized self projections at the App boundary only for the current active User's own Profile. LINE picture/status are provider presentation data; they never replace Account identity. Earned Achievement facts come from Account-owned `user_achievements` and are read-only on this surface.
 - Home avatar resolves the current Account locator independently of the optional LINE photo and links directly to the namespace or lifecycle destination. `/profile` remains the unresolved/external entry; confirmed invalid/suspended Account state disables the avatar destination. Clear the locator on visibility loss/unmount and refresh it on resume; navigation hints never authorize private Profile reads.
+- Authored Profile status is separate from LINE presentation and User qualification. Preserve the pending request identity for unknown results; successful receipt replay requires a current-state read before presentation. Self follower/following counts use Account projections, and Network login input resolves through Namespace before Account mutation; neither exposes another User's private network.

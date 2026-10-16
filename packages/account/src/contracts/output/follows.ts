@@ -1,6 +1,7 @@
 export type FollowItem = {
   userId: string;
   followedAt: number;
+  login?: string | null;
 };
 
 export interface FollowStore {

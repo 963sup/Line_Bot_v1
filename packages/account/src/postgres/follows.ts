@@ -1,11 +1,15 @@
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
-import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
+import { nullableString, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { FollowItem, FollowStore } from "../contracts/output/follows.js";
 import { requireActiveUser, requireFollowableUser } from "../domain/user.js";
 import { readUserQualification } from "./qualification.js";
 
 function followRow(row: Record<string, unknown>) {
-  return { user_id: stringValue(row.user_id), created_at: numericValue(row.created_at) };
+  return {
+    user_id: stringValue(row.user_id),
+    created_at: numericValue(row.created_at),
+    login: nullableString(row.login),
+  };
 }
 
 export class PostgresFollowStore implements FollowStore {
@@ -42,12 +46,21 @@ export class PostgresFollowStore implements FollowStore {
     return this.db.transaction(async (sql) => {
       const rows = (
         await sql.query(
-          "SELECT follower_user_id AS user_id,created_at FROM user_follows WHERE followed_user_id=$1 ORDER BY created_at DESC,follower_user_id",
+          `SELECT f.follower_user_id AS user_id,f.created_at,p.login
+           FROM user_follows f
+           LEFT JOIN user_namespace_projection p
+             ON p.id=f.follower_user_id AND p.status='active'
+           WHERE f.followed_user_id=$1
+           ORDER BY f.created_at DESC,f.follower_user_id`,
           [userId],
           followRow,
         )
       ).rows;
-      return rows.map((row) => ({ userId: row.user_id, followedAt: Number(row.created_at) }));
+      return rows.map((row) => ({
+        userId: row.user_id,
+        followedAt: Number(row.created_at),
+        login: row.login,
+      }));
     });
   }
 
@@ -55,12 +68,21 @@ export class PostgresFollowStore implements FollowStore {
     return this.db.transaction(async (sql) => {
       const rows = (
         await sql.query(
-          "SELECT followed_user_id AS user_id,created_at FROM user_follows WHERE follower_user_id=$1 ORDER BY created_at DESC,followed_user_id",
+          `SELECT f.followed_user_id AS user_id,f.created_at,p.login
+           FROM user_follows f
+           LEFT JOIN user_namespace_projection p
+             ON p.id=f.followed_user_id AND p.status='active'
+           WHERE f.follower_user_id=$1
+           ORDER BY f.created_at DESC,f.followed_user_id`,
           [userId],
           followRow,
         )
       ).rows;
-      return rows.map((row) => ({ userId: row.user_id, followedAt: Number(row.created_at) }));
+      return rows.map((row) => ({
+        userId: row.user_id,
+        followedAt: Number(row.created_at),
+        login: row.login,
+      }));
     });
   }
 }

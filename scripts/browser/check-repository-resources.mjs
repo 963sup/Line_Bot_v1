@@ -91,7 +91,7 @@ const otherRepository = {
 const firstDiscussion = {
   id: "discussion-alpha",
   repositoryId: repository.id,
-  number: null,
+  number: 7,
   author: "user-alpha",
   title: "Release readiness",
   category: "General",
@@ -238,7 +238,12 @@ function routeKind(url) {
   const beforeLast = segments.at(-2);
   const joined = segments.join("/");
   if (joined.includes("discussions")) {
-    if (beforeLast === "discussions" && last && last !== "discussions") return "discussion";
+    if (
+      (beforeLast === "discussions" || beforeLast === "by-number") &&
+      last &&
+      last !== "discussions"
+    )
+      return "discussion";
     return "discussions";
   }
   if (joined.includes("labels")) return "labels";
@@ -327,8 +332,12 @@ function payloadFor(url, request) {
     };
   }
   if (kind === "discussion") {
-    const id = decodeURIComponent(url.pathname.split("/").filter(Boolean).at(-1) ?? "");
-    if (id !== firstDiscussion.id) return { status: 404, json: { error: "找不到 Discussion。" } };
+    const locator = decodeURIComponent(url.pathname.split("/").filter(Boolean).at(-1) ?? "");
+    const canonicalLocator = url.pathname.includes("/by-number/");
+    if (
+      canonicalLocator ? Number(locator) !== firstDiscussion.number : locator !== firstDiscussion.id
+    )
+      return { status: 404, json: { error: "找不到 Discussion。" } };
     const page = pageItems(comments, after, (item) => ({ at: item.createdAt, id: item.id }));
     return {
       json: {
@@ -769,22 +778,35 @@ try {
   result.checks.push(
     "all seven Repository sections share shell/header/navigation geometry at 1280, 390 and 320px; 44px targets and no overflow",
   );
-  const firstDiscussionPath = `/acme/Operations/discussions/${firstDiscussion.id}`;
+  const firstDiscussionPath = `/acme/Operations/discussions/number/${firstDiscussion.number}`;
   const secondDiscussionPath = `/acme/Operations/discussions/${secondDiscussion.id}`;
   const firstMilestonePath = "/acme/Operations/milestones/1";
   await gotoPath("/acme/Operations/discussions");
   await expect(page.getByRole("heading", { name: "Discussions", exact: true })).toBeVisible();
-  await expectSingleLinkHref(linkWithText(firstDiscussion.title), firstDiscussionPath);
+  await expectSingleLinkHref(
+    linkWithText(`#${firstDiscussion.number} ${firstDiscussion.title}`),
+    firstDiscussionPath,
+  );
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Discussions", exact: true })).toBeVisible();
-  await expectSingleLinkHref(linkWithText(firstDiscussion.title), firstDiscussionPath);
+  await expectSingleLinkHref(
+    linkWithText(`#${firstDiscussion.number} ${firstDiscussion.title}`),
+    firstDiscussionPath,
+  );
   await clickLoadMore();
   await expectSingleLinkHref(linkWithText(secondDiscussion.title), secondDiscussionPath);
-  await expectSingleLinkHref(linkWithText(firstDiscussion.title), firstDiscussionPath);
-  await linkWithText(firstDiscussion.title).click();
-  await expect(page).toHaveURL(`${base}/acme/Operations/discussions/${firstDiscussion.id}`);
+  await expect(linkWithText(secondDiscussion.title)).not.toContainText(/^#\d+\s/);
+  await expectSingleLinkHref(
+    linkWithText(`#${firstDiscussion.number} ${firstDiscussion.title}`),
+    firstDiscussionPath,
+  );
+  await linkWithText(`#${firstDiscussion.number} ${firstDiscussion.title}`).click();
+  await expect(page).toHaveURL(`${base}${firstDiscussionPath}`);
   await expect(
-    page.getByRole("heading", { name: firstDiscussion.title, exact: true }),
+    page.getByRole("heading", {
+      name: `#${firstDiscussion.number} ${firstDiscussion.title}`,
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(page.getByText(comments[0].body, { exact: true })).toBeVisible();
   await clickLoadMore();

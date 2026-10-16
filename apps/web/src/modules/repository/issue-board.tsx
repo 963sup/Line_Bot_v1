@@ -424,7 +424,9 @@ export default function IssueBoard({
                           issue.number,
                         )}
                       >
-                        <strong>{issue.title}</strong>
+                        <strong>
+                          #{issue.number} {issue.title}
+                        </strong>
                         <span className="status-badge">
                           {workflowStatusLabel[issue.workflowStatus]}
                         </span>
@@ -439,7 +441,9 @@ export default function IssueBoard({
       )}
       {data && current && detailMode && (
         <article className="detail-card">
-          <h2>{current.title}</h2>
+          <h2>
+            #{current.number} {current.title}
+          </h2>
           <p>
             Issue state：{current.state}
             {current.stateReason ? ` · ${current.stateReason}` : ""}

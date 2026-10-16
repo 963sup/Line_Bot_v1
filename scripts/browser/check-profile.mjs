@@ -38,6 +38,7 @@ await build({
       import ProfilePage from '../../apps/web/src/app/(public)/[login]/page.tsx';
       import ProfileEntry from '../../apps/web/src/app/(mobile)/profile/profile-entry.tsx';
       import MemberAvatar from '../../apps/web/src/modules/account/member-avatar.tsx';
+      import NetworkPanel from '../../apps/web/src/modules/account/network-panel.tsx';
       import '../../apps/web/src/app/globals.css';
       import {startLineMiniAppBoot} from '../../apps/web/src/shared/browser/liff-bootstrap.ts';
       const root = createRoot(document.getElementById('root'));
@@ -50,6 +51,7 @@ await build({
       };
       window.renderEntry=(instance)=>{window.resolvedTarget=null;root.render(<ProfileEntry key={instance} liffId="test"/>)};
       window.renderAvatar=(instance)=>root.render(<MemberAvatar key={instance} liffId="test"/>);
+      window.renderNetwork=(instance)=>root.render(<NetworkPanel key={instance} liffId="test"/>);
       window.renderProfile({instance:0});`,
     resolveDir: fileURLToPath(new URL(".", import.meta.url)),
     loader: "tsx",
@@ -72,6 +74,7 @@ await build({
           "mini-app": "export const lineMiniApp=()=>({liffId:'test'});",
           "account.server":
             "export const publicUserById=async()=>({login:'viewer'}); export const profiles={publicByUserId:async()=>null};",
+          "account-status.server": "export const profileStatuses={publicByUserId:async()=>null};",
           "namespace.server":
             "export const resolveAccountNamespace=async()=>({id:'user-1',login:'viewer',kind:'USER'});",
           "directory.server":
@@ -82,7 +85,7 @@ await build({
         builder.onResolve(
           {
             filter:
-              /(?:mini-app|account\.server|namespace\.server|directory\.server|repository\.server)$/,
+              /(?:mini-app|account\.server|account-status\.server|namespace\.server|directory\.server|repository\.server)$/,
           },
           ({ path: specifier }) => ({
             path: specifier.split("/").at(-1),
@@ -155,6 +158,7 @@ await build({
           "mini-app": "exports.lineMiniApp = () => ({liffId:'test'});",
           "account.server":
             "exports.publicUserById = async () => ({login:'viewer'}); exports.profiles = {publicByUserId:async()=>null};",
+          "account-status.server": "exports.profileStatuses={publicByUserId:async()=>null};",
           "namespace.server":
             "exports.resolveAccountNamespace = async () => ({id:'user-1',login:'viewer',kind:'USER'});",
           "directory.server":
@@ -222,6 +226,7 @@ try {
   browser = await chromium.launch({ channel: process.env.NAVIGATION_BROWSER_CHANNEL || undefined });
   context = await browser.newContext({
     viewport: { width: 390, height: 844 },
+    timezoneId: "Asia/Taipei",
     serviceWorkers: "block",
   });
   await context.addInitScript(() => {
@@ -263,6 +268,15 @@ try {
   });
   let member = accountMember("user-1", "viewer", "active");
   let failAchievements = false;
+  let failFollows = false;
+  let failStatus = false;
+  let following = [{ userId: "friend", followedAt: 1, login: "friend" }];
+  let profileStatus = null;
+  let loseNextStatusResponse = false;
+  let holdStatusPost = false;
+  let heldStatusPost;
+  const statusReceipts = new Map();
+  const statusWrites = [];
   let heldProfile;
   let holdProfile = false;
   let membershipReads = 0;
@@ -333,6 +347,59 @@ try {
             },
       });
     }
+    if (url.pathname === "/api/profile/status") {
+      if (route.request().method() === "POST") {
+        if (holdStatusPost) {
+          heldStatusPost = route;
+          return;
+        }
+        const body = route.request().postDataJSON();
+        statusWrites.push(body);
+        const receipt = statusReceipts.get(body.requestId);
+        if (receipt) return route.fulfill({ json: { status: receipt } });
+        profileStatus = {
+          userId: "user-1",
+          ...body,
+          version: (profileStatus?.version ?? 0) + 1,
+          createdAt: 1,
+          updatedAt: 2,
+        };
+        statusReceipts.set(body.requestId, profileStatus);
+        if (loseNextStatusResponse) {
+          loseNextStatusResponse = false;
+          return route.abort("failed");
+        }
+        return route.fulfill({ json: { status: profileStatus } });
+      }
+      privateReads.push(url.pathname);
+      return route.fulfill({
+        status: failStatus ? 503 : 200,
+        json: failStatus ? { error: "狀態讀取失敗。" } : { status: profileStatus },
+      });
+    }
+    if (url.pathname === "/api/follows") {
+      if (route.request().method() === "POST") {
+        const body = route.request().postDataJSON();
+        following =
+          body.action === "follow"
+            ? [
+                ...following,
+                {
+                  userId: body.targetUserId ?? body.targetLogin,
+                  followedAt: 2,
+                  login: body.targetLogin ?? "viewer",
+                },
+              ]
+            : following.filter((item) => item.userId !== body.targetUserId);
+        return route.fulfill({ json: { ok: true } });
+      }
+      return route.fulfill({
+        status: failFollows ? 503 : 200,
+        json: failFollows
+          ? { error: "unavailable" }
+          : { followers: [{ userId: "friend", followedAt: 1, login: "friend" }], following },
+      });
+    }
     if (url.pathname.startsWith("/api/"))
       throw new Error(`Unexpected profile request: ${url.pathname}`);
     return route.continue();
@@ -340,13 +407,20 @@ try {
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Private viewer");
   await expect(page.getByText("Private biography")).toBeVisible();
+  await expect(page.getByRole("link", { name: "1 followers", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "1 following", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toBeVisible();
   await expect(page.getByLabel("First achievement", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Projects", exact: true })).toHaveAttribute(
     "href",
     "/projects",
   );
-  assert.deepEqual(privateReads.sort(), ["/api/profile", "/api/profile/achievements"]);
+  assert.deepEqual(privateReads.sort(), [
+    "/api/profile",
+    "/api/profile/achievements",
+    "/api/profile/status",
+  ]);
   assert.equal(authProofExchanges, 1, "the initial service session exchanges LINE proof once");
   assert.equal(authMethods[0], "POST", "a fresh LIFF entry exchanges proof without a restore hop");
   const tokenReads = await page.evaluate(() =>
@@ -443,14 +517,74 @@ try {
   results.push(
     "320/390px Profile toolbar alignment, real Popular cards, native share, cancellation and clipboard fallback",
   );
-  results.push("self identity, achievements, settings; only two private section requests");
+  results.push("self identity, achievements, settings, followers and following use owner reads");
+
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await page.getByLabel("狀態訊息", { exact: true }).fill("專心處理問題單");
+  await page.getByLabel("表情", { exact: true }).fill("🎯");
+  await page.getByLabel("顯示忙碌中", { exact: true }).check();
+  await page.getByRole("button", { name: "更新狀態", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toContainText(
+    "專心處理問題單",
+  );
+  assert.equal(statusWrites[0].expectedVersion, 0);
+  assert.equal(statusWrites[0].limitedAvailability, true);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toContainText(
+    "專心處理問題單",
+  );
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await page.getByRole("button", { name: "清除狀態", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toHaveText(
+    /Set your status/,
+  );
+  assert.equal(statusWrites.at(-1).expectedVersion, 1);
+  assert.equal(statusWrites.at(-1).message, null);
+  results.push(
+    "authored Profile status saves, reads back after reload, and clears with observed version",
+  );
+
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await page.getByLabel("狀態訊息", { exact: true }).fill("尚未保存的草稿");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Set your status", exact: true }),
+  ).not.toContainText("尚未保存的草稿");
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await page.getByLabel("狀態訊息", { exact: true }).fill("重試後確認");
+  loseNextStatusResponse = true;
+  await page.getByRole("button", { name: "更新狀態", exact: true }).click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  profileStatus = { ...profileStatus, message: "其他裝置的最新狀態", version: 4 };
+  await page.getByRole("button", { name: "更新狀態", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toContainText(
+    "其他裝置的最新狀態",
+  );
+  assert.equal(statusWrites.at(-1).requestId, statusWrites.at(-2).requestId);
+  assert.equal(
+    profileStatus.version,
+    4,
+    "unknown-result retry does not overwrite a later device write",
+  );
+  results.push(
+    "cancel does not publish drafts; lost status response retries with the same request identity",
+  );
 
   failAchievements = true;
+  failFollows = true;
+  failStatus = true;
   await page.evaluate(() => window.renderProfile({ instance: 1 }));
   await expect(page.getByText("Achievements 目前不可用。")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Private viewer");
   await expect(page.getByRole("heading", { name: "Popular", exact: true })).toBeVisible();
-  results.push("failed achievement request preserves identity and public content");
+  await expect(page.getByText("追蹤關係目前不可用，請稍後重試。")).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText("狀態讀取失敗。");
+  await expect(page.getByRole("link", { name: "0 followers", exact: true })).toHaveCount(0);
+  failFollows = false;
+  failStatus = false;
+  results.push(
+    "failed private section requests preserve identity and public content without fake zero counts",
+  );
 
   const beforeVisitor = privateReads.length;
   const beforeMembership = membershipReads;
@@ -462,8 +596,16 @@ try {
   await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Projects", exact: true })).toHaveCount(0);
   assert.equal(privateReads.length, beforeVisitor);
+  await expect(page.getByRole("button", { name: "追蹤", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "追蹤", exact: true }).click();
+  await expect(page.getByRole("button", { name: "取消追蹤", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "取消追蹤", exact: true }).click();
+  await expect(page.getByRole("button", { name: "追蹤", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toHaveCount(0);
   await captureShell(page, output, "profile-visitor", 0);
-  results.push("other viewer cannot load or retain private sections");
+  results.push(
+    "other active viewer can follow/unfollow with readback but cannot load or retain target private sections",
+  );
 
   member = accountMember("user-1", "viewer", "active");
   const beforeOrganization = membershipReads;
@@ -590,6 +732,70 @@ try {
   results.push(
     "slow provider photo never gates navigation; lifecycle, failed lookup, resume and stale responses stay isolated",
   );
+  holdMembership = false;
+  member = accountMember("user-1", "viewer", "active");
+  await page.evaluate(() => window.renderNetwork(14));
+  await expect(
+    page.locator("#followers").getByRole("link", { name: "@friend", exact: true }),
+  ).toHaveAttribute("href", "/friend");
+  await expect(page.locator("#following")).toBeVisible();
+  await page.getByLabel("登入名稱", { exact: true }).fill("teammate");
+  await page.getByRole("button", { name: "追蹤使用者", exact: true }).click();
+  await expect(
+    page.locator("#following").getByRole("link", { name: "@teammate", exact: true }),
+  ).toHaveAttribute("href", "/teammate");
+  await page
+    .locator("#following li")
+    .filter({ has: page.getByRole("link", { name: "@teammate", exact: true }) })
+    .getByRole("button", { name: "取消追蹤", exact: true })
+    .click();
+  await expect(
+    page.locator("#following").getByRole("link", { name: "@teammate", exact: true }),
+  ).toHaveCount(0);
+  results.push("Network anchors, canonical login entry, profile links, and unfollow readback");
+  holdProfile = false;
+  failAchievements = false;
+  profileStatus = { ...profileStatus, expiresAt: 8_640_000_000_000_000 };
+  await page.evaluate(() => window.renderProfile({ instance: 15 }));
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await expect(page.getByRole("button", { name: "清除狀態", exact: true })).toBeEnabled();
+  await page.getByLabel("狀態訊息", { exact: true }).fill("最遠到期日仍可編輯");
+  await page.getByRole("button", { name: "更新狀態", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toContainText(
+    "最遠到期日仍可編輯",
+  );
+  assert.equal(statusWrites.at(-1).expiresAt, 8_640_000_000_000_000);
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await page.getByRole("button", { name: "清除狀態", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toHaveText(
+    /Set your status/,
+  );
+  results.push("maximum valid expiry loads, edits and clears in UTC+8 without date overflow");
+  await page.getByRole("button", { name: "Set your status", exact: true }).click();
+  await page.getByLabel("狀態訊息", { exact: true }).fill("背景中的舊操作");
+  holdStatusPost = true;
+  await page.getByRole("button", { name: "更新狀態", exact: true }).click();
+  await expect.poll(() => Boolean(heldStatusPost)).toBe(true);
+  const readsBeforeHidden = privateReads.filter((entry) => entry === "/api/profile/status").length;
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("button", { name: "Set your status", exact: true })).toHaveCount(0);
+  const conflictResponse = page.waitForResponse(
+    (response) => response.url().endsWith("/api/profile/status") && response.status() === 409,
+  );
+  await heldStatusPost.fulfill({ status: 409, json: { error: "狀態已更新，請重新載入。" } });
+  await conflictResponse;
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  assert.equal(
+    privateReads.filter((entry) => entry === "/api/profile/status").length,
+    readsBeforeHidden,
+    "late conflict cannot issue a private read after visibility invalidation",
+  );
+  results.push("late 409 after backgrounding cannot revive private status reads or controls");
   assert.deepEqual(errors, []);
   console.log(`PASS: ${results.join("; ")}`);
 } finally {

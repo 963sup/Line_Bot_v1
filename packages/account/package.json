@@ -32,6 +32,10 @@
       "types": "./dist/application/profile.d.ts",
       "default": "./dist/application/profile.js"
     },
+    "./application/user-profile-status": {
+      "types": "./dist/application/user-profile-status.d.ts",
+      "default": "./dist/application/user-profile-status.js"
+    },
     "./application/achievements": {
       "types": "./dist/application/achievements.d.ts",
       "default": "./dist/application/achievements.js"
@@ -63,6 +67,14 @@
     "./contracts/repositories/profile": {
       "types": "./dist/contracts/repositories/profile.d.ts",
       "default": "./dist/contracts/repositories/profile.js"
+    },
+    "./contracts/repositories/user-profile-status": {
+      "types": "./dist/contracts/repositories/user-profile-status.d.ts",
+      "default": "./dist/contracts/repositories/user-profile-status.js"
+    },
+    "./contracts/dto/user-profile-status": {
+      "types": "./dist/contracts/dto/user-profile-status.d.ts",
+      "default": "./dist/contracts/dto/user-profile-status.js"
     },
     "./contracts/output/achievements": {
       "types": "./dist/contracts/output/achievements.d.ts",
