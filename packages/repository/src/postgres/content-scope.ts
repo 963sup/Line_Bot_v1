@@ -1,8 +1,8 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { booleanValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
-import { RepositoryError } from "../domain.js";
 import { authorizedRepository } from "./access.js";
 
 /** Retains qualification/governance/repository locks in the caller's transaction. */

@@ -2,8 +2,10 @@ import type {
   RepositoryManagementCommand,
   RepositoryManagementStore,
 } from "../contracts/repositories/management.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
-import { normalizeRepositoryName, RepositoryError, type RepositoryVisibility } from "../domain.js";
+import type { RepositoryVisibility } from "../domain/repository/entities/repository.js";
+import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

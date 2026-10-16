@@ -18,7 +18,7 @@ import type {
   RepositoryCreationStore,
   RepositoryOwnerOption,
 } from "../contracts/repositories/creation.js";
-import { RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
 import {
   decodeCommandRow,
   postgresErrorCode,

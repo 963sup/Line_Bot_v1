@@ -2,7 +2,8 @@ import type {
   RepositoryCreateCommand,
   RepositoryCreationStore,
 } from "../contracts/repositories/creation.js";
-import { normalizeRepositoryName, RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
+import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 

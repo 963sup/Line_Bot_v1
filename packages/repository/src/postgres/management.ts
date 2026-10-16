@@ -19,13 +19,13 @@ import type {
   RepositoryManagementSnapshot,
   RepositoryManagementStore,
 } from "../contracts/repositories/management.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
+import type { RepositoryVisibility } from "../domain/repository/entities/repository.js";
 import {
   hasRepositoryPermission,
-  RepositoryError,
   type RepositoryPermission,
-  type RepositoryVisibility,
-} from "../domain.js";
+} from "../domain/repository/value-objects/repository-capability.js";
 import {
   decodeCommandRow,
   decodePermissionsRow,

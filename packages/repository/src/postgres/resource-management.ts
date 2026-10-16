@@ -24,7 +24,7 @@ import type {
   RepositoryResourceManagementReceipt,
   RepositoryResourceManagementStore,
 } from "../contracts/output/resource-management.js";
-import { hasRepositoryPermission, RepositoryError } from "../domain.js";
+import { hasRepositoryPermission, RepositoryError } from "../contracts/repository.js";
 import {
   decodeCommandRow,
   decodeIdRow,

@@ -1,6 +1,6 @@
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { numericValue } from "@line_bot_v1/platform/validation";
-import { RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
 
 export async function allocateRepositoryIssueNumber(
   sql: Sql,

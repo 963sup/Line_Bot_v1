@@ -1,5 +1,5 @@
 import type { RepositorySelector } from "../../contracts/selectors.js";
-import type { RepositoryPermission } from "../../domain.js";
+import type { RepositoryPermission } from "../../domain/repository/value-objects/repository-capability.js";
 
 export type RepositoryAccessSubjectKind = "USER" | "TEAM";
 

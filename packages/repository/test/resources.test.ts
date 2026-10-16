@@ -4,7 +4,7 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createRepositoryResources } from "../src/application/resources.js";
 import type { RepositoryResourceStore } from "../src/contracts/output/resources.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryManagementStore } from "../src/postgres/management.js";
 import { PostgresRepositoryResourceStore } from "../src/postgres/resources.js";
 

@@ -23,7 +23,7 @@ import type {
   RepositoryStarListSummary,
   RepositoryStarListVisibility,
 } from "../contracts/repositories/star-lists.js";
-import { RepositoryError } from "../domain.js";
+import { RepositoryError } from "../contracts/repository.js";
 import { decodeCommandRow } from "./decode.js";
 import { readVisibleStarListRepositoryRows } from "./star-list-reads.js";
 

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import type { RepositoryAccessCommand } from "../src/contracts/repositories/access.js";
-import { RepositoryError } from "../src/domain.js";
+import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryAccessStore } from "../src/postgres/access-management.js";
 
 const databaseUrl = process.env.CAPABILITY_TEST_DATABASE_URL;

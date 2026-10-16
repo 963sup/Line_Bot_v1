@@ -14,13 +14,13 @@ import type {
   RepositoryAddressSnapshot,
   RepositoryAddressStore,
 } from "../contracts/repositories/address.js";
+import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
+import type { RepositoryAddress } from "../domain/repository/entities/repository.js";
 import {
   hasRepositoryPermission,
-  type RepositoryAddress,
-  RepositoryError,
   type RepositoryPermission,
-} from "../domain.js";
+} from "../domain/repository/value-objects/repository-capability.js";
 import { resolveAuthorizedRepositoryId } from "./access.js";
 import { decodeCommandRow, decodePermissionsRow, repositoryOwnerKind } from "./decode.js";
 
