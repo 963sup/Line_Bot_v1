@@ -1,13 +1,11 @@
-import type {
-  RepositoryCreateCommand,
-  RepositoryCreationStore,
-} from "../contracts/repositories/creation.js";
-import { RepositoryError } from "../contracts/repository.js";
-import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
+import { isRecord } from "@line_bot_v1/platform/validation";
+import type { RepositoryCreateCommand } from "../../contracts/input/repository-creation.js";
+import { RepositoryError } from "../../contracts/repository.js";
+import { normalizeRepositoryName } from "../../domain/repository/value-objects/repository-name.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
-function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
+export function parseRepositoryCreateCommand(raw: unknown): RepositoryCreateCommand {
   if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository 建立資料格式不正確。");
   }
@@ -47,21 +45,3 @@ function parseCreateCommand(raw: unknown): RepositoryCreateCommand {
     visibility,
   };
 }
-
-export function createRepositoryCreation(deps: {
-  activeUser(subject: string): Promise<{ id: string }>;
-  store(): RepositoryCreationStore;
-  now(): number;
-}) {
-  return {
-    async owners(subject: string) {
-      return deps.store().owners((await deps.activeUser(subject)).id);
-    },
-    async create(subject: string, raw: unknown) {
-      const command = parseCreateCommand(raw);
-      return deps.store().create((await deps.activeUser(subject)).id, command, deps.now());
-    },
-  };
-}
-
-import { isRecord } from "@line_bot_v1/platform/validation";

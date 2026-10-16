@@ -2747,11 +2747,17 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository creation for self User owner or an active Organization member with viewerCanCreateRepositories; INTERNAL requires the Organization's current active Enterprise scope.",
+        "scope": "Repository creation for self User owners or current Organization creators authorized by the visibility-specific creation capability; INTERNAL requires the Organization's current active Enterprise scope.",
         "sourcePaths": [
-          "packages/repository/src/application/creation.ts",
-          "packages/repository/src/contracts/repositories/creation.ts",
-          "packages/repository/src/postgres/creation.ts"
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/application/commands/repository-creation.ts",
+          "packages/repository/src/application/use-cases/repository-creation.ts",
+          "packages/repository/src/application/use-cases/create-repository.ts",
+          "packages/repository/src/contracts/input/repository-creation.ts",
+          "packages/repository/src/contracts/output/repository-creation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-creation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-creation-owners.ts",
+          "packages/repository/src/composition/bootstrap/repository-creation.ts"
         ],
         "publicExports": [
           "./application/creation",
@@ -2765,6 +2771,8 @@
         ],
         "testPaths": [
           "packages/repository/test/creation.test.ts",
+          "packages/repository/test/creation-characterization.test.ts",
+          "packages/repository/test/visibility.test.ts",
           "apps/web/test/repository-creation-http.test.ts"
         ],
         "note": "Create persists the selected visibility atomically. Organization creation uses the Organization-owned visibility-specific member creation capability; current OrganizationOwner bypasses member restrictions. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current capability and accepts pre-visibility private-create fingerprints for rollout-safe retry."
