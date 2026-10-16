@@ -13,6 +13,7 @@ test("Partner writes retain atomic referral publication and exact replay in Post
     await sql.query(
       "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES('owner','active',1,1)",
     );
+    await sql.query("SELECT app_private.claim_account_login('owner','USER','owner',1)");
   });
   let now = 100;
   let managing = true;
