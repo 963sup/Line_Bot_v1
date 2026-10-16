@@ -1,9 +1,9 @@
 import {
+  type ContactMethod,
+  normalizePartnerContactValue,
+  type PartnerContactDraft,
   PartnerError,
   partnerAssert,
-  normalizePartnerContactValue,
-  type ContactMethod,
-  type PartnerContactDraft,
 } from "../../domain.js";
 
 const uuid = (value: string) =>
@@ -44,7 +44,6 @@ export type PartnerCommand =
     }
   | { action: "withdraw"; requestId: string; referralId: string };
 
-
 function text(source: Record<string, unknown>, key: string, max: number, required = true) {
   const value = source[key] ?? "";
   partnerAssert(
@@ -59,7 +58,6 @@ function method(value: unknown): ContactMethod {
   partnerAssert(value === "phone" || value === "email" || value === "line", 400, "聯繫方式無效。");
   return value;
 }
-
 
 function status(value: unknown): "published" | "unlisted" {
   partnerAssert(value === "published" || value === "unlisted", 400, "刊登狀態不正確。");
