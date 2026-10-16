@@ -301,6 +301,17 @@ async function run() {
               role: "ADMIN",
               version: 1,
             },
+            {
+              id: "project-legacy",
+              ownerLogin: "viewer",
+              ownerKind: "USER",
+              number: null,
+              name: "Legacy Plan",
+              public: false,
+              closed: false,
+              role: "ADMIN",
+              version: 1,
+            },
           ],
         },
       });
@@ -634,14 +645,19 @@ async function run() {
     await page.getByRole("link", { name: /Projects/ }).click();
     await expect(page).toHaveURL(`${base}/projects`);
     await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
-    await expect(page.getByText("Operations Plan", { exact: true })).toBeVisible();
+    await expect(page.getByText("#1 Operations Plan", { exact: true })).toBeVisible();
+    const legacyProjectLink = page.getByRole("link", { name: /Legacy Plan/ });
+    await expect(legacyProjectLink).toHaveAttribute("href", "/projects/project-legacy");
+    await expect(legacyProjectLink).not.toContainText(/^#\d+\s/);
     await page.getByRole("button", { name: "Organization", exact: true }).click();
-    await expect(page.getByText("Operations Plan", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("#1 Operations Plan", { exact: true })).toHaveCount(0);
+    await expect(legacyProjectLink).toHaveCount(0);
     await expect(
       page.getByText("此擁有者類型目前沒有可存取的 Project。", { exact: true }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Personal", exact: true }).click();
-    await expect(page.getByText("Operations Plan", { exact: true })).toBeVisible();
+    await expect(page.getByText("#1 Operations Plan", { exact: true })).toBeVisible();
+    await expect(legacyProjectLink).toBeVisible();
     await page.getByRole("button", { name: "All projects", exact: true }).click();
     if (artifactDir) {
       await page.screenshot({ path: path.join(artifactDir, "projects.png"), fullPage: true });
@@ -814,11 +830,16 @@ async function run() {
 
     await page.goto(`${base}/acme/Operations/issues/${issueNumber}`);
     await page.getByRole("heading", { name: "Issue", exact: true }).waitFor();
-    await page.getByRole("heading", { name: issue.title, exact: true }).waitFor();
+    await page
+      .getByRole("heading", { name: `#${issue.number} ${issue.title}`, exact: true })
+      .waitFor();
     const issueBackLink = page.getByRole("link", { name: "← 返回 Issues", exact: true });
     await expect(issueBackLink).toHaveAttribute("href", "/acme/Operations/issues");
     await issueBackLink.click();
     await expect(page).toHaveURL(`${base}/acme/Operations/issues`);
+    await expect(
+      page.getByRole("link", { name: new RegExp(`^#${issue.number} ${issue.title}`) }),
+    ).toBeVisible();
 
     await page.goto(`${base}/notifications`);
     await page.getByRole("heading", { name: "Inbox", exact: true }).waitFor();

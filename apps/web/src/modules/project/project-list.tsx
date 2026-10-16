@@ -67,7 +67,10 @@ export default function ProjectList({ liffId }: { liffId: string }) {
             >
               <span className={styles.copy}>
                 <small className={styles.owner}>{item.ownerLogin}</small>
-                <strong className={styles.name}>{item.name}</strong>
+                <strong className={styles.name}>
+                  {item.number === null ? "" : `#${item.number} `}
+                  {item.name}
+                </strong>
               </span>
               <span className={styles.open}>開啟</span>
             </Link>
