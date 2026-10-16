@@ -1,12 +1,10 @@
-import type {
-  RepositoryManagementCommand,
-  RepositoryManagementStore,
-} from "../contracts/repositories/management.js";
-import { RepositoryError } from "../contracts/repository.js";
-import type { RepositorySelector } from "../contracts/selectors.js";
-import type { RepositoryVisibility } from "../domain/repository/entities/repository.js";
-import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
-import { accountLoginForRepositoryLocator } from "./owner-locator.js";
+import { isRecord } from "@line_bot_v1/platform/validation";
+import type { RepositoryManagementCommand } from "../../contracts/input/repository-management.js";
+import { RepositoryError } from "../../contracts/repository.js";
+import type { RepositorySelector } from "../../contracts/selectors.js";
+import type { RepositoryVisibility } from "../../domain/repository/entities/repository.js";
+import { normalizeRepositoryName } from "../../domain/repository/value-objects/repository-name.js";
+import { accountLoginForRepositoryLocator } from "../owner-locator.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;
@@ -15,7 +13,7 @@ function isRepositoryVisibility(value: unknown): value is RepositoryVisibility {
   return value === "private" || value === "internal" || value === "public";
 }
 
-function repositorySelector(value: RepositorySelector): RepositorySelector {
+export function parseRepositoryManagementSelector(value: RepositorySelector): RepositorySelector {
   if ("repositoryId" in value) {
     if (!identifierPattern.test(value.repositoryId)) {
       throw new RepositoryError(400, "Repository 識別碼不正確。");
@@ -34,7 +32,7 @@ function repositorySelector(value: RepositorySelector): RepositorySelector {
   };
 }
 
-function parseCommand(raw: unknown): RepositoryManagementCommand {
+export function parseRepositoryManagementCommand(raw: unknown): RepositoryManagementCommand {
   if (!isRecord(raw)) {
     throw new RepositoryError(400, "Repository 管理操作格式不正確。");
   }
@@ -87,31 +85,7 @@ function parseCommand(raw: unknown): RepositoryManagementCommand {
     if (!isRepositoryVisibility(value.visibility)) {
       throw new RepositoryError(400, "Repository visibility 不正確。");
     }
-    return {
-      ...base,
-      action: "visibility",
-      visibility: value.visibility,
-    };
+    return { ...base, action: "visibility", visibility: value.visibility };
   }
   return { ...base, action: value.action };
 }
-
-export function createRepositoryManagement(deps: {
-  activeUser(subject: string): Promise<{ id: string }>;
-  store(): RepositoryManagementStore;
-  now(): number;
-}) {
-  return {
-    async view(subject: string, selector: RepositorySelector) {
-      const user = await deps.activeUser(subject);
-      return deps.store().view(user.id, repositorySelector(selector));
-    },
-    async execute(subject: string, raw: unknown) {
-      const command = parseCommand(raw);
-      const user = await deps.activeUser(subject);
-      return deps.store().execute(user.id, command, deps.now());
-    },
-  };
-}
-
-import { isRecord } from "@line_bot_v1/platform/validation";

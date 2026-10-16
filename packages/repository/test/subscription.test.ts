@@ -4,9 +4,9 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositorySubscription } from "../src/application/subscription.js";
+import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
 import type { RepositorySubscriptionStore } from "../src/contracts/repositories/subscription.js";
 import { RepositoryError } from "../src/contracts/repository.js";
-import { PostgresRepositoryManagementStore } from "../src/postgres/management.js";
 import { PostgresRepositorySubscriptionStore } from "../src/postgres/subscription.js";
 
 async function activeUser(db: Database, id: string) {
