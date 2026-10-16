@@ -18,8 +18,6 @@
 
 每個 package 先讀 owner、FPT/product contracts、public exports、source、schema 與 tests，再追「資格 → replay → load → decision → save」。Domain 承接純業務決策，Application 承接用例與交易協調，Contracts 承接穩定 Port／DTO，Adapter 承接 SQL、鎖、條件寫入與 mapping，Composition 只接線。Root named public entries 可以合法存在；只有確認混合責任或重複 authority 才搬移，不留舊路徑 wrapper，不放寬 governing guards。
 
-下一個深查點是 [Team collaboration](../../../packages/team/src/application/collaboration.ts) 到 [Postgres adapter](../../../packages/team/src/adapters/postgres.ts) 的 transaction／decision 分工：目前 use case 呼叫 repository mutation，而 adapter 同時引用跨 Owner 資格查詢與 Domain policies。這是待追證據，不代表所有 adapter 分支都是 Domain violation。
-
 完成條件：每項修復有具體 source/consumer 證據、單一責任歸屬、同步的公開／資料／依賴契約、既有行為及授權／競爭／replay 回歸證據；以獨立可回滾 PR → main 交付。已完成項回到 owner/source/tests，不在此累積第二份 package review database。
 
 ## Supabase / production readiness

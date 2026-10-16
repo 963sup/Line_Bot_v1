@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { PostgresTeamRepository } from "../src/adapters/postgres.js";
-import { TeamError } from "../src/domain/errors/team-error.js";
+import { PostgresTeamRepository } from "../src/composition/bootstrap/team.js";
+import { TeamError } from "../src/contracts/errors/team-error.js";
 
 function hasStatus(error: unknown, status: number): boolean {
   return error instanceof Error && "status" in error && error.status === status;

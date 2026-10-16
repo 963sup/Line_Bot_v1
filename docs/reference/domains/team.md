@@ -27,17 +27,17 @@ Team row 保存 nullable `parent_team_id`。Composite FK 保證 parent/child 同
 - projection 保留 `source_team_id`、`source_membership_version`、`depth`，不建立第二份 membership truth；
 - 同一 User 可有多個來源；consumer 若需要 FPT `ALL`，應取 IMMEDIATE + CHILD_TEAM 的集合，而不是 overwrite source。
 
-`parent-team` 是 versioned Team command。Link/move 要求 actor 同時維護 child 與新 parent；unlink 只要求 child TeamMaintainer。Cross-Organization parent 與 cycle fail closed。
+parent-team 是 versioned Team command。Link/move 要求 actor 同時具備 child 與新 parent 的管理權；unlink 只要求 child 管理權。管理權可以來自 effective TeamMaintainer，或 current same-scope OrganizationOwner 的 administrative capability。Cross-Organization parent 與 cycle fail closed。
 
 ## Privacy read policy
 
-`SECRET` 只讓 current effective Team member發現／讀 Team detail 與 active effective members。 `VISIBLE` 讓 current active Organization member發現／讀 Team detail與 active effective members，但不建立 membership。Maintainer 額外可看到 pending/removed direct rows。
+SECRET 的一般可見性只讓 current effective Team member 發現／讀 Team detail 與 active effective members。Current same-scope OrganizationOwner 另有 administrative read/manage capability，可讀 Team detail 與 pending/removed direct rows；這不建立 TeamMembership 或 TeamMaintainer，Owner 的 isMaintainer 仍為 false。VISIBLE 讓 current active Organization member 發現／讀 Team detail 與 active effective members，但不建立 membership。Effective TeamMaintainer 也可看到 pending/removed direct rows。
 
 Collection query因此同時回傳：actor 的 effective Teams，以及同 Organization 的 VISIBLE Teams。Summary 明確標出 `membershipStatus` 與 `membershipType`；`none` 只表示可見但不是 member。
 
 ## Notification setting
 
-Team-level `NOTIFICATIONS_DISABLED | NOTIFICATIONS_ENABLED` 是 Team aggregate state，由 TeamMaintainer 以 `settings` command 修改。Enabled 的語意只定義 Team @mention 時的 current effective member recipient population；Team module 不因此建立 recipient Notification、個人 subscription 或 delivery attempt。
+Team-level `NOTIFICATIONS_DISABLED | NOTIFICATIONS_ENABLED` 是 Team aggregate state，由 effective TeamMaintainer 或 current same-scope OrganizationOwner 以 `settings` command 修改。Enabled 的語意只定義 Team @mention 時的 current effective member recipient population；Team module 不因此建立 recipient Notification、個人 subscription 或 delivery attempt。
 
 Current Team slice 尚未有 Team @mention producer/fan-out。真正 Notification fact、read state、delivery idempotency/retry 仍由 [Notifications](../../owners/notifications.md) owner 管理。
 
@@ -46,14 +46,22 @@ Current Team slice 尚未有 Team @mention producer/fan-out。真正 Notificatio
 Current Organization Team commands:
 
 - `create-team`：建立 Team + creator membership + maintainer。
-- `rename-team`：effective TeamMaintainer 修改 name/derived slug。
-- `parent-team`：link/move/unlink hierarchy，使用上述雙方 maintainer 規則。
-- `settings`：effective TeamMaintainer 修改 privacy/notification setting。
+- rename-team：effective TeamMaintainer 或 current same-scope OrganizationOwner 修改 name/derived slug。
+- `parent-team`：link/move/unlink hierarchy，使用上述雙方管理權規則。
+- settings：effective TeamMaintainer 或 current same-scope OrganizationOwner 修改 privacy/notification setting。
 - `join`：本人建立 pending direct membership request。
 - `membership`：核准／移除 direct membership；self removal 是受限特例。
 - `maintainer`：授予／撤銷 TeamMaintainer，維持 last-effective-maintainer invariant。
 
 每個正式 write 都重新核驗 actor/current scope，使用 stable ids、唯一 requestId、normalized fingerprint；existing Team mutation核對 expectedVersion。Exact retry 只可重放相同 command，且 replay 仍重新核對 current User/Organization/Team qualification與必要 maintainer authority。Team aggregate version 在成功 mutation 後增加；失敗 mutation整筆 rollback。
+
+Application use case 擁有七種 command 的資格、replay、current facts 與 Domain transition
+編排；單一 mutation transaction Output Port 只暴露必要 scope、opaque evidence 與
+Domain values。PostgreSQL adapter 在同一 transaction 維持 governance lock、Team／hierarchy
+row locks、expected version、Team／membership／maintainer state 與 receipt 的原子提交。
+Query contract 只提供 read capability；Composition Root 組裝 query、mutation adapter 與
+use case，公開的 PostgresTeamRepository constructor 與 view／viewByLocator／execute
+介面維持不變。
 
 ## Repository access source
 

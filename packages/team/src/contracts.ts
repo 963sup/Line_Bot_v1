@@ -7,8 +7,10 @@ import {
   stringValue,
 } from "@line_bot_v1/platform/validation";
 
-export type TeamPrivacy = "SECRET" | "VISIBLE";
-export type TeamNotificationSetting = "NOTIFICATIONS_DISABLED" | "NOTIFICATIONS_ENABLED";
+export type { TeamNotificationSetting, TeamPrivacy } from "./domain/team.js";
+
+import type { TeamNotificationSetting, TeamPrivacy } from "./domain/team.js";
+
 type TeamMembershipType = "IMMEDIATE" | "CHILD_TEAM";
 
 export type TeamMembershipView = {
