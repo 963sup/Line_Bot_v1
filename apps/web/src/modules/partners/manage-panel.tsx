@@ -1,7 +1,7 @@
 "use client";
-import type { Partner, PartnerContact, PartnersView } from "@line_bot_v1/partners/contracts";
 import type { PartnerCommand } from "@line_bot_v1/partners/application/commands/partner-command";
 import { parsePartnerCommand } from "@line_bot_v1/partners/application/commands/partner-command";
+import type { Partner, PartnerContact, PartnersView } from "@line_bot_v1/partners/contracts";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
