@@ -175,3 +175,8 @@ export function decidePartnerReferral(
   partnerAssert(referral.status === "pending", 409, "推薦案件已結案。");
   return command.status;
 }
+
+/** Persisted conflict detection stays in the adapter; its meaning belongs to Partners. */
+export function assertUniquePartnerContact(duplicate: boolean): void {
+  partnerAssert(!duplicate, 409, "同名夥伴的窗口與聯繫方式已存在，請核對既有資料。");
+}
