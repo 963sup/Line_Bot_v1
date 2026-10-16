@@ -93,7 +93,7 @@ export function normalizePartnerContactValue(kind: ContactMethod, value: string)
 }
 
 /** Only the repository can supply a trusted previous contact for preserving legacy values. */
-export function normalizePartnerContact(
+function normalizePartnerContact(
   contact: PartnerContactDraft,
   previous?: { phone: string; email: string; line: string },
 ) {
