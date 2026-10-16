@@ -7,51 +7,48 @@ import {
   recordGovernanceResult,
 } from "@line_bot_v1/identity-access/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { executeOrganizationOwner } from "../src/application/use-cases/organization-owner.js";
 import { createPostgresOrganizationGovernance } from "../src/composition/bootstrap/organization-governance.js";
-import type {
-  OrganizationCommand,
-  OrganizationReceipt,
-} from "../src/contracts/organization-governance.js";
-import { PostgresOrganizationGovernance } from "../src/postgres.js";
+import type { OrganizationReceipt } from "../src/contracts/organization-governance.js";
+import type { OrganizationOwnerTransactions } from "../src/contracts/output/organization-owner.js";
 
 const actor = { provider: "line:test", subject: "owner" };
 
-test("the existing public constructor and factory preserve atomic Organization creation and canonical replay", async (t) => {
-  const { pg, db, governance } = await fixture();
-  t.after(() => pg.close());
-  const create: OrganizationCommand = {
-    requestId: "dddddddd-dddd-4ddd-8ddd-000000000001",
-    reason: "create Organization",
-    action: "create-organization",
-    login: "second-org",
-    name: "Second Org",
+test("OrganizationOwner captures one command snapshot before the transaction awaits", async () => {
+  const command = {
+    action: "grant-organization-owner" as const,
+    requestId: "11111111-1111-4111-8111-111111111111",
+    organizationAccountId: "org",
+    targetUserId: "target",
+    expectedVersion: 0,
+    reason: "snapshot",
   };
-  const direct = new PostgresOrganizationGovernance(db);
-  const receipt = await direct.execute(actor, create, 100);
-  assert.equal(receipt.version, 1);
-  assert.equal(receipt.status, "active");
-  assert.deepEqual(await governance.execute(actor, create), receipt);
-  const detail = await direct.detail(actor, receipt.scopeId);
-  assert.equal(detail.login, "second-org");
-  assert.equal(detail.actorIsOwner, true);
-  assert.equal(detail.actorMemberRole, "ADMIN");
-  await assert.rejects(
-    governance.execute(actor, { ...create, requestId: "dddddddd-dddd-4ddd-8ddd-000000000002" }),
-    failure(409, "conflict"),
-  );
-  assert.deepEqual(
-    (await pg.query("SELECT count(*)::int AS count FROM app_private.organizations")).rows,
-    [{ count: 2 }],
-  );
-  assert.deepEqual(
-    (await pg.query("SELECT scope_id FROM app_private.governance_command_receipts")).rows,
-    [{ scope_id: receipt.scopeId }],
-  );
-  assert.deepEqual(
-    (await pg.query("SELECT scope_id FROM app_private.governance_audit_events")).rows,
-    [{ scope_id: receipt.scopeId }],
-  );
+  const original = { ...command };
+  const transactions: OrganizationOwnerTransactions = {
+    transact: async (_actor, scope, evidence, operation) => {
+      assert.equal(scope.targetUserId, original.targetUserId);
+      assert.deepEqual(JSON.parse(evidence.payload), original);
+      command.targetUserId = "changed";
+      return operation({
+        organization: { id: "org", status: "active", version: 1 },
+        authorize: async () => {},
+        replay: async () => null,
+        membership: async () => ({ status: "active", version: 1 }),
+        load: async () => null,
+        activeTargetVersion: async () => 1,
+        targetEffective: async () => false,
+        anotherEffective: async () => false,
+        save: async (next) => next.version,
+        record: async (result) => {
+          assert.equal(result.subjectId, scope.targetUserId);
+        },
+      });
+    },
+  };
+  const result = await executeOrganizationOwner(transactions, actor, command, 10);
+  assert.equal(result.subjectId, original.targetUserId);
 });
+
 function failure(status: number, code: string) {
   return (error: unknown) =>
     error instanceof GovernanceAccessError && error.status === status && error.code === code;

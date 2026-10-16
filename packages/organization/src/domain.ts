@@ -162,6 +162,29 @@ export function createOrganization(id: OrganizationAccountId): Organization {
   return { id: requireId(id, "Organization id"), status: "active", version: 1 };
 }
 
+export function normalizeOrganizationName(value: string): string {
+  const name = value.trim();
+  if (name.length < 1 || name.length > 120) {
+    throw new OrganizationError("invalid-input", "Organization name is invalid.");
+  }
+  return name;
+}
+
+export function updateOrganizationMemberCreationPolicy(
+  organization: Organization,
+  expectedVersion: number,
+): Organization {
+  requireId(organization.id, "Organization id");
+  if (organization.status !== "active") {
+    throw new OrganizationError(
+      "inactive",
+      "Inactive Organization cannot change its member creation policy.",
+    );
+  }
+  requireExpectedVersion(organization.version, expectedVersion, "Organization");
+  return { ...organization, version: organization.version + 1 };
+}
+
 export function deactivateOrganization(
   organization: Organization,
   expectedVersion: number,

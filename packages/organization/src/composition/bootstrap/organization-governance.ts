@@ -7,11 +7,13 @@ import { PostgresOrganizationPersistence } from "../../adapters/outbound/persist
 import { PostgresOrganizationLifecycle } from "../../adapters/outbound/persistence/organization-lifecycle.js";
 import { PostgresOrganizationMembership } from "../../adapters/outbound/persistence/organization-membership.js";
 import { PostgresOrganizationOwner } from "../../adapters/outbound/persistence/organization-owner.js";
+import { PostgresOrganizationScope } from "../../adapters/outbound/persistence/organization-scope.js";
 import type { OrganizationMembershipCommand } from "../../application/commands/organization-membership.js";
 import type { OrganizationOwnerCommand } from "../../application/commands/organization-owner.js";
 import { organizationGovernance } from "../../application/organization-governance.js";
 import { executeOrganizationMembership } from "../../application/use-cases/organization-membership.js";
 import { executeOrganizationOwner } from "../../application/use-cases/organization-owner.js";
+import { executeOrganizationScope } from "../../application/use-cases/organization-scope.js";
 import type { OrganizationGovernancePort } from "../../contracts/input/organization-governance.js";
 import type {
   OrganizationCommand,
@@ -41,10 +43,12 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
   private readonly persistence: PostgresOrganizationPersistence;
   private readonly owner: PostgresOrganizationOwner;
   private readonly membership: PostgresOrganizationMembership;
+  private readonly scope: PostgresOrganizationScope;
   constructor(db: Database = businessDatabase()) {
     this.persistence = new PostgresOrganizationPersistence(db);
     this.owner = new PostgresOrganizationOwner(db);
     this.membership = new PostgresOrganizationMembership(db);
+    this.scope = new PostgresOrganizationScope(db);
   }
   list(actor: VerifiedLineActor, query: GovernanceQuery) {
     return this.persistence.list(actor, query);
@@ -57,11 +61,11 @@ export class PostgresOrganizationGovernance implements OrganizationGovernancePor
     command: OrganizationCommand,
     at: number,
   ): Promise<OrganizationReceipt> {
-    return isOwnerCommand(command)
-      ? executeOrganizationOwner(this.owner, actor, command, at)
-      : isMembershipCommand(command)
-        ? executeOrganizationMembership(this.membership, actor, command, at)
-        : this.persistence.execute(actor, command, at);
+    if (isOwnerCommand(command)) return executeOrganizationOwner(this.owner, actor, command, at);
+    if (isMembershipCommand(command)) {
+      return executeOrganizationMembership(this.membership, actor, command, at);
+    }
+    return executeOrganizationScope(this.scope, actor, command, at);
   }
 }
 
