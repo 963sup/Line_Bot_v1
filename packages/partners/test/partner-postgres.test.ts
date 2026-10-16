@@ -48,7 +48,7 @@ test("Partner writes retain atomic referral publication and exact replay in Post
     [submitted.id],
   );
   assert.equal(pending.rows[0]?.status, "pending");
-  assert.equal(pending.rows[0]?.submitted_at, "100");
+  assert.equal(Number(pending.rows[0]?.submitted_at), 100);
   now = 101;
   assert.deepEqual(await partners.execute("proof", refer), submitted);
 
@@ -78,7 +78,7 @@ test("Partner writes retain atomic referral publication and exact replay in Post
     ],
     ["successful", "東區設備", "窗口"],
   );
-  assert.equal(persisted.rows[0]?.submitted_at, "100");
+  assert.equal(Number(persisted.rows[0]?.submitted_at), 100);
   now = 102;
   assert.deepEqual(await partners.execute("proof", review), accepted);
   assert.equal(
