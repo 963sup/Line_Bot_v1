@@ -89,9 +89,9 @@ export function executePartnerCommand(
     partnerAssert(referral, 404, "推薦案件不存在。");
     const decision = decidePartnerReferral(command, referral, actor, transaction.canReview);
     if (decision === "withdrawn") await transaction.withdraw(command.referralId);
-    else if (decision === "rejected") {
+    else if (command.action === "review" && decision === "rejected") {
       await transaction.reject(command.referralId, command.reviewNote ?? "");
-    } else {
+    } else if (command.action === "review") {
       await transaction.lockDirectory();
       assertUniquePartnerContact(await transaction.duplicateContact(referralContact(referral)));
       await transaction.publish(command.referralId, referral, command.reviewNote ?? "");
