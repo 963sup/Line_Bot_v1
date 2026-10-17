@@ -8,6 +8,7 @@ import type { WbsContentTransaction, WbsStore } from "../../../contracts/reposit
 import type { WbsRevision } from "../../../domain/content.js";
 import { parseWbsDocument, WbsError } from "../../../domain/document.js";
 import { canEditWbs } from "../../../domain/policies/access.js";
+import { PostgresWbsScopeBoundary } from "./scope-boundary.js";
 
 function revisionMetadata(row: SqlRow): Omit<WbsRevision, "document"> {
   const action = stringValue(row.action);
@@ -52,6 +53,7 @@ export class PostgresWbsStore implements WbsStore {
   read(userId: string, selector: RepositorySelector, revisionId?: string): Promise<WbsView> {
     return this.db.transaction(async (sql) => {
       const { repository, archived } = await repositoryContentScope(sql, userId, selector);
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repository.id);
       const root = (
         await sql.query(
           "SELECT version,head_revision_id FROM repository_wbs WHERE repository_id=$1",
@@ -84,6 +86,7 @@ export class PostgresWbsStore implements WbsStore {
   history(userId: string, selector: RepositorySelector, before?: number): Promise<WbsHistory> {
     return this.db.transaction(async (sql) => {
       const { repository } = await repositoryContentScope(sql, userId, selector);
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repository.id);
       const rows = (
         await sql.query(
           "SELECT id,version,parent_revision_id,actor_user_id,action,at FROM repository_wbs_revisions WHERE repository_id=$1 AND ($2::integer IS NULL OR version<$2) ORDER BY version DESC LIMIT 21",
@@ -110,6 +113,7 @@ export class PostgresWbsStore implements WbsStore {
       const { repository, archived } = await repositoryContentScope(sql, userId, {
         repositoryId: command.repositoryId,
       });
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repository.id);
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
         nextId: randomUUID,

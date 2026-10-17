@@ -69,7 +69,7 @@ References support the existing status; listed tests are evidence locations, not
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | Repository owner locators and User principals reference Account-owned identity and current User qualification. |
-| provides | actions | stable-identity+query | repository | transaction-recheck | Current Repository access, archive and maintain/admin authority gate automation commands and each fixed step. |
+| provides | actions | stable-identity+query | repository | transaction-recheck | During R1 transfer, current Repository access, archive and maintain/admin authority gate legacy automation commands and each fixed step; this is not the final Project Actions scope contract. |
 | consumes | identity-access | query | identity-access | transaction-recheck | Repository consumes current IdentityAccess authorization decisions for Repository-owned access and protected operations; IdentityAccess does not own or mutate Repository grant truth. |
 | provides | insights | query | repository | current-state | Insights consumes repository-owned authorized current queries; source facts and authorization remain with the provider. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
@@ -86,7 +86,7 @@ References support the existing status; listed tests are evidence locations, not
 | provides | issue | query | repository | transaction-recheck | Issue classification and milestone assignment reference Repository-owned Label and Milestone definitions in the same Repository; Issue owns only the association fact. |
 | provides | issue | stable-identity+query | repository | transaction-recheck | Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority. |
 | provides | notifications | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
-| provides | wbs | stable-identity+query | repository | transaction-recheck | Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned. |
+| provides | wbs | stable-identity+query | repository | transaction-recheck | During R1 transfer, Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned and this path is not a permanent parallel WBS model. |
 | provides | wiki | stable-identity+query | repository | transaction-recheck | Wiki consumes current Repository scope, qualification, archive state and explicit write authority without owning Repository facts. |
 
 ## Tactical Model Boundary

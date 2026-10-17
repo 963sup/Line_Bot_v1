@@ -197,6 +197,12 @@ test("Project runtime privileges match activated planning capabilities", async (
     "project_item_multi_select_values",
     "project_items",
     "project_milestones",
+    "project_action_attempts",
+    "project_action_commands",
+    "project_action_events",
+    "project_action_rule_versions",
+    "project_action_rules",
+    "project_action_runs",
     "project_repository_references",
     "project_status_updates",
     "project_team_access",
@@ -204,6 +210,16 @@ test("Project runtime privileges match activated planning capabilities", async (
     "project_view_visible_fields",
     "project_views",
     "project_wbs",
+    "project_wbs_baselines",
+    "project_wbs_commands",
+    "project_wbs_governance",
+    "project_wbs_governance_commands",
+    "project_wbs_outbox",
+    "project_wbs_policies",
+    "project_wbs_proposal_versions",
+    "project_wbs_proposals",
+    "project_wbs_reviews",
+    "project_wbs_revisions",
     "projects",
   ];
   const result = await pg.query(
@@ -257,6 +273,12 @@ test("Project runtime privileges match activated planning capabilities", async (
   };
 
   assert.deepEqual(result.rows, [
+    { relname: "project_action_attempts", ...readInsertUpdate },
+    { relname: "project_action_commands", ...readInsert },
+    { relname: "project_action_events", ...readInsert },
+    { relname: "project_action_rule_versions", ...readInsert },
+    { relname: "project_action_rules", ...readInsertUpdate },
+    { relname: "project_action_runs", ...readInsertUpdate },
     { relname: "project_commands", ...readInsert },
     { relname: "project_draft_issue_assignees", ...relationSet },
     { relname: "project_draft_issues", ...readInsertUpdate },
@@ -274,7 +296,17 @@ test("Project runtime privileges match activated planning capabilities", async (
     { relname: "project_user_access", ...all },
     { relname: "project_view_visible_fields", ...all },
     { relname: "project_views", ...all },
-    { relname: "project_wbs", ...none },
+    { relname: "project_wbs", ...readInsertUpdate },
+    { relname: "project_wbs_baselines", ...readInsert },
+    { relname: "project_wbs_commands", ...readInsert },
+    { relname: "project_wbs_governance", ...readInsertUpdate },
+    { relname: "project_wbs_governance_commands", ...readInsert },
+    { relname: "project_wbs_outbox", ...readInsert },
+    { relname: "project_wbs_policies", ...readInsert },
+    { relname: "project_wbs_proposal_versions", ...readInsert },
+    { relname: "project_wbs_proposals", ...readInsertUpdate },
+    { relname: "project_wbs_reviews", ...readInsert },
+    { relname: "project_wbs_revisions", ...readInsert },
     {
       relname: "projects",
       relrowsecurity: true,
@@ -308,6 +340,726 @@ test("Project runtime privileges match activated planning capabilities", async (
       can_update_creator: false,
       can_update_owner: false,
       can_update_deleted: true,
+    },
+  ]);
+});
+
+test("Project WBS and automation schema preserve scoped version and immutable evidence contracts", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  const columns = await pg.query(
+    `select table_name,array_agg(column_name order by ordinal_position) as columns
+     from information_schema.columns
+     where table_schema='app_private' and table_name=any($1::text[])
+     group by table_name order by table_name`,
+    [
+      [
+        "project_action_attempts",
+        "project_action_commands",
+        "project_action_events",
+        "project_action_rule_versions",
+        "project_action_rules",
+        "project_action_runs",
+        "project_wbs",
+        "project_wbs_baselines",
+        "project_wbs_commands",
+        "project_wbs_governance",
+        "project_wbs_governance_commands",
+        "project_wbs_outbox",
+        "project_wbs_policies",
+        "project_wbs_proposal_versions",
+        "project_wbs_proposals",
+        "project_wbs_reviews",
+        "project_wbs_revisions",
+      ],
+    ],
+  );
+  assert.deepEqual(columns.rows, [
+    {
+      table_name: "project_action_attempts",
+      columns: ["run_id", "number", "lease_token", "started_at", "finished_at", "result"],
+    },
+    {
+      table_name: "project_action_commands",
+      columns: ["actor", "request_id", "fingerprint", "result", "at"],
+    },
+    { table_name: "project_action_events", columns: ["id", "project_id", "at"] },
+    {
+      table_name: "project_action_rule_versions",
+      columns: ["rule_id", "version", "snapshot"],
+    },
+    { table_name: "project_action_rules", columns: ["id", "project_id", "version"] },
+    {
+      table_name: "project_action_runs",
+      columns: [
+        "id",
+        "project_id",
+        "rule_id",
+        "rule_version",
+        "rule_snapshot",
+        "revision_id",
+        "baseline_id",
+        "source_event_id",
+        "status",
+        "version",
+        "step",
+        "attempt",
+        "available_at",
+        "created_at",
+        "results",
+        "lease_token",
+        "lease_until",
+      ],
+    },
+    { table_name: "project_wbs", columns: ["project_id", "version", "head_revision_id"] },
+    {
+      table_name: "project_wbs_baselines",
+      columns: [
+        "id",
+        "project_id",
+        "number",
+        "proposal_id",
+        "proposal_version",
+        "revision_id",
+        "previous_baseline_id",
+        "policy_version",
+        "published_by",
+        "approval_review_ids",
+        "at",
+      ],
+    },
+    {
+      table_name: "project_wbs_commands",
+      columns: ["actor_user_id", "request_id", "project_id", "fingerprint", "revision_id"],
+    },
+    {
+      table_name: "project_wbs_governance",
+      columns: ["project_id", "version", "policy_version", "published_baseline_id"],
+    },
+    {
+      table_name: "project_wbs_governance_commands",
+      columns: ["actor_user_id", "request_id", "project_id", "fingerprint", "result"],
+    },
+    {
+      table_name: "project_wbs_outbox",
+      columns: [
+        "id",
+        "event_no",
+        "project_id",
+        "baseline_id",
+        "revision_id",
+        "at",
+        "lease_token",
+        "lease_until",
+        "acknowledged_at",
+      ],
+    },
+    {
+      table_name: "project_wbs_policies",
+      columns: [
+        "project_id",
+        "version",
+        "minimum_approvals",
+        "allow_self_approval",
+        "actor_user_id",
+        "at",
+      ],
+    },
+    {
+      table_name: "project_wbs_proposal_versions",
+      columns: [
+        "project_id",
+        "proposal_id",
+        "version",
+        "title",
+        "reason",
+        "status",
+        "candidate_revision_id",
+        "base_baseline_id",
+        "actor_user_id",
+        "at",
+      ],
+    },
+    {
+      table_name: "project_wbs_proposals",
+      columns: ["id", "project_id", "number", "version", "author_user_id", "created_at"],
+    },
+    {
+      table_name: "project_wbs_reviews",
+      columns: [
+        "id",
+        "project_id",
+        "proposal_id",
+        "proposal_version",
+        "candidate_revision_id",
+        "policy_version",
+        "reviewer_user_id",
+        "decision",
+        "note",
+        "sequence",
+        "at",
+      ],
+    },
+    {
+      table_name: "project_wbs_revisions",
+      columns: [
+        "id",
+        "project_id",
+        "version",
+        "parent_revision_id",
+        "actor_user_id",
+        "action",
+        "document",
+        "at",
+      ],
+    },
+  ]);
+
+  const foreignKey = async (
+    table: string,
+    sourceColumns: string[],
+    target: string,
+    targetColumns: string[],
+  ) => {
+    const result = await pg.query(
+      `select c.condeferrable,c.condeferred
+       from pg_constraint c
+       where c.contype='f' and c.conrelid=$1::regclass and c.confrelid=$2::regclass
+         and (select array_agg(a.attname::text order by u.ordinality)
+              from unnest(c.conkey) with ordinality u(attnum,ordinality)
+              join pg_attribute a on a.attrelid=c.conrelid and a.attnum=u.attnum)=$3::text[]
+         and (select array_agg(a.attname::text order by u.ordinality)
+              from unnest(c.confkey) with ordinality u(attnum,ordinality)
+              join pg_attribute a on a.attrelid=c.confrelid and a.attnum=u.attnum)=$4::text[]`,
+      [`app_private.${table}`, `app_private.${target}`, sourceColumns, targetColumns],
+    );
+    assert.deepEqual(result.rows, [{ condeferrable: false, condeferred: false }]);
+  };
+  await foreignKey(
+    "project_wbs_revisions",
+    ["project_id", "parent_revision_id"],
+    "project_wbs_revisions",
+    ["project_id", "id"],
+  );
+  await foreignKey("project_wbs_commands", ["project_id", "revision_id"], "project_wbs_revisions", [
+    "project_id",
+    "id",
+  ]);
+  await foreignKey(
+    "project_wbs_reviews",
+    ["project_id", "proposal_id", "proposal_version", "candidate_revision_id"],
+    "project_wbs_proposal_versions",
+    ["project_id", "proposal_id", "version", "candidate_revision_id"],
+  );
+  await foreignKey(
+    "project_wbs_baselines",
+    ["project_id", "proposal_id", "proposal_version", "revision_id"],
+    "project_wbs_proposal_versions",
+    ["project_id", "proposal_id", "version", "candidate_revision_id"],
+  );
+  await foreignKey("project_wbs_outbox", ["project_id", "baseline_id"], "project_wbs_baselines", [
+    "project_id",
+    "id",
+  ]);
+  await foreignKey("project_wbs_outbox", ["project_id", "revision_id"], "project_wbs_revisions", [
+    "project_id",
+    "id",
+  ]);
+  await foreignKey("project_action_runs", ["project_id", "rule_id"], "project_action_rules", [
+    "project_id",
+    "id",
+  ]);
+  await foreignKey("project_action_runs", ["project_id", "revision_id"], "project_wbs_revisions", [
+    "project_id",
+    "id",
+  ]);
+  await foreignKey("project_action_runs", ["project_id", "baseline_id"], "project_wbs_baselines", [
+    "project_id",
+    "id",
+  ]);
+
+  const deferredHeads = await pg.query(
+    `select conname,condeferrable,condeferred
+     from pg_constraint
+     where conname=any(array['project_wbs_head_fkey','project_wbs_proposal_head_fkey'])
+     order by conname`,
+  );
+  assert.deepEqual(deferredHeads.rows, [
+    { conname: "project_wbs_head_fkey", condeferrable: true, condeferred: true },
+    { conname: "project_wbs_proposal_head_fkey", condeferrable: true, condeferred: true },
+  ]);
+
+  const immutable = [
+    "project_action_commands",
+    "project_action_events",
+    "project_action_rule_versions",
+    "project_wbs_baselines",
+    "project_wbs_commands",
+    "project_wbs_governance_commands",
+    "project_wbs_policies",
+    "project_wbs_proposal_versions",
+    "project_wbs_reviews",
+    "project_wbs_revisions",
+  ];
+  const immutablePrivileges = await pg.query(
+    `select c.relname,
+      has_table_privilege('line_app',c.oid,'UPDATE') as can_update,
+      has_table_privilege('line_app',c.oid,'DELETE') as can_delete
+     from pg_class c join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private' and c.relname=any($1::text[])
+     order by c.relname`,
+    [immutable],
+  );
+  assert.deepEqual(
+    immutablePrivileges.rows,
+    immutable.map((relname) => ({ relname, can_update: false, can_delete: false })),
+  );
+
+  const outboxColumns = await pg.query(
+    `select column_name,has_column_privilege(
+       'line_app',format('app_private.%I',table_name),column_name,'UPDATE'
+     ) as can_update
+     from information_schema.columns
+     where table_schema='app_private' and table_name='project_wbs_outbox'
+     order by ordinal_position`,
+  );
+  assert.deepEqual(
+    outboxColumns.rows,
+    [
+      "id",
+      "event_no",
+      "project_id",
+      "baseline_id",
+      "revision_id",
+      "at",
+      "lease_token",
+      "lease_until",
+      "acknowledged_at",
+    ].map((column_name) => ({
+      column_name,
+      can_update: ["lease_token", "lease_until", "acknowledged_at"].includes(column_name),
+    })),
+  );
+});
+
+test("WBS scope transfer exposes only request intent and immutable cutover evidence", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+
+  const columns = await pg.query(
+    `select table_name,array_agg(column_name order by ordinal_position) as columns
+     from information_schema.columns
+     where table_schema='app_private'
+       and table_name=any(array['legacy_wbs_command_evidence','wbs_scope_transfers'])
+     group by table_name order by table_name`,
+  );
+  assert.deepEqual(columns.rows, [
+    {
+      table_name: "legacy_wbs_command_evidence",
+      columns: [
+        "actor_user_id",
+        "request_id",
+        "repository_id",
+        "fingerprint",
+        "revision_id",
+        "project_id",
+        "transfer_id",
+      ],
+    },
+    {
+      table_name: "wbs_scope_transfers",
+      columns: [
+        "id",
+        "repository_id",
+        "project_id",
+        "actor_user_id",
+        "request_id",
+        "state",
+        "source_version",
+        "source_head_revision_id",
+        "revision_count",
+        "command_count",
+        "source_hash",
+        "requested_at",
+        "activated_at",
+        "release_sha",
+        "cancelled_at",
+        "cancel_request_id",
+      ],
+    },
+  ]);
+
+  const privileges = await pg.query(
+    `select c.relname,c.relrowsecurity,
+      has_table_privilege('line_app',c.oid,'SELECT') as can_select,
+      has_table_privilege('line_app',c.oid,'INSERT') as can_insert,
+      has_table_privilege('line_app',c.oid,'UPDATE') as can_update,
+      has_table_privilege('line_app',c.oid,'DELETE') as can_delete
+     from pg_class c join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname='app_private'
+       and c.relname=any(array['legacy_wbs_command_evidence','wbs_scope_transfers'])
+     order by c.relname`,
+  );
+  assert.deepEqual(privileges.rows, [
+    {
+      relname: "legacy_wbs_command_evidence",
+      relrowsecurity: true,
+      can_select: true,
+      can_insert: false,
+      can_update: false,
+      can_delete: false,
+    },
+    {
+      relname: "wbs_scope_transfers",
+      relrowsecurity: true,
+      can_select: true,
+      can_insert: false,
+      can_update: false,
+      can_delete: false,
+    },
+  ]);
+
+  const transferInsertColumns = await pg.query(
+    `select column_name,has_column_privilege(
+       'line_app','app_private.wbs_scope_transfers',column_name,'INSERT'
+     ) as can_insert
+     from information_schema.columns
+     where table_schema='app_private' and table_name='wbs_scope_transfers'
+     order by ordinal_position`,
+  );
+  const requestColumns = new Set([
+    "id",
+    "repository_id",
+    "project_id",
+    "actor_user_id",
+    "request_id",
+    "source_version",
+    "source_head_revision_id",
+    "revision_count",
+    "command_count",
+    "source_hash",
+    "requested_at",
+  ]);
+  assert.deepEqual(
+    transferInsertColumns.rows,
+    [
+      "id",
+      "repository_id",
+      "project_id",
+      "actor_user_id",
+      "request_id",
+      "state",
+      "source_version",
+      "source_head_revision_id",
+      "revision_count",
+      "command_count",
+      "source_hash",
+      "requested_at",
+      "activated_at",
+      "release_sha",
+      "cancelled_at",
+      "cancel_request_id",
+    ].map((column_name) => ({ column_name, can_insert: requestColumns.has(column_name) })),
+  );
+
+  const transferUpdateColumns = await pg.query(
+    `select column_name,has_column_privilege(
+       'line_app','app_private.wbs_scope_transfers',column_name,'UPDATE'
+     ) as can_update
+     from information_schema.columns
+     where table_schema='app_private' and table_name='wbs_scope_transfers'
+     order by ordinal_position`,
+  );
+  const cancellationColumns = new Set(["state", "cancelled_at", "cancel_request_id"]);
+  assert.deepEqual(
+    transferUpdateColumns.rows,
+    [
+      "id",
+      "repository_id",
+      "project_id",
+      "actor_user_id",
+      "request_id",
+      "state",
+      "source_version",
+      "source_head_revision_id",
+      "revision_count",
+      "command_count",
+      "source_hash",
+      "requested_at",
+      "activated_at",
+      "release_sha",
+      "cancelled_at",
+      "cancel_request_id",
+    ].map((column_name) => ({ column_name, can_update: cancellationColumns.has(column_name) })),
+  );
+
+  const liveReservations = await pg.query(
+    `select c.relname as index_name,i.indisunique,pg_get_expr(i.indpred,i.indrelid) as predicate
+     from pg_index i join pg_class c on c.oid=i.indexrelid
+     where i.indrelid='app_private.wbs_scope_transfers'::regclass
+       and c.relname=any(array[
+         'wbs_scope_transfers_live_project',
+         'wbs_scope_transfers_live_repository'
+       ]) order by c.relname`,
+  );
+  assert.deepEqual(
+    liveReservations.rows.map((row) => ({
+      index_name: stringValue(record(row).index_name),
+      indisunique: booleanValue(record(row).indisunique),
+      liveOnly: /REQUESTED.*ACTIVE/.test(stringValue(record(row).predicate)),
+    })),
+    [
+      {
+        index_name: "wbs_scope_transfers_live_project",
+        indisunique: true,
+        liveOnly: true,
+      },
+      {
+        index_name: "wbs_scope_transfers_live_repository",
+        indisunique: true,
+        liveOnly: true,
+      },
+    ],
+  );
+
+  const transferSource = await pg.query(
+    `select c.condeferrable,c.condeferred
+     from pg_constraint c
+     where c.contype='f'
+       and c.conrelid='app_private.wbs_scope_transfers'::regclass
+       and c.confrelid='app_private.repository_wbs_revisions'::regclass
+       and (select array_agg(a.attname::text order by u.ordinality)
+            from unnest(c.conkey) with ordinality u(attnum,ordinality)
+            join pg_attribute a on a.attrelid=c.conrelid and a.attnum=u.attnum)
+         =array['repository_id','source_version','source_head_revision_id']
+       and (select array_agg(a.attname::text order by u.ordinality)
+            from unnest(c.confkey) with ordinality u(attnum,ordinality)
+            join pg_attribute a on a.attrelid=c.confrelid and a.attnum=u.attnum)
+         =array['repository_id','version','id']`,
+  );
+  assert.deepEqual(transferSource.rows, [{ condeferrable: false, condeferred: false }]);
+
+  const evidenceRevision = await pg.query(
+    `select count(*)::int as count
+     from pg_constraint c
+     where c.contype='f'
+       and c.conrelid='app_private.legacy_wbs_command_evidence'::regclass
+       and c.confrelid='app_private.project_wbs_revisions'::regclass
+       and (select array_agg(a.attname::text order by u.ordinality)
+            from unnest(c.conkey) with ordinality u(attnum,ordinality)
+            join pg_attribute a on a.attrelid=c.conrelid and a.attnum=u.attnum)
+         =array['project_id','revision_id']
+       and (select array_agg(a.attname::text order by u.ordinality)
+            from unnest(c.confkey) with ordinality u(attnum,ordinality)
+            join pg_attribute a on a.attrelid=c.confrelid and a.attnum=u.attnum)
+         =array['project_id','id']`,
+  );
+  assert.deepEqual(evidenceRevision.rows, [{ count: 1 }]);
+
+  const evidenceTransfer = await pg.query(
+    `select count(*)::int as count
+     from pg_constraint c
+     where c.contype='f'
+       and c.conrelid='app_private.legacy_wbs_command_evidence'::regclass
+       and c.confrelid='app_private.wbs_scope_transfers'::regclass
+       and (select array_agg(a.attname::text order by u.ordinality)
+            from unnest(c.conkey) with ordinality u(attnum,ordinality)
+            join pg_attribute a on a.attrelid=c.conrelid and a.attnum=u.attnum)
+         =array['transfer_id','repository_id','project_id']
+       and (select array_agg(a.attname::text order by u.ordinality)
+            from unnest(c.confkey) with ordinality u(attnum,ordinality)
+            join pg_attribute a on a.attrelid=c.confrelid and a.attnum=u.attnum)
+         =array['id','repository_id','project_id']`,
+  );
+  assert.deepEqual(evidenceTransfer.rows, [{ count: 1 }]);
+
+  const functionPrivileges = await pg.query(
+    `select p.proname,
+      has_function_privilege('line_app',p.oid,'EXECUTE') as runtime_execute,
+      has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute
+     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+     where n.nspname='app_private' and p.proname=any(array[
+       'reject_legacy_wbs_evidence_mutation',
+       'enforce_wbs_scope_transfer_cancel',
+       'wbs_scope_transfer_blocks_project',
+       'wbs_scope_transfer_blocks_repository'
+     ]) order by p.proname`,
+  );
+  assert.deepEqual(functionPrivileges.rows, [
+    {
+      proname: "enforce_wbs_scope_transfer_cancel",
+      runtime_execute: true,
+      anon_execute: false,
+      authenticated_execute: false,
+    },
+    {
+      proname: "reject_legacy_wbs_evidence_mutation",
+      runtime_execute: false,
+      anon_execute: false,
+      authenticated_execute: false,
+    },
+    {
+      proname: "wbs_scope_transfer_blocks_project",
+      runtime_execute: true,
+      anon_execute: false,
+      authenticated_execute: false,
+    },
+    {
+      proname: "wbs_scope_transfer_blocks_repository",
+      runtime_execute: true,
+      anon_execute: false,
+      authenticated_execute: false,
+    },
+  ]);
+
+  const fences = await pg.query(
+    `select tgname
+     from pg_trigger
+     where not tgisinternal and tgname=any(array[
+       'legacy_wbs_command_evidence_immutable',
+       'wbs_scope_transfer_cancel_only',
+       'project_wbs_commands_transfer_fence',
+       'project_wbs_revisions_transfer_fence',
+       'project_wbs_transfer_fence'
+     ]) order by tgname`,
+  );
+  assert.deepEqual(fences.rows, [
+    { tgname: "legacy_wbs_command_evidence_immutable" },
+    { tgname: "project_wbs_commands_transfer_fence" },
+    { tgname: "project_wbs_revisions_transfer_fence" },
+    { tgname: "project_wbs_transfer_fence" },
+    { tgname: "wbs_scope_transfer_cancel_only" },
+  ]);
+});
+
+test("WBS transfer cancellation releases only the live reservation without rewriting intent", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+  await pg.transaction(async (sql) => {
+    await sql.query('insert into app_private.users(id,status,"createdAt") values($1,$2,$3)', [
+      "transfer-owner",
+      "active",
+      1,
+    ]);
+    await sql.query("select app_private.claim_account_login($1,'USER',$2,$3)", [
+      "transfer-owner",
+      "transfer-owner",
+      1,
+    ]);
+  });
+  await pg.query("select * from app_private.provision_repository($1,$2,$3,'USER',$4,'public')", [
+    "transfer-repository",
+    "transfer-owner",
+    "transfer-owner",
+    "Transfer source",
+  ]);
+  await pg.query(
+    `insert into app_private.projects(
+       id,owner_account_id,owner_account_kind,number,creator,name,is_public,version,created_at,updated_at
+     ) values('transfer-project','transfer-owner','USER',null,'transfer-owner','Transfer target',false,1,1,1)`,
+  );
+  const sourceRevisionId = "10000000-0000-4000-8000-000000000001";
+  await pg.transaction(async (sql) => {
+    await sql.query("set constraints all deferred");
+    await sql.query(
+      "insert into app_private.repository_wbs(repository_id,version,head_revision_id) values($1,1,$2)",
+      ["transfer-repository", sourceRevisionId],
+    );
+    await sql.query(
+      `insert into app_private.repository_wbs_revisions(
+         id,repository_id,version,parent_revision_id,actor_user_id,action,document,at
+       ) values($1,$2,1,null,$3,'initialize',$4::jsonb,2)`,
+      [
+        sourceRevisionId,
+        "transfer-repository",
+        "transfer-owner",
+        JSON.stringify({ schemaVersion: 1, nodes: [] }),
+      ],
+    );
+  });
+
+  const firstTransferId = "20000000-0000-4000-8000-000000000002";
+  const secondTransferId = "30000000-0000-4000-8000-000000000003";
+  const insertIntent = (id: string, requestId: string) =>
+    pg.query(
+      `insert into app_private.wbs_scope_transfers(
+         id,repository_id,project_id,actor_user_id,request_id,source_version,
+         source_head_revision_id,revision_count,command_count,source_hash,requested_at
+       ) values($1,'transfer-repository','transfer-project','transfer-owner',$2,1,$3,1,1,$4,3)`,
+      [id, requestId, sourceRevisionId, "a".repeat(64)],
+    );
+
+  await pg.query("set role line_app");
+  try {
+    await insertIntent(firstTransferId, "40000000-0000-4000-8000-000000000004");
+    await assert.rejects(
+      pg.query("update app_private.wbs_scope_transfers set source_hash=$2 where id=$1", [
+        firstTransferId,
+        "b".repeat(64),
+      ]),
+    );
+    await assert.rejects(
+      pg.query("update app_private.wbs_scope_transfers set state='ACTIVE' where id=$1", [
+        firstTransferId,
+      ]),
+    );
+    await pg.query(
+      "update app_private.wbs_scope_transfers set state='CANCELLED',cancelled_at=4,cancel_request_id=$2 where id=$1",
+      [firstTransferId, "50000000-0000-4000-8000-000000000005"],
+    );
+    await insertIntent(secondTransferId, "60000000-0000-4000-8000-000000000006");
+  } finally {
+    await pg.query("reset role");
+  }
+
+  const intents = await pg.query(
+    `select id,state,source_hash,cancelled_at,cancel_request_id
+     from app_private.wbs_scope_transfers order by requested_at,id`,
+  );
+  assert.deepEqual(intents.rows, [
+    {
+      id: firstTransferId,
+      state: "CANCELLED",
+      source_hash: "a".repeat(64),
+      cancelled_at: 4,
+      cancel_request_id: "50000000-0000-4000-8000-000000000005",
+    },
+    {
+      id: secondTransferId,
+      state: "REQUESTED",
+      source_hash: "a".repeat(64),
+      cancelled_at: null,
+      cancel_request_id: null,
+    },
+  ]);
+
+  await pg.query(
+    "update app_private.wbs_scope_transfers set state='ACTIVE',activated_at=5,release_sha=$2 where id=$1",
+    [secondTransferId, "c".repeat(40)],
+  );
+  await pg.query("set role line_app");
+  try {
+    const attempted = await pg.query(
+      "update app_private.wbs_scope_transfers set state='CANCELLED',cancelled_at=6,cancel_request_id=$2 where id=$1 returning id",
+      [secondTransferId, "70000000-0000-4000-8000-000000000007"],
+    );
+    assert.deepEqual(attempted.rows, []);
+  } finally {
+    await pg.query("reset role");
+  }
+  const active = await pg.query(
+    "select state,activated_at,release_sha,cancelled_at,cancel_request_id from app_private.wbs_scope_transfers where id=$1",
+    [secondTransferId],
+  );
+  assert.deepEqual(active.rows, [
+    {
+      state: "ACTIVE",
+      activated_at: 5,
+      release_sha: "c".repeat(40),
+      cancelled_at: null,
+      cancel_request_id: null,
     },
   ]);
 });

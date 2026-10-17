@@ -82,7 +82,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
            AND ($2::uuid IS NULL OR id=$2::uuid)
            AND ($3::boolean IS FALSE OR read_at IS NULL)
            AND (
-             source_type NOT IN ('issue','discussion','wbs-baseline')
+             source_type NOT IN ('issue','discussion','wbs-baseline','project-wbs-baseline')
              OR EXISTS (
                SELECT 1
                FROM notification_repository_source_access access
@@ -90,6 +90,14 @@ export class PostgresNotificationRepository implements NotificationRepository {
                  AND access.source_id=notifications.source_id
                  AND (notifications.source_type<>'wbs-baseline' OR access.source_version=notifications.source_version)
                  AND (access.user_id=$1 OR access.user_id IS NULL)
+             )
+             OR EXISTS (
+               SELECT 1
+               FROM notification_project_source_access access
+               WHERE access.source_type=notifications.source_type
+                 AND access.source_id=notifications.source_id
+                 AND access.source_version=notifications.source_version
+                 AND access.user_id=$1
              )
            )
          ORDER BY created_at DESC,id
@@ -108,7 +116,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
          FROM notifications
          WHERE id=$1::uuid AND recipient=$2
            AND (
-             source_type NOT IN ('issue','discussion','wbs-baseline')
+             source_type NOT IN ('issue','discussion','wbs-baseline','project-wbs-baseline')
              OR EXISTS (
                SELECT 1
                FROM notification_repository_source_access access
@@ -116,6 +124,14 @@ export class PostgresNotificationRepository implements NotificationRepository {
                  AND access.source_id=notifications.source_id
                  AND (notifications.source_type<>'wbs-baseline' OR access.source_version=notifications.source_version)
                  AND (access.user_id=$2 OR access.user_id IS NULL)
+             )
+             OR EXISTS (
+               SELECT 1
+               FROM notification_project_source_access access
+               WHERE access.source_type=notifications.source_type
+                 AND access.source_id=notifications.source_id
+                 AND access.source_version=notifications.source_version
+                 AND access.user_id=$2
              )
            )
          FOR UPDATE`,
@@ -134,7 +150,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
          SET read_at=$3,version=version+1
          WHERE id=$1::uuid AND recipient=$2
            AND (
-             source_type NOT IN ('issue','discussion','wbs-baseline')
+             source_type NOT IN ('issue','discussion','wbs-baseline','project-wbs-baseline')
              OR EXISTS (
                SELECT 1
                FROM notification_repository_source_access access
@@ -142,6 +158,14 @@ export class PostgresNotificationRepository implements NotificationRepository {
                  AND access.source_id=notifications.source_id
                  AND (notifications.source_type<>'wbs-baseline' OR access.source_version=notifications.source_version)
                  AND (access.user_id=$2 OR access.user_id IS NULL)
+             )
+             OR EXISTS (
+               SELECT 1
+               FROM notification_project_source_access access
+               WHERE access.source_type=notifications.source_type
+                 AND access.source_id=notifications.source_id
+                 AND access.source_version=notifications.source_version
+                 AND access.user_id=$2
              )
            )
          RETURNING id,recipient,source_type,source_id,source_version,kind,title,body,created_at,read_at,version`,

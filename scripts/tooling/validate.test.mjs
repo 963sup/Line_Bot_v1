@@ -291,6 +291,58 @@ test("Vercel production adapter changes run the tooling-owned deployment tests",
   assert.equal(shouldRunFast("tooling:check", scope), true);
 });
 
+test("WBS operator changes run its canonical tooling test stage in full and fast validation", (t) => {
+  const scope = classifyChangedFiles(["scripts/wbs/transfer.mjs"]);
+  assert.deepEqual(scope, {
+    codeAffected: true,
+    docsAffected: false,
+    schemaAffected: false,
+    toolingAffected: true,
+  });
+  assert.equal(shouldRunFast("tooling:test", scope), true);
+
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-wbs-validation-command-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const preload = join(directory, "capture.mjs");
+  writeFileSync(
+    preload,
+    `
+    import childProcess from 'node:child_process';
+    import { syncBuiltinESMExports } from 'node:module';
+    childProcess.spawnSync = (_file, args) => {
+      console.log(JSON.stringify(args));
+      return { status: 0 };
+    };
+    syncBuiltinESMExports();
+  `,
+  );
+  const output = execFileSync(
+    process.execPath,
+    [
+      "--import",
+      pathToFileURL(preload).href,
+      fileURLToPath(new URL("./validate.mjs", import.meta.url)),
+      "--group",
+      "tooling",
+    ],
+    {
+      encoding: "utf8",
+      env: { ...process.env, npm_execpath: "fixture-pnpm.js" },
+    },
+  );
+  const calls = output
+    .split("\n")
+    .filter((line) => line.startsWith("["))
+    .map((line) => JSON.parse(line));
+  const toolingTests = calls.filter((call) => call.includes("scripts/wbs/transfer.test.mjs"));
+  assert.equal(toolingTests.length, 1);
+  assert.deepEqual(toolingTests[0], [
+    "--test",
+    "scripts/tooling/doctor.test.mjs",
+    "scripts/wbs/transfer.test.mjs",
+  ]);
+});
+
 test("architecture tooling changes also run tooling validation", () => {
   for (const file of [
     "scripts/architecture/check-architecture.mjs",

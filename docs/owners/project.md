@@ -15,9 +15,11 @@ Project owns:
 - persisted Project views and their visible-field configuration;
 - Project status updates, independent from Issue state/events;
 - replay-safe Project commands, aggregate version and immutable Project event evidence;
+- current Project `READ | WRITE | ADMIN` authorization and open/closed/deleted lifecycle decisions consumed by Project-scoped WBS and Actions;
 - references to Repository and Issue identities without acquiring either source owner's authority.
 
 Account remains authoritative for User/Organization identity. Organization and Team remain authoritative for their membership/qualification facts. Repository remains authoritative for Repository visibility/access. Issue remains authoritative for Issue content and lifecycle.
+WBS remains authoritative for Project-scoped WBS documents, immutable Revisions, governance and Baselines. Actions remains authoritative for fixed Project automation rules and Runs. A shared ProjectId and transaction do not transfer those facts to Project.
 
 ## Current runtime
 
@@ -33,6 +35,7 @@ Canonical capability `manage-project-planning` is implemented alongside `read-pr
 - Existing pre-parity rows without a number are adopted explicitly rather than silently reinterpreted.
 - User and Team collaborators are Project-owned grants. Current source qualification is rechecked; Project grants do not rewrite Account/Team authority.
 - Public Project visibility may grant read projection only. It never grants Project write authority or source Repository/Issue access.
+- The public Project content-scope output contract rechecks the current active User, locks the current Project, recomputes direct/Team/public access, returns `READ | WRITE | ADMIN`, and reports closed state. Soft-deleted or unauthorized Projects resolve as not found. It does not read or write WBS/Actions private tables.
 - Root writes require Project write/admin policy; collaborator administration and destructive root operations require the stronger management policy enforced by the Project owner runtime.
 - Every command carries a stable request UUID. Existing-project mutations require `expectedVersion`; exact replay and stale-version conflicts are handled inside one transaction.
 - Organization-owned ProjectV2 creation and owner-level management consume Organization's current product-local `viewerCanCreateProjectV2` / `viewerCanAdminister` capability contract. A creator allowed by the member creation capability receives a Project-owned `ADMIN` User grant in the same transaction, so the newly created private Project is immediately usable; an `OrganizationOwner` keeps implicit owner authority and is not copied into Project collaborator grants. The deprecated FPT `viewerCanCreateProjects` field refers to Projects (classic), not this authorization path, and no generic Permission value is created for this path.
@@ -82,9 +85,11 @@ Canonical capability `manage-project-planning` is implemented alongside `read-pr
 - Mutable title is presentation, not identity.
 - Owner login + Project number resolves the Project and then rechecks current Project access; knowing the URL never authorizes access.
 
-## Deferred adjacent planning facts
+## Project-scoped WBS and Actions
 
-Existing Project WBS and Project-local Milestone persistence remain separate planning concepts. This capability does not reinterpret them as Issue hierarchy or Repository Milestone, and no acceptance claim for #181–#188 depends on expanding those adjacent concepts.
+Project supplies the current authorization and lifecycle contract for Project-scoped WBS and fixed Actions. `READ` permits reads only. `WRITE` permits WBS draft edits, proposals and reviews. `ADMIN` is required for publication, policy changes and Project Actions management. A closed Project remains readable to an authorized viewer, permits exact replay of an already committed request, and rejects new writes. A deleted Project is not found.
+
+WBS owns the WBS document head, immutable Revision history, exact-replay receipts, policy, proposals, reviews, Baselines and publication outbox. Actions owns the two fixed automations and their immutable rule versions, accepted events, Runs, attempts and command receipts. Project-local Milestone remains a separate Project planning concept. Neither Project WBS nor Actions reinterprets ProjectItem, Issue hierarchy or Repository Milestone.
 
 ## Mapping
 
@@ -96,9 +101,13 @@ Canonical machine truth:
 [data topology](../../architecture/data-topology.json) ·
 [Project root schema](../../supabase/schemas/700_projects.sql) ·
 [Project Item/Draft schema](../../supabase/schemas/701_project_items.sql) ·
+[Project WBS schema](../../supabase/schemas/702_project_wbs.sql) ·
 [Project access schema](../../supabase/schemas/705_project_access.sql) ·
 [Project field schema](../../supabase/schemas/707_project_fields.sql) ·
 [Project view schema](../../supabase/schemas/708_project_views.sql) ·
-[Project status schema](../../supabase/schemas/709_project_status_updates.sql).
+[Project status schema](../../supabase/schemas/709_project_status_updates.sql) ·
+[Project WBS governance](../../supabase/schemas/710_project_wbs_governance.sql) ·
+[Project WBS outbox](../../supabase/schemas/711_project_wbs_outbox.sql) ·
+[Project Actions](../../supabase/schemas/712_project_actions.sql).
 
 Adjacent owners: [Account](account.md) · [Organization](organization.md) · [Team](team.md) · [Repository](repository.md) · [Issue](issue.md)

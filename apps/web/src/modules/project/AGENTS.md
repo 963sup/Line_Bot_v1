@@ -11,5 +11,8 @@
 - Project task progress is a Project-owned single-select field. Changing an Item field, archiving an Item or removing a Project Item never mutates its source Issue.
 - DraftIssue content remains local to the Project until the Project owner explicitly converts it through the existing conversion command.
 - Store an exact pending command only for retry/recovery; submit the same request ID after an unknown result and read back the authoritative Project view after success.
+- Project WBS presentation at `/projects/[projectId]/wbs` consumes `@line_bot_v1/wbs` through `/api/project-wbs`, history, governance and metrics transports. Project supplies current `READ | WRITE | ADMIN` access and open/closed/deleted lifecycle; WBS retains document, immutable Revision, governance, Baseline and metrics authority.
+- WBS reads require current `READ`. Draft edits, proposals and reviews require `WRITE | ADMIN`; policy changes and Baseline publication require `ADMIN`. A closed Project is read-only except for authorized exact replay, and a deleted or unauthorized Project is not found. Browser state never upgrades these decisions.
+- Draft content and the published Baseline remain separate. Metrics report current owner facts and do not create approval, acceptance or Project planning truth.
 
 Current transport map: [Web runtime routes](../../../../../docs/reference/runtime/routes.md). Package and data authority: [Project owner](../../../../../docs/owners/project.md).
