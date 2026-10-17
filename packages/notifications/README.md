@@ -11,6 +11,8 @@ Routing and module overview for `@line_bot_v1/notifications`.
 
 The current executable slice is recipient-scoped inbox reading and marking a notification read.
 
+Project WBS Baseline delivery is an owner capability: it accepts explicit recipients, binds exact Project/Baseline/Revision identity, and uses `notification_project_source_access` to recheck active User plus current Project READ. The projection is non-authoritative; WBS, Project, Account and Notifications retain their own facts. Repository WBS delivery remains during R1 transfer only.
+
 - [Notification Aggregate](src/domain/aggregates/notification.ts): first-read timestamp and replay-safe version transition.
 - [Use cases](src/application/use-cases/notifications.ts): qualification, input normalization, expected business results and published projection.
 - [Published DTO and Result](src/contracts/dto/notification.ts): explicit exchange fields, independent of the Aggregate representation.

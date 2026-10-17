@@ -36,6 +36,7 @@ import {
 import { canEditWbs, canReviewWbs } from "../../../domain/policies/access.js";
 import type { WbsBaseline, WbsProposal, WbsReview } from "../../../domain/scope-governance.js";
 import { isWbsReviewerEligible, summarizeWbsReviews } from "../../../domain/scope-governance.js";
+import { PostgresWbsScopeBoundary } from "./scope-boundary.js";
 
 function nullable(value: unknown) {
   return value === null ? null : stringValue(value);
@@ -246,6 +247,7 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
   ): Promise<WbsGovernanceView> {
     return this.db.transaction(async (sql) => {
       const { repository, archived } = await repositoryContentScope(sql, userId, selector);
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repository.id);
       const state = await root(sql, repository.id);
       const draft = (
         await sql.query("SELECT head_revision_id FROM repository_wbs WHERE repository_id=$1", [
@@ -381,6 +383,7 @@ export class PostgresWbsGovernanceStore implements WbsGovernanceStore {
       const { repository, archived } = await repositoryContentScope(sql, userId, {
         repositoryId: command.repositoryId,
       });
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repository.id);
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
         nextId: randomUUID,

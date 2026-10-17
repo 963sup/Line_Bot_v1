@@ -26,26 +26,33 @@
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| RepositoryWBS | repository-wbs | authoritative | current | Repository-scoped versioned scope document; separate from legacy Project-owned WBS. |
+| LegacyWBSCommandEvidence | legacy-wbs-command-evidence | authoritative | current | Immutable migrated request identity, fingerprint and Revision evidence used to preserve exact replay after WBS scope transfer. |
+| RepositoryWBS | repository-wbs | authoritative | current | Repository-scoped versioned scope document retained during R1 only for verified transfer into the Project-scoped WBS authority; it is not a permanent parallel model. |
+| WBS | wbs | authoritative | current | Project-scoped work breakdown structure whose document, immutable revisions and governance are WBS-owned while current access and lifecycle stay Project-owned. Project is not WBS. |
 | WBSBaseline | wbs-baseline | authoritative | current | Immutable published scope and counted approval evidence; not deliverable acceptance or GitHub Commit. |
 | WbsBaselineEvent | wbs-baseline-event | authoritative | current | Version-bound Baseline publication fact and transactional outbox acknowledgment. |
 | WBSChangeProposal | wbs-change-proposal | authoritative | current | Versioned local scope proposal binding an immutable candidate Revision and explicit base Baseline. |
 | WBSCommandReceipt | wbs-command-receipt | authoritative | current | Durable exact-replay identity referencing the committed WBS revision. |
-| WBSGovernance | wbs-governance | authoritative | current | Repository-WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version. |
+| WBSGovernance | wbs-governance | authoritative | current | WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version and scoped by its enclosing Project or R1 legacy Repository. |
 | WBSGovernancePolicy | wbs-governance-policy | authoritative | current | Immutable versioned approval policy, controlled by current Repository ADMIN. |
 | WBSGovernanceReceipt | wbs-governance-receipt | authoritative | current | Durable exact-replay result for an atomic WBS governance command. |
 | WBSProposalReview | wbs-proposal-review | authoritative | current | Append-only review binding exact proposal version, candidate Revision, policy version and reviewer identity. |
 | WBSProposalVersion | wbs-proposal-version | authoritative | current | Immutable proposal content and base snapshot selected by a proposal head; old reviews resolve their exact reviewed proposal version. |
 | WBSRevision | wbs-revision | authoritative | current | Immutable typed WBS scope snapshot with command-time actor and parent revision evidence. |
+| WBSScopeTransfer | wbs-scope-transfer | authoritative | current | One-way Repository-to-Project WBS cutover intent and activation evidence binding exact source history, target scope and trusted release context. A live REQUESTED intent may be withdrawn by the current source User owner into immutable CANCELLED evidence with exact replay, allowing a corrected request without weakening an ACTIVE cutover. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | govern-repository-wbs | required | implemented | Propose frozen WBS scope, review exact candidate and policy versions, and atomically publish immutable Baselines without overwriting drafts; recheck current reviewer authority. |
+| manage-project-wbs | required | implemented | Manage Project-scoped WBS content, immutable Revision history, governance, Baselines and publication events through current Project access and lifecycle. |
 | manage-repository-wbs | required | implemented | Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning. |
+| publish-project-wbs-baseline-events | required | implemented | Atomically enqueue Project-scoped version-bound Baseline events and expose leased claim/acknowledge. |
 | publish-wbs-baseline-events | required | implemented | Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge. |
+| read-project-wbs-metrics | required | implemented | Read authorized WBS-owned Project metrics through current Project access without transferring source authority to a consumer. |
 | read-wbs-metrics | required | implemented | Read authorized wbs-owned Repository metrics without transferring source or authorization authority to Insights. |
+| transfer-repository-wbs-to-project | required | implemented | Move one eligible Repository WBS into an empty Project scope exactly once while preserving immutable history and command replay evidence. |
 
 ## Context Relationships
 
@@ -53,8 +60,10 @@
 | --- | --- | --- | --- | --- | --- |
 | provides | actions | event | wbs | durable-event-replay | WBS publishes version-bound outbox events; Actions accepts once before acknowledge. |
 | provides | insights | query | wbs | current-state | Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider. |
-| provides | notifications | reference | wbs | current-source-access | Inbox creation/read/mark-read and dispatch reference an exact WBS Baseline and Revision. |
-| consumes | repository | stable-identity+query | repository | transaction-recheck | Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned. |
+| provides | notifications | reference | wbs | current-source-access | Project WBS notification creation, Inbox read/mark-read and dispatch bind an exact Baseline and Revision, require an active recipient with current Project READ, and use explicit recipients without Watch. |
+| provides | notifications | reference | wbs | current-source-access | During R1 transfer, Inbox creation/read/mark-read and dispatch reference an exact Repository WBS Baseline and Revision. |
+| consumes | project | stable-identity+query | project | transaction-recheck | Project-scoped WBS consumes the Project public content-scope contract for current READ/WRITE/ADMIN access and open/closed/deleted lifecycle; Account-owned active-User qualification remains a prerequisite and WBS retains document, Revision, governance and Baseline authority. |
+| consumes | repository | stable-identity+query | repository | transaction-recheck | During R1 transfer, Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned and this path is not a permanent parallel WBS model. |
 
 ## Tactical Model Boundary
 

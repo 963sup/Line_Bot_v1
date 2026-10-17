@@ -140,6 +140,12 @@ await context.route("**/*", async (route) => {
   if (!url.pathname.startsWith("/api/")) return route.continue();
   if (url.pathname === "/api/auth")
     return route.fulfill({ json: { generation, sessionChanged: false } });
+  if (url.pathname === "/api/repository-wbs/transfer") {
+    assert.equal(request.method(), "GET");
+    assert.equal(request.headers()["x-app-session-generation"], generation);
+    assert.equal(url.searchParams.get("repositoryId"), "repo");
+    return route.fulfill({ json: null });
+  }
   if (url.pathname === "/api/repository-wiki") {
     assert.equal(request.headers()["x-app-session-generation"], generation);
     try {

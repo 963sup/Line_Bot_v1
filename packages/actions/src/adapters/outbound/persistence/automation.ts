@@ -3,6 +3,7 @@ import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
+import { createPostgresWbsScopeBoundary } from "@line_bot_v1/wbs/composition/bootstrap/scope-boundary";
 import type {
   WbsBaselineEvent,
   WbsBaselineEvents,
@@ -17,6 +18,7 @@ import { rule, run } from "./decode.js";
 
 async function scope(sql: Sql, userId: string, repositoryId: string) {
   const access = await repositoryContentScope(sql, userId, { repositoryId });
+  await createPostgresWbsScopeBoundary(sql).repositoryAvailable(repositoryId);
   const qualification = await readActiveUserQualification(sql, userId, "share");
   if (!qualification) throw new ActionsError(403, "委派資格不可用。");
   return {
@@ -187,6 +189,7 @@ export class PostgresActionPersistence implements ActionTransactions, ActionRunQ
     ) => Promise<void>,
   ) {
     return this.db.transaction(async (sql) => {
+      if (!(await createPostgresWbsScopeBoundary(sql).legacyQueueAvailable())) return;
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`action-event:${event.id}`]);
       // Freeze the complete fan-out at first acceptance, including the empty-rule case.
       if ((await sql.query("SELECT id FROM action_events WHERE id=$1", [event.id])).rows.length)
@@ -205,6 +208,7 @@ export class PostgresActionPersistence implements ActionTransactions, ActionRunQ
   }
   claim(now: number) {
     return this.db.transaction(async (sql) => {
+      if (!(await createPostgresWbsScopeBoundary(sql).legacyQueueAvailable())) return null;
       const token = randomUUID();
       const row = (
         await sql.query(
@@ -229,6 +233,7 @@ export class PostgresActionPersistence implements ActionTransactions, ActionRunQ
   }
   inspect(lease: ActionLease, now: number) {
     return this.db.transaction(async (sql) => {
+      if (!(await createPostgresWbsScopeBoundary(sql).legacyQueueAvailable())) return null;
       // Use the universal qualification -> governance -> Repository -> aggregate order.
       let currentScope: Awaited<ReturnType<typeof scope>> | null = null;
       try {
@@ -260,6 +265,7 @@ export class PostgresActionPersistence implements ActionTransactions, ActionRunQ
   }
   finish(lease: ActionLease, now: number, work: (run: ActionRun) => ActionRun) {
     return this.db.transaction(async (sql) => {
+      if (!(await createPostgresWbsScopeBoundary(sql).legacyQueueAvailable())) return false;
       const current = (
         await sql.query(
           "SELECT * FROM action_runs WHERE id=$1 AND lease_token=$2 AND lease_until>$3 AND status='running' FOR UPDATE",

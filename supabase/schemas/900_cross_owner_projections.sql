@@ -322,6 +322,80 @@ join app_private.repository_visibility_access visibility
   on visibility.repository_id=ref.repository_id;
 
 
+-- Project exposes one current effective role per active User without copying collaborator,
+-- Organization-owner or Team-membership authority into Notifications/WBS consumers.
+create view app_private.project_visibility_access
+with (security_invoker = true)
+as
+with candidate_roles(project_id, user_id, role, role_rank) as (
+  select p.id, u.id, 'READ'::text, 1
+  from app_private.projects p
+  join app_private.users u on u.status='active'
+  where p.is_public and p.deleted_at is null
+
+  union all
+
+  select p.id, owner_user.id, 'ADMIN'::text, 3
+  from app_private.projects p
+  join app_private.users owner_user
+    on owner_user.id=p.owner_account_id and owner_user.status='active'
+  where p.owner_account_kind='USER' and p.deleted_at is null
+
+  union all
+
+  select p.id, owner_role.user_id, 'ADMIN'::text, 3
+  from app_private.projects p
+  join app_private.organizations o
+    on o.account_id=p.owner_account_id and o.status='active'
+  join app_private.organization_memberships membership
+    on membership.organization_account_id=o.account_id and membership.status='active'
+  join app_private.organization_role_assignments owner_role
+    on owner_role.organization_account_id=o.account_id
+      and owner_role.user_id=membership.user_id
+      and owner_role.role='OrganizationOwner'
+      and owner_role.status='active'
+      and owner_role.membership_version=membership.version
+  join app_private.users owner_user
+    on owner_user.id=owner_role.user_id
+      and owner_user.status='active'
+      and owner_user.status_version=owner_role.user_status_version
+  where p.owner_account_kind='ORGANIZATION' and p.deleted_at is null
+
+  union all
+
+  select
+    access.project_id,
+    access.user_id,
+    access.role,
+    case access.role when 'ADMIN' then 3 when 'WRITE' then 2 else 1 end
+  from app_private.project_user_access access
+  join app_private.projects p on p.id=access.project_id and p.deleted_at is null
+  join app_private.users recipient on recipient.id=access.user_id and recipient.status='active'
+
+  union all
+
+  select
+    access.project_id,
+    membership.user_id,
+    access.role,
+    case access.role when 'ADMIN' then 3 when 'WRITE' then 2 else 1 end
+  from app_private.project_team_access access
+  join app_private.projects p on p.id=access.project_id and p.deleted_at is null
+  join app_private.team_effective_memberships membership on membership.team_id=access.team_id
+  join app_private.users recipient
+    on recipient.id=membership.user_id and recipient.status='active'
+), effective_roles as (
+  select project_id, user_id, max(role_rank) as role_rank
+  from candidate_roles
+  group by project_id, user_id
+)
+select
+  project_id,
+  user_id,
+  case role_rank when 3 then 'ADMIN' when 2 then 'WRITE' else 'READ' end as role
+from effective_roles;
+
+
 -- Notifications references Issue/Discussion source facts but must recheck the source
 -- Repository's current read visibility for the recipient. NULL user_id represents PUBLIC.
 create view app_private.notification_repository_source_access
@@ -354,7 +428,23 @@ select distinct 'wbs-baseline'::text, baseline.id::text, recipient.id,
 from app_private.repository_wbs_baselines baseline
 join app_private.repository_visibility_access visibility on visibility.repository_id=baseline.repository_id
 join app_private.users recipient on recipient.status='active'
-  and (visibility.user_id=recipient.id or visibility.user_id is null);
+  and (visibility.user_id=recipient.id or visibility.user_id is null)
+where not app_private.wbs_scope_transfer_blocks_repository(baseline.repository_id);
+
+
+-- Project WBS notifications bind the immutable Baseline and Revision identity to the current
+-- Project read decision. Closed Projects remain readable; deleted Projects contribute no rows.
+create view app_private.notification_project_source_access
+with (security_invoker = true)
+as
+select distinct
+  'project-wbs-baseline'::text as source_type,
+  baseline.id::text as source_id,
+  baseline.revision_id::text as source_version,
+  baseline.project_id,
+  access.user_id
+from app_private.project_wbs_baselines baseline
+join app_private.project_visibility_access access on access.project_id=baseline.project_id;
 
 
 -- Organization collaborator affiliation is a rebuildable projection over Repository-owned direct

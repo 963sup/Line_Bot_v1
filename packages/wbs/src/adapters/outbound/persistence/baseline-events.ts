@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { numericValue, stringValue } from "@line_bot_v1/platform/validation";
-import type { WbsBaselineEvents } from "../../../contracts/output/baseline-events.js";
+import type {
+  WbsBaselineEvent,
+  WbsBaselineEvents,
+} from "../../../contracts/output/baseline-events.js";
+import { PostgresWbsScopeBoundary } from "./scope-boundary.js";
 
 /** Called under the Repository lock when a rule enables its future-event delegation. */
 async function wbsEventCursor(sql: Sql, repositoryId: string) {
@@ -17,10 +21,14 @@ async function wbsEventCursor(sql: Sql, repositoryId: string) {
 export class PostgresWbsBaselineEvents implements WbsBaselineEvents {
   constructor(private db: Database) {}
   cursor(repositoryId: string) {
-    return this.db.transaction((sql) => wbsEventCursor(sql, repositoryId));
+    return this.db.transaction(async (sql) => {
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repositoryId);
+      return wbsEventCursor(sql, repositoryId);
+    });
   }
   claim(now: number) {
     return this.db.transaction(async (sql) => {
+      if (!(await new PostgresWbsScopeBoundary(sql).legacyQueueAvailable())) return null;
       const token = randomUUID();
       return (
         (
@@ -44,15 +52,17 @@ export class PostgresWbsBaselineEvents implements WbsBaselineEvents {
       );
     });
   }
-  acknowledge(event: { id: string; leaseToken: string }, now: number) {
-    return this.db.transaction(
-      async (sql) =>
+  acknowledge(event: WbsBaselineEvent, now: number) {
+    return this.db.transaction(async (sql) => {
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(event.repositoryId);
+      return (
         (
           await sql.query(
             "UPDATE repository_wbs_outbox SET acknowledged_at=$3,lease_token=NULL,lease_until=NULL WHERE id=$1 AND lease_token=$2 AND lease_until>$3 AND acknowledged_at IS NULL RETURNING id",
             [event.id, event.leaseToken, now],
           )
-        ).rows.length === 1,
-    );
+        ).rows.length === 1
+      );
+    });
   }
 }

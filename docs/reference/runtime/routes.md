@@ -34,6 +34,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/partners`, `/partners/news`, `/partners/referrals` | Partners directory / news / referral surfaces |
 | `/projects` | Authorized Project collection；可建立 Personal/Organization Project 並進入 Project detail；Project-owned User/Team collaborator grants 與 public read projection 都由 Project owner重驗，來源 Repository/Issue 仍逐項重驗 access；planning write management 由 `/api/project-management` 承接 |
 | `/projects/new`、`/projects/{projectId}` | Project create/detail presentation；detail 由 Project `ADMIN` 管理設定與協作者、由 `WRITE`/`ADMIN` 維護 Project-local DraftIssue 與 progress 欄位，命令使用 owner current role、expected version 與 replay contract；不改寫來源 Issue |
+| `/projects/{projectId}/wbs` | Project-scoped WBS 編輯、不可變歷史、提案與審查；WRITE 可審查，ADMIN 才能發布 Baseline。Project 身分只定位，讀寫均重驗目前 Project access |
 | `/repositories`, `/explore` | Repository collection/workbench、Trending / Awesome Lists / Activity discovery + Star surface |
 | `/stars` | Current User 已 Star 且目前仍可存取的 Repository；使用既有 Repository Star query，Home Favorites 為相同 query 的摘要入口 |
 | `/issues` | Repository 選擇入口，進入 `/{login}/{repository}/issues`；目前不是跨 Repository Issue aggregate |
@@ -95,8 +96,11 @@ Current Repository-scoped collaboration/resource API：
 | `/api/projects/by-number/{projectNumber}` | owner-scoped canonical Project number lookup；owner login + number 只定位，仍重新驗 current Project access |
 | `/api/project-management` | Project current planning management；root lifecycle、User/Team collaborator、Item/DraftIssue、typed fields/values、views、status updates 都保留 expectedVersion/exact replay 與 immutable Project events |
 | `/api/project-management/users` | Project-scoped User lookup；exact login candidate 僅供 current Project ADMIN 邀請，label lookup 只接受 snapshot 中已可見的 User IDs |
+| `/api/project-wbs`、`/api/project-wbs/history` | Project WBS content commands 與 immutable Revision history；projectId、獨立 content version 與 exact request replay |
+| `/api/project-wbs/governance`、`/api/project-wbs/metrics` | Project WBS 提案、版本綁定審查、Baseline 與目前指標；所有來源讀取重驗 Project access |
+| `/api/repository-wbs/transfer`、`/api/repository-wbs/transfer/cancel` | R1 Source User owner 讀取目前 intent、提交精確 source/head/target 請求或以獨立 requestId 撤回 REQUESTED；保留快照與 CANCELLED 回執，資料移轉由 Release-only operator 執行 |
 
-Discussion read 與 current management write 都由 Discussion owner 承接；read locator 不授權，write 仍逐次重驗 Repository access、version 與 replay。Project aggregate-root read 與 `manage-project-planning` 都已 current；Project-owned collaborator、Item/DraftIssue、typed fields/values、views、status updates 是正式 runtime capability，來源 Repository/Issue authority 不轉移。Project WBS 與 Project-local Milestone 保持相鄰 planning persistence，不因這些 current capability 被重新解讀。
+Discussion read 與 current management write 都由 Discussion owner 承接；read locator 不授權，write 仍逐次重驗 Repository access、version 與 replay。Project aggregate-root read 與 `manage-project-planning` 都已 current；Project-owned collaborator、Item/DraftIssue、typed fields/values、views、status updates 是正式 runtime capability，來源 Repository/Issue authority 不轉移。Project WBS 由 WBS Owner 管理內容與治理，Project 提供目前授權與生命週期；Project-local Milestone 仍是獨立 planning persistence。
 
 ## Same-page view state
 

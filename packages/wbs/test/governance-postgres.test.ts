@@ -110,7 +110,10 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
   }));
   // Hold the real row lock until both independent pool sessions are waiting on it.
   const blocker = await pool.connect();
-  await blocker.query("BEGIN;SELECT 1 FROM app_private.repositories WHERE id='repo' FOR UPDATE");
+  await blocker.query("BEGIN");
+  const blockerPid = Number((await blocker.query("SELECT pg_backend_pid() AS pid")).rows[0]?.pid);
+  assert.ok(Number.isSafeInteger(blockerPid));
+  await blocker.query("SELECT 1 FROM app_private.repositories WHERE id='repo' FOR UPDATE");
   const competing = commands.map((command) =>
     executeWbsGovernanceCommand(governance, "owner", command, 5),
   );
@@ -120,7 +123,23 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
       waiting = Number(
         (
           await pool.query(
-            "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT is_archived FROM repositories%'",
+            `WITH RECURSIVE blocking_chain(waiter_pid, blocker_pid) AS (
+               SELECT activity.pid, blocker.pid
+               FROM pg_stat_activity activity
+               CROSS JOIN LATERAL unnest(pg_blocking_pids(activity.pid)) AS blocker(pid)
+               WHERE activity.datname=current_database()
+                 AND activity.wait_event_type='Lock'
+                 AND position('FROM repositories' IN activity.query)>0
+                 AND position('FOR UPDATE' IN activity.query)>0
+               UNION
+               SELECT chain.waiter_pid, blocker.pid
+               FROM blocking_chain chain
+               CROSS JOIN LATERAL unnest(pg_blocking_pids(chain.blocker_pid)) AS blocker(pid)
+             )
+             SELECT count(DISTINCT waiter_pid)
+             FROM blocking_chain
+             WHERE blocker_pid=$1::integer`,
+            [blockerPid],
           )
         ).rows[0]?.count,
       );

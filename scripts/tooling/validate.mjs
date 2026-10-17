@@ -88,6 +88,7 @@ export function classifyChangedFiles(files) {
       file.startsWith("scripts/architecture/") ||
       file.startsWith("scripts/vercel/") ||
       file.startsWith("scripts/github/") ||
+      file.startsWith("scripts/wbs/") ||
       file.startsWith("architecture/") ||
       file === ".dependency-cruiser.mjs" ||
       [
@@ -230,7 +231,10 @@ function main() {
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
     ],
     ["tooling:check", ["scripts/tooling/check-tooling.mjs"]],
-    ["tooling:test", ["--test", "scripts/tooling/doctor.test.mjs"]],
+    [
+      "tooling:test",
+      ["--test", "scripts/tooling/doctor.test.mjs", "scripts/wbs/transfer.test.mjs"],
+    ],
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
     ["lint", [biome, "check", "."]],

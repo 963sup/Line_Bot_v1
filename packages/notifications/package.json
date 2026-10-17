@@ -47,6 +47,26 @@
     "./composition/bootstrap/baseline-delivery": {
       "types": "./dist/composition/bootstrap/baseline-delivery.d.ts",
       "default": "./dist/composition/bootstrap/baseline-delivery.js"
+    },
+    "./application/use-cases/project-baseline-delivery": {
+      "types": "./dist/application/use-cases/project-baseline-delivery.d.ts",
+      "default": "./dist/application/use-cases/project-baseline-delivery.js"
+    },
+    "./contracts/output/project-baseline-delivery": {
+      "types": "./dist/contracts/output/project-baseline-delivery.d.ts",
+      "default": "./dist/contracts/output/project-baseline-delivery.js"
+    },
+    "./contracts/repositories/project-baseline-delivery": {
+      "types": "./dist/contracts/repositories/project-baseline-delivery.d.ts",
+      "default": "./dist/contracts/repositories/project-baseline-delivery.js"
+    },
+    "./composition/bootstrap/project-baseline-delivery": {
+      "types": "./dist/composition/bootstrap/project-baseline-delivery.d.ts",
+      "default": "./dist/composition/bootstrap/project-baseline-delivery.js"
+    },
+    "./composition/bootstrap/transfer-facts": {
+      "types": "./dist/composition/bootstrap/transfer-facts.d.ts",
+      "default": "./dist/composition/bootstrap/transfer-facts.js"
     }
   },
   "files": [
