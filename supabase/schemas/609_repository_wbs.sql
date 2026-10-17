@@ -1,3 +1,48 @@
+-- Any ACTIVE transfer retires the legacy Repository WBS authority globally.
+-- to_regclass keeps the earlier owner schema loadable before 713 creates transfer intent storage.
+create or replace function app_private.wbs_scope_transfer_blocks_repository(p_repository_id text)
+returns boolean
+language plpgsql
+security invoker
+set search_path to 'pg_catalog'
+as $function$
+declare
+  blocked boolean := false;
+begin
+  perform app_private.lock_governance('shared');
+  if to_regclass('app_private.wbs_scope_transfers') is null then
+    return false;
+  end if;
+  execute
+    'select exists(select 1 from app_private.wbs_scope_transfers where state=''ACTIVE'')'
+    into blocked;
+  return blocked;
+end
+$function$;
+revoke all on function app_private.wbs_scope_transfer_blocks_repository(text)
+  from public,anon,authenticated,line_app;
+grant execute on function app_private.wbs_scope_transfer_blocks_repository(text) to line_app;
+
+create or replace function app_private.reject_active_repository_wbs_write()
+returns trigger
+language plpgsql
+security invoker
+set search_path to 'pg_catalog'
+as $function$
+declare
+  source_repository_id text := coalesce(new.repository_id,old.repository_id);
+begin
+  if current_user='line_app'
+     and app_private.wbs_scope_transfer_blocks_repository(source_repository_id) then
+    raise exception 'repository_wbs_transferred' using errcode='55000';
+  end if;
+  return coalesce(new,old);
+end
+$function$;
+revoke all on function app_private.reject_active_repository_wbs_write()
+  from public,anon,authenticated,line_app;
+grant execute on function app_private.reject_active_repository_wbs_write() to line_app;
+
 -- Repository-WBS content is separate from legacy Project-owned decomposition.
 create table app_private.repository_wbs (
   repository_id text primary key references app_private.repositories(id),
@@ -37,11 +82,30 @@ alter table app_private.repository_wbs_commands enable row level security;
 revoke all on app_private.repository_wbs, app_private.repository_wbs_revisions, app_private.repository_wbs_commands from public, anon, authenticated, line_app;
 grant select,insert,update on app_private.repository_wbs to line_app;
 grant select,insert on app_private.repository_wbs_revisions, app_private.repository_wbs_commands to line_app;
-create policy backend on app_private.repository_wbs for all to line_app using(true) with check(true);
-create policy backend_read on app_private.repository_wbs_revisions for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_revisions for insert to line_app with check(true);
-create policy backend_read on app_private.repository_wbs_commands for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_commands for insert to line_app with check(true);
+create policy backend_read on app_private.repository_wbs for select to line_app
+  using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs for insert to line_app
+  with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_update on app_private.repository_wbs for update to line_app
+  using(not app_private.wbs_scope_transfer_blocks_repository(repository_id))
+  with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_revisions for select to line_app
+  using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_revisions for insert to line_app
+  with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_commands for select to line_app
+  using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_commands for insert to line_app
+  with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create trigger repository_wbs_transfer_fence before insert or update or delete
+  on app_private.repository_wbs for each row
+  execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_revisions_transfer_fence before insert or update or delete
+  on app_private.repository_wbs_revisions for each row
+  execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_commands_transfer_fence before insert or update or delete
+  on app_private.repository_wbs_commands for each row
+  execute function app_private.reject_active_repository_wbs_write();
 
 -- Scope governance has its own version; content Revision numbers never change for reviews.
 create table app_private.repository_wbs_policies (
@@ -146,15 +210,27 @@ alter table app_private.repository_wbs_governance_commands enable row level secu
 revoke all on app_private.repository_wbs_policies,app_private.repository_wbs_governance,app_private.repository_wbs_proposals,app_private.repository_wbs_proposal_versions,app_private.repository_wbs_reviews,app_private.repository_wbs_baselines,app_private.repository_wbs_governance_commands from public,anon,authenticated,line_app;
 grant select,insert,update on app_private.repository_wbs_governance,app_private.repository_wbs_proposals to line_app;
 grant select,insert on app_private.repository_wbs_policies,app_private.repository_wbs_proposal_versions,app_private.repository_wbs_reviews,app_private.repository_wbs_baselines,app_private.repository_wbs_governance_commands to line_app;
-create policy backend on app_private.repository_wbs_governance for all to line_app using(true) with check(true);
-create policy backend on app_private.repository_wbs_proposals for all to line_app using(true) with check(true);
-create policy backend_read on app_private.repository_wbs_proposal_versions for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_proposal_versions for insert to line_app with check(true);
-create policy backend_read on app_private.repository_wbs_policies for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_policies for insert to line_app with check(true);
-create policy backend_read on app_private.repository_wbs_reviews for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_reviews for insert to line_app with check(true);
-create policy backend_read on app_private.repository_wbs_baselines for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_baselines for insert to line_app with check(true);
-create policy backend_read on app_private.repository_wbs_governance_commands for select to line_app using(true);
-create policy backend_insert on app_private.repository_wbs_governance_commands for insert to line_app with check(true);
+create policy backend_read on app_private.repository_wbs_governance for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_governance for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_update on app_private.repository_wbs_governance for update to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id)) with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_proposals for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_proposals for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_update on app_private.repository_wbs_proposals for update to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id)) with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_proposal_versions for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_proposal_versions for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_policies for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_policies for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_reviews for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_reviews for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_baselines for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_baselines for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_read on app_private.repository_wbs_governance_commands for select to line_app using(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+create policy backend_insert on app_private.repository_wbs_governance_commands for insert to line_app with check(not app_private.wbs_scope_transfer_blocks_repository(repository_id));
+
+create trigger repository_wbs_policies_transfer_fence before insert or update or delete on app_private.repository_wbs_policies for each row execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_governance_transfer_fence before insert or update or delete on app_private.repository_wbs_governance for each row execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_proposals_transfer_fence before insert or update or delete on app_private.repository_wbs_proposals for each row execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_proposal_versions_transfer_fence before insert or update or delete on app_private.repository_wbs_proposal_versions for each row execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_reviews_transfer_fence before insert or update or delete on app_private.repository_wbs_reviews for each row execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_baselines_transfer_fence before insert or update or delete on app_private.repository_wbs_baselines for each row execute function app_private.reject_active_repository_wbs_write();
+create trigger repository_wbs_governance_commands_transfer_fence before insert or update or delete on app_private.repository_wbs_governance_commands for each row execute function app_private.reject_active_repository_wbs_write();

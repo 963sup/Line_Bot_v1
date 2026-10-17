@@ -1084,9 +1084,9 @@
       "id": "wbs",
       "canonicalName": "WBS",
       "kind": "authoritative",
-      "owner": "project",
-      "lifecycle": "current-data-only",
-      "definition": "Project-owned work breakdown structure. Project is not WBS.",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Project-scoped work breakdown structure whose document, immutable revisions and governance are WBS-owned while current access and lifecycle stay Project-owned. Project is not WBS.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1480,7 +1480,7 @@
       "kind": "authoritative",
       "owner": "wbs",
       "lifecycle": "current",
-      "definition": "Repository-scoped versioned scope document; separate from legacy Project-owned WBS.",
+      "definition": "Repository-scoped versioned scope document retained during R1 only for verified transfer into the Project-scoped WBS authority; it is not a permanent parallel model.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1510,7 +1510,7 @@
       "kind": "authoritative",
       "owner": "wbs",
       "lifecycle": "current",
-      "definition": "Repository-WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version.",
+      "definition": "WBS governance version, current immutable policy and published Baseline pointers; separate from draft content version and scoped by its enclosing Project or R1 legacy Repository.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1575,6 +1575,26 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "wbs-scope-transfer",
+      "canonicalName": "WBSScopeTransfer",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "One-way Repository-to-Project WBS cutover intent and activation evidence binding exact source history, target scope and trusted release context. A live REQUESTED intent may be withdrawn by the current source User owner into immutable CANCELLED evidence with exact replay, allowing a corrected request without weakening an ACTIVE cutover.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "legacy-wbs-command-evidence",
+      "canonicalName": "LegacyWBSCommandEvidence",
+      "kind": "authoritative",
+      "owner": "wbs",
+      "lifecycle": "current",
+      "definition": "Immutable migrated request identity, fingerprint and Revision evidence used to preserve exact replay after WBS scope transfer.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "wiki-page",
       "canonicalName": "WikiPage",
       "kind": "authoritative",
@@ -1621,7 +1641,7 @@
       "kind": "authoritative",
       "owner": "actions",
       "lifecycle": "current",
-      "definition": "Versioned fixed business automation definition with explicit recipients and revocable current delegation.",
+      "definition": "Versioned fixed Project business automation definition with explicit recipients and revocable current delegation; the Repository form is retained only during R1 transfer.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1631,7 +1651,7 @@
       "kind": "authoritative",
       "owner": "actions",
       "lifecycle": "current",
-      "definition": "Source-version-bound automation execution with immutable rule snapshot and durable progress.",
+      "definition": "Project-WBS source-version-bound automation execution with immutable rule snapshot and durable progress; the Repository form is retained only during R1 transfer.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -2260,12 +2280,38 @@
       "to": "repository",
       "kind": "reference",
       "owner": "wbs",
-      "meaning": "Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned.",
+      "meaning": "During R1 transfer, Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned and this path is not a permanent parallel WBS model.",
       "provider": "repository",
       "consumer": "wbs",
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck"
+    },
+    {
+      "id": "wbs-project-scope",
+      "from": "wbs",
+      "to": "project",
+      "kind": "reference",
+      "owner": "wbs",
+      "meaning": "Project-scoped WBS consumes the Project public content-scope contract for current READ/WRITE/ADMIN access and open/closed/deleted lifecycle; Account-owned active-User qualification remains a prerequisite and WBS retains document, Revision, governance and Baseline authority.",
+      "provider": "project",
+      "consumer": "wbs",
+      "integrationMode": "stable-identity+query",
+      "authority": "project",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "actions-project-scope",
+      "from": "action-rule",
+      "to": "project",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "project",
+      "consumer": "actions",
+      "integrationMode": "stable-identity+query",
+      "authority": "project",
+      "consistency": "transaction-recheck",
+      "meaning": "Project Actions management and every worker step consume current Project ADMIN and open lifecycle through the Project public scope contract; Actions retains rule and Run authority."
     },
     {
       "id": "wiki-repository-scope",
@@ -2330,7 +2376,7 @@
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck",
-      "meaning": "Current Repository access, archive and maintain/admin authority gate automation commands and each fixed step."
+      "meaning": "During R1 transfer, current Repository access, archive and maintain/admin authority gate legacy automation commands and each fixed step; this is not the final Project Actions scope contract."
     },
     {
       "id": "actions-delegation",
@@ -2408,7 +2454,20 @@
       "integrationMode": "reference",
       "authority": "wbs",
       "consistency": "current-source-access",
-      "meaning": "Inbox creation/read/mark-read and dispatch reference an exact WBS Baseline and Revision."
+      "meaning": "During R1 transfer, Inbox creation/read/mark-read and dispatch reference an exact Repository WBS Baseline and Revision."
+    },
+    {
+      "id": "notifications-project-wbs-source",
+      "from": "notification",
+      "to": "wbs-baseline",
+      "kind": "reference",
+      "owner": "notifications",
+      "provider": "wbs",
+      "consumer": "notifications",
+      "integrationMode": "reference",
+      "authority": "wbs",
+      "consistency": "current-source-access",
+      "meaning": "Project WBS notification creation, Inbox read/mark-read and dispatch bind an exact Baseline and Revision, require an active recipient with current Project READ, and use explicit recipients without Watch."
     }
   ],
   "capabilities": [
@@ -4084,6 +4143,133 @@
       }
     },
     {
+      "id": "provide-project-content-scope",
+      "owner": "project",
+      "kind": "leaf",
+      "intent": "Provide the current active-User, Project access and lifecycle decision used by Project-scoped WBS and Actions without transferring Project authority.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Current active-User qualification, locked Project access recomputation and open/closed/deleted lifecycle projection for WBS and Actions.",
+        "sourcePaths": [
+          "packages/project/src/contracts/output/content-scope.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-content-scope.ts",
+          "packages/project/src/composition/bootstrap/project-content-scope.ts"
+        ],
+        "publicExports": [
+          "./contracts/output/content-scope",
+          "./composition/bootstrap/project-content-scope"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/project/test/content-scope.test.ts"],
+        "note": "READ allows reads only; WRITE allows WBS edit/propose/review; ADMIN additionally allows publish, policy and fixed Actions. Closed is read/exact-replay only and deleted resolves as not found."
+      }
+    },
+    {
+      "id": "transfer-repository-wbs-to-project",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Move one eligible Repository WBS into an empty Project scope exactly once while preserving immutable history and command replay evidence.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Explicit REQUESTED-to-ACTIVE one-way cutover with request-time and execution-time eligibility checks, exact immutable source snapshot, live-intent read, owner-authorized REQUESTED-to-CANCELLED recovery, release/deployment/recovery evidence and immutable replay mapping.",
+        "sourcePaths": [
+          "packages/wbs/src/domain/transfer.ts",
+          "packages/wbs/src/application/use-cases/transfer.ts",
+          "packages/wbs/src/contracts/dto/transfer.ts",
+          "packages/wbs/src/contracts/repositories/transfer.ts",
+          "packages/wbs/src/adapters/outbound/persistence/transfer.ts"
+        ],
+        "publicExports": ["./application/use-cases/transfer", "./composition/bootstrap/transfer"],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-wbs/transfer/route.ts",
+          "apps/web/src/app/api/repository-wbs/transfer/cancel/route.ts",
+          "scripts/wbs/transfer.mjs"
+        ],
+        "testPaths": [
+          "packages/wbs/test/transfer.test.ts",
+          "packages/wbs/test/transfer-postgres.test.ts",
+          "apps/web/test/wbs-transfer-http.test.ts"
+        ],
+        "note": "Only a public User-owned Repository may request transfer to an open private Project owned/administered by the same active User. Request preflights an empty destination and zero dependent legacy state; execution rechecks both and the exact source snapshot. Source changes remain allowed and make activation fail safely. The current source User owner may read the live intent and exactly replay withdrawal without target Project authority, including after target deletion; CANCELLED preserves its snapshot and releases live Repository/Project uniqueness for replanning. ACTIVE is irreversible. The operator requires exact current-main, successful release/deployment and provider recovery evidence; there is no dual write."
+      }
+    },
+    {
+      "id": "manage-project-wbs",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Manage Project-scoped WBS content, immutable Revision history, governance, Baselines and publication events through current Project access and lifecycle.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project-scoped content initialization/edit/history, proposal/review/policy/Baseline governance, metrics and version-bound publication outbox with expected version and exact replay.",
+        "sourcePaths": [
+          "packages/wbs/src/domain/document.ts",
+          "packages/wbs/src/domain/content.ts",
+          "packages/wbs/src/domain/governance.ts",
+          "packages/wbs/src/domain/scope-governance.ts",
+          "packages/wbs/src/domain/policies/project-access.ts",
+          "packages/wbs/src/application/use-cases/project-content.ts",
+          "packages/wbs/src/application/use-cases/project-governance.ts",
+          "packages/wbs/src/adapters/outbound/persistence/project-content.ts",
+          "packages/wbs/src/adapters/outbound/persistence/project-governance.ts"
+        ],
+        "publicExports": [
+          "./application/commands/project-content",
+          "./application/commands/project-governance",
+          "./application/use-cases/project-content",
+          "./application/use-cases/project-governance",
+          "./contracts/dto/project-content",
+          "./contracts/dto/project-governance",
+          "./contracts/repositories/project-content",
+          "./contracts/repositories/project-governance",
+          "./contracts/output/project-metrics",
+          "./contracts/output/project-baseline-events",
+          "./composition/bootstrap/project-content",
+          "./composition/bootstrap/project-governance",
+          "./composition/bootstrap/project-metrics",
+          "./composition/bootstrap/project-baseline-events"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/project-wbs/route.ts",
+          "apps/web/src/app/api/project-wbs/history/route.ts",
+          "apps/web/src/app/api/project-wbs/governance/route.ts",
+          "apps/web/src/app/(mobile)/(tabs)/projects/[projectId]/wbs/page.tsx"
+        ],
+        "testPaths": [
+          "packages/wbs/test/project-hexagonal.test.ts",
+          "packages/wbs/test/project-postgres.test.ts",
+          "apps/web/test/project-wbs-http.test.ts",
+          "apps/web/test/project-wbs-governance-http.test.ts"
+        ],
+        "note": "Project supplies current access/lifecycle; WBS retains document, Revision and governance authority. R1 legacy Repository state is transferred with explicit state and replay evidence, never dual-written."
+      }
+    },
+    {
       "id": "manage-repository-wbs",
       "owner": "wbs",
       "kind": "leaf",
@@ -4124,7 +4310,7 @@
           "apps/web/src/app/(resource)/[login]/[repository]/wbs/page.tsx"
         ],
         "testPaths": ["packages/wbs/test/wbs.test.ts", "apps/web/test/wbs-http.test.ts"],
-        "note": "Saved Revision is not approval or Baseline. Legacy project_wbs remains Project-owned current-data-only and is never auto-mapped."
+        "note": "R1 transfer-only runtime. Saved Revision is not approval or Baseline; no new Project scope dual-write or permanent legacy coexistence is allowed."
       }
     },
     {
@@ -4171,7 +4357,7 @@
           "packages/wbs/test/governance-postgres.test.ts",
           "apps/web/test/wbs-governance-http.test.ts"
         ],
-        "note": "Baseline is published scope, not work-package acceptance. Draft head and immutable content history are preserved; no collaboration, attachments, fan-out, branches or Fork runtime is enabled."
+        "note": "R1 transfer-only runtime. Baseline is published scope, not work-package acceptance. Draft head and immutable content history are preserved; no collaboration, attachments, branches or Fork runtime is enabled."
       }
     },
     {
@@ -4269,6 +4455,27 @@
       }
     },
     {
+      "id": "read-project-wbs-metrics",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Read authorized WBS-owned Project metrics through current Project access without transferring source authority to a consumer.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project-scoped open proposals, published Baseline, draft Revision and structural differences through an owner public query.",
+        "sourcePaths": ["packages/wbs/src/adapters/outbound/persistence/project-metrics.ts"],
+        "publicExports": [
+          "./contracts/output/project-metrics",
+          "./composition/bootstrap/project-metrics"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/wbs/test/project-postgres.test.ts"],
+        "note": "The owner query consumes Project current access; no Insights Project screen or independent metric persistence is claimed."
+      }
+    },
+    {
       "id": "read-wbs-metrics",
       "owner": "wbs",
       "kind": "leaf",
@@ -4283,7 +4490,46 @@
         "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
         "entrypoints": ["scripts/insights/run.mjs"],
         "testPaths": ["packages/wbs/test/metrics.test.ts"],
-        "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
+        "note": "R1 transfer-only Repository metric query. Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
+      }
+    },
+    {
+      "id": "manage-project-business-actions",
+      "owner": "actions",
+      "kind": "leaf",
+      "intent": "Manage and recover two fixed Project business automations under current Project ADMIN and WBS publication identity.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project-scoped fixed WBS Revision checks and explicit-recipient Baseline notification Runs with immutable rules, event acceptance, durable attempts, fenced leases and exact replay.",
+        "sourcePaths": [
+          "packages/actions/src/domain/project-automation.ts",
+          "packages/actions/src/application/use-cases/project-automation.ts",
+          "packages/actions/src/application/use-cases/project-worker.ts",
+          "packages/actions/src/adapters/outbound/persistence/project-automation.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/project-automation",
+          "./application/use-cases/project-worker",
+          "./contracts/dto/project-automation",
+          "./contracts/repositories/project-automation",
+          "./contracts/output/project-fixed-steps",
+          "./composition/bootstrap/project-automation"
+        ],
+        "entrypoints": [],
+        "testPaths": [
+          "packages/actions/test/project-actions-domain.test.ts",
+          "packages/actions/test/project-actions-postgres.test.ts"
+        ],
+        "note": "Project supplies current ADMIN/open lifecycle; WBS supplies exact Revision/Baseline events; Notifications owns delivery. R1 Repository Actions remain only until durable transfer evidence is verified."
       }
     },
     {
@@ -4322,7 +4568,36 @@
           "packages/actions/test/actions.test.ts",
           "packages/actions/test/actions-postgres.test.ts"
         ],
-        "note": "Internal execution evidence; production activation and real LINE device delivery require separate evidence."
+        "note": "R1 transfer-only Repository runtime. Internal execution evidence does not prove Project transfer, production activation or real LINE device delivery."
+      }
+    },
+    {
+      "id": "publish-project-wbs-baseline-events",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Atomically enqueue Project-scoped version-bound Baseline events and expose leased claim/acknowledge.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project-scoped Baseline publication event identity, cursor, leased claim and acknowledge.",
+        "sourcePaths": [
+          "packages/wbs/src/adapters/outbound/persistence/project-baseline-events.ts"
+        ],
+        "publicExports": [
+          "./contracts/output/project-baseline-events",
+          "./composition/bootstrap/project-baseline-events"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/wbs/test/project-postgres.test.ts"],
+        "note": "Publication and enqueueing share the WBS transaction; a consumer accepts idempotently before acknowledge."
       }
     },
     {
@@ -4349,7 +4624,39 @@
         ],
         "entrypoints": [],
         "testPaths": ["packages/wbs/test/metrics.test.ts"],
-        "note": "Internal execution evidence; production activation and real LINE device delivery require separate evidence."
+        "note": "R1 transfer-only Repository event feed; it is not a permanent second publication stream."
+      }
+    },
+    {
+      "id": "deliver-project-baseline-notifications",
+      "owner": "notifications",
+      "kind": "leaf",
+      "intent": "Create explicit-recipient Project WBS Inbox records and recover fixed LINE delivery intents under current Project source access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Explicit Project WBS Baseline recipients with active User and current Project READ source checks, exact notification receipts and recoverable LINE intents without Watch.",
+        "sourcePaths": [
+          "packages/notifications/src/application/use-cases/project-baseline-delivery.ts",
+          "packages/notifications/src/adapters/outbound/persistence/project-baseline-delivery.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/project-baseline-delivery",
+          "./contracts/output/project-baseline-delivery",
+          "./contracts/repositories/project-baseline-delivery",
+          "./composition/bootstrap/project-baseline-delivery"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/notifications/test/project-baseline-delivery.test.ts"],
+        "note": "WBS owns Baseline/Revision truth, Project owns current access, Account owns active User/provider binding and Notifications owns Inbox/delivery. Provider acceptance is not device delivery."
       }
     },
     {
@@ -4381,7 +4688,7 @@
         ],
         "entrypoints": [],
         "testPaths": ["packages/notifications/test/baseline-delivery.test.ts"],
-        "note": "Internal execution evidence; production activation and real LINE device delivery require separate evidence."
+        "note": "R1 transfer-only Repository notification path. Internal execution evidence does not prove Project transfer, production activation or real LINE device delivery."
       }
     }
   ],

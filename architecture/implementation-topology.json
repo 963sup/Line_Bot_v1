@@ -243,7 +243,11 @@
       "path": "packages/wbs",
       "moduleKind": "domain-module",
       "semanticOwner": "wbs",
-      "allowedWorkspaceDependencies": ["@line_bot_v1/platform", "@line_bot_v1/repository"]
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/platform",
+        "@line_bot_v1/project",
+        "@line_bot_v1/repository"
+      ]
     },
     "@line_bot_v1/wiki": {
       "path": "packages/wiki",
@@ -264,6 +268,7 @@
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/account",
         "@line_bot_v1/platform",
+        "@line_bot_v1/project",
         "@line_bot_v1/repository",
         "@line_bot_v1/wbs",
         "@line_bot_v1/notifications"
@@ -608,6 +613,7 @@
       "semanticOwner": null,
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/account",
+        "@line_bot_v1/actions",
         "@line_bot_v1/namespace",
         "@line_bot_v1/notifications",
         "@line_bot_v1/asset",

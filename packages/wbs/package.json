@@ -20,6 +20,10 @@
       "types": "./dist/domain/scope-governance.d.ts",
       "default": "./dist/domain/scope-governance.js"
     },
+    "./domain/transfer": {
+      "types": "./dist/domain/transfer.d.ts",
+      "default": "./dist/domain/transfer.js"
+    },
     "./application/commands/content": {
       "types": "./dist/application/commands/content.d.ts",
       "default": "./dist/application/commands/content.js"
@@ -27,6 +31,18 @@
     "./application/commands/governance": {
       "types": "./dist/application/commands/governance.d.ts",
       "default": "./dist/application/commands/governance.js"
+    },
+    "./application/commands/project-content": {
+      "types": "./dist/application/commands/project-content.d.ts",
+      "default": "./dist/application/commands/project-content.js"
+    },
+    "./application/commands/project-governance": {
+      "types": "./dist/application/commands/project-governance.d.ts",
+      "default": "./dist/application/commands/project-governance.js"
+    },
+    "./application/commands/transfer": {
+      "types": "./dist/application/commands/transfer.d.ts",
+      "default": "./dist/application/commands/transfer.js"
     },
     "./application/use-cases/content": {
       "types": "./dist/application/use-cases/content.d.ts",
@@ -36,6 +52,18 @@
       "types": "./dist/application/use-cases/governance.d.ts",
       "default": "./dist/application/use-cases/governance.js"
     },
+    "./application/use-cases/project-content": {
+      "types": "./dist/application/use-cases/project-content.d.ts",
+      "default": "./dist/application/use-cases/project-content.js"
+    },
+    "./application/use-cases/project-governance": {
+      "types": "./dist/application/use-cases/project-governance.d.ts",
+      "default": "./dist/application/use-cases/project-governance.js"
+    },
+    "./application/use-cases/transfer": {
+      "types": "./dist/application/use-cases/transfer.d.ts",
+      "default": "./dist/application/use-cases/transfer.js"
+    },
     "./contracts/dto/content": {
       "types": "./dist/contracts/dto/content.d.ts",
       "default": "./dist/contracts/dto/content.js"
@@ -43,6 +71,18 @@
     "./contracts/dto/governance": {
       "types": "./dist/contracts/dto/governance.d.ts",
       "default": "./dist/contracts/dto/governance.js"
+    },
+    "./contracts/dto/project-content": {
+      "types": "./dist/contracts/dto/project-content.d.ts",
+      "default": "./dist/contracts/dto/project-content.js"
+    },
+    "./contracts/dto/project-governance": {
+      "types": "./dist/contracts/dto/project-governance.d.ts",
+      "default": "./dist/contracts/dto/project-governance.js"
+    },
+    "./contracts/dto/transfer": {
+      "types": "./dist/contracts/dto/transfer.d.ts",
+      "default": "./dist/contracts/dto/transfer.js"
     },
     "./contracts/repositories/content": {
       "types": "./dist/contracts/repositories/content.d.ts",
@@ -52,17 +92,53 @@
       "types": "./dist/contracts/repositories/governance.d.ts",
       "default": "./dist/contracts/repositories/governance.js"
     },
+    "./contracts/repositories/project-content": {
+      "types": "./dist/contracts/repositories/project-content.d.ts",
+      "default": "./dist/contracts/repositories/project-content.js"
+    },
+    "./contracts/repositories/project-governance": {
+      "types": "./dist/contracts/repositories/project-governance.d.ts",
+      "default": "./dist/contracts/repositories/project-governance.js"
+    },
+    "./contracts/repositories/transfer": {
+      "types": "./dist/contracts/repositories/transfer.d.ts",
+      "default": "./dist/contracts/repositories/transfer.js"
+    },
     "./composition/bootstrap/store": {
       "types": "./dist/composition/bootstrap/store.d.ts",
       "default": "./dist/composition/bootstrap/store.js"
+    },
+    "./composition/bootstrap/project-content": {
+      "types": "./dist/composition/bootstrap/project-content.d.ts",
+      "default": "./dist/composition/bootstrap/project-content.js"
+    },
+    "./composition/bootstrap/project-governance": {
+      "types": "./dist/composition/bootstrap/project-governance.d.ts",
+      "default": "./dist/composition/bootstrap/project-governance.js"
     },
     "./contracts/output/metrics": {
       "types": "./dist/contracts/output/metrics.d.ts",
       "default": "./dist/contracts/output/metrics.js"
     },
+    "./contracts/output/project-metrics": {
+      "types": "./dist/contracts/output/project-metrics.d.ts",
+      "default": "./dist/contracts/output/project-metrics.js"
+    },
+    "./contracts/output/transfer": {
+      "types": "./dist/contracts/output/transfer.d.ts",
+      "default": "./dist/contracts/output/transfer.js"
+    },
+    "./contracts/output/scope-boundary": {
+      "types": "./dist/contracts/output/scope-boundary.d.ts",
+      "default": "./dist/contracts/output/scope-boundary.js"
+    },
     "./composition/bootstrap/metrics": {
       "types": "./dist/composition/bootstrap/metrics.d.ts",
       "default": "./dist/composition/bootstrap/metrics.js"
+    },
+    "./composition/bootstrap/project-metrics": {
+      "types": "./dist/composition/bootstrap/project-metrics.d.ts",
+      "default": "./dist/composition/bootstrap/project-metrics.js"
     },
     "./contracts/output/baseline-events": {
       "types": "./dist/contracts/output/baseline-events.d.ts",
@@ -71,6 +147,22 @@
     "./composition/bootstrap/baseline-events": {
       "types": "./dist/composition/bootstrap/baseline-events.d.ts",
       "default": "./dist/composition/bootstrap/baseline-events.js"
+    },
+    "./contracts/output/project-baseline-events": {
+      "types": "./dist/contracts/output/project-baseline-events.d.ts",
+      "default": "./dist/contracts/output/project-baseline-events.js"
+    },
+    "./composition/bootstrap/project-baseline-events": {
+      "types": "./dist/composition/bootstrap/project-baseline-events.d.ts",
+      "default": "./dist/composition/bootstrap/project-baseline-events.js"
+    },
+    "./composition/bootstrap/transfer": {
+      "types": "./dist/composition/bootstrap/transfer.d.ts",
+      "default": "./dist/composition/bootstrap/transfer.js"
+    },
+    "./composition/bootstrap/scope-boundary": {
+      "types": "./dist/composition/bootstrap/scope-boundary.d.ts",
+      "default": "./dist/composition/bootstrap/scope-boundary.js"
     }
   },
   "files": [
@@ -83,6 +175,7 @@
   },
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/project": "workspace:*",
     "@line_bot_v1/repository": "workspace:*"
   },
   "devDependencies": {

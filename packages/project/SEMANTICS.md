@@ -37,19 +37,20 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | ProjectV2SingleSelectFieldOption | project-field-option | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2SingleSelectFieldOption |
 | ProjectV2StatusUpdate | project-status-update | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2StatusUpdate |
 | ProjectV2View | project-view | authoritative | current | GitHub FPT: schema-projects.json#ProjectV2View |
-| WBS | wbs | authoritative | current-data-only | Project-owned work breakdown structure. Project is not WBS. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | manage-project-planning | required | implemented | Manage ProjectV2 root lifecycle, owner-scoped number, collaborators, Item/DraftIssue lifecycle, typed fields and values, views, status updates, and Repository/Issue references without taking source-owner authority. |
+| provide-project-content-scope | required | implemented | Provide the current active-User, Project access and lifecycle decision used by Project-scoped WBS and Actions without transferring Project authority. |
 | read-projects | required | implemented | Read authorized Project summaries without asserting Project planning writes or underlying Repository work authority. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | actions | stable-identity+query | project | transaction-recheck | Project Actions management and every worker step consume current Project ADMIN and open lifecycle through the Project public scope contract; Actions retains rule and Run authority. |
 | consumes | namespace | command | namespace | same-transaction | Project retains field, option and view lifecycle while Namespace owns their scoped exact-name occupancy and release in the caller transaction. |
 | consumes | namespace | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
 | consumes | numbering | command | numbering | same-transaction | Project retains Project and View lifecycle, authorization, version and replay while Numbering allocates Account-scoped Project and Project-scoped View numbers in the same transaction. |
@@ -60,6 +61,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | consumes | account | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |
 | consumes | repository | reference | repository | current-access-and-identity | Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access. |
 | consumes | team | query | team | transaction-recheck | Project-owned Team grants consume current Team membership and Team organization scope; Team identity or membership does not become Project-owned authority. |
+| provides | wbs | stable-identity+query | project | transaction-recheck | Project-scoped WBS consumes the Project public content-scope contract for current READ/WRITE/ADMIN access and open/closed/deleted lifecycle; Account-owned active-User qualification remains a prerequisite and WBS retains document, Revision, governance and Baseline authority. |
 
 ## Tactical Model Boundary
 

@@ -4,12 +4,14 @@ import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content
 import type { WbsMetricsQuery } from "../../../contracts/output/metrics.js";
 import { parseWbsDocument, WbsError } from "../../../domain/document.js";
 import { compareWbsDocuments } from "../../../domain/governance.js";
+import { PostgresWbsScopeBoundary } from "./scope-boundary.js";
 
 export class PostgresWbsMetrics implements WbsMetricsQuery {
   constructor(private readonly db: Database = businessDatabase()) {}
   read(userId: string, repositoryId: string) {
     return this.db.transaction(async (sql) => {
-      await repositoryContentScope(sql, userId, { repositoryId });
+      const { repository } = await repositoryContentScope(sql, userId, { repositoryId });
+      await new PostgresWbsScopeBoundary(sql).repositoryAvailable(repository.id);
       const count = (
         await sql.query(
           "SELECT count(*)::integer AS n FROM repository_wbs_proposals p JOIN repository_wbs_proposal_versions v ON v.proposal_id=p.id AND v.repository_id=p.repository_id AND v.version=p.version WHERE p.repository_id=$1 AND v.status='OPEN'",

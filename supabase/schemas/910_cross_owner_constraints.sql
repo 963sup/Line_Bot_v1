@@ -314,6 +314,10 @@ security invoker
 set search_path to 'app_private', 'pg_catalog'
 as $function$
 begin
+  if new.source_type in ('issue','discussion','wbs-baseline','project-wbs-baseline') then
+    perform app_private.lock_governance('shared');
+  end if;
+
   if new.source_type in ('issue','discussion','wbs-baseline')
      and not exists (
        select 1
@@ -322,6 +326,18 @@ begin
          and access.source_id=new.source_id
          and (new.source_type<>'wbs-baseline' or access.source_version=new.source_version)
          and (access.user_id=new.recipient or access.user_id is null)
+     ) then
+    raise exception 'notification_source_access_forbidden' using errcode = '42501';
+  end if;
+
+  if new.source_type='project-wbs-baseline'
+     and not exists (
+       select 1
+       from app_private.notification_project_source_access access
+       where access.source_type=new.source_type
+         and access.source_id=new.source_id
+         and access.source_version=new.source_version
+         and access.user_id=new.recipient
      ) then
     raise exception 'notification_source_access_forbidden' using errcode = '42501';
   end if;

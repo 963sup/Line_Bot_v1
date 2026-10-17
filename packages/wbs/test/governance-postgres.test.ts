@@ -110,7 +110,10 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
   }));
   // Hold the real row lock until both independent pool sessions are waiting on it.
   const blocker = await pool.connect();
-  await blocker.query("BEGIN;SELECT 1 FROM app_private.repositories WHERE id='repo' FOR UPDATE");
+  await blocker.query("BEGIN");
+  const blockerPid = Number((await blocker.query("SELECT pg_backend_pid() AS pid")).rows[0]?.pid);
+  assert.ok(Number.isSafeInteger(blockerPid));
+  await blocker.query("SELECT 1 FROM app_private.repositories WHERE id='repo' FOR UPDATE");
   const competing = commands.map((command) =>
     executeWbsGovernanceCommand(governance, "owner", command, 5),
   );
@@ -120,7 +123,13 @@ test("real PostgreSQL sessions serialize competing publication and exact retries
       waiting = Number(
         (
           await pool.query(
-            "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT is_archived FROM repositories%'",
+            `SELECT count(*) FROM pg_stat_activity activity
+             WHERE activity.datname=current_database()
+               AND activity.wait_event_type='Lock'
+               AND $1::integer=ANY(pg_blocking_pids(activity.pid))
+               AND position('FROM repositories' IN activity.query)>0
+               AND position('FOR UPDATE' IN activity.query)>0`,
+            [blockerPid],
           )
         ).rows[0]?.count,
       );

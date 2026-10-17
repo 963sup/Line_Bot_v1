@@ -154,7 +154,7 @@ function highestRole(values: readonly ProjectAccessRole[]): ProjectAccessRole | 
   return best;
 }
 
-async function effectiveProjectRole(
+export async function effectiveProjectRole(
   sql: Sql,
   row: ProjectRow,
   userId: string,
