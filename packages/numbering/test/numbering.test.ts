@@ -64,6 +64,56 @@ test("family limits preserve consumer number ranges", () => {
   assert.equal(numberLimit("repository-work-item"), Number.MAX_SAFE_INTEGER);
 });
 
+test("Series time constraint round-trips through schema diff SQL without changing its bounds", async (t) => {
+  const { pg } = await postgresFixture();
+  t.after(() => pg.close());
+  const definition = async () => {
+    const { rows } = await pg.query<{ definition: string }>(
+      `SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+       WHERE conrelid='app_private.number_series'::regclass
+         AND conname='number_series_time_check'`,
+    );
+    const [row] = rows;
+    assert.ok(row);
+    return row.definition;
+  };
+  const before = await definition();
+  for (let round = 0; round < 3; round++) {
+    await pg.exec(`ALTER TABLE app_private.number_series
+      DROP CONSTRAINT number_series_time_check,
+      ADD CONSTRAINT number_series_time_check ${await definition()};`);
+    assert.equal(await definition(), before);
+  }
+  const insert = (scope: string, createdAt: number, updatedAt: number) =>
+    pg.query(
+      `INSERT INTO app_private.number_series(
+         family,scope_kind,scope_id,next_number,legacy_high_water,managed_from,created_at,updated_at
+       ) VALUES('repository-discussion','REPOSITORY',$1,1,0,1,$2,$3)`,
+      [scope, createdAt, updatedAt],
+    );
+  const maximum = Number.MAX_SAFE_INTEGER;
+  const validTimes = [
+    [0, 0],
+    [0, maximum],
+    [maximum, maximum],
+  ] as const;
+  for (const [index, [createdAt, updatedAt]] of validTimes.entries()) {
+    await insert(`valid-time-${index}`, createdAt, updatedAt);
+  }
+  const invalidTimes = [
+    [-1, 0],
+    [maximum + 1, maximum + 1],
+    [1, 0],
+    [0, maximum + 1],
+  ] as const;
+  for (const [index, [createdAt, updatedAt]] of invalidTimes.entries()) {
+    await assert.rejects(
+      insert(`invalid-time-${index}`, createdAt, updatedAt),
+      /number_series_time_check/,
+    );
+  }
+});
+
 test("allocation is scoped, replay-stable, resolvable, and rolls back with the caller", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());

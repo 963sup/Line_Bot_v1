@@ -29,8 +29,9 @@ create table app_private.number_series (
     )
   ),
   constraint number_series_time_check check (
-    created_at between 0 and 9007199254740991
-    and updated_at between created_at and 9007199254740991
+    -- Explicit comparisons keep PostgreSQL CHECK deparse/reparse structurally stable.
+    created_at >= 0 and created_at <= 9007199254740991
+    and updated_at >= created_at and updated_at <= 9007199254740991
   )
 );
 
