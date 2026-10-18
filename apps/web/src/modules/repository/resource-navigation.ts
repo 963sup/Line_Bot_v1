@@ -15,6 +15,7 @@ export function repositoryIssuesPath(ownerLogin: string, repositoryName: string)
 }
 
 export type RepositoryResourceSection =
+  | "objects"
   | "wiki"
   | "insights"
   | "wbs"
@@ -33,6 +34,11 @@ export function repositoryResourceNavigationItems(
 ) {
   const items: { href: string; label: string; section: RepositoryResourceSection }[] = [
     { href: repositoryPath(ownerLogin, repositoryName), label: "Overview", section: "overview" },
+    {
+      href: repositoryObjectsPath(ownerLogin, repositoryName),
+      label: "Objects",
+      section: "objects",
+    },
     {
       href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`,
       label: "WBS 移轉",
@@ -72,6 +78,14 @@ export function repositoryResourceNavigationItems(
     );
   }
   return items;
+}
+
+export function repositoryObjectsPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/objects`;
+}
+
+export function repositoryObjectPath(ownerLogin: string, repositoryName: string, objectId: string) {
+  return `${repositoryObjectsPath(ownerLogin, repositoryName)}/${encodeURIComponent(objectId)}`;
 }
 
 export function repositoryIssueCreatePath(ownerLogin: string, repositoryName: string) {

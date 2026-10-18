@@ -414,6 +414,14 @@
     {
       "path": "supabase/schemas/852_notification_receipts.sql",
       "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/615_objects.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/628_issue_object_references.sql",
+      "role": "authoritative"
     }
   ],
   "relations": [
@@ -1856,6 +1864,62 @@
       "authority": true,
       "semanticOwner": "notifications",
       "concept": "notification-receipt"
+    },
+    {
+      "name": "object_types",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "object-type"
+    },
+    {
+      "name": "objects",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "content-object"
+    },
+    {
+      "name": "object_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "object-revision"
+    },
+    {
+      "name": "object_relationships",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "object-relationship"
+    },
+    {
+      "name": "object_relationship_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "object-relationship-revision"
+    },
+    {
+      "name": "object_commands",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "object-command-receipt"
+    },
+    {
+      "name": "issue_object_references",
+      "kind": "table",
+      "path": "supabase/schemas/628_issue_object_references.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-object-reference"
     }
   ]
 }

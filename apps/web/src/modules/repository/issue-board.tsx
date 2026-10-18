@@ -9,10 +9,11 @@ import {
   type IssueWorkflowStatus,
 } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState, PrimaryLink } from "../../shared/ui/page-layout";
+import IssueObjectReferences from "./issue-object-references";
 import {
   clearPendingIssueCommand,
   type PendingIssueCommand,
@@ -118,6 +119,12 @@ export default function IssueBoard({
     setBusy(false);
   }, []);
 
+  const invalidateAuthorizedState = useCallback(() => {
+    generation.current += 1;
+    clearAuthorizedState();
+    setError("");
+  }, [clearAuthorizedState]);
+
   async function load(nextRepository = selectedRepository, nextView = view) {
     const ticket = ++generation.current;
     setBusy(true);
@@ -211,6 +218,24 @@ export default function IssueBoard({
     [],
   );
 
+  const onVisibility = useEffectEvent(() => {
+    invalidateAuthorizedState();
+    if (document.visibilityState === "visible") void load();
+  });
+
+  useEffect(() => {
+    const visibility = () => onVisibility();
+    const unsubscribe = liffClient.onSessionBlocked(invalidateAuthorizedState);
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("pagehide", invalidateAuthorizedState);
+    return () => {
+      generation.current += 1;
+      unsubscribe();
+      document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("pagehide", invalidateAuthorizedState);
+    };
+  }, [invalidateAuthorizedState]);
+
   useEffect(() => {
     if (observedRouteKey.current === routeKey) return;
     observedRouteKey.current = routeKey;
@@ -270,7 +295,7 @@ export default function IssueBoard({
         key={routeKey}
         liffId={liffId}
         onReady={() => load()}
-        onWait={clearAuthorizedState}
+        onWait={invalidateAuthorizedState}
       />
       {detailMode && (
         <Link className="back-link" href={canonicalIssuesHref}>
@@ -462,6 +487,20 @@ export default function IssueBoard({
             建立者：{current.publisher}；Assignees：
             {current.assignees.length ? current.assignees.join(", ") : "未指派"}
           </p>
+
+          {ownerLogin && repositoryName && (
+            <IssueObjectReferences
+              liffId={liffId}
+              ownerLogin={ownerLogin}
+              repositoryName={repositoryName}
+              actorUserId={data.userId}
+              repositoryId={current.repositoryId}
+              issueId={current.id}
+              issueVersion={current.version}
+              canManage={canAssignIssue}
+              onUpdated={() => load(current.repositoryId, view)}
+            />
+          )}
 
           {current.state === "OPEN" &&
             ((current.assignees.includes(data.userId) && current.workflowStatus === "active") ||

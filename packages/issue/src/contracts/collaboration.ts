@@ -2,6 +2,19 @@ import type { IssueTypeDefinition } from "./issue-types.js";
 
 export type IssueLockReason = "OFF_TOPIC" | "RESOLVED" | "SPAM" | "TOO_HEATED";
 
+export type IssueObjectReferenceView = Readonly<{
+  objectId: string;
+  revisionId: string;
+  pinnedVersion: number;
+  name: string;
+  typeId: string;
+  typeName: string;
+  archived: boolean;
+  currentRevisionId: string;
+  currentVersion: number;
+  hasNewerRevision: boolean;
+}>;
+
 type CommandBase = Readonly<{
   requestId: string;
   repositoryId: string;
@@ -23,6 +36,13 @@ export type IssueCollaborationCommand =
   | (CommandBase & Readonly<{ action: "clear-labels" }>)
   | (CommandBase & Readonly<{ action: "set-milestone"; milestoneId: string | null }>)
   | (CommandBase & Readonly<{ action: "set-issue-type"; issueTypeId: string | null }>)
+  | (CommandBase &
+      Readonly<{
+        action: "set-object-reference";
+        objectId: string;
+        revisionId: string;
+      }>)
+  | (CommandBase & Readonly<{ action: "remove-object-reference"; objectId: string }>)
   | (CommandBase &
       Readonly<{
         action:
@@ -62,6 +82,7 @@ export type IssueCollaborationView = Readonly<{
   lockReason: IssueLockReason | null;
   milestoneId: string | null;
   issueType: IssueTypeDefinition | null;
+  objectReferences: readonly IssueObjectReferenceView[];
   labelIds: readonly string[];
   comments: readonly IssueCommentView[];
   parentIssueId: string | null;

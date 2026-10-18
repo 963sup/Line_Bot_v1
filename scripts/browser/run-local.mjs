@@ -66,7 +66,7 @@ const report = {
   node: process.version,
   base,
   scope:
-    "Real Next.js production build and browser; synthetic LIFF/API; no database or mobile LINE.",
+    "Real Next.js production build and browser; synthetic LIFF/API with isolated local PGlite owner use cases; no remote database or mobile LINE.",
   status: "failed",
 };
 let server;
@@ -136,6 +136,11 @@ try {
   await command([next, "build"], web, "build.log");
   report.build = "passed";
   await startServer("server.log");
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-objects.mjs")],
+    root,
+    "objects.log",
+  );
   await command([path.join(root, "scripts/browser/check-navigation.mjs")], root, "browser.log");
   await command([path.join(root, "scripts/browser/measure-loading.mjs")], root, "loading.log");
   await command([path.join(root, "scripts/browser/check-profile.mjs")], root, "profile.log");

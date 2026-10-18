@@ -155,6 +155,20 @@
         "$TURBO_ROOT$/supabase/schemas/*.sql",
         "$TURBO_ROOT$/scripts/actions/*.mjs"
       ]
+    },
+    "@line_bot_v1/object#test": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
+    },
+    "@line_bot_v1/issue#test": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     }
   }
 }

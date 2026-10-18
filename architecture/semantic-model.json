@@ -267,13 +267,28 @@
       "kind": "business-owner",
       "lifecycle": "current",
       "doc": "docs/owners/actions.md"
+    },
+    {
+      "id": "object",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/object.md"
     }
   ],
   "subdomains": [
     {
       "id": "collaboration",
       "classification": "core",
-      "owners": ["repository", "issue", "discussion", "project", "wbs", "wiki", "actions"],
+      "owners": [
+        "repository",
+        "issue",
+        "discussion",
+        "project",
+        "wbs",
+        "wiki",
+        "actions",
+        "object"
+      ],
       "rationale": "企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -462,6 +477,11 @@
     {
       "id": "wbs",
       "owner": "wbs",
+      "status": "selected"
+    },
+    {
+      "id": "object",
+      "owner": "object",
       "status": "selected"
     }
   ],
@@ -1704,6 +1724,76 @@
       "definition": "Exact notification intent receipt and cancellation barrier; no source authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "content-object",
+      "canonicalName": "Object",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Repository-native content instance with stable identity and an immutable versioned head; it does not replace other contexts domain models.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "object-type",
+      "canonicalName": "ObjectType",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Repository-scoped named classification with enablement and version; exactly one classification per Object and no dynamic field schema.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "object-revision",
+      "canonicalName": "ObjectRevision",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Immutable Object content, classification label snapshot, lifecycle and actor version; restoration creates a new revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "object-relationship",
+      "canonicalName": "ObjectRelationship",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Named directed same-Repository Object-to-Object edge with independent lifecycle and version; cycles are permitted but self and duplicate active edges are rejected.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "object-relationship-revision",
+      "canonicalName": "ObjectRelationshipRevision",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Immutable version of one Object Relationship; not a whole Repository graph snapshot.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "object-command-receipt",
+      "canonicalName": "ObjectCommandReceipt",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Immutable actor/request fingerprint and committed result supporting current-authorized exact replay.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "issue-object-reference",
+      "canonicalName": "IssueObjectReference",
+      "kind": "reference",
+      "owner": "issue",
+      "lifecycle": "current",
+      "definition": "Issue-owned optional association to a same-Repository Object and an explicitly pinned immutable revision.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -2468,6 +2558,32 @@
       "authority": "wbs",
       "consistency": "current-source-access",
       "meaning": "Project WBS notification creation, Inbox read/mark-read and dispatch bind an exact Baseline and Revision, require an active recipient with current Project READ, and use explicit recipients without Watch."
+    },
+    {
+      "id": "object-repository-scope",
+      "from": "content-object",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "object",
+      "provider": "repository",
+      "consumer": "object",
+      "meaning": "Object consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "issue-object-pinned-reference",
+      "from": "issue-object-reference",
+      "to": "object-revision",
+      "kind": "reference",
+      "owner": "issue",
+      "provider": "object",
+      "consumer": "issue",
+      "meaning": "Issue owns fixed Object Revision references; Object verifies current access and referenceability in the caller transaction. Existing references retain historical content after Object archive.",
+      "integrationMode": "stable-identity+query",
+      "authority": "object",
+      "consistency": "same-transaction"
     }
   ],
   "capabilities": [
@@ -3425,7 +3541,7 @@
         "publicExports": [
           "./application/collaboration",
           "./contracts/collaboration",
-          "./postgres/collaboration"
+          "./composition/bootstrap/collaboration"
         ],
         "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
         "testPaths": [
@@ -3464,7 +3580,7 @@
           "./postgres/issue-types",
           "./application/collaboration",
           "./contracts/collaboration",
-          "./postgres/collaboration"
+          "./composition/bootstrap/collaboration"
         ],
         "entrypoints": [
           "apps/web/src/app/api/issue-types/route.ts",
@@ -4690,6 +4806,78 @@
         "testPaths": ["packages/notifications/test/baseline-delivery.test.ts"],
         "note": "R1 transfer-only Repository notification path. Internal execution evidence does not prove Project transfer, production activation or real LINE device delivery."
       }
+    },
+    {
+      "id": "manage-repository-objects",
+      "owner": "object",
+      "kind": "leaf",
+      "intent": "Manage classified Repository-native content and directed relationships with immutable history, current access, conditional versions and durable exact replay.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage classified Repository-native content and directed relationships with immutable history, current access, conditional versions and durable exact replay.",
+        "sourcePaths": [
+          "packages/object/src/domain/object.ts",
+          "packages/object/src/domain/object-type.ts",
+          "packages/object/src/domain/relationship.ts",
+          "packages/object/src/application/use-cases/objects.ts",
+          "packages/object/src/adapters/outbound/persistence/objects.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/objects",
+          "./contracts/dto/objects",
+          "./contracts/output/references",
+          "./composition/bootstrap/objects",
+          "./composition/bootstrap/references",
+          "./domain/error"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-objects/route.ts",
+          "apps/web/src/app/api/repository-object-types/route.ts",
+          "apps/web/src/app/api/repository-object-relationships/route.ts"
+        ],
+        "testPaths": [
+          "packages/object/test/object-persistence.test.ts",
+          "packages/object/test/object-postgres.test.ts",
+          "apps/web/test/object-http.test.ts"
+        ],
+        "note": "Current local product extension, distinct from GitObject; provider publication requires separate evidence."
+      }
+    },
+    {
+      "id": "manage-issue-object-references",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Manage same-Repository fixed Object Revision references using Issue authorization, version, event and receipt atomicity.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage same-Repository fixed Object Revision references using Issue authorization, version, event and receipt atomicity.",
+        "sourcePaths": [
+          "packages/issue/src/application/collaboration.ts",
+          "packages/issue/src/adapters/postgres/collaboration.ts"
+        ],
+        "publicExports": ["./contracts/collaboration", "./composition/bootstrap/collaboration"],
+        "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
+        "testPaths": ["packages/issue/test/object-reference-postgres.test.ts"],
+        "note": "Current local product extension, distinct from GitObject; provider publication requires separate evidence."
+      }
     }
   ],
   "invariants": [
@@ -4787,6 +4975,13 @@
       "severity": "error",
       "enforcement": ["data-topology", "architecture-check"],
       "tags": ["data", "ownership", "boundary"]
+    },
+    {
+      "id": "OBJECT1",
+      "scope": "object",
+      "statement": "Object Type, Object content and Object-to-Object relationships are Object-owned; revision history and receipts are immutable. Other contexts retain their models and own their references.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "schema", "tests"]
     }
   ],
   "truthRegistry": [
@@ -5040,6 +5235,10 @@
     {
       "semanticOwner": "actions",
       "module": "@line_bot_v1/actions"
+    },
+    {
+      "semanticOwner": "object",
+      "module": "@line_bot_v1/object"
     }
   ],
   "policies": [

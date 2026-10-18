@@ -28,6 +28,13 @@ function identifier(value: unknown, label: string): string {
   return value;
 }
 
+function uuidIdentifier(value: unknown, label: string): string {
+  if (typeof value !== "string" || !requestIdPattern.test(value)) {
+    throw new IssueError(400, `${label} 不正確。`);
+  }
+  return value.toLowerCase();
+}
+
 function positiveVersion(value: unknown, label = "Issue"): number {
   if (!Number.isSafeInteger(value) || Number(value) < 1) {
     throw new IssueError(400, `${label} 版本不正確。`);
@@ -157,6 +164,36 @@ function parseCommand(raw: unknown): IssueCollaborationCommand {
       issueTypeId:
         value.issueTypeId === null ? null : identifier(value.issueTypeId, "IssueType 識別碼"),
     };
+  }
+
+  if (action === "set-object-reference") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "repositoryId",
+      "issueId",
+      "expectedVersion",
+      "objectId",
+      "revisionId",
+    ]);
+    return {
+      ...base,
+      action,
+      objectId: uuidIdentifier(value.objectId, "Object 識別碼"),
+      revisionId: uuidIdentifier(value.revisionId, "Object Revision 識別碼"),
+    };
+  }
+
+  if (action === "remove-object-reference") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "repositoryId",
+      "issueId",
+      "expectedVersion",
+      "objectId",
+    ]);
+    return { ...base, action, objectId: uuidIdentifier(value.objectId, "Object 識別碼") };
   }
 
   if (

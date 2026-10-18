@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import type { ObjectReferenceReader } from "@line_bot_v1/object/contracts/output/references";
+import { ObjectError } from "@line_bot_v1/object/domain/error";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import {
@@ -23,7 +25,11 @@ import type {
   IssueLockReason,
 } from "../../contracts/collaboration.js";
 import type { IssueTypeDefinition } from "../../contracts/issue-types.js";
-import { IssueError } from "../../domain.js";
+import {
+  changeIssueObjectReference,
+  IssueError,
+  removeIssueObjectReference,
+} from "../../domain.js";
 import {
   advance,
   comment,
@@ -112,6 +118,19 @@ const decodePositionRow = (row: Record<string, unknown>) => ({
 const decodeChildIssueRow = (row: Record<string, unknown>) => ({
   child_issue_id: stringValue(row.child_issue_id),
 });
+const decodeObjectReferenceRow = (row: Record<string, unknown>) => ({
+  object_id: stringValue(row.object_id),
+  revision_id: stringValue(row.revision_id),
+});
+
+async function objectOperation<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof ObjectError) throw new IssueError(error.status, error.message);
+    throw error;
+  }
+}
 
 function issueTypeDefinition(row: AssignedIssueTypeRow): IssueTypeDefinition {
   return {
@@ -149,7 +168,10 @@ async function assignedIssueType(sql: Sql, issueId: string): Promise<IssueTypeDe
 }
 
 export class PostgresIssueCollaborationStore implements IssueCollaborationStore {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly objectReferences: (sql: Sql) => ObjectReferenceReader,
+    private readonly db: Database = businessDatabase(),
+  ) {}
 
   view(
     who: IssueCollaborationIdentity,
@@ -177,6 +199,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         blockedByIssueIds,
         blockingIssueIds,
         relatedIssueIds,
+        objectReferenceRows,
       ] = await Promise.all([
         assignedIssueType(sql, issueId),
         sql.query(
@@ -259,7 +282,27 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
            ORDER BY id`,
           issueId,
         ),
+        sql.query(
+          `SELECT object_id,revision_id
+           FROM issue_object_references
+           WHERE repository_id=$1 AND issue_id=$2
+           ORDER BY object_id`,
+          [repositoryId, issueId],
+          decodeObjectReferenceRow,
+        ),
       ]);
+
+      const objectReferences = await objectOperation(() =>
+        this.objectReferences(sql).verifyPinned(
+          who.userId,
+          repositoryId,
+          objectReferenceRows.rows.map((row) => ({
+            objectId: row.object_id,
+            revisionId: row.revision_id,
+          })),
+          { allowArchived: true },
+        ),
+      );
 
       return {
         issueId: issue.id,
@@ -276,6 +319,7 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
         blockedByIssueIds,
         blockingIssueIds,
         relatedIssueIds,
+        objectReferences,
       };
     });
   }
@@ -672,6 +716,57 @@ export class PostgresIssueCollaborationStore implements IssueCollaborationStore 
             issueType: after,
           };
         }
+      } else if (command.action === "set-object-reference") {
+        const before = (
+          await sql.query(
+            `SELECT object_id,revision_id
+             FROM issue_object_references
+             WHERE repository_id=$1 AND issue_id=$2 AND object_id=$3
+             FOR UPDATE`,
+            [issue.repository_id, issue.id, command.objectId],
+            decodeObjectReferenceRow,
+          )
+        ).rows[0];
+        const change = changeIssueObjectReference(before?.revision_id ?? null, command.revisionId);
+        const [verified] = await objectOperation(() =>
+          this.objectReferences(sql).verifyPinned(
+            who.userId,
+            issue.repository_id,
+            [{ objectId: command.objectId, revisionId: command.revisionId }],
+            { allowArchived: false },
+          ),
+        );
+        if (!verified) throw new IssueError(503, "Object reference 驗證結果不完整。");
+        await sql.query(
+          `INSERT INTO issue_object_references(
+             repository_id,issue_id,object_id,revision_id,pinned_by,pinned_at
+           ) VALUES($1,$2,$3,$4,$5,$6)
+           ON CONFLICT(issue_id,object_id) DO UPDATE
+           SET revision_id=EXCLUDED.revision_id,
+               pinned_by=EXCLUDED.pinned_by,
+               pinned_at=EXCLUDED.pinned_at`,
+          [issue.repository_id, issue.id, verified.objectId, verified.revisionId, who.userId, now],
+        );
+        resourceId = verified.objectId;
+        data = {
+          objectId: verified.objectId,
+          previousRevisionId: change.previousRevisionId,
+          revisionId: verified.revisionId,
+        };
+      } else if (command.action === "remove-object-reference") {
+        const removed = (
+          await sql.query(
+            `DELETE FROM issue_object_references
+             WHERE repository_id=$1 AND issue_id=$2 AND object_id=$3
+             RETURNING object_id,revision_id`,
+            [issue.repository_id, issue.id, command.objectId],
+            decodeObjectReferenceRow,
+          )
+        ).rows[0];
+        const removal = removeIssueObjectReference(removed?.revision_id ?? null);
+        if (!removed) throw new IssueError(503, "Issue Object reference 移除結果不完整。");
+        resourceId = removed.object_id;
+        data = { objectId: removed.object_id, removedRevisionId: removal.removedRevisionId };
       } else if (command.action === "lock") {
         if (issue.is_locked) throw new IssueError(409, "Conversation 已鎖定。");
         patch = { locked: true, lockReason: command.reason };

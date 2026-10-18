@@ -43,7 +43,8 @@
     "@line_bot_v1/explore": "workspace:*",
     "@line_bot_v1/audit": "workspace:*",
     "@line_bot_v1/issue": "workspace:*",
-    "@line_bot_v1/wbs": "workspace:*"
+    "@line_bot_v1/wbs": "workspace:*",
+    "@line_bot_v1/object": "workspace:*"
   },
   "devDependencies": {
     "@line/liff-mock": "catalog:",

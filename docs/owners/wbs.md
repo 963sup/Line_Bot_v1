@@ -4,7 +4,7 @@ Baseline publication atomically saves a version-bound outbox event. The public e
 
 The owner-published metrics query reports current OPEN proposals, the published Baseline and structural draft differences under current Project access. Missing content remains uninitialized; without a published Baseline, differences are null rather than an invented approved scope. Consumers use these facts without acquiring WBS authority.
 
-WBS owns a Project-scoped work decomposition document, its head version, immutable Revision content/history, governance, Baselines and durable exact-replay receipts. Project owns the enclosing Project's current authorization and lifecycle. WBS is a local product capability and does not redefine GitHub GitObject, Commit, PullRequest or ProjectItem semantics. A generic Object Domain runtime is deferred local product design, is distinct from GitObject, and has no invented FPT mapping.
+WBS owns a Project-scoped work decomposition document, its head version, immutable Revision content/history, governance, Baselines and durable exact-replay receipts. Project owns the enclosing Project's current authorization and lifecycle. WBS is a local product capability and does not redefine GitHub GitObject, Commit, PullRequest or ProjectItem semantics. The separate [Object Domain](object.md) owns Repository-native content and is distinct from GitObject. WBS-to-Object integration remains subsequent work and does not transfer WBS or Project authority.
 
 ## Authority and invariants
 

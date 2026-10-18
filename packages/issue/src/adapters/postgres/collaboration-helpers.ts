@@ -107,6 +107,8 @@ const receiptActions: readonly IssueCollaborationReceipt["action"][] = [
   "clear-labels",
   "set-milestone",
   "set-issue-type",
+  "set-object-reference",
+  "remove-object-reference",
   "add-sub-issue",
   "remove-sub-issue",
   "add-blocked-by",
