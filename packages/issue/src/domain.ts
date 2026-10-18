@@ -5,6 +5,10 @@ export type {
   IssueWorkflowStatus,
 } from "./domain/issue/entities/issue.js";
 export { IssueError } from "./domain/issue/errors/issue-error.js";
+export {
+  changeIssueObjectReference,
+  removeIssueObjectReference,
+} from "./domain/issue/policies/issue-object-reference.js";
 export { canIssueRepositoryOperation } from "./domain/issue/policies/issue-repository-operation.js";
 export { transitionIssue } from "./domain/issue/policies/issue-transition.js";
 export { normalizeIssueNumber } from "./domain/issue/value-objects/issue-number.js";

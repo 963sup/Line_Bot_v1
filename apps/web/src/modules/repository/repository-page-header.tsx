@@ -3,6 +3,7 @@ import RepositoryResourceNavigation from "./repository-resource-navigation";
 import { type RepositoryResourceSection, repositoryPath } from "./resource-navigation";
 
 const titles: Record<RepositoryResourceSection, string> = {
+  objects: "Objects",
   wiki: "Wiki",
   insights: "Insights",
   wbs: "WBS",

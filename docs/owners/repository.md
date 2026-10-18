@@ -15,7 +15,7 @@ Repository owns:
 - Repository Label、Repository Milestone and repository-scoped Issue number allocation；
 - discovery projections derived from Repository / Star / immutable Issue event facts。
 
-Issue consumes Repository scope/access and repository-scoped number allocation without acquiring Repository authority. Discussion consumes Repository scope/access without acquiring Repository authority. Project may reference Repository/Issue work but does not acquire either authority. Notifications only stores delivery references and does not acquire source truth.
+Issue consumes Repository scope/access and repository-scoped number allocation without acquiring Repository authority. Discussion consumes Repository scope/access without acquiring Repository authority. Object consumes Repository scope/access while owning its native content, classification, immutable revisions and Object-to-Object structure. Project may reference Repository/Issue work but does not acquire either authority. Notifications only stores delivery references and does not acquire source truth.
 
 ## Invariants
 

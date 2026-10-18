@@ -26,13 +26,14 @@
 | `/api/organization`、`/api/team`、`/api/enterprise` | 各自 owner 的治理、scope 與命令；EnterpriseTeam 不共用 Organization Team 語意 |
 | `/api/issues`、`/api/issues/{issueNumber}` | Issue owner transport；Repository-scoped read returns canonical `state/stateReason`, local `workflowStatus`, body and assignees；POST carries replay-safe create/workflow/edit/close/reopen/add-remove-assignees commands；GET `workflowStatus` is canonical and legacy `status` remains a temporary alias |
 | `/api/issue-types` | Issue owner Organization-scoped IssueType definition read/manage；current active `OrganizationOwner` only，create/update/delete 與 Issue assign/clear 分離 |
-| `/api/issue-collaboration` | Issue collaboration transport；comments/labels/milestone/relations/lock 與 IssueType assign/clear 共用 Issue expected-version/exact-replay aggregate mutation |
+| `/api/issue-collaboration` | Issue collaboration transport；comments/labels/milestone/relations/lock、IssueType assign/clear 及固定 Object Revision 引用共用 Issue expected-version/exact-replay aggregate mutation；Object 來源資格由其公開契約重驗 |
 | `/api/discussions`、`/api/discussions/{discussionId}` | Discussion owner transport；Repository-scoped authorized GET，必須提供 `owner` + `name` |
 | `/api/repository-labels` | GET：Repository Label authorized collection read，必須提供 `owner` + `name`；POST：Repository-owned replay-safe Label create/update/delete definition mutation |
 | `/api/repository-milestones`、`/api/repository-milestones/{milestoneNumber}` | GET：Repository Milestone authorized collection/detail read，必須提供 `owner` + `name`；collection POST：Repository-owned replay-safe Milestone create/update/open/close definition mutation |
 | `/api/repositories` | GET：Current User 的 explicit-access Repository collection；POST：Repository owner contract 的 replay-safe PRIVATE / INTERNAL / PUBLIC Repository create |
 | `/api/repository-management` | GET：current Repository settings projection；POST：current admin replay-safe rename/visibility/archive/unarchive with expected Repository version |
 | `/api/repository-subscription` | GET/POST：current-readable Repository 的 User Watch state；exact SUBSCRIBED / UNSUBSCRIBED / IGNORED，subscription 不授權 |
+| `/api/repository-object-types`、`/api/repository-objects`、`/api/repository-object-relationships` | Object owner 的分類、版本化內容與同 Repository 有向關係；verified LINE identity、current Repository scope、expected version 與 exact retry 由 owner contract 重驗 |
 | `/api/project-wbs`、`/api/project-wbs/history` | Project WBS content command/current view 與 immutable Revision history；current Project access/lifecycle、expected version 與 exact replay 由 owner contract 決定 |
 | `/api/project-wbs/governance`、`/api/project-wbs/metrics` | Project WBS policy/proposal/review/Baseline command and read transport，以及 WBS-owned current metrics；Project 僅供目前授權與 lifecycle |
 | `/api/repository-wbs/transfer`、`/api/repository-wbs/transfer/cancel` | R1 live-intent read、preflighted request 與 current source User owner exact-replay withdrawal；cancel 不依賴 target Project 且不適用 ACTIVE，Web 不執行 Release-only transfer |

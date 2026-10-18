@@ -8,6 +8,8 @@ import {
   repositoryIssuesPath,
   repositoryLabelsPath,
   repositoryMilestonesPath,
+  repositoryObjectPath,
+  repositoryObjectsPath,
   repositoryPath,
   repositoryResourceNavigationItems,
   repositorySettingsPath,
@@ -22,6 +24,11 @@ test("repository resource navigation builds canonical owner/name URLs", () => {
   assert.equal(repositoryAccessPath("acme", "Operations"), "/acme/Operations/access");
   assert.equal(repositorySettingsPath("acme", "Operations"), "/acme/Operations/settings");
   assert.equal(repositoryIssuesPath("acme", "Operations"), "/acme/Operations/issues");
+  assert.equal(repositoryObjectsPath("acme", "Operations"), "/acme/Operations/objects");
+  assert.equal(
+    repositoryObjectPath("acme", "Operations", "object / 1"),
+    "/acme/Operations/objects/object%20%2F%201",
+  );
   assert.equal(repositoryIssuePath("acme", "Operations", 12), "/acme/Operations/issues/12");
   assert.equal(repositoryIssueCreatePath("acme", "Operations"), "/acme/Operations/issues?create=1");
   assert.equal(repositoryDiscussionsPath("acme", "Operations"), "/acme/Operations/discussions");
@@ -46,12 +53,23 @@ test("Repository Star List navigation stays under the existing repositories root
 test("repository resource navigation exposes one ordered map and gates management links", () => {
   assert.deepEqual(
     repositoryResourceNavigationItems("acme", "Operations", false).map((item) => item.section),
-    ["overview", "wbs", "wiki", "insights", "issues", "discussions", "labels", "milestones"],
+    [
+      "overview",
+      "objects",
+      "wbs",
+      "wiki",
+      "insights",
+      "issues",
+      "discussions",
+      "labels",
+      "milestones",
+    ],
   );
   assert.deepEqual(
     repositoryResourceNavigationItems("acme", "Operations", true).map((item) => item.section),
     [
       "overview",
+      "objects",
       "wbs",
       "wiki",
       "insights",

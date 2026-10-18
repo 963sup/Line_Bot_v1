@@ -192,7 +192,8 @@
         "@line_bot_v1/numbering",
         "@line_bot_v1/organization",
         "@line_bot_v1/platform",
-        "@line_bot_v1/repository"
+        "@line_bot_v1/repository",
+        "@line_bot_v1/object"
       ]
     },
     "@line_bot_v1/team": {
@@ -273,6 +274,12 @@
         "@line_bot_v1/wbs",
         "@line_bot_v1/notifications"
       ]
+    },
+    "@line_bot_v1/object": {
+      "path": "packages/object",
+      "moduleKind": "domain-module",
+      "semanticOwner": "object",
+      "allowedWorkspaceDependencies": ["@line_bot_v1/platform", "@line_bot_v1/repository"]
     }
   },
   "targetModules": {
@@ -637,7 +644,8 @@
         "@line_bot_v1/audit",
         "@line_bot_v1/wbs",
         "@line_bot_v1/insights",
-        "@line_bot_v1/wiki"
+        "@line_bot_v1/wiki",
+        "@line_bot_v1/object"
       ]
     }
   }

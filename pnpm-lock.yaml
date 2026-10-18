@@ -203,6 +203,9 @@ importers:
       '@line_bot_v1/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@line_bot_v1/object':
+        specifier: workspace:*
+        version: link:../../packages/object
       '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../../packages/organization
@@ -571,6 +574,9 @@ importers:
       '@line_bot_v1/numbering':
         specifier: workspace:*
         version: link:../numbering
+      '@line_bot_v1/object':
+        specifier: workspace:*
+        version: link:../object
       '@line_bot_v1/organization':
         specifier: workspace:*
         version: link:../organization
@@ -669,6 +675,25 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/object:
+    dependencies:
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
