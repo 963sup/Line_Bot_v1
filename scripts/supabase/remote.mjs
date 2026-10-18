@@ -810,6 +810,48 @@ export function requiresIdentifierCutoverRecovery({ command, foundationState, au
   return command === "sync" && foundationState !== "fresh" && authorityState === "cutover-required";
 }
 
+export async function verifyIdentifierCutoverRecovery({
+  projectRef,
+  schemaSql,
+  authorization,
+  env = process.env,
+  fetchImpl = globalThis.fetch,
+}) {
+  const schemaSha256 = planFingerprint(schemaSql.replaceAll("\r\n", "\n"));
+  if (
+    authorization?.decision === "proceed-without-backup" &&
+    authorization.authority === "scoped-identifiers-v1" &&
+    authorization.projectRef === projectRef &&
+    authorization.schemaSha256 === schemaSha256 &&
+    typeof authorization.id === "string" &&
+    authorization.id.length > 0 &&
+    typeof authorization.instruction === "string" &&
+    authorization.instruction.length > 0
+  ) {
+    assertRemoteMutationContext("sync", env);
+    assertConfirmedProject(projectRef, env.SUPABASE_CONFIRM_PROJECT);
+    const revision = remoteMutationRevision(env);
+    if (env.GITHUB_SHA !== revision || env.GITHUB_REF !== "refs/heads/main") {
+      throw new Error("Unbacked cutover authorization requires the exact main Release revision.");
+    }
+    return {
+      projectRef,
+      provider: "supabase",
+      recoveryMode: "explicit-no-backup-authorization",
+      providerRecoveryVerified: false,
+      backupVerified: false,
+      disposition: "explicitly-authorized-without-backup",
+      authorizationId: authorization.id,
+      authority: authorization.authority,
+      schemaSha256,
+      revision,
+    };
+  }
+  const config = supabaseManagementRecoveryConfig(env);
+  assertConfirmedProject(projectRef, config.projectRef);
+  return verifySupabaseRecoveryReadback(config, fetchImpl);
+}
+
 function persistSupabaseRecoveryEvidence(evidence) {
   writeFileSync(
     new URL("recovery-readback.json", artifacts),
@@ -991,8 +1033,19 @@ async function runRemoteCommand({ projectRef, command, api }) {
     })
   ) {
     if (foundationState === "existing") await assertCutoverFoundationReady();
-    const recoveryEvidence = await verifySupabaseRecoveryReadback();
+    const recoveryEvidence = await verifyIdentifierCutoverRecovery({
+      projectRef,
+      schemaSql: declaredSchemaSql(),
+      authorization: JSON.parse(
+        readFileSync(new URL("identifier-cutover-authorization.json", import.meta.url), "utf8"),
+      ),
+    });
     persistSupabaseRecoveryEvidence(recoveryEvidence);
+    if (recoveryEvidence.backupVerified === false) {
+      console.warn(
+        `No verified backup: cutover explicitly authorized by ${recoveryEvidence.authorizationId} for ${projectRef} at ${recoveryEvidence.revision}.`,
+      );
+    }
   }
   await rebuildDesiredLocal();
   await assertDesiredIdentifierAuthority();
@@ -1062,7 +1115,7 @@ async function runRemoteCommand({ projectRef, command, api }) {
       );
       if (identifierAuthority.state === "cutover-required") {
         console.log(
-          "Existing-database cutover requires provider recovery readback before any remote DDL.",
+          "Existing-database cutover requires provider recovery readback or explicit authorization for this exact project and schema without a backup before any remote DDL.",
         );
       }
       console.log(plan.sql || "Remote app_private schema already matches supabase/schemas.");

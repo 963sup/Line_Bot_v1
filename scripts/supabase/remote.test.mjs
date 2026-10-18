@@ -32,6 +32,7 @@ import {
   runWithRemoteReconciliationLock,
   supabaseApiReadbackConfig,
   supabaseManagementRecoveryConfig,
+  verifyIdentifierCutoverRecovery,
   verifySupabaseApiReadback,
   verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
@@ -571,7 +572,7 @@ test("Supabase recovery readback accepts PITR/WALG or a completed managed backup
   assert.throws(() => assertSupabaseRecoveryReadback({}), /unexpected response/i);
 });
 
-test("identifier cutover requires provider recovery before existing-database DDL", () => {
+test("identifier cutover requires a recovery decision before existing-database DDL", () => {
   assert.equal(
     requiresIdentifierCutoverRecovery({
       command: "sync",
@@ -586,6 +587,103 @@ test("identifier cutover requires provider recovery before existing-database DDL
     { command: "sync", foundationState: "existing", authorityState: "active" },
   ]) {
     assert.equal(requiresIdentifierCutoverRecovery(input), false);
+  }
+});
+
+const unbackedRevision = "a".repeat(40);
+const unbackedSchema = "create table app_private.example(id text);\n";
+const unbackedAuthorization = {
+  id: "explicit-user-authorization",
+  authority: "scoped-identifiers-v1",
+  projectRef: "nmssogphayjymjpbnrxv",
+  schemaSha256: planFingerprint(unbackedSchema),
+  decision: "proceed-without-backup",
+  instruction: "Proceed without a backup for Vercel acceptance.",
+};
+const unbackedEnv = {
+  GITHUB_ACTIONS: "true",
+  GITHUB_REF: "refs/heads/main",
+  GITHUB_SHA: unbackedRevision,
+  SUPABASE_REMOTE_MUTATION_CONTEXT: "validated-main",
+  SUPABASE_RELEASE_SHA: unbackedRevision,
+  SUPABASE_CONFIRM_PROJECT: unbackedAuthorization.projectRef,
+  SUPABASE_URL: `https://${unbackedAuthorization.projectRef}.supabase.co`,
+  SUPABASE_ACCESS_TOKEN: "management-token",
+};
+
+test("explicit unbacked cutover is scoped to the exact project, authority and canonical schema", async () => {
+  for (const schemaSql of [unbackedSchema, unbackedSchema.replaceAll("\n", "\r\n")]) {
+    const evidence = await verifyIdentifierCutoverRecovery({
+      projectRef: unbackedAuthorization.projectRef,
+      schemaSql,
+      authorization: unbackedAuthorization,
+      env: unbackedEnv,
+      fetchImpl: () => {
+        throw new Error("Unbacked authorization must not claim provider backup readback.");
+      },
+    });
+    assert.deepEqual(evidence, {
+      projectRef: unbackedAuthorization.projectRef,
+      provider: "supabase",
+      recoveryMode: "explicit-no-backup-authorization",
+      providerRecoveryVerified: false,
+      backupVerified: false,
+      disposition: "explicitly-authorized-without-backup",
+      authorizationId: unbackedAuthorization.id,
+      authority: "scoped-identifiers-v1",
+      schemaSha256: planFingerprint(unbackedSchema),
+      revision: unbackedRevision,
+    });
+    assert.equal(JSON.stringify(evidence).includes("management-token"), false);
+  }
+});
+
+test("unmatched or incomplete authorization retains the provider recovery requirement", async () => {
+  for (const authorization of [
+    undefined,
+    { ...unbackedAuthorization, decision: "skip" },
+    { ...unbackedAuthorization, projectRef: "another-project" },
+    { ...unbackedAuthorization, authority: "scoped-identifiers-v2" },
+    { ...unbackedAuthorization, schemaSha256: planFingerprint("different schema") },
+    { ...unbackedAuthorization, id: "" },
+    { ...unbackedAuthorization, instruction: "" },
+  ]) {
+    let called = false;
+    await assert.rejects(
+      verifyIdentifierCutoverRecovery({
+        projectRef: unbackedAuthorization.projectRef,
+        schemaSql: unbackedSchema,
+        authorization,
+        env: unbackedEnv,
+        fetchImpl: async () => {
+          called = true;
+          return Response.json({ pitr_enabled: false, walg_enabled: false, backups: [] });
+        },
+      }),
+      /recovery is unavailable/,
+    );
+    assert.equal(called, true);
+  }
+});
+
+test("unbacked authorization cannot be consumed locally, on a branch, at another SHA or project", async () => {
+  for (const env of [
+    { ...unbackedEnv, GITHUB_ACTIONS: "false" },
+    { ...unbackedEnv, SUPABASE_REMOTE_MUTATION_CONTEXT: "" },
+    { ...unbackedEnv, GITHUB_REF: "refs/heads/feature" },
+    { ...unbackedEnv, GITHUB_SHA: "b".repeat(40) },
+    { ...unbackedEnv, SUPABASE_RELEASE_SHA: "invalid" },
+    { ...unbackedEnv, SUPABASE_CONFIRM_PROJECT: "another-project" },
+  ]) {
+    await assert.rejects(
+      verifyIdentifierCutoverRecovery({
+        projectRef: unbackedAuthorization.projectRef,
+        schemaSql: unbackedSchema,
+        authorization: unbackedAuthorization,
+        env,
+      }),
+      /current-main|exact main Release revision|exact lowercase Git|exactly match/,
+    );
   }
 });
 
