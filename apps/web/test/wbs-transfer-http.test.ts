@@ -157,6 +157,56 @@ test("WBS transfer transport preserves exact retry and failure classes", async (
   assert.equal((await (await get()).json()).id, command.transferId);
   assert.equal((await get(async () => Promise.reject(new WbsError(401, "login")))).status, 401);
 
+  const locatorReads: unknown[] = [];
+  const locatorGet = (query: string, identity = async () => "subject") =>
+    wbsTransferRead(
+      new Request(`https://example.com/api/repository-wbs/transfer?${query}`),
+      provideStore,
+      identity,
+      async () => ({ id: "actor" }),
+      async (actorUserId, selector) => {
+        locatorReads.push([actorUserId, selector]);
+        return "repository";
+      },
+    );
+  assert.equal((await locatorGet("owner=Alice&name=Alpha")).status, 200);
+  assert.deepEqual(locatorReads, [["actor", { ownerLogin: "alice", repositoryName: "Alpha" }]]);
+  assert.equal(
+    (
+      await locatorGet("owner=alice&name=Alpha", async () => {
+        throw new WbsError(401, "login");
+      })
+    ).status,
+    401,
+  );
+  assert.equal(locatorReads.length, 1);
+  for (const query of [
+    "owner=alice",
+    "owner=alice&name=Alpha&repositoryId=other",
+    "owner=alice&owner=other&name=Alpha",
+    "repositoryId=repository&repositoryId=other",
+    "repositoryId=repository&actorUserId=spoof",
+  ])
+    assert.equal((await locatorGet(query)).status, 400);
+  assert.equal(locatorReads.length, 1);
+
+  const currentRead = store.readCurrent;
+  store.readCurrent = async () => ({ transfer: saved, source: source("another-owner") });
+  assert.equal((await locatorGet("owner=alice&name=Alpha")).status, 403);
+  store.readCurrent = currentRead;
+  const beforeMissingLocator = storeResolutions;
+  const missingLocator = await wbsTransferRead(
+    new Request("https://example.com/api/repository-wbs/transfer?owner=alice&name=Missing"),
+    provideStore,
+    async () => "subject",
+    async () => ({ id: "actor" }),
+    async () => {
+      throw new WbsError(404, "missing");
+    },
+  );
+  assert.equal(missingLocator.status, 404);
+  assert.equal(storeResolutions, beforeMissingLocator);
+
   const cancelCommand = {
     transferId: command.transferId,
     repositoryId: command.repositoryId,

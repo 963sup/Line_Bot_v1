@@ -4,7 +4,7 @@
 
 `/{login}/{repository}/insights` is the authenticated read-only Repository Pulse entry. The locator is resolved under current Repository access; no public metrics are server-rendered.
 
-`/{login}/{repository}/wbs` is the Repository-WBS content entry; current and historical content are authorized through the WBS owner contract. Existing root and collaboration routes remain available.
+`/{login}/{repository}/wbs` retains existing Repository-WBS content, exact retries and controlled migration. New WBS starts in Project. Repository roots direct new work to Projects and label the legacy link explicitly; after cutover, current source-owner authorization resolves the Project destination without requiring the retired content API to succeed.
 
 
 ## 現行 URL 與 invariant

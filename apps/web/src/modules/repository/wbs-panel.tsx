@@ -2,7 +2,9 @@
 
 import { parseWbsCommand } from "@line_bot_v1/wbs/application/commands/content";
 import type { WbsCommand, WbsHistory, WbsView } from "@line_bot_v1/wbs/contracts/dto/content";
+import type { WbsScopeTransfer } from "@line_bot_v1/wbs/contracts/dto/transfer";
 import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
+import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -11,6 +13,7 @@ import WbsGovernancePanel from "./wbs-governance-panel";
 import styles from "./wbs-panel.module.css";
 import { wbsHistory, wbsReceipt, wbsView } from "./wbs-response";
 import WbsTransferPanel from "./wbs-transfer-panel";
+import { parseWbsScopeTransfer } from "./wbs-transfer-state";
 
 type Pending = { actor: string; command: WbsCommand };
 export default function WbsPanel({
@@ -23,6 +26,8 @@ export default function WbsPanel({
   repositoryName: string;
 }) {
   const [view, setView] = useState<WbsView | null>(null);
+  const [retired, setRetired] = useState(false);
+  const [transfer, setTransfer] = useState<WbsScopeTransfer | null>(null);
   const [draft, setDraft] = useState<WbsNode | null>(null);
   const [creating, setCreating] = useState(false);
   const [history, setHistory] = useState<WbsHistory | null>(null);
@@ -73,6 +78,8 @@ export default function WbsPanel({
     const ticket = ++generation.current;
     setBusy(true);
     setError("");
+    setTransfer(null);
+    setRetired(false);
     try {
       const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入。");
@@ -81,6 +88,45 @@ export default function WbsPanel({
         headers: { "X-App-Session-Generation": token },
       });
       const body: unknown = await response.json();
+      if (ticket !== generation.current) return;
+      if (response.status === 410) {
+        current.current = null;
+        pendingRef.current = null;
+        setView(null);
+        setDraft(null);
+        setHistory(null);
+        setPending(null);
+        setRetired(true);
+        const destination = await fetch(
+          `/api/repository-wbs/transfer?${new URLSearchParams({ owner: ownerLogin, name: repositoryName })}`,
+          {
+            cache: "no-store",
+            headers: { "X-App-Session-Generation": token },
+          },
+        );
+        const incoming: unknown = await destination.json();
+        if (ticket !== generation.current) return;
+        if (!destination.ok)
+          throw Object.assign(
+            new Error(
+              incoming &&
+                typeof incoming === "object" &&
+                "error" in incoming &&
+                typeof incoming.error === "string"
+                ? incoming.error
+                : "無法讀取目前的 WBS 移轉狀態，請確認來源存取權後重試。",
+            ),
+            {
+              status: destination.status,
+            },
+          );
+        if (incoming !== null) {
+          const active = parseWbsScopeTransfer(incoming);
+          if (active.state !== "ACTIVE") throw new Error("WBS 移轉狀態尚待確認，請重新載入。");
+          setTransfer(active);
+        }
+        return;
+      }
       if (!response.ok)
         throw Object.assign(
           new Error(
@@ -147,7 +193,7 @@ export default function WbsPanel({
     } finally {
       if (ticket === generation.current) setBusy(false);
     }
-  }, [endpoint, liffId, storageKey]);
+  }, [endpoint, liffId, storageKey, ownerLogin, repositoryName]);
 
   async function execute(edit?: WbsEdit) {
     const source = current.current;
@@ -218,6 +264,8 @@ export default function WbsPanel({
     current.current = null;
     pendingRef.current = null;
     setView(null);
+    setTransfer(null);
+    setRetired(false);
     setDraft(null);
     setPending(null);
     setHistory(null);
@@ -345,9 +393,29 @@ export default function WbsPanel({
         ownerLogin={view?.repository.ownerLogin ?? ownerLogin}
         repositoryName={view?.repository.name ?? repositoryName}
         active="wbs"
+        title="舊 WBS 與移轉"
         canManage={view?.canManageRepository ?? false}
       />
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
+      <section className={styles.notice} aria-label="WBS 入口">
+        <h2>WBS 已由 Project 管理</h2>
+        <p>
+          新的工作分解結構請在 Project 建立。此頁保留舊 Repository WBS 的既有資料、操作重試與移轉。
+        </p>
+        <Link href="/projects">前往 Projects</Link>
+      </section>
+      {retired && (
+        <section className={styles.notice} aria-label="WBS 移轉完成">
+          <h2>Repository WBS 已停止使用</h2>
+          {transfer ? (
+            <Link href={`/projects/${encodeURIComponent(transfer.projectId)}/wbs`}>
+              開啟 Project WBS
+            </Link>
+          ) : (
+            <p>請從 Projects 開啟目前有權存取的 WBS。</p>
+          )}
+        </section>
+      )}
       {error && (
         <p role="alert" className={styles.notice}>
           {error}
@@ -376,10 +444,7 @@ export default function WbsPanel({
       {view && !view.revision && (
         <div className={styles.panel}>
           <h2>尚未建立 WBS</h2>
-          <p>建立工作分解結構，定義交付成果與驗收要求。</p>
-          {editable && (
-            <button onClick={() => void execute({ action: "initialize" })}>建立 WBS</button>
-          )}
+          <p>Repository 不再提供新建 WBS；請前往 Project 建立。</p>
         </div>
       )}
       {view?.archived && <p>Repository 已封存，WBS 僅供讀取。</p>}

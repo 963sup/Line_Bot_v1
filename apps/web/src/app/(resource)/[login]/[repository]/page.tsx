@@ -1,5 +1,6 @@
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import IssueBoard from "../../../../modules/repository/issue-board";
 import RepositoryPageHeader from "../../../../modules/repository/repository-page-header";
@@ -38,11 +39,14 @@ export default async function Page({
           repositoryName={publicRepository.name}
           explicitInteraction
         />
-        <PrimaryLink
-          href={`/${encodeURIComponent(publicRepository.ownerLogin)}/${encodeURIComponent(publicRepository.name)}/wbs`}
-        >
-          開啟 WBS
-        </PrimaryLink>
+        <PrimaryLink href="/projects">前往 Projects</PrimaryLink>
+        <p>
+          <Link
+            href={`/${encodeURIComponent(publicRepository.ownerLogin)}/${encodeURIComponent(publicRepository.name)}/wbs`}
+          >
+            舊 WBS 與移轉
+          </Link>
+        </p>
       </>
     );
   }
@@ -56,11 +60,12 @@ export default async function Page({
       navigationActive="overview"
       overviewContent={
         <>
-          <PrimaryLink
-            href={`/${encodeURIComponent(ownerLogin)}/${encodeURIComponent(repository)}/wbs`}
-          >
-            開啟 WBS
-          </PrimaryLink>
+          <PrimaryLink href="/projects">前往 Projects</PrimaryLink>
+          <p>
+            <Link href={`/${encodeURIComponent(ownerLogin)}/${encodeURIComponent(repository)}/wbs`}>
+              舊 WBS 與移轉
+            </Link>
+          </p>
           <RepositorySubscriptionControl
             liffId={lineMiniApp().liffId}
             ownerLogin={ownerLogin}

@@ -6,6 +6,7 @@ import type {
   CancelWbsScopeTransferCommand,
   WbsScopeTransfer,
 } from "@line_bot_v1/wbs/contracts/dto/transfer";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import type {
@@ -445,21 +446,34 @@ export default function WbsTransferPanel({
     <section className="crud-guidance" aria-label="Project WBS 移轉">
       <h2>移轉至 Project WBS</h2>
       <p>
-        這會建立同一 User owner 的私人 Project，再登記版本固定的移轉請求。正式移轉由 release
-        workflow 執行。
+        這會為你建立私人 Project，並提出舊 WBS
+        的移轉請求。提出請求不代表已完成移轉，請以目前狀態為準。
       </p>
       {loading && <p role="status">正在讀取移轉狀態…</p>}
       {error && <p role="alert">{error}</p>}
       {accepted && accepted.state !== "CANCELLED" ? (
         <>
           <p role="status">
-            移轉請求已建立；Transfer ID：{accepted.id}；目標 Project ID：{accepted.projectId}
-            ；目前狀態：
-            {accepted.state}。
+            {accepted.state === "ACTIVE"
+              ? "移轉已完成，請改用 Project WBS。"
+              : "移轉請求已建立，等待完成；目前仍使用舊 WBS。"}
           </p>
-          <p>
-            固定來源版本：{accepted.sourceVersion}；來源 Revision：{accepted.sourceHeadRevisionId}。
-          </p>
+          <Link
+            href={`/projects/${encodeURIComponent(accepted.projectId)}${accepted.state === "ACTIVE" ? "/wbs" : ""}`}
+          >
+            {accepted.state === "ACTIVE" ? "開啟 Project WBS" : "查看目標 Project"}
+          </Link>
+          <details>
+            <summary>移轉紀錄</summary>
+            <p>
+              Transfer ID：{accepted.id}；目標 Project ID：{accepted.projectId}；狀態：
+              {accepted.state}。
+            </p>
+            <p>
+              固定來源版本：{accepted.sourceVersion}；來源 Revision：{accepted.sourceHeadRevisionId}
+              。
+            </p>
+          </details>
           {accepted.state === "REQUESTED" && (
             <button type="button" disabled={busy} onClick={() => startWithdrawal(accepted)}>
               {busy ? "處理中…" : cancellation ? "重試撤回移轉請求" : "撤回移轉請求"}

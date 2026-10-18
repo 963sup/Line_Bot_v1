@@ -4,13 +4,22 @@ import {
 } from "../../../../modules/repository/wbs-transfer-http.server";
 import { activeLineUser } from "../../_composition/account.server";
 import { requestLineIdentity } from "../../_composition/request-identity.server";
-import { wbsTransferStore } from "../../_composition/wbs-transfer.server";
+import {
+  resolveWbsTransferRepository,
+  wbsTransferStore,
+} from "../../_composition/wbs-transfer.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
-  return wbsTransferRead(request, wbsTransferStore, requestLineIdentity, activeLineUser);
+  return wbsTransferRead(
+    request,
+    wbsTransferStore,
+    requestLineIdentity,
+    activeLineUser,
+    resolveWbsTransferRepository,
+  );
 }
 
 export function POST(request: Request) {
