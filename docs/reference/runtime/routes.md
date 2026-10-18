@@ -98,7 +98,7 @@ Current Repository-scoped collaboration/resource API：
 | `/api/project-management/users` | Project-scoped User lookup；exact login candidate 僅供 current Project ADMIN 邀請，label lookup 只接受 snapshot 中已可見的 User IDs |
 | `/api/project-wbs`、`/api/project-wbs/history` | Project WBS content commands 與 immutable Revision history；projectId、獨立 content version 與 exact request replay |
 | `/api/project-wbs/governance`、`/api/project-wbs/metrics` | Project WBS 提案、版本綁定審查、Baseline 與目前指標；所有來源讀取重驗 Project access |
-| `/api/repository-wbs/transfer`、`/api/repository-wbs/transfer/cancel` | R1 Source User owner 讀取目前 intent、提交精確 source/head/target 請求或以獨立 requestId 撤回 REQUESTED；保留快照與 CANCELLED 回執，資料移轉由 Release-only operator 執行 |
+| `/api/repository-wbs/transfer`、`/api/repository-wbs/transfer/cancel` | R1 Source User owner 讀取目前 intent（單一 repositoryId，或完整 owner/name 經 Repository current access 解析）、提交精確 source/head/target 請求或以獨立 requestId 撤回 REQUESTED；410 後仍可查詢 ACTIVE 目的地。保留快照與 CANCELLED 回執，資料移轉由 Release-only operator 執行 |
 
 Discussion read 與 current management write 都由 Discussion owner 承接；read locator 不授權，write 仍逐次重驗 Repository access、version 與 replay。Project aggregate-root read 與 `manage-project-planning` 都已 current；Project-owned collaborator、Item/DraftIssue、typed fields/values、views、status updates 是正式 runtime capability，來源 Repository/Issue authority 不轉移。Project WBS 由 WBS Owner 管理內容與治理，Project 提供目前授權與生命週期；Project-local Milestone 仍是獨立 planning persistence。
 

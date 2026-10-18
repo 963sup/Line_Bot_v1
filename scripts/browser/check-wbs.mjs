@@ -344,7 +344,22 @@ try {
   await page.goto(`${base}/alice/Alpha/wbs`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "尚未建立 WBS" })).toBeVisible();
   assert.equal(posts.length, 0, "Read must not initialize content");
-  await page.getByRole("button", { name: "建立 WBS", exact: true }).click();
+  await expect(page.getByRole("button", { name: "建立 WBS", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "前往 Projects", exact: true })).toBeVisible();
+  // Existing Repository data remains a transfer source; the Web no longer creates new legacy WBS.
+  const legacy = await executeWbsCommand(
+    contentStore,
+    actor,
+    {
+      action: "initialize",
+      repositoryId: "repo",
+      expectedVersion: 0,
+      requestId: randomUUID(),
+    },
+    Date.now(),
+  );
+  revisions.push(legacy.revision);
+  await page.reload();
   await expect(page.getByText("目前版本：1", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "新增節點" }).click();
   await page.getByLabel("標題", { exact: true }).fill("門市開幕");

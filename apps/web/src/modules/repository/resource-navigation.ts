@@ -33,7 +33,11 @@ export function repositoryResourceNavigationItems(
 ) {
   const items: { href: string; label: string; section: RepositoryResourceSection }[] = [
     { href: repositoryPath(ownerLogin, repositoryName), label: "Overview", section: "overview" },
-    { href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`, label: "WBS", section: "wbs" },
+    {
+      href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`,
+      label: "WBS 移轉",
+      section: "wbs",
+    },
     { href: `${repositoryPath(ownerLogin, repositoryName)}/wiki`, label: "Wiki", section: "wiki" },
     {
       href: `${repositoryPath(ownerLogin, repositoryName)}/insights`,

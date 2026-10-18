@@ -16,6 +16,7 @@ const resolvedImport = async (specifier) =>
   import(pathToFileURL(webRequire.resolve(specifier)).href);
 
 const { postgresFixture } = await resolvedImport("@line_bot_v1/platform/testing/postgres");
+const { createSql } = await resolvedImport("@line_bot_v1/platform/postgres");
 const { createProjectManagement } = await resolvedImport(
   "@line_bot_v1/project/application/management",
 );
@@ -69,8 +70,15 @@ const { executeWbsCommand } = await resolvedImport(
 const { executeWbsGovernanceCommand } = await resolvedImport(
   "@line_bot_v1/wbs/application/use-cases/governance",
 );
-const { cancelWbsScopeTransfer, readWbsScopeTransfer, requestWbsScopeTransfer } =
-  await resolvedImport("@line_bot_v1/wbs/application/use-cases/transfer");
+const {
+  cancelWbsScopeTransfer,
+  executeWbsScopeTransfer,
+  readWbsScopeTransfer,
+  requestWbsScopeTransfer,
+} = await resolvedImport("@line_bot_v1/wbs/application/use-cases/transfer");
+const { repositoryContentScope } = await resolvedImport(
+  "@line_bot_v1/repository/postgres/content-scope",
+);
 
 const fixture = await postgresFixture();
 for (const userId of ["owner", "writer"]) {
@@ -116,27 +124,42 @@ const projectGovernance = createPostgresProjectWbsGovernanceStore(fixture.db);
 const projectMetrics = createPostgresProjectWbsMetrics(fixture.db);
 const repositoryContent = createPostgresWbsStore(fixture.db);
 const repositoryGovernance = createPostgresWbsGovernanceStore(fixture.db);
-const transferStore = createPostgresWbsScopeTransferStore(fixture.db, (sql) => ({
-  project: async (userId, targetProjectId) => {
-    const scope = await createPostgresProjectContentScope(sql).read(userId, targetProjectId);
-    return {
-      projectId: scope.project.id,
-      ownerAccountId: scope.project.ownerAccountId,
-      ownerKind: scope.project.ownerKind,
-      role: scope.role,
-      public: scope.project.public,
-      closed: scope.closed,
-      hasCollaboratorGrants: scope.project.hasCollaboratorGrants,
-    };
+const transferStore = createPostgresWbsScopeTransferStore(
+  fixture.db,
+  (sql) => ({
+    project: async (userId, targetProjectId) => {
+      const scope = await createPostgresProjectContentScope(sql).read(userId, targetProjectId);
+      return {
+        projectId: scope.project.id,
+        ownerAccountId: scope.project.ownerAccountId,
+        ownerKind: scope.project.ownerKind,
+        role: scope.role,
+        public: scope.project.public,
+        closed: scope.closed,
+        hasCollaboratorGrants: scope.project.hasCollaboratorGrants,
+      };
+    },
+    dependents: async (_actorUserId, _repositoryId, targetProjectId) => {
+      const [actionRows, notificationRows] = await Promise.all([
+        createPostgresActionTransferFacts(sql).read(targetProjectId),
+        createPostgresNotificationTransferFacts(sql).read(),
+      ]);
+      return { actionRows, notificationRows };
+    },
+  }),
+  {
+    transaction: (work) =>
+      fixture.pg.transaction(async (tx) => {
+        await tx.exec("SET LOCAL search_path=app_private,pg_catalog");
+        return work(
+          createSql(async (text, values) => {
+            const result = await tx.query(text, values);
+            return { rows: result.rows, rowCount: result.affectedRows ?? null };
+          }),
+        );
+      }),
   },
-  dependents: async (_actorUserId, _repositoryId, targetProjectId) => {
-    const [actionRows, notificationRows] = await Promise.all([
-      createPostgresActionTransferFacts(sql).read(targetProjectId),
-      createPostgresNotificationTransferFacts(sql).read(),
-    ]);
-    return { actionRows, notificationRows };
-  },
-}));
+);
 await executeWbsCommand(
   repositoryContent,
   "owner",
@@ -199,6 +222,7 @@ const projectPosts = [];
 const contentPosts = [];
 const governancePosts = [];
 const transferPosts = [];
+let transferLookupFailure = false;
 const cancelPosts = [];
 
 function errorResponse(route, error, fallback) {
@@ -344,12 +368,21 @@ await context.route("**/*", async (route) => {
   if (url.pathname === "/api/repository-wbs/transfer") {
     try {
       if (request.method() === "GET") {
+        if (transferLookupFailure)
+          return route.fulfill({ status: 503, json: { error: "移轉服務暫時無法使用。" } });
+        const repositoryId =
+          url.searchParams.get("repositoryId") ??
+          (await fixture.db.transaction(
+            async (sql) =>
+              (
+                await repositoryContentScope(sql, actor, {
+                  ownerLogin: url.searchParams.get("owner") ?? "",
+                  repositoryName: url.searchParams.get("name") ?? "",
+                })
+              ).repository.id,
+          ));
         return route.fulfill({
-          json: await readWbsScopeTransfer(
-            transferStore,
-            actor,
-            url.searchParams.get("repositoryId") ?? "",
-          ),
+          json: await readWbsScopeTransfer(transferStore, actor, repositoryId),
         });
       }
       const command = parseRequestWbsScopeTransferCommand(request.postDataJSON());
@@ -527,7 +560,12 @@ try {
   await expect(transferRegion.getByRole("alert")).toContainText("結果尚待確認");
   await transferRegion.getByRole("button", { name: "重試原操作" }).click();
   await expect(transferRegion.getByRole("status")).toContainText("移轉請求已建立");
-  await expect(transferRegion.getByRole("status")).toContainText(transferPosts[0].transferId);
+  await expect(transferRegion).toContainText(transferPosts[0].transferId);
+  await expect(transferRegion.getByRole("link", { name: "查看目標 Project" })).toHaveAttribute(
+    "href",
+    `/projects/${encodeURIComponent(transferPosts[0].projectId)}`,
+  );
+  await expect(transferRegion.getByRole("link", { name: "開啟 Project WBS" })).toHaveCount(0);
   await expect(transferRegion).toContainText("固定來源版本：1");
   await expect(transferRegion).toContainText(transferPosts[0].sourceHeadRevisionId);
   assert.equal(projectPosts.at(-1).requestId, projectPosts.at(-2).requestId);
@@ -536,7 +574,7 @@ try {
   assert.equal(transferPosts[0].sourceVersion, 1);
   await page.evaluate(() => sessionStorage.removeItem("wbs-transfer:repo:owner"));
   await page.reload();
-  await expect(transferRegion.getByRole("status")).toContainText(transferPosts[0].transferId);
+  await expect(transferRegion).toContainText(transferPosts[0].transferId);
 
   cancelUnknown = true;
   await transferRegion.getByRole("button", { name: "撤回移轉請求" }).click();
@@ -560,7 +598,7 @@ try {
     { command: staleCancellation },
   );
   await page.reload();
-  await expect(transferRegion.getByRole("status")).toContainText(transferPosts[1].transferId);
+  await expect(transferRegion).toContainText(transferPosts[1].transferId);
   await transferRegion.getByRole("button", { name: "撤回移轉請求" }).click();
   await expect(transferRegion.getByRole("status")).toContainText("移轉請求已撤回");
   assert.equal(cancelPosts.at(-1).transferId, transferPosts[1].transferId);
@@ -598,6 +636,54 @@ try {
   ]);
   await page.screenshot({ path: path.join(output, "transfer-requested.png"), fullPage: true });
 
+  // Local owner-store activation proves that a fresh legacy URL works after its content API retires.
+  await transferRegion.getByRole("button", { name: "建立 Project 與移轉請求" }).click();
+  await expect(transferRegion.getByRole("status")).toContainText("移轉請求已建立");
+  const finalTransfer = transferPosts.at(-1);
+  assert.ok(finalTransfer);
+  await executeWbsScopeTransfer(
+    transferStore,
+    {
+      transferId: finalTransfer.transferId,
+      currentMainSha: "a".repeat(40),
+      deployedSha: "a".repeat(40),
+      providerRecoveryReady: true,
+    },
+    Date.now(),
+  );
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+  const retired = page.getByRole("region", { name: "WBS 移轉完成" });
+  await expect(retired.getByRole("heading", { name: "Repository WBS 已停止使用" })).toBeVisible();
+  await expect(retired.getByRole("link", { name: "開啟 Project WBS" })).toHaveAttribute(
+    "href",
+    `/projects/${encodeURIComponent(finalTransfer.projectId)}/wbs`,
+  );
+  await expect(page.getByRole("button", { name: "新增節點" })).toHaveCount(0);
+  await page.screenshot({ path: path.join(output, "transfer-active.png"), fullPage: true });
+  transferLookupFailure = true;
+  await page.reload();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("移轉服務暫時無法使用");
+  await expect(page.getByRole("link", { name: "開啟 Project WBS" })).toHaveCount(0);
+  transferLookupFailure = false;
+  await page.reload();
+  await expect(retired.getByRole("link", { name: "開啟 Project WBS" })).toBeVisible();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("link", { name: "開啟 Project WBS" })).toHaveCount(0);
+  await page.reload();
+  await expect(retired.getByRole("link", { name: "開啟 Project WBS" })).toBeVisible();
+  await retired.getByRole("link", { name: "開啟 Project WBS" }).click();
+  await expect(page.getByRole("heading", { name: "Project WBS", exact: true })).toBeVisible();
+  await expect(page.getByText("目前版本：1", { exact: true })).toBeVisible();
+  actor = "writer";
+  await page.goto(`${base}/owner/Alpha/wbs`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("User owner");
+  await expect(page.getByRole("link", { name: "開啟 Project WBS" })).toHaveCount(0);
+  await expect(page.getByText(finalTransfer.projectId, { exact: false })).toHaveCount(0);
+
   assert.deepEqual(errors, []);
   writeFileSync(
     path.join(output, "project-wbs-results.json"),
@@ -605,7 +691,7 @@ try {
       {
         status: "passed",
         scope:
-          "Real Next browser with synthetic LINE/API transport and real Project, Repository, WBS governance and transfer-request owner stores on local PGlite; no operator migration executed.",
+          "Real Next browser with synthetic LINE/API transport and real Project, Repository, WBS governance and transfer owner stores on local PGlite, including local activation; no production mutation.",
         checks: [
           "formal Project creation and Project collaborator authorization",
           "explicit Project WBS initialize and edit",
@@ -619,6 +705,8 @@ try {
           "two-phase Project creation and transfer request exact replay without operator execution",
           "durable transfer recovery and exact-replay withdrawal before a replacement intent",
           "cross-tab cancelled request replay and stale cancellation reconciliation",
+          "fresh legacy URL recovers the authorized Project destination after ACTIVE and HTTP 410",
+          "non-owner cutover recovery never exposes the target Project",
         ],
         projectContentPosts: contentPosts.length,
         projectGovernancePosts: governancePosts.length,
