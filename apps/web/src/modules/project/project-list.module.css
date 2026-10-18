@@ -16,8 +16,7 @@
 
 .collection .filters .filter,
 .collection .filters .activeFilter,
-.collection .filters .refresh,
-.collection .filters .create {
+.collection .filters .refresh {
   width: auto;
   min-height: 44px;
   flex: 0 0 auto;
@@ -34,16 +33,8 @@
 
 .filter,
 .activeFilter,
-.refresh:not(:disabled),
-.create {
+.refresh:not(:disabled) {
   cursor: pointer;
-}
-
-.collection .filters .create {
-  border-color: var(--green-strong);
-  background: var(--green-strong);
-  color: var(--surface);
-  text-decoration: none;
 }
 
 .collection .filters .activeFilter {
@@ -64,8 +55,7 @@
 
 .filter:focus-visible,
 .activeFilter:focus-visible,
-.refresh:focus-visible,
-.create:focus-visible {
+.refresh:focus-visible {
   outline: 2px solid var(--green-strong);
   outline-offset: 2px;
 }

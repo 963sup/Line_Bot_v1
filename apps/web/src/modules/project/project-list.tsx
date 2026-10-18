@@ -24,9 +24,6 @@ export default function ProjectList({ liffId }: { liffId: string }) {
     <div className={`repository-list resource-workspace ${styles.collection}`}>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <div className={styles.filters} role="group" aria-label="Filter projects by owner type">
-        <Link className={styles.create} href="/projects/new">
-          建立 Project
-        </Link>
         {ownerFilters.map((filter) => (
           <button
             key={filter.value}
