@@ -95,7 +95,7 @@ test("partner management HTTP uses verified LINE User, not supplied identity or 
       ],
     };
     let writes = 0;
-    mock.method(PostgresPartnerRepository.prototype, "execute", async (actor: string) => {
+    mock.method(PostgresPartnerRepository.prototype, "run", async (actor: string) => {
       assert.equal(actor, id);
       writes++;
       return { id: command.id };

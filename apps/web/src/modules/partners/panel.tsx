@@ -1,5 +1,6 @@
 "use client";
 
+import type { PartnerCommand } from "@line_bot_v1/partners/application/commands/partner-command";
 import type {
   ContactMethod,
   Partner,
@@ -8,7 +9,6 @@ import type {
   PartnerReferral,
   PartnersView,
 } from "@line_bot_v1/partners/contracts";
-import type { PartnerCommand } from "@line_bot_v1/partners/domain";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
