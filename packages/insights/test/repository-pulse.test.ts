@@ -13,13 +13,6 @@ const issues = {
     unstructuredEvents: 0,
   },
 };
-const wbs = {
-  initialized: false,
-  pendingProposals: 0,
-  baseline: null,
-  draftRevisionId: null,
-  differences: null,
-};
 test("Pulse preserves time boundaries and metric meaning without loading authoritative aggregates", async () => {
   const calls: unknown[] = [];
   const query = createRepositoryPulse({
@@ -32,7 +25,6 @@ test("Pulse preserves time boundaries and metric meaning without loading authori
         return issues;
       },
     },
-    wbs: { read: async () => wbs },
     now: () => 1000000000,
   });
   const view = await query.read("owner", { repositoryId: "repo" });
@@ -42,10 +34,10 @@ test("Pulse preserves time boundaries and metric meaning without loading authori
     ["owner", "repo", 395200000, 1000000000],
   ]);
   assert.equal(view.issues.status, "available");
-  assert.equal(view.wbs.status, "available");
+  assert.equal("wbs" in view, false);
   await assert.rejects(query.read("owner", { repositoryId: "repo", from: 2, to: 2 }));
 });
-test("unavailable sources are not zero; authorization failures never yield partial private output", async () => {
+test("an unavailable source is not zero; authorization and not-found failures stay closed", async () => {
   const deps = {
     qualify: async () => {},
     issues: {
@@ -53,7 +45,6 @@ test("unavailable sources are not zero; authorization failures never yield parti
         throw new Error("storage unavailable");
       },
     },
-    wbs: { read: async () => wbs },
     now: () => 100,
   };
   const view = await createRepositoryPulse(deps).read("owner", {
@@ -62,15 +53,16 @@ test("unavailable sources are not zero; authorization failures never yield parti
     to: 100,
   });
   assert.deepEqual(view.issues, { status: "unavailable", value: null });
-  assert.equal(view.wbs.status, "available");
-  await assert.rejects(
-    createRepositoryPulse({
-      ...deps,
-      issues: {
-        read: async () => {
-          throw Object.assign(new Error("revoked"), { status: 403 });
+  for (const status of [401, 403, 404]) {
+    await assert.rejects(
+      createRepositoryPulse({
+        ...deps,
+        issues: {
+          read: async () => {
+            throw Object.assign(new Error("denied"), { status });
+          },
         },
-      },
-    }).read("owner", { repositoryId: "repo", from: 0, to: 100 }),
-  );
+      }).read("owner", { repositoryId: "repo", from: 0, to: 100 }),
+    );
+  }
 });

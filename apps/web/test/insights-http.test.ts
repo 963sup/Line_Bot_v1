@@ -2,12 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createRepositoryPulse } from "@line_bot_v1/insights/application/use-cases/repository-pulse";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
-import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { insightsRequest } from "../src/modules/repository/insights-http.server";
 import { insightsView } from "../src/modules/repository/insights-response";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error";
 
-test("Insights HTTP preserves identity, locator, interval, partial availability and denial", async () => {
+test("Insights HTTP preserves identity, locator, interval, source availability and denial", async () => {
   const url = "https://example.test/api/repository-insights?owner=alice&name=Alpha";
   let failure: "none" | "source" | "forbidden" | "missing" = "none";
   const calls: unknown[] = [];
@@ -19,6 +18,7 @@ test("Insights HTTP preserves identity, locator, interval, partial availability 
       read: async () => {
         if (failure === "source") throw new Error("storage unavailable");
         if (failure === "forbidden") throw new RepositoryError(403, "denied");
+        if (failure === "missing") throw new RepositoryError(404, "missing");
         return {
           created: 2,
           closed: 1,
@@ -29,18 +29,6 @@ test("Insights HTTP preserves identity, locator, interval, partial availability 
             legacyIssues: 1,
             unstructuredEvents: 2,
           },
-        };
-      },
-    },
-    wbs: {
-      read: async () => {
-        if (failure === "missing") throw new WbsError(404, "missing");
-        return {
-          initialized: false,
-          pendingProposals: 0,
-          baseline: null,
-          draftRevisionId: null,
-          differences: null,
         };
       },
     },
@@ -59,6 +47,7 @@ test("Insights HTTP preserves identity, locator, interval, partial availability 
   assert.match(response.headers.get("cache-control") ?? "", /no-store/);
   const view = insightsView(await response.json());
   assert.equal(view.issues?.created, 2);
+  assert.equal("wbs" in view, false);
   assert.equal(view.from, 395200000);
   assert.equal(view.to, 1000000000);
   assert.deepEqual(calls, [["canonical-user", "resolved-repo"]]);
@@ -95,8 +84,7 @@ test("Insights presentation rejects missing metrics rather than fabricating zero
     period: { from: 1, to: 2, timeZone: "Asia/Taipei" },
     observedAt: 2,
     issues: { status: "unavailable", value: null },
-    wbs: { status: "unavailable", value: null },
   };
-  assert.equal(insightsView(value).wbs, null);
+  assert.equal(insightsView(value).issues, null);
   assert.throws(() => insightsView({ ...value, issues: { status: "available", value: {} } }));
 });

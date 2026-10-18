@@ -12,7 +12,6 @@ const date = (value: number) =>
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value);
-const differenceLabels = { ADDED: "新增", REMOVED: "移除", CHANGED: "修改" };
 export default function InsightsPanel({
   liffId,
   ownerLogin,
@@ -123,7 +122,7 @@ export default function InsightsPanel({
           <p className={styles.context}>
             更新時間：{date(view.observedAt)}（Asia/Taipei）
             <br />
-            活動期間：{date(view.from)} 至 {date(view.to)}，包含起點、不含終點。各來源獨立讀取。
+            活動期間：{date(view.from)} 至 {date(view.to)}，包含起點、不含終點。
           </p>
           <section className={styles.panel}>
             <h2>Issue 活動</h2>
@@ -169,39 +168,6 @@ export default function InsightsPanel({
               </>
             ) : (
               <p role="status">Issue 來源暫時不可用，無法顯示指標。</p>
-            )}
-          </section>
-          <section className={styles.panel}>
-            <h2>WBS 目前規劃</h2>
-            {view.wbs ? (
-              <>
-                {!view.wbs.initialized && <p>尚未建立 WBS。</p>}
-                <p>待審提案：{view.wbs.pendingProposals}</p>
-                <p>
-                  {view.wbs.baseline
-                    ? `正式基準 #${view.wbs.baseline.number} · 發布於 ${date(view.wbs.baseline.publishedAt)}`
-                    : "尚無正式基準，無法比較草稿差異。"}
-                </p>
-                {view.wbs.differences !== null && (
-                  <>
-                    <h3>草稿與正式基準差異</h3>
-                    {view.wbs.differences.length ? (
-                      <ul>
-                        {view.wbs.differences.map((item) => (
-                          <li key={item.nodeId}>
-                            {differenceLabels[item.kind]}：{item.title}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>草稿與正式基準內容相同。</p>
-                    )}
-                  </>
-                )}
-                <p>正式基準代表已發布範圍，不代表交付驗收或專案完成率。</p>
-              </>
-            ) : (
-              <p role="status">WBS 來源暫時不可用，無法顯示規劃資訊。</p>
             )}
           </section>
         </div>

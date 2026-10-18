@@ -4,6 +4,8 @@
 
 `GET /api/repository-insights` transports Insights Repository Pulse. `owner`/`name` locate current Repository scope; optional `from`/`to` are nonnegative epoch milliseconds with `[from,to)` semantics. Verified LINE identity maps to an active User, and each source rechecks authorization. Authorization fails closed; infrastructure source failure stays explicitly unavailable. No mutation endpoint.
 
+`GET /api/repository-overview` uses `owner`/`name` as locators and verified active User identity for current Repository scope. It composes canonical Repository metadata and WBS-owned legacy-entry eligibility only; no content document, transfer destination, inferred Project association or metric count is returned. Legacy source failure remains explicit and retryable.
+
 `/api/project-wbs` GET/POST and `/api/project-wbs/history` GET are the current WBS owner transports. They use verified LINE identity and the Project owner's current content-scope contract; initialization is an explicit version-zero command. Project identity only locates the scope. Revision is immutable saved content, not a Baseline or acceptance decision.
 
 `/api/project-wbs/governance` GET/POST transports WBS policy, proposal, exact-version review and atomic Baseline publication. `/api/project-wbs/metrics` GET transports WBS-owned current draft/Baseline metrics. Both recheck current Project access and lifecycle; governance version is separate from draft content version. Policy/version gates, origin checks and exact replay remain authoritative; publication is not deliverable acceptance.

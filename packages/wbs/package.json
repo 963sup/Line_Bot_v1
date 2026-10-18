@@ -64,6 +64,10 @@
       "types": "./dist/application/use-cases/transfer.d.ts",
       "default": "./dist/application/use-cases/transfer.js"
     },
+    "./application/use-cases/legacy-entry": {
+      "types": "./dist/application/use-cases/legacy-entry.d.ts",
+      "default": "./dist/application/use-cases/legacy-entry.js"
+    },
     "./contracts/dto/content": {
       "types": "./dist/contracts/dto/content.d.ts",
       "default": "./dist/contracts/dto/content.js"
@@ -116,9 +120,9 @@
       "types": "./dist/composition/bootstrap/project-governance.d.ts",
       "default": "./dist/composition/bootstrap/project-governance.js"
     },
-    "./contracts/output/metrics": {
-      "types": "./dist/contracts/output/metrics.d.ts",
-      "default": "./dist/contracts/output/metrics.js"
+    "./contracts/output/legacy-entry": {
+      "types": "./dist/contracts/output/legacy-entry.d.ts",
+      "default": "./dist/contracts/output/legacy-entry.js"
     },
     "./contracts/output/project-metrics": {
       "types": "./dist/contracts/output/project-metrics.d.ts",
@@ -132,9 +136,9 @@
       "types": "./dist/contracts/output/scope-boundary.d.ts",
       "default": "./dist/contracts/output/scope-boundary.js"
     },
-    "./composition/bootstrap/metrics": {
-      "types": "./dist/composition/bootstrap/metrics.d.ts",
-      "default": "./dist/composition/bootstrap/metrics.js"
+    "./composition/bootstrap/legacy-entry": {
+      "types": "./dist/composition/bootstrap/legacy-entry.d.ts",
+      "default": "./dist/composition/bootstrap/legacy-entry.js"
     },
     "./composition/bootstrap/project-metrics": {
       "types": "./dist/composition/bootstrap/project-metrics.d.ts",

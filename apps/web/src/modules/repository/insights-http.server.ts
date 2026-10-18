@@ -1,6 +1,5 @@
 import type { RepositoryPulse } from "@line_bot_v1/insights/contracts/dto/repository-pulse";
 import { RepositoryError } from "@line_bot_v1/repository/domain";
-import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
 
@@ -30,7 +29,6 @@ export async function insightsRequest(
       throw new RepositoryError(400, "期間起點必須早於終點。");
     return jsonResponse(await read(subject, selector, period));
   } catch (error) {
-    if (error instanceof WbsError) return jsonResponse({ error: error.message }, error.status);
     return repositoryFailure(error);
   }
 }

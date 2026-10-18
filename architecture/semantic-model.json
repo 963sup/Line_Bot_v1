@@ -1650,10 +1650,10 @@
       "kind": "derived-projection",
       "owner": "insights",
       "lifecycle": "current",
-      "definition": "Authorized Repository-scoped composition of Issue activity/current workflow and WBS scope-governance metrics with explicit coverage.",
+      "definition": "Authorized Repository-scoped composition of Issue activity and current workflow metrics with explicit coverage.",
       "authorityMode": "derived",
       "persistenceExpectation": "none",
-      "derivedFrom": ["issue", "repository-wbs"]
+      "derivedFrom": ["issue"]
     },
     {
       "id": "action-rule",
@@ -2443,19 +2443,6 @@
       "consistency": "current-state"
     },
     {
-      "id": "insights-wbs-metrics",
-      "from": "repository-pulse",
-      "to": "repository-wbs",
-      "kind": "reference",
-      "owner": "insights",
-      "meaning": "Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider.",
-      "provider": "wbs",
-      "consumer": "insights",
-      "integrationMode": "query",
-      "authority": "wbs",
-      "consistency": "current-state"
-    },
-    {
       "id": "actions-repository-scope",
       "from": "action-rule",
       "to": "repository",
@@ -3169,12 +3156,14 @@
         "publicExports": ["./application/public", "./contracts/output/public"],
         "entrypoints": [
           "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
-          "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx"
+          "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx",
+          "apps/web/src/app/api/repository-overview/route.ts"
         ],
         "testPaths": [
           "packages/repository/test/management.test.ts",
           "packages/repository/test/visibility.test.ts",
-          "packages/repository/test/stars.test.ts"
+          "packages/repository/test/stars.test.ts",
+          "apps/web/test/repository-overview.test.ts"
         ],
         "note": "RepositoryId is stable. Current owner/name wins. With followRenames=true, an old owner-scoped name resolves the same Repository; false rejects the old name. Historical names stay reserved against other Repositories under that owner, while the same Repository may reclaim its own alias. Visibility grants read authority only and never synthesizes RepositoryPermission."
       }
@@ -4522,7 +4511,7 @@
       "id": "read-repository-pulse",
       "owner": "insights",
       "kind": "leaf",
-      "intent": "Compose authorized Repository Pulse from owner-published Issue/WBS metrics, preserving time boundaries, source coverage and explicit unavailability.",
+      "intent": "Compose authorized Repository Pulse from owner-published Issue metrics, preserving time boundaries, source coverage and explicit unavailability.",
       "preserves": ["K1", "K2", "K5", "K6"],
       "validationProfiles": [
         "semantic-architecture",
@@ -4533,12 +4522,11 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Repository Pulse query through authenticated internal CLI and read-only Web delivery for Issue period events/current workflow and current WBS baseline/proposal/draft metrics.",
+        "scope": "Repository Pulse query through authenticated internal CLI and read-only Web delivery for Issue period events and current workflow.",
         "sourcePaths": ["packages/insights/src/application/use-cases/repository-pulse.ts"],
         "publicExports": [
           "./application/use-cases/repository-pulse",
-          "./contracts/dto/repository-pulse",
-          "./contracts/output/repository-metrics"
+          "./contracts/dto/repository-pulse"
         ],
         "entrypoints": [
           "scripts/insights/run.mjs",
@@ -4589,24 +4577,6 @@
         "entrypoints": [],
         "testPaths": ["packages/wbs/test/project-postgres.test.ts"],
         "note": "The owner query consumes Project current access; no Insights Project screen or independent metric persistence is claimed."
-      }
-    },
-    {
-      "id": "read-wbs-metrics",
-      "owner": "wbs",
-      "kind": "leaf",
-      "intent": "Read authorized wbs-owned Repository metrics without transferring source or authorization authority to Insights.",
-      "preserves": ["K1", "K2", "K5", "K6"],
-      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
-      "runtimeExpectation": "required",
-      "implementation": {
-        "status": "implemented",
-        "scope": "Repository-scoped wbs metrics through an owner public query.",
-        "sourcePaths": ["packages/wbs/src/adapters/outbound/persistence/metrics.ts"],
-        "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
-        "entrypoints": ["scripts/insights/run.mjs"],
-        "testPaths": ["packages/wbs/test/metrics.test.ts"],
-        "note": "R1 transfer-only Repository metric query. Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
       }
     },
     {
@@ -4739,7 +4709,10 @@
           "./composition/bootstrap/baseline-events"
         ],
         "entrypoints": [],
-        "testPaths": ["packages/wbs/test/metrics.test.ts"],
+        "testPaths": [
+          "packages/wbs/test/governance-postgres.test.ts",
+          "packages/wbs/test/scope-boundary-postgres.test.ts"
+        ],
         "note": "R1 transfer-only Repository event feed; it is not a permanent second publication stream."
       }
     },
@@ -4877,6 +4850,28 @@
         "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
         "testPaths": ["packages/issue/test/object-reference-postgres.test.ts"],
         "note": "Current local product extension, distinct from GitObject; provider publication requires separate evidence."
+      }
+    },
+    {
+      "id": "read-legacy-wbs-entry",
+      "owner": "wbs",
+      "kind": "leaf",
+      "intent": "Report whether a currently readable Repository needs a legacy WBS recovery entry using durable source evidence or the current actor's live transfer, without exposing a destination Project.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Read-only lightweight legacy-entry eligibility under current Repository scope; remains queryable after Repository-WBS content retirement.",
+        "sourcePaths": ["packages/wbs/src/application/use-cases/legacy-entry.ts"],
+        "publicExports": [
+          "./application/use-cases/legacy-entry",
+          "./contracts/output/legacy-entry",
+          "./composition/bootstrap/legacy-entry"
+        ],
+        "entrypoints": ["apps/web/src/app/api/repository-overview/route.ts"],
+        "testPaths": ["packages/wbs/test/legacy-entry.test.ts"],
+        "note": "No content initialization, transfer activation, destination disclosure or second source of truth. Infrastructure failure remains unavailable, not absent."
       }
     }
   ],

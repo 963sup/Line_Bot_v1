@@ -50,8 +50,8 @@
 | manage-repository-wbs | required | implemented | Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning. |
 | publish-project-wbs-baseline-events | required | implemented | Atomically enqueue Project-scoped version-bound Baseline events and expose leased claim/acknowledge. |
 | publish-wbs-baseline-events | required | implemented | Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge. |
+| read-legacy-wbs-entry | required | implemented | Report whether a currently readable Repository needs a legacy WBS recovery entry using durable source evidence or the current actor's live transfer, without exposing a destination Project. |
 | read-project-wbs-metrics | required | implemented | Read authorized WBS-owned Project metrics through current Project access without transferring source authority to a consumer. |
-| read-wbs-metrics | required | implemented | Read authorized wbs-owned Repository metrics without transferring source or authorization authority to Insights. |
 | transfer-repository-wbs-to-project | required | implemented | Move one eligible Repository WBS into an empty Project scope exactly once while preserving immutable history and command replay evidence. |
 
 ## Context Relationships
@@ -59,7 +59,6 @@
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | actions | event | wbs | durable-event-replay | WBS publishes version-bound outbox events; Actions accepts once before acknowledge. |
-| provides | insights | query | wbs | current-state | Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider. |
 | provides | notifications | reference | wbs | current-source-access | Project WBS notification creation, Inbox read/mark-read and dispatch bind an exact Baseline and Revision, require an active recipient with current Project READ, and use explicit recipients without Watch. |
 | provides | notifications | reference | wbs | current-source-access | During R1 transfer, Inbox creation/read/mark-read and dispatch reference an exact Repository WBS Baseline and Revision. |
 | consumes | project | stable-identity+query | project | transaction-recheck | Project-scoped WBS consumes the Project public content-scope contract for current READ/WRITE/ADMIN access and open/closed/deleted lifecycle; Account-owned active-User qualification remains a prerequisite and WBS retains document, Revision, governance and Baseline authority. |

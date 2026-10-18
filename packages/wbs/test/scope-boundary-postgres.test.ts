@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createPostgresWbsBaselineEvents } from "../src/composition/bootstrap/baseline-events.js";
-import { createPostgresWbsMetrics } from "../src/composition/bootstrap/metrics.js";
+import { createPostgresLegacyWbsEntryQuery } from "../src/composition/bootstrap/legacy-entry.js";
 import { createPostgresWbsScopeBoundary } from "../src/composition/bootstrap/scope-boundary.js";
 import {
   createPostgresWbsGovernanceStore,
@@ -33,9 +33,13 @@ test("ACTIVE boundary returns retired semantics without touching removed Reposit
       "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES('owner','active',1,1)",
     );
     await sql.query("SELECT app_private.claim_account_login('owner','USER','owner',1)");
+    await sql.query(
+      "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES('reader','active',1,1)",
+    );
+    await sql.query("SELECT app_private.claim_account_login('reader','USER','reader',1)");
   });
   await pg.query(
-    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Source','private')",
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Source','public')",
   );
   await pg.query(
     "SELECT * FROM app_private.provision_repository('repo-b','owner','owner','USER','Unmigrated','private')",
@@ -45,6 +49,8 @@ test("ACTIVE boundary returns retired semantics without touching removed Reposit
   );
   const sourceRevisionId = randomUUID();
   const projectRevisionId = randomUUID();
+  const transferId = randomUUID();
+  const transferRequestId = randomUUID();
   await pg.transaction(async (sql) => {
     await sql.query("SET CONSTRAINTS ALL DEFERRED");
     await sql.query(
@@ -65,7 +71,11 @@ test("ACTIVE boundary returns retired semantics without touching removed Reposit
     );
     await sql.query(
       "INSERT INTO app_private.wbs_scope_transfers(id,repository_id,project_id,actor_user_id,request_id,state,source_version,source_head_revision_id,revision_count,command_count,source_hash,requested_at,activated_at,release_sha) VALUES($1,'repo','project','owner',$2,'ACTIVE',1,$3,1,1,$4,1,2,$5)",
-      [randomUUID(), randomUUID(), sourceRevisionId, "a".repeat(64), "b".repeat(40)],
+      [transferId, transferRequestId, sourceRevisionId, "a".repeat(64), "b".repeat(40)],
+    );
+    await sql.query(
+      "INSERT INTO app_private.legacy_wbs_command_evidence(actor_user_id,request_id,repository_id,fingerprint,revision_id,project_id,transfer_id) VALUES('owner',$1,'repo','receipt',$2,'project',$3)",
+      [randomUUID(), projectRevisionId, transferId],
     );
   });
   const gone = (error: unknown) => error instanceof WbsError && error.status === 410;
@@ -120,7 +130,16 @@ test("ACTIVE boundary returns retired semantics without touching removed Reposit
     ),
     gone,
   );
-  await assert.rejects(createPostgresWbsMetrics(db).read("owner", "repo"), gone);
+  const legacyEntry = createPostgresLegacyWbsEntryQuery(db);
+  assert.deepEqual(await legacyEntry.read("owner", { repositoryId: "repo" }), {
+    entryRequired: true,
+  });
+  assert.deepEqual(await legacyEntry.read("reader", { repositoryId: "repo" }), {
+    entryRequired: true,
+  });
+  assert.deepEqual(await legacyEntry.read("owner", { repositoryId: "repo-b" }), {
+    entryRequired: false,
+  });
 
   const events = createPostgresWbsBaselineEvents(db);
   await assert.rejects(events.cursor("repo"), gone);

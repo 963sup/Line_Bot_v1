@@ -32,35 +32,59 @@ export function repositoryResourceNavigationItems(
   repositoryName: string,
   canManage: boolean,
 ) {
-  const items: { href: string; label: string; section: RepositoryResourceSection }[] = [
-    { href: repositoryPath(ownerLogin, repositoryName), label: "Overview", section: "overview" },
+  const items: {
+    href: string;
+    label: string;
+    section: RepositoryResourceSection;
+    group: "primary" | "more";
+  }[] = [
+    {
+      href: repositoryPath(ownerLogin, repositoryName),
+      label: "Overview",
+      section: "overview",
+      group: "primary",
+    },
     {
       href: repositoryObjectsPath(ownerLogin, repositoryName),
       label: "Objects",
       section: "objects",
+      group: "primary",
     },
     {
-      href: `${repositoryPath(ownerLogin, repositoryName)}/wbs`,
-      label: "WBS 移轉",
-      section: "wbs",
+      href: repositoryIssuesPath(ownerLogin, repositoryName),
+      label: "Issues",
+      section: "issues",
+      group: "primary",
     },
-    { href: `${repositoryPath(ownerLogin, repositoryName)}/wiki`, label: "Wiki", section: "wiki" },
-    {
-      href: `${repositoryPath(ownerLogin, repositoryName)}/insights`,
-      label: "Insights",
-      section: "insights",
-    },
-    { href: repositoryIssuesPath(ownerLogin, repositoryName), label: "Issues", section: "issues" },
     {
       href: repositoryDiscussionsPath(ownerLogin, repositoryName),
       label: "Discussions",
       section: "discussions",
+      group: "primary",
     },
-    { href: repositoryLabelsPath(ownerLogin, repositoryName), label: "Labels", section: "labels" },
+    {
+      href: `${repositoryPath(ownerLogin, repositoryName)}/wiki`,
+      label: "Wiki",
+      section: "wiki",
+      group: "primary",
+    },
+    {
+      href: `${repositoryPath(ownerLogin, repositoryName)}/insights`,
+      label: "Insights",
+      section: "insights",
+      group: "primary",
+    },
+    {
+      href: repositoryLabelsPath(ownerLogin, repositoryName),
+      label: "Labels",
+      section: "labels",
+      group: "more",
+    },
     {
       href: repositoryMilestonesPath(ownerLogin, repositoryName),
       label: "Milestones",
       section: "milestones",
+      group: "more",
     },
   ];
   if (canManage) {
@@ -69,11 +93,13 @@ export function repositoryResourceNavigationItems(
         href: repositorySettingsPath(ownerLogin, repositoryName),
         label: "Settings",
         section: "settings",
+        group: "more",
       },
       {
         href: repositoryAccessPath(ownerLogin, repositoryName),
         label: "Access",
         section: "access",
+        group: "more",
       },
     );
   }

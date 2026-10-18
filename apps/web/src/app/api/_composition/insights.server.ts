@@ -2,7 +2,6 @@ import { createRepositoryPulse } from "@line_bot_v1/insights/application/use-cas
 import { createPostgresIssueMetrics } from "@line_bot_v1/issue/composition/bootstrap/metrics";
 import { businessDatabase } from "@line_bot_v1/platform/postgres";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
-import { createPostgresWbsMetrics } from "@line_bot_v1/wbs/composition/bootstrap/metrics";
 import { activeLineUser } from "./account.server";
 
 export async function readRepositoryPulse(
@@ -18,7 +17,6 @@ export async function readRepositoryPulse(
       await db.transaction((sql) => repositoryContentScope(sql, userId, { repositoryId }));
     },
     issues: createPostgresIssueMetrics(db),
-    wbs: createPostgresWbsMetrics(db),
     now: Date.now,
   });
   return {
