@@ -22,9 +22,6 @@ const { createRepositoryPulse } = await import(
 const { createPostgresIssueMetrics } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/issue/composition/bootstrap/metrics")).href
 );
-const { createPostgresWbsMetrics } = await import(
-  pathToFileURL(webRequire.resolve("@line_bot_v1/wbs/composition/bootstrap/metrics")).href
-);
 const { repositoryContentScope } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/repository/postgres/content-scope")).href
 );
@@ -80,7 +77,6 @@ const pulse = createRepositoryPulse({
       return createPostgresIssueMetrics(fixture.db).read(...args);
     },
   },
-  wbs: createPostgresWbsMetrics(fixture.db),
   now: Date.now,
 });
 const target = new URL(process.env.NAVIGATION_BASE ?? "http://127.0.0.1:4117");
@@ -502,18 +498,24 @@ try {
   await expect(page.getByText("門市開幕第二版", { exact: true })).toHaveCount(0);
   actor = "owner";
   forbidden = false;
-  const expectedMetrics = await createPostgresWbsMetrics(fixture.db).read("owner", "repo");
-  assert.ok(expectedMetrics.baseline);
-  const baselineText = `正式基準 #${expectedMetrics.baseline.number}`;
   await page.goto(`${base}/alice/Alpha/insights`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Issue 活動", exact: true })).toBeVisible();
-  await expect(page.getByText(baselineText, { exact: false })).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Repository resources" })
+      .locator("summary")
+      .filter({ hasText: "更多" }),
+  ).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Repository resources" })
+    .locator("summary")
+    .filter({ hasText: "更多" })
+    .click();
   await expect(
     page
       .getByRole("navigation", { name: "Repository resources" })
       .getByRole("link", { name: "Settings", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(/^移除：/)).toBeVisible();
   await page.getByLabel("Issue 活動期間").selectOption("30");
   await expect.poll(() => insightsPeriods.at(-1)).toBe(30 * 86400000);
   await expect(page.getByText(/更新時間：/)).toBeVisible();
@@ -530,13 +532,11 @@ try {
   await expect(
     page.getByText("Issue 來源暫時不可用，無法顯示指標。", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(baselineText, { exact: false })).toBeVisible();
   await fixture.pg.query("UPDATE app_private.users SET status='paused' WHERE id='owner'");
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await expect(page.getByText(baselineText, { exact: false })).toHaveCount(0);
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     document.dispatchEvent(new Event("visibilitychange"));
@@ -660,7 +660,7 @@ try {
           "mobile layout",
           "private state clear",
           "Wiki raw content, stable page identity, durable exact retry after reload, immutable history, compare/restore, archive and current access",
-          "Insights period/current state, real owner metrics, partial source failure and qualification revocation",
+          "Insights period/current state, issue source failure and qualification revocation",
         ],
         posts: posts.length,
       },

@@ -260,7 +260,7 @@
       "path": "packages/insights",
       "moduleKind": "application-module",
       "semanticOwner": "insights",
-      "allowedWorkspaceDependencies": ["@line_bot_v1/issue", "@line_bot_v1/wbs"]
+      "allowedWorkspaceDependencies": ["@line_bot_v1/issue"]
     },
     "@line_bot_v1/actions": {
       "path": "packages/actions",

@@ -21,30 +21,11 @@ export function insightsView(value: unknown) {
   const pulse = record(value),
     period = record(pulse.period);
   if (period.timeZone !== "Asia/Taipei") throw new Error("Insights 時區格式不正確。");
-  const issues = source(pulse.issues),
-    wbs = source(pulse.wbs);
+  const issues = source(pulse.issues);
   const workflow = issues ? record(issues.workflow) : null;
   const coverage = issues ? record(issues.coverage) : null;
   if (coverage && coverage.stateChanges !== "recorded-events-only")
     throw new Error("Insights 歷史證據格式不正確。");
-  const baseline = wbs && wbs.baseline !== null ? record(wbs.baseline) : null;
-  const differences:
-    | { kind: "ADDED" | "REMOVED" | "CHANGED"; title: string; nodeId: string }[]
-    | null = wbs?.differences === null || !wbs ? null : [];
-  if (differences && wbs) {
-    if (!Array.isArray(wbs.differences)) throw new Error("Insights 差異格式不正確。");
-    for (const value of wbs.differences) {
-      const item = record(value);
-      if (
-        (item.kind !== "ADDED" && item.kind !== "REMOVED" && item.kind !== "CHANGED") ||
-        typeof item.title !== "string" ||
-        typeof item.nodeId !== "string"
-      )
-        throw new Error("Insights 差異格式不正確。");
-      differences.push({ kind: item.kind, title: item.title, nodeId: item.nodeId });
-    }
-  }
-  if (wbs && typeof wbs.initialized !== "boolean") throw new Error("Insights WBS 格式不正確。");
   return {
     canManageRepository: pulse.canManageRepository === true,
     from: count(period.from),
@@ -66,15 +47,5 @@ export function insightsView(value: unknown) {
             unstructuredEvents: count(coverage.unstructuredEvents),
           }
         : null,
-    wbs: wbs
-      ? {
-          initialized: wbs.initialized === true,
-          pendingProposals: count(wbs.pendingProposals),
-          baseline: baseline
-            ? { number: count(baseline.number), publishedAt: count(baseline.publishedAt) }
-            : null,
-          differences,
-        }
-      : null,
   };
 }

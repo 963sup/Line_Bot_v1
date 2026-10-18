@@ -8,14 +8,14 @@
 Object owner contract. Object Type, immutable Object revision and directed Object-to-Object
 relationship facts remain owned by `@line_bot_v1/object`; the URL locator never authorizes.
 
-`/{login}/{repository}/wbs` retains existing Repository-WBS content, exact retries and controlled migration. New WBS starts in Project. Repository roots direct new work to Projects and label the legacy link explicitly; after cutover, current source-owner authorization resolves the Project destination without requiring the retired content API to succeed.
+`/{login}/{repository}/wbs` retains existing Repository-WBS content, exact retries and controlled migration. New WBS starts in Project. Overview conditionally links to legacy recovery from WBS-owned eligibility; shared navigation has no WBS tab. After cutover, current source-owner authorization resolves the Project destination without requiring the retired content API to succeed.
 
 
 ## 現行 URL 與 invariant
 
 Current URL：`/{login}/{repository}`；FPT 對照 `schema-repos` 與 RepositoryOwner。
 
-- 目前 public branch 顯示安全摘要；private/internal branch 在可信身分後載入 Issue surface。這是現況，不表示已提供完整 Repository overview 或公開 Issue body。
+- Repository root presents Overview and content entries. Public metadata remains anonymous-readable; current authenticated Repository scope supplies private/internal metadata and admin controls. IssueBoard is confined to Issues routes. Public lookup failure remains unavailable and retryable, not a missing Repository.
 - `access`、`settings`、`issues`、`discussions`、`labels`、`milestones` 子路徑與 Repository root 已收斂在本 group；同一 canonical locator hierarchy 只有一個 route owner。
 - 改根頁導覽必須同時核對 public/private branch 的目的地、手機換行、對比及返回；只測登入後子頁不足以證明公開根頁。
 - URL owner/name 與 stable RepositoryId 分開；變更名稱或 scope 必須重新解析，不以瀏覽器保存的舊 ID 取代路徑意圖。

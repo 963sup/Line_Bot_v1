@@ -19,10 +19,11 @@ export async function startRepositoryOverviewFixture(output) {
     "next/script":
       "import {useEffect} from 'react'; export default function Script({onReady}) { useEffect(()=>{onReady?.()},[]); return null; }",
     "next/navigation":
-      "export function usePathname(){return location.pathname} export function useRouter(){return {push:href=>location.assign(href),replace:href=>location.replace(href)}} export function notFound(){throw Error('not-found')}",
+      "export function usePathname(){return location.pathname} export function useRouter(){return {push:href=>location.assign(href),replace:href=>location.replace(href),refresh:()=>location.reload()}} export function notFound(){throw Error('not-found')}",
     "@line_bot_v1/line/mini-app": "export const lineMiniApp=()=>({liffId:'test'});",
     "repository.server":
-      "export const publicRepositories=()=>({byOwnerAndName:async(ownerLogin,name)=>location.search==='?public' ? {ownerLogin,name} : null});",
+      "export const publicRepositories=()=>({byOwnerAndName:async(ownerLogin,name)=>{const query=new URLSearchParams(location.search);if(query.has('source-unavailable')&&!sessionStorage.getItem('public-lookup-retried')){sessionStorage.setItem('public-lookup-retried','1');throw Error('synthetic public source unavailable')}return query.has('public')||query.has('source-unavailable')?{id:'repo-operations',ownerLogin,name}:null}});",
+    "server-error": "export function captureHandledServerError(){}",
   };
   await build({
     stdin: {
@@ -31,7 +32,8 @@ export async function startRepositoryOverviewFixture(output) {
         import Page from '../../apps/web/src/app/(resource)/[login]/[repository]/page.tsx';
         import Layout from '../../apps/web/src/app/(resource)/[login]/[repository]/layout.tsx';
         import '../../apps/web/src/app/globals.css';
-        const page=await Page({params:Promise.resolve({login:'acme',repository:'Operations'})});
+        const [login='acme',repository='Operations']=location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+        const page=await Page({params:Promise.resolve({login,repository})});
         createRoot(document.getElementById('root')).render(<Layout>{page}</Layout>);`,
       resolveDir: fileURLToPath(new URL(".", import.meta.url)),
       loader: "tsx",
@@ -53,10 +55,14 @@ export async function startRepositoryOverviewFixture(output) {
           builder.onResolve(
             {
               filter:
-                /^(next\/(link|script|navigation)|@line_bot_v1\/line\/mini-app)$|repository\.server$/,
+                /^(next\/(link|script|navigation)|@line_bot_v1\/line\/mini-app)$|(repository\.server|server-error)$/,
             },
             ({ path: specifier }) => ({
-              path: specifier.endsWith("repository.server") ? "repository.server" : specifier,
+              path: specifier.endsWith("repository.server")
+                ? "repository.server"
+                : specifier.endsWith("server-error")
+                  ? "server-error"
+                  : specifier,
               namespace: "overview-delivery",
             }),
           );

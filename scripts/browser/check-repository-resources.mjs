@@ -46,10 +46,15 @@ const sessionGenerations = Object.freeze({
 let activeSyntheticProof;
 await context.addInitScript((key) => {
   if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, "token-a");
+  if (!window.localStorage.getItem("synthetic-liff-logged-in"))
+    window.localStorage.setItem("synthetic-liff-logged-in", "1");
   window.liff = {
     init: async () => {},
-    isLoggedIn: () => true,
-    getAccessToken: () => window.localStorage.getItem(key) || "token-a",
+    isLoggedIn: () => window.localStorage.getItem("synthetic-liff-logged-in") === "1",
+    getAccessToken: () =>
+      window.localStorage.getItem("synthetic-liff-logged-in") === "1"
+        ? window.localStorage.getItem(key) || "token-a"
+        : null,
     isInClient: () => false,
     getProfile: async () => ({
       userId: "U11111111111111111111111111111111",
@@ -57,7 +62,11 @@ await context.addInitScript((key) => {
     }),
     closeWindow: () => {},
     openWindow: () => {},
-    login: () => {},
+    login: () =>
+      window.sessionStorage.setItem(
+        "synthetic-liff-login-calls",
+        String(Number(window.sessionStorage.getItem("synthetic-liff-login-calls") ?? "0") + 1),
+      ),
   };
 }, syntheticProofStorageKey);
 if (output) await context.tracing.start({ screenshots: true, snapshots: true });
@@ -65,11 +74,22 @@ if (output) await context.tracing.start({ screenshots: true, snapshots: true });
 const page = await context.newPage();
 const errors = [];
 const requests = [];
+const authRequests = [];
 let delayNextPrivateLabels = false;
 let releaseDelayedPrivateLabels;
+let delayNextOverview = false;
+let releaseDelayedOverview;
+let delayNextAuthRestore = false;
+let releaseDelayedAuthRestore;
+let completedAuthRestores = 0;
+let overviewFailure = null;
+let overviewVisibility = "private";
+let overviewArchived = false;
+let overviewPermissions = ["admin"];
+let overviewLegacyStatus = "none";
 const result = {
   status: "failed",
-  scope: "All seven Repository sections and resource URLs with synthetic LINE/API.",
+  scope: "Repository Overview and resource URLs with synthetic LINE/API.",
   base,
   urls: [],
   requests,
@@ -271,6 +291,24 @@ function routeOwner(url) {
 }
 
 function payloadFor(url, request) {
+  if (url.pathname === "/api/repository-overview") {
+    assert.equal(url.searchParams.get("owner"), "acme");
+    assert.equal(url.searchParams.get("name"), "Operations");
+    if (overviewFailure) return overviewFailure;
+    return {
+      json: {
+        repository: {
+          id: repository.id,
+          ownerLogin: repository.ownerLogin,
+          name: repository.name,
+          visibility: overviewVisibility,
+          archived: overviewArchived,
+          permissions: overviewPermissions,
+        },
+        legacyWbs: { status: overviewLegacyStatus },
+      },
+    };
+  }
   const managedRepository = {
     ...repository,
     actorUserId: "user-alpha",
@@ -419,6 +457,7 @@ async function expectRepositoryResourceMobileLayout() {
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: original.height });
     await expect(page.getByRole("heading", { name: "Discussions", exact: true })).toBeVisible();
+    await openRepositoryMore();
     for (const name of ["Discussions", "Labels", "Milestones"]) {
       await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
     }
@@ -483,6 +522,104 @@ async function expectRepositoryResourceMobileLayout() {
   await page.setViewportSize(original);
 }
 
+const primaryRepositorySections = [
+  "Overview",
+  "Objects",
+  "Issues",
+  "Discussions",
+  "Wiki",
+  "Insights",
+];
+const secondaryRepositorySections = ["Labels", "Milestones", "Settings", "Access"];
+
+function repositoryNavigation() {
+  return page.getByRole("navigation", { name: "Repository resources" });
+}
+
+async function openRepositoryMore() {
+  const navigation = repositoryNavigation();
+  const disclosure = navigation.locator("details");
+  if ((await disclosure.getAttribute("open")) === null) {
+    await navigation.locator("summary").filter({ hasText: "更多" }).click();
+  }
+  await expect(disclosure).toHaveAttribute("open", "");
+  return navigation;
+}
+
+async function expectRepositoryNavigation(active, canManage) {
+  const navigation = repositoryNavigation();
+  assert.deepEqual(
+    await navigation.locator(":scope > a").allTextContents(),
+    primaryRepositorySections,
+    "Repository primary navigation order must remain stable",
+  );
+  assert.deepEqual(
+    await navigation.locator("details a").allTextContents(),
+    canManage ? secondaryRepositorySections : secondaryRepositorySections.slice(0, 2),
+    "Repository secondary navigation must be capability-filtered",
+  );
+  await expect(navigation.getByRole("menu")).toHaveCount(0);
+  await expect(navigation.locator("summary")).toHaveText("更多");
+  const activeLink = navigation.getByRole("link", { name: active, exact: true });
+  if (secondaryRepositorySections.includes(active)) {
+    await expect(navigation.locator("details")).toHaveAttribute("open", "");
+  }
+  await expect(activeLink).toHaveAttribute("aria-current", "page");
+  return navigation;
+}
+
+async function clickRepositorySection(section) {
+  const navigation = secondaryRepositorySections.includes(section)
+    ? await openRepositoryMore()
+    : repositoryNavigation();
+  await navigation.getByRole("link", { name: section, exact: true }).click();
+}
+
+async function resetOverviewSession({ hint = false, lineLoggedIn = true } = {}) {
+  assert.equal(new URL(page.url()).origin, overviewFixture.origin);
+  await context.clearCookies();
+  await page.evaluate(
+    ({ hasHint, loggedIn }) => {
+      for (const storage of [window.sessionStorage, window.localStorage]) {
+        storage.removeItem("line_bot_v1:session-established");
+        storage.removeItem("line_bot_v1:session-blocked");
+        if (hasHint) storage.setItem("line_bot_v1:session-established", "1");
+      }
+      window.localStorage.setItem("synthetic-liff-logged-in", loggedIn ? "1" : "0");
+      window.sessionStorage.setItem("synthetic-liff-login-calls", "0");
+    },
+    { hasHint: hint, loggedIn: lineLoggedIn },
+  );
+}
+
+async function liffLoginCalls() {
+  return page.evaluate(() =>
+    Number(window.sessionStorage.getItem("synthetic-liff-login-calls") ?? "0"),
+  );
+}
+
+async function seedOverviewAppCookie(accessToken = "token-a") {
+  await page.evaluate(async (token) => {
+    const response = await fetch("/api/auth", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken: token }),
+    });
+    if (!response.ok) throw new Error("Synthetic app session seed failed.");
+  }, accessToken);
+}
+
+async function activatePrivateOverview() {
+  await resetOverviewSession();
+  await page.goto(`${overviewFixture.origin}/acme/Operations`);
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "登入後讀取 Repository", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "登入以讀取 Repository", exact: true }).click();
+}
+
 async function gotoPath(pathname) {
   const url = `${base}${pathname}`;
   result.urls.push(url);
@@ -502,24 +639,46 @@ await context.route("**/*", async (route) => {
   if (!url.pathname.startsWith("/api/")) return route.continue();
 
   if (url.pathname === "/api/auth") {
+    authRequests.push({
+      method: request.method(),
+      action:
+        request.method() === "POST"
+          ? request.postDataJSON().action === "restore"
+            ? "restore"
+            : "exchange"
+          : request.method().toLowerCase(),
+    });
     if (
       request.method() === "GET" ||
       (request.method() === "POST" && request.postDataJSON().action === "restore")
     ) {
       if (request.method() === "POST")
         assert.deepEqual(request.postDataJSON(), { action: "restore" });
+      if (
+        request.method() === "POST" &&
+        request.postDataJSON().action === "restore" &&
+        delayNextAuthRestore
+      ) {
+        delayNextAuthRestore = false;
+        await new Promise((resolve) => {
+          releaseDelayedAuthRestore = resolve;
+        });
+      }
       const cookies = request.headers().cookie ?? "";
       const proof = Object.keys(sessionGenerations).find((candidate) =>
         cookies
           .split(";")
           .some((part) => part.trim() === `__Host-line_bot_v1_session=synthetic-${candidate}`),
       );
-      if (!proof)
-        return route.fulfill({
+      if (!proof) {
+        await route.fulfill({
           status: 401,
           json: { error: "服務登入已失效，請重新登入。" },
         });
-      return route.fulfill({
+        if (request.method() === "POST") completedAuthRestores += 1;
+        return;
+      }
+      await route.fulfill({
         json: { generation: sessionGenerations[proof] },
         ...(request.method() === "POST"
           ? {
@@ -529,6 +688,8 @@ await context.route("**/*", async (route) => {
             }
           : {}),
       });
+      if (request.method() === "POST") completedAuthRestores += 1;
+      return;
     }
     if (request.method() === "POST") {
       const body = request.postDataJSON();
@@ -572,6 +733,12 @@ await context.route("**/*", async (route) => {
   assert.match(request.headers().cookie ?? "", /__Host-line_bot_v1_session=/);
 
   const matched = payloadFor(url, request);
+  if (url.pathname === "/api/repository-overview" && delayNextOverview) {
+    delayNextOverview = false;
+    await new Promise((resolve) => {
+      releaseDelayedOverview = resolve;
+    });
+  }
   if (
     routeKind(url) === "labels" &&
     routeOwner(url) === "private" &&
@@ -588,7 +755,7 @@ await context.route("**/*", async (route) => {
     path: `${url.pathname}${url.search}`,
     kind: routeKind(url) ?? "other",
     generation: readSessionGeneration(request),
-    status: matched?.status ?? 404,
+    status: matched ? (matched.status ?? 200) : 404,
   });
   if (!matched) return route.fulfill({ status: 404, json: { error: "synthetic route not found" } });
   return route.fulfill({ status: matched.status ?? 200, json: matched.json });
@@ -609,12 +776,17 @@ try {
     let expectedGeometry;
     for (const section of sections) {
       const suffix = section === "Overview" ? "" : `/${section.toLowerCase()}`;
-      if (section === "Overview") await page.goto(`${overviewFixture.origin}/acme/Operations`);
-      else await gotoPath(`/acme/Operations${suffix}`);
+      if (section === "Overview") {
+        await context.clearCookies();
+        await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
+      } else await gotoPath(`/acme/Operations${suffix}`);
       const main = page.getByRole("main");
       await expect(main.getByRole("heading", { name: section, exact: true })).toBeVisible();
-      const navigation = main.getByRole("navigation", { name: "Repository resources" });
-      await expect(navigation.getByRole("link")).toHaveCount(11);
+      const navigation = await expectRepositoryNavigation(section, section !== "Overview");
+      await expect(main.locator(".back-link")).toHaveAttribute(
+        "href",
+        section === "Overview" ? "/acme" : "/acme/Operations",
+      );
       await expect(navigation.getByRole("link", { name: "Objects", exact: true })).toHaveAttribute(
         "href",
         "/acme/Operations/objects",
@@ -627,10 +799,6 @@ try {
         "href",
         "/acme/Operations/insights",
       );
-      await expect(navigation.getByRole("link", { name: section, exact: true })).toHaveAttribute(
-        "aria-current",
-        "page",
-      );
       const metrics = await main.evaluate((element) => {
         const heading = element.querySelector(".page-heading");
         const nav = element.querySelector('nav[aria-label="Repository resources"]');
@@ -639,7 +807,7 @@ try {
         const links = Array.from(nav.querySelectorAll("a"), (link) => {
           const box = link.getBoundingClientRect();
           return { left: box.left, right: box.right, width: box.width, height: box.height };
-        });
+        }).filter((link) => link.width > 0 && link.height > 0);
         return {
           geometry: [
             headingBox.x,
@@ -664,13 +832,14 @@ try {
         );
         assert.ok(link.left >= -1 && link.right <= width + 1, `${section} navigation is clipped`);
       }
-      if (expectedGeometry)
+      const geometryGroup = secondaryRepositorySections.includes(section) ? "secondary" : "primary";
+      if (expectedGeometry?.group === geometryGroup)
         assert.deepEqual(
           metrics.geometry,
-          expectedGeometry,
+          expectedGeometry.geometry,
           `${section} header differs at ${width}px`,
         );
-      expectedGeometry = metrics.geometry;
+      expectedGeometry = { group: geometryGroup, geometry: metrics.geometry };
       if (section === "Settings") {
         await expect(
           main.getByRole("heading", { name: "acme/Operations", exact: true }),
@@ -681,32 +850,290 @@ try {
         });
         assert.ok(cardGap >= 18, "Settings command families must have consistent card spacing");
       }
-      if (output && width === 390)
+      if (output && (width === 390 || section === "Overview" || section === "Labels"))
         await page.screenshot({
-          path: path.join(output, `repository-${section.toLowerCase()}-layout.png`),
+          path: path.join(output, `repository-${section.toLowerCase()}-${width}.png`),
           fullPage: true,
         });
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
+  await context.clearCookies();
   const beforePublicReads = requests.length;
+  const beforePublicAuth = authRequests.length;
   await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
   await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await captureShell(page, output, "repository-public", 1);
   await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
-  await expect(
-    page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
-  ).toHaveCount(9);
-  await expect(
-    page.getByText("登入後可設定這個 Repository 的追蹤偏好。", {
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expectRepositoryNavigation("Overview", false);
+  await expect(repositoryNavigation().getByRole("link")).toHaveCount(6);
+  await expect(page.getByRole("heading", { name: "Repository 內容", exact: true })).toBeVisible();
+  for (const [name, href] of [
+    ["Objects", "/acme/Operations/objects"],
+    ["Issues", "/acme/Operations/issues"],
+    ["Discussions", "/acme/Operations/discussions"],
+    ["Wiki", "/acme/Operations/wiki"],
+    ["Insights", "/acme/Operations/insights"],
+  ]) {
+    await expect(page.getByRole("link", { name: new RegExp(`^${name}`) }).last()).toHaveAttribute(
+      "href",
+      href,
+    );
+  }
+  await expect(page.getByRole("link", { name: /^Projects/ })).toHaveAttribute("href", "/projects");
+  await expect(page.getByRole("heading", { name: "Public Repository", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /WBS/i })).toHaveCount(0);
   assert.equal(
     requests.length,
     beforePublicReads,
     "Public Overview must stay passive before interaction",
   );
+  assert.equal(
+    authRequests.length,
+    beforePublicAuth,
+    "Public Overview must not establish a service session before explicit interaction",
+  );
+  assert.equal(
+    requests.filter((request) => request.path.startsWith("/api/repository-subscription?")).length,
+    0,
+    "Public Overview must not read Watch state before explicit interaction",
+  );
+  await page.getByRole("button", { name: "設定追蹤偏好", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Subscription", exact: true })).toHaveValue(
+    "UNSUBSCRIBED",
+  );
+  assert.equal(
+    requests.filter((request) => request.path.startsWith("/api/repository-subscription?")).length,
+    1,
+    "Watch activation must read the real Repository subscription selector once",
+  );
+  await resetOverviewSession();
+  activeSyntheticProof = undefined;
+  result.checks.push(
+    "public Overview renders content entries without forced login; Watch loads only after explicit interaction",
+  );
+
+  await page.evaluate(() => sessionStorage.removeItem("public-lookup-retried"));
+  const beforeUnavailableReads = requests.length;
+  const beforeUnavailableAuth = authRequests.length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations?source-unavailable`);
+  await expect(
+    page.getByRole("heading", { name: "公開 Repository 資訊暫時無法確認", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("目前無法確認這個 Repository 是否公開。你仍可登入以讀取有權限的 Repository。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "登入後讀取 Repository", exact: true }),
+  ).toHaveCount(0);
+  assert.equal(
+    requests.length,
+    beforeUnavailableReads,
+    "Public lookup failure must not be reclassified through the authenticated API",
+  );
+  assert.equal(
+    authRequests.length,
+    beforeUnavailableAuth,
+    "Public lookup retry must remain passive before explicit login",
+  );
+  await page.getByRole("button", { name: "重試公開資訊", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Public Repository", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "公開 Repository 資訊暫時無法確認", exact: true }),
+  ).toHaveCount(0);
+  assert.equal(requests.length, beforeUnavailableReads);
+  assert.equal(authRequests.length, beforeUnavailableAuth);
+  result.checks.push(
+    "public lookup source failure stays distinct from private/not-found and refreshes to public metadata without login",
+  );
+
+  await resetOverviewSession({ hint: true, lineLoggedIn: false });
+  const beforeStaleHintAuth = authRequests.length;
+  const beforeStaleHintCompletion = completedAuthRestores;
+  const beforeStaleHintOverview = requests.filter((request) =>
+    request.path.startsWith("/api/repository-overview?"),
+  ).length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
+  await expect(page.getByRole("heading", { name: "Public Repository", exact: true })).toBeVisible();
+  await expect.poll(() => authRequests.length).toBeGreaterThan(beforeStaleHintAuth);
+  await expect.poll(() => completedAuthRestores).toBeGreaterThan(beforeStaleHintCompletion);
+  assert.equal(await liffLoginCalls(), 0, "A stale session hint must never redirect to LINE login");
+  assert.equal(
+    requests.filter((request) => request.path.startsWith("/api/repository-overview?")).length,
+    beforeStaleHintOverview,
+    "An expired app cookie must not authorize an Overview request",
+  );
+
+  await resetOverviewSession({ hint: true, lineLoggedIn: false });
+  await seedOverviewAppCookie();
+  delayNextAuthRestore = true;
+  const beforeDelayedAuthCompletion = completedAuthRestores;
+  const beforeDelayedAuthOverview = requests.filter((request) =>
+    request.path.startsWith("/api/repository-overview?"),
+  ).length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations`);
+  await expect.poll(() => (releaseDelayedAuthRestore ? "delayed" : "pending")).toBe("delayed");
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  releaseDelayedAuthRestore();
+  releaseDelayedAuthRestore = undefined;
+  await expect.poll(() => completedAuthRestores).toBeGreaterThan(beforeDelayedAuthCompletion);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))),
+      ),
+  );
+  await expect(
+    page.getByRole("heading", { name: "登入後讀取 Repository", exact: true }),
+  ).toBeVisible();
+  assert.equal(await liffLoginCalls(), 0);
+  assert.equal(
+    requests.filter((request) => request.path.startsWith("/api/repository-overview?")).length,
+    beforeDelayedAuthOverview,
+    "A late passive auth response after pagehide must not start an Overview request",
+  );
+  result.checks.push(
+    "stale hints never redirect or read Overview; pagehide rejects delayed passive authentication",
+  );
+
+  overviewVisibility = "private";
+  overviewArchived = false;
+  overviewPermissions = ["admin"];
+  overviewLegacyStatus = "none";
+  overviewFailure = null;
+  await activatePrivateOverview();
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
+  await expect(page.getByText("Private", { exact: true })).toBeVisible();
+  await expect(page.getByText("Active", { exact: true })).toBeVisible();
+  await expect(page.getByText("admin", { exact: true })).toBeVisible();
+  await expectRepositoryNavigation("Overview", true);
+  await expect(page.getByRole("link", { name: "開啟舊 WBS 與移轉", exact: true })).toHaveCount(0);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toHaveCount(0);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
+
+  const beforePrivateRestore = requests.filter((request) =>
+    request.path.startsWith("/api/repository-overview?"),
+  ).length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations`);
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "登入以讀取 Repository", exact: true }),
+  ).toHaveCount(0);
+  await expect
+    .poll(
+      () =>
+        requests.filter((request) => request.path.startsWith("/api/repository-overview?")).length,
+    )
+    .toBeGreaterThan(beforePrivateRestore);
+
+  const beforePublicEnrichment = requests.filter((request) =>
+    request.path.startsWith("/api/repository-overview?"),
+  ).length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
+  await expect
+    .poll(
+      () =>
+        requests.filter((request) => request.path.startsWith("/api/repository-overview?")).length,
+    )
+    .toBeGreaterThan(beforePublicEnrichment);
+  await expectRepositoryNavigation("Overview", true);
+
+  overviewFailure = { status: 401, json: { error: "服務登入已失效，請重新登入。" } };
+  const beforeExplicitExchanges = authRequests.filter(
+    (request) => request.action === "exchange",
+  ).length;
+  await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
+  await expect(page.getByRole("heading", { name: "Repository 內容", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Repository 資訊讀取失敗", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toHaveCount(0);
+  await expect(repositoryNavigation().locator("details a")).toHaveCount(2);
+  overviewFailure = null;
+  await page.getByRole("button", { name: "重新登入並重試", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
+  await expect
+    .poll(() => authRequests.filter((request) => request.action === "exchange").length)
+    .toBeGreaterThan(beforeExplicitExchanges);
+  result.checks.push(
+    "valid private session restores without a click; public hint verifies rights and API 401 requires explicit relogin",
+  );
+
+  overviewLegacyStatus = "available";
+  await activatePrivateOverview();
+  await expect(page.getByRole("link", { name: "開啟舊 WBS 與移轉", exact: true })).toHaveAttribute(
+    "href",
+    "/acme/Operations/wbs",
+  );
+
+  overviewVisibility = "internal";
+  overviewArchived = true;
+  overviewPermissions = ["read"];
+  overviewLegacyStatus = "none";
+  await activatePrivateOverview();
+  await expect(page.getByText("Internal", { exact: true })).toBeVisible();
+  await expect(page.getByText("Archived", { exact: true })).toBeVisible();
+  await expect(page.getByText("read", { exact: true })).toBeVisible();
+  await expectRepositoryNavigation("Overview", false);
+  await expect(repositoryNavigation().locator("details a")).toHaveCount(2);
+
+  overviewArchived = false;
+  overviewPermissions = ["admin"];
+  overviewLegacyStatus = "unavailable";
+  await activatePrivateOverview();
+  const legacyAlert = page.getByRole("alert").filter({
+    has: page.getByText("舊 WBS 狀態暫時無法確認。", { exact: true }),
+  });
+  await expect(legacyAlert).toBeVisible();
+  overviewLegacyStatus = "none";
+  await legacyAlert.getByRole("button", { name: "重試 Repository 資訊", exact: true }).click();
+  await expect(legacyAlert).toHaveCount(0);
+
+  overviewFailure = { status: 503, json: { error: "Repository source unavailable." } };
+  await activatePrivateOverview();
+  await expect(
+    page.getByRole("heading", { name: "Repository 資訊讀取失敗", exact: true }),
+  ).toBeVisible();
+  overviewFailure = null;
+  await page.getByRole("button", { name: "重試 Repository 資訊", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
+
+  overviewFailure = { status: 403, json: { error: "沒有 Repository 存取權限。" } };
+  await activatePrivateOverview();
+  await expect(
+    page.getByRole("heading", { name: "無法讀取 Repository", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("沒有 Repository 存取權限。", { exact: true })).toBeVisible();
+
+  overviewFailure = null;
+  overviewLegacyStatus = "available";
+  delayNextOverview = true;
+  await activatePrivateOverview();
+  await expect.poll(() => (releaseDelayedOverview ? "delayed" : "pending")).toBe("delayed");
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  releaseDelayedOverview();
+  releaseDelayedOverview = undefined;
+  await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "開啟舊 WBS 與移轉", exact: true })).toHaveCount(0);
+  result.checks.push(
+    "private admin, reader/archive, legacy states, source retry, authorization denial, hidden/pagehide and late response clearing",
+  );
+
+  overviewVisibility = "private";
+  overviewArchived = false;
+  overviewPermissions = ["admin"];
+  overviewLegacyStatus = "none";
   // Controlled local navigation experiment, not production Web Vitals.
   if (process.env.REPOSITORY_BENCHMARK === "1") {
     await gotoPath("/acme/Operations/labels");
@@ -744,14 +1171,9 @@ try {
         const before = requests.length;
         responses = [];
         const started = performance.now();
-        await page
-          .getByRole("navigation", { name: "Repository resources" })
-          .getByRole("link", { name: section, exact: true })
-          .click();
+        await clickRepositorySection(section);
         await expect(ready[section]()).toBeVisible();
-        await expect(
-          page.getByRole("navigation", { name: "Repository resources" }).getByRole("link"),
-        ).toHaveCount(11);
+        await expectRepositoryNavigation(section, true);
         const readyMs = performance.now() - started;
         const retained = await page
           .locator(".app-shell")
@@ -780,7 +1202,7 @@ try {
     };
   }
   result.checks.push(
-    "all seven Repository sections share shell/header/navigation geometry at 1280, 390 and 320px; 44px targets and no overflow",
+    "Repository sections share shell/header/navigation geometry at 1280, 390 and 320px; primary order, native disclosure, 44px targets and no overflow",
   );
   const firstDiscussionPath = `/acme/Operations/discussions/number/${firstDiscussion.number}`;
   const secondDiscussionPath = `/acme/Operations/discussions/${secondDiscussion.id}`;
@@ -832,10 +1254,7 @@ try {
   await page
     .locator(".app-shell")
     .evaluate((element) => (element.dataset.sharedLayoutCheck = "retained"));
-  await page
-    .getByRole("navigation", { name: "Repository resources" })
-    .getByRole("link", { name: "Labels", exact: true })
-    .click();
+  await clickRepositorySection("Labels");
   await expect(page.getByRole("heading", { name: "Labels", exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toBeVisible();
   assert.equal(
@@ -844,6 +1263,11 @@ try {
     "Sibling soft navigation must preserve the Repository layout",
   );
   await expect(page.getByText("help wanted", { exact: true })).toBeVisible();
+  await page.getByRole("main").locator(".back-link").click();
+  await expect(page).toHaveURL(`${base}/acme/Operations`);
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Labels", exact: true })).toBeVisible();
   result.checks.push("labels direct load");
 
   await gotoPath("/acme/Operations/milestones");
@@ -885,7 +1309,8 @@ try {
   await expect(page.getByText("private-visible", { exact: true })).toBeVisible();
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);
   const readerNavigation = page.getByRole("navigation", { name: "Repository resources" });
-  await expect(readerNavigation.getByRole("link")).toHaveCount(9);
+  await expectRepositoryNavigation("Labels", false);
+  await expect(readerNavigation.getByRole("link")).toHaveCount(8);
   await expect(readerNavigation.getByRole("link", { name: "Settings", exact: true })).toHaveCount(
     0,
   );

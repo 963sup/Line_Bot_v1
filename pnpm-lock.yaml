@@ -552,9 +552,6 @@ importers:
       '@line_bot_v1/issue':
         specifier: workspace:*
         version: link:../issue
-      '@line_bot_v1/wbs':
-        specifier: workspace:*
-        version: link:../wbs
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

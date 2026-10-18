@@ -9,7 +9,7 @@ import {
   type IssueWorkflowStatus,
 } from "@line_bot_v1/issue/domain";
 import Link from "next/link";
-import { type ReactNode, useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState, PrimaryLink } from "../../shared/ui/page-layout";
@@ -23,11 +23,7 @@ import {
 import { postIssueCommand, requestIssueSnapshot } from "./issue-requests";
 import RepositoryPageHeader from "./repository-page-header";
 import styles from "./repository-resource.module.css";
-import {
-  type RepositoryResourceSection,
-  repositoryIssuePath,
-  repositoryIssuesPath,
-} from "./resource-navigation";
+import { repositoryIssuePath, repositoryIssuesPath } from "./resource-navigation";
 
 const workflowStatusLabel: Record<IssueWorkflowStatus, string> = {
   pending: "待承接",
@@ -64,8 +60,6 @@ export default function IssueBoard({
   repositoryName,
   issueNumber,
   initialCreating = false,
-  navigationActive = "issues",
-  overviewContent,
 }: {
   liffId: string;
   repositoryId?: string;
@@ -73,8 +67,6 @@ export default function IssueBoard({
   repositoryName?: string;
   issueNumber?: number;
   initialCreating?: boolean;
-  navigationActive?: RepositoryResourceSection;
-  overviewContent?: ReactNode;
 }) {
   const detailMode = issueNumber !== undefined;
   const canonicalRepository = Boolean(ownerLogin && repositoryName);
@@ -283,14 +275,13 @@ export default function IssueBoard({
         <RepositoryPageHeader
           ownerLogin={ownerLogin}
           repositoryName={repositoryName}
-          active={navigationActive}
+          active="issues"
           canManage={currentRepository?.permissions.includes("admin") ?? false}
           {...(detailMode ? { title: "Issue" } : {})}
         />
       ) : (
         <PageHeading title={detailMode ? "Issue" : "儲存庫"} actions={headingActions} />
       )}
-      {overviewContent}
       <MiniAppRuntime
         key={routeKey}
         liffId={liffId}

@@ -1,6 +1,6 @@
 .resourceNav {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0 0 24px;
 }
@@ -26,13 +26,40 @@
   color: var(--green-strong);
 }
 
-.resourceLink:focus-visible {
+.resourceLink:focus-visible,
+.moreSummary:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--green-strong) 38%, transparent);
   outline-offset: 2px;
 }
 
+.more {
+  grid-column: 1 / -1;
+}
+
+.moreSummary {
+  width: fit-content;
+  min-height: 44px;
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondaryLinks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
 @media (max-width: 480px) {
   .resourceNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .secondaryLinks {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

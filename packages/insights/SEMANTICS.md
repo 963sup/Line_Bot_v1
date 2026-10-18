@@ -22,13 +22,13 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| RepositoryPulse | repository-pulse | derived-projection | current | Authorized Repository-scoped composition of Issue activity/current workflow and WBS scope-governance metrics with explicit coverage. |
+| RepositoryPulse | repository-pulse | derived-projection | current | Authorized Repository-scoped composition of Issue activity and current workflow metrics with explicit coverage. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| read-repository-pulse | required | implemented | Compose authorized Repository Pulse from owner-published Issue/WBS metrics, preserving time boundaries, source coverage and explicit unavailability. |
+| read-repository-pulse | required | implemented | Compose authorized Repository Pulse from owner-published Issue metrics, preserving time boundaries, source coverage and explicit unavailability. |
 
 ## Context Relationships
 
@@ -36,7 +36,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | consumes | issue | query | issue | current-state | Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider. |
 | consumes | repository | query | repository | current-state | Insights consumes repository-owned authorized current queries; source facts and authorization remain with the provider. |
-| consumes | wbs | query | wbs | current-state | Insights consumes wbs-owned authorized current queries; source facts and authorization remain with the provider. |
 
 ## Tactical Model Boundary
 

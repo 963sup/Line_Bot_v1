@@ -11,10 +11,6 @@
     "./contracts/dto/repository-pulse": {
       "types": "./dist/contracts/dto/repository-pulse.d.ts",
       "default": "./dist/contracts/dto/repository-pulse.js"
-    },
-    "./contracts/output/repository-metrics": {
-      "types": "./dist/contracts/output/repository-metrics.d.ts",
-      "default": "./dist/contracts/output/repository-metrics.js"
     }
   },
   "files": [
@@ -26,8 +22,7 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@line_bot_v1/issue": "workspace:*",
-    "@line_bot_v1/wbs": "workspace:*"
+    "@line_bot_v1/issue": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

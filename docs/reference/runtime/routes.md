@@ -41,7 +41,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/repositories/lists`, `/repositories/lists/new` | Current User Repository Star List collection/create；create預設 private，pending requestId 只作 exact-retry presentation metadata |
 | `/repositories/lists/{listId}` | Repository Star List detail/manage；stable ListId只定位，private/public read與 mutation仍由 Repository owner重驗 |
 | `/repositories/lists/discover` | Awesome Lists presentation：public Repository Star List discovery，只顯示 viewer 可見 Repository/count |
-| `/{ownerLogin}/{repositoryName}` | Repository canonical locator；RepositoryId stable，current name 優先，old alias 預設 follow rename；PUBLIC anonymous-readable，PRIVATE explicit access，INTERNAL same current active Enterprise；登入 User 可在此管理 Watch state但 Watch 不授權 |
+| `/{ownerLogin}/{repositoryName}` | Repository Overview 與內容入口；RepositoryId stable，current name 優先，old alias 預設 follow rename；PUBLIC anonymous-readable，PRIVATE explicit access，INTERNAL same current active Enterprise；登入 User 可管理 Watch，舊 WBS 恢復入口依 durable source/live transfer 顯示，Projects 不暗示關聯或繼承權限 |
 | `/{ownerLogin}/{repositoryName}/access` | Repository access management；管理 Direct User / Organization Team grants，owner/name 只定位，每次讀寫重新驗有效 Repository admin（含 OrganizationOwner implicit admin） |
 | `/{ownerLogin}/{repositoryName}/settings` | Repository lifecycle + address；rename/visibility/archive 與 address 是獨立 replay family，current admin 授權；archive 保留地址但不再作新 clock-in site |
 | `/{ownerLogin}/{repositoryName}/objects`、`/objects/{objectId}` | Object-owned Repository 原生內容；分類、不可變內容版本、封存／還原與具名稱有向關係。API 每次重驗 Repository access；Object ID 與 Revision ID 不授權 |
@@ -92,6 +92,7 @@ Current Repository-scoped collaboration/resource API：
 | `/api/repository-address` | Repository 打卡點查詢及 expected-version / exact-replay 設定與移除；地址描述允許 null |
 | `/api/repository-management` | Repository settings read + current-admin expected-version/exact-replay rename、visibility、archive、unarchive |
 | `/api/repository-subscription` | Current-readable Repository 的 User Watch state；SUBSCRIBED / UNSUBSCRIBED / IGNORED，獨立 version/replay 且不授權 |
+| `/api/repository-overview` | Verified active User 與 current Repository scope 的唯讀摘要；WBS Owner 提供舊入口 eligibility，失敗明示 unavailable；不回傳 Project 目的地或推測統計 |
 | `/api/repository-access` | GET access grant projection；POST expected-version + exact-replay Direct User / Organization Team grant mutation；不建立 Organization/Team membership |
 | `/api/projects` | Authorized Project collection read；Project-owned collaborator/public read policy與來源 access 每次重新驗證 |
 | `/api/projects/by-number/{projectNumber}` | owner-scoped canonical Project number lookup；owner login + number 只定位，仍重新驗 current Project access |
