@@ -6,5 +6,6 @@ import { activeLineUser } from "./account.server";
 export const partners = createPartners({
   activeUser: activeLineUser,
   repository: () => new PostgresPartnerRepository(hasPermission),
+  mutations: () => new PostgresPartnerRepository(hasPermission),
   now: () => Date.now(),
 });

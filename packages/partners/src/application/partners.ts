@@ -1,10 +1,14 @@
+import type { PartnerMutationTransactions } from "../contracts/output/partner-mutations.js";
 import type { PartnerCursor, PartnerRepository } from "../contracts/repositories/partners.js";
 import type { PartnerView } from "../contracts.js";
-import { PartnerError, parsePartnerCommand } from "../domain.js";
+import { PartnerError } from "../domain.js";
+import { parsePartnerCommand } from "./commands/partner-command.js";
+import { executePartnerCommand } from "./use-cases/partner-mutations.js";
 
 export function createPartners(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   repository(): PartnerRepository;
+  mutations(): PartnerMutationTransactions;
   now(): number;
 }) {
   return {
@@ -32,7 +36,7 @@ export function createPartners(deps: {
     },
     async execute(subject: string, raw: unknown) {
       const user = await deps.activeUser(subject);
-      return deps.repository().execute(user.id, parsePartnerCommand(raw), deps.now());
+      return executePartnerCommand(deps.mutations(), user.id, parsePartnerCommand(raw), deps.now());
     },
   };
 }
