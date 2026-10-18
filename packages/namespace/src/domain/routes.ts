@@ -19,6 +19,14 @@ type NamespaceRoute = Readonly<{
  */
 export const NAMESPACE_ROUTES = [
   {
+    id: "project-wbs",
+    pathTemplate: "/projects/{projectId}/wbs",
+    scope: "project",
+    locatorOwner: "project",
+    kind: "resource",
+    state: "active",
+  },
+  {
     id: "repository-wbs",
     pathTemplate: "/{login}/{repository}/wbs",
     scope: "repository",

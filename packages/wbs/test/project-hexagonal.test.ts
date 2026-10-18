@@ -1,0 +1,160 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { parseProjectWbsCommand } from "../src/application/commands/project-content.js";
+import { executeProjectWbsCommand } from "../src/application/use-cases/project-content.js";
+import { executeProjectWbsGovernanceCommand } from "../src/application/use-cases/project-governance.js";
+import type { ProjectWbsReceipt } from "../src/contracts/dto/project-content.js";
+import type { ProjectWbsGovernanceReceipt } from "../src/contracts/dto/project-governance.js";
+import type {
+  ProjectWbsContentTransaction,
+  ProjectWbsStore,
+} from "../src/contracts/repositories/project-content.js";
+import type {
+  ProjectWbsGovernanceStore,
+  ProjectWbsGovernanceTransaction,
+} from "../src/contracts/repositories/project-governance.js";
+import type { WbsRevision } from "../src/domain/content.js";
+import { WbsError } from "../src/domain/document.js";
+import { defaultWbsPolicy } from "../src/domain/governance.js";
+import type { ProjectWbsRole } from "../src/domain/policies/project-access.js";
+
+const requestId = "00000000-0000-4000-8000-000000000001";
+
+test("Project content uses projectId and reauthorizes the current role before exact replay", async () => {
+  assert.equal(
+    parseProjectWbsCommand({
+      action: "initialize",
+      projectId: "project-a",
+      requestId,
+      expectedVersion: 0,
+    }).projectId,
+    "project-a",
+  );
+  assert.throws(
+    () =>
+      parseProjectWbsCommand({
+        action: "initialize",
+        repositoryId: "repo",
+        requestId,
+        expectedVersion: 0,
+      }),
+    (error) => error instanceof WbsError && error.status === 400,
+  );
+  let role: ProjectWbsRole = "WRITE";
+  let closed = false;
+  let current: WbsRevision | null = null;
+  let receipt: ProjectWbsReceipt | null = null;
+  const calls: string[] = [];
+  const transaction: ProjectWbsContentTransaction = {
+    get scope() {
+      return { projectId: "project-a", role, closed };
+    },
+    nextId: () => "revision",
+    replay: async () => {
+      calls.push("replay");
+      return receipt;
+    },
+    load: async () => {
+      calls.push("load");
+      return current;
+    },
+    save: async (next) => {
+      calls.push("save");
+      current = next;
+      receipt = { requestId, projectId: "project-a", revision: next };
+      return receipt;
+    },
+  };
+  const store: ProjectWbsStore = {
+    read: async () => {
+      throw new Error("not a read test");
+    },
+    history: async () => ({ revisions: [], next: null }),
+    transact: async (_user, _command, operation) => operation(transaction),
+  };
+  const command = {
+    action: "initialize" as const,
+    projectId: "project-a",
+    requestId,
+    expectedVersion: 0,
+  };
+  const saved = await executeProjectWbsCommand(store, "actor", command, 1);
+  assert.deepEqual(calls, ["replay", "load", "save"]);
+  closed = true;
+  calls.length = 0;
+  assert.deepEqual(await executeProjectWbsCommand(store, "actor", command, 2), saved);
+  assert.deepEqual(calls, ["replay"]);
+  role = "READ";
+  calls.length = 0;
+  await assert.rejects(
+    executeProjectWbsCommand(store, "actor", command, 3),
+    (error) => error instanceof WbsError && error.status === 403,
+  );
+  assert.deepEqual(calls, []);
+});
+
+test("Project governance allows WRITE review but reserves publication and policy for ADMIN", async () => {
+  let role: ProjectWbsRole = "WRITE";
+  let replay: ProjectWbsGovernanceReceipt | null = null;
+  const calls: string[] = [];
+  const transaction: ProjectWbsGovernanceTransaction = {
+    get scope() {
+      return { projectId: "project-a", role, closed: true };
+    },
+    nextId: () => "unused",
+    replay: async () => {
+      calls.push("replay");
+      return replay;
+    },
+    hasContent: async () => {
+      throw new Error("replay should return first");
+    },
+    loadState: async () => ({ version: 0, baselineId: null, policy: defaultWbsPolicy }),
+    loadProposal: async () => null,
+    loadRevision: async () => {
+      throw new Error("unused");
+    },
+    loadBaseline: async () => {
+      throw new Error("unused");
+    },
+    loadReviews: async () => [],
+    save: async () => {
+      throw new Error("unused");
+    },
+  };
+  const store: ProjectWbsGovernanceStore = {
+    view: async () => {
+      throw new Error("not a view test");
+    },
+    transact: async (_user, _command, operation) => operation(transaction),
+  };
+  const review = {
+    action: "review-proposal" as const,
+    projectId: "project-a",
+    requestId,
+    expectedVersion: 2,
+    proposalId: "proposal",
+    expectedProposalVersion: 1,
+    expectedPolicyVersion: 1,
+    decision: "APPROVE" as const,
+    note: "",
+  };
+  replay = {
+    requestId,
+    projectId: "project-a",
+    action: "review-proposal",
+    version: 3,
+    proposalId: "proposal",
+    baselineId: null,
+  };
+  assert.deepEqual(await executeProjectWbsGovernanceCommand(store, "writer", review, 1), replay);
+  const publish = { ...review, action: "publish-proposal" as const };
+  await assert.rejects(
+    executeProjectWbsGovernanceCommand(store, "writer", publish, 1),
+    (error) => error instanceof WbsError && error.status === 403,
+  );
+  role = "ADMIN";
+  replay = { ...replay, action: "publish-proposal", baselineId: "baseline" };
+  assert.deepEqual(await executeProjectWbsGovernanceCommand(store, "admin", publish, 1), replay);
+  assert.deepEqual(calls, ["replay", "replay"]);
+});

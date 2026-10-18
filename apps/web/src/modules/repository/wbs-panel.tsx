@@ -10,6 +10,7 @@ import RepositoryPageHeader from "./repository-page-header";
 import WbsGovernancePanel from "./wbs-governance-panel";
 import styles from "./wbs-panel.module.css";
 import { wbsHistory, wbsReceipt, wbsView } from "./wbs-response";
+import WbsTransferPanel from "./wbs-transfer-panel";
 
 type Pending = { actor: string; command: WbsCommand };
 export default function WbsPanel({
@@ -587,17 +588,30 @@ export default function WbsPanel({
         </>
       )}
       {view?.revision && !historical && (
-        <WbsGovernancePanel
-          key={`${view.actorUserId}:${view.repository.id}`}
-          liffId={liffId}
-          ownerLogin={ownerLogin}
-          repositoryName={repositoryName}
-          repositoryId={view.repository.id}
-          actorUserId={view.actorUserId}
-          draftRevisionId={view.revision.id}
-          disabled={busy || Boolean(pending)}
-          onAccessLost={governanceAccessLost}
-        />
+        <>
+          <WbsGovernancePanel
+            key={`${view.actorUserId}:${view.repository.id}:governance`}
+            liffId={liffId}
+            ownerLogin={ownerLogin}
+            repositoryName={repositoryName}
+            repositoryId={view.repository.id}
+            actorUserId={view.actorUserId}
+            draftRevisionId={view.revision.id}
+            disabled={busy || Boolean(pending)}
+            onAccessLost={governanceAccessLost}
+          />
+          <WbsTransferPanel
+            key={`${view.actorUserId}:${view.repository.id}:transfer`}
+            liffId={liffId}
+            actorUserId={view.actorUserId}
+            repositoryId={view.repository.id}
+            repositoryName={view.repository.name}
+            sourceVersion={view.version}
+            sourceHeadRevisionId={view.revision.id}
+            canManageRepository={view.canManageRepository}
+            disabled={busy || Boolean(pending)}
+          />
+        </>
       )}
       {view && history && (
         <section className={styles.panel} aria-label="WBS 歷史">

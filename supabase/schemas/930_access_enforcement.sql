@@ -117,9 +117,17 @@ revoke all on app_private.project_repository_visible_references
   from public, anon, authenticated, line_app;
 grant select on app_private.project_repository_visible_references to line_app;
 
+revoke all on app_private.project_visibility_access
+  from public, anon, authenticated, line_app;
+grant select on app_private.project_visibility_access to line_app;
+
 revoke all on app_private.notification_repository_source_access
   from public, anon, authenticated, line_app;
 grant select on app_private.notification_repository_source_access to line_app;
+
+revoke all on app_private.notification_project_source_access
+  from public, anon, authenticated, line_app;
+grant select on app_private.notification_project_source_access to line_app;
 
 revoke all on app_private.organization_repository_collaborators from public, anon, authenticated, line_app;
 grant select on app_private.organization_repository_collaborators to line_app;

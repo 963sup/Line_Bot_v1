@@ -6,6 +6,7 @@ import type {
   ProjectManagementCommand,
   ProjectManagementView,
 } from "@line_bot_v1/project/contracts/management";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -329,6 +330,9 @@ export default function ProjectDetail({
             <p className="crud-lifecycle-note">
               Repository 權限不會自動成為 Project 權限；Project 工作項目與來源 Issue 分開管理。
             </p>
+            <Link className="button-link" href={`/projects/${encodeURIComponent(projectId)}/wbs`}>
+              開啟 Project WBS
+            </Link>
           </section>
 
           {canManage && (

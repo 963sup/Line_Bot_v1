@@ -35,6 +35,14 @@
     "./composition/bootstrap/postgres-project-management-store": {
       "types": "./dist/composition/bootstrap/postgres-project-management-store.d.ts",
       "default": "./dist/composition/bootstrap/postgres-project-management-store.js"
+    },
+    "./contracts/output/content-scope": {
+      "types": "./dist/contracts/output/content-scope.d.ts",
+      "default": "./dist/contracts/output/content-scope.js"
+    },
+    "./composition/bootstrap/project-content-scope": {
+      "types": "./dist/composition/bootstrap/project-content-scope.d.ts",
+      "default": "./dist/composition/bootstrap/project-content-scope.js"
     }
   },
   "files": [

@@ -43,6 +43,7 @@ References support the existing status; listed tests are evidence locations, not
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | deliver-explicit-baseline-notifications | required | implemented | Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents. |
+| deliver-project-baseline-notifications | required | implemented | Create explicit-recipient Project WBS Inbox records and recover fixed LINE delivery intents under current Project source access. |
 
 ## Context Relationships
 
@@ -51,7 +52,8 @@ References support the existing status; listed tests are evidence locations, not
 | provides | actions | command | notifications | idempotent-command | Stable per-run recipient intent creates Inbox and LINE effects through Notifications. |
 | consumes | account | query | account | current-state | Account supplies current active provider binding; Notifications retains the first delivery target snapshot. |
 | consumes | repository | query | repository | transaction-recheck | Current source access and explicit-recipient Watch eligibility are Repository-owned. |
-| consumes | wbs | reference | wbs | current-source-access | Inbox creation/read/mark-read and dispatch reference an exact WBS Baseline and Revision. |
+| consumes | wbs | reference | wbs | current-source-access | Project WBS notification creation, Inbox read/mark-read and dispatch bind an exact Baseline and Revision, require an active recipient with current Project READ, and use explicit recipients without Watch. |
+| consumes | wbs | reference | wbs | current-source-access | During R1 transfer, Inbox creation/read/mark-read and dispatch reference an exact Repository WBS Baseline and Revision. |
 | consumes | repository | query | repository | transaction-recheck | Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access. |
 
 ## Tactical Model Boundary

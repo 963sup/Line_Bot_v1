@@ -145,6 +145,11 @@ try {
     "wbs.log",
   );
   await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-project-wbs.mjs")],
+    root,
+    "project-wbs.log",
+  );
+  await command(
     [path.join(root, "scripts/browser/check-repository-resources.mjs")],
     root,
     "repository-resources.log",

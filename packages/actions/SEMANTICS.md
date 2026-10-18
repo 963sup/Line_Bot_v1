@@ -27,14 +27,15 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | ActionAttempt | action-attempt | authoritative | current | Fenced execution lease and durable per-step recovery evidence. |
 | ActionCommandReceipt | action-command-receipt | authoritative | current | Durable exact replay for authenticated automation commands. |
 | ActionEventReceipt | action-event-receipt | authoritative | current | First accepted source event fixes the complete rule fan-out, including no matching rule. |
-| ActionRule | action-rule | authoritative | current | Versioned fixed business automation definition with explicit recipients and revocable current delegation. |
-| ActionRun | action-run | authoritative | current | Source-version-bound automation execution with immutable rule snapshot and durable progress. |
+| ActionRule | action-rule | authoritative | current | Versioned fixed Project business automation definition with explicit recipients and revocable current delegation; the Repository form is retained only during R1 transfer. |
+| ActionRun | action-run | authoritative | current | Project-WBS source-version-bound automation execution with immutable rule snapshot and durable progress; the Repository form is retained only during R1 transfer. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | manage-business-actions | required | implemented | Manage and recover two fixed, delegated Repository business automations. |
+| manage-project-business-actions | required | implemented | Manage and recover two fixed Project business automations under current Project ADMIN and WBS publication identity. |
 
 ## Context Relationships
 
@@ -42,7 +43,8 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | query | account | current-state | Active Account qualification version binds revocable execution delegation. |
 | consumes | notifications | command | notifications | idempotent-command | Stable per-run recipient intent creates Inbox and LINE effects through Notifications. |
-| consumes | repository | stable-identity+query | repository | transaction-recheck | Current Repository access, archive and maintain/admin authority gate automation commands and each fixed step. |
+| consumes | project | stable-identity+query | project | transaction-recheck | Project Actions management and every worker step consume current Project ADMIN and open lifecycle through the Project public scope contract; Actions retains rule and Run authority. |
+| consumes | repository | stable-identity+query | repository | transaction-recheck | During R1 transfer, current Repository access, archive and maintain/admin authority gate legacy automation commands and each fixed step; this is not the final Project Actions scope contract. |
 | consumes | wbs | event | wbs | durable-event-replay | WBS publishes version-bound outbox events; Actions accepts once before acknowledge. |
 
 ## Tactical Model Boundary

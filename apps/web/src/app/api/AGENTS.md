@@ -4,9 +4,11 @@
 
 `GET /api/repository-insights` transports Insights Repository Pulse. `owner`/`name` locate current Repository scope; optional `from`/`to` are nonnegative epoch milliseconds with `[from,to)` semantics. Verified LINE identity maps to an active User, and each source rechecks authorization. Authorization fails closed; infrastructure source failure stays explicitly unavailable. No mutation endpoint.
 
-`/api/repository-wbs` GET/POST and `/api/repository-wbs/history` GET are WBS owner transports. They use verified LINE identity and owner-side current Repository access; initialization is an explicit version-zero command. Revision is immutable saved content, not a Baseline or acceptance decision.
+`/api/project-wbs` GET/POST and `/api/project-wbs/history` GET are the current WBS owner transports. They use verified LINE identity and the Project owner's current content-scope contract; initialization is an explicit version-zero command. Project identity only locates the scope. Revision is immutable saved content, not a Baseline or acceptance decision.
 
-`/api/repository-wbs/governance` GET/POST transports WBS policy, proposal, exact-version review and atomic Baseline publication. Governance version is separate from draft content version. Owner-side current permissions, policy/version gates, origin checks and exact replay remain authoritative; publication is not deliverable acceptance.
+`/api/project-wbs/governance` GET/POST transports WBS policy, proposal, exact-version review and atomic Baseline publication. `/api/project-wbs/metrics` GET transports WBS-owned current draft/Baseline metrics. Both recheck current Project access and lifecycle; governance version is separate from draft content version. Policy/version gates, origin checks and exact replay remain authoritative; publication is not deliverable acceptance.
+
+`/api/repository-wbs`, its history/governance routes and Repository Insights are R1 predecessor transports retained only for verified cutover. `GET /api/repository-wbs/transfer` returns the current source User owner's live intent. POST records an exact Repository source version/head and target Project request only after source/target authorization, destination and dependent-state preflight. `POST /api/repository-wbs/transfer/cancel` lets the current source User owner exactly replay withdrawal of `REQUESTED`, independently of target Project access or deletion. Cancellation preserves the captured snapshot and cannot affect `ACTIVE`. Web does not execute or activate transfer; trusted Release execution rechecks the snapshot, destination and dependencies.
 
 
 ## 現行 URL 與 invariant
@@ -31,6 +33,9 @@
 | `/api/repositories` | GET：Current User 的 explicit-access Repository collection；POST：Repository owner contract 的 replay-safe PRIVATE / INTERNAL / PUBLIC Repository create |
 | `/api/repository-management` | GET：current Repository settings projection；POST：current admin replay-safe rename/visibility/archive/unarchive with expected Repository version |
 | `/api/repository-subscription` | GET/POST：current-readable Repository 的 User Watch state；exact SUBSCRIBED / UNSUBSCRIBED / IGNORED，subscription 不授權 |
+| `/api/project-wbs`、`/api/project-wbs/history` | Project WBS content command/current view 與 immutable Revision history；current Project access/lifecycle、expected version 與 exact replay 由 owner contract 決定 |
+| `/api/project-wbs/governance`、`/api/project-wbs/metrics` | Project WBS policy/proposal/review/Baseline command and read transport，以及 WBS-owned current metrics；Project 僅供目前授權與 lifecycle |
+| `/api/repository-wbs/transfer`、`/api/repository-wbs/transfer/cancel` | R1 live-intent read、preflighted request 與 current source User owner exact-replay withdrawal；cancel 不依賴 target Project 且不適用 ACTIVE，Web 不執行 Release-only transfer |
 | `/api/repository-access` | GET：Repository access management projection；POST：replay-safe Direct User / Organization Team grant mutation；owner/name/request body 只定位與表達 intent，不授權 |
 | `/api/repository-address` | GET：current effective Repository member address projection；POST：current effective Repository admin replay-safe address set/remove；public visibility does not grant this read |
 | `/api/repositories/owners` | Repository create owner options：current User 本人 + Organization scopes with at least one allowed visibility under current Owner/member creation policy；Organization option 回 allowed visibilities 與 current INTERNAL eligibility |
