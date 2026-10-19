@@ -1,5 +1,5 @@
 import { pathToFileURL } from "node:url";
-import { githubJson, requireRepository } from "../github/api.mjs";
+import { githubJson, readLatestRunJobs, requireRepository } from "../github/api.mjs";
 import { requireCurrentMain } from "../github/current-main.mjs";
 import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote.mjs";
 
@@ -26,11 +26,14 @@ export async function requireReleasedImports({ sha, repository, token, fetchImpl
       run.conclusion === "success",
   );
   if (!release) return false;
-  const jobs = await githubJson(
-    `/repos/${target}/actions/runs/${release.id}/jobs?filter=latest&per_page=100`,
-    { token, fetchImpl },
-  );
-  const result = (name) => jobs.jobs?.find((job) => job.name === name)?.conclusion;
+  const jobs = await readLatestRunJobs({
+    repository: target,
+    runId: release.id,
+    maxAttempt: release.run_attempt,
+    token,
+    fetchImpl,
+  });
+  const result = (name) => jobs.find((job) => job.name === name)?.conclusion;
   const core = ["release_plan", "validation / validate"].every(
     (name) => result(name) === "success",
   );

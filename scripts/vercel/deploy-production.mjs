@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
+import { githubJson, readLatestRunJobs } from "../github/api.mjs";
 
 const API_ORIGIN = "https://api.vercel.com";
-const GITHUB_API_ORIGIN = "https://api.github.com";
 const RELEASE_WORKFLOW_PATH = ".github/workflows/release.yml";
 const ACTIVE_DEPLOYMENT_STATES = new Set(["QUEUED", "BUILDING", "INITIALIZING"]);
 
@@ -69,36 +69,10 @@ async function requestJson(fetchImpl, path, token, label, init = {}, mutation = 
   return body;
 }
 
-async function requestGitHubJson(fetchImpl, path, token, label) {
-  let response;
-  try {
-    response = await fetchImpl(`${GITHUB_API_ORIGIN}${path}`, {
-      headers: {
-        accept: "application/vnd.github+json",
-        authorization: `Bearer ${token}`,
-        "x-github-api-version": "2022-11-28",
-      },
-      signal: AbortSignal.timeout(20_000),
-    });
-  } catch {
-    throw new Error(`${label}: GitHub evidence read failed.`);
-  }
-  const text = await response.text();
-  let body = {};
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch {
-      throw new Error(`${label}: GitHub returned non-JSON response (${response.status}).`);
-    }
-  }
-  if (!response.ok) throw new Error(`${label}: GitHub request failed (${response.status}).`);
-  return body;
-}
-
 export async function verifyProductionReleaseAuthorization({
   token,
   runId,
+  runAttempt,
   sha,
   repository,
   fetchImpl = fetch,
@@ -106,37 +80,36 @@ export async function verifyProductionReleaseAuthorization({
   const expectedRepository = `${VERCEL_PRODUCTION_TARGET.gitOrg}/${VERCEL_PRODUCTION_TARGET.gitRepo}`;
   if (!token) throw new Error("Production deployment requires GitHub Release evidence.");
   if (!/^\d+$/.test(runId ?? "")) throw new Error("Production deployment requires GITHUB_RUN_ID.");
+  if (!/^[1-9]\d*$/.test(runAttempt ?? ""))
+    throw new Error("Production deployment requires GITHUB_RUN_ATTEMPT.");
   if (repository !== expectedRepository) {
     throw new Error("Production deployment GitHub repository does not match the production owner.");
   }
-  const run = await requestGitHubJson(
-    fetchImpl,
-    `/repos/${expectedRepository}/actions/runs/${runId}`,
+  const run = await githubJson(`/repos/${expectedRepository}/actions/runs/${runId}`, {
     token,
-    "Production Release run preflight",
-  );
+    fetchImpl,
+  });
   if (
     String(run.id) !== runId ||
     run.path !== RELEASE_WORKFLOW_PATH ||
     run.event !== "push" ||
     run.head_branch !== "main" ||
     run.head_sha !== sha ||
-    run.status !== "in_progress"
+    run.run_attempt !== Number(runAttempt) ||
+    !["queued", "in_progress"].includes(run.status) ||
+    run.conclusion !== null
   ) {
     throw new Error("Production deployment is not running inside the current authorized Release.");
   }
 
-  const jobs = await requestGitHubJson(
-    fetchImpl,
-    `/repos/${expectedRepository}/actions/runs/${runId}/jobs?filter=latest&per_page=100`,
+  const jobs = await readLatestRunJobs({
+    repository: expectedRepository,
+    runId,
+    maxAttempt: Number(runAttempt),
     token,
-    "Production Release job preflight",
-  );
-  if (!Array.isArray(jobs.jobs)) {
-    throw new Error("Production Release job evidence is invalid.");
-  }
-  const succeeded = (name) =>
-    jobs.jobs.some((job) => job?.name === name && job?.conclusion === "success");
+    fetchImpl,
+  });
+  const succeeded = (name) => jobs.some((job) => job.name === name && job.conclusion === "success");
   if (!succeeded("validation / validate")) {
     throw new Error("Production deployment requires successful full validation.");
   }
@@ -364,6 +337,7 @@ async function main() {
   await verifyProductionReleaseAuthorization({
     token: process.env.GITHUB_TOKEN,
     runId: process.env.GITHUB_RUN_ID,
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT,
     sha,
     repository: process.env.GITHUB_REPOSITORY,
   });

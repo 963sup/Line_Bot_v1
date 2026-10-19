@@ -9,10 +9,20 @@ import {
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const json = (body, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
+  new Response(
+    JSON.stringify(
+      body.jobs
+        ? {
+            ...body,
+            jobs: body.jobs.map((job, index) => ({ id: index + 1, run_attempt: 1, ...job })),
+          }
+        : body,
+    ),
+    {
+      status,
+      headers: { "content-type": "application/json" },
+    },
+  );
 
 const project = () =>
   json({ id: VERCEL_PRODUCTION_TARGET.projectId, name: VERCEL_PRODUCTION_TARGET.projectName });
@@ -42,6 +52,8 @@ test("production release authorization accepts only a current planned Release", 
       head_branch: "main",
       head_sha: SHA,
       status: "in_progress",
+      run_attempt: 1,
+      conclusion: null,
     }),
     json({
       jobs: [
@@ -53,10 +65,96 @@ test("production release authorization accepts only a current planned Release", 
   await verifyProductionReleaseAuthorization({
     token: "test-token",
     runId: "123",
+    runAttempt: "1",
     sha: SHA,
     repository: "963sup/Line_Bot_v1",
     fetchImpl: async () => responses.shift(),
   });
+});
+
+test("an active queued Release can deploy after successful prerequisites from earlier attempts", async () => {
+  const calls = [];
+  await verifyProductionReleaseAuthorization({
+    token: "test-token",
+    runId: "123",
+    runAttempt: "3",
+    sha: SHA,
+    repository: "963sup/Line_Bot_v1",
+    fetchImpl: async (url) => {
+      calls.push(String(url));
+      if (String(url).endsWith("/runs/123"))
+        return json({
+          id: 123,
+          path: ".github/workflows/release.yml",
+          event: "push",
+          head_branch: "main",
+          head_sha: SHA,
+          status: "queued",
+          conclusion: null,
+          run_attempt: 3,
+        });
+      assert.match(String(url), /filter=all/);
+      return json({
+        jobs: [
+          { id: 1, run_attempt: 1, name: "validation / validate", conclusion: "success" },
+          { id: 2, run_attempt: 1, name: "release_plan", conclusion: "failure" },
+          { id: 3, run_attempt: 2, name: "release_plan", conclusion: "success" },
+          { id: 4, run_attempt: 3, name: "deployment", conclusion: null },
+        ],
+      });
+    },
+  });
+  assert.equal(calls.length, 2);
+});
+
+test("Release deployment rejects terminal runs, wrong identity and stale attempts before reading jobs", async () => {
+  const valid = {
+    id: 123,
+    path: ".github/workflows/release.yml",
+    event: "push",
+    head_branch: "main",
+    head_sha: SHA,
+    status: "queued",
+    conclusion: null,
+    run_attempt: 3,
+  };
+  for (const patch of [
+    { status: "completed" },
+    { status: "waiting" },
+    { conclusion: "cancelled" },
+    { id: 456 },
+    { path: ".github/workflows/validate.yml" },
+    { event: "pull_request" },
+    { head_branch: "other" },
+    { head_sha: "f".repeat(40) },
+    { run_attempt: 4 },
+  ]) {
+    let reads = 0;
+    await assert.rejects(
+      verifyProductionReleaseAuthorization({
+        token: "synthetic",
+        runId: "123",
+        runAttempt: "3",
+        sha: SHA,
+        repository: "963sup/Line_Bot_v1",
+        fetchImpl: async () => {
+          reads++;
+          return json({ ...valid, ...patch });
+        },
+      }),
+      /current authorized Release/,
+    );
+    assert.equal(reads, 1);
+  }
+  await assert.rejects(
+    verifyProductionReleaseAuthorization({
+      token: "synthetic",
+      runId: "123",
+      sha: SHA,
+      repository: "963sup/Line_Bot_v1",
+    }),
+    /GITHUB_RUN_ATTEMPT/,
+  );
 });
 
 test("production release authorization fails closed before Release planning succeeds", async () => {
@@ -68,6 +166,8 @@ test("production release authorization fails closed before Release planning succ
       head_branch: "main",
       head_sha: SHA,
       status: "in_progress",
+      run_attempt: 1,
+      conclusion: null,
     }),
     json({
       jobs: [
@@ -80,6 +180,7 @@ test("production release authorization fails closed before Release planning succ
     verifyProductionReleaseAuthorization({
       token: "test-token",
       runId: "123",
+      runAttempt: "1",
       sha: SHA,
       repository: "963sup/Line_Bot_v1",
       fetchImpl: async () => responses.shift(),
@@ -98,6 +199,8 @@ for (const conclusion of ["failure", "cancelled", "skipped", null]) {
         head_branch: "main",
         head_sha: SHA,
         status: "in_progress",
+        run_attempt: 1,
+        conclusion: null,
       }),
       json({
         jobs: [
@@ -110,6 +213,7 @@ for (const conclusion of ["failure", "cancelled", "skipped", null]) {
       verifyProductionReleaseAuthorization({
         token: "test-token",
         runId: "123",
+        runAttempt: "1",
         sha: SHA,
         repository: "963sup/Line_Bot_v1",
         fetchImpl: async () => responses.shift(),

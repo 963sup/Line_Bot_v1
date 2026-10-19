@@ -53,7 +53,7 @@ test("Import worker requires current main, completed successful Release and exac
     "supabase",
     "deployment",
     "identifier_runtime_activation",
-  ].map((name) => ({ name, conclusion: "success" }));
+  ].map((name, index) => ({ id: index + 1, run_attempt: 1, name, conclusion: "success" }));
   const fetchImpl = async (url) =>
     new Response(
       JSON.stringify(
@@ -73,6 +73,14 @@ test("Import worker requires current main, completed successful Release and exac
       fetchImpl,
     });
   assert.equal(await verify(), true);
+  jobs.push({
+    id: 99,
+    run_attempt: 2,
+    name: "identifier_runtime_activation",
+    conclusion: "failure",
+  });
+  assert.equal(await verify(), false, "old activation success cannot hide a failed retry");
+  jobs.pop();
   jobs = jobs.map((job) =>
     ["deployment", "identifier_runtime_activation", "supabase"].includes(job.name)
       ? { ...job, conclusion: "skipped" }

@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { githubJson, requireRepository } from "./api.mjs";
+import { githubJson, readLatestRunJobs, requireRepository } from "./api.mjs";
 import { requireCurrentMain } from "./current-main.mjs";
 
 const OWNER_JOBS = Object.freeze({
@@ -138,15 +138,6 @@ async function releaseRuns({ repository, token, fetchImpl }) {
   }
 }
 
-async function jobsForRun({ repository, runId, token, fetchImpl }) {
-  const body = await githubJson(
-    `/repos/${repository}/actions/runs/${runId}/jobs?filter=latest&per_page=100`,
-    { token, fetchImpl },
-  );
-  if (!Array.isArray(body.jobs)) throw new Error("GitHub Release job evidence is invalid.");
-  return body.jobs;
-}
-
 export async function findOwnerBaseline({
   owner,
   runs,
@@ -155,7 +146,7 @@ export async function findOwnerBaseline({
   token,
   fetchImpl,
   git,
-  loadJobs = ({ runId }) => jobsForRun({ repository, runId, token, fetchImpl }),
+  loadJobs = ({ runId }) => readLatestRunJobs({ repository, runId, token, fetchImpl }),
 }) {
   const acceptedJobs = OWNER_JOBS[owner];
   if (!acceptedJobs) throw new Error(`Unknown release owner: ${owner}`);
@@ -211,7 +202,7 @@ export async function planRelease({
     if (!jobsCache.has(runId)) {
       jobsCache.set(
         runId,
-        jobsForRun({
+        readLatestRunJobs({
           repository: targetRepository,
           runId,
           token,

@@ -15,10 +15,20 @@ const SHA = "a".repeat(40);
 const PREVIOUS = "b".repeat(40);
 const OLD = "c".repeat(40);
 const json = (body, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
+  new Response(
+    JSON.stringify(
+      body.jobs
+        ? {
+            ...body,
+            jobs: body.jobs.map((job, index) => ({ id: index + 1, run_attempt: 1, ...job })),
+          }
+        : body,
+    ),
+    {
+      status,
+      headers: { "content-type": "application/json" },
+    },
+  );
 
 test("release evidence title accepts only exact Release SHA", () => {
   assert.equal(releaseSha(`Release ${PREVIOUS}`), PREVIOUS);
