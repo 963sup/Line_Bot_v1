@@ -43,6 +43,10 @@
     "./composition/bootstrap/project-content-scope": {
       "types": "./dist/composition/bootstrap/project-content-scope.d.ts",
       "default": "./dist/composition/bootstrap/project-content-scope.js"
+    },
+    "./composition/bootstrap/repository-imports": {
+      "types": "./dist/composition/bootstrap/repository-imports.d.ts",
+      "default": "./dist/composition/bootstrap/repository-imports.js"
     }
   },
   "files": [

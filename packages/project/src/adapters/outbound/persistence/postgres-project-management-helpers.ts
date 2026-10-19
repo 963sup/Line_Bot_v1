@@ -47,6 +47,7 @@ type StoredReceipt = Readonly<{
 }>;
 
 const projectManagementActions: readonly ProjectManagementCommand["action"][] = [
+  "set-repository-import",
   "create-project",
   "adopt-project",
   "update-project",

@@ -16,6 +16,7 @@ pnpm test:browser
 
 | 腳本 | 主要範圍 |
 | --- | --- |
+| [check-project-imports.mjs](check-project-imports.mjs) | 建立／既有 Project 匯入儲存庫 Issues、條件篩選、未知結果精確重試、後續自動加入、停用及來源權限；1280／390／320px 截圖 |
 | `run-local.mjs` | 標準本機 browser suite 入口：build 一次、啟動 loopback production Web、依序執行案例、保存 evidence 並關閉服務。 |
 | `check-navigation.mjs` | 列表/詳情、query、前進返回、直接開啟與讀寫途中導覽。 |
 | `check-profile.mjs` | Profile client lifecycle、換帳號、遲到回應與 server-page composition。 |

@@ -17,6 +17,30 @@ export type ProjectOwnerOption = Readonly<{
   login: string;
 }>;
 export type ProjectDirectoryUser = Readonly<{ id: string; login: string | null }>;
+export type ProjectRepositoryOption = Readonly<{ id: string; ownerLogin: string; name: string }>;
+
+export async function requestProjectRepositories(
+  token: string,
+): Promise<readonly ProjectRepositoryOption[]> {
+  const response = await fetch("/api/repositories", {
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+    headers: { "X-App-Session-Generation": token },
+  });
+  const value = await payload(response, "儲存庫清單暫時無法讀取。");
+  if (!isRecord(value) || !Array.isArray(value.items))
+    throw new ProjectRequestError("儲存庫清單回應不完整。", 503);
+  return value.items.map((item) => {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== "string" ||
+      typeof item.ownerLogin !== "string" ||
+      typeof item.name !== "string"
+    )
+      throw new ProjectRequestError("儲存庫清單回應不完整。", 503);
+    return { id: item.id, ownerLogin: item.ownerLogin, name: item.name };
+  });
+}
 
 export class ProjectRequestError extends Error {
   constructor(

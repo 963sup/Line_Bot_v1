@@ -6,13 +6,17 @@ import type { ProjectManagementCommand } from "@line_bot_v1/project/contracts/ma
 import { useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import styles from "./project-import.module.css";
+import ProjectImportFields, { type ImportIssues } from "./project-import-fields";
 import {
   type ProjectActor,
   type ProjectOwnerOption,
+  type ProjectRepositoryOption,
   ProjectRequestError,
   postProjectCommand,
   requestProjectActor,
   requestProjectOwnerOrganizations,
+  requestProjectRepositories,
 } from "./project-requests";
 
 type CreateProjectCommand = Extract<ProjectManagementCommand, { action: "create-project" }>;
@@ -42,7 +46,6 @@ function readPending(actorUserId: string): PendingCreate | null {
       command.expectedVersion !== 0 ||
       typeof command.title !== "string" ||
       typeof command.public !== "boolean" ||
-      command.repositoryId !== null ||
       command.teamId !== null
     ) {
       sessionStorage.removeItem(pendingKey(actorUserId));
@@ -76,18 +79,29 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [organizationWarning, setOrganizationWarning] = useState("");
+  const [importEnabled, setImportEnabled] = useState(false);
+  const [repositories, setRepositories] = useState<readonly ProjectRepositoryOption[] | null>(null);
+  const [repositoryId, setRepositoryId] = useState("");
+  const [importIssues, setImportIssues] = useState<ImportIssues>("OPEN");
+  const [repositoryError, setRepositoryError] = useState("");
   const locked = useRef(false);
   const generation = useRef(0);
 
   function clear() {
     generation.current++;
     setActor(null);
+    setTitle("");
+    setImportIssues("OPEN");
     setOwners(null);
     setOwnerAccountId("");
     setPending(null);
     setBusy(false);
     setError("");
     setOrganizationWarning("");
+    setImportEnabled(false);
+    setRepositories(null);
+    setRepositoryId("");
+    setRepositoryError("");
   }
 
   async function load() {
@@ -120,6 +134,16 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
       );
       setOrganizationWarning(warning);
       setPending(readPending(currentActor.id));
+      try {
+        const sourceRepositories = await requestProjectRepositories(token);
+        if (ticket !== generation.current) return;
+        setRepositories(sourceRepositories);
+        setRepositoryError("");
+      } catch (cause) {
+        if (ticket !== generation.current) return;
+        setRepositories(null);
+        setRepositoryError(cause instanceof Error ? cause.message : "儲存庫清單讀取失敗。");
+      }
     } catch (cause) {
       if (ticket === generation.current) {
         setActor(null);
@@ -133,6 +157,7 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
   }
 
   async function execute(operation: PendingCreate) {
+    const ticket = generation.current;
     if (locked.current) return;
     locked.current = true;
     setBusy(true);
@@ -145,6 +170,7 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
         throw new ProjectRequestError("LINE 使用者已切換，請重新讀取 Project 建立頁。", 403);
       }
       const receipt = await postProjectCommand(token, operation.command);
+      if (ticket !== generation.current) return;
       if (
         receipt.requestId !== operation.command.requestId ||
         receipt.action !== operation.command.action ||
@@ -158,6 +184,7 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
       setPending(null);
       window.location.assign(`/projects/${encodeURIComponent(receipt.projectId)}`);
     } catch (cause) {
+      if (ticket !== generation.current) return;
       const status = cause instanceof ProjectRequestError ? cause.status : 503;
       if (status < 500 && status !== 429) {
         clearPending(operation.actorUserId);
@@ -168,12 +195,19 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
       );
     } finally {
       locked.current = false;
-      setBusy(false);
+      if (ticket === generation.current) setBusy(false);
     }
   }
 
   function create() {
-    if (!actor || !owners || pending || !title.trim()) return;
+    if (
+      !actor ||
+      !owners ||
+      pending ||
+      !title.trim() ||
+      (importEnabled && !repositories?.some((repo) => repo.id === repositoryId))
+    )
+      return;
     const owner = owners.find((item) => item.id === ownerAccountId);
     if (!owner) return;
     const command: CreateProjectCommand = {
@@ -184,7 +218,8 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
       expectedVersion: 0,
       title: title.trim(),
       public: false,
-      repositoryId: null,
+      repositoryId: importEnabled ? repositoryId : null,
+      ...(importEnabled ? { importIssues } : {}),
       teamId: null,
     };
     const operation = { actorUserId: actor.id, command };
@@ -249,7 +284,54 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
             <p className="crud-lifecycle-note">
               新 Project 預設為 private；Repository 權限不會自動成為 Project 權限。
             </p>
-            <button disabled={busy || !selectedOwner || !title.trim()}>建立 Project</button>
+            <fieldset disabled={busy}>
+              <legend>匯入工作項目</legend>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  checked={importEnabled}
+                  onChange={(event) => setImportEnabled(event.target.checked)}
+                />
+                從儲存庫匯入項目
+              </label>
+              {importEnabled && (
+                <>
+                  {repositoryError && (
+                    <>
+                      <p role="alert">{repositoryError}</p>
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={busy}
+                        onClick={() => void load()}
+                      >
+                        重新讀取儲存庫
+                      </button>
+                    </>
+                  )}
+                  {repositories && (
+                    <ProjectImportFields
+                      repositories={repositories}
+                      repositoryId={repositoryId}
+                      onRepositoryChange={setRepositoryId}
+                      state={importIssues}
+                      onStateChange={setImportIssues}
+                      disabled={busy}
+                    />
+                  )}
+                </>
+              )}
+            </fieldset>
+            <button
+              disabled={
+                busy ||
+                !selectedOwner ||
+                !title.trim() ||
+                (importEnabled && (!repositories || !repositoryId))
+              }
+            >
+              建立 Project
+            </button>
           </form>
         </section>
       )}

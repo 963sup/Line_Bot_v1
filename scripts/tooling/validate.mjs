@@ -261,6 +261,7 @@ function main() {
         "scripts/github/current-main.test.mjs",
         "scripts/github/release-plan.test.mjs",
         "scripts/github/validation-result.test.mjs",
+        "scripts/project/imports.test.mjs",
       ],
     ],
     [

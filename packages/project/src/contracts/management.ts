@@ -135,6 +135,13 @@ export type ProjectStatusUpdate = Readonly<{
 }>;
 
 export type ProjectManagementView = Readonly<{
+  repositoryImports?: readonly Readonly<{
+    repositoryId: string;
+    repositoryName: string;
+    ownerLogin: string;
+    state: "OPEN" | "CLOSED" | "ALL";
+    enabled: boolean;
+  }>[];
   project: ProjectRoot;
   role: ProjectAccessRole;
   collaborators: readonly ProjectCollaborator[];
@@ -185,9 +192,16 @@ export type ProjectManagementCommand =
         title: string;
         public: boolean;
         repositoryId: string | null;
+        importIssues?: "OPEN" | "CLOSED" | "ALL";
         teamId: string | null;
       }>)
   | (ExistingProjectBase & Readonly<{ action: "adopt-project" }>)
+  | (ExistingProjectBase &
+      Readonly<{
+        action: "set-repository-import";
+        repositoryId: string;
+        importIssues: "OPEN" | "CLOSED" | "ALL" | null;
+      }>)
   | (ExistingProjectBase &
       Readonly<{
         action: "update-project";

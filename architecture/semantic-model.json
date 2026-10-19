@@ -1804,6 +1804,26 @@
       "definition": "Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project-repository-import",
+      "canonicalName": "Project Repository Import",
+      "definition": "Project-owned standing intent to admit existing and future matching Issues from an authorized Repository, bound to a currently qualified Project administrator.",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "project-repository-import-exclusion",
+      "canonicalName": "Project Repository Import Exclusion",
+      "definition": "Project-owned explicit removal evidence preventing automatic re-admission of an Issue until an explicit manual add.",
+      "kind": "authoritative",
+      "owner": "project",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -2045,7 +2065,7 @@
       "id": "project-issue-reference",
       "provider": "issue",
       "consumer": "project",
-      "meaning": "Project Item references Issue-owned work; Project metadata cannot rewrite Issue state.",
+      "meaning": "Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. Optional Repository import uses the Issue public bounded projection, stores only Project-owned Issue references, and rechecks source access before each batch.",
       "integrationMode": "reference",
       "authority": "issue",
       "consistency": "current-access-and-identity"
@@ -3865,24 +3885,27 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "ProjectV2 root, owner-scoped creation through product-local viewerCanCreateProjectV2 with an atomic creator ADMIN grant for non-Owner members, distinct implicit OrganizationOwner authority, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events.",
+        "scope": "ProjectV2 root, owner-scoped creation through product-local viewerCanCreateProjectV2 with an atomic creator ADMIN grant for non-Owner members, distinct implicit OrganizationOwner authority, access grants, Item/DraftIssue, typed field/value, View and StatusUpdate management with current source access, expectedVersion, exact replay and immutable Project events. Optional repository Issue import at creation or later configuration; bounded, qualification-version-bound background admission preserves source access, manual removal exclusions, Project versions and immutable events.",
         "sourcePaths": [
           "packages/project/src/application/management.ts",
           "packages/project/src/contracts/management.ts",
           "packages/project/src/adapters/outbound/persistence/postgres-project-management-store.ts",
           "packages/project/src/adapters/outbound/persistence/postgres-project-items.ts",
           "packages/project/src/adapters/outbound/persistence/postgres-project-fields.ts",
-          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts"
+          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-repository-imports.ts"
         ],
         "publicExports": [
           "./application/management",
           "./contracts/management",
-          "./composition/bootstrap/postgres-project-management-store"
+          "./composition/bootstrap/postgres-project-management-store",
+          "./composition/bootstrap/repository-imports"
         ],
         "entrypoints": ["apps/web/src/app/api/project-management/route.ts"],
         "testPaths": [
           "packages/project/test/collection.test.ts",
-          "packages/project/test/management.test.ts"
+          "packages/project/test/management.test.ts",
+          "packages/project/test/repository-imports.test.ts"
         ],
         "note": "Project owns planning metadata only. Issue content/state remains Issue-owned and every viewer-facing Issue item is filtered by current source access; Draft conversion calls the Issue owner contract in the same transaction. WBS and Project-local Milestone writes remain explicitly data-only."
       }
