@@ -22,6 +22,38 @@
   gap: 6px;
 }
 
+.form fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin-block: 12px 24px;
+}
+
+.form input,
+.form select,
+.form textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.tableScroll table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.tableScroll th,
+.tableScroll td {
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
 .form textarea {
   min-height: 180px;
 }

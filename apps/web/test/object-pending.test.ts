@@ -110,3 +110,120 @@ test("Object Type receipt maps command typeId to committed DTO id", () => {
     true,
   );
 });
+
+test("atomic engineering retry remains actor/repository bound and acknowledges every changed version", () => {
+  const objectId = randomUUID();
+  const pending: PendingObjectCommand = {
+    actorUserId: "user",
+    family: "objects",
+    command: {
+      action: "set-quantities",
+      repositoryId: "repo",
+      requestId: randomUUID(),
+      expectedVersion: 0,
+      observed: { objects: [], relationships: [] },
+      changes: [{ objectId, expectedVersion: 4, quantity: null }],
+    },
+  };
+  assert.deepEqual(parsePendingObjectCommand(pending, "user", "repo", objectId), pending);
+  assert.equal(parsePendingObjectCommand(pending, "other", "repo", objectId), null);
+  const receipt = {
+    requestId: pending.command.requestId,
+    kind: "engineering",
+    result: {
+      repositoryId: "repo",
+      objects: [
+        { objectId, repositoryId: "repo", actorUserId: "user", version: 5, action: "set-quantity" },
+      ],
+      relationships: [],
+      measure: null,
+    },
+  };
+  assert.equal(confirmsObjectReceipt(receipt, pending), true);
+  assert.equal(confirmsObjectReceipt({ ...receipt, requestId: randomUUID() }, pending), false);
+  assert.equal(
+    confirmsObjectReceipt({ ...receipt, result: { ...receipt.result, objects: [] } }, pending),
+    false,
+  );
+  assert.equal(
+    confirmsObjectReceipt(
+      {
+        ...receipt,
+        result: { ...receipt.result, objects: [{ ...receipt.result.objects[0], version: 4 }] },
+      },
+      pending,
+    ),
+    false,
+  );
+  assert.equal(
+    confirmsObjectReceipt(
+      {
+        ...receipt,
+        result: {
+          ...receipt.result,
+          objects: [{ ...receipt.result.objects[0], actorUserId: "other" }],
+        },
+      },
+      pending,
+    ),
+    false,
+  );
+});
+
+test("creating a child acknowledges its immutable endpoint identity and parent", () => {
+  const objectId = randomUUID(),
+    parentObjectId = randomUUID(),
+    relationshipId = randomUUID();
+  const pending: PendingObjectCommand = {
+    actorUserId: "user",
+    family: "objects",
+    command: {
+      action: "create-child",
+      repositoryId: "repo",
+      requestId: randomUUID(),
+      expectedVersion: 0,
+      objectId,
+      parentObjectId,
+      relationshipId,
+      kind: "ALLOCATES",
+    },
+  };
+  const receipt = {
+    requestId: pending.command.requestId,
+    kind: "engineering",
+    result: {
+      repositoryId: "repo",
+      objects: [
+        { objectId, repositoryId: "repo", actorUserId: "user", action: "create", version: 1 },
+      ],
+      relationships: [
+        {
+          relationshipId,
+          repositoryId: "repo",
+          actorUserId: "user",
+          action: "create",
+          version: 1,
+          sourceObjectId: parentObjectId,
+          targetObjectId: objectId,
+          kind: "ALLOCATES",
+          active: true,
+        },
+      ],
+      measure: null,
+    },
+  };
+  assert.equal(confirmsObjectReceipt(receipt, pending), true);
+  assert.equal(
+    confirmsObjectReceipt(
+      {
+        ...receipt,
+        result: {
+          ...receipt.result,
+          relationships: [{ ...receipt.result.relationships[0], sourceObjectId: randomUUID() }],
+        },
+      },
+      pending,
+    ),
+    false,
+  );
+});

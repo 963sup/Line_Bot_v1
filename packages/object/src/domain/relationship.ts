@@ -1,3 +1,4 @@
+import type { RelationshipKind } from "./engineering.js";
 import { ObjectError } from "./error.js";
 
 export type ObjectRelationshipRevision = Readonly<{
@@ -13,6 +14,7 @@ export type ObjectRelationshipRevision = Readonly<{
   targetObjectId: string;
   name: string;
   active: boolean;
+  kind?: RelationshipKind;
 }>;
 
 function normalizeRelationshipName(value: string) {
@@ -30,6 +32,7 @@ export function reviseRelationship(
         sourceObjectId: string;
         targetObjectId: string;
         name: string;
+        kind?: RelationshipKind;
       }>
     | Readonly<{ action: "rename"; name: string }>
     | Readonly<{ action: "remove" }>,
@@ -72,5 +75,6 @@ export function reviseRelationship(
     targetObjectId,
     name,
     active,
+    kind: edit.action === "create" ? (edit.kind ?? "REFERENCE") : (current?.kind ?? "REFERENCE"),
   };
 }

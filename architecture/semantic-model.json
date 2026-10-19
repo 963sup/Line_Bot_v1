@@ -1751,7 +1751,7 @@
       "kind": "authoritative",
       "owner": "object",
       "lifecycle": "current",
-      "definition": "Immutable Object content, classification label snapshot, lifecycle and actor version; restoration creates a new revision.",
+      "definition": "Immutable Object content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1761,7 +1761,7 @@
       "kind": "authoritative",
       "owner": "object",
       "lifecycle": "current",
-      "definition": "Named directed same-Repository Object-to-Object edge with independent lifecycle and version; cycles are permitted but self and duplicate active edges are rejected.",
+      "definition": "Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1793,6 +1793,16 @@
       "lifecycle": "current",
       "definition": "Issue-owned optional association to a same-Repository Object and an explicitly pinned immutable revision.",
       "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "object-measure",
+      "canonicalName": "ObjectMeasure",
+      "kind": "authoritative",
+      "owner": "object",
+      "lifecycle": "current",
+      "definition": "Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition.",
+      "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     }
   ],
@@ -4784,7 +4794,7 @@
       "id": "manage-repository-objects",
       "owner": "object",
       "kind": "leaf",
-      "intent": "Manage classified Repository-native content and directed relationships with immutable history, current access, conditional versions and durable exact replay.",
+      "intent": "Manage classified Repository-native Objects, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
       "validationProfiles": [
         "semantic-architecture",
@@ -4796,13 +4806,15 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Manage classified Repository-native content and directed relationships with immutable history, current access, conditional versions and durable exact replay.",
+        "scope": "Manage classified Repository-native Objects, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay.",
         "sourcePaths": [
           "packages/object/src/domain/object.ts",
           "packages/object/src/domain/object-type.ts",
           "packages/object/src/domain/relationship.ts",
           "packages/object/src/application/use-cases/objects.ts",
-          "packages/object/src/adapters/outbound/persistence/objects.ts"
+          "packages/object/src/adapters/outbound/persistence/objects.ts",
+          "packages/object/src/domain/engineering.ts",
+          "packages/object/src/application/use-cases/engineering.ts"
         ],
         "publicExports": [
           "./application/use-cases/objects",
@@ -4815,12 +4827,16 @@
         "entrypoints": [
           "apps/web/src/app/api/repository-objects/route.ts",
           "apps/web/src/app/api/repository-object-types/route.ts",
-          "apps/web/src/app/api/repository-object-relationships/route.ts"
+          "apps/web/src/app/api/repository-object-relationships/route.ts",
+          "apps/web/src/app/api/repository-object-measures/route.ts"
         ],
         "testPaths": [
           "packages/object/test/object-persistence.test.ts",
           "packages/object/test/object-postgres.test.ts",
-          "apps/web/test/object-http.test.ts"
+          "apps/web/test/object-http.test.ts",
+          "packages/object/test/object-engineering.test.ts",
+          "packages/object/test/object-engineering-persistence.test.ts",
+          "packages/object/test/object-engineering-postgres.test.ts"
         ],
         "note": "Current local product extension, distinct from GitObject; provider publication requires separate evidence."
       }
@@ -4974,7 +4990,7 @@
     {
       "id": "OBJECT1",
       "scope": "object",
-      "statement": "Object Type, Object content and Object-to-Object relationships are Object-owned; revision history and receipts are immutable. Other contexts retain their models and own their references.",
+      "statement": "Object owns classifications, immutable measurement definitions, revision quantities and typed relationships. Structural edges are acyclic with one parent; allocations use identical measures, planned children and exact nonnegative totals within the parent, including archived allocations. Direct location is singular. Atomic edits, revisions and exact receipts share the Repository transaction; other contexts retain their models and pinned references.",
       "severity": "error",
       "enforcement": ["semantic-policy", "schema", "tests"]
     }

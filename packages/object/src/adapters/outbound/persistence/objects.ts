@@ -19,12 +19,22 @@ import type {
   ObjectTransaction,
   ObjectTransactions,
 } from "../../../contracts/output/objects.js";
+import type { Quantity } from "../../../domain/engineering.js";
 import { ObjectError } from "../../../domain/error.js";
 import type { ObjectRevision } from "../../../domain/object.js";
 import type { ObjectType } from "../../../domain/object-type.js";
 import type { ObjectRelationshipRevision } from "../../../domain/relationship.js";
+import { measureRow, quantityRow, readEngineeringGraph } from "./engineering.js";
 
-const objectActions = ["create", "edit", "reclassify", "archive", "unarchive", "restore"] as const;
+const objectActions = [
+  "create",
+  "edit",
+  "reclassify",
+  "archive",
+  "unarchive",
+  "restore",
+  "set-quantity",
+] as const;
 const relationshipActions = ["create", "rename", "remove"] as const;
 
 function typeRow(row: SqlRow): ObjectType {
@@ -54,6 +64,7 @@ function objectRevision(row: SqlRow): ObjectRevision {
     name: stringValue(row.name),
     content: stringValue(row.content),
     archived: booleanValue(row.archived),
+    quantity: quantityRow(row),
   };
 }
 function relationshipRevision(row: SqlRow): ObjectRelationshipRevision {
@@ -70,6 +81,12 @@ function relationshipRevision(row: SqlRow): ObjectRelationshipRevision {
     targetObjectId: stringValue(row.target_object_id),
     name: stringValue(row.name),
     active: booleanValue(row.active),
+    kind: literalValue(row.kind ?? "REFERENCE", [
+      "REFERENCE",
+      "INCLUDES",
+      "ALLOCATES",
+      "LOCATED_IN",
+    ]),
   };
 }
 function summary(row: SqlRow): ObjectSummaryDto {
@@ -105,7 +122,103 @@ function jsonBoolean(value: unknown): boolean {
 function jsonParent(value: unknown): string | null {
   return value === null ? null : jsonString(value);
 }
+function jsonQuantity(value: unknown): Quantity | null {
+  if (value === null) return null;
+  if (!isRecord(value)) throw new ObjectError(503, "Object 計量回執無法讀取。", "UNAVAILABLE");
+  const source = value.sourceReference;
+  if (source !== null && !isRecord(source))
+    throw new ObjectError(503, "Object 來源回執無法讀取。", "UNAVAILABLE");
+  return {
+    measureId: jsonString(value.measureId),
+    value: jsonString(value.value),
+    purpose: literalValue(value.purpose, ["REFERENCE", "PLANNED"]),
+    sourceReference:
+      source === null
+        ? null
+        : { objectId: jsonString(source.objectId), revisionId: jsonString(source.revisionId) },
+  };
+}
+function receiptV2(value: Record<string, unknown>): ObjectCommandReceipt {
+  if (value.family !== "objects" || !isRecord(value.result))
+    throw new ObjectError(503, "Object 回執無法讀取。", "UNAVAILABLE");
+  const result = value.result;
+  if (result.kind !== "engineering") {
+    const legacy = receipt({ ...value, receiptVersion: 1 });
+    if (!isRecord(result.result))
+      throw new ObjectError(503, "Object 回執無法讀取。", "UNAVAILABLE");
+    if (legacy.kind === "object" && "objectId" in legacy.result)
+      return {
+        ...legacy,
+        result: { ...legacy.result, quantity: jsonQuantity(result.result.quantity) },
+      };
+    if (legacy.kind === "relationship" && "relationshipId" in legacy.result)
+      return {
+        ...legacy,
+        result: {
+          ...legacy.result,
+          kind: literalValue(result.result.kind, [
+            "REFERENCE",
+            "INCLUDES",
+            "ALLOCATES",
+            "LOCATED_IN",
+          ]),
+        },
+      };
+    return legacy;
+  }
+  const payload = result.result;
+  if (
+    !isRecord(payload) ||
+    !Array.isArray(payload.objects) ||
+    !Array.isArray(payload.relationships)
+  )
+    throw new ObjectError(503, "工程回執無法讀取。", "UNAVAILABLE");
+  const objects = payload.objects.map((item: unknown) => {
+    const decoded = receiptV2({
+      receiptVersion: 2,
+      family: "objects",
+      result: { requestId: result.requestId, kind: "object", result: item },
+    });
+    if (!("objectId" in decoded.result))
+      throw new ObjectError(503, "工程回執無法讀取。", "UNAVAILABLE");
+    return decoded.result;
+  });
+  const relationships = payload.relationships.map((item: unknown) => {
+    const decoded = receiptV2({
+      receiptVersion: 2,
+      family: "objects",
+      result: { requestId: result.requestId, kind: "relationship", result: item },
+    });
+    if (!("relationshipId" in decoded.result))
+      throw new ObjectError(503, "工程回執無法讀取。", "UNAVAILABLE");
+    return decoded.result;
+  });
+  const measure = payload.measure;
+  if (measure !== null && !isRecord(measure))
+    throw new ObjectError(503, "計量回執無法讀取。", "UNAVAILABLE");
+  return {
+    requestId: jsonString(result.requestId),
+    kind: "engineering",
+    result: {
+      repositoryId: jsonString(payload.repositoryId),
+      objects,
+      relationships,
+      measure:
+        measure === null
+          ? null
+          : {
+              id: jsonString(measure.id),
+              repositoryId: jsonString(measure.repositoryId),
+              name: jsonString(measure.name),
+              subject: jsonString(measure.subject),
+              unit: literalValue(measure.unit, ["m", "pcs"]),
+              createdAt: jsonNumber(measure.createdAt),
+            },
+    },
+  };
+}
 function receipt(value: unknown): ObjectCommandReceipt {
+  if (isRecord(value) && value.receiptVersion === 2) return receiptV2(value);
   if (
     !isRecord(value) ||
     value.receiptVersion !== 1 ||
@@ -211,6 +324,25 @@ async function readRelationshipRevision(sql: Sql, repositoryId: string, relation
 export class PostgresObjects implements ObjectReads, ObjectTransactions {
   constructor(private readonly db: Database = businessDatabase()) {}
 
+  engineeringGraph(userId: string, repositoryId: string) {
+    return this.db.transaction(async (sql) => {
+      await repositoryContentScope(sql, userId, { repositoryId });
+      return readEngineeringGraph(sql, repositoryId);
+    });
+  }
+  listMeasures(userId: string, query: { repositoryId: string; after?: string }) {
+    return this.db.transaction(async (sql) => {
+      await repositoryContentScope(sql, userId, { repositoryId: query.repositoryId });
+      const rows = (
+        await sql.query(
+          "SELECT * FROM object_measures WHERE repository_id=$1 AND ($2::uuid IS NULL OR id>$2) ORDER BY id LIMIT 51",
+          [query.repositoryId, query.after ?? null],
+          measureRow,
+        )
+      ).rows;
+      return { items: rows.slice(0, 50), next: rows.length > 50 ? (rows[49]?.id ?? null) : null };
+    });
+  }
   listTypes(userId: string, query: { repositoryId: string; after?: string }) {
     return this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, userId, { repositoryId: query.repositoryId });
@@ -335,11 +467,21 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
         readObjectRevision(sql, query.repositoryId, query.objectId, query.afterId),
       ]);
       if (!before || !after) throw new ObjectError(404, "找不到 Object Revision。", "NOT_FOUND");
-      return (["typeId", "typeName", "name", "content", "archived"] as const).flatMap((field) =>
+      const contentDifferences = (
+        ["typeId", "typeName", "name", "content", "archived"] as const
+      ).flatMap((field) =>
         before[field] === after[field]
           ? []
           : [{ field, before: before[field], after: after[field] }],
       );
+      const beforeQuantity = JSON.stringify(before.quantity ?? null);
+      const afterQuantity = JSON.stringify(after.quantity ?? null);
+      return [
+        ...contentDifferences,
+        ...(beforeQuantity === afterQuantity
+          ? []
+          : [{ field: "quantity" as const, before: beforeQuantity, after: afterQuantity }]),
+      ];
     });
   }
 
@@ -359,6 +501,20 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
       const tx: ObjectTransaction = {
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
         nextId: randomUUID,
+        engineeringGraph: () => readEngineeringGraph(sql, repository.id),
+        saveMeasure: async (measure) => {
+          await sql.query(
+            "INSERT INTO object_measures(id,repository_id,name,subject,unit,created_at) VALUES($1,$2,$3,$4,$5,$6)",
+            [
+              measure.id,
+              measure.repositoryId,
+              measure.name,
+              measure.subject,
+              measure.unit,
+              measure.createdAt,
+            ],
+          );
+        },
         replay: async () => {
           const row = (
             await sql.query(
@@ -436,8 +592,8 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
           await sql.query(
             `INSERT INTO object_revisions(
                id,object_id,repository_id,version,parent_revision_id,actor_user_id,at,action,
-               type_id,type_name,name,content,archived
-             ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+               type_id,type_name,name,content,archived,measure_id,quantity_value,quantity_purpose,source_object_id,source_revision_id
+             ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::numeric,$16,$17,$18)`,
             [
               next.id,
               next.objectId,
@@ -452,6 +608,11 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
               next.name,
               next.content,
               next.archived,
+              next.quantity?.measureId ?? null,
+              next.quantity?.value ?? null,
+              next.quantity?.purpose ?? null,
+              next.quantity?.sourceReference?.objectId ?? null,
+              next.quantity?.sourceReference?.revisionId ?? null,
             ],
           );
           if (expectedVersion > 0) {
@@ -485,8 +646,8 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
           if (expectedVersion === 0)
             await sql.query(
               `INSERT INTO object_relationships(
-                 id,repository_id,version,head_revision_id,source_object_id,target_object_id,name,active
-               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+                 id,repository_id,version,head_revision_id,source_object_id,target_object_id,name,active,kind
+               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
               [
                 next.relationshipId,
                 next.repositoryId,
@@ -496,13 +657,14 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
                 next.targetObjectId,
                 next.name,
                 next.active,
+                next.kind ?? "REFERENCE",
               ],
             );
           await sql.query(
             `INSERT INTO object_relationship_revisions(
                id,relationship_id,repository_id,version,parent_revision_id,actor_user_id,at,action,
-               source_object_id,target_object_id,name,active
-             ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+               source_object_id,target_object_id,name,active,kind
+             ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
             [
               next.id,
               next.relationshipId,
@@ -516,6 +678,7 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
               next.targetObjectId,
               next.name,
               next.active,
+              next.kind ?? "REFERENCE",
             ],
           );
           if (expectedVersion > 0) {
@@ -548,7 +711,7 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
               evidence.requestId,
               repository.id,
               fingerprint,
-              JSON.stringify({ receiptVersion: 1, family: "objects", result }),
+              JSON.stringify({ receiptVersion: 2, family: "objects", result }),
             ],
           );
         },
@@ -572,6 +735,7 @@ export class PostgresObjects implements ObjectReads, ObjectTransactions {
         if (
           code === "23505" &&
           [
+            "object_measures_pkey",
             "object_types_pkey",
             "objects_pkey",
             "object_revisions_pkey",

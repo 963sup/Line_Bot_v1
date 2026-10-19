@@ -1,3 +1,4 @@
+import type { EngineeringGraph, ObjectMeasure } from "../../domain/engineering.js";
 import type { ObjectRevision } from "../../domain/object.js";
 import type { ObjectType } from "../../domain/object-type.js";
 import type { ObjectRelationshipRevision } from "../../domain/relationship.js";
@@ -12,6 +13,11 @@ import type {
 } from "../dto/objects.js";
 
 export interface ObjectReads {
+  engineeringGraph(userId: string, repositoryId: string): Promise<EngineeringGraph>;
+  listMeasures(
+    userId: string,
+    query: { repositoryId: string; after?: string },
+  ): Promise<CursorPage<ObjectMeasure>>;
   listTypes(
     userId: string,
     query: { repositoryId: string; after?: string },
@@ -45,6 +51,8 @@ export interface ObjectReads {
 export interface ObjectTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   nextId(): string;
+  engineeringGraph(): Promise<EngineeringGraph>;
+  saveMeasure(measure: ObjectMeasure): Promise<void>;
   replay(): Promise<ObjectCommandReceipt | null>;
   loadType(typeId: string): Promise<ObjectType | null>;
   saveType(next: ObjectType, expectedVersion: number): Promise<void>;

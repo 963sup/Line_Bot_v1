@@ -20,6 +20,7 @@ const { repositoryContentScope } = await resolvedImport(
   "@line_bot_v1/repository/postgres/content-scope",
 );
 const { createObjects } = await resolvedImport("@line_bot_v1/object/application/use-cases/objects");
+const { ObjectError } = await resolvedImport("@line_bot_v1/object/domain/error");
 const { createPostgresObjectDependencies } = await resolvedImport(
   "@line_bot_v1/object/composition/bootstrap/objects",
 );
@@ -149,6 +150,7 @@ function failure(error, fallback) {
     status: error && typeof error === "object" && "status" in error ? Number(error.status) : 503,
     json: {
       error: error instanceof Error && error.message ? error.message : fallback,
+      ...(error instanceof ObjectError ? { code: error.code } : {}),
     },
   };
 }
@@ -165,6 +167,7 @@ await context.route("**/*", async (route) => {
 
   if (
     [
+      "/api/repository-object-measures",
       "/api/repository-object-types",
       "/api/repository-objects",
       "/api/repository-object-relationships",
@@ -184,8 +187,15 @@ await context.route("**/*", async (route) => {
             : url.pathname === "/api/repository-objects"
               ? "objects"
               : "relationships";
-        const receipt =
-          family === "types"
+        const receipt = [
+          "create-measure",
+          "set-quantities",
+          "set-parent",
+          "set-location",
+          "create-child",
+        ].includes(command.action)
+          ? await objectOwner.executeEngineering(actor, command)
+          : family === "types"
             ? await objectOwner.executeType(actor, command)
             : family === "objects"
               ? await objectOwner.executeObject(actor, command)
@@ -199,6 +209,13 @@ await context.route("**/*", async (route) => {
         }
         return route.fulfill({ json: receipt });
       }
+      if (url.pathname === "/api/repository-object-measures")
+        return route.fulfill({
+          json: {
+            ...currentScope,
+            ...(await objectOwner.listMeasures(actor, { repositoryId: "repo" })),
+          },
+        });
       if (url.pathname === "/api/repository-object-types") {
         return route.fulfill({
           json: {
@@ -241,6 +258,23 @@ await context.route("**/*", async (route) => {
       }
       const objectId = url.searchParams.get("objectId");
       const view = url.searchParams.get("view") ?? (objectId ? "object" : "list");
+      if (view === "structure")
+        return route.fulfill({
+          json: {
+            ...currentScope,
+            ...(await objectOwner.structure(actor, {
+              repositoryId: "repo",
+              rootId: url.searchParams.get("rootId"),
+              ...(url.searchParams.has("parentId")
+                ? { parentId: url.searchParams.get("parentId") }
+                : {}),
+              ...(url.searchParams.has("after") ? { after: url.searchParams.get("after") } : {}),
+              ...(url.searchParams.has("groupBy")
+                ? { groupBy: url.searchParams.get("groupBy") }
+                : {}),
+            })),
+          },
+        });
       if (view === "list") {
         return route.fulfill({
           json: {
@@ -496,6 +530,180 @@ try {
     });
   }
 
+  // Engineering is a separate content identity so the existing Issue pin history remains unchanged.
+  const fibreId = randomUUID();
+  await objectOwner.executeObject("owner", {
+    action: "create",
+    repositoryId: "repo",
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    objectId: fibreId,
+    typeId: objectACurrent.typeId,
+    name: "光纖工程",
+    content: "工程計畫",
+  });
+  await page.goto(`${base}/alice/Alpha/objects/${fibreId}`, { waitUntil: "domcontentloaded" });
+  const engineering = page.getByTestId("object-engineering");
+  await expect(engineering.getByText("數量未登錄", { exact: true })).toBeVisible();
+  await engineering.getByText("新增計量定義", { exact: true }).click();
+  const definition = engineering
+    .locator("form")
+    .filter({ has: page.getByRole("button", { name: "建立計量定義", exact: true }) });
+  await definition.getByLabel("名稱", { exact: true }).fill("光纖長度");
+  await definition.getByLabel("計量對象與方法", { exact: true }).fill("沿光纖路徑計量");
+  await definition.getByRole("button", { name: "建立計量定義", exact: true }).click();
+  await expect(
+    engineering.getByRole("button", { name: "建立計量定義", exact: true }),
+  ).toBeEnabled();
+  await engineering.getByText("調整計量與工程結構", { exact: true }).click();
+  const quantityForm = engineering
+    .locator("form")
+    .filter({ has: page.getByRole("heading", { name: "本範圍數量", exact: true }) });
+  await quantityForm
+    .getByLabel("計量定義", { exact: true })
+    .selectOption({ label: "光纖長度 · m · 沿光纖路徑計量" });
+  await quantityForm.getByLabel("數量（留空表示未登錄）", { exact: true }).fill("8500");
+  await quantityForm.getByLabel("數量用途", { exact: true }).selectOption("REFERENCE");
+  objectResultUnknown = true;
+  await quantityForm.getByRole("button", { name: "儲存數量", exact: true }).click();
+  await expect(page.getByRole("button", { name: "重試原操作", exact: true })).toBeVisible();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "重試原操作", exact: true }).click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 8500");
+  assert.deepEqual(objectPosts.at(-1), objectPosts.at(-2));
+  await engineering.getByText("調整計量與工程結構", { exact: true }).click();
+  const childForm = engineering
+    .locator("form")
+    .filter({ has: page.getByRole("heading", { name: "新增子 Object", exact: true }) });
+  for (const [name, value] of [
+    ["範圍一", "2000"],
+    ["範圍二", "1000"],
+    ["範圍三", "3000"],
+    ["範圍四", "2000"],
+  ]) {
+    await childForm.getByLabel("名稱", { exact: true }).fill(name);
+    await childForm.getByLabel("數量（留空表示未登錄）", { exact: true }).fill(value);
+    await childForm.getByRole("button", { name: "建立子 Object", exact: true }).click();
+    await expect(engineering.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(
+      childForm.getByRole("button", { name: "建立子 Object", exact: true }),
+    ).toBeEnabled();
+  }
+  await expect(engineering.getByTestId("engineering-balance")).toContainText(
+    "已分配 8000 · 未分配 500",
+  );
+  await childForm.getByLabel("名稱", { exact: true }).fill("超額範圍");
+  await childForm.getByLabel("數量（留空表示未登錄）", { exact: true }).fill("501");
+  await childForm.getByRole("button", { name: "建立子 Object", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("超過父");
+  await expect(engineering.getByRole("link", { name: "超額範圍", exact: true })).toHaveCount(0);
+  await page.getByTestId("objects-refresh").click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 500");
+  const batch = engineering
+    .locator("form")
+    .filter({ has: page.getByRole("heading", { name: "批次調整本頁子範圍", exact: true }) });
+  await batch.getByLabel("範圍一（m）", { exact: true }).fill("2600");
+  await batch.getByLabel("範圍二（m）", { exact: true }).fill("400");
+  await batch.getByRole("button", { name: "儲存批次數量", exact: true }).click();
+  await expect(batch.getByRole("button", { name: "儲存批次數量", exact: true })).toBeEnabled();
+  await engineering
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name: "範圍一", exact: true }) })
+    .getByRole("button")
+    .click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 2600");
+  await engineering.getByText("調整計量與工程結構", { exact: true }).click();
+  for (const [name, value] of [
+    ["第一段", "1200"],
+    ["第二段", "800"],
+  ]) {
+    await childForm.getByLabel("名稱", { exact: true }).fill(name);
+    await childForm.getByLabel("數量（留空表示未登錄）", { exact: true }).fill(value);
+    await childForm.getByRole("button", { name: "建立子 Object", exact: true }).click();
+    await expect(engineering.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(
+      childForm.getByRole("button", { name: "建立子 Object", exact: true }),
+    ).toBeEnabled();
+  }
+  await engineering
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name: "第一段", exact: true }) })
+    .getByRole("button")
+    .click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 1200");
+  await engineering.getByText("調整計量與工程結構", { exact: true }).click();
+  const roomId = randomUUID();
+  await objectOwner.executeObject("owner", {
+    action: "create",
+    repositoryId: "repo",
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    objectId: roomId,
+    typeId: objectACurrent.typeId,
+    name: "電氣室",
+    content: "位置",
+  });
+  await engineering.getByRole("button", { name: "載入可選 Object", exact: true }).click();
+  await engineering.getByLabel("操作", { exact: true }).selectOption("set-location");
+  await engineering
+    .getByLabel("目標 Object", { exact: true })
+    .selectOption({ label: "電氣室 · 設備" });
+  await engineering.getByRole("button", { name: "更新工程關係", exact: true }).click();
+  await expect(engineering.getByText(/直接位置：電氣室/)).toBeVisible();
+  await engineering.getByRole("button", { name: "返回上一層", exact: true }).click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 600");
+  await engineering.getByRole("button", { name: "返回上一層", exact: true }).click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText(
+    "已分配 8000 · 未分配 500",
+  );
+  await engineering.getByRole("button", { name: "依位置", exact: true }).click();
+  await expect(engineering.getByRole("table")).toContainText("未指定位置");
+  await expect(engineering.getByRole("table")).toContainText("1200 m");
+  await expect(engineering.getByRole("table")).toContainText("電氣室");
+  await engineering.getByRole("button", { name: "依工種", exact: true }).click();
+  await expect(engineering.getByRole("table")).toContainText("設備");
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    assert.ok(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      `Engineering overflow at ${width}`,
+    );
+    await page.screenshot({
+      path: path.join(output, `object-engineering-${width}.png`),
+      fullPage: true,
+    });
+  }
+  await engineering.getByRole("button", { name: "工程結構", exact: true }).click();
+  await engineering
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name: "範圍一", exact: true }) })
+    .getByRole("button")
+    .click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 600");
+  await engineering
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name: "第一段", exact: true }) })
+    .getByRole("button")
+    .click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText("未分配 1200");
+  await engineering.getByText("調整計量與工程結構", { exact: true }).click();
+  await engineering.getByRole("button", { name: "載入可選 Object", exact: true }).click();
+  await engineering.getByLabel("操作", { exact: true }).selectOption("set-parent");
+  await engineering
+    .getByLabel("目標 Object", { exact: true })
+    .selectOption({ label: "電氣室 · 設備" });
+  await engineering.getByLabel("父關係", { exact: true }).selectOption("INCLUDES");
+  await engineering.getByRole("button", { name: "更新工程關係", exact: true }).click();
+  await expect(engineering.getByTestId("engineering-balance")).toContainText(
+    "已分配 8000 · 未分配 500",
+  );
+  await expect(
+    page.getByTestId("object-detail").getByRole("heading", { name: "光纖工程", exact: true }),
+  ).toBeVisible();
+  await expect(engineering.getByRole("button", { name: "返回上一層", exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  await expect(engineering).toHaveCount(0);
+
   await fixture.pg.query(
     "UPDATE app_private.repository_access SET capability='read',version=version+1 WHERE repository_id='repo' AND principal_id='other'",
   );
@@ -573,7 +781,7 @@ try {
        (SELECT count(*)::int FROM app_private.object_relationships WHERE active) AS relationships,
        (SELECT count(*)::int FROM app_private.issue_object_references) AS issue_references`,
   );
-  assert.deepEqual(rows.rows, [{ types: 1, objects: 2, relationships: 1, issue_references: 1 }]);
+  assert.deepEqual(rows.rows, [{ types: 1, objects: 10, relationships: 8, issue_references: 1 }]);
   assert.deepEqual(errors, []);
   writeFileSync(
     path.join(output, "objects-results.json"),
@@ -583,7 +791,11 @@ try {
         scope:
           "Real Next production/browser with synthetic LINE/API transport and real Object and Issue owner use cases on isolated local PGlite; no production mutation.",
         checks: [
-          "Object Type and two Object instances",
+          "Object Type, Object instances and immutable measurement definition",
+          "8500m baseline, 8000m allocation, 500m residual and overflow rollback",
+          "atomic sibling transfer, recursive children and explicit electrical-room location",
+          "moving a descendant outside the current root resets navigation without clearing authorized Object content",
+          "engineering/location/type views and unknown-result exact batch retry",
           "unknown-result exact replay keeps one Object identity",
           "pagehide clears unsubmitted private Object drafts",
           "directed Object relationship",

@@ -61,3 +61,5 @@ FPT queries/mutations 是 GitHub GraphQL domain truth；它們定義 GitHub sema
 - Every route must pass explicit stable IDs, scope, expected version and request identity to the owner contract when required; URL, body role, selected UI scope or session cache is not authority.
 - Keep HTTP/LINE wire contracts and failure classification stable during module moves; do not implement a second use case or query private tables from a route.
 - API tests must cover unauthorized/forbidden, wrong scope, stale/replay conflict, unavailable source and unknown-result behavior where the owner supports those states.
+
+`/api/repository-object-measures` GET lists immutable Object-owned measurement definitions; POST transports ADMIN creation. `/api/repository-objects?view=structure` reads per-level engineering nodes and full-root totals. Object and relationship POST routes transport atomic `set-quantities`, `set-parent` and `set-location` intents through the same current identity, scope, origin and receipt contract.

@@ -1,5 +1,7 @@
+import type { ObservedEngineering } from "../domain/engineering.js";
 import { ObjectError } from "../domain/error.js";
 import type { ObjectEdit } from "../domain/object.js";
+import { parseObserved } from "./engineering-commands.js";
 
 type Base = Readonly<{
   repositoryId: string;
@@ -12,7 +14,11 @@ export type ObjectTypeCommand = Base &
     | Readonly<{ action: "create" | "update"; name: string; description: string }>
     | Readonly<{ action: "disable" | "enable" }>
   );
-export type ObjectCommand = Base & Readonly<{ objectId: string }> & ObjectEdit;
+type PublicObjectEdit =
+  | Omit<Extract<ObjectEdit, { action: "create" }>, "quantity">
+  | Exclude<ObjectEdit, { action: "create" | "restore" | "set-quantity" }>
+  | (Extract<ObjectEdit, { action: "restore" }> & Readonly<{ observed?: ObservedEngineering }>);
+export type ObjectCommand = Base & Readonly<{ objectId: string }> & PublicObjectEdit;
 export type ObjectRelationshipCommand = Base &
   Readonly<{ relationshipId: string }> &
   (
@@ -146,11 +152,13 @@ export function parseObjectCommand(raw: unknown): ObjectCommand {
       "expectedVersion",
       "objectId",
       "revisionId",
+      "observed",
     ]);
     return {
       ...common,
       action: value.action,
       revisionId: uuid(value.revisionId, "Object Revision ID"),
+      ...(value.observed === undefined ? {} : { observed: parseObserved(value.observed) }),
     };
   }
   throw new ObjectError(400, "Object 操作不正確。", "INVALID_INPUT");
