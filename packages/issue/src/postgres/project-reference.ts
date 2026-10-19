@@ -21,6 +21,41 @@ export type ProjectIssueReference = Readonly<{
 
 const issueStates: readonly ProjectIssueReference["state"][] = ["OPEN", "CLOSED"];
 
+/** Bounded Issue-owned projection; Project supplies its own membership/exclusion identities. */
+export async function readProjectImportIssueReferences(
+  sql: Sql,
+  input: Readonly<{
+    userId: string;
+    repositoryId: string;
+    state: "OPEN" | "CLOSED" | "ALL";
+    excludeIds: readonly string[];
+    limit: number;
+  }>,
+): Promise<ProjectIssueReference[]> {
+  await repositoryOperation(() =>
+    repositoryScope(sql, { userId: input.userId }, input.repositoryId),
+  );
+  if (!Number.isInteger(input.limit) || input.limit < 1 || input.limit > 101)
+    throw new IssueError(400, "Issue 匯入批次不正確。");
+  const rows = (
+    await sql.query(
+      `SELECT id,repository_id,number,title,state,version FROM issues
+     WHERE repository_id=$1 AND ($2='ALL' OR COALESCE(state,'OPEN')=$2)
+       AND NOT (id=ANY($3::text[])) ORDER BY number,id LIMIT $4 FOR SHARE`,
+      [input.repositoryId, input.state, input.excludeIds, input.limit],
+      decodeProjectIssueRow,
+    )
+  ).rows;
+  return rows.map((row) => ({
+    id: row.id,
+    repositoryId: row.repository_id,
+    number: Number(row.number),
+    title: row.title,
+    state: row.state ?? "OPEN",
+    version: Number(row.version),
+  }));
+}
+
 function decodeProjectIssueRow(row: Record<string, unknown>) {
   const state = nullableString(row.state);
   return {

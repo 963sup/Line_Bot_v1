@@ -44,6 +44,10 @@ import {
   storeProjectReceipt,
 } from "./postgres-project-management-helpers.js";
 import {
+  configureProjectImport,
+  readProjectImports,
+} from "./postgres-project-repository-imports.js";
+import {
   executeProjectViewStatusCommand,
   readProjectStatusUpdates,
   readProjectViews,
@@ -405,6 +409,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       ]);
       return {
         project: projectRoot(selected.row),
+        repositoryImports: await readProjectImports(sql, identity.userId, projectId),
         role: selected.role,
         collaborators,
         items,
@@ -451,6 +456,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       ]);
       return {
         project: projectRoot(selected.row),
+        repositoryImports: await readProjectImports(sql, identity.userId, row.id),
         role: selected.role,
         collaborators,
         items,
@@ -477,15 +483,37 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       const replay = await readProjectReceipt(sql, identity.userId, command.requestId, fingerprint);
       if (replay) {
         await readProjectScope(sql, identity.userId, replay.projectId, true);
+        if (command.action === "create-project" && command.importIssues) {
+          if (!command.repositoryId)
+            throw new ProjectError(400, "匯入 Issues 必須指定 Repository。");
+          await requireReadableRepository(sql, identity.userId, command.repositoryId);
+        } else if (command.action === "set-repository-import" && command.importIssues !== null) {
+          await requireReadableRepository(sql, identity.userId, command.repositoryId);
+        }
         return replay;
       }
 
       if (command.action === "create-project") {
+        if (command.importIssues && !command.repositoryId) {
+          throw new ProjectError(400, "匯入 Issues 必須指定 Repository。");
+        }
         const row = await createProject(sql, identity, command, now);
+        const imported =
+          command.importIssues && command.repositoryId
+            ? await configureProjectImport(
+                sql,
+                identity.userId,
+                row.id,
+                command.repositoryId,
+                command.importIssues,
+                now,
+              )
+            : null;
         const data = {
           ownerAccountId: row.owner_account_id,
           ownerKind: row.owner_account_kind,
           number: Number(row.number),
+          ...(imported ? imported : {}),
         };
         await appendProjectEvent(sql, row.id, 1, identity.userId, command.action, data, now);
         const result: ProjectManagementReceipt = {
@@ -584,6 +612,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
       requireProjectVersion(selected.row, command.expectedVersion);
 
       const adminActions = new Set<ProjectManagementCommand["action"]>([
+        "set-repository-import",
         "adopt-project",
         "update-project",
         "close-project",
@@ -673,6 +702,16 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         data = { deleted: true };
       } else if (command.action === "update-collaborators") {
         data = await mutateCollaborators(sql, selected.row, command, now);
+        next = await advanceProject(sql, selected.row, command.expectedVersion, now);
+      } else if (command.action === "set-repository-import") {
+        data = await configureProjectImport(
+          sql,
+          identity.userId,
+          selected.row.id,
+          command.repositoryId,
+          command.importIssues,
+          now,
+        );
         next = await advanceProject(sql, selected.row, command.expectedVersion, now);
       } else if (isItemCommand(command)) {
         await validateDraftAssignees(sql, command);

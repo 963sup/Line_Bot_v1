@@ -12,6 +12,7 @@ import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import ProjectCollaborators from "./project-collaborators";
 import styles from "./project-detail.module.css";
+import ProjectRepositoryImports from "./project-repository-imports";
 import {
   type ProjectDirectoryUser,
   ProjectRequestError,
@@ -29,6 +30,7 @@ type PendingOperation = Readonly<{
 }>;
 
 const retryableUiActions = new Set<ProjectManagementCommand["action"]>([
+  "set-repository-import",
   "update-project",
   "close-project",
   "reopen-project",
@@ -333,6 +335,9 @@ export default function ProjectDetail({
             <Link className="button-link" href={`/projects/${encodeURIComponent(projectId)}/wbs`}>
               開啟 Project WBS
             </Link>
+            <button type="button" className="secondary" disabled={busy} onClick={() => void load()}>
+              重新讀取 Project
+            </button>
           </section>
 
           {canManage && (
@@ -351,6 +356,15 @@ export default function ProjectDetail({
               onAccessChanged={() => void load()}
             />
           )}
+          <ProjectRepositoryImports
+            key={`${actorUserId}:${projectId}`}
+            data={data}
+            liffId={liffId}
+            actorUserId={actorUserId}
+            busy={busy}
+            pending={Boolean(pending)}
+            send={send}
+          />
           <ProjectWorkspace
             data={data}
             actorUserId={actorUserId}

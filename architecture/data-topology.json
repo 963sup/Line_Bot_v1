@@ -1928,6 +1928,22 @@
       "authority": true,
       "semanticOwner": "object",
       "concept": "object-measure"
+    },
+    {
+      "name": "project_repository_imports",
+      "kind": "table",
+      "path": "supabase/schemas/704_project_repository_references.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-repository-import"
+    },
+    {
+      "name": "project_repository_import_exclusions",
+      "kind": "table",
+      "path": "supabase/schemas/704_project_repository_references.sql",
+      "authority": true,
+      "semanticOwner": "project",
+      "concept": "project-repository-import-exclusion"
     }
   ]
 }

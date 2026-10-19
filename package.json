@@ -55,7 +55,8 @@
     "actions:worker": "node scripts/actions/worker.mjs",
     "project-actions:run": "node scripts/actions/project-run.mjs",
     "project-actions:worker": "node scripts/actions/project-worker.mjs",
-    "wbs:transfer": "node scripts/wbs/transfer.mjs"
+    "wbs:transfer": "node scripts/wbs/transfer.mjs",
+    "project:imports": "node scripts/project/imports.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

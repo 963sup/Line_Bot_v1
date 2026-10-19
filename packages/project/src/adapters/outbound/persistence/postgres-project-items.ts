@@ -171,7 +171,7 @@ async function nextPosition(sql: Sql, projectId: string): Promise<number> {
   return Number(row.position);
 }
 
-async function ensureRepositoryReference(sql: Sql, projectId: string, repositoryId: string) {
+export async function ensureRepositoryReference(sql: Sql, projectId: string, repositoryId: string) {
   const existing = (
     await sql.query(
       `SELECT 1
@@ -260,6 +260,10 @@ export async function executeProjectItemCommand(
   if (command.action === "add-issue-item") {
     const issue = await readProjectIssueReference(sql, userId, command.issueId);
     if (!issue) throw new ProjectError(404, "找不到可讀取的 source Issue。");
+    await sql.query(
+      "DELETE FROM project_repository_import_exclusions WHERE project_id=$1 AND issue_id=$2",
+      [projectId, issue.id],
+    );
     const itemId = randomUUID();
     const position = await nextPosition(sql, projectId);
     await ensureRepositoryReference(sql, projectId, issue.repositoryId);
@@ -391,6 +395,12 @@ export async function executeProjectItemCommand(
         projectId,
         item.id,
       ]);
+      if (item.issue_id) {
+        await sql.query(
+          `INSERT INTO project_repository_import_exclusions(project_id,issue_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
+          [projectId, item.issue_id],
+        );
+      }
       await sql.query("DELETE FROM project_items WHERE project_id=$1 AND id=$2 AND version=$3", [
         projectId,
         item.id,

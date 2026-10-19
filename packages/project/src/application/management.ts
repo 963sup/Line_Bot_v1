@@ -54,6 +54,7 @@ const itemKinds: readonly ProjectManagementView["items"][number]["kind"][] = [
   "DRAFT_ISSUE",
 ];
 const managementActions: readonly ProjectManagementCommand["action"][] = [
+  "set-repository-import",
   "create-project",
   "adopt-project",
   "update-project",
@@ -305,6 +306,7 @@ export function parseProjectManagementCommand(raw: unknown): ProjectManagementCo
       "title",
       "public",
       "repositoryId",
+      "importIssues",
       "teamId",
     ]);
     return {
@@ -319,10 +321,43 @@ export function parseProjectManagementCommand(raw: unknown): ProjectManagementCo
         value.repositoryId === null || value.repositoryId === undefined
           ? null
           : id(value.repositoryId, "Repository 識別碼"),
+      ...(value.importIssues === undefined
+        ? {}
+        : {
+            importIssues: (() => {
+              if (!value.repositoryId)
+                throw new ProjectError(400, "匯入 Issues 必須指定 Repository。");
+              return oneOf(
+                value.importIssues,
+                ["OPEN", "CLOSED", "ALL"] as const,
+                "Issue 匯入條件不正確。",
+              );
+            })(),
+          }),
       teamId:
         value.teamId === null || value.teamId === undefined
           ? null
           : id(value.teamId, "Team 識別碼"),
+    };
+  }
+
+  if (action === "set-repository-import") {
+    exactKeys(value, [
+      "action",
+      "requestId",
+      "projectId",
+      "expectedVersion",
+      "repositoryId",
+      "importIssues",
+    ]);
+    return {
+      ...current(value),
+      action,
+      repositoryId: id(value.repositoryId, "Repository 識別碼"),
+      importIssues:
+        value.importIssues === null
+          ? null
+          : oneOf(value.importIssues, ["OPEN", "CLOSED", "ALL"] as const, "Issue 匯入條件不正確。"),
     };
   }
 
@@ -1188,10 +1223,39 @@ export function parseProjectManagementView(raw: unknown): ProjectManagementView 
     "fieldValues",
     "views",
     "statusUpdates",
+    "repositoryImports",
   ]);
   return {
     project: parseProjectRoot(value.project, "Project view.project"),
     role: responseOneOf(value.role, accessRoles, "Project view.role"),
+    ...(value.repositoryImports === undefined
+      ? {}
+      : {
+          repositoryImports: responseArray(
+            value.repositoryImports,
+            "Project view.repositoryImports",
+            (raw, label) => {
+              const record = responseRecord(raw, label, [
+                "repositoryId",
+                "repositoryName",
+                "ownerLogin",
+                "state",
+                "enabled",
+              ]);
+              return {
+                repositoryId: responseString(record.repositoryId, `${label}.repositoryId`),
+                repositoryName: responseString(record.repositoryName, `${label}.repositoryName`),
+                ownerLogin: responseString(record.ownerLogin, `${label}.ownerLogin`),
+                state: responseOneOf(
+                  record.state,
+                  ["OPEN", "CLOSED", "ALL"] as const,
+                  `${label}.state`,
+                ),
+                enabled: responseBoolean(record.enabled, `${label}.enabled`),
+              };
+            },
+          ),
+        }),
     collaborators: responseArray(
       value.collaborators,
       "Project view.collaborators",
