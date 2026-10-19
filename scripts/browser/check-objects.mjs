@@ -258,6 +258,20 @@ await context.route("**/*", async (route) => {
       }
       const objectId = url.searchParams.get("objectId");
       const view = url.searchParams.get("view") ?? (objectId ? "object" : "list");
+      if (view === "tree")
+        return route.fulfill({
+          json: {
+            ...currentScope,
+            ...(await objectOwner.tree(actor, {
+              repositoryId: "repo",
+              includeArchived: url.searchParams.get("includeArchived") === "true",
+              ...(url.searchParams.has("parentId")
+                ? { parentId: url.searchParams.get("parentId") }
+                : {}),
+              ...(url.searchParams.has("after") ? { after: url.searchParams.get("after") } : {}),
+            })),
+          },
+        });
       if (view === "structure")
         return route.fulfill({
           json: {
@@ -381,6 +395,7 @@ await context.route("**/*", async (route) => {
 try {
   await page.goto(`${base}/alice/Alpha/objects`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Object Types" })).toBeVisible();
+  await page.getByTestId("object-types").locator("summary").click();
   await expect(page.getByText("尚無 Object Type。", { exact: true })).toBeVisible();
 
   await expect(page.locator("#object-type-description")).toHaveAttribute("maxlength", "2000");
@@ -388,6 +403,7 @@ try {
   await page.getByLabel("Type 說明").fill("可持續演進的設備內容");
   await page.getByRole("button", { name: "建立 Object Type", exact: true }).click();
   await expect(page.getByText(/設備 · 版本 1/)).toBeVisible();
+  await page.locator('summary[aria-label="新增根 Object"]').click();
 
   await page.getByLabel("Object Type").selectOption({ label: "設備" });
   await page.getByLabel("名稱", { exact: true }).fill("Object A");
@@ -407,6 +423,7 @@ try {
     objectId: objectAId,
   });
 
+  await page.locator('summary[aria-label="新增根 Object"]').click();
   await page.getByLabel("Object Type").selectOption({ label: "設備" });
   await page.getByLabel("名稱", { exact: true }).fill("Object B");
   await page.getByLabel("內容", { exact: true }).fill("設備 B 初版內容");
@@ -743,7 +760,7 @@ try {
   await expect(page.getByRole("link", { name: "Object B", exact: true })).toBeVisible();
   await page.getByLabel("顯示已封存 Objects", { exact: true }).check();
   await expect(page.getByRole("link", { name: "Object A", exact: true })).toBeVisible();
-  await expect(page.getByTestId("object-list")).toContainText("Object A · 設備 · 版本 4 · 已封存");
+  await expect(page.getByTestId("object-list")).toContainText("設備 · 已封存");
   await page.getByRole("link", { name: "Object A", exact: true }).click();
   await page.getByRole("button", { name: "取消封存", exact: true }).click();
   await expect(page.getByText(/設備 · 版本 5/)).toBeVisible();
@@ -760,6 +777,60 @@ try {
       fullPage: true,
     });
   }
+
+  const processType = randomUUID();
+  await objectOwner.executeType("owner", {
+    action: "create",
+    repositoryId: "repo",
+    typeId: processType,
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    name: "工序",
+    description: "施工步驟",
+  });
+  await page.goto(`${base}/alice/Alpha/objects`, { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("button", { name: "新增 光纖工程 的子 Object", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId("object-types")).not.toHaveAttribute("open");
+  await page.getByRole("button", { name: "新增 光纖工程 的子 Object", exact: true }).click();
+  const treeChildForm = page.getByRole("form", { name: "新增 光纖工程 的子 Object", exact: true });
+  await treeChildForm.getByLabel("名稱", { exact: true }).fill("光纖敷設工序");
+  await treeChildForm.getByLabel("Object Type", { exact: true }).selectOption({ label: "工序" });
+  objectResultUnknown = true;
+  await treeChildForm.getByRole("button", { name: "建立子 Object", exact: true }).click();
+  await expect(page.getByRole("button", { name: "重試原操作", exact: true })).toBeVisible();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "重試原操作", exact: true }).click();
+  await expect(page.getByRole("button", { name: "重試原操作", exact: true })).toHaveCount(0);
+  assert.deepEqual(objectPosts.at(-1), objectPosts.at(-2));
+  await page.getByRole("button", { name: "展開 光纖工程", exact: true }).click();
+  await expect(page.getByRole("link", { name: "光纖敷設工序", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "新增 光纖敷設工序 的子 Object", exact: true }).click();
+  const grandchildForm = page.getByRole("form", {
+    name: "新增 光纖敷設工序 的子 Object",
+    exact: true,
+  });
+  await grandchildForm.getByLabel("名稱", { exact: true }).fill("A 區作業");
+  await grandchildForm.getByRole("button", { name: "建立子 Object", exact: true }).click();
+  await page.getByRole("button", { name: "展開 光纖敷設工序", exact: true }).click();
+  await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "收合 光纖敷設工序", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "展開 光纖敷設工序", exact: true }).click();
+  await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toBeVisible();
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    await page.screenshot({ path: path.join(output, `objects-tree-${width}.png`), fullPage: true });
+    if (width === 390)
+      await page
+        .getByTestId("object-list")
+        .screenshot({ path: path.join(output, "objects-tree-panel.png") });
+  }
+  await page.goto(`${base}/alice/Alpha/objects/${objectAId}`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("object-detail")).toBeVisible();
 
   await fixture.pg.query("UPDATE app_private.users SET status='paused' WHERE id='owner'");
   await page.evaluate(() => {
@@ -781,7 +852,7 @@ try {
        (SELECT count(*)::int FROM app_private.object_relationships WHERE active) AS relationships,
        (SELECT count(*)::int FROM app_private.issue_object_references) AS issue_references`,
   );
-  assert.deepEqual(rows.rows, [{ types: 1, objects: 10, relationships: 8, issue_references: 1 }]);
+  assert.deepEqual(rows.rows, [{ types: 2, objects: 12, relationships: 10, issue_references: 1 }]);
   assert.deepEqual(errors, []);
   writeFileSync(
     path.join(output, "objects-results.json"),
@@ -791,6 +862,8 @@ try {
         scope:
           "Real Next production/browser with synthetic LINE/API transport and real Object and Issue owner use cases on isolated local PGlite; no production mutation.",
         checks: [
+          "collapsible Repository Object tree, inline plus creation, independent types and exact child retry after reload",
+          "nested keyboard collapse/expand and 320/390/1280 tree layouts",
           "Object Type, Object instances and immutable measurement definition",
           "8500m baseline, 8000m allocation, 500m residual and overflow rollback",
           "atomic sibling transfer, recursive children and explicit electrical-room location",

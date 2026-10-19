@@ -25,6 +25,7 @@ import type { ObjectRevision } from "../../../domain/object.js";
 import type { ObjectType } from "../../../domain/object-type.js";
 import type { ObjectRelationshipRevision } from "../../../domain/relationship.js";
 import { measureRow, quantityRow, readEngineeringGraph } from "./engineering.js";
+import { readObjectTree } from "./tree.js";
 
 const objectActions = [
   "create",
@@ -324,6 +325,15 @@ async function readRelationshipRevision(sql: Sql, repositoryId: string, relation
 export class PostgresObjects implements ObjectReads, ObjectTransactions {
   constructor(private readonly db: Database = businessDatabase()) {}
 
+  listTree(
+    userId: string,
+    query: { repositoryId: string; parentId?: string; after?: string; includeArchived?: boolean },
+  ) {
+    return this.db.transaction(async (sql) => {
+      await repositoryContentScope(sql, userId, { repositoryId: query.repositoryId });
+      return readObjectTree(sql, query);
+    });
+  }
   engineeringGraph(userId: string, repositoryId: string) {
     return this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, userId, { repositoryId });

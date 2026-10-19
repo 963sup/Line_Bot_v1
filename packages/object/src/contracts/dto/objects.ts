@@ -130,6 +130,12 @@ export type StructureDto = Readonly<{
   }>[];
 }>;
 
+export type ObjectTreeDto = Readonly<{
+  parent: StructureNodeDto | null;
+  nodes: CursorPage<StructureNodeDto>;
+  observed: ObservedEngineering;
+}>;
+
 export type CursorPage<T> = Readonly<{ items: readonly T[]; next: string | null }>;
 export type ObjectRevisionDifference = Readonly<{
   field: "typeId" | "typeName" | "name" | "content" | "archived" | "quantity";

@@ -553,11 +553,11 @@ async function expectRepositoryNavigation(active, canManage) {
     primaryRepositorySections,
     "Repository primary navigation order must remain stable",
   );
-  assert.deepEqual(
-    await navigation.locator("details a").allTextContents(),
-    canManage ? secondaryRepositorySections : secondaryRepositorySections.slice(0, 2),
-    "Repository secondary navigation must be capability-filtered",
-  );
+  await expect
+    .poll(() => navigation.locator("details a").allTextContents(), {
+      message: "Repository secondary navigation must be capability-filtered",
+    })
+    .toEqual(canManage ? secondaryRepositorySections : secondaryRepositorySections.slice(0, 2));
   await expect(navigation.getByRole("menu")).toHaveCount(0);
   await expect(navigation.locator("summary")).toHaveText("更多");
   const activeLink = navigation.getByRole("link", { name: active, exact: true });

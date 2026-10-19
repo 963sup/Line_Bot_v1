@@ -40,6 +40,15 @@ test("Object HTTP binds verified identity, Repository URL and exact commands", a
   let captured: unknown;
   let capturedTypeAfter: string | undefined;
   const owner: ReturnType<ObjectWebRuntime["objects"]> = {
+    tree: async (userId, query) => {
+      assert.equal(userId, "user");
+      captured = query;
+      return {
+        parent: null,
+        nodes: { items: [], next: null },
+        observed: { objects: [], relationships: [] },
+      };
+    },
     listMeasures: async () => ({ items: [], next: null }),
     structure: async () => {
       throw new ObjectError(404, "父節點不在此工程範圍。", "STRUCTURE_SCOPE_CHANGED");
@@ -209,4 +218,24 @@ test("Object HTTP binds verified identity, Repository URL and exact commands", a
   );
   assert.equal(moved.status, 404);
   assert.equal(record(await moved.json()).code, "STRUCTURE_SCOPE_CHANGED");
+  const tree = await objectRequest(
+    new Request(`${base}&view=tree&includeArchived=true&parentId=${typeId}`),
+    "objects",
+    runtime,
+    identity,
+  );
+  assert.equal(tree.status, 200);
+  assert.deepEqual(captured, { repositoryId: "repo", parentId: typeId, includeArchived: true });
+  assert.equal(tree.headers.get("cache-control"), "no-store");
+  assert.equal(
+    (
+      await objectRequest(
+        new Request(`${base}&view=tree&includeArchived=invalid`),
+        "objects",
+        runtime,
+        identity,
+      )
+    ).status,
+    400,
+  );
 });

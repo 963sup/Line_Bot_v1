@@ -9,10 +9,15 @@ import type {
   ObjectRevisionDifference,
   ObjectRevisionDto,
   ObjectSummaryDto,
+  ObjectTreeDto,
   ObjectTypeDto,
 } from "../dto/objects.js";
 
 export interface ObjectReads {
+  listTree(
+    userId: string,
+    query: { repositoryId: string; parentId?: string; after?: string; includeArchived?: boolean },
+  ): Promise<ObjectTreeDto>;
   engineeringGraph(userId: string, repositoryId: string): Promise<EngineeringGraph>;
   listMeasures(
     userId: string,

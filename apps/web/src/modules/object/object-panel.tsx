@@ -1,11 +1,12 @@
 "use client";
 
+import type { ObjectTreeDto } from "@line_bot_v1/object/contracts/dto/objects";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import EngineeringPanel from "./engineering-panel";
-import { structureView } from "./engineering-response";
+import { objectTree, structureView } from "./engineering-response";
 import { appendCursorPage, objectTypeOptions } from "./object-pagination";
 import styles from "./object-panel.module.css";
 import {
@@ -24,9 +25,9 @@ import {
   objectRelationships,
   objectRevision,
   objectScope,
-  objects,
   objectTypes,
 } from "./object-response";
+import ObjectTree from "./object-tree";
 
 const endpoint: Record<ObjectFamily, string> = {
   types: "/api/repository-object-types",
@@ -53,8 +54,7 @@ export default function ObjectPanel({
   const [scope, setScope] = useState<ReturnType<typeof objectScope> | null>(null);
   const [types, setTypes] = useState<ObjectTypeView[]>([]);
   const [typesNext, setTypesNext] = useState<string | null>(null);
-  const [items, setItems] = useState<ReturnType<typeof objects>["objects"]>([]);
-  const [objectsNext, setObjectsNext] = useState<string | null>(null);
+  const [treePage, setTreePage] = useState<ObjectTreeDto | null>(null);
   const [head, setHead] = useState<ObjectRevisionView | null>(null);
   const [shown, setShown] = useState<ObjectRevisionView | null>(null);
   const [history, setHistory] = useState<ObjectRevisionView[]>([]);
@@ -94,8 +94,7 @@ export default function ObjectPanel({
     onCanManageChange?.(false);
     setTypes([]);
     setTypesNext(null);
-    setItems([]);
-    setObjectsNext(null);
+    setTreePage(null);
     setHead(null);
     setShown(null);
     setHistory([]);
@@ -180,7 +179,10 @@ export default function ObjectPanel({
       try {
         const [typeValue, objectValue, relationshipValue] = await Promise.all([
           request("types"),
-          request("objects", objectId ? { objectId } : { archived: String(archivedFilter) }),
+          request(
+            "objects",
+            objectId ? { objectId } : { view: "tree", includeArchived: String(archivedFilter) },
+          ),
           objectId ? request("relationships", { objectId }) : Promise.resolve(null),
         ]);
         if (ticket !== generation.current) return;
@@ -220,9 +222,7 @@ export default function ObjectPanel({
             setRelationshipsNext(relationshipPage.next);
           }
         } else {
-          const objectPage = objects(objectValue);
-          setItems(objectPage.objects);
-          setObjectsNext(objectPage.next);
+          setTreePage(objectTree(objectValue));
           if (!selectedTypeId) setSelectedTypeId(nextTypes.find((type) => type.enabled)?.id ?? "");
         }
         const saved = sessionStorage.getItem(storageKey);
@@ -253,9 +253,8 @@ export default function ObjectPanel({
     [request, objectId, showArchived, clear, storageKey, selectedTypeId, onCanManageChange],
   );
 
-  async function loadMore(family: "types" | "objects" | "relationships") {
-    const cursor =
-      family === "types" ? typesNext : family === "objects" ? objectsNext : relationshipsNext;
+  async function loadMore(family: "types" | "relationships") {
+    const cursor = family === "types" ? typesNext : relationshipsNext;
     if (!cursor || (family === "relationships" && !objectId)) return;
     const ticket = ++generation.current;
     setBusy(true);
@@ -263,11 +262,7 @@ export default function ObjectPanel({
     try {
       const value = await request(
         family,
-        family === "types"
-          ? { after: cursor }
-          : family === "objects"
-            ? { after: cursor, archived: String(showArchived) }
-            : { after: cursor, objectId: objectId ?? "" },
+        family === "types" ? { after: cursor } : { after: cursor, objectId: objectId ?? "" },
       );
       if (ticket !== generation.current) return;
       const currentScope = scopeRef.current;
@@ -284,10 +279,6 @@ export default function ObjectPanel({
         const page = objectTypes(value);
         setTypes((current) => appendCursorPage(current, page.types, (type) => type.id));
         setTypesNext(page.next);
-      } else if (family === "objects") {
-        const page = objects(value);
-        setItems((current) => appendCursorPage(current, page.objects, (item) => item.objectId));
-        setObjectsNext(page.next);
       } else {
         const page = objectRelationships(value);
         setRelationships((current) =>
@@ -565,8 +556,13 @@ export default function ObjectPanel({
 
       {!objectId && scope ? (
         <>
-          <section className={styles.panel} data-testid="object-types">
-            <h2>Object Types</h2>
+          <details
+            className={`${styles.panel} ${styles.typeDisclosure}`}
+            data-testid="object-types"
+          >
+            <summary>
+              <h2>Object Types</h2>
+            </summary>
             {types.length ? (
               <ul className={styles.list}>
                 {types.map((type) => (
@@ -668,11 +664,11 @@ export default function ObjectPanel({
                 </div>
               </form>
             ) : null}
-          </section>
+          </details>
 
           <section className={styles.panel} data-testid="object-list">
             <h2>Objects</h2>
-            <label>
+            <label className={styles.archiveFilter}>
               <input
                 type="checkbox"
                 checked={showArchived}
@@ -685,84 +681,83 @@ export default function ObjectPanel({
               />{" "}
               顯示已封存 Objects
             </label>
-            {items.length ? (
-              <ul className={styles.list}>
-                {items.map((item) => (
-                  <li key={item.objectId}>
-                    <Link href={`${basePath}/${encodeURIComponent(item.objectId)}`}>
-                      {item.name}
-                    </Link>
-                    {` · ${item.typeName} · 版本 ${item.version}${item.archived ? " · 已封存" : ""}`}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>尚無 Object。</p>
-            )}
-            {objectsNext ? (
-              <button type="button" disabled={busy} onClick={() => void loadMore("objects")}>
-                載入更多 Objects
-              </button>
+            {treePage ? (
+              <ObjectTree
+                key={`${scope.actorUserId}:${scope.repository.id}:${showArchived}`}
+                page={treePage}
+                basePath={basePath}
+                scope={scope}
+                types={types}
+                busy={busy || !!pending}
+                refresh={engineeringRefresh}
+                includeArchived={showArchived}
+                request={request}
+                mutate={mutate}
+                invalidate={clear}
+              />
             ) : null}
             {scope.canEdit ? (
-              <form
-                className={styles.form}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void mutate("objects", (fresh) => ({
-                    action: "create",
-                    repositoryId: fresh.repository.id,
-                    objectId: crypto.randomUUID(),
-                    requestId: crypto.randomUUID(),
-                    expectedVersion: 0,
-                    typeId: selectedTypeId,
-                    name,
-                    content,
-                  }));
-                }}
-              >
-                <h3>建立 Object</h3>
-                <label htmlFor="object-type">
-                  Object Type
-                  <select
-                    id="object-type"
-                    required
-                    value={selectedTypeId}
-                    onChange={(event) => setSelectedTypeId(event.target.value)}
-                  >
-                    <option value="">選擇 Type</option>
-                    {types
-                      .filter((type) => type.enabled)
-                      .map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label htmlFor="object-name">
-                  名稱
-                  <input
-                    id="object-name"
-                    maxLength={200}
-                    required
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                  />
-                </label>
-                <label htmlFor="object-content">
-                  內容
-                  <textarea
-                    id="object-content"
-                    maxLength={262_144}
-                    value={content}
-                    onChange={(event) => setContent(event.target.value)}
-                  />
-                </label>
-                <button type="submit" disabled={busy || !!pending || !selectedTypeId}>
-                  建立 Object
-                </button>
-              </form>
+              <details className={styles.createDisclosure}>
+                <summary aria-label="新增根 Object">＋ 新增 Object</summary>
+                <form
+                  className={styles.form}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void mutate("objects", (fresh) => ({
+                      action: "create",
+                      repositoryId: fresh.repository.id,
+                      objectId: crypto.randomUUID(),
+                      requestId: crypto.randomUUID(),
+                      expectedVersion: 0,
+                      typeId: selectedTypeId,
+                      name,
+                      content,
+                    }));
+                  }}
+                >
+                  <h3>建立 Object</h3>
+                  <label htmlFor="object-type">
+                    Object Type
+                    <select
+                      id="object-type"
+                      required
+                      value={selectedTypeId}
+                      onChange={(event) => setSelectedTypeId(event.target.value)}
+                    >
+                      <option value="">選擇 Type</option>
+                      {types
+                        .filter((type) => type.enabled)
+                        .map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label htmlFor="object-name">
+                    名稱
+                    <input
+                      id="object-name"
+                      maxLength={200}
+                      required
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                    />
+                  </label>
+                  <label htmlFor="object-content">
+                    內容
+                    <textarea
+                      id="object-content"
+                      maxLength={262_144}
+                      value={content}
+                      onChange={(event) => setContent(event.target.value)}
+                    />
+                  </label>
+                  <button type="submit" disabled={busy || !!pending || !selectedTypeId}>
+                    建立 Object
+                  </button>
+                </form>
+              </details>
             ) : null}
           </section>
         </>

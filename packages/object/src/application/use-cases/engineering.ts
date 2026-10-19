@@ -1,4 +1,8 @@
-import type { ObjectCommandReceipt, StructureDto } from "../../contracts/dto/objects.js";
+import type {
+  ObjectCommandReceipt,
+  ObjectTreeDto,
+  StructureDto,
+} from "../../contracts/dto/objects.js";
 import type {
   ObjectReads,
   ObjectTransaction,
@@ -45,6 +49,17 @@ export function createEngineering(deps: {
   now(): number;
 }) {
   return {
+    async tree(
+      userId: string,
+      query: { repositoryId: string; parentId?: string; after?: string; includeArchived?: boolean },
+    ): Promise<ObjectTreeDto> {
+      return deps.reads.listTree(userId, {
+        repositoryId: repositoryId(query.repositoryId),
+        ...(query.parentId === undefined ? {} : { parentId: objectId(query.parentId) }),
+        ...(query.after === undefined ? {} : { after: optionalIdCursor(query.after) }),
+        ...(query.includeArchived === undefined ? {} : { includeArchived: query.includeArchived }),
+      });
+    },
     async listMeasures(userId: string, query: { repositoryId: string; after?: string }) {
       const page = await deps.reads.listMeasures(userId, {
         repositoryId: repositoryId(query.repositoryId),
