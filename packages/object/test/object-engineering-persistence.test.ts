@@ -395,4 +395,97 @@ test("engineering persistence preserves atomic budgets, exact replay, history an
       );
     },
   );
+  await t.test(
+    "repository tree preserves roots, classification and archived ancestor context with per-level pages",
+    async () => {
+      const parent = await create("光纖工程");
+      const leaf = await child(parent.objectId, "光纖敷設", null, "INCLUDES");
+      const nested = await child(leaf.objectId, "A 區", null, "INCLUDES");
+      const roots = await app.tree("owner", { repositoryId: "repo" });
+      assert.ok(
+        roots.nodes.items.some((node) => node.objectId === parent.objectId && node.hasChildren),
+      );
+      assert.ok(!roots.nodes.items.some((node) => node.objectId === leaf.objectId));
+      const first = await app.tree("owner", { repositoryId: "repo", parentId: parent.objectId });
+      assert.equal(first.nodes.items[0]?.objectId, leaf.objectId);
+      assert.equal(first.nodes.items[0]?.quantity, null);
+      assert.equal(first.nodes.items[0]?.typeId, typeId);
+      assert.equal(first.nodes.items[0]?.relationship?.kind, "INCLUDES");
+      const inlineId = randomUUID();
+      await app.executeEngineering("owner", {
+        ...envelope(),
+        action: "create-child",
+        objectId: inlineId,
+        parentObjectId: parent.objectId,
+        relationshipId: randomUUID(),
+        typeId,
+        name: "追加工序",
+        content: "",
+        kind: "INCLUDES",
+        quantity: null,
+        observed: first.observed,
+      });
+      await app.executeObject("owner", {
+        ...envelope(),
+        action: "archive",
+        objectId: inlineId,
+        expectedVersion: 1,
+      });
+      assert.ok(!first.observed.objects.some((item) => item.objectId === root.objectId));
+      await app.executeObject("owner", {
+        ...envelope(),
+        action: "archive",
+        objectId: parent.objectId,
+        expectedVersion: 1,
+      });
+      assert.ok(
+        (await app.tree("owner", { repositoryId: "repo" })).nodes.items.some(
+          (node) => node.objectId === parent.objectId && node.archived,
+        ),
+      );
+      await app.executeObject("owner", {
+        ...envelope(),
+        action: "archive",
+        objectId: nested.objectId,
+        expectedVersion: 1,
+      });
+      await app.executeObject("owner", {
+        ...envelope(),
+        action: "archive",
+        objectId: leaf.objectId,
+        expectedVersion: 1,
+      });
+      assert.ok(
+        !(await app.tree("owner", { repositoryId: "repo" })).nodes.items.some(
+          (node) => node.objectId === parent.objectId,
+        ),
+      );
+      assert.ok(
+        (await app.tree("owner", { repositoryId: "repo", includeArchived: true })).nodes.items.some(
+          (node) => node.objectId === parent.objectId,
+        ),
+      );
+      const page = await app.tree("owner", {
+        repositoryId: "repo",
+        parentId: root.objectId,
+        includeArchived: true,
+      });
+      assert.equal(page.nodes.items.length, 50);
+      assert.ok(page.nodes.next);
+      const next = await app.tree("owner", {
+        repositoryId: "repo",
+        parentId: root.objectId,
+        includeArchived: true,
+        after: page.nodes.next,
+      });
+      assert.ok(next.nodes.items.length);
+      assert.ok(
+        next.nodes.items.every(
+          (node) => !page.nodes.items.some((seen) => seen.objectId === node.objectId),
+        ),
+      );
+      await assert.rejects(app.tree("owner", { repositoryId: "other", parentId: parent.objectId }));
+      await assert.rejects(app.tree("other", { repositoryId: "repo" }));
+    },
+  );
 });

@@ -166,6 +166,20 @@ export async function objectRequest(
     }
     const objectId = query.get("objectId");
     const view = query.get("view") ?? (objectId ? "object" : "list");
+    if (view === "tree") {
+      const includeArchived = query.get("includeArchived");
+      if (includeArchived !== null && includeArchived !== "true" && includeArchived !== "false")
+        throw new ObjectError(400, "封存篩選不正確。", "INVALID_INPUT");
+      return jsonResponse({
+        ...scope,
+        ...(await owner.tree(scope.actorUserId, {
+          repositoryId: scope.repository.id,
+          ...(query.has("parentId") ? { parentId: query.get("parentId") ?? "" } : {}),
+          ...(query.has("after") ? { after: query.get("after") ?? "" } : {}),
+          includeArchived: includeArchived === "true",
+        })),
+      });
+    }
     if (view === "structure")
       return jsonResponse({
         ...scope,

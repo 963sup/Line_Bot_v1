@@ -1,4 +1,5 @@
 import type {
+  ObjectTreeDto,
   Quantity,
   StructureDto,
   StructureNodeDto,
@@ -49,6 +50,31 @@ function node(value: unknown): StructureNodeDto {
           kind: literalValue(edge.kind, ["REFERENCE", "INCLUDES", "ALLOCATES", "LOCATED_IN"]),
         }
       : null,
+  };
+}
+export function objectTree(value: unknown): ObjectTreeDto {
+  const v = record(value);
+  const nodes = record(v.nodes);
+  const observed = record(v.observed);
+  return {
+    parent: v.parent === null ? null : node(v.parent),
+    nodes: { items: list(nodes.items, node), next: nullableString(nodes.next) },
+    observed: {
+      objects: list(observed.objects, (value) => {
+        const v = record(value);
+        return { objectId: stringValue(v.objectId), version: numberValue(v.version) };
+      }),
+      relationships: list(observed.relationships, (value) => {
+        const v = record(value);
+        return {
+          relationshipId: stringValue(v.relationshipId),
+          version: numberValue(v.version),
+          sourceObjectId: stringValue(v.sourceObjectId),
+          targetObjectId: stringValue(v.targetObjectId),
+          kind: literalValue(v.kind, ["INCLUDES", "ALLOCATES", "LOCATED_IN"]),
+        };
+      }),
+    },
   };
 }
 export function structureView(value: unknown): StructureDto {

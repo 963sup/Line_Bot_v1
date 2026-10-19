@@ -79,3 +79,111 @@
 .list li {
   margin-block: 10px;
 }
+
+.typeDisclosure summary {
+  cursor: pointer;
+}
+
+.typeDisclosure summary h2 {
+  display: inline;
+  font-size: 1rem;
+}
+
+.typeDisclosure[open] summary {
+  margin-bottom: 16px;
+}
+
+.createDisclosure {
+  margin-top: 12px;
+}
+
+.createDisclosure > summary {
+  cursor: pointer;
+  width: fit-content;
+  padding-block: 10px;
+  font-weight: 600;
+}
+
+.treeList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+
+.treeToggle,
+.treeAdd,
+.treeSpacer {
+  flex: 0 0 36px;
+  width: 36px;
+  min-height: 44px;
+}
+
+.panel .treeRow > .treeToggle,
+.panel .treeRow > .treeAdd {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.2rem;
+}
+
+.panel .archiveFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block: 8px;
+}
+
+.panel .archiveFilter input {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.treeToggle:focus-visible,
+.treeAdd:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.treeLabel {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.treeLabel a {
+  overflow-wrap: anywhere;
+}
+
+.treeLabel span {
+  font-size: 0.8rem;
+}
+
+.treeChildren {
+  margin-left: 12px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+
+.childForm {
+  margin-block: 8px;
+  padding: 12px;
+}
+
+.childForm textarea {
+  min-height: 72px;
+}

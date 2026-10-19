@@ -18,6 +18,13 @@ const ids = {
 };
 
 const reads: ObjectReads = {
+  async listTree() {
+    return {
+      parent: null,
+      nodes: { items: [], next: null },
+      observed: { objects: [], relationships: [] },
+    };
+  },
   async engineeringGraph() {
     return { objects: [], edges: [], measures: [] };
   },

@@ -87,7 +87,11 @@ its own collaboration authority. They do not become Object subtypes or current r
 
 ## Mapping and verification
 
-Runtime owner: `packages/object`. Web presents the Objects collection, classification management,
+Runtime owner: `packages/object`. The Repository Objects collection is a collapsible structural forest,
+with per-level cursor pages and inline plus creation through the existing `create-child` command.
+Inline children use INCLUDES without a quantity; allocation and quantity editing remain in detail.
+Archived ancestors remain visible as context for active descendants; the archive toggle includes fully archived branches.
+Web presents classification management,
 content/history and relationship lists beneath the Repository locator. Issue remains the first
 external consumer. Current mappings, exports and executable SQL are governed by the canonical
 architecture models, manifests and declarative schemas.
