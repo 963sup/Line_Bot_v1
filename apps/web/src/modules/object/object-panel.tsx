@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import EngineeringPanel from "./engineering-panel";
+import { structureView } from "./engineering-response";
 import { appendCursorPage, objectTypeOptions } from "./object-pagination";
 import styles from "./object-panel.module.css";
 import {
@@ -30,6 +32,7 @@ const endpoint: Record<ObjectFamily, string> = {
   types: "/api/repository-object-types",
   objects: "/api/repository-objects",
   relationships: "/api/repository-object-relationships",
+  measures: "/api/repository-object-measures",
 };
 
 export default function ObjectPanel({
@@ -66,6 +69,7 @@ export default function ObjectPanel({
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<PendingObjectCommand | null>(null);
+  const [engineeringRefresh, setEngineeringRefresh] = useState(0);
   const [typeName, setTypeName] = useState("");
   const [typeDescription, setTypeDescription] = useState("");
   const [editingType, setEditingType] = useState<ObjectTypeView | null>(null);
@@ -148,7 +152,11 @@ export default function ObjectPanel({
           value && typeof value === "object" && "error" in value && typeof value.error === "string"
             ? value.error
             : "Object 服務暫時不可用。";
-        throw Object.assign(new Error(message), { status: response.status });
+        const code =
+          value && typeof value === "object" && "code" in value && typeof value.code === "string"
+            ? value.code
+            : undefined;
+        throw Object.assign(new Error(message), { status: response.status, code });
       }
       return value;
     },
@@ -188,6 +196,7 @@ export default function ObjectPanel({
         const nextTypes = typePage.types;
         setTypes(nextTypes);
         setTypesNext(typePage.next);
+        setEngineeringRefresh((value) => value + 1);
         if (objectId) {
           const revision = objectRevision(
             objectValue && typeof objectValue === "object" && "revision" in objectValue
@@ -313,7 +322,9 @@ export default function ObjectPanel({
 
   async function mutate(
     family: ObjectFamily,
-    commandFactory?: (fresh: ReturnType<typeof objectScope>) => ObjectCommand,
+    commandFactory?: (
+      fresh: ReturnType<typeof objectScope>,
+    ) => ObjectCommand | Promise<ObjectCommand>,
   ) {
     if (locked.current) return;
     locked.current = true;
@@ -342,8 +353,22 @@ export default function ObjectPanel({
         throw new Error("登入身分或 Repository 已改變，請重新讀取。");
       }
       const nextFamily = saved?.family ?? family;
-      const command = saved?.command ?? commandFactory?.(fresh);
+      let command = saved?.command ?? (await commandFactory?.(fresh));
       if (!command) throw new Error("操作內容不存在。");
+      if (!guard()) return;
+      if (!saved && command.action === "restore" && objectId) {
+        const structure = structureView(
+          await request(
+            "objects",
+            { view: "structure", rootId: objectId },
+            undefined,
+            sessionGeneration,
+            guard,
+          ),
+        );
+        if (!guard()) return;
+        command = { ...command, observed: structure.observed };
+      }
       const nextPending = { actorUserId: fresh.actorUserId, family: nextFamily, command };
       remember(nextPending);
       const result = await request(nextFamily, {}, command, sessionGeneration, guard);
@@ -753,6 +778,18 @@ export default function ObjectPanel({
               {historical ? " · 歷史版本" : ""}
             </p>
             <pre className={styles.content}>{shown.content}</pre>
+            {shown.quantity ? (
+              <p>
+                數量：{shown.quantity.value} · 計量定義 {shown.quantity.measureId} ·{" "}
+                {shown.quantity.purpose === "REFERENCE" ? "參考基準" : "計畫數量"}
+                <br />
+                {shown.quantity.sourceReference
+                  ? `固定來源 ${shown.quantity.sourceReference.objectId} / ${shown.quantity.sourceReference.revisionId}`
+                  : "來源未登錄"}
+              </p>
+            ) : (
+              <p>數量未登錄</p>
+            )}
             <p className={styles.muted}>內容以純文字顯示，不執行 HTML。</p>
             <div className={styles.actions}>
               <button type="button" disabled={busy} onClick={() => void inspectHistory()}>
@@ -883,6 +920,21 @@ export default function ObjectPanel({
               </form>
             ) : null}
           </section>
+
+          {!historical ? (
+            <EngineeringPanel
+              key={`${scope.actorUserId}:${objectId}`}
+              rootId={objectId}
+              basePath={basePath}
+              scope={scope}
+              types={types}
+              busy={busy || !!pending}
+              refresh={engineeringRefresh}
+              request={request}
+              mutate={mutate}
+              invalidate={clear}
+            />
+          ) : null}
 
           {history.length ? (
             <section className={styles.panel} data-testid="object-history">

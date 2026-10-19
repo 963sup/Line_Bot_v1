@@ -1,3 +1,4 @@
+import type { RelationshipKind } from "@line_bot_v1/object/contracts/dto/objects";
 import {
   booleanValue,
   literalValue,
@@ -6,6 +7,7 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
+import { quantityView } from "./engineering-response";
 
 export function objectScope(value: unknown) {
   const v = record(value);
@@ -57,18 +59,24 @@ export function objectRevision(value: unknown) {
       "archive",
       "unarchive",
       "restore",
+      "set-quantity",
     ]),
     name: stringValue(v.name),
     content: stringValue(v.content),
     typeId: stringValue(v.typeId),
     typeName: stringValue(v.typeName),
     archived: booleanValue(v.archived),
+    quantity: quantityView(v.quantity),
   };
 }
 
 export type ObjectRelationshipView = ReturnType<typeof objectRelationship>;
 function objectRelationship(value: unknown) {
   const v = record(value);
+  const kind: RelationshipKind =
+    v.kind === undefined
+      ? "REFERENCE"
+      : literalValue(v.kind, ["REFERENCE", "INCLUDES", "ALLOCATES", "LOCATED_IN"]);
   return {
     id: stringValue(v.id),
     relationshipId: stringValue(v.relationshipId),
@@ -82,6 +90,7 @@ function objectRelationship(value: unknown) {
     targetObjectId: stringValue(v.targetObjectId),
     name: stringValue(v.name),
     active: booleanValue(v.active),
+    kind,
   };
 }
 
@@ -141,7 +150,14 @@ export function objectComparison(value: unknown) {
     )
       throw new Error("Object 比較內容不正確。");
     return {
-      field: literalValue(item.field, ["typeId", "typeName", "name", "content", "archived"]),
+      field: literalValue(item.field, [
+        "typeId",
+        "typeName",
+        "name",
+        "content",
+        "archived",
+        "quantity",
+      ]),
       before,
       after,
     };

@@ -25,7 +25,7 @@ export type ObjectWebRuntime = {
   objects(): ReturnType<typeof createObjects>;
 };
 
-export type ObjectRequestFamily = "types" | "objects" | "relationships";
+export type ObjectRequestFamily = "types" | "objects" | "relationships" | "measures";
 
 function pathSelector(owner: string, repository: string) {
   let ownerLogin: string;
@@ -75,7 +75,10 @@ function failure(error: unknown) {
   const status = known ? error.status : 503;
   captureHandledServerError(error, { service: "objects-api", operation: "request", status });
   return jsonResponse(
-    { error: known ? error.message : "Object 服務暫時不可用，請稍後重試。" },
+    {
+      error: known ? error.message : "Object 服務暫時不可用，請稍後重試。",
+      ...(error instanceof ObjectError ? { code: error.code } : {}),
+    },
     status,
   );
 }
@@ -103,13 +106,31 @@ export async function objectRequest(
           "INVALID_INPUT",
         );
       const result =
-        family === "types"
-          ? await owner.executeType(scope.actorUserId, command)
-          : family === "objects"
-            ? await owner.executeObject(scope.actorUserId, command)
-            : await owner.executeRelationship(scope.actorUserId, command);
+        (family === "measures" && command.action === "create-measure") ||
+        (family === "objects" &&
+          (command.action === "set-quantities" || command.action === "create-child")) ||
+        (family === "relationships" &&
+          (command.action === "set-parent" || command.action === "set-location"))
+          ? await owner.executeEngineering(scope.actorUserId, command)
+          : family === "measures"
+            ? (() => {
+                throw new ObjectError(400, "計量操作不正確。", "INVALID_INPUT");
+              })()
+            : family === "types"
+              ? await owner.executeType(scope.actorUserId, command)
+              : family === "objects"
+                ? await owner.executeObject(scope.actorUserId, command)
+                : await owner.executeRelationship(scope.actorUserId, command);
       return jsonResponse(result);
     }
+    if (family === "measures")
+      return jsonResponse({
+        ...scope,
+        ...(await owner.listMeasures(scope.actorUserId, {
+          repositoryId: scope.repository.id,
+          ...(query.has("after") ? { after: query.get("after") ?? "" } : {}),
+        })),
+      });
     if (family === "types")
       return jsonResponse({
         ...scope,
@@ -145,6 +166,17 @@ export async function objectRequest(
     }
     const objectId = query.get("objectId");
     const view = query.get("view") ?? (objectId ? "object" : "list");
+    if (view === "structure")
+      return jsonResponse({
+        ...scope,
+        ...(await owner.structure(scope.actorUserId, {
+          repositoryId: scope.repository.id,
+          rootId: query.get("rootId") ?? "",
+          ...(query.has("parentId") ? { parentId: query.get("parentId") ?? "" } : {}),
+          ...(query.has("after") ? { after: query.get("after") ?? "" } : {}),
+          ...(query.has("groupBy") ? { groupBy: query.get("groupBy") ?? "" } : {}),
+        })),
+      });
     if (view === "list") {
       const archived = query.get("archived");
       if (archived !== null && archived !== "true" && archived !== "false")

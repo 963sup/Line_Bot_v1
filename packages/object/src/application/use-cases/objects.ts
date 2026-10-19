@@ -1,55 +1,19 @@
 import type { ObjectReads, ObjectTransactions } from "../../contracts/output/objects.js";
+import { requireObserved, validateEngineering } from "../../domain/engineering.js";
 import { ObjectError } from "../../domain/error.js";
-import { type ObjectRevision, reviseObject } from "../../domain/object.js";
-import { type ObjectType, reviseObjectType } from "../../domain/object-type.js";
+import { reviseObject } from "../../domain/object.js";
+import { reviseObjectType } from "../../domain/object-type.js";
 import { canEditObject, canManageObjectTypes } from "../../domain/policies/access.js";
-import { type ObjectRelationshipRevision, reviseRelationship } from "../../domain/relationship.js";
+import { reviseRelationship } from "../../domain/relationship.js";
 import {
   parseObjectCommand,
   parseObjectRelationshipCommand,
   parseObjectTypeCommand,
 } from "../commands.js";
+import { objectDto, relationshipDto, typeDto } from "../object-dto.js";
 import { historyCursor, objectId, optionalIdCursor, repositoryId } from "../queries.js";
+import { createEngineering, validateQuantitySource } from "./engineering.js";
 
-const typeDto = (value: ObjectType) => ({
-  id: value.id,
-  repositoryId: value.repositoryId,
-  name: value.name,
-  description: value.description,
-  enabled: value.enabled,
-  version: value.version,
-  createdAt: value.createdAt,
-  updatedAt: value.updatedAt,
-});
-const objectDto = (value: ObjectRevision) => ({
-  id: value.id,
-  objectId: value.objectId,
-  repositoryId: value.repositoryId,
-  version: value.version,
-  parentRevisionId: value.parentRevisionId,
-  actorUserId: value.actorUserId,
-  at: value.at,
-  action: value.action,
-  typeId: value.typeId,
-  typeName: value.typeName,
-  name: value.name,
-  content: value.content,
-  archived: value.archived,
-});
-const relationshipDto = (value: ObjectRelationshipRevision) => ({
-  id: value.id,
-  relationshipId: value.relationshipId,
-  repositoryId: value.repositoryId,
-  version: value.version,
-  parentRevisionId: value.parentRevisionId,
-  actorUserId: value.actorUserId,
-  at: value.at,
-  action: value.action,
-  sourceObjectId: value.sourceObjectId,
-  targetObjectId: value.targetObjectId,
-  name: value.name,
-  active: value.active,
-});
 function requireMutable(tx: { scope: { archived: boolean } }) {
   if (tx.scope.archived)
     throw new ObjectError(409, "封存的 Repository 不可變更 Object。", "LIFECYCLE_CONFLICT");
@@ -61,6 +25,7 @@ export function createObjects(deps: {
   now(): number;
 }) {
   return {
+    ...createEngineering(deps),
     listTypes: (userId: string, query: { repositoryId: string; after?: string }) =>
       deps.reads.listTypes(userId, {
         repositoryId: repositoryId(query.repositoryId),
@@ -132,7 +97,11 @@ export function createObjects(deps: {
           if (!canManageObjectTypes(tx.scope.permissions))
             throw new ObjectError(403, "管理 Object Type 需要 admin。", "FORBIDDEN");
           const replay = await tx.replay();
-          if (replay) return replay;
+          if (replay) {
+            if (replay.kind !== "type")
+              throw new ObjectError(503, "Object Type 回執種類不正確。", "UNAVAILABLE");
+            return replay;
+          }
           requireMutable(tx);
           const current = await tx.loadType(command.typeId);
           const next = reviseObjectType(current, command, {
@@ -165,7 +134,11 @@ export function createObjects(deps: {
           if (!canEditObject(tx.scope.permissions))
             throw new ObjectError(403, "管理 Object 需要 write、maintain 或 admin。", "FORBIDDEN");
           const replay = await tx.replay();
-          if (replay) return replay;
+          if (replay) {
+            if (replay.kind !== "object")
+              throw new ObjectError(503, "Object 回執種類不正確。", "UNAVAILABLE");
+            return replay;
+          }
           requireMutable(tx);
           const current = await tx.loadObject(command.objectId);
           const restored =
@@ -201,6 +174,32 @@ export function createObjects(deps: {
             },
             restored,
           );
+          if (command.action === "restore") {
+            const graph = await tx.engineeringGraph();
+            if (
+              JSON.stringify(current?.quantity ?? null) !== JSON.stringify(next.quantity ?? null)
+            ) {
+              requireObserved(
+                graph,
+                [next.objectId],
+                command.observed ?? { objects: [], relationships: [] },
+              );
+              if (
+                next.quantity &&
+                JSON.stringify(current?.quantity?.sourceReference ?? null) !==
+                  JSON.stringify(next.quantity.sourceReference)
+              )
+                await validateQuantitySource(tx, next.quantity);
+            }
+            validateEngineering({
+              ...graph,
+              objects: graph.objects.map((item) =>
+                item.objectId === next.objectId
+                  ? { ...item, quantity: next.quantity ?? null }
+                  : item,
+              ),
+            });
+          }
           await tx.saveObject(next, command.expectedVersion);
           const receipt = {
             requestId: command.requestId,
@@ -229,7 +228,11 @@ export function createObjects(deps: {
               "FORBIDDEN",
             );
           const replay = await tx.replay();
-          if (replay) return replay;
+          if (replay) {
+            if (replay.kind !== "relationship")
+              throw new ObjectError(503, "Relationship 回執種類不正確。", "UNAVAILABLE");
+            return replay;
+          }
           requireMutable(tx);
           const current = await tx.loadRelationship(command.relationshipId);
           if (command.action !== "remove") {

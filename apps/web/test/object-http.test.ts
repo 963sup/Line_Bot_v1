@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
+import { ObjectError } from "@line_bot_v1/object/domain/error";
 import { record, stringValue } from "@line_bot_v1/platform/validation";
 import type { ObjectWebRuntime } from "../src/modules/object/object-http.server";
 import { objectRequest } from "../src/modules/object/object-http.server";
@@ -39,6 +40,19 @@ test("Object HTTP binds verified identity, Repository URL and exact commands", a
   let captured: unknown;
   let capturedTypeAfter: string | undefined;
   const owner: ReturnType<ObjectWebRuntime["objects"]> = {
+    listMeasures: async () => ({ items: [], next: null }),
+    structure: async () => {
+      throw new ObjectError(404, "父節點不在此工程範圍。", "STRUCTURE_SCOPE_CHANGED");
+    },
+    executeEngineering: async (userId, command) => {
+      assert.equal(userId, "user");
+      captured = command;
+      return {
+        requestId: stringValue(record(command).requestId),
+        kind: "engineering",
+        result: { repositoryId: "repo", objects: [], relationships: [], measure: null },
+      };
+    },
     listTypes: async (userId: string, query) => {
       assert.equal(userId, "user");
       capturedTypeAfter = query.after;
@@ -156,4 +170,43 @@ test("Object HTTP binds verified identity, Repository URL and exact commands", a
   assert.equal(committed.status, 200);
   assert.deepEqual(captured, command);
   assert.equal(stringValue(record(await committed.json()).requestId), command.requestId);
+  for (const [family, action] of [
+    ["measures", "create-measure"],
+    ["objects", "set-quantities"],
+    ["objects", "create-child"],
+    ["relationships", "set-parent"],
+    ["relationships", "set-location"],
+  ] as const) {
+    const engineeringCommand = {
+      repositoryId: "repo",
+      requestId: randomUUID(),
+      expectedVersion: 0,
+      action,
+    };
+    const postEngineering = (origin: string, repositoryId = "repo") =>
+      objectRequest(
+        new Request(base, {
+          method: "POST",
+          headers: { origin, "content-type": "application/json" },
+          body: JSON.stringify({ ...engineeringCommand, repositoryId }),
+        }),
+        family,
+        runtime,
+        identity,
+      );
+    assert.equal((await postEngineering("https://attacker.test")).status, 403);
+    assert.equal((await postEngineering("https://example.test", "other")).status, 400);
+    const result = await postEngineering("https://example.test");
+    assert.equal(result.status, 200);
+    assert.deepEqual(captured, engineeringCommand);
+  }
+  assert.equal((await objectRequest(new Request(base), "measures", runtime, identity)).status, 200);
+  const moved = await objectRequest(
+    new Request(`${base}&view=structure&rootId=${summary.objectId}&parentId=${typeId}`),
+    "objects",
+    runtime,
+    identity,
+  );
+  assert.equal(moved.status, 404);
+  assert.equal(record(await moved.json()).code, "STRUCTURE_SCOPE_CHANGED");
 });

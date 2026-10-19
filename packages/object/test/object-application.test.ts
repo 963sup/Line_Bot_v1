@@ -18,6 +18,12 @@ const ids = {
 };
 
 const reads: ObjectReads = {
+  async engineeringGraph() {
+    return { objects: [], edges: [], measures: [] };
+  },
+  async listMeasures() {
+    return { items: [], next: null };
+  },
   async listTypes() {
     return { items: [], next: null };
   },
@@ -71,6 +77,8 @@ function transactions(options: {
           archived: options.archived ?? false,
         },
         nextId: () => ids.revision,
+        engineeringGraph: async () => ({ objects: [], edges: [], measures: [] }),
+        saveMeasure: async () => {},
         replay: async () => options.replay ?? null,
         loadType: async () => options.objectType ?? null,
         saveType: async () => {},
@@ -131,6 +139,60 @@ test("authorized exact replay is readable after Repository archive", async () =>
   );
 });
 
+test("engineering measure creation rechecks ADMIN before replay and preserves archive replay order", async () => {
+  const command = {
+    action: "create-measure",
+    repositoryId: "repo",
+    requestId: ids.request,
+    expectedVersion: 0,
+    measureId: ids.type,
+    name: "光纖",
+    subject: "路徑長度",
+    unit: "m",
+  };
+  const replay: ObjectCommandReceipt = {
+    requestId: ids.request,
+    kind: "engineering",
+    result: {
+      repositoryId: "repo",
+      objects: [],
+      relationships: [],
+      measure: {
+        id: ids.type,
+        repositoryId: "repo",
+        name: "光纖",
+        subject: "路徑長度",
+        unit: "m",
+        createdAt: 1,
+      },
+    },
+  };
+  const unauthorized = createObjects({
+    reads,
+    transactions: transactions({ permissions: ["write"], replay }),
+    now: () => 2,
+  });
+  await assert.rejects(
+    unauthorized.executeEngineering("user", command),
+    (error) => error instanceof ObjectError && error.code === "FORBIDDEN",
+  );
+  const archived = createObjects({
+    reads,
+    transactions: transactions({ permissions: ["admin"], archived: true, replay }),
+    now: () => 2,
+  });
+  assert.deepEqual(await archived.executeEngineering("user", command), replay);
+  const fresh = createObjects({
+    reads,
+    transactions: transactions({ permissions: ["admin"], archived: true }),
+    now: () => 2,
+  });
+  await assert.rejects(
+    fresh.executeEngineering("user", command),
+    (error) => error instanceof ObjectError && error.code === "LIFECYCLE_CONFLICT",
+  );
+});
+
 test("disabled Type cannot receive a new Object", async () => {
   const app = createObjects({
     reads,
@@ -150,6 +212,90 @@ test("disabled Type cannot receive a new Object", async () => {
     }),
     (error) => error instanceof ObjectError && error.code === "LIFECYCLE_CONFLICT",
   );
+});
+
+test("a persisted receipt from another command family fails closed", async () => {
+  const app = createObjects({
+    reads,
+    transactions: transactions({
+      permissions: ["admin"],
+      replay: { requestId: ids.request, kind: "type", result: type(true) },
+    }),
+    now: () => 2,
+  });
+  await assert.rejects(
+    app.executeObject("user", {
+      action: "create",
+      repositoryId: "repo",
+      requestId: ids.request,
+      expectedVersion: 0,
+      objectId: ids.object,
+      typeId: ids.type,
+      name: "A",
+      content: "",
+    }),
+    (error) => error instanceof ObjectError && error.code === "UNAVAILABLE",
+  );
+});
+
+test("a small engineering root publishes a bounded snapshot in a large Repository", async () => {
+  const root = {
+    objectId: ids.object,
+    revisionId: ids.revision,
+    version: 1,
+    name: "root",
+    typeId: ids.type,
+    typeName: "Document",
+    archived: false,
+    quantity: null,
+  };
+  const graph = {
+    objects: [
+      root,
+      ...Array.from({ length: 10001 }, (_, index) => ({
+        ...root,
+        objectId: `10000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+      })),
+    ],
+    edges: [],
+    measures: [],
+  };
+  const app = createObjects({
+    reads: { ...reads, engineeringGraph: async () => graph },
+    transactions: transactions({ permissions: ["admin"] }),
+    now: () => 2,
+  });
+  const result = await app.structure("user", { repositoryId: "repo", rootId: root.objectId });
+  assert.deepEqual(result.observed, {
+    objects: [{ objectId: root.objectId, version: 1 }],
+    relationships: [],
+  });
+  assert.ok(JSON.stringify(result.observed).length < 1000);
+  const supported = {
+    ...graph,
+    edges: graph.objects
+      .filter((object) => object.objectId !== root.objectId)
+      .map((object) => ({
+        relationshipId: object.objectId,
+        version: 1,
+        sourceObjectId: root.objectId,
+        targetObjectId: object.objectId,
+        kind: "INCLUDES" as const,
+      })),
+  };
+  const supportedApp = createObjects({
+    reads: { ...reads, engineeringGraph: async () => supported },
+    transactions: transactions({ permissions: ["admin"] }),
+    now: () => 2,
+  });
+  const firstPage = await supportedApp.structure("user", {
+    repositoryId: "repo",
+    rootId: root.objectId,
+  });
+  assert.equal(firstPage.nodes.items.length, 50);
+  assert.equal(firstPage.observed.relationships.length, 50);
+  assert.equal(firstPage.observed.objects.length, 51);
+  assert.ok(JSON.stringify(firstPage.observed).length < 524288);
 });
 
 test("every new Object revision snapshots the current Type label even when Type is disabled", async () => {

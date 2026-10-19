@@ -1920,6 +1920,14 @@
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-object-reference"
+    },
+    {
+      "name": "object_measures",
+      "kind": "table",
+      "path": "supabase/schemas/615_objects.sql",
+      "authority": true,
+      "semanticOwner": "object",
+      "concept": "object-measure"
     }
   ]
 }

@@ -28,16 +28,17 @@
 | --- | --- | --- | --- | --- |
 | Object | content-object | authoritative | current | Repository-native content instance with stable identity and an immutable versioned head; it does not replace other contexts domain models. |
 | ObjectCommandReceipt | object-command-receipt | authoritative | current | Immutable actor/request fingerprint and committed result supporting current-authorized exact replay. |
-| ObjectRelationship | object-relationship | authoritative | current | Named directed same-Repository Object-to-Object edge with independent lifecycle and version; cycles are permitted but self and duplicate active edges are rejected. |
+| ObjectMeasure | object-measure | authoritative | current | Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition. |
+| ObjectRelationship | object-relationship | authoritative | current | Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children. |
 | ObjectRelationshipRevision | object-relationship-revision | authoritative | current | Immutable version of one Object Relationship; not a whole Repository graph snapshot. |
-| ObjectRevision | object-revision | authoritative | current | Immutable Object content, classification label snapshot, lifecycle and actor version; restoration creates a new revision. |
+| ObjectRevision | object-revision | authoritative | current | Immutable Object content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision. |
 | ObjectType | object-type | authoritative | current | Repository-scoped named classification with enablement and version; exactly one classification per Object and no dynamic field schema. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-repository-objects | required | implemented | Manage classified Repository-native content and directed relationships with immutable history, current access, conditional versions and durable exact replay. |
+| manage-repository-objects | required | implemented | Manage classified Repository-native Objects, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay. |
 
 ## Context Relationships
 

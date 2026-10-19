@@ -7,3 +7,5 @@ Inherits [packages](../AGENTS.md). Object owns Repository-scoped native content 
 - Object and Relationship identities survive revision changes. Revisions are immutable; restoring content creates a new revision.
 - Cross-context references pin an Object revision and remain owned by the consuming context.
 - Runtime access to immutable revisions is read-only except for insertion of a new committed revision.
+
+- Object also owns immutable measure definitions, revision quantity snapshots and typed engineering structure; the quantity/allocation contract is defined in [Object](../../docs/owners/object.md). Repository transaction serialization, authorization and exact legacy replay remain unchanged.

@@ -1,3 +1,4 @@
+import type { Quantity } from "./engineering.js";
 import { ObjectError } from "./error.js";
 
 export type ObjectRevision = Readonly<{
@@ -8,20 +9,28 @@ export type ObjectRevision = Readonly<{
   parentRevisionId: string | null;
   actorUserId: string;
   at: number;
-  action: "create" | "edit" | "reclassify" | "archive" | "unarchive" | "restore";
+  action: "create" | "edit" | "reclassify" | "archive" | "unarchive" | "restore" | "set-quantity";
   typeId: string;
   typeName: string;
   name: string;
   content: string;
   archived: boolean;
+  quantity?: Quantity | null;
 }>;
 
 export type ObjectEdit =
-  | Readonly<{ action: "create"; name: string; content: string; typeId: string }>
+  | Readonly<{
+      action: "create";
+      name: string;
+      content: string;
+      typeId: string;
+      quantity?: Quantity | null;
+    }>
   | Readonly<{ action: "edit"; name: string; content: string }>
   | Readonly<{ action: "reclassify"; typeId: string }>
   | Readonly<{ action: "archive" }>
   | Readonly<{ action: "unarchive" }>
+  | Readonly<{ action: "set-quantity"; quantity: Quantity | null }>
   | Readonly<{ action: "restore"; revisionId: string }>;
 
 function normalizeName(value: string) {
@@ -65,11 +74,13 @@ export function reviseObject(
   let typeId = current?.typeId ?? "";
   let typeName = current?.typeName ?? "";
   let archived = current?.archived ?? false;
+  let quantity = current?.quantity ?? null;
   if (edit.action === "create") {
     name = normalizeName(edit.name);
     content = validateContent(edit.content);
     typeId = edit.typeId;
     typeName = context.typeName;
+    quantity = edit.quantity ?? null;
   } else if (edit.action === "edit") {
     name = normalizeName(edit.name);
     content = validateContent(edit.content);
@@ -78,6 +89,7 @@ export function reviseObject(
     typeName = context.typeName;
   } else if (edit.action === "archive") archived = true;
   else if (edit.action === "unarchive") archived = false;
+  else if (edit.action === "set-quantity") quantity = edit.quantity;
   else {
     if (
       !restored ||
@@ -90,6 +102,7 @@ export function reviseObject(
     content = restored.content;
     typeId = restored.typeId;
     typeName = context.typeName;
+    quantity = restored.quantity ?? null;
   }
   typeName = context.typeName;
   if (
@@ -97,7 +110,8 @@ export function reviseObject(
     current.name === name &&
     current.content === content &&
     current.typeId === typeId &&
-    current.archived === archived
+    current.archived === archived &&
+    JSON.stringify(current.quantity ?? null) === JSON.stringify(quantity)
   )
     throw new ObjectError(409, "Object 沒有變更。", "LIFECYCLE_CONFLICT");
   return {
@@ -114,5 +128,6 @@ export function reviseObject(
     name,
     content,
     archived,
+    quantity,
   };
 }
