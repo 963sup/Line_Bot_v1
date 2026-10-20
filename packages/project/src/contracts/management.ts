@@ -1,3 +1,4 @@
+import type { ProjectLifecycleAction } from "../domain/project-lifecycle.js";
 import type {
   ProjectAccessRole,
   ProjectCollaboratorRole,
@@ -210,8 +211,9 @@ export type ProjectManagementCommand =
         readme?: string;
         public?: boolean;
       }>)
-  | (ExistingProjectBase &
-      Readonly<{ action: "close-project" | "reopen-project" | "delete-project" }>)
+  | (ExistingProjectBase & Readonly<{ action: "close-project" }>)
+  | (ExistingProjectBase & Readonly<{ action: "reopen-project" }>)
+  | (ExistingProjectBase & Readonly<{ action: "delete-project" }>)
   | (CommandBase &
       Readonly<{
         action: "copy-project";
@@ -369,7 +371,7 @@ export interface ProjectManagementStore {
   ): Promise<ProjectManagementView>;
   execute(
     identity: ProjectManagementIdentity,
-    command: ProjectManagementCommand,
+    command: Exclude<ProjectManagementCommand, { action: ProjectLifecycleAction }>,
     now: number,
   ): Promise<ProjectManagementReceipt>;
 }

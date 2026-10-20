@@ -3,12 +3,14 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { PostgresProjectLifecycle } from "../src/adapters/outbound/persistence/postgres-project-lifecycle.js";
 import { PostgresProjectManagementStore } from "../src/adapters/outbound/persistence/postgres-project-management-store.js";
 import {
   parseProjectManagementCommand,
   parseProjectManagementReceipt,
   parseProjectManagementView,
 } from "../src/application/management.js";
+import { executeProjectLifecycle } from "../src/application/use-cases/project-lifecycle.js";
 import { ProjectError } from "../src/domain.js";
 
 async function activeUser(db: Database, id: string) {
@@ -412,7 +414,8 @@ test("Project management composes access, draft conversion, typed fields, views 
     ],
   );
 
-  await store.execute(
+  await executeProjectLifecycle(
+    new PostgresProjectLifecycle(db),
     owner,
     {
       action: "close-project",

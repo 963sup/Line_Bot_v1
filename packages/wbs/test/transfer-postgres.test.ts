@@ -7,7 +7,10 @@ import { createSql } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { createProjectManagement } from "@line_bot_v1/project/application/management";
-import { createPostgresProjectManagementStore } from "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store";
+import {
+  createPostgresProjectLifecycle,
+  createPostgresProjectManagementStore,
+} from "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store";
 import { createPostgresProjectContentScope } from "@line_bot_v1/project/composition/bootstrap/project-content-scope";
 import { ProjectError } from "@line_bot_v1/project/domain";
 import { executeWbsCommand } from "../src/application/use-cases/content.js";
@@ -94,6 +97,7 @@ async function buildSourceAndTarget(args: {
   const project = createProjectManagement({
     activeUser: async (subject) => ({ id: subject }),
     store: () => createPostgresProjectManagementStore(args.db),
+    lifecycle: () => createPostgresProjectLifecycle(args.db),
     now: () => 5,
   });
   const created = await project.command("owner", {
@@ -616,6 +620,7 @@ test("PGlite owner cancels a stranded intent and replans before Project deletion
   const project = createProjectManagement({
     activeUser: async (subject) => ({ id: subject }),
     store: () => createPostgresProjectManagementStore(db),
+    lifecycle: () => createPostgresProjectLifecycle(db),
     now: () => 330,
   });
   await project.command("owner", {
