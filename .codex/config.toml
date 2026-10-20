@@ -9,6 +9,7 @@ Model routing and subagent roles are owned by .codex/agents/AGENTS.md.
 [agents]
 enabled = true
 # Default subagent model: GPT-5.6 Sol (gpt-5.6-sol).
+# Opt-in GPT-6.1 development roles set their own model in agents/*.toml.
 default_subagent_model = "gpt-5.6-sol"
 default_subagent_reasoning_effort = "medium"
 # Excludes the primary agent: 1 primary + up to 8 subagents.
@@ -16,6 +17,8 @@ default_subagent_reasoning_effort = "medium"
 max_concurrent_threads_per_session = 8
 
 [mcp_servers.next-devtools]
+# Shared by the parent and its subagents; per-tool overrides take precedence.
+default_tools_approval_mode = "approve"
 command = "pnpm"
 args = ["exec", "next-devtools-mcp"]
 startup_timeout_sec = 60
@@ -23,7 +26,18 @@ startup_timeout_sec = 60
 [mcp_servers.next-devtools.env]
 NEXT_DEVTOOLS_HOST = "127.0.0.1"
 
+[mcp_servers.next-devtools.tools.nextjs_docs]
+approval_mode = "approve"
+
+[mcp_servers.next-devtools.tools.nextjs_index]
+approval_mode = "approve"
+
 [mcp_servers.shadcn]
+# Shared by the parent and its subagents; per-tool overrides take precedence.
+default_tools_approval_mode = "approve"
 command = "pnpm"
 args = ["--dir", "apps/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 60
+
+[mcp_servers.shadcn.tools.get_project_registries]
+approval_mode = "approve"
