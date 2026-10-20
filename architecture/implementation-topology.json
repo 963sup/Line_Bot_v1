@@ -294,6 +294,28 @@
       "moduleKind": "support-module",
       "semanticOwner": "content",
       "allowedWorkspaceDependencies": []
+    },
+    "@line_bot_v1/contract": {
+      "path": "packages/contract",
+      "moduleKind": "domain-module",
+      "semanticOwner": "contract",
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/content",
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/resources"
+      ]
+    },
+    "@line_bot_v1/execution": {
+      "path": "packages/execution",
+      "moduleKind": "domain-module",
+      "semanticOwner": "execution",
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/contract",
+        "@line_bot_v1/resources"
+      ]
     }
   },
   "targetModules": {

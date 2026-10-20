@@ -1,0 +1,55 @@
+{
+  "name": "@line_bot_v1/contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./application/commands": {
+      "types": "./dist/application/commands.d.ts",
+      "default": "./dist/application/commands.js"
+    },
+    "./application/use-cases/contracts": {
+      "types": "./dist/application/use-cases/contracts.d.ts",
+      "default": "./dist/application/use-cases/contracts.js"
+    },
+    "./contracts/dto/contracts": {
+      "types": "./dist/contracts/dto/contracts.d.ts",
+      "default": "./dist/contracts/dto/contracts.js"
+    },
+    "./contracts/output/references": {
+      "types": "./dist/contracts/output/references.d.ts",
+      "default": "./dist/contracts/output/references.js"
+    },
+    "./composition/bootstrap/contracts": {
+      "types": "./dist/composition/bootstrap/contracts.d.ts",
+      "default": "./dist/composition/bootstrap/contracts.js"
+    },
+    "./composition/bootstrap/references": {
+      "types": "./dist/composition/bootstrap/references.d.ts",
+      "default": "./dist/composition/bootstrap/references.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/content": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/resources": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

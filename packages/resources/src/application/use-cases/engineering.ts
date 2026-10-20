@@ -15,8 +15,6 @@ import {
   engineeringTotals,
   isStructural,
   observeEngineering,
-  quantityUnits,
-  quantityValue,
   requireObserved,
   validateEngineering,
   validateQuantity,
@@ -24,6 +22,7 @@ import {
 import { ObjectError } from "../../domain/error.js";
 import { type ObjectRevision, reviseObject } from "../../domain/object.js";
 import { canEditObject, canManageObjectTypes } from "../../domain/policies/access.js";
+import { quantityUnits, quantityValue } from "../../domain/quantity.js";
 import { reviseRelationship } from "../../domain/relationship.js";
 import { parseEngineeringCommand } from "../engineering-commands.js";
 import { measureDto, objectDto, relationshipDto, structureNodeDto } from "../object-dto.js";

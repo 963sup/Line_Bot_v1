@@ -6,11 +6,12 @@ import {
   engineeringTotals,
   observeEngineering,
   type Quantity,
-  quantityUnits,
   requireObserved,
   validateEngineering,
   validateQuantity,
 } from "../src/domain/engineering.js";
+import { ObjectError } from "../src/domain/error.js";
+import { quantityUnits } from "../src/domain/quantity.js";
 
 const measure = {
   id: "fibre",
@@ -77,6 +78,27 @@ test("exact decimal arithmetic rejects excess precision, negatives, exponents an
   for (const value of ["0.1", "1.0"])
     assert.throws(() => validateQuantity(quantity(value), { ...measure, unit: "pcs" }));
   assert.equal(validateQuantity(quantity("0"), measure).value, "0");
+});
+test("quantity validation keeps format, measure and unit errors in that order", () => {
+  const pieces = { ...measure, unit: "pcs" as const };
+  assert.throws(
+    () => validateQuantity(quantity("invalid", "PLANNED", "other"), pieces),
+    (error) => error instanceof ObjectError && error.code === "INVALID_INPUT",
+  );
+  assert.throws(
+    () => validateQuantity(quantity("1.0", "PLANNED", "other"), pieces),
+    (error) =>
+      error instanceof ObjectError &&
+      error.code === "LIFECYCLE_CONFLICT" &&
+      error.message === "找不到同一 Repository 的計量定義。",
+  );
+  assert.throws(
+    () => validateQuantity(quantity("1.0"), pieces),
+    (error) =>
+      error instanceof ObjectError &&
+      error.code === "INVALID_INPUT" &&
+      error.message === "pcs 數量必須是整數。",
+  );
 });
 test("nested frontier keeps 8000 planned metres and 500 reference residual without double counting", () => {
   const graph = example();

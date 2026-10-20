@@ -1,0 +1,43 @@
+{
+  "name": "@line_bot_v1/execution",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application/use-cases/executions": {
+      "types": "./dist/application/use-cases/executions.d.ts",
+      "default": "./dist/application/use-cases/executions.js"
+    },
+    "./contracts/dto/executions": {
+      "types": "./dist/contracts/dto/executions.d.ts",
+      "default": "./dist/contracts/dto/executions.js"
+    },
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./composition/bootstrap/executions": {
+      "types": "./dist/composition/bootstrap/executions.d.ts",
+      "default": "./dist/composition/bootstrap/executions.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/contract": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/resources": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -26,12 +26,13 @@ No canonical business concept is currently declared for this owner.
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| normalize-text-content | required | implemented | Normalize a bounded title and preserve an unmodified body for Resources and Wiki without acquiring identity, revisions, storage or rendering authority. |
+| normalize-text-content | required | implemented | Normalize a bounded title and preserve an unmodified body for Resources, Wiki and Contract without acquiring identity, revisions, storage or rendering authority. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | contract | query | content | pure-value | Contract consumes bounded title/body normalization, retaining agreement identity, revisions, error semantics, authorization and persistence authority. |
 | provides | resources | query | content | pure-value | Resources consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
 | provides | wiki | query | content | pure-value | Wiki consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
 

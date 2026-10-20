@@ -56,7 +56,9 @@
     "project-actions:run": "node scripts/actions/project-run.mjs",
     "project-actions:worker": "node scripts/actions/project-worker.mjs",
     "wbs:transfer": "node scripts/wbs/transfer.mjs",
-    "project:imports": "node scripts/project/imports.mjs"
+    "project:imports": "node scripts/project/imports.mjs",
+    "contract:run": "node scripts/contract/run.mjs",
+    "execution:run": "node scripts/execution/run.mjs"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.51.0",
@@ -82,6 +84,8 @@
     "@line_bot_v1/actions": "workspace:*",
     "@line_bot_v1/notifications": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.1",
-    "next-devtools-mcp": "0.4.0"
+    "next-devtools-mcp": "0.4.0",
+    "@line_bot_v1/contract": "workspace:*",
+    "@line_bot_v1/execution": "workspace:*"
   }
 }
