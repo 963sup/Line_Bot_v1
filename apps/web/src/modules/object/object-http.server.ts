@@ -1,9 +1,9 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import type { createObjects } from "@line_bot_v1/object/application/use-cases/objects";
-import { ObjectError } from "@line_bot_v1/object/domain/error";
 import { record } from "@line_bot_v1/platform/validation";
 import { normalizeRepositoryName, RepositoryError } from "@line_bot_v1/repository/domain";
+import type { createObjects } from "@line_bot_v1/resources/application/use-cases/objects";
+import { ObjectError } from "@line_bot_v1/resources/domain/error";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

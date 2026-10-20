@@ -51,7 +51,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | insights | query | issue | current-state | Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider. |
-| consumes | object | stable-identity+query | object | same-transaction | Issue owns fixed Object Revision references; Object verifies current access and referenceability in the caller transaction. Existing references retain historical content after Object archive. |
+| consumes | resources | stable-identity+query | resources | same-transaction | Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive. |
 | consumes | namespace | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
 | consumes | namespace | command | namespace | same-transaction | Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction. |
 | consumes | numbering | command | numbering | same-transaction | Issue authorizes and creates its stable resource, then obtains an idempotent Repository work-item number in the same transaction; Numbering owns the shared Issue/future Pull Request series. |

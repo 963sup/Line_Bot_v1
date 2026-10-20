@@ -1870,48 +1870,48 @@
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "object-type"
+      "semanticOwner": "resources",
+      "concept": "resource-type"
     },
     {
       "name": "objects",
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "content-object"
+      "semanticOwner": "resources",
+      "concept": "resource"
     },
     {
       "name": "object_revisions",
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "object-revision"
+      "semanticOwner": "resources",
+      "concept": "resource-revision"
     },
     {
       "name": "object_relationships",
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "object-relationship"
+      "semanticOwner": "resources",
+      "concept": "resource-relationship"
     },
     {
       "name": "object_relationship_revisions",
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "object-relationship-revision"
+      "semanticOwner": "resources",
+      "concept": "resource-relationship-revision"
     },
     {
       "name": "object_commands",
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "object-command-receipt"
+      "semanticOwner": "resources",
+      "concept": "resource-command-receipt"
     },
     {
       "name": "issue_object_references",
@@ -1926,8 +1926,8 @@
       "kind": "table",
       "path": "supabase/schemas/615_objects.sql",
       "authority": true,
-      "semanticOwner": "object",
-      "concept": "object-measure"
+      "semanticOwner": "resources",
+      "concept": "resource-measure"
     },
     {
       "name": "project_repository_imports",

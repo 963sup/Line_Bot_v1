@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { ObjectReferenceReader } from "@line_bot_v1/object/contracts/output/references";
-import { ObjectError } from "@line_bot_v1/object/domain/error";
 import { readOrganizationQualification } from "@line_bot_v1/organization/postgres";
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import {
@@ -16,6 +14,8 @@ import {
   repositoryLabelIdsExist,
   repositoryMilestoneExists,
 } from "@line_bot_v1/repository/postgres/resource-management";
+import type { ObjectReferenceReader } from "@line_bot_v1/resources/contracts/output/references";
+import { ObjectError } from "@line_bot_v1/resources/domain/error";
 import type {
   IssueCollaborationCommand,
   IssueCollaborationIdentity,

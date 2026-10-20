@@ -269,10 +269,16 @@
       "doc": "docs/owners/actions.md"
     },
     {
-      "id": "object",
+      "id": "resources",
       "kind": "business-owner",
       "lifecycle": "current",
-      "doc": "docs/owners/object.md"
+      "doc": "docs/owners/resources.md"
+    },
+    {
+      "id": "content",
+      "kind": "support-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/content.md"
     }
   ],
   "subdomains": [
@@ -287,7 +293,7 @@
         "wbs",
         "wiki",
         "actions",
-        "object"
+        "resources"
       ],
       "rationale": "企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。",
       "sources": [
@@ -480,8 +486,8 @@
       "status": "selected"
     },
     {
-      "id": "object",
-      "owner": "object",
+      "id": "resources",
+      "owner": "resources",
       "status": "selected"
     }
   ],
@@ -1726,60 +1732,60 @@
       "persistenceExpectation": "relation"
     },
     {
-      "id": "content-object",
-      "canonicalName": "Object",
+      "id": "resource",
+      "canonicalName": "Resource",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
-      "definition": "Repository-native content instance with stable identity and an immutable versioned head; it does not replace other contexts domain models.",
+      "definition": "Repository-scoped resource with stable identity, immutable versioned content and optional exact reference/planned quantity; its Object wire and storage identifiers remain stable. It does not replace other contexts domain models.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
     {
-      "id": "object-type",
-      "canonicalName": "ObjectType",
+      "id": "resource-type",
+      "canonicalName": "ResourceType",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
-      "definition": "Repository-scoped named classification with enablement and version; exactly one classification per Object and no dynamic field schema.",
+      "definition": "Repository-scoped named classification with enablement and version; exactly one classification per Resource and no dynamic field schema.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
     {
-      "id": "object-revision",
-      "canonicalName": "ObjectRevision",
+      "id": "resource-revision",
+      "canonicalName": "ResourceRevision",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
-      "definition": "Immutable Object content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision.",
+      "definition": "Immutable Resource content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
     {
-      "id": "object-relationship",
-      "canonicalName": "ObjectRelationship",
+      "id": "resource-relationship",
+      "canonicalName": "ResourceRelationship",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
       "definition": "Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
     {
-      "id": "object-relationship-revision",
-      "canonicalName": "ObjectRelationshipRevision",
+      "id": "resource-relationship-revision",
+      "canonicalName": "ResourceRelationshipRevision",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
-      "definition": "Immutable version of one Object Relationship; not a whole Repository graph snapshot.",
+      "definition": "Immutable version of one Resource Relationship; not a whole Repository graph snapshot.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
     {
-      "id": "object-command-receipt",
-      "canonicalName": "ObjectCommandReceipt",
+      "id": "resource-command-receipt",
+      "canonicalName": "ResourceCommandReceipt",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
       "definition": "Immutable actor/request fingerprint and committed result supporting current-authorized exact replay.",
       "authorityMode": "authoritative",
@@ -1796,10 +1802,10 @@
       "persistenceExpectation": "relation"
     },
     {
-      "id": "object-measure",
-      "canonicalName": "ObjectMeasure",
+      "id": "resource-measure",
+      "canonicalName": "ResourceMeasure",
       "kind": "authoritative",
-      "owner": "object",
+      "owner": "resources",
       "lifecycle": "current",
       "definition": "Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition.",
       "authorityMode": "authoritative",
@@ -2577,14 +2583,14 @@
       "meaning": "Project WBS notification creation, Inbox read/mark-read and dispatch bind an exact Baseline and Revision, require an active recipient with current Project READ, and use explicit recipients without Watch."
     },
     {
-      "id": "object-repository-scope",
-      "from": "content-object",
+      "id": "resources-repository-scope",
+      "from": "resource",
       "to": "repository",
       "kind": "reference",
-      "owner": "object",
+      "owner": "resources",
       "provider": "repository",
-      "consumer": "object",
-      "meaning": "Object consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority.",
+      "consumer": "resources",
+      "meaning": "Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority.",
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck"
@@ -2592,15 +2598,33 @@
     {
       "id": "issue-object-pinned-reference",
       "from": "issue-object-reference",
-      "to": "object-revision",
+      "to": "resource-revision",
       "kind": "reference",
       "owner": "issue",
-      "provider": "object",
+      "provider": "resources",
       "consumer": "issue",
-      "meaning": "Issue owns fixed Object Revision references; Object verifies current access and referenceability in the caller transaction. Existing references retain historical content after Object archive.",
+      "meaning": "Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive.",
       "integrationMode": "stable-identity+query",
-      "authority": "object",
+      "authority": "resources",
       "consistency": "same-transaction"
+    },
+    {
+      "id": "resources-content-value",
+      "provider": "content",
+      "consumer": "resources",
+      "meaning": "Resources consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned.",
+      "integrationMode": "query",
+      "authority": "content",
+      "consistency": "pure-value"
+    },
+    {
+      "id": "wiki-content-value",
+      "provider": "content",
+      "consumer": "wiki",
+      "meaning": "Wiki consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned.",
+      "integrationMode": "query",
+      "authority": "content",
+      "consistency": "pure-value"
     }
   ],
   "capabilities": [
@@ -4814,10 +4838,10 @@
       }
     },
     {
-      "id": "manage-repository-objects",
-      "owner": "object",
+      "id": "manage-repository-resources",
+      "owner": "resources",
       "kind": "leaf",
-      "intent": "Manage classified Repository-native Objects, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay.",
+      "intent": "Manage classified Repository-native Resources, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
       "validationProfiles": [
         "semantic-architecture",
@@ -4829,15 +4853,15 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Manage classified Repository-native Objects, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay.",
+        "scope": "Manage classified Repository-native Resources, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay.",
         "sourcePaths": [
-          "packages/object/src/domain/object.ts",
-          "packages/object/src/domain/object-type.ts",
-          "packages/object/src/domain/relationship.ts",
-          "packages/object/src/application/use-cases/objects.ts",
-          "packages/object/src/adapters/outbound/persistence/objects.ts",
-          "packages/object/src/domain/engineering.ts",
-          "packages/object/src/application/use-cases/engineering.ts"
+          "packages/resources/src/domain/object.ts",
+          "packages/resources/src/domain/object-type.ts",
+          "packages/resources/src/domain/relationship.ts",
+          "packages/resources/src/application/use-cases/objects.ts",
+          "packages/resources/src/adapters/outbound/persistence/objects.ts",
+          "packages/resources/src/domain/engineering.ts",
+          "packages/resources/src/application/use-cases/engineering.ts"
         ],
         "publicExports": [
           "./application/use-cases/objects",
@@ -4854,14 +4878,14 @@
           "apps/web/src/app/api/repository-object-measures/route.ts"
         ],
         "testPaths": [
-          "packages/object/test/object-persistence.test.ts",
-          "packages/object/test/object-postgres.test.ts",
+          "packages/resources/test/object-persistence.test.ts",
+          "packages/resources/test/object-postgres.test.ts",
           "apps/web/test/object-http.test.ts",
-          "packages/object/test/object-engineering.test.ts",
-          "packages/object/test/object-engineering-persistence.test.ts",
-          "packages/object/test/object-engineering-postgres.test.ts"
+          "packages/resources/test/object-engineering.test.ts",
+          "packages/resources/test/object-engineering-persistence.test.ts",
+          "packages/resources/test/object-engineering-postgres.test.ts"
         ],
-        "note": "Current local product extension, distinct from GitObject; provider publication requires separate evidence."
+        "note": "Resources owns the existing Object runtime and stable wire/storage contracts. Content supplies only bounded text normalization. No data migration, replay rewrite or business lifecycle change is implied."
       }
     },
     {
@@ -4911,6 +4935,27 @@
         "entrypoints": ["apps/web/src/app/api/repository-overview/route.ts"],
         "testPaths": ["packages/wbs/test/legacy-entry.test.ts"],
         "note": "No content initialization, transfer activation, destination disclosure or second source of truth. Infrastructure failure remains unavailable, not absent."
+      }
+    },
+    {
+      "id": "normalize-text-content",
+      "owner": "content",
+      "kind": "leaf",
+      "intent": "Normalize a bounded title and preserve an unmodified body for Resources and Wiki without acquiring identity, revisions, storage or rendering authority.",
+      "preserves": ["K1", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Trim a 1..200 UTF-16-code-unit title and validate a body of at most 262144 UTF-16 code units; return field-specific failures without consumer error or transport semantics.",
+        "sourcePaths": ["packages/content/src/text.ts"],
+        "publicExports": ["./text"],
+        "entrypoints": [
+          "packages/resources/src/domain/object.ts",
+          "packages/wiki/src/domain/wiki-page.ts"
+        ],
+        "testPaths": ["packages/content/test/text.test.ts"],
+        "note": "Pure support mechanism; Resources and Wiki retain aggregate/revision authority and their established error contracts."
       }
     }
   ],
@@ -5012,8 +5057,8 @@
     },
     {
       "id": "OBJECT1",
-      "scope": "object",
-      "statement": "Object owns classifications, immutable measurement definitions, revision quantities and typed relationships. Structural edges are acyclic with one parent; allocations use identical measures, planned children and exact nonnegative totals within the parent, including archived allocations. Direct location is singular. Atomic edits, revisions and exact receipts share the Repository transaction; other contexts retain their models and pinned references.",
+      "scope": "resources",
+      "statement": "Resources owns classifications, immutable measurement definitions, revision quantities and typed relationships. Structural edges are acyclic with one parent; allocations use identical measures, planned children and exact nonnegative totals within the parent, including archived allocations. Direct location is singular. Atomic edits, revisions and exact receipts share the Repository transaction; other contexts retain their models and pinned references.",
       "severity": "error",
       "enforcement": ["semantic-policy", "schema", "tests"]
     }
@@ -5271,8 +5316,12 @@
       "module": "@line_bot_v1/actions"
     },
     {
-      "semanticOwner": "object",
-      "module": "@line_bot_v1/object"
+      "semanticOwner": "resources",
+      "module": "@line_bot_v1/resources"
+    },
+    {
+      "semanticOwner": "content",
+      "module": "@line_bot_v1/content"
     }
   ],
   "policies": [

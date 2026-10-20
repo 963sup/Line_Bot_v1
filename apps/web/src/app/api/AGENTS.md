@@ -35,7 +35,7 @@
 | `/api/repositories` | GET：Current User 的 explicit-access Repository collection；POST：Repository owner contract 的 replay-safe PRIVATE / INTERNAL / PUBLIC Repository create |
 | `/api/repository-management` | GET：current Repository settings projection；POST：current admin replay-safe rename/visibility/archive/unarchive with expected Repository version |
 | `/api/repository-subscription` | GET/POST：current-readable Repository 的 User Watch state；exact SUBSCRIBED / UNSUBSCRIBED / IGNORED，subscription 不授權 |
-| `/api/repository-object-types`、`/api/repository-objects`、`/api/repository-object-relationships` | Object owner 的分類、版本化內容與同 Repository 有向關係；verified LINE identity、current Repository scope、expected version 與 exact retry 由 owner contract 重驗 |
+| `/api/repository-object-types`、`/api/repository-objects`、`/api/repository-object-relationships` | Resources owner 的分類、版本化內容與同 Repository 有向關係；保留 Object wire contract，verified LINE identity、current Repository scope、expected version 與 exact retry 由 owner contract 重驗 |
 | `/api/project-wbs`、`/api/project-wbs/history` | Project WBS content command/current view 與 immutable Revision history；current Project access/lifecycle、expected version 與 exact replay 由 owner contract 決定 |
 | `/api/project-wbs/governance`、`/api/project-wbs/metrics` | Project WBS policy/proposal/review/Baseline command and read transport，以及 WBS-owned current metrics；Project 僅供目前授權與 lifecycle |
 | `/api/repository-wbs/transfer`、`/api/repository-wbs/transfer/cancel` | R1 live-intent read、preflighted request 與 current source User owner exact-replay withdrawal；cancel 不依賴 target Project 且不適用 ACTIVE，Web 不執行 Release-only transfer |
@@ -62,4 +62,4 @@ FPT queries/mutations 是 GitHub GraphQL domain truth；它們定義 GitHub sema
 - Keep HTTP/LINE wire contracts and failure classification stable during module moves; do not implement a second use case or query private tables from a route.
 - API tests must cover unauthorized/forbidden, wrong scope, stale/replay conflict, unavailable source and unknown-result behavior where the owner supports those states.
 
-`/api/repository-object-measures` GET lists immutable Object-owned measurement definitions; POST transports ADMIN creation. `/api/repository-objects?view=structure` reads per-level engineering nodes and full-root totals. Object and relationship POST routes transport atomic `set-quantities`, `set-parent` and `set-location` intents through the same current identity, scope, origin and receipt contract.
+`/api/repository-object-measures` GET lists immutable Resources-owned measurement definitions; POST transports ADMIN creation. `/api/repository-objects?view=structure` reads per-level engineering nodes and full-root totals. Object and relationship POST routes transport atomic `set-quantities`, `set-parent` and `set-location` intents through the same current identity, scope, origin and receipt contract.

@@ -4,7 +4,7 @@ import type {
   ObjectMeasureDto,
   Quantity,
   StructureDto,
-} from "@line_bot_v1/object/contracts/dto/objects";
+} from "@line_bot_v1/resources/contracts/dto/objects";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { mergeEngineeringObservations, structureView } from "./engineering-response";

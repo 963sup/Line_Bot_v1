@@ -1,3 +1,4 @@
+import { normalizeContent } from "@line_bot_v1/content/text";
 import { WikiError } from "./wiki-error.js";
 
 export type WikiEdit =
@@ -53,9 +54,9 @@ export function reviseWikiPage(
     title = restored.title;
     body = restored.body;
   }
-  title = title.trim();
-  if (!title || title.length > 200 || body.length > 262144)
-    throw new WikiError(400, "Invalid Wiki title or content size.");
+  const normalized = normalizeContent({ title, body });
+  if (!normalized.ok) throw new WikiError(400, "Invalid Wiki title or content size.");
+  ({ title, body } = normalized.value);
   if (
     current &&
     edit.action !== "restore" &&

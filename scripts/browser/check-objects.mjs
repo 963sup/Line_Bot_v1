@@ -19,10 +19,12 @@ const { postgresFixture } = await resolvedImport("@line_bot_v1/platform/testing/
 const { repositoryContentScope } = await resolvedImport(
   "@line_bot_v1/repository/postgres/content-scope",
 );
-const { createObjects } = await resolvedImport("@line_bot_v1/object/application/use-cases/objects");
-const { ObjectError } = await resolvedImport("@line_bot_v1/object/domain/error");
+const { createObjects } = await resolvedImport(
+  "@line_bot_v1/resources/application/use-cases/objects",
+);
+const { ObjectError } = await resolvedImport("@line_bot_v1/resources/domain/error");
 const { createPostgresObjectDependencies } = await resolvedImport(
-  "@line_bot_v1/object/composition/bootstrap/objects",
+  "@line_bot_v1/resources/composition/bootstrap/objects",
 );
 const { createIssues } = await resolvedImport("@line_bot_v1/issue/application/issues");
 const { PostgresIssueStore } = await resolvedImport("@line_bot_v1/issue/postgres");

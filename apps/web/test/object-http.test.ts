@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { ObjectError } from "@line_bot_v1/object/domain/error";
 import { record, stringValue } from "@line_bot_v1/platform/validation";
+import { ObjectError } from "@line_bot_v1/resources/domain/error";
 import type { ObjectWebRuntime } from "../src/modules/object/object-http.server";
 import { objectRequest } from "../src/modules/object/object-http.server";
 import { objectScope, objects, objectTypes } from "../src/modules/object/object-response";

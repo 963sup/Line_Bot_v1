@@ -38,6 +38,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| consumes | content | query | content | pure-value | Wiki consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Wiki consumes current Repository scope, qualification, archive state and explicit write authority without owning Repository facts. |
 
 ## Tactical Model Boundary

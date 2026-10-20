@@ -1,9 +1,3 @@
-import type {
-  ObjectTreeDto,
-  Quantity,
-  StructureDto,
-  StructureNodeDto,
-} from "@line_bot_v1/object/contracts/dto/objects";
 import {
   booleanValue,
   literalValue,
@@ -12,6 +6,12 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
+import type {
+  ObjectTreeDto,
+  Quantity,
+  StructureDto,
+  StructureNodeDto,
+} from "@line_bot_v1/resources/contracts/dto/objects";
 
 export function quantityView(value: unknown): Quantity | null {
   if (value === undefined || value === null) return null;

@@ -41,7 +41,7 @@ Repository remains authoritative for Repository identity, current visibility/acc
 - Type-definition history is immutable in `issue_type_events`; Issue add/change/remove type history is recorded in `issue_events` as `issue_type_added | issue_type_changed | issue_type_removed` timeline evidence.
 - An Issue may reference zero or more Objects from its own Repository, at most once per Object. Each relation pins an explicit Object Revision; Object changes never silently move the pin.
 - Adding or updating a pin requires current Issue triage authority and an unarchived current Object. Existing pins remain readable when an Object is later archived, and removal remains an Issue-owned operation.
-- Object owns Object identity, revision contents and reference validation. Issue persists only its relationship fact and consumes the Object public transaction-bound reference contract; it never queries Object private relations directly.
+- Resources owns resource identity, revision contents and reference validation. Issue persists only its relationship fact and consumes the Resources-owned Object public transaction-bound reference contract; it never queries Resources private relations directly.
 
 ## Repository operation matrix
 
@@ -54,7 +54,7 @@ The permission matrix follows the exact FPT `schema-repos.json#RepositoryPermiss
 | comment | read, triage, triage_plus, write, maintain, admin | Implemented through manage-issue-collaboration; lock state is checked separately |
 | local workflow | read, triage, triage_plus, write, maintain, admin | Implemented; publisher/current-assignee responsibility is checked separately |
 | triage | triage, triage_plus, write, maintain, admin | Implemented for IssueType, Label/Milestone classification and typed Issue relations |
-| pin Object revision | triage, triage_plus, write, maintain, admin | Implemented as an Issue-owned relation validated through the Object public contract |
+| pin Object revision | triage, triage_plus, write, maintain, admin | Implemented as an Issue-owned relation validated through the Resources-owned Object public contract |
 | edit | triage, triage_plus, write, maintain, admin | Implemented for title/body/local criteria |
 | close | triage, triage_plus, write, maintain, admin | Implemented for close/reopen + stateReason |
 | assign | triage, triage_plus, write, maintain, admin | Implemented for add/remove assignees |

@@ -137,6 +137,49 @@ function createObject(): ObjectRevision {
   );
 }
 
+test("shared Content values preserve Object normalization, error wording and conflict precedence", () => {
+  const context = {
+    id: ids.revision,
+    objectId: ids.object,
+    repositoryId,
+    actorUserId: userId,
+    expectedVersion: 0,
+    at: 1,
+    typeName: "Equipment",
+  };
+  const body = "  original\r\nplain text  ";
+  const created = reviseObject(
+    null,
+    { action: "create", typeId: ids.type, name: "  AHU A  ", content: body },
+    context,
+  );
+  assert.equal(created.name, "AHU A");
+  assert.equal(created.content, body);
+
+  for (const [name, content, message] of [
+    [" ", "x".repeat(262_145), "Object 名稱需為 1 到 200 字。"],
+    ["AHU A", "x".repeat(262_145), "Object 內容不可超過 262144 字。"],
+  ] as const) {
+    assert.throws(
+      () =>
+        reviseObject(
+          created,
+          { action: "edit", name, content },
+          { ...context, expectedVersion: 1 },
+        ),
+      (error) =>
+        error instanceof ObjectError &&
+        error.status === 400 &&
+        error.code === "INVALID_INPUT" &&
+        error.message === message,
+    );
+  }
+  assert.throws(
+    () => reviseObject(created, { action: "edit", name: " ", content: body }, context),
+    (error) => error instanceof ObjectError && error.code === "VERSION_CONFLICT",
+  );
+});
+
 test("Object has stable identity, immutable revision chain and archive gate", () => {
   const created = createObject();
   const edited = reviseObject(

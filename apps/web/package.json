@@ -30,7 +30,7 @@
     "@line_bot_v1/line": "workspace:*",
     "@line_bot_v1/namespace": "workspace:*",
     "@line_bot_v1/notifications": "workspace:*",
-    "@line_bot_v1/object": "workspace:*",
+    "@line_bot_v1/resources": "workspace:*",
     "@line_bot_v1/organization": "workspace:*",
     "@line_bot_v1/partners": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",

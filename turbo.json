@@ -157,7 +157,7 @@
         "$TURBO_ROOT$/scripts/actions/*.mjs"
       ]
     },
-    "@line_bot_v1/object#test": {
+    "@line_bot_v1/resources#test": {
       "cache": false,
       "dependsOn": ["^build"],
       "outputs": [],

@@ -44,7 +44,7 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | `/{ownerLogin}/{repositoryName}` | Repository Overview 與內容入口；RepositoryId stable，current name 優先，old alias 預設 follow rename；PUBLIC anonymous-readable，PRIVATE explicit access，INTERNAL same current active Enterprise；登入 User 可管理 Watch，舊 WBS 恢復入口依 durable source/live transfer 顯示，Projects 不暗示關聯或繼承權限 |
 | `/{ownerLogin}/{repositoryName}/access` | Repository access management；管理 Direct User / Organization Team grants，owner/name 只定位，每次讀寫重新驗有效 Repository admin（含 OrganizationOwner implicit admin） |
 | `/{ownerLogin}/{repositoryName}/settings` | Repository lifecycle + address；rename/visibility/archive 與 address 是獨立 replay family，current admin 授權；archive 保留地址但不再作新 clock-in site |
-| `/{ownerLogin}/{repositoryName}/objects`、`/objects/{objectId}` | Object-owned Repository 原生內容；分類、不可變內容版本、封存／還原與具名稱有向關係。API 每次重驗 Repository access；Object ID 與 Revision ID 不授權 |
+| `/{ownerLogin}/{repositoryName}/objects`、`/objects/{objectId}` | Resources-owned Repository 原生資源；分類、不可變內容版本、封存／還原與具名稱有向關係。保留 Object wire contract；API 每次重驗 Repository access，Object ID 與 Revision ID 不授權 |
 | `/{ownerLogin}/{repositoryName}/issues` | Repository-scoped Issue collection；owner/name 只定位 Repository，read API 重新驗 current User access |
 | `/{ownerLogin}/{repositoryName}/issues/{issueNumber}` | Repository-scoped Issue detail；`issueNumber` 是 Repository-local locator，stable IssueId 仍只作 internal identity/command reference；重新解析 owner/name 並驗目前 access |
 | `/{ownerLogin}/{repositoryName}/discussions` | Repository-scoped Discussion collection；authorized read 與 Discussion owner 的 current management capability 分離，list navigation 優先使用 canonical number locator |
