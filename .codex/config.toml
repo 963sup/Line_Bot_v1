@@ -14,3 +14,13 @@ default_subagent_reasoning_effort = "medium"
 # Excludes the primary agent: 1 primary + up to 8 subagents.
 # Ceiling, not target team size; only parallelize independent, bounded work.
 max_concurrent_threads_per_session = 8
+
+[mcp_servers.next-devtools]
+command = "pnpm"
+args = ["--config.node-linker=hoisted", "--config.virtual-store-type=project", "dlx", "next-devtools-mcp@latest"]
+startup_timeout_sec = 60
+
+[mcp_servers.shadcn]
+command = "pnpm"
+args = ["--config.node-linker=hoisted", "--config.virtual-store-type=project", "--dir", "apps/web", "dlx", "shadcn@latest", "mcp"]
+startup_timeout_sec = 60
