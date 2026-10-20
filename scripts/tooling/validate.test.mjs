@@ -19,7 +19,7 @@ function git(directory, args) {
   execFileSync("git", args, { cwd: directory, stdio: "ignore" });
 }
 
-test("CI bounds the actual typecheck/test invocation without changing its coverage or local execution", (t) => {
+test("local and CI validation bound aggregate test workers without changing scope or CI semantics", (t) => {
   const directory = mkdtempSync(join(tmpdir(), "line-bot-validation-command-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const preload = join(directory, "capture.mjs");
@@ -28,35 +28,47 @@ test("CI bounds the actual typecheck/test invocation without changing its covera
     `
     import childProcess from 'node:child_process';
     import { syncBuiltinESMExports } from 'node:module';
-    childProcess.spawnSync = (_file, args) => {
-      console.log(JSON.stringify(args));
+    childProcess.spawnSync = (file, args, options) => {
+      if (file === 'git') return { status: 0, stdout: args[0] === 'ls-files' ? '' : 'scripts/tooling/validate.mjs\\0' };
+      console.log('CAPTURE:' + JSON.stringify({ args, ci: options.env.CI ?? null }));
       return { status: 0 };
     };
     syncBuiltinESMExports();
   `,
   );
-  for (const ci of ["true", "false", ""]) {
-    const output = execFileSync(
-      process.execPath,
-      [
-        "--import",
-        pathToFileURL(preload).href,
-        fileURLToPath(new URL("./validate.mjs", import.meta.url)),
-        "--group",
-        "typecheck-test",
-      ],
-      {
-        encoding: "utf8",
-        env: { ...process.env, CI: ci, npm_execpath: "fixture-pnpm.js" },
-      },
-    );
-    const calls = output
-      .split("\n")
-      .filter((line) => line.startsWith("["))
-      .map((line) => JSON.parse(line));
-    assert.equal(calls.length, 1);
-    assert.deepEqual(calls[0].slice(1, 4), ["run", "typecheck", "test"]);
-    assert.deepEqual(calls[0].slice(4), ci === "true" ? ["--concurrency=2"] : []);
+  for (const ci of ["true", "false", undefined]) {
+    for (const [mode, selection] of [
+      [["--group", "typecheck-test"], []],
+      [[], []],
+      [["--fast"], ["--affected"]],
+      [["--fast", "--filter=@line_bot_v1/team"], ["--filter=@line_bot_v1/team"]],
+    ]) {
+      const env = { ...process.env, npm_execpath: "fixture-pnpm.js" };
+      if (ci === undefined) delete env.CI;
+      else env.CI = ci;
+      const output = execFileSync(
+        process.execPath,
+        [
+          "--import",
+          pathToFileURL(preload).href,
+          fileURLToPath(new URL("./validate.mjs", import.meta.url)),
+          ...mode,
+        ],
+        {
+          encoding: "utf8",
+          env,
+        },
+      );
+      const calls = output
+        .split("\n")
+        .filter((line) => line.startsWith("CAPTURE:"))
+        .map((line) => JSON.parse(line.slice("CAPTURE:".length)))
+        .filter((call) => call.args[1] === "run" && call.args[2] === "typecheck");
+      assert.equal(calls.length, 1);
+      assert.deepEqual(calls[0].args.slice(1, 4), ["run", "typecheck", "test"]);
+      assert.deepEqual(calls[0].args.slice(4), ["--concurrency=2", ...selection]);
+      assert.equal(calls[0].ci, ci ?? null);
+    }
   }
 });
 
