@@ -32,25 +32,33 @@ function requireReadyState(state) {
   return state;
 }
 
-try {
-  const before = requireReadyState(collectChangeState());
-  validateCommandSurface();
-  const after = requireReadyState(collectChangeState());
-  console.log(
-    JSON.stringify(
-      {
-        ok: true,
-        branch: after.branch,
-        head: after.head,
-        originMain: after.originMain,
-        validated: "pnpm validate",
-        unchangedHead: before.head === after.head,
-      },
-      null,
-      2,
-    ),
-  );
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
+export function finalizeChange({
+  collectState = collectChangeState,
+  validate = validateCommandSurface,
+} = {}) {
+  const before = requireReadyState(collectState());
+  validate();
+  const after = requireReadyState(collectState());
+  for (const key of ["branch", "head", "originMain", "upstream"]) {
+    if (before[key] !== after[key]) {
+      throw new Error(`${key} changed during validation; validate the new exact revision again.`);
+    }
+  }
+  return {
+    ok: true,
+    branch: after.branch,
+    head: after.head,
+    originMain: after.originMain,
+    validated: "pnpm validate",
+    unchangedHead: true,
+  };
+}
+
+if (import.meta.main) {
+  try {
+    console.log(JSON.stringify(finalizeChange(), null, 2));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
 }

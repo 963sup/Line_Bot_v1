@@ -80,6 +80,36 @@ function dependencyAvailability() {
   );
 }
 
+export function inspectSourceTool(
+  root = repositoryRoot,
+  { readVersion = (binary) => commandVersion(binary, ["--version"]) } = {},
+) {
+  const manifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  const expected = manifest.devDependencies?.["@ast-grep/cli"] ?? null;
+  let actual = null;
+  let executableVersion = null;
+  try {
+    const packageRoot = resolve(root, "node_modules/@ast-grep/cli");
+    const installed = JSON.parse(readFileSync(resolve(packageRoot, "package.json"), "utf8"));
+    actual = installed.version ?? null;
+    const binary = typeof installed.bin === "string" ? installed.bin : installed.bin?.sg;
+    if (binary && existsSync(resolve(packageRoot, binary)))
+      executableVersion = readVersion(resolve(packageRoot, binary));
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  return {
+    id: "ast-grep",
+    ok:
+      /^\d+\.\d+\.\d+$/.test(expected ?? "") &&
+      actual === expected &&
+      executableVersion === `ast-grep ${expected}`,
+    expected,
+    actual,
+    executableVersion,
+  };
+}
+
 export function parseDoctorArgs(args) {
   let live = false;
   let port;
@@ -114,14 +144,16 @@ export async function main() {
     });
     const envKeys = parseEnvKeys(readFileSync(resolve(repositoryRoot, ".env.example"), "utf8"));
     const configuration = inspectMcpConfiguration(repositoryRoot);
+    const sourceTool = inspectSourceTool();
     const live = options.live ? await probeMcp(repositoryRoot, options) : { status: "not-run" };
-    const ok = report.ok && configuration.ok && live.ok !== false;
+    const ok = report.ok && configuration.ok && sourceTool.ok && live.ok !== false;
     console.log(
       JSON.stringify(
         {
           ...report,
           ok,
           mcp: { configuration, live },
+          sourceTool,
           environment: {
             declared: envKeys.length,
             present: envKeys.filter((key) => Boolean(process.env[key])).length,

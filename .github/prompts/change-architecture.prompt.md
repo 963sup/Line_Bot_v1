@@ -9,6 +9,8 @@ Architecture intent: ${input:intent:Describe the business result or architecture
 
 If the intent uses GitHub-derived semantics, resolve the exact `architecture/domain/fpt/*.json` file/symbol/field before the local overlay. FPT is domain truth, not a benchmark or implementation opt-in. Return a unique Owner, Source of Truth, Boundary/Dependency direction, correct change, and Validation. Do not add abstractions from pattern preference alone.
 
+Follow the default repository change loop in `docs/reference/engineering/development-workflow.md#default-repository-change-loop`.
+
 ## Delivery
 
 Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.

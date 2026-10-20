@@ -18,4 +18,6 @@
 
 `check` 在執行前列出 scope、各階段選取／略過理由及 typecheck/test workspace selection。Schema 或未追蹤檔案會保守擴大 workspace coverage；明確指定 filter 時，由呼叫者負責涵蓋所有 consumer。輸出只解釋既有選取規則，不代表驗證已通過。
 
-`tooling:check` 擁有 list-skills、check-tooling、validate 與 deployment adapter regression tests；validation 的 `tooling:test` 只補執行 doctor tests，避免同一次 validation 重複執行。
+`tooling:check` 擁有 list-skills、check-tooling、validate 與 deployment adapter regression tests；validation 的 `tooling:test` 補執行 doctor、WBS operator 與來源查改測試，避免同一次 validation 重複執行。
+
+`scripts/code/*.test.mjs` 驗證來源查改流程；`scripts/code/` 變更會觸發 tooling fast gates。`code` 命令、ast-grep pin 與其特定 installation build 由 `tooling:check` 檢查，doctor 讀回安裝與原生 executable 版本；不擴大全域安裝腳本或 Codex 權限。
