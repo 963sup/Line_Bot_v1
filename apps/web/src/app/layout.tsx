@@ -19,6 +19,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { VercelObservability } from "../shared/browser/vercel-observability";
+import { TooltipProvider } from "../shared/ui/tooltip";
 import "./globals.css";
 
 // Root metadata supplies the shared application title and description.
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-Hant">
       <body>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         {process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production" && (
           <VercelObservability />
         )}
