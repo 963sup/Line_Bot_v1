@@ -32,7 +32,7 @@ pnpm schema:remote recovery
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
 - `schema:local`：用 current schemas 重建 local application schema。
 - `plan / verify / recovery`：read-only remote diagnosis / recovery readback；詳細 contract 見 [Supabase platform](../docs/reference/platform/supabase.md)。
-- `repair / prepare / sync`：remote mutation；只允許 current `main` 的 GitHub Actions Release 呼叫，不作本機或任意 branch 操作。
+- `sync / activate-identifiers`：remote mutation；只允許 current `main` 的 GitHub Actions Release 呼叫，不作本機或任意 branch 操作；用途與執行條件見 [Supabase platform](../docs/reference/platform/supabase.md)。
 
 ## Change routing
 
