@@ -46,7 +46,7 @@
 
   /* Preflight is opt-in so native elements on existing pages keep their defaults.
      Reset old descendant selectors at the primitive boundary, before utilities. */
-  :where([data-slot], [data-slot] *):not(svg, svg *) {
+  :where([data-slot], [data-slot="calendar"] *):not(svg, svg *) {
     all: revert;
     box-sizing: border-box;
     margin: 0;
@@ -66,11 +66,6 @@
   [data-slot]::after {
     box-sizing: border-box;
     border: 0 solid var(--border);
-  }
-
-  [data-slot] :where(h1, h2, h3, h4, p, ul, ol) {
-    margin: 0;
-    padding: 0;
   }
 
   [data-slot] :where(svg) {

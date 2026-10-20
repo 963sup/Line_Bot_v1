@@ -24,6 +24,7 @@ Sources: [official registry](https://ui.shadcn.com/r/styles/radix-nova/registry.
 - [globals.css](../../app/globals.css) owns Tailwind/theme setup; [legacy.css](legacy.css) preserves the previous stylesheet in its own layer.
 - The [PostCSS module transform](../../../postcss/legacy-modules.cjs) puts existing CSS Modules in the same `legacy` layer, preserving their specificity and source-order relationship with the global stylesheet.
 - Preflight is opt-in at each primitive's `data-slot` boundary. Existing native HTML keeps its original browser defaults; Tailwind utilities override the legacy layer on new primitives.
+- The reset does not traverse feature children inside Card/Dialog content. Calendar owns the reset for its third-party-generated internal markup.
 - The existing foreground token `--muted` stays separate from shadcn's background token `--ui-muted`.
 - Dark variants support `.dark` and the existing `.app-shell`. For portaled content outside the shell, apply `className="dark"` to the content when its caller uses the dark theme.
 - TooltipProvider is installed at the application root. Other providers belong with the consumer that needs them.
