@@ -118,6 +118,7 @@ page.on("pageerror", (error) => errors.push(error.message));
 
 const generation = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const objectPosts = [];
+const treeReads = [];
 const issueReferencePosts = [];
 let objectResultUnknown = false;
 let issueReferenceResultUnknown = false;
@@ -258,7 +259,8 @@ await context.route("**/*", async (route) => {
       }
       const objectId = url.searchParams.get("objectId");
       const view = url.searchParams.get("view") ?? (objectId ? "object" : "list");
-      if (view === "tree")
+      if (view === "tree") {
+        treeReads.push(url.searchParams.get("parentId"));
         return route.fulfill({
           json: {
             ...currentScope,
@@ -272,6 +274,7 @@ await context.route("**/*", async (route) => {
             })),
           },
         });
+      }
       if (view === "structure")
         return route.fulfill({
           json: {
@@ -815,11 +818,25 @@ try {
   await grandchildForm.getByRole("button", { name: "建立子 Object", exact: true }).click();
   await page.getByRole("button", { name: "展開 光纖敷設工序", exact: true }).click();
   await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toBeVisible();
+  const treeParentId = objectPosts.at(-1).parentObjectId;
+  const branchReadCount = () => treeReads.filter((parentId) => parentId === treeParentId).length;
+  const readsBeforeCollapse = branchReadCount();
   await page.getByRole("button", { name: "收合 光纖敷設工序", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "展開 光纖敷設工序", exact: true }).click();
   await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toBeVisible();
+  assert.equal(branchReadCount(), readsBeforeCollapse, "reopening a loaded Object must not read");
+  await page.getByTestId("objects-refresh").click();
+  await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toBeVisible();
+  await expect.poll(branchReadCount).toBe(readsBeforeCollapse + 1);
+  await page.getByRole("button", { name: "收合 光纖敷設工序", exact: true }).click();
+  await page.getByTestId("objects-refresh").click();
+  await expect(page.getByTestId("objects-refresh")).toBeEnabled();
+  assert.equal(branchReadCount(), readsBeforeCollapse + 1, "collapsed branches stay lazy");
+  await page.getByRole("button", { name: "展開 光纖敷設工序", exact: true }).click();
+  await expect(page.getByRole("link", { name: "A 區作業", exact: true })).toBeVisible();
+  assert.equal(branchReadCount(), readsBeforeCollapse + 2, "refresh invalidates collapsed pages");
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));

@@ -87,12 +87,16 @@ function ChildForm({
 type BranchProps = Omit<TreeProps, "page"> & {
   parentId: string | null;
   initialPage?: ObjectTreeDto;
+  snapshots: Map<string | null, { refresh: number; page: ObjectTreeDto }>;
 };
 
-function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
+function ObjectBranch({ parentId, initialPage, snapshots, ...props }: BranchProps) {
   const { basePath, scope, types, busy, refresh, includeArchived, request, mutate, invalidate } =
     props;
-  const [data, setData] = useState<ObjectTreeDto | null>(initialPage ?? null);
+  const [data, setData] = useState<ObjectTreeDto | null>(() => {
+    const cached = snapshots.get(parentId);
+    return initialPage ?? (cached?.refresh === refresh ? cached.page : null);
+  });
   const dataRef = useRef(data);
   dataRef.current = data;
   const previousRefresh = useRef(refresh);
@@ -126,7 +130,7 @@ function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
         if ((next.parent?.objectId ?? null) !== parentId)
           throw new Error("Object 父層回應不一致，請重新讀取。");
         const current = dataRef.current;
-        setData(
+        const snapshot =
           after && current
             ? {
                 ...next,
@@ -140,10 +144,17 @@ function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
                 },
                 observed: mergeEngineeringObservations(current.observed, next.observed),
               }
-            : next,
-        );
+            : next;
+        snapshots.delete(parentId);
+        snapshots.set(parentId, { refresh, page: snapshot });
+        if (snapshots.size > 32) {
+          const oldest = snapshots.keys().next().value;
+          if (oldest !== undefined) snapshots.delete(oldest);
+        }
+        setData(snapshot);
       } catch (cause) {
         if (ticket !== generation.current) return;
+        snapshots.delete(parentId);
         setData(null);
         if (
           cause &&
@@ -157,7 +168,7 @@ function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
         if (ticket === generation.current) setLoading(false);
       }
     },
-    [request, parentId, includeArchived, actorUserId, repositoryId, invalidate],
+    [request, parentId, includeArchived, actorUserId, repositoryId, invalidate, refresh, snapshots],
   );
 
   useEffect(() => {
@@ -170,11 +181,20 @@ function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
       setData(initialPage);
       setError("");
       setLoading(false);
-    } else void read();
+    } else {
+      const cached = snapshots.get(parentId);
+      if (cached?.refresh === refresh) {
+        snapshots.delete(parentId);
+        snapshots.set(parentId, cached);
+        setData(cached.page);
+        setError("");
+        setLoading(false);
+      } else void read();
+    }
     return () => {
       generation.current++;
     };
-  }, [initialPage, refresh, read]);
+  }, [initialPage, refresh, read, snapshots, parentId]);
 
   return (
     <div aria-busy={loading}>
@@ -272,7 +292,9 @@ function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
                       </div>
                     ) : null}
                     <div id={childId} hidden={!open} className={styles.treeChildren}>
-                      {open ? <ObjectBranch {...props} parentId={node.objectId} /> : null}
+                      {open ? (
+                        <ObjectBranch {...props} snapshots={snapshots} parentId={node.objectId} />
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -297,5 +319,8 @@ function ObjectBranch({ parentId, initialPage, ...props }: BranchProps) {
 }
 
 export default function ObjectTree({ page, ...props }: TreeProps) {
-  return <ObjectBranch {...props} parentId={null} initialPage={page} />;
+  const snapshots = useRef(new Map<string | null, { refresh: number; page: ObjectTreeDto }>());
+  return (
+    <ObjectBranch {...props} snapshots={snapshots.current} parentId={null} initialPage={page} />
+  );
 }

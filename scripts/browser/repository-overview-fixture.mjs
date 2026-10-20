@@ -42,6 +42,7 @@ export async function startRepositoryOverviewFixture(output) {
     format: "esm",
     outfile: path.join(directory, "overview.js"),
     platform: "browser",
+    conditions: ["style"],
     nodePaths: [path.join(web, "node_modules")],
     jsx: "automatic",
     define: {
