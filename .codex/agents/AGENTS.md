@@ -10,6 +10,24 @@
 
 每個 role 只擁有一個 Primary Responsibility；新增 role 必須有獨立問題、deliverable、stop condition、validation。
 
+## Autonomous delegation
+
+Primary 在每個任務開始時主動判斷是否委派；在任務授權與當前工具限制內，符合下列條件就直接使用最少必要角色，不等待使用者再次指定 agent。簡單、Owner 已知且可直接驗收的任務由 Primary 完成。
+
+| 觸發條件 | 行動與交接 |
+| --- | --- |
+| 有可獨立回答的未知數，且定位／根因／研究會改變實作決策 | 將有明確 stop condition 的問題交下方適用角色；獨立唯讀問題可並行，沿用已取得證據。 |
+| 需要 framework／provider／runtime 的 specialist 證據 | 交給對應既有 specialist；取得來源或實際 runtime 證據後才決定實作。 |
+| 決策與契約已確定，變更能形成獨立寫入面 | Primary 可交單一 implementation worker；同檔案／產物只有一位 writer。不同 Owner 仍沿真實契約整合。 |
+| 批次變更、公開契約／跨 Owner、authorization／transaction 或 guard 改動需要獨立缺陷檢查 | 實作穩定後交 diff reviewer；reviewer 只讀 diff 與直接 consumers，不重跑整套驗證。 |
+| Candidate 已穩定且有明確的驗證執行需求 | 指定一位 validation owner，預設 Primary；只有有獨立執行價值時才另派現有 runner，不為委派改選模型。 |
+
+需要才啟用 `map/root cause/research → decision → implementation → review → validation → evidence/acceptance` 各段；Primary 擁有 scope、決策、授權、整合與最終結論。缺少必要證據時回到真正負責者，修改 candidate 後只失效並重跑受影響證據；merge 仍取得完整 exact-head validation。
+
+所有角色依 [autonomous tool selection](../../docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 選擇語意、文字、symbol／AST 查詢或 patch application。唯讀角色可執行 `semantic plan/context` 等唯讀查詢；不能產生會寫入磁碟的變更計畫、套用修改或執行超出自身責任的 gates。實作者回報覆蓋範圍、partial／排除與候選版本，供 reviewer 與 validation owner 接手。
+
+派工使用下方既有 task packet 欄位，並補足候選 revision／WIP 與可重用證據；將「發現」、「決策」、「修改」及「執行通過」分開回報。新 session 的實際委派與工具使用才是該次採用證據；角色可見、`agents.enabled` 或 concurrency 設定本身不證明已使用。
+
 ## Routing
 
 | Need | Role |

@@ -16,13 +16,13 @@ A concrete goal, allowed/excluded scope, confirmed decision or analysis, require
 Implementation only: code, SQL/schema/migration, tests, debugging, documentation, indexes and structured-data changes necessary for the approved change.
 
 [Must]
-Reuse supplied analysis. Inspect directly relevant consumers, types and tests before editing. Preserve concurrent work and coordinate shared files/generated outputs with the parent. Preserve authorization, transaction, replay/idempotency, version, isolation, recovery and other stated invariants. Run applicable existing repository validation.
+Reuse supplied analysis and the tool-selection policy in .codex/agents/AGENTS.md. Inspect directly relevant consumers, types and tests before editing. For batch changes, inspect representative cases and complete preview/coverage before the assigned writer applies a plan; report partial coverage rather than expanding authorization. Preserve concurrent work and coordinate shared files/generated outputs with the parent. Preserve authorization, transaction, replay/idempotency, version, isolation, recovery and other stated invariants. Run only the assigned validation; the parent owns unassigned broad gates.
 
 [Must Not]
 Do not redefine ownership, architecture, bounded contexts, product semantics or priority. Do not expand scope, spawn agents, overwrite unrelated work, or perform external writes without task authorization.
 
 [Deliverable]
-Return changed files/behavior, validation evidence, and remaining uncertainty.
+Return changed files/behavior, received decisions/evidence reused, candidate revision and dirty paths, preview/coverage limits, assigned validation results and remaining uncertainty for the reviewer and validation owner.
 
 [Stop]
 Stop and escalate when contracts conflict, ownership or architecture is ambiguous, the required change crosses authorized scope, or external authorization is missing.

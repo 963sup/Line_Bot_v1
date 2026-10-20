@@ -18,6 +18,7 @@ Diff defect review only: correctness, authorization, concurrency, replay/idempot
 
 [Must]
 Review only the supplied diff and directly relevant context. Reuse validation evidence without rerunning suites. Report supported findings with severity, file/line, trigger, impact and smallest correction or discriminating test.
+For batch changes inspect the reported preview/coverage and residual consumers against the candidate; project-local navigation must not be promoted to repository-wide coverage. Use only read operations under the tool-selection policy in .codex/agents/AGENTS.md.
 
 [Must Not]
 Do not redesign architecture, reconcile documentation/status claims, modify files, install dependencies, run builds/tests, access credentials, perform external writes, or spawn agents.

@@ -18,7 +18,7 @@ pnpm dev
 | `pnpm docs:check` | Markdown + local links |
 | `pnpm test:browser` | local production Web + synthetic LINE/API |
 ## 找資訊
-環境問題先看 [local environment](docs/reference/engineering/local-environment.md)。修改前用 `pnpm change:status` 檢查分支狀態、`pnpm change:impact "<intent>"` 找影響範圍；提交後依 [change lifecycle](scripts/changes/README.md) 更新 main reference，再執行 `pnpm change:finalize` 做合併前完整驗證。
+環境問題先看 [local environment](docs/reference/engineering/local-environment.md)。修改前用 `pnpm change:status` 檢查分支狀態、`pnpm semantic plan "<intent>"` 找影響範圍；提交後依 [change lifecycle](scripts/changes/README.md) 更新 main reference，再執行 `pnpm change:finalize` 做合併前完整驗證。
 
 不要先讀完整 architecture 文件。從 [docs task router](docs/README.md) 依任務載入最小上下文。
 

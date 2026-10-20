@@ -3,6 +3,7 @@
 - `.codex/` owns Codex runtime config, agent profiles, and command-safety policy; never product/business/repository truth.
 - `config.toml` stores machine config; [agents/AGENTS.md](agents/AGENTS.md) owns human-readable model/role routing.
 - Agent profiles may restrict role/tools but do not duplicate repository rules; root + nearest AGENTS still apply.
+- Runtime bootstrap points to the [tool selection and change loop](../docs/reference/engineering/development-workflow.md#autonomous-tool-selection); [role routing](agents/AGENTS.md#autonomous-delegation) owns proactive delegation and handoffs. Configure those active pointers in `developer_instructions`; file presence alone does not activate a workflow.
 - `rules/*.rules` enforces Codex command safety only and never replaces external-platform authorization.
 - Validate runtime config with `tooling:check`; use `tooling:rules` for execpolicy semantics. Static success ≠ current-session reload.
 - For Next.js/shadcn tasks and MCP diagnosis, follow the [agent workflow](../docs/reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow); dependency versions stay in manifests/lockfile.

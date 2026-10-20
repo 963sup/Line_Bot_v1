@@ -31,13 +31,13 @@ pnpm tooling:doctor
 pnpm skills:list
 pnpm code --help
 pnpm change:status
-pnpm change:impact "<intent>"
+pnpm semantic plan "<intent>"
 pnpm change:preflight
 pnpm check
 pnpm change:finalize
 ```
 
-`change:impact` 只是 `pnpm semantic plan` 的 ergonomic alias；semantic impact authority 仍位於 architecture semantic system。正式 Rich Menu 圖片位於 `assets/line/rich-menu/`，不與 scripts 混放。
+Semantic impact authority 位於 architecture semantic system，統一使用 `pnpm semantic plan`。工具與委派選擇見 [development workflow](../docs/reference/engineering/development-workflow.md#autonomous-tool-selection)。正式 Rich Menu 圖片位於 `assets/line/rich-menu/`，不與 scripts 混放。
 
 ## 發布工作流程
 

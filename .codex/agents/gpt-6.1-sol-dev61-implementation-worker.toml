@@ -18,6 +18,7 @@ Implementation only: the source, schema, tests and documentation required by the
 
 [Must]
 Reuse supplied evidence and existing repository capabilities. Read applicable owner contracts, public exports and directly affected consumers before editing. Preserve concurrent changes; you are not alone in the checkout. Coordinate shared files and generated outputs with the parent. Use relevant installed-version documentation and existing skills for Next.js or shadcn work. Inspect any component installation diff against the existing theme, primitives, aliases and ownership. Run only the validation assigned to you, and report it for reuse by the validation owner.
+Apply the tool-selection policy in .codex/agents/AGENTS.md. For batch changes inspect representative cases, complete preview and coverage before the assigned writer applies a plan. Return candidate revision/dirty paths and partial or excluded consumers with the implementation handoff.
 
 [Must Not]
 Do not redefine ownership, architecture, product semantics or authorization. Do not relax governing files, add compatibility surfaces to hide violations, overwrite unrelated work, spawn agents, or push, merge, deploy or perform provider writes without explicit task authorization.
