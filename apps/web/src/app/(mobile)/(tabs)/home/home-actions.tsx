@@ -1,19 +1,7 @@
-"use client";
-
+import { CirclePlus, Search } from "lucide-react";
 import Link from "next/link";
 import MemberAvatar from "../../../../modules/account/member-avatar";
-
-const iconProps = {
-  width: 24,
-  height: 24,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.8,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-};
+import HomeRefresh from "./home-refresh";
 
 export default function HomeActions({ liffId }: { liffId: string }) {
   return (
@@ -24,31 +12,14 @@ export default function HomeActions({ liffId }: { liffId: string }) {
         aria-label="Search repositories"
         title="Search"
       >
-        <svg {...iconProps}>
-          <circle cx="10.5" cy="10.5" r="6.5" />
-          <path d="m15.5 15.5 5 5" />
-        </svg>
+        <Search size={24} strokeWidth={1.8} aria-hidden="true" />
       </Link>
 
-      <button
-        type="button"
-        className="home-heading-action"
-        aria-label="Refresh Home"
-        title="Refresh"
-        onClick={() => window.location.reload()}
-      >
-        <svg {...iconProps}>
-          <path d="M20 7v5h-5" />
-          <path d="M19 12a7 7 0 1 0-1.2 4" />
-        </svg>
-      </button>
+      <HomeRefresh />
 
       <details className="home-create-menu">
         <summary className="home-heading-action" aria-label="Create" title="Create">
-          <svg {...iconProps}>
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 8v8M8 12h8" />
-          </svg>
+          <CirclePlus size={24} strokeWidth={1.8} aria-hidden="true" />
         </summary>
         <div className="home-create-popover">
           <Link href="/repositories/new">

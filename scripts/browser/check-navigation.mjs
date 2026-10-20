@@ -480,6 +480,15 @@ async function run() {
 
     await page.goto(`${base}/home`);
     await expect(page.getByRole("button", { name: "Refresh Home", exact: true })).toBeVisible();
+    await Promise.all([
+      page.waitForEvent("domcontentloaded"),
+      page.getByRole("button", { name: "Refresh Home", exact: true }).click(),
+    ]);
+    await expect(page).toHaveURL(`${base}/home`);
+    await expect(page.getByRole("link", { name: "個人檔案", exact: true })).toHaveAttribute(
+      "href",
+      "/viewer",
+    );
     await expect(page.getByRole("heading", { name: "My Work", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Shortcuts", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recent", exact: true })).toBeVisible();
@@ -668,6 +677,14 @@ async function run() {
     await expect(page.getByRole("link", { name: /Create Issue/ })).toHaveAttribute(
       "href",
       "/repositories?intent=create-issue",
+    );
+
+    await page.locator('summary[aria-label="Create"]').press("Enter");
+    await expect(page.getByRole("link", { name: /Create Issue/ })).not.toBeVisible();
+    await page.locator('summary[aria-label="Create"]').press("Enter");
+    await expect(page.getByRole("link", { name: /New Repository/ })).toHaveAttribute(
+      "href",
+      "/repositories/new",
     );
 
     let releaseSearchRead;
