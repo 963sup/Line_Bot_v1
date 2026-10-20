@@ -20,6 +20,7 @@ import type {
   ProjectManagementStore,
   ProjectManagementView,
 } from "../../../contracts/management.js";
+import type { ProjectLifecycleAction } from "../../../domain/project-lifecycle.js";
 import { type ProjectAccessRole, ProjectError } from "../../../domain.js";
 import {
   executeProjectFieldCommand,
@@ -470,7 +471,7 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
 
   execute(
     identity: ProjectManagementIdentity,
-    command: ProjectManagementCommand,
+    command: Exclude<ProjectManagementCommand, { action: ProjectLifecycleAction }>,
     now: number,
   ): Promise<ProjectManagementReceipt> {
     const fingerprint = projectFingerprint(command);
@@ -615,8 +616,6 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
         "set-repository-import",
         "adopt-project",
         "update-project",
-        "close-project",
-        "reopen-project",
         "delete-project",
         "update-collaborators",
       ]);
@@ -624,7 +623,6 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
 
       if (
         selected.row.closed &&
-        command.action !== "reopen-project" &&
         command.action !== "update-project" &&
         command.action !== "update-collaborators" &&
         command.action !== "delete-project"
@@ -675,20 +673,6 @@ export class PostgresProjectManagementStore implements ProjectManagementStore {
           readmeChanged: readme !== selected.row.readme,
           public: publicValue,
         };
-      } else if (command.action === "close-project") {
-        if (selected.row.closed) throw new ProjectError(409, "Project 已關閉。");
-        next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
-          closed: true,
-          closedAt: now,
-        });
-        data = { closed: true };
-      } else if (command.action === "reopen-project") {
-        if (!selected.row.closed) throw new ProjectError(409, "Project 已開啟。");
-        next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
-          closed: false,
-          closedAt: null,
-        });
-        data = { closed: false };
       } else if (command.action === "delete-project") {
         next = await advanceProject(sql, selected.row, command.expectedVersion, now, {
           title: "[deleted]",

@@ -1,13 +1,18 @@
 import { createProjectManagement } from "@line_bot_v1/project/application/management";
-import { createPostgresProjectManagementStore } from "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store";
+import {
+  createPostgresProjectLifecycle,
+  createPostgresProjectManagementStore,
+} from "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store";
 import { activeLineUser, publicUserById } from "./account.server";
 import { resolveAccountNamespace } from "./namespace.server";
 
 let store: ReturnType<typeof createPostgresProjectManagementStore> | undefined;
+let lifecycle: ReturnType<typeof createPostgresProjectLifecycle> | undefined;
 
 export const projectManagement = createProjectManagement({
   activeUser: activeLineUser,
   store: () => (store ??= createPostgresProjectManagementStore()),
+  lifecycle: () => (lifecycle ??= createPostgresProjectLifecycle()),
   now: () => Date.now(),
 });
 

@@ -9,6 +9,7 @@ import type {
   ProjectManagementStore,
   ProjectManagementView,
 } from "../contracts/management.js";
+import type { ProjectLifecyclePersistence } from "../contracts/output/project-lifecycle.js";
 import type {
   ProjectCollaboratorRole,
   ProjectFieldDataType,
@@ -18,6 +19,7 @@ import type {
   ProjectViewLayout,
 } from "../domain.js";
 import { ProjectError } from "../domain.js";
+import { executeProjectLifecycle } from "./use-cases/project-lifecycle.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -1302,6 +1304,7 @@ export function parseProjectManagementReceipt(raw: unknown): ProjectManagementRe
 export function createProjectManagement(deps: {
   activeUser(subject: string): Promise<{ id: string }>;
   store(): ProjectManagementStore;
+  lifecycle(): ProjectLifecyclePersistence;
   now(): number;
 }) {
   async function identity(subject: string) {
@@ -1327,7 +1330,14 @@ export function createProjectManagement(deps: {
       }
       return deps.store().viewByNumber(await identity(subject), owner, Number(number));
     },
-    command: async (subject: string, raw: unknown) =>
-      deps.store().execute(await identity(subject), parseProjectManagementCommand(raw), deps.now()),
+    command: async (subject: string, raw: unknown) => {
+      const store = deps.store();
+      const actor = await identity(subject);
+      const command = parseProjectManagementCommand(raw);
+      const now = deps.now();
+      return command.action === "close-project" || command.action === "reopen-project"
+        ? executeProjectLifecycle(deps.lifecycle(), actor, command, now)
+        : store.execute(actor, command, now);
+    },
   };
 }
