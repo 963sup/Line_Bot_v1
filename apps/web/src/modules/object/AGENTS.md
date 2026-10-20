@@ -17,3 +17,8 @@ The collection consumes the Object-owned per-level tree projection. Disclosure c
 row plus buttons create independently classified INCLUDES children without quantity through the existing
 pending-command lifecycle. Classification management and root creation are collapsed disclosures.
 Archived ancestor context never changes structural parenthood. Session loss unmounts all private branches.
+
+Within one mounted collection, up to 32 recently read branch pages and their observed versions may
+survive disclosure collapse. Cache scope includes actor, Repository and archive filter. Refresh and
+successful mutations invalidate snapshots through the existing refresh generation; collapsed branches
+reload only when reopened. Identity/session and page lifecycle invalidation still clear private state.
