@@ -1191,6 +1191,65 @@ async function run() {
     await page.unroute("**/api/repositories/starred");
     await page.unroute("**/api/repositories/lists");
     await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.goto(`${base}/stars`);
+    const freshStarredResult = page
+      .locator(".starred-repositories")
+      .getByRole("link", { name: "acme/Operations" });
+    await expect(freshStarredResult).toBeVisible();
+    let releaseLateStarredRead;
+    const blockedLateStarredRead = new Promise((resolve) => {
+      releaseLateStarredRead = resolve;
+    });
+    await page.route("**/api/repositories/starred", async (route) => {
+      await blockedLateStarredRead;
+      await route.fulfill({ json: { items: [longStarredRepository] } });
+    });
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect(freshStarredResult).toHaveCount(0);
+    const refreshingStarred = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === "/api/repositories/starred",
+    );
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await refreshingStarred;
+    const starredStatus = page.locator(".starred-repositories").getByRole("status");
+    await expect(starredStatus).toBeVisible();
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    const lateStarredResponse = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/repositories/starred",
+    );
+    releaseLateStarredRead();
+    await (await lateStarredResponse).finished();
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    await expect(page.locator(".starred-repositories").getByRole("link")).toHaveCount(0);
+    await expect(starredStatus).toHaveCount(0);
+    await page.unroute("**/api/repositories/starred");
+    const resumedStarred = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === "/api/repositories/starred",
+    );
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await resumedStarred;
+    await expect(freshStarredResult).toBeVisible();
+    if (artifactDir) {
+      await page.screenshot({
+        path: path.join(artifactDir, "starred-resumed-after-late-response.png"),
+        fullPage: true,
+      });
+    }
     assert.equal(
       posts.length,
       rowAcceptancePosts,

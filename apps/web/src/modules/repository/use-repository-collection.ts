@@ -1,12 +1,21 @@
 "use client";
 
-import type { RepositorySummary } from "@line_bot_v1/repository/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
-import { errorMessage, isRecord, isRepositorySummary } from "./response-validation";
+import {
+  errorMessage,
+  isRecord,
+  isRepositorySummary,
+  isStarredRepository,
+} from "./response-validation";
 
-export function useRepositoryCollection(liffId: string) {
-  const [items, setItems] = useState<RepositorySummary[] | null>(null);
+function useCollection<T>(
+  liffId: string,
+  path: string,
+  isItem: (value: unknown) => value is T,
+  unavailable: string,
+) {
+  const [items, setItems] = useState<T[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const generation = useRef(0);
@@ -25,7 +34,7 @@ export function useRepositoryCollection(liffId: string) {
     try {
       const token = await liffClient.ensureSession(liffId);
       if (!token) throw new Error("請完成 LINE 登入後重試。");
-      const response = await fetch("/api/repositories", {
+      const response = await fetch(path, {
         headers: { "X-App-Session-Generation": token },
         cache: "no-store",
       });
@@ -34,20 +43,20 @@ export function useRepositoryCollection(liffId: string) {
         !response.ok ||
         !isRecord(value) ||
         !Array.isArray(value.items) ||
-        !value.items.every(isRepositorySummary)
+        !value.items.every(isItem)
       ) {
-        throw new Error(errorMessage(value, "Repository 列表暫不可用。"));
+        throw new Error(errorMessage(value, unavailable));
       }
       if (ticket === generation.current) setItems(value.items);
     } catch (cause) {
       if (ticket === generation.current) {
         setItems(null);
-        setError(cause instanceof Error ? cause.message : "Repository 列表暫不可用。");
+        setError(cause instanceof Error ? cause.message : unavailable);
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
     }
-  }, [liffId]);
+  }, [isItem, liffId, path, unavailable]);
 
   useEffect(() => {
     const visibility = () => {
@@ -62,4 +71,22 @@ export function useRepositoryCollection(liffId: string) {
   }, [clear, load]);
 
   return { items, busy, error, load, clear };
+}
+
+export function useRepositoryCollection(liffId: string) {
+  return useCollection(
+    liffId,
+    "/api/repositories",
+    isRepositorySummary,
+    "Repository 列表暫不可用。",
+  );
+}
+
+export function useStarredRepositoryCollection(liffId: string) {
+  return useCollection(
+    liffId,
+    "/api/repositories/starred",
+    isStarredRepository,
+    "收藏的儲存庫暫不可用。",
+  );
 }
