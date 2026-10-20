@@ -670,15 +670,205 @@ async function run() {
       "/repositories?intent=create-issue",
     );
 
+    let releaseSearchRead;
+    const blockedSearchRead = new Promise((resolve) => {
+      releaseSearchRead = resolve;
+    });
+    let searchReply = async (route) => {
+      await blockedSearchRead;
+      await route.fallback();
+    };
+    await page.route("**/api/repositories", (route) =>
+      searchReply ? searchReply(route) : route.fallback(),
+    );
+
     await page.getByRole("link", { name: "Search repositories", exact: true }).click();
     await expect(page).toHaveURL(`${base}/search`);
-    await page
-      .getByRole("searchbox", { name: "Search repositories", exact: true })
-      .fill("Operations");
-    await expect(page.getByRole("link", { name: /acme\/Operations/ })).toHaveAttribute(
-      "href",
-      "/acme/Operations",
+    const searchStatus = page.getByRole("status").filter({ hasText: "正在讀取 Repository…" });
+    await expect(searchStatus).toBeVisible();
+    releaseSearchRead();
+    searchReply = undefined;
+
+    const searchbox = page.getByRole("searchbox", {
+      name: "Search repositories",
+      exact: true,
+    });
+    const searchGroup = page.locator('[data-slot="input-group"]');
+    const searchPrompt = page.getByRole("heading", { name: "Find your stuff.", level: 2 });
+    const searchEmpty = page.locator('[data-slot="empty"]');
+    const searchResult = page.getByRole("link", { name: /acme\/Operations/ });
+    await expect(searchPrompt).toBeVisible();
+    await expect(searchbox).toBeFocused();
+    await expect(searchbox).toHaveAttribute("type", "search");
+    await expect(searchbox).toHaveAttribute("autocapitalize", "none");
+    await expect(searchbox).toHaveAttribute("autocorrect", "off");
+    await expect(
+      searchGroup.getByRole("searchbox", { name: "Search repositories", exact: true }),
+    ).toBeVisible();
+    await expect(searchGroup).toHaveCSS("height", "44px");
+    await expect(
+      page.getByText("搜尋你目前有權存取的 Repositories。", { exact: true }),
+    ).toBeVisible();
+
+    const searchReads = reads.filter((value) => value === "/api/repositories").length;
+    await searchbox.fill("  oPeRaTiOnS  ");
+    await expect(searchResult).toHaveAttribute("href", "/acme/Operations");
+    await expect(searchResult).toContainText("admin");
+    await searchbox.press("Enter");
+    await expect(page).toHaveURL(`${base}/search`);
+    await searchbox.fill("工程計畫");
+    await expect(
+      page.getByText("找不到符合「工程計畫」的 Repository。", { exact: true }),
+    ).toBeVisible();
+    await expect(searchbox).toHaveValue("工程計畫");
+    await searchbox.fill("");
+    await expect(searchPrompt).toBeVisible();
+    assert.equal(reads.filter((value) => value === "/api/repositories").length, searchReads);
+
+    await searchbox.fill("Operations");
+    await searchbox.press("Tab");
+    await expect(searchResult).toBeFocused();
+    await searchResult.press("Enter");
+    await expect(page).toHaveURL(`${base}/acme/Operations`);
+    await page.goBack();
+    await expect(page).toHaveURL(`${base}/search`);
+    await expect(searchbox).toBeVisible();
+    await page.goto(`${base}/search`);
+    await expect(searchPrompt).toBeVisible();
+    await page.reload();
+    await expect(searchPrompt).toBeVisible();
+    await expect(searchbox).toHaveValue("");
+
+    searchReply = (route) => route.fulfill({ status: 503, json: { error: "搜尋來源暫不可用。" } });
+    await page.goto(`${base}/search`);
+    await expect(page.getByRole("alert").filter({ hasText: "搜尋來源暫不可用。" })).toHaveText(
+      "搜尋來源暫不可用。",
     );
+    await expect(searchPrompt).toHaveCount(0);
+    await expect(searchResult).toHaveCount(0);
+    await expect(page.getByText(/找不到符合/)).toHaveCount(0);
+
+    const longRepository = {
+      id: "long-repository",
+      ownerLogin: "long-owner-abcdefghijklmnopqrst",
+      name: `engineering-${"long-name-".repeat(7)}plan`,
+      permissions: ["read"],
+    };
+    searchReply = (route) => route.fulfill({ json: { items: [longRepository] } });
+    await page.reload();
+    await expect(searchPrompt).toBeVisible();
+    const longResult = page.getByRole("link", {
+      name: new RegExp(`${longRepository.ownerLogin}/${longRepository.name}`),
+    });
+    for (const width of [320, 390, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      await searchbox.fill("");
+      await expect(searchPrompt).toBeVisible();
+      const emptyHeight = await searchEmpty.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      assert.ok(emptyHeight >= 844 * 0.52 - 1, `search empty state keeps 52vh at ${width}px`);
+      await expect(searchGroup).toHaveCSS("height", "44px");
+      if (artifactDir) {
+        await page.screenshot({
+          path: path.join(artifactDir, `search-empty-${width}.png`),
+          fullPage: true,
+        });
+      }
+
+      await searchbox.fill("engineering");
+      await expect(longResult).toBeVisible();
+      await expect(longResult).toHaveAttribute(
+        "href",
+        `/${longRepository.ownerLogin}/${longRepository.name}`,
+      );
+      await searchbox.press("Tab");
+      await expect(longResult).toBeFocused();
+      await longResult.press("Shift+Tab");
+      await expect(searchbox).toBeFocused();
+      assert.equal(await searchbox.evaluate((element) => element.matches(":focus-visible")), true);
+      const layout = await page.evaluate(() => ({
+        viewport: window.innerWidth,
+        document: document.documentElement.scrollWidth,
+        body: document.body.scrollWidth,
+      }));
+      assert.ok(
+        layout.document <= layout.viewport && layout.body <= layout.viewport,
+        `search results overflow at ${width}px: ${JSON.stringify(layout)}`,
+      );
+      if (artifactDir) {
+        await page.screenshot({
+          path: path.join(artifactDir, `search-results-${width}.png`),
+          fullPage: true,
+        });
+      }
+    }
+
+    let releaseLateSearchRead;
+    const blockedLateSearchRead = new Promise((resolve) => {
+      releaseLateSearchRead = resolve;
+    });
+    searchReply = async (route) => {
+      await blockedLateSearchRead;
+      await route.fulfill({ json: { items: [longRepository] } });
+    };
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect(longResult).toHaveCount(0);
+    const refreshingSearch = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === "/api/repositories",
+    );
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await refreshingSearch;
+    await expect(searchStatus).toBeVisible();
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    const staleSearchResponse = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/repositories",
+    );
+    releaseLateSearchRead();
+    const staleResponse = await staleSearchResponse;
+    await staleResponse.finished();
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }),
+    );
+    await expect(longResult).toHaveCount(0);
+    await expect(searchStatus).toHaveCount(0);
+
+    searchReply = undefined;
+    await page.reload();
+    await expect(searchPrompt).toBeVisible();
+    await searchbox.fill("Operations");
+    await expect(searchResult).toBeVisible();
+    const sessionReload = page.waitForEvent("load");
+    await page.evaluate(() => {
+      const channel = new BroadcastChannel("line_bot_v1:session");
+      channel.postMessage({ type: "session-changed" });
+      channel.close();
+    });
+    await sessionReload;
+    const sessionChangedError = "登入狀態已在其他分頁更新，請選擇「使用 LINE 重新登入」。";
+    const sessionChangedAlert = page.getByRole("alert").filter({ hasText: sessionChangedError });
+    await expect(sessionChangedAlert).toHaveText(sessionChangedError);
+    await expect(searchResult).toHaveCount(0);
+    await expect(searchbox).toBeVisible();
+    await expect(searchbox).toHaveValue("");
+    await searchbox.fill("Operations");
+    await expect(searchResult).toHaveCount(0);
+    await expect(sessionChangedAlert).toHaveText(sessionChangedError);
+    await page.evaluate(() => sessionStorage.removeItem("line_bot_v1:session-blocked"));
+    await page.unroute("**/api/repositories");
+    await page.setViewportSize({ width: 390, height: 844 });
 
     await page.goto(`${base}/explore`);
     await page.getByRole("heading", { name: "Explore", exact: true }).waitFor();

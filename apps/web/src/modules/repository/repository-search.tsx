@@ -1,8 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { SearchIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { Empty, EmptyDescription, EmptyHeader } from "../../shared/ui/empty";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "../../shared/ui/input-group";
+import { ActionRow } from "../../shared/ui/page-layout";
 import { repositoryPath } from "./resource-navigation";
 import { useRepositoryCollection } from "./use-repository-collection";
 
@@ -21,30 +24,35 @@ export default function RepositorySearch({ liffId }: { liffId: string }) {
   );
 
   return (
-    <div className="repository-search">
+    <>
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
-      <label className="repository-search-field">
-        <span aria-hidden="true">⌕</span>
-        <span className="sr-only">Search repositories</span>
-        <input
+      <InputGroup className="mb-6 h-11">
+        <InputGroupInput
           autoFocus
           type="search"
+          aria-label="Search repositories"
+          className="h-full"
           value={query}
           placeholder="Search repositories"
           autoCapitalize="none"
           autoCorrect="off"
           onChange={(event) => setQuery(event.target.value)}
         />
-      </label>
+        <InputGroupAddon>
+          <SearchIcon aria-hidden="true" />
+        </InputGroupAddon>
+      </InputGroup>
 
       {busy && <p role="status">正在讀取 Repository…</p>}
       {error && <p role="alert">{error}</p>}
 
       {!busy && !error && !needle && (
-        <div className="repository-search-empty">
-          <h2>Find your stuff.</h2>
-          <p>搜尋你目前有權存取的 Repositories。</p>
-        </div>
+        <Empty className="min-h-[52vh]">
+          <EmptyHeader>
+            <h2 className="m-0 text-[28px]">Find your stuff.</h2>
+            <EmptyDescription>搜尋你目前有權存取的 Repositories。</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       {!busy && !error && needle && results.length === 0 && (
@@ -54,24 +62,15 @@ export default function RepositorySearch({ liffId }: { liffId: string }) {
       {results.length > 0 && (
         <div className="menu-group" aria-label="Repository search results">
           {results.map((item) => (
-            <Link
-              className="action-row"
+            <ActionRow
               key={item.id}
               href={repositoryPath(item.ownerLogin, item.name)}
-            >
-              <span className="action-row-copy">
-                <strong>
-                  {item.ownerLogin}/{item.name}
-                </strong>
-                <small>{item.permissions.join(", ")}</small>
-              </span>
-              <span className="action-chevron" aria-hidden="true">
-                ›
-              </span>
-            </Link>
+              title={`${item.ownerLogin}/${item.name}`}
+              description={item.permissions.join(", ")}
+            />
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

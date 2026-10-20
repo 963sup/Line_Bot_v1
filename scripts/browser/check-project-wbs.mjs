@@ -20,9 +20,10 @@ const { createSql } = await resolvedImport("@line_bot_v1/platform/postgres");
 const { createProjectManagement } = await resolvedImport(
   "@line_bot_v1/project/application/management",
 );
-const { createPostgresProjectManagementStore } = await resolvedImport(
-  "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store",
-);
+const { createPostgresProjectLifecycle, createPostgresProjectManagementStore } =
+  await resolvedImport(
+    "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store",
+  );
 const { createPostgresProjectContentScope } = await resolvedImport(
   "@line_bot_v1/project/composition/bootstrap/project-content-scope",
 );
@@ -97,6 +98,7 @@ await fixture.pg.query(
 const projectService = createProjectManagement({
   activeUser: async (subject) => ({ id: subject }),
   store: () => createPostgresProjectManagementStore(fixture.db),
+  lifecycle: () => createPostgresProjectLifecycle(fixture.db),
   now: Date.now,
 });
 const created = await projectService.command("owner", {

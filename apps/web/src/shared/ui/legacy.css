@@ -2462,46 +2462,6 @@ summary:focus-visible {
   background: var(--surface-muted);
 }
 
-.repository-search-field {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 24px;
-  padding: 0 2px 8px;
-  border-bottom: 1px solid var(--line);
-  color: var(--green-strong);
-}
-
-.app-shell .repository-search-field input {
-  margin: 0;
-  padding: 10px 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ink);
-  outline: none;
-}
-
-.repository-search-empty {
-  display: grid;
-  min-height: 52vh;
-  place-content: center;
-  padding: 32px 20px;
-  text-align: center;
-}
-
-.repository-search-empty h2 {
-  margin: 0;
-  font-size: 28px;
-}
-
-.repository-search-empty p {
-  max-width: 360px;
-  margin: 14px auto 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
 @media (max-width: 430px) {
   .home-heading-actions {
     gap: 4px;
