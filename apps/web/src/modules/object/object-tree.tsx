@@ -1,6 +1,6 @@
 "use client";
 
-import type { ObjectTreeDto, StructureNodeDto } from "@line_bot_v1/object/contracts/dto/objects";
+import type { ObjectTreeDto, StructureNodeDto } from "@line_bot_v1/resources/contracts/dto/objects";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { mergeEngineeringObservations, objectTree } from "./engineering-response";

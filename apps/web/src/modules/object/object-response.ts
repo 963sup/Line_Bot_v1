@@ -1,4 +1,3 @@
-import type { RelationshipKind } from "@line_bot_v1/object/contracts/dto/objects";
 import {
   booleanValue,
   literalValue,
@@ -7,6 +6,7 @@ import {
   record,
   stringValue,
 } from "@line_bot_v1/platform/validation";
+import type { RelationshipKind } from "@line_bot_v1/resources/contracts/dto/objects";
 import { quantityView } from "./engineering-response";
 
 export function objectScope(value: unknown) {

@@ -4,7 +4,7 @@
 
 ## Target focus
 
-目前唯一已選定、仍需要 target-level 設計的主鏈是：
+已選定、仍需要 target-level 設計的人力／薪資主鏈是：
 
 ```text
 User + Organization
@@ -42,6 +42,18 @@ Workforce/Employment、Attendance Employment cutover、versioned Payroll input/r
 | Payroll | versioned input、deterministic calculation、PayrollRun、PayStatement、approval/finalize/publication/correction | bank payment、Accounting posting、上游事實 writer |
 
 其餘 owner 只有在出現第二個真實 consumer、implementation、variation、external technology boundary、policy/transaction/recovery/isolation responsibility 時才新增 abstraction。
+
+## Contract / Execution activation question
+
+使用者提出新增 Contract 與 Execution 作為下一階段方向。它們目前不是 runtime Owner、
+workspace、public export 或資料表；不得把本提案當成已 promotion 的 architecture authority。
+Resources 已承接既有 Object 的資源／工程能力，Content 只提供共用文字值，現有薪資責任仍由
+Payroll 持有。此調整不把計畫數量、Issue 完成或 Actions 執行解讀成已驗收實績或應付薪資。
+
+啟用前需先確定 Contract 指哪一種協議、誰可使哪個條款版本生效／終止，以及 Execution
+指履約實績還是薪資流程。第一個真實用例必須明定 scope、actor authority、固定版本來源、
+更正／撤銷與 replay／transaction boundary，再由 canonical semantic/module/data models
+同步 promotion 與 provider/consumer 契約。未確定前不以空 package 或 GitHub FPT root 冒充實作。
 
 ## Relationship rules
 

@@ -87,7 +87,7 @@
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
     "@line_bot_v1/numbering": "workspace:*",
-    "@line_bot_v1/object": "workspace:*"
+    "@line_bot_v1/resources": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

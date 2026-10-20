@@ -47,6 +47,33 @@ test("Wiki page transitions preserve identity and restore creates a new revision
   assert.throws(() => reviseWikiPage(first, 0, { action: "archive" }, context), WikiError);
 });
 
+test("Wiki normalizes titles, preserves bodies and retains its validation error contract", () => {
+  const context = {
+    id: randomUUID(),
+    pageId: randomUUID(),
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 1,
+  };
+  const body = "  original\r\nmarkdown  ";
+  const created = reviseWikiPage(null, 0, { action: "create", title: "  Guide  ", body }, context);
+  assert.equal(created.title, "Guide");
+  assert.equal(created.body, body);
+
+  for (const edit of [
+    { action: "rename" as const, title: "   " },
+    { action: "edit" as const, title: "Guide", body: "x".repeat(262_145) },
+  ]) {
+    assert.throws(
+      () => reviseWikiPage(created, 1, edit, { ...context, id: randomUUID() }),
+      (error) =>
+        error instanceof WikiError &&
+        error.status === 400 &&
+        error.message === "Invalid Wiki title or content size.",
+    );
+  }
+});
+
 test("Wiki persistence keeps scope, replay, atomic head and immutable historical content", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());

@@ -1,3 +1,4 @@
+import { normalizeContent } from "@line_bot_v1/content/text";
 import type { Quantity } from "./engineering.js";
 import { ObjectError } from "./error.js";
 
@@ -33,17 +34,14 @@ export type ObjectEdit =
   | Readonly<{ action: "set-quantity"; quantity: Quantity | null }>
   | Readonly<{ action: "restore"; revisionId: string }>;
 
-function normalizeName(value: string) {
-  const name = value.trim();
-  if (!name || name.length > 200)
-    throw new ObjectError(400, "Object 名稱需為 1 到 200 字。", "INVALID_INPUT");
-  return name;
-}
-
-function validateContent(value: string) {
-  if (value.length > 262_144)
+function normalizeObjectContent(name: string, content: string) {
+  const normalized = normalizeContent({ title: name, body: content });
+  if (!normalized.ok) {
+    if (normalized.field === "title")
+      throw new ObjectError(400, "Object 名稱需為 1 到 200 字。", "INVALID_INPUT");
     throw new ObjectError(400, "Object 內容不可超過 262144 字。", "INVALID_INPUT");
-  return value;
+  }
+  return { name: normalized.value.title, content: normalized.value.body };
 }
 
 export function reviseObject(
@@ -76,14 +74,12 @@ export function reviseObject(
   let archived = current?.archived ?? false;
   let quantity = current?.quantity ?? null;
   if (edit.action === "create") {
-    name = normalizeName(edit.name);
-    content = validateContent(edit.content);
+    ({ name, content } = normalizeObjectContent(edit.name, edit.content));
     typeId = edit.typeId;
     typeName = context.typeName;
     quantity = edit.quantity ?? null;
   } else if (edit.action === "edit") {
-    name = normalizeName(edit.name);
-    content = validateContent(edit.content);
+    ({ name, content } = normalizeObjectContent(edit.name, edit.content));
   } else if (edit.action === "reclassify") {
     typeId = edit.typeId;
     typeName = context.typeName;

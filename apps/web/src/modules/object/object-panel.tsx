@@ -1,6 +1,6 @@
 "use client";
 
-import type { ObjectTreeDto } from "@line_bot_v1/object/contracts/dto/objects";
+import type { ObjectTreeDto } from "@line_bot_v1/resources/contracts/dto/objects";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";

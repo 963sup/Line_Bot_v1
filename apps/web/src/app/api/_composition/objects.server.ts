@@ -1,7 +1,7 @@
-import { createObjects } from "@line_bot_v1/object/application/use-cases/objects";
-import { createPostgresObjectDependencies } from "@line_bot_v1/object/composition/bootstrap/objects";
 import { businessDatabase } from "@line_bot_v1/platform/postgres";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
+import { createObjects } from "@line_bot_v1/resources/application/use-cases/objects";
+import { createPostgresObjectDependencies } from "@line_bot_v1/resources/composition/bootstrap/objects";
 import type { ObjectWebRuntime } from "../../../modules/object/object-http.server";
 import { activeLineUser } from "./account.server";
 

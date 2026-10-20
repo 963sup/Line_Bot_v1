@@ -27,6 +27,12 @@ Payroll
 Repository
 → work/content container authority
 
+Resources
+→ Repository-scoped resource identity, content revisions, classification and engineering graph
+
+Content
+→ shared bounded title/body values; no aggregate or persisted data authority
+
 Project
 → planning authority
    └─ WBS = Project-owned decomposition

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { createPostgresObjectReferenceReader } from "@line_bot_v1/object/composition/bootstrap/references";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { record, stringValue } from "@line_bot_v1/platform/validation";
+import { createPostgresObjectReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/references";
 import { PostgresIssueCollaborationStore } from "../src/adapters/postgres/collaboration.js";
 import { PostgresIssueTypeStore } from "../src/adapters/postgres/issue-types.js";
 
