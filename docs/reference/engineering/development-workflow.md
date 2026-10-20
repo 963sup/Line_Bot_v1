@@ -18,6 +18,8 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 
 每個任務以一個可驗收結果為單位，從 repository root 工作；依任務使用必要工具，不為完成清單而讀全庫或執行無關程序。
 
+開始時先選擇下方適用的工具，並依 [autonomous delegation](../../../.codex/agents/AGENTS.md#autonomous-delegation) 決定 Primary 直接處理或委派；已有任務授權就直接執行。只在有助於確認 scope、未知數或責任時，以簡短進度說明選擇，不新增逐次核准或任務紀錄。
+
 1. **目標與不變條件**：確認可觀察結果、允許／排除範圍、Owner、consumer 與完成標準，保留現有 WIP。
 2. **Owner／契約**：已知 Owner 直接讀其契約、public exports、source/tests 與 nearest AGENTS；未知或跨語意時用 `pnpm semantic context "<intent>"` / `plan`，照 required selectors 讀 authority。歧義先定位，不當成修改授權。
 3. **實作／consumers**：文字、SQL、JSON 與文件用 `rg`；符號定義／引用用 `pnpm code definition` / `references`；相同語法結構用 `code search`。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
@@ -31,6 +33,42 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 工具介面與例子見 [source operations](../../../scripts/code/README.md)。`pnpm code` 只查詢／產生計畫，來源寫入仍由 [patch application](../../../scripts/changes/README.md) 擁有；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
 
 AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結果；三者不互相冒充證據。最終回報 changed behavior/Owner、驗證命令與 SHA、結果及未驗證範圍。開新 Codex 工作階段後，用簡短任務確認能讀到 root AGENTS、本節與工具入口；既有 session 中修改文件或靜態檢查成功不證明新 session 載入。指令探索契約見 [Codex AGENTS](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
+
+## Autonomous tool selection
+
+目標是用最小必要成本取得足以修改與驗收的證據。Primary 與子代理按目前要回答的問題主動選用下表；工具結果不擴大任務授權，唯讀角色也不能產生會寫入磁碟的計畫。
+
+| 要回答的問題／操作 | 主動使用 | 完成條件與限制 |
+| --- | --- | --- |
+| Owner 未知、語意歧義或跨 Owner 影響 | `pnpm semantic plan "<intent>"`；需要載入具體 authority 時用 `context` | 讀取選中的真實契約、來源與 revision；已知 Owner 可直接讀契約，不要求先跑兩個命令。 |
+| 已知路徑、精確文字、SQL／JSON／文件引用 | `rg`／`rg --files` 與 targeted reads | 確認搜尋範圍、排除與實際 consumers。文字命中不證明是同一個 TS symbol。 |
+| TS／JS symbol 的定義、引用與私有改名 | `pnpm code definition`／`references`／`rename` | 使用現有 TypeScript LanguageService；先查引用再產生改名預覽。project-local、partial、unsupported、公開／跨 project 邊界如實回報，沿 public exports 補查 consumers。 |
+| 重複的 JS／TS 語法結構查改 | `pnpm code search`／`rewrite` | 使用 pinned ast-grep；先驗證代表性命中與反例，再檢查全部命中、排除與完整計畫。 |
+| 套用已檢查的批次計畫 | `pnpm patch:apply <plan.json>`，再於授權內加 `--apply` | 一個 writer；保留 hash／exact-before 檢查，修改後重查漏改並檢視 diff。一般小修改可直接編輯。 |
+
+工具失敗或 coverage 有缺口時，先讀錯誤與實際契約，採目前允許且能保留證據的操作；不能為完成流程擴大 permission、偽造完整覆蓋或直接繞過 plan preflight。介面細節由各工具 README 擁有。
+
+### Command consolidation
+
+| 項目 | 決定與原因 |
+| --- | --- |
+| `change:impact` | 移除純轉呼叫入口，統一為 `pnpm semantic plan`；不保留 compatibility alias。 |
+| `change:plan`、`semantic:*` package aliases | 維持既有退休／禁止規則。編輯器 task label 不屬 package alias。 |
+| `repo:context`／`scripts/context/` | 尚未實作；目前重用 semantic context、`rg` 與 code 查詢，不新增重複索引入口。 |
+| ts-morph | Repository 符號工具直接使用 TypeScript LanguageService。shadcn 的 transitive dependency 由其 lockfile 擁有，不因本流程刪除。 |
+| `rg`、小範圍直接編輯、`change:status`／`preflight`／`finalize` | 保留各自的文字搜尋、編輯與 Git lifecycle 責任。四項查改能力不取代 validation、architecture/security guards 或 runtime 驗收。 |
+
+### Adoption evidence
+
+標準化的共同輸入是目標、不變條件、Owner／consumer、允許範圍及驗收方式；交接還需指明 candidate revision／WIP、已取得證據、剩餘未知數與 validation owner。完成時回報實際行為、命令結果與 revision、coverage 限制及尚未驗證範圍。使用目前 turn 與忽略的 `.artifacts/` 交換暫存計畫，不建立永久任務 database。
+
+| 證據 | 可以證明 |
+| --- | --- |
+| `tooling:check`、`docs:check`、CLI regression tests、CI | canonical command／instruction wiring 與可執行前置條件、結果契約。 |
+| 新 session 的指引讀回 | 該次 session 能讀取目前指引；不代表已主動選工具或委派。 |
+| 未提示工具／角色名稱的新 session 任務與實際工具紀錄 | 該次案例是否自行選對工具、保持單一 writer、按需要委派及如實回報 evidence。 |
+
+修改接線後至少用代表案例觀察行為：單檔文件修正應保持簡單；Owner 未知且有獨立查證面時應定位並適當委派；批次符號／結構變更應產生預覽、經 patch preflight 並重查；公開或跨 project 結果不能被宣稱為完整改名。案例不把工具名稱寫進 prompt，不以重述流程當作實際採用證據。這些是受目前 host、工具與 live instructions 限制的行為驗收，不保證所有未來 session。
 
 ## Validation
 

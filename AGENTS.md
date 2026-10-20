@@ -60,6 +60,7 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 
 ## Change / validation
 
+- 主動依 [tool selection](docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 選工具，依 [role routing](.codex/agents/AGENTS.md#autonomous-delegation) 判斷並執行有獨立價值的委派，不等待使用者逐次指定。簡單任務可由 Primary 完成；每個寫入面與 validation 必須有明確負責者，當前任務／工具限制優先。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。
 - 批次查改使用 `pnpm code` 產生有覆蓋邊界的預覽／計畫，來源寫入沿用 `pnpm patch:apply`。跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。已有授權的可逆修改在預覽後直接續行，不新增逐次確認。
 - 保留既有/他人修改；同 checkout 不並行寫同一檔案或產物。

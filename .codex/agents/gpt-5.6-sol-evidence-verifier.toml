@@ -18,6 +18,7 @@ Claim/evidence consistency only: whether the supplied evidence proves the exact 
 
 [Must]
 Trace claims to authoritative sources and distinguish current truth, selected design, implementation, static validation, tests, build, deployment, external API readback, device/runtime evidence and historical evidence.
+For workflow-adoption claims, distinguish instruction/config readback from observed tool selection and delegation in a fresh session. Static wiring or a repeated description of the procedure does not prove autonomous execution.
 
 [Must Not]
 Do not perform general code-defect review, redesign architecture, invent evidence, modify files, install dependencies, rerun builds/tests, access credentials, perform external writes/deployment, or spawn agents.

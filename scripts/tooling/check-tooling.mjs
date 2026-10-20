@@ -49,6 +49,30 @@ const repositoryTextPatterns = [
   "supabase/**/*.{md,sql,toml}",
 ];
 const table = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const codexInstructionReferences = [
+  { label: "root AGENTS.md", path: "AGENTS.md" },
+  {
+    label: ".codex/agents/AGENTS.md",
+    path: ".codex/agents/AGENTS.md",
+    sections: ["Autonomous delegation"],
+  },
+  {
+    label: "docs/reference/engineering/development-workflow.md",
+    path: "docs/reference/engineering/development-workflow.md",
+    sections: ["Default repository change loop", "Autonomous tool selection"],
+  },
+];
+function markdownSectionStatus(source, heading) {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`^##\\s+${escapedHeading}\\s*$`, "m").exec(source);
+  if (!match) return "missing";
+  const remainder = source.slice(match.index + match[0].length);
+  const nextSection = remainder.search(/^#{1,2}\s+/m);
+  const body = nextSection < 0 ? remainder : remainder.slice(0, nextSection);
+  return body.split("\n").some((line) => line.trim() && !/^#{1,6}\s+/.test(line.trim()))
+    ? "valid"
+    : "empty";
+}
 const retiredProjectIdentities = [
   { label: "workspace namespace", value: `${["@line", "work"].join("-")}/` },
   { label: "system id", value: ["line", "work", "assistant"].join("-") },
@@ -183,8 +207,8 @@ export function validate(root) {
       errors.push("package.json: patch:apply must own deterministic repository patch execution");
     if (manifest.scripts?.["change:status"] !== "node scripts/changes/status.mjs")
       errors.push("package.json: change:status must own read-only local change state");
-    if (manifest.scripts?.["change:impact"] !== "pnpm semantic plan")
-      errors.push("package.json: change:impact must delegate to the semantic planning authority");
+    if (Object.hasOwn(manifest.scripts ?? {}, "change:impact"))
+      errors.push("package.json: change:impact is retired; use pnpm semantic plan");
     if (manifest.scripts?.["change:preflight"] !== "node scripts/changes/preflight.mjs")
       errors.push("package.json: change:preflight must own local merge-readiness checks");
     if (manifest.scripts?.["change:finalize"] !== "node scripts/changes/finalize.mjs")
@@ -1088,8 +1112,23 @@ export function validate(root) {
   } catch (error) {
     errors.push(`version metadata: ${error.message}`);
   }
+  for (const reference of codexInstructionReferences) {
+    const file = resolve(root, reference.path);
+    if (!existsSync(file)) {
+      errors.push(`${reference.path}: referenced canonical Codex instruction is required`);
+      continue;
+    }
+    const source = read(file);
+    for (const heading of reference.sections ?? []) {
+      const status = markdownSectionStatus(source, heading);
+      if (status === "missing") errors.push(`${reference.path}: ## ${heading} section is required`);
+      if (status === "empty")
+        errors.push(`${reference.path}: ## ${heading} section must not be empty`);
+    }
+  }
   const agents = new Set();
-  for (const file of [resolve(root, ".codex/config.toml"), ...files(".codex/agents/*.toml")]) {
+  const codexConfigFile = resolve(root, ".codex/config.toml");
+  for (const file of [codexConfigFile, ...files(".codex/agents/*.toml")]) {
     try {
       // Preserve TOML integer types, rejecting floats including 1.0.
       const data = parse(read(file), { integersAsBigInt: true });
@@ -1115,6 +1154,14 @@ export function validate(root) {
           if (table(value)) pending.push([path ? `${path}.${key}` : key, value]);
         }
       }
+      if (file === codexConfigFile) {
+        if (typeof data.developer_instructions !== "string" || !data.developer_instructions.trim())
+          throw new Error("missing developer_instructions");
+        for (const reference of codexInstructionReferences) {
+          if (!data.developer_instructions.includes(reference.label))
+            throw new Error(`developer_instructions must reference ${reference.label}`);
+        }
+      }
       if (basename(dirname(file)) === "agents") {
         for (const key of ["name", "description", "developer_instructions"]) {
           if (typeof data[key] !== "string" || !data[key].trim()) throw new Error(`missing ${key}`);
@@ -1135,6 +1182,10 @@ export function validate(root) {
           data.sandbox_mode !== "read-only"
         )
           throw new Error("review/navigation role must remain read-only");
+        for (const reference of codexInstructionReferences.slice(0, 2)) {
+          if (!data.developer_instructions.includes(reference.label))
+            throw new Error(`developer_instructions must reference ${reference.label}`);
+        }
       }
     } catch (error) {
       errors.push(`${relative(root, file)}: ${error.message}`);

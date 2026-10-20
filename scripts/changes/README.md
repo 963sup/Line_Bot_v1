@@ -13,6 +13,6 @@
 | `patch-apply.mjs` | `pnpm patch:apply <plan.json> [--apply]`：以 SHA-256 + exact-before preflight 執行 declarative replacement。 |
 | `patch-apply.test.mjs` | 驗證 patch path/hash/precondition/dry-run/apply/TOCTOU guards。 |
 
-`pnpm change:impact "<intent>"` 直接委派 `pnpm semantic plan "<intent>"`。Merge preflight 前先明確執行 `git fetch origin main`；commands 不偷偷更新 refs。
+影響範圍使用 `pnpm semantic plan "<intent>"`；本目錄只負責 Git lifecycle 與 patch application。Merge preflight 前先明確執行 `git fetch origin main`；commands 不偷偷更新 refs。
 
 `change:finalize` 要求驗證前後的 branch、HEAD、`origin/main` 與 upstream 名稱一致；任一改變即失敗。這只涵蓋讀到的本地 refs，merge 前仍須重新讀取遠端 base、PR head 與該 head 的 CI 結果。

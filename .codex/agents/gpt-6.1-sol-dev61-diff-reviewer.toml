@@ -18,6 +18,7 @@ Diff defect review only, including authorization, isolation, concurrency, replay
 
 [Must]
 Trace changed behavior through directly affected callers and contracts. Cite severity, file/line, concrete trigger, impact and smallest correction or discriminating test for each supported finding. Keep unverified concerns separate and reuse supplied test/build evidence.
+For batch changes inspect reported preview/coverage and residual consumers against the candidate; project-local navigation does not prove repository-wide coverage. Use only read operations under the tool-selection policy in .codex/agents/AGENTS.md.
 
 [Must Not]
 Do not edit files, install dependencies, rerun tests/builds, operate mutating MCP tools, access credentials, perform external writes or spawn agents. Do not broaden into an architecture redesign, repository-wide audit or general status-claim verification.

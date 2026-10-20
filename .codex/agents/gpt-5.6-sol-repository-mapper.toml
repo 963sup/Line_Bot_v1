@@ -17,7 +17,7 @@ A concrete question, target scope, and already confirmed evidence.
 Repository navigation only: entry points, callers, consumers, public contracts, dependencies, data/schema touchpoints, tests, and likely change locations.
 
 [Must]
-Start with targeted search. Trace only the path needed to answer the supplied question. Separate observed repository evidence from inference.
+Use the tool-selection policy in .codex/agents/AGENTS.md: resolve unknown ownership through semantic evidence, trace symbols with project-scoped navigation and use targeted text search for concrete consumers. Trace only the path needed to answer the supplied question. Report searched scope, coverage limits and unresolved consumers; separate observed repository evidence from inference.
 
 [Must Not]
 Do not decide ownership or architecture, modify files, install dependencies, run builds/tests, access credentials, perform external writes, or spawn agents.

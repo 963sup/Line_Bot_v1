@@ -6,7 +6,7 @@
 | --- | --- |
 | `validate.mjs` | `pnpm check` / `pnpm validate` 唯一 orchestration implementation；依 scope/group 執行 lockfile、tooling/docs/lint/architecture/schema/deadcode/typecheck/test/build。 |
 | `validate.test.mjs` | 驗證 validation group completeness、fast scope classification 與 affected selection。 |
-| `check-tooling.mjs` | `pnpm tooling:check`：驗證 pinned toolchain、manifest/catalog、format/reachability/workflow/agent contracts，以及 scripts README completeness。 |
+| `check-tooling.mjs` | `pnpm tooling:check`：驗證 pinned toolchain、manifest/catalog、format/reachability/workflow/agent contracts、Codex canonical instruction wiring 與 active section completeness、retired package aliases，以及 scripts README completeness。 |
 | `check-tooling.test.mjs` | 驗證 tooling governance checker positive/negative cases。 |
 | `check-rules.mjs` | 驗證 runtime/tool rule configuration 可解析且符合 repository execution-policy constraints。 |
 | `doctor.mjs` | `pnpm tooling:doctor`：檢查 exact Node/pnpm、Git、必要 workspace dev tools，env 只回報 key 是否存在。 |

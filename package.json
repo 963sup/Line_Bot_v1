@@ -45,7 +45,6 @@
     "code": "node scripts/code/cli.mjs",
     "patch:apply": "node scripts/changes/patch-apply.mjs",
     "change:status": "node scripts/changes/status.mjs",
-    "change:impact": "pnpm semantic plan",
     "change:preflight": "node scripts/changes/preflight.mjs",
     "change:finalize": "node scripts/changes/finalize.mjs",
     "github:current-main": "node scripts/github/current-main.mjs",

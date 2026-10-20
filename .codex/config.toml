@@ -3,7 +3,8 @@
 # Primary model: GPT-6 Astra (gpt-6-astra).
 developer_instructions = """
 Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
-Model routing and subagent roles are owned by .codex/agents/AGENTS.md.
+At the start of repository work, follow docs/reference/engineering/development-workflow.md for the change loop and proactive tool selection.
+Read .codex/agents/AGENTS.md and apply its autonomous delegation policy when independent work or specialist evidence improves the result; current task and tool restrictions take precedence.
 """
 
 [agents]

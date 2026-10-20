@@ -20,6 +20,15 @@ const manifest = JSON.parse(readFileSync(resolve(repo, "package.json"), "utf8"))
 const exactNodeVersion = readFileSync(resolve(repo, ".node-version"), "utf8").trim();
 // Generated fixture imports must not be mistaken for this test's actual imports.
 const importing = (specifier) => `import ${JSON.stringify(specifier)};`;
+const rootDeveloperInstructions =
+  "Follow root AGENTS.md, .codex/agents/AGENTS.md, and docs/reference/engineering/development-workflow.md.";
+const roleDeveloperInstructions = "Follow root AGENTS.md and .codex/agents/AGENTS.md.";
+const codexConfig = (content = "") =>
+  `developer_instructions = ${JSON.stringify(rootDeveloperInstructions)}\n${content}`;
+const roleGuidance =
+  "# Codex agents\n\n## Autonomous delegation\n\nDelegate bounded work when it improves evidence.\n";
+const workflowGuidance =
+  "# Development workflow\n\n## Default repository change loop\n\nFollow the bounded change loop.\n\n## Autonomous tool selection\n\nSelect tools that answer the current question.\n";
 
 test("every PGlite test consumer launches Node with the WASM code GC protection", () => {
   const consumers = new Set(
@@ -78,7 +87,7 @@ function fixture(t) {
     writeFileSync(file, content);
   };
   const write = writeRaw;
-  write(".codex/config.toml", "[agents]\nenabled = true\n");
+  write(".codex/config.toml", codexConfig("[agents]\nenabled = true\n"));
   write(
     "AGENTS.md",
     "[Packages](packages/AGENTS.md) [Scripts](scripts/AGENTS.md) [GitHub](.github/AGENTS.md) [Codex](.codex/AGENTS.md)\\n",
@@ -90,6 +99,7 @@ function fixture(t) {
     ".codex/AGENTS.md",
   ])
     write(path, "# Scope\\n");
+  write(".codex/agents/AGENTS.md", roleGuidance);
   write("scripts/README.md", "# Scripts\\n");
   write("scripts/tooling/README.md", "# Tooling scripts\\n");
   write("packages/demo/AGENTS.md", "# @line_bot_v1/demo\\n");
@@ -112,7 +122,6 @@ function fixture(t) {
         code: "node scripts/code/cli.mjs",
         "patch:apply": "node scripts/changes/patch-apply.mjs",
         "change:status": "node scripts/changes/status.mjs",
-        "change:impact": "pnpm semantic plan",
         "change:preflight": "node scripts/changes/preflight.mjs",
         "change:finalize": "node scripts/changes/finalize.mjs",
         "tooling:doctor": "node scripts/tooling/doctor.mjs",
@@ -211,6 +220,7 @@ function fixture(t) {
   ];
   for (const contract of taskContracts) write(`docs/tasks/${contract}.md`, "# Task\n");
   write("docs/README.md", "# Documentation\n");
+  write("docs/reference/engineering/development-workflow.md", workflowGuidance);
   for (const [file, name, tools] of [
     ["architecture-reviewer.agent.md", "architecture-reviewer", "[read, search]"],
     ["database-reviewer.agent.md", "database-reviewer", "[read, search]"],
@@ -548,6 +558,15 @@ test("semantic and patch commands keep one responsibility-shaped entrypoint", (t
   packageJson.scripts["change:plan"] = "node legacy.mjs";
   write("package.json", JSON.stringify(packageJson));
   rejects(root, "change:plan is retired");
+
+  delete packageJson.scripts["change:plan"];
+  packageJson.scripts["change:impact"] = "pnpm semantic plan";
+  write("package.json", JSON.stringify(packageJson));
+  rejects(root, "change:impact is retired");
+
+  delete packageJson.scripts["change:impact"];
+  write("package.json", JSON.stringify(packageJson));
+  assert.deepEqual(validate(root), []);
 });
 
 test("source operations keep a pinned local CLI and a preview-only command entrypoint", (t) => {
@@ -1353,6 +1372,79 @@ test("invalid TOML fails", (t) => {
   write(".codex/config.toml", "[agents");
   assert.ok(validate(root).length);
 });
+test("Codex config keeps active canonical instruction pointers", (t) => {
+  const { root, write } = fixture(t);
+  for (const reference of [
+    "root AGENTS.md",
+    ".codex/agents/AGENTS.md",
+    "docs/reference/engineering/development-workflow.md",
+  ]) {
+    write(
+      ".codex/config.toml",
+      codexConfig("[agents]\nenabled = true\n").replace(reference, "missing.md"),
+    );
+    rejects(root, `developer_instructions must reference ${reference}`);
+    write(".codex/config.toml", codexConfig("[agents]\nenabled = true\n"));
+    assert.deepEqual(validate(root), []);
+  }
+
+  rmSync(resolve(root, "docs/reference/engineering/development-workflow.md"));
+  rejects(
+    root,
+    "docs/reference/engineering/development-workflow.md: referenced canonical Codex instruction is required",
+  );
+  write("docs/reference/engineering/development-workflow.md", workflowGuidance);
+  assert.deepEqual(validate(root), []);
+});
+test("canonical Codex guidance keeps non-empty active sections", (t) => {
+  const { root, write } = fixture(t);
+  for (const { path, heading, source, body } of [
+    {
+      path: ".codex/agents/AGENTS.md",
+      heading: "Autonomous delegation",
+      source: roleGuidance,
+      body: "Delegate bounded work when it improves evidence.",
+    },
+    {
+      path: "docs/reference/engineering/development-workflow.md",
+      heading: "Default repository change loop",
+      source: workflowGuidance,
+      body: "Follow the bounded change loop.",
+    },
+    {
+      path: "docs/reference/engineering/development-workflow.md",
+      heading: "Autonomous tool selection",
+      source: workflowGuidance,
+      body: "Select tools that answer the current question.",
+    },
+  ]) {
+    write(path, source.replace(`## ${heading}\n\n${body}\n`, ""));
+    rejects(root, `## ${heading} section is required`);
+
+    write(path, source.replace(`${body}\n`, ""));
+    rejects(root, `## ${heading} section must not be empty`);
+
+    write(path, source);
+    assert.deepEqual(validate(root), []);
+  }
+});
+test("custom roles keep repository governance pointers", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".codex/agents/implementation-worker.toml";
+  for (const reference of ["root AGENTS.md", ".codex/agents/AGENTS.md"]) {
+    write(
+      path,
+      `name = "implementation-worker"\ndescription = "fixture"\ndeveloper_instructions = ${JSON.stringify(roleDeveloperInstructions.replace(reference, "missing.md"))}\n`,
+    );
+    rejects(root, `developer_instructions must reference ${reference}`);
+
+    write(
+      path,
+      `name = "implementation-worker"\ndescription = "fixture"\ndeveloper_instructions = ${JSON.stringify(roleDeveloperInstructions)}\n`,
+    );
+    assert.deepEqual(validate(root), []);
+  }
+});
 for (const prefix of ["", "[features.multi_agent_v2]\nenabled = true\n"]) {
   test(`agent limit cannot hide in wrong table: ${prefix}`, (t) => {
     const { root, write } = fixture(t);
@@ -1386,7 +1478,7 @@ for (const content of [
 ]) {
   test(`valid settings pass: ${content}`, (t) => {
     const { root, write } = fixture(t);
-    write(".codex/config.toml", content);
+    write(".codex/config.toml", codexConfig(content));
     assert.deepEqual(validate(root), []);
   });
 }
