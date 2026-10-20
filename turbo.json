@@ -37,6 +37,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/.env.local",
+        "$TURBO_ROOT$/.vercelignore",
         "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
         "$TURBO_ROOT$/scripts/runtime/next.mjs"
       ]

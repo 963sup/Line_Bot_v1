@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   findOwnerBaseline,
@@ -511,4 +512,16 @@ test("failed scheduler still retries after Web deployment has already succeeded"
   );
   assert.equal(plan.web_affected, false);
   assert.equal(plan.scheduler_changed, true);
+});
+
+test("upload-only changes schedule Web without schema or Rich Menu publication", async () => {
+  const turbo = JSON.parse(readFileSync(new URL("../../turbo.json", import.meta.url), "utf8"));
+  assert.ok(
+    turbo.tasks["@line_bot_v1/web#build"].inputs.includes("$TURBO_ROOT$/.vercelignore"),
+    "Web build must track its deployment upload policy",
+  );
+  const plan = await planRelease(plannerFixture({ files: [".vercelignore"], affected: true }));
+  assert.equal(plan.web_affected, true);
+  assert.equal(plan.schema_changed, false);
+  assert.equal(plan.rich_menu_changed, false);
 });

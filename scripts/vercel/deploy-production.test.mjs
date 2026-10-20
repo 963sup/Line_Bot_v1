@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   deployProduction,
@@ -353,4 +354,26 @@ test("production deploy never retries an unknown mutation result inside one invo
     /outcome unknown/,
   );
   assert.equal(calls, 3);
+});
+
+test("Vercel upload retains PostCSS configuration and its local plugin", () => {
+  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+    /\r?\n/,
+  );
+  for (const path of [
+    "apps/web/postcss.config.mjs",
+    "apps/web/postcss",
+    "apps/web/postcss/legacy-modules.cjs",
+  ]) {
+    assert.ok(
+      rules.includes(`!${path}`),
+      `Vercel upload excludes required CSS build input: ${path}`,
+    );
+  }
+  const config = readFileSync(
+    new URL("../../apps/web/postcss.config.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(config, /legacy-modules\.cjs/);
+  assert.match(config, /@tailwindcss\/postcss/);
 });
