@@ -22,7 +22,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 
 1. **目標與不變條件**：確認可觀察結果、允許／排除範圍、Owner、consumer 與完成標準，保留現有 WIP。
 2. **Owner／契約**：已知 Owner 直接讀其契約、public exports、source/tests 與 nearest AGENTS；未知或跨語意時用 `pnpm semantic context "<intent>"` / `plan`，照 required selectors 讀 authority。歧義先定位，不當成修改授權。
-3. **實作／consumers**：文字、SQL、JSON 與文件用 `rg`；符號定義／引用用 `pnpm code definition` / `references`；相同語法結構用 `code search`。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
+3. **實作／consumers**：文字、SQL、JSON 與文件用 `rg`；有界範圍的 imports／exports／頂層宣告與靜態模組連結用 `pnpm code facts --scope <path>`；特定符號定義／引用用 `pnpm code definition` / `references`；相同語法結構用 `code search`。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
 4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
 5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
 6. **修改／漏改**：`pnpm patch:apply <plan.json>` 預覽，既有授權內以 `--apply` 套用，再重跑相同搜尋、檢查剩餘命中與 Git diff。一般小修改可直接編輯；批次計畫不繞過內容／雜湊前置條件。預覽是工程步驟，不要求使用者重複確認。
@@ -42,6 +42,7 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 | --- | --- | --- |
 | Owner 未知、語意歧義或跨 Owner 影響 | `pnpm semantic plan "<intent>"`；需要載入具體 authority 時用 `context` | 讀取選中的真實契約、來源與 revision；已知 Owner 可直接讀契約，不要求先跑兩個命令。 |
 | 已知路徑、精確文字、SQL／JSON／文件引用 | `rg`／`rg --files` 與 targeted reads | 確認搜尋範圍、排除與實際 consumers。文字命中不證明是同一個 TS symbol。 |
+| 有界 source 範圍的 imports／exports／頂層宣告與靜態模組連結 | `pnpm code facts --scope <path>`，可重複 scope／exclude | ts-morph 只解析當次 source snapshot，模組目標依實際 tsconfig 解析；查閱 hash、工作樹狀態、package exports 與 partial／邊界。輸出是 stdout 證據，不推導業務 Owner、runtime call graph 或跨 project 完整性。 |
 | TS／JS symbol 的定義、引用與私有改名 | `pnpm code definition`／`references`／`rename` | 使用現有 TypeScript LanguageService；先查引用再產生改名預覽。project-local、partial、unsupported、公開／跨 project 邊界如實回報，沿 public exports 補查 consumers。 |
 | 重複的 JS／TS 語法結構查改 | `pnpm code search`／`rewrite` | 使用 pinned ast-grep；先驗證代表性命中與反例，再檢查全部命中、排除與完整計畫。 |
 | 套用已檢查的批次計畫 | `pnpm patch:apply <plan.json>`，再於授權內加 `--apply` | 一個 writer；保留 hash／exact-before 檢查，修改後重查漏改並檢視 diff。一般小修改可直接編輯。 |
@@ -55,7 +56,7 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 | `change:impact` | 移除純轉呼叫入口，統一為 `pnpm semantic plan`；不保留 compatibility alias。 |
 | `change:plan`、`semantic:*` package aliases | 維持既有退休／禁止規則。編輯器 task label 不屬 package alias。 |
 | `repo:context`／`scripts/context/` | 尚未實作；目前重用 semantic context、`rg` 與 code 查詢，不新增重複索引入口。 |
-| ts-morph | Repository 符號工具直接使用 TypeScript LanguageService。shadcn 的 transitive dependency 由其 lockfile 擁有，不因本流程刪除。 |
+| ts-morph | Root pinned direct dependency 擁有唯讀 `code facts` 的語法提取；定義／引用／改名仍使用既有 TypeScript LanguageService，shadcn 保留自己的 transitive dependency。不建立第二套語意查詢或永久索引。 |
 | `rg`、小範圍直接編輯、`change:status`／`preflight`／`finalize` | 保留各自的文字搜尋、編輯與 Git lifecycle 責任。四項查改能力不取代 validation、architecture/security guards 或 runtime 驗收。 |
 
 ### Adoption evidence

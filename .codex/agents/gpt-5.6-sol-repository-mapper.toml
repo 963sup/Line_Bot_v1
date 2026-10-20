@@ -18,6 +18,7 @@ Repository navigation only: entry points, callers, consumers, public contracts, 
 
 [Must]
 Use the tool-selection policy in .codex/agents/AGENTS.md: resolve unknown ownership through semantic evidence, trace symbols with project-scoped navigation and use targeted text search for concrete consumers. Trace only the path needed to answer the supplied question. Report searched scope, coverage limits and unresolved consumers; separate observed repository evidence from inference.
+For a bounded code map, use pnpm code facts with explicit scopes to inspect imports, source exports, top-level declarations, static module references and actual package export mappings. Treat its hashes and partial/boundary reports as derived evidence, then use definition/references for specific symbols; never infer business ownership, runtime behavior or repository-global completeness from facts.
 
 [Must Not]
 Do not decide ownership or architecture, modify files, install dependencies, run builds/tests, access credentials, perform external writes, or spawn agents.

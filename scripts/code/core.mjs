@@ -29,11 +29,11 @@ function fail(message) {
   throw new Error(message);
 }
 
-function slash(path) {
+export function slash(path) {
   return path.replaceAll("\\", "/");
 }
 
-function sha256(bytes) {
+export function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
@@ -55,18 +55,18 @@ function git(root, args, options = {}) {
   return command("git", args, { cwd: root, ...options });
 }
 
-function sourceState(root) {
+export function sourceState(root) {
   const revision = git(root, ["rev-parse", "HEAD"]).stdout.trim();
   const status = git(root, ["status", "--porcelain=v1", "-z"]).stdout;
   return { revision, dirty: status.length > 0 };
 }
 
-function pathInside(root, candidate) {
+export function pathInside(root, candidate) {
   const rel = relative(resolve(root), resolve(candidate));
   return rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
 }
 
-function inspectExistingPath(root, input, { fileOnly = false } = {}) {
+export function inspectExistingPath(root, input, { fileOnly = false } = {}) {
   if (!input || input.includes("\0")) fail(`Invalid path: ${input}`);
   const candidate = resolve(root, input);
   if (!pathInside(root, candidate)) fail(`Path escapes repository: ${input}`);
@@ -81,7 +81,7 @@ function inspectExistingPath(root, input, { fileOnly = false } = {}) {
   return { absolute: candidate, relative: slash(rel) };
 }
 
-function skipReason(path) {
+export function skipReason(path) {
   const parts = slash(path).split("/");
   const lower = parts.map((part) => part.toLocaleLowerCase("en-US"));
   if (lower.some((part) => SKIPPED_DIRECTORIES.has(part))) return "generated-or-dependency";
@@ -105,7 +105,7 @@ function scopeContains(scope, path) {
   return scope === "" || path === scope || path.startsWith(`${scope}/`);
 }
 
-function inventory(root, { scopes, excludes = [] }) {
+export function inventory(root, { scopes, excludes = [] }) {
   if (!scopes?.length) fail("At least one --scope is required.");
   const normalizedScopes = scopes.map((scope) => inspectExistingPath(root, scope).relative);
   const normalizedExcludes = excludes.map((path) => inspectExistingPath(root, path).relative);
@@ -415,12 +415,39 @@ export function structuralRewrite(root, options) {
   };
 }
 
-function readConfig(configFile) {
-  const raw = ts.readConfigFile(configFile, ts.sys.readFile);
+function readConfig(configFile, trace) {
+  const readFile = (file) => {
+    if (trace?.allowPath && !trace.allowPath(file)) {
+      trace?.blocked?.(file, "read");
+      return undefined;
+    }
+    const value = trace?.readFile ? trace.readFile(file) : ts.sys.readFile(file);
+    trace?.read?.(file, value);
+    return value;
+  };
+  const fileExists = (file) => {
+    if (trace?.allowPath && !trace.allowPath(file)) {
+      trace?.blocked?.(file, "file-exists");
+      return false;
+    }
+    const exists = ts.sys.fileExists(file);
+    trace?.fileExists?.(file, exists);
+    return exists;
+  };
+  const directoryExists = (directory) => {
+    if (trace?.allowPath && !trace.allowPath(directory)) {
+      trace?.blocked?.(directory, "directory-exists");
+      return false;
+    }
+    const exists = ts.sys.directoryExists?.(directory) ?? false;
+    trace?.directoryExists?.(directory, exists);
+    return exists;
+  };
+  const raw = ts.readConfigFile(configFile, readFile);
   if (raw.error) fail(ts.flattenDiagnosticMessageText(raw.error.messageText, " "));
   const parsed = ts.parseJsonConfigFileContent(
     raw.config,
-    ts.sys,
+    { ...ts.sys, readFile, fileExists, directoryExists },
     dirname(configFile),
     undefined,
     configFile,
@@ -447,10 +474,12 @@ function configCandidates(root, file) {
   return candidates;
 }
 
-function selectConfig(root, file) {
+export function selectConfig(root, file, trace) {
   for (const candidate of configCandidates(root, file)) {
-    if (!existsSync(candidate)) continue;
-    const parsed = readConfig(candidate);
+    const exists = existsSync(candidate);
+    trace?.fileExists?.(candidate, exists);
+    if (!exists) continue;
+    const parsed = readConfig(candidate, trace);
     if (parsed.fileNames.some((name) => resolve(name) === resolve(file)))
       return { file: candidate, parsed };
   }

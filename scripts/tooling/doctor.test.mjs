@@ -3,7 +3,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { evaluateDoctor, inspectSourceTool, parseDoctorArgs, parseEnvKeys } from "./doctor.mjs";
+import {
+  dependencyAvailability,
+  evaluateDoctor,
+  inspectSourceTool,
+  parseDoctorArgs,
+  parseEnvKeys,
+} from "./doctor.mjs";
 import { inspectMcpConfiguration, probeMcp, verifyNextProject } from "./mcp-doctor.mjs";
 
 test("parseEnvKeys returns canonical variable names without values", () => {
@@ -51,7 +57,7 @@ test("evaluateDoctor succeeds only when required local toolchain matches", () =>
       expectedPnpm: "11.25.0",
       actualPnpm: "11.25.0",
       gitVersion: "git version 2.50.0",
-      dependencies: { turbo: true, typescript: true },
+      dependencies: { turbo: true, "ts-morph": true, typescript: true },
     }).ok,
     true,
   );
@@ -62,13 +68,44 @@ test("evaluateDoctor succeeds only when required local toolchain matches", () =>
     expectedPnpm: "11.25.0",
     actualPnpm: null,
     gitVersion: null,
-    dependencies: { turbo: false },
+    dependencies: { turbo: false, "ts-morph": false },
   });
   assert.equal(failed.ok, false);
   assert.deepEqual(
     failed.checks.filter((check) => !check.ok).map((check) => check.id),
-    ["node", "pnpm", "git", "dependency:turbo"],
+    ["node", "pnpm", "git", "dependency:turbo", "dependency:ts-morph"],
   );
+});
+
+test("dependency availability requires the exact installed source facts parser", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "dependency-doctor-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({ devDependencies: { "ts-morph": "27.0.2" } }),
+  );
+  assert.equal(dependencyAvailability(root)["ts-morph"], false);
+
+  mkdirSync(join(root, "node_modules/ts-morph"), { recursive: true });
+  assert.equal(dependencyAvailability(root)["ts-morph"], false);
+
+  writeFileSync(join(root, "node_modules/ts-morph/package.json"), "{invalid");
+  assert.equal(dependencyAvailability(root)["ts-morph"], false);
+
+  writeFileSync(
+    join(root, "node_modules/ts-morph/package.json"),
+    JSON.stringify({ version: "28.0.0" }),
+  );
+  assert.equal(dependencyAvailability(root)["ts-morph"], false);
+
+  writeFileSync(
+    join(root, "node_modules/ts-morph/package.json"),
+    JSON.stringify({ version: "27.0.2" }),
+  );
+  assert.equal(dependencyAvailability(root)["ts-morph"], true);
+
+  mkdirSync(join(root, "node_modules/turbo"), { recursive: true });
+  assert.equal(dependencyAvailability(root).turbo, true);
 });
 
 test("live MCP and runtime probes require explicit, valid local options", () => {
