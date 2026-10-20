@@ -78,6 +78,8 @@
     "@line_bot_v1/project": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
     "@line_bot_v1/actions": "workspace:*",
-    "@line_bot_v1/notifications": "workspace:*"
+    "@line_bot_v1/notifications": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "next-devtools-mcp": "0.4.0"
   }
 }

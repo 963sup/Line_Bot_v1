@@ -11,6 +11,7 @@
 | Authentication / authorization | [auth change](tasks/auth-change.md) + owner | [request authorization](rules/request-authorization.md) |
 | Debug deployment / remote state | [deployment debug](tasks/deployment-debug.md) | one provider / release / recovery reference |
 | Architecture / ownership | [architecture change](tasks/architecture-change.md) | [dependency boundaries](rules/dependency-boundaries.md) + decision only if why is needed |
+| Codex / MCP tooling | [development workflow](reference/engineering/development-workflow.md) | [local environment](reference/engineering/local-environment.md) + applicable `.codex` / `scripts` constraints |
 | Find / change business rule | [business rule](tasks/business-rule.md) + owner | owner-specific reference only for the relevant flow |
 
 ## Progressive disclosure

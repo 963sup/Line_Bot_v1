@@ -22,6 +22,30 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 
 一般程式與文件驗證入口見 [Validation](validation-pipeline.md)。
 
+## Next.js and shadcn agent workflow
+
+MCP 接入由 `.codex/config.toml` 擁有；可執行版本由對應 workspace manifest 與 lockfile 擁有。從 repository 根目錄啟動 Codex：Next DevTools 使用根 workspace 的 executable，shadcn 使用 `apps/web` 的 executable 與 `components.json`。安裝使用 `pnpm install --frozen-lockfile`；更新 MCP 時修改真正的 dependency pin 與 lockfile，再驗證，不使用 `dlx @latest` 或機器專屬路徑。
+
+| 任務 | 先讀／使用 | 接續驗證 |
+| --- | --- | --- |
+| 查找、組合或新增 UI | 現有 `apps/web/src/shared/ui`、`apps/web/components.json` 與適用 owner；使用既有 shadcn skill／MCP 查詢 registry item 與範例 | 檢視安裝 diff，保留專案 theme、primitive、aliases 與 owner；瀏覽器操作受影響流程 |
+| Next.js API、route 或 server/client boundary | `apps/web/node_modules/next/dist/docs/` 的版本對應文件；不足時使用 Context7／官方來源並確認版本 | 開發伺服器 MCP 的實際 tools 與 runtime；不以其他版本範例覆蓋本地契約 |
+| 編譯、hydration 或頁面錯誤 | 啟動 `pnpm dev`，從 banner 取得 port；透過 Next DevTools 查詢該 port 的 tools 與 project metadata | 確認 project path 是目前 checkout 的 `apps/web`，再查 errors、compilation issues 與受影響頁面 |
+
+工具名稱以該版本的 `tools/list` 為準；沿用現有 agent roles，依任務載入 skills。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
+
+```sh
+pnpm tooling:doctor
+pnpm tooling:doctor --mcp
+pnpm tooling:doctor --mcp --next-port 3000
+```
+
+第一個命令只檢查本地 toolchain、project MCP 設定與已安裝版本。`--mcp` 才啟動兩個已配置的本地 MCP，使用 SDK 的安全預設環境取得 initialize／完整 tools list；不下載套件、不傳遞 provider credentials、不列印 server logs 或 tool descriptions。`--next-port` 使用明確的 loopback port，經已配置的 Next DevTools 檢查 runtime tools 與 project identity；請替換成實際 banner port。診斷結束即關閉其 MCP processes，不啟停應用程式。
+
+以上分別證明 configuration、MCP transport 與 runtime project identity。一般 offline validation 不執行 live probes；診斷不證明目前 Codex session 已重新載入設定、registry 認證或瀏覽器行為。設定變更後重新載入 MCP／開新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行 canonical `pnpm check`，merge 前以 exact head 執行 `pnpm validate`。若使用 `next-dev-loop`，先滿足該 skill 的 framework／browser 版本與 preflight。
+
+官方契約：[Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)、[Next.js MCP](https://nextjs.org/docs/app/guides/mcp)、[shadcn MCP](https://ui.shadcn.com/docs/mcp)。
+
 
 ## Commit and PR workflow
 
