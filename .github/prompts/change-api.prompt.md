@@ -9,6 +9,8 @@ API change: ${input:change:Describe the route, protocol, or API behavior to chan
 
 Separate transport changes from business capability changes. Preserve authorization, retry/replay, failure mapping, and secret boundaries where applicable.
 
+Follow the default repository change loop in `docs/reference/engineering/development-workflow.md#default-repository-change-loop`.
+
 ## Delivery
 
 Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.

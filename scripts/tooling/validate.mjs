@@ -85,6 +85,7 @@ export function classifyChangedFiles(files) {
     (file) =>
       isToolingMetadata(file) ||
       file.startsWith("scripts/tooling/") ||
+      file.startsWith("scripts/code/") ||
       file.startsWith("scripts/architecture/") ||
       file.startsWith("scripts/vercel/") ||
       file.startsWith("scripts/github/") ||
@@ -233,7 +234,12 @@ function main() {
     ["tooling:check", ["scripts/tooling/check-tooling.mjs"]],
     [
       "tooling:test",
-      ["--test", "scripts/tooling/doctor.test.mjs", "scripts/wbs/transfer.test.mjs"],
+      [
+        "--test",
+        "scripts/tooling/doctor.test.mjs",
+        "scripts/wbs/transfer.test.mjs",
+        "scripts/code/*.test.mjs",
+      ],
     ],
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
@@ -252,7 +258,12 @@ function main() {
     ],
     [
       "change:test",
-      ["--test", "scripts/changes/patch-apply.test.mjs", "scripts/changes/state.test.mjs"],
+      [
+        "--test",
+        "scripts/changes/patch-apply.test.mjs",
+        "scripts/changes/state.test.mjs",
+        "scripts/changes/finalize.test.mjs",
+      ],
     ],
     [
       "github:test",

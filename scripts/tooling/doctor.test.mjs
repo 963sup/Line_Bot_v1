@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { evaluateDoctor, parseDoctorArgs, parseEnvKeys } from "./doctor.mjs";
+import { evaluateDoctor, inspectSourceTool, parseDoctorArgs, parseEnvKeys } from "./doctor.mjs";
 import { inspectMcpConfiguration, probeMcp, verifyNextProject } from "./mcp-doctor.mjs";
 
 test("parseEnvKeys returns canonical variable names without values", () => {
@@ -11,6 +11,36 @@ test("parseEnvKeys returns canonical variable names without values", () => {
     "BAR",
     "FOO",
   ]);
+});
+
+test("source tool diagnosis requires an installed exact manifest version", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "source-tool-doctor-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const manifest = join(root, "package.json");
+  writeFileSync(manifest, JSON.stringify({ devDependencies: { "@ast-grep/cli": "0.51.0" } }));
+  assert.equal(inspectSourceTool(root).ok, false);
+  const installed = join(root, "node_modules/@ast-grep/cli");
+  mkdirSync(installed, { recursive: true });
+  writeFileSync(join(installed, "package.json"), JSON.stringify({ version: "0.50.0" }));
+  assert.equal(inspectSourceTool(root).ok, false);
+  writeFileSync(join(installed, "package.json"), JSON.stringify({ version: "0.51.0" }));
+  assert.equal(inspectSourceTool(root).ok, false);
+  writeFileSync(join(installed, "sg"), "fixture");
+  writeFileSync(
+    join(installed, "package.json"),
+    JSON.stringify({ version: "0.51.0", bin: { sg: "sg" } }),
+  );
+  assert.equal(inspectSourceTool(root, { readVersion: () => null }).ok, false);
+  assert.equal(inspectSourceTool(root, { readVersion: () => "ast-grep 0.50.0" }).ok, false);
+  assert.deepEqual(inspectSourceTool(root, { readVersion: () => "ast-grep 0.51.0" }), {
+    id: "ast-grep",
+    ok: true,
+    expected: "0.51.0",
+    actual: "0.51.0",
+    executableVersion: "ast-grep 0.51.0",
+  });
+  writeFileSync(manifest, JSON.stringify({ devDependencies: { "@ast-grep/cli": "^0.51.0" } }));
+  assert.equal(inspectSourceTool(root, { readVersion: () => "ast-grep 0.51.0" }).ok, false);
 });
 
 test("evaluateDoctor succeeds only when required local toolchain matches", () => {

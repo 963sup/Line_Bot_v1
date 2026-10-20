@@ -3,6 +3,7 @@ packages:
   - packages/*
 
 allowBuilds:
+  '@ast-grep/cli': true
   '@firebase/util': false
   '@google/genai': false
   '@sentry/cli': true

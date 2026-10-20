@@ -166,6 +166,14 @@ export function validate(root) {
       errors.push("package.json: deadcode must remain the canonical Knip reachability check");
     if (manifest.scripts?.semantic !== "node scripts/architecture/semantic-cli.mjs")
       errors.push("package.json: semantic must remain the single semantic command namespace");
+    if (manifest.scripts?.code !== "node scripts/code/cli.mjs")
+      errors.push("package.json: code must own source queries and preview-only patch generation");
+    if (manifest.devDependencies?.["@ast-grep/cli"] !== "0.51.0")
+      errors.push("package.json: source operations require the pinned @ast-grep/cli 0.51.0");
+    if (workspace.allowBuilds?.["@ast-grep/cli"] !== true)
+      errors.push(
+        "pnpm-workspace.yaml: the pinned ast-grep CLI requires its explicit installation build",
+      );
     const semanticAliases = Object.keys(manifest.scripts ?? {}).filter((name) =>
       name.startsWith("semantic:"),
     );

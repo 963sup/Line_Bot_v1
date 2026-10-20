@@ -9,6 +9,8 @@ Feature: ${input:feature:Describe the observable business result}
 
 For GitHub-derived behavior, resolve the exact vendored FPT file/symbol/field first; local absence means not implemented, not that the domain truth is optional. Find the existing owner before adding boundaries. Deliver the smallest real end-to-end slice and validate with repository canonical commands.
 
+Follow the default repository change loop in `docs/reference/engineering/development-workflow.md#default-repository-change-loop`.
+
 ## Delivery
 
 Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.

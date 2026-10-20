@@ -109,6 +109,7 @@ function fixture(t) {
         format: "biome check --write .",
         deadcode: "knip",
         semantic: "node scripts/architecture/semantic-cli.mjs",
+        code: "node scripts/code/cli.mjs",
         "patch:apply": "node scripts/changes/patch-apply.mjs",
         "change:status": "node scripts/changes/status.mjs",
         "change:impact": "pnpm semantic plan",
@@ -121,7 +122,7 @@ function fixture(t) {
         "github:current-main": "node scripts/github/current-main.mjs",
         "github:release-plan": "node scripts/github/release-plan.mjs",
       },
-      devDependencies: { "@biomejs/biome": "2.5.12" },
+      devDependencies: { "@biomejs/biome": "2.5.12", "@ast-grep/cli": "0.51.0" },
     }),
   );
   write(
@@ -130,7 +131,7 @@ function fixture(t) {
   );
   write(
     "pnpm-workspace.yaml",
-    'packages: ["packages/*"]\nengineStrict: true\nsaveExact: true\nverifyDepsBeforeRun: error\ncatalog:\n  typescript: 5.9.3\n',
+    'packages: ["packages/*"]\nallowBuilds:\n  "@ast-grep/cli": true\nengineStrict: true\nsaveExact: true\nverifyDepsBeforeRun: error\ncatalog:\n  typescript: 5.9.3\n',
   );
   write(
     "biome.json",
@@ -547,6 +548,24 @@ test("semantic and patch commands keep one responsibility-shaped entrypoint", (t
   packageJson.scripts["change:plan"] = "node legacy.mjs";
   write("package.json", JSON.stringify(packageJson));
   rejects(root, "change:plan is retired");
+});
+
+test("source operations keep a pinned local CLI and a preview-only command entrypoint", (t) => {
+  const { root, write } = fixture(t);
+  const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  packageJson.scripts.code = "pnpm dlx @ast-grep/cli@latest";
+  write("package.json", JSON.stringify(packageJson));
+  rejects(root, "code must own source queries and preview-only patch generation");
+  packageJson.scripts.code = "node scripts/code/cli.mjs";
+  packageJson.devDependencies["@ast-grep/cli"] = "^0.51.0";
+  write("package.json", JSON.stringify(packageJson));
+  rejects(root, "pinned @ast-grep/cli 0.51.0");
+  packageJson.devDependencies["@ast-grep/cli"] = "0.51.0";
+  write("package.json", JSON.stringify(packageJson));
+  const workspace = YAML.parse(readFileSync(resolve(root, "pnpm-workspace.yaml"), "utf8"));
+  workspace.allowBuilds["@ast-grep/cli"] = false;
+  write("pnpm-workspace.yaml", YAML.stringify(workspace));
+  rejects(root, "ast-grep CLI requires its explicit installation build");
 });
 
 test("Biome mutation and editor integration stay canonical", (t) => {

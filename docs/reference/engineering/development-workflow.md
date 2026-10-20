@@ -2,7 +2,7 @@
 
 ## Codex project development
 
-共用工作行為只由 repository AGENTS 維護；Codex config/rules/agents/skills 是工程工具設定，不是產品契約，也不證明目前工作階段已載入。
+共用工作契約由 repository AGENTS 維護，本文件擁有其操作程序；Codex config/rules/agents/skills 是工程工具設定，不是產品契約，也不證明目前工作階段已載入。
 
 ## Project configuration
 
@@ -13,6 +13,24 @@
 ## Working principle
 
 Agent 修改前仍須按 repository source priority 檢查 code / manifest / schema / tests / nearest AGENTS。Tool configuration 不建立 compatibility layer、business abstraction 或 architecture exception。
+
+## Default repository change loop
+
+每個任務以一個可驗收結果為單位，從 repository root 工作；依任務使用必要工具，不為完成清單而讀全庫或執行無關程序。
+
+1. **目標與不變條件**：確認可觀察結果、允許／排除範圍、Owner、consumer 與完成標準，保留現有 WIP。
+2. **Owner／契約**：已知 Owner 直接讀其契約、public exports、source/tests 與 nearest AGENTS；未知或跨語意時用 `pnpm semantic context "<intent>"` / `plan`，照 required selectors 讀 authority。歧義先定位，不當成修改授權。
+3. **實作／consumers**：文字、SQL、JSON 與文件用 `rg`；符號定義／引用用 `pnpm code definition` / `references`；相同語法結構用 `code search`。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
+4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
+5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
+6. **修改／漏改**：`pnpm patch:apply <plan.json>` 預覽，既有授權內以 `--apply` 套用，再重跑相同搜尋、檢查剩餘命中與 Git diff。一般小修改可直接編輯；批次計畫不繞過內容／雜湊前置條件。預覽是工程步驟，不要求使用者重複確認。
+7. **相關驗證**：執行真正受影響的 tests／runtime 驗收與 `pnpm check`；純文件用 `pnpm docs:check`。同 checkout 的 build/type generation/installation 按順序執行。
+8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；`pnpm change:finalize` 執行完整 `pnpm validate`，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
+9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
+
+工具介面與例子見 [source operations](../../../scripts/code/README.md)。`pnpm code` 只查詢／產生計畫，來源寫入仍由 [patch application](../../../scripts/changes/README.md) 擁有；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
+
+AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結果；三者不互相冒充證據。最終回報 changed behavior/Owner、驗證命令與 SHA、結果及未驗證範圍。開新 Codex 工作階段後，用簡短任務確認能讀到 root AGENTS、本節與工具入口；既有 session 中修改文件或靜態檢查成功不證明新 session 載入。指令探索契約見 [Codex AGENTS](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
 
 ## Validation
 

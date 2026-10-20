@@ -143,6 +143,15 @@ test("documentation-only changes run only documentation-owned fast gates", () =>
   assert.equal(shouldRunFast("tooling:check", scope), false);
 });
 
+test("source operations trigger their tooling tests in fast validation and keep all CI groups", () => {
+  const scope = classifyChangedFiles(["scripts/code/cli.mjs"]);
+  assert.equal(scope.toolingAffected, true);
+  assert.equal(shouldRunFast("tooling:check", scope), true);
+  assert.equal(shouldRunFast("tooling:test", scope), true);
+  assert.equal(shouldRunFast("change:test", scope), true);
+  assert.equal(Object.keys(validationGroups).length, 8);
+});
+
 test("local fast scope includes non-ignored untracked files and ignores excluded files", (t) => {
   const directory = gitFixture(t);
 
@@ -352,6 +361,7 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
     "--test",
     "scripts/tooling/doctor.test.mjs",
     "scripts/wbs/transfer.test.mjs",
+    "scripts/code/*.test.mjs",
   ]);
 });
 

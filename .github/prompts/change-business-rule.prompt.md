@@ -9,6 +9,8 @@ Rule: ${input:rule:Name or describe the business rule}
 
 Locate the semantic owner and authoritative implementation before editing prose. If the rule changes, update the minimum executable enforcement/test with it.
 
+Follow the default repository change loop in `docs/reference/engineering/development-workflow.md#default-repository-change-loop`.
+
 ## Delivery
 
 Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.
