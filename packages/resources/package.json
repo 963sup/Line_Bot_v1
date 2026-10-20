@@ -24,6 +24,10 @@
       "types": "./dist/contracts/output/references.d.ts",
       "default": "./dist/contracts/output/references.js"
     },
+    "./contracts/output/engineering-references": {
+      "types": "./dist/contracts/output/engineering-references.d.ts",
+      "default": "./dist/contracts/output/engineering-references.js"
+    },
     "./composition/bootstrap/objects": {
       "types": "./dist/composition/bootstrap/objects.d.ts",
       "default": "./dist/composition/bootstrap/objects.js"
@@ -31,6 +35,14 @@
     "./composition/bootstrap/references": {
       "types": "./dist/composition/bootstrap/references.d.ts",
       "default": "./dist/composition/bootstrap/references.js"
+    },
+    "./composition/bootstrap/engineering-references": {
+      "types": "./dist/composition/bootstrap/engineering-references.d.ts",
+      "default": "./dist/composition/bootstrap/engineering-references.js"
+    },
+    "./domain/quantity": {
+      "types": "./dist/domain/quantity.d.ts",
+      "default": "./dist/domain/quantity.js"
     },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",

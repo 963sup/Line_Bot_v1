@@ -90,6 +90,13 @@ transaction-bound reference validation/read capability; consumers never query it
 New pins require a currently unarchived Resource, while existing pins remain readable after archive
 under current access. A newer Resource revision never silently changes an existing Issue pin.
 
+[Contract](contract.md) consumes the transaction-bound quantity reader: an exact revision's quantity,
+immutable measure and resource display basis. Missing quantity/measure rejects the entire request;
+results preserve input order. Contract owns agreed quantities and activation, while
+[Execution](execution.md) owns declarations and internal review through the Contract line reader.
+The pure Resources quantity export is the shared exact decimal/unit policy for both consumers.
+Existing Object reference DTOs retain their published shape.
+
 WBS and Discussion integration is subsequent work. WBS must retain Project authorization,
 Repository source authorization and immutable Revision/Baseline semantics; Discussion must retain
 its own collaboration authority. They do not become Resource subtypes or current runtime consumers.

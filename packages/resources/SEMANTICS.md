@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md) |
+| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 工程約定與履約實績以固定資源版本協作，約定與實績各有獨立 lifecycle、審查及不可變歷史。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md) |
 
 ## Bounded Context
 
@@ -44,6 +44,8 @@
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | contract | stable-identity+query | resources | transaction-recheck+immutable-pin | Contract qualifies exact same-Repository Resource revisions and immutable measures through the transaction-bound public quantity reader. Create/edit/activate require current unarchived Resources; later source changes never rewrite agreed bases. Resources also owns exact decimal/unit normalization. |
+| provides | execution | query | resources | pure-value | Execution consumes the pure exact decimal/unit value policy with the Contract-published pinned measure. It does not query Resource private tables or requalify archived source facts. |
 | provides | issue | stable-identity+query | resources | same-transaction | Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive. |
 | consumes | content | query | content | pure-value | Resources consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority. |

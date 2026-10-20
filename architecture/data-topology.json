@@ -422,6 +422,14 @@
     {
       "path": "supabase/schemas/628_issue_object_references.sql",
       "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/616_contracts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/617_executions.sql",
+      "role": "authoritative"
     }
   ],
   "relations": [
@@ -1944,6 +1952,54 @@
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-repository-import-exclusion"
+    },
+    {
+      "name": "engineering_contracts",
+      "kind": "table",
+      "path": "supabase/schemas/616_contracts.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "engineering-contract"
+    },
+    {
+      "name": "engineering_contract_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/616_contracts.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "engineering-contract-revision"
+    },
+    {
+      "name": "engineering_contract_commands",
+      "kind": "table",
+      "path": "supabase/schemas/616_contracts.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "engineering-contract-command-receipt"
+    },
+    {
+      "name": "engineering_executions",
+      "kind": "table",
+      "path": "supabase/schemas/617_executions.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "engineering-execution"
+    },
+    {
+      "name": "engineering_execution_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/617_executions.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "engineering-execution-revision"
+    },
+    {
+      "name": "engineering_execution_commands",
+      "kind": "table",
+      "path": "supabase/schemas/617_executions.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "engineering-execution-command-receipt"
     }
   ]
 }

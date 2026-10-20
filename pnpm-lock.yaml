@@ -101,6 +101,12 @@ importers:
       '@line_bot_v1/actions':
         specifier: workspace:*
         version: link:packages/actions
+      '@line_bot_v1/contract':
+        specifier: workspace:*
+        version: link:packages/contract
+      '@line_bot_v1/execution':
+        specifier: workspace:*
+        version: link:packages/execution
       '@line_bot_v1/insights':
         specifier: workspace:*
         version: link:packages/insights
@@ -487,6 +493,31 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/contract:
+    dependencies:
+      '@line_bot_v1/content':
+        specifier: workspace:*
+        version: link:../content
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
+      '@line_bot_v1/resources':
+        specifier: workspace:*
+        version: link:../resources
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/daily-check-in:
     dependencies:
       '@line_bot_v1/account':
@@ -557,6 +588,31 @@ importers:
       '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../repository
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/execution:
+    dependencies:
+      '@line_bot_v1/contract':
+        specifier: workspace:*
+        version: link:../contract
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
+      '@line_bot_v1/resources':
+        specifier: workspace:*
+        version: link:../resources
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2111,6 +2167,7 @@ packages:
   '@opentelemetry/sdk-trace-base@2.11.0':
     resolution: {integrity: sha512-H19x/TX/LZdqiYOjM7fqtSxwlplC5pgelavqbQdHbhdq0q/AI/TGkM2dfGuuynTXmJPeF2HoZVoPDu+TGoW78A==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 

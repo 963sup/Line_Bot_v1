@@ -30,6 +30,12 @@ Repository
 Resources
 → Repository-scoped resource identity, content revisions, classification and engineering graph
 
+Contract
+→ Repository-scoped engineering agreements with frozen Resource revision quantity bases
+
+Execution
+→ quantity declarations and internal review against fixed active Contract lines
+
 Content
 → shared bounded title/body values; no aggregate or persisted data authority
 
@@ -42,6 +48,7 @@ Key separations:
 
 - Provider identity proof ≠ User lifecycle ≠ Membership / Employment ≠ Role / Permission。
 - Repository ≠ Project；Project Item只是 planning reference，不取得 underlying work authority。
+- Resource 基準數量 ≠ Contract 約定數量 ≠ Execution 申報／審查實績 ≠ Payroll 結算結果。
 - Bounded Context ≠ Module Boundary ≠ Data Boundary ≠ Consistency Boundary。
 - Accounting ≠ Billing/Charging ≠ Payment ≠ Settlement；沒有真實 owner/lifecycle/consumer時不預建 umbrella domain。
 

@@ -76,6 +76,9 @@ DDD Repository 是持久化存取模式；下方產品詞彙中的 Repository �
 | Team | Organization-scoped collaboration group | EnterpriseTeam / role |
 | Employment | User 與 Organization 的具期間工作關係 | Account / OrganizationMembership |
 | Repository | 獨立擁有 content / permission / state / lifecycle 的工作容器 | Git repository / Project |
+| Resource | Repository 內具固定版本、分類及可選工程數量的資源 | GitObject / 通用業務 Entity |
+| Contract | 固定 Resource revision 數量基準的工程約定，草稿可編輯、啟用後凍結 | 通用法律合約 / Payroll |
+| Execution | 固定 ACTIVE Contract line 的數量申報及內部接受／退回／作廢事實 | Issue 完成 / Actions runner / 薪資執行 |
 | Project | 跨 Repository / Work reference 的 planning boundary | Repository / WBS |
 | Project Item | planning reference to underlying work | copied work truth |
 | WBS | Project-owned Work Breakdown Structure | Project / arbitrary folder tree |
