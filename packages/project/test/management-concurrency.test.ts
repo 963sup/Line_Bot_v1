@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
+import { PostgresProjectLifecycle } from "../src/adapters/outbound/persistence/postgres-project-lifecycle.js";
 import { readProjectReceipt } from "../src/adapters/outbound/persistence/postgres-project-management-helpers.js";
 import { PostgresProjectManagementStore } from "../src/adapters/outbound/persistence/postgres-project-management-store.js";
+import { executeProjectLifecycle } from "../src/application/use-cases/project-lifecycle.js";
 import { ProjectError } from "../src/domain.js";
 
 type QueryRecord = { text: string; values?: unknown[] };
@@ -76,6 +78,43 @@ test("Project management takes a shared governance lock before replay and capabi
     order,
     [...order].sort((left, right) => left - right),
   );
+});
+
+test("Project lifecycle keeps governance, request, replay and Project row locking order", async () => {
+  const queries: QueryRecord[] = [];
+  const db = databaseWith(async (text) => {
+    if (text === governanceLockQuery || text.includes("pg_advisory_xact_lock"))
+      return { rows: [{}] };
+    if (text.includes("FROM project_commands") || text.includes("FROM projects"))
+      return { rows: [] };
+    throw new Error(`unexpected query: ${text}`);
+  }, queries);
+  await assert.rejects(
+    executeProjectLifecycle(
+      new PostgresProjectLifecycle(db),
+      { userId: "actor" },
+      {
+        action: "close-project",
+        requestId: "request",
+        projectId: "project",
+        expectedVersion: 1,
+      },
+      10,
+    ),
+    (error: unknown) => error instanceof ProjectError && error.status === 404,
+  );
+  assert.deepEqual(
+    queries.map((query) => query.text),
+    [
+      governanceLockQuery,
+      "SELECT pg_advisory_xact_lock(hashtext($1))",
+      "SELECT fingerprint,result FROM project_commands WHERE actor=$1 AND request_id=$2",
+      "SELECT pg_advisory_xact_lock(hashtext($1))",
+      "SELECT * FROM projects WHERE id=$1 FOR UPDATE",
+    ],
+  );
+  assert.deepEqual(queries[1]?.values, ["project-request:actor:request"]);
+  assert.deepEqual(queries[3]?.values, ["project:project"]);
 });
 
 test("Project management rejects a stored replay receipt with an incomplete result contract", async () => {
