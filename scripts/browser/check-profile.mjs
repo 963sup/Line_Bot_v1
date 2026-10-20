@@ -59,6 +59,7 @@ await build({
   bundle: true,
   outfile: path.join(output, "profile.js"),
   platform: "browser",
+  conditions: ["style"],
   nodePaths: [path.join(web, "node_modules")],
   jsx: "automatic",
   loader: { ".css": "css" },
