@@ -275,13 +275,8 @@ function main() {
     ["deadcode", ["node_modules/knip/bin/knip.js"]],
     [
       "typecheck+test",
-      [
-        turbo,
-        "run",
-        "typecheck",
-        "test",
-        ...(process.env.CI === "true" ? ["--concurrency=2"] : []),
-      ],
+      // Each package may start two PGlite workers; bound aggregate native/WASM memory locally too.
+      [turbo, "run", "typecheck", "test", "--concurrency=2"],
     ],
     ["build", [turbo, "run", "build"]],
   ];

@@ -69,6 +69,8 @@ TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace sour
 Web build 同時承擔 Sentry sourcemap 上傳，因此 `@line_bot_v1/web#build` 停用 Turbo 快取，避免重播產物而跳過上傳；其他 package build 仍可使用快取。`SENTRY_AUTH_TOKEN` 保留 passthrough，不納入 cache hash。未提供 Sentry 配置的本機 build 不證明上傳成功。
 
 Type generation、test/build artifact 與 dependency install 在同一 checkout 可能競爭。驗證流程預設按 repository runner 順序執行；不要同時手動跑另一套會寫相同產物的 command。
+
+`check`／`validate` 的 typecheck/test stage 在本地與 CI 都限制最多兩個 Turbo tasks；單一 package 的 Node test runner 仍最多兩個 workers，避免跨套件並行相乘而同時初始化過多 PGlite／WASM instances。這是 aggregate resource budget，不縮小 package、test 或 schema coverage，也不修改 `CI`：真 PostgreSQL service 的 CI 必填檢查與本地條件維持原契約。保留 Node 24 的 `--no-wasm-code-gc` 保護；PGlite 的 native／WASM 記憶體不能靠提高 JS heap 上限當作根因修復。直接執行其他 Turbo test 命令時也須設定適當的 `--concurrency`，不要假設 package 內的 worker 上限會限制跨套件總量。
 ## External-effect tools
 以下可能需要明確環境／授權，不屬一般 offline validate：
 
