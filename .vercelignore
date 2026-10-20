@@ -13,6 +13,9 @@
 !apps/web/package.json
 !apps/web/tsconfig.json
 !apps/web/next.config.ts
+!apps/web/postcss.config.mjs
+!apps/web/postcss
+!apps/web/postcss/legacy-modules.cjs
 !apps/web/next-env.d.ts
 !apps/web/vercel.json
 !apps/web/src
