@@ -62,7 +62,7 @@ function pnpmVersion() {
   return commandVersion("pnpm", ["--version"]);
 }
 
-function dependencyAvailability() {
+export function dependencyAvailability(root = repositoryRoot) {
   const dependencies = {
     "@modelcontextprotocol/sdk": ["@modelcontextprotocol", "sdk"],
     "@biomejs/biome": ["@biomejs", "biome"],
@@ -72,12 +72,24 @@ function dependencyAvailability() {
     typescript: ["typescript"],
     "smol-toml": ["smol-toml"],
   };
-  return Object.fromEntries(
+  const availability = Object.fromEntries(
     Object.entries(dependencies).map(([name, parts]) => [
       name,
-      existsSync(resolve(repositoryRoot, "node_modules", ...parts)),
+      existsSync(resolve(root, "node_modules", ...parts)),
     ]),
   );
+  let tsMorph = false;
+  try {
+    const manifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+    const expected = manifest.devDependencies?.["ts-morph"];
+    const installed = JSON.parse(
+      readFileSync(resolve(root, "node_modules/ts-morph/package.json"), "utf8"),
+    );
+    tsMorph = expected === "27.0.2" && installed.version === expected;
+  } catch {
+    tsMorph = false;
+  }
+  return { ...availability, "ts-morph": tsMorph };
 }
 
 export function inspectSourceTool(

@@ -131,7 +131,11 @@ function fixture(t) {
         "github:current-main": "node scripts/github/current-main.mjs",
         "github:release-plan": "node scripts/github/release-plan.mjs",
       },
-      devDependencies: { "@biomejs/biome": "2.5.12", "@ast-grep/cli": "0.51.0" },
+      devDependencies: {
+        "@biomejs/biome": "2.5.12",
+        "@ast-grep/cli": "0.51.0",
+        "ts-morph": "27.0.2",
+      },
     }),
   );
   write(
@@ -585,6 +589,21 @@ test("source operations keep a pinned local CLI and a preview-only command entry
   workspace.allowBuilds["@ast-grep/cli"] = false;
   write("pnpm-workspace.yaml", YAML.stringify(workspace));
   rejects(root, "ast-grep CLI requires its explicit installation build");
+});
+
+test("source facts keep the supported direct exact parser dependency", (t) => {
+  const { root, write } = fixture(t);
+  const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  for (const invalid of [undefined, "^27.0.2", "28.0.0"]) {
+    if (invalid === undefined) delete packageJson.devDependencies["ts-morph"];
+    else packageJson.devDependencies["ts-morph"] = invalid;
+    write("package.json", JSON.stringify(packageJson));
+    rejects(root, "pinned direct ts-morph 27.0.2");
+
+    packageJson.devDependencies["ts-morph"] = "27.0.2";
+    write("package.json", JSON.stringify(packageJson));
+    assert.deepEqual(validate(root), []);
+  }
 });
 
 test("Biome mutation and editor integration stay canonical", (t) => {

@@ -65,6 +65,7 @@
     "knip": "catalog:",
     "smol-toml": "catalog:",
     "supabase": "catalog:",
+    "ts-morph": "27.0.2",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "yaml": "catalog:",

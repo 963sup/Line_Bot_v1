@@ -194,6 +194,10 @@ export function validate(root) {
       errors.push("package.json: code must own source queries and preview-only patch generation");
     if (manifest.devDependencies?.["@ast-grep/cli"] !== "0.51.0")
       errors.push("package.json: source operations require the pinned @ast-grep/cli 0.51.0");
+    if (manifest.devDependencies?.["ts-morph"] !== "27.0.2")
+      errors.push(
+        "package.json: source facts require the pinned direct ts-morph 27.0.2 dependency",
+      );
     if (workspace.allowBuilds?.["@ast-grep/cli"] !== true)
       errors.push(
         "pnpm-workspace.yaml: the pinned ast-grep CLI requires its explicit installation build",

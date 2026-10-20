@@ -1,9 +1,11 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { definitions, references, rename, structuralRewrite, structuralSearch } from "./core.mjs";
+import { codeFacts } from "./facts.mjs";
 
 export const usage = `Usage:
   pnpm code search --rule <yaml> --scope <path> [--scope <path>] [--exclude <path>]
+  pnpm code facts --scope <path> [--scope <path>] [--exclude <path>]
   pnpm code rewrite --rule <yaml> --scope <path> [--scope <path>] [--exclude <path>] --objective <text> --out <.artifacts/plan.json>
   pnpm code definition <file> <1-based-line> <1-based-column>
   pnpm code references <file> <1-based-line> <1-based-column>
@@ -45,6 +47,14 @@ function positiveInteger(value, label) {
 export function execute(argv, { root = process.cwd() } = {}) {
   const [operation, ...args] = argv;
   if (operation === "--help" || operation === "-h") return { operation: "help", usage };
+  if (operation === "facts") {
+    const options = parseOptions(args, {
+      allowed: new Set(["scope", "exclude"]),
+      repeatable: new Set(["scope", "exclude"]),
+    });
+    if (!options.scopes?.length) fail("--scope is required.");
+    return codeFacts(root, options);
+  }
   if (operation === "search" || operation === "rewrite") {
     const options = parseOptions(args, {
       allowed: new Set(

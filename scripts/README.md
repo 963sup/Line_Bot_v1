@@ -14,7 +14,7 @@
 | `attendance/` | Attendance maintenance worker / scheduler operation。 |
 | `browser/` | 可重跑的本機 production-Web browser probes。 |
 | `changes/` | Change status/preflight/finalize 與 deterministic patch application。 |
-| `code/` | AST／TypeScript 符號查詢與 preview-only patch plan generation；寫入沿用 `patch:apply`。 |
+| `code/` | ts-morph 唯讀 code facts、AST／TypeScript 符號查詢與 preview-only patch plan generation；寫入沿用 `patch:apply`。 |
 | `docs/` | Documentation validation。 |
 | `github/` | GitHub readback 與 Release affected-source routing。 |
 | `line/` | LINE provider operation adapters；目前包含 `rich-menu/`。 |
@@ -30,6 +30,7 @@
 pnpm tooling:doctor
 pnpm skills:list
 pnpm code --help
+pnpm code facts --scope packages/repository/src
 pnpm change:status
 pnpm semantic plan "<intent>"
 pnpm change:preflight
