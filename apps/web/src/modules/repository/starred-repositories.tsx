@@ -1,10 +1,10 @@
 "use client";
 
 import type { StarredRepository } from "@line_bot_v1/repository/contracts/repositories/stars";
-import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { ActionRow } from "../../shared/ui/page-layout";
 import { repositoryPath } from "./resource-navigation";
 import { errorMessage, isRecord, isStarredRepository } from "./response-validation";
 
@@ -77,23 +77,12 @@ export default function StarredRepositories({ liffId }: { liffId: string }) {
       {items && items.length > 0 && (
         <div className="menu-group">
           {items.map((item) => (
-            <Link
-              className="action-row"
+            <ActionRow
               key={item.id}
               href={repositoryPath(item.ownerLogin, item.name)}
-            >
-              <span>
-                <strong>
-                  {item.ownerLogin}/{item.name}
-                </strong>
-                <small>
-                  {item.visibility} · {item.starCount} Stars
-                </small>
-              </span>
-              <span className="action-chevron" aria-hidden="true">
-                ›
-              </span>
-            </Link>
+              title={`${item.ownerLogin}/${item.name}`}
+              description={`${item.visibility} · ${item.starCount} Stars`}
+            />
           ))}
         </div>
       )}
