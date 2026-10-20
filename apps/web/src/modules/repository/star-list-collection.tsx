@@ -1,10 +1,10 @@
 "use client";
 
 import type { RepositoryStarListSummary } from "@line_bot_v1/repository/contracts/repositories/star-lists";
-import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import { ActionRow } from "../../shared/ui/page-layout";
 import { repositoryStarListPath } from "./resource-navigation";
 import { errorMessage, isRecord, isStarListSummary } from "./response-validation";
 
@@ -80,18 +80,12 @@ export default function RepositoryStarListCollection({ liffId }: { liffId: strin
       {items && items.length > 0 && (
         <div className="menu-group">
           {items.map((item) => (
-            <Link className="action-row" key={item.id} href={repositoryStarListPath(item.id)}>
-              <span className="action-row-copy">
-                <strong>{item.name}</strong>
-                <small>
-                  @{item.ownerLogin} · {item.visibility} · {item.visibleRepositoryCount}{" "}
-                  repositories
-                </small>
-              </span>
-              <span className="action-chevron" aria-hidden="true">
-                ›
-              </span>
-            </Link>
+            <ActionRow
+              key={item.id}
+              href={repositoryStarListPath(item.id)}
+              title={item.name}
+              description={`@${item.ownerLogin} · ${item.visibility} · ${item.visibleRepositoryCount} repositories`}
+            />
           ))}
         </div>
       )}

@@ -1055,6 +1055,132 @@ async function run() {
         fullPage: true,
       });
     }
+    const rowAcceptancePosts = posts.length;
+    const rowCases = [
+      {
+        pathname: "/home",
+        scope: ".home-starred",
+        title: "acme/Operations",
+        description: "private · 3 Stars",
+        href: "/acme/Operations",
+      },
+      {
+        pathname: "/stars",
+        scope: ".starred-repositories",
+        title: "acme/Operations",
+        description: "private · 3 Stars",
+        href: "/acme/Operations",
+      },
+      {
+        pathname: "/repositories/lists",
+        scope: ".crud-manager",
+        title: starList.name,
+        description: "@viewer · public · 1 repositories",
+        href: `/repositories/lists/${starListId}`,
+      },
+    ];
+    for (const rowCase of rowCases) {
+      await page.goto(`${base}${rowCase.pathname}`);
+      const row = page.locator(rowCase.scope).getByRole("link", { name: rowCase.title });
+      await expect(row).toHaveAccessibleName(`${rowCase.title} ${rowCase.description}`);
+      await expect(row.locator("strong")).toHaveText(rowCase.title);
+      await expect(row.locator("small")).toHaveText(rowCase.description);
+      await expect(row).toHaveAttribute("href", rowCase.href);
+      await row.focus();
+      await expect(row).toBeFocused();
+      await row.press("Enter");
+      await expect(page).toHaveURL(`${base}${rowCase.href}`);
+      await page.goBack();
+      await expect(page).toHaveURL(`${base}${rowCase.pathname}`);
+      if (artifactDir) {
+        await page.screenshot({
+          path: path.join(artifactDir, `action-row-${rowCase.pathname.split("/").at(-1)}.png`),
+          fullPage: true,
+        });
+      }
+    }
+
+    const longStarredRepository = {
+      id: repositoryId,
+      ownerLogin: "long-owner-abcdefghijklmnopqrst",
+      name: `engineering-${"long-name-".repeat(7)}plan`,
+      visibility: "private",
+      starredAt: Date.now(),
+      starCount: 3,
+    };
+    const longStarList = { ...starList, name: "Operations Toolkit ".repeat(4).trim() };
+    await page.route("**/api/repositories/starred", (route) =>
+      route.fulfill({ json: { items: [longStarredRepository] } }),
+    );
+    await page.route("**/api/repositories/lists", (route) =>
+      route.fulfill({ json: { items: [longStarList] } }),
+    );
+    for (const rowCase of rowCases) {
+      const isList = rowCase.pathname === "/repositories/lists";
+      const title = isList
+        ? longStarList.name
+        : `${longStarredRepository.ownerLogin}/${longStarredRepository.name}`;
+      const href = isList
+        ? rowCase.href
+        : `/${longStarredRepository.ownerLogin}/${longStarredRepository.name}`;
+      await page.goto(`${base}${rowCase.pathname}`);
+      const row = page.locator(rowCase.scope).getByRole("link", { name: title });
+      await expect(row).toHaveAccessibleName(`${title} ${rowCase.description}`);
+      await expect(row.locator("strong")).toHaveText(title);
+      await expect(row.locator("small")).toHaveText(rowCase.description);
+      await expect(row).toHaveAttribute("href", href);
+      for (const width of [320, 390, 1280]) {
+        await page.setViewportSize({ width, height: 844 });
+        await row.scrollIntoViewIfNeeded();
+        await expect(row).toBeVisible();
+        await expect(row.locator(".action-chevron")).toBeInViewport();
+        await row.focus();
+        await row.press("Shift+Tab");
+        await page.keyboard.press("Tab");
+        await expect(row).toBeFocused();
+        assert.equal(await row.evaluate((element) => element.matches(":focus-visible")), true);
+        const layout = await row.evaluate((element) => {
+          const bounds = element.getBoundingClientRect();
+          const arrow = element.querySelector(".action-chevron").getBoundingClientRect();
+          return {
+            viewport: innerWidth,
+            document: document.documentElement.scrollWidth,
+            body: document.body.scrollWidth,
+            left: bounds.left,
+            right: bounds.right,
+            arrowLeft: arrow.left,
+            arrowRight: arrow.right,
+          };
+        });
+        assert.ok(
+          layout.document <= layout.viewport + 1 && layout.body <= layout.viewport + 1,
+          `action row document overflow: ${JSON.stringify(layout)}`,
+        );
+        assert.ok(
+          layout.arrowLeft >= layout.left && layout.arrowRight <= layout.right + 1,
+          `action row chevron overflow: ${JSON.stringify(layout)}`,
+        );
+        if (artifactDir) {
+          await page.screenshot({
+            path: path.join(
+              artifactDir,
+              `action-row-${rowCase.pathname.split("/").at(-1)}-long-${width}.png`,
+            ),
+            fullPage: true,
+          });
+        }
+      }
+    }
+    await page.unroute("**/api/repositories/starred");
+    await page.unroute("**/api/repositories/lists");
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(
+      posts.length,
+      rowAcceptancePosts,
+      "result-row navigation must not issue business commands",
+    );
+    assert.deepEqual(errors, []);
+
     console.log(
       "PASS: Home/Profile IA, Explore Activity, dedicated Trending, Awesome Lists, Star List management, scoped Repository resources and Notifications navigation; real Next.js/browser with synthetic LIFF/API.",
     );
