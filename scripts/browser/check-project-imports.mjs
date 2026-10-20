@@ -15,7 +15,7 @@ const webRequire = createRequire(new URL("../../apps/web/package.json", import.m
 const resolved = (specifier) => import(pathToFileURL(webRequire.resolve(specifier)).href);
 const { postgresFixture } = await resolved("@line_bot_v1/platform/testing/postgres");
 const { createProjectManagement } = await resolved("@line_bot_v1/project/application/management");
-const { createPostgresProjectManagementStore } = await resolved(
+const { createPostgresProjectLifecycle, createPostgresProjectManagementStore } = await resolved(
   "@line_bot_v1/project/composition/bootstrap/postgres-project-management-store",
 );
 const { createProjectRepositoryImports } = await resolved(
@@ -68,6 +68,7 @@ await issues.execute(
 const projects = createProjectManagement({
   activeUser: async (subject) => ({ id: subject }),
   store: () => createPostgresProjectManagementStore(fixture.db),
+  lifecycle: () => createPostgresProjectLifecycle(fixture.db),
   now: Date.now,
 });
 const worker = createProjectRepositoryImports(fixture.db);
