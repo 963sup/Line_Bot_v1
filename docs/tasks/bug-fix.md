@@ -5,6 +5,7 @@
 1. Root + nearest `AGENTS.md`.
 2. Affected owner contract。
 3. 只有 failure涉及的 cross-cutting rule（authorization / database write / runtime / external effect）。
+4. Next.js／UI failure 使用 [Next.js and shadcn agent workflow](../reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow)。
 
 不要先讀完整 architecture、platform或Governance。
 

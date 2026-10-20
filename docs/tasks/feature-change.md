@@ -6,6 +6,7 @@
 2. `pnpm semantic plan "<intent>"` 或 affected owner contract。
 3. 只載入真正受影響的 rule。
 4. 若沒有 owner，再讀 [architecture change](architecture-change.md)。
+5. Next.js／UI 任務使用 [Next.js and shadcn agent workflow](../reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow)。
 
 ## Decide
 

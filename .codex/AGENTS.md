@@ -5,4 +5,5 @@
 - Agent profiles may restrict role/tools but do not duplicate repository rules; root + nearest AGENTS still apply.
 - `rules/*.rules` enforces Codex command safety only and never replaces external-platform authorization.
 - Validate runtime config with `tooling:check`; use `tooling:rules` for execpolicy semantics. Static success ≠ current-session reload.
+- For Next.js/shadcn tasks and MCP diagnosis, follow the [agent workflow](../docs/reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow); dependency versions stay in manifests/lockfile.
 - Do not broaden sandbox/approval or command prefixes to make a task pass; verify allow/deny cases and report runtime-load evidence separately.

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { inspectMcpConfiguration, probeMcp } from "./mcp-doctor.mjs";
 
 export const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -63,11 +64,13 @@ function pnpmVersion() {
 
 function dependencyAvailability() {
   const dependencies = {
+    "@modelcontextprotocol/sdk": ["@modelcontextprotocol", "sdk"],
     "@biomejs/biome": ["@biomejs", "biome"],
     knip: ["knip"],
     supabase: ["supabase"],
     turbo: ["turbo"],
     typescript: ["typescript"],
+    "smol-toml": ["smol-toml"],
   };
   return Object.fromEntries(
     Object.entries(dependencies).map(([name, parts]) => [
@@ -77,8 +80,27 @@ function dependencyAvailability() {
   );
 }
 
-export function main() {
+export function parseDoctorArgs(args) {
+  let live = false;
+  let port;
+  for (let index = 0; index < args.length; index++) {
+    if (args[index] === "--mcp" && !live) live = true;
+    else if (args[index] === "--next-port" && port === undefined) {
+      const value = args[++index];
+      if (!/^\d+$/.test(value ?? ""))
+        throw new Error("--next-port requires an integer from 1 to 65535.");
+      port = Number(value);
+      if (port < 1 || port > 65535)
+        throw new Error("--next-port requires an integer from 1 to 65535.");
+    } else throw new Error("Usage: pnpm tooling:doctor [--mcp [--next-port <port>]]");
+  }
+  if (port !== undefined && !live) throw new Error("--next-port requires --mcp.");
+  return { live, port };
+}
+
+export async function main() {
   try {
+    const options = parseDoctorArgs(process.argv.slice(2));
     const manifest = JSON.parse(readFileSync(resolve(repositoryRoot, "package.json"), "utf8"));
     const expectedNode = readFileSync(resolve(repositoryRoot, ".node-version"), "utf8").trim();
     const expectedPnpm = String(manifest.packageManager ?? "").replace(/^pnpm@/, "");
@@ -91,10 +113,15 @@ export function main() {
       dependencies: dependencyAvailability(),
     });
     const envKeys = parseEnvKeys(readFileSync(resolve(repositoryRoot, ".env.example"), "utf8"));
+    const configuration = inspectMcpConfiguration(repositoryRoot);
+    const live = options.live ? await probeMcp(repositoryRoot, options) : { status: "not-run" };
+    const ok = report.ok && configuration.ok && live.ok !== false;
     console.log(
       JSON.stringify(
         {
           ...report,
+          ok,
+          mcp: { configuration, live },
           environment: {
             declared: envKeys.length,
             present: envKeys.filter((key) => Boolean(process.env[key])).length,
@@ -106,11 +133,11 @@ export function main() {
         2,
       ),
     );
-    if (!report.ok) process.exitCode = 1;
+    if (!ok) process.exitCode = 1;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   }
 }
 
-if (import.meta.main) main();
+if (import.meta.main) await main();

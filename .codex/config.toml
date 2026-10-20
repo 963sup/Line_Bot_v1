@@ -17,10 +17,13 @@ max_concurrent_threads_per_session = 8
 
 [mcp_servers.next-devtools]
 command = "pnpm"
-args = ["--config.node-linker=hoisted", "--config.virtual-store-type=project", "dlx", "next-devtools-mcp@latest"]
+args = ["exec", "next-devtools-mcp"]
 startup_timeout_sec = 60
+
+[mcp_servers.next-devtools.env]
+NEXT_DEVTOOLS_HOST = "127.0.0.1"
 
 [mcp_servers.shadcn]
 command = "pnpm"
-args = ["--config.node-linker=hoisted", "--config.virtual-store-type=project", "--dir", "apps/web", "dlx", "shadcn@latest", "mcp"]
+args = ["--dir", "apps/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 60
