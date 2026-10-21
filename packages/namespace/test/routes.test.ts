@@ -8,6 +8,10 @@ const activeDeliveryRoutes = {
   "repository-wbs": { file: "(resource)/[login]/[repository]/wbs/page.tsx" },
   account: { file: "(public)/[login]/page.tsx" },
   repository: { file: "(resource)/[login]/[repository]/page.tsx" },
+  "repository-content": { file: "(resource)/[login]/[repository]/content/page.tsx" },
+  "repository-resources": { file: "(resource)/[login]/[repository]/resources/page.tsx" },
+  "repository-contracts": { file: "(resource)/[login]/[repository]/contracts/page.tsx" },
+  "repository-executions": { file: "(resource)/[login]/[repository]/executions/page.tsx" },
   "repository-issues": { file: "(resource)/[login]/[repository]/issues/page.tsx" },
   "repository-issue": {
     file: "(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx",

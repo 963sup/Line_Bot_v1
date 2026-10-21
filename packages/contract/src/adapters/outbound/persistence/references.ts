@@ -2,11 +2,11 @@ import type { Sql } from "@line_bot_v1/platform/postgres";
 import { literalValue, stringValue } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type {
-  ContractLineBasis,
   ContractLineReference,
   ContractReferenceReader,
 } from "../../../contracts/output/references.js";
 import { ContractError, contractErrorFromUnknown } from "../../../domain/error.js";
+import type { ContractLineBasis } from "../../../domain/line-reference.js";
 import { readContractRevision } from "./contracts.js";
 
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -69,10 +69,46 @@ export class PostgresContractReferenceReader implements ContractReferenceReader 
         throw new ContractError(404, "Active Contract revision not found.", "NOT_FOUND");
       const line = revision.lines.find((candidate) => candidate.lineId === ref.lineId);
       if (!line) throw new ContractError(404, "Contract line reference not found.", "NOT_FOUND");
-      return {
+      const common = {
         contractId: revision.contractId,
         contractRevisionId: revision.id,
         lineId: line.lineId,
+        agreedQuantity: line.agreedQuantity,
+      };
+      if ("content" in line)
+        return {
+          ...common,
+          content: {
+            repositoryId: line.content.repositoryId,
+            planRevisionId: line.content.planRevisionId,
+            planVersion: line.content.planVersion,
+            node: {
+              id: line.content.node.id,
+              kind: line.content.node.kind,
+              title: line.content.node.title,
+              body: line.content.node.body,
+              path: line.content.node.path.map((item) => ({
+                id: item.id,
+                kind: item.kind,
+                title: item.title,
+              })),
+              plannedQuantity:
+                line.content.node.plannedQuantity === null
+                  ? null
+                  : {
+                      value: line.content.node.plannedQuantity.value,
+                      measure: {
+                        id: line.content.node.plannedQuantity.measure.id,
+                        name: line.content.node.plannedQuantity.measure.name,
+                        subject: line.content.node.plannedQuantity.measure.subject,
+                        unit: line.content.node.plannedQuantity.measure.unit,
+                      },
+                    },
+            },
+          },
+        };
+      return {
+        ...common,
         resource: {
           resourceId: line.resource.resourceId,
           resourceRevisionId: line.resource.resourceRevisionId,
@@ -86,7 +122,6 @@ export class PostgresContractReferenceReader implements ContractReferenceReader 
           },
           sourceQuantity: line.resource.sourceQuantity,
         },
-        agreedQuantity: line.agreedQuantity,
       };
     } catch (error) {
       throw contractErrorFromUnknown(error);

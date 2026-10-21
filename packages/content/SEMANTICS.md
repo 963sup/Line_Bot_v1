@@ -4,37 +4,54 @@
 
 - Package: `packages/content`
 - Module: `@line_bot_v1/content`
-- Module kind: `support-module`
+- Module kind: `domain-module`
 - Semantic owner: `content`
-- Owner kind: `support-owner`
+- Owner kind: `business-owner`
 - Owner lifecycle: `current`
 - Product domain: `enterprise-workforce-operations-management`
 
 ## Subdomain
 
-No business subdomain is assigned to this owner. Technical and application-only modules are not classified as business subdomains by package existence.
+| Subdomain | Classification | Rationale | Sources |
+| --- | --- | --- | --- |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 
-No Bounded Context is selected or declared for this owner in the canonical semantic model.
+| Context | Status | Ownership | Note |
+| --- | --- | --- | --- |
+| content | selected | owner: content |  |
 
 ## Ubiquitous Language
 
-No canonical business concept is currently declared for this owner.
+| Term | Concept ID | Kind | Lifecycle | Definition |
+| --- | --- | --- | --- | --- |
+| ContentMeasure | content-measure | authoritative | current | Immutable plan-local measure identity, subject/method and unit embedded in coherent Content plan revisions. |
+| ContentPlan | content-plan | authoritative | current | Repository-scoped work definition head selecting one complete immutable plan document. |
+| ContentPlanCommandReceipt | content-plan-command-receipt | authoritative | current | Durable actor/request fingerprint and Content plan revision for current-authorized exact replay. |
+| ContentPlanResourcePin | content-plan-resource-pin | authoritative | current | Exact physical Resource revision assignment belonging to one node in a fixed Content plan revision. |
+| ContentPlanRevision | content-plan-revision | authoritative | current | Immutable complete Subject/Object/SubObject/Work/Task hierarchy, planned measures, quantities and exact physical resource pins. |
+| Object | content-object | authoritative | current | Work-content Object under a Subject; distinct from GitObject and physical Resource identity. |
+| Subject | content-subject | authoritative | current | Root subject of a Repository work plan. |
+| SubObject | content-subobject | authoritative | current | Work-content subdivision under one Object. |
+| Task | content-task | authoritative | current | Leaf work definition under one Work. Content owns identity and plan definition; Execution owns actual execution and prerequisites. |
+| Work | content-work | authoritative | current | Defined work under one SubObject, containing Tasks and optionally an explicit planned quantity. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| normalize-text-content | required | implemented | Normalize a bounded title and preserve an unmodified body for Resources, Wiki and Contract without acquiring identity, revisions, storage or rendering authority. |
+| manage-content-plans | required | implemented | Manage Repository work definitions in a strict five-level hierarchy with coherent immutable plan revisions and physical resource pins. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| provides | contract | query | content | pure-value | Contract consumes bounded title/body normalization, retaining agreement identity, revisions, error semantics, authorization and persistence authority. |
-| provides | resources | query | content | pure-value | Resources consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
-| provides | wiki | query | content | pure-value | Wiki consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
+| consumes | resources | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource assignments qualify exact physical identities through the public reader; unchanged historical pins survive archive. |
+| consumes | repository | stable-identity+query | repository | transaction-recheck | Current Repository qualification, permissions and archive policy are rechecked in the actual Content transaction. |
+| provides | contract | stable-identity+query | content | transaction-recheck+immutable-pin | Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments. |
+| provides | execution | query | content | pure-value | Execution applies the Content-published exact planned-measure quantity policy while owning actual quantities and internal review. |
+| provides | execution | stable-identity+query | content | transaction-recheck+immutable-pin | Actual reports pin exact Tasks and validate membership in the committed Work/Task; Task prerequisites belong to Execution. |
 
 ## Tactical Model Boundary
 

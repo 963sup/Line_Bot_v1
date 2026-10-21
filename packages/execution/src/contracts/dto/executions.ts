@@ -1,7 +1,13 @@
-import type { ContractLineBasis } from "@line_bot_v1/contract/contracts/output/references";
-import type { ExecutionAction, ExecutionState } from "../../domain/execution.js";
+import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import type { ContractLineBasis } from "@line_bot_v1/contract/domain/line-reference";
+import type { ResourceBasis } from "@line_bot_v1/resources/domain/resource-reference";
+import type {
+  ExecutionAction,
+  ExecutionDependencyBasis,
+  ExecutionState,
+} from "../../domain/execution.js";
 
-export type ExecutionRevisionDto = Readonly<{
+type ExecutionRevisionDtoCommon = Readonly<{
   revisionId: string;
   executionId: string;
   repositoryId: string;
@@ -11,11 +17,22 @@ export type ExecutionRevisionDto = Readonly<{
   at: number;
   action: ExecutionAction;
   state: ExecutionState;
-  basis: ContractLineBasis;
   quantity: string;
   note: string;
   reason: string | null;
 }>;
+export type ExecutionRevisionDto = ExecutionRevisionDtoCommon &
+  (
+    | Readonly<{
+        basis: Extract<ContractLineBasis, { resource: unknown }>;
+      }>
+    | Readonly<{
+        basis: Extract<ContractLineBasis, { content: unknown }>;
+        task: ContentPlanItemBasis;
+        resources: readonly ResourceBasis[];
+        dependency: ExecutionDependencyBasis;
+      }>
+  );
 export type ExecutionReceipt = Readonly<{ requestId: string; revision: ExecutionRevisionDto }>;
 export type ExecutionSummary = Readonly<{
   executionId: string;

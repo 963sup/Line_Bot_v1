@@ -31,6 +31,10 @@
     "./composition/bootstrap/references": {
       "types": "./dist/composition/bootstrap/references.d.ts",
       "default": "./dist/composition/bootstrap/references.js"
+    },
+    "./domain/line-reference": {
+      "types": "./dist/domain/line-reference.d.ts",
+      "default": "./dist/domain/line-reference.js"
     }
   },
   "files": [
@@ -42,10 +46,10 @@
     "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
-    "@line_bot_v1/content": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
-    "@line_bot_v1/resources": "workspace:*"
+    "@line_bot_v1/resources": "workspace:*",
+    "@line_bot_v1/content": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

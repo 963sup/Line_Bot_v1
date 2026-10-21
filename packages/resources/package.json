@@ -24,10 +24,6 @@
       "types": "./dist/contracts/output/references.d.ts",
       "default": "./dist/contracts/output/references.js"
     },
-    "./contracts/output/engineering-references": {
-      "types": "./dist/contracts/output/engineering-references.d.ts",
-      "default": "./dist/contracts/output/engineering-references.js"
-    },
     "./composition/bootstrap/objects": {
       "types": "./dist/composition/bootstrap/objects.d.ts",
       "default": "./dist/composition/bootstrap/objects.js"
@@ -36,10 +32,6 @@
       "types": "./dist/composition/bootstrap/references.d.ts",
       "default": "./dist/composition/bootstrap/references.js"
     },
-    "./composition/bootstrap/engineering-references": {
-      "types": "./dist/composition/bootstrap/engineering-references.d.ts",
-      "default": "./dist/composition/bootstrap/engineering-references.js"
-    },
     "./domain/quantity": {
       "types": "./dist/domain/quantity.d.ts",
       "default": "./dist/domain/quantity.js"
@@ -47,6 +39,38 @@
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
+    },
+    "./application/use-cases/resources": {
+      "types": "./dist/application/use-cases/resources.d.ts",
+      "default": "./dist/application/use-cases/resources.js"
+    },
+    "./contracts/dto/resources": {
+      "types": "./dist/contracts/dto/resources.d.ts",
+      "default": "./dist/contracts/dto/resources.js"
+    },
+    "./contracts/output/resource-references": {
+      "types": "./dist/contracts/output/resource-references.d.ts",
+      "default": "./dist/contracts/output/resource-references.js"
+    },
+    "./composition/bootstrap/resources": {
+      "types": "./dist/composition/bootstrap/resources.d.ts",
+      "default": "./dist/composition/bootstrap/resources.js"
+    },
+    "./composition/bootstrap/resource-references": {
+      "types": "./dist/composition/bootstrap/resource-references.d.ts",
+      "default": "./dist/composition/bootstrap/resource-references.js"
+    },
+    "./domain/resource-error": {
+      "types": "./dist/domain/resource-error.d.ts",
+      "default": "./dist/domain/resource-error.js"
+    },
+    "./domain/resource-reference": {
+      "types": "./dist/domain/resource-reference.d.ts",
+      "default": "./dist/domain/resource-reference.js"
+    },
+    "./domain/engineering-reference": {
+      "types": "./dist/domain/engineering-reference.d.ts",
+      "default": "./dist/domain/engineering-reference.js"
     }
   },
   "files": [
@@ -58,7 +82,6 @@
     "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
-    "@line_bot_v1/content": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*"
   },

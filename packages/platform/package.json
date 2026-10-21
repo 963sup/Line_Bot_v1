@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./text": {
+      "types": "./dist/text.d.ts",
+      "default": "./dist/text.js"
+    },
     "./validation": {
       "types": "./dist/validation.d.ts",
       "default": "./dist/validation.js"

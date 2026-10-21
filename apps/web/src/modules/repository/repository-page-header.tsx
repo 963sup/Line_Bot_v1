@@ -3,7 +3,11 @@ import RepositoryResourceNavigation from "./repository-resource-navigation";
 import { type RepositoryResourceSection, repositoryPath } from "./resource-navigation";
 
 const titles: Record<RepositoryResourceSection, string> = {
-  objects: "Objects",
+  content: "Content",
+  resources: "Resources",
+  contracts: "Contracts",
+  executions: "Executions",
+  objects: "Objects (Legacy)",
   wiki: "Wiki",
   insights: "Insights",
   wbs: "WBS",
@@ -35,7 +39,7 @@ export default function RepositoryPageHeader({
   return (
     <>
       <PageHeading
-        title={title ?? titles[active]}
+        title={active === "objects" ? `${title ?? "Objects"} (Legacy)` : (title ?? titles[active])}
         description={`${ownerLogin}/${repositoryName}`}
         back={
           back ??

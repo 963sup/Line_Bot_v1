@@ -1,6 +1,7 @@
-import { normalizeContent } from "@line_bot_v1/content/text";
-import type { ResourceQuantityBasis } from "@line_bot_v1/resources/contracts/output/engineering-references";
-import { normalizeQuantity, quantityUnits } from "@line_bot_v1/resources/domain/quantity";
+import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import { normalizeQuantity } from "@line_bot_v1/content/domain/quantity";
+import { normalizeContent } from "@line_bot_v1/platform/text";
+import type { ResourceQuantityBasis } from "@line_bot_v1/resources/domain/engineering-reference";
 import { ContractError } from "./error.js";
 
 type ContractState = "DRAFT" | "ACTIVE" | "CLOSED";
@@ -8,16 +9,25 @@ export type ContractAction = "create" | "edit" | "activate" | "close";
 
 export type ContractLineInput = Readonly<{
   lineId: string;
-  resourceId: string;
-  resourceRevisionId: string;
+  planRevisionId: string;
+  nodeId: string;
   agreedQuantity: string;
 }>;
 
-export type FrozenContractLine = Readonly<{
+export type ContentContractLine = Readonly<{
+  lineId: string;
+  content: ContentPlanItemBasis;
+  agreedQuantity: string;
+}>;
+
+/** Historical snapshot only. New commands cannot create this shape. */
+export type HistoricalResourceContractLine = Readonly<{
   lineId: string;
   resource: ResourceQuantityBasis;
   agreedQuantity: string;
 }>;
+
+export type FrozenContractLine = ContentContractLine | HistoricalResourceContractLine;
 
 export type ContractRevision = Readonly<{
   id: string;
@@ -39,9 +49,9 @@ export type ContractEdit =
       action: "create" | "edit";
       title: string;
       body: string;
-      lines: readonly FrozenContractLine[];
+      lines: readonly ContentContractLine[];
     }>
-  | Readonly<{ action: "activate"; lines: readonly FrozenContractLine[] }>
+  | Readonly<{ action: "activate"; lines: readonly ContentContractLine[] }>
   | Readonly<{ action: "close" }>;
 
 function copyResource(resource: ResourceQuantityBasis): ResourceQuantityBasis {
@@ -60,12 +70,51 @@ function copyResource(resource: ResourceQuantityBasis): ResourceQuantityBasis {
   };
 }
 
+function copyContent(content: ContentPlanItemBasis): ContentPlanItemBasis {
+  return {
+    repositoryId: content.repositoryId,
+    planRevisionId: content.planRevisionId,
+    planVersion: content.planVersion,
+    node: {
+      id: content.node.id,
+      kind: content.node.kind,
+      title: content.node.title,
+      body: content.node.body,
+      path: content.node.path.map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        title: item.title,
+      })),
+      plannedQuantity:
+        content.node.plannedQuantity === null
+          ? null
+          : {
+              value: content.node.plannedQuantity.value,
+              measure: {
+                id: content.node.plannedQuantity.measure.id,
+                name: content.node.plannedQuantity.measure.name,
+                subject: content.node.plannedQuantity.measure.subject,
+                unit: content.node.plannedQuantity.measure.unit,
+              },
+            },
+    },
+  };
+}
+
 export function copyContractLines(lines: readonly FrozenContractLine[]): FrozenContractLine[] {
-  return lines.map((line) => ({
-    lineId: line.lineId,
-    resource: copyResource(line.resource),
-    agreedQuantity: line.agreedQuantity,
-  }));
+  return lines.map((line) =>
+    "content" in line
+      ? {
+          lineId: line.lineId,
+          content: copyContent(line.content),
+          agreedQuantity: line.agreedQuantity,
+        }
+      : {
+          lineId: line.lineId,
+          resource: copyResource(line.resource),
+          agreedQuantity: line.agreedQuantity,
+        },
+  );
 }
 
 export function assertContractTransition(
@@ -89,33 +138,36 @@ export function assertContractTransition(
 
 export function freezeContractLines(
   inputs: readonly ContractLineInput[],
-  resources: readonly ResourceQuantityBasis[],
-): FrozenContractLine[] {
-  if (inputs.length < 1 || inputs.length > 100 || resources.length !== inputs.length)
+  contentItems: readonly ContentPlanItemBasis[],
+): ContentContractLine[] {
+  if (inputs.length < 1 || inputs.length > 100 || contentItems.length !== inputs.length)
     throw new ContractError(400, "Contract must contain 1 to 100 lines.", "INVALID_INPUT");
-  return normalizeFrozenLines(
+  return normalizeContentLines(
     inputs.map((input, index) => {
-      const resource = resources[index];
+      const content = contentItems[index];
       if (
-        !resource ||
-        resource.resourceId !== input.resourceId ||
-        resource.resourceRevisionId !== input.resourceRevisionId
+        !content ||
+        content.planRevisionId !== input.planRevisionId ||
+        content.node.id !== input.nodeId
       )
         throw new ContractError(
           503,
-          "Contract Resource qualification is incomplete.",
+          "Contract Content qualification is incomplete.",
           "UNAVAILABLE",
         );
       return {
         lineId: input.lineId,
-        resource: copyResource(resource),
+        content: copyContent(content),
         agreedQuantity: input.agreedQuantity,
       };
     }),
   );
 }
 
-function normalizeFrozenLines(lines: readonly FrozenContractLine[]): FrozenContractLine[] {
+function normalizeContentLines(
+  lines: readonly ContentContractLine[],
+  repositoryId?: string,
+): ContentContractLine[] {
   if (lines.length < 1 || lines.length > 100)
     throw new ContractError(400, "Contract must contain 1 to 100 lines.", "INVALID_INPUT");
   const seen = new Set<string>();
@@ -123,14 +175,22 @@ function normalizeFrozenLines(lines: readonly FrozenContractLine[]): FrozenContr
     if (seen.has(line.lineId))
       throw new ContractError(400, "Contract line identifiers must be unique.", "INVALID_INPUT");
     seen.add(line.lineId);
+    if (
+      (repositoryId !== undefined && line.content.repositoryId !== repositoryId) ||
+      line.content.node.plannedQuantity === null
+    )
+      throw new ContractError(409, "Contract Content plan item is not eligible.", "SOURCE_INVALID");
     let agreedQuantity: string;
     try {
-      agreedQuantity = normalizeQuantity(line.agreedQuantity, line.resource.measure.unit);
-      if (quantityUnits(agreedQuantity) <= 0n) throw new Error("non-positive");
+      agreedQuantity = normalizeQuantity(
+        line.agreedQuantity,
+        line.content.node.plannedQuantity.measure.unit,
+      );
+      if (agreedQuantity === "0") throw new Error("non-positive");
     } catch {
       throw new ContractError(400, "Contract agreed quantity must be positive.", "INVALID_INPUT");
     }
-    return { lineId: line.lineId, resource: copyResource(line.resource), agreedQuantity };
+    return { lineId: line.lineId, content: copyContent(line.content), agreedQuantity };
   });
 }
 
@@ -160,20 +220,26 @@ export function reviseContract(
   let state: ContractState = current?.state ?? "DRAFT";
   if (edit.action === "create" || edit.action === "edit") {
     ({ title, body } = normalizedTerms(edit.title, edit.body));
-    lines = normalizeFrozenLines(edit.lines);
+    lines = normalizeContentLines(edit.lines, context.repositoryId);
     state = "DRAFT";
   } else if (edit.action === "activate") {
-    const activated = normalizeFrozenLines(edit.lines);
+    if (!current || current.lines.some((line) => !("content" in line)))
+      throw new ContractError(
+        409,
+        "A historical Resource draft must be edited to Content before activation.",
+        "LIFECYCLE_CONFLICT",
+      );
+    const activated = normalizeContentLines(edit.lines, context.repositoryId);
     if (
-      !current ||
       activated.length !== current.lines.length ||
       activated.some((line, index) => {
         const previous = current.lines[index];
         return (
           !previous ||
+          !("content" in previous) ||
           line.lineId !== previous.lineId ||
-          line.resource.resourceId !== previous.resource.resourceId ||
-          line.resource.resourceRevisionId !== previous.resource.resourceRevisionId ||
+          line.content.planRevisionId !== previous.content.planRevisionId ||
+          line.content.node.id !== previous.content.node.id ||
           line.agreedQuantity !== previous.agreedQuantity
         );
       })

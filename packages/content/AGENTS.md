@@ -1,8 +1,11 @@
-# Content package constraints
+# Content constraints
 
-Inherits the [packages contract](../AGENTS.md). Authority: [Content owner](../../docs/owners/content.md).
+Inherits [packages](../AGENTS.md). Authority: [Content owner](../../docs/owners/content.md).
 
-- Own only the shared normalization and validation policy for title/body text values.
-- Trim titles, require 1 to 200 JavaScript UTF-16 code units, and preserve body strings exactly while limiting them to 262144 code units.
-- Do not own identity, revisions, lifecycle, persistence, authorization, HTML, Markdown, or rendering behavior.
-- Keep the public surface explicit through `package.json` exports. Do not introduce configurable policy engines or framework ports.
+- Content owns Repository work definitions, the strict Subject → Object → SubObject → Work → Task hierarchy, planned quantities and coherent immutable plan revisions.
+- Task identity/definition belongs to Content; execution state, prerequisites, actuals and internal review belong to Execution.
+- Resources owns Location, Equipment and Material identity/lifecycle. Use its public transaction-bound reference contract, never its private tables or adapters.
+- One Repository plan head selects a complete immutable document revision. Preserve current authorization, expected-version concurrency, exact replay and atomic head/revision/receipt writes.
+- Equal units alone do not establish comparable quantities. Plan edits never rewrite Contract commitments or Execution facts.
+- Project WBS remains a distinct Project-scoped owner; do not create a second writer for its document or Baseline.
+- Text validation is a neutral Platform mechanism, not Content's public business capability.

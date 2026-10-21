@@ -1,16 +1,30 @@
 # Content
 
-Content owns the shared bounded title/body normalization mechanism used by Resources, Wiki and Contract.
-A title is trimmed and must contain 1–200 UTF-16 code units; a body may contain at most 262144
-UTF-16 code units and is returned unchanged. Title failures take precedence over body failures.
-The result identifies the invalid field; each consumer retains its established error wording,
-status and validation timing.
+Content owns Repository-scoped work definitions and plan versions: Subject → Object → SubObject →
+Work → Task. Nodes have stable identity, text, ordering and one valid parent. Subjects are roots;
+Tasks are leaves. Planned quantities and immutable measure definitions belong to Content.
 
-Content has no identity, head, revision, classification, quantity, relationship, authorization,
-rendering or persisted relation. Resources, Wiki and Contract keep their own immutable aggregate revisions,
-exact replay, current access checks and transaction boundaries. Object plain text and Wiki raw
-Markdown remain consumer-specific meanings. A shared value does not create another content store.
+One Repository plan head selects a complete immutable document revision. Replacing the document
+validates the entire hierarchy under its observed version and appends a revision. Historical plans
+remain unchanged. A plan version does not imply formal approval, completion or legal effectiveness;
+no additional Baseline workflow is inferred.
 
-Use the exact `@line_bot_v1/content/text` export. Current implementation and consumers are recorded
-in the canonical [semantic model](../../architecture/semantic-model.json) and
-[module topology](../../architecture/implementation-topology.json).
+Resources owns physical Location, Equipment and Material identity/lifecycle. Content validates new
+exact resource revision pins through its public transaction-bound reader. Resource archive does not
+rewrite history or invalidate unchanged historical pins. Contract owns formal commitments against
+exact Work/Task plan items; Execution owns Task execution, prerequisites, actuals and internal review.
+Planned, agreed and actual quantities are distinct facts. Task hierarchy is not an execution DAG.
+
+Repository owns current access and archive policy. Permission checks precede replay; new writes
+reject archived Repositories, while currently authorized exact replay may return its committed
+revision. Expected version, head, revision, pins and receipt commit or roll back together. Changed
+payloads under the same request identity conflict. Revisions and receipts are insert/read-only.
+
+Project WBS remains a distinct Project-scoped planning/governance owner. Content does not edit WBS
+documents or implicitly transfer their authority. The former text mechanism moves to the neutral
+`@line_bot_v1/platform/text` export. Legacy Objects require explicit classification and verified
+transfer; names, units and mutable classifications do not prove physical resource identity.
+
+Current implementation, dependencies and persisted mappings are recorded by the canonical
+[semantic model](../../architecture/semantic-model.json), [module topology](../../architecture/implementation-topology.json)
+and [data topology](../../architecture/data-topology.json).

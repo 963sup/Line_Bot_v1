@@ -24,11 +24,17 @@ No canonical business concept is currently declared for this owner.
 
 ## Capabilities
 
-No owner capability is currently declared in the canonical semantic model.
+| Capability | Runtime | Implementation | Intent |
+| --- | --- | --- | --- |
+| normalize-text-content | required | implemented | Normalize a bounded title and preserve an unmodified body for Resources, Wiki and Contract without acquiring identity, revisions, storage or rendering authority. |
 
 ## Context Relationships
 
-No cross-owner semantic relationship is currently declared for this owner.
+| Direction | Counterparty | Mode | Authority | Consistency | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| provides | contract | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
+| provides | resources | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
+| provides | wiki | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 
 ## Tactical Model Boundary
 

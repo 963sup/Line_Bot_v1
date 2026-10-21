@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 工程約定與履約實績以固定資源版本協作，約定與實績各有獨立 lifecycle、審查及不可變歷史。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md) |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 
@@ -26,28 +26,36 @@
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| Resource | resource | authoritative | current | Repository-scoped resource with stable identity, immutable versioned content and optional exact reference/planned quantity; its Object wire and storage identifiers remain stable. It does not replace other contexts domain models. |
-| ResourceCommandReceipt | resource-command-receipt | authoritative | current | Immutable actor/request fingerprint and committed result supporting current-authorized exact replay. |
-| ResourceMeasure | resource-measure | authoritative | current | Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition. |
-| ResourceRelationship | resource-relationship | authoritative | current | Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children. |
-| ResourceRelationshipRevision | resource-relationship-revision | authoritative | current | Immutable version of one Resource Relationship; not a whole Repository graph snapshot. |
-| ResourceRevision | resource-revision | authoritative | current | Immutable Resource content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision. |
-| ResourceType | resource-type | authoritative | current | Repository-scoped named classification with enablement and version; exactly one classification per Resource and no dynamic field schema. |
+| Equipment | resource-equipment | authoritative | current | Physical equipment identity with EQUIPMENT kind and its own lifecycle; assignment or use does not transfer work hierarchy or actual execution authority. |
+| Location | resource-location | authoritative | current | Physical place identity with LOCATION kind in the shared Repository Resource registry; referenced by work definitions and actual execution, never a Content hierarchy node. |
+| Material | resource-material | authoritative | current | Physical material identity with MATERIAL kind and lifecycle. Identity does not infer stock, planned work quantity or actual consumption. |
+| PhysicalResource | physical-resource | authoritative | current | Repository-shared Location, Equipment or Material stable identity and lifecycle; no work hierarchy, plan quantities or execution actuals. |
+| PhysicalResourceCommandReceipt | physical-resource-command-receipt | authoritative | current | Durable physical-resource command fingerprint and exact committed revision. |
+| PhysicalResourceRevision | physical-resource-revision | authoritative | current | Immutable resource identity-kind, name, description, lifecycle and actor snapshot. |
+| Resource | resource | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Repository-scoped resource with stable identity, immutable versioned content and optional exact reference/planned quantity; its Object wire and storage identifiers remain stable. It does not replace other contexts domain models. |
+| ResourceCommandReceipt | resource-command-receipt | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable actor/request fingerprint and committed result supporting current-authorized exact replay. |
+| ResourceMeasure | resource-measure | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition. |
+| ResourceRelationship | resource-relationship | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children. |
+| ResourceRelationshipRevision | resource-relationship-revision | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable version of one Resource Relationship; not a whole Repository graph snapshot. |
+| ResourceRevision | resource-revision | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable Resource content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision. |
+| ResourceType | resource-type | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Repository-scoped named classification with enablement and version; exactly one classification per Resource and no dynamic field schema. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-repository-resources | required | implemented | Manage classified Repository-native Resources, exact reference/planned quantities and typed engineering structure with immutable history, current access, atomic allocation edits and durable exact replay. |
+| manage-legacy-repository-objects | required | implemented | Preserve legacy Object behavior and historical references pending explicit data classification and verified owner cutover. |
+| manage-physical-resources | required | implemented | Manage shared Location/Equipment/Material identity and lifecycle with immutable revisions and exact replay. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| provides | contract | stable-identity+query | resources | transaction-recheck+immutable-pin | Contract qualifies exact same-Repository Resource revisions and immutable measures through the transaction-bound public quantity reader. Create/edit/activate require current unarchived Resources; later source changes never rewrite agreed bases. Resources also owns exact decimal/unit normalization. |
-| provides | execution | query | resources | pure-value | Execution consumes the pure exact decimal/unit value policy with the Contract-published pinned measure. It does not query Resource private tables or requalify archived source facts. |
+| provides | content | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource assignments qualify exact physical identities through the public reader; unchanged historical pins survive archive. |
+| provides | contract | stable-identity+query | resources | transaction-recheck+immutable-pin | Legacy immutable Resource-based commitments remain historical facts until explicit mapping. New commitments use Content plan items; no inferred conversion or new Resource-only commitments. |
+| provides | execution | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource-use pins qualify current physical resources; historical actuals retain immutable source evidence. |
 | provides | issue | stable-identity+query | resources | same-transaction | Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive. |
-| consumes | content | query | content | pure-value | Resources consumes the shared bounded title/body normalization decision and translates failures into its existing errors; identity, immutable revisions, rendering, persistence and authorization remain consumer-owned. |
+| consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority. |
 
 ## Tactical Model Boundary

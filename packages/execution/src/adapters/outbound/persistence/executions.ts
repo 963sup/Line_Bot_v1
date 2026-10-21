@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
-import type {
-  ContractLineBasis,
-  ContractReferenceReader,
-} from "@line_bot_v1/contract/contracts/output/references";
+import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
+import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
+import type { ContractLineBasis } from "@line_bot_v1/contract/domain/line-reference";
 import {
   businessDatabase,
   type Database,
@@ -17,24 +17,70 @@ import {
   stringValue,
 } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
+import type { ResourceReferenceReader } from "@line_bot_v1/resources/contracts/output/resource-references";
 import type { QuantityUnit } from "@line_bot_v1/resources/domain/quantity";
+import type { ResourceBasis } from "@line_bot_v1/resources/domain/resource-reference";
+import type { TaskDependencyView } from "../../../contracts/dto/task-dependencies.js";
 import type {
   ExecutionReads,
   ExecutionTransaction,
   ExecutionTransactions,
 } from "../../../contracts/output/executions.js";
 import { ExecutionError } from "../../../domain/error.js";
-import type { ExecutionRevision } from "../../../domain/execution.js";
+import type { ExecutionDependencyBasis, ExecutionRevision } from "../../../domain/execution.js";
+
+function contentValue(value: unknown): ContentPlanItemBasis {
+  const content = record(value);
+  const node = record(content.node);
+  const planned = node.plannedQuantity === null ? null : record(node.plannedQuantity);
+  const measure = planned === null ? null : record(planned.measure);
+  if (!Array.isArray(node.path)) throw new TypeError("Expected Content path");
+  return {
+    repositoryId: stringValue(content.repositoryId),
+    planRevisionId: stringValue(content.planRevisionId),
+    planVersion: numberValue(content.planVersion),
+    node: {
+      id: stringValue(node.id),
+      kind: literalValue(node.kind, ["WORK", "TASK"]),
+      title: stringValue(node.title),
+      body: stringValue(node.body),
+      path: node.path.map((item) => {
+        const path = record(item);
+        return {
+          id: stringValue(path.id),
+          kind: literalValue(path.kind, ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"]),
+          title: stringValue(path.title),
+        };
+      }),
+      plannedQuantity:
+        planned === null || measure === null
+          ? null
+          : {
+              value: stringValue(planned.value),
+              measure: {
+                id: stringValue(measure.id),
+                name: stringValue(measure.name),
+                subject: stringValue(measure.subject),
+                unit: literalValue(measure.unit, ["m", "pcs"]),
+              },
+            },
+    },
+  };
+}
 
 function basisValue(value: unknown): ContractLineBasis {
   const basis = record(value);
-  const resource = record(basis.resource);
-  const measure = record(resource.measure);
-  return {
+  const common = {
     contractId: stringValue(basis.contractId),
     contractRevisionId: stringValue(basis.contractRevisionId),
     lineId: stringValue(basis.lineId),
     agreedQuantity: stringValue(basis.agreedQuantity),
+  };
+  if (basis.content !== undefined) return { ...common, content: contentValue(basis.content) };
+  const resource = record(basis.resource);
+  const measure = record(resource.measure);
+  return {
+    ...common,
     resource: {
       resourceId: stringValue(resource.resourceId),
       resourceRevisionId: stringValue(resource.resourceRevisionId),
@@ -51,8 +97,33 @@ function basisValue(value: unknown): ContractLineBasis {
   };
 }
 
-function decode(row: SqlRow): ExecutionRevision {
+function resourcesValue(value: unknown): ResourceBasis[] {
+  if (!Array.isArray(value)) throw new TypeError("Expected Execution resources");
+  return value.map((item) => {
+    const resource = record(item);
+    return {
+      resourceId: stringValue(resource.resourceId),
+      resourceRevisionId: stringValue(resource.resourceRevisionId),
+      resourceVersion: numberValue(resource.resourceVersion),
+      kind: literalValue(resource.kind, ["LOCATION", "EQUIPMENT", "MATERIAL"]),
+      name: stringValue(resource.name),
+    };
+  });
+}
+
+function dependencyValue(value: unknown): ExecutionDependencyBasis {
+  const dependency = record(value);
+  if (!Array.isArray(dependency.prerequisiteTaskIds))
+    throw new TypeError("Expected prerequisite Task identities");
   return {
+    version: numberValue(dependency.version),
+    revisionId: dependency.revisionId === null ? null : stringValue(dependency.revisionId),
+    prerequisiteTaskIds: dependency.prerequisiteTaskIds.map((item) => stringValue(item)),
+  };
+}
+
+function decode(row: SqlRow): ExecutionRevision {
+  const common = {
     id: stringValue(row.id),
     executionId: stringValue(row.execution_id),
     repositoryId: stringValue(row.repository_id),
@@ -66,6 +137,19 @@ function decode(row: SqlRow): ExecutionRevision {
     quantity: stringValue(row.quantity),
     note: stringValue(row.note),
     reason: row.reason === null ? null : stringValue(row.reason),
+  };
+  const basis = basisValue(row.basis);
+  if (row.task === null || row.task === undefined) {
+    if ("content" in basis) throw new TypeError("Expected legacy Execution basis");
+    return { ...common, basis };
+  }
+  if (!("content" in basis)) throw new TypeError("Expected Content Execution basis");
+  return {
+    ...common,
+    basis,
+    task: contentValue(row.task),
+    resources: resourcesValue(row.source_resources),
+    dependency: dependencyValue(row.dependency),
   };
 }
 
@@ -89,6 +173,46 @@ async function readRevision(
   return row ?? null;
 }
 
+async function readDependencies(
+  sql: Sql,
+  repositoryId: string,
+  planRevisionId: string,
+): Promise<TaskDependencyView> {
+  const row = (
+    await sql.query(
+      `SELECT revision.id,revision.version,revision.edges
+         FROM execution_task_dependencies dependency
+         JOIN execution_task_dependency_revisions revision
+           ON revision.repository_id=dependency.repository_id
+          AND revision.plan_revision_id=dependency.plan_revision_id
+          AND revision.id=dependency.head_revision_id
+        WHERE dependency.repository_id=$1 AND dependency.plan_revision_id=$2`,
+      [repositoryId, planRevisionId],
+      (value) => ({
+        id: stringValue(value.id),
+        version: numberValue(value.version),
+        edges: (() => {
+          if (!Array.isArray(value.edges)) throw new TypeError("Expected Task dependency edges");
+          return value.edges.map((item) => {
+            const edge = record(item);
+            return {
+              taskId: stringValue(edge.taskId),
+              prerequisiteTaskId: stringValue(edge.prerequisiteTaskId),
+            };
+          });
+        })(),
+      }),
+    )
+  ).rows[0];
+  return {
+    repositoryId,
+    planRevisionId,
+    version: row?.version ?? 0,
+    revisionId: row?.id ?? null,
+    edges: row?.edges ?? [],
+  };
+}
+
 function persistenceError(error: unknown): never {
   if (error instanceof ExecutionError) throw error;
   if (error && typeof error === "object") {
@@ -103,7 +227,9 @@ function persistenceError(error: unknown): never {
 
 export class PostgresExecutions implements ExecutionReads, ExecutionTransactions {
   constructor(
-    private readonly references: (sql: Sql) => ContractReferenceReader,
+    private readonly contracts: (sql: Sql) => ContractReferenceReader,
+    private readonly content: (sql: Sql) => ContentPlanReferenceReader,
+    private readonly resources: (sql: Sql) => ResourceReferenceReader,
     private readonly db: Database = businessDatabase(),
   ) {}
 
@@ -185,11 +311,18 @@ export class PostgresExecutions implements ExecutionReads, ExecutionTransactions
           repositoryId: scope.repositoryId,
         });
         await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `execution-task-dependencies:${repository.id}`,
+        ]);
+        await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
           `execution:${userId}:${evidence.requestId}`,
         ]);
         return operation({
           scope: { repositoryId: repository.id, permissions: repository.permissions, archived },
-          references: this.references(sql),
+          contracts: this.contracts(sql),
+          content: this.content(sql),
+          resources: this.resources(sql),
+          readDependencies: (planRevisionId) =>
+            readDependencies(sql, repository.id, planRevisionId),
           nextId: randomUUID,
           replay: async () => {
             const row = (
@@ -237,8 +370,13 @@ export class PostgresExecutions implements ExecutionReads, ExecutionTransactions
               await sql.query(
                 `INSERT INTO engineering_execution_revisions(
                  id,execution_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
-                 contract_id,contract_revision_id,contract_revision_state,line_id,basis,quantity,note,reason
-               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'ACTIVE',$12,$13::jsonb,$14,$15,$16)`,
+                 contract_id,contract_revision_id,contract_revision_state,line_id,basis,
+                 plan_revision_id,task_id,task,source_resources,
+                 dependency_version,dependency_revision_id,dependency,quantity,note,reason
+               ) VALUES(
+                 $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'ACTIVE',$12,$13::jsonb,
+                 $14,$15,$16::jsonb,$17::jsonb,$18,$19,$20::jsonb,$21,$22,$23
+               )`,
                 [
                   next.id,
                   next.executionId,
@@ -253,6 +391,13 @@ export class PostgresExecutions implements ExecutionReads, ExecutionTransactions
                   next.basis.contractRevisionId,
                   next.basis.lineId,
                   JSON.stringify(next.basis),
+                  "task" in next ? next.task.planRevisionId : null,
+                  "task" in next ? next.task.node.id : null,
+                  "task" in next ? JSON.stringify(next.task) : null,
+                  "task" in next ? JSON.stringify(next.resources) : null,
+                  "task" in next ? next.dependency.version : null,
+                  "task" in next ? next.dependency.revisionId : null,
+                  "task" in next ? JSON.stringify(next.dependency) : null,
                   next.quantity,
                   next.note,
                   next.reason,

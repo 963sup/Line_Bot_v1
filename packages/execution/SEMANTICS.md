@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 工程約定與履約實績以固定資源版本協作，約定與實績各有獨立 lifecycle、審查及不可變歷史。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md) |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 
@@ -26,23 +26,28 @@
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| EngineeringExecution | engineering-execution | authoritative | current | Repository-scoped positive quantity declaration against one ACTIVE Contract revision line; ADMIN acceptance/rejection and later voiding preserve the immutable submission basis. |
+| EngineeringExecution | engineering-execution | authoritative | current | Repository-scoped actual Task quantity report bound to an exact Content Task within an ACTIVE Contract Work/Task commitment, physical Resource pins and observed Task-prerequisite version. Internal review preserves the immutable submission basis and does not infer Task completion. |
 | EngineeringExecutionCommandReceipt | engineering-execution-command-receipt | authoritative | current | Immutable actor/request fingerprint and exact committed Execution revision supporting current-authorized replay. |
-| EngineeringExecutionRevision | engineering-execution-revision | authoritative | current | Immutable submission/review revision with fixed Contract line basis, exact quantity, original note, explicit state and review reason; not an occurrence timestamp, payment or legal acceptance. |
+| EngineeringExecutionRevision | engineering-execution-revision | authoritative | current | Immutable submission/review snapshot with exact Content Task, Contract commitment, physical Resource revisions, observed prerequisite evidence, actual quantity, note and explicit review decision. Historical Resource-only reports retain their original facts; not payment or legal acceptance. |
+| TaskDependencyCommandReceipt | task-dependency-command-receipt | authoritative | current | Exact replay evidence for one atomic Task prerequisite replacement. |
+| TaskDependencyPlan | task-dependency-plan | authoritative | current | Versioned prerequisite DAG for Tasks in one exact Content plan revision; distinct from Content hierarchy and does not infer completion from quantities. |
+| TaskDependencyRevision | task-dependency-revision | authoritative | current | Immutable Task prerequisite edge snapshot qualified against exact Content Task identities. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| record-engineering-executions | required | implemented | Record and review Repository engineering quantities against exact active Contract lines, preserving submission facts and correction history. |
+| record-engineering-executions | required | implemented | Record actual Task quantities against exact Content and Contract bases, with versioned prerequisites, resource use and internal review. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| consumes | content | query | content | pure-value | Execution applies the Content-published exact planned-measure quantity policy while owning actual quantities and internal review. |
+| consumes | content | stable-identity+query | content | transaction-recheck+immutable-pin | Actual reports pin exact Tasks and validate membership in the committed Work/Task; Task prerequisites belong to Execution. |
 | consumes | contract | stable-identity+query | contract | transaction-recheck+immutable-pin | Submission requires a currently ACTIVE Contract and its exact activation revision line in the same transaction. Existing reports remain reviewable/voidable after closure using the immutable ACTIVE source revision; Contract retains agreement authority. |
+| consumes | resources | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource-use pins qualify current physical resources; historical actuals retain immutable source evidence. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
-| consumes | resources | query | resources | pure-value | Execution consumes the pure exact decimal/unit value policy with the Contract-published pinned measure. It does not query Resource private tables or requalify archived source facts. |
 
 ## Tactical Model Boundary
 

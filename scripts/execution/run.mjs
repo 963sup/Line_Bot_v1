@@ -1,5 +1,7 @@
 import { createExecutions } from "@line_bot_v1/execution/application/use-cases/executions";
+import { createTaskDependencies } from "@line_bot_v1/execution/application/use-cases/task-dependencies";
 import { createPostgresExecutionDependencies } from "@line_bot_v1/execution/composition/bootstrap/executions";
+import { createPostgresTaskDependencyDependencies } from "@line_bot_v1/execution/composition/bootstrap/task-dependencies";
 import { ExecutionError } from "@line_bot_v1/execution/domain/error";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
 import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
@@ -24,7 +26,20 @@ try {
     now: Date.now,
   });
   let result;
-  if (input.operation === "execute") {
+  if (input.operation === "replace-dependencies") {
+    const dependencies = createTaskDependencies({
+      ...createPostgresTaskDependencyDependencies(db),
+      now: Date.now,
+    });
+    mutationStarted = true;
+    result = await dependencies.execute(actor, input.command);
+  } else if (input.operation === "dependencies") {
+    const dependencies = createTaskDependencies({
+      ...createPostgresTaskDependencyDependencies(db),
+      now: Date.now,
+    });
+    result = await dependencies.read(actor, input.query);
+  } else if (input.operation === "execute") {
     mutationStarted = true;
     result = await executions.execute(actor, input.command);
   } else if (input.operation === "read") result = await executions.read(actor, input.query);

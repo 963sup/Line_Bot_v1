@@ -1,73 +1,101 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
+import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
+import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
+import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
-import { createObjects } from "@line_bot_v1/resources/application/use-cases/objects";
-import { createPostgresObjectDependencies } from "@line_bot_v1/resources/composition/bootstrap/objects";
+import { parseContractCommand } from "../src/application/commands.js";
 import { createContracts } from "../src/application/use-cases/contracts.js";
 import { createPostgresContractDependencies } from "../src/composition/bootstrap/contracts.js";
 import { createPostgresContractReferenceReader } from "../src/composition/bootstrap/references.js";
 import { reviseContract } from "../src/domain/contract.js";
 import { ContractError } from "../src/domain/error.js";
 
-async function seedResource(
-  db: Parameters<typeof createPostgresObjectDependencies>[0],
-  repositoryId = "repo",
-) {
-  const resources = createObjects({ ...createPostgresObjectDependencies(db), now: () => 50 });
-  const typeId = randomUUID();
-  const measureId = randomUUID();
-  const envelope = () => ({ repositoryId, requestId: randomUUID(), expectedVersion: 0 });
-  await resources.executeType("owner", {
-    ...envelope(),
-    action: "create",
-    typeId,
-    name: "Work",
-    description: "",
+async function seedContentPlan(db: Database, repositoryId = "repo") {
+  const plans = createContentPlans({
+    ...createPostgresContentPlanDependencies(db),
+    now: () => 50,
   });
-  await resources.executeEngineering("owner", {
-    ...envelope(),
-    action: "create-measure",
-    measureId,
-    name: "Cable",
-    subject: "Installed route length",
-    unit: "m",
-  });
-  const resourceId = randomUUID();
-  await resources.executeObject("owner", {
-    ...envelope(),
-    action: "create",
-    objectId: resourceId,
-    typeId,
-    name: "Cable A",
-    content: "source",
-  });
-  const observed = (await resources.structure("owner", { repositoryId, rootId: resourceId }))
-    .observed;
-  const quantity = await resources.executeEngineering("owner", {
-    ...envelope(),
-    action: "set-quantities",
-    observed,
-    changes: [
+  const ids = {
+    measure: randomUUID(),
+    subject: randomUUID(),
+    object: randomUUID(),
+    subobject: randomUUID(),
+    work: randomUUID(),
+    task: randomUUID(),
+  };
+  const document = {
+    schemaVersion: 1 as const,
+    measures: [
       {
-        objectId: resourceId,
-        expectedVersion: 1,
-        quantity: {
-          measureId,
-          value: "10",
-          purpose: "REFERENCE",
-          sourceReference: null,
-        },
+        id: ids.measure,
+        name: "Length",
+        subject: "Installed route length",
+        unit: "m" as const,
       },
     ],
+    nodes: [
+      {
+        id: ids.subject,
+        parentId: null,
+        position: 0,
+        kind: "SUBJECT" as const,
+        title: "Contract works",
+        body: "",
+        plannedQuantity: null,
+      },
+      {
+        id: ids.object,
+        parentId: ids.subject,
+        position: 0,
+        kind: "OBJECT" as const,
+        title: "Network",
+        body: "",
+        plannedQuantity: null,
+      },
+      {
+        id: ids.subobject,
+        parentId: ids.object,
+        position: 0,
+        kind: "SUBOBJECT" as const,
+        title: "Backbone",
+        body: "",
+        plannedQuantity: null,
+      },
+      {
+        id: ids.work,
+        parentId: ids.subobject,
+        position: 0,
+        kind: "WORK" as const,
+        title: "Install cable",
+        body: "Work basis",
+        plannedQuantity: { measureId: ids.measure, value: "100" },
+      },
+      {
+        id: ids.task,
+        parentId: ids.work,
+        position: 0,
+        kind: "TASK" as const,
+        title: "Pull cable",
+        body: "Task basis",
+        plannedQuantity: { measureId: ids.measure, value: "10" },
+      },
+    ],
+    resourcePins: [],
+  };
+  const first = await plans.execute("owner", {
+    action: "initialize",
+    repositoryId,
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    document,
   });
-  const revision = quantity.result.objects[0];
-  assert.ok(revision);
-  return { resources, resourceId, resourceRevisionId: revision.id, typeId, measureId };
+  return { plans, ids, document, first };
 }
 
-test("Contract persists atomic revisions, replay and established active line references", async (t) => {
+test("Contract persists Content-based revisions, replay and established active line references", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await db.transaction(async (sql) => {
@@ -82,7 +110,7 @@ test("Contract persists atomic revisions, replay and established active line ref
   await pg.query(
     "SELECT * FROM app_private.provision_repository('other','owner','owner','USER','Other','private')",
   );
-  const source = await seedResource(db);
+  const source = await seedContentPlan(db);
   let clock = 100;
   const store = createPostgresContractDependencies(db);
   const contracts = createContracts({ ...store, now: () => clock++ });
@@ -99,8 +127,8 @@ test("Contract persists atomic revisions, replay and established active line ref
     lines: [
       {
         lineId,
-        resourceId: source.resourceId,
-        resourceRevisionId: source.resourceRevisionId,
+        planRevisionId: source.first.revision.revisionId,
+        nodeId: source.ids.task,
         agreedQuantity: "20.000",
       },
     ],
@@ -120,14 +148,17 @@ test("Contract persists atomic revisions, replay and established active line ref
     (error) => error instanceof ContractError && error.code === "NOT_FOUND",
   );
 
-  await source.resources.executeObject("owner", {
-    action: "edit",
+  await source.plans.execute("owner", {
+    action: "replace",
     repositoryId: "repo",
-    objectId: source.resourceId,
     requestId: randomUUID(),
-    expectedVersion: 2,
-    name: "Cable A revised",
-    content: "new source",
+    expectedVersion: 1,
+    document: {
+      ...source.document,
+      nodes: source.document.nodes.map((node) =>
+        node.id === source.ids.task ? { ...node, title: "Pull cable revised" } : node,
+      ),
+    },
   });
   const activate = {
     action: "activate",
@@ -137,9 +168,15 @@ test("Contract persists atomic revisions, replay and established active line ref
     expectedVersion: 1,
   } as const;
   const active = await contracts.execute("owner", activate);
+  const activeLine = active.revision.lines[0];
   assert.equal(active.revision.state, "ACTIVE");
-  assert.equal(active.revision.lines[0]?.resource.resourceRevisionId, source.resourceRevisionId);
-  assert.equal(active.revision.lines[0]?.resource.name, "Cable A");
+  assert.ok(activeLine && "content" in activeLine);
+  assert.equal(activeLine.content.planRevisionId, source.first.revision.revisionId);
+  assert.equal(activeLine.content.node.title, "Pull cable");
+  assert.deepEqual(
+    activeLine.content.node.path.map((item) => item.kind),
+    ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"],
+  );
 
   const reference = await db.transaction((sql) =>
     createPostgresContractReferenceReader(sql).verifyLine(
@@ -149,51 +186,9 @@ test("Contract persists atomic revisions, replay and established active line ref
       { requireActive: true },
     ),
   );
+  assert.ok("content" in reference);
+  assert.equal(reference.content.node.title, "Pull cable");
   assert.equal(reference.agreedQuantity, "20");
-
-  const activationBlockedId = randomUUID();
-  await contracts.execute("owner", {
-    ...create,
-    contractId: activationBlockedId,
-    requestId: randomUUID(),
-  });
-
-  await source.resources.executeObject("owner", {
-    action: "archive",
-    repositoryId: "repo",
-    objectId: source.resourceId,
-    requestId: randomUUID(),
-    expectedVersion: 3,
-  });
-  await assert.rejects(
-    contracts.execute("owner", {
-      action: "activate",
-      repositoryId: "repo",
-      contractId: activationBlockedId,
-      requestId: randomUUID(),
-      expectedVersion: 1,
-    }),
-    (error) => error instanceof ContractError && error.code === "SOURCE_INVALID",
-  );
-  await assert.rejects(
-    contracts.execute("owner", {
-      ...create,
-      contractId: randomUUID(),
-      requestId: randomUUID(),
-    }),
-    (error) => error instanceof ContractError && error.code === "SOURCE_INVALID",
-  );
-  assert.deepEqual(
-    await db.transaction((sql) =>
-      createPostgresContractReferenceReader(sql).verifyLine(
-        "owner",
-        "repo",
-        { contractId, contractRevisionId: active.revision.revisionId, lineId },
-        { requireActive: true },
-      ),
-    ),
-    reference,
-  );
 
   await assert.rejects(
     store.transactions.transact(
@@ -240,19 +235,16 @@ test("Contract persists atomic revisions, replay and established active line ref
     ),
     (error) => error instanceof ContractError && error.code === "SOURCE_INVALID",
   );
-  assert.equal(
-    (
-      await db.transaction((sql) =>
-        createPostgresContractReferenceReader(sql).verifyLine(
-          "owner",
-          "repo",
-          { contractId, contractRevisionId: active.revision.revisionId, lineId },
-          { requireActive: false },
-        ),
-      )
-    ).lineId,
-    lineId,
+  const historical = await db.transaction((sql) =>
+    createPostgresContractReferenceReader(sql).verifyLine(
+      "owner",
+      "repo",
+      { contractId, contractRevisionId: active.revision.revisionId, lineId },
+      { requireActive: false },
+    ),
   );
+  assert.ok("content" in historical);
+  assert.equal(historical.lineId, lineId);
   assert.deepEqual(
     (await contracts.history("owner", { repositoryId: "repo", contractId })).revisions.map(
       (revision) => revision.state,
@@ -298,6 +290,156 @@ test("Contract persists atomic revisions, replay and established active line ref
   );
 });
 
+test("historical Resource JSONB remains readable, replayable, referenceable and closable", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await db.transaction(async (sql) => {
+    await sql.query(
+      `INSERT INTO users(id,status,status_version,"createdAt") VALUES('owner','active',1,1)`,
+    );
+    await sql.query("SELECT claim_account_login(id,'USER',id,1) FROM users");
+  });
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Contract','private')",
+  );
+
+  const contractId = randomUUID();
+  const draftRevisionId = randomUUID();
+  const activeRevisionId = randomUUID();
+  const lineId = randomUUID();
+  const resourceId = randomUUID();
+  const resourceRevisionId = randomUUID();
+  const measureId = randomUUID();
+  const requestId = randomUUID();
+  const legacyCommand = {
+    action: "create",
+    repositoryId: "repo",
+    contractId,
+    requestId,
+    expectedVersion: 0,
+    title: "Legacy agreement",
+    body: "Frozen Resource basis",
+    lines: [{ lineId, resourceId, resourceRevisionId, agreedQuantity: "3.5" }],
+  } as const;
+  const parsedCommand = parseContractCommand(legacyCommand);
+  const fingerprint = createHash("sha256").update(JSON.stringify(parsedCommand)).digest("hex");
+  const legacyLine = {
+    lineId,
+    resource: {
+      resourceId,
+      resourceRevisionId,
+      resourceVersion: 7,
+      name: "Legacy cable",
+      measure: {
+        id: measureId,
+        name: "Length",
+        subject: "Installed route length",
+        unit: "m",
+      },
+      sourceQuantity: "10",
+    },
+    agreedQuantity: "3.5",
+  } as const;
+
+  await db.transaction(async (sql) => {
+    await sql.query(
+      `INSERT INTO engineering_contracts(id,repository_id,version,head_revision_id)
+       VALUES($1,'repo',2,$2)`,
+      [contractId, activeRevisionId],
+    );
+    await sql.query(
+      `INSERT INTO engineering_contract_revisions(
+         id,contract_id,repository_id,version,parent_revision_id,actor_user_id,
+         at,action,state,title,body,lines
+       ) VALUES
+         ($1,$2,'repo',1,NULL,'owner',10,'create','DRAFT',$3,$4,$5::jsonb),
+         ($6,$2,'repo',2,$1,'owner',20,'activate','ACTIVE',$3,$4,$5::jsonb)`,
+      [
+        draftRevisionId,
+        contractId,
+        legacyCommand.title,
+        legacyCommand.body,
+        JSON.stringify([legacyLine]),
+        activeRevisionId,
+      ],
+    );
+    await sql.query(
+      `INSERT INTO engineering_contract_commands(
+         actor_user_id,request_id,repository_id,contract_id,fingerprint,revision_id
+       ) VALUES('owner',$1,'repo',$2,$3,$4)`,
+      [requestId, contractId, fingerprint, draftRevisionId],
+    );
+  });
+
+  const contracts = createContracts({
+    ...createPostgresContractDependencies(db),
+    now: () => 30,
+  });
+  const current = await contracts.read("owner", { repositoryId: "repo", contractId });
+  assert.equal(current.revisionId, activeRevisionId);
+  assert.deepEqual(current.lines, [legacyLine]);
+
+  const history = await contracts.history("owner", { repositoryId: "repo", contractId });
+  assert.deepEqual(
+    history.revisions.map((revision) => [revision.revisionId, revision.state, revision.lines]),
+    [
+      [activeRevisionId, "ACTIVE", [legacyLine]],
+      [draftRevisionId, "DRAFT", [legacyLine]],
+    ],
+  );
+
+  const reference = await db.transaction((sql) =>
+    createPostgresContractReferenceReader(sql).verifyLine(
+      "owner",
+      "repo",
+      { contractId, contractRevisionId: activeRevisionId, lineId },
+      { requireActive: true },
+    ),
+  );
+  assert.ok("resource" in reference);
+  assert.deepEqual(reference.resource, legacyLine.resource);
+  assert.equal(reference.agreedQuantity, legacyLine.agreedQuantity);
+
+  const replay = await contracts.execute("owner", legacyCommand);
+  assert.equal(replay.requestId, requestId);
+  assert.equal(replay.revision.revisionId, draftRevisionId);
+  assert.deepEqual(replay.revision.lines, [legacyLine]);
+  await assert.rejects(
+    contracts.execute("owner", { ...legacyCommand, requestId: randomUUID() }),
+    (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
+  );
+
+  const closed = await contracts.execute("owner", {
+    action: "close",
+    repositoryId: "repo",
+    contractId,
+    requestId: randomUUID(),
+    expectedVersion: 2,
+  });
+  assert.equal(closed.revision.state, "CLOSED");
+  assert.deepEqual(closed.revision.lines, [legacyLine]);
+  assert.deepEqual(
+    (
+      await contracts.read("owner", {
+        repositoryId: "repo",
+        contractId,
+        revisionId: activeRevisionId,
+      })
+    ).lines,
+    [legacyLine],
+  );
+  const established = await db.transaction((sql) =>
+    createPostgresContractReferenceReader(sql).verifyLine(
+      "owner",
+      "repo",
+      { contractId, contractRevisionId: activeRevisionId, lineId },
+      { requireActive: false },
+    ),
+  );
+  assert.ok("resource" in established);
+  assert.deepEqual(established.resource, legacyLine.resource);
+});
+
 const url = process.env.CAPABILITY_TEST_DATABASE_URL;
 test("independent PostgreSQL sessions serialize Contract replay and competing activation", {
   skip: !url && !process.env.CI,
@@ -314,7 +456,7 @@ test("independent PostgreSQL sessions serialize Contract replay and competing ac
   await pool.query(
     "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Contract','private')",
   );
-  const source = await seedResource(db);
+  const source = await seedContentPlan(db);
   const contracts = createContracts({ ...createPostgresContractDependencies(db), now: () => 1 });
   const command = {
     action: "create",
@@ -327,8 +469,8 @@ test("independent PostgreSQL sessions serialize Contract replay and competing ac
     lines: [
       {
         lineId: randomUUID(),
-        resourceId: source.resourceId,
-        resourceRevisionId: source.resourceRevisionId,
+        planRevisionId: source.first.revision.revisionId,
+        nodeId: source.ids.task,
         agreedQuantity: "1",
       },
     ],

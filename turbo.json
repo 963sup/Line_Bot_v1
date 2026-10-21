@@ -171,6 +171,13 @@
       "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
+    "@line_bot_v1/content#test": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
+    },
     "@line_bot_v1/execution#test": {
       "cache": false,
       "dependsOn": ["^build"],
