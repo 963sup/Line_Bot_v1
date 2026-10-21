@@ -13,6 +13,6 @@ Choose evidence by responsibility; smaller evidence never proves a larger claim.
 
 一般修改用 `pnpm check`；merge/release 前用 `pnpm validate`。External mutation/probe 不是一般 offline validation。
 
-CI 的 typecheck/test stage 最多同時執行兩個 Turbo tasks，避免多個 Owner 的 PGlite 初始化互相爭用 runner 資源。Owner 內部測試併發、測試內容、逾時與成功條件維持原有契約；本機保留 Turbo 的正常排程。
+本機與 CI 的 typecheck/test stage 最多同時執行兩個 Turbo tasks，避免多個 Owner 的 PGlite 初始化互相爭用資源。Owner 內部測試併發、測試內容、逾時與成功條件維持原有契約。
 
 Failure 先讀實際 log，沿 consumer/contract/owner 找根因；不得為變綠放寬 authorization、architecture guard、schema invariant 或 test expectation。

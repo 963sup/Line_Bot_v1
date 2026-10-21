@@ -86,6 +86,9 @@ export function classifyChangedFiles(files) {
       isToolingMetadata(file) ||
       file.startsWith("scripts/tooling/") ||
       file.startsWith("scripts/code/") ||
+      file.startsWith("scripts/runtime/") ||
+      file.startsWith("scripts/contract/") ||
+      file.startsWith("scripts/execution/") ||
       file.startsWith("scripts/architecture/") ||
       file.startsWith("scripts/vercel/") ||
       file.startsWith("scripts/github/") ||
@@ -239,6 +242,9 @@ function main() {
         "scripts/tooling/doctor.test.mjs",
         "scripts/wbs/transfer.test.mjs",
         "scripts/code/*.test.mjs",
+        "scripts/runtime/internal-input.test.mjs",
+        "scripts/contract/*.test.mjs",
+        "scripts/execution/*.test.mjs",
       ],
     ],
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
