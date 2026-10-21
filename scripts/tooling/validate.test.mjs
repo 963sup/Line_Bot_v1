@@ -144,11 +144,18 @@ test("documentation-only changes run only documentation-owned fast gates", () =>
 });
 
 test("source operations trigger their tooling tests in fast validation and keep all CI groups", () => {
-  const scope = classifyChangedFiles(["scripts/code/cli.mjs"]);
-  assert.equal(scope.toolingAffected, true);
-  assert.equal(shouldRunFast("tooling:check", scope), true);
-  assert.equal(shouldRunFast("tooling:test", scope), true);
-  assert.equal(shouldRunFast("change:test", scope), true);
+  for (const path of [
+    "scripts/code/cli.mjs",
+    "scripts/runtime/internal-input.mjs",
+    "scripts/contract/run.mjs",
+    "scripts/execution/run.mjs",
+  ]) {
+    const scope = classifyChangedFiles([path]);
+    assert.equal(scope.toolingAffected, true, path);
+    assert.equal(shouldRunFast("tooling:check", scope), true, path);
+    assert.equal(shouldRunFast("tooling:test", scope), true, path);
+    assert.equal(shouldRunFast("change:test", scope), true, path);
+  }
   assert.equal(Object.keys(validationGroups).length, 8);
 });
 
@@ -362,6 +369,9 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
     "scripts/tooling/doctor.test.mjs",
     "scripts/wbs/transfer.test.mjs",
     "scripts/code/*.test.mjs",
+    "scripts/runtime/internal-input.test.mjs",
+    "scripts/contract/*.test.mjs",
+    "scripts/execution/*.test.mjs",
   ]);
 });
 
