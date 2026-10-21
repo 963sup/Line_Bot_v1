@@ -59,22 +59,25 @@ test("contract CLI classifies input and identity failures before dispatch", () =
 });
 
 test("contract CLI uses strict owner errors and distinguishes unknown mutation results", () => {
-  for (const [status, code] of [
-    [400, "INVALID_INPUT"],
-    [403, "FORBIDDEN"],
-    [404, "NOT_FOUND"],
-    [409, "VERSION_CONFLICT"],
-    [409, "LIFECYCLE_CONFLICT"],
-    [409, "REQUEST_ID_REUSED"],
-    [409, "SOURCE_INVALID"],
-    [503, "UNAVAILABLE"],
-  ]) {
-    assert.deepEqual(failure("read", `owner-typed:${status}:${code}`), {
-      ok: false,
-      error: legacyError,
-      status,
-      code,
-    });
+  for (const operation of ["read", "execute"]) {
+    for (const [status, code] of [
+      [400, "INVALID_INPUT"],
+      [403, "FORBIDDEN"],
+      [404, "NOT_FOUND"],
+      [409, "VERSION_CONFLICT"],
+      [409, "LIFECYCLE_CONFLICT"],
+      [409, "REQUEST_ID_REUSED"],
+      [409, "SOURCE_INVALID"],
+      [503, "UNAVAILABLE"],
+    ]) {
+      const unknownResult = operation === "execute" && code === "UNAVAILABLE";
+      assert.deepEqual(failure(operation, `owner-typed:${status}:${code}`), {
+        ok: false,
+        error: legacyError,
+        status,
+        code: unknownResult ? "UNKNOWN_RESULT" : code,
+      });
+    }
   }
   assert.equal(failure("read", "fake-error").code, "UNAVAILABLE");
   assert.equal(failure("read", "operation-error").code, "UNAVAILABLE");

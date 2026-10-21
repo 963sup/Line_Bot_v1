@@ -18,7 +18,6 @@ const mocked = new Set([
 
 function operationSource(owner) {
   const errorName = owner === "contract" ? "ContractError" : "ExecutionError";
-  const conflictCode = owner === "contract" ? "VERSION_CONFLICT" : "CONFLICT";
   return `
     import { ${errorName} } from "@line_bot_v1/${owner}/domain/error";
     const scenario = process.env.CLI_SCENARIO;
@@ -27,7 +26,6 @@ function operationSource(owner) {
       calls += 1;
       const typed = /^owner-typed:(\\d+):([A-Z_]+)$/.exec(scenario ?? "");
       if (typed) throw new ${errorName}(Number(typed[1]), "TOP_SECRET", typed[2]);
-      if (scenario === "owner-typed") throw new ${errorName}(409, "TOP_SECRET", "${conflictCode}");
       if (scenario === "owner-unavailable") throw new ${errorName}(503, "TOP_SECRET", "UNAVAILABLE");
       if (scenario === "fake-error") throw { status: 418, code: "FORGED", message: "TOP_SECRET" };
       if (scenario === "operation-error") throw new Error("TOP_SECRET");

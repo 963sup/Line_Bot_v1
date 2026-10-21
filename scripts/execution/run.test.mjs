@@ -20,19 +20,22 @@ test("execution CLI preserves success output and owner error codes", () => {
     ok: true,
     value: { owner: "execution", operation: "read", actor: "user-id", input: {}, calls: 1 },
   });
-  for (const [status, code] of [
-    [400, "INVALID_INPUT"],
-    [403, "FORBIDDEN"],
-    [404, "NOT_FOUND"],
-    [409, "CONFLICT"],
-    [503, "UNAVAILABLE"],
-  ]) {
-    assert.deepEqual(failure("read", `owner-typed:${status}:${code}`), {
-      ok: false,
-      error: legacyError,
-      status,
-      code,
-    });
+  for (const operation of ["read", "execute"]) {
+    for (const [status, code] of [
+      [400, "INVALID_INPUT"],
+      [403, "FORBIDDEN"],
+      [404, "NOT_FOUND"],
+      [409, "CONFLICT"],
+      [503, "UNAVAILABLE"],
+    ]) {
+      const unknownResult = operation === "execute" && code === "UNAVAILABLE";
+      assert.deepEqual(failure(operation, `owner-typed:${status}:${code}`), {
+        ok: false,
+        error: legacyError,
+        status,
+        code: unknownResult ? "UNKNOWN_RESULT" : code,
+      });
+    }
   }
 });
 
