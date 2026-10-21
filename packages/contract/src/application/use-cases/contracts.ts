@@ -15,7 +15,7 @@ import {
 } from "../../domain/contract.js";
 import { ContractError, contractErrorFromUnknown } from "../../domain/error.js";
 import { canAdminContract, canEditContract } from "../../domain/policies/access.js";
-import { parseContractCommand } from "../commands.js";
+import { isContentContractLineInput, parseContractCommand } from "../commands.js";
 import {
   type ContractQuery,
   contractHistoryQuery,
@@ -26,13 +26,23 @@ import {
 } from "../queries.js";
 import { contractRevisionDto } from "./revision-dto.js";
 
-function resourceInputs(current: ContractRevision): ContractLineInput[] {
-  return current.lines.map((line) => ({
-    lineId: line.lineId,
-    resourceId: line.resource.resourceId,
-    resourceRevisionId: line.resource.resourceRevisionId,
-    agreedQuantity: line.agreedQuantity,
-  }));
+function contentInputs(current: ContractRevision): ContractLineInput[] {
+  if (current.lines.some((line) => !("content" in line)))
+    throw new ContractError(
+      409,
+      "A historical Resource draft must be edited to Content before activation.",
+      "LIFECYCLE_CONFLICT",
+    );
+  return current.lines.map((line) => {
+    if (!("content" in line))
+      throw new ContractError(409, "Contract Content source is unavailable.", "SOURCE_INVALID");
+    return {
+      lineId: line.lineId,
+      planRevisionId: line.content.planRevisionId,
+      nodeId: line.content.node.id,
+      agreedQuantity: line.agreedQuantity,
+    };
+  });
 }
 
 export function createContracts(deps: {
@@ -94,39 +104,56 @@ export function createContracts(deps: {
               };
             if (tx.scope.archived)
               throw new ContractError(409, "Repository is archived.", "LIFECYCLE_CONFLICT");
+            if (
+              (command.action === "create" || command.action === "edit") &&
+              !command.lines.every(isContentContractLineInput)
+            )
+              throw new ContractError(
+                409,
+                "Historical Resource Contract commands are replay-only.",
+                "LIFECYCLE_CONFLICT",
+              );
             const current = await tx.contracts.load();
             assertContractTransition(current, command.expectedVersion, command.action);
             let edit: ContractEdit;
             if (command.action === "create" || command.action === "edit") {
-              const resources = await tx.resources.verifyPinned(
+              const contentLines = command.lines;
+              if (!contentLines.every(isContentContractLineInput))
+                throw new ContractError(
+                  409,
+                  "Historical Resource Contract commands are replay-only.",
+                  "LIFECYCLE_CONFLICT",
+                );
+              const contentItems = await tx.content.verifyPinned(
                 userId,
                 tx.scope.repositoryId,
-                command.lines.map(({ resourceId, resourceRevisionId }) => ({
-                  resourceId,
-                  resourceRevisionId,
+                contentLines.map(({ planRevisionId, nodeId }) => ({
+                  planRevisionId,
+                  nodeId,
                 })),
-                { allowArchived: false },
               );
               edit = {
                 action: command.action,
                 title: command.title,
                 body: command.body,
-                lines: freezeContractLines(command.lines, resources),
+                lines: freezeContractLines(contentLines, contentItems),
               } as const;
             } else if (command.action === "activate") {
               if (!current)
                 throw new ContractError(409, "Contract lifecycle conflict.", "LIFECYCLE_CONFLICT");
-              const inputs = resourceInputs(current);
-              const resources = await tx.resources.verifyPinned(
+              const inputs = contentInputs(current);
+              const contentItems = await tx.content.verifyPinned(
                 userId,
                 tx.scope.repositoryId,
-                inputs.map(({ resourceId, resourceRevisionId }) => ({
-                  resourceId,
-                  resourceRevisionId,
+                inputs.map(({ planRevisionId, nodeId }) => ({
+                  planRevisionId,
+                  nodeId,
                 })),
-                { allowArchived: false },
               );
-              edit = { action: "activate", lines: freezeContractLines(inputs, resources) } as const;
+              edit = {
+                action: "activate",
+                lines: freezeContractLines(inputs, contentItems),
+              } as const;
             } else edit = { action: "close" } as const;
             const revision = reviseContract(current, command.expectedVersion, edit, {
               id: tx.nextId(),

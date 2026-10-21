@@ -15,11 +15,16 @@ import { parseRepositoryOverview, type RepositoryOverview } from "./repository-o
 import RepositoryPageHeader from "./repository-page-header";
 import RepositorySubscriptionControl from "./repository-subscription-control";
 import {
+  repositoryContentPath,
+  repositoryContractsPath,
   repositoryDiscussionsPath,
+  repositoryExecutionsPath,
   repositoryIssuesPath,
   repositoryObjectsPath,
   repositoryPath,
+  repositoryResourcesPath,
 } from "./resource-navigation";
+
 import { errorMessage } from "./response-validation";
 
 function visibilityLabel(value: RepositoryOverview["repository"]["visibility"]) {
@@ -194,19 +199,44 @@ export default function RepositoryOverviewPanel({
       )}
 
       <div className="crud-manager">
-        <section className="crud-detail" aria-labelledby="repository-content-heading">
+        <section className="crud-detail" aria-labelledby="repository-delivery-heading">
           <div className="crud-detail-head">
             <div>
-              <h2 id="repository-content-heading">Repository 內容</h2>
-              <p>管理物件、工作、討論與知識。</p>
+              <h2 id="repository-delivery-heading">工作交付</h2>
+              <p>從計畫、實體資源與承諾，到 Task 實績與審查。</p>
             </div>
           </div>
           <div className="menu-group">
             <ActionRow
-              href={repositoryObjectsPath(baseOwner, baseName)}
-              title="Objects"
-              description="建立可分類、可版本化並可互相關聯的核心內容。"
+              href={repositoryContentPath(baseOwner, baseName)}
+              title="Content"
+              description="管理 Subject、Object、SubObject、Work 與 Task 的版本化工作計畫。"
             />
+            <ActionRow
+              href={repositoryResourcesPath(baseOwner, baseName)}
+              title="Resources"
+              description="管理 Location、Equipment 與 Material 的實體資源身份。"
+            />
+            <ActionRow
+              href={repositoryContractsPath(baseOwner, baseName)}
+              title="Contracts"
+              description="建立工作承諾、約定數量，並管理草稿、啟用與結案。"
+            />
+            <ActionRow
+              href={repositoryExecutionsPath(baseOwner, baseName)}
+              title="Executions"
+              description="提交 Task 實績、記錄依賴與 Resources，並完成審查。"
+            />
+          </div>
+        </section>
+        <section className="crud-detail" aria-labelledby="repository-collaboration-heading">
+          <div className="crud-detail-head">
+            <div>
+              <h2 id="repository-collaboration-heading">協作與知識</h2>
+              <p>追蹤工作、討論與維護 Repository 知識。</p>
+            </div>
+          </div>
+          <div className="menu-group">
             <ActionRow
               href={repositoryIssuesPath(baseOwner, baseName)}
               title="Issues"
@@ -226,6 +256,21 @@ export default function RepositoryOverviewPanel({
               href={`${basePath}/insights`}
               title="Insights"
               description="查看 Repository 的 Issue 活動。"
+            />
+          </div>
+        </section>
+        <section className="crud-detail" aria-labelledby="repository-legacy-heading">
+          <div className="crud-detail-head">
+            <div>
+              <h2 id="repository-legacy-heading">Legacy</h2>
+              <p>保留既有資料的入口；新的工作內容請使用 Content。</p>
+            </div>
+          </div>
+          <div className="menu-group">
+            <ActionRow
+              href={repositoryObjectsPath(baseOwner, baseName)}
+              title="Objects (Legacy)"
+              description="查看與維護既有 Objects；新的工作階層與計畫版本由 Content 管理。"
             />
           </div>
         </section>

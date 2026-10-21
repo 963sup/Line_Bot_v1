@@ -1,4 +1,4 @@
-import type { ResourceQuantityReader } from "@line_bot_v1/resources/contracts/output/engineering-references";
+import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
 import type { ContractRevision } from "../../domain/contract.js";
 import type { ContractSummary } from "../dto/contracts.js";
 import type { Contracts } from "../repositories/contracts.js";
@@ -23,7 +23,7 @@ export interface ContractReads {
 export interface ContractTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly contracts: Contracts;
-  readonly resources: ResourceQuantityReader;
+  readonly content: ContentPlanReferenceReader;
   nextId(): string;
   replay(): Promise<{ requestId: string; revision: ContractRevision } | null>;
   record(revision: ContractRevision): Promise<void>;

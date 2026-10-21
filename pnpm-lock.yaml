@@ -191,6 +191,12 @@ importers:
       '@line_bot_v1/audit':
         specifier: workspace:*
         version: link:../../packages/audit
+      '@line_bot_v1/content':
+        specifier: workspace:*
+        version: link:../../packages/content
+      '@line_bot_v1/contract':
+        specifier: workspace:*
+        version: link:../../packages/contract
       '@line_bot_v1/daily-check-in':
         specifier: workspace:*
         version: link:../../packages/daily-check-in
@@ -200,6 +206,9 @@ importers:
       '@line_bot_v1/enterprise':
         specifier: workspace:*
         version: link:../../packages/enterprise
+      '@line_bot_v1/execution':
+        specifier: workspace:*
+        version: link:../../packages/execution
       '@line_bot_v1/expense':
         specifier: workspace:*
         version: link:../../packages/expense
@@ -482,6 +491,16 @@ importers:
         version: 5.9.3
 
   packages/content:
+    dependencies:
+      '@line_bot_v1/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
+      '@line_bot_v1/resources':
+        specifier: workspace:*
+        version: link:../resources
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -601,6 +620,9 @@ importers:
 
   packages/execution:
     dependencies:
+      '@line_bot_v1/content':
+        specifier: workspace:*
+        version: link:../content
       '@line_bot_v1/contract':
         specifier: workspace:*
         version: link:../contract
@@ -974,9 +996,6 @@ importers:
 
   packages/resources:
     dependencies:
-      '@line_bot_v1/content':
-        specifier: workspace:*
-        version: link:../content
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
@@ -1065,9 +1084,6 @@ importers:
 
   packages/wiki:
     dependencies:
-      '@line_bot_v1/content':
-        specifier: workspace:*
-        version: link:../content
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform

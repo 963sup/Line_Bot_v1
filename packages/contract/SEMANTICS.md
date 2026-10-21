@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 工程約定與履約實績以固定資源版本協作，約定與實績各有獨立 lifecycle、審查及不可變歷史。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md) |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 
@@ -26,23 +26,25 @@
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
-| EngineeringContract | engineering-contract | authoritative | current | Repository-scoped engineering agreement with editable DRAFT terms, ADMIN activation of fixed Resource revision quantity bases, and explicit closure. It has no monetary, signature or Payroll authority. |
+| ContractLine | contract-line | authoritative | current | One formal agreed quantity and frozen exact Content Work/Task plan basis embedded in an immutable Contract revision; distinct from both planned and actual quantity. |
+| EngineeringContract | engineering-contract | authoritative | current | Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions; historical Resource-based snapshots remain readable without inferred conversion. No monetary, signature or Payroll authority. |
 | EngineeringContractCommandReceipt | engineering-contract-command-receipt | authoritative | current | Immutable actor/request fingerprint and exact committed Contract revision supporting current-authorized replay. |
-| EngineeringContractRevision | engineering-contract-revision | authoritative | current | Immutable whole agreement snapshot including bounded line set, exact Resource quantity basis, positive agreed quantities, state, actor and timestamp; active/closed terms cannot be amended. |
+| EngineeringContractRevision | engineering-contract-revision | authoritative | current | Immutable whole commitment snapshot including exact Content plan-item and measure bases, positive agreed quantities, terms, state, actor and timestamp; active/closed terms cannot be amended. Legacy Resource-based revisions preserve their original representation. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-engineering-contracts | required | implemented | Manage Repository engineering agreements with editable drafts, fixed Resource bases, ADMIN activation/closure and immutable revisions. |
+| manage-engineering-contracts | required | implemented | Manage formal commitments against exact Content Work/Task plan items, freezing agreed quantities on activation. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| consumes | content | query | content | pure-value | Contract consumes bounded title/body normalization, retaining agreement identity, revisions, error semantics, authorization and persistence authority. |
+| consumes | content | stable-identity+query | content | transaction-recheck+immutable-pin | Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments. |
+| consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
-| consumes | resources | stable-identity+query | resources | transaction-recheck+immutable-pin | Contract qualifies exact same-Repository Resource revisions and immutable measures through the transaction-bound public quantity reader. Create/edit/activate require current unarchived Resources; later source changes never rewrite agreed bases. Resources also owns exact decimal/unit normalization. |
+| consumes | resources | stable-identity+query | resources | transaction-recheck+immutable-pin | Legacy immutable Resource-based commitments remain historical facts until explicit mapping. New commitments use Content plan items; no inferred conversion or new Resource-only commitments. |
 | provides | execution | stable-identity+query | contract | transaction-recheck+immutable-pin | Submission requires a currently ACTIVE Contract and its exact activation revision line in the same transaction. Existing reports remain reviewable/voidable after closure using the immutable ACTIVE source revision; Contract retains agreement authority. |
 
 ## Tactical Model Boundary

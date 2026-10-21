@@ -1,4 +1,4 @@
-import { normalizeContent } from "@line_bot_v1/content/text";
+import { normalizeContent } from "@line_bot_v1/platform/text";
 import { WikiError } from "./wiki-error.js";
 
 export type WikiEdit =

@@ -985,5 +985,11 @@ begin
   end if;
 end
 $function$;
+-- Content owns each assignment; the exact physical identity/revision belongs to Resources.
+alter table app_private.content_plan_resource_pins
+  add constraint content_plan_resource_pins_resource_fkey
+  foreign key(repository_id,resource_id,resource_revision_id)
+  references app_private.resource_revisions(repository_id,resource_id,id);
+
 revoke all on function app_private.assert_scoped_identifier_parity()
   from public, anon, authenticated, line_app;

@@ -2,6 +2,21 @@
 
 Low-frequency route lookup. Route existence does not grant authorization or prove a capability is active.
 
+## Repository engineering delivery
+
+| Route | Owner responsibility |
+| --- | --- |
+| `/{login}/{repository}/content` | Content work hierarchy, plan quantities, exact physical resource pins and coherent plan versions |
+| `/{login}/{repository}/resources` | Resources Location / Equipment / Material identity and lifecycle |
+| `/{login}/{repository}/contracts` | Contract commitments against exact Content Work/Task plan items |
+| `/{login}/{repository}/executions` | Execution Task actuals, prerequisite graph, resource use and internal review |
+
+The corresponding `/api/repository-content`, `/api/repository-resources`,
+`/api/repository-contracts` and `/api/repository-executions` transports consume public owner
+capabilities. Each request verifies current identity and Repository scope; POST checks Origin,
+bounded JSON and exact body/URL Repository agreement. Legacy `/objects` remains available during
+explicit data classification and verified cutover; it is not the new physical Resource collection.
+
 ## Route contract
 
 正式 URL 只有一個 route owner。Route Group 只表達 layout/runtime 分區，不改 URL，也不授予 business permission。

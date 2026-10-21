@@ -15,6 +15,10 @@ export function repositoryIssuesPath(ownerLogin: string, repositoryName: string)
 }
 
 export type RepositoryResourceSection =
+  | "content"
+  | "resources"
+  | "contracts"
+  | "executions"
   | "objects"
   | "wiki"
   | "insights"
@@ -45,10 +49,34 @@ export function repositoryResourceNavigationItems(
       group: "primary",
     },
     {
-      href: repositoryObjectsPath(ownerLogin, repositoryName),
-      label: "Objects",
-      section: "objects",
+      href: repositoryContentPath(ownerLogin, repositoryName),
+      label: "Content",
+      section: "content",
       group: "primary",
+    },
+    {
+      href: repositoryResourcesPath(ownerLogin, repositoryName),
+      label: "Resources",
+      section: "resources",
+      group: "primary",
+    },
+    {
+      href: repositoryContractsPath(ownerLogin, repositoryName),
+      label: "Contracts",
+      section: "contracts",
+      group: "primary",
+    },
+    {
+      href: repositoryExecutionsPath(ownerLogin, repositoryName),
+      label: "Executions",
+      section: "executions",
+      group: "primary",
+    },
+    {
+      href: repositoryObjectsPath(ownerLogin, repositoryName),
+      label: "Objects (Legacy)",
+      section: "objects",
+      group: "more",
     },
     {
       href: repositoryIssuesPath(ownerLogin, repositoryName),
@@ -104,6 +132,22 @@ export function repositoryResourceNavigationItems(
     );
   }
   return items;
+}
+
+export function repositoryContentPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/content`;
+}
+
+export function repositoryResourcesPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/resources`;
+}
+
+export function repositoryContractsPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/contracts`;
+}
+
+export function repositoryExecutionsPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/executions`;
 }
 
 export function repositoryObjectsPath(ownerLogin: string, repositoryName: string) {

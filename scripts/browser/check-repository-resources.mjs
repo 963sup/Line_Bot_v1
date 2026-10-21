@@ -458,7 +458,16 @@ async function expectRepositoryResourceMobileLayout() {
     await page.setViewportSize({ width, height: original.height });
     await expect(page.getByRole("heading", { name: "Discussions", exact: true })).toBeVisible();
     await openRepositoryMore();
-    for (const name of ["Discussions", "Labels", "Milestones"]) {
+    for (const name of [
+      "Content",
+      "Resources",
+      "Contracts",
+      "Executions",
+      "Discussions",
+      "Objects (Legacy)",
+      "Labels",
+      "Milestones",
+    ]) {
       await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
     }
     const metrics = await page.evaluate(() => {
@@ -506,7 +515,16 @@ async function expectRepositoryResourceMobileLayout() {
         metrics.bodyWidth <= metrics.viewportWidth + 1,
       `Repository resources overflow horizontally at ${width}px: document ${metrics.documentWidth}px, body ${metrics.bodyWidth}px.`,
     );
-    for (const name of ["Discussions", "Labels", "Milestones"]) {
+    for (const name of [
+      "Content",
+      "Resources",
+      "Contracts",
+      "Executions",
+      "Discussions",
+      "Objects (Legacy)",
+      "Labels",
+      "Milestones",
+    ]) {
       const link = metrics.links.find((item) => item.text === name);
       assert.ok(link, `${name} nav link is missing at ${width}px.`);
       assert.ok(
@@ -524,13 +542,22 @@ async function expectRepositoryResourceMobileLayout() {
 
 const primaryRepositorySections = [
   "Overview",
-  "Objects",
+  "Content",
+  "Resources",
+  "Contracts",
+  "Executions",
   "Issues",
   "Discussions",
   "Wiki",
   "Insights",
 ];
-const secondaryRepositorySections = ["Labels", "Milestones", "Settings", "Access"];
+const secondaryRepositorySections = [
+  "Objects (Legacy)",
+  "Labels",
+  "Milestones",
+  "Settings",
+  "Access",
+];
 
 function repositoryNavigation() {
   return page.getByRole("navigation", { name: "Repository resources" });
@@ -557,7 +584,7 @@ async function expectRepositoryNavigation(active, canManage) {
     .poll(() => navigation.locator("details a").allTextContents(), {
       message: "Repository secondary navigation must be capability-filtered",
     })
-    .toEqual(canManage ? secondaryRepositorySections : secondaryRepositorySections.slice(0, 2));
+    .toEqual(canManage ? secondaryRepositorySections : secondaryRepositorySections.slice(0, 3));
   await expect(navigation.getByRole("menu")).toHaveCount(0);
   await expect(navigation.locator("summary")).toHaveText("更多");
   const activeLink = navigation.getByRole("link", { name: active, exact: true });
@@ -787,10 +814,28 @@ try {
         "href",
         section === "Overview" ? "/acme" : "/acme/Operations",
       );
-      await expect(navigation.getByRole("link", { name: "Objects", exact: true })).toHaveAttribute(
-        "href",
-        "/acme/Operations/objects",
-      );
+      for (const [name, href] of [
+        ["Content", "/acme/Operations/content"],
+        ["Resources", "/acme/Operations/resources"],
+        ["Contracts", "/acme/Operations/contracts"],
+        ["Executions", "/acme/Operations/executions"],
+      ]) {
+        await expect(navigation.getByRole("link", { name, exact: true })).toHaveAttribute(
+          "href",
+          href,
+        );
+      }
+      await openRepositoryMore();
+      await expect(
+        navigation.getByRole("link", { name: "Objects (Legacy)", exact: true }),
+      ).toBeVisible();
+      await expect(
+        navigation.getByRole("link", { name: "Objects (Legacy)", exact: true }),
+      ).toHaveAttribute("href", "/acme/Operations/objects");
+      if (!secondaryRepositorySections.includes(section)) {
+        await navigation.locator("summary").filter({ hasText: "更多" }).click();
+        await expect(navigation.locator("details")).not.toHaveAttribute("open", "");
+      }
       await expect(navigation.getByRole("link", { name: "Wiki", exact: true })).toHaveAttribute(
         "href",
         "/acme/Operations/wiki",
@@ -866,20 +911,37 @@ try {
   await captureShell(page, output, "repository-public", 1);
   await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
   await expectRepositoryNavigation("Overview", false);
-  await expect(repositoryNavigation().getByRole("link")).toHaveCount(6);
-  await expect(page.getByRole("heading", { name: "Repository 內容", exact: true })).toBeVisible();
+  await expect(repositoryNavigation().getByRole("link")).toHaveCount(9);
+  const deliveryRegion = page.getByRole("region", { name: "工作交付" });
+  await expect(deliveryRegion).toBeVisible();
   for (const [name, href] of [
-    ["Objects", "/acme/Operations/objects"],
+    ["Content", "/acme/Operations/content"],
+    ["Resources", "/acme/Operations/resources"],
+    ["Contracts", "/acme/Operations/contracts"],
+    ["Executions", "/acme/Operations/executions"],
+  ]) {
+    await expect(
+      deliveryRegion.getByRole("link", { name: new RegExp(`^${name}`) }),
+    ).toHaveAttribute("href", href);
+  }
+  const collaborationRegion = page.getByRole("region", { name: "協作與知識" });
+  await expect(collaborationRegion).toBeVisible();
+  for (const [name, href] of [
     ["Issues", "/acme/Operations/issues"],
     ["Discussions", "/acme/Operations/discussions"],
     ["Wiki", "/acme/Operations/wiki"],
     ["Insights", "/acme/Operations/insights"],
   ]) {
-    await expect(page.getByRole("link", { name: new RegExp(`^${name}`) }).last()).toHaveAttribute(
-      "href",
-      href,
-    );
+    await expect(
+      collaborationRegion.getByRole("link", { name: new RegExp(`^${name}`) }),
+    ).toHaveAttribute("href", href);
   }
+  const legacyRegion = page.getByRole("region", { name: "Legacy" });
+  await expect(legacyRegion).toBeVisible();
+  await expect(legacyRegion.getByRole("link", { name: /^Objects \(Legacy\)/ })).toHaveAttribute(
+    "href",
+    "/acme/Operations/objects",
+  );
   await expect(page.getByRole("link", { name: /^Projects/ })).toHaveAttribute("href", "/projects");
   await expect(page.getByRole("heading", { name: "Public Repository", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /WBS/i })).toHaveCount(0);
@@ -1054,12 +1116,12 @@ try {
     (request) => request.action === "exchange",
   ).length;
   await page.goto(`${overviewFixture.origin}/acme/Operations?public`);
-  await expect(page.getByRole("heading", { name: "Repository 內容", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "工作交付", exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Repository 資訊讀取失敗", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toHaveCount(0);
-  await expect(repositoryNavigation().locator("details a")).toHaveCount(2);
+  await expect(repositoryNavigation().locator("details a")).toHaveCount(3);
   overviewFailure = null;
   await page.getByRole("button", { name: "重新登入並重試", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
@@ -1086,7 +1148,7 @@ try {
   await expect(page.getByText("Archived", { exact: true })).toBeVisible();
   await expect(page.getByText("read", { exact: true })).toBeVisible();
   await expectRepositoryNavigation("Overview", false);
-  await expect(repositoryNavigation().locator("details a")).toHaveCount(2);
+  await expect(repositoryNavigation().locator("details a")).toHaveCount(3);
 
   overviewArchived = false;
   overviewPermissions = ["admin"];
@@ -1310,7 +1372,7 @@ try {
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);
   const readerNavigation = page.getByRole("navigation", { name: "Repository resources" });
   await expectRepositoryNavigation("Labels", false);
-  await expect(readerNavigation.getByRole("link")).toHaveCount(8);
+  await expect(readerNavigation.getByRole("link")).toHaveCount(12);
   await expect(readerNavigation.getByRole("link", { name: "Settings", exact: true })).toHaveCount(
     0,
   );

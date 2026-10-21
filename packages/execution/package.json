@@ -19,6 +19,18 @@
     "./composition/bootstrap/executions": {
       "types": "./dist/composition/bootstrap/executions.d.ts",
       "default": "./dist/composition/bootstrap/executions.js"
+    },
+    "./application/use-cases/task-dependencies": {
+      "types": "./dist/application/use-cases/task-dependencies.d.ts",
+      "default": "./dist/application/use-cases/task-dependencies.js"
+    },
+    "./contracts/dto/task-dependencies": {
+      "types": "./dist/contracts/dto/task-dependencies.d.ts",
+      "default": "./dist/contracts/dto/task-dependencies.js"
+    },
+    "./composition/bootstrap/task-dependencies": {
+      "types": "./dist/composition/bootstrap/task-dependencies.d.ts",
+      "default": "./dist/composition/bootstrap/task-dependencies.js"
     }
   },
   "files": [
@@ -33,7 +45,8 @@
     "@line_bot_v1/contract": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
-    "@line_bot_v1/resources": "workspace:*"
+    "@line_bot_v1/resources": "workspace:*",
+    "@line_bot_v1/content": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

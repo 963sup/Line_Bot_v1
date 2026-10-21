@@ -430,6 +430,18 @@
     {
       "path": "supabase/schemas/617_executions.sql",
       "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/618_content_plans.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/619_resources.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/620_task_dependencies.sql",
+      "role": "authoritative"
     }
   ],
   "relations": [
@@ -2000,6 +2012,86 @@
       "authority": true,
       "semanticOwner": "execution",
       "concept": "engineering-execution-command-receipt"
+    },
+    {
+      "name": "content_plans",
+      "kind": "table",
+      "path": "supabase/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan"
+    },
+    {
+      "name": "content_plan_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan-revision"
+    },
+    {
+      "name": "content_plan_resource_pins",
+      "kind": "table",
+      "path": "supabase/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan-resource-pin"
+    },
+    {
+      "name": "content_plan_commands",
+      "kind": "table",
+      "path": "supabase/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan-command-receipt"
+    },
+    {
+      "name": "repository_resources",
+      "kind": "table",
+      "path": "supabase/schemas/619_resources.sql",
+      "authority": true,
+      "semanticOwner": "resources",
+      "concept": "physical-resource"
+    },
+    {
+      "name": "resource_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/619_resources.sql",
+      "authority": true,
+      "semanticOwner": "resources",
+      "concept": "physical-resource-revision"
+    },
+    {
+      "name": "resource_commands",
+      "kind": "table",
+      "path": "supabase/schemas/619_resources.sql",
+      "authority": true,
+      "semanticOwner": "resources",
+      "concept": "physical-resource-command-receipt"
+    },
+    {
+      "name": "execution_task_dependencies",
+      "kind": "table",
+      "path": "supabase/schemas/620_task_dependencies.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "task-dependency-plan"
+    },
+    {
+      "name": "execution_task_dependency_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/620_task_dependencies.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "task-dependency-revision"
+    },
+    {
+      "name": "execution_task_dependency_commands",
+      "kind": "table",
+      "path": "supabase/schemas/620_task_dependencies.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "task-dependency-command-receipt"
     }
   ]
 }

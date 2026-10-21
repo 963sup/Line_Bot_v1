@@ -36,7 +36,7 @@ Module registration, semantic-owner lifecycle, Bounded Context status and runtim
 | [packages/assistant](./assistant/SEMANTICS.md) | application-module | [assistant](../docs/owners/assistant.md) | current | Not declared |
 | [packages/attendance](./attendance/SEMANTICS.md) | domain-module | [attendance](../docs/owners/attendance.md) | current | attendance / strong-candidate |
 | [packages/audit](./audit/SEMANTICS.md) | domain-module | [audit](../docs/owners/audit.md) | current | Not declared |
-| [packages/content](./content/SEMANTICS.md) | support-module | [content](../docs/owners/content.md) | current | Not declared |
+| [packages/content](./content/SEMANTICS.md) | domain-module | [content](../docs/owners/content.md) | current | content / selected |
 | [packages/contract](./contract/SEMANTICS.md) | domain-module | [contract](../docs/owners/contract.md) | current | contract / selected |
 | [packages/daily-check-in](./daily-check-in/SEMANTICS.md) | domain-module | [daily-check-in](../docs/owners/daily-check-in.md) | current | daily-check-in / selected |
 | [packages/discussion](./discussion/SEMANTICS.md) | domain-module | [discussion](../docs/owners/discussion.md) | current | Not declared |

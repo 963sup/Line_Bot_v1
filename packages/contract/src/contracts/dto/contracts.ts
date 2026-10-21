@@ -1,10 +1,17 @@
-import type { ResourceQuantityBasis } from "@line_bot_v1/resources/contracts/output/engineering-references";
+import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import type { ResourceQuantityBasis } from "@line_bot_v1/resources/domain/engineering-reference";
 
-type ContractLineDto = Readonly<{
-  lineId: string;
-  resource: ResourceQuantityBasis;
-  agreedQuantity: string;
-}>;
+type ContractLineDto =
+  | Readonly<{
+      lineId: string;
+      content: ContentPlanItemBasis;
+      agreedQuantity: string;
+    }>
+  | Readonly<{
+      lineId: string;
+      resource: ResourceQuantityBasis;
+      agreedQuantity: string;
+    }>;
 
 export type ContractRevisionDto = Readonly<{
   revisionId: string;

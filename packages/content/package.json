@@ -4,9 +4,37 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./text": {
-      "types": "./dist/text.d.ts",
-      "default": "./dist/text.js"
+    "./application/use-cases/plans": {
+      "types": "./dist/application/use-cases/plans.d.ts",
+      "default": "./dist/application/use-cases/plans.js"
+    },
+    "./contracts/dto/plans": {
+      "types": "./dist/contracts/dto/plans.d.ts",
+      "default": "./dist/contracts/dto/plans.js"
+    },
+    "./contracts/output/plan-references": {
+      "types": "./dist/contracts/output/plan-references.d.ts",
+      "default": "./dist/contracts/output/plan-references.js"
+    },
+    "./composition/bootstrap/plans": {
+      "types": "./dist/composition/bootstrap/plans.d.ts",
+      "default": "./dist/composition/bootstrap/plans.js"
+    },
+    "./composition/bootstrap/plan-references": {
+      "types": "./dist/composition/bootstrap/plan-references.d.ts",
+      "default": "./dist/composition/bootstrap/plan-references.js"
+    },
+    "./domain/quantity": {
+      "types": "./dist/domain/quantity.d.ts",
+      "default": "./dist/domain/quantity.js"
+    },
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./domain/plan-reference": {
+      "types": "./dist/domain/plan-reference.d.ts",
+      "default": "./dist/domain/plan-reference.js"
     }
   },
   "files": [
@@ -15,11 +43,16 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@line_bot_v1/resources": "workspace:*"
   }
 }

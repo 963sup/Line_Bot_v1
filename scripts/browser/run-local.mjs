@@ -141,6 +141,11 @@ try {
     root,
     "objects.log",
   );
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-work-content.mjs")],
+    root,
+    "work-content.log",
+  );
   await command([path.join(root, "scripts/browser/check-navigation.mjs")], root, "browser.log");
   await command(
     ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-project-imports.mjs")],

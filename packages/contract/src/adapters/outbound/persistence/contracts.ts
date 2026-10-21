@@ -1,4 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
+import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
+import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import type { QuantityUnit } from "@line_bot_v1/content/domain/quantity";
 import {
   businessDatabase,
   type Database,
@@ -13,11 +16,7 @@ import {
   stringValue,
 } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
-import type {
-  ResourceQuantityBasis,
-  ResourceQuantityReader,
-} from "@line_bot_v1/resources/contracts/output/engineering-references";
-import type { QuantityUnit } from "@line_bot_v1/resources/domain/quantity";
+import type { ResourceQuantityBasis } from "@line_bot_v1/resources/domain/engineering-reference";
 import type { ContractSummary } from "../../../contracts/dto/contracts.js";
 import type {
   ContractReads,
@@ -27,7 +26,7 @@ import type {
 import type { ContractRevision, FrozenContractLine } from "../../../domain/contract.js";
 import { ContractError } from "../../../domain/error.js";
 
-type ResourceReaderFactory = (sql: Sql) => ResourceQuantityReader;
+type ContentReaderFactory = (sql: Sql) => ContentPlanReferenceReader;
 
 function parsedJson(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -59,17 +58,61 @@ function decodeResource(value: unknown): ResourceQuantityBasis {
   };
 }
 
+function decodeContent(value: unknown): ContentPlanItemBasis {
+  if (!isRecord(value) || !isRecord(value.node) || !Array.isArray(value.node.path))
+    throw new TypeError("Expected Content plan item basis");
+  const planned = value.node.plannedQuantity;
+  let plannedQuantity: ContentPlanItemBasis["node"]["plannedQuantity"] = null;
+  if (planned !== null) {
+    if (!isRecord(planned) || !isRecord(planned.measure))
+      throw new TypeError("Expected Content planned quantity");
+    plannedQuantity = {
+      value: stringValue(planned.value),
+      measure: {
+        id: stringValue(planned.measure.id),
+        name: stringValue(planned.measure.name),
+        subject: stringValue(planned.measure.subject),
+        unit: literalValue(planned.measure.unit, ["m", "pcs"]),
+      },
+    };
+  }
+  return {
+    repositoryId: stringValue(value.repositoryId),
+    planRevisionId: stringValue(value.planRevisionId),
+    planVersion: numberValue(value.planVersion),
+    node: {
+      id: stringValue(value.node.id),
+      kind: literalValue(value.node.kind, ["WORK", "TASK"]),
+      title: stringValue(value.node.title),
+      body: stringValue(value.node.body),
+      path: value.node.path.map((item) => {
+        if (!isRecord(item)) throw new TypeError("Expected Content path item");
+        return {
+          id: stringValue(item.id),
+          kind: literalValue(item.kind, ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"]),
+          title: stringValue(item.title),
+        };
+      }),
+      plannedQuantity,
+    },
+  };
+}
+
 function decodeContractLines(value: unknown): FrozenContractLine[] {
   const parsed = parsedJson(value);
   if (!Array.isArray(parsed) || parsed.length < 1 || parsed.length > 100)
     throw new TypeError("Expected Contract lines");
   return parsed.map((line) => {
     if (!isRecord(line)) throw new TypeError("Expected Contract line");
-    return {
+    const common = {
       lineId: stringValue(line.lineId),
-      resource: decodeResource(line.resource),
       agreedQuantity: stringValue(line.agreedQuantity),
     };
+    const hasContent = Object.hasOwn(line, "content");
+    const hasResource = Object.hasOwn(line, "resource");
+    if (hasContent === hasResource) throw new TypeError("Expected one Contract line basis");
+    if (hasContent) return { ...common, content: decodeContent(line.content) };
+    return { ...common, resource: decodeResource(line.resource) };
   });
 }
 
@@ -117,7 +160,7 @@ export async function readContractRevision(
 
 export class PostgresContracts implements ContractReads, ContractTransactions {
   constructor(
-    private readonly resourceReader: ResourceReaderFactory,
+    private readonly contentReader: ContentReaderFactory,
     private readonly db: Database = businessDatabase(),
   ) {}
 
@@ -210,7 +253,7 @@ export class PostgresContracts implements ContractReads, ContractTransactions {
       ]);
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
-        resources: this.resourceReader(sql),
+        content: this.contentReader(sql),
         nextId: randomUUID,
         replay: async () => {
           const row = (

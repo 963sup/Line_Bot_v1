@@ -1,4 +1,4 @@
-import { normalizeContent } from "@line_bot_v1/content/text";
+import { normalizeContent } from "@line_bot_v1/platform/text";
 import type { Quantity } from "./engineering.js";
 import { ObjectError } from "./error.js";
 

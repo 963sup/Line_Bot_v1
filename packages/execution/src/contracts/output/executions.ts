@@ -1,6 +1,9 @@
+import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
 import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
+import type { ResourceReferenceReader } from "@line_bot_v1/resources/contracts/output/resource-references";
 import type { ExecutionRevision } from "../../domain/execution.js";
 import type { ExecutionSummary } from "../dto/executions.js";
+import type { TaskDependencyView } from "../dto/task-dependencies.js";
 import type { Executions } from "../repositories/executions.js";
 
 export interface ExecutionReads {
@@ -22,7 +25,10 @@ export interface ExecutionReads {
 export interface ExecutionTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly executions: Executions;
-  readonly references: ContractReferenceReader;
+  readonly contracts: ContractReferenceReader;
+  readonly content: ContentPlanReferenceReader;
+  readonly resources: ResourceReferenceReader;
+  readDependencies(planRevisionId: string): Promise<TaskDependencyView>;
   nextId(): string;
   replay(): Promise<{ requestId: string; revision: ExecutionRevision } | null>;
   record(revision: ExecutionRevision): Promise<void>;

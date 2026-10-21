@@ -1,8 +1,19 @@
 # Resources constraints
 
-Resources owns the existing `Object*` transport/storage model. Preserve public routes, DTO keys,
-SQL identifiers, revision/receipt formats and Issue pins when changing source placement. Content
-only supplies bounded title/body values; it does not own resource identity, graph or persistence.
+## Current ownership
+
+Resources owns physical Location, Equipment and Material identity/lifecycle. New physical resource
+capabilities have immutable revisions and a public reference reader. Content owns work structure
+and planned quantities; it is no longer a text support dependency. The rules below preserve legacy
+Object history and consumers until explicit classification and verified cutover. Do not infer
+physical identity from legacy names, units or mutable types. New physical resource code does not
+own Content structure or Execution actuals.
+
+## Legacy Object constraints
+
+Resources preserves the existing `Object*` transport/storage model until explicit data cutover.
+Preserve public routes, DTO keys, SQL identifiers, revision/receipt formats and Issue pins when
+changing source placement. Shared text validation comes from Platform.
 
 Inherits [packages](../AGENTS.md). Resource owns Repository-scoped native content instances, classifications, immutable content revisions, and Resource-to-Resource relationships.
 

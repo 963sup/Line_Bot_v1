@@ -47,9 +47,11 @@ Workforce/Employment、Attendance Employment cutover、versioned Payroll input/r
 
 [Contract](../../owners/contract.md) 與 [Execution](../../owners/execution.md) 的工程約定／實績
 slice 已提升為 current runtime；具體 owner、schema、public contracts 與 consumer 回 canonical
-models 及 owner contracts。Resources 保存基準，Contract 凍結約定版本，Execution 保存申報與
-內部審查。Payroll 維持既有責任，沒有自動計薪、付款或法律驗收語意；後續 Web delivery
-仍需獨立用例與驗收，不能從 operator CLI 推定。
+models 及 owner contracts。Content 保存 Repository 工作內容、階層與計畫版本；Resources
+管理 Location／Equipment／Material 身分與生命週期；Contract 凍結工作承諾；Execution
+保存 Task 實績、前置依賴與內部審查。Web 與 operator CLI 各自需要驗收證據，不能互相推定。
+既有 Object 資料仍需明確分類與驗證切換，不從名稱、類型或單位推斷歸屬。Payroll 維持
+既有責任，沒有自動計薪、付款或法律驗收語意。
 
 ## Relationship rules
 

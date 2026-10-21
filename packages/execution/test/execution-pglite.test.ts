@@ -1,294 +1,148 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
+import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
+import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
 import { createContracts } from "@line_bot_v1/contract/application/use-cases/contracts";
 import { createPostgresContractDependencies } from "@line_bot_v1/contract/composition/bootstrap/contracts";
-import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { createObjects } from "@line_bot_v1/resources/application/use-cases/objects";
-import { createPostgresObjectDependencies } from "@line_bot_v1/resources/composition/bootstrap/objects";
+import { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
+import { createPostgresResourceDependencies } from "@line_bot_v1/resources/composition/bootstrap/resources";
+import { parseExecutionCommand } from "../src/application/commands/executions.js";
 import { createExecutions } from "../src/application/use-cases/executions.js";
+import { createTaskDependencies } from "../src/application/use-cases/task-dependencies.js";
 import { createPostgresExecutionDependencies } from "../src/composition/bootstrap/executions.js";
+import { createPostgresTaskDependencyDependencies } from "../src/composition/bootstrap/task-dependencies.js";
 import { ExecutionError } from "../src/domain/error.js";
-import { reviseExecution } from "../src/domain/execution.js";
 
-const contractId = "11111111-1111-4111-8111-111111111111";
-const draftId = "22222222-2222-4222-8222-222222222222";
-const activeId = "33333333-3333-4333-8333-333333333333";
-const lineId = "44444444-4444-4444-8444-444444444444";
-const resourceId = "55555555-5555-4555-8555-555555555555";
-const resourceRevisionId = "66666666-6666-4666-8666-666666666666";
-
-const line = {
-  lineId,
-  resource: {
-    resourceId,
-    resourceRevisionId,
-    resourceVersion: 1,
-    name: "Concrete",
-    measure: { id: "length", name: "Length", subject: "work", unit: "m" as const },
-    sourceQuantity: "10",
-  },
-  agreedQuantity: "2",
-};
-
-async function seedContract(sql: Sql) {
-  await sql.query(
-    "INSERT INTO engineering_contracts(id,repository_id,version,head_revision_id) VALUES($1,'repo',2,$2)",
-    [contractId, activeId],
-  );
-  await sql.query(
-    `INSERT INTO engineering_contract_revisions(
-       id,contract_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,title,body,lines
-     ) VALUES($1,$2,'repo',1,NULL,'owner',1,'create','DRAFT','Contract','body',$3::jsonb),
-             ($4,$2,'repo',2,$1,'owner',2,'activate','ACTIVE','Contract','body',$3::jsonb)`,
-    [draftId, contractId, JSON.stringify([line]), activeId],
-  );
-}
-
-async function setup(db: Database, provision: (sql: string) => Promise<unknown>) {
+test("public Content, Resource, Contract, dependency and Execution compositions freeze exact evidence", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
   await db.transaction(async (sql) => {
     for (const id of ["owner", "viewer"]) {
       await sql.query(
-        "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES($1,'active',1,1)",
+        `INSERT INTO users(id,status,status_version,"createdAt") VALUES($1,'active',1,1)`,
         [id],
       );
       await sql.query("SELECT claim_account_login($1,'USER',$1,1)", [id]);
     }
   });
-  await provision(
+  await pg.query(
     "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Execution','private')",
   );
-  await provision(
-    "SELECT * FROM app_private.provision_repository('other','owner','owner','USER','Other','private')",
-  );
-  await db.transaction(seedContract);
-}
 
-function submit(executionId: string, requestId = randomUUID()) {
-  return {
-    action: "submit" as const,
-    repositoryId: "repo",
-    executionId,
-    requestId,
-    expectedVersion: 0,
-    contractId,
-    contractRevisionId: activeId,
-    lineId,
-    quantity: "5.125",
-    note: "installed",
-  };
-}
-
-test("Execution Postgres transaction preserves scope, exact replay, source lifecycle and rollback", async (t) => {
-  const { pg, db } = await postgresFixture();
-  t.after(() => pg.close());
-  await setup(db, (sql) => pg.query(sql));
-  const dependencies = createPostgresExecutionDependencies(db);
-  const executions = createExecutions({ ...dependencies, now: () => 100 });
-  const executionId = randomUUID();
-  const command = submit(executionId);
-  const first = await executions.execute("owner", command);
-  assert.deepEqual(await executions.execute("owner", command), first);
-  await assert.rejects(
-    executions.execute("owner", { ...command, quantity: "6" }),
-    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
-  );
-  await assert.rejects(executions.read("viewer", { repositoryId: "repo", executionId }));
-  await assert.rejects(
-    executions.read("owner", {
-      repositoryId: "other",
-      executionId,
-      revisionId: first.revision.revisionId,
-    }),
-  );
-  const accepted = await executions.execute("owner", {
-    action: "accept",
-    repositoryId: "repo",
-    executionId,
-    requestId: randomUUID(),
-    expectedVersion: 1,
-  });
-  assert.equal(accepted.revision.state, "ACCEPTED");
-  assert.equal(accepted.revision.quantity, first.revision.quantity);
-  assert.deepEqual(accepted.revision.basis, first.revision.basis);
-  await assert.rejects(
-    executions.execute("owner", {
-      action: "void",
-      repositoryId: "repo",
-      executionId,
-      requestId: randomUUID(),
-      expectedVersion: 1,
-      reason: "stale",
-    }),
-    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
-  );
-
-  const closeId = randomUUID();
-  await db.transaction(async (sql) => {
-    await sql.query(
-      `INSERT INTO engineering_contract_revisions(
-         id,contract_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,title,body,lines
-       ) VALUES($1,$2,'repo',3,$3,'owner',3,'close','CLOSED','Contract','body',$4::jsonb)`,
-      [closeId, contractId, activeId, JSON.stringify([line])],
-    );
-    await sql.query(
-      "UPDATE engineering_contracts SET version=3,head_revision_id=$2 WHERE repository_id='repo' AND id=$1",
-      [contractId, closeId],
-    );
-  });
-  const voided = await executions.execute("owner", {
-    action: "void",
-    repositoryId: "repo",
-    executionId,
-    requestId: randomUUID(),
-    expectedVersion: 2,
-    reason: "duplicate",
-  });
-  assert.equal(voided.revision.state, "VOIDED");
-  await assert.rejects(
-    executions.execute("owner", submit(randomUUID())),
-    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
-  );
-
-  const rollbackId = randomUUID();
-  await assert.rejects(
-    dependencies.transactions.transact(
-      "owner",
-      { repositoryId: "repo", executionId: rollbackId },
-      { requestId: command.requestId, payload: JSON.stringify(command) },
-      async (tx) => {
-        const basis = await tx.references.verifyLine(
-          "owner",
-          "repo",
-          { contractId, contractRevisionId: activeId, lineId },
-          { requireActive: false },
-        );
-        const next = reviseExecution(
-          null,
-          0,
-          { action: "submit", quantity: "1", note: "rollback" },
-          {
-            id: tx.nextId(),
-            executionId: rollbackId,
-            repositoryId: "repo",
-            actorUserId: "owner",
-            at: 101,
-          },
-          basis,
-        );
-        await tx.executions.save(next, 0);
-        await tx.record(next);
-      },
-    ),
-  );
-  await assert.rejects(executions.read("owner", { repositoryId: "repo", executionId: rollbackId }));
-  assert.equal(
-    (await executions.history("owner", { repositoryId: "repo", executionId })).revisions.length,
-    3,
-  );
-  await assert.rejects(
-    db.transaction((sql) =>
-      sql.query("UPDATE engineering_execution_revisions SET note='tampered' WHERE id=$1", [
-        first.revision.revisionId,
-      ]),
-    ),
-  );
-  await assert.rejects(
-    db.transaction((sql) =>
-      sql.query(
-        `INSERT INTO engineering_execution_revisions(
-           id,execution_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
-           contract_id,contract_revision_id,contract_revision_state,line_id,basis,quantity,note,reason
-         ) SELECT $1,execution_id,repository_id,4,$2,actor_user_id,at,'void','VOIDED',
-                  contract_id,$3,'ACTIVE',line_id,basis,quantity,note,'bad source'
-             FROM engineering_execution_revisions WHERE id=$2`,
-        [randomUUID(), voided.revision.revisionId, randomUUID()],
-      ),
-    ),
-  );
-  await pg.query("UPDATE app_private.repositories SET is_archived=true WHERE id='repo'");
-  assert.deepEqual(await executions.execute("owner", command), first);
-  await assert.rejects(
-    executions.execute("owner", {
-      action: "void",
-      repositoryId: "repo",
-      executionId,
-      requestId: randomUUID(),
-      expectedVersion: 3,
-      reason: "archived",
-    }),
-  );
-});
-
-test("public Resources, Contract and Execution compositions preserve frozen quantity evidence end to end", async (t) => {
-  const { pg, db } = await postgresFixture();
-  t.after(() => pg.close());
-  await db.transaction(async (sql) => {
-    await sql.query(
-      "INSERT INTO users(id,status,status_version,\"createdAt\") VALUES('owner','active',1,1)",
-    );
-    await sql.query("SELECT claim_account_login('owner','USER','owner',1)");
-  });
-  await pg.query(
-    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Execution flow','private')",
-  );
-
-  const resources = createObjects({ ...createPostgresObjectDependencies(db), now: () => 10 });
-  const typeId = randomUUID();
-  const measureId = randomUUID();
-  const objectId = randomUUID();
-  const resourceEnvelope = () => ({
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 0,
-  });
-  await resources.executeType("owner", {
-    ...resourceEnvelope(),
+  const resources = createResources({ ...createPostgresResourceDependencies(db), now: () => 10 });
+  const resourceId = randomUUID();
+  const resource = await resources.execute("owner", {
     action: "create",
-    typeId,
-    name: "Installed work",
+    repositoryId: "repo",
+    resourceId,
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    kind: "EQUIPMENT",
+    name: "Lift",
     description: "",
   });
-  await resources.executeEngineering("owner", {
-    ...resourceEnvelope(),
-    action: "create-measure",
-    measureId,
-    name: "Installed length",
-    subject: "Measured installed route",
-    unit: "m",
+
+  const measureId = randomUUID();
+  const objectId = randomUUID();
+  const subobjectId = randomUUID();
+  const workId = randomUUID();
+  const prerequisiteId = randomUUID();
+  const taskId = randomUUID();
+  const plans = createContentPlans({
+    ...createPostgresContentPlanDependencies(db),
+    now: () => 20,
   });
-  await resources.executeObject("owner", {
-    ...resourceEnvelope(),
-    action: "create",
-    objectId,
-    typeId,
-    name: "Cable run",
-    content: "source",
-  });
-  const observed = (await resources.structure("owner", { repositoryId: "repo", rootId: objectId }))
-    .observed;
-  const quantity = await resources.executeEngineering("owner", {
-    ...resourceEnvelope(),
-    action: "set-quantities",
-    observed,
-    changes: [
-      {
-        objectId,
-        expectedVersion: 1,
-        quantity: {
-          measureId,
-          value: "25.500",
-          purpose: "REFERENCE",
-          sourceReference: null,
+  const plan = await plans.execute("owner", {
+    action: "initialize",
+    repositoryId: "repo",
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    document: {
+      schemaVersion: 1,
+      measures: [{ id: measureId, name: "Length", subject: "Installed", unit: "m" }],
+      nodes: [
+        {
+          id: randomUUID(),
+          parentId: null,
+          position: 0,
+          kind: "SUBJECT",
+          title: "Project",
+          body: "",
+          plannedQuantity: null,
         },
+      ],
+      resourcePins: [],
+    },
+  });
+  const subjectId = plan.revision.document.nodes[0]?.id;
+  assert.ok(subjectId);
+  const document = {
+    schemaVersion: 1 as const,
+    measures: plan.revision.document.measures,
+    nodes: [
+      ...plan.revision.document.nodes,
+      {
+        id: objectId,
+        parentId: subjectId,
+        position: 0,
+        kind: "OBJECT" as const,
+        title: "Building",
+        body: "",
+        plannedQuantity: null,
+      },
+      {
+        id: subobjectId,
+        parentId: objectId,
+        position: 0,
+        kind: "SUBOBJECT" as const,
+        title: "Floor",
+        body: "",
+        plannedQuantity: null,
+      },
+      {
+        id: workId,
+        parentId: subobjectId,
+        position: 0,
+        kind: "WORK" as const,
+        title: "Install",
+        body: "",
+        plannedQuantity: { measureId, value: "100" },
+      },
+      {
+        id: prerequisiteId,
+        parentId: workId,
+        position: 0,
+        kind: "TASK" as const,
+        title: "Prepare",
+        body: "",
+        plannedQuantity: { measureId, value: "5" },
+      },
+      {
+        id: taskId,
+        parentId: workId,
+        position: 1,
+        kind: "TASK" as const,
+        title: "Install lift",
+        body: "",
+        plannedQuantity: { measureId, value: "10" },
       },
     ],
+    resourcePins: [],
+  };
+  const planWithTasks = await plans.execute("owner", {
+    action: "replace",
+    repositoryId: "repo",
+    requestId: randomUUID(),
+    expectedVersion: 1,
+    document,
   });
-  const resourceRevision = quantity.result.objects[0];
-  assert.ok(resourceRevision);
 
-  const contracts = createContracts({ ...createPostgresContractDependencies(db), now: () => 20 });
+  const contracts = createContracts({
+    ...createPostgresContractDependencies(db),
+    now: () => 30,
+  });
   const contractId = randomUUID();
   const lineId = randomUUID();
   await contracts.execute("owner", {
@@ -297,14 +151,14 @@ test("public Resources, Contract and Execution compositions preserve frozen quan
     contractId,
     requestId: randomUUID(),
     expectedVersion: 0,
-    title: "Cable installation",
-    body: "terms",
+    title: "Installation",
+    body: "",
     lines: [
       {
         lineId,
-        resourceId: objectId,
-        resourceRevisionId: resourceRevision.id,
-        agreedQuantity: "10",
+        planRevisionId: planWithTasks.revision.revisionId,
+        nodeId: workId,
+        agreedQuantity: "100",
       },
     ],
   });
@@ -315,21 +169,72 @@ test("public Resources, Contract and Execution compositions preserve frozen quan
     requestId: randomUUID(),
     expectedVersion: 1,
   });
-  await resources.executeObject("owner", {
-    action: "archive",
-    repositoryId: "repo",
-    objectId,
-    requestId: randomUUID(),
-    expectedVersion: 2,
+
+  const dependencies = createTaskDependencies({
+    ...createPostgresTaskDependencyDependencies(db),
+    now: () => 40,
   });
+  assert.equal(
+    (
+      await dependencies.read("owner", {
+        repositoryId: "repo",
+        planRevisionId: planWithTasks.revision.revisionId,
+      })
+    ).version,
+    0,
+  );
+  const missingPlanRevisionId = randomUUID();
+  await assert.rejects(
+    dependencies.read("owner", {
+      repositoryId: "repo",
+      planRevisionId: missingPlanRevisionId,
+    }),
+    (error) => error instanceof ExecutionError && error.code === "NOT_FOUND",
+  );
+  await assert.rejects(
+    dependencies.execute("owner", {
+      action: "replace",
+      repositoryId: "repo",
+      planRevisionId: missingPlanRevisionId,
+      requestId: randomUUID(),
+      expectedVersion: 0,
+      edges: [],
+    }),
+    (error) => error instanceof ExecutionError && error.code === "NOT_FOUND",
+  );
+  const dependencyCommand = {
+    action: "replace",
+    repositoryId: "repo",
+    planRevisionId: planWithTasks.revision.revisionId,
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    edges: [{ taskId, prerequisiteTaskId: prerequisiteId }],
+  } as const;
+  const dependency = await dependencies.execute("owner", dependencyCommand);
+  assert.deepEqual(await dependencies.execute("owner", dependencyCommand), dependency);
+  await assert.rejects(
+    dependencies.execute("viewer", {
+      ...dependencyCommand,
+      requestId: randomUUID(),
+      expectedVersion: 1,
+    }),
+  );
+  await assert.rejects(
+    dependencies.execute("owner", {
+      ...dependencyCommand,
+      requestId: randomUUID(),
+      expectedVersion: 0,
+    }),
+    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
+  );
 
   const executions = createExecutions({
     ...createPostgresExecutionDependencies(db),
-    now: () => 30,
+    now: () => 50,
   });
   const executionId = randomUUID();
-  const submitted = await executions.execute("owner", {
-    action: "submit",
+  const command = {
+    action: "submit" as const,
     repositoryId: "repo",
     executionId,
     requestId: randomUUID(),
@@ -337,12 +242,34 @@ test("public Resources, Contract and Execution compositions preserve frozen quan
     contractId,
     contractRevisionId: active.revision.revisionId,
     lineId,
+    task: { planRevisionId: planWithTasks.revision.revisionId, nodeId: taskId },
+    resources: [{ resourceId, resourceRevisionId: resource.revision.revisionId }],
+    observedDependencyVersion: dependency.revision.version,
     quantity: "12.250",
-    note: "installed after source archival",
-  });
+    note: "installed",
+  };
+  const submitted = await executions.execute("owner", command);
+  assert.deepEqual(await executions.execute("owner", command), submitted);
+  assert.ok("task" in submitted.revision);
+  if (!("task" in submitted.revision)) assert.fail("expected Task execution");
   assert.equal(submitted.revision.quantity, "12.25");
-  assert.equal(submitted.revision.basis.resource.sourceQuantity, "25.5");
-  assert.equal(submitted.revision.basis.resource.resourceRevisionId, resourceRevision.id);
+  assert.equal(submitted.revision.task.node.id, taskId);
+  assert.equal(submitted.revision.resources[0]?.resourceRevisionId, resource.revision.revisionId);
+  assert.deepEqual(submitted.revision.dependency.prerequisiteTaskIds, [prerequisiteId]);
+  await assert.rejects(
+    executions.execute("owner", {
+      ...command,
+      executionId: randomUUID(),
+      requestId: randomUUID(),
+      observedDependencyVersion: 0,
+    }),
+    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
+  );
+  await assert.rejects(
+    executions.read("viewer", { repositoryId: "repo", executionId }),
+    (error) => error instanceof ExecutionError && error.code === "FORBIDDEN",
+  );
+
   const accepted = await executions.execute("owner", {
     action: "accept",
     repositoryId: "repo",
@@ -350,6 +277,168 @@ test("public Resources, Contract and Execution compositions preserve frozen quan
     requestId: randomUUID(),
     expectedVersion: 1,
   });
-  assert.equal(accepted.revision.state, "ACCEPTED");
-  assert.deepEqual(accepted.revision.basis, submitted.revision.basis);
+  assert.ok("task" in accepted.revision);
+  if (!("task" in accepted.revision)) assert.fail("expected Task execution");
+  assert.deepEqual(accepted.revision.dependency, submitted.revision.dependency);
+
+  const reusableRequestId = randomUUID();
+  await assert.rejects(
+    dependencies.execute("owner", {
+      ...dependencyCommand,
+      requestId: reusableRequestId,
+      expectedVersion: 1,
+      edges: [
+        { taskId, prerequisiteTaskId: prerequisiteId },
+        { taskId: prerequisiteId, prerequisiteTaskId: taskId },
+      ],
+    }),
+    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
+  );
+  const replaced = await dependencies.execute("owner", {
+    ...dependencyCommand,
+    requestId: reusableRequestId,
+    expectedVersion: 1,
+    edges: [],
+  });
+  assert.equal(replaced.revision.version, 2, "failed graph command leaves no receipt or revision");
+  assert.deepEqual(submitted.revision.dependency.prerequisiteTaskIds, [prerequisiteId]);
+  await resources.execute("owner", {
+    action: "archive",
+    repositoryId: "repo",
+    resourceId,
+    requestId: randomUUID(),
+    expectedVersion: 1,
+  });
+  const reusableExecutionRequestId = randomUUID();
+  const retryExecutionId = randomUUID();
+  await assert.rejects(
+    executions.execute("owner", {
+      ...command,
+      executionId: retryExecutionId,
+      requestId: reusableExecutionRequestId,
+      observedDependencyVersion: replaced.revision.version,
+    }),
+    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
+  );
+  const retried = await executions.execute("owner", {
+    ...command,
+    executionId: retryExecutionId,
+    requestId: reusableExecutionRequestId,
+    resources: [],
+    observedDependencyVersion: replaced.revision.version,
+  });
+  assert.equal(retried.revision.state, "SUBMITTED", "failed submission leaves no receipt or head");
+
+  const legacyExecutionId = randomUUID();
+  const legacyRevisionId = randomUUID();
+  const legacyBasis = {
+    contractId,
+    contractRevisionId: active.revision.revisionId,
+    lineId,
+    agreedQuantity: "100",
+    resource: {
+      resourceId,
+      resourceRevisionId: resource.revision.revisionId,
+      resourceVersion: 1,
+      name: "Legacy lift",
+      measure: { id: "legacy", name: "Length", subject: "Installed", unit: "m" },
+      sourceQuantity: "100",
+    },
+  };
+  const legacySubmitCommand = {
+    action: "submit",
+    repositoryId: "repo",
+    executionId: legacyExecutionId,
+    requestId: randomUUID(),
+    expectedVersion: 0,
+    contractId,
+    contractRevisionId: active.revision.revisionId,
+    lineId,
+    quantity: "1",
+    note: "legacy",
+  } as const;
+  const legacyFingerprint = createHash("sha256")
+    .update(JSON.stringify(parseExecutionCommand(legacySubmitCommand)))
+    .digest("hex");
+  await db.transaction(async (sql) => {
+    await sql.query(
+      "INSERT INTO engineering_executions(id,repository_id,contract_id,version,head_revision_id) VALUES($1,'repo',$2,1,$3)",
+      [legacyExecutionId, contractId, legacyRevisionId],
+    );
+    await sql.query(
+      `INSERT INTO engineering_execution_revisions(
+         id,execution_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
+         contract_id,contract_revision_id,contract_revision_state,line_id,basis,quantity,note,reason
+       ) VALUES($1,$2,'repo',1,NULL,'owner',1,'submit','SUBMITTED',$3,$4,'ACTIVE',$5,$6::jsonb,'1','legacy',NULL)`,
+      [
+        legacyRevisionId,
+        legacyExecutionId,
+        contractId,
+        active.revision.revisionId,
+        lineId,
+        JSON.stringify(legacyBasis),
+      ],
+    );
+    await sql.query(
+      `INSERT INTO engineering_execution_commands(
+         actor_user_id,request_id,repository_id,execution_id,fingerprint,revision_id
+       ) VALUES('owner',$1,'repo',$2,$3,$4)`,
+      [legacySubmitCommand.requestId, legacyExecutionId, legacyFingerprint, legacyRevisionId],
+    );
+  });
+  const replayedLegacySubmit = await executions.execute("owner", legacySubmitCommand);
+  assert.equal(replayedLegacySubmit.revision.revisionId, legacyRevisionId);
+  assert.equal(
+    (await executions.history("owner", { repositoryId: "repo", executionId: legacyExecutionId }))
+      .revisions.length,
+    1,
+    "exact legacy submit receipt replay does not append another revision",
+  );
+  const legacy = await executions.read("owner", {
+    repositoryId: "repo",
+    executionId: legacyExecutionId,
+  });
+  assert.equal("task" in legacy, false);
+
+  await contracts.execute("owner", {
+    action: "close",
+    repositoryId: "repo",
+    contractId,
+    requestId: randomUUID(),
+    expectedVersion: 2,
+  });
+  const legacyReviewCommand = {
+    action: "accept",
+    repositoryId: "repo",
+    executionId: legacyExecutionId,
+    requestId: randomUUID(),
+    expectedVersion: 1,
+  } as const;
+  const reviewedLegacy = await executions.execute("owner", legacyReviewCommand);
+  assert.equal(reviewedLegacy.revision.state, "ACCEPTED");
+  assert.equal("task" in reviewedLegacy.revision, false);
+  assert.deepEqual(await executions.execute("owner", legacyReviewCommand), reviewedLegacy);
+  assert.equal(
+    (await executions.history("owner", { repositoryId: "repo", executionId: legacyExecutionId }))
+      .revisions.length,
+    2,
+    "exact legacy receipt replay does not append another revision",
+  );
+  const voided = await executions.execute("owner", {
+    action: "void",
+    repositoryId: "repo",
+    executionId,
+    requestId: randomUUID(),
+    expectedVersion: 2,
+    reason: "duplicate",
+  });
+  assert.equal(voided.revision.state, "VOIDED");
+  await assert.rejects(
+    executions.execute("owner", {
+      ...command,
+      executionId: randomUUID(),
+      requestId: randomUUID(),
+    }),
+    (error) => error instanceof ExecutionError && error.code === "CONFLICT",
+  );
 });

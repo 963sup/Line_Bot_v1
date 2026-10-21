@@ -7,6 +7,38 @@
 - Draft `create` and `edit` commands supply the full 1 to 100 line set. `activate` and `close` add no fields.
 - A command may mutate the configured database. Run only against an explicitly authorized target. The CLI verifies LINE proof and current User qualification; Contract owns business authorization and transaction/replay behavior.
 
+New `create`/`edit` lines reference exact Content Work or Task plan items:
+
+```json
+{
+  "operation": "execute",
+  "proof": "<fresh LIFF access token>",
+  "command": {
+    "action": "create",
+    "repositoryId": "repository-id",
+    "contractId": "11111111-1111-4111-8111-111111111111",
+    "requestId": "22222222-2222-4222-8222-222222222222",
+    "expectedVersion": 0,
+    "title": "Cable installation",
+    "body": "Agreed scope",
+    "lines": [
+      {
+        "lineId": "33333333-3333-4333-8333-333333333333",
+        "planRevisionId": "44444444-4444-4444-8444-444444444444",
+        "nodeId": "55555555-5555-4555-8555-555555555555",
+        "agreedQuantity": "125.5"
+      }
+    ]
+  }
+}
+```
+
+`edit` uses the same complete `title`, `body` and `lines` shape with the observed Contract version.
+`activate` and `close` contain only the common command fields plus their action. Resource-based line
+payloads are accepted only to replay an already committed historical receipt; they cannot create a
+new revision. A historical Resource-based draft must be explicitly edited to Content lines before
+activation.
+
 No HTTP route, UI, production probe, scheduler, credential logging, or automatic external work is installed by this command.
 
 ## Failure and recovery

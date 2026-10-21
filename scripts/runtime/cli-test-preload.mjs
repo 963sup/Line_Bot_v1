@@ -8,7 +8,9 @@ const mocked = new Set([
   "@line_bot_v1/contract/composition/bootstrap/contracts",
   "@line_bot_v1/contract/domain/error",
   "@line_bot_v1/execution/application/use-cases/executions",
+  "@line_bot_v1/execution/application/use-cases/task-dependencies",
   "@line_bot_v1/execution/composition/bootstrap/executions",
+  "@line_bot_v1/execution/composition/bootstrap/task-dependencies",
   "@line_bot_v1/execution/domain/error",
   "@line_bot_v1/line/identity",
   "@line_bot_v1/line/mini-app",
@@ -16,7 +18,10 @@ const mocked = new Set([
   "@line_bot_v1/platform/postgres",
 ]);
 
-function operationSource(owner) {
+function operationSource(
+  owner,
+  factory = owner === "contract" ? "createContracts" : "createExecutions",
+) {
   const errorName = owner === "contract" ? "ContractError" : "ExecutionError";
   return `
     import { ${errorName} } from "@line_bot_v1/${owner}/domain/error";
@@ -31,7 +36,7 @@ function operationSource(owner) {
       if (scenario === "operation-error") throw new Error("TOP_SECRET");
       return { owner: "${owner}", operation, actor, input, calls };
     }
-    export function ${owner === "contract" ? "createContracts" : "createExecutions"}() {
+    export function ${factory}() {
       if (scenario === "factory-error") throw new Error("TOP_SECRET");
       return {
         execute: async (actor, command) => invoke("execute", actor, command),
@@ -51,10 +56,14 @@ function sourceFor(url) {
     return `export class ExecutionError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }`;
   if (specifier.endsWith("/application/use-cases/contracts")) return operationSource("contract");
   if (specifier.endsWith("/application/use-cases/executions")) return operationSource("execution");
+  if (specifier.endsWith("/application/use-cases/task-dependencies"))
+    return operationSource("execution", "createTaskDependencies");
   if (specifier.endsWith("/composition/bootstrap/contracts"))
     return `export function createPostgresContractDependencies() { return {}; }`;
   if (specifier.endsWith("/composition/bootstrap/executions"))
     return `export function createPostgresExecutionDependencies() { return {}; }`;
+  if (specifier.endsWith("/composition/bootstrap/task-dependencies"))
+    return `export function createPostgresTaskDependencyDependencies() { return {}; }`;
   if (specifier === "@line_bot_v1/platform/postgres")
     return `
       export class PostgresDatabase {

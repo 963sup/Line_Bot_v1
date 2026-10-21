@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | 企業協作是已確認的產品競爭核心；沿用 GitHub 非程式碼協作模型，工作容器、討論、工作事項與規劃保留各自 authority。 工程約定與履約實績以固定資源版本協作，約定與實績各有獨立 lifecycle、審查及不可變歷史。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md) |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 
@@ -70,6 +70,7 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | Repository owner locators and User principals reference Account-owned identity and current User qualification. |
 | provides | actions | stable-identity+query | repository | transaction-recheck | During R1 transfer, current Repository access, archive and maintain/admin authority gate legacy automation commands and each fixed step; this is not the final Project Actions scope contract. |
+| provides | content | stable-identity+query | repository | transaction-recheck | Current Repository qualification, permissions and archive policy are rechecked in the actual Content transaction. |
 | provides | contract | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
 | provides | execution | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
 | consumes | identity-access | query | identity-access | transaction-recheck | Repository consumes current IdentityAccess authorization decisions for Repository-owned access and protected operations; IdentityAccess does not own or mutate Repository grant truth. |

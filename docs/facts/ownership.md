@@ -28,16 +28,16 @@ Repository
 → work/content container authority
 
 Resources
-→ Repository-scoped resource identity, content revisions, classification and engineering graph
+→ shared physical Location / Equipment / Material identity and lifecycle
 
 Contract
-→ Repository-scoped engineering agreements with frozen Resource revision quantity bases
+→ formal commitments with frozen Content Work/Task plan bases and agreed quantities
 
 Execution
-→ quantity declarations and internal review against fixed active Contract lines
+→ Task actuals, resource use, prerequisite DAG and internal review against fixed commitments
 
 Content
-→ shared bounded title/body values; no aggregate or persisted data authority
+→ Repository Subject / Object / SubObject / Work / Task content, hierarchy and coherent plan revisions
 
 Project
 → planning authority
@@ -48,7 +48,8 @@ Key separations:
 
 - Provider identity proof ≠ User lifecycle ≠ Membership / Employment ≠ Role / Permission。
 - Repository ≠ Project；Project Item只是 planning reference，不取得 underlying work authority。
-- Resource 基準數量 ≠ Contract 約定數量 ≠ Execution 申報／審查實績 ≠ Payroll 結算結果。
+- Content 計畫量 ≠ Contract 約定量 ≠ Execution 申報／審查實績 ≠ Payroll 結算結果；Resources 身分不等於工作階層。
+- Legacy Object 資料與 writer 只在明確分類／驗證切換期間保留，不從名稱或類型推斷新 Owner；中立文字驗證由 Platform 擁有。
 - Bounded Context ≠ Module Boundary ≠ Data Boundary ≠ Consistency Boundary。
 - Accounting ≠ Billing/Charging ≠ Payment ≠ Settlement；沒有真實 owner/lifecycle/consumer時不預建 umbrella domain。
 

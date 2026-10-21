@@ -16,13 +16,14 @@ pnpm test:browser
 
 | 腳本 | 主要範圍 |
 | --- | --- |
+| [check-work-content.mjs](check-work-content.mjs) | 實際 Content 工作樹／計畫量與版本、實體 Resources、Contract 固定承諾、Task dependencies、Execution 實績及審查；合成 LINE 與本機 PGlite 公開用例讀回，不代表正式資料遷移或 LINE 真機驗收。 |
 | [check-project-imports.mjs](check-project-imports.mjs) | 建立／既有 Project 匯入儲存庫 Issues、條件篩選、未知結果精確重試、後續自動加入、停用及來源權限；1280／390／320px 截圖 |
 | `run-local.mjs` | 標準本機 browser suite 入口：build 一次、啟動 loopback production Web、依序執行案例、保存 evidence 並關閉服務。 |
 | `check-navigation.mjs` | 列表/詳情、query、前進返回、直接開啟與讀寫途中導覽。 |
 | `check-profile.mjs` | Profile client lifecycle、換帳號、遲到回應與 server-page composition。 |
 | `check-objects.mjs` | Object Type、工程計量／多視圖／超分拒絕／批次命令重試、不可變內容版本、具名稱關係、Issue 固定版本引用、原命令重試與資格失效；使用真實 Next/browser、隔離 PGlite 及合成 LINE/API。 |
 | `check-wbs.mjs` | WBS 編輯／治理與歷史；Repository Insights 的 Issue 期間與來源失敗；Wiki 原文、建立／編輯／exact retry、歷史比較／還原／封存；三者手機版面與資格撤銷清除。真實 Next/browser、隔離 PGlite、合成 LINE/API。 |
-| `check-repository-resources.mjs` | Repository 六個主導覽、原生「更多」揭露與資源頁桌面／手機版面；Overview 匿名／權限／封存／舊 WBS 恢復狀態，及 Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類、換帳號與遲到回應清除。Overview 使用真實 route/component 與合成 server query，其餘資源頁使用 Next production routes。 |
+| `check-repository-resources.mjs` | Repository 九個主導覽（含 Content／Resources／Contracts／Executions）、`Objects (Legacy)` 與原生「更多」分組，以及資源頁桌面／手機版面；Overview 匿名／權限／封存／舊 WBS 恢復狀態，及 Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類、換帳號與遲到回應清除。Overview 使用真實 route/component 與合成 server query，其餘資源頁使用 Next production routes。 |
 | `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
 | `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |
 | `check-partner-management.mjs` | Partner 名錄/管理、版本衝突、換帳號與 unknown-result handling。 |
@@ -39,7 +40,7 @@ pnpm test:browser
 
 `check-navigation.mjs` 同時量測 Home → Explore → Inbox → Home：暖機一輪後執行 20 輪，保存 `shell-navigation.json` 的 p50／p95、各次 API 路徑、RSC／script 解壓 bytes，並斷言共同外殼保留、不增加 document／LIFF 初始化。時間包含 Playwright 操作及斷言，不能當作正式 LINE 延遲或 Web Vitals。`shell-evidence.mjs` 由現有案例共用，保存 Home、Settings、Repository 與本人／訪客／Organization Profile 在 320／390／1280px 的 `shell-*.png` 與版面 JSON；Profile 使用獨立元件 fixture，與 Next production 導覽證據分開。
 
-設定 `REPOSITORY_BENCHMARK=1` 可額外量測六個 Repository 資源頁各 20 次軟導覽，先暖機一輪，再記錄資料可見時間、外殼 DOM 保留、業務 API 次數與解壓後的 RSC／script bytes。結果保存在 `repository-resources-results.json`；這是本機、合成即時 API 的受控比較，時間包含 Playwright 操作／斷言成本，不能當作 production Web Vitals。Overview 的 server query 使用獨立合成 fixture，因此不混入 Next 路由效能數據。
+設定 `REPOSITORY_BENCHMARK=1` 可額外量測 Issues／Discussions／Labels／Milestones／Settings／Access 六頁各 20 次軟導覽，先暖機一輪，再記錄資料可見時間、外殼 DOM 保留、業務 API 次數與解壓後的 RSC／script bytes。結果保存在 `repository-resources-results.json`；這是本機、合成即時 API 的受控比較，時間包含 Playwright 操作／斷言成本，不能當作 production Web Vitals。Overview 的 server query 使用獨立合成 fixture，因此不混入 Next 路由效能數據。
 
 ## 個別執行與量測
 

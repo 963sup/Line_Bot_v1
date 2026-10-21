@@ -1,14 +1,91 @@
+import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
 import type { ContractLineReference } from "@line_bot_v1/contract/contracts/output/references";
+import type { ContractLineBasis } from "@line_bot_v1/contract/domain/line-reference";
+import type { ResourceBasis } from "@line_bot_v1/resources/domain/resource-reference";
 import type { ExecutionReceipt, ExecutionRevisionDto } from "../../contracts/dto/executions.js";
 import type { ExecutionReads, ExecutionTransactions } from "../../contracts/output/executions.js";
 import { ExecutionError, executionErrorFromUnknown } from "../../domain/error.js";
+import type { ExecutionRevision } from "../../domain/execution.js";
 import { reviseExecution } from "../../domain/execution.js";
 import { canReviewExecution, canSubmitExecution } from "../../domain/policies/access.js";
 import { parseExecutionCommand } from "../commands/executions.js";
 import { executionId, historyCursor, repositoryId } from "../queries/executions.js";
 
-function dto(revision: Awaited<ReturnType<ExecutionReads["read"]>>): ExecutionRevisionDto {
+function contentBasis(value: ContentPlanItemBasis): ContentPlanItemBasis {
   return {
+    repositoryId: value.repositoryId,
+    planRevisionId: value.planRevisionId,
+    planVersion: value.planVersion,
+    node: {
+      id: value.node.id,
+      kind: value.node.kind,
+      title: value.node.title,
+      body: value.node.body,
+      path: value.node.path.map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        title: item.title,
+      })),
+      plannedQuantity:
+        value.node.plannedQuantity === null
+          ? null
+          : {
+              value: value.node.plannedQuantity.value,
+              measure: {
+                id: value.node.plannedQuantity.measure.id,
+                name: value.node.plannedQuantity.measure.name,
+                subject: value.node.plannedQuantity.measure.subject,
+                unit: value.node.plannedQuantity.measure.unit,
+              },
+            },
+    },
+  };
+}
+
+function contractBasis(
+  value: Extract<ContractLineBasis, { content: unknown }>,
+): Extract<ContractLineBasis, { content: unknown }>;
+function contractBasis(
+  value: Extract<ContractLineBasis, { resource: unknown }>,
+): Extract<ContractLineBasis, { resource: unknown }>;
+function contractBasis(value: ContractLineBasis): ContractLineBasis {
+  const common = {
+    contractId: value.contractId,
+    contractRevisionId: value.contractRevisionId,
+    lineId: value.lineId,
+    agreedQuantity: value.agreedQuantity,
+  };
+  if ("content" in value) return { ...common, content: contentBasis(value.content) };
+  return {
+    ...common,
+    resource: {
+      resourceId: value.resource.resourceId,
+      resourceRevisionId: value.resource.resourceRevisionId,
+      resourceVersion: value.resource.resourceVersion,
+      name: value.resource.name,
+      measure: {
+        id: value.resource.measure.id,
+        name: value.resource.measure.name,
+        subject: value.resource.measure.subject,
+        unit: value.resource.measure.unit,
+      },
+      sourceQuantity: value.resource.sourceQuantity,
+    },
+  };
+}
+
+function resourceBasis(value: ResourceBasis): ResourceBasis {
+  return {
+    resourceId: value.resourceId,
+    resourceRevisionId: value.resourceRevisionId,
+    resourceVersion: value.resourceVersion,
+    kind: value.kind,
+    name: value.name,
+  };
+}
+
+function dto(revision: ExecutionRevision): ExecutionRevisionDto {
+  const common = {
     revisionId: revision.id,
     executionId: revision.executionId,
     repositoryId: revision.repositoryId,
@@ -18,28 +95,25 @@ function dto(revision: Awaited<ReturnType<ExecutionReads["read"]>>): ExecutionRe
     at: revision.at,
     action: revision.action,
     state: revision.state,
-    basis: {
-      contractId: revision.basis.contractId,
-      contractRevisionId: revision.basis.contractRevisionId,
-      lineId: revision.basis.lineId,
-      agreedQuantity: revision.basis.agreedQuantity,
-      resource: {
-        resourceId: revision.basis.resource.resourceId,
-        resourceRevisionId: revision.basis.resource.resourceRevisionId,
-        resourceVersion: revision.basis.resource.resourceVersion,
-        name: revision.basis.resource.name,
-        measure: {
-          id: revision.basis.resource.measure.id,
-          name: revision.basis.resource.measure.name,
-          subject: revision.basis.resource.measure.subject,
-          unit: revision.basis.resource.measure.unit,
-        },
-        sourceQuantity: revision.basis.resource.sourceQuantity,
-      },
-    },
     quantity: revision.quantity,
     note: revision.note,
     reason: revision.reason,
+  };
+  if (!("task" in revision))
+    return {
+      ...common,
+      basis: contractBasis(revision.basis),
+    };
+  return {
+    ...common,
+    basis: contractBasis(revision.basis),
+    task: contentBasis(revision.task),
+    resources: revision.resources.map(resourceBasis),
+    dependency: {
+      version: revision.dependency.version,
+      revisionId: revision.dependency.revisionId,
+      prerequisiteTaskIds: [...revision.dependency.prerequisiteTaskIds],
+    },
   };
 }
 
@@ -160,6 +234,12 @@ export function createExecutions(deps: {
               );
             const replay = await tx.replay();
             if (replay) return { requestId: replay.requestId, revision: dto(replay.revision) };
+            if (command.action === "submit" && !("task" in command))
+              throw new ExecutionError(
+                409,
+                "Legacy Execution submissions can only replay an existing receipt.",
+                "CONFLICT",
+              );
             if (tx.scope.archived)
               throw new ExecutionError(409, "Repository is archived.", "CONFLICT");
             const current = await tx.executions.load();
@@ -179,11 +259,67 @@ export function createExecutions(deps: {
                 lineId: current.basis.lineId,
               };
             }
-            const basis = await tx.references
+            const basis = await tx.contracts
               .verifyLine(userId, tx.scope.repositoryId, reference, {
                 requireActive: command.action === "submit",
               })
               .catch(sourceError);
+            if (
+              basis.contractId !== reference.contractId ||
+              basis.contractRevisionId !== reference.contractRevisionId ||
+              basis.lineId !== reference.lineId
+            )
+              throw new ExecutionError(409, "Execution Contract reference mismatch.", "CONFLICT");
+            let source: Parameters<typeof reviseExecution>[4] = null;
+            if (command.action === "submit") {
+              if (!("content" in basis))
+                throw new ExecutionError(
+                  409,
+                  "Legacy Contract lines cannot receive new Execution reports.",
+                  "CONFLICT",
+                );
+              const tasks = await tx.content
+                .verifyPinned(userId, tx.scope.repositoryId, [command.task])
+                .catch(sourceError);
+              const task = tasks[0];
+              if (
+                tasks.length !== 1 ||
+                !task ||
+                task.planRevisionId !== command.task.planRevisionId ||
+                task.node.id !== command.task.nodeId
+              )
+                throw new ExecutionError(409, "Execution Task reference mismatch.", "CONFLICT");
+              const resources = await tx.resources
+                .verifyPinned(userId, tx.scope.repositoryId, command.resources, {
+                  allowArchived: false,
+                })
+                .catch(sourceError);
+              if (
+                resources.length !== command.resources.length ||
+                resources.some(
+                  (resource, index) =>
+                    resource.resourceId !== command.resources[index]?.resourceId ||
+                    resource.resourceRevisionId !== command.resources[index]?.resourceRevisionId,
+                )
+              )
+                throw new ExecutionError(409, "Execution Resource reference mismatch.", "CONFLICT");
+              const dependency = await tx.readDependencies(command.task.planRevisionId);
+              if (dependency.version !== command.observedDependencyVersion)
+                throw new ExecutionError(409, "Task dependency version conflict.", "CONFLICT");
+              source = {
+                basis,
+                task,
+                resources,
+                dependency: {
+                  version: dependency.version,
+                  revisionId: dependency.revisionId,
+                  prerequisiteTaskIds: dependency.edges
+                    .filter((edge) => edge.taskId === task.node.id)
+                    .map((edge) => edge.prerequisiteTaskId)
+                    .sort(),
+                },
+              };
+            }
             const revision = reviseExecution(
               current,
               command.expectedVersion,
@@ -195,7 +331,7 @@ export function createExecutions(deps: {
                 actorUserId: userId,
                 at: deps.now(),
               },
-              basis,
+              source,
             );
             await tx.executions.save(revision, command.expectedVersion);
             await tx.record(revision);
