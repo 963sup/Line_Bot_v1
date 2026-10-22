@@ -46,7 +46,7 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 
 Runtime owner: `packages/repository`. Discovery projection: `packages/explore`. Web presentation: `apps/web/src/modules/repository`.
 
-The canonical Web root is Repository Overview: public metadata is anonymous-readable, while current authenticated Repository scope controls private/internal metadata and management links. Overview composes WBS-owned legacy recovery eligibility without acquiring WBS authority or exposing a destination Project. Source failure remains unavailable and retryable. Objects, Issues, Discussions, Wiki and Insights are content entries; Labels/Milestones and current-admin Settings/Access live in the native More disclosure. Projects remains an independent planning entry and does not imply a Repository association or inherited authorization.
+The canonical Web root is Repository Overview: public metadata is anonymous-readable, while current authenticated Repository scope controls private/internal metadata and management links. Overview composes WBS-owned legacy recovery eligibility without acquiring WBS authority or exposing a destination Project. Source failure remains unavailable and retryable. All available resources share one ordered navigation grid without a disclosure. Objects is explicitly labeled Legacy; Settings and Access remain visible only to current admins. Projects remains an independent planning entry and does not imply a Repository association or inherited authorization.
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
 

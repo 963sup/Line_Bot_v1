@@ -59,11 +59,11 @@ test("repository resource navigation exposes one ordered map and gates managemen
       "resources",
       "contracts",
       "executions",
-      "objects",
       "issues",
       "discussions",
       "wiki",
       "insights",
+      "objects",
       "labels",
       "milestones",
     ],
@@ -76,34 +76,15 @@ test("repository resource navigation exposes one ordered map and gates managemen
       "resources",
       "contracts",
       "executions",
-      "objects",
       "issues",
       "discussions",
       "wiki",
       "insights",
+      "objects",
       "labels",
       "milestones",
       "settings",
       "access",
     ],
-  );
-  const items = repositoryResourceNavigationItems("acme", "Operations", true);
-  assert.deepEqual(
-    items.filter((item) => item.group === "primary").map((item) => item.section),
-    [
-      "overview",
-      "content",
-      "resources",
-      "contracts",
-      "executions",
-      "issues",
-      "discussions",
-      "wiki",
-      "insights",
-    ],
-  );
-  assert.deepEqual(
-    items.filter((item) => item.group === "more").map((item) => item.section),
-    ["objects", "labels", "milestones", "settings", "access"],
   );
 });

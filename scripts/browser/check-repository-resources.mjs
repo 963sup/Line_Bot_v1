@@ -457,7 +457,6 @@ async function expectRepositoryResourceMobileLayout() {
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: original.height });
     await expect(page.getByRole("heading", { name: "Discussions", exact: true })).toBeVisible();
-    await openRepositoryMore();
     for (const name of [
       "Content",
       "Resources",
@@ -540,7 +539,7 @@ async function expectRepositoryResourceMobileLayout() {
   await page.setViewportSize(original);
 }
 
-const primaryRepositorySections = [
+const repositorySections = [
   "Overview",
   "Content",
   "Resources",
@@ -550,8 +549,6 @@ const primaryRepositorySections = [
   "Discussions",
   "Wiki",
   "Insights",
-];
-const secondaryRepositorySections = [
   "Objects (Legacy)",
   "Labels",
   "Milestones",
@@ -563,42 +560,23 @@ function repositoryNavigation() {
   return page.getByRole("navigation", { name: "Repository resources" });
 }
 
-async function openRepositoryMore() {
-  const navigation = repositoryNavigation();
-  const disclosure = navigation.locator("details");
-  if ((await disclosure.getAttribute("open")) === null) {
-    await navigation.locator("summary").filter({ hasText: "更多" }).click();
-  }
-  await expect(disclosure).toHaveAttribute("open", "");
-  return navigation;
-}
-
 async function expectRepositoryNavigation(active, canManage) {
   const navigation = repositoryNavigation();
-  assert.deepEqual(
-    await navigation.locator(":scope > a").allTextContents(),
-    primaryRepositorySections,
-    "Repository primary navigation order must remain stable",
-  );
   await expect
-    .poll(() => navigation.locator("details a").allTextContents(), {
-      message: "Repository secondary navigation must be capability-filtered",
+    .poll(() => navigation.locator(":scope > a").allTextContents(), {
+      message: "Repository navigation must be ordered and capability-filtered",
     })
-    .toEqual(canManage ? secondaryRepositorySections : secondaryRepositorySections.slice(0, 3));
+    .toEqual(canManage ? repositorySections : repositorySections.slice(0, -2));
   await expect(navigation.getByRole("menu")).toHaveCount(0);
-  await expect(navigation.locator("summary")).toHaveText("更多");
+  await expect(navigation.locator("details, summary")).toHaveCount(0);
   const activeLink = navigation.getByRole("link", { name: active, exact: true });
-  if (secondaryRepositorySections.includes(active)) {
-    await expect(navigation.locator("details")).toHaveAttribute("open", "");
-  }
+  await expect(activeLink).toBeVisible();
   await expect(activeLink).toHaveAttribute("aria-current", "page");
   return navigation;
 }
 
 async function clickRepositorySection(section) {
-  const navigation = secondaryRepositorySections.includes(section)
-    ? await openRepositoryMore()
-    : repositoryNavigation();
+  const navigation = repositoryNavigation();
   await navigation.getByRole("link", { name: section, exact: true }).click();
 }
 
@@ -800,7 +778,7 @@ try {
   ];
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 844 });
-    let expectedGeometry;
+    const expectedGeometry = new Map();
     for (const section of sections) {
       const suffix = section === "Overview" ? "" : `/${section.toLowerCase()}`;
       if (section === "Overview") {
@@ -825,17 +803,12 @@ try {
           href,
         );
       }
-      await openRepositoryMore();
       await expect(
         navigation.getByRole("link", { name: "Objects (Legacy)", exact: true }),
       ).toBeVisible();
       await expect(
         navigation.getByRole("link", { name: "Objects (Legacy)", exact: true }),
       ).toHaveAttribute("href", "/acme/Operations/objects");
-      if (!secondaryRepositorySections.includes(section)) {
-        await navigation.locator("summary").filter({ hasText: "更多" }).click();
-        await expect(navigation.locator("details")).not.toHaveAttribute("open", "");
-      }
       await expect(navigation.getByRole("link", { name: "Wiki", exact: true })).toHaveAttribute(
         "href",
         "/acme/Operations/wiki",
@@ -877,14 +850,14 @@ try {
         );
         assert.ok(link.left >= -1 && link.right <= width + 1, `${section} navigation is clipped`);
       }
-      const geometryGroup = secondaryRepositorySections.includes(section) ? "secondary" : "primary";
-      if (expectedGeometry?.group === geometryGroup)
+      const previousGeometry = expectedGeometry.get(metrics.links.length);
+      if (previousGeometry)
         assert.deepEqual(
           metrics.geometry,
-          expectedGeometry.geometry,
+          previousGeometry,
           `${section} header differs at ${width}px`,
         );
-      expectedGeometry = { group: geometryGroup, geometry: metrics.geometry };
+      expectedGeometry.set(metrics.links.length, metrics.geometry);
       if (section === "Settings") {
         await expect(
           main.getByRole("heading", { name: "acme/Operations", exact: true }),
@@ -900,6 +873,8 @@ try {
           path: path.join(output, `repository-${section.toLowerCase()}-${width}.png`),
           fullPage: true,
         });
+      if (output && width === 390 && section === "Settings")
+        await navigation.screenshot({ path: path.join(output, "repository-navigation-390.png") });
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -911,7 +886,7 @@ try {
   await captureShell(page, output, "repository-public", 1);
   await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
   await expectRepositoryNavigation("Overview", false);
-  await expect(repositoryNavigation().getByRole("link")).toHaveCount(9);
+  await expect(repositoryNavigation().getByRole("link")).toHaveCount(12);
   const deliveryRegion = page.getByRole("region", { name: "工作交付" });
   await expect(deliveryRegion).toBeVisible();
   for (const [name, href] of [
@@ -1121,7 +1096,7 @@ try {
     page.getByRole("heading", { name: "Repository 資訊讀取失敗", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toHaveCount(0);
-  await expect(repositoryNavigation().locator("details a")).toHaveCount(3);
+  await expect(repositoryNavigation().locator(":scope > a")).toHaveCount(12);
   overviewFailure = null;
   await page.getByRole("button", { name: "重新登入並重試", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
@@ -1148,7 +1123,7 @@ try {
   await expect(page.getByText("Archived", { exact: true })).toBeVisible();
   await expect(page.getByText("read", { exact: true })).toBeVisible();
   await expectRepositoryNavigation("Overview", false);
-  await expect(repositoryNavigation().locator("details a")).toHaveCount(3);
+  await expect(repositoryNavigation().locator(":scope > a")).toHaveCount(12);
 
   overviewArchived = false;
   overviewPermissions = ["admin"];
@@ -1264,7 +1239,7 @@ try {
     };
   }
   result.checks.push(
-    "Repository sections share shell/header/navigation geometry at 1280, 390 and 320px; primary order, native disclosure, 44px targets and no overflow",
+    "Repository sections share shell/header/navigation geometry per available link count at 1280, 390 and 320px; flat ordered links, no disclosure, 44px targets and no overflow",
   );
   const firstDiscussionPath = `/acme/Operations/discussions/number/${firstDiscussion.number}`;
   const secondDiscussionPath = `/acme/Operations/discussions/${secondDiscussion.id}`;

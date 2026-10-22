@@ -28,7 +28,6 @@ test("repository navigation exposes corrected owners and keeps Objects clearly l
       href: "/Owner/Repo/objects",
       label: "Objects (Legacy)",
       section: "objects",
-      group: "more",
     },
   );
 });

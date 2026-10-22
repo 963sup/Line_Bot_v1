@@ -500,22 +500,14 @@ try {
   forbidden = false;
   await page.goto(`${base}/alice/Alpha/insights`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Issue 活動", exact: true })).toBeVisible();
+  const repositoryNavigation = page.getByRole("navigation", { name: "Repository resources" });
+  await expect(repositoryNavigation.locator("details, summary")).toHaveCount(0);
   await expect(
-    page
-      .getByRole("navigation", { name: "Repository resources" })
-      .locator("summary")
-      .filter({ hasText: "更多" }),
+    repositoryNavigation.getByRole("link", { name: "Settings", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Repository resources" })
-    .locator("summary")
-    .filter({ hasText: "更多" })
-    .click();
   await expect(
-    page
-      .getByRole("navigation", { name: "Repository resources" })
-      .getByRole("link", { name: "Settings", exact: true }),
-  ).toBeVisible();
+    repositoryNavigation.getByRole("link", { name: "Insights", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await page.getByLabel("Issue 活動期間").selectOption("30");
   await expect.poll(() => insightsPeriods.at(-1)).toBe(30 * 86400000);
   await expect(page.getByText(/更新時間：/)).toBeVisible();
