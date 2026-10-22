@@ -53,7 +53,7 @@ function queryIndex(queries: QueryRecord[], fragment: string) {
 
 function organizationOwnerQuery(text: string) {
   return (
-    text.includes("FROM organization_role_assignments") &&
+    text.includes("FROM identity_access_organization_scopes o") &&
     text.includes("identity_access_organization_scopes") &&
     text.includes("identity_access_organization_subjects")
   );
@@ -336,10 +336,17 @@ test("OrganizationOwner revoke preserves the last-effective-owner invariant", as
         ],
       };
     }
-    if (text.includes("JOIN organization_memberships") && text.includes("r.user_id<>$2")) {
+    if (
+      text.includes("JOIN organization_memberships") &&
+      text.includes("JOIN identity_access_organization_subjects u") &&
+      text.includes("r.user_id<>$2")
+    ) {
       return { rows: [] };
     }
-    if (text.includes("JOIN organization_memberships")) {
+    if (
+      text.includes("JOIN organization_memberships") &&
+      text.includes("JOIN identity_access_organization_subjects u")
+    ) {
       return { rows: [{ "?column?": 1 }] };
     }
     if (text.includes("UPDATE organization_role_assignments")) {

@@ -21,11 +21,12 @@ export async function hasEnterpriseOwnerAssignment(
          FROM enterprise_role_assignments r
          JOIN enterprise_direct_affiliations a
            ON a.enterprise_account_id=r.enterprise_account_id AND a.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
+         JOIN identity_access_enterprise_subjects u
+           ON u.enterprise_account_id=r.enterprise_account_id AND u.user_id=r.user_id
          WHERE r.enterprise_account_id=$1 AND r.user_id=$2
            AND r.role='EnterpriseOwner' AND r.status='active'
-           AND a.status='active' AND u.status='active'
-           AND r.user_status_version=u.status_version`,
+           AND a.status='active' AND u.user_status='active'
+           AND r.user_status_version=u.user_status_version`,
         [enterpriseAccountId, userId],
       )
     ).rows[0],
@@ -44,11 +45,12 @@ export async function hasReplacementEnterpriseOwner(
          FROM enterprise_role_assignments r
          JOIN enterprise_direct_affiliations a
            ON a.enterprise_account_id=r.enterprise_account_id AND a.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
+         JOIN identity_access_enterprise_subjects u
+           ON u.enterprise_account_id=r.enterprise_account_id AND u.user_id=r.user_id
          WHERE r.enterprise_account_id=$1 AND r.user_id<>$2
            AND r.role='EnterpriseOwner' AND r.status='active'
-           AND a.status='active' AND u.status='active'
-           AND r.user_status_version=u.status_version
+           AND a.status='active' AND u.user_status='active'
+           AND r.user_status_version=u.user_status_version
          LIMIT 1`,
         [enterpriseAccountId, excludedUserId],
       )
@@ -63,11 +65,12 @@ export async function readEnterpriseOwnerScopeIds(sql: Sql, userId: string): Pro
        FROM enterprise_role_assignments r
        JOIN enterprise_direct_affiliations a
          ON a.enterprise_account_id=r.enterprise_account_id AND a.user_id=r.user_id
-       JOIN users u ON u.id=r.user_id
+       JOIN identity_access_enterprise_subjects u
+         ON u.enterprise_account_id=r.enterprise_account_id AND u.user_id=r.user_id
        WHERE r.user_id=$1
          AND r.role='EnterpriseOwner' AND r.status='active'
-         AND a.status='active' AND u.status='active'
-         AND r.user_status_version=u.status_version
+         AND a.status='active' AND u.user_status='active'
+         AND r.user_status_version=u.user_status_version
       ORDER BY r.enterprise_account_id`,
       [userId],
       idRow,
@@ -88,11 +91,12 @@ export async function readEnterpriseOwnerAssignments(
        FROM enterprise_role_assignments r
        JOIN enterprise_direct_affiliations a
          ON a.enterprise_account_id=r.enterprise_account_id AND a.user_id=r.user_id
-       JOIN users u ON u.id=r.user_id
+       JOIN identity_access_enterprise_subjects u
+         ON u.enterprise_account_id=r.enterprise_account_id AND u.user_id=r.user_id
        WHERE r.enterprise_account_id=$1
          AND r.role='EnterpriseOwner' AND r.status='active'
-         AND a.status='active' AND u.status='active'
-         AND r.user_status_version=u.status_version
+         AND a.status='active' AND u.user_status='active'
+         AND r.user_status_version=u.user_status_version
          AND ($2::text[] IS NULL OR r.user_id=ANY($2::text[]))
       ORDER BY r.user_id`,
       [enterpriseAccountId, userIds ?? null],
