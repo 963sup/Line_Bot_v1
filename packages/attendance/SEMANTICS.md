@@ -40,11 +40,11 @@ References support the existing status; listed tests are evidence locations, not
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| record-attendance | required | implemented | Record valid attendance while preserving eligibility, replay, version, and isolation semantics. |
-| review-attendance-supplement | required | implemented | Let a current effective Repository ADMIN User approve or reject a pending Attendance supplement, with approval atomically appending the Attendance fact and decision event. |
-| submit-attendance-supplement | required | implemented | Let an active User propose a missing complete session or a missing end time without directly changing authoritative Attendance facts. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| record-attendance | required | implemented | ledger-attendance-posting | Record valid attendance while preserving eligibility, replay, version, and isolation semantics. |
+| review-attendance-supplement | required | implemented |  | Let a current effective Repository ADMIN User approve or reject a pending Attendance supplement, with approval atomically appending the Attendance fact and decision event. |
+| submit-attendance-supplement | required | implemented |  | Let an active User propose a missing complete session or a missing end time without directly changing authoritative Attendance facts. |
 
 ## Context Relationships
 
@@ -52,7 +52,9 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- | --- | --- |
 | consumes | account | stable-identity+query | account | current-state | Qualified User/current subject. |
 | consumes | asset | stable-identity | asset | current-identity | Attendance references the Asset-owned reward identity when posting attendance rewards. |
+| provides | account | projection | attendance | current-state | Account User administration reads the Attendance-owned open-session activity projection for administrative display; it does not authorize User suspension or transfer Attendance writer or lifecycle authority to Account. |
 | provides | ledger | command | attendance | atomic-where-required | Authorized attendance reward decision. |
+| consumes | ledger | command | ledger | same-transaction | Attendance calls Ledger's idempotent durable credit writer in the caller transaction; Attendance owns reward eligibility and amount while Ledger owns the resulting immutable value fact. |
 | consumes | repository | query | repository | current-state | Attendance consumes a Repository point (coordinates and radius with an optional address description) plus current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal. |
 
 ## Tactical Model Boundary

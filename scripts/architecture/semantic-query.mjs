@@ -29,6 +29,9 @@ function capabilityEvidence(compiled, capability) {
     capability,
     owner: compiled.owners.get(capability.owner) ?? null,
     implementation: capability.implementation ?? null,
+    contracts: (capability.consumes ?? [])
+      .map((id) => compiled.relationships.get(id))
+      .filter(Boolean),
     members: (capability.members ?? []).map((id) => compiled.capabilities.get(id)).filter(Boolean),
     validation: (capability.validationProfiles ?? [])
       .map((id) => compiled.validationProfiles.get(id))
@@ -96,6 +99,7 @@ function explain(compiled, id) {
       capability: evidence.capability,
       owner: evidence.owner,
       implementation: evidence.implementation,
+      contracts: evidence.contracts,
       members: evidence.members,
       boundaries: boundarySnapshot(compiled, [evidence.capability.owner]),
       invariants: (evidence.capability.preserves ?? [])

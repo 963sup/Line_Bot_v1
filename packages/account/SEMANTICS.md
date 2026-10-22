@@ -40,13 +40,14 @@ References support the existing status; listed tests are evidence locations, not
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| manage-user-follow | required | implemented | Manage directional User follow relationships and their follower/following read projections. |
-| manage-user-profile | required | implemented | Read and update User profile metadata without changing User identity or login authority. |
-| manage-user-profile-status | required | implemented | Read publicly visible User status and let the currently qualified User set or clear their own message, emoji, limited-availability flag, and expiry; organization-scoped audience is unsupported. |
-| qualify-user | required | implemented | Determine current User qualification for a consumer operation. |
-| read-user-achievements | required | implemented | Read the current User's earned Achievement facts without turning recognition into identity or authorization. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| manage-user-administration | required | implemented | attendance-account-management-activity, identity-access-account-administration, issue-account-management-activity | Read managed Users and suspend or restore their Account-owned lifecycle while preserving current authorization, source activity, version, and exact replay semantics. |
+| manage-user-follow | required | implemented |  | Manage directional User follow relationships and their follower/following read projections. |
+| manage-user-profile | required | implemented |  | Read and update User profile metadata without changing User identity or login authority. |
+| manage-user-profile-status | required | implemented |  | Read publicly visible User status and let the currently qualified User set or clear their own message, emoji, limited-availability flag, and expiry; organization-scoped audience is unsupported. |
+| qualify-user | required | implemented | namespace-account-root-reservation | Determine current User qualification for a consumer operation. |
+| read-user-achievements | required | implemented |  | Read the current User's earned Achievement facts without turning recognition into identity or authorization. |
 
 ## Context Relationships
 
@@ -54,18 +55,23 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- | --- | --- |
 | provides | attendance | stable-identity+query | account | current-state | Qualified User/current subject. |
 | provides | daily-check-in | stable-identity+query | account | transaction-recheck | User identity and transaction-time qualification. |
-| provides | enterprise | stable-identity | account | current-identity | Enterprise affiliations, invitations, and Team membership reference Account-owned stable User and Account identities. |
+| provides | enterprise | stable-identity+query | account | transaction-recheck | Enterprise affiliations, invitations, and Team membership reference Account-owned stable identities and recheck current User qualification and status version in the caller transaction. |
+| provides | enterprise | command | account | same-transaction | Enterprise creation uses the narrow atomic provision_enterprise_scope coordinator to establish the Account-owned root and initial qualified User reference; Enterprise owns its scoped lifecycle after provisioning. |
 | provides | expense | stable-identity+query | account | transaction-recheck | Expense consumes current User identity and qualification, including transaction-time mutation rechecks. |
 | provides | identity-access | stable-identity+query | account | current-state | IdentityAccess consumes current User identity, qualification and status version when evaluating permissions and RoleAssignments. |
 | provides | ledger | reference | account | current-identity | Ledger value facts reference the Account-owned stable holder identity without taking Account lifecycle authority. |
-| provides | organization | stable-identity+query | account | current-state | Organization participation and public locator behavior reference Account-owned User and Account identity contracts. |
+| provides | organization | stable-identity+query | account | transaction-recheck | Organization participation and public locator behavior reference Account-owned identities and recheck current User qualification and status version in the caller transaction. |
+| provides | organization | command | account | same-transaction | Organization creation uses the narrow atomic provision_organization_scope coordinator to establish the Account-owned root and initial qualified User reference; Organization owns its scoped lifecycle after provisioning. |
 | provides | partner-directory | stable-identity+query | account | transaction-recheck | PartnerDirectory management consumes current User identity and qualification before protected operations. |
 | provides | repository | stable-identity+query | account | current-state | Repository owner locators and User principals reference Account-owned identity and current User qualification. |
-| provides | team | stable-identity+query | account | current-state | Current User qualification and participation identity. |
+| provides | team | stable-identity+query | account | transaction-recheck | Team commands recheck Account-owned User identity, active qualification, and status version in the caller transaction. |
 | provides | wallet | stable-identity+query | account | current-state | Wallet balance projection consumes current User holder qualification and stable Account identity. |
 | provides | actions | query | account | current-state | Active Account qualification version binds revocable execution delegation. |
+| consumes | attendance | projection | attendance | current-state | Account User administration reads the Attendance-owned open-session activity projection for administrative display; it does not authorize User suspension or transfer Attendance writer or lifecycle authority to Account. |
+| consumes | identity-access | query | identity-access | transaction-recheck | Account User administration rechecks IdentityAccess decisions for users.read, users.suspend, and last-permission-administrator protection; Account retains User lifecycle, status, version, and replay authority. |
+| consumes | issue | projection | issue | current-state | Account User administration reads the Issue-owned unfinished-assignment activity projection for administrative display; it does not authorize User suspension or transfer Issue writer or lifecycle authority to Account. |
 | consumes | line-integration | external-proof | line-integration | verified-request | Verified LINE identity proof consumed for account mapping/qualification. |
-| consumes | namespace | query | namespace | current-policy | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
+| consumes | namespace | command | namespace | same-transaction | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
 | provides | notifications | query | account | current-state | Account supplies current active provider binding; Notifications retains the first delivery target snapshot. |
 | provides | project | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |
 

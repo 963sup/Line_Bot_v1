@@ -2121,9 +2121,18 @@
       "provider": "namespace",
       "consumer": "account",
       "meaning": "Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence.",
-      "integrationMode": "query",
+      "integrationMode": "command",
       "authority": "namespace",
-      "consistency": "current-policy"
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-organization-root-reservation",
+      "provider": "namespace",
+      "consumer": "organization",
+      "meaning": "Organization creation coordinates a Namespace-owned global login claim in the same transaction; Organization owns its lifecycle while Namespace owns normalization, collision, binding, and history.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
     },
     {
       "id": "namespace-enterprise-naming",
@@ -2219,10 +2228,10 @@
       "id": "account-team-qualification",
       "provider": "account",
       "consumer": "team",
-      "meaning": "Current User qualification and participation identity.",
+      "meaning": "Team commands recheck Account-owned User identity, active qualification, and status version in the caller transaction.",
       "integrationMode": "stable-identity+query",
       "authority": "account",
-      "consistency": "current-state"
+      "consistency": "transaction-recheck"
     },
     {
       "id": "account-attendance-qualification",
@@ -2246,10 +2255,10 @@
       "id": "organization-team-scope",
       "provider": "organization",
       "consumer": "team",
-      "meaning": "Organization scope, active participation, current viewerCanCreateTeams capability and current Owner administration of Organization Teams.",
+      "meaning": "Team commands recheck Organization-owned active participation, membership version, viewerCanCreateTeams capability, and current Owner administration in the caller transaction.",
       "integrationMode": "stable-identity+query",
       "authority": "organization",
-      "consistency": "current-state"
+      "consistency": "transaction-recheck"
     },
     {
       "id": "daily-check-in-ledger-posting",
@@ -2261,6 +2270,24 @@
       "consistency": "atomic-where-required"
     },
     {
+      "id": "ledger-daily-check-in-posting",
+      "provider": "ledger",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn calls Ledger's idempotent durable credit writer in the caller transaction; DailyCheckIn owns reward eligibility and amount while Ledger owns the resulting immutable value fact.",
+      "integrationMode": "command",
+      "authority": "ledger",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "ledger-daily-check-in-readback",
+      "provider": "ledger",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn reads the Ledger-owned immutable credit fact to reconstruct and verify replay outcomes without taking Ledger fact authority.",
+      "integrationMode": "query",
+      "authority": "ledger",
+      "consistency": "transaction-recheck"
+    },
+    {
       "id": "attendance-ledger-posting",
       "provider": "attendance",
       "consumer": "ledger",
@@ -2268,6 +2295,15 @@
       "integrationMode": "command",
       "authority": "attendance",
       "consistency": "atomic-where-required"
+    },
+    {
+      "id": "ledger-attendance-posting",
+      "provider": "ledger",
+      "consumer": "attendance",
+      "meaning": "Attendance calls Ledger's idempotent durable credit writer in the caller transaction; Attendance owns reward eligibility and amount while Ledger owns the resulting immutable value fact.",
+      "integrationMode": "command",
+      "authority": "ledger",
+      "consistency": "same-transaction"
     },
     {
       "id": "asset-wallet-denomination",
@@ -2459,6 +2495,24 @@
       "consistency": "atomic-where-required"
     },
     {
+      "id": "organization-enterprise-qualification",
+      "provider": "organization",
+      "consumer": "enterprise",
+      "meaning": "Enterprise attachment and Enterprise Team assignment consume Organization-owned stable identity, active lifecycle, and current OrganizationOwner consent or qualification; no Organization authority transfers to Enterprise.",
+      "integrationMode": "stable-identity+query",
+      "authority": "organization",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "organization-enterprise-membership-coordination",
+      "provider": "organization",
+      "consumer": "enterprise",
+      "meaning": "Enterprise Team membership and assignment transitions call Organization-owned source-removal protection, effective membership refresh, and pending invitation cancellation in the same transaction; Enterprise retains its Team source and assignment facts.",
+      "integrationMode": "command",
+      "authority": "organization",
+      "consistency": "same-transaction"
+    },
+    {
       "id": "asset-attendance-reward-identity",
       "provider": "asset",
       "consumer": "attendance",
@@ -2480,10 +2534,19 @@
       "id": "account-enterprise-identity",
       "provider": "account",
       "consumer": "enterprise",
-      "meaning": "Enterprise affiliations, invitations, and Team membership reference Account-owned stable User and Account identities.",
-      "integrationMode": "stable-identity",
+      "meaning": "Enterprise affiliations, invitations, and Team membership reference Account-owned stable identities and recheck current User qualification and status version in the caller transaction.",
+      "integrationMode": "stable-identity+query",
       "authority": "account",
-      "consistency": "current-identity"
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-enterprise-root-provisioning",
+      "provider": "account",
+      "consumer": "enterprise",
+      "meaning": "Enterprise creation uses the narrow atomic provision_enterprise_scope coordinator to establish the Account-owned root and initial qualified User reference; Enterprise owns its scoped lifecycle after provisioning.",
+      "integrationMode": "command",
+      "authority": "account",
+      "consistency": "same-transaction"
     },
     {
       "id": "enterprise-identity-access-owner-facts",
@@ -2498,9 +2561,36 @@
       "id": "identity-access-enterprise-authorization",
       "provider": "identity-access",
       "consumer": "enterprise",
-      "meaning": "Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle.",
+      "meaning": "Enterprise governance rechecks IdentityAccess authorization decisions in the caller transaction from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle.",
       "integrationMode": "query",
       "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "identity-access-account-administration",
+      "provider": "identity-access",
+      "consumer": "account",
+      "meaning": "Account User administration rechecks IdentityAccess decisions for users.read, users.suspend, and last-permission-administrator protection; Account retains User lifecycle, status, version, and replay authority.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "attendance-account-management-activity",
+      "provider": "attendance",
+      "consumer": "account",
+      "meaning": "Account User administration reads the Attendance-owned open-session activity projection for administrative display; it does not authorize User suspension or transfer Attendance writer or lifecycle authority to Account.",
+      "integrationMode": "projection",
+      "authority": "attendance",
+      "consistency": "current-state"
+    },
+    {
+      "id": "issue-account-management-activity",
+      "provider": "issue",
+      "consumer": "account",
+      "meaning": "Account User administration reads the Issue-owned unfinished-assignment activity projection for administrative display; it does not authorize User suspension or transfer Issue writer or lifecycle authority to Account.",
+      "integrationMode": "projection",
+      "authority": "issue",
       "consistency": "current-state"
     },
     {
@@ -2534,10 +2624,19 @@
       "id": "account-organization-identity",
       "provider": "account",
       "consumer": "organization",
-      "meaning": "Organization participation and public locator behavior reference Account-owned User and Account identity contracts.",
+      "meaning": "Organization participation and public locator behavior reference Account-owned identities and recheck current User qualification and status version in the caller transaction.",
       "integrationMode": "stable-identity+query",
       "authority": "account",
-      "consistency": "current-state"
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-organization-root-provisioning",
+      "provider": "account",
+      "consumer": "organization",
+      "meaning": "Organization creation uses the narrow atomic provision_organization_scope coordinator to establish the Account-owned root and initial qualified User reference; Organization owns its scoped lifecycle after provisioning.",
+      "integrationMode": "command",
+      "authority": "account",
+      "consistency": "same-transaction"
     },
     {
       "id": "organization-identity-access-owner-facts",
@@ -2552,10 +2651,10 @@
       "id": "identity-access-organization-authorization",
       "provider": "identity-access",
       "consumer": "organization",
-      "meaning": "Organization governance consumes current authorization decisions evaluated by IdentityAccess for Owner-controlled lifecycle, Owner appointment and member creation policy; IdentityAccess does not write OrganizationOwner facts.",
+      "meaning": "Organization governance rechecks IdentityAccess authorization decisions in the caller transaction for Owner-controlled lifecycle, Owner appointment, and member creation policy; IdentityAccess does not write OrganizationOwner facts.",
       "integrationMode": "query",
       "authority": "identity-access",
-      "consistency": "current-state"
+      "consistency": "transaction-recheck"
     },
     {
       "id": "account-partner-qualification",
@@ -2603,22 +2702,13 @@
       "consistency": "transaction-recheck"
     },
     {
-      "id": "team-identity-access-maintainer-facts",
-      "provider": "team",
-      "consumer": "identity-access",
-      "meaning": "IdentityAccess consumes current Team-owned TeamMaintainer relationship facts plus current User, Organization, and TeamMembership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle.",
-      "integrationMode": "query",
-      "authority": "team",
-      "consistency": "current-state"
-    },
-    {
-      "id": "identity-access-team-authorization",
+      "id": "identity-access-team-actor-resolution",
       "provider": "identity-access",
       "consumer": "team",
-      "meaning": "Team collaboration consumes current authorization decisions evaluated by IdentityAccess from Team-owned TeamMaintainer facts and current qualification; IdentityAccess does not write the TeamMaintainer lifecycle.",
+      "meaning": "Team resolves the verified request actor through IdentityAccess; Account still owns User qualification, while Team and Organization own TeamMaintainer and OrganizationOwner authorization decisions.",
       "integrationMode": "query",
       "authority": "identity-access",
-      "consistency": "current-state"
+      "consistency": "verified-request"
     },
     {
       "id": "account-wallet-holder-qualification",
@@ -3071,6 +3161,7 @@
       "preserves": ["K2", "K5"],
       "validationProfiles": ["semantic-architecture", "architecture-tests", "fast-repository"],
       "runtimeExpectation": "required",
+      "consumes": ["namespace-account-root-reservation"],
       "implementation": {
         "status": "implemented",
         "scope": "current account qualification use case and login identity surface",
@@ -3128,6 +3219,49 @@
         ],
         "testPaths": ["packages/account/test/profile.test.ts"],
         "note": "Profile source and public exports exist; tests are evidence locations, not proof unless executed."
+      }
+    },
+    {
+      "id": "manage-user-administration",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read managed Users and suspend or restore their Account-owned lifecycle while preserving current authorization, source activity, version, and exact replay semantics.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": [
+        "attendance-account-management-activity",
+        "identity-access-account-administration",
+        "issue-account-management-activity"
+      ],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User administration read, suspend, and unsuspend surface with Account-owned lifecycle, status version, replay, and source activity projection",
+        "sourcePaths": [
+          "packages/account/src/application/manage-users.ts",
+          "packages/account/src/application/commands/user-status.ts",
+          "packages/account/src/application/use-cases/change-user-status.ts",
+          "packages/account/src/domain/user.ts",
+          "packages/account/src/contracts/input/user-management.ts",
+          "packages/account/src/contracts/output/user-management-transactions.ts",
+          "packages/account/src/adapters/outbound/persistence/user-management.ts",
+          "packages/account/src/composition/bootstrap/user-management.ts"
+        ],
+        "publicExports": ["./application/manage-users", "./contracts/repositories/user-management"],
+        "entrypoints": ["apps/web/src/app/api/membership/manage/route.ts"],
+        "testPaths": [
+          "packages/account/test/user-management.test.ts",
+          "packages/account/test/user-status-command.test.ts",
+          "packages/identity-access/test/user-management-integration.test.ts",
+          "apps/web/test/user-management-api.test.ts"
+        ],
+        "note": "IdentityAccess decides users.read, users.suspend, and last-permission-administrator protection. Account owns User lifecycle, status, version, and exact replay; Attendance and Issue retain their source activity writers and lifecycles."
       }
     },
     {
@@ -3255,6 +3389,13 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": [
+        "account-enterprise-identity",
+        "account-enterprise-root-provisioning",
+        "identity-access-enterprise-authorization",
+        "namespace-enterprise-naming",
+        "organization-enterprise-qualification"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current Enterprise governance application surface",
@@ -3310,6 +3451,13 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": [
+        "account-enterprise-identity",
+        "identity-access-enterprise-authorization",
+        "namespace-enterprise-naming",
+        "organization-enterprise-membership-coordination",
+        "organization-enterprise-qualification"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current Enterprise Team domain and governance surface",
@@ -3348,6 +3496,14 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": [
+        "account-organization-identity",
+        "account-organization-root-provisioning",
+        "enterprise-organization-membership-source",
+        "identity-access-organization-authorization",
+        "namespace-organization-locator",
+        "namespace-organization-root-reservation"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current Organization Owner governance, member creation policy, FPT OrganizationMemberRole projection, and viewer capability reads",
@@ -3381,9 +3537,14 @@
           "./application/organization-governance",
           "./contracts/input/organization-governance",
           "./contracts/organization-governance",
-          "./domain"
+          "./domain",
+          "./postgres"
         ],
-        "entrypoints": ["apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx"],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-organization.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-team.ts"
+        ],
         "testPaths": [
           "packages/organization/test/organization-capabilities.test.ts",
           "packages/organization/test/organization-owner.test.ts",
@@ -3409,6 +3570,11 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": [
+        "account-organization-identity",
+        "enterprise-organization-membership-source",
+        "identity-access-organization-authorization"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current Organization invitation domain and governance surface",
@@ -3447,6 +3613,13 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": [
+        "account-team-qualification",
+        "identity-access-team-actor-resolution",
+        "namespace-team-locator",
+        "namespace-team-naming",
+        "organization-team-scope"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current Organization Team aggregate including FPT parent/child membership semantics, TeamPrivacy and TeamNotificationSetting",
@@ -4330,6 +4503,7 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": ["ledger-attendance-posting"],
       "implementation": {
         "status": "implemented",
         "scope": "Clock-in validates Repository coordinates, radius, current GPS accuracy and effective member access; clock-out uses the original immutable point snapshot even after member removal.",
@@ -4435,6 +4609,7 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": ["ledger-daily-check-in-posting", "ledger-daily-check-in-readback"],
       "implementation": {
         "status": "implemented",
         "scope": "current DailyCheckIn application surface",
@@ -4476,6 +4651,7 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
+      "consumes": ["attendance-ledger-posting", "daily-check-in-ledger-posting"],
       "implementation": {
         "status": "implemented",
         "scope": "current Ledger domain and repository port",
@@ -6107,7 +6283,7 @@
       "authority",
       "consistency"
     ],
-    "rule": "A cross-owner dependency exists only through an explicit relationship contract. Consumer need does not transfer provider authority."
+    "rule": "A cross-owner dependency exists only through an explicit provider-to-consumer public capability relationship. A source fact or decision may flow in the opposite direction under a separate relationship without transferring authority. Implemented leaf capability consumes entries reference relationship IDs and never redefine those contracts."
   },
   "evidenceModel": {
     "scopeRule": "Evidence proves only the scope actually exercised; stronger claims require stronger evidence.",

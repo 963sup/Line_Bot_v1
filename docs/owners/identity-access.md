@@ -4,7 +4,7 @@ Read this file for authorization-policy ownership. Detailed permission catalog a
 
 ## Responsibility
 
-Identity & Access owns feature Permission definitions/grants/administration and authorization decisions that are not owned by a business lifecycle. EnterpriseOwner, OrganizationOwner, and TeamMaintainer relationship facts are owned by Enterprise, Organization, and Team respectively; Identity/Access consumes them only to evaluate current authorization.
+Identity & Access owns feature Permission definitions/grants/administration, verified request-actor resolution, and authorization decisions that are not owned by a business lifecycle. EnterpriseOwner and OrganizationOwner relationship facts remain owned by Enterprise and Organization and are consumed for their current scoped authorization contracts. TeamMaintainer facts and Team authorization remain Team-owned; the current Team integration consumes only Identity/Access actor resolution, then rechecks Account qualification and Team/Organization authority through their own contracts.
 
 It does not own User identity proof/lifecycle, OrganizationMembership, Employment, Team membership, or the business state being protected.
 

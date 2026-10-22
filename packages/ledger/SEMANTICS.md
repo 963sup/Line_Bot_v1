@@ -30,9 +30,9 @@
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| post-value-fact | required | implemented | Append an immutable value fact with stable identity. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| post-value-fact | required | implemented | attendance-ledger-posting, daily-check-in-ledger-posting | Append an immutable value fact with stable identity. |
 
 ## Context Relationships
 
@@ -42,6 +42,9 @@
 | consumes | asset | stable-identity+query | asset | current-state | AssetCode and denomination. |
 | consumes | attendance | command | attendance | atomic-where-required | Authorized attendance reward decision. |
 | consumes | daily-check-in | command | daily-check-in | atomic-where-required | Authorized reward decision committed with required transaction semantics. |
+| provides | attendance | command | ledger | same-transaction | Attendance calls Ledger's idempotent durable credit writer in the caller transaction; Attendance owns reward eligibility and amount while Ledger owns the resulting immutable value fact. |
+| provides | daily-check-in | command | ledger | same-transaction | DailyCheckIn calls Ledger's idempotent durable credit writer in the caller transaction; DailyCheckIn owns reward eligibility and amount while Ledger owns the resulting immutable value fact. |
+| provides | daily-check-in | query | ledger | transaction-recheck | DailyCheckIn reads the Ledger-owned immutable credit fact to reconstruct and verify replay outcomes without taking Ledger fact authority. |
 | provides | wallet | projection | ledger | derived | Immutable value facts projected into wallet balance. |
 
 ## Tactical Model Boundary

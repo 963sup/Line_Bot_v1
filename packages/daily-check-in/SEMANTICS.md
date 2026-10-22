@@ -30,9 +30,9 @@
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| claim-daily-check-in | required | implemented | Create at most one authorized business-day check-in effect. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| claim-daily-check-in | required | implemented | ledger-daily-check-in-posting, ledger-daily-check-in-readback | Create at most one authorized business-day check-in effect. |
 
 ## Context Relationships
 
@@ -41,6 +41,8 @@
 | consumes | account | stable-identity+query | account | transaction-recheck | User identity and transaction-time qualification. |
 | consumes | asset | stable-identity+query | asset | current-state | DailyCheckIn consumes Asset-owned reward identity and denomination when deciding and reconstructing rewards. |
 | provides | ledger | command | daily-check-in | atomic-where-required | Authorized reward decision committed with required transaction semantics. |
+| consumes | ledger | command | ledger | same-transaction | DailyCheckIn calls Ledger's idempotent durable credit writer in the caller transaction; DailyCheckIn owns reward eligibility and amount while Ledger owns the resulting immutable value fact. |
+| consumes | ledger | query | ledger | transaction-recheck | DailyCheckIn reads the Ledger-owned immutable credit fact to reconstruct and verify replay outcomes without taking Ledger fact authority. |
 
 ## Tactical Model Boundary
 

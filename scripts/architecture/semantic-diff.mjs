@@ -66,7 +66,7 @@ function classifyChanged(label, before, after) {
       properties.some((property) =>
         ["owner", "kind", "members", "runtimeExpectation", "implementation"].includes(property),
       ) ||
-      ["preserves", "validationProfiles"].some((property) =>
+      ["preserves", "validationProfiles", "consumes"].some((property) =>
         (before[property] ?? []).some((id) => !(after[property] ?? []).includes(id)),
       );
   } else if (label === "locators") {

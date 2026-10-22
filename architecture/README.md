@@ -29,6 +29,8 @@ evidence
 
 FPT category 不等於 package 或 Bounded Context；但 FPT 中的 GitHub GraphQL resource、field、query、mutation、interface、enum、union、input object 與 scalar 不得由本地摘要重新定義。Product overlay 的 FPT reference 只保存 exact `file` / `symbol` / optional `field`；FPT-backed concept 不得另存 `canonicalName`、`definition` 或其他 semantic summary，名稱與 GitHub meaning 必須直接由 FPT resolve。Local-only concept 才擁有本地 `canonicalName` / `definition`。category/adoption 都由 FPT 或產品狀態推導，不另存第二份。Code/SCM capability 可以依產品 scope 維持未實作，不能因此刪改 FPT truth。
 
+跨 Owner 的 workspace dependency 依 `semantic-model.json#relationships` 記錄 provider → consumer 的公開 capability contract；source fact、qualification 或 decision 若反向流動，必須用另一條 relationship 保留其真正 authority。Implemented leaf capability 的 `consumes` 只引用 relationship ID，不複製 contract 定義。這些本地 metadata 只描述目前 source 已使用的協作邊界，不改寫 FPT 原始語意，也不啟用新的會員、角色或權限。
+
 可讀 projection 使用 `pnpm semantic view docs`，change impact 使用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。不要手工保存第二套 FPT node、edge、adoption 或 category 清單。
 
 
