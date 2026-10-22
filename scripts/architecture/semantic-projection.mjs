@@ -185,13 +185,21 @@ function renderPackageSemanticDoc(compiled, moduleName) {
       )
     : "No canonical business concept is currently declared for this owner.";
 
+  const hasConsumedContracts = capabilities.some((capability) => capability.consumes?.length);
   const capabilitySection = capabilities.length
     ? markdownTable(
-        ["Capability", "Runtime", "Implementation", "Intent"],
+        [
+          "Capability",
+          "Runtime",
+          "Implementation",
+          ...(hasConsumedContracts ? ["Consumes"] : []),
+          "Intent",
+        ],
         capabilities.map((capability) => [
           markdownCell(capability.id),
           markdownCell(capability.runtimeExpectation),
           markdownCell(capability.implementation?.status ?? ""),
+          ...(hasConsumedContracts ? [markdownCell((capability.consumes ?? []).join(", "))] : []),
           markdownCell(capability.intent),
         ]),
       )
@@ -404,6 +412,7 @@ function capabilities(compiled) {
         "Implementation",
         "Runtime expectation",
         "Members",
+        "Consumes",
         "Preserves",
         "Validation",
         "Intent",
@@ -415,6 +424,7 @@ function capabilities(compiled) {
         capability.implementation?.status ?? "",
         capability.runtimeExpectation,
         (capability.members ?? []).join(", "),
+        markdownCell((capability.consumes ?? []).join(", ")),
         (capability.preserves ?? []).join(", "),
         (capability.validationProfiles ?? []).join(", "),
         capability.intent.replaceAll("|", "\\|"),

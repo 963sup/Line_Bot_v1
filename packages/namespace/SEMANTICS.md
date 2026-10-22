@@ -40,13 +40,14 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| provides | account | query | namespace | current-policy | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
+| provides | account | command | namespace | same-transaction | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
 | provides | discussion | command | namespace | same-transaction | Discussion retains category lifecycle and deletion rules while Namespace owns Repository-scoped category slug normalization and occupancy in the caller transaction. |
 | provides | discussion | query | namespace | current-state | Discussion uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
 | provides | enterprise | command | namespace | same-transaction | Enterprise validates lifecycle and authorization, then claims or renames Enterprise and EnterpriseTeam slugs through Namespace in the same transaction; Namespace owns normalization and occupancy. |
 | provides | issue | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
 | provides | issue | command | namespace | same-transaction | Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction. |
 | provides | organization | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| provides | organization | command | namespace | same-transaction | Organization creation coordinates a Namespace-owned global login claim in the same transaction; Organization owns its lifecycle while Namespace owns normalization, collision, binding, and history. |
 | provides | project | command | namespace | same-transaction | Project retains field, option and view lifecycle while Namespace owns their scoped exact-name occupancy and release in the caller transaction. |
 | provides | project | query | namespace | current-state | Project presentation resolves the current canonical owner login without treating the locator as authorization. |
 | provides | repository | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |

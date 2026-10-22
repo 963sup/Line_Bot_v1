@@ -49,7 +49,7 @@ Organization Team 必須至少保有一位 effective TeamMaintainer。最後一�
 ## 與其他 owner 的邊界
 
 - Organization owner 提供 active Organization／OrganizationMembership scope qualification；Team 不查寫 Organization private state。
-- Team 是 TeamMaintainer 與 direct TeamMembership 的唯一 writer；Identity/Access 只讀 Team-owned facts 與 current qualification。
+- Team 是 TeamMaintainer 與 direct TeamMembership 的唯一 writer，並與 OrganizationOwner 一起決定 Team 管理權。Identity/Access 在現行 Team runtime 只解析 verified request actor；User qualification 由 Account 提供，Team/Organization 權限仍由各自 Owner 的 current facts 與 version binding 決定。資料庫中的 Team subject projection 不是 Identity/Access 已消費 TeamMaintainer facts 或擁有 Team authorization 的 runtime 證據。
 - Enterprise owner 擁有 EnterpriseTeam、EnterpriseTeamMembership 與 EnterpriseTeam → Organization assignment；Organization Team 不共用其 identity 或 membership。
 - Repository 擁有 Repository access grant；Team 只提供可追蹤 current effective membership projection。Issue 擁有 Issue lifecycle。
 - Notifications 擁有 recipient Notification 與 delivery attempts；Team 只擁有 Team-level notification setting。

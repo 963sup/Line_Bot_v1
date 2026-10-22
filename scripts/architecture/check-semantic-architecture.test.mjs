@@ -774,6 +774,21 @@ test("cross-owner workspace dependencies require an explicit semantic relationsh
   model.implementationMappings.find((mapping) => mapping.semanticOwner === "project").module =
     "@line_bot_v1/project";
 
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /cross-owner dependency @line_bot_v1\/project .* lacks explicit provider-to-consumer relationship contract/,
+  );
+
+  const contract = {
+    id: "project-capability-for-repository",
+    provider: "project",
+    consumer: "repository",
+    authority: "project",
+    meaning: "Repository consumes a Project-owned public capability.",
+    integrationMode: "reference",
+    consistency: "current-state",
+  };
+  model.relationships.push(contract);
   assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 
   model.relationships = [
@@ -789,8 +804,135 @@ test("cross-owner workspace dependencies require an explicit semantic relationsh
   ];
   assert.match(
     validateSemanticArchitecture(model, fpt, topology).join("\n"),
-    /cross-owner dependency @line_bot_v1\/project .* lacks explicit semantic relationship contract/,
+    /cross-owner dependency @line_bot_v1\/project .* lacks explicit provider-to-consumer relationship contract/,
   );
+
+  model.relationships.push(contract);
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
+test("source commands do not replace the consumed provider capability contract", () => {
+  const { model, fpt, topology } = fixture();
+  topology.modules["@line_bot_v1/project"] = {
+    path: "packages/project",
+    moduleKind: "domain-module",
+    semanticOwner: "project",
+    allowedWorkspaceDependencies: [],
+  };
+  topology.modules["@line_bot_v1/repository"].allowedWorkspaceDependencies = [
+    "@line_bot_v1/project",
+  ];
+  model.implementationMappings.find((mapping) => mapping.semanticOwner === "project").module =
+    "@line_bot_v1/project";
+  model.integrationModes.push({ id: "command", authorityTransfer: false });
+  model.relationships[0].integrationMode = "command";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /lacks explicit provider-to-consumer relationship contract/,
+  );
+  model.relationships.push({
+    id: "project-posting-for-repository",
+    provider: "project",
+    consumer: "repository",
+    authority: "project",
+    meaning: "Project owns committing the source decision supplied by Repository.",
+    integrationMode: "command",
+    consistency: "same-transaction",
+  });
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+});
+
+test("capability consumption keeps injected contracts resolvable and owned by the consumer", () => {
+  const { model, fpt, topology } = fixture();
+  const capability = model.capabilities[0];
+  const contract = {
+    id: "project-qualification-for-repository",
+    provider: "project",
+    consumer: "repository",
+    authority: "project",
+    meaning: "Project provides current qualification through an injected public query.",
+    integrationMode: "reference",
+    consistency: "current-state",
+  };
+  model.relationships.push(contract);
+  capability.consumes = [contract.id];
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+
+  model.relationships = model.relationships.filter(
+    (relationship) => relationship.id !== contract.id,
+  );
+  model.relationships.push({ ...contract, id: "unrelated-project-contract" });
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unknown consumed relationship project-qualification-for-repository/,
+  );
+  model.relationships.push(contract);
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+
+  capability.consumes = ["missing-contract"];
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /unknown consumed relationship missing-contract/,
+  );
+  capability.consumes = [model.relationships[0].id];
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /consumed relationship .* consumer must match capability owner repository/,
+  );
+  capability.consumes = [contract.id, contract.id];
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /consumes must be a unique list of relationship IDs/,
+  );
+  capability.consumes = contract.id;
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /consumes must be a unique list of relationship IDs/,
+  );
+  capability.consumes = [contract.id];
+  capability.implementation.status = "not-implemented";
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /consumes requires an implemented leaf capability/,
+  );
+  capability.implementation.status = "implemented";
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
+
+  const compiled = compileSemanticArchitecture(model, fpt, topology);
+  const evidence = querySemanticArchitecture(compiled, "evidence", [capability.id]);
+  assert.deepEqual(evidence.contracts, [contract]);
+  assert.match(
+    renderSemanticView(compiled, "capabilities"),
+    /project-qualification-for-repository/,
+  );
+  assert.match(
+    packageSemanticDocs(compiled).get("packages/repository/SEMANTICS.md"),
+    /project-qualification-for-repository/,
+  );
+
+  const after = structuredClone(model);
+  after.capabilities[0].consumes = [];
+  assert.equal(diffSemanticModels(model, after)[0].breaking, true);
+  assert.equal(diffSemanticModels(after, model)[0].breaking, false);
+
+  const aggregate = {
+    id: "repository-family",
+    owner: "repository",
+    kind: "aggregate",
+    members: [capability.id],
+    intent: "Aggregate existing repository capabilities.",
+    runtimeExpectation: "required",
+    preserves: ["K1"],
+    validationProfiles: ["semantic-architecture"],
+    consumes: [contract.id],
+  };
+  model.capabilities.push(aggregate);
+  assert.match(
+    validateSemanticArchitecture(model, fpt, topology).join("\n"),
+    /consumes requires an implemented leaf capability/,
+  );
+  delete aggregate.consumes;
+  assert.deepEqual(validateSemanticArchitecture(model, fpt, topology), []);
 });
 
 test("rejects topology semantic owners that do not resolve", () => {

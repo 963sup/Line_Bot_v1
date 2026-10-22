@@ -37,26 +37,30 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| manage-organization-governance | required | implemented | Manage Organization governance scope, membership state, and public Organization lookup. |
-| manage-organization-invitations | required | implemented | Manage pending Organization invitations as intent, not active membership or authorization. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| manage-organization-governance | required | implemented | account-organization-identity, account-organization-root-provisioning, enterprise-organization-membership-source, identity-access-organization-authorization, namespace-organization-locator, namespace-organization-root-reservation | Manage Organization governance scope, membership state, and public Organization lookup. |
+| manage-organization-invitations | required | implemented | account-organization-identity, enterprise-organization-membership-source, identity-access-organization-authorization | Manage pending Organization invitations as intent, not active membership or authorization. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| consumes | account | stable-identity+query | account | current-state | Organization participation and public locator behavior reference Account-owned User and Account identity contracts. |
+| consumes | account | stable-identity+query | account | transaction-recheck | Organization participation and public locator behavior reference Account-owned identities and recheck current User qualification and status version in the caller transaction. |
+| consumes | account | command | account | same-transaction | Organization creation uses the narrow atomic provision_organization_scope coordinator to establish the Account-owned root and initial qualified User reference; Organization owns its scoped lifecycle after provisioning. |
 | consumes | enterprise | projection | enterprise | atomic-where-required | Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority. |
-| consumes | identity-access | query | identity-access | current-state | Organization governance consumes current authorization decisions evaluated by IdentityAccess for Owner-controlled lifecycle, Owner appointment and member creation policy; IdentityAccess does not write OrganizationOwner facts. |
+| consumes | identity-access | query | identity-access | transaction-recheck | Organization governance rechecks IdentityAccess authorization decisions in the caller transaction for Owner-controlled lifecycle, Owner appointment, and member creation policy; IdentityAccess does not write OrganizationOwner facts. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
+| consumes | namespace | command | namespace | same-transaction | Organization creation coordinates a Namespace-owned global login claim in the same transaction; Organization owns its lifecycle while Namespace owns normalization, collision, binding, and history. |
+| provides | enterprise | command | organization | same-transaction | Enterprise Team membership and assignment transitions call Organization-owned source-removal protection, effective membership refresh, and pending invitation cancellation in the same transaction; Enterprise retains its Team source and assignment facts. |
+| provides | enterprise | stable-identity+query | organization | transaction-recheck | Enterprise attachment and Enterprise Team assignment consume Organization-owned stable identity, active lifecycle, and current OrganizationOwner consent or qualification; no Organization authority transfers to Enterprise. |
 | provides | identity-access | query | organization | current-state | IdentityAccess consumes current Organization-owned OrganizationOwner relationship facts and membership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | issue | stable-identity+query | organization | transaction-recheck | IssueType definitions consume Organization-owned stable identity, active lifecycle and current OrganizationOwner qualification; Issue retains IssueType definition and assignment authority. |
 | provides | project | query | organization | transaction-recheck | ProjectV2 creation rechecks the product-local Organization-owned viewerCanCreateProjectV2 capability for the current active member. A creator without OrganizationOwner authority receives a Project-owned ADMIN grant atomically; OrganizationOwner remains implicit owner authority. The deprecated FPT Projects (classic) field is not its authorization contract. |
 | provides | project | query | organization | current-state | ProjectV2 collection and owner-level management consume current Organization-owned viewerCanAdminister for Organization-owned Projects; creation separately consumes viewerCanCreateProjectV2, while personal Projects remain User-owned. |
 | provides | repository | query | organization | transaction-recheck | Repository creation under an Organization consumes the Organization-owned visibility-specific member creation policy; current OrganizationOwner also projects implicit admin on Organization-owned Repositories without copying grants. |
 | provides | repository | stable-identity+query | organization | current-state | Organization-owned Repositories consume current Organization scope and viewerCanCreateRepositories/viewerCanAdminister capabilities. OrganizationMembership qualifies Team-derived access and classifies direct User grants as member/outside, but it does not own or qualify the Repository-owned direct grant. |
-| provides | team | stable-identity+query | organization | current-state | Organization scope, active participation, current viewerCanCreateTeams capability and current Owner administration of Organization Teams. |
+| provides | team | stable-identity+query | organization | transaction-recheck | Team commands recheck Organization-owned active participation, membership version, viewerCanCreateTeams capability, and current Owner administration in the caller transaction. |
 
 ## Tactical Model Boundary
 

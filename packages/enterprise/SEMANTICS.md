@@ -34,20 +34,23 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| manage-enterprise-governance | required | implemented | Manage Enterprise governance scope without treating Enterprise slug as Repository owner login. |
-| manage-enterprise-teams | required | implemented | Manage Enterprise-owned teams, memberships, and Organization assignments. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| manage-enterprise-governance | required | implemented | account-enterprise-identity, account-enterprise-root-provisioning, identity-access-enterprise-authorization, namespace-enterprise-naming, organization-enterprise-qualification | Manage Enterprise governance scope without treating Enterprise slug as Repository owner login. |
+| manage-enterprise-teams | required | implemented | account-enterprise-identity, identity-access-enterprise-authorization, namespace-enterprise-naming, organization-enterprise-membership-coordination, organization-enterprise-qualification | Manage Enterprise-owned teams, memberships, and Organization assignments. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| consumes | account | stable-identity | account | current-identity | Enterprise affiliations, invitations, and Team membership reference Account-owned stable User and Account identities. |
+| consumes | account | stable-identity+query | account | transaction-recheck | Enterprise affiliations, invitations, and Team membership reference Account-owned stable identities and recheck current User qualification and status version in the caller transaction. |
+| consumes | account | command | account | same-transaction | Enterprise creation uses the narrow atomic provision_enterprise_scope coordinator to establish the Account-owned root and initial qualified User reference; Enterprise owns its scoped lifecycle after provisioning. |
 | provides | identity-access | query | enterprise | current-state | IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
 | provides | organization | projection | enterprise | atomic-where-required | Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority. |
-| consumes | identity-access | query | identity-access | current-state | Enterprise governance consumes current authorization decisions evaluated by IdentityAccess from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
+| consumes | identity-access | query | identity-access | transaction-recheck | Enterprise governance rechecks IdentityAccess authorization decisions in the caller transaction from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle. |
 | consumes | namespace | command | namespace | same-transaction | Enterprise validates lifecycle and authorization, then claims or renames Enterprise and EnterpriseTeam slugs through Namespace in the same transaction; Namespace owns normalization and occupancy. |
+| consumes | organization | command | organization | same-transaction | Enterprise Team membership and assignment transitions call Organization-owned source-removal protection, effective membership refresh, and pending invitation cancellation in the same transaction; Enterprise retains its Team source and assignment facts. |
+| consumes | organization | stable-identity+query | organization | transaction-recheck | Enterprise attachment and Enterprise Team assignment consume Organization-owned stable identity, active lifecycle, and current OrganizationOwner consent or qualification; no Organization authority transfers to Enterprise. |
 | consumes | repository | query | repository | current-state | Enterprise governance consumes a read-only outside-collaborator projection derived from Repository-owned direct grants and current attached Organization scope; Enterprise receives no Repository grant writer or Collaborator identity authority. |
 
 ## Tactical Model Boundary

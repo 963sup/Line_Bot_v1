@@ -369,6 +369,38 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
         errors.push("Capability " + capability.id + ": unknown invariant " + invariantId);
       }
     }
+    if (capability.consumes !== undefined) {
+      if (capability.kind !== "leaf" || implementationStatus(capability) !== "implemented") {
+        errors.push(
+          "Capability " + capability.id + ": consumes requires an implemented leaf capability",
+        );
+      }
+      if (
+        !Array.isArray(capability.consumes) ||
+        capability.consumes.some((id) => typeof id !== "string" || !id.trim()) ||
+        !unique(capability.consumes)
+      ) {
+        errors.push(
+          "Capability " + capability.id + ": consumes must be a unique list of relationship IDs",
+        );
+      } else {
+        for (const id of capability.consumes) {
+          const relationship = relationships.get(id);
+          if (!relationship) {
+            errors.push("Capability " + capability.id + ": unknown consumed relationship " + id);
+          } else if (relationship.consumer !== capability.owner) {
+            errors.push(
+              "Capability " +
+                capability.id +
+                ": consumed relationship " +
+                id +
+                " consumer must match capability owner " +
+                capability.owner,
+            );
+          }
+        }
+      }
+    }
   }
 
   const runtimeExpectations = new Set(["required", "not-asserted"]);
@@ -692,7 +724,7 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
   }
 
   const ownerKinds = new Map([...owners.values()].map((owner) => [owner.id, owner.kind]));
-  const ownerPair = (left, right) => [left, right].sort().join("\u0000");
+  const ownerPair = (provider, consumer) => [provider, consumer].join("\u0000");
   const relationshipPairs = new Set(
     [...relationships.values()].map((relationship) =>
       ownerPair(relationship.provider, relationship.consumer),
@@ -711,9 +743,9 @@ export function validateSemanticArchitecture(model, fpt, topology, commandManife
             dependency +
             " (" +
             provider.semanticOwner +
-            " <-> " +
+            " -> " +
             entry.semanticOwner +
-            ") lacks explicit semantic relationship contract",
+            ") lacks explicit provider-to-consumer relationship contract",
         );
       }
     }

@@ -40,20 +40,19 @@ References support the existing status; listed tests are evidence locations, not
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| manage-team-collaboration | required | implemented | Manage Organization-scoped Team collaboration, direct/effective membership, hierarchy, privacy, notification setting, maintainer state, and locator access. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| manage-team-collaboration | required | implemented | account-team-qualification, identity-access-team-actor-resolution, namespace-team-locator, namespace-team-naming, organization-team-scope | Manage Organization-scoped Team collaboration, direct/effective membership, hierarchy, privacy, notification setting, maintainer state, and locator access. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| consumes | account | stable-identity+query | account | current-state | Current User qualification and participation identity. |
-| consumes | identity-access | query | identity-access | current-state | Team collaboration consumes current authorization decisions evaluated by IdentityAccess from Team-owned TeamMaintainer facts and current qualification; IdentityAccess does not write the TeamMaintainer lifecycle. |
+| consumes | account | stable-identity+query | account | transaction-recheck | Team commands recheck Account-owned User identity, active qualification, and status version in the caller transaction. |
+| consumes | identity-access | query | identity-access | verified-request | Team resolves the verified request actor through IdentityAccess; Account still owns User qualification, while Team and Organization own TeamMaintainer and OrganizationOwner authorization decisions. |
 | consumes | namespace | query | namespace | current-state | Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer. |
 | consumes | namespace | command | namespace | same-transaction | Team retains lifecycle and authorization while Namespace owns Organization-scoped Team slug normalization and occupancy in the caller transaction. |
-| consumes | organization | stable-identity+query | organization | current-state | Organization scope, active participation, current viewerCanCreateTeams capability and current Owner administration of Organization Teams. |
-| provides | identity-access | query | team | current-state | IdentityAccess consumes current Team-owned TeamMaintainer relationship facts plus current User, Organization, and TeamMembership qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle. |
+| consumes | organization | stable-identity+query | organization | transaction-recheck | Team commands recheck Organization-owned active participation, membership version, viewerCanCreateTeams capability, and current Owner administration in the caller transaction. |
 | provides | project | query | team | transaction-recheck | Project-owned Team grants consume current Team membership and Team organization scope; Team identity or membership does not become Project-owned authority. |
 
 ## Tactical Model Boundary
