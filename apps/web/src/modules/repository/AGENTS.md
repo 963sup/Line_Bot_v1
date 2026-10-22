@@ -27,7 +27,7 @@ Repository resource routes 同時呈現 repos/issues/discussions，但 route gro
 - Project planning references Issues through Project contracts; this module never turns Project metadata into Issue truth.
 
 - Repository root is Overview for both public and authorized private/internal viewers; it never mounts IssueBoard. `GET /api/repository-overview` composes current Repository metadata and WBS legacy-entry eligibility through public contracts, without returning a transfer destination. Public metadata does not force login. Overview does not infer Project associations or inherited access.
-- Shared primary navigation is Overview, Objects, Issues, Discussions, Wiki and Insights. Native `更多` disclosure contains Labels and Milestones, plus Settings and Access only for current admin; the actual active link carries `aria-current=page`, and a secondary active route opens its disclosure.
+- Shared navigation renders all available resources in one ordered grid, without a `更多` disclosure. Objects stays explicitly labeled Legacy; Settings and Access remain visible only for current admin. The actual active link carries `aria-current=page`.
 
 - `/search` reuses the authorized Repository collection as a presentation filter; it does not create a generic Search owner or a second Repository truth.
 - `/explore` consumes the Repository discovery contract. Trending uses the owner-defined 7-day active-Star window with total Star/name/id tie-breaks；Activity 只投影 current-access-safe immutable Issue events；Awesome Lists links to the public Repository Star List discovery projection. My Lists management persists exact-retry pending command metadata in browser storage but server remains replay/version/authorization authority.
