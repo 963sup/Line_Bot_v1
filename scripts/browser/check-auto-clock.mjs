@@ -72,7 +72,7 @@ function panelSnapshot(state) {
 }
 async function fixture(options = {}) {
   const state = {
-    memberId: "member-a",
+    userId: "member-a",
     working: false,
     version: 0,
     posts: [],
@@ -160,7 +160,7 @@ async function fixture(options = {}) {
       assert.equal(url.search, "?view=clock");
       return route.fulfill({
         json: {
-          memberId: state.memberId,
+          userId: state.userId,
           working: state.working,
           version: state.version,
           sites: options.noSite
@@ -182,7 +182,7 @@ async function fixture(options = {}) {
     }
     if (url.pathname === "/api/attendance/supplements") {
       assert.equal(request.method(), "GET");
-      return route.fulfill({ json: { viewerId: state.memberId, mine: [], review: [] } });
+      return route.fulfill({ json: { viewerId: state.userId, mine: [], review: [] } });
     }
     if (/^\/api\/attendance\/clock-(in|out)$/.test(url.pathname)) {
       assert.equal(request.method(), "POST");
@@ -309,14 +309,14 @@ try {
     const state = await fixture({ loseResponse: true });
     await page.goto(`${base}/attendance/clock-in`);
     await expect(page.getByRole("button", { name: "重試同一筆上班", exact: true })).toBeEnabled();
-    state.memberId = "member-b";
+    state.userId = "member-b";
     state.working = false;
     state.version = 0;
     await page.reload();
     await expect(page.getByRole("main").getByRole("alert")).toContainText("會員身分已變更");
     assert.equal(state.posts.length, 1);
     await expect(page.getByRole("button", { name: "重試同一筆上班", exact: true })).toHaveCount(0);
-    await finish("another member cannot restore the pending command", state);
+    await finish("another user cannot restore the pending command", state);
   }
   {
     const state = await fixture({ external: true });

@@ -4,8 +4,11 @@ import type {
   RepositoryAccessCommand,
   RepositoryAccessSnapshot,
   RepositoryAccessSubjectKind,
-} from "@line_bot_v1/repository/contracts/repositories/access";
-import { type RepositoryPermission, repositoryPermissions } from "@line_bot_v1/repository/domain";
+} from "@line_bot_v1/repository/contracts/input/repository-access";
+import {
+  type RepositoryPermission,
+  repositoryPermissions,
+} from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { useCallback, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

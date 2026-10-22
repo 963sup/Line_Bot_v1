@@ -4,7 +4,6 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { record, stringValue } from "@line_bot_v1/platform/validation";
-import { createPostgresObjectReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/references";
 import { PostgresIssueCollaborationStore } from "../src/adapters/postgres/collaboration.js";
 import { PostgresIssueTypeStore } from "../src/adapters/postgres/issue-types.js";
 
@@ -58,10 +57,7 @@ test("IssueType keeps Organization scope separate from Issue permission and work
   }
 
   const types = new PostgresIssueTypeStore(db);
-  const collaboration = new PostgresIssueCollaborationStore(
-    createPostgresObjectReferenceReader,
-    db,
-  );
+  const collaboration = new PostgresIssueCollaborationStore(db);
   const owner = { userId: "owner" };
   const writer = { userId: "writer" };
   const reader = { userId: "reader" };

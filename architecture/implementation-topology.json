@@ -192,8 +192,7 @@
         "@line_bot_v1/numbering",
         "@line_bot_v1/organization",
         "@line_bot_v1/platform",
-        "@line_bot_v1/repository",
-        "@line_bot_v1/resources"
+        "@line_bot_v1/repository"
       ]
     },
     "@line_bot_v1/team": {
@@ -298,8 +297,7 @@
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/content",
         "@line_bot_v1/platform",
-        "@line_bot_v1/repository",
-        "@line_bot_v1/resources"
+        "@line_bot_v1/repository"
       ]
     },
     "@line_bot_v1/execution": {

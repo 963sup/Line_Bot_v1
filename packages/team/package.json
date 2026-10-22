@@ -12,10 +12,6 @@
       "types": "./dist/application/collaboration.d.ts",
       "default": "./dist/application/collaboration.js"
     },
-    "./contracts/repositories/team": {
-      "types": "./dist/contracts/input/team-collaboration.d.ts",
-      "default": "./dist/contracts/input/team-collaboration.js"
-    },
     "./contracts/input/team-command": {
       "types": "./dist/contracts/input/team-command.d.ts",
       "default": "./dist/contracts/input/team-command.js"
@@ -28,11 +24,11 @@
       "types": "./dist/application/commands/team-command.d.ts",
       "default": "./dist/application/commands/team-command.js"
     },
-    "./domain/errors/team-error": {
+    "./contracts/errors/team-error": {
       "types": "./dist/contracts/errors/team-error.d.ts",
       "default": "./dist/contracts/errors/team-error.js"
     },
-    "./domain/value-objects/team-slug": {
+    "./application/commands/team-slug": {
       "types": "./dist/application/commands/team-slug.d.ts",
       "default": "./dist/application/commands/team-slug.js"
     },

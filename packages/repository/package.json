@@ -8,10 +8,6 @@
       "types": "./dist/application/resources.d.ts",
       "default": "./dist/application/resources.js"
     },
-    "./domain": {
-      "types": "./dist/contracts/repository.d.ts",
-      "default": "./dist/contracts/repository.js"
-    },
     "./domain/repository/value-objects/repository-capability": {
       "types": "./dist/domain/repository/value-objects/repository-capability.d.ts",
       "default": "./dist/domain/repository/value-objects/repository-capability.js"
@@ -136,29 +132,13 @@
       "types": "./dist/contracts/output/collection.d.ts",
       "default": "./dist/contracts/output/collection.js"
     },
-    "./contracts/repositories/creation": {
-      "types": "./dist/contracts/input/repository-creation.d.ts",
-      "default": "./dist/contracts/input/repository-creation.js"
-    },
     "./contracts/repositories/star-lists": {
       "types": "./dist/contracts/repositories/star-lists.d.ts",
       "default": "./dist/contracts/repositories/star-lists.js"
     },
-    "./contracts/repositories/access": {
-      "types": "./dist/contracts/input/repository-access.d.ts",
-      "default": "./dist/contracts/input/repository-access.js"
-    },
     "./contracts/repositories/address": {
       "types": "./dist/contracts/repositories/address.d.ts",
       "default": "./dist/contracts/repositories/address.js"
-    },
-    "./contracts/repositories/management": {
-      "types": "./dist/contracts/input/repository-management.d.ts",
-      "default": "./dist/contracts/input/repository-management.js"
-    },
-    "./contracts/repositories/subscription": {
-      "types": "./dist/contracts/input/repository-subscription.d.ts",
-      "default": "./dist/contracts/input/repository-subscription.js"
     },
     "./postgres/content-scope": {
       "types": "./dist/postgres/content-scope.d.ts",
@@ -167,6 +147,38 @@
     "./postgres/explicit-recipient": {
       "types": "./dist/postgres/explicit-recipient.d.ts",
       "default": "./dist/postgres/explicit-recipient.js"
+    },
+    "./contracts/errors/repository-error": {
+      "types": "./dist/contracts/errors/repository-error.d.ts",
+      "default": "./dist/contracts/errors/repository-error.js"
+    },
+    "./domain/repository/entities/repository": {
+      "types": "./dist/domain/repository/entities/repository.d.ts",
+      "default": "./dist/domain/repository/entities/repository.js"
+    },
+    "./domain/repository/value-objects/repository-name": {
+      "types": "./dist/domain/repository/value-objects/repository-name.d.ts",
+      "default": "./dist/domain/repository/value-objects/repository-name.js"
+    },
+    "./domain/milestone/value-objects/milestone-number": {
+      "types": "./dist/domain/milestone/value-objects/milestone-number.d.ts",
+      "default": "./dist/domain/milestone/value-objects/milestone-number.js"
+    },
+    "./contracts/input/repository-creation": {
+      "types": "./dist/contracts/input/repository-creation.d.ts",
+      "default": "./dist/contracts/input/repository-creation.js"
+    },
+    "./contracts/input/repository-access": {
+      "types": "./dist/contracts/input/repository-access.d.ts",
+      "default": "./dist/contracts/input/repository-access.js"
+    },
+    "./contracts/input/repository-management": {
+      "types": "./dist/contracts/input/repository-management.d.ts",
+      "default": "./dist/contracts/input/repository-management.js"
+    },
+    "./contracts/input/repository-subscription": {
+      "types": "./dist/contracts/input/repository-subscription.d.ts",
+      "default": "./dist/contracts/input/repository-subscription.js"
     }
   },
   "files": [

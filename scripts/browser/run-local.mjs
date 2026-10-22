@@ -137,11 +137,6 @@ try {
   report.build = "passed";
   await startServer("server.log");
   await command(
-    ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-objects.mjs")],
-    root,
-    "objects.log",
-  );
-  await command(
     ["--no-wasm-code-gc", path.join(root, "scripts/browser/check-work-content.mjs")],
     root,
     "work-content.log",

@@ -1,4 +1,4 @@
-import { RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { issueBody, repositoryFailure } from "../../../../modules/repository/http.server";
 import { jsonResponse } from "../../../../shared/server/http";
 import { issueActivity } from "../../_composition/issue-activity.server";

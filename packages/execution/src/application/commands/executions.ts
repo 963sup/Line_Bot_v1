@@ -20,14 +20,6 @@ export type ExecutionCommand = ExecutionDecision &
         quantity: string;
         note: string;
       }>
-    | Readonly<{
-        action: "submit";
-        contractId: string;
-        contractRevisionId: string;
-        lineId: string;
-        quantity: string;
-        note: string;
-      }>
     | Readonly<{ action: "accept" }>
     | Readonly<{ action: "reject" | "void"; reason: string }>
   );
@@ -86,35 +78,28 @@ export function parseExecutionCommand(input: unknown): ExecutionCommand {
       quantity: value.quantity,
       note: value.note,
     };
-    const hasTaskFields =
-      value.task !== undefined ||
-      value.resources !== undefined ||
-      value.observedDependencyVersion !== undefined;
-    if (!hasTaskFields) command = common;
-    else {
-      if (
-        typeof value.observedDependencyVersion !== "number" ||
-        !Number.isSafeInteger(value.observedDependencyVersion) ||
-        value.observedDependencyVersion < 0 ||
-        value.observedDependencyVersion >= 2147483647 ||
-        !Array.isArray(value.resources)
-      )
-        throw new ExecutionError(400, "Invalid Execution Task evidence.", "INVALID_INPUT");
-      const task = exactRecord(value.task, ["planRevisionId", "nodeId"]);
-      const resources = value.resources.map((item) => {
-        const resource = exactRecord(item, ["resourceId", "resourceRevisionId"]);
-        return {
-          resourceId: id(resource.resourceId),
-          resourceRevisionId: id(resource.resourceRevisionId),
-        };
-      });
-      command = {
-        ...common,
-        task: { planRevisionId: id(task.planRevisionId), nodeId: id(task.nodeId) },
-        resources,
-        observedDependencyVersion: value.observedDependencyVersion,
+    if (
+      typeof value.observedDependencyVersion !== "number" ||
+      !Number.isSafeInteger(value.observedDependencyVersion) ||
+      value.observedDependencyVersion < 0 ||
+      value.observedDependencyVersion >= 2147483647 ||
+      !Array.isArray(value.resources)
+    )
+      throw new ExecutionError(400, "Invalid Execution Task evidence.", "INVALID_INPUT");
+    const task = exactRecord(value.task, ["planRevisionId", "nodeId"]);
+    const resources = value.resources.map((item) => {
+      const resource = exactRecord(item, ["resourceId", "resourceRevisionId"]);
+      return {
+        resourceId: id(resource.resourceId),
+        resourceRevisionId: id(resource.resourceRevisionId),
       };
-    }
+    });
+    command = {
+      ...common,
+      task: { planRevisionId: id(task.planRevisionId), nodeId: id(task.nodeId) },
+      resources,
+      observedDependencyVersion: value.observedDependencyVersion,
+    };
   } else if (value.action === "accept") command = { ...base, action: "accept" };
   else if (
     (value.action === "reject" || value.action === "void") &&

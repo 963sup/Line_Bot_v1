@@ -7,7 +7,6 @@ const titles: Record<RepositoryResourceSection, string> = {
   resources: "Resources",
   contracts: "Contracts",
   executions: "Executions",
-  objects: "Objects (Legacy)",
   wiki: "Wiki",
   insights: "Insights",
   wbs: "WBS",
@@ -39,7 +38,7 @@ export default function RepositoryPageHeader({
   return (
     <>
       <PageHeading
-        title={active === "objects" ? `${title ?? "Objects"} (Legacy)` : (title ?? titles[active])}
+        title={title ?? titles[active]}
         description={`${ownerLogin}/${repositoryName}`}
         back={
           back ??

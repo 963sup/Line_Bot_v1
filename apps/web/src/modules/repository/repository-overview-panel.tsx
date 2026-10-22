@@ -20,7 +20,6 @@ import {
   repositoryDiscussionsPath,
   repositoryExecutionsPath,
   repositoryIssuesPath,
-  repositoryObjectsPath,
   repositoryPath,
   repositoryResourcesPath,
 } from "./resource-navigation";
@@ -259,22 +258,6 @@ export default function RepositoryOverviewPanel({
             />
           </div>
         </section>
-        <section className="crud-detail" aria-labelledby="repository-legacy-heading">
-          <div className="crud-detail-head">
-            <div>
-              <h2 id="repository-legacy-heading">Legacy</h2>
-              <p>保留既有資料的入口；新的工作內容請使用 Content。</p>
-            </div>
-          </div>
-          <div className="menu-group">
-            <ActionRow
-              href={repositoryObjectsPath(baseOwner, baseName)}
-              title="Objects (Legacy)"
-              description="查看與維護既有 Objects；新的工作階層與計畫版本由 Content 管理。"
-            />
-          </div>
-        </section>
-
         <section className="crud-detail" aria-labelledby="repository-context-heading">
           <div className="crud-detail-head">
             <div>

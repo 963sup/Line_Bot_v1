@@ -1,10 +1,10 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../contracts/errors/repository-error.js";
 import type {
   RepositoryManagementCommand,
   RepositoryManagementReceipt,
 } from "../../contracts/input/repository-management.js";
 import type { RepositoryManagementPersistence } from "../../contracts/output/repository-management.js";
-import { RepositoryError } from "../../contracts/repository.js";
 import {
   decideRepositoryLifecycle,
   type RepositoryLifecycleChange,

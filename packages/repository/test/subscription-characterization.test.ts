@@ -4,11 +4,11 @@ import test from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositorySubscriptionStore } from "../src/composition/bootstrap/repository-subscription.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type {
   RepositorySubscriptionCommand,
   RepositorySubscriptionState,
 } from "../src/contracts/input/repository-subscription.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 
 test("Watch preserves missing, no-op, stale, replay authorization and archived behavior", async (t) => {
   const { pg, db } = await postgresFixture();

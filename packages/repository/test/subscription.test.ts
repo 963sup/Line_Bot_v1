@@ -6,8 +6,8 @@ import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositorySubscription } from "../src/application/use-cases/repository-subscription.js";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
 import { PostgresRepositorySubscriptionStore } from "../src/composition/bootstrap/repository-subscription.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositorySubscriptionStore } from "../src/contracts/input/repository-subscription.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {

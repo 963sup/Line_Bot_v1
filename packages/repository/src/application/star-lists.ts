@@ -1,13 +1,11 @@
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryStarListCommand,
   RepositoryStarListCreateCommand,
   RepositoryStarListStore,
 } from "../contracts/repositories/star-lists.js";
-import {
-  normalizeRepositoryStarListDescription,
-  normalizeRepositoryStarListName,
-  RepositoryError,
-} from "../contracts/repository.js";
+import { normalizeRepositoryStarListDescription } from "../domain/star-list/value-objects/star-list-description.js";
+import { normalizeRepositoryStarListName } from "../domain/star-list/value-objects/star-list-name.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 

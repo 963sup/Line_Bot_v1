@@ -18,7 +18,6 @@ import {
 } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type { ResourceReferenceReader } from "@line_bot_v1/resources/contracts/output/resource-references";
-import type { QuantityUnit } from "@line_bot_v1/resources/domain/quantity";
 import type { ResourceBasis } from "@line_bot_v1/resources/domain/resource-reference";
 import type { TaskDependencyView } from "../../../contracts/dto/task-dependencies.js";
 import type {
@@ -70,30 +69,14 @@ function contentValue(value: unknown): ContentPlanItemBasis {
 
 function basisValue(value: unknown): ContractLineBasis {
   const basis = record(value);
-  const common = {
+  if (!Object.hasOwn(basis, "content") || Object.hasOwn(basis, "resource"))
+    throw new TypeError("Expected Content Execution basis");
+  return {
     contractId: stringValue(basis.contractId),
     contractRevisionId: stringValue(basis.contractRevisionId),
     lineId: stringValue(basis.lineId),
     agreedQuantity: stringValue(basis.agreedQuantity),
-  };
-  if (basis.content !== undefined) return { ...common, content: contentValue(basis.content) };
-  const resource = record(basis.resource);
-  const measure = record(resource.measure);
-  return {
-    ...common,
-    resource: {
-      resourceId: stringValue(resource.resourceId),
-      resourceRevisionId: stringValue(resource.resourceRevisionId),
-      resourceVersion: numberValue(resource.resourceVersion),
-      name: stringValue(resource.name),
-      measure: {
-        id: stringValue(measure.id),
-        name: stringValue(measure.name),
-        subject: stringValue(measure.subject),
-        unit: literalValue(measure.unit, ["m", "pcs"] satisfies readonly QuantityUnit[]),
-      },
-      sourceQuantity: stringValue(resource.sourceQuantity),
-    },
+    content: contentValue(basis.content),
   };
 }
 
@@ -122,8 +105,17 @@ function dependencyValue(value: unknown): ExecutionDependencyBasis {
   };
 }
 
-function decode(row: SqlRow): ExecutionRevision {
-  const common = {
+export function decodeExecutionRevision(row: SqlRow): ExecutionRevision {
+  if (
+    row.task === null ||
+    row.task === undefined ||
+    row.source_resources === null ||
+    row.source_resources === undefined ||
+    row.dependency === null ||
+    row.dependency === undefined
+  )
+    throw new TypeError("Expected Task Execution evidence");
+  return {
     id: stringValue(row.id),
     executionId: stringValue(row.execution_id),
     repositoryId: stringValue(row.repository_id),
@@ -137,16 +129,6 @@ function decode(row: SqlRow): ExecutionRevision {
     quantity: stringValue(row.quantity),
     note: stringValue(row.note),
     reason: row.reason === null ? null : stringValue(row.reason),
-  };
-  const basis = basisValue(row.basis);
-  if (row.task === null || row.task === undefined) {
-    if ("content" in basis) throw new TypeError("Expected legacy Execution basis");
-    return { ...common, basis };
-  }
-  if (!("content" in basis)) throw new TypeError("Expected Content Execution basis");
-  return {
-    ...common,
-    basis,
     task: contentValue(row.task),
     resources: resourcesValue(row.source_resources),
     dependency: dependencyValue(row.dependency),
@@ -167,7 +149,7 @@ async function readRevision(
       revisionId === undefined
         ? [repositoryId, executionId]
         : [repositoryId, executionId, revisionId],
-      decode,
+      decodeExecutionRevision,
     )
   ).rows[0];
   return row ?? null;
@@ -290,7 +272,7 @@ export class PostgresExecutions implements ExecutionReads, ExecutionTransactions
               AND ($3::integer IS NULL OR version<$3)
             ORDER BY version DESC LIMIT 21`,
           [query.repositoryId, query.executionId, before ?? null],
-          decode,
+          decodeExecutionRevision,
         )
       ).rows;
       const revisions = rows.slice(0, 20);
@@ -391,13 +373,13 @@ export class PostgresExecutions implements ExecutionReads, ExecutionTransactions
                   next.basis.contractRevisionId,
                   next.basis.lineId,
                   JSON.stringify(next.basis),
-                  "task" in next ? next.task.planRevisionId : null,
-                  "task" in next ? next.task.node.id : null,
-                  "task" in next ? JSON.stringify(next.task) : null,
-                  "task" in next ? JSON.stringify(next.resources) : null,
-                  "task" in next ? next.dependency.version : null,
-                  "task" in next ? next.dependency.revisionId : null,
-                  "task" in next ? JSON.stringify(next.dependency) : null,
+                  next.task.planRevisionId,
+                  next.task.node.id,
+                  JSON.stringify(next.task),
+                  JSON.stringify(next.resources),
+                  next.dependency.version,
+                  next.dependency.revisionId,
+                  JSON.stringify(next.dependency),
                   next.quantity,
                   next.note,
                   next.reason,

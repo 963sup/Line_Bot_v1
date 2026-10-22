@@ -36,16 +36,10 @@ type FrozenContentBasis = {
     plannedQuantity: { value: string; measure: FrozenMeasure } | null;
   };
 };
-type FrozenResourceQuantityBasis = {
-  name: string;
-  sourceQuantity: string;
-  measure: FrozenMeasure;
-};
 type ContractLine = {
   lineId: string;
   agreedQuantity: string;
-  content?: FrozenContentBasis;
-  resource?: FrozenResourceQuantityBasis;
+  content: FrozenContentBasis;
 };
 type ContractRevision = {
   contractId: string;
@@ -84,9 +78,9 @@ type ExecutionRevision = ExecutionSummary & {
   note: string;
   reason: string | null;
   basis: ContractLine;
-  task?: FrozenContentBasis;
-  resources?: Array<{ resourceId: string; name: string; kind: string }>;
-  dependency?: {
+  task: FrozenContentBasis;
+  resources: Array<{ resourceId: string; name: string; kind: string }>;
+  dependency: {
     version: number;
     revisionId: string | null;
     prerequisiteTaskIds: string[];
@@ -649,7 +643,7 @@ export default function ExecutionsPanel({
           )}
           {selected ? (
             <>
-              {selected.task && selected.basis.content ? (
+              {
                 <div className="grid gap-1 rounded-lg border p-3 text-sm">
                   <strong>
                     Task: {selected.task.node.title} ({selected.task.node.kind})
@@ -681,19 +675,7 @@ export default function ExecutionsPanel({
                       : "無 prerequisite"}
                   </span>
                 </div>
-              ) : selected.basis.resource ? (
-                <div className="grid gap-1 rounded-lg border p-3 text-sm">
-                  <strong>Legacy Resource report: {selected.basis.resource.name}</strong>
-                  <span>
-                    實績：{selected.quantity} {selected.basis.resource.measure.unit}
-                  </span>
-                  <span>
-                    來源數量：{selected.basis.resource.sourceQuantity}{" "}
-                    {selected.basis.resource.measure.unit}
-                  </span>
-                  <span>備註：{selected.note || "無"}</span>
-                </div>
-              ) : null}
+              }
               <Label>原因</Label>
               <Textarea value={reason} onChange={(event) => setReason(event.target.value)} />
               <div className="flex flex-wrap gap-2">

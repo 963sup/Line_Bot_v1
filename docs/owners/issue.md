@@ -15,7 +15,6 @@ Issue owns:
 - replay-safe Issue commands, aggregate version and immutable structured Issue event history;
 - Issue → Repository Label association facts.
 - Organization-scoped `IssueType` definitions and the optional Issue → IssueType association fact.
-- Issue → Object reference facts, each pinned to one explicit Object Revision.
 
 Repository remains authoritative for Repository identity, current visibility/access, participant scope, Label/Milestone definitions and allocation of the next repository-scoped Issue number. Project may reference Issue but cannot rewrite Issue state.
 
@@ -39,9 +38,6 @@ Repository remains authoritative for Repository identity, current visibility/acc
 - IssueType is independent from permission, `OPEN/CLOSED`, `stateReason` and local workflow. Assigning a type changes only the Issue aggregate version and type relation/history.
 - `isEnabled=false` blocks only new assignment; existing assignments stay readable. Delete is a soft tombstone, is forbidden while any current Issue references the type, and deleted definitions cannot be revived.
 - Type-definition history is immutable in `issue_type_events`; Issue add/change/remove type history is recorded in `issue_events` as `issue_type_added | issue_type_changed | issue_type_removed` timeline evidence.
-- An Issue may reference zero or more Objects from its own Repository, at most once per Object. Each relation pins an explicit Object Revision; Object changes never silently move the pin.
-- Adding or updating a pin requires current Issue triage authority and an unarchived current Object. Existing pins remain readable when an Object is later archived, and removal remains an Issue-owned operation.
-- Resources owns resource identity, revision contents and reference validation. Issue persists only its relationship fact and consumes the Resources-owned Object public transaction-bound reference contract; it never queries Resources private relations directly.
 
 ## Repository operation matrix
 
@@ -54,7 +50,6 @@ The permission matrix follows the exact FPT `schema-repos.json#RepositoryPermiss
 | comment | read, triage, triage_plus, write, maintain, admin | Implemented through manage-issue-collaboration; lock state is checked separately |
 | local workflow | read, triage, triage_plus, write, maintain, admin | Implemented; publisher/current-assignee responsibility is checked separately |
 | triage | triage, triage_plus, write, maintain, admin | Implemented for IssueType, Label/Milestone classification and typed Issue relations |
-| pin Object revision | triage, triage_plus, write, maintain, admin | Implemented as an Issue-owned relation validated through the Resources-owned Object public contract |
 | edit | triage, triage_plus, write, maintain, admin | Implemented for title/body/local criteria |
 | close | triage, triage_plus, write, maintain, admin | Implemented for close/reopen + stateReason |
 | assign | triage, triage_plus, write, maintain, admin | Implemented for add/remove assignees |
@@ -110,4 +105,3 @@ Issue collaboration is current runtime authority through `manage-issue-collabora
 - Cross-Repository relation mutations recheck both endpoints' current Repository access. Read projections omit inaccessible relation endpoints rather than leaking hidden titles or counts.
 - Conversation lock is independent of OPEN/CLOSED state. Lock/unlock requires Repository write/maintain/admin; a locked conversation allows comments only from those same privileged collaborators.
 - Every mutation requires `expectedVersion` plus a request UUID, advances the Issue aggregate version exactly once, persists one immutable Issue event, and stores an exact replay receipt in the same transaction.
-- `set-object-reference` requires explicit Object and Revision identities. Repeating the current pin is a conflict; changing a pin or removing it records the exact prior/current Revision identity in Issue history.

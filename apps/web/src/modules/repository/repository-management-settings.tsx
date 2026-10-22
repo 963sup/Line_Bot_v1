@@ -3,7 +3,7 @@
 import type {
   RepositoryManagementCommand,
   RepositoryManagementSnapshot,
-} from "@line_bot_v1/repository/contracts/repositories/management";
+} from "@line_bot_v1/repository/contracts/input/repository-management";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";

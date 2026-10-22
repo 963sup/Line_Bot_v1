@@ -1,6 +1,7 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
-import type { RepositoryPermission, RepositoryVisibility } from "@line_bot_v1/repository/domain";
-import { repositoryPermissions } from "@line_bot_v1/repository/domain";
+import type { RepositoryVisibility } from "@line_bot_v1/repository/domain/repository/entities/repository";
+import type { RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
+import { repositoryPermissions } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 
 type LegacyWbsEntryStatus = "available" | "none" | "unavailable";
 

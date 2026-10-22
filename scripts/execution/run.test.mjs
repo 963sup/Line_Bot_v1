@@ -4,13 +4,13 @@ import { runCli } from "../runtime/cli-subprocess-test-helper.mjs";
 
 const script = "scripts/execution/run.mjs";
 const request = (operation) => ({ operation, proof: "secret-proof", command: {}, query: {} });
-const legacyError = "Execution operation failed; no credential or provider payload is logged.";
+const safeError = "Execution operation failed; no credential or provider payload is logged.";
 
 function failure(operation, scenario) {
   const result = runCli(script, request(operation), scenario);
   assert.equal(result.status, 1);
   assert.equal(result.stdout, "");
-  assert.equal(result.json.error, legacyError);
+  assert.equal(result.json.error, safeError);
   assert.doesNotMatch(result.stderr, /TOP_SECRET|secret-proof/);
   return result.json;
 }
@@ -32,7 +32,7 @@ test("execution CLI preserves success output and owner error codes", () => {
         (operation === "execute" || operation === "replace-dependencies") && code === "UNAVAILABLE";
       assert.deepEqual(failure(operation, `owner-typed:${status}:${code}`), {
         ok: false,
-        error: legacyError,
+        error: safeError,
         status,
         code: unknownResult ? "UNKNOWN_RESULT" : code,
       });

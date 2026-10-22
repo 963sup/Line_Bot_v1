@@ -1,7 +1,8 @@
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { nullableString } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import { RepositoryError, type RepositorySummary } from "@line_bot_v1/repository/domain";
+import { type RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
 import { authorizedRepository } from "@line_bot_v1/repository/postgres/access";
 import type {
   DiscussionCursor,

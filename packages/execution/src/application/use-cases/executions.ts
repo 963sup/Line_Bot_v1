@@ -42,35 +42,13 @@ function contentBasis(value: ContentPlanItemBasis): ContentPlanItemBasis {
   };
 }
 
-function contractBasis(
-  value: Extract<ContractLineBasis, { content: unknown }>,
-): Extract<ContractLineBasis, { content: unknown }>;
-function contractBasis(
-  value: Extract<ContractLineBasis, { resource: unknown }>,
-): Extract<ContractLineBasis, { resource: unknown }>;
 function contractBasis(value: ContractLineBasis): ContractLineBasis {
-  const common = {
+  return {
     contractId: value.contractId,
     contractRevisionId: value.contractRevisionId,
     lineId: value.lineId,
     agreedQuantity: value.agreedQuantity,
-  };
-  if ("content" in value) return { ...common, content: contentBasis(value.content) };
-  return {
-    ...common,
-    resource: {
-      resourceId: value.resource.resourceId,
-      resourceRevisionId: value.resource.resourceRevisionId,
-      resourceVersion: value.resource.resourceVersion,
-      name: value.resource.name,
-      measure: {
-        id: value.resource.measure.id,
-        name: value.resource.measure.name,
-        subject: value.resource.measure.subject,
-        unit: value.resource.measure.unit,
-      },
-      sourceQuantity: value.resource.sourceQuantity,
-    },
+    content: contentBasis(value.content),
   };
 }
 
@@ -99,11 +77,6 @@ function dto(revision: ExecutionRevision): ExecutionRevisionDto {
     note: revision.note,
     reason: revision.reason,
   };
-  if (!("task" in revision))
-    return {
-      ...common,
-      basis: contractBasis(revision.basis),
-    };
   return {
     ...common,
     basis: contractBasis(revision.basis),
@@ -234,12 +207,6 @@ export function createExecutions(deps: {
               );
             const replay = await tx.replay();
             if (replay) return { requestId: replay.requestId, revision: dto(replay.revision) };
-            if (command.action === "submit" && !("task" in command))
-              throw new ExecutionError(
-                409,
-                "Legacy Execution submissions can only replay an existing receipt.",
-                "CONFLICT",
-              );
             if (tx.scope.archived)
               throw new ExecutionError(409, "Repository is archived.", "CONFLICT");
             const current = await tx.executions.load();
@@ -272,12 +239,6 @@ export function createExecutions(deps: {
               throw new ExecutionError(409, "Execution Contract reference mismatch.", "CONFLICT");
             let source: Parameters<typeof reviseExecution>[4] = null;
             if (command.action === "submit") {
-              if (!("content" in basis))
-                throw new ExecutionError(
-                  409,
-                  "Legacy Contract lines cannot receive new Execution reports.",
-                  "CONFLICT",
-                );
               const tasks = await tx.content
                 .verifyPinned(userId, tx.scope.repositoryId, [command.task])
                 .catch(sourceError);

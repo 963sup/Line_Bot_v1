@@ -463,7 +463,6 @@ async function expectRepositoryResourceMobileLayout() {
       "Contracts",
       "Executions",
       "Discussions",
-      "Objects (Legacy)",
       "Labels",
       "Milestones",
     ]) {
@@ -520,7 +519,6 @@ async function expectRepositoryResourceMobileLayout() {
       "Contracts",
       "Executions",
       "Discussions",
-      "Objects (Legacy)",
       "Labels",
       "Milestones",
     ]) {
@@ -549,7 +547,6 @@ const repositorySections = [
   "Discussions",
   "Wiki",
   "Insights",
-  "Objects (Legacy)",
   "Labels",
   "Milestones",
   "Settings",
@@ -767,6 +764,18 @@ await context.route("**/*", async (route) => {
 });
 
 try {
+  for (const retired of [
+    "/api/repository-objects",
+    "/api/repository-object-types",
+    "/api/repository-object-measures",
+    "/api/repository-object-relationships",
+    "/acme/Operations/objects",
+    "/acme/Operations/objects/retired-object",
+  ]) {
+    const response = await context.request.get(`${base}${retired}`);
+    assert.equal(response.status(), 404, `${retired} must be retired without an alias.`);
+  }
+  result.checks.push("Retired Object routes return 404 without compatibility aliases.");
   const sections = [
     "Overview",
     "Issues",
@@ -805,10 +814,7 @@ try {
       }
       await expect(
         navigation.getByRole("link", { name: "Objects (Legacy)", exact: true }),
-      ).toBeVisible();
-      await expect(
-        navigation.getByRole("link", { name: "Objects (Legacy)", exact: true }),
-      ).toHaveAttribute("href", "/acme/Operations/objects");
+      ).toHaveCount(0);
       await expect(navigation.getByRole("link", { name: "Wiki", exact: true })).toHaveAttribute(
         "href",
         "/acme/Operations/wiki",
@@ -886,7 +892,7 @@ try {
   await captureShell(page, output, "repository-public", 1);
   await expect(page.getByRole("main").locator(".back-link")).toHaveAttribute("href", "/acme");
   await expectRepositoryNavigation("Overview", false);
-  await expect(repositoryNavigation().getByRole("link")).toHaveCount(12);
+  await expect(repositoryNavigation().getByRole("link")).toHaveCount(11);
   const deliveryRegion = page.getByRole("region", { name: "工作交付" });
   await expect(deliveryRegion).toBeVisible();
   for (const [name, href] of [
@@ -911,12 +917,7 @@ try {
       collaborationRegion.getByRole("link", { name: new RegExp(`^${name}`) }),
     ).toHaveAttribute("href", href);
   }
-  const legacyRegion = page.getByRole("region", { name: "Legacy" });
-  await expect(legacyRegion).toBeVisible();
-  await expect(legacyRegion.getByRole("link", { name: /^Objects \(Legacy\)/ })).toHaveAttribute(
-    "href",
-    "/acme/Operations/objects",
-  );
+  await expect(page.getByRole("region", { name: "Legacy" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /^Projects/ })).toHaveAttribute("href", "/projects");
   await expect(page.getByRole("heading", { name: "Public Repository", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /WBS/i })).toHaveCount(0);
@@ -1096,7 +1097,7 @@ try {
     page.getByRole("heading", { name: "Repository 資訊讀取失敗", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toHaveCount(0);
-  await expect(repositoryNavigation().locator(":scope > a")).toHaveCount(12);
+  await expect(repositoryNavigation().locator(":scope > a")).toHaveCount(11);
   overviewFailure = null;
   await page.getByRole("button", { name: "重新登入並重試", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Repository 狀態", exact: true })).toBeVisible();
@@ -1123,7 +1124,7 @@ try {
   await expect(page.getByText("Archived", { exact: true })).toBeVisible();
   await expect(page.getByText("read", { exact: true })).toBeVisible();
   await expectRepositoryNavigation("Overview", false);
-  await expect(repositoryNavigation().locator(":scope > a")).toHaveCount(12);
+  await expect(repositoryNavigation().locator(":scope > a")).toHaveCount(11);
 
   overviewArchived = false;
   overviewPermissions = ["admin"];
@@ -1347,7 +1348,7 @@ try {
   await expect(page.getByText("bug", { exact: true })).toHaveCount(0);
   const readerNavigation = page.getByRole("navigation", { name: "Repository resources" });
   await expectRepositoryNavigation("Labels", false);
-  await expect(readerNavigation.getByRole("link")).toHaveCount(12);
+  await expect(readerNavigation.getByRole("link")).toHaveCount(11);
   await expect(readerNavigation.getByRole("link", { name: "Settings", exact: true })).toHaveCount(
     0,
   );

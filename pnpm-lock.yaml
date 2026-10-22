@@ -526,9 +526,6 @@ importers:
       '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../repository
-      '@line_bot_v1/resources':
-        specifier: workspace:*
-        version: link:../resources
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -751,9 +748,6 @@ importers:
       '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../repository
-      '@line_bot_v1/resources':
-        specifier: workspace:*
-        version: link:../resources
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

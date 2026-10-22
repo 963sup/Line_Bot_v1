@@ -15,7 +15,7 @@ Repository owns:
 - Repository Label、Repository Milestone and repository-scoped Issue number allocation；
 - discovery projections derived from Repository / Star / immutable Issue event facts。
 
-Issue consumes Repository scope/access and repository-scoped number allocation without acquiring Repository authority. Discussion consumes Repository scope/access without acquiring Repository authority. Resources consumes Repository scope/access while owning resource identity, content, classification, immutable revisions and resource structure; its Object wire/storage contract remains stable. Project may reference Repository/Issue work but does not acquire either authority. Notifications only stores delivery references and does not acquire source truth.
+Issue consumes Repository scope/access and repository-scoped number allocation without acquiring Repository authority. Discussion consumes Repository scope/access without acquiring Repository authority. Content owns work hierarchy and coherent plan revisions. Resources consumes Repository scope/access while owning physical Location, Equipment and Material identity, lifecycle and immutable revisions. Project may reference Repository/Issue work but does not acquire either authority. Notifications only stores delivery references and does not acquire source truth.
 
 ## Invariants
 
@@ -46,7 +46,7 @@ Issue consumes Repository scope/access and repository-scoped number allocation w
 
 Runtime owner: `packages/repository`. Discovery projection: `packages/explore`. Web presentation: `apps/web/src/modules/repository`.
 
-The canonical Web root is Repository Overview: public metadata is anonymous-readable, while current authenticated Repository scope controls private/internal metadata and management links. Overview composes WBS-owned legacy recovery eligibility without acquiring WBS authority or exposing a destination Project. Source failure remains unavailable and retryable. All available resources share one ordered navigation grid without a disclosure. Objects is explicitly labeled Legacy; Settings and Access remain visible only to current admins. Projects remains an independent planning entry and does not imply a Repository association or inherited authorization.
+The canonical Web root is Repository Overview: public metadata is anonymous-readable, while current authenticated Repository scope controls private/internal metadata and management links. Overview composes WBS-owned legacy recovery eligibility without acquiring WBS authority or exposing a destination Project. Source failure remains unavailable and retryable. All available resources share one ordered navigation grid without a disclosure. Settings and Access remain visible only to current admins. Projects remains an independent planning entry and does not imply a Repository association or inherited authorization.
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
 

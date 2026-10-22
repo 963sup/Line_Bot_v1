@@ -1,10 +1,10 @@
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryLabelCursor,
   RepositoryMilestoneCursor,
   RepositoryMilestoneStatus,
   RepositoryResourceStore,
 } from "../contracts/output/resources.js";
-import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import { normalizeRepositoryMilestoneNumber } from "../domain/milestone/value-objects/milestone-number.js";
 import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";

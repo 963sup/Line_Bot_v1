@@ -46,7 +46,7 @@ export class PostgresDailyCheckInStore implements DailyCheckInStore {
       const claim = await insertClaim(
         sql,
         {
-          memberId: id,
+          userId: id,
           day: currentDay,
           prizeCode: prize.code,
           rewardAmountUnits: amountUnits,
@@ -86,17 +86,13 @@ export class PostgresDailyCheckInStore implements DailyCheckInStore {
   }
 }
 
-async function readClaim(
-  sql: Sql,
-  memberId: string,
-  day: string,
-): Promise<DailyCheckInClaim | null> {
+async function readClaim(sql: Sql, userId: string, day: string): Promise<DailyCheckInClaim | null> {
   const row = (
     await sql.query(
       `SELECT business_day,prize_code,reward_amount_units,policy_version,decided_at
        FROM daily_check_in_claims
        WHERE user_id=$1 AND business_day=$2`,
-      [memberId, day],
+      [userId, day],
       decodeClaimRow,
     )
   ).rows[0];
@@ -106,11 +102,11 @@ async function readClaim(
   return mapClaim(row, definition);
 }
 
-async function hasLedgerFact(sql: Sql, memberId: string, day: string) {
+async function hasLedgerFact(sql: Sql, userId: string, day: string) {
   return (
     (await readLedgerCreditFact(
       sql,
-      memberId,
+      userId,
       COIN_ASSET_CODE,
       DAILY_CHECK_IN_LEDGER_SOURCE,
       day,
@@ -118,13 +114,13 @@ async function hasLedgerFact(sql: Sql, memberId: string, day: string) {
   );
 }
 
-async function ensureLedgerParity(sql: Sql, memberId: string, claim: DailyCheckInClaim) {
+async function ensureLedgerParity(sql: Sql, userId: string, claim: DailyCheckInClaim) {
   const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
   if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
   const expectedUnits = toAssetUnits(claim.reward, definition.unitsPerWhole);
   const fact = await readLedgerCreditFact(
     sql,
-    memberId,
+    userId,
     COIN_ASSET_CODE,
     DAILY_CHECK_IN_LEDGER_SOURCE,
     claim.day,
@@ -151,7 +147,7 @@ function toAssetUnits(amount: number, unitsPerWhole: number) {
 async function insertClaim(
   sql: Sql,
   claim: {
-    memberId: string;
+    userId: string;
     day: string;
     prizeCode: DailyCheckInPrizeCode;
     rewardAmountUnits: number;
@@ -167,7 +163,7 @@ async function insertClaim(
        ON CONFLICT (user_id,business_day) DO NOTHING
        RETURNING business_day,prize_code,reward_amount_units,policy_version,decided_at`,
       [
-        claim.memberId,
+        claim.userId,
         claim.day,
         claim.prizeCode,
         COIN_ASSET_CODE,

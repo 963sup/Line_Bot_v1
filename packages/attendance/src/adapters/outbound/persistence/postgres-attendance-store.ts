@@ -239,18 +239,18 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
 
   refreshMenu(provider: string, subject: string, now: number): Promise<void> {
     return this.db.transaction(async (sql) => {
-      const member = (
+      const userBinding = (
         await sql.query(
           `SELECT i.user_id AS id,i.auth_user_id FROM attendance_identity_bindings i
            WHERE i.provider=$1 AND i.subject=$2`,
           [provider, subject],
         )
       ).rows[0];
-      if (!member) throw new AttendanceError(403, "會員資格不可用。");
-      if (member.auth_user_id) {
+      if (!userBinding) throw new AttendanceError(403, "會員資格不可用。");
+      if (userBinding.auth_user_id) {
         const account = (
           await sql.query("SELECT attendance_account_active($1::uuid,$2::bigint) AS active", [
-            member.auth_user_id,
+            userBinding.auth_user_id,
             now,
           ])
         ).rows[0];
@@ -267,7 +267,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
            revision=GREATEST(attendance_menu_outbox.revision+1,EXCLUDED.revision),
            available_at=EXCLUDED.available_at,
            attempts=0`,
-        [member.id, now],
+        [userBinding.id, now],
       );
     });
   }
@@ -275,21 +275,21 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
   private async lock(sql: Sql, id: string, now: number) {
     // Acquire before the User row, matching membership/access and address writers.
     await sql.query("SELECT app_private.lock_governance('shared')");
-    const m = await readUserQualification(sql, id, "update");
-    if (!m || m.status !== "active") {
+    const user = await readUserQualification(sql, id, "update");
+    if (!user || user.status !== "active") {
       throw new AttendanceError(
         403,
-        m?.status === "suspended" ? "會員已停權。" : "會員資格不可用。",
+        user?.status === "suspended" ? "會員已停權。" : "會員資格不可用。",
       );
     }
-    if (m.authUserId) {
-      const u = (
+    if (user.authUserId) {
+      const account = (
         await sql.query("SELECT attendance_account_active($1::uuid,$2::bigint) AS active", [
-          m.authUserId,
+          user.authUserId,
           now,
         ])
       ).rows[0];
-      if (!u?.active) throw new AttendanceError(403, "會員登入帳號不可用。");
+      if (!account?.active) throw new AttendanceError(403, "會員登入帳號不可用。");
     }
     await sql.query("INSERT INTO attendance_state(uid) VALUES($1) ON CONFLICT DO NOTHING", [id]);
     const state = (await sql.query("SELECT version FROM attendance_state WHERE uid=$1", [id]))

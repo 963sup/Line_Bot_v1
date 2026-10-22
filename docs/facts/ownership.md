@@ -49,7 +49,7 @@ Key separations:
 - Provider identity proof ≠ User lifecycle ≠ Membership / Employment ≠ Role / Permission。
 - Repository ≠ Project；Project Item只是 planning reference，不取得 underlying work authority。
 - Content 計畫量 ≠ Contract 約定量 ≠ Execution 申報／審查實績 ≠ Payroll 結算結果；Resources 身分不等於工作階層。
-- Legacy Object 資料與 writer 只在明確分類／驗證切換期間保留，不從名稱或類型推斷新 Owner；中立文字驗證由 Platform 擁有。
+- Content 工作節點與實體 Resource 身分分別由其 Owner 管理；中立文字驗證由 Platform 擁有。
 - Bounded Context ≠ Module Boundary ≠ Data Boundary ≠ Consistency Boundary。
 - Accounting ≠ Billing/Charging ≠ Payment ≠ Settlement；沒有真實 owner/lifecycle/consumer時不預建 umbrella domain。
 

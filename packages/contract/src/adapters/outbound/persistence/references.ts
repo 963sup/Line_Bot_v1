@@ -75,52 +75,35 @@ export class PostgresContractReferenceReader implements ContractReferenceReader 
         lineId: line.lineId,
         agreedQuantity: line.agreedQuantity,
       };
-      if ("content" in line)
-        return {
-          ...common,
-          content: {
-            repositoryId: line.content.repositoryId,
-            planRevisionId: line.content.planRevisionId,
-            planVersion: line.content.planVersion,
-            node: {
-              id: line.content.node.id,
-              kind: line.content.node.kind,
-              title: line.content.node.title,
-              body: line.content.node.body,
-              path: line.content.node.path.map((item) => ({
-                id: item.id,
-                kind: item.kind,
-                title: item.title,
-              })),
-              plannedQuantity:
-                line.content.node.plannedQuantity === null
-                  ? null
-                  : {
-                      value: line.content.node.plannedQuantity.value,
-                      measure: {
-                        id: line.content.node.plannedQuantity.measure.id,
-                        name: line.content.node.plannedQuantity.measure.name,
-                        subject: line.content.node.plannedQuantity.measure.subject,
-                        unit: line.content.node.plannedQuantity.measure.unit,
-                      },
-                    },
-            },
-          },
-        };
       return {
         ...common,
-        resource: {
-          resourceId: line.resource.resourceId,
-          resourceRevisionId: line.resource.resourceRevisionId,
-          resourceVersion: line.resource.resourceVersion,
-          name: line.resource.name,
-          measure: {
-            id: line.resource.measure.id,
-            name: line.resource.measure.name,
-            subject: line.resource.measure.subject,
-            unit: line.resource.measure.unit,
+        content: {
+          repositoryId: line.content.repositoryId,
+          planRevisionId: line.content.planRevisionId,
+          planVersion: line.content.planVersion,
+          node: {
+            id: line.content.node.id,
+            kind: line.content.node.kind,
+            title: line.content.node.title,
+            body: line.content.node.body,
+            path: line.content.node.path.map((item) => ({
+              id: item.id,
+              kind: item.kind,
+              title: item.title,
+            })),
+            plannedQuantity:
+              line.content.node.plannedQuantity === null
+                ? null
+                : {
+                    value: line.content.node.plannedQuantity.value,
+                    measure: {
+                      id: line.content.node.plannedQuantity.measure.id,
+                      name: line.content.node.plannedQuantity.measure.name,
+                      subject: line.content.node.plannedQuantity.measure.subject,
+                      unit: line.content.node.plannedQuantity.measure.unit,
+                    },
+                  },
           },
-          sourceQuantity: line.resource.sourceQuantity,
         },
       };
     } catch (error) {

@@ -22,17 +22,12 @@ type ExecutionRevisionDtoCommon = Readonly<{
   reason: string | null;
 }>;
 export type ExecutionRevisionDto = ExecutionRevisionDtoCommon &
-  (
-    | Readonly<{
-        basis: Extract<ContractLineBasis, { resource: unknown }>;
-      }>
-    | Readonly<{
-        basis: Extract<ContractLineBasis, { content: unknown }>;
-        task: ContentPlanItemBasis;
-        resources: readonly ResourceBasis[];
-        dependency: ExecutionDependencyBasis;
-      }>
-  );
+  Readonly<{
+    basis: ContractLineBasis;
+    task: ContentPlanItemBasis;
+    resources: readonly ResourceBasis[];
+    dependency: ExecutionDependencyBasis;
+  }>;
 export type ExecutionReceipt = Readonly<{ requestId: string; revision: ExecutionRevisionDto }>;
 export type ExecutionSummary = Readonly<{
   executionId: string;

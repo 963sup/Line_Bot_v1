@@ -96,13 +96,13 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
       assert.equal((await action(request({ action: "clockIn" }))).status, 400);
     }
     assert.equal((await GET(request(undefined, ""))).status, 401);
-    const member = await activateMember(user);
-    await allowAttendance(member);
+    const userId = await activateMember(user);
+    await allowAttendance(userId);
     await activateMember(other);
     const prepared = await (
       await GET(request(undefined, "token", "https://app.example", true))
     ).json();
-    assert.equal(prepared.memberId, member);
+    assert.equal(prepared.userId, userId);
     assert.equal(prepared.working, false);
     assert.equal(prepared.version, 0);
     assert.equal(prepared.attendance, undefined, "clock preparation does not download history");
@@ -206,7 +206,7 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
     assert.equal(pushes.length, 3, "replaying clock-in cannot create another notification");
     const otherView = await (await GET(request(undefined, "other"))).json();
     assert.equal(otherView.attendance.records.length, 0);
-    await memberStore().suspend(member);
+    await memberStore().suspend(userId);
     for (const action of [clockIn, clockOut])
       assert.equal((await action(request(body(2)))).status, 403);
     assert.equal((await GET(request())).status, 403);

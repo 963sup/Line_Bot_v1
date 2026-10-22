@@ -1,5 +1,5 @@
+import type { RepositoryVisibility } from "../../domain/repository/entities/repository.js";
 import type { RepositoryPermission } from "../../domain/repository/value-objects/repository-capability.js";
-import type { RepositoryVisibility } from "../repository.js";
 import type { RepositorySelector } from "../selectors.js";
 
 export type RepositoryManagementSnapshot = Readonly<{

@@ -118,8 +118,8 @@ export default function AutoClock({
       const data = parseAttendanceClockPreparation(rawPreparation);
 
       current = readAttempt();
-      if (current && current.owner !== data.memberId) {
-        saveAttempt({ owner: data.memberId, operation, phase: "started" });
+      if (current && current.owner !== data.userId) {
+        saveAttempt({ owner: data.userId, operation, phase: "started" });
         throw new Error("會員身分已變更，請重新確認本次打卡。");
       }
       if (current && !explicit) {
@@ -141,17 +141,17 @@ export default function AutoClock({
         if (!data.sites.length)
           throw new Error("尚未加入有可用打卡點的 Repository，請聯絡管理者。");
         if (!liffClient.inClient() && !explicit) {
-          saveAttempt({ owner: data.memberId, operation, phase: "started" });
+          saveAttempt({ owner: data.userId, operation, phase: "started" });
           setStatus("請確認後定位打卡。");
           return;
         }
-        current = { owner: data.memberId, operation, phase: "started" };
+        current = { owner: data.userId, operation, phase: "started" };
         saveAttempt(current);
         setStatus("正在取得本次定位…");
         const location = await locateAttendance();
         signal.throwIfAborted();
         current = {
-          owner: data.memberId,
+          owner: data.userId,
           operation,
           phase: "pending",
           body: parseAttendanceInput({
@@ -181,7 +181,7 @@ export default function AutoClock({
       signal.throwIfAborted();
       if (!result.ok) {
         if (result.status < 500 && result.status !== 408) {
-          current = { owner: data.memberId, operation: current.operation, phase: "started" };
+          current = { owner: data.userId, operation: current.operation, phase: "started" };
           saveAttempt(current);
           setAttempt(current);
         }
@@ -191,7 +191,7 @@ export default function AutoClock({
       if (receipt.version !== current.body.expectedVersion + 1)
         throw new Error("打卡回執版本不一致，請重試同一筆。");
       current = {
-        owner: data.memberId,
+        owner: data.userId,
         operation: current.operation,
         phase: "done",
         at: receipt.at,

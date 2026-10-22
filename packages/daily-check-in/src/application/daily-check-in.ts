@@ -8,14 +8,14 @@ import {
 export function createDailyCheckIn(deps: DailyCheckInDependencies) {
   return {
     checkIn: async (subject: string, expectedDay: unknown) => {
-      const account = await deps.activeUser(subject);
+      const user = await deps.activeUser(subject);
       const now = deps.now();
       const day = parseDailyCheckInDay(expectedDay);
-      return deps.store().claim(account.id, now, day);
+      return deps.store().claim(user.id, now, day);
     },
     readClaim: async (subject: string, day: unknown) => {
-      const account = await deps.activeUser(subject);
-      return deps.store().read(account.id, parseDailyCheckInDay(day), "active");
+      const user = await deps.activeUser(subject);
+      return deps.store().read(user.id, parseDailyCheckInDay(day), "active");
     },
     currentView: async (userId: string) => {
       const day = dailyCheckInDay(deps.now());

@@ -154,7 +154,7 @@ test("only the latest selection intent may publish its result", () => {
   assert.equal(isCurrentIntent(newIntent, newIntent), true);
 });
 
-test("corrected owner panels wire closed history, legal review actions, and explicit legacy replacement", () => {
+test("corrected owner panels preserve closed history and legal review actions without legacy replacement", () => {
   const executionSource = readFileSync(
     new URL("../src/modules/execution/executions-panel.tsx", import.meta.url),
     "utf8",
@@ -170,13 +170,9 @@ test("corrected owner panels wire closed history, legal review actions, and expl
   );
   assert.equal(executionSource.match(/!executionSubmissionAllowed\(contract\.state\)/g)?.length, 2);
   assert.match(executionSource, /selected\.state !== "ACCEPTED"/);
-  assert.match(contractSource, />\s*清除舊 lines，改用 Content\s*</);
+  assert.doesNotMatch(contractSource, /legacyReplacementStarted|hasLegacyLines/);
   assert.match(
     contractSource,
-    /selected\?\.state === "DRAFT" && hasLegacyLines && !legacyReplacementStarted/,
-  );
-  assert.match(
-    contractSource,
-    /!view\?\.canManage \|\| busy \|\| pending !== null \|\| hasLegacyLines \|\| draftDirty/,
+    /!view\?\.canManage \|\| busy \|\| pending !== null \|\| draftDirty/,
   );
 });

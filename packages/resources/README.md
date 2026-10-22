@@ -1,16 +1,15 @@
 # Resources
 
-This package owns two explicit models during the staged cutover:
+This package owns Repository-scoped physical `LOCATION`, `EQUIPMENT` and `MATERIAL` identities.
+Resources have an explicit immutable kind, versioned name and description, an
+`ACTIVE | ARCHIVED` lifecycle, immutable revisions and durable command receipts.
 
-- New physical Resources: immutable `LOCATION | EQUIPMENT | MATERIAL` kind, versioned
-  name/description, archive/unarchive lifecycle and an exact public revision reader used by Content
-  and Execution.
-- Legacy Objects: Object Types, versioned content/quantities, directed relationships, existing HTTP
-  and Issue reference contracts. These remain current writers and historical authority until an
-  explicit classification and migration policy is decided.
+The public reference reader verifies current Repository access and returns exact physical Resource
+revision bases in caller order. Content and Execution use that contract for frozen physical Resource
+pins without acquiring Resource authority.
 
-No name, Object Type, relationship or unit is used to infer physical identity. Consumers use public
-reference readers and never query Resource-owned relations.
+The former Object, Object Type, quantity, relationship and engineering model has been retired. It is
+not a compatibility surface for physical Resources.
 
 Read the [owner contract](../../docs/owners/resources.md), [local constraints](AGENTS.md) and generated
-[semantics](SEMANTICS.md) for the current responsibility and published Object wire contract.
+[semantics](SEMANTICS.md) for the current responsibility and public contracts.

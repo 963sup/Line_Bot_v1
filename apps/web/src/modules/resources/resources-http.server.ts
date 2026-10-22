@@ -1,6 +1,7 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeRepositoryName, RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
 import type { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
 import { ResourceError } from "@line_bot_v1/resources/domain/resource-error";
 import { captureHandledServerError } from "../../shared/observability/server-error";

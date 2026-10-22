@@ -4,9 +4,7 @@
 
 `/{login}/{repository}/insights` is the authenticated read-only Repository Pulse entry. The locator is resolved under current Repository access; no public metrics are server-rendered.
 
-`/{login}/{repository}/objects` and `/objects/{objectId}` present the Repository-scoped
-Resource owner contract. Resource Type, immutable Resource revision and directed Resource-to-Resource
-relationship facts remain owned by `@line_bot_v1/resources`; the URL locator never authorizes.
+`/{login}/{repository}/content` presents Content work plans; `/resources` presents physical Resources. Their distinct owner contracts recheck current Repository scope.
 
 `/{login}/{repository}/wbs` retains existing Repository-WBS content, exact retries and controlled migration. New WBS starts in Project. Overview conditionally links to legacy recovery from WBS-owned eligibility; shared navigation has no WBS tab. After cutover, current source-owner authorization resolves the Project destination without requiring the retired content API to succeed.
 

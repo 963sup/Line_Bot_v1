@@ -5,8 +5,8 @@ import {
   readOrganizationViewerCapabilities,
 } from "@line_bot_v1/organization/postgres";
 import type { Database } from "@line_bot_v1/platform/postgres";
+import { RepositoryError } from "../../../contracts/errors/repository-error.js";
 import type { RepositoryOwnerOption } from "../../../contracts/input/repository-creation.js";
-import { RepositoryError } from "../../../contracts/repository.js";
 
 export class PostgresRepositoryCreationOwnersQuery {
   constructor(private readonly db: Database) {}

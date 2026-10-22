@@ -4,7 +4,7 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryCreationStore } from "../src/composition/bootstrap/repository-creation.js";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
-import { RepositoryError } from "../src/contracts/repository.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import { authorizedRepository } from "../src/postgres/access.js";
 import { PostgresRepositoryDiscoveryStore } from "../src/postgres/discovery.js";
 import { PostgresRepositoryStarListStore } from "../src/postgres/star-lists.js";

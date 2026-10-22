@@ -9,7 +9,7 @@ import type {
   RepositoryStarListDiscovery,
   TrendingRepository,
 } from "../contracts/discovery.js";
-import { RepositoryError } from "../contracts/repository.js";
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type { RepositoryPermission } from "../domain/repository/value-objects/repository-capability.js";
 import { repositoryOwnerKind, repositoryPermissionArray, repositoryVisibility } from "./decode.js";
 import {

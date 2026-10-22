@@ -4,42 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/commands": {
-      "types": "./dist/application/commands.d.ts",
-      "default": "./dist/application/commands.js"
-    },
-    "./application/queries": {
-      "types": "./dist/application/queries.d.ts",
-      "default": "./dist/application/queries.js"
-    },
-    "./application/use-cases/objects": {
-      "types": "./dist/application/use-cases/objects.d.ts",
-      "default": "./dist/application/use-cases/objects.js"
-    },
-    "./contracts/dto/objects": {
-      "types": "./dist/contracts/dto/objects.d.ts",
-      "default": "./dist/contracts/dto/objects.js"
-    },
-    "./contracts/output/references": {
-      "types": "./dist/contracts/output/references.d.ts",
-      "default": "./dist/contracts/output/references.js"
-    },
-    "./composition/bootstrap/objects": {
-      "types": "./dist/composition/bootstrap/objects.d.ts",
-      "default": "./dist/composition/bootstrap/objects.js"
-    },
-    "./composition/bootstrap/references": {
-      "types": "./dist/composition/bootstrap/references.d.ts",
-      "default": "./dist/composition/bootstrap/references.js"
-    },
-    "./domain/quantity": {
-      "types": "./dist/domain/quantity.d.ts",
-      "default": "./dist/domain/quantity.js"
-    },
-    "./domain/error": {
-      "types": "./dist/domain/error.d.ts",
-      "default": "./dist/domain/error.js"
-    },
     "./application/use-cases/resources": {
       "types": "./dist/application/use-cases/resources.d.ts",
       "default": "./dist/application/use-cases/resources.js"
@@ -67,10 +31,6 @@
     "./domain/resource-reference": {
       "types": "./dist/domain/resource-reference.d.ts",
       "default": "./dist/domain/resource-reference.js"
-    },
-    "./domain/engineering-reference": {
-      "types": "./dist/domain/engineering-reference.d.ts",
-      "default": "./dist/domain/engineering-reference.js"
     }
   },
   "files": [

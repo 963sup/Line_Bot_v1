@@ -2,11 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
-import type { ResourceQuantityBasis } from "@line_bot_v1/resources/domain/engineering-reference";
 import {
   type ContractRevision,
   freezeContractLines,
-  type HistoricalResourceContractLine,
   reviseContract,
 } from "../src/domain/contract.js";
 import { ContractError } from "../src/domain/error.js";
@@ -27,17 +25,6 @@ function content(unit: "m" | "pcs" = "m"): ContentPlanItemBasis {
         measure: { id: randomUUID(), name: "Length", subject: "Installed length", unit },
       },
     },
-  };
-}
-
-function resource(): ResourceQuantityBasis {
-  return {
-    resourceId: randomUUID(),
-    resourceRevisionId: randomUUID(),
-    resourceVersion: 2,
-    name: "Legacy cable",
-    measure: { id: randomUUID(), name: "Length", subject: "Installed length", unit: "m" },
-    sourceQuantity: "10",
   };
 }
 
@@ -221,42 +208,4 @@ test("activation requalification cannot rewrite Content pins or agreed quantitie
       () => reviseContract(created, 1, { action: "activate", lines: [changed] }, context(2)),
       (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
     );
-});
-
-test("historical Resource revisions remain readable and closable but drafts require Content edit", () => {
-  const legacyLine: HistoricalResourceContractLine = {
-    lineId: randomUUID(),
-    resource: resource(),
-    agreedQuantity: "1",
-  };
-  const legacyDraft: ContractRevision = {
-    ...context(1),
-    version: 1,
-    parentRevisionId: null,
-    action: "create",
-    state: "DRAFT",
-    title: "Legacy",
-    body: "",
-    lines: [legacyLine],
-  };
-  assert.throws(
-    () => reviseContract(legacyDraft, 1, { action: "activate", lines: [] }, context(2)),
-    (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
-  );
-  const replacement = line();
-  const edited = reviseContract(
-    legacyDraft,
-    1,
-    {
-      action: "edit",
-      title: "Migrated",
-      body: "",
-      lines: freezeContractLines([replacement.input], [replacement.basis]),
-    },
-    context(2),
-  );
-  assert.ok(edited.lines.every((value) => "content" in value));
-  const legacyActive = { ...legacyDraft, state: "ACTIVE" as const };
-  const closed = reviseContract(legacyActive, 1, { action: "close" }, context(2));
-  assert.ok("resource" in (closed.lines[0] ?? {}));
 });

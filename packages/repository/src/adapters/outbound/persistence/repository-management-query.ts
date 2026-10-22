@@ -6,8 +6,8 @@ import {
 } from "@line_bot_v1/namespace/postgres";
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { stringValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../../contracts/errors/repository-error.js";
 import type { RepositoryManagementSnapshot } from "../../../contracts/input/repository-management.js";
-import { RepositoryError } from "../../../contracts/repository.js";
 import type { RepositorySelector } from "../../../contracts/selectors.js";
 import type { RepositoryLifecycleState } from "../../../domain/repository/entities/repository.js";
 import type { RepositoryPermission } from "../../../domain/repository/value-objects/repository-capability.js";

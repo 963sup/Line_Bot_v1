@@ -8,8 +8,6 @@ import {
   repositoryIssuesPath,
   repositoryLabelsPath,
   repositoryMilestonesPath,
-  repositoryObjectPath,
-  repositoryObjectsPath,
   repositoryPath,
   repositoryResourceNavigationItems,
   repositorySettingsPath,
@@ -24,11 +22,6 @@ test("repository resource navigation builds canonical owner/name URLs", () => {
   assert.equal(repositoryAccessPath("acme", "Operations"), "/acme/Operations/access");
   assert.equal(repositorySettingsPath("acme", "Operations"), "/acme/Operations/settings");
   assert.equal(repositoryIssuesPath("acme", "Operations"), "/acme/Operations/issues");
-  assert.equal(repositoryObjectsPath("acme", "Operations"), "/acme/Operations/objects");
-  assert.equal(
-    repositoryObjectPath("acme", "Operations", "object / 1"),
-    "/acme/Operations/objects/object%20%2F%201",
-  );
   assert.equal(repositoryIssuePath("acme", "Operations", 12), "/acme/Operations/issues/12");
   assert.equal(repositoryIssueCreatePath("acme", "Operations"), "/acme/Operations/issues?create=1");
   assert.equal(repositoryDiscussionsPath("acme", "Operations"), "/acme/Operations/discussions");
@@ -63,7 +56,6 @@ test("repository resource navigation exposes one ordered map and gates managemen
       "discussions",
       "wiki",
       "insights",
-      "objects",
       "labels",
       "milestones",
     ],
@@ -80,7 +72,6 @@ test("repository resource navigation exposes one ordered map and gates managemen
       "discussions",
       "wiki",
       "insights",
-      "objects",
       "labels",
       "milestones",
       "settings",

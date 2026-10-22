@@ -39,8 +39,7 @@ type Revision = Summary & {
   body: string;
   lines: Array<{
     lineId: string;
-    content?: { planRevisionId: string; node: PlanNode };
-    resource?: unknown;
+    content: { planRevisionId: string; node: PlanNode };
     agreedQuantity: string;
   }>;
 };
@@ -54,14 +53,12 @@ type View = {
 };
 class StaleRequestError extends Error {}
 function editableLines(revision: Revision): Line[] {
-  return revision.lines
-    .filter((line) => line.content)
-    .map((line) => ({
-      lineId: line.lineId,
-      planRevisionId: line.content?.planRevisionId ?? "",
-      nodeId: line.content?.node.id ?? "",
-      agreedQuantity: line.agreedQuantity,
-    }));
+  return revision.lines.map((line) => ({
+    lineId: line.lineId,
+    planRevisionId: line.content.planRevisionId,
+    nodeId: line.content.node.id,
+    agreedQuantity: line.agreedQuantity,
+  }));
 }
 export default function ContractsPanel({
   liffId,
@@ -86,18 +83,13 @@ export default function ContractsPanel({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
   const [pending, setPending] = useState<PendingCommandEnvelope | null>(null);
-  const [legacyReplacementStarted, setLegacyReplacementStarted] = useState(false);
   const responseGeneration = useRef(0);
   const mutationLock = useRef<symbol | null>(null);
-  const hasLegacyLines = selected?.lines.some((line) => !line.content) ?? false;
-  const legacyReplacementRequired =
-    selected?.state === "DRAFT" && hasLegacyLines && !legacyReplacementStarted;
   const draftDirty =
     selected !== null &&
     (selected.title !== title ||
       selected.body !== body ||
-      JSON.stringify(editableLines(selected)) !== JSON.stringify(lines) ||
-      legacyReplacementStarted);
+      JSON.stringify(editableLines(selected)) !== JSON.stringify(lines));
   const clear = useCallback(() => {
     responseGeneration.current++;
     mutationLock.current = null;
@@ -111,7 +103,6 @@ export default function ContractsPanel({
     setNodeId("");
     setQuantity("");
     setPending(null);
-    setLegacyReplacementStarted(false);
     setError("");
     setBusy(false);
     onCanManageChange(false);
@@ -222,7 +213,6 @@ export default function ContractsPanel({
       setTitle(revision.title);
       setBody(revision.body);
       setLines(editableLines(revision));
-      setLegacyReplacementStarted(false);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
       setError(cause instanceof Error ? cause.message : "Contract 載入失敗。");
@@ -282,7 +272,6 @@ export default function ContractsPanel({
       setTitle(result.revision.title);
       setBody(result.revision.body);
       setLines(editableLines(result.revision));
-      setLegacyReplacementStarted(false);
       await load();
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
@@ -357,7 +346,6 @@ export default function ContractsPanel({
               setTitle("");
               setBody("");
               setLines([]);
-              setLegacyReplacementStarted(false);
             }}
           >
             新增 Contract
@@ -382,37 +370,6 @@ export default function ContractsPanel({
               </Button>
             </div>
           )}
-          {hasLegacyLines && selected?.state === "DRAFT" && !legacyReplacementStarted && (
-            <div className="grid gap-2 rounded-lg border p-3 text-sm">
-              <p>
-                此草稿含 legacy Resource lines。若要改用 Content，必須明確清除全部舊 lines，
-                再建立完整的新 line set；歷史 revision 仍會保留。
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!view?.canEdit || busy || pending !== null}
-                onClick={() => {
-                  setLines([]);
-                  setNodeId("");
-                  setQuantity("");
-                  setLegacyReplacementStarted(true);
-                }}
-              >
-                清除舊 lines，改用 Content
-              </Button>
-            </div>
-          )}
-          {hasLegacyLines && selected?.state === "DRAFT" && legacyReplacementStarted && (
-            <p className="text-sm text-muted-foreground">
-              儲存草稿後，legacy Resource lines 將由目前完整的 Content line set 取代。
-            </p>
-          )}
-          {hasLegacyLines && selected?.state !== "DRAFT" && (
-            <p className="text-sm text-muted-foreground">
-              此 Contract 含 legacy Resource lines；ACTIVE／CLOSED revision 僅供檢視。
-            </p>
-          )}
           <Label>標題</Label>
           <Input
             value={title}
@@ -434,9 +391,7 @@ export default function ContractsPanel({
             <NativeSelect
               value={nodeId}
               disabled={
-                !view?.canEdit ||
-                legacyReplacementRequired ||
-                (selected?.state !== undefined && selected.state !== "DRAFT")
+                !view?.canEdit || (selected?.state !== undefined && selected.state !== "DRAFT")
               }
               onChange={(event) => setNodeId(event.target.value)}
             >
@@ -452,9 +407,7 @@ export default function ContractsPanel({
               placeholder="約定數量"
               value={quantity}
               disabled={
-                !view?.canEdit ||
-                legacyReplacementRequired ||
-                (selected?.state !== undefined && selected.state !== "DRAFT")
+                !view?.canEdit || (selected?.state !== undefined && selected.state !== "DRAFT")
               }
               onChange={(event) => setQuantity(event.target.value)}
             />
@@ -462,7 +415,6 @@ export default function ContractsPanel({
               variant="outline"
               disabled={
                 !view?.canEdit ||
-                legacyReplacementRequired ||
                 (selected?.state !== undefined && selected.state !== "DRAFT") ||
                 !nodeId ||
                 !quantity ||
@@ -492,9 +444,7 @@ export default function ContractsPanel({
                 size="sm"
                 variant="outline"
                 disabled={
-                  !view?.canEdit ||
-                  legacyReplacementRequired ||
-                  (selected?.state !== undefined && selected.state !== "DRAFT")
+                  !view?.canEdit || (selected?.state !== undefined && selected.state !== "DRAFT")
                 }
                 onClick={() =>
                   setLines((current) => current.filter((item) => item.lineId !== line.lineId))
@@ -512,7 +462,6 @@ export default function ContractsPanel({
                 pending !== null ||
                 !title.trim() ||
                 lines.length === 0 ||
-                legacyReplacementRequired ||
                 selected?.state === "ACTIVE" ||
                 selected?.state === "CLOSED"
               }
@@ -523,9 +472,7 @@ export default function ContractsPanel({
             {selected?.state === "DRAFT" && (
               <Button
                 variant="outline"
-                disabled={
-                  !view?.canManage || busy || pending !== null || hasLegacyLines || draftDirty
-                }
+                disabled={!view?.canManage || busy || pending !== null || draftDirty}
                 onClick={() => void execute("activate")}
               >
                 啟用

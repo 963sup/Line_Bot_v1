@@ -1,6 +1,6 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../contracts/errors/repository-error.js";
 import type { RepositoryManagementCommand } from "../../contracts/input/repository-management.js";
-import { RepositoryError } from "../../contracts/repository.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import type { RepositoryVisibility } from "../../domain/repository/entities/repository.js";
 import { normalizeRepositoryName } from "../../domain/repository/value-objects/repository-name.js";

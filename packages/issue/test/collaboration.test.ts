@@ -2,66 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { createObjects } from "@line_bot_v1/resources/application/use-cases/objects";
-import { createPostgresObjectDependencies } from "@line_bot_v1/resources/composition/bootstrap/objects";
-import { createPostgresObjectReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/references";
 import { PostgresIssueCollaborationStore } from "../src/adapters/postgres/collaboration.js";
-import { createIssueCollaboration } from "../src/application/collaboration.js";
-import type {
-  IssueCollaborationCommand,
-  IssueCollaborationStore,
-} from "../src/contracts/collaboration.js";
-
-test("Issue collaboration parses explicit Object and Revision UUIDs at its boundary", async () => {
-  let received: IssueCollaborationCommand | undefined;
-  const store: IssueCollaborationStore = {
-    view: async () => {
-      throw new Error("not used");
-    },
-    execute: async (_identity, command, now) => {
-      received = command;
-      return {
-        requestId: command.requestId,
-        repositoryId: command.repositoryId,
-        issueId: command.issueId,
-        action: command.action,
-        version: command.expectedVersion + 1,
-        at: now,
-        resourceId: null,
-        data: {},
-      };
-    },
-  };
-  const collaboration = createIssueCollaboration({
-    activeUser: async () => ({ id: "actor" }),
-    store: () => store,
-    now: () => 10,
-  });
-  await collaboration.command("subject", {
-    action: "set-object-reference",
-    requestId: "11111111-1111-4111-8111-111111111111",
-    repositoryId: "repo",
-    issueId: "issue",
-    expectedVersion: 1,
-    objectId: "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
-    revisionId: "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB",
-  });
-  assert.equal(received?.action, "set-object-reference");
-  if (received?.action !== "set-object-reference") throw new Error("Object command not received");
-  assert.equal(received.objectId, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-  assert.equal(received.revisionId, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
-  await assert.rejects(
-    collaboration.command("subject", {
-      action: "remove-object-reference",
-      requestId: randomUUID(),
-      repositoryId: "repo",
-      issueId: "issue",
-      expectedVersion: 1,
-      objectId: "not-a-uuid",
-    }),
-    /Object 識別碼 不正確/,
-  );
-});
 
 test("Issue collaboration keeps comments, labels, milestone and graphs replay-safe", async (t) => {
   const { pg, db } = await postgresFixture();
@@ -123,7 +64,7 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
     });
   }
 
-  const store = new PostgresIssueCollaborationStore(createPostgresObjectReferenceReader, db);
+  const store = new PostgresIssueCollaborationStore(db);
   const actor = { userId: "actor" };
 
   const addComment = {
@@ -275,97 +216,6 @@ test("Issue collaboration keeps comments, labels, milestone and graphs replay-sa
   assert.deepEqual(view.blockedByIssueIds, ["blocker"]);
   assert.deepEqual(view.relatedIssueIds, ["child"]);
   assert.equal(view.comments.length, 1);
-
-  const objectTypeId = randomUUID();
-  const objectId = randomUUID();
-  const objects = createObjects({ ...createPostgresObjectDependencies(db), now: () => 20 });
-  await objects.executeType("actor", {
-    action: "create",
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 0,
-    typeId: objectTypeId,
-    name: "Requirement",
-    description: "",
-  });
-  const objectCreated = await objects.executeObject("actor", {
-    action: "create",
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 0,
-    objectId,
-    typeId: objectTypeId,
-    name: "Requirement A",
-    content: "v1",
-  });
-  const pinnedRevisionId = objectCreated.result.id;
-  const setReference = {
-    action: "set-object-reference" as const,
-    requestId: randomUUID(),
-    repositoryId: "repo",
-    issueId: "parent",
-    expectedVersion: 8,
-    objectId,
-    revisionId: pinnedRevisionId,
-  };
-  const pinned = await store.execute(actor, setReference, 21);
-  assert.equal(pinned.version, 9);
-  assert.deepEqual(await store.execute(actor, setReference, 21), pinned);
-  await assert.rejects(
-    store.execute(actor, { ...setReference, requestId: randomUUID(), expectedVersion: 9 }, 22),
-    /沒有變更/,
-  );
-  const editedObject = await objects.executeObject("actor", {
-    action: "edit",
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 1,
-    objectId,
-    name: "Requirement A",
-    content: "v2",
-  });
-  const pinnedView = await store.view(actor, "repo", "parent");
-  assert.equal(pinnedView.objectReferences[0]?.revisionId, pinnedRevisionId);
-  assert.equal(pinnedView.objectReferences[0]?.hasNewerRevision, true);
-  await assert.rejects(
-    store.execute(actor, { ...setReference, revisionId: editedObject.result.id }, 23),
-    /請求編號已用於不同/,
-  );
-  const updated = await store.execute(
-    actor,
-    {
-      ...setReference,
-      requestId: randomUUID(),
-      expectedVersion: 9,
-      revisionId: editedObject.result.id,
-    },
-    23,
-  );
-  assert.equal(updated.version, 10);
-  await objects.executeObject("actor", {
-    action: "archive",
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 2,
-    objectId,
-  });
-  const archivedPin = await store.view(actor, "repo", "parent");
-  assert.equal(archivedPin.objectReferences[0]?.archived, true);
-  assert.equal(archivedPin.objectReferences[0]?.revisionId, editedObject.result.id);
-  const removed = await store.execute(
-    actor,
-    {
-      action: "remove-object-reference",
-      requestId: randomUUID(),
-      repositoryId: "repo",
-      issueId: "parent",
-      expectedVersion: 10,
-      objectId,
-    },
-    24,
-  );
-  assert.equal(removed.version, 11);
-  assert.deepEqual((await store.view(actor, "repo", "parent")).objectReferences, []);
 
   const childEvents = await pg.query(
     "select version,action,data from issue_events where issue_id='child' order by version",

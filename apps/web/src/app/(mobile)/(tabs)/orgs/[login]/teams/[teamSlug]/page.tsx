@@ -1,6 +1,6 @@
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeTeamSlug } from "@line_bot_v1/team/domain/value-objects/team-slug";
+import { normalizeTeamSlug } from "@line_bot_v1/team/application/commands/team-slug";
 import { notFound } from "next/navigation";
 import TeamPanel from "../../../../../../../modules/team/panel";
 import { PageHeading } from "../../../../../../../shared/ui/page-layout";

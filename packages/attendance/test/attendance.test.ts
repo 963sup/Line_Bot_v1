@@ -61,7 +61,7 @@ test("only canonical commands use verified actor, provider and server time/site;
   };
   assert.deepEqual(Object.keys(api).sort(), ["execute", "get", "prepare"]);
   assert.deepEqual(await api.prepare("verified"), {
-    memberId: "member",
+    userId: "member",
     version: 0,
     working: false,
     sites: [],

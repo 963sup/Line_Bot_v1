@@ -4,7 +4,7 @@ import test from "node:test";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
 import { PostgresRepositorySubscriptionStore } from "../src/composition/bootstrap/repository-subscription.js";
-import { RepositoryError } from "../src/contracts/repository.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 
 const databaseUrl = process.env.CAPABILITY_TEST_DATABASE_URL;
 test("PostgreSQL Watch holds shared governance through access validation and releases it on rollback", {

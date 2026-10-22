@@ -45,7 +45,8 @@ graph version and any physical Resource revision pins:
 The Task must match the Contract Task directly or descend from its pinned Work in the same plan
 revision. Each supplied Resource pin is requalified through Resources. The dependency version is a
 consistency observation; submission does not assert prerequisite completion because no Task
-completion state exists. Historical Resource-based Contract lines cannot receive new submissions.
+completion state exists. Submission without Task, dependency and physical Resource evidence is
+invalid; Resource/Object-based Contract compatibility shapes are not accepted.
 
 `accept` adds no action fields. `reject` and `void` add `reason`; each review uses the observed
 Execution version. Task dependency replacement is a separate package capability and is not exposed

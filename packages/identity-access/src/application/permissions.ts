@@ -11,13 +11,13 @@ export function createPermissions(deps: {
   return {
     async read(subject: string, target = "") {
       if (target.length > 128) throw new PermissionError(400, "會員編號不正確。");
-      const member = await deps.activeUser(subject);
-      return deps.store().read(member.id, target);
+      const user = await deps.activeUser(subject);
+      return deps.store().read(user.id, target);
     },
     async change(subject: string, raw: unknown) {
       const c = parsePermissionCommand(raw);
-      const member = await deps.activeUser(subject);
-      return deps.store().change(member.id, c, deps.now());
+      const user = await deps.activeUser(subject);
+      return deps.store().change(user.id, c, deps.now());
     },
   };
 }

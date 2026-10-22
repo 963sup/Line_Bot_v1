@@ -11,8 +11,7 @@ export type ExecutionDecision =
   | Readonly<{ action: "accept" }>
   | Readonly<{ action: "reject" | "void"; reason: string }>;
 
-export type ContentContractLineBasis = Extract<ContractLineBasis, { content: unknown }>;
-type LegacyContractLineBasis = Extract<ContractLineBasis, { resource: unknown }>;
+export type ContentContractLineBasis = ContractLineBasis;
 export type ExecutionDependencyBasis = Readonly<{
   version: number;
   revisionId: string | null;
@@ -34,15 +33,13 @@ type RevisionCommon = Readonly<{
   reason: string | null;
 }>;
 
-type LegacyExecutionRevision = RevisionCommon & Readonly<{ basis: LegacyContractLineBasis }>;
-type TaskExecutionRevision = RevisionCommon &
+export type ExecutionRevision = RevisionCommon &
   Readonly<{
     basis: ContentContractLineBasis;
     task: ContentPlanItemBasis;
     resources: readonly ResourceBasis[];
     dependency: ExecutionDependencyBasis;
   }>;
-export type ExecutionRevision = LegacyExecutionRevision | TaskExecutionRevision;
 
 function copyContent(value: ContentPlanItemBasis): ContentPlanItemBasis {
   return {
@@ -75,31 +72,13 @@ function copyContent(value: ContentPlanItemBasis): ContentPlanItemBasis {
   };
 }
 
-function copyBasis(basis: ContentContractLineBasis): ContentContractLineBasis;
-function copyBasis(basis: LegacyContractLineBasis): LegacyContractLineBasis;
 function copyBasis(basis: ContractLineBasis): ContractLineBasis {
-  const common = {
+  return {
     contractId: basis.contractId,
     contractRevisionId: basis.contractRevisionId,
     lineId: basis.lineId,
     agreedQuantity: basis.agreedQuantity,
-  };
-  if ("content" in basis) return { ...common, content: copyContent(basis.content) };
-  return {
-    ...common,
-    resource: {
-      resourceId: basis.resource.resourceId,
-      resourceRevisionId: basis.resource.resourceRevisionId,
-      resourceVersion: basis.resource.resourceVersion,
-      name: basis.resource.name,
-      measure: {
-        id: basis.resource.measure.id,
-        name: basis.resource.measure.name,
-        subject: basis.resource.measure.subject,
-        unit: basis.resource.measure.unit,
-      },
-      sourceQuantity: basis.resource.sourceQuantity,
-    },
+    content: copyContent(basis.content),
   };
 }
 
@@ -140,7 +119,6 @@ function reviewedRevision(
     note: current.note,
     reason,
   };
-  if (!("task" in current)) return { ...common, basis: copyBasis(current.basis) };
   return {
     ...common,
     basis: copyBasis(current.basis),

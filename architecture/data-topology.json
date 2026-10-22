@@ -416,14 +416,6 @@
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/615_objects.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/628_issue_object_references.sql",
-      "role": "authoritative"
-    },
-    {
       "path": "supabase/schemas/616_contracts.sql",
       "role": "authoritative"
     },
@@ -1884,70 +1876,6 @@
       "authority": true,
       "semanticOwner": "notifications",
       "concept": "notification-receipt"
-    },
-    {
-      "name": "object_types",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource-type"
-    },
-    {
-      "name": "objects",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource"
-    },
-    {
-      "name": "object_revisions",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource-revision"
-    },
-    {
-      "name": "object_relationships",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource-relationship"
-    },
-    {
-      "name": "object_relationship_revisions",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource-relationship-revision"
-    },
-    {
-      "name": "object_commands",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource-command-receipt"
-    },
-    {
-      "name": "issue_object_references",
-      "kind": "table",
-      "path": "supabase/schemas/628_issue_object_references.sql",
-      "authority": true,
-      "semanticOwner": "issue",
-      "concept": "issue-object-reference"
-    },
-    {
-      "name": "object_measures",
-      "kind": "table",
-      "path": "supabase/schemas/615_objects.sql",
-      "authority": true,
-      "semanticOwner": "resources",
-      "concept": "resource-measure"
     },
     {
       "name": "project_repository_imports",

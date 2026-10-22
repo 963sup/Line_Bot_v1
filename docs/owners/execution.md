@@ -10,7 +10,7 @@ Resource lifecycle, Issue workflow, Actions automation or Payroll calculation.
 
 - WRITE, MAINTAIN or ADMIN submits against the current ACTIVE Contract revision. A Task-based
   Contract line must either pin that Task directly or pin a Work ancestor in the same exact Content
-  plan revision. Historical Resource-only Contract lines cannot receive new submissions.
+  plan revision.
 - `task` is `{planRevisionId,nodeId}` and must resolve to an exact same-Repository Content Task with a
   planned quantity. `resources` is an explicit array of exact physical Resource revision references;
   new submissions require those Resources to be currently active.
@@ -35,13 +35,6 @@ Resource lifecycle, Issue workflow, Actions automation or Payroll calculation.
 - Internal acceptance is not legal acceptance, payroll approval or a payable amount. There is no
   cumulative cap, automatic agreement closure, posting, event delivery or background worker.
 
-## Historical reports
-
-Reports created from the earlier Resource-based Contract basis remain readable and reviewable under
-their original frozen shape. No Content Task, dependency graph or physical Resource list is inferred
-for them, and new reports cannot be created from that legacy basis. The broader historical data
-classification policy remains unresolved.
-
 ## Access and consistency
 
 Current active User and Repository access are rechecked on reads, commands and exact replay. Action
@@ -54,6 +47,8 @@ SQL transaction as Repository scope, source/aggregate locking, dependency read, 
 head/revision save and command receipt. It does not query another owner's private tables. Changed
 payload under the same actor/request identity conflicts; failures roll back the entire command.
 Runtime revisions and receipts permit only insert/read. DTOs explicitly project detached values.
+Rows without Content Task, physical Resource and dependency evidence, or with a Resource/Object
+Contract basis, are invalid and are not decoded as compatibility variants.
 
 ## Delivery and evidence
 

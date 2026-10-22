@@ -1,4 +1,4 @@
-import type { RepositorySummary } from "@line_bot_v1/repository/domain";
+import type { RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
 import type {
   Discussion,
   DiscussionCloseReason,

@@ -32,7 +32,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Issue.parent | issue-parent-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#parent |
 | Issue.relatesTo | issue-related-link | authoritative | current | GitHub FPT: schema-issues.json#Issue#relatesTo |
 | IssueComment | issue-comment | authoritative | current | GitHub FPT: schema-issues.json#IssueComment |
-| IssueObjectReference | issue-object-reference | reference | current | Issue-owned optional association to a same-Repository Object and an explicitly pinned immutable revision. |
 | IssueType | issue-type | authoritative | current | GitHub FPT: schema-issues.json#IssueType |
 
 ## Capabilities
@@ -40,7 +39,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
 | manage-issue-collaboration | required | implemented | Manage Issue comments, Repository Label links, Repository Milestone assignment, Issue hierarchy/dependencies/related links, and independent conversation lock state without transferring Repository authority. |
-| manage-issue-object-references | required | implemented | Manage same-Repository fixed Object Revision references using Issue authorization, version, event and receipt atomicity. |
 | manage-issue-types | required | implemented | Manage Organization-scoped IssueType definitions and the optional Issue-to-IssueType relation without granting Repository permission or changing Issue workflow. |
 | manage-issues | required | implemented | Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow. |
 | read-issue-activity | required | implemented | Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority. |
@@ -52,7 +50,6 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | --- | --- | --- | --- | --- | --- |
 | provides | insights | query | issue | current-state | Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider. |
 | provides | account | projection | issue | current-state | Account User administration reads the Issue-owned unfinished-assignment activity projection for administrative display; it does not authorize User suspension or transfer Issue writer or lifecycle authority to Account. |
-| consumes | resources | stable-identity+query | resources | same-transaction | Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive. |
 | consumes | namespace | query | namespace | current-state | Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority. |
 | consumes | namespace | command | namespace | same-transaction | Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction. |
 | consumes | numbering | command | numbering | same-transaction | Issue authorizes and creates its stable resource, then obtains an idempotent Repository work-item number in the same transaction; Numbering owns the shared Issue/future Pull Request series. |

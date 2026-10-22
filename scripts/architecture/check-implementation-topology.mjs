@@ -49,6 +49,29 @@ export function validatePackageExports(name, exportsMap = {}) {
     if (/^\.\/dist\/adapters(?:\.js|\/)/.test(compiled)) {
       errors.push(name + ": private adapter must not be package export: " + key);
     }
+    const primaryRole = key.match(
+      /^\.\/(domain|application|contracts|composition|testing)(?:\/|$)/,
+    )?.[1];
+    if (!primaryRole) continue;
+    const contractRole = key.match(
+      /^\.\/contracts\/(input|output|repositories|dto|errors)(?:\/|$)/,
+    )?.[1];
+    const role = contractRole ? `contracts/${contractRole}` : primaryRole;
+    const prefix = `./dist/${role}`;
+    const conditions = typeof target === "string" ? [["default", target]] : Object.entries(target);
+    for (const [condition, value] of conditions) {
+      if (
+        typeof value !== "string" ||
+        (!value.startsWith(`${prefix}/`) &&
+          ![".js", ".mjs", ".cjs", ".d.ts", ".d.mts", ".d.cts"].some(
+            (extension) => value === `${prefix}${extension}`,
+          ))
+      ) {
+        errors.push(
+          `public-export-role-matches-target: ${name} ${key} -> ${condition} ${String(value)}`,
+        );
+      }
+    }
   }
   return errors;
 }

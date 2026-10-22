@@ -12,7 +12,7 @@ export interface DailyCheckInStore {
    * A repeated human/business-day claim returns the original outcome; failures must roll back all writes.
    */
   claim(
-    memberId: string,
+    userId: string,
     now: number,
     expectedDay: string,
     authId?: string,
@@ -20,7 +20,7 @@ export interface DailyCheckInStore {
 
   /** Recovery requires active qualification in the read transaction; account views may show existing claims. */
   read(
-    memberId: string,
+    userId: string,
     day: string,
     qualification: "active" | "any",
   ): Promise<DailyCheckInClaim | null>;

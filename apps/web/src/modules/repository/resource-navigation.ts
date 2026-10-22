@@ -19,7 +19,6 @@ export type RepositoryResourceSection =
   | "resources"
   | "contracts"
   | "executions"
-  | "objects"
   | "wiki"
   | "insights"
   | "wbs"
@@ -87,11 +86,6 @@ export function repositoryResourceNavigationItems(
       section: "insights",
     },
     {
-      href: repositoryObjectsPath(ownerLogin, repositoryName),
-      label: "Objects (Legacy)",
-      section: "objects",
-    },
-    {
       href: repositoryLabelsPath(ownerLogin, repositoryName),
       label: "Labels",
       section: "labels",
@@ -133,14 +127,6 @@ export function repositoryContractsPath(ownerLogin: string, repositoryName: stri
 
 export function repositoryExecutionsPath(ownerLogin: string, repositoryName: string) {
   return `${repositoryPath(ownerLogin, repositoryName)}/executions`;
-}
-
-export function repositoryObjectsPath(ownerLogin: string, repositoryName: string) {
-  return `${repositoryPath(ownerLogin, repositoryName)}/objects`;
-}
-
-export function repositoryObjectPath(ownerLogin: string, repositoryName: string, objectId: string) {
-  return `${repositoryObjectsPath(ownerLogin, repositoryName)}/${encodeURIComponent(objectId)}`;
 }
 
 export function repositoryIssueCreatePath(ownerLogin: string, repositoryName: string) {

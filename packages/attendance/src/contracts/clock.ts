@@ -25,12 +25,12 @@ export type AttendanceSnapshot = {
 export type AttendanceResult = AttendanceSnapshot & { credited: number; replayed: boolean };
 export interface AttendanceStore {
   prepare(
-    memberId: string,
+    userId: string,
     now: number,
   ): Promise<{ version: number; working: boolean; sites: AttendancePoint[] }>;
-  snapshot(memberId: string, now: number): Promise<AttendanceSnapshot>;
+  snapshot(userId: string, now: number): Promise<AttendanceSnapshot>;
   execute(
-    memberId: string,
+    userId: string,
     action: AttendanceAction,
     input: AttendanceInput,
     now: number,

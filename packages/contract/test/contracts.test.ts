@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
-import type { ResourceQuantityBasis } from "@line_bot_v1/resources/domain/engineering-reference";
 import { parseContractCommand } from "../src/application/commands.js";
 import { createContracts } from "../src/application/use-cases/contracts.js";
 import type { ContractReads, ContractTransactions } from "../src/contracts/output/contracts.js";
@@ -65,7 +64,7 @@ const historicalCommand = {
   ],
 } as const;
 
-test("strict commands canonicalize IDs and reject unknown nested fields", () => {
+test("strict commands canonicalize IDs and reject unknown or retired line fields", () => {
   assert.equal(
     parseContractCommand({ ...command, contractId: ids.contract.toUpperCase() }).contractId,
     ids.contract,
@@ -78,9 +77,10 @@ test("strict commands canonicalize IDs and reject unknown nested fields", () => 
       }),
     (error) => error instanceof ContractError && error.code === "INVALID_INPUT",
   );
-  const parsedHistorical = parseContractCommand(historicalCommand);
-  assert.ok(parsedHistorical.action === "create" || parsedHistorical.action === "edit");
-  assert.equal(parsedHistorical.lines.length, 1);
+  assert.throws(
+    () => parseContractCommand(historicalCommand),
+    (error) => error instanceof ContractError && error.code === "INVALID_INPUT",
+  );
   assert.throws(
     () => parseContractCommand({ ...command, actorUserId: "attacker" }),
     (error) => error instanceof ContractError && error.code === "INVALID_INPUT",
@@ -194,46 +194,5 @@ test("authorized exact replay bypasses archive and source requalification", asyn
       lines: internal.lines,
     },
   });
-  assert.deepEqual(replay.counters(), { contentCalls: 0, replayCalls: 1 });
-});
-
-test("historical Resource command without a receipt cannot create a new revision", async () => {
-  const state = harness();
-  await assert.rejects(
-    state.app.execute("owner", historicalCommand),
-    (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
-  );
-  assert.equal(state.saved.length, 0);
-  assert.deepEqual(state.counters(), { contentCalls: 0, replayCalls: 1 });
-});
-
-test("historical Resource receipt replays without invoking the new Content provider", async () => {
-  const resource: ResourceQuantityBasis = {
-    resourceId: historicalCommand.lines[0].resourceId,
-    resourceRevisionId: historicalCommand.lines[0].resourceRevisionId,
-    resourceVersion: 1,
-    name: "Historical cable",
-    measure: { id: ids.measure, name: "Length", subject: "Installed length", unit: "m" },
-    sourceQuantity: "10",
-  };
-  const historical: ContractRevision = {
-    id: ids.revision,
-    contractId: ids.contract,
-    repositoryId: "repo",
-    version: 2,
-    parentRevisionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    actorUserId: "owner",
-    at: 90,
-    action: "activate",
-    state: "ACTIVE",
-    title: "Historical",
-    body: "",
-    lines: [{ lineId: ids.line, resource, agreedQuantity: "5" }],
-  };
-  const replay = harness({ archived: true, replay: historical });
-  const result = await replay.app.execute("owner", historicalCommand);
-  const line = result.revision.lines[0];
-  assert.ok(line && "resource" in line);
-  assert.equal(line.resource.resourceRevisionId, resource.resourceRevisionId);
   assert.deepEqual(replay.counters(), { contentCalls: 0, replayCalls: 1 });
 });

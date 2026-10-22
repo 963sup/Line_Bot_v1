@@ -9,7 +9,7 @@ import {
   numberValue,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import { RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import type { ProjectManagementView } from "../../../contracts/management.js";
 import { ProjectError } from "../../../domain.js";

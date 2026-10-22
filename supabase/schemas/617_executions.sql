@@ -24,13 +24,13 @@ create table app_private.engineering_execution_revisions (
   contract_revision_state text not null check(contract_revision_state='ACTIVE'),
   line_id uuid not null,
   basis jsonb not null check(jsonb_typeof(basis)='object'),
-  plan_revision_id uuid,
-  task_id uuid,
-  task jsonb,
-  source_resources jsonb,
-  dependency_version integer,
+  plan_revision_id uuid not null,
+  task_id uuid not null,
+  task jsonb not null,
+  source_resources jsonb not null,
+  dependency_version integer not null,
   dependency_revision_id uuid,
-  dependency jsonb,
+  dependency jsonb not null,
   quantity text not null check(
     quantity ~ '^(0|[1-9][0-9]{0,14})(\.[0-9]{1,3})?$' and quantity::numeric>0
   ),
@@ -61,30 +61,22 @@ create table app_private.engineering_execution_revisions (
     basis->>'lineId'=line_id::text
   ) is true),
   check((
+    jsonb_typeof(task)='object' and jsonb_typeof(source_resources)='array' and
+    dependency_version>=0 and jsonb_typeof(dependency)='object' and
+    basis ? 'content' and not (basis ? 'resource') and
+    basis->'content'->>'repositoryId'=repository_id and
+    basis->'content'->>'planRevisionId'=plan_revision_id::text and
+    task->>'repositoryId'=repository_id and
+    task->>'planRevisionId'=plan_revision_id::text and
+    task->'node'->>'id'=task_id::text and task->'node'->>'kind'='TASK' and
+    dependency ? 'version' and jsonb_typeof(dependency->'version')='number' and
+    (dependency->>'version')::integer=dependency_version and dependency ? 'revisionId' and
     (
-      plan_revision_id is null and task_id is null and task is null and
-      source_resources is null and dependency_version is null and
-      dependency_revision_id is null and dependency is null and
-      basis ? 'resource' and not (basis ? 'content')
-    ) or (
-      plan_revision_id is not null and task_id is not null and
-      jsonb_typeof(task)='object' and jsonb_typeof(source_resources)='array' and
-      dependency_version is not null and dependency_version>=0 and
-      jsonb_typeof(dependency)='object' and basis ? 'content' and not (basis ? 'resource') and
-      basis->'content'->>'repositoryId'=repository_id and
-      basis->'content'->>'planRevisionId'=plan_revision_id::text and
-      task->>'repositoryId'=repository_id and
-      task->>'planRevisionId'=plan_revision_id::text and
-      task->'node'->>'id'=task_id::text and task->'node'->>'kind'='TASK' and
-      dependency ? 'version' and jsonb_typeof(dependency->'version')='number' and
-      (dependency->>'version')::integer=dependency_version and dependency ? 'revisionId' and
-      (
-        (dependency_version=0 and dependency_revision_id is null and
-          dependency->>'revisionId' is null) or
-        (dependency_version>0 and dependency_revision_id is not null and
-          dependency->>'revisionId'=dependency_revision_id::text)
-      ) and jsonb_typeof(dependency->'prerequisiteTaskIds')='array'
-    )
+      (dependency_version=0 and dependency_revision_id is null and
+        dependency->>'revisionId' is null) or
+      (dependency_version>0 and dependency_revision_id is not null and
+        dependency->>'revisionId'=dependency_revision_id::text)
+    ) and jsonb_typeof(dependency->'prerequisiteTaskIds')='array'
   ) is true)
 );
 

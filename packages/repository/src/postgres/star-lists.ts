@@ -13,6 +13,7 @@ import {
   numericValue,
   stringValue,
 } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryStarListCommand,
   RepositoryStarListCreateCommand,
@@ -23,7 +24,6 @@ import type {
   RepositoryStarListSummary,
   RepositoryStarListVisibility,
 } from "../contracts/repositories/star-lists.js";
-import { RepositoryError } from "../contracts/repository.js";
 import { decodeCommandRow } from "./decode.js";
 import { readVisibleStarListRepositoryRows } from "./star-list-reads.js";
 

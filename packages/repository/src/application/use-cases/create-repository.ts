@@ -1,10 +1,10 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../contracts/errors/repository-error.js";
 import type {
   RepositoryCreateCommand,
   RepositoryCreationResult,
 } from "../../contracts/input/repository-creation.js";
 import type { RepositoryCreationPersistence } from "../../contracts/output/repository-creation.js";
-import { RepositoryError } from "../../contracts/repository.js";
 import {
   assertRepositoryCreationOwner,
   assertRepositoryCreationVisibility,

@@ -3,7 +3,8 @@ import type { createExecutions } from "@line_bot_v1/execution/application/use-ca
 import type { createTaskDependencies } from "@line_bot_v1/execution/application/use-cases/task-dependencies";
 import { ExecutionError } from "@line_bot_v1/execution/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeRepositoryName, RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";

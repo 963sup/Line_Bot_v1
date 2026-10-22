@@ -2,13 +2,13 @@ import { createHash } from "node:crypto";
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { Database, Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { numberValue, stringValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../../contracts/errors/repository-error.js";
 import type {
   RepositoryAccessEvidence,
   RepositoryAccessMutationResult,
   RepositoryAccessPersistence,
   RepositoryAccessTransaction,
 } from "../../../contracts/output/repository-access.js";
-import { RepositoryError } from "../../../contracts/repository.js";
 import type {
   RepositoryAccessGrantState,
   RepositoryAccessMutation,
