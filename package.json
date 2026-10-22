@@ -21,7 +21,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "architecture": "node scripts/architecture/check-all.mjs",
-    "architecture:test": "node --test scripts/architecture/check-architecture.test.mjs scripts/architecture/check-convergence-guardrails.test.mjs scripts/architecture/check-fpt-domain-truth.test.mjs scripts/architecture/check-semantic-architecture.test.mjs scripts/architecture/check-data-topology.test.mjs scripts/architecture/check-data-access.test.mjs",
+    "architecture:test": "node --test scripts/architecture/check-architecture.test.mjs scripts/architecture/check-convergence-guardrails.test.mjs scripts/architecture/check-fpt-domain-truth.test.mjs scripts/architecture/check-semantic-architecture.test.mjs scripts/architecture/check-data-topology.test.mjs scripts/architecture/check-data-access.test.mjs scripts/architecture/runtime-sql-source.test.mjs",
     "deadcode": "knip",
     "docs:check": "node scripts/docs/check-docs.mjs",
     "docs:test": "node --test scripts/docs/check-docs.test.mjs",
@@ -86,6 +86,7 @@
     "@modelcontextprotocol/sdk": "1.32.1",
     "next-devtools-mcp": "0.4.0",
     "@line_bot_v1/contract": "workspace:*",
-    "@line_bot_v1/execution": "workspace:*"
+    "@line_bot_v1/execution": "workspace:*",
+    "libpg-query": "17.7.4"
   }
 }

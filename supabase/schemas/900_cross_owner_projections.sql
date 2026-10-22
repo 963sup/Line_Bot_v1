@@ -545,6 +545,8 @@ where i.assignee is not null
 
 -- Identity/Access qualification read models. These expose only scope/membership/affiliation
 -- facts required to validate RoleAssignment effectiveness; they own no authority.
+-- owner_assignment_qualified is the current qualified assignment fact. Scope lifecycle remains
+-- a separate authorization-consumer check so lifecycle recovery can inspect an inactive scope.
 create view app_private.identity_access_enterprise_scopes
 with (security_invoker = true)
 as
@@ -560,7 +562,18 @@ select
   a.status as affiliation_status,
   a.version as affiliation_version,
   u.status as user_status,
-  u.status_version as user_status_version
+  u.status_version as user_status_version,
+  exists (
+    select 1
+    from app_private.enterprise_role_assignments r
+    where r.enterprise_account_id=a.enterprise_account_id
+      and r.user_id=a.user_id
+      and r.role='EnterpriseOwner'
+      and r.status='active'
+      and a.status='active'
+      and u.status='active'
+      and r.user_status_version=u.status_version
+  ) as owner_assignment_qualified
 from app_private.enterprise_direct_affiliations a
 join app_private.users u on u.id=a.user_id;
 
@@ -579,7 +592,19 @@ select
   m.status as membership_status,
   m.version as membership_version,
   u.status as user_status,
-  u.status_version as user_status_version
+  u.status_version as user_status_version,
+  exists (
+    select 1
+    from app_private.organization_role_assignments r
+    where r.organization_account_id=m.organization_account_id
+      and r.user_id=m.user_id
+      and r.role='OrganizationOwner'
+      and r.status='active'
+      and m.status='active'
+      and u.status='active'
+      and r.user_status_version=u.status_version
+      and r.membership_version=m.version
+  ) as owner_assignment_qualified
 from app_private.organization_memberships m
 join app_private.users u on u.id=m.user_id;
 

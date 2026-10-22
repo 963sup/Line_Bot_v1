@@ -8,7 +8,7 @@
 | `check-architecture.mjs` | 驗證 repository source/package architecture constraints。 |
 | `check-architecture.test.mjs` | 驗證 architecture checker fixtures。 |
 | `check-convergence-guardrails.test.mjs` | 防止已移除的歷史 architecture/compatibility 模式重新出現。 |
-| `check-data-access.mjs` | 將 runtime PostgreSQL adapter SQL access 與 canonical data topology 對照。 |
+| `check-data-access.mjs` | 依 canonical module/application roots 收集 runtime source，正規化跨平台路徑並檢查 SQL data access。 |
 | `check-data-access.test.mjs` | 驗證跨 owner read/write data-access guard。 |
 | `check-data-topology.mjs` | 驗證 data topology 與 declarative schema current state 一致。 |
 | `check-data-topology.test.mjs` | 驗證 schema file/relation/owner topology。 |
@@ -17,7 +17,10 @@
 | `check-semantic-architecture.test.mjs` | 驗證 semantic ownership/relationship/capability/evidence contracts。 |
 | `check-fpt-domain-truth.mjs` | 驗證 vendored GitHub FPT JSON file set、blob integrity 與 provenance。 |
 | `check-fpt-domain-truth.test.mjs` | 驗證 exact FPT mirror、tamper detection 與 direct symbol/field resolution。 |
-| `data-access-core.mjs` | 純函式 data-access policy engine。 |
+| `data-access-core.mjs` | 依 module semantic owner、relation authority 與 projection participation 檢查直接 SQL 存取。 |
+| `runtime-sql-source.mjs` | 以 TypeScript AST 擷取 query/exec 的有限靜態 SQL 組合，未解析的動態 SQL 明確失敗。 |
+| `runtime-sql-source.test.mjs` | 驗證 SQL 擷取、scope/alias、有限分支、forwarding 與 source failure。 |
+| `sql-relations.mjs` | 以固定版本 PostgreSQL parser 取得 physical read/write relations，保留 CTE lexical scope。 |
 | `data-topology-core.mjs` | 載入/解析 declarative SQL，編譯 relation-level data topology。 |
 | `semantic-cli.mjs` | `pnpm semantic` 唯一 CLI namespace。 |
 | `semantic-core.mjs` | 編譯 FPT domain truth、product overlay、implementation/data topology 與 indexes。 |
@@ -29,6 +32,8 @@
 | `semantic-query.mjs` | 執行 owner/concept/path/contracts/consumers/invariants/evidence 查詢。 |
 
 一般入口使用 `pnpm architecture`、`pnpm boundaries`、`pnpm semantic <verb>`；FPT references 只允許 exact `file` / `symbol` / optional `field`，不得在 overlay 再保存 category/adoption 摘要。修改前遵守同層 `AGENTS.md`。
+
+Data-access guard 掃描 current modules 與 application hosts 的 source，不以 adapter 目錄或變數名稱決定涵蓋範圍，並比對 pnpm workspace inventory，漏登錄的 module/app 明確失敗。只有 manifest 的 testing export 與 canonical testing placement 同時成立、且未同時作 runtime export 的 exact entry 排除；Dependency Cruiser 繼續禁止 runtime 使用 testing surface。公開 SQL wrapper 依 manifest 的 runtime export entries 與實際 re-export symbols 判定，內部 helper 沿相對 import 與有限 callsites 分析；未支援的 export target 或缺少對應 source 明確失敗。Declared participant 可讀 derived/constrained projection，但不能直接寫入。Neutral forwarding 只接受 Platform 公開 PostgreSQL `createSql` 契約的 symbol identity 與直接 callback parameter 證據，另外計數並在 caller 檢查實際 SQL。無法封閉分析的公開 SQL wrapper、任意 dynamic composition、語法錯誤或未宣告 relation 是 analysis failure，與 ownership violation 分開回報。這是直接 relation access 的靜態證據，不取代 SQL coordinator、RLS/grants、交易／授權與執行驗證。
 
 子域分類使用 `pnpm semantic view subdomains`，context status 與證據使用 `pnpm semantic view contexts`。`plan` / `context` / `explain` 從相同 canonical model 取得相關分類與邊界證據；`pnpm semantic package-docs` 更新各 package 的 generated projection。
 

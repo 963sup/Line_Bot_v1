@@ -260,6 +260,7 @@ function main() {
         "scripts/architecture/check-semantic-architecture.test.mjs",
         "scripts/architecture/check-data-topology.test.mjs",
         "scripts/architecture/check-data-access.test.mjs",
+        "scripts/architecture/runtime-sql-source.test.mjs",
       ],
     ],
     [

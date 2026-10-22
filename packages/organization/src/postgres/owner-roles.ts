@@ -21,11 +21,12 @@ export async function hasOrganizationOwnerAssignment(
          FROM organization_role_assignments r
          JOIN organization_memberships m
            ON m.organization_account_id=r.organization_account_id AND m.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
+         JOIN identity_access_organization_subjects u
+           ON u.organization_account_id=r.organization_account_id AND u.user_id=r.user_id
          WHERE r.organization_account_id=$1 AND r.user_id=$2
            AND r.role='OrganizationOwner' AND r.status='active'
-           AND m.status='active' AND u.status='active'
-           AND r.user_status_version=u.status_version
+           AND m.status='active' AND u.user_status='active'
+           AND r.user_status_version=u.user_status_version
            AND r.membership_version=m.version`,
         [organizationAccountId, userId],
       )
@@ -50,11 +51,12 @@ export async function hasReplacementOrganizationOwner(
          FROM organization_role_assignments r
          JOIN organization_memberships m
            ON m.organization_account_id=r.organization_account_id AND m.user_id=r.user_id
-         JOIN users u ON u.id=r.user_id
+         JOIN identity_access_organization_subjects u
+           ON u.organization_account_id=r.organization_account_id AND u.user_id=r.user_id
          WHERE r.organization_account_id=$1 AND r.user_id<>$2
            AND r.role='OrganizationOwner' AND r.status='active'
-           AND m.status='active' AND u.status='active'
-           AND r.user_status_version=u.status_version
+           AND m.status='active' AND u.user_status='active'
+           AND r.user_status_version=u.user_status_version
            AND r.membership_version=m.version
            AND ($3::text[] IS NULL OR NOT (r.user_id=ANY($3::text[])) OR EXISTS (
              SELECT 1 FROM organization_membership_sources s
@@ -81,11 +83,12 @@ export async function readOrganizationOwnerScopeIds(sql: Sql, userId: string): P
        FROM organization_role_assignments r
        JOIN organization_memberships m
          ON m.organization_account_id=r.organization_account_id AND m.user_id=r.user_id
-       JOIN users u ON u.id=r.user_id
+       JOIN identity_access_organization_subjects u
+         ON u.organization_account_id=r.organization_account_id AND u.user_id=r.user_id
        WHERE r.user_id=$1
          AND r.role='OrganizationOwner' AND r.status='active'
-         AND m.status='active' AND u.status='active'
-         AND r.user_status_version=u.status_version
+         AND m.status='active' AND u.user_status='active'
+         AND r.user_status_version=u.user_status_version
          AND r.membership_version=m.version
       ORDER BY r.organization_account_id`,
       [userId],
@@ -107,11 +110,12 @@ export async function readOrganizationOwnerAssignments(
        FROM organization_role_assignments r
        JOIN organization_memberships m
          ON m.organization_account_id=r.organization_account_id AND m.user_id=r.user_id
-       JOIN users u ON u.id=r.user_id
+       JOIN identity_access_organization_subjects u
+         ON u.organization_account_id=r.organization_account_id AND u.user_id=r.user_id
        WHERE r.organization_account_id=$1
          AND r.role='OrganizationOwner' AND r.status='active'
-         AND m.status='active' AND u.status='active'
-         AND r.user_status_version=u.status_version
+         AND m.status='active' AND u.user_status='active'
+         AND r.user_status_version=u.user_status_version
          AND r.membership_version=m.version
          AND ($2::text[] IS NULL OR r.user_id=ANY($2::text[]))
       ORDER BY r.user_id`,

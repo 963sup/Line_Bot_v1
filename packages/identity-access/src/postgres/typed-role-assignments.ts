@@ -6,13 +6,9 @@ export async function hasEnterpriseOwnerAssignment(sql: Sql, enterpriseId: strin
     (
       await sql.query(
         `SELECT 1
-         FROM enterprise_role_assignments r
-         JOIN identity_access_enterprise_subjects s
-           ON s.enterprise_account_id=r.enterprise_account_id AND s.user_id=r.user_id
-         WHERE r.enterprise_account_id=$1 AND r.user_id=$2
-           AND r.role='EnterpriseOwner' AND r.status='active'
-           AND s.affiliation_status='active' AND s.user_status='active'
-           AND r.user_status_version=s.user_status_version`,
+         FROM identity_access_enterprise_subjects s
+         WHERE s.enterprise_account_id=$1 AND s.user_id=$2
+           AND s.owner_assignment_qualified`,
         [enterpriseId, userId],
       )
     ).rows[0],
@@ -24,16 +20,12 @@ async function isEnterpriseOwner(sql: Sql, enterpriseId: string, userId: string)
     (
       await sql.query(
         `SELECT 1
-         FROM enterprise_role_assignments r
-         JOIN identity_access_enterprise_scopes e
-           ON e.account_id=r.enterprise_account_id
+         FROM identity_access_enterprise_scopes e
          JOIN identity_access_enterprise_subjects s
-           ON s.enterprise_account_id=r.enterprise_account_id AND s.user_id=r.user_id
-         WHERE r.enterprise_account_id=$1 AND r.user_id=$2
+           ON s.enterprise_account_id=e.account_id
+         WHERE e.account_id=$1 AND s.user_id=$2
            AND e.status='active'
-           AND r.role='EnterpriseOwner' AND r.status='active'
-           AND s.affiliation_status='active' AND s.user_status='active'
-           AND r.user_status_version=s.user_status_version`,
+           AND s.owner_assignment_qualified`,
         [enterpriseId, userId],
       )
     ).rows[0],
@@ -50,17 +42,12 @@ async function hasDirectOrganizationOwnerAssignment(
     (
       await sql.query(
         `SELECT 1
-         FROM organization_role_assignments r
-         JOIN identity_access_organization_scopes o
-           ON o.account_id=r.organization_account_id
+         FROM identity_access_organization_scopes o
          JOIN identity_access_organization_subjects s
-           ON s.organization_account_id=r.organization_account_id AND s.user_id=r.user_id
-         WHERE r.organization_account_id=$1 AND r.user_id=$2
+           ON s.organization_account_id=o.account_id
+         WHERE o.account_id=$1 AND s.user_id=$2
            AND ($3::boolean=false OR o.status='active')
-           AND r.role='OrganizationOwner' AND r.status='active'
-           AND s.membership_status='active' AND s.user_status='active'
-           AND r.user_status_version=s.user_status_version
-           AND r.membership_version=s.membership_version`,
+           AND s.owner_assignment_qualified`,
         [organizationAccountId, userId, requireActiveOrganization],
       )
     ).rows[0],

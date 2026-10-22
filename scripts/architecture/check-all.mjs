@@ -41,10 +41,20 @@ const dataAccess = await checkDataAccess();
 for (const error of dataAccess.errors) console.error(error);
 console.log(
   "Runtime data access: " +
+    dataAccess.workspaceCount +
+    " workspaces / " +
     dataAccess.sourceCount +
-    " source files, " +
-    dataAccess.errors.length +
-    " violations.",
+    " source files / " +
+    dataAccess.queryCount +
+    " queries, " +
+    dataAccess.violationCount +
+    " violations, " +
+    dataAccess.analysisFailureCount +
+    " analysis failures, " +
+    dataAccess.forwardedCount +
+    " neutral forwards, " +
+    dataAccess.testingOnlySourceCount +
+    " declared test-only entries.",
 );
 
 const dataTopology = await checkDataTopology();

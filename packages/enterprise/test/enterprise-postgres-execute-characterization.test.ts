@@ -80,7 +80,7 @@ test("enterprise execute authorizes current owner before replay lookup", async (
       return { rows: [activeEnterpriseRow()] };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_scopes e") &&
       text.includes("identity_access_enterprise_scopes")
     ) {
       return { rows: [] };
@@ -101,7 +101,7 @@ test("enterprise execute authorizes current owner before replay lookup", async (
     },
   );
 
-  assert.ok(queryIndex(queries, "FROM enterprise_role_assignments") >= 0);
+  assert.ok(queryIndex(queries, "FROM identity_access_enterprise_scopes e") >= 0);
   assert.equal(queryIndex(queries, "FROM governance_command_receipts"), -1);
   assert.equal(queryIndex(queries, "FROM enterprise_teams"), -1);
 });
@@ -135,7 +135,7 @@ test("enterprise execute replay hit short-circuits before team lock and write", 
       return { rows: [activeEnterpriseRow()] };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_scopes e") &&
       text.includes("identity_access_enterprise_scopes")
     ) {
       return { rows: [{ "?column?": 1 }] };
@@ -164,7 +164,7 @@ test("enterprise execute keeps lock authorization replay mutation and durable re
       return { rows: [activeEnterpriseRow()] };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_scopes e") &&
       text.includes("identity_access_enterprise_scopes")
     ) {
       return { rows: [{ "?column?": 1 }] };
@@ -277,7 +277,7 @@ test("Enterprise owns EnterpriseOwner grant mutation and durable evidence", asyn
       return { rows: [activeEnterpriseRow()] };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_scopes e") &&
       text.includes("identity_access_enterprise_scopes")
     ) {
       return { rows: [{ "?column?": 1 }] };
@@ -353,7 +353,7 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
       return { rows: [activeEnterpriseRow()] };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_scopes e") &&
       text.includes("identity_access_enterprise_scopes")
     ) {
       return { rows: [{ "?column?": 1 }] };
@@ -371,10 +371,17 @@ test("EnterpriseOwner revoke preserves the last-effective-owner invariant", asyn
     ) {
       return { rows: [{ status: "active", version: 1, user_status_version: 7 }] };
     }
-    if (text.includes("JOIN enterprise_direct_affiliations") && text.includes("r.user_id<>$2")) {
+    if (
+      text.includes("JOIN enterprise_direct_affiliations") &&
+      text.includes("JOIN identity_access_enterprise_subjects u") &&
+      text.includes("r.user_id<>$2")
+    ) {
       return { rows: [] };
     }
-    if (text.includes("JOIN enterprise_direct_affiliations")) {
+    if (
+      text.includes("JOIN enterprise_direct_affiliations") &&
+      text.includes("JOIN identity_access_enterprise_subjects u")
+    ) {
       return { rows: [{ "?column?": 1 }] };
     }
     if (text.includes("UPDATE enterprise_role_assignments")) {
@@ -456,7 +463,7 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
       return { rows: [activeEnterpriseRow()] };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_subjects s") &&
       text.includes("identity_access_enterprise_subjects") &&
       !text.includes("identity_access_enterprise_scopes")
     ) {
@@ -483,7 +490,7 @@ test("enterprise lifecycle mutation keeps lifecycle-owner authorization replay u
 
   const lifecycleAuthorization = queries.findIndex(
     (query) =>
-      query.text.includes("FROM enterprise_role_assignments") &&
+      query.text.includes("FROM identity_access_enterprise_subjects s") &&
       query.text.includes("identity_access_enterprise_subjects") &&
       !query.text.includes("identity_access_enterprise_scopes"),
   );
@@ -529,7 +536,7 @@ test("legacy Enterprise identity completion is owner-authorized, versioned, repl
       };
     }
     if (
-      text.includes("FROM enterprise_role_assignments") &&
+      text.includes("FROM identity_access_enterprise_scopes e") &&
       text.includes("identity_access_enterprise_scopes")
     ) {
       return { rows: [{ "?column?": 1 }] };
@@ -559,7 +566,7 @@ test("legacy Enterprise identity completion is owner-authorized, versioned, repl
 
   assert.equal(receipt.action, "complete-enterprise-identity");
   assert.equal(receipt.version, 2);
-  assert.ok(queryIndex(queries, "FROM enterprise_role_assignments") >= 0);
+  assert.ok(queryIndex(queries, "FROM identity_access_enterprise_scopes e") >= 0);
   assert.ok(queryIndex(queries, "FROM governance_command_receipts") >= 0);
   assert.ok(
     queryIndex(queries, "claim_scoped_namespace_name") < queryIndex(queries, "UPDATE enterprises"),
