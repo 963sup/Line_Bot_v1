@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { createRepositoryOverviewReader } from "../src/app/api/_composition/repository-overview.server";
 import { repositoryOverviewRequest } from "../src/modules/repository/overview-http.server";
 import { parseRepositoryOverview } from "../src/modules/repository/repository-overview";

@@ -1,11 +1,11 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { Database, SqlRow } from "@line_bot_v1/platform/postgres";
 import { literalValue, numericValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../../contracts/errors/repository-error.js";
 import type {
   RepositorySubscriptionSnapshot,
   RepositorySubscriptionState,
 } from "../../../contracts/input/repository-subscription.js";
-import { RepositoryError } from "../../../contracts/repository.js";
 import type { RepositorySelector } from "../../../contracts/selectors.js";
 import { repositorySubscriptionStates } from "../../../domain/repository/entities/repository.js";
 import { authorizedRepository } from "../../../postgres/access.js";

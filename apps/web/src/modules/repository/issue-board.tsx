@@ -13,7 +13,6 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { PageHeading, PageState, PrimaryLink } from "../../shared/ui/page-layout";
-import IssueObjectReferences from "./issue-object-references";
 import {
   clearPendingIssueCommand,
   type PendingIssueCommand,
@@ -478,20 +477,6 @@ export default function IssueBoard({
             建立者：{current.publisher}；Assignees：
             {current.assignees.length ? current.assignees.join(", ") : "未指派"}
           </p>
-
-          {ownerLogin && repositoryName && (
-            <IssueObjectReferences
-              liffId={liffId}
-              ownerLogin={ownerLogin}
-              repositoryName={repositoryName}
-              actorUserId={data.userId}
-              repositoryId={current.repositoryId}
-              issueId={current.id}
-              issueVersion={current.version}
-              canManage={canAssignIssue}
-              onUpdated={() => load(current.repositoryId, view)}
-            />
-          )}
 
           {current.state === "OPEN" &&
             ((current.assignees.includes(data.userId) && current.workflowStatus === "active") ||

@@ -1,6 +1,6 @@
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeRepositoryMilestoneNumber } from "@line_bot_v1/repository/domain";
+import { normalizeRepositoryMilestoneNumber } from "@line_bot_v1/repository/domain/milestone/value-objects/milestone-number";
 import { notFound } from "next/navigation";
 import RepositoryResourcesPanel from "../../../../../../modules/repository/resources-panel";
 

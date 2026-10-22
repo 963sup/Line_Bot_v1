@@ -27,9 +27,9 @@
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | ContractLine | contract-line | authoritative | current | One formal agreed quantity and frozen exact Content Work/Task plan basis embedded in an immutable Contract revision; distinct from both planned and actual quantity. |
-| EngineeringContract | engineering-contract | authoritative | current | Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions; historical Resource-based snapshots remain readable without inferred conversion. No monetary, signature or Payroll authority. |
+| EngineeringContract | engineering-contract | authoritative | current | Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions. No monetary, signature or Payroll authority. |
 | EngineeringContractCommandReceipt | engineering-contract-command-receipt | authoritative | current | Immutable actor/request fingerprint and exact committed Contract revision supporting current-authorized replay. |
-| EngineeringContractRevision | engineering-contract-revision | authoritative | current | Immutable whole commitment snapshot including exact Content plan-item and measure bases, positive agreed quantities, terms, state, actor and timestamp; active/closed terms cannot be amended. Legacy Resource-based revisions preserve their original representation. |
+| EngineeringContractRevision | engineering-contract-revision | authoritative | current | Immutable whole commitment snapshot including exact Content plan-item and measure bases, positive agreed quantities, terms, state, actor and timestamp; active/closed terms cannot be amended. |
 
 ## Capabilities
 
@@ -44,7 +44,6 @@
 | consumes | content | stable-identity+query | content | transaction-recheck+immutable-pin | Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments. |
 | consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
-| consumes | resources | stable-identity+query | resources | transaction-recheck+immutable-pin | Legacy immutable Resource-based commitments remain historical facts until explicit mapping. New commitments use Content plan items; no inferred conversion or new Resource-only commitments. |
 | provides | execution | stable-identity+query | contract | transaction-recheck+immutable-pin | Submission requires a currently ACTIVE Contract and its exact activation revision line in the same transaction. Existing reports remain reviewable/voidable after closure using the immutable ACTIVE source revision; Contract retains agreement authority. |
 
 ## Tactical Model Boundary

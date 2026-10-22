@@ -34,10 +34,8 @@ New `create`/`edit` lines reference exact Content Work or Task plan items:
 ```
 
 `edit` uses the same complete `title`, `body` and `lines` shape with the observed Contract version.
-`activate` and `close` contain only the common command fields plus their action. Resource-based line
-payloads are accepted only to replay an already committed historical receipt; they cannot create a
-new revision. A historical Resource-based draft must be explicitly edited to Content lines before
-activation.
+`activate` and `close` contain only the common command fields plus their action. Resource/Object-based
+line payloads are invalid, including attempts to replay the retired command shape.
 
 No HTTP route, UI, production probe, scheduler, credential logging, or automatic external work is installed by this command.
 

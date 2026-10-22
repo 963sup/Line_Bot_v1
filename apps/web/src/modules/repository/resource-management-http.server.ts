@@ -1,5 +1,5 @@
 import type { createRepositoryResourceManagement } from "@line_bot_v1/repository/application/resource-management";
-import { RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryBody, repositoryFailure } from "./http.server";
 

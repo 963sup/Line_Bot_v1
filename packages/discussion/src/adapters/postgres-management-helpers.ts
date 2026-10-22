@@ -8,7 +8,8 @@ import {
   numericValue,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import { type RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import { repositoryLabelIdsExist } from "@line_bot_v1/repository/postgres/resource-management";
 import type {

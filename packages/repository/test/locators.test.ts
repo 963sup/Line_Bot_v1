@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { accountLoginForRepositoryLocator } from "../src/application/owner-locator.js";
-import { normalizeRepositoryMilestoneNumber } from "../src/contracts/repository.js";
+import { normalizeRepositoryMilestoneNumber } from "../src/domain/milestone/value-objects/milestone-number.js";
 
 test("Repository composes its owner locator from the Account namespace contract", () => {
   assert.equal(accountLoginForRepositoryLocator(" Alice "), "alice");

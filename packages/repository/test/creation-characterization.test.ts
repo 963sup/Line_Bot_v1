@@ -5,8 +5,8 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryCreationStore } from "../src/composition/bootstrap/repository-creation.js";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryCreateCommand } from "../src/contracts/input/repository-creation.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 
 async function activeUser(db: Database, id: string, login = id) {
   await db.transaction(async (sql) => {

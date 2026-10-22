@@ -1,5 +1,5 @@
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type { RepositoryStarStore } from "../contracts/repositories/stars.js";
-import { RepositoryError } from "../contracts/repository.js";
 
 function repositoryId(value: string): string {
   const id = value.trim();

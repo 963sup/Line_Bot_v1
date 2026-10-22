@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { createRepositoryManagement } from "@line_bot_v1/repository/application/management";
-import { RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import {
   repositoryManagementCommandRequest,
   repositoryManagementViewRequest,

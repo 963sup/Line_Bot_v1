@@ -1,6 +1,6 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../contracts/errors/repository-error.js";
 import type { RepositoryCreateCommand } from "../../contracts/input/repository-creation.js";
-import { RepositoryError } from "../../contracts/repository.js";
 import { normalizeRepositoryName } from "../../domain/repository/value-objects/repository-name.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;

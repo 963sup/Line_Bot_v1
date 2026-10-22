@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseAttendanceSnapshot } from "../src/contracts/dto/attendance-client.js";
+import {
+  parseAttendanceClockPreparation,
+  parseAttendanceSnapshot,
+} from "../src/contracts/dto/attendance-client.js";
 import { parseAttendanceSupplementInbox } from "../src/contracts/dto/attendance-supplement.js";
 
 const point = {
@@ -23,6 +26,24 @@ test("Attendance client accepts an addressless point and preserves legacy descri
 
   assert.equal(snapshot.sites[0]?.address, null);
   assert.equal(snapshot.sites[1]?.address, "既有街道地址");
+});
+
+test("Attendance clock preparation publishes canonical User identity without a memberId alias", () => {
+  assert.equal(
+    parseAttendanceClockPreparation({ userId: "user", working: false, version: 0, sites: [] })
+      .userId,
+    "user",
+  );
+  assert.throws(
+    () =>
+      parseAttendanceClockPreparation({
+        memberId: "user",
+        working: false,
+        version: 0,
+        sites: [],
+      }),
+    /出勤準備回應不完整/,
+  );
 });
 
 test("Attendance supplement DTO accepts an addressless immutable site snapshot", () => {

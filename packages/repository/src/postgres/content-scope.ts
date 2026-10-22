@@ -1,7 +1,7 @@
 import { readActiveUserQualification } from "@line_bot_v1/account/postgres";
 import type { Sql } from "@line_bot_v1/platform/postgres";
 import { booleanValue, stringValue } from "@line_bot_v1/platform/validation";
-import { RepositoryError } from "../contracts/repository.js";
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import { authorizedRepository } from "./access.js";
 import { repositoryOwnerKind, repositoryVisibility } from "./decode.js";

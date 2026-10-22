@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
 import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
-import { parseContractCommand } from "../src/application/commands.js";
 import { createContracts } from "../src/application/use-cases/contracts.js";
 import { createPostgresContractDependencies } from "../src/composition/bootstrap/contracts.js";
 import { createPostgresContractReferenceReader } from "../src/composition/bootstrap/references.js";
@@ -266,6 +265,35 @@ test("Contract persists Content-based revisions, replay and established active l
       [randomUUID(), contractId, active.revision.revisionId],
     ),
   );
+  const retiredContractId = randomUUID();
+  const retiredRevisionId = randomUUID();
+  await db.transaction(async (sql) => {
+    await sql.query(
+      "INSERT INTO engineering_contracts(id,repository_id,version,head_revision_id) VALUES($1,'repo',1,$2)",
+      [retiredContractId, retiredRevisionId],
+    );
+    await sql.query(
+      `INSERT INTO engineering_contract_revisions(
+         id,contract_id,repository_id,version,parent_revision_id,actor_user_id,
+         at,action,state,title,body,lines
+       ) VALUES($1,$2,'repo',1,NULL,'owner',1,'create','DRAFT','retired','',$3::jsonb)`,
+      [
+        retiredRevisionId,
+        retiredContractId,
+        JSON.stringify([
+          {
+            lineId: randomUUID(),
+            resource: { resourceId: randomUUID(), resourceRevisionId: randomUUID() },
+            agreedQuantity: "1",
+          },
+        ]),
+      ],
+    );
+  });
+  await assert.rejects(
+    contracts.read("owner", { repositoryId: "repo", contractId: retiredContractId }),
+    (error) => error instanceof ContractError && error.code === "UNAVAILABLE",
+  );
   await assert.rejects(
     pg.query(
       `INSERT INTO app_private.engineering_contract_revisions(
@@ -288,156 +316,6 @@ test("Contract persists Content-based revisions, replay and established active l
     contracts.execute("owner", { ...create, requestId: randomUUID() }),
     (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
   );
-});
-
-test("historical Resource JSONB remains readable, replayable, referenceable and closable", async (t) => {
-  const { pg, db } = await postgresFixture();
-  t.after(() => pg.close());
-  await db.transaction(async (sql) => {
-    await sql.query(
-      `INSERT INTO users(id,status,status_version,"createdAt") VALUES('owner','active',1,1)`,
-    );
-    await sql.query("SELECT claim_account_login(id,'USER',id,1) FROM users");
-  });
-  await pg.query(
-    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Contract','private')",
-  );
-
-  const contractId = randomUUID();
-  const draftRevisionId = randomUUID();
-  const activeRevisionId = randomUUID();
-  const lineId = randomUUID();
-  const resourceId = randomUUID();
-  const resourceRevisionId = randomUUID();
-  const measureId = randomUUID();
-  const requestId = randomUUID();
-  const legacyCommand = {
-    action: "create",
-    repositoryId: "repo",
-    contractId,
-    requestId,
-    expectedVersion: 0,
-    title: "Legacy agreement",
-    body: "Frozen Resource basis",
-    lines: [{ lineId, resourceId, resourceRevisionId, agreedQuantity: "3.5" }],
-  } as const;
-  const parsedCommand = parseContractCommand(legacyCommand);
-  const fingerprint = createHash("sha256").update(JSON.stringify(parsedCommand)).digest("hex");
-  const legacyLine = {
-    lineId,
-    resource: {
-      resourceId,
-      resourceRevisionId,
-      resourceVersion: 7,
-      name: "Legacy cable",
-      measure: {
-        id: measureId,
-        name: "Length",
-        subject: "Installed route length",
-        unit: "m",
-      },
-      sourceQuantity: "10",
-    },
-    agreedQuantity: "3.5",
-  } as const;
-
-  await db.transaction(async (sql) => {
-    await sql.query(
-      `INSERT INTO engineering_contracts(id,repository_id,version,head_revision_id)
-       VALUES($1,'repo',2,$2)`,
-      [contractId, activeRevisionId],
-    );
-    await sql.query(
-      `INSERT INTO engineering_contract_revisions(
-         id,contract_id,repository_id,version,parent_revision_id,actor_user_id,
-         at,action,state,title,body,lines
-       ) VALUES
-         ($1,$2,'repo',1,NULL,'owner',10,'create','DRAFT',$3,$4,$5::jsonb),
-         ($6,$2,'repo',2,$1,'owner',20,'activate','ACTIVE',$3,$4,$5::jsonb)`,
-      [
-        draftRevisionId,
-        contractId,
-        legacyCommand.title,
-        legacyCommand.body,
-        JSON.stringify([legacyLine]),
-        activeRevisionId,
-      ],
-    );
-    await sql.query(
-      `INSERT INTO engineering_contract_commands(
-         actor_user_id,request_id,repository_id,contract_id,fingerprint,revision_id
-       ) VALUES('owner',$1,'repo',$2,$3,$4)`,
-      [requestId, contractId, fingerprint, draftRevisionId],
-    );
-  });
-
-  const contracts = createContracts({
-    ...createPostgresContractDependencies(db),
-    now: () => 30,
-  });
-  const current = await contracts.read("owner", { repositoryId: "repo", contractId });
-  assert.equal(current.revisionId, activeRevisionId);
-  assert.deepEqual(current.lines, [legacyLine]);
-
-  const history = await contracts.history("owner", { repositoryId: "repo", contractId });
-  assert.deepEqual(
-    history.revisions.map((revision) => [revision.revisionId, revision.state, revision.lines]),
-    [
-      [activeRevisionId, "ACTIVE", [legacyLine]],
-      [draftRevisionId, "DRAFT", [legacyLine]],
-    ],
-  );
-
-  const reference = await db.transaction((sql) =>
-    createPostgresContractReferenceReader(sql).verifyLine(
-      "owner",
-      "repo",
-      { contractId, contractRevisionId: activeRevisionId, lineId },
-      { requireActive: true },
-    ),
-  );
-  assert.ok("resource" in reference);
-  assert.deepEqual(reference.resource, legacyLine.resource);
-  assert.equal(reference.agreedQuantity, legacyLine.agreedQuantity);
-
-  const replay = await contracts.execute("owner", legacyCommand);
-  assert.equal(replay.requestId, requestId);
-  assert.equal(replay.revision.revisionId, draftRevisionId);
-  assert.deepEqual(replay.revision.lines, [legacyLine]);
-  await assert.rejects(
-    contracts.execute("owner", { ...legacyCommand, requestId: randomUUID() }),
-    (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
-  );
-
-  const closed = await contracts.execute("owner", {
-    action: "close",
-    repositoryId: "repo",
-    contractId,
-    requestId: randomUUID(),
-    expectedVersion: 2,
-  });
-  assert.equal(closed.revision.state, "CLOSED");
-  assert.deepEqual(closed.revision.lines, [legacyLine]);
-  assert.deepEqual(
-    (
-      await contracts.read("owner", {
-        repositoryId: "repo",
-        contractId,
-        revisionId: activeRevisionId,
-      })
-    ).lines,
-    [legacyLine],
-  );
-  const established = await db.transaction((sql) =>
-    createPostgresContractReferenceReader(sql).verifyLine(
-      "owner",
-      "repo",
-      { contractId, contractRevisionId: activeRevisionId, lineId },
-      { requireActive: false },
-    ),
-  );
-  assert.ok("resource" in established);
-  assert.deepEqual(established.resource, legacyLine.resource);
 });
 
 const url = process.env.CAPABILITY_TEST_DATABASE_URL;

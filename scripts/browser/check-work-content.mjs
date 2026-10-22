@@ -460,105 +460,6 @@ try {
   const currentPlan = await content.read("owner", { repositoryId: "repo" });
   assert.equal(currentPlan.version, 2);
 
-  const legacyContractId = "11111111-1111-4111-8111-111111111111";
-  const legacyRevisionId = "22222222-2222-4222-8222-222222222222";
-  const legacyLine = {
-    lineId: "33333333-3333-4333-8333-333333333333",
-    resource: {
-      resourceId: "44444444-4444-4444-8444-444444444444",
-      resourceRevisionId: "55555555-5555-4555-8555-555555555555",
-      resourceVersion: 7,
-      name: "歷史光纜",
-      measure: {
-        id: "66666666-6666-4666-8666-666666666666",
-        name: "歷史長度",
-        subject: "歷史安裝長度",
-        unit: "m",
-      },
-      sourceQuantity: "80",
-    },
-    agreedQuantity: "60",
-  };
-  await fixture.db.transaction(async (sql) => {
-    await sql.query(
-      `INSERT INTO engineering_contracts(id,repository_id,version,head_revision_id)
-       VALUES($1,'repo',1,$2)`,
-      [legacyContractId, legacyRevisionId],
-    );
-    await sql.query(
-      `INSERT INTO engineering_contract_revisions(
-         id,contract_id,repository_id,version,parent_revision_id,actor_user_id,
-         at,action,state,title,body,lines
-       ) VALUES($1,$2,'repo',1,NULL,'owner',90,'create','DRAFT',$3,$4,$5::jsonb)`,
-      [
-        legacyRevisionId,
-        legacyContractId,
-        "Legacy Resource 草稿",
-        "僅供 browser fixture 驗證完整替換",
-        JSON.stringify([legacyLine]),
-      ],
-    );
-  });
-  const seededLegacyDraft = await contracts.read("owner", {
-    repositoryId: "repo",
-    contractId: legacyContractId,
-  });
-  assert.ok("resource" in seededLegacyDraft.lines[0]);
-
-  await page.goto(`${base}/alice/Alpha/contracts`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Legacy Resource 草稿.*DRAFT/ }).click();
-  const legacyEditor = card("Legacy Resource 草稿").last();
-  await expect(legacyEditor).toContainText("此草稿含 legacy Resource lines");
-  const saveLegacyReplacement = legacyEditor.getByRole("button", {
-    name: "儲存草稿",
-    exact: true,
-  });
-  const activateLegacyReplacement = legacyEditor.getByRole("button", {
-    name: "啟用",
-    exact: true,
-  });
-  await expect(saveLegacyReplacement).toBeDisabled();
-  await expect(activateLegacyReplacement).toBeDisabled();
-  await legacyEditor
-    .getByRole("button", { name: "清除舊 lines，改用 Content", exact: true })
-    .click();
-  await expect(saveLegacyReplacement).toBeDisabled();
-  await expect(activateLegacyReplacement).toBeDisabled();
-  await selectByText(legacyEditor.locator("select"), /WORK: 主幹光纖施工/);
-  await legacyEditor.locator('input[placeholder="約定數量"]').fill("80");
-  await legacyEditor.getByRole("button", { name: "加入", exact: true }).click();
-  await expect(saveLegacyReplacement).toBeEnabled();
-  await expect(activateLegacyReplacement).toBeDisabled();
-  const legacySaveResponse = waitForMutation("/api/repository-contracts");
-  await saveLegacyReplacement.click();
-  await waitForCompletedResponse(legacySaveResponse);
-  const replacedLegacyDraft = await contracts.read("owner", {
-    repositoryId: "repo",
-    contractId: legacyContractId,
-  });
-  assert.equal(replacedLegacyDraft.version, 2);
-  assert.equal(replacedLegacyDraft.lines.length, 1);
-  assert.ok("content" in replacedLegacyDraft.lines[0]);
-  assert.equal(replacedLegacyDraft.lines[0].content.planRevisionId, currentPlan.revisionId);
-  assert.equal("resource" in replacedLegacyDraft.lines[0], false);
-  const replacementHistory = await contracts.history("owner", {
-    repositoryId: "repo",
-    contractId: legacyContractId,
-  });
-  assert.equal(replacementHistory.revisions.length, 2);
-  assert.ok("resource" in replacementHistory.revisions[1].lines[0]);
-  await expect(activateLegacyReplacement).toBeEnabled();
-  const legacyActivateResponse = waitForMutation("/api/repository-contracts");
-  await activateLegacyReplacement.click();
-  await waitForCompletedResponse(legacyActivateResponse);
-  const activatedLegacyContract = await contracts.read("owner", {
-    repositoryId: "repo",
-    contractId: legacyContractId,
-  });
-  assert.equal(activatedLegacyContract.state, "ACTIVE");
-  assert.equal(activatedLegacyContract.version, 3);
-  assert.ok("content" in activatedLegacyContract.lines[0]);
-
   await page.goto(`${base}/alice/Alpha/contracts`, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /主幹光纖合約/ }).click();
   await expect(page.getByRole("button", { name: "啟用", exact: true })).toBeEnabled();
@@ -1057,8 +958,6 @@ try {
         closedContractState: closedContract.state,
         submittedAfterClosureState: "SUBMITTED",
         rejectedExecutionState: rejectedExecution.state,
-        legacyDraftExplicitlyReplacedWithContent: true,
-        legacyReplacementContractId: activatedLegacyContract.contractId,
         staleResourceResponseDiscarded: true,
         staleResourceRejectionDiscarded: true,
         resourceExactReplayKeptSingleRevision: true,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createRepositoryPulse } from "@line_bot_v1/insights/application/use-cases/repository-pulse";
-import { RepositoryError } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { insightsRequest } from "../src/modules/repository/insights-http.server";
 import { insightsView } from "../src/modules/repository/insights-response";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error";

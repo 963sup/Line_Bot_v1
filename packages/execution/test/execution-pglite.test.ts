@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
 import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
@@ -8,7 +8,7 @@ import { createPostgresContractDependencies } from "@line_bot_v1/contract/compos
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
 import { createPostgresResourceDependencies } from "@line_bot_v1/resources/composition/bootstrap/resources";
-import { parseExecutionCommand } from "../src/application/commands/executions.js";
+import { decodeExecutionRevision } from "../src/adapters/outbound/persistence/executions.js";
 import { createExecutions } from "../src/application/use-cases/executions.js";
 import { createTaskDependencies } from "../src/application/use-cases/task-dependencies.js";
 import { createPostgresExecutionDependencies } from "../src/composition/bootstrap/executions.js";
@@ -329,101 +329,97 @@ test("public Content, Resource, Contract, dependency and Execution compositions 
   });
   assert.equal(retried.revision.state, "SUBMITTED", "failed submission leaves no receipt or head");
 
-  const legacyExecutionId = randomUUID();
-  const legacyRevisionId = randomUUID();
-  const legacyBasis = {
+  const retiredExecutionId = randomUUID();
+  const retiredRevisionId = randomUUID();
+  await assert.rejects(
+    db.transaction(async (sql) => {
+      await sql.query(
+        "INSERT INTO engineering_executions(id,repository_id,contract_id,version,head_revision_id) VALUES($1,'repo',$2,1,$3)",
+        [retiredExecutionId, contractId, retiredRevisionId],
+      );
+      await sql.query(
+        `INSERT INTO engineering_execution_revisions(
+           id,execution_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
+           contract_id,contract_revision_id,contract_revision_state,line_id,basis,quantity,note,reason
+         ) VALUES($1,$2,'repo',1,NULL,'owner',1,'submit','SUBMITTED',$3,$4,'ACTIVE',$5,$6::jsonb,'1','',NULL)`,
+        [
+          retiredRevisionId,
+          retiredExecutionId,
+          contractId,
+          active.revision.revisionId,
+          lineId,
+          JSON.stringify({
+            contractId,
+            contractRevisionId: active.revision.revisionId,
+            lineId,
+            agreedQuantity: "100",
+            resource: { resourceId, resourceRevisionId: resource.revision.revisionId },
+          }),
+        ],
+      );
+    }),
+    (error) =>
+      Boolean(error && typeof error === "object" && Reflect.get(error, "code") === "23502"),
+  );
+
+  const canonicalColumnsResourceBasisId = randomUUID();
+  const canonicalColumnsResourceBasisRevisionId = randomUUID();
+  const resourceBasis = {
     contractId,
     contractRevisionId: active.revision.revisionId,
     lineId,
     agreedQuantity: "100",
-    resource: {
-      resourceId,
-      resourceRevisionId: resource.revision.revisionId,
-      resourceVersion: 1,
-      name: "Legacy lift",
-      measure: { id: "legacy", name: "Length", subject: "Installed", unit: "m" },
-      sourceQuantity: "100",
-    },
+    resource: { resourceId, resourceRevisionId: resource.revision.revisionId },
   };
-  const legacySubmitCommand = {
-    action: "submit",
-    repositoryId: "repo",
-    executionId: legacyExecutionId,
-    requestId: randomUUID(),
-    expectedVersion: 0,
-    contractId,
-    contractRevisionId: active.revision.revisionId,
-    lineId,
-    quantity: "1",
-    note: "legacy",
-  } as const;
-  const legacyFingerprint = createHash("sha256")
-    .update(JSON.stringify(parseExecutionCommand(legacySubmitCommand)))
-    .digest("hex");
-  await db.transaction(async (sql) => {
-    await sql.query(
-      "INSERT INTO engineering_executions(id,repository_id,contract_id,version,head_revision_id) VALUES($1,'repo',$2,1,$3)",
-      [legacyExecutionId, contractId, legacyRevisionId],
-    );
-    await sql.query(
-      `INSERT INTO engineering_execution_revisions(
-         id,execution_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
-         contract_id,contract_revision_id,contract_revision_state,line_id,basis,quantity,note,reason
-       ) VALUES($1,$2,'repo',1,NULL,'owner',1,'submit','SUBMITTED',$3,$4,'ACTIVE',$5,$6::jsonb,'1','legacy',NULL)`,
-      [
-        legacyRevisionId,
-        legacyExecutionId,
-        contractId,
-        active.revision.revisionId,
-        lineId,
-        JSON.stringify(legacyBasis),
-      ],
-    );
-    await sql.query(
-      `INSERT INTO engineering_execution_commands(
-         actor_user_id,request_id,repository_id,execution_id,fingerprint,revision_id
-       ) VALUES('owner',$1,'repo',$2,$3,$4)`,
-      [legacySubmitCommand.requestId, legacyExecutionId, legacyFingerprint, legacyRevisionId],
-    );
-  });
-  const replayedLegacySubmit = await executions.execute("owner", legacySubmitCommand);
-  assert.equal(replayedLegacySubmit.revision.revisionId, legacyRevisionId);
-  assert.equal(
-    (await executions.history("owner", { repositoryId: "repo", executionId: legacyExecutionId }))
-      .revisions.length,
-    1,
-    "exact legacy submit receipt replay does not append another revision",
+  await assert.rejects(
+    db.transaction(async (sql) => {
+      await sql.query(
+        "INSERT INTO engineering_executions(id,repository_id,contract_id,version,head_revision_id) VALUES($1,'repo',$2,1,$3)",
+        [canonicalColumnsResourceBasisId, contractId, canonicalColumnsResourceBasisRevisionId],
+      );
+      await sql.query(
+        `INSERT INTO engineering_execution_revisions(
+           id,execution_id,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
+           contract_id,contract_revision_id,contract_revision_state,line_id,basis,
+           plan_revision_id,task_id,task,source_resources,
+           dependency_version,dependency_revision_id,dependency,quantity,note,reason
+         )
+         SELECT $1,$2,repository_id,version,parent_revision_id,actor_user_id,at,action,state,
+                contract_id,contract_revision_id,contract_revision_state,line_id,$3::jsonb,
+                plan_revision_id,task_id,task,source_resources,
+                dependency_version,dependency_revision_id,dependency,quantity,note,reason
+         FROM engineering_execution_revisions WHERE id=$4`,
+        [
+          canonicalColumnsResourceBasisRevisionId,
+          canonicalColumnsResourceBasisId,
+          JSON.stringify(resourceBasis),
+          submitted.revision.revisionId,
+        ],
+      );
+    }),
+    (error) =>
+      Boolean(error && typeof error === "object" && Reflect.get(error, "code") === "23514"),
   );
-  const legacy = await executions.read("owner", {
-    repositoryId: "repo",
-    executionId: legacyExecutionId,
-  });
-  assert.equal("task" in legacy, false);
 
-  await contracts.execute("owner", {
-    action: "close",
-    repositoryId: "repo",
-    contractId,
-    requestId: randomUUID(),
-    expectedVersion: 2,
+  const persisted = await db.transaction(async (sql) => {
+    const result = await sql.query("SELECT * FROM engineering_execution_revisions WHERE id=$1", [
+      submitted.revision.revisionId,
+    ]);
+    return result.rows[0];
   });
-  const legacyReviewCommand = {
-    action: "accept",
-    repositoryId: "repo",
-    executionId: legacyExecutionId,
-    requestId: randomUUID(),
-    expectedVersion: 1,
-  } as const;
-  const reviewedLegacy = await executions.execute("owner", legacyReviewCommand);
-  assert.equal(reviewedLegacy.revision.state, "ACCEPTED");
-  assert.equal("task" in reviewedLegacy.revision, false);
-  assert.deepEqual(await executions.execute("owner", legacyReviewCommand), reviewedLegacy);
-  assert.equal(
-    (await executions.history("owner", { repositoryId: "repo", executionId: legacyExecutionId }))
-      .revisions.length,
-    2,
-    "exact legacy receipt replay does not append another revision",
+  assert.ok(persisted);
+  assert.throws(
+    () =>
+      decodeExecutionRevision({
+        ...persisted,
+        basis: resourceBasis,
+        task: null,
+        source_resources: null,
+        dependency: null,
+      }),
+    TypeError,
   );
+
   const voided = await executions.execute("owner", {
     action: "void",
     repositoryId: "repo",

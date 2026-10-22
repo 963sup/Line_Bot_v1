@@ -1765,86 +1765,6 @@
       "persistenceExpectation": "relation"
     },
     {
-      "id": "resource",
-      "canonicalName": "Resource",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Repository-scoped resource with stable identity, immutable versioned content and optional exact reference/planned quantity; its Object wire and storage identifiers remain stable. It does not replace other contexts domain models.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "resource-type",
-      "canonicalName": "ResourceType",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Repository-scoped named classification with enablement and version; exactly one classification per Resource and no dynamic field schema.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "resource-revision",
-      "canonicalName": "ResourceRevision",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable Resource content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "resource-relationship",
-      "canonicalName": "ResourceRelationship",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "resource-relationship-revision",
-      "canonicalName": "ResourceRelationshipRevision",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable version of one Resource Relationship; not a whole Repository graph snapshot.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "resource-command-receipt",
-      "canonicalName": "ResourceCommandReceipt",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable actor/request fingerprint and committed result supporting current-authorized exact replay.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "issue-object-reference",
-      "canonicalName": "IssueObjectReference",
-      "kind": "reference",
-      "owner": "issue",
-      "lifecycle": "current",
-      "definition": "Issue-owned optional association to a same-Repository Object and an explicitly pinned immutable revision.",
-      "authorityMode": "reference-only",
-      "persistenceExpectation": "relation"
-    },
-    {
-      "id": "resource-measure",
-      "canonicalName": "ResourceMeasure",
-      "kind": "authoritative",
-      "owner": "resources",
-      "lifecycle": "current",
-      "definition": "Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition.",
-      "authorityMode": "authoritative",
-      "persistenceExpectation": "relation"
-    },
-    {
       "id": "project-repository-import",
       "canonicalName": "Project Repository Import",
       "definition": "Project-owned standing intent to admit existing and future matching Issues from an authorized Repository, bound to a currently qualified Project administrator.",
@@ -1870,7 +1790,7 @@
       "kind": "authoritative",
       "owner": "contract",
       "lifecycle": "current",
-      "definition": "Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions; historical Resource-based snapshots remain readable without inferred conversion. No monetary, signature or Payroll authority.",
+      "definition": "Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions. No monetary, signature or Payroll authority.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1880,7 +1800,7 @@
       "kind": "authoritative",
       "owner": "contract",
       "lifecycle": "current",
-      "definition": "Immutable whole commitment snapshot including exact Content plan-item and measure bases, positive agreed quantities, terms, state, actor and timestamp; active/closed terms cannot be amended. Legacy Resource-based revisions preserve their original representation.",
+      "definition": "Immutable whole commitment snapshot including exact Content plan-item and measure bases, positive agreed quantities, terms, state, actor and timestamp; active/closed terms cannot be amended.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -1910,7 +1830,7 @@
       "kind": "authoritative",
       "owner": "execution",
       "lifecycle": "current",
-      "definition": "Immutable submission/review snapshot with exact Content Task, Contract commitment, physical Resource revisions, observed prerequisite evidence, actual quantity, note and explicit review decision. Historical Resource-only reports retain their original facts; not payment or legal acceptance.",
+      "definition": "Immutable submission/review snapshot with exact Content Task, Contract commitment, physical Resource revisions, observed prerequisite evidence, actual quantity, note and explicit review decision; not payment or legal acceptance.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },
@@ -2957,29 +2877,16 @@
     },
     {
       "id": "resources-repository-scope",
-      "from": "resource",
+      "from": "physical-resource",
       "to": "repository",
       "kind": "reference",
       "owner": "resources",
       "provider": "repository",
       "consumer": "resources",
-      "meaning": "Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority.",
+      "meaning": "Physical Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority.",
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck"
-    },
-    {
-      "id": "issue-object-pinned-reference",
-      "from": "issue-object-reference",
-      "to": "resource-revision",
-      "kind": "reference",
-      "owner": "issue",
-      "provider": "resources",
-      "consumer": "issue",
-      "meaning": "Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive.",
-      "integrationMode": "stable-identity+query",
-      "authority": "resources",
-      "consistency": "same-transaction"
     },
     {
       "id": "resources-platform-text",
@@ -3016,15 +2923,6 @@
       "integrationMode": "stable-identity+query",
       "authority": "repository",
       "consistency": "transaction-recheck"
-    },
-    {
-      "id": "contract-resource-quantity-basis",
-      "provider": "resources",
-      "consumer": "contract",
-      "meaning": "Legacy immutable Resource-based commitments remain historical facts until explicit mapping. New commitments use Content plan items; no inferred conversion or new Resource-only commitments.",
-      "integrationMode": "stable-identity+query",
-      "authority": "resources",
-      "consistency": "transaction-recheck+immutable-pin"
     },
     {
       "id": "contract-platform-text",
@@ -3179,7 +3077,7 @@
           "packages/account/src/adapters/outbound/persistence/google-link.ts",
           "packages/account/src/composition/bootstrap/google-link.ts"
         ],
-        "publicExports": ["./application/user", "./contracts/repositories/user"],
+        "publicExports": ["./application/user"],
         "entrypoints": [],
         "testPaths": [
           "packages/account/test/user.test.ts",
@@ -3253,7 +3151,7 @@
           "packages/account/src/adapters/outbound/persistence/user-management.ts",
           "packages/account/src/composition/bootstrap/user-management.ts"
         ],
-        "publicExports": ["./application/manage-users", "./contracts/repositories/user-management"],
+        "publicExports": ["./application/manage-users"],
         "entrypoints": ["apps/web/src/app/api/membership/manage/route.ts"],
         "testPaths": [
           "packages/account/test/user-management.test.ts",
@@ -3644,10 +3542,9 @@
           "./application/collaboration",
           "./application/commands/team-command",
           "./contracts/input/team-command",
-          "./contracts/repositories/team",
           "./contracts",
-          "./domain/errors/team-error",
-          "./domain/value-objects/team-slug",
+          "./contracts/errors/team-error",
+          "./application/commands/team-slug",
           "./postgres"
         ],
         "entrypoints": [
@@ -3722,7 +3619,7 @@
         ],
         "publicExports": [
           "./application/creation",
-          "./contracts/repositories/creation",
+          "./contracts/input/repository-creation",
           "./postgres/creation"
         ],
         "entrypoints": [
@@ -3758,11 +3655,20 @@
         "scope": "Current Repository reads over explicit access, PUBLIC visibility or same-active-Enterprise INTERNAL visibility, plus public anonymous lookup.",
         "sourcePaths": [
           "packages/repository/src/application/public.ts",
+          "packages/repository/src/contracts/errors/repository-error.ts",
           "packages/repository/src/contracts/output/public.ts",
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/domain/repository/value-objects/repository-name.ts",
           "packages/repository/src/postgres/access.ts",
           "packages/repository/src/postgres/public.ts"
         ],
-        "publicExports": ["./application/public", "./contracts/output/public"],
+        "publicExports": [
+          "./application/public",
+          "./contracts/errors/repository-error",
+          "./contracts/output/public",
+          "./domain/repository/entities/repository",
+          "./domain/repository/value-objects/repository-name"
+        ],
         "entrypoints": [
           "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
           "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx",
@@ -3807,7 +3713,7 @@
         ],
         "publicExports": [
           "./application/management",
-          "./contracts/repositories/management",
+          "./contracts/input/repository-management",
           "./postgres/management"
         ],
         "entrypoints": [
@@ -3855,7 +3761,7 @@
         ],
         "publicExports": [
           "./application/subscription",
-          "./contracts/repositories/subscription",
+          "./contracts/input/repository-subscription",
           "./postgres/subscription"
         ],
         "entrypoints": [
@@ -3898,11 +3804,13 @@
           "packages/repository/src/application/use-cases/repository-access-mutation.ts",
           "packages/repository/src/adapters/outbound/persistence/repository-access.ts",
           "packages/repository/src/adapters/outbound/persistence/repository-access-query.ts",
-          "packages/repository/src/composition/bootstrap/repository-access.ts"
+          "packages/repository/src/composition/bootstrap/repository-access.ts",
+          "packages/repository/src/domain/repository/value-objects/repository-capability.ts"
         ],
         "publicExports": [
           "./application/access",
-          "./contracts/repositories/access",
+          "./contracts/input/repository-access",
+          "./domain/repository/value-objects/repository-capability",
           "./postgres/access-management"
         ],
         "entrypoints": [
@@ -4283,12 +4191,14 @@
         "sourcePaths": [
           "packages/repository/src/application/resources.ts",
           "packages/repository/src/contracts/output/resources.ts",
+          "packages/repository/src/domain/milestone/value-objects/milestone-number.ts",
           "packages/repository/src/postgres/resources.ts",
           "packages/repository/src/postgres/access.ts"
         ],
         "publicExports": [
           "./application/resources",
           "./contracts/output/resources",
+          "./domain/milestone/value-objects/milestone-number",
           "./postgres/resources"
         ],
         "entrypoints": [
@@ -4698,11 +4608,7 @@
           "packages/identity-access/src/composition/bootstrap/permissions.ts",
           "packages/identity-access/src/domain/permission.ts"
         ],
-        "publicExports": [
-          "./application/permissions",
-          "./application/permissions/ports",
-          "./domain/permission"
-        ],
+        "publicExports": ["./application/permissions", "./domain/permission"],
         "entrypoints": ["apps/web/src/app/(mobile)/(secondary)/settings/permissions/page.tsx"],
         "testPaths": [
           "packages/identity-access/test/permission.test.ts",
@@ -5396,88 +5302,6 @@
       }
     },
     {
-      "id": "manage-legacy-repository-objects",
-      "owner": "resources",
-      "kind": "leaf",
-      "intent": "Preserve legacy Object behavior and historical references pending explicit data classification and verified owner cutover.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
-      "validationProfiles": [
-        "semantic-architecture",
-        "architecture-tests",
-        "schema",
-        "tests",
-        "fast-repository"
-      ],
-      "runtimeExpectation": "required",
-      "implementation": {
-        "status": "implemented",
-        "scope": "Preserve legacy Object behavior and historical references pending explicit data classification and verified owner cutover.",
-        "sourcePaths": [
-          "packages/resources/src/domain/object.ts",
-          "packages/resources/src/domain/object-type.ts",
-          "packages/resources/src/domain/relationship.ts",
-          "packages/resources/src/application/use-cases/objects.ts",
-          "packages/resources/src/adapters/outbound/persistence/objects.ts",
-          "packages/resources/src/domain/engineering.ts",
-          "packages/resources/src/application/use-cases/engineering.ts",
-          "packages/resources/src/domain/quantity.ts"
-        ],
-        "publicExports": [
-          "./application/use-cases/objects",
-          "./contracts/dto/objects",
-          "./contracts/output/references",
-          "./composition/bootstrap/objects",
-          "./composition/bootstrap/references",
-          "./domain/error",
-          "./domain/quantity",
-          "./domain/engineering-reference"
-        ],
-        "entrypoints": [
-          "apps/web/src/app/api/repository-objects/route.ts",
-          "apps/web/src/app/api/repository-object-types/route.ts",
-          "apps/web/src/app/api/repository-object-relationships/route.ts",
-          "apps/web/src/app/api/repository-object-measures/route.ts"
-        ],
-        "testPaths": [
-          "packages/resources/test/object-persistence.test.ts",
-          "packages/resources/test/object-postgres.test.ts",
-          "apps/web/test/object-http.test.ts",
-          "packages/resources/test/object-engineering.test.ts",
-          "packages/resources/test/object-engineering-persistence.test.ts",
-          "packages/resources/test/object-engineering-postgres.test.ts",
-          "packages/resources/test/quantity.test.ts"
-        ],
-        "note": "Transitional existing writer, not the physical Resource model. No automatic classification, record copy or replay rewrite."
-      }
-    },
-    {
-      "id": "manage-issue-object-references",
-      "owner": "issue",
-      "kind": "leaf",
-      "intent": "Manage same-Repository fixed Object Revision references using Issue authorization, version, event and receipt atomicity.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
-      "validationProfiles": [
-        "semantic-architecture",
-        "architecture-tests",
-        "schema",
-        "tests",
-        "fast-repository"
-      ],
-      "runtimeExpectation": "required",
-      "implementation": {
-        "status": "implemented",
-        "scope": "Manage same-Repository fixed Object Revision references using Issue authorization, version, event and receipt atomicity.",
-        "sourcePaths": [
-          "packages/issue/src/application/collaboration.ts",
-          "packages/issue/src/adapters/postgres/collaboration.ts"
-        ],
-        "publicExports": ["./contracts/collaboration", "./composition/bootstrap/collaboration"],
-        "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
-        "testPaths": ["packages/issue/test/object-reference-postgres.test.ts"],
-        "note": "Current local product extension, distinct from GitObject; provider publication requires separate evidence."
-      }
-    },
-    {
       "id": "read-legacy-wbs-entry",
       "owner": "wbs",
       "kind": "leaf",
@@ -5513,7 +5337,7 @@
         "sourcePaths": ["packages/platform/src/text.ts"],
         "publicExports": ["./text"],
         "entrypoints": [
-          "packages/resources/src/domain/object.ts",
+          "packages/resources/src/domain/resource.ts",
           "packages/wiki/src/domain/wiki-page.ts",
           "packages/contract/src/domain/contract.ts"
         ],
@@ -5562,7 +5386,7 @@
           "packages/contract/test/contracts.test.ts",
           "packages/contract/test/contracts-postgres.test.ts"
         ],
-        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence. Legacy data requires explicit classification and verified transfer; no inferred conversion."
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
       }
     },
     {
@@ -5608,7 +5432,7 @@
           "packages/execution/test/execution-pglite.test.ts",
           "packages/execution/test/execution-postgres.test.ts"
         ],
-        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence. Legacy data requires explicit classification and verified transfer; no inferred conversion."
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
       }
     },
     {
@@ -5647,7 +5471,7 @@
           "packages/content/test/plans-postgres.test.ts"
         ],
         "entrypoints": ["apps/web/src/app/api/repository-content/route.ts"],
-        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence. Legacy data requires explicit classification and verified transfer; no inferred conversion."
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
       }
     },
     {
@@ -5685,7 +5509,7 @@
           "packages/resources/test/resource-persistence.test.ts"
         ],
         "entrypoints": ["apps/web/src/app/api/repository-resources/route.ts"],
-        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence. Legacy data requires explicit classification and verified transfer; no inferred conversion."
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
       }
     }
   ],
@@ -5786,16 +5610,9 @@
       "tags": ["data", "ownership", "boundary"]
     },
     {
-      "id": "OBJECT1",
-      "scope": "resources",
-      "statement": "Resources owns classifications, immutable measurement definitions, revision quantities and typed relationships. Structural edges are acyclic with one parent; allocations use identical measures, planned children and exact nonnegative totals within the parent, including archived allocations. Direct location is singular. Atomic edits, revisions and exact receipts share the Repository transaction; other contexts retain their models and pinned references.",
-      "severity": "error",
-      "enforcement": ["semantic-policy", "schema", "tests"]
-    },
-    {
       "id": "CONTRACT1",
       "scope": "contract",
-      "statement": "New commitments bind exact Content Work/Task plan items and frozen agreed quantities. Draft edits and ADMIN activation/closure preserve current qualification, permission-before-replay, expected-version concurrency and atomic revisions/receipts. Legacy source snapshots are not inferred or rewritten.",
+      "statement": "Commitments bind exact Content Work/Task plan items and frozen agreed quantities. Draft edits and ADMIN activation/closure preserve current qualification, permission-before-replay, expected-version concurrency and atomic revisions/receipts.",
       "severity": "error",
       "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
       "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]

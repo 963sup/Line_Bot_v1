@@ -1,5 +1,5 @@
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import type { RepositorySummary } from "@line_bot_v1/repository/domain";
+import type { RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
 import type { Issue, IssueWorkflowStatus } from "../../domain.js";
 import type { IssueCommand } from "../input/issues.js";
 

@@ -26,12 +26,13 @@ import type {
   RepositoryMilestone,
   RepositoryMilestoneStatus,
 } from "../contracts/dto/resources.js";
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryResourceManagementCommand,
   RepositoryResourceManagementReceipt,
   RepositoryResourceManagementStore,
 } from "../contracts/output/resource-management.js";
-import { hasRepositoryPermission, RepositoryError } from "../contracts/repository.js";
+import { hasRepositoryPermission } from "../domain/repository/value-objects/repository-capability.js";
 import {
   decodeCommandRow,
   decodeIdRow,

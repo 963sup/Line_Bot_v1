@@ -9,7 +9,7 @@ import {
   numericValue,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import type { RepositoryPermission } from "@line_bot_v1/repository/domain";
+import type { RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import type {
   DiscussionManagementCommand,
   DiscussionManagementIdentity,

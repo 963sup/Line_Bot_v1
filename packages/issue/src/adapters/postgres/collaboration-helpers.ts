@@ -8,7 +8,8 @@ import {
   numericValue,
   stringValue,
 } from "@line_bot_v1/platform/validation";
-import { RepositoryError, type RepositoryPermission } from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import { type RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
 import type {
   IssueCollaborationCommand,
@@ -107,8 +108,6 @@ const receiptActions: readonly IssueCollaborationReceipt["action"][] = [
   "clear-labels",
   "set-milestone",
   "set-issue-type",
-  "set-object-reference",
-  "remove-object-reference",
   "add-sub-issue",
   "remove-sub-issue",
   "add-blocked-by",

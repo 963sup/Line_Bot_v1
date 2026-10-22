@@ -1,5 +1,5 @@
+import { RepositoryError } from "../../contracts/errors/repository-error.js";
 import type { RepositorySubscriptionStore } from "../../contracts/input/repository-subscription.js";
-import { RepositoryError } from "../../contracts/repository.js";
 import type { RepositorySelector } from "../../contracts/selectors.js";
 import { normalizeRepositoryName } from "../../domain/repository/value-objects/repository-name.js";
 import { parseRepositorySubscriptionCommand } from "../commands/repository-subscription.js";

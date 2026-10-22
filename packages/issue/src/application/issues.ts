@@ -1,5 +1,5 @@
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
-import { normalizeRepositoryName } from "@line_bot_v1/repository/domain";
+import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
 import type { IssueCommand, RepositorySelector } from "../contracts/input/issues.js";
 import type { IssueRepository } from "../contracts/repositories/issues.js";
 import {

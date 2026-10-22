@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createRepositoryStars } from "../src/application/stars.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryStarStore } from "../src/contracts/repositories/stars.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryStarStore } from "../src/postgres/stars.js";
 
 function service(store: Partial<RepositoryStarStore>) {

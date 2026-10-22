@@ -114,6 +114,46 @@ test("package public exports keep adapters private", () => {
   );
 });
 
+test("public export role agrees with runtime and declaration targets", () => {
+  const entry = (target) => ({ types: `./dist/${target}.d.ts`, default: `./dist/${target}.js` });
+  const legal = {
+    ".": entry("index"),
+    "./postgres": entry("composition/bootstrap/store"),
+    "./domain/user": entry("domain/user"),
+    "./application/create-user": entry("application/use-cases/create-user"),
+    "./contracts/repositories/users": entry("contracts/repositories/users"),
+    "./composition/bootstrap/store": entry("composition/bootstrap/store"),
+    "./testing/fixture": entry("testing/fixture"),
+  };
+  assert.deepEqual(validatePackageExports("demo", legal), []);
+  for (const [key, target] of [
+    ["./domain", "contracts/repository"],
+    ["./application/permissions/ports", "contracts/input/permissions"],
+    ["./contracts/repositories/users", "contracts/input/users"],
+    ["./domain/errors/team-error", "contracts/errors/team-error"],
+    ["./composition/bootstrap/store", "contracts/input/store"],
+    ["./testing/fixture", "application/fixture"],
+  ]) {
+    const errors = validatePackageExports("demo", { [key]: entry(target) });
+    assert.equal(errors.length, 2);
+    assert.ok(errors.every((error) => error.startsWith("public-export-role-matches-target:")));
+  }
+  assert.equal(
+    validatePackageExports("demo", {
+      "./domain/user": { types: "./dist/contracts/user.d.ts", default: "./dist/domain/user.js" },
+    }).length,
+    1,
+  );
+  assert.equal(validatePackageExports("demo", { "./domain": entry("domain-like") }).length, 2);
+  assert.deepEqual(
+    validatePackageExports("demo", {
+      "./contracts/input/users": entry("contracts/input/users"),
+      "./contracts/errors/team-error": entry("contracts/errors/team-error"),
+    }),
+    [],
+  );
+});
+
 test("selected target modules stay outside current workspace topology", () => {
   const topology = {
     modules: {

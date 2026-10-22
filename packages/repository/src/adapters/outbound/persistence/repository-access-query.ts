@@ -6,8 +6,8 @@ import {
 } from "@line_bot_v1/namespace/postgres";
 import type { Database, Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { booleanValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../../contracts/errors/repository-error.js";
 import type { RepositoryAccessSnapshot } from "../../../contracts/input/repository-access.js";
-import { RepositoryError } from "../../../contracts/repository.js";
 import type { RepositorySelector } from "../../../contracts/selectors.js";
 import {
   hasRepositoryPermission,

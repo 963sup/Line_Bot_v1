@@ -205,6 +205,7 @@ test("Execution command parsing strictly canonicalizes Task and resource pins", 
   assert.deepEqual(parsed.task, { planRevisionId: ids.planRevision, nodeId: ids.task });
   for (const change of [
     { actorUserId: "forged" },
+    { task: undefined, resources: undefined, observedDependencyVersion: undefined },
     { observedDependencyVersion: -1 },
     {
       resources: [

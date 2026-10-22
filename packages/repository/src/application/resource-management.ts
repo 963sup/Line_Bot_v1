@@ -1,8 +1,8 @@
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryResourceManagementCommand,
   RepositoryResourceManagementStore,
 } from "../contracts/output/resource-management.js";
-import { RepositoryError } from "../contracts/repository.js";
 
 const requestIdPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const identifierPattern = /^[\w-]{1,128}$/;

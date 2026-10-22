@@ -1,7 +1,6 @@
 import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
 import { normalizeQuantity } from "@line_bot_v1/content/domain/quantity";
 import { normalizeContent } from "@line_bot_v1/platform/text";
-import type { ResourceQuantityBasis } from "@line_bot_v1/resources/domain/engineering-reference";
 import { ContractError } from "./error.js";
 
 type ContractState = "DRAFT" | "ACTIVE" | "CLOSED";
@@ -20,14 +19,7 @@ export type ContentContractLine = Readonly<{
   agreedQuantity: string;
 }>;
 
-/** Historical snapshot only. New commands cannot create this shape. */
-export type HistoricalResourceContractLine = Readonly<{
-  lineId: string;
-  resource: ResourceQuantityBasis;
-  agreedQuantity: string;
-}>;
-
-export type FrozenContractLine = ContentContractLine | HistoricalResourceContractLine;
+export type FrozenContractLine = ContentContractLine;
 
 export type ContractRevision = Readonly<{
   id: string;
@@ -53,22 +45,6 @@ export type ContractEdit =
     }>
   | Readonly<{ action: "activate"; lines: readonly ContentContractLine[] }>
   | Readonly<{ action: "close" }>;
-
-function copyResource(resource: ResourceQuantityBasis): ResourceQuantityBasis {
-  return {
-    resourceId: resource.resourceId,
-    resourceRevisionId: resource.resourceRevisionId,
-    resourceVersion: resource.resourceVersion,
-    name: resource.name,
-    measure: {
-      id: resource.measure.id,
-      name: resource.measure.name,
-      subject: resource.measure.subject,
-      unit: resource.measure.unit,
-    },
-    sourceQuantity: resource.sourceQuantity,
-  };
-}
 
 function copyContent(content: ContentPlanItemBasis): ContentPlanItemBasis {
   return {
@@ -102,19 +78,11 @@ function copyContent(content: ContentPlanItemBasis): ContentPlanItemBasis {
 }
 
 export function copyContractLines(lines: readonly FrozenContractLine[]): FrozenContractLine[] {
-  return lines.map((line) =>
-    "content" in line
-      ? {
-          lineId: line.lineId,
-          content: copyContent(line.content),
-          agreedQuantity: line.agreedQuantity,
-        }
-      : {
-          lineId: line.lineId,
-          resource: copyResource(line.resource),
-          agreedQuantity: line.agreedQuantity,
-        },
-  );
+  return lines.map((line) => ({
+    lineId: line.lineId,
+    content: copyContent(line.content),
+    agreedQuantity: line.agreedQuantity,
+  }));
 }
 
 export function assertContractTransition(
@@ -223,12 +191,8 @@ export function reviseContract(
     lines = normalizeContentLines(edit.lines, context.repositoryId);
     state = "DRAFT";
   } else if (edit.action === "activate") {
-    if (!current || current.lines.some((line) => !("content" in line)))
-      throw new ContractError(
-        409,
-        "A historical Resource draft must be edited to Content before activation.",
-        "LIFECYCLE_CONFLICT",
-      );
+    if (!current)
+      throw new ContractError(409, "Contract lifecycle conflict.", "LIFECYCLE_CONFLICT");
     const activated = normalizeContentLines(edit.lines, context.repositoryId);
     if (
       activated.length !== current.lines.length ||
@@ -236,7 +200,6 @@ export function reviseContract(
         const previous = current.lines[index];
         return (
           !previous ||
-          !("content" in previous) ||
           line.lineId !== previous.lineId ||
           line.content.planRevisionId !== previous.content.planRevisionId ||
           line.content.node.id !== previous.content.node.id ||

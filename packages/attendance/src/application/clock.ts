@@ -4,19 +4,19 @@ import type { AttendanceAction } from "../domain/value-objects/attendance-action
 
 export function createClockAttendance(deps: AttendanceDependencies) {
   async function execute(subject: string, action: AttendanceAction, input: AttendanceInput) {
-    const member = await deps.activeUser(subject);
+    const user = await deps.activeUser(subject);
     return deps
       .store()
-      .execute(member.id, action, input, deps.now(), { provider: deps.provider(), subject });
+      .execute(user.id, action, input, deps.now(), { provider: deps.provider(), subject });
   }
   return {
     prepare: async (subject: string) => {
-      const member = await deps.activeUser(subject);
-      return { memberId: member.id, ...(await deps.store().prepare(member.id, deps.now())) };
+      const user = await deps.activeUser(subject);
+      return { userId: user.id, ...(await deps.store().prepare(user.id, deps.now())) };
     },
     get: async (subject: string) => {
-      const member = await deps.activeUser(subject);
-      return deps.store().snapshot(member.id, deps.now());
+      const user = await deps.activeUser(subject);
+      return deps.store().snapshot(user.id, deps.now());
     },
     execute,
   };

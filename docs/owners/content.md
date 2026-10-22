@@ -21,9 +21,9 @@ revision. Expected version, head, revision, pins and receipt commit or roll back
 payloads under the same request identity conflict. Revisions and receipts are insert/read-only.
 
 Project WBS remains a distinct Project-scoped planning/governance owner. Content does not edit WBS
-documents or implicitly transfer their authority. The former text mechanism moves to the neutral
-`@line_bot_v1/platform/text` export. Legacy Objects require explicit classification and verified
-transfer; names, units and mutable classifications do not prove physical resource identity.
+documents or implicitly transfer their authority. Text validation uses the neutral
+`@line_bot_v1/platform/text` export. Physical Resource kind is explicit; names and units never infer
+physical resource identity.
 
 Current implementation, dependencies and persisted mappings are recorded by the canonical
 [semantic model](../../architecture/semantic-model.json), [module topology](../../architecture/implementation-topology.json)

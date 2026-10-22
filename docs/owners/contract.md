@@ -23,17 +23,6 @@ submissions and internal review.
   errors, identity, lifecycle and history. Activation is internal approval; signatures,
   counterparties, prices, legal effect, payment and Payroll are outside this owner.
 
-## Historical Resource-based revisions
-
-Earlier Contract revisions may contain immutable Resource/Object quantity snapshots. Persistence,
-DTOs, history, line-reference reads and exact receipt replay preserve that explicit historical
-variant. They never infer a Content node or rewrite stored evidence.
-
-New create/edit commands cannot write Resource-based lines. An existing Resource-based DRAFT must be
-explicitly edited to a complete Content-based line set before activation. Existing Resource-based
-ACTIVE agreements remain readable and closable, and their historical Execution reports remain
-reviewable. The broader legacy data-classification/cutover policy is still unresolved.
-
 ## Access and consistency
 
 Current active User and Repository access are rechecked for every read, command and replay. Action
@@ -46,9 +35,10 @@ and command receipt share one transaction. Reusing actor/request identity with c
 input conflicts. A failed receipt rolls back the revision and head. Runtime revisions/receipts are
 insert/read-only. Lists and history use bounded keyset pages.
 
-The published line reader returns the exact Content or historical Resource line variant from an
-explicit revision. New Execution submission requires that revision to be the current ACTIVE head;
-review permits its later CLOSED state. Consumers use this public contract rather than private SQL.
+The published line reader returns the exact Content line from an explicit revision. New Execution
+submission requires that revision to be the current ACTIVE head; review permits its later CLOSED
+state. Resource/Object-based payloads and persisted line shapes are rejected rather than interpreted
+through a compatibility model. Consumers use this public contract rather than private SQL.
 
 ## Delivery and evidence
 
@@ -59,6 +49,6 @@ retains its existing responsibility.
 
 Mappings, exports and SQL remain governed by the canonical architecture models, manifests and
 declarative schemas. Verify illegal transitions, detached union projections, current access,
-Content pin qualification, historical replay/read behavior, rollback, foreign scope/version
+Content pin qualification, retired-shape rejection, rollback, foreign scope/version
 constraints and native multi-session competition. Local tests, CI PostgreSQL and production
 deployment are separate evidence.

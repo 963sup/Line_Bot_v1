@@ -12,13 +12,13 @@ import {
   type SqlRow,
 } from "@line_bot_v1/platform/postgres";
 import { isRecord, numericValue, stringValue } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryAddressCommand,
   RepositoryAddressReceipt,
   RepositoryAddressSnapshot,
   RepositoryAddressStore,
 } from "../contracts/repositories/address.js";
-import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import type { RepositoryAddress } from "../domain/repository/entities/repository.js";
 import {

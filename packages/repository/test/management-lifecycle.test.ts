@@ -4,8 +4,8 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryManagementCommand } from "../src/contracts/input/repository-management.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 import {
   decideRepositoryLifecycle,
   RepositoryLifecycleError,

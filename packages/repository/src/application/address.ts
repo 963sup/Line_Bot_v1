@@ -1,8 +1,8 @@
+import { RepositoryError } from "../contracts/errors/repository-error.js";
 import type {
   RepositoryAddressCommand,
   RepositoryAddressStore,
 } from "../contracts/repositories/address.js";
-import { RepositoryError } from "../contracts/repository.js";
 import type { RepositorySelector } from "../contracts/selectors.js";
 import { normalizeRepositoryName } from "../domain/repository/value-objects/repository-name.js";
 import { accountLoginForRepositoryLocator } from "./owner-locator.js";

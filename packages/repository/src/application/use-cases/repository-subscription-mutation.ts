@@ -1,10 +1,10 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "../../contracts/errors/repository-error.js";
 import type {
   RepositorySubscriptionCommand,
   RepositorySubscriptionReceipt,
 } from "../../contracts/input/repository-subscription.js";
 import type { RepositorySubscriptionPersistence } from "../../contracts/output/repository-subscription.js";
-import { RepositoryError } from "../../contracts/repository.js";
 import {
   decideRepositorySubscription,
   isRepositorySubscriptionState,

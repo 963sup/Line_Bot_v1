@@ -4,8 +4,8 @@ import test from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresRepositoryAccessStore } from "../src/composition/bootstrap/repository-access.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryAccessCommand } from "../src/contracts/input/repository-access.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 import {
   decideRepositoryAccess,
   RepositoryAccessDecisionError,

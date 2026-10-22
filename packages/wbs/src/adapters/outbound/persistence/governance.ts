@@ -12,8 +12,8 @@ import {
   numericValue,
   stringValue,
 } from "@line_bot_v1/platform/validation";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
-import { RepositoryError } from "@line_bot_v1/repository/domain";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type {
   WbsGovernanceCommand,

@@ -9,7 +9,7 @@ import {
   repositoryResourcesPath,
 } from "../src/modules/repository/resource-navigation";
 
-test("repository navigation exposes corrected owners and keeps Objects clearly legacy", () => {
+test("repository navigation exposes only current delivery owners", () => {
   const items = repositoryResourceNavigationItems("Owner", "Repo", false);
   assert.deepEqual(
     items
@@ -22,17 +22,10 @@ test("repository navigation exposes corrected owners and keeps Objects clearly l
       ["executions", repositoryExecutionsPath("Owner", "Repo")],
     ],
   );
-  assert.deepEqual(
-    items.find((item) => item.section === "objects"),
-    {
-      href: "/Owner/Repo/objects",
-      label: "Objects (Legacy)",
-      section: "objects",
-    },
-  );
+  assert.ok(items.every((item) => !item.href.endsWith("/objects")));
 });
 
-test("Repository Overview presents current delivery owners and separates legacy Objects", () => {
+test("Repository Overview presents current delivery owners without a legacy Object entry", () => {
   const source = readFileSync(
     new URL("../src/modules/repository/repository-overview-panel.tsx", import.meta.url),
     "utf8",
@@ -50,11 +43,6 @@ test("Repository Overview presents current delivery owners and separates legacy 
     );
   }
   assert.match(source, /<h2 id="repository-delivery-heading">工作交付<\/h2>/);
-  assert.match(source, /<h2 id="repository-legacy-heading">Legacy<\/h2>/);
-  assert.match(
-    source,
-    /href=\{repositoryObjectsPath\(baseOwner, baseName\)\}[\s\S]*?title="Objects \(Legacy\)"/,
-  );
-  assert.doesNotMatch(source, /title="Objects"/);
+  assert.doesNotMatch(source, /repository-legacy-heading|repositoryObjectsPath|Objects \(Legacy\)/);
   assert.match(source, /<ActionRow href="\/projects" title="Projects"/);
 });

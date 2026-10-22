@@ -5,8 +5,8 @@ import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { createRepositoryManagement } from "../src/application/use-cases/repository-management.js";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryManagementStore } from "../src/contracts/input/repository-management.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 import { authorizedRepository } from "../src/postgres/access.js";
 
 async function activeUser(db: Database, id: string, login = id) {

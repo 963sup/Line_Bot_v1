@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryManagementCommand } from "../src/contracts/input/repository-management.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 
 const databaseUrl = process.env.CAPABILITY_TEST_DATABASE_URL;
 test("PostgreSQL Repository lifecycle serializes competing versions and concurrent exact replay", {

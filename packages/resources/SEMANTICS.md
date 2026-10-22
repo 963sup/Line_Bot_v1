@@ -32,19 +32,11 @@
 | PhysicalResource | physical-resource | authoritative | current | Repository-shared Location, Equipment or Material stable identity and lifecycle; no work hierarchy, plan quantities or execution actuals. |
 | PhysicalResourceCommandReceipt | physical-resource-command-receipt | authoritative | current | Durable physical-resource command fingerprint and exact committed revision. |
 | PhysicalResourceRevision | physical-resource-revision | authoritative | current | Immutable resource identity-kind, name, description, lifecycle and actor snapshot. |
-| Resource | resource | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Repository-scoped resource with stable identity, immutable versioned content and optional exact reference/planned quantity; its Object wire and storage identifiers remain stable. It does not replace other contexts domain models. |
-| ResourceCommandReceipt | resource-command-receipt | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable actor/request fingerprint and committed result supporting current-authorized exact replay. |
-| ResourceMeasure | resource-measure | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable Repository-local measurement subject/method and unit (m or pcs), created by ADMIN. Equal units do not imply equal measurement semantics. Semantic corrections create a new definition. |
-| ResourceRelationship | resource-relationship | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Same-Repository immutable-endpoint directed edge with independent history and kind: REFERENCE permits cycles; INCLUDES and ALLOCATES form a single-parent acyclic structure; LOCATED_IN records one direct location. ALLOCATES consumes matching-measure parent quantity, including archived children. |
-| ResourceRelationshipRevision | resource-relationship-revision | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable version of one Resource Relationship; not a whole Repository graph snapshot. |
-| ResourceRevision | resource-revision | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Immutable Resource content, classification label, lifecycle, actor and optional exact quantity snapshot (measure, decimal value, reference/planned purpose and fixed source revision); restoration creates a new revision. |
-| ResourceType | resource-type | authoritative | current | Legacy Object authority retained for explicit classification, historical pins and replay during cutover. Repository-scoped named classification with enablement and version; exactly one classification per Resource and no dynamic field schema. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Intent |
 | --- | --- | --- | --- |
-| manage-legacy-repository-objects | required | implemented | Preserve legacy Object behavior and historical references pending explicit data classification and verified owner cutover. |
 | manage-physical-resources | required | implemented | Manage shared Location/Equipment/Material identity and lifecycle with immutable revisions and exact replay. |
 
 ## Context Relationships
@@ -52,11 +44,9 @@
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | content | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource assignments qualify exact physical identities through the public reader; unchanged historical pins survive archive. |
-| provides | contract | stable-identity+query | resources | transaction-recheck+immutable-pin | Legacy immutable Resource-based commitments remain historical facts until explicit mapping. New commitments use Content plan items; no inferred conversion or new Resource-only commitments. |
 | provides | execution | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource-use pins qualify current physical resources; historical actuals retain immutable source evidence. |
-| provides | issue | stable-identity+query | resources | same-transaction | Issue owns fixed Resource Revision references; Resource verifies current access and referenceability in the caller transaction. Existing references retain historical content after Resource archive. |
 | consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
-| consumes | repository | stable-identity+query | repository | transaction-recheck | Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority. |
+| consumes | repository | stable-identity+query | repository | transaction-recheck | Physical Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority. |
 
 ## Tactical Model Boundary
 

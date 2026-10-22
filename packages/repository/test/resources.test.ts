@@ -4,8 +4,8 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createRepositoryResources } from "../src/application/resources.js";
 import { PostgresRepositoryManagementStore } from "../src/composition/bootstrap/repository-management.js";
+import { RepositoryError } from "../src/contracts/errors/repository-error.js";
 import type { RepositoryResourceStore } from "../src/contracts/output/resources.js";
-import { RepositoryError } from "../src/contracts/repository.js";
 import { PostgresRepositoryResourceStore } from "../src/postgres/resources.js";
 
 async function activeUser(db: Database, id: string, login = id) {

@@ -13,7 +13,6 @@
         "scripts/browser/check-navigation.mjs",
         "scripts/browser/check-wbs.mjs",
         "scripts/browser/check-project-wbs.mjs",
-        "scripts/browser/check-objects.mjs",
         "scripts/browser/check-work-content.mjs",
         "scripts/browser/check-project-imports.mjs",
         "scripts/browser/check-partner-management.mjs",

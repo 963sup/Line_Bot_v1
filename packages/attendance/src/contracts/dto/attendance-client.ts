@@ -197,7 +197,7 @@ export function parseAttendanceResult(value: unknown): AttendanceResult {
 }
 
 export type AttendanceClockPreparation = {
-  memberId: string;
+  userId: string;
   working: boolean;
   action: AttendanceAction;
   operation: AttendanceOperation;
@@ -208,8 +208,8 @@ export type AttendanceClockPreparation = {
 export function parseAttendanceClockPreparation(value: unknown): AttendanceClockPreparation {
   const preparation = objectValue(value);
   if (
-    typeof preparation.memberId !== "string" ||
-    !preparation.memberId ||
+    typeof preparation.userId !== "string" ||
+    !preparation.userId ||
     typeof preparation.working !== "boolean" ||
     !safeVersion(preparation.version) ||
     !Array.isArray(preparation.sites)
@@ -217,7 +217,7 @@ export function parseAttendanceClockPreparation(value: unknown): AttendanceClock
     throw new AttendanceError(502, "出勤準備回應不完整，請重試。");
   const action = attendanceActionForWorking(preparation.working);
   return {
-    memberId: preparation.memberId,
+    userId: preparation.userId,
     working: preparation.working,
     action,
     operation: attendanceOperation(action),

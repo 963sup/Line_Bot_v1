@@ -6,14 +6,14 @@ import type {
 import type {
   RepositoryCreationResult,
   RepositoryOwnerOption,
-} from "@line_bot_v1/repository/contracts/repositories/creation";
+} from "@line_bot_v1/repository/contracts/input/repository-creation";
 import type {
   RepositoryStarListDetail,
   RepositoryStarListMutationResult,
   RepositoryStarListSummary,
 } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 import type { StarredRepository } from "@line_bot_v1/repository/contracts/repositories/stars";
-import type { RepositorySummary } from "@line_bot_v1/repository/domain";
+import type { RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);

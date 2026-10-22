@@ -1,9 +1,7 @@
 import type { createDiscussions } from "@line_bot_v1/discussion/application/discussions";
 import type { createRepositoryResources } from "@line_bot_v1/repository/application/resources";
-import {
-  normalizeRepositoryMilestoneNumber,
-  RepositoryError,
-} from "@line_bot_v1/repository/domain";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import { normalizeRepositoryMilestoneNumber } from "@line_bot_v1/repository/domain/milestone/value-objects/milestone-number";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
 

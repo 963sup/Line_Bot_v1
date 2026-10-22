@@ -21,9 +21,8 @@ pnpm test:browser
 | `run-local.mjs` | 標準本機 browser suite 入口：build 一次、啟動 loopback production Web、依序執行案例、保存 evidence 並關閉服務。 |
 | `check-navigation.mjs` | 列表/詳情、query、前進返回、直接開啟與讀寫途中導覽。 |
 | `check-profile.mjs` | Profile client lifecycle、換帳號、遲到回應與 server-page composition。 |
-| `check-objects.mjs` | Object Type、工程計量／多視圖／超分拒絕／批次命令重試、不可變內容版本、具名稱關係、Issue 固定版本引用、原命令重試與資格失效；使用真實 Next/browser、隔離 PGlite 及合成 LINE/API。 |
 | `check-wbs.mjs` | WBS 編輯／治理與歷史；Repository Insights 的 Issue 期間與來源失敗；Wiki 原文、建立／編輯／exact retry、歷史比較／還原／封存；三者手機版面與資格撤銷清除。真實 Next/browser、隔離 PGlite、合成 LINE/API。 |
-| `check-repository-resources.mjs` | Repository 單一導覽網格（含 `Objects (Legacy)` 與依權限顯示的 Settings／Access），以及資源頁桌面／手機版面；Overview 匿名／權限／封存／舊 WBS 恢復狀態，及 Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類、換帳號與遲到回應清除。Overview 使用真實 route/component 與合成 server query，其餘資源頁使用真實 Next routes。 |
+| `check-repository-resources.mjs` | Repository 單一導覽網格（依權限顯示 Settings／Access，已退役 Objects 不再出現），以及資源頁桌面／手機版面；Overview 匿名／權限／封存／舊 WBS 恢復狀態，及 Discussions/Labels/Milestones URL、詳情、分頁、錯誤分類、換帳號與遲到回應清除。Overview 使用真實 route/component 與合成 server query，其餘資源頁使用真實 Next routes。 |
 | `check-membership.mjs` | 註冊/恢復、Google handoff、會員確認/取消、每日簽到與 profile readback。 |
 | `check-member-management.mjs` | 成員搜尋/分頁、停權、原命令重試與撤權。 |
 | `check-partner-management.mjs` | Partner 名錄/管理、版本衝突、換帳號與 unknown-result handling。 |

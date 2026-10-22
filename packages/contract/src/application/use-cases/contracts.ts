@@ -15,7 +15,7 @@ import {
 } from "../../domain/contract.js";
 import { ContractError, contractErrorFromUnknown } from "../../domain/error.js";
 import { canAdminContract, canEditContract } from "../../domain/policies/access.js";
-import { isContentContractLineInput, parseContractCommand } from "../commands.js";
+import { parseContractCommand } from "../commands.js";
 import {
   type ContractQuery,
   contractHistoryQuery,
@@ -27,15 +27,7 @@ import {
 import { contractRevisionDto } from "./revision-dto.js";
 
 function contentInputs(current: ContractRevision): ContractLineInput[] {
-  if (current.lines.some((line) => !("content" in line)))
-    throw new ContractError(
-      409,
-      "A historical Resource draft must be edited to Content before activation.",
-      "LIFECYCLE_CONFLICT",
-    );
   return current.lines.map((line) => {
-    if (!("content" in line))
-      throw new ContractError(409, "Contract Content source is unavailable.", "SOURCE_INVALID");
     return {
       lineId: line.lineId,
       planRevisionId: line.content.planRevisionId,
@@ -104,26 +96,11 @@ export function createContracts(deps: {
               };
             if (tx.scope.archived)
               throw new ContractError(409, "Repository is archived.", "LIFECYCLE_CONFLICT");
-            if (
-              (command.action === "create" || command.action === "edit") &&
-              !command.lines.every(isContentContractLineInput)
-            )
-              throw new ContractError(
-                409,
-                "Historical Resource Contract commands are replay-only.",
-                "LIFECYCLE_CONFLICT",
-              );
             const current = await tx.contracts.load();
             assertContractTransition(current, command.expectedVersion, command.action);
             let edit: ContractEdit;
             if (command.action === "create" || command.action === "edit") {
               const contentLines = command.lines;
-              if (!contentLines.every(isContentContractLineInput))
-                throw new ContractError(
-                  409,
-                  "Historical Resource Contract commands are replay-only.",
-                  "LIFECYCLE_CONFLICT",
-                );
               const contentItems = await tx.content.verifyPinned(
                 userId,
                 tx.scope.repositoryId,

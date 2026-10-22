@@ -4,14 +4,14 @@ import { runCli } from "../runtime/cli-subprocess-test-helper.mjs";
 
 const script = "scripts/contract/run.mjs";
 const request = (operation) => ({ operation, proof: "secret-proof", command: {}, query: {} });
-const legacyError = "Contract operation failed; no credential or provider payload is logged.";
+const safeError = "Contract operation failed; no credential or provider payload is logged.";
 
 function failure(operation, scenario, input = request(operation)) {
   const result = runCli(script, input, scenario);
   assert.equal(result.status, 1);
   assert.equal(result.stdout, "");
   assert.equal(result.json.ok, false);
-  assert.equal(result.json.error, legacyError);
+  assert.equal(result.json.error, safeError);
   assert.doesNotMatch(`${result.stdout}${result.stderr}`, /TOP_SECRET|secret-proof/);
   return result.json;
 }
@@ -40,7 +40,7 @@ test("contract CLI preserves success output and contains cleanup failure", () =>
 test("contract CLI classifies input and identity failures before dispatch", () => {
   assert.deepEqual(failure("read", "success", "not-json"), {
     ok: false,
-    error: legacyError,
+    error: safeError,
     status: 400,
     code: "INVALID_INPUT",
   });
@@ -49,7 +49,7 @@ test("contract CLI classifies input and identity failures before dispatch", () =
   assert.equal(failure("read", "success", { operation: "read" }).code, "UNAUTHENTICATED");
   assert.deepEqual(failure("read", "auth-invalid"), {
     ok: false,
-    error: legacyError,
+    error: safeError,
     status: 401,
     code: "UNAUTHENTICATED",
   });
@@ -73,7 +73,7 @@ test("contract CLI uses strict owner errors and distinguishes unknown mutation r
       const unknownResult = operation === "execute" && code === "UNAVAILABLE";
       assert.deepEqual(failure(operation, `owner-typed:${status}:${code}`), {
         ok: false,
-        error: legacyError,
+        error: safeError,
         status,
         code: unknownResult ? "UNKNOWN_RESULT" : code,
       });

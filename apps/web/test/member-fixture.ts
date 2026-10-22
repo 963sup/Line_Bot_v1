@@ -68,7 +68,7 @@ export async function closeFixture() {
   await fixture.pg.close();
 }
 
-export async function allowAttendance(memberId: string) {
+export async function allowAttendance(userId: string) {
   const id = randomUUID();
   await fixture.pg.query(
     `WITH inserted AS (
@@ -79,12 +79,12 @@ export async function allowAttendance(memberId: string) {
      ) FROM inserted`,
     [
       id,
-      memberId,
+      userId,
       JSON.stringify({ address: "Test address", latitude: 25, longitude: 121, radius: 100 }),
     ],
   );
   await fixture.pg.query(
     "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES($1,$2,'admin',1)",
-    [id, memberId],
+    [id, userId],
   );
 }
