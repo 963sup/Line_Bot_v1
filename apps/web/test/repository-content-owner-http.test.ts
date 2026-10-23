@@ -131,3 +131,31 @@ test("owner HTTP preserves owner status and code", async () => {
   assert.equal(response.status, 409);
   assert.deepEqual(await response.json(), { error: "conflict", code: "VERSION_CONFLICT" });
 });
+
+test("Content HTTP pins explicitly requested historical plan revision without falling back", async () => {
+  const source = runtime();
+  const original = source.owner();
+  const revision = await original.read("user-1", { repositoryId: "repository-1" });
+  const pinnedId = "55555555-5555-4555-8555-555555555555";
+  let matched = false;
+  const pinned: ContentWebRuntime = {
+    ...source,
+    owner: () => ({
+      ...original,
+      read: async (actor, query) => {
+        assert.equal(actor, "user-1");
+        assert.deepEqual(query, { repositoryId: "repository-1", revisionId: pinnedId });
+        matched = true;
+        return revision;
+      },
+    }),
+  };
+  const response = await contentRequest(
+    new Request(url + "&revisionId=" + pinnedId),
+    pinned,
+    async () => "subject",
+  );
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).revision.revisionId, revision.revisionId);
+  assert.equal(matched, true);
+});

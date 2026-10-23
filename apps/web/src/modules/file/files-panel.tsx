@@ -50,6 +50,7 @@ type Observation = {
 type Output = { documentKind: string; observations: Observation[] };
 type Processing = RunSummary & {
   repositoryId: string;
+  revisionId: string;
   processorVersion: string;
   rawResult: Output | null;
   savedResult: Output | null;
@@ -190,6 +191,7 @@ function parseProcessing(value: unknown): Processing {
   return {
     ...parseRun(value),
     repositoryId: stringValue(r.repositoryId),
+    revisionId: stringValue(r.revisionId),
     processorVersion: stringValue(r.processorVersion),
     rawResult: parseOutput(r.rawResult),
     savedResult: parseOutput(r.savedResult),
@@ -260,11 +262,13 @@ export default function FilesPanel({
   liffId,
   ownerLogin,
   repositoryName,
+  contentPath,
   onCanManageChange,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
+  contentPath: string;
   onCanManageChange(value: boolean): void;
 }) {
   const [view, setView] = useState<View | null>(null);
@@ -1010,6 +1014,27 @@ export default function FilesPanel({
                       </Button>
                     </div>
                   )}
+                </div>
+              )}
+              {processing.state === "SAVED" && saved && view?.canEdit && (
+                <div className="grid gap-2 rounded-lg border p-3 text-sm">
+                  <p className="font-medium">下一步：檢視並對應 Content</p>
+                  <p className="text-muted-foreground">
+                    只傳遞 Run 和 SavedResult Revision 身分，不在 URL 傳遞原始資料。 Content 會由
+                    File Owner 重新授權讀取，並由使用者自行建立工作結構。
+                  </p>
+                  <Button
+                    disabled={busy || !!pending}
+                    onClick={() => {
+                      const query = new URLSearchParams({
+                        sourceRunId: processing.runId,
+                        sourceRevisionId: processing.revisionId,
+                      });
+                      globalThis.window.location.assign(`${contentPath}?${query.toString()}`);
+                    }}
+                  >
+                    前往 Content 建立草稿
+                  </Button>
                 </div>
               )}
               {processing.state === "DISCARDED" && (

@@ -21,7 +21,12 @@ revision. Expected version, head, revision, pins and receipt commit or roll back
 payloads under the same request identity conflict. Revisions and receipts are insert/read-only.
 
 Project WBS remains a distinct Project-scoped planning/governance owner. Content does not edit WBS
-documents or implicitly transfer their authority. Text validation uses the neutral
+documents or implicitly transfer their authority. A user may explicitly inspect one exact File
+SavedResult through File's separately authorized Web read and prefill a browser-local Content node
+draft. This does not infer hierarchy or quantity, start a File processor, record formal File→Content
+lineage or write to another owner. An authoritative Content revision exists only after the user
+invokes Content's version/replay-protected command; machine-verifiable import provenance is still
+unimplemented. Text validation uses the neutral
 `@line_bot_v1/platform/text` export. Physical Resource kind is explicit; names and units never infer
 physical resource identity.
 

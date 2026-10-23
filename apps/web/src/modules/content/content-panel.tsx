@@ -20,6 +20,13 @@ import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
 import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select";
 import { Textarea } from "../../shared/ui/textarea";
+import {
+  type FileSourceLocator,
+  fileSavedSource,
+  fileSourceLocator,
+  observationCanPrefill,
+  type SavedFileSource,
+} from "./file-source";
 
 type Kind = "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
 type Measure = { id: string; name: string; subject: string; unit: "m" | "pcs" };
@@ -46,6 +53,7 @@ type Node = {
   plannedQuantity: { measureId: string; value: string } | null;
 };
 type Revision = {
+  revisionId: string;
   version: number;
   document: {
     schemaVersion: 1;
@@ -87,15 +95,21 @@ export default function ContentPanel({
   liffId,
   ownerLogin,
   repositoryName,
+  contractsPath,
   onCanManageChange,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
+  contractsPath: string;
   onCanManageChange(value: boolean): void;
 }) {
   const [view, setView] = useState<View | null>(null);
   const [document, setDocument] = useState(emptyDocument());
+  const [sourceLocator, setSourceLocator] = useState<FileSourceLocator | null>(null);
+  const [savedSource, setSavedSource] = useState<SavedFileSource | null>(null);
+  const [selectedObservationId, setSelectedObservationId] = useState<string | null>(null);
+  const [sourceReviewed, setSourceReviewed] = useState(false);
   const [kind, setKind] = useState<Kind>("SUBJECT");
   const [parentId, setParentId] = useState("");
   const [title, setTitle] = useState("");
@@ -117,6 +131,10 @@ export default function ContentPanel({
     mutationLock.current = null;
     setView(null);
     setDocument(emptyDocument());
+    setSourceLocator(null);
+    setSavedSource(null);
+    setSelectedObservationId(null);
+    setSourceReviewed(false);
     setResources([]);
     setResourceNext(null);
     setKind("SUBJECT");
@@ -135,7 +153,7 @@ export default function ContentPanel({
   }, [onCanManageChange]);
   const request = useCallback(
     async (
-      endpoint: "content" | "resources" = "content",
+      endpoint: "content" | "resources" | "files" = "content",
       command?: object,
       query: Record<string, string> = {},
     ) => {
@@ -180,6 +198,10 @@ export default function ContentPanel({
       setResources(resourceView.resources);
       setResourceNext(resourceView.next);
       setDocument(next.revision?.document ?? emptyDocument());
+      setSavedSource(null);
+      setSelectedObservationId(null);
+      setSourceReviewed(false);
+      setSourceLocator(fileSourceLocator(new URLSearchParams(globalThis.window.location.search)));
       setPending(
         restorePendingCommand(sessionStorage, "content", next.actorUserId, next.repository.id),
       );
@@ -206,6 +228,47 @@ export default function ContentPanel({
       globalThis.window.removeEventListener("pagehide", clear);
     };
   }, [clear]);
+  const loadFileSource = async () => {
+    if (!view?.canEdit || !sourceLocator || pending || busy) return;
+    const ticket = responseGeneration.current;
+    setBusy(true);
+    setError("");
+    setSavedSource(null);
+    setSelectedObservationId(null);
+    setSourceReviewed(false);
+    try {
+      const value: unknown = await request("files", undefined, {
+        view: "processing",
+        runId: sourceLocator.runId,
+        revisionId: sourceLocator.revisionId,
+      });
+      const source = fileSavedSource(value, {
+        repositoryId: view.repository.id,
+        ...sourceLocator,
+      });
+      if (ticket !== responseGeneration.current) return;
+      setSavedSource(source);
+      setSelectedObservationId(null);
+      setSourceReviewed(false);
+    } catch (cause) {
+      if (cause instanceof StaleRequestError || ticket !== responseGeneration.current) return;
+      const status =
+        cause !== null && typeof cause === "object" && "status" in cause
+          ? Number(cause.status)
+          : null;
+      if (status === 401 || status === 403) {
+        clear();
+        setError("File 存取已失效，請重新登入或確認 Repository 權限。");
+        return;
+      }
+      setError(cause instanceof Error ? cause.message : "File SavedResult 無法讀取。");
+    } finally {
+      if (ticket === responseGeneration.current) setBusy(false);
+    }
+  };
+  const selectedObservation =
+    savedSource?.observations.find((item) => item.id === selectedObservationId) ?? null;
+
   const addNode = () => {
     const selectedParent = document.nodes.find((node) => node.id === parentId);
     if (
@@ -230,6 +293,8 @@ export default function ContentPanel({
     }));
     setTitle("");
     setBody("");
+    setSelectedObservationId(null);
+    setSourceReviewed(false);
   };
   const loadMoreResources = async () => {
     if (!resourceNext) return;
@@ -327,6 +392,103 @@ export default function ContentPanel({
             原命令重試
           </Button>
         </div>
+      )}
+      {sourceLocator && view?.canEdit && (
+        <Card>
+          <CardHeader>
+            <CardTitle>從 File SavedResult 對應 Content 草稿</CardTitle>
+            <CardDescription>
+              File 來源需重新授權讀取。解析內容是未驗證候選資料，不會自動建立工作階層、 數量、合約或
+              WBS。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy || pending !== null}
+              onClick={() => void loadFileSource()}
+            >
+              讀取指定 SavedResult Revision
+            </Button>
+            {savedSource && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {savedSource.documentKind} · Run {savedSource.runId} · Revision{" "}
+                  {savedSource.revisionId}
+                </p>
+                <div className="grid gap-2" aria-label="File 解析候選欄位">
+                  {savedSource.observations.map((observation) => (
+                    <Button
+                      key={observation.id}
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start whitespace-normal text-left"
+                      disabled={busy || pending !== null}
+                      onClick={() => {
+                        setSelectedObservationId(observation.id);
+                        setSourceReviewed(false);
+                      }}
+                    >
+                      {observation.label} · {observation.value ?? "未提供值"}
+                      {observation.uncertain ? " · 不確定" : ""}
+                    </Button>
+                  ))}
+                </div>
+                {selectedObservation && (
+                  <div className="grid gap-2 rounded-lg border p-3 text-sm">
+                    <strong>{selectedObservation.label}</strong>
+                    <p className="whitespace-pre-wrap">{selectedObservation.value ?? "缺少值"}</p>
+                    <p className="text-muted-foreground">
+                      觀測項目：{selectedObservation.id} · 來源位置：{" "}
+                      {selectedObservation.source
+                        ? JSON.stringify(selectedObservation.source)
+                        : "未定位"}
+                    </p>
+                    {selectedObservation.uncertain && (
+                      <p className="text-destructive">
+                        此來源標記為不確定，必須核對原始 File 再決定是否採用。
+                      </p>
+                    )}
+                    {!observationCanPrefill(selectedObservation) && (
+                      <p className="text-destructive">
+                        值缺失或超過 Content 節點內容上限，請人工整理，不會截斷來源。
+                      </p>
+                    )}
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={sourceReviewed}
+                        onChange={(event) => setSourceReviewed(event.target.checked)}
+                      />
+                      已核對此項目與來源，理解它尚非正式 Content 事實
+                    </label>
+                    <Button
+                      type="button"
+                      disabled={
+                        busy ||
+                        pending !== null ||
+                        !sourceReviewed ||
+                        !observationCanPrefill(selectedObservation)
+                      }
+                      onClick={() => {
+                        setTitle(selectedObservation.label);
+                        setBody(selectedObservation.value ?? "");
+                      }}
+                    >
+                      預填下方節點表單（不寫入）
+                    </Button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  預填不會推斷 Subject／Object／SubObject／Work／Task，也不會換算數量或單位。
+                  請自行選擇類型與上層、檢查內容，再透過 Content 儲存版本。 目前沒有持久的
+                  File→Content 來源稽核契約；這是人工對應，不是正式自動匯入。
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
       <Card>
         <CardHeader>
@@ -605,6 +767,32 @@ export default function ContentPanel({
           ))}
         </CardContent>
       </Card>
+      {view?.canEdit &&
+        view.revision &&
+        view.revision.document.nodes.some(
+          (node) => (node.kind === "WORK" || node.kind === "TASK") && node.plannedQuantity !== null,
+        ) && (
+          <div className="grid gap-2 rounded-lg border p-3 text-sm">
+            <p className="font-medium">下一步：以正式 Content Revision 建立 Contract</p>
+            <p className="text-muted-foreground">
+              只引用已儲存的 Content v{view.revision.version}，不會使用尚未儲存的草稿，
+              也不會自動建立或啟用合約。
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy || pending !== null}
+              onClick={() => {
+                const query = new URLSearchParams({
+                  planRevisionId: view.revision?.revisionId ?? "",
+                });
+                globalThis.window.location.assign(`${contractsPath}?${query.toString()}`);
+              }}
+            >
+              前往 Contracts 選擇 Work／Task 與約定數量
+            </Button>
+          </div>
+        )}
       <Card>
         <CardHeader>
           <CardTitle>新增節點</CardTitle>
