@@ -63,7 +63,7 @@ test("the protected Node process still initializes, queries and closes PostgreSQ
   assert.equal(report.event, "pglite-fixture-ready");
   for (const key of ["startupMs", "schemaReadMs", "schemaApplyMs", "totalMs"] as const) {
     assert.ok(key in report);
-    const duration = report[key];
+    const duration: unknown = Object.entries(report).find(([field]) => field === key)?.[1];
     assert.ok(typeof duration === "number" && Number.isFinite(duration) && duration >= 0);
   }
   assert.ok("schemaFileCount" in report);
