@@ -58,6 +58,12 @@ test("Sentry data collection keeps frame-local and surrounding source values out
   assert.equal(maxBreadcrumbs, 0);
   assert.equal(dataCollection.stackFrameVariables, false);
   assert.equal(dataCollection.frameContextLines, 0);
+  assert.deepEqual(dataCollection.genAI, { inputs: false, outputs: false });
+  assert.equal(dataCollection.databaseQueryData, false);
+  assert.equal(dataCollection.httpHeaders, false);
+  assert.deepEqual(dataCollection.httpBodies, []);
+  assert.equal(dataCollection.cookies, false);
+  assert.equal(dataCollection.urlQueryParams, false);
 });
 
 test("handled server failures capture only 5xx responses", () => {
