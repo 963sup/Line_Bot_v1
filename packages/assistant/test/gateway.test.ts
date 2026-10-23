@@ -8,8 +8,5 @@ test("gateway validates model ID and delegates API key or OIDC authentication to
     () => createGatewayTextGenerator({ model: "bad-model" }),
     /Invalid AI_GATEWAY_MODEL/,
   );
-  assert.equal(
-    typeof createGatewayTextGenerator({ model: "google/gemini-2.5-flash" }),
-    "function",
-  );
+  assert.equal(typeof createGatewayTextGenerator({ model: "google/gemini-2.5-flash" }), "function");
 });
