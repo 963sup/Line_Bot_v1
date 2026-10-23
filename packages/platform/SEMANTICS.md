@@ -33,6 +33,7 @@ No canonical business concept is currently declared for this owner.
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | contract | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
+| provides | file | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | provides | resources | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | provides | wiki | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 

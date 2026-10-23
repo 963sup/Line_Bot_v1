@@ -781,6 +781,7 @@ export function validate(root) {
 
     const releasePlan = releaseWorkflow.jobs?.release_plan;
     const releaseSupabase = releaseWorkflow.jobs?.supabase;
+    const releaseStorage = releaseWorkflow.jobs?.supabase_storage;
     const releaseDeployment = releaseWorkflow.jobs?.deployment;
     const releaseIdentifierActivation = releaseWorkflow.jobs?.identifier_runtime_activation;
     const releaseRich = releaseWorkflow.jobs?.rich_menu;
@@ -788,6 +789,7 @@ export function validate(root) {
     if (
       !releasePlan ||
       !releaseSupabase ||
+      !releaseStorage ||
       !releaseDeployment ||
       !releaseIdentifierActivation ||
       !releaseRich ||
@@ -821,6 +823,7 @@ export function validate(root) {
     }
     for (const job of [
       releaseSupabase,
+      releaseStorage,
       releaseDeployment,
       releaseIdentifierActivation,
       releaseRich,
@@ -906,6 +909,46 @@ export function validate(root) {
     }
     if (main < 0 || sync <= main) errors.push("CI: Supabase must guard current main before sync");
     const syncStep = supabaseSteps[sync];
+    const schemaReady =
+      "(needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))";
+    const storageReady =
+      "(needs.supabase_storage.result == 'success' || (needs.release_plan.outputs.storage_changed != 'true' && needs.supabase_storage.result == 'skipped'))";
+    const storageSteps = releaseStorage?.steps ?? [];
+    const storageMain = currentMainIndex(storageSteps);
+    const storageSync = storageSteps.findIndex((step) => step.run === "pnpm storage:remote sync");
+    const storageSyncStep = storageSteps[storageSync];
+    const expectedStorageEnv = {
+      GITHUB_TOKEN: "${{ github.token }}",
+      GITHUB_REPOSITORY: "${{ github.repository }}",
+      SUPABASE_ACCESS_TOKEN: "${{ secrets.SUPABASE_ACCESS_TOKEN }}",
+      POSTGRES_URL_NON_POOLING: "${{ secrets.POSTGRES_URL_NON_POOLING }}",
+      SUPABASE_RELEASE_SHA: "${{ needs.release_plan.outputs.head_sha }}",
+      SUPABASE_URL: "${{ secrets.SUPABASE_URL }}",
+      SUPABASE_CONFIRM_PROJECT: "nmssogphayjymjpbnrxv",
+    };
+    if (
+      releasePlan?.outputs?.storage_changed !== "${{ steps.plan.outputs.storage_changed }}" ||
+      !releaseStorage?.if?.includes("needs.release_plan.outputs.storage_changed == 'true'") ||
+      !releaseStorage.if.includes(schemaReady) ||
+      JSON.stringify(releaseStorage.needs) !==
+        JSON.stringify(["release_plan", "validation", "supabase"]) ||
+      releaseStorage.env?.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main" ||
+      releaseStorage.concurrency?.group !== releaseSupabase?.concurrency?.group ||
+      releaseStorage.concurrency?.["cancel-in-progress"] !== false ||
+      storageMain < 0 ||
+      storageSync <= storageMain ||
+      storageSteps.filter((step) => step.run?.includes("storage:remote")).length !== 1 ||
+      JSON.stringify(Object.entries(storageSyncStep?.env ?? {}).sort()) !==
+        JSON.stringify(Object.entries(expectedStorageEnv).sort()) ||
+      !storageSteps.some(
+        (step) =>
+          step.uses === "actions/upload-artifact@v4" &&
+          step.if === "always()" &&
+          step.with?.path === ".artifacts/supabase-remote/storage-bucket-readback.json",
+      )
+    ) {
+      errors.push("CI: Storage must require changed-source exact-main publication and readback");
+    }
     const accessTokenReference = "${{ secrets.SUPABASE_ACCESS_TOKEN }}";
     const accessTokenReferences =
       releaseWorkflowSource.match(/\$\{\{\s*secrets\.SUPABASE_ACCESS_TOKEN\s*\}\}/g) ?? [];
@@ -916,17 +959,19 @@ export function validate(root) {
       ) ||
       Object.values(releaseWorkflow.jobs ?? {}).some((job) =>
         (job?.steps ?? []).some(
-          (step) => step !== syncStep && Object.hasOwn(step.env ?? {}, "SUPABASE_ACCESS_TOKEN"),
+          (step) =>
+            step !== syncStep &&
+            step !== storageSyncStep &&
+            Object.hasOwn(step.env ?? {}, "SUPABASE_ACCESS_TOKEN"),
         ),
       );
     if (
       syncStep?.env?.SUPABASE_ACCESS_TOKEN !== accessTokenReference ||
-      accessTokenReferences.length !== 1 ||
+      storageSyncStep?.env?.SUPABASE_ACCESS_TOKEN !== accessTokenReference ||
+      accessTokenReferences.length !== 2 ||
       misplacedAccessToken
     ) {
-      errors.push(
-        "CI: Supabase access token must be exposed only to the exact declarative schema sync step",
-      );
+      errors.push("CI: Supabase access token must be scoped to Schema and Storage sync steps");
     }
     const evidenceUpload = supabaseSteps.find(
       (step) => step.uses === "actions/upload-artifact@v4" && step.if === "always()",
@@ -953,8 +998,6 @@ export function validate(root) {
         "CI: Supabase must preserve plan, verification, history, recovery and scoped identifier readback evidence even on failure",
       );
     }
-    const schemaReady =
-      "(needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))";
     const webReady =
       "(needs.deployment.result == 'success' || (needs.release_plan.outputs.web_affected != 'true' && needs.deployment.result == 'skipped'))";
     const deploymentSteps = releaseDeployment?.steps ?? [];
@@ -969,12 +1012,14 @@ export function validate(root) {
       !releaseDeployment?.if?.includes("always()") ||
       !releaseDeployment.if.includes("needs.release_plan.outputs.web_affected == 'true'") ||
       !releaseDeployment.if.includes(schemaReady) ||
+      !releaseDeployment.if.includes(storageReady) ||
       !releaseDeployment.needs?.includes("supabase") ||
+      !releaseDeployment.needs?.includes("supabase_storage") ||
       deploymentMain < 0 ||
       productionDeploy <= deploymentMain
     ) {
       errors.push(
-        "CI: production deployment must be Web-affected only, follow Supabase contract convergence or unchanged skip, and invoke the Vercel owner after current-main guard",
+        "CI: production deployment must be Web-affected only, follow Supabase contract convergence and Storage readiness or unchanged skip, and invoke the Vercel owner after current-main guard",
       );
     }
     const identifierActivationSteps = releaseIdentifierActivation?.steps ?? [];

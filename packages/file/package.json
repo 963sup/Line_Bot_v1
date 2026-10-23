@@ -1,0 +1,51 @@
+{
+  "name": "@line_bot_v1/file",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application/use-cases/files": {
+      "types": "./dist/application/use-cases/files.d.ts",
+      "default": "./dist/application/use-cases/files.js"
+    },
+    "./application/use-cases/reclaim": {
+      "types": "./dist/application/use-cases/reclaim.d.ts",
+      "default": "./dist/application/use-cases/reclaim.js"
+    },
+    "./composition/bootstrap/files": {
+      "types": "./dist/composition/bootstrap/files.d.ts",
+      "default": "./dist/composition/bootstrap/files.js"
+    },
+    "./composition/bootstrap/processors": {
+      "types": "./dist/composition/bootstrap/processors.d.ts",
+      "default": "./dist/composition/bootstrap/processors.js"
+    },
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./domain/file": {
+      "types": "./dist/domain/file.d.ts",
+      "default": "./dist/domain/file.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
+  },
+  "dependencies": {
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*",
+    "@google/genai": "catalog:",
+    "@supabase/supabase-js": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

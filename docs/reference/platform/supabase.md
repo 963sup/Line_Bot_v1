@@ -33,7 +33,7 @@ Server runtime 直接使用 Supabase/Vercel integration 提供的 `POSTGRES_URL`
 
 RLS / grants 是 database defense-in-depth，不取代 application owner/scope authorization。需要 Auth database fact 的 cross-boundary invariant 由 app-owned FK 或 narrow SECURITY DEFINER function 封裝；`line_app` 只有 app_private 權限與 function EXECUTE，不直接取得 `auth` USAGE/SELECT。External identity proof 則走 Supabase Auth API adapter，不直接查 Supabase Auth tables。
 
-Supabase secret / service-role 類高權限變數即使由 Marketplace 一併注入，也必須視為 **server-only technical capability**：它可以繞過一般 RLS enforcement，因此不得出現在 browser/client bundle，也不能因持有高權限 key 就跳過 actor qualification、authorization、scope 或 business invariant。Current business persistence 不消費 service-role key。
+Supabase secret / service-role 類高權限變數即使由 Marketplace 一併注入，也必須視為 **server-only technical capability**：它可以繞過一般 RLS enforcement，因此不得出現在 browser/client bundle，也不能因持有高權限 key 就跳過 actor qualification、authorization、scope 或 business invariant。Application PostgreSQL persistence 不消費 service-role key；File 私有 Storage Object Adapter 在 server-only runtime 消費該 key，但必須先由 File Application／Repository 完成當下授權。
 
 Web runtime 的 PostgreSQL application connection contract 是 provider-owned `POSTGRES_URL`。Vercel 與 Supabase resource 綁定後由平台同步該值；Vercel serverless runtime 使用 Supavisor transaction pooler（port 6543），business transaction 內立即 `SET LOCAL ROLE line_app`，維持 grants、RLS 與 application data boundary。
 
@@ -80,6 +80,7 @@ RLS 可以拒絕不合法 database access，但不能回答完整的 Domain 問�
 | `POSTGRES_URL` | server-only PostgreSQL technical connection；Vercel Production 由 Supabase Marketplace resource 自動同步，application transaction 立即降權到 `line_app` |
 | `POSTGRES_URL_NON_POOLING` | server-only schema operator connection；只供 remote reconciliation，不是 Web runtime connection |
 | `SUPABASE_URL` | remote reconciliation 的 project identity guard；必須與 operator connection 指向同一 Supabase project |
+| `SUPABASE_SERVICE_ROLE_KEY` | server-only File private object API credential；不得進 Browser、CLI 請求、Logs 或共用 PostgreSQL Adapter |
 | `SUPABASE_ACCESS_TOKEN` | server-only Management API credential；只注入可能需要首次 cutover recovery readback 的 schema sync step，不進 browser/runtime、deployment 或 runtime activation，也不作 business authority |
 
 Secret values、project ID、callback origin 等不寫入 docs 範例。
@@ -116,3 +117,31 @@ PGlite/local SQL test能驗局部 schema／transaction，不等於 remote TLS、
 - Release ordering：[Release](../operations/release.md)
 - Recovery：[Recovery](../operations/recovery.md)
 - Production gaps：[Runtime and platform gaps](../../change/gaps/runtime-and-platform.md)
+
+## Free Plan capability ownership and activation
+
+The current Supabase Organization for `Line_Bot_v1` is on the Free plan; account-specific quotas and provider availability must be verified again before publication. This section routes capabilities to their existing authority; it does **not** enable optional features by declaration.
+
+| Free-capable provider feature | Current consumer and authority | Activation policy |
+| --- | --- | --- |
+| Postgres / application SQL / RLS | `app_private` declarative schema; each `packages/<owner>` owns its facts | Current; keep browser roles outside private schema |
+| PostgREST and pg_graphql | Hosted PostgREST exists; no authorized private-business GraphQL consumer | Do not create a second direct browser business API |
+| Auth providers | Account's Google PKCE proof; LINE identity remains independent | Current subset; provider user metadata never grants Repository permission |
+| File Storage | File's originals; `supabase/config.toml` owns the private `repository-files` bucket settings | Target; Bucket publication does not imply File Upload adapter delivered |
+| Realtime Broadcast / Presence / Postgres Changes | No verified realtime consumer for File or other owners | Leave inactive until actual private change feed and access revocation rules exist |
+| Edge Functions | No deployed function consumer currently evidenced | No empty `functions/` or duplicate Next.js use case |
+| pg_cron / pg_net / Vault | Attendance's existing authenticated scheduler | Current; do not create a generic second scheduler |
+| Queues / pgmq | No durable queue consumer (ProcessingRun already owns user intent) | Not enabled until claim, lease, recovery and retry contract is necessary |
+| pgvector / semantic search | No authoritative embedding consumer | Not enabled until owner, provenance, version and privacy contract exists |
+| Database webhooks | No separate required outbound consumer | Keep dormant; use owner-specific events only when needed |
+| Studio / Logs / advisors / CLI | Provider diagnostics and existing schema/Release operator | Provider tools, not product business Owners |
+
+Supabase Free currently documents approximately 500 MB per project for Database, 1 GB Storage, and 50 MB global maximum upload size. The File Bucket deliberately limits one object to 45 MiB (under the Free global limit). These are provider limits, **not** product authorization, upload completeness or backup guarantees. Free plans do not include downloadable managed daily backups or PITR. Database-only backups do not restore Storage objects. Reference: [Free quotas](https://supabase.com/docs/guides/platform/billing-on-supabase), [Storage limits](https://supabase.com/docs/guides/storage/uploads/file-limits), [Backup guarantees](https://supabase.com/docs/guides/platform/backups).
+
+### File Storage publication boundary
+
+- Bucket configuration Source of Truth: native `supabase/config.toml#storage.buckets.repository-files`. Do not add another `supabase/storage/file.json` manifest.
+- Bucket is **private**, format-neutral, and shared across Repositories. RepositoryId isolation comes from current Repository authorization in File; object keys or bucket visibility alone do not grant access.
+- `supabase/schemas/*.sql` remains the sole application PostgreSQL schema authority; it must never `INSERT/UPDATE/ALTER` provider-owned `storage.buckets` or `storage.objects` to publish File Storage.
+- `pnpm storage:remote plan/verify` reads provider state without writes. Bucket publication is a separate changed-source Release job invoking `pnpm storage:remote sync` through the pinned Supabase CLI. It requires exact current-main authorization, the pinned project, a matching preflight and a post-write readback. Unknown outcomes must be read back rather than blindly retried; existing divergent Bucket settings must fail closed rather than overwrite.
+- Bucket creation and File's object storage adapter are independent deliverables. A configured empty Bucket does **not** mean objects are safely persisted. File requires a durable upload identity, hash verification, finalize, immutable key, rollback/recovery and protected download before replacing its current PostgreSQL `bytea` implementation.

@@ -311,6 +311,12 @@
         "@line_bot_v1/resources",
         "@line_bot_v1/content"
       ]
+    },
+    "@line_bot_v1/file": {
+      "path": "packages/file",
+      "moduleKind": "domain-module",
+      "semanticOwner": "file",
+      "allowedWorkspaceDependencies": ["@line_bot_v1/platform", "@line_bot_v1/repository"]
     }
   },
   "targetModules": {
@@ -679,7 +685,8 @@
         "@line_bot_v1/resources",
         "@line_bot_v1/content",
         "@line_bot_v1/contract",
-        "@line_bot_v1/execution"
+        "@line_bot_v1/execution",
+        "@line_bot_v1/file"
       ]
     }
   }

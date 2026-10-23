@@ -4,6 +4,11 @@ import { pathToFileURL } from "node:url";
 
 const mocked = new Set([
   "@line_bot_v1/account/postgres",
+  "@line_bot_v1/file/application/use-cases/files",
+  "@line_bot_v1/file/composition/bootstrap/files",
+  "@line_bot_v1/file/composition/bootstrap/processors",
+  "@line_bot_v1/file/domain/error",
+  "@line_bot_v1/file/domain/file",
   "@line_bot_v1/contract/application/use-cases/contracts",
   "@line_bot_v1/contract/composition/bootstrap/contracts",
   "@line_bot_v1/contract/domain/error",
@@ -22,7 +27,8 @@ function operationSource(
   owner,
   factory = owner === "contract" ? "createContracts" : "createExecutions",
 ) {
-  const errorName = owner === "contract" ? "ContractError" : "ExecutionError";
+  const errorName =
+    owner === "contract" ? "ContractError" : owner === "file" ? "FileError" : "ExecutionError";
   return `
     import { ${errorName} } from "@line_bot_v1/${owner}/domain/error";
     const scenario = process.env.CLI_SCENARIO;
@@ -39,6 +45,11 @@ function operationSource(
     export function ${factory}() {
       if (scenario === "factory-error") throw new Error("TOP_SECRET");
       return {
+        file: async (actor, query) => invoke("file", actor, query),
+        ${owner === "file" ? 'pendingUploads: async (actor, scope) => invoke("pendingUploads", actor, scope),' : ""}
+        processing: async (actor, query) => invoke("processing", actor, query),
+        result: async (actor, command) => invoke("result", actor, command),
+        run: async (actor, command) => invoke("run", actor, command),
         execute: async (actor, command) => invoke("execute", actor, command),
         read: async (actor, query) => invoke("read", actor, query),
         list: async (actor, query) => invoke("list", actor, query),
@@ -50,6 +61,16 @@ function operationSource(
 
 function sourceFor(url) {
   const specifier = url.slice("cli-test:".length);
+  if (specifier === "@line_bot_v1/file/domain/error")
+    return `export class FileError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }`;
+  if (specifier === "@line_bot_v1/file/domain/file")
+    return `export const fileLimits = { bytes: 47185920 };`;
+  if (specifier === "@line_bot_v1/file/application/use-cases/files")
+    return operationSource("file", "createFiles");
+  if (specifier === "@line_bot_v1/file/composition/bootstrap/files")
+    return `export function createPostgresFileDependencies() { return {}; }`;
+  if (specifier === "@line_bot_v1/file/composition/bootstrap/processors")
+    return `export const plainTextProcessor = {}; export function createGeminiFileProcessor() { return {}; }`;
   if (specifier === "@line_bot_v1/contract/domain/error")
     return `export class ContractError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }`;
   if (specifier === "@line_bot_v1/execution/domain/error")

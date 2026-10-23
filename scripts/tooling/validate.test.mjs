@@ -148,6 +148,7 @@ test("source operations trigger their tooling tests in fast validation and keep 
     "scripts/code/cli.mjs",
     "scripts/runtime/internal-input.mjs",
     "scripts/contract/run.mjs",
+    "scripts/file/run.mjs",
     "scripts/execution/run.mjs",
   ]) {
     const scope = classifyChangedFiles([path]);
@@ -371,6 +372,7 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
     "scripts/code/*.test.mjs",
     "scripts/runtime/internal-input.test.mjs",
     "scripts/contract/*.test.mjs",
+    "scripts/file/*.test.mjs",
     "scripts/execution/*.test.mjs",
   ]);
 });

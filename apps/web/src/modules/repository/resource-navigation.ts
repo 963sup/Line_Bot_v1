@@ -16,6 +16,7 @@ export function repositoryIssuesPath(ownerLogin: string, repositoryName: string)
 
 export type RepositoryResourceSection =
   | "content"
+  | "files"
   | "resources"
   | "contracts"
   | "executions"
@@ -49,6 +50,11 @@ export function repositoryResourceNavigationItems(
       href: repositoryContentPath(ownerLogin, repositoryName),
       label: "Content",
       section: "content",
+    },
+    {
+      href: repositoryFilesPath(ownerLogin, repositoryName),
+      label: "Files",
+      section: "files",
     },
     {
       href: repositoryResourcesPath(ownerLogin, repositoryName),
@@ -115,6 +121,10 @@ export function repositoryResourceNavigationItems(
 
 export function repositoryContentPath(ownerLogin: string, repositoryName: string) {
   return `${repositoryPath(ownerLogin, repositoryName)}/content`;
+}
+
+export function repositoryFilesPath(ownerLogin: string, repositoryName: string) {
+  return `${repositoryPath(ownerLogin, repositoryName)}/files`;
 }
 
 export function repositoryResourcesPath(ownerLogin: string, repositoryName: string) {
