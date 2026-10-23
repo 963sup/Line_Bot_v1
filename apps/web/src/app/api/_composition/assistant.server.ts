@@ -16,9 +16,9 @@ function geminiConfiguration() {
 }
 
 function gatewayConfiguration() {
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
   const model = process.env.AI_GATEWAY_MODEL;
-  return apiKey && model ? { apiKey, model } : undefined;
+  const hasCredentials = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+  return model && hasCredentials ? { model } : undefined;
 }
 
 function geminiRuntime() {
