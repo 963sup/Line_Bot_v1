@@ -1,4 +1,5 @@
 import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
+import { createGatewayAssistant } from "@line_bot_v1/assistant/gateway";
 import { createGeminiClient, runGeminiProbe } from "@line_bot_v1/assistant/gemini";
 import {
   type AssistantRuntimeDependencies,
@@ -14,6 +15,12 @@ function geminiConfiguration() {
   return apiKey && model ? { apiKey, model } : undefined;
 }
 
+function gatewayConfiguration() {
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  const model = process.env.AI_GATEWAY_MODEL;
+  return apiKey && model ? { apiKey, model } : undefined;
+}
+
 function geminiRuntime() {
   const configuration = geminiConfiguration();
   if (!configuration) throw new Error("Gemini is not configured");
@@ -26,6 +33,14 @@ function geminiRuntime() {
 const assistantRuntime = createAssistantRuntime({
   isConfigured: () => Boolean(geminiConfiguration()),
   generate: async (input) => {
+    const gateway = gatewayConfiguration();
+    if (gateway) {
+      return createGatewayAssistant(gateway).generate({
+        prompt: input,
+        system:
+          "你是繁體中文工作群組助手。只簡短回答使用者明確提問。不具備搜尋、查帳或執行動作能力，不聲稱已執行。含糊輸入問一句釐清問題。若要記帳請使用者 @助手 記帳後傳圖。",
+      });
+    }
     const { client, model } = geminiRuntime();
     const result = await client.models.generateContent({
       model,
@@ -35,34 +50,4 @@ const assistantRuntime = createAssistantRuntime({
           "你是繁體中文工作群組助手。只簡短回答使用者明確提問。不具備搜尋、查帳或執行動作能力，不聲稱已執行。含糊輸入問一句釐清問題。若要記帳請使用者 @助手 記帳後傳圖。",
         maxOutputTokens: 600,
         httpOptions: { timeout: 10000, retryOptions: { attempts: 1 } },
-        abortSignal: AbortSignal.timeout(12000),
-      },
-    });
-    return result.text;
-  },
-  runAgent: async (input) => {
-    const { client, model } = geminiRuntime();
-    return runIntakeAgent({ models: client.models, model, input });
-  },
-  probe: async () => {
-    const { client, model } = geminiRuntime();
-    return runGeminiProbe(
-      {
-        models: {
-          generateContent: async (parameters) => {
-            const response = await client.models.generateContent(parameters);
-            return response.text === undefined ? {} : { text: response.text };
-          },
-        },
-      },
-      model,
-    );
-  },
-} satisfies AssistantRuntimeDependencies);
-
-export const { answer, agentText, aiTestText } = assistantRuntime;
-
-export async function assistantSurface(subject: string, mode: AssistantSurfaceMode, input: string) {
-  await activeLineUser(subject);
-  return runAssistantSurface(mode, input, assistantRuntime);
-}
+        abortSignal: AbortS...[truncated]
