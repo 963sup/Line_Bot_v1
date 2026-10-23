@@ -4,6 +4,7 @@ import { type RepositoryResourceSection, repositoryPath } from "./resource-navig
 
 const titles: Record<RepositoryResourceSection, string> = {
   content: "Content",
+  files: "Files",
   resources: "Resources",
   contracts: "Contracts",
   executions: "Executions",

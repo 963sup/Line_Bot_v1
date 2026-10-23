@@ -24,6 +24,7 @@ jobs:
     outputs:
       head_sha: ${{ steps.plan.outputs.head_sha }}
       schema_changed: ${{ steps.plan.outputs.schema_changed }}
+      storage_changed: ${{ steps.plan.outputs.storage_changed }}
       web_affected: ${{ steps.plan.outputs.web_affected }}
       rich_menu_changed: ${{ steps.plan.outputs.rich_menu_changed }}
       scheduler_changed: ${{ steps.plan.outputs.scheduler_changed }}
@@ -109,16 +110,73 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  deployment:
-    concurrency:
-      group: vercel-production-mini-app-line
-      cancel-in-progress: false
+  supabase_storage:
     needs: [release_plan, validation, supabase]
     if: >-
       always() &&
       needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
-      needs.release_plan.outputs.web_affected == 'true' &&
+      needs.release_plan.outputs.storage_changed == 'true' &&
       (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_REMOTE_MUTATION_CONTEXT: validated-main
+    concurrency:
+      group: supabase-production-nmssogphayjymjpbnrxv
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release_plan.outputs.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+
+      - name: Require current main before Storage publication
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
+        run: pnpm github:current-main --sha "$SHA"
+
+      - name: Converge private File Bucket and read back
+        run: pnpm storage:remote sync
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          SUPABASE_RELEASE_SHA: ${{ needs.release_plan.outputs.head_sha }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_CONFIRM_PROJECT: nmssogphayjymjpbnrxv
+
+      - name: Preserve Storage readback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-storage-${{ needs.release_plan.outputs.head_sha }}
+          path: .artifacts/supabase-remote/storage-bucket-readback.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deployment:
+    concurrency:
+      group: vercel-production-mini-app-line
+      cancel-in-progress: false
+    needs: [release_plan, validation, supabase, supabase_storage]
+    if: >-
+      always() &&
+      needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
+      needs.release_plan.outputs.web_affected == 'true' &&
+      (needs.supabase.result == 'success' || (needs.release_plan.outputs.schema_changed != 'true' && needs.supabase.result == 'skipped')) &&
+      (needs.supabase_storage.result == 'success' || (needs.release_plan.outputs.storage_changed != 'true' && needs.supabase_storage.result == 'skipped'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

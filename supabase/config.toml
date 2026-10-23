@@ -1,4 +1,5 @@
-# Local development only; managed platform schemas stay outside app_private.
+# Local CLI configuration plus native File Bucket desired state.
+# Application PostgreSQL schema remains in supabase/schemas, not provider-owned schemas.
 project_id = "Line_Bot"
 
 [api]
@@ -22,3 +23,12 @@ schema_paths = ["./schemas/*.sql"]
 [db.seed]
 enabled = false
 sql_paths = []
+# Supabase CLI is the sole desired-state authority for the File bucket.
+# This is a private provider object store, not an additional Repository ACL.
+[storage]
+enabled = true
+file_size_limit = "50MB"
+
+[storage.buckets.repository-files]
+public = false
+file_size_limit = "45MiB"

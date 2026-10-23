@@ -1,5 +1,7 @@
 # Web API transport boundary
 
+`GET/POST /api/repository-files` translates current LINE session and Repository owner/name locator into File public use cases. GET is authorized File List/detail/Run history/actor-only Pending Upload readback/limited download; POST is exact-scope bounded multipart Upload or explicit single-Processor Run/Save/Discard. File owner rechecks access, version, receipts and Storage integrity; Web exposes neither service-role credential nor original private object key. Browser media is limited to 3 MB; no silent processing.
+
 `GET/POST /api/repository-wiki` resolves `owner`/`name` through current Repository access after verified LINE identity/active Account mapping. GET transports list/page/history/compare queries; POST transports existing Wiki commands, with exact resolved RepositoryId matching, origin/JSON/size checks and owner-side replay/version authorization. Actor/role in input never authorizes; archived Repository is read-only.
 
 `GET /api/repository-insights` transports Insights Repository Pulse. `owner`/`name` locate current Repository scope; optional `from`/`to` are nonnegative epoch milliseconds with `[from,to)` semantics. Verified LINE identity maps to an active User, and each source rechecks authorization. Authorization fails closed; infrastructure source failure stays explicitly unavailable. No mutation endpoint.

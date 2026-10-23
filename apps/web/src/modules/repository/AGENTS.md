@@ -1,5 +1,7 @@
 # Web repository module
 
+Repository Files navigation uses the canonical `/{login}/{repository}/files` route. File operations/processing remain owned by `packages/file`; Repository only authorizes current scope, and Web preserves one request identity per explicit operation without browser-side ownership of saved facts.
+
 Wiki at `/{login}/{repository}/wiki` and `/wiki/{pageId}` consumes Wiki owner use cases. Stable page identity, immutable history, comparison/restore and exact replay remain owner contracts. Web binds pending commands to verified User/Repository/page, preserves unknown-result original content, clears private state on identity loss/hidden views, and renders Markdown only as escaped text. No second writer or page-specific ACL.
 
 Insights at `/{login}/{repository}/insights` and `GET /api/repository-insights` presents Repository Pulse from Issue-owned activity and workflow metrics. Source authorization remains with Repository and Issue. Period activity and current workflow are separate; unavailable sources and incomplete event coverage remain explicit. Project WBS metrics stay on Project WBS. Clear private metrics on session block, hidden/pagehide and failed refresh; stale responses cannot restore them.
@@ -10,7 +12,7 @@ Project is the primary entry for new WBS. Repository Overview conditionally offe
 
 `GET /api/repository-wbs/transfer` reads only the current source User owner's live transfer intent. POST records a guarded request for the exact source version/head and target Project after owner-side destination/dependency preflight. `POST /api/repository-wbs/transfer/cancel` withdraws only `REQUESTED` with a separate exact-replay request ID; it remains available to the current source User owner when target Project access or lifecycle no longer qualifies, preserves the captured snapshot and cannot cancel `ACTIVE`. The Web surface cannot activate transfer, infer Release evidence or dual-write Project WBS. It must keep request and cancellation retry identities distinct and display owner-returned state; trusted Release execution and readback occur through the WBS operator contract.
 ## 現行 surface 與 invariant
-URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `access`、`settings`、`issues`、`discussions`、`labels`、`milestones` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。
+URLs：`/repositories`、`/repositories/lists`、`/repositories/lists/{listId}`、`/repositories/lists/discover`、`/search`、`/explore`、`/{login}/{repository}` 與其 `files`、`access`、`settings`、`issues`、`discussions`、`labels`、`milestones` 子資源；完整 locator 見 semantic model，HTTP selector 見 [API](../../app/api/AGENTS.md)。
 
 Repository resource routes 同時呈現 repos/issues/discussions，但 route grouping 不轉移 domain ownership：Repository 擁有 Repository scope/access，Issue lifecycle 由 `@line_bot_v1/issue` 擁有，Discussion lifecycle 由 `@line_bot_v1/discussion` 擁有。Issue.number、Milestone.number 與 Discussion.number 都是 Repository-local canonical semantics；現行 canonical Discussion detail route 使用 `/discussions/number/{discussionNumber}`，opaque id route 僅保留 pre-parity `number=null` 的 compatibility fallback，不得反向成為 authority。Label 目前只有 collection；若調整 locator，必須從 semantic truth 同步到 schema、domain 與 route，而不是只改 URL。
 

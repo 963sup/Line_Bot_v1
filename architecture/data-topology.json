@@ -180,7 +180,15 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/609_repository_wbs.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/610_repository_labels.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/610_wiki.sql",
       "role": "authoritative"
     },
     {
@@ -188,7 +196,39 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/611_wbs_outbox.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/612_actions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/615_files.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/616_contracts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/617_executions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/618_content_plans.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/619_resources.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/620_issues.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/620_task_dependencies.sql",
       "role": "authoritative"
     },
     {
@@ -364,6 +404,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/852_notification_receipts.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/860_partners.sql",
       "role": "authoritative"
     },
@@ -394,46 +438,6 @@
     {
       "path": "supabase/schemas/930_access_enforcement.sql",
       "role": "access-enforcement"
-    },
-    {
-      "path": "supabase/schemas/609_repository_wbs.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/610_wiki.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/611_wbs_outbox.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/612_actions.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/852_notification_receipts.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/616_contracts.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/617_executions.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/618_content_plans.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/619_resources.sql",
-      "role": "authoritative"
-    },
-    {
-      "path": "supabase/schemas/620_task_dependencies.sql",
-      "role": "authoritative"
     }
   ],
   "relations": [
@@ -2020,6 +2024,54 @@
       "authority": true,
       "semanticOwner": "execution",
       "concept": "task-dependency-command-receipt"
+    },
+    {
+      "name": "repository_files",
+      "kind": "table",
+      "path": "supabase/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file"
+    },
+    {
+      "name": "file_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-revision"
+    },
+    {
+      "name": "file_upload_intents",
+      "kind": "table",
+      "path": "supabase/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-upload-intent"
+    },
+    {
+      "name": "file_processing_runs",
+      "kind": "table",
+      "path": "supabase/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-processing-run"
+    },
+    {
+      "name": "file_processing_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-processing-revision"
+    },
+    {
+      "name": "file_commands",
+      "kind": "table",
+      "path": "supabase/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-command-receipt"
     }
   ]
 }

@@ -1,0 +1,87 @@
+import type { FileDescriptor, FileRevision, FileUploadIntent } from "../../domain/file.js";
+import type { ProcessingRevision } from "../../domain/processing-run.js";
+import type { FileRevisions, ProcessingRevisions } from "../repositories/files.js";
+
+export type FileReceipt =
+  | Readonly<{ kind: "file"; requestId: string; revision: FileRevision }>
+  | Readonly<{ kind: "processing"; requestId: string; revision: ProcessingRevision }>;
+export interface FileTransaction {
+  readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
+  readonly files: FileRevisions;
+  readonly uploads: {
+    load(): Promise<FileUploadIntent | null>;
+    prepare(intent: FileUploadIntent): Promise<void>;
+    /** Extend the active upload window before each external attempt. */
+    touch(): Promise<void>;
+  };
+  readonly processings: ProcessingRevisions;
+  nextId(): string;
+  replay(): Promise<FileReceipt | null>;
+  record(receipt: FileReceipt): Promise<void>;
+}
+export interface FileTransactions {
+  transact<T>(
+    actor: string,
+    identity: Readonly<{ repositoryId: string; kind: "file" | "processing"; id: string }>,
+    evidence: Readonly<{ requestId: string; payload: string }>,
+    work: (tx: FileTransaction) => Promise<T>,
+  ): Promise<T>;
+}
+export interface FileReads {
+  /** Pending Upload Intents belong only to the original actor and are never File List entries. */
+  pendingUploads(
+    actor: string,
+    scope: string,
+    after?: string,
+  ): Promise<{ intents: readonly FileUploadIntent[]; next: string | null }>;
+  file(actor: string, scope: string, id: string, revisionId?: string): Promise<FileRevision>;
+  processing(
+    actor: string,
+    scope: string,
+    id: string,
+    revisionId?: string,
+  ): Promise<ProcessingRevision>;
+  list(
+    actor: string,
+    scope: string,
+    after?: string,
+  ): Promise<{ files: readonly FileRevision[]; next: string | null }>;
+  processingsForFile(
+    actor: string,
+    scope: string,
+    fileId: string,
+    after?: string,
+  ): Promise<{
+    runs: readonly Pick<
+      ProcessingRevision,
+      | "runId"
+      | "fileId"
+      | "fileRevisionId"
+      | "state"
+      | "version"
+      | "processorId"
+      | "processorKind"
+      | "at"
+    >[];
+    next: string | null;
+  }>;
+}
+/** Operator-only capability; never exposed through a File Web route. */
+export interface FileReclamation {
+  candidates(beforeAt: number, quietMillis: number): Promise<readonly FileUploadIntent[]>;
+  quarantine(
+    actor: string,
+    requestId: string,
+    beforeAt: number,
+    quietMillis: number,
+  ): Promise<FileRevision | null>;
+  markReclaimed(actor: string, requestId: string, revisionId: string): Promise<void>;
+}
+
+export interface FilePayloadInspector {
+  inspect(
+    bytes: Uint8Array,
+    name: string,
+    mediaType: string,
+  ): { descriptor: FileDescriptor; bytes: Uint8Array };
+}

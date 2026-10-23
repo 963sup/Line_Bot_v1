@@ -88,6 +88,7 @@ export function classifyChangedFiles(files) {
       file.startsWith("scripts/code/") ||
       file.startsWith("scripts/runtime/") ||
       file.startsWith("scripts/contract/") ||
+      file.startsWith("scripts/file/") ||
       file.startsWith("scripts/execution/") ||
       file.startsWith("scripts/architecture/") ||
       file.startsWith("scripts/vercel/") ||
@@ -244,6 +245,7 @@ function main() {
         "scripts/code/*.test.mjs",
         "scripts/runtime/internal-input.test.mjs",
         "scripts/contract/*.test.mjs",
+        "scripts/file/*.test.mjs",
         "scripts/execution/*.test.mjs",
       ],
     ],
@@ -285,7 +287,12 @@ function main() {
     ],
     [
       "schema:remote:test",
-      ["--test", "scripts/supabase/postgres.test.mjs", "scripts/supabase/remote.test.mjs"],
+      [
+        "--test",
+        "scripts/supabase/postgres.test.mjs",
+        "scripts/supabase/remote.test.mjs",
+        "scripts/supabase/storage.test.mjs",
+      ],
     ],
     ["attendance:scheduler:test", ["--test", "scripts/attendance/scheduler.test.mjs"]],
     ["schema:check", [turbo, "run", "schema:check"]],

@@ -7,15 +7,17 @@ Low-frequency route lookup. Route existence does not grant authorization or prov
 | Route | Owner responsibility |
 | --- | --- |
 | `/{login}/{repository}/content` | Content work hierarchy, plan quantities, exact physical resource pins and coherent plan versions |
+| `/{login}/{repository}/files` | Repository-scoped protected File collection, bounded Web Upload/Download, explicitly selected Processor, Run History and local Preview→Save/Discard |
 | `/{login}/{repository}/resources` | Resources Location / Equipment / Material identity and lifecycle |
 | `/{login}/{repository}/contracts` | Contract commitments against exact Content Work/Task plan items |
 | `/{login}/{repository}/executions` | Execution Task actuals, prerequisite graph, resource use and internal review |
 
-The corresponding `/api/repository-content`, `/api/repository-resources`,
-`/api/repository-contracts` and `/api/repository-executions` transports consume public owner
-capabilities. Each request verifies current identity and Repository scope; POST checks Origin,
-bounded JSON and exact body/URL Repository agreement. Content and physical Resources have distinct
-identities and lifecycle contracts.
+The corresponding `/api/repository-content`, `/api/repository-files`,
+`/api/repository-resources`, `/api/repository-contracts` and `/api/repository-executions`
+transports consume public owner capabilities. Each request verifies current identity and Repository scope; POST checks Origin,
+bounded input and exact body/URL Repository agreement. File Upload uses bounded multipart
+with a 3 MB Web limit and never silently starts a Processor. Content and physical Resources
+have distinct identities and lifecycle contracts.
 
 ## Route contract
 
@@ -107,6 +109,7 @@ Current Repository-scoped collaboration/resource API：
 | `/api/repository-management` | Repository settings read + current-admin expected-version/exact-replay rename、visibility、archive、unarchive |
 | `/api/repository-subscription` | Current-readable Repository 的 User Watch state；SUBSCRIBED / UNSUBSCRIBED / IGNORED，獨立 version/replay 且不授權 |
 | `/api/repository-overview` | Verified active User 與 current Repository scope 的唯讀摘要；WBS Owner 提供舊入口 eligibility，失敗明示 unavailable；不回傳 Project 目的地或推測統計 |
+| `/api/repository-files` | Authenticated Repository-scoped File List/detail/ProcessingRun history、受保護小檔下載與 multipart 上傳、單次手動 Run/Save/Discard；Server 驗身份與 Repository scope，File owner 重驗權限與版本 |
 | `/api/repository-access` | GET access grant projection；POST expected-version + exact-replay Direct User / Organization Team grant mutation；不建立 Organization/Team membership |
 | `/api/projects` | Authorized Project collection read；Project-owned collaborator/public read policy與來源 access 每次重新驗證 |
 | `/api/projects/by-number/{projectNumber}` | owner-scoped canonical Project number lookup；owner login + number 只定位，仍重新驗 current Project access |

@@ -291,6 +291,12 @@
       "kind": "business-owner",
       "lifecycle": "current",
       "doc": "docs/owners/execution.md"
+    },
+    {
+      "id": "file",
+      "kind": "business-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/file.md"
     }
   ],
   "subdomains": [
@@ -390,6 +396,13 @@
         "docs/owners/notifications.md",
         "docs/owners/audit.md"
       ]
+    },
+    {
+      "id": "file-management",
+      "classification": "supporting",
+      "owners": ["file"],
+      "rationale": "Upload/List and user-selected processing are supporting capabilities; Run never follows Upload automatically, and Preview never saves or imports itself.",
+      "sources": ["docs/owners/file.md"]
     }
   ],
   "boundedContexts": [
@@ -522,6 +535,23 @@
       "id": "content",
       "owner": "content",
       "status": "selected"
+    },
+    {
+      "id": "file",
+      "owner": "file",
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/file.md"],
+        "sourcePaths": [
+          "packages/file/src/domain/file.ts",
+          "packages/file/src/domain/processing-run.ts"
+        ],
+        "testPaths": [
+          "packages/file/test/domain.test.ts",
+          "packages/file/test/persistence.test.ts"
+        ],
+        "rationale": "File original evidence and user-triggered ProcessingRuns have independent source/result lifecycles. SavedResult is an immutable outcome within ProcessingRun, not a third Aggregate or downstream approval."
+      }
     }
   ],
   "concepts": [
@@ -2033,6 +2063,66 @@
       "lifecycle": "current",
       "authorityMode": "authoritative",
       "definition": "One formal agreed quantity and frozen exact Content Work/Task plan basis embedded in an immutable Contract revision; distinct from both planned and actual quantity."
+    },
+    {
+      "id": "file",
+      "canonicalName": "File",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Repository-scoped protected original file identity; head selects an immutable revision. Format-neutral, not a Contract, Content plan or public attachment.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-revision",
+      "canonicalName": "FileRevision",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Immutable authorized File source revision: exact external private-object bytes identified by Repository/File/Revision, declared media type, size, SHA-256, actor and timestamp. A revision is committed only after content readback; edits and processing never replace its object.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-upload-intent",
+      "canonicalName": "FileUploadIntent",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine/reclaimed markers fence deletion of never-committed Storage objects; FileCommandReceipt alone proves finalization.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-processing-run",
+      "canonicalName": "FileProcessingRun",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "A single explicitly selected Parser/OCR/AI operation against an immutable File revision, with fenced attempts and Preview/Save/Discard lifecycle.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-processing-revision",
+      "canonicalName": "FileProcessingRevision",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Immutable user-requested processing attempt, RawResult and optional SavedResult with bounded edits, uncertainty and source locators.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-command-receipt",
+      "canonicalName": "FileCommandReceipt",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Immutable actor/request fingerprint and exact File or ProcessingRun revision receipt; reauthorization and fencing preserve recovery.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -2995,6 +3085,24 @@
       "integrationMode": "stable-identity+query",
       "authority": "resources",
       "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "file-repository-scope",
+      "provider": "repository",
+      "consumer": "file",
+      "meaning": "File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "file-platform-persistence",
+      "provider": "platform",
+      "consumer": "file",
+      "meaning": "File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "transaction-bound"
     }
   ],
   "capabilities": [
@@ -5511,6 +5619,145 @@
         "entrypoints": ["apps/web/src/app/api/repository-resources/route.ts"],
         "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
       }
+    },
+    {
+      "id": "manage-files",
+      "owner": "file",
+      "kind": "leaf",
+      "intent": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
+        "sourcePaths": [
+          "packages/file/src/domain/file.ts",
+          "packages/file/src/application/use-cases/files.ts",
+          "packages/file/src/application/use-cases/reclaim.ts",
+          "packages/file/src/adapters/outbound/persistence/files.ts",
+          "packages/file/src/adapters/outbound/storage/supabase.ts",
+          "packages/file/src/contracts/output/object-store.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/files",
+          "./application/use-cases/reclaim",
+          "./composition/bootstrap/files",
+          "./composition/bootstrap/processors",
+          "./domain/error",
+          "./domain/file"
+        ],
+        "entrypoints": [
+          "scripts/file/run.mjs",
+          "scripts/file/reclaim.mjs",
+          "apps/web/src/app/api/repository-files/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
+        ],
+        "testPaths": [
+          "packages/file/test/domain.test.ts",
+          "packages/file/test/extractors.test.ts",
+          "packages/file/test/persistence.test.ts",
+          "packages/file/test/object-store.test.ts",
+          "apps/web/test/files-owner-http.test.ts"
+        ],
+        "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport supports explicit bounded 3 MB multipart Upload/Download and current-authorized File List/Run History; private Supabase Storage remains the only bytes store. No large-file Web transport, live device/production acceptance or business import is asserted."
+      }
+    },
+    {
+      "id": "run-file-processing",
+      "owner": "file",
+      "kind": "leaf",
+      "intent": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
+        "sourcePaths": [
+          "packages/file/src/domain/processing-run.ts",
+          "packages/file/src/contracts/output/processor.ts",
+          "packages/file/src/application/use-cases/files.ts",
+          "packages/file/src/adapters/outbound/processing/plain-text.ts",
+          "packages/file/src/adapters/outbound/processing/gemini.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/files",
+          "./composition/bootstrap/files",
+          "./composition/bootstrap/processors",
+          "./domain/error",
+          "./domain/file"
+        ],
+        "entrypoints": [
+          "scripts/file/run.mjs",
+          "apps/web/src/app/api/repository-files/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
+        ],
+        "testPaths": [
+          "packages/file/test/domain.test.ts",
+          "packages/file/test/extractors.test.ts",
+          "packages/file/test/persistence.test.ts",
+          "apps/web/test/files-owner-http.test.ts"
+        ],
+        "note": "CLI and Repository-scoped Web invoke only user-selected available native UTF-8 text Parser or configured Gemini PDF/image AI. RawResult is untrusted Preview. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
+      }
+    },
+    {
+      "id": "manage-file-result",
+      "owner": "file",
+      "kind": "leaf",
+      "intent": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
+        "sourcePaths": [
+          "packages/file/src/domain/processing-run.ts",
+          "packages/file/src/application/use-cases/files.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/files",
+          "./composition/bootstrap/files",
+          "./composition/bootstrap/processors",
+          "./domain/error",
+          "./domain/file"
+        ],
+        "entrypoints": [
+          "scripts/file/run.mjs",
+          "apps/web/src/app/api/repository-files/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
+        ],
+        "testPaths": [
+          "packages/file/test/domain.test.ts",
+          "packages/file/test/extractors.test.ts",
+          "packages/file/test/persistence.test.ts",
+          "apps/web/test/files-owner-http.test.ts"
+        ],
+        "note": "CLI and Web provide explicit local Edit, Discard or version-bound Save of Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
+      }
     }
   ],
   "invariants": [
@@ -5624,6 +5871,22 @@
       "severity": "error",
       "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
       "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]
+    },
+    {
+      "id": "FILE1",
+      "scope": "file",
+      "statement": "Original file bytes reside in immutable private Storage objects keyed by exact Repository/File/Revision; an object never becomes a visible FileRevision before verified upload and transactional Finalize. Current Repository authorization precedes access/replay, and storage paths/keys do not grant access. Uncertain external outcome is resolved by explicit readback, never blind overwrite.",
+      "severity": "error",
+      "enforcement": ["source-code", "schema", "tests"],
+      "tags": ["file", "privacy", "immutable-evidence"]
+    },
+    {
+      "id": "FILE2",
+      "scope": "file",
+      "statement": "Only an explicit authorized user Run invokes the chosen processor. Preview remains untrusted and only version-bound Save creates a SavedResult; Discard creates no SavedResult. Durable attempt identity, permission rechecks and fencing preserve completion without database locks.",
+      "severity": "error",
+      "enforcement": ["source-code", "schema", "tests"],
+      "tags": ["file", "processing", "user-intent", "recovery", "trust"]
     }
   ],
   "truthRegistry": [
@@ -5893,6 +6156,10 @@
     {
       "semanticOwner": "execution",
       "module": "@line_bot_v1/execution"
+    },
+    {
+      "semanticOwner": "file",
+      "module": "@line_bot_v1/file"
     }
   ],
   "policies": [

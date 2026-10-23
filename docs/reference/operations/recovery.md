@@ -45,6 +45,10 @@ Current schema publication不以 migration history作 rollback機制，也不改
 
 Schema publication ordering見 [Release](release.md)；Supabase recovery/readback mechanism見 [Supabase](../platform/supabase.md)。
 
+## File orphan recovery
+
+A File Upload Intent is not a committed FileRevision. The File-owned `file:reclaim plan` is read-only. Destructive `apply` requires a separately governed, validated current-main Release operator context not yet wired into the existing main-push-only workflow; do not invoke from a branch, workstation or unvalidated provider context. Eligibility requires an explicitly selected UTC cutoff and at least seven days of inactivity. Quarantine under the original request/File locks blocks late Finalize before any object deletion; Storage removal needs independent object-absence readback before a durable reclaimed marker. Provider failure leaves quarantine for a separate explicit operator retry. Committed FileRevision bytes and receipts never qualify as orphan cleanup. This is not a database backup, a global Storage scan or permission to remove business evidence.
+
 ## External state
 
 Database recovery不自動恢復 LINE Rich Menu、webhook、scheduler、Google/Supabase console等外部狀態；外部平台狀態由 [External change control](../../rules/external-effects.md)逐項 readback。
