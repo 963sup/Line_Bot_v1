@@ -10,3 +10,13 @@ Routing and module overview for `@line_bot_v1/platform`.
 ## Scope
 
 Cross-cutting technical utilities: clock, UUID generation, structured errors, database helpers.
+
+## Test fixture profiling
+
+`postgresFixture()` creates an isolated PGlite database and applies the current declarative SQL schema for each fixture. To measure its phases without changing test isolation, run an affected package test explicitly with profiling enabled:
+
+```sh
+PGLITE_FIXTURE_PROFILE=1 pnpm --filter @line_bot_v1/repository test
+```
+
+Each successfully initialized fixture prints one `PGLITE_FIXTURE_PROFILE` JSON line to stderr with `startupMs` (PGlite/bootstrap), `schemaReadMs` (reading schema files), `schemaApplyMs` (applying SQL and setting the search path), `totalMs` and `schemaFileCount`. The output contains durations and counts only, not SQL or credentials. Profiling is disabled by default. Compare runs on the same revision and runner conditions before changing fixture isolation, test concurrency or Turbo cache policy.

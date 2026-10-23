@@ -28,7 +28,7 @@ test("PGlite refuses an unsafe Node process before allocating WASM", () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
-test("the protected Node process still initializes, queries and closes PostgreSQL", () => {
+test("the protected Node process still initializes, queries and closes PostgreSQL", (t) => {
   const result = spawnSync(
     process.execPath,
     [
@@ -45,7 +45,29 @@ test("the protected Node process still initializes, queries and closes PostgreSQ
     finally { await pg.close(); }
   `,
     ],
-    { cwd: new URL("../", import.meta.url), encoding: "utf8", timeout: 30000 },
+    {
+      cwd: new URL("../", import.meta.url),
+      encoding: "utf8",
+      timeout: 30000,
+      env: { ...process.env, PGLITE_FIXTURE_PROFILE: "1" },
+    },
   );
   assert.equal(result.status, 0, result.stderr);
+  const reportLine = result.stderr
+    .split(/\r?\n/)
+    .find((line) => line.startsWith("PGLITE_FIXTURE_PROFILE "));
+  assert.ok(reportLine, result.stderr);
+  const report: unknown = JSON.parse(reportLine.slice("PGLITE_FIXTURE_PROFILE ".length));
+  assert.ok(report !== null && typeof report === "object" && !Array.isArray(report));
+  assert.ok("event" in report);
+  assert.equal(report.event, "pglite-fixture-ready");
+  for (const key of ["startupMs", "schemaReadMs", "schemaApplyMs", "totalMs"] as const) {
+    assert.ok(key in report);
+    const duration: unknown = Object.entries(report).find(([field]) => field === key)?.[1];
+    assert.ok(typeof duration === "number" && Number.isFinite(duration) && duration >= 0);
+  }
+  assert.ok("schemaFileCount" in report);
+  const count = report.schemaFileCount;
+  assert.ok(typeof count === "number" && Number.isInteger(count) && count > 0);
+  t.diagnostic(reportLine);
 });
