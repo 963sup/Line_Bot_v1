@@ -1,5 +1,5 @@
-import { createGatewayAssistant } from "@line_bot_v1/assistant/gateway";
 import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
+import { createGatewayAssistant } from "@line_bot_v1/assistant/gateway";
 import { createGeminiClient, runGeminiProbe } from "@line_bot_v1/assistant/gemini";
 import {
   type AssistantRuntimeDependencies,
