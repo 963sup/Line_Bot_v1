@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   repositoryAccessPath,
   repositoryDiscussionsPath,
+  repositoryFilesPath,
   repositoryIssueCreatePath,
   repositoryIssuePath,
   repositoryIssuesPath,
@@ -22,6 +23,7 @@ test("repository resource navigation builds canonical owner/name URLs", () => {
   assert.equal(repositoryAccessPath("acme", "Operations"), "/acme/Operations/access");
   assert.equal(repositorySettingsPath("acme", "Operations"), "/acme/Operations/settings");
   assert.equal(repositoryIssuesPath("acme", "Operations"), "/acme/Operations/issues");
+  assert.equal(repositoryFilesPath("acme", "Operations"), "/acme/Operations/files");
   assert.equal(repositoryIssuePath("acme", "Operations", 12), "/acme/Operations/issues/12");
   assert.equal(repositoryIssueCreatePath("acme", "Operations"), "/acme/Operations/issues?create=1");
   assert.equal(repositoryDiscussionsPath("acme", "Operations"), "/acme/Operations/discussions");
@@ -49,6 +51,7 @@ test("repository resource navigation exposes one ordered map and gates managemen
     [
       "overview",
       "content",
+      "files",
       "resources",
       "contracts",
       "executions",
@@ -65,6 +68,7 @@ test("repository resource navigation exposes one ordered map and gates managemen
     [
       "overview",
       "content",
+      "files",
       "resources",
       "contracts",
       "executions",

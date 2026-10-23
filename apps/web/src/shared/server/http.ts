@@ -12,7 +12,7 @@ export function jsonResponse(data: unknown, status = 200) {
 
 export class BodyTooLargeError extends Error {}
 
-export async function readBodyText(request: Request, maxBytes: number): Promise<string> {
+export async function readBodyBytes(request: Request, maxBytes: number): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];
   let size = 0;
   const reader = request.body?.getReader();
@@ -27,5 +27,9 @@ export async function readBodyText(request: Request, maxBytes: number): Promise<
       }
       chunks.push(value);
     }
-  return Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
+}
+
+export async function readBodyText(request: Request, maxBytes: number): Promise<string> {
+  return Buffer.from(await readBodyBytes(request, maxBytes)).toString("utf8");
 }

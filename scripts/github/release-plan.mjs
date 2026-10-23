@@ -5,6 +5,7 @@ import { requireCurrentMain } from "./current-main.mjs";
 
 const OWNER_JOBS = Object.freeze({
   supabase: new Set(["supabase"]),
+  storage: new Set(["supabase_storage"]),
   deployment: new Set(["deployment"]),
   richMenu: new Set(["rich_menu", "rich_menu_direct", "rich_menu_after_deployment"]),
   scheduler: new Set(["attendance_scheduler"]),
@@ -48,6 +49,12 @@ export function releaseSha(displayTitle) {
 
 export function schemaChanged(files) {
   return files.some((file) => /^supabase\/schemas\/[^/]+\.sql$/.test(file));
+}
+
+export function storageChanged(files) {
+  return files.some(
+    (file) => file === "supabase/config.toml" || file === "scripts/supabase/storage.mjs",
+  );
 }
 
 export function richMenuChanged(files) {
@@ -213,51 +220,67 @@ export async function planRelease({
     return jobsCache.get(runId);
   };
 
-  const [supabaseBaseline, deploymentBaseline, richMenuBaseline, schedulerBaseline] =
-    await Promise.all([
-      findOwnerBaseline({
-        owner: "supabase",
-        runs,
-        targetSha,
-        repository: targetRepository,
-        token,
-        fetchImpl,
-        git,
-        loadJobs,
-      }),
-      findOwnerBaseline({
-        owner: "deployment",
-        runs,
-        targetSha,
-        repository: targetRepository,
-        token,
-        fetchImpl,
-        git,
-        loadJobs,
-      }),
-      findOwnerBaseline({
-        owner: "richMenu",
-        runs,
-        targetSha,
-        repository: targetRepository,
-        token,
-        fetchImpl,
-        git,
-        loadJobs,
-      }),
-      findOwnerBaseline({
-        owner: "scheduler",
-        runs,
-        targetSha,
-        repository: targetRepository,
-        token,
-        fetchImpl,
-        git,
-        loadJobs,
-      }),
-    ]);
+  const [
+    supabaseBaseline,
+    storageBaseline,
+    deploymentBaseline,
+    richMenuBaseline,
+    schedulerBaseline,
+  ] = await Promise.all([
+    findOwnerBaseline({
+      owner: "supabase",
+      runs,
+      targetSha,
+      repository: targetRepository,
+      token,
+      fetchImpl,
+      git,
+      loadJobs,
+    }),
+    findOwnerBaseline({
+      owner: "storage",
+      runs,
+      targetSha,
+      repository: targetRepository,
+      token,
+      fetchImpl,
+      git,
+      loadJobs,
+    }),
+    findOwnerBaseline({
+      owner: "deployment",
+      runs,
+      targetSha,
+      repository: targetRepository,
+      token,
+      fetchImpl,
+      git,
+      loadJobs,
+    }),
+    findOwnerBaseline({
+      owner: "richMenu",
+      runs,
+      targetSha,
+      repository: targetRepository,
+      token,
+      fetchImpl,
+      git,
+      loadJobs,
+    }),
+    findOwnerBaseline({
+      owner: "scheduler",
+      runs,
+      targetSha,
+      repository: targetRepository,
+      token,
+      fetchImpl,
+      git,
+      loadJobs,
+    }),
+  ]);
 
   const supabaseFiles = git.changedFiles(supabaseBaseline, targetSha);
+  const storageFiles = git.changedFiles(storageBaseline, targetSha);
   const deploymentFiles = git.changedFiles(deploymentBaseline, targetSha);
   const richMenuFiles = git.changedFiles(richMenuBaseline, targetSha);
   const schedulerFiles = git.changedFiles(schedulerBaseline, targetSha);
@@ -272,6 +295,7 @@ export async function planRelease({
   return {
     head_sha: targetSha,
     schema_changed: schema,
+    storage_changed: storageChanged(storageFiles),
     web_affected: web,
     rich_menu_changed: richMenu,
     scheduler_changed:
@@ -280,6 +304,7 @@ export async function planRelease({
       pendingWeb(schedulerFiles, schedulerBaseline),
     baselines: {
       supabase: supabaseBaseline,
+      storage: storageBaseline,
       deployment: deploymentBaseline,
       rich_menu: richMenuBaseline,
       scheduler: schedulerBaseline,
@@ -291,6 +316,7 @@ export function githubOutputLines(plan) {
   return [
     `head_sha=${plan.head_sha}`,
     `schema_changed=${plan.schema_changed}`,
+    `storage_changed=${plan.storage_changed}`,
     `web_affected=${plan.web_affected}`,
     `rich_menu_changed=${plan.rich_menu_changed}`,
     `scheduler_changed=${plan.scheduler_changed}`,

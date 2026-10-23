@@ -10,6 +10,7 @@ import {
   richMenuChanged,
   schedulerChanged,
   schemaChanged,
+  storageChanged,
 } from "./release-plan.mjs";
 
 const SHA = "a".repeat(40);
@@ -87,6 +88,10 @@ test("successful owner jobs advance independently while other jobs in the Releas
 test("release source classifiers preserve owner boundaries", () => {
   assert.equal(schemaChanged(["supabase/schemas/200_enterprises.sql"]), true);
   assert.equal(schemaChanged(["scripts/supabase/remote.mjs"]), false);
+  assert.equal(storageChanged(["supabase/config.toml"]), true);
+  assert.equal(storageChanged(["scripts/supabase/storage.mjs"]), true);
+  assert.equal(storageChanged(["scripts/supabase/storage.test.mjs"]), false);
+  assert.equal(storageChanged(["supabase/schemas/615_files.sql"]), false);
   assert.equal(richMenuChanged(["assets/line/rich-menu/menu.jpg"]), true);
   assert.equal(richMenuChanged(["apps/web/src/modules/assistant/rich-menu/definition.ts"]), true);
   assert.equal(publicationOnlyRichMenuSource("apps/web/src/app/page.tsx"), false);
@@ -199,6 +204,7 @@ test("release plan keeps owner cursors independent and rich menu direct when Web
   assert.equal(plan.scheduler_changed, false);
   assert.deepEqual(githubOutputLines(plan).slice(1), [
     "schema_changed=false",
+    "storage_changed=false",
     "web_affected=false",
     "rich_menu_changed=true",
     "scheduler_changed=false",
@@ -312,11 +318,38 @@ test("each current Rich Menu asset triggers independent publication even when Tu
   }
 });
 
+test("Storage Bucket changes publish separately from declarative SQL and Web", async () => {
+  const plan = await planRelease(plannerFixture({ files: ["supabase/config.toml"] }));
+  assert.equal(plan.schema_changed, false);
+  assert.equal(plan.storage_changed, true);
+  assert.equal(plan.web_affected, false);
+  assert.equal(plan.rich_menu_changed, false);
+  assert.equal(plan.scheduler_changed, false);
+});
+
+test("Storage tracks its own successful Release baseline", async () => {
+  const plan = await planRelease(
+    plannerFixture({
+      previousJobs: [{ name: "supabase_storage", conclusion: "success" }],
+      byBaseline: (baseline) => (baseline === PREVIOUS ? [] : ["supabase/config.toml"]),
+    }),
+  );
+  assert.equal(plan.baselines.storage, PREVIOUS);
+  assert.equal(plan.storage_changed, false);
+  assert.equal(plan.schema_changed, false);
+});
+
 test("unrelated docs and tests trigger no remote operations", async () => {
   const plan = await planRelease(
     plannerFixture({ files: ["README.md", "scripts/line/rich-menu/sync.test.ts"] }),
   );
-  for (const key of ["schema_changed", "web_affected", "rich_menu_changed", "scheduler_changed"]) {
+  for (const key of [
+    "schema_changed",
+    "storage_changed",
+    "web_affected",
+    "rich_menu_changed",
+    "scheduler_changed",
+  ]) {
     assert.equal(plan[key], false, key);
   }
 });

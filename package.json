@@ -34,7 +34,8 @@
     "start": "pnpm --filter @line_bot_v1/web start",
     "boundaries": "node scripts/architecture/check-implementation-topology.mjs",
     "schema:remote": "node scripts/supabase/remote.mjs",
-    "schema:remote:test": "node --test scripts/supabase/postgres.test.mjs scripts/supabase/remote.test.mjs",
+    "storage:remote": "node scripts/supabase/storage.mjs",
+    "schema:remote:test": "node --test scripts/supabase/postgres.test.mjs scripts/supabase/remote.test.mjs scripts/supabase/storage.test.mjs",
     "probe:agent": "node scripts/probes/check-agent.mjs --live",
     "probe:expense-card": "node scripts/probes/check-expense-card.mjs --live",
     "probe:gemini": "node scripts/probes/check-gemini.mjs --live",
@@ -58,7 +59,9 @@
     "wbs:transfer": "node scripts/wbs/transfer.mjs",
     "project:imports": "node scripts/project/imports.mjs",
     "contract:run": "node scripts/contract/run.mjs",
-    "execution:run": "node scripts/execution/run.mjs"
+    "execution:run": "node scripts/execution/run.mjs",
+    "file:run": "node scripts/file/run.mjs",
+    "file:reclaim": "node scripts/file/reclaim.mjs"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.51.0",
@@ -87,6 +90,7 @@
     "next-devtools-mcp": "0.4.0",
     "@line_bot_v1/contract": "workspace:*",
     "@line_bot_v1/execution": "workspace:*",
-    "libpg-query": "17.7.4"
+    "libpg-query": "17.7.4",
+    "@line_bot_v1/file": "workspace:*"
   }
 }

@@ -15,6 +15,7 @@
 | `browser/` | 可重跑的本機 production-Web browser probes。 |
 | `changes/` | Change status/preflight/finalize 與 deterministic patch application。 |
 | `code/` | ts-morph 唯讀 code facts、AST／TypeScript 符號查詢與 preview-only patch plan generation；寫入沿用 `patch:apply`。 |
+| `file/` | Authenticated protected file upload, extraction, review and exact source readback; separate read-only plan and validated-main explicit orphan recovery. |
 | `docs/` | Documentation validation。 |
 | `github/` | GitHub readback 與 Release affected-source routing。 |
 | `line/` | LINE provider operation adapters；目前包含 `rich-menu/`。 |

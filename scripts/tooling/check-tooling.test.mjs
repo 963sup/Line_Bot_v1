@@ -971,7 +971,7 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
 
   write(
     ".github/workflows/release.yml",
-    workflow.replace("needs.supabase.result == 'success'", "true"),
+    workflow.replaceAll("needs.supabase.result == 'success'", "true"),
   );
   rejects(root, "follow Supabase contract convergence");
 
@@ -1013,8 +1013,7 @@ test("Release scopes the Supabase management token and preserves identifier cuto
   const { root, write } = fixture(t);
   const path = ".github/workflows/release.yml";
   const source = readFileSync(resolve(root, path), "utf8");
-  const expectedError =
-    "Supabase access token must be exposed only to the exact declarative schema sync step";
+  const expectedError = "Supabase access token must be scoped to Schema and Storage sync steps";
 
   write(
     path,
@@ -1055,6 +1054,20 @@ test("Release scopes the Supabase management token and preserves identifier cuto
     write(path, source.replace(`            .artifacts/supabase-remote/${evidence}\n`, ""));
     rejects(root, "preserve plan, verification, history, recovery and scoped identifier readback");
   }
+
+  const missingStoragePublication = YAML.parse(source);
+  missingStoragePublication.jobs.supabase_storage.steps.find(
+    (step) => step.run === "pnpm storage:remote sync",
+  ).run = "echo skip-storage";
+  write(path, YAML.stringify(missingStoragePublication));
+  rejects(root, "Storage must require changed-source exact-main publication");
+
+  const missingStorageToken = YAML.parse(source);
+  delete missingStorageToken.jobs.supabase_storage.steps.find(
+    (step) => step.run === "pnpm storage:remote sync",
+  ).env.SUPABASE_ACCESS_TOKEN;
+  write(path, YAML.stringify(missingStorageToken));
+  rejects(root, expectedError);
 
   write(path, source);
   assert.deepEqual(validate(root), []);
@@ -1191,6 +1204,7 @@ test("parallel releases retain every publication gate and resource lock", (t) =>
   for (const name of [
     "supabase",
     "deployment",
+    "supabase_storage",
     "identifier_runtime_activation",
     "rich_menu",
     "attendance_scheduler",
