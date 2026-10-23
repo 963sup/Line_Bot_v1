@@ -31,7 +31,7 @@ function geminiRuntime() {
 }
 
 const assistantRuntime = createAssistantRuntime({
-  isConfigured: () => Boolean(gatewayConfiguration() || geminiConfiguration()),
+  isConfigured: () => Boolean(geminiConfiguration()),
   generate: async (input) => {
     const gateway = gatewayConfiguration();
     if (gateway) {
