@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { type Database, type Sql, type SqlRow } from "@line_bot_v1/platform/postgres";
 import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
+import { type Database, type Sql, type SqlRow } from "@line_bot_v1/platform/postgres";
 import { isRecord, numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { createPostgresProjectContentScope } from "@line_bot_v1/project/composition/bootstrap/project-content-scope";
 import type {

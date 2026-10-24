@@ -83,9 +83,13 @@ test("Project WBS HTTP rejects a missing Contract disclosure and forged source d
     else process.env.APP_ORIGIN = previous;
   });
   const store: ProjectWbsStore = {
-    read: async () => { throw Error("unreachable"); },
+    read: async () => {
+      throw Error("unreachable");
+    },
     history: async () => ({ revisions: [], next: null }),
-    transact: async () => { throw new WbsError(409, "stale"); },
+    transact: async () => {
+      throw new WbsError(409, "stale");
+    },
   };
   const runtime = createProjectWbs({
     activeUser: async () => ({ id: "user" }),
@@ -127,7 +131,13 @@ test("Project WBS HTTP rejects a missing Contract disclosure and forged source d
     );
   }
   assert.equal((await post({ ...valid, confirmedDisclosure: false })).status, 400);
-  assert.equal((await post({ ...valid, source: { ...valid.source, contractId: "bad" } })).status, 400);
-  assert.equal((await post({ ...valid, node: { ...valid.node, kind: "DELIVERABLE" } })).status, 400);
+  assert.equal(
+    (await post({ ...valid, source: { ...valid.source, contractId: "bad" } })).status,
+    400,
+  );
+  assert.equal(
+    (await post({ ...valid, node: { ...valid.node, kind: "DELIVERABLE" } })).status,
+    400,
+  );
   assert.equal((await post(valid)).status, 409);
 });

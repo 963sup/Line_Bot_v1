@@ -162,8 +162,7 @@ export default function ProjectWbsContractImport({
     try {
       const result = await request({ contractId });
       if (ticket !== epoch.current) return;
-      if (str(record(result.repository).id) !== repositoryId ||
-          result.actorUserId !== actorUserId)
+      if (str(record(result.repository).id) !== repositoryId || result.actorUserId !== actorUserId)
         throw new Error("Contract 來源身分或 Repository 不一致。");
       const revision = record(result.revision);
       if (revision.state !== "ACTIVE" || revision.contractId !== contractId)
@@ -187,9 +186,16 @@ export default function ProjectWbsContractImport({
   }
   function submit() {
     if (
-      disabled || busy || !confirmed || !selected || !repositoryId || !line ||
-      !title.trim() || !eligible.some((node) => node.id === parentId)
-    ) return;
+      disabled ||
+      busy ||
+      !confirmed ||
+      !selected ||
+      !repositoryId ||
+      !line ||
+      !title.trim() ||
+      !eligible.some((node) => node.id === parentId)
+    )
+      return;
     onImport({
       action: "import-contract",
       confirmedDisclosure: true,
@@ -222,29 +228,59 @@ export default function ProjectWbsContractImport({
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3">
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="grid gap-1">
             <Label htmlFor="contract-repository-owner">Contract Repository Owner Login</Label>
-            <Input id="contract-repository-owner" value={owner} disabled={disabled || busy}
-              onChange={(event) => { resetSource(); setOwner(event.target.value); }} />
+            <Input
+              id="contract-repository-owner"
+              value={owner}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                resetSource();
+                setOwner(event.target.value);
+              }}
+            />
           </div>
           <div className="grid gap-1">
             <Label htmlFor="contract-repository-name">Contract Repository Name</Label>
-            <Input id="contract-repository-name" value={repository} disabled={disabled || busy}
-              onChange={(event) => { resetSource(); setRepository(event.target.value); }} />
+            <Input
+              id="contract-repository-name"
+              value={repository}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                resetSource();
+                setRepository(event.target.value);
+              }}
+            />
           </div>
         </div>
-        <Button variant="outline" type="button" disabled={disabled || busy || !owner.trim() || !repository.trim()}
-          onClick={() => void loadContracts()}>讀取可用 ACTIVE Contracts</Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={disabled || busy || !owner.trim() || !repository.trim()}
+          onClick={() => void loadContracts()}
+        >
+          讀取可用 ACTIVE Contracts
+        </Button>
         {repositoryId && (
           <>
             <Label htmlFor="contract-revision-choice">選擇合約</Label>
-            <NativeSelect id="contract-revision-choice" value={selected?.contractId ?? ""}
-              disabled={busy || disabled} onChange={(event) => void openContract(event.target.value)}>
+            <NativeSelect
+              id="contract-revision-choice"
+              value={selected?.contractId ?? ""}
+              disabled={busy || disabled}
+              onChange={(event) => void openContract(event.target.value)}
+            >
               <NativeSelectOption value="">選擇 ACTIVE Contract</NativeSelectOption>
               {contracts.map((item) => (
-                <NativeSelectOption key={item.contractId} value={item.contractId}>{item.title}</NativeSelectOption>
+                <NativeSelectOption key={item.contractId} value={item.contractId}>
+                  {item.title}
+                </NativeSelectOption>
               ))}
             </NativeSelect>
           </>
@@ -252,8 +288,12 @@ export default function ProjectWbsContractImport({
         {selected && (
           <>
             <Label htmlFor="contract-line-choice">精確 Contract 項次</Label>
-            <NativeSelect id="contract-line-choice" value={lineId} disabled={busy || disabled}
-              onChange={(event) => selectLine(event.target.value)}>
+            <NativeSelect
+              id="contract-line-choice"
+              value={lineId}
+              disabled={busy || disabled}
+              onChange={(event) => selectLine(event.target.value)}
+            >
               <NativeSelectOption value="">選擇合約項次</NativeSelectOption>
               {selected.lines.map((item) => (
                 <NativeSelectOption key={item.lineId} value={item.lineId}>
@@ -266,23 +306,42 @@ export default function ProjectWbsContractImport({
         {line && (
           <>
             <p className="text-xs text-muted-foreground">
-              Pinned Contract Revision：{selected?.revisionId}。來源約定數量僅供核對，
-              不成為 Project WBS 的第二份數量事實。
+              Pinned Contract Revision：{selected?.revisionId}。來源約定數量僅供核對， 不成為
+              Project WBS 的第二份數量事實。
             </p>
             <Label htmlFor="contract-wbs-parent">指定 WBS Deliverable</Label>
-            <NativeSelect id="contract-wbs-parent" value={parentId} disabled={disabled || busy}
-              onChange={(event) => { setParentId(event.target.value); setConfirmed(false); }}>
+            <NativeSelect
+              id="contract-wbs-parent"
+              value={parentId}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                setParentId(event.target.value);
+                setConfirmed(false);
+              }}
+            >
               <NativeSelectOption value="">請選擇既有父節點</NativeSelectOption>
               {eligible.map((node) => (
-                <NativeSelectOption key={node.id} value={node.id}>{node.title}</NativeSelectOption>
+                <NativeSelectOption key={node.id} value={node.id}>
+                  {node.title}
+                </NativeSelectOption>
               ))}
             </NativeSelect>
             <Label htmlFor="contract-wbs-title">確認工作包名稱</Label>
-            <Input id="contract-wbs-title" value={title} maxLength={200} disabled={disabled || busy}
-              onChange={(event) => { setTitle(event.target.value); setConfirmed(false); }} />
+            <Input
+              id="contract-wbs-title"
+              value={title}
+              maxLength={200}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                setConfirmed(false);
+              }}
+            />
             <Label htmlFor="contract-wbs-description">工作包說明</Label>
-            <Textarea id="contract-wbs-description" value={description} disabled={disabled || busy}
-              onChange={(event) => { setDescription(event.target.value); setConfirmed(false); }} />
+            <Textarea
+              id="contract-wbs-description"
+              value={description}
+              disabled={disabled || busy}
             <Label htmlFor="contract-wbs-deliverable">交付成果</Label>
             <Textarea id="contract-wbs-deliverable" value={deliverable} disabled={disabled || busy}
               onChange={(event) => { setDeliverable(event.target.value); setConfirmed(false); }} />

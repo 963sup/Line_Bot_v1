@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseProjectWbsCommand } from "../src/application/commands/project-content.js";
-import { reviseWbsContent } from "../src/domain/content.js";
 import { executeProjectWbsCommand } from "../src/application/use-cases/project-content.js";
 import { executeProjectWbsGovernanceCommand } from "../src/application/use-cases/project-governance.js";
 import type { ProjectWbsReceipt } from "../src/contracts/dto/project-content.js";
@@ -15,6 +14,7 @@ import type {
   ProjectWbsGovernanceTransaction,
 } from "../src/contracts/repositories/project-governance.js";
 import type { WbsRevision } from "../src/domain/content.js";
+import { reviseWbsContent } from "../src/domain/content.js";
 import { WbsError } from "../src/domain/document.js";
 import { defaultWbsPolicy } from "../src/domain/governance.js";
 import type { ProjectWbsRole } from "../src/domain/policies/project-access.js";
@@ -269,7 +269,10 @@ test("Project import rechecks current Project/Contract access and stores only a 
               title: "Contract source",
               body: "",
               path: [],
-              plannedQuantity: { value: "26", measure: { id: "measure", name: "Set", subject: "", unit: "SET" } },
+              plannedQuantity: {
+                value: "26",
+                measure: { id: "measure", name: "Set", subject: "", unit: "SET" },
+              },
             },
           },
           agreedQuantity: "26",
@@ -294,7 +297,9 @@ test("Project import rechecks current Project/Contract access and stores only a 
     },
   };
   const store: ProjectWbsStore = {
-    read: async () => { throw Error("unused"); },
+    read: async () => {
+      throw Error("unused");
+    },
     history: async () => ({ revisions: [], next: null }),
     transact: async (_actor, _command, action) => action(transaction),
   };

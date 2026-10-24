@@ -4,7 +4,10 @@ import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { PostgresProjectWbsStore } from "../src/adapters/outbound/persistence/project-content.js";
-import { executeProjectWbsCommand, createProjectWbs } from "../src/application/use-cases/project-content.js";
+import {
+  createProjectWbs,
+  executeProjectWbsCommand,
+} from "../src/application/use-cases/project-content.js";
 import { createProjectWbsGovernance } from "../src/application/use-cases/project-governance.js";
 import { createPostgresProjectWbsStore } from "../src/composition/bootstrap/project-content.js";
 import { createPostgresProjectWbsGovernanceStore } from "../src/composition/bootstrap/project-governance.js";
@@ -210,7 +213,12 @@ test("Project WBS pins Contract source privately with native SQL transaction and
   const initialize = await executeProjectWbsCommand(
     store,
     "project-writer",
-    { action: "initialize", projectId: "destination-project", requestId: randomUUID(), expectedVersion: 0 },
+    {
+      action: "initialize",
+      projectId: "destination-project",
+      requestId: randomUUID(),
+      expectedVersion: 0,
+    },
     1,
   );
   const parent = await executeProjectWbsCommand(
@@ -257,13 +265,20 @@ test("Project WBS pins Contract source privately with native SQL transaction and
   assert.equal(received.revision.document.nodes.at(-1)?.id, cmd.node.id);
   assert.equal(Object.hasOwn(received.revision, "contractImport"), false);
   assert.equal(
-    Object.hasOwn((await store.read("project-writer", { projectId: "destination-project" })).revision ?? {}, "contractImport"),
+    Object.hasOwn(
+      (await store.read("project-writer", { projectId: "destination-project" })).revision ?? {},
+      "contractImport",
+    ),
     false,
   );
-  const evidence = (await db.transaction((sql) => sql.query(
-    "SELECT contract_import FROM project_wbs_revisions WHERE project_id=$1 AND id=$2",
-    ["destination-project", received.revision.id],
-  ))).rows[0]?.contract_import;
+  const evidence = (
+    await db.transaction((sql) =>
+      sql.query("SELECT contract_import FROM project_wbs_revisions WHERE project_id=$1 AND id=$2", [
+        "destination-project",
+        received.revision.id,
+      ]),
+    )
+  ).rows[0]?.contract_import;
   assert.deepEqual(evidence, {
     ...source,
     planRevisionId: "44444444-4444-4444-8444-444444444444",
@@ -272,15 +287,45 @@ test("Project WBS pins Contract source privately with native SQL transaction and
   });
   assert.deepEqual(await executeProjectWbsCommand(store, "project-writer", cmd, 4), received);
   assert.deepEqual(verifies, [true, false]);
-  await assert.rejects(executeProjectWbsCommand(store, "project-writer", { ...cmd, node: { ...cmd.node, title: "reused" } }, 5));
+  await assert.rejects(
+    executeProjectWbsCommand(
+      store,
+      "project-writer",
+      { ...cmd, node: { ...cmd.node, title: "reused" } },
+      5,
+    ),
+  );
   sourceReadable = false;
   await assert.rejects(executeProjectWbsCommand(store, "project-writer", cmd, 6));
   const before = (await store.read("project-writer", { projectId: "destination-project" })).version;
   await assert.rejects(
-    executeProjectWbsCommand(store, "project-writer", { ...cmd, requestId: randomUUID(), expectedVersion: before, node: { ...cmd.node, id: "unreadable" } }, 7),
+    executeProjectWbsCommand(
+      store,
+      "project-writer",
+      {
+        ...cmd,
+        requestId: randomUUID(),
+        expectedVersion: before,
+        node: { ...cmd.node, id: "unreadable" },
+      },
+      7,
+    ),
   );
-  assert.equal((await store.read("project-writer", { projectId: "destination-project" })).version, before);
+  assert.equal(
+    (await store.read("project-writer", { projectId: "destination-project" })).version,
+    before,
+  );
   await assert.rejects(
-    executeProjectWbsCommand(store, "source-owner", { ...cmd, requestId: randomUUID(), expectedVersion: before, node: { ...cmd.node, id: "not-owner" } }, 8),
+    executeProjectWbsCommand(
+      store,
+      "source-owner",
+      {
+        ...cmd,
+        requestId: randomUUID(),
+        expectedVersion: before,
+        node: { ...cmd.node, id: "not-owner" },
+      },
+      8,
+    ),
   );
 });
