@@ -173,25 +173,10 @@
       "lifecycle": "selected-target"
     },
     {
-      "id": "check",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
-      "id": "deployment",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
       "id": "discussion",
       "kind": "business-owner",
       "lifecycle": "current",
       "doc": "docs/owners/discussion.md"
-    },
-    {
-      "id": "gist",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
     },
     {
       "id": "issue",
@@ -205,37 +190,7 @@
       "lifecycle": "selected-target"
     },
     {
-      "id": "package-registry",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
-      "id": "pull-request",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
-      "id": "release",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
-      "id": "security",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
-      "id": "source-control",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
       "id": "sponsorship",
-      "kind": "business-owner",
-      "lifecycle": "selected-target"
-    },
-    {
-      "id": "workflow",
       "kind": "business-owner",
       "lifecycle": "selected-target"
     },
@@ -6080,23 +6035,8 @@
       "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
     },
     {
-      "semanticOwner": "check",
-      "targetModule": "@line_bot_v1/check",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
-      "semanticOwner": "deployment",
-      "targetModule": "@line_bot_v1/deployment",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
       "semanticOwner": "discussion",
       "module": "@line_bot_v1/discussion"
-    },
-    {
-      "semanticOwner": "gist",
-      "targetModule": "@line_bot_v1/gist",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
     },
     {
       "semanticOwner": "issue",
@@ -6108,38 +6048,8 @@
       "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
     },
     {
-      "semanticOwner": "package-registry",
-      "targetModule": "@line_bot_v1/package-registry",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
-      "semanticOwner": "pull-request",
-      "targetModule": "@line_bot_v1/pull-request",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
-      "semanticOwner": "release",
-      "targetModule": "@line_bot_v1/release",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
-      "semanticOwner": "security",
-      "targetModule": "@line_bot_v1/security",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
-      "semanticOwner": "source-control",
-      "targetModule": "@line_bot_v1/source-control",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
       "semanticOwner": "sponsorship",
       "targetModule": "@line_bot_v1/sponsorship",
-      "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
-    },
-    {
-      "semanticOwner": "workflow",
-      "targetModule": "@line_bot_v1/workflow",
       "note": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
     },
     {

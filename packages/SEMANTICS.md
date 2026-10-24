@@ -4,7 +4,7 @@
 
 - Product domain: enterprise-workforce-operations-management
 - Registered package modules: 36
-- Selected targets: 14
+- Selected targets: 5
 
 ## Authority / retrieval
 
