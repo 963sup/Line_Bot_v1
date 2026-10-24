@@ -2,16 +2,20 @@ import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { withPostgres } from "../supabase/postgres.mjs";
 import {
-  assertConfirmedProject,
-  assertRemoteMutationContext,
-  assertRemoteTarget,
-  projectRefFromSupabaseUrl,
-  remoteMutationRevision,
-  requireMutationAdjacentCurrentMain,
   runWithRemoteReconciliationLock,
   supabaseManagementRecoveryConfig,
   verifySupabaseRecoveryReadback,
 } from "../supabase/remote.mjs";
+import {
+  assertValidatedMainMutationContext,
+  remoteMutationRevision,
+  requireMutationAdjacentCurrentMain,
+} from "../supabase/remote-authorization.mjs";
+import {
+  assertConfirmedProject,
+  assertRemoteTarget,
+  projectRefFromSupabaseUrl,
+} from "../supabase/remote-target.mjs";
 
 const githubApiOrigin = "https://api.github.com";
 const releaseWorkflowPath = ".github/workflows/release.yml";
@@ -33,7 +37,7 @@ function required(value, name) {
 
 export function wbsTransferOperatorConfig(env = process.env) {
   const target = wbsTransferOperatorTargetConfig(env);
-  assertRemoteMutationContext("sync", env);
+  assertValidatedMainMutationContext(env);
   const recovery = supabaseManagementRecoveryConfig(env);
   if (recovery.projectRef !== target.projectRef) {
     throw new Error("WBS transfer recovery target does not match the database target.");

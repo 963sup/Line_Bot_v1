@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertRemoteMutationContext } from "./remote.mjs";
+import { assertValidatedMainMutationContext } from "./remote-authorization.mjs";
 import { bucketState, desiredFileBucket, reconcileBucket } from "./storage.mjs";
 
 const configuration = `[storage]
@@ -127,9 +127,9 @@ test("unknown provider outcome requires independent readback and no blind retry"
 });
 
 test("production mutation is gated by existing exact-main Release authority", () => {
-  assert.throws(() => assertRemoteMutationContext("sync", {}), /GitHub Actions/);
+  assert.throws(() => assertValidatedMainMutationContext({}), /GitHub Actions/);
   assert.doesNotThrow(() =>
-    assertRemoteMutationContext("sync", {
+    assertValidatedMainMutationContext({
       GITHUB_ACTIONS: "true",
       SUPABASE_REMOTE_MUTATION_CONTEXT: "validated-main",
     }),
