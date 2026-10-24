@@ -6,9 +6,9 @@
 
 模型版本上限為 GPT-6；角色模型、名稱與檔名須保持一致，不得配置高於 GPT-6 的版本。
 
-- GPT-6 Astra (`gpt-6-astra`)：Primary orchestration；需要獨立最終 architecture / acceptance decision 時使用。
-- GPT-5.6 Sol (`gpt-5.6-sol`)：repository mapping、root cause、architecture analysis、technical research、bounded implementation、diff review、evidence verification。
-- GPT-6 Sol (`gpt-6-sol`)：額外的開發角色組；使用下方 `dev6-*` roles，不改既有預設模型與角色。
+- GPT-6 Luna (`gpt-6-luna`)：Primary orchestration、獨立 architecture / acceptance decision 與 `dev6-*` 開發角色組。
+- GPT-5.6 Terra (`gpt-5.6-terra`)：root cause、architecture analysis、technical research、bounded implementation、diff review。
+- GPT-5.6 Luna (`gpt-5.6-luna`)：repository mapping、evidence verification；也是預設子代理模型。
 
 每個 role 只擁有一個 Primary Responsibility；新增 role 必須有獨立問題、deliverable、stop condition、validation。
 
@@ -26,7 +26,12 @@ Primary 在每個任務開始時主動判斷是否委派；在任務授權與當
 
 需要才啟用 `map/root cause/research → decision → implementation → review → validation → evidence/acceptance` 各段；Primary 擁有 scope、決策、授權、整合與最終結論。缺少必要證據時回到真正負責者，修改 candidate 後只失效並重跑受影響證據；merge 仍取得完整 exact-head validation。
 
-所有角色依 [autonomous tool selection](../../docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 選擇語意、文字、symbol／AST 查詢或 patch application。唯讀角色可執行 `semantic plan/context` 等唯讀查詢；不能產生會寫入磁碟的變更計畫、套用修改或執行超出自身責任的 gates。實作者回報覆蓋範圍、partial／排除與候選版本，供 reviewer 與 validation owner 接手。
+所有角色依 [repository change loop](../../docs/reference/engineering/development-workflow.md#default-repository-change-loop) 與 [autonomous tool selection](../../docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 工作。先從業務結果、實際 consumer 與不變條件理解問題，再定位 Owner、可讀契約、source of truth 與受影響依賴；工具用於回答具體未知數，不逐檔搜尋或為了跑滿命令清單而執行。
+
+- Owner 已知且影響有界：直接讀該 Owner 契約、public exports、相關 source/tests。Owner 未知、語意歧義或跨 Owner：先用 `pnpm semantic resolve/plan/context` 定位，再讀選中的真實來源；`candidate`、`no-match` 與工具輸出不授予修改範圍。
+- 找實作與 consumers：已知文字／路徑用 `rg`；TS/JS 結構用 `pnpm code facts/definition/references/search`。先確認搜尋邊界、代表案例與跨 project public contract，不把局部結果當全庫完整。
+- 改代碼：小範圍直接編輯；批次同型變更由實作者用 `pnpm code rewrite/rename` 產生預覽，檢查命中與排除後以 `pnpm patch:apply` 套用，再重查漏改與 diff。唯讀角色只能做唯讀查詢，不產生寫入計畫或套用修改。
+- 驗證：依受影響契約選必要的 `pnpm architecture`、`pnpm boundaries`、相關測試與 runtime 檢查；一般程式變更執行 `pnpm check`，純文件用 `pnpm docs:check`。這些命令各有證據邊界，PR／merge 所需完整驗證仍依 development workflow。實作者回報覆蓋範圍、partial／排除與候選版本，供 reviewer 與 validation owner 接手。
 
 派工使用下方既有 task packet 欄位，並補足候選 revision／WIP 與可重用證據；將「發現」、「決策」、「修改」及「執行通過」分開回報。新 session 的實際委派與工具使用才是該次採用證據；角色可見、`agents.enabled` 或 concurrency 設定本身不證明已使用。
 
@@ -62,10 +67,10 @@ Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐�
 指定 `dev6-*` role 時，角色檔的模型與 effort 生效；不要派原本有固定模型的角色再期待 spawn model 覆蓋它。若主代理也要使用 6，可從 repository 根目錄啟動：
 
 ```sh
-codex -m gpt-6-sol -c model_reasoning_effort=high
+codex -m gpt-6-luna -c model_reasoning_effort=high
 ```
 
-上述命令只選擇該次 CLI session 的主模型；專案角色需由新 session 載入，帳號仍須有模型使用權限。桌面版在模型選單選擇 GPT-6 Sol，並在任務中指定所需 `dev6-*` role。
+上述命令只選擇該次 CLI session 的主模型；專案角色需由新 session 載入，帳號仍須有模型使用權限。桌面版在模型選單選擇 GPT-6 Luna，並在任務中指定所需 `dev6-*` role。
 
 ## MCP permissions and evidence
 

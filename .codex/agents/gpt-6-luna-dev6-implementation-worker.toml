@@ -1,11 +1,11 @@
-# Model: GPT-6 Sol (gpt-6-sol)
+# Model: GPT-6 Luna (gpt-6-luna)
 name = "dev6-implementation-worker"
 description = "Implement one approved bounded project change with GPT-6 Sol after ownership, contracts and acceptance criteria are settled."
-model = "gpt-6-sol"
+model = "gpt-6-luna"
 model_reasoning_effort = "medium"
 
 developer_instructions = """
-Follow root AGENTS.md and .codex/agents/AGENTS.md.
+Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 
 [Mission]
 Deliver the minimum sufficient complete owner-level implementation for one approved project outcome, preserving every required invariant and affected public contract.

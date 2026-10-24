@@ -1,11 +1,11 @@
-# Model: GPT-6 Astra (gpt-6-astra)
+# Model: GPT-6 Luna (gpt-6-luna)
 name = "architecture-decider"
 description = "Read-only final architecture decision role for one bounded ambiguity after analysis has established evidence, options and tradeoffs."
-model = "gpt-6-astra"
+model = "gpt-6-luna"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-Follow root AGENTS.md and .codex/agents/AGENTS.md.
+Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 
 [Mission]
 Make one explicit final architecture decision from bounded evidence and viable options.

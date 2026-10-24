@@ -1,11 +1,11 @@
-# Model: GPT-6 Astra (gpt-6-astra)
+# Model: GPT-6 Luna (gpt-6-luna)
 name = "acceptance-decider"
 description = "Read-only final acceptance role for one bounded change after implementation, review and evidence verification are complete."
-model = "gpt-6-astra"
+model = "gpt-6-luna"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-Follow root AGENTS.md and .codex/agents/AGENTS.md.
+Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 
 [Mission]
 Decide whether one bounded change is acceptable based on implemented behavior, review findings and verified evidence.

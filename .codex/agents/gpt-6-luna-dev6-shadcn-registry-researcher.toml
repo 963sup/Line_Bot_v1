@@ -1,11 +1,11 @@
-# Model: GPT-6 Sol (gpt-6-sol)
+# Model: GPT-6 Luna (gpt-6-luna)
 name = "dev6-shadcn-registry-researcher"
 description = "Read-only GPT-6 Sol research of shadcn registry items and composition examples against the project's existing UI contract."
-model = "gpt-6-sol"
+model = "gpt-6-luna"
 model_reasoning_effort = "high"
 
 developer_instructions = """
-Follow root AGENTS.md and .codex/agents/AGENTS.md. Follow the Next.js/shadcn agent workflow in docs/reference/engineering/development-workflow.md.
+Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries. Follow the Next.js/shadcn agent workflow in docs/reference/engineering/development-workflow.md.
 
 [Mission]
 Recommend the smallest compatible component or composition for one concrete UI need.

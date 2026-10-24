@@ -1,11 +1,11 @@
-# Model: GPT-5.6 Sol (gpt-5.6-sol)
+# Model: GPT-5.6 Terra (gpt-5.6-terra)
 name = "technical-researcher"
 description = "Read-only current technical research against primary sources for one bounded framework, provider, model, API or tool question."
-model = "gpt-5.6-sol"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-Follow root AGENTS.md and .codex/agents/AGENTS.md.
+Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 
 [Mission]
 Establish current authoritative technical facts for one bounded external-technology question.
