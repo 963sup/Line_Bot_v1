@@ -27,6 +27,7 @@ jobs:
       storage_changed: ${{ steps.plan.outputs.storage_changed }}
       web_affected: ${{ steps.plan.outputs.web_affected }}
       rich_menu_changed: ${{ steps.plan.outputs.rich_menu_changed }}
+      rich_menu_requires_web: ${{ steps.plan.outputs.rich_menu_requires_web }}
       scheduler_changed: ${{ steps.plan.outputs.scheduler_changed }}
     steps:
       - uses: actions/checkout@v6
@@ -274,7 +275,7 @@ jobs:
       needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
       needs.release_plan.outputs.rich_menu_changed == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 110
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       TURBO_TELEMETRY_DISABLED: "1"
@@ -300,6 +301,14 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           SHA: ${{ needs.release_plan.outputs.head_sha }}
         run: pnpm github:current-main --sha "$SHA"
+
+      - name: Require compatible Web runtime for behavior-dependent menu publication
+        if: needs.release_plan.outputs.rich_menu_requires_web == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SHA: ${{ needs.release_plan.outputs.head_sha }}
+        run: pnpm github:rich-menu-ready --sha "$SHA"
 
       - name: Publish Rich Menu desired state
         env:

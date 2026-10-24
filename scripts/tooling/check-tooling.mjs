@@ -231,6 +231,8 @@ export function validate(root) {
       errors.push("package.json: github:current-main must own exact-main GitHub readback");
     if (manifest.scripts?.["github:release-plan"] !== "node scripts/github/release-plan.mjs")
       errors.push("package.json: github:release-plan must own Release affected-source routing");
+    if (manifest.scripts?.["github:rich-menu-ready"] !== "node scripts/github/rich-menu-ready.mjs")
+      errors.push("package.json: github:rich-menu-ready must own read-only Menu runtime evidence");
     if (Object.hasOwn(manifest.scripts ?? {}, "change:plan"))
       errors.push(
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
@@ -1122,6 +1124,22 @@ export function validate(root) {
     const richSteps = releaseRich?.steps ?? [];
     const richMain = currentMainIndex(richSteps);
     const publish = richSteps.findIndex((step) => step.run === "pnpm line:rich-menu publish all");
+    const ready = richSteps.findIndex(
+      (step) =>
+        step.run === 'pnpm github:rich-menu-ready --sha "$SHA"' &&
+        step.if === "needs.release_plan.outputs.rich_menu_requires_web == 'true'" &&
+        step.env?.GITHUB_TOKEN === "${{ github.token }}" &&
+        step.env?.GITHUB_REPOSITORY === "${{ github.repository }}" &&
+        step.env?.SHA === "${{ needs.release_plan.outputs.head_sha }}",
+    );
+    if (
+      releasePlan?.outputs?.rich_menu_requires_web !==
+        "${{ steps.plan.outputs.rich_menu_requires_web }}" ||
+      ready <= richMain ||
+      ready >= publish
+    ) {
+      errors.push("CI: Rich Menu must verify compatible exact-SHA Web runtime before publication");
+    }
     if (
       JSON.stringify(releaseRich?.needs) !== JSON.stringify(["release_plan", "validation"]) ||
       !releaseRich?.if?.includes("needs.release_plan.outputs.rich_menu_changed == 'true'") ||

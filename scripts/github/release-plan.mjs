@@ -291,6 +291,9 @@ export async function planRelease({
     files.some((file) => !publicationOnlyRichMenuSource(file)) &&
     turbo.webBuildAffected(baseline, targetSha);
   const web = pendingWeb(deploymentFiles, deploymentBaseline);
+  // A menu cannot claim runtime compatibility without either a proven Web baseline
+  // or a successful, exact-SHA Web publication in the current Release.
+  const richMenuRequiresWeb = richMenu && (web || !deploymentBaseline);
 
   return {
     head_sha: targetSha,
@@ -298,6 +301,7 @@ export async function planRelease({
     storage_changed: storageChanged(storageFiles),
     web_affected: web,
     rich_menu_changed: richMenu,
+    rich_menu_requires_web: richMenuRequiresWeb,
     scheduler_changed:
       schedulerChanged(schedulerFiles) ||
       schemaChanged(schedulerFiles) ||
@@ -319,6 +323,7 @@ export function githubOutputLines(plan) {
     `storage_changed=${plan.storage_changed}`,
     `web_affected=${plan.web_affected}`,
     `rich_menu_changed=${plan.rich_menu_changed}`,
+    `rich_menu_requires_web=${plan.rich_menu_requires_web}`,
     `scheduler_changed=${plan.scheduler_changed}`,
   ];
 }

@@ -50,6 +50,7 @@
     "change:finalize": "node scripts/changes/finalize.mjs",
     "github:current-main": "node scripts/github/current-main.mjs",
     "github:release-plan": "node scripts/github/release-plan.mjs",
+    "github:rich-menu-ready": "node scripts/github/rich-menu-ready.mjs",
     "wiki:run": "node scripts/wiki/run.mjs",
     "insights:run": "node scripts/insights/run.mjs",
     "actions:run": "node scripts/actions/run.mjs",
