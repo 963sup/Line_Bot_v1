@@ -4,9 +4,10 @@ import { checkDataTopology } from "./check-data-topology.mjs";
 import { checkFptDomainTruth } from "./check-fpt-domain-truth.mjs";
 import { checkImplementationTopology } from "./check-implementation-topology.mjs";
 import { checkSemanticArchitecture } from "./check-semantic-architecture.mjs";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 
 const architecture = await checkArchitecture();
-for (const error of architecture.errors) console.error(error);
+reportArchitectureViolations("architecture", architecture.errors);
 console.log(
   "Architecture: " +
     architecture.moduleCount +
@@ -16,7 +17,7 @@ console.log(
 );
 
 const topology = await checkImplementationTopology();
-for (const error of topology.errors) console.error(error);
+reportArchitectureViolations("implementation-topology", topology.errors);
 console.log(
   "Implementation topology: " +
     topology.packageCount +
@@ -26,7 +27,7 @@ console.log(
 );
 
 const fpt = await checkFptDomainTruth();
-for (const error of fpt.errors) console.error(error);
+reportArchitectureViolations("fpt-domain-truth", fpt.errors);
 console.log(
   "FPT domain truth: " +
     fpt.fileCount +
@@ -38,7 +39,7 @@ console.log(
 );
 
 const dataAccess = await checkDataAccess();
-for (const error of dataAccess.errors) console.error(error);
+reportArchitectureViolations("data-access", dataAccess.errors);
 console.log(
   "Runtime data access: " +
     dataAccess.workspaceCount +
@@ -58,7 +59,7 @@ console.log(
 );
 
 const dataTopology = await checkDataTopology();
-for (const error of dataTopology.errors) console.error(error);
+reportArchitectureViolations("data-topology", dataTopology.errors);
 console.log(
   "Data topology: " +
     dataTopology.surfaceCount +
@@ -70,7 +71,7 @@ console.log(
 );
 
 const semantic = await checkSemanticArchitecture();
-for (const error of semantic.errors) console.error(error);
+reportArchitectureViolations("semantic-architecture", semantic.errors);
 console.log(
   "Semantic architecture: " +
     semantic.ownerCount +
