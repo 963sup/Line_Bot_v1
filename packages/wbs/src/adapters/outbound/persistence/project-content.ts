@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database, type Sql, type SqlRow } from "@line_bot_v1/platform/postgres";
+import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
 import { isRecord, numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { createPostgresProjectContentScope } from "@line_bot_v1/project/composition/bootstrap/project-content-scope";
 import type {
@@ -11,7 +12,7 @@ import type {
   ProjectWbsContentTransaction,
   ProjectWbsStore,
 } from "../../../contracts/repositories/project-content.js";
-import type { WbsRevision } from "../../../domain/content.js";
+import type { WbsContractImportEvidence, WbsRevision } from "../../../domain/content.js";
 import { parseWbsDocument, WbsError } from "../../../domain/document.js";
 import { canEditProjectWbs } from "../../../domain/policies/project-access.js";
 import { PostgresWbsScopeBoundary } from "./scope-boundary.js";
@@ -21,6 +22,7 @@ function revisionMetadata(row: SqlRow): Omit<WbsRevision, "document"> {
   if (
     action !== "initialize" &&
     action !== "create-node" &&
+    action !== "import-contract" &&
     action !== "update-node" &&
     action !== "move-node" &&
     action !== "delete-subtree"
@@ -53,7 +55,10 @@ function canonical(value: unknown): unknown {
   return value;
 }
 export class PostgresProjectWbsStore implements ProjectWbsStore {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly db: Database = businessDatabase(),
+    private readonly source: (sql: Sql) => ContractReferenceReader,
+  ) {}
   read(
     userId: string,
     selector: { projectId: string },
@@ -130,6 +135,7 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
       await new PostgresWbsScopeBoundary(sql).projectWritable(project.id);
       return operation({
         scope: { projectId: project.id, closed, role },
+        contracts: this.source(sql),
         nextId: randomUUID,
         replay: async () => {
           await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
@@ -218,14 +224,14 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
             throw new WbsError(503, "WBS 目前版本無法讀取。");
           return current;
         },
-        save: async (next) => {
+        save: async (next, contractImport?: WbsContractImportEvidence) => {
           if (next.parentRevisionId === null)
             await sql.query(
               "INSERT INTO project_wbs(project_id,version,head_revision_id) VALUES($1,$2,$3)",
               [project.id, next.version, next.id],
             );
           await sql.query(
-            "INSERT INTO project_wbs_revisions(id,project_id,version,parent_revision_id,actor_user_id,action,document,at) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8)",
+            "INSERT INTO project_wbs_revisions(id,project_id,version,parent_revision_id,actor_user_id,action,document,at,contract_import) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb)",
             [
               next.id,
               project.id,
@@ -235,6 +241,7 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
               next.action,
               JSON.stringify(next.document),
               next.at,
+              contractImport ? JSON.stringify(contractImport) : null,
             ],
           );
           if (next.parentRevisionId !== null) {

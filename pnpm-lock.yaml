@@ -1096,6 +1096,9 @@ importers:
 
   packages/wbs:
     dependencies:
+      '@line_bot_v1/contract':
+        specifier: workspace:*
+        version: link:../contract
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
