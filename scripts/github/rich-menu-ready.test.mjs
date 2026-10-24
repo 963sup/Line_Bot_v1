@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { requireRichMenuWebReady } from "./rich-menu-ready.mjs";
 
@@ -128,10 +129,12 @@ test("runtime gate remains available after 125 pending upstream observations", a
   const { args, counters } = fixture({
     snapshots: [...pending, ["success", "success"]],
   });
-  assert.deepEqual(
-    await requireRichMenuWebReady({ ...args, maxPolls: undefined }),
-    { sha: SHA, run_id: 42, attempt: 1, ready: true },
-  );
+  assert.deepEqual(await requireRichMenuWebReady({ ...args, maxPolls: undefined }), {
+    sha: SHA,
+    run_id: 42,
+    attempt: 1,
+    ready: true,
+  });
   assert.deepEqual(counters(), { polls: 126, sleeps: 125 });
 });
 
@@ -141,4 +144,14 @@ test("runtime readiness bound stays finite", async () => {
     requireRichMenuWebReady({ ...args, maxPolls: 201 }),
     /Invalid readiness poll bound/,
   );
+});
+
+test("Rich Menu job reserves execution headroom beyond bounded upstream readiness", () => {
+  const workflow = readFileSync(
+    new URL("../../.github/workflows/release.yml", import.meta.url),
+    "utf8",
+  );
+  const menuJob = workflow.split("\n  rich_menu:\n")[1]?.split("\n  attendance_scheduler:\n")[0];
+  assert.ok(menuJob);
+  assert.match(menuJob, /^    timeout-minutes: 110$/m);
 });

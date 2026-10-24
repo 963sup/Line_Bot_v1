@@ -275,7 +275,7 @@ jobs:
       needs.validation.result == 'success' && needs.release_plan.result == 'success' &&
       needs.release_plan.outputs.rich_menu_changed == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 110
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       TURBO_TELEMETRY_DISABLED: "1"
