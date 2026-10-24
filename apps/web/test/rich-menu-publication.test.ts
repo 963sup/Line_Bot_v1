@@ -276,7 +276,7 @@ test("alias read failure before any provider write safely cleans up newly create
 test("later alias lost response restores earlier aliases without deleting new menus", async () => {
   const main = config("attendance-in");
   const submenu = config("forms");
-  const created = [
+  const created: Array<{ page: RichMenuPublicationConfig["page"]; richMenuId: string }> = [
     { page: submenu.page, richMenuId: "richmenu-new-forms" },
     { page: main.page, richMenuId: "richmenu-new-main" },
   ];
