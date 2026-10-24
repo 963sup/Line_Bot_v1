@@ -163,6 +163,116 @@ test("activation failure restores default and aliases while retaining new menus"
   assert.deepEqual(deletedMenus, []);
 });
 
+for (const previousAliasId of [null, "richmenu-old0abcd"] as const) {
+  for (const failure of ["response-loss", "readback-failure"] as const) {
+    test(`first alias ${previousAliasId ? "update" : "create"} ${failure} reconciles without deleting referenced menus`, async () => {
+      const home = config("attendance-in");
+      const newId = "richmenu-new0abcd";
+      const alias = "line_bot_v1-attendance-in";
+      const aliases = new Map<string, string>();
+      if (previousAliasId) aliases.set(alias, previousAliasId);
+      let targetReads = 0;
+      let faultInjected = false;
+      const deletedMenus: string[] = [];
+
+      const writeAlias = async (name: string, id: string) => {
+        aliases.set(name, id); // Provider commits before the response is lost.
+        if (name === alias && id === newId && failure === "response-loss" && !faultInjected) {
+          faultInjected = true;
+          throw new Error("synthetic response loss after provider mutation");
+        }
+      };
+      const client = publicationClient({
+        get: async () => home.menu,
+        getAlias: async (name: string) => {
+          if (name === alias) {
+            targetReads++;
+            if (failure === "readback-failure" && targetReads === 3) {
+              faultInjected = true;
+              throw new Error("synthetic post-mutation readback failure");
+            }
+          }
+          return aliases.get(name) ?? null;
+        },
+        createAlias: writeAlias,
+        updateAlias: writeAlias,
+        deleteAlias: async (name: string) => {
+          aliases.delete(name);
+        },
+        getDefault: async () => "richmenu-existing-default",
+        delete: async (id: string) => {
+          deletedMenus.push(id);
+          return new Response(null, { status: 200 });
+        },
+      });
+
+      await assert.rejects(
+        activateRichMenuBatch(client, [home], [{ page: "attendance-in", richMenuId: newId }]),
+        /previous remote state was restored; retained new menus for reconciliation/,
+      );
+      assert.equal(faultInjected, true);
+      assert.equal(aliases.get(alias) ?? null, previousAliasId);
+      assert.deepEqual(deletedMenus, []);
+    });
+  }
+}
+
+test("failed rollback of an uncertain alias write retains new menus for reconciliation", async () => {
+  const home = config("attendance-in");
+  const alias = "line_bot_v1-attendance-in";
+  const newId = "richmenu-new0abcd";
+  const previousId = "richmenu-old0abcd";
+  const aliases = new Map([[alias, previousId]]);
+  const deletedMenus: string[] = [];
+  const client = publicationClient({
+    get: async () => home.menu,
+    getAlias: async (name: string) => aliases.get(name) ?? null,
+    updateAlias: async (name: string, id: string) => {
+      if (id === previousId) throw new Error("synthetic restore unavailable");
+      aliases.set(name, id);
+      throw new Error("synthetic response loss after provider mutation");
+    },
+    getDefault: async () => previousId,
+    delete: async (id: string) => {
+      deletedMenus.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], [{ page: "attendance-in", richMenuId: newId }]),
+    /rollback incomplete \(alias:line_bot_v1-attendance-in\); retained new menus for reconciliation/,
+  );
+  assert.equal(aliases.get(alias), newId);
+  assert.deepEqual(deletedMenus, []);
+});
+
+test("alias read failure before any provider write safely cleans up newly created menus", async () => {
+  const home = config("attendance-in");
+  const newId = "richmenu-new0abcd";
+  const alias = "line_bot_v1-attendance-in";
+  let targetReads = 0;
+  const deletedMenus: string[] = [];
+  const client = publicationClient({
+    get: async () => home.menu,
+    getAlias: async (name: string) => {
+      if (name === alias && ++targetReads === 2) throw new Error("synthetic pre-mutation failure");
+      return null;
+    },
+    getDefault: async () => null,
+    delete: async (id: string) => {
+      deletedMenus.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], [{ page: "attendance-in", richMenuId: newId }]),
+    /failed before remote publication; newly created menus were removed/,
+  );
+  assert.deepEqual(deletedMenus, [newId]);
+});
+
 test("publish keeps preflight before creation and activation in one process", async () => {
   const home = config("attendance-in");
   const events: string[] = [];
