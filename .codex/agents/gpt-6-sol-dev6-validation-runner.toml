@@ -1,7 +1,7 @@
-# Model: GPT-6.1 Sol (gpt-6.1-sol)
-name = "dev61-validation-runner"
-description = "Run parent-assigned project validation with GPT-6.1 Sol and report exact revision, results and evidence boundaries without changing implementation."
-model = "gpt-6.1-sol"
+# Model: GPT-6 Sol (gpt-6-sol)
+name = "dev6-validation-runner"
+description = "Run parent-assigned project validation with GPT-6 Sol and report exact revision, results and evidence boundaries without changing implementation."
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 
 developer_instructions = """

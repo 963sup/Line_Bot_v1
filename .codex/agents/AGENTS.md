@@ -4,9 +4,11 @@
 
 ## Models
 
+模型版本上限為 GPT-6；角色模型、名稱與檔名須保持一致，不得配置高於 GPT-6 的版本。
+
 - GPT-6 Astra (`gpt-6-astra`)：Primary orchestration；需要獨立最終 architecture / acceptance decision 時使用。
 - GPT-5.6 Sol (`gpt-5.6-sol`)：repository mapping、root cause、architecture analysis、technical research、bounded implementation、diff review、evidence verification。
-- GPT-6.1 Sol (`gpt-6.1-sol`)：額外的開發角色組；使用下方 `dev61-*` roles，不改既有預設模型與角色。
+- GPT-6 Sol (`gpt-6-sol`)：額外的開發角色組；使用下方 `dev6-*` roles，不改既有預設模型與角色。
 
 每個 role 只擁有一個 Primary Responsibility；新增 role 必須有獨立問題、deliverable、stop condition、validation。
 
@@ -45,25 +47,25 @@ Primary 在每個任務開始時主動判斷是否委派；在任務授權與當
 
 Primary GPT-6 可直接做 final decision；不為形式重派。只使用會改變決策或提升 acceptance confidence 的最少 roles。
 
-## GPT-6.1 development
+## GPT-6 development
 
 | Need | Role | Reasoning | Deliverable |
 | --- | --- | --- | --- |
-| 已決定的 bounded change，指定 6.1 實作 | `dev61-implementation-worker` | medium | 最小充分實作、相關驗證與未解決事項 |
-| 指定 6.1 審查 concrete diff | `dev61-diff-reviewer` | high | 有 trigger、位置與影響的 defect findings |
-| 執行已指定的 check、test、build 或 runtime smoke | `dev61-validation-runner` | high | exact revision、命令結果與 evidence boundary |
-| Next.js route、hydration、compilation 或 runtime 根因 | `dev61-nextjs-runtime-analyst` | high | 正確 checkout/port 的 runtime evidence 與根因 |
-| shadcn registry item、範例或組合選擇 | `dev61-shadcn-registry-researcher` | high | 符合現有 UI contract 的選項、來源與預期 diff |
+| 已決定的 bounded change，指定 6 實作 | `dev6-implementation-worker` | medium | 最小充分實作、相關驗證與未解決事項 |
+| 指定 6 審查 concrete diff | `dev6-diff-reviewer` | high | 有 trigger、位置與影響的 defect findings |
+| 執行已指定的 check、test、build 或 runtime smoke | `dev6-validation-runner` | high | exact revision、命令結果與 evidence boundary |
+| Next.js route、hydration、compilation 或 runtime 根因 | `dev6-nextjs-runtime-analyst` | high | 正確 checkout/port 的 runtime evidence 與根因 |
+| shadcn registry item、範例或組合選擇 | `dev6-shadcn-registry-researcher` | high | 符合現有 UI contract 的選項、來源與預期 diff |
 
 Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐證，再交給單一 implementation worker。Diff review 可指出需修正處；修正完成後由指定 validation owner 執行 gates。`evidence-verifier` 檢查 claim 是否被結果支持，仍不執行測試。高風險決策沿用既有 Astra decision roles。這是選擇流程，不要求每次啟用所有角色。
 
-指定 `dev61-*` role 時，角色檔的模型與 effort 生效；不要派原本有固定模型的角色再期待 spawn model 覆蓋它。若主代理也要使用 6.1，可從 repository 根目錄啟動：
+指定 `dev6-*` role 時，角色檔的模型與 effort 生效；不要派原本有固定模型的角色再期待 spawn model 覆蓋它。若主代理也要使用 6，可從 repository 根目錄啟動：
 
 ```sh
-codex -m gpt-6.1-sol -c model_reasoning_effort=high
+codex -m gpt-6-sol -c model_reasoning_effort=high
 ```
 
-上述命令只選擇該次 CLI session 的主模型；專案角色需由新 session 載入，帳號仍須有模型使用權限。桌面版在模型選單選擇 GPT-6.1 Sol，並在任務中指定所需 `dev61-*` role。
+上述命令只選擇該次 CLI session 的主模型；專案角色需由新 session 載入，帳號仍須有模型使用權限。桌面版在模型選單選擇 GPT-6 Sol，並在任務中指定所需 `dev6-*` role。
 
 ## MCP permissions and evidence
 
@@ -75,7 +77,7 @@ MCP 工具免逐次確認不授予產品／provider 寫入權限。Specialist �
 
 ## Constraints
 
-- `repository-mapper` / `implementation-worker` / `dev61-implementation-worker` 預設 medium reasoning；其餘 analysis/review/evidence/decision/validation roles high。
+- `repository-mapper` / `implementation-worker` / `dev6-implementation-worker` 預設 medium reasoning；其餘 analysis/review/evidence/decision/validation roles high。
 - 最多 8 個 subagents；只並行可獨立驗收且不競爭同一寫入面的工作。
 - 子代理不自行擴 scope 或再派工；owner/permission/research 缺口回報 Primary。
 - 寫入代理保留他人修改；同 checkout 不並行寫同一檔案、migration order 或 generated output。

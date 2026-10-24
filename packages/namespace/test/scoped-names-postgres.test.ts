@@ -92,8 +92,7 @@ test("PostgreSQL serializes concurrent scoped claims and rename collisions", {
     await claimA.query(
       "INSERT INTO repository_labels(id,repository_id,name,color,version) VALUES('label-a','namespace-repo','Shared','ff0000',1)",
     );
-    await claimA.query("COMMIT");
-    await assert.rejects(blockedClaim);
+    await Promise.all([assert.rejects(blockedClaim), claimA.query("COMMIT")]);
   } finally {
     await claimA.query("ROLLBACK").catch(() => {});
     await claimB.query("ROLLBACK").catch(() => {});
@@ -153,8 +152,7 @@ test("PostgreSQL serializes concurrent scoped claims and rename collisions", {
     const renameWaiters = await waitForBlocked(renameAPid);
     assert.equal(renameWaiters.length, 1);
     assert.equal(renameWaiters[0]?.wait_event, "advisory");
-    await renameA.query("COMMIT");
-    await assert.rejects(blockedRename);
+    await Promise.all([assert.rejects(blockedRename), renameA.query("COMMIT")]);
   } finally {
     await renameA.query("ROLLBACK").catch(() => {});
     await renameB.query("ROLLBACK").catch(() => {});

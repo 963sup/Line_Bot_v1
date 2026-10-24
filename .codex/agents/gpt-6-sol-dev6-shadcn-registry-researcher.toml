@@ -1,7 +1,7 @@
-# Model: GPT-6.1 Sol (gpt-6.1-sol)
-name = "dev61-shadcn-registry-researcher"
-description = "Read-only GPT-6.1 Sol research of shadcn registry items and composition examples against the project's existing UI contract."
-model = "gpt-6.1-sol"
+# Model: GPT-6 Sol (gpt-6-sol)
+name = "dev6-shadcn-registry-researcher"
+description = "Read-only GPT-6 Sol research of shadcn registry items and composition examples against the project's existing UI contract."
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 
 developer_instructions = """

@@ -1,7 +1,7 @@
-# Model: GPT-6.1 Sol (gpt-6.1-sol)
-name = "dev61-diff-reviewer"
-description = "Read-only GPT-6.1 Sol review of one bounded diff for introduced correctness, authorization, concurrency and regression defects."
-model = "gpt-6.1-sol"
+# Model: GPT-6 Sol (gpt-6-sol)
+name = "dev6-diff-reviewer"
+description = "Read-only GPT-6 Sol review of one bounded diff for introduced correctness, authorization, concurrency and regression defects."
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 
 developer_instructions = """

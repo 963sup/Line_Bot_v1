@@ -28,3 +28,9 @@ Browser SDK 使用 Vercel 提供的 `NEXT_PUBLIC_VERCEL_ENV` 標記 `production`
 `SENTRY_ORG` / `SENTRY_PROJECT` 進 Web build hash；`SENTRY_AUTH_TOKEN` 只作 Turbo pass-through credential，不進 cache key。只有三個 build values 都存在時 `next.config.ts` 才啟用 Sentry build plugin/source-map upload。因 `@sentry/cli` 的 postinstall 供 source-map CLI binary setup 使用，`pnpm-workspace.yaml` 只明確批准該 package 的 build script，不放寬全域 build-script policy。
 
 Repository source 存在不代表 Vercel/Sentry 遠端 integration 已連線。啟用後需以 Preview controlled exception 驗證 event arrival 與 source-map stack，再移除任何暫時 probe。
+
+## Developer MCP
+
+`.codex/config.toml` 接入 [官方 Sentry MCP](https://mcp.sentry.dev/)，限定 `963sup/sentry` 專案。Hosted MCP 使用 OAuth；從 repository root 執行 `codex mcp login sentry --scopes org:read,project:read,event:read`，完成登入後重新載入 MCP／開新 session，再讀取該專案的 issue/event 驗證連線。OAuth credentials 由 Codex 管理，不寫入 repository 或 `.env.local`；此連線不需要 DSN、`SENTRY_AUTH_TOKEN`、OTLP 或 log drain 環境變數。
+
+開發診斷只讀指定 environment/release 的 issue、event 與 stack，沿實際 source/consumer 確認根因；MCP project scope 不授予遠端修改權限。Config 解析或 OAuth 登入成功不代表 source map、事件收集或當前 session 工具已驗證。`tooling:doctor --mcp` 只探測 Next DevTools/shadcn 本地 servers，不驗證 Sentry。
