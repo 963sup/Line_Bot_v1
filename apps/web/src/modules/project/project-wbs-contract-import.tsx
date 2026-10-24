@@ -374,8 +374,8 @@ export default function ProjectWbsContractImport({
                 disabled={disabled || busy}
                 onChange={(event) => setConfirmed(event.target.checked)}
               />
-              我已確認此 Contract 項次的來源及對應 WBS，並同意將工作包放入目標 Project，
-              即使 Project 可讀者與 Contract 可讀者不同。
+              我已確認此 Contract 項次的來源及對應 WBS，並同意將工作包放入目標 Project， 即使
+              Project 可讀者與 Contract 可讀者不同。
             </label>
             <Button
               type="button"
