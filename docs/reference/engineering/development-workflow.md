@@ -10,6 +10,15 @@
 - `.codex/agents/`：專案角色責任；當前工具權限與使用者指示優先。
 - `.codex/rules/default.rules`：只約束列出的 command patterns；不能取代 GitHub/Supabase/LINE 等實際平台授權。
 
+## Skill selection and compatibility
+
+Repository-installed third-party Skills are optional task methods, not product authority or executable permission. Discover them via `pnpm skills:list [query]` and read only the chosen `.agents/skills/<name>/SKILL.md` plus references needed for the current decision. Selection is `Task → Owner/Truth/Boundary → one applicable method → authorized tool → evidence`; do not preload all Skills, duplicate project invariants inside an external Skill, or install another Skill merely because its title resembles a project responsibility.
+
+- **Instruction priority:** root and nearest `AGENTS.md`, canonical contracts and current source take precedence over third-party Skill examples. In particular, generic `npx skills add/update` advice from `find-skills` is *not* permission to bypass [Skills management](../../../.agents/AGENTS.md). Only the project's pinned/trusted Skills CLI may install, update or remove an entry, and it must keep `skills-lock.json` synchronized; do not hand-edit `.agents/skills/` or its lockfile.
+- **Compatibility gate:** before using an external Skill, verify that its referenced local files exist, any required executables/subagents/browser or provider connection are actually available in this session, and all proposed writes fit the task/target authorization. Missing references or unsupported execution steps are an incomplete capability, not instructions to guess a replacement or claim execution; report the precise gap, and switch to an independently verified existing method when possible.
+- **Overlap resolution:** keep `AGENTS.md` as the change-policy owner, `docs/` as human-readable routing/why, `architecture/` and source as product authorities, `.agents/skills/` as externally managed methods, and connected Plugins as actual provider capabilities. For overlapping methods (for example First Principles, DDD, debugging or validation), select by the specific decision to make and actual prerequisites; do not create a second project playbook, duplicate source of truth, or add a new Skill without an uncovered consumer.
+- **Evidence boundary:** reading a `SKILL.md` proves only that its instructions were inspected. Command output, tests, GitHub CI, provider readback and device acceptance must each be independently verified. If a Skill demands a tool unavailable here, mark that step unverified rather than implying it ran.
+
 ## Working principle
 
 Agent 修改前仍須按 repository source priority 檢查 code / manifest / schema / tests / nearest AGENTS。Tool configuration 不建立 compatibility layer、business abstraction 或 architecture exception。
