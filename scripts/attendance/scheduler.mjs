@@ -1,10 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { withPostgres } from "../supabase/postgres.mjs";
-import {
-  assertConfirmedProject,
-  assertRemoteMutationContext,
-  assertRemoteTarget,
-} from "../supabase/remote.mjs";
+import { assertValidatedMainMutationContext } from "../supabase/remote-authorization.mjs";
+import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote-target.mjs";
 import { VERCEL_PRODUCTION_TARGET } from "../vercel/deploy-production.mjs";
 
 export const ATTENDANCE_SCHEDULER = Object.freeze({
@@ -46,7 +43,7 @@ export function parseSchedulerArgs(argv) {
 }
 
 export function assertSchedulerMutationContext(action, env = process.env) {
-  if (action === "reconcile") assertRemoteMutationContext("sync", env);
+  if (action === "reconcile") assertValidatedMainMutationContext(env);
 }
 
 export function schedulerCommand() {

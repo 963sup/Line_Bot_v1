@@ -5,11 +5,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "smol-toml";
 import { requireCurrentMain } from "../github/current-main.mjs";
 import { withPostgres } from "./postgres.mjs";
-import {
-  assertConfirmedProject,
-  assertRemoteMutationContext,
-  assertRemoteTarget,
-} from "./remote.mjs";
+import { assertValidatedMainMutationContext } from "./remote-authorization.mjs";
+import { assertConfirmedProject, assertRemoteTarget } from "./remote-target.mjs";
 
 const root = new URL("../../", import.meta.url);
 const bucketConfig = new URL("supabase/config.toml", root);
@@ -136,7 +133,7 @@ async function main() {
     return;
   }
 
-  assertRemoteMutationContext("sync", env);
+  assertValidatedMainMutationContext(env);
   if (!env.SUPABASE_ACCESS_TOKEN) throw new Error("Supabase provider access token is unavailable.");
   const sha = env.SUPABASE_RELEASE_SHA ?? "";
   if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("Exact storage release SHA is required.");

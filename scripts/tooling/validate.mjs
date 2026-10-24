@@ -286,15 +286,7 @@ function main() {
         "scripts/project/imports.test.mjs",
       ],
     ],
-    [
-      "schema:remote:test",
-      [
-        "--test",
-        "scripts/supabase/postgres.test.mjs",
-        "scripts/supabase/remote.test.mjs",
-        "scripts/supabase/storage.test.mjs",
-      ],
-    ],
+    ["schema:remote:test", ["--test", "scripts/supabase/*.test.mjs"]],
     ["attendance:scheduler:test", ["--test", "scripts/attendance/scheduler.test.mjs"]],
     ["schema:check", [turbo, "run", "schema:check"]],
     ["architecture", ["scripts/architecture/check-all.mjs"]],

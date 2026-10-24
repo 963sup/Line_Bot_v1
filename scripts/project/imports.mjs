@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { githubJson, readLatestRunJobs, requireRepository } from "../github/api.mjs";
 import { requireCurrentMain } from "../github/current-main.mjs";
-import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote.mjs";
+import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote-target.mjs";
 
 export function assertImportTarget({ supabaseUrl, postgresUrl, confirmedProject }) {
   const projectRef = assertRemoteTarget(supabaseUrl, postgresUrl);
