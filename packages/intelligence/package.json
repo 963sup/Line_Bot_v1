@@ -12,6 +12,14 @@
       "types": "./dist/contracts/output/document-attempts.d.ts",
       "default": "./dist/contracts/output/document-attempts.js"
     },
+    "./contracts/output/processing-history": {
+      "types": "./dist/contracts/output/processing-history.d.ts",
+      "default": "./dist/contracts/output/processing-history.js"
+    },
+    "./composition/bootstrap/processing-history": {
+      "types": "./dist/composition/bootstrap/processing-history.d.ts",
+      "default": "./dist/composition/bootstrap/processing-history.js"
+    },
     "./composition/bootstrap/document-intake": {
       "types": "./dist/composition/bootstrap/document-intake.d.ts",
       "default": "./dist/composition/bootstrap/document-intake.js"

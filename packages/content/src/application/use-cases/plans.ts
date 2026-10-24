@@ -99,7 +99,7 @@ export function createContentPlans(deps: {
                     current,
                     command.expectedVersion,
                     command.target,
-                    await tx.savedFileResults.verifySaved(
+                    await tx.savedProcessing.verifySaved(
                       userId,
                       tx.scope.repositoryId,
                       command.source,

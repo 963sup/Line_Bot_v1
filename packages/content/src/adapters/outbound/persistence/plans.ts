@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { FileSavedResultReader } from "@line_bot_v1/file/contracts/output/saved-results";
 import {
   businessDatabase,
   type Database,
@@ -20,6 +19,7 @@ import type {
   ContentPlanReads,
   ContentPlanTransaction,
   ContentPlanTransactions,
+  ProcessingHistoryReader,
 } from "../../../contracts/output/plans.js";
 import { ContentError } from "../../../domain/error.js";
 import type {
@@ -33,7 +33,7 @@ import type {
 import { isQuantityUnit } from "../../../domain/quantity.js";
 
 type ResourceReaderFactory = (sql: Sql) => ResourceReferenceReader;
-type SavedResultsFactory = (sql: Sql) => FileSavedResultReader;
+type ProcessingHistoryFactory = (sql: Sql) => ProcessingHistoryReader;
 
 function parsedJson(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -162,7 +162,7 @@ export async function readContentPlanRevision(
 export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransactions {
   constructor(
     private readonly resourceReader: ResourceReaderFactory,
-    private readonly savedResultsReader: SavedResultsFactory,
+    private readonly processingHistoryReader: ProcessingHistoryFactory,
     private readonly db: Database = businessDatabase(),
   ) {}
 
@@ -221,7 +221,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
         resources: this.resourceReader(sql),
-        savedFileResults: this.savedResultsReader(sql),
+        savedProcessing: this.processingHistoryReader(sql),
         nextId: randomUUID,
         replay: async () => {
           const row = (
