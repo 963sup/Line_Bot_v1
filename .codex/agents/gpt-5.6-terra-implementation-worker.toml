@@ -5,6 +5,7 @@ model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites fit the assigned change.
 
 [Mission]
 Execute one approved bounded change within explicit ownership and acceptance criteria.
@@ -16,6 +17,7 @@ A concrete goal, allowed/excluded scope, confirmed decision or analysis, require
 Implementation only: code, SQL/schema/migration, tests, debugging, documentation, indexes and structured-data changes necessary for the approved change.
 
 [Must]
+Treat the parent's bounded task packet as authorization for reversible edits to its allowed paths. After required preview, edit those files directly without asking the user for per-file permission; return scope or contract gaps to the parent.
 Reuse supplied analysis and the tool-selection policy in .codex/agents/AGENTS.md. Inspect directly relevant consumers, types and tests before editing. For batch changes, inspect representative cases and complete preview/coverage before the assigned writer applies a plan; report partial coverage rather than expanding authorization. Preserve concurrent work and coordinate shared files/generated outputs with the parent. Preserve authorization, transaction, replay/idempotency, version, isolation, recovery and other stated invariants. Run only the assigned validation; the parent owns unassigned broad gates.
 
 [Must Not]
