@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { businessDatabase, type Database, type Sql, type SqlRow } from "@line_bot_v1/platform/postgres";
+import { type Database, type Sql, type SqlRow } from "@line_bot_v1/platform/postgres";
 import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
 import { isRecord, numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { createPostgresProjectContentScope } from "@line_bot_v1/project/composition/bootstrap/project-content-scope";
@@ -56,7 +56,7 @@ function canonical(value: unknown): unknown {
 }
 export class PostgresProjectWbsStore implements ProjectWbsStore {
   constructor(
-    private readonly db: Database = businessDatabase(),
+    private readonly db: Database,
     private readonly source: (sql: Sql) => ContractReferenceReader,
   ) {}
   read(
