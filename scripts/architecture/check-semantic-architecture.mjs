@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 import { loadSemanticArchitecture } from "./semantic-core.mjs";
 import { packageSemanticDocs } from "./semantic-projection.mjs";
 
@@ -44,7 +45,7 @@ export async function checkSemanticArchitecture() {
 
 if (process.argv[1] && relative(resolve(process.argv[1]), fileURLToPath(import.meta.url)) === "") {
   const result = await checkSemanticArchitecture();
-  for (const error of result.errors) console.error(error);
+  reportArchitectureViolations("semantic-architecture", result.errors);
   console.log(
     "Semantic architecture: " +
       result.ownerCount +

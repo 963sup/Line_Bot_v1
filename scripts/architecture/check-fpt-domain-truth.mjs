@@ -1,6 +1,7 @@
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadFptDomainTruth, validateFptDomainTruth } from "./fpt-domain-core.mjs";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -16,7 +17,7 @@ export async function checkFptDomainTruth(root = repositoryRoot) {
 
 if (process.argv[1] && relative(resolve(process.argv[1]), fileURLToPath(import.meta.url)) === "") {
   const result = await checkFptDomainTruth();
-  for (const error of result.errors) console.error(error);
+  reportArchitectureViolations("fpt-domain-truth", result.errors);
   console.log(
     `FPT domain truth: ${result.fileCount} JSON files, ${result.symbolCount} indexed symbols, revision ${result.revision}, ${result.errors.length} violations.`,
   );

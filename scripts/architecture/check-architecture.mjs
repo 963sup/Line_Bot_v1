@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { cruise } from "dependency-cruiser";
 import ts from "typescript";
 import config from "../../.dependency-cruiser.mjs";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 
 const repository = fileURLToPath(new URL("../../", import.meta.url));
 const normalize = (path) => path.replaceAll("\\", "/");
@@ -324,7 +325,7 @@ export async function checkArchitecture(root = repository) {
 
 if (process.argv[1] && relative(resolve(process.argv[1]), fileURLToPath(import.meta.url)) === "") {
   const result = await checkArchitecture();
-  for (const error of result.errors) console.error(error);
+  reportArchitectureViolations("architecture", result.errors);
   console.log(`Architecture: ${result.moduleCount} modules, ${result.errors.length} violations.`);
   process.exitCode = result.errors.length ? 1 : 0;
 }
