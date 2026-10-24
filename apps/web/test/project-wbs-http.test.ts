@@ -4,7 +4,11 @@ import { createProjectWbs } from "@line_bot_v1/wbs/application/use-cases/project
 import type { ProjectWbsStore } from "@line_bot_v1/wbs/contracts/repositories/project-content";
 import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { projectWbsRequest } from "../src/modules/project/project-wbs-http.server";
-import { projectWbsHistory, projectWbsReceipt, projectWbsView } from "../src/modules/project/project-wbs-response";
+import {
+  projectWbsHistory,
+  projectWbsReceipt,
+  projectWbsView,
+} from "../src/modules/project/project-wbs-response";
 
 test("Project WBS HTTP checks origin, parses commands and keeps failure classes distinct", async (t) => {
   const previous = process.env.APP_ORIGIN;
@@ -167,8 +171,15 @@ test("import-contract revisions survive Web receipt, current view and history de
     revision,
   });
   assert.equal(view.revision?.action, "import-contract");
-  assert.equal(projectWbsHistory({ revisions: [revision], next: null }).revisions[0]?.action, "import-contract");
+  assert.equal(
+    projectWbsHistory({ revisions: [revision], next: null }).revisions[0]?.action,
+    "import-contract",
+  );
   assert.throws(() =>
-    projectWbsReceipt({ requestId: "req", projectId: "project", revision: { ...revision, action: "unknown" } }),
+    projectWbsReceipt({
+      requestId: "req",
+      projectId: "project",
+      revision: { ...revision, action: "unknown" },
+    }),
   );
 });

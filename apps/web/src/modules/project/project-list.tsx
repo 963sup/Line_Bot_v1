@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import styles from "./project-list.module.css";
 import {
   type ContractWbsHandoff,
   contractWbsHandoffSearch,
   parseContractWbsHandoff,
 } from "./contract-wbs-handoff";
+import styles from "./project-list.module.css";
 import { useProjectCollection } from "./use-project-collection";
 
 type OwnerFilter = "ALL" | "USER" | "ORGANIZATION";

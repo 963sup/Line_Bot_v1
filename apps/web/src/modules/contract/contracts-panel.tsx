@@ -36,6 +36,7 @@ type PlanNode = {
 };
 type Line = { lineId: string; planRevisionId: string; nodeId: string; agreedQuantity: string };
 type Revision = Summary & {
+  revisionId: string;
   body: string;
   lines: Array<{
     lineId: string;
