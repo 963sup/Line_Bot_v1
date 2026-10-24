@@ -421,9 +421,10 @@ test("PGlite rolls back the entire transfer when replay evidence persistence fai
   assert.equal(
     Number(
       (
-        await pg.query("SELECT count(*) FROM app_private.project_wbs WHERE project_id=$1", [
-          built.projectId,
-        ])
+        await pg.query<{ count: string }>(
+          "SELECT count(*) FROM app_private.project_wbs WHERE project_id=$1",
+          [built.projectId],
+        )
       ).rows[0]?.count,
     ),
     0,
@@ -431,7 +432,7 @@ test("PGlite rolls back the entire transfer when replay evidence persistence fai
   assert.equal(
     Number(
       (
-        await pg.query(
+        await pg.query<{ count: string }>(
           "SELECT count(*) FROM app_private.project_wbs_revisions WHERE project_id=$1",
           [built.projectId],
         )
@@ -442,7 +443,7 @@ test("PGlite rolls back the entire transfer when replay evidence persistence fai
   assert.equal(
     Number(
       (
-        await pg.query(
+        await pg.query<{ count: string }>(
           "SELECT count(*) FROM app_private.legacy_wbs_command_evidence WHERE project_id=$1",
           [built.projectId],
         )
@@ -462,7 +463,7 @@ test("PGlite rolls back the entire transfer when replay evidence persistence fai
   assert.equal(
     Number(
       (
-        await pg.query(
+        await pg.query<{ count: string }>(
           "SELECT count(*) FROM app_private.repository_wbs_revisions WHERE repository_id='repo'",
         )
       ).rows[0]?.count,
