@@ -3,7 +3,7 @@
  * Intelligence owns the interpretation result; File remains the owner of the
  * exact original revision named by this evidence.
  */
-export type SavedProcessingReference = Readonly<{
+type SavedProcessingReference = Readonly<{
   runId: string;
   processingRevisionId: string;
   observationId: string;

@@ -3,6 +3,7 @@ import { filePayloadInspector } from "../../adapters/outbound/binary/payloads.js
 import {
   PostgresFiles,
   createPostgresFileRevisionQualifier as postgresRevisionQualifier,
+  createPostgresFileSavedResultReader as postgresSavedResults,
 } from "../../adapters/outbound/persistence/files.js";
 import { supabaseFileObjects } from "../../adapters/outbound/storage/supabase.js";
 import { createFileSourceReader } from "../../application/use-cases/sources.js";
@@ -14,6 +15,7 @@ import type {
 } from "../../contracts/output/files.js";
 import type { FileObjectRemoval, FileObjectStore } from "../../contracts/output/object-store.js";
 import type { FileRevisionQualifier, FileSourceReader } from "../../contracts/output/references.js";
+import type { FileSavedResultReader } from "../../contracts/output/saved-results.js";
 
 /** One technical provider, initialized only when the requested operation requires bytes. */
 function lazyPrivateObjects() {
@@ -58,6 +60,11 @@ export function createPostgresFileReclamationDependencies(
     maintenance: new PostgresFiles(db),
     objects: objects ? () => objects : provider,
   };
+}
+
+/** Retained processing evidence stays behind File's public capability. */
+export function createPostgresSavedFileResults(sql: Sql): FileSavedResultReader {
+  return postgresSavedResults(sql);
 }
 
 export function createPostgresFileSourceReader(

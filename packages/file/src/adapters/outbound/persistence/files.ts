@@ -20,6 +20,7 @@ import type {
   FileTransactions,
 } from "../../../contracts/output/files.js";
 import type { FileRevisionQualifier } from "../../../contracts/output/references.js";
+import type { FileSavedResultReader } from "../../../contracts/output/saved-results.js";
 import { FileError } from "../../../domain/error.js";
 import type { FileRevision, FileUploadIntent } from "../../../domain/file.js";
 import {
@@ -608,6 +609,42 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
       })
       .catch(persistError);
   }
+}
+
+/** Transaction-bound access to retained File-owned processing evidence. */
+export function createPostgresFileSavedResultReader(sql: Sql): FileSavedResultReader {
+  return {
+    async verifySaved(actor, repositoryId, reference) {
+      if (
+        !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(reference.runId) ||
+        !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(reference.processingRevisionId) ||
+        !/^[A-Za-z0-9_-]{1,80}$/.test(reference.observationId)
+      )
+        throw new FileError(404, "Saved File result was not found.", "NOT_FOUND");
+      await currentScope(sql, actor, repositoryId);
+      const revision = await readProcessing(
+        sql,
+        repositoryId,
+        reference.runId.toLowerCase(),
+        reference.processingRevisionId.toLowerCase(),
+      );
+      const observation = revision?.savedResult?.observations.find(
+        (item) => item.id === reference.observationId,
+      );
+      if (revision?.state !== "SAVED" || !observation || observation.value === null)
+        throw new FileError(404, "Saved File result was not found.", "NOT_FOUND");
+      return {
+        repositoryId: revision.repositoryId,
+        fileId: revision.fileId,
+        fileRevisionId: revision.fileRevisionId,
+        fileSha256: revision.fileSha256,
+        runId: revision.runId,
+        processingRevisionId: revision.id,
+        observationId: observation.id,
+        uncertain: observation.uncertain,
+      };
+    },
+  };
 }
 
 /** Public File qualification uses the caller's transaction and only File-owned metadata. */
