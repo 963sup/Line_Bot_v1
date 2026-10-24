@@ -9,7 +9,7 @@ export function reportArchitectureViolations(stage, errors, options = {}) {
     options.outputDirectory ??
     process.env.REPOSITORY_VALIDATION_OUTPUT_DIR ??
     createOutputDirectory(repositoryRoot, "architecture-");
-  const report = writeBoundedDiagnostic(outputDirectory, stage, errors.join("\n"));
+  const report = writeBoundedDiagnostic(outputDirectory, `${stage}-violations`, errors.join("\n"));
   const write = options.write ?? console.error;
   write(`${stage}: ${errors.length} violations.`);
   write(report.diagnostic);
