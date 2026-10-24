@@ -223,3 +223,75 @@ test("publish keeps preflight before creation and activation in one process", as
   assert.ok(events.indexOf("upload") < events.indexOf("alias"));
   assert.ok(events.indexOf("alias") < events.indexOf("activate"));
 });
+
+for (const existing of [false, true]) {
+  for (const failure of ["lost-response", "readback"] as const) {
+    test(`first alias ${existing ? "update" : "create"} ${failure} restores the previous remote state without deleting new menus`, async () => {
+      const home = config("attendance-in");
+      const newId = "richmenu-new0abcd";
+      const oldId = "richmenu-old0abcd";
+      const alias = "line_bot_v1-attendance-in";
+      const aliases = new Map<string, string>(existing ? [[alias, oldId]] : []);
+      const deleted: string[] = [];
+      let reads = 0;
+      const write = async (id: string) => {
+        aliases.set(alias, id);
+        if (failure === "lost-response") throw new Error("remote committed; response lost");
+      };
+      const client = publicationClient({
+        get: async () => home.menu,
+        getAlias: async (key: string) => {
+          if (key === alias) {
+            reads++;
+            // First read snapshots the old value; second read follows the write.
+            if (failure === "readback" && reads === 2)
+              throw new Error("remote readback unavailable");
+          }
+          return aliases.get(key) ?? null;
+        },
+        createAlias: async (_key: string, id: string) => write(id),
+        updateAlias: async (_key: string, id: string) => write(id),
+        deleteAlias: async (key: string) => { aliases.delete(key); },
+        getDefault: async () => oldId,
+        delete: async (id: string) => {
+          deleted.push(id);
+          return new Response(null, { status: 200 });
+        },
+      });
+      await assert.rejects(
+        activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+        /previous remote state was restored; retained new menus/,
+      );
+      assert.equal(aliases.get(alias) ?? null, existing ? oldId : null);
+      assert.deepEqual(deleted, []);
+    });
+  }
+}
+
+test("first unknown alias outcome with failed rollback retains new menus for reconciliation", async () => {
+  const home = config("attendance-in");
+  const alias = "line_bot_v1-attendance-in";
+  const newId = "richmenu-new0abcd";
+  const aliases = new Map<string, string>();
+  const deleted: string[] = [];
+  const client = publicationClient({
+    get: async () => home.menu,
+    getAlias: async (key: string) => aliases.get(key) ?? null,
+    createAlias: async (key: string, id: string) => {
+      aliases.set(key, id);
+      throw new Error("response lost after commit");
+    },
+    deleteAlias: async () => { throw new Error("rollback unavailable"); },
+    getDefault: async () => null,
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+    /rollback incomplete .*retained new menus for reconciliation/,
+  );
+  assert.equal(aliases.get(alias), newId);
+  assert.deepEqual(deleted, []);
+});
