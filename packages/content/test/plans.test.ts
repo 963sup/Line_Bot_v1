@@ -81,7 +81,7 @@ function harness(options?: {
             return [basis];
           },
         },
-        savedFileResults: {
+        savedProcessing: {
           verifySaved: async () => ({
             repositoryId: "repo",
             fileId: ids.subject,

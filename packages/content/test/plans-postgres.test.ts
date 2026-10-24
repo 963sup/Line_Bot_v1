@@ -2,10 +2,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
-import {
-  createPostgresFileDependencies,
-  createPostgresSavedFileResults,
-} from "@line_bot_v1/file/composition/bootstrap/files";
+import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
+import { createPostgresProcessingHistory } from "@line_bot_v1/intelligence/composition/bootstrap/processing-history";
 import { plainTextProcessor } from "@line_bot_v1/file/composition/bootstrap/processors";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
@@ -161,7 +159,7 @@ test("Content persists complete revisions, replay, pins and exact historical ref
   });
   const persistence = new PostgresContentPlans(
     (sql) => countingResourceReader(calls, createPostgresResourceReferenceReader(sql)),
-    createPostgresSavedFileResults,
+    createPostgresProcessingHistory,
     db,
   );
   const plans = createContentPlans({
@@ -315,7 +313,7 @@ test("independent PostgreSQL sessions allow only one competing Content initializ
   await seedRepository(db);
   const persistence = new PostgresContentPlans(
     () => countingResourceReader({ count: 0 }),
-    createPostgresSavedFileResults,
+    createPostgresProcessingHistory,
     db,
   );
   const plans = createContentPlans({ reads: persistence, transactions: persistence, now: () => 1 });
@@ -387,7 +385,7 @@ test("Content imports one verified SAVED File observation and pins immutable pro
   const observation = saved.processing.savedResult?.observations[0];
   assert.ok(observation);
   const plans = createContentPlans({
-    ...createPostgresContentPlanDependencies(db),
+    ...createPostgresContentPlanDependencies(db, createPostgresProcessingHistory),
     now: () => 100,
   });
   const initial = contentCommand("repo");
