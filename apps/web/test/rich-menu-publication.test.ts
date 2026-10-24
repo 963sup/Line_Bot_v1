@@ -273,6 +273,180 @@ test("alias read failure before any provider write safely cleans up newly create
   assert.deepEqual(deletedMenus, [newId]);
 });
 
+test("later alias lost response restores earlier aliases without deleting new menus", async () => {
+  const main = config("attendance-in");
+  const submenu = config("forms");
+  const created = [
+    { page: submenu.page, richMenuId: "richmenu-new-forms" },
+    { page: main.page, richMenuId: "richmenu-new-main" },
+  ];
+  const aliases = new Map([
+    ["line_bot_v1-forms", "richmenu-old-forms"],
+    ["line_bot_v1-attendance-in", "richmenu-old-main"],
+  ]);
+  let failed = false;
+  const deleted: string[] = [];
+  const client = publicationClient({
+    get: async (id: string) => (id === created[0]?.richMenuId ? submenu.menu : main.menu),
+    getAlias: async (name: string) => aliases.get(name) ?? null,
+    updateAlias: async (name: string, id: string) => {
+      aliases.set(name, id);
+      if (name === "line_bot_v1-attendance-in" && id === "richmenu-new-main" && !failed) {
+        failed = true;
+        throw new Error("synthetic later-alias response loss");
+      }
+    },
+    getDefault: async () => "richmenu-old-main",
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [main, submenu], created),
+    /previous remote state was restored; retained new menus for reconciliation/,
+  );
+  assert.equal(failed, true);
+  assert.equal(aliases.get("line_bot_v1-forms"), "richmenu-old-forms");
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), "richmenu-old-main");
+  assert.deepEqual(deleted, []);
+});
+
+for (const failure of ["response-loss", "readback-failure"] as const) {
+  test(`default activation ${failure} restores previous default and alias without deleting menus`, async () => {
+    const home = config("attendance-in");
+    const newId = "richmenu-new-main";
+    const oldId = "richmenu-old-main";
+    const alias = "line_bot_v1-attendance-in";
+    const aliases = new Map([[alias, oldId]]);
+    let defaultId = oldId;
+    let defaultReads = 0;
+    let injected = false;
+    const deleted: string[] = [];
+    const client = publicationClient({
+      get: async () => home.menu,
+      getAlias: async (name: string) => aliases.get(name) ?? null,
+      updateAlias: async (name: string, id: string) => {
+        aliases.set(name, id);
+      },
+      getDefault: async () => {
+        defaultReads++;
+        if (failure === "readback-failure" && defaultReads === 2) {
+          injected = true;
+          throw new Error("synthetic default readback unavailable");
+        }
+        return defaultId;
+      },
+      activate: async (id: string) => {
+        defaultId = id;
+        if (failure === "response-loss" && id === newId && !injected) {
+          injected = true;
+          throw new Error("synthetic default activation response lost");
+        }
+        return new Response(null, { status: 200 });
+      },
+      delete: async (id: string) => {
+        deleted.push(id);
+        return new Response(null, { status: 200 });
+      },
+    });
+
+    await assert.rejects(
+      activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+      /previous remote state was restored; retained new menus for reconciliation/,
+    );
+    assert.equal(injected, true);
+    assert.equal(defaultId, oldId);
+    assert.equal(aliases.get(alias), oldId);
+    assert.deepEqual(deleted, []);
+  });
+}
+
+test("default rollback failure reports incomplete recovery and retains new menus", async () => {
+  const home = config("attendance-in");
+  const oldId = "richmenu-old-main";
+  const newId = "richmenu-new-main";
+  let currentDefault = oldId;
+  const aliases = new Map([["line_bot_v1-attendance-in", oldId]]);
+  const deleted: string[] = [];
+  const client = publicationClient({
+    get: async () => home.menu,
+    getAlias: async (name: string) => aliases.get(name) ?? null,
+    updateAlias: async (name: string, id: string) => {
+      aliases.set(name, id);
+    },
+    getDefault: async () => currentDefault,
+    activate: async (id: string) => {
+      if (id === oldId) throw new Error("synthetic rollback unavailable");
+      currentDefault = id;
+      throw new Error("synthetic activation response lost");
+    },
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+    /rollback incomplete \(default\); retained new menus for reconciliation/,
+  );
+  assert.equal(currentDefault, newId);
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), oldId);
+  assert.deepEqual(deleted, []);
+});
+
+test("deprecated alias deletion with lost response restores prior state", async () => {
+  const home = config("attendance-in");
+  const oldId = "richmenu-old-main";
+  const newId = "richmenu-new-main";
+  const deprecated = "line_bot_v1-home";
+  const aliases = new Map([
+    ["line_bot_v1-attendance-in", oldId],
+    [deprecated, oldId],
+  ]);
+  let defaultId = oldId;
+  let injected = false;
+  const deleted: string[] = [];
+  const client = publicationClient({
+    get: async () => home.menu,
+    getAlias: async (name: string) => aliases.get(name) ?? null,
+    updateAlias: async (name: string, id: string) => {
+      aliases.set(name, id);
+    },
+    createAlias: async (name: string, id: string) => {
+      aliases.set(name, id);
+    },
+    deleteAlias: async (name: string) => {
+      aliases.delete(name);
+      if (name === deprecated && !injected) {
+        injected = true;
+        throw new Error("synthetic deprecated alias deletion response lost");
+      }
+    },
+    getDefault: async () => defaultId,
+    activate: async (id: string) => {
+      defaultId = id;
+      return new Response(null, { status: 200 });
+    },
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+    /previous remote state was restored; retained new menus for reconciliation/,
+  );
+  assert.equal(injected, true);
+  assert.equal(defaultId, oldId);
+  assert.equal(aliases.get(deprecated), oldId);
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), oldId);
+  assert.deepEqual(deleted, []);
+});
+
 test("publish keeps preflight before creation and activation in one process", async () => {
   const home = config("attendance-in");
   const events: string[] = [];
