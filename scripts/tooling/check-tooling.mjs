@@ -1,11 +1,15 @@
 // Offline metadata checks; never load application code or environment files.
-import { spawnSync } from "node:child_process";
 import { existsSync, globSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
 import ts from "typescript";
 import YAML from "yaml";
+import {
+  createOutputDirectory,
+  runBoundedCommand,
+  writeBoundedDiagnostic,
+} from "../runtime/bounded-output.mjs";
 import { validationGroups } from "./validate.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -1428,9 +1432,22 @@ if (import.meta.main) {
   }
   const failures = validate(repositoryRoot);
   if (failures.length) {
-    console.error(failures.join("\n"));
+    const outputDirectory =
+      process.env.REPOSITORY_VALIDATION_OUTPUT_DIR ??
+      createOutputDirectory(repositoryRoot, "tooling-check-");
+    const report = writeBoundedDiagnostic(
+      outputDirectory,
+      "tooling-violations",
+      failures.join("\n"),
+    );
+    console.error(`Tooling: ${failures.length} violations.`);
+    console.error(report.diagnostic);
+    console.error(`Full log: ${report.logPath}`);
     process.exit(1);
   }
+  const outputDirectory =
+    process.env.REPOSITORY_VALIDATION_OUTPUT_DIR ??
+    createOutputDirectory(repositoryRoot, "tooling-check-");
   for (const args of [
     ...globSync("scripts/**/*.mjs", { cwd: repositoryRoot })
       .sort()
@@ -1443,9 +1460,18 @@ if (import.meta.main) {
       "scripts/vercel/deploy-production.test.mjs",
     ],
   ]) {
-    const result = spawnSync(process.execPath, args, { cwd: repositoryRoot, stdio: "inherit" });
-    if (result.error) console.error(`Node could not start: ${result.error.message}`);
-    if (result.error || result.status !== 0) process.exit(result.status ?? 1);
+    const result = runBoundedCommand(process.execPath, args, {
+      cwd: repositoryRoot,
+      label: args[0] === "--check" ? `syntax-${args[1]}` : "tooling-tests",
+      outputDirectory,
+    });
+    if (result.error || result.status !== 0) {
+      console.error(`Tooling command failed: node ${args.join(" ")}`);
+      if (result.error) console.error(`Node could not start: ${result.error.message}`);
+      if (result.diagnostic) console.error(result.diagnostic);
+      console.error(`Full log: ${result.logPath}`);
+      process.exit(result.status ?? 1);
+    }
   }
   console.log(
     "Tooling OK: versions, environment contract, script syntax, literal imports, AGENTS governance and agent TOML. Rules require tooling:rules.",

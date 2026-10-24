@@ -16,6 +16,8 @@
 
 `tooling:doctor` 是 developer environment diagnosis；`tooling:check` 是 repository contract validation。兩者 evidence 不互相替代。
 
+`tooling:check` 的語法與測試子程序、metadata violations 保留完整 log 在 `.artifacts/`；失敗時終端只顯示有界片段與 log 路徑。透過 `pnpm validate` 執行時，log 留在同一個 validation artifact 目錄。
+
 `check` 在執行前列出 scope、各階段選取／略過理由及 typecheck/test workspace selection。Schema 或未追蹤檔案會保守擴大 workspace coverage；明確指定 filter 時，由呼叫者負責涵蓋所有 consumer。輸出只解釋既有選取規則，不代表驗證已通過。
 
 `tooling:check` 擁有 list-skills、check-tooling、validate 與 deployment adapter regression tests；validation 的 `tooling:test` 補執行 doctor、WBS operator、來源查改、runtime helper 與 Contract／Execution CLI 測試，避免同一次 validation 重複執行。
