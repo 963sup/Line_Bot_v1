@@ -201,12 +201,14 @@ test("release plan keeps owner cursors independent and rich menu direct when Web
   assert.equal(plan.schema_changed, false);
   assert.equal(plan.web_affected, false);
   assert.equal(plan.rich_menu_changed, true);
+  assert.equal(plan.rich_menu_requires_web, false);
   assert.equal(plan.scheduler_changed, false);
   assert.deepEqual(githubOutputLines(plan).slice(1), [
     "schema_changed=false",
     "storage_changed=false",
     "web_affected=false",
     "rich_menu_changed=true",
+    "rich_menu_requires_web=false",
     "scheduler_changed=false",
   ]);
 });
@@ -247,7 +249,7 @@ test("release plan keeps Rich Menu and Web as independent pending operations", a
   });
   assert.equal(plan.web_affected, true);
   assert.equal(plan.rich_menu_changed, true);
-  assert.equal(Object.hasOwn(plan, "rich_menu_requires_web"), false);
+  assert.equal(plan.rich_menu_requires_web, true);
   assert.equal(plan.scheduler_changed, true);
 });
 
@@ -297,6 +299,20 @@ test("schema-only changes sync schema without publishing Rich Menu or deploying 
   assert.equal(plan.schema_changed, true);
   assert.equal(plan.web_affected, false);
   assert.equal(plan.rich_menu_changed, false);
+});
+
+
+test("Rich Menu fails closed when no compatible Web deployment baseline exists", async () => {
+  const plan = await planRelease(
+    plannerFixture({
+      runs: [],
+      files: ["assets/line/rich-menu/line_bot_v1-forms.jpg"],
+      affected: false,
+    }),
+  );
+  assert.equal(plan.rich_menu_changed, true);
+  assert.equal(plan.web_affected, false);
+  assert.equal(plan.rich_menu_requires_web, true);
 });
 
 test("each current Rich Menu asset triggers independent publication even when Turbo is affected", async () => {
