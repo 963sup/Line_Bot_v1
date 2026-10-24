@@ -19,18 +19,6 @@
       "skillPath": "allocating-effort/SKILL.md",
       "computedHash": "ae0fb220bcecc473120470d758e1a57029e70c54d447f579d7739dcca0993ac6"
     },
-    "architecture": {
-      "source": "v1r3n/first-principles-skills",
-      "sourceType": "github",
-      "skillPath": "skills/architecture/SKILL.md",
-      "computedHash": "092f4f250d067316a2c8ca554728846e439aeae4d2b5c034657c493d5c98438e"
-    },
-    "code": {
-      "source": "v1r3n/first-principles-skills",
-      "sourceType": "github",
-      "skillPath": "skills/code/SKILL.md",
-      "computedHash": "ab17bb8bad9af41c4269f719b1a02da7b6980ce0a3e4056893132bb3389a8d45"
-    },
     "codebase-design": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -66,12 +54,6 @@
       "sourceType": "github",
       "skillPath": "skills/deployments-cicd/SKILL.md",
       "computedHash": "9aceb3e41d6cdafdedec7c36b9908d2f97e3328924864eed4aa7aaefb33888af"
-    },
-    "design": {
-      "source": "v1r3n/first-principles-skills",
-      "sourceType": "github",
-      "skillPath": "skills/design/SKILL.md",
-      "computedHash": "9c19d6221760152640033a62a5584bd01b05c760349fd1cdef20b2fa047f48cc"
     },
     "design-taste-frontend": {
       "source": "leonxlnx/taste-skill",
