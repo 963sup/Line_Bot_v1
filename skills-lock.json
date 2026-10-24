@@ -265,12 +265,6 @@
       "skillPath": "skills/nextjs-turbopack/SKILL.md",
       "computedHash": "7c0a0cc66806d6594c385f4e80419a305027065b852d48fe2cf91540ebea660c"
     },
-    "pdf": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/pdf/SKILL.md",
-      "computedHash": "37226d4220d844377e6b2a386c51a011df4cd130855ff0b80bcc22f9c28abd57"
-    },
     "plan": {
       "source": "v1r3n/first-principles-skills",
       "sourceType": "github",
