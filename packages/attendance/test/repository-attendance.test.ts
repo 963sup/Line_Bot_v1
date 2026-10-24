@@ -292,7 +292,31 @@ test("review receipt replays after repository ADMIN access is revoked", async (t
 
   assert.equal(first.replayed, false);
   assert.equal(replay.replayed, true);
-  assert.deepEqual(replay.supplement, first.supplement);
+  assert.deepEqual(first, { replayed: false });
+  assert.deepEqual(replay, { replayed: true });
+  await pg.query("UPDATE app_private.repositories SET visibility='private' WHERE id='repo'");
+  assert.deepEqual(await store.review("outsider", command, now + 2, reviewer), { replayed: true });
+  await assert.rejects(
+    () => store.review("outsider", { ...command, commandId: randomUUID() }, now + 3, reviewer),
+    { status: 403 },
+  );
+  await assert.rejects(
+    () => store.review("outsider", { ...command, reason: "changed" }, now + 3, reviewer),
+    { status: 409 },
+  );
+  await assert.rejects(() => store.review("outsider", command, now + 3, member), { status: 403 });
+  await assert.rejects(
+    () => store.review("outsider", { ...command, supplementId: randomUUID() }, now + 3, reviewer),
+    { status: 409 },
+  );
+  await pg.query("UPDATE app_private.users SET status='paused' WHERE id='outsider'");
+  await assert.rejects(() => store.review("outsider", command, now + 3, reviewer), { status: 403 });
+  await pg.query("UPDATE app_private.users SET status='active' WHERE id='outsider'");
+  await pg.query(
+    "UPDATE app_private.attendance_commands SET result='{}'::jsonb WHERE uid='outsider' AND request_id=$1",
+    [command.commandId],
+  );
+  await assert.rejects(() => store.review("outsider", command, now + 4, reviewer), { status: 502 });
 });
 
 test("review inbox shows all pending requests and repository submissions enforce a concurrent limit", async (t) => {
@@ -489,5 +513,13 @@ test("OrganizationOwner can review an Organization-owned supplement without a di
     now,
     ownerRecipient,
   );
-  assert.equal(review.supplement.status, "APPROVED");
+  assert.deepEqual(review, { replayed: false });
+  assert.deepEqual(
+    (
+      await pg.query("SELECT status FROM app_private.attendance_supplement_requests WHERE id=$1", [
+        submitted.supplement.id,
+      ])
+    ).rows,
+    [{ status: "APPROVED" }],
+  );
 });

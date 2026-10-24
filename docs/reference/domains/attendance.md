@@ -46,6 +46,14 @@ Asset 定義 Coin denomination；Ledger 保存 idempotent posting；Wallet 只�
 - Reviewer 必須在讀取及決策當下都具有該 Repository 的 effective `ADMIN`。Organization-owned Repository 的有效 OrganizationOwner 由 Repository effective access 投影取得隱含 `ADMIN`；申請者不得核准自己的 request。
 - 核准與出勤事實、事件、Attendance version 及 menu state projection 同 transaction。拒絕必須留下原因，不產生薪資結果。
 
+### Review receipt disclosure
+
+- 新審核需 active User、有效登入帳號／LINE binding 與當下 effective ADMIN；公開可見或 READ 不授權審核，也不授權讀取其他申請人的資料。
+- 首次成功只回傳 `{ replayed: false }`。同一 actor、command ID 與完整 fingerprint 的重試只回傳 `{ replayed: true }`，不包含申請人、時間、地址、座標或原因。
+- 撤銷 ADMIN 或全部 Repository 存取後，仍允許原操作人確認自己的精確操作結果；停用帳號／User 或 LINE binding 不符仍拒絕。同一 request ID 的不同內容仍衝突。
+- 完整 durable receipt 保留在 Attendance 內部；重放必須先驗證既有 receipt 結構，損毀或缺失不能推定成功。這不授權讀取歷史申請明細。
+- Web 以 owner 公開 parser 驗證最小回應後重新載入清單；申請人自己的 submission receipt 維持完整。既有頁面若仍使用舊解析器，須重新整理取得新版。
+
 ## Repository attendance-point eligibility
 
 儲存庫可設定一個打卡點（經緯度、打卡半徑與可選地址描述）；只有座標與半徑是打卡點成立條件，不另外建立地點或地點人員名單。
