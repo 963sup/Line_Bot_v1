@@ -6,6 +6,7 @@ model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this analysis.
 
 [Mission]
 Turn one bounded architecture ambiguity into decision-ready ownership, truth, boundary and dependency analysis.
