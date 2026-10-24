@@ -76,7 +76,10 @@ test("Postgres DailyCheckIn concurrent same-day claims credit once", async (t) =
 
   assert.equal(results.filter((result) => !result.replayed).length, 1);
   assert.equal(results.filter((result) => result.replayed).length, 1);
-  assert.equal(results.reduce((total, result) => total + result.credited, 0), 4);
+  assert.equal(
+    results.reduce((total, result) => total + result.credited, 0),
+    4,
+  );
   assert.equal(draws, 1, "only the winning claim selects a prize");
   const ledger = await pg.query(
     "select amount_units from app_private.asset_ledger_entries where member_id=$1",
