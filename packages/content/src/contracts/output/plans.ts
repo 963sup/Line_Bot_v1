@@ -1,3 +1,4 @@
+import type { FileSavedResultReader } from "@line_bot_v1/file/contracts/output/saved-results";
 import type { ResourceReferenceReader } from "@line_bot_v1/resources/contracts/output/resource-references";
 import type { ContentPlanRevision } from "../../domain/plan.js";
 import type { ContentPlans } from "../repositories/plans.js";
@@ -18,6 +19,7 @@ export interface ContentPlanTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly plans: ContentPlans;
   readonly resources: ResourceReferenceReader;
+  readonly savedFileResults: FileSavedResultReader;
   nextId(): string;
   replay(): Promise<{ requestId: string; revision: ContentPlanRevision } | null>;
   record(revision: ContentPlanRevision): Promise<void>;

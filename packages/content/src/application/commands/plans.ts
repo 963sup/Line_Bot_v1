@@ -12,13 +12,36 @@ import { normalizeQuantityUnit } from "../../domain/quantity.js";
 
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
-export type ContentPlanCommand = Readonly<{
-  action: "initialize" | "replace";
-  repositoryId: string;
-  requestId: string;
-  expectedVersion: number;
-  document: ContentPlanDocument;
-}>;
+export type ContentPlanCommand =
+  | Readonly<{
+      action: "initialize" | "replace";
+      repositoryId: string;
+      requestId: string;
+      expectedVersion: number;
+      document: ContentPlanDocument;
+    }>
+  | Readonly<{
+      action: "import-file";
+      repositoryId: string;
+      requestId: string;
+      expectedVersion: number;
+      confirmedDisclosure: true;
+      source: Readonly<{
+        runId: string;
+        processingRevisionId: string;
+        observationId: string;
+      }>;
+      target: Readonly<{
+        id: string;
+        parentId: string;
+        kind: "WORK" | "TASK";
+        title: string;
+        body: string;
+        measureId: string;
+        quantity: string;
+        newMeasure?: ContentMeasure;
+      }>;
+    }>;
 
 function invalid(message = "Invalid Content plan command."): never {
   throw new ContentError(400, message, "INVALID_INPUT");
@@ -136,8 +159,6 @@ function document(input: unknown): ContentPlanDocument {
 
 export function parseContentPlanCommand(input: unknown): ContentPlanCommand {
   const value = object(input);
-  exact(value, ["action", "repositoryId", "requestId", "expectedVersion", "document"]);
-  if (value.action !== "initialize" && value.action !== "replace") return invalid();
   const expectedVersion = integer(value.expectedVersion);
   if (
     typeof value.repositoryId !== "string" ||
@@ -147,10 +168,68 @@ export function parseContentPlanCommand(input: unknown): ContentPlanCommand {
     expectedVersion >= 2_147_483_647
   )
     return invalid();
+  const repositoryId = value.repositoryId;
+  const requestId = id(value.requestId);
+  if (value.action === "import-file") {
+    exact(value, [
+      "action",
+      "repositoryId",
+      "requestId",
+      "expectedVersion",
+      "confirmedDisclosure",
+      "source",
+      "target",
+    ]);
+    if (expectedVersion === 0 || value.confirmedDisclosure !== true)
+      return invalid("Explicit reviewed Content disclosure is required.");
+    const source = object(value.source);
+    exact(source, ["runId", "processingRevisionId", "observationId"]);
+    const observationId = text(source.observationId);
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(observationId)) return invalid();
+    const target = object(value.target);
+    exact(target, [
+      "id",
+      "parentId",
+      "kind",
+      "title",
+      "body",
+      "measureId",
+      "quantity",
+      "newMeasure",
+    ]);
+    if (target.kind !== "WORK" && target.kind !== "TASK") return invalid();
+    const quantity = text(target.quantity);
+    if (quantity.length > 32) return invalid();
+    const newMeasure = target.newMeasure === undefined ? undefined : measure(target.newMeasure);
+    return {
+      action: "import-file",
+      repositoryId,
+      requestId,
+      expectedVersion,
+      confirmedDisclosure: true,
+      source: {
+        runId: id(source.runId),
+        processingRevisionId: id(source.processingRevisionId),
+        observationId,
+      },
+      target: {
+        id: id(target.id),
+        parentId: id(target.parentId),
+        kind: target.kind,
+        title: text(target.title),
+        body: text(target.body),
+        measureId: id(target.measureId),
+        quantity,
+        ...(newMeasure ? { newMeasure } : {}),
+      },
+    };
+  }
+  exact(value, ["action", "repositoryId", "requestId", "expectedVersion", "document"]);
+  if (value.action !== "initialize" && value.action !== "replace") return invalid();
   return {
     action: value.action,
-    repositoryId: value.repositoryId,
-    requestId: id(value.requestId),
+    repositoryId,
+    requestId,
     expectedVersion,
     document: document(value.document),
   };

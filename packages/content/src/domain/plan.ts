@@ -37,6 +37,30 @@ export type ContentPlanDocument = Readonly<{
   resourcePins: readonly ContentResourcePin[];
 }>;
 
+/** Exact File evidence imported into a Content revision; never the source of File truth. */
+export type ContentFileImportEvidence = Readonly<{
+  repositoryId: string;
+  fileId: string;
+  fileRevisionId: string;
+  fileSha256: string;
+  runId: string;
+  processingRevisionId: string;
+  observationId: string;
+  uncertain: boolean;
+  nodeId: string;
+}>;
+
+export type ContentFileImportTarget = Readonly<{
+  id: string;
+  parentId: string;
+  kind: "WORK" | "TASK";
+  title: string;
+  body: string;
+  measureId: string;
+  quantity: string;
+  newMeasure?: ContentMeasure;
+}>;
+
 export type ContentPlanRevision = Readonly<{
   id: string;
   repositoryId: string;
@@ -44,8 +68,9 @@ export type ContentPlanRevision = Readonly<{
   parentRevisionId: string | null;
   actorUserId: string;
   at: number;
-  action: "initialize" | "replace";
+  action: "initialize" | "replace" | "import-file";
   document: ContentPlanDocument;
+  fileImport?: ContentFileImportEvidence;
 }>;
 
 function invalid(message: string): never {
@@ -220,7 +245,7 @@ export function changedResourcePins(
 export function reviseContentPlan(
   current: ContentPlanRevision | null,
   expectedVersion: number,
-  action: "initialize" | "replace",
+  action: "initialize" | "replace" | "import-file",
   document: ContentPlanDocument,
   evidence: Readonly<{ id: string; repositoryId: string; actorUserId: string; at: number }>,
 ): ContentPlanRevision {
@@ -249,4 +274,65 @@ export function reviseContentPlan(
     action,
     document: normalized,
   };
+}
+
+/** A verified saved observation is only evidence; the user supplies the Content meaning. */
+export function importFileContentNode(
+  current: ContentPlanRevision | null,
+  expectedVersion: number,
+  target: ContentFileImportTarget,
+  source: Omit<ContentFileImportEvidence, "nodeId">,
+  context: Readonly<{ id: string; repositoryId: string; actorUserId: string; at: number }>,
+): ContentPlanRevision {
+  if (!current)
+    throw new ContentError(
+      409,
+      "Create a Content plan before importing a File.",
+      "LIFECYCLE_CONFLICT",
+    );
+  if (source.repositoryId !== context.repositoryId)
+    throw new ContentError(409, "File source belongs to another Repository.", "SOURCE_INVALID");
+  const parent = current.document.nodes.find((node) => node.id === target.parentId);
+  if (
+    (target.kind === "WORK" && parent?.kind !== "SUBOBJECT") ||
+    (target.kind === "TASK" && parent?.kind !== "WORK")
+  )
+    invalid("Select an existing legal Content parent for the imported work.");
+  if (current.document.nodes.some((node) => node.id === target.id))
+    invalid("Imported Content node identity already exists.");
+  if (
+    target.newMeasure &&
+    (target.newMeasure.id !== target.measureId ||
+      current.document.measures.some((measure) => measure.id === target.newMeasure?.id))
+  )
+    invalid("Imported Content measure identity is not available.");
+  const position = current.document.nodes.filter(
+    (node) => node.parentId === target.parentId,
+  ).length;
+  const next = reviseContentPlan(
+    current,
+    expectedVersion,
+    "import-file",
+    {
+      schemaVersion: 1,
+      measures: target.newMeasure
+        ? [...current.document.measures, target.newMeasure]
+        : current.document.measures,
+      nodes: [
+        ...current.document.nodes,
+        {
+          id: target.id,
+          parentId: target.parentId,
+          kind: target.kind,
+          position,
+          title: target.title,
+          body: target.body,
+          plannedQuantity: { measureId: target.measureId, value: target.quantity },
+        },
+      ],
+      resourcePins: current.document.resourcePins,
+    },
+    context,
+  );
+  return { ...next, fileImport: { ...source, nodeId: target.id } };
 }

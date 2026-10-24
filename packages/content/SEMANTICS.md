@@ -49,6 +49,7 @@
 | --- | --- | --- | --- | --- | --- |
 | consumes | resources | stable-identity+query | resources | transaction-recheck+immutable-pin | New resource assignments qualify exact physical identities through the public reader; unchanged historical pins survive archive. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Current Repository qualification, permissions and archive policy are rechecked in the actual Content transaction. |
+| consumes | file | stable-identity+query | file | transaction-recheck+immutable-pin | A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs. |
 | provides | contract | stable-identity+query | content | transaction-recheck+immutable-pin | Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments. |
 | provides | execution | query | content | pure-value | Execution applies the Content-published exact planned-measure quantity policy while owning actual quantities and internal review. |
 | provides | execution | stable-identity+query | content | transaction-recheck+immutable-pin | Actual reports pin exact Tasks and validate membership in the committed Work/Task; Task prerequisites belong to Execution. |
