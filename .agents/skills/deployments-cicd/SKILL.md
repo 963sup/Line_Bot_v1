@@ -82,7 +82,7 @@ vercel --prod --force
 ### Build Locally, Deploy Build Output
 
 ```bash
-# Build locally (uses development env vars by default)
+# Build locally (uses preview env vars by default)
 vercel build
 
 # Build with production env vars
@@ -106,8 +106,8 @@ vercel deploy --prod --skip-domain
 # Promote it (instant, no rebuild)
 vercel promote <deployment-url-or-id>
 
-# Rollback to the previous production deployment
-vercel rollback
+# Show pending rollback status (no argument does not roll back)
+vercel rollback status
 
 # Rollback to a specific deployment
 vercel rollback <deployment-url-or-id>
@@ -126,9 +126,8 @@ vercel inspect <deployment-url>
 # List recent deployments
 vercel ls
 
-# View logs for a deployment
-vercel logs <deployment-url>
-vercel logs <deployment-url> --follow
+# View recent runtime logs for a deployment
+vercel logs --deployment <url>
 ```
 
 ## CI/CD Integration
@@ -188,6 +187,7 @@ jobs:
 | Post preview URLs on pull requests from GitHub Actions, or deploy from GitLab CI or Bitbucket Pipelines | [references/cli-pipelines.md](references/cli-pipelines.md) |
 | Let deployed functions reach AWS, GCP, or Vault without static secrets (OIDC federation) | [references/oidc-federation.md](references/oidc-federation.md) |
 | Deployment Checks, or testing protected deployments from CI | [references/deployment-checks.md](references/deployment-checks.md) |
+| Live status (MCP) | [references/live-status.md](references/live-status.md) |
 
 ## Common CI Patterns
 
@@ -254,7 +254,7 @@ jobs:
 |----------|----------|----------|
 | Standard team workflow | Git-push deploy | Push to main/feature branches |
 | Custom CI/CD (Actions, CircleCI) | Prebuilt deploy | `vercel build && vercel deploy --prebuilt` |
-| Monorepo with Turborepo | Affected + remote cache | `turbo run build --affected --remote-cache` |
+| Monorepo with Turborepo | Affected + remote cache | `turbo run build --affected` |
 | Preview for every PR | Default behavior | Auto-creates preview URL per branch |
 | Release a tested build | Deployment Checks (Git) or staged production (CLI) | Required checks, or `vercel deploy --prod --skip-domain` → test → `vercel promote <url>` |
 | Atomic deploys with DB migrations | Two-phase | Run migration → verify → `vercel promote` |
@@ -294,7 +294,7 @@ For production deploys, also include:
 
 ```
 ### Post-Deploy Observability
-- **Error scan**: <N errors found / clean> (scanned via vercel logs --level error --since 1h)
+- **Error scan**: <N errors found / clean> (scanned via vercel logs -q level:error --since 1h)
 - **Drains**: <N configured / none>
 - **Monitoring**: <active / gaps identified>
 ```
@@ -308,7 +308,7 @@ Based on the deployment outcome:
 - **Build error** → "Check the build logs above. Common fixes: verify `build` script in package.json, check for missing env vars with `/env list`, ensure dependencies are installed."
 - **Missing env vars** → "Run `/env pull` to sync environment variables locally, or `/env list` to review what's configured on Vercel."
 - **Monorepo issues** → "Set the Root Directory in Project Settings to the app's folder; `vercel.json` has no `rootDirectory` key."
-- **Post-deploy errors detected** → "Review errors above. Check `vercel logs <url> --level error` for details. If drains are configured, correlate with external monitoring."
+- **Post-deploy errors detected** → "Review errors above. Check `vercel logs --deployment <url> -q level:error` for details. If drains are configured, correlate with external monitoring."
 - **No monitoring configured** → "Set up drains or install an error tracking integration before the next production deploy. Run `/status` for a full observability diagnostic."
 
 ## Official Documentation
