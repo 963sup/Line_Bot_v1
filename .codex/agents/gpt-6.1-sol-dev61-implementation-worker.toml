@@ -8,7 +8,7 @@ developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md.
 
 [Mission]
-Deliver the smallest complete patch for one approved project change.
+Deliver the minimum sufficient complete owner-level implementation for one approved project outcome, preserving every required invariant and affected public contract.
 
 [Input]
 Goal, allowed/excluded paths, confirmed Owner and contracts, supplied analysis, invariants, acceptance criteria and assigned validation scope.

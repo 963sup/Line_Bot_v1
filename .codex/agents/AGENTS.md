@@ -49,7 +49,7 @@ Primary GPT-6 可直接做 final decision；不為形式重派。只使用會改
 
 | Need | Role | Reasoning | Deliverable |
 | --- | --- | --- | --- |
-| 已決定的 bounded change，指定 6.1 實作 | `dev61-implementation-worker` | medium | 最小 patch、相關驗證與未解決事項 |
+| 已決定的 bounded change，指定 6.1 實作 | `dev61-implementation-worker` | medium | 最小充分實作、相關驗證與未解決事項 |
 | 指定 6.1 審查 concrete diff | `dev61-diff-reviewer` | high | 有 trigger、位置與影響的 defect findings |
 | 執行已指定的 check、test、build 或 runtime smoke | `dev61-validation-runner` | high | exact revision、命令結果與 evidence boundary |
 | Next.js route、hydration、compilation 或 runtime 根因 | `dev61-nextjs-runtime-analyst` | high | 正確 checkout/port 的 runtime evidence 與根因 |
