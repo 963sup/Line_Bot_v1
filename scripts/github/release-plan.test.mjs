@@ -301,7 +301,6 @@ test("schema-only changes sync schema without publishing Rich Menu or deploying 
   assert.equal(plan.rich_menu_changed, false);
 });
 
-
 test("Rich Menu fails closed when no compatible Web deployment baseline exists", async () => {
   const plan = await planRelease(
     plannerFixture({

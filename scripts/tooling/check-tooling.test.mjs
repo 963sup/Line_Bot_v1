@@ -130,6 +130,7 @@ function fixture(t) {
         "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
         "github:current-main": "node scripts/github/current-main.mjs",
         "github:release-plan": "node scripts/github/release-plan.mjs",
+        "github:rich-menu-ready": "node scripts/github/rich-menu-ready.mjs",
       },
       devDependencies: {
         "@biomejs/biome": "2.5.12",
@@ -1008,6 +1009,17 @@ test("Release workflow remains a thin adapter around canonical owner commands", 
 
   write(".github/workflows/release.yml", workflow);
   assert.deepEqual(validate(root), []);
+});
+
+test("Rich Menu runtime readiness is checked before provider publication", (t) => {
+  const { root, write } = fixture(t);
+  const path = ".github/workflows/release.yml";
+  const source = readFileSync(resolve(root, path), "utf8");
+  write(
+    path,
+    source.replace('pnpm github:rich-menu-ready --sha "$SHA"', "echo skip-readiness"),
+  );
+  rejects(root, "Rich Menu must verify compatible exact-SHA Web runtime");
 });
 
 test("Release scopes the Supabase management token and preserves identifier cutover evidence", (t) => {
