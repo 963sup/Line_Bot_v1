@@ -9,7 +9,10 @@ const json = (value) =>
   });
 
 function fixture({
-  snapshots = [[null, null], ["success", "success"]],
+  snapshots = [
+    [null, null],
+    ["success", "success"],
+  ],
   runSha = SHA,
   mainShas = [SHA],
 } = {}) {
@@ -100,7 +103,10 @@ test("runtime gate rejects another Release SHA before job readback", async () =>
 test("runtime gate stops if main changes during publication", async () => {
   const { args } = fixture({
     mainShas: [SHA, SHA, "b".repeat(40)],
-    snapshots: [[null, null], ["success", "success"]],
+    snapshots: [
+      [null, null],
+      ["success", "success"],
+    ],
   });
   await assert.rejects(requireRichMenuWebReady(args), /not current main/);
 });

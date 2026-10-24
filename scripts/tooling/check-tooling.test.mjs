@@ -1015,10 +1015,7 @@ test("Rich Menu runtime readiness is checked before provider publication", (t) =
   const { root, write } = fixture(t);
   const path = ".github/workflows/release.yml";
   const source = readFileSync(resolve(root, path), "utf8");
-  write(
-    path,
-    source.replace('pnpm github:rich-menu-ready --sha "$SHA"', "echo skip-readiness"),
-  );
+  write(path, source.replace('pnpm github:rich-menu-ready --sha "$SHA"', "echo skip-readiness"));
   rejects(root, "Rich Menu must verify compatible exact-SHA Web runtime");
 });
 

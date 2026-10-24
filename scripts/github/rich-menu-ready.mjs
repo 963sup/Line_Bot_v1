@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 import { githubJson, readLatestRunJobs, requireRepository } from "./api.mjs";
-import { requireCurrentMain, parseExactSha } from "./current-main.mjs";
+import { parseExactSha, requireCurrentMain } from "./current-main.mjs";
 
 const sleepFor = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -18,8 +18,7 @@ export async function requireRichMenuWebReady({
 }) {
   const target = requireRepository(repository);
   if (!/^[a-f0-9]{40}$/.test(sha ?? "")) throw new Error("An exact SHA is required.");
-  if (!Number.isSafeInteger(runId) || runId <= 0)
-    throw new Error("Release run ID is invalid.");
+  if (!Number.isSafeInteger(runId) || runId <= 0) throw new Error("Release run ID is invalid.");
   if (!Number.isSafeInteger(runAttempt) || runAttempt <= 0)
     throw new Error("Release attempt is invalid.");
   if (!Number.isSafeInteger(maxPolls) || maxPolls < 1 || maxPolls > 120)
@@ -54,8 +53,8 @@ export async function requireRichMenuWebReady({
     const activation = jobs.find((job) => job.name === "identifier_runtime_activation");
     if (
       [deployment, activation].some(
-        (job) => job?.conclusion !== undefined && job?.conclusion !== null &&
-          job.conclusion !== "success",
+        (job) =>
+          job?.conclusion !== undefined && job?.conclusion !== null && job.conclusion !== "success",
       )
     )
       throw new Error("Compatible Web runtime publication was not successful.");

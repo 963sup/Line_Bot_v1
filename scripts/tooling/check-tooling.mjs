@@ -1136,7 +1136,11 @@ export function validate(root) {
       releasePlan?.outputs?.rich_menu_requires_web !==
         "${{ steps.plan.outputs.rich_menu_requires_web }}" ||
       ready <= richMain ||
-      ready >= publish ||
+      ready >= publish
+    ) {
+      errors.push("CI: Rich Menu must verify compatible exact-SHA Web runtime before publication");
+    }
+    if (
       JSON.stringify(releaseRich?.needs) !== JSON.stringify(["release_plan", "validation"]) ||
       !releaseRich?.if?.includes("needs.release_plan.outputs.rich_menu_changed == 'true'") ||
       richMain < 0 ||
@@ -1147,7 +1151,7 @@ export function validate(root) {
       releaseWorkflow.jobs?.rich_menu_after_deployment
     ) {
       errors.push(
-        "CI: Rich Menu must verify compatible exact-SHA Web runtime when necessary and keep one independent current-main guarded publication job",
+        "CI: Rich Menu must use one independent changed-source publication job with current-main guard",
       );
     }
     const schedulerSteps = releaseScheduler?.steps ?? [];
