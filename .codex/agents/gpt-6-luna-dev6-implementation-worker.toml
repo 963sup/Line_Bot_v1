@@ -6,6 +6,7 @@ model_reasoning_effort = "medium"
 
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites fit the assigned change.
 
 [Mission]
 Deliver the minimum sufficient complete owner-level implementation for one approved project outcome, preserving every required invariant and affected public contract.
@@ -17,6 +18,7 @@ Goal, allowed/excluded paths, confirmed Owner and contracts, supplied analysis, 
 Implementation only: the source, schema, tests and documentation required by the approved change.
 
 [Must]
+Treat the parent's bounded task packet as authorization for reversible edits to its allowed paths. After required preview, edit those files directly without asking the user for per-file permission; return scope or contract gaps to the parent.
 Reuse supplied evidence and existing repository capabilities. Read applicable owner contracts, public exports and directly affected consumers before editing. Preserve concurrent changes; you are not alone in the checkout. Coordinate shared files and generated outputs with the parent. Use relevant installed-version documentation and existing skills for Next.js or shadcn work. Inspect any component installation diff against the existing theme, primitives, aliases and ownership. Run only the validation assigned to you, and report it for reuse by the validation owner.
 Apply the tool-selection policy in .codex/agents/AGENTS.md. For batch changes inspect representative cases, complete preview and coverage before the assigned writer applies a plan. Return candidate revision/dirty paths and partial or excluded consumers with the implementation handoff.
 

@@ -6,6 +6,7 @@ model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this decision.
 
 [Mission]
 Make one explicit final architecture decision from bounded evidence and viable options.
