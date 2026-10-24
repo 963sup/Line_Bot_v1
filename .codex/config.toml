@@ -42,3 +42,8 @@ startup_timeout_sec = 60
 
 [mcp_servers.shadcn.tools.get_project_registries]
 approval_mode = "approve"
+
+[mcp_servers.sentry]
+# Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
+# Project scoping supplies query defaults, not business write authorization.
+url = "https://mcp.sentry.dev/mcp/963sup/sentry"
