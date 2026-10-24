@@ -238,6 +238,14 @@ export function validate(root) {
         "package.json: change:plan is retired; semantic planning and patch application are separate responsibilities",
       );
     const validationSource = read(resolve(root, "scripts/tooling/validate.mjs"));
+    if (!validationSource.includes("runBoundedCommand("))
+      errors.push(
+        "scripts/tooling/validate.mjs: validation subprocess output must remain bounded and artifact-backed",
+      );
+    if (/stdio\s*:\s*["']inherit["']/.test(validationSource))
+      errors.push(
+        "scripts/tooling/validate.mjs: validation must not stream unbounded subprocess output",
+      );
     for (const mutableCommand of [
       "schema:local",
       "schema:remote",
@@ -725,6 +733,19 @@ export function validate(root) {
     )
       errors.push(
         "CI: main and every non-draft pull-request head must run every canonical validation group in parallel",
+      );
+    const validationLogUpload = (fullValidateJob?.steps ?? []).find(
+      (step) => step.uses === "actions/upload-artifact@v4" && step.if === "always()",
+    );
+    if (
+      validationLogUpload?.with?.name !==
+        "validation-${{ matrix.group }}-${{ github.event.pull_request.head.sha || github.sha }}" ||
+      validationLogUpload?.with?.path !== ".artifacts/validation-*/" ||
+      validationLogUpload?.with?.["if-no-files-found"] !== "error" ||
+      validationLogUpload?.with?.["include-hidden-files"] !== true
+    )
+      errors.push(
+        "CI: every validation group must preserve bounded full logs as an exact-head artifact",
       );
     if (
       validateJob?.needs !== "full-validate" ||

@@ -43,6 +43,12 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 
 AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結果；三者不互相冒充證據。最終回報 changed behavior/Owner、驗證命令與 SHA、結果及未驗證範圍。開新 Codex 工作階段後，用簡短任務確認能讀到 root AGENTS、本節與工具入口；既有 session 中修改文件或靜態檢查成功不證明新 session 載入。指令探索契約見 [Codex AGENTS](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
 
+### Tool output budget and stopping rule
+
+完整執行、原始證據保存與 Agent context 是三個邊界。所有工具預設先回傳能改變下一步的最小摘要：搜尋先 count／files／有限命中；Git 先 name-only／stat；API／JSON 先投影必要欄位；checks 全綠只回傳 aggregate，失敗才展開失敗項；test/build 成功只回傳 stage、status、duration 與 revision。高量 stdout/stderr 寫入 ignored artifact，失敗只讀固定上限 tail 與第一個可行動錯誤。工具呼叫明確設定 output cap；不得因方便把完整 diff、log、payload 或檔案樹送入 context。
+
+擴展輸出前先說明尚缺哪個 decision fact，並只讀能回答該問題的 path、stage、range 或 page。若新輸出不會改變修改、驗證或交付決策就停止；不能以重複 readback、等價 local/CI evidence 或「更確定」為由持續累積 context。這個預算不縮小 command、test、CI 或 branch-protection scope。
+
 ## Autonomous tool selection
 
 目標是用最小必要成本取得足以修改與驗收的證據。Primary 與子代理按目前要回答的問題主動選用下表；工具結果不擴大任務授權，唯讀角色也不能產生會寫入磁碟的計畫。

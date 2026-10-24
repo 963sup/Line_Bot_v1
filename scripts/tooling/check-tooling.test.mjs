@@ -144,6 +144,10 @@ function fixture(t) {
     readFileSync(resolve(repo, "scripts/tooling/validate.mjs"), "utf8"),
   );
   write(
+    "scripts/tooling/bounded-output.mjs",
+    readFileSync(resolve(repo, "scripts/tooling/bounded-output.mjs"), "utf8"),
+  );
+  write(
     "pnpm-workspace.yaml",
     'packages: ["packages/*"]\nallowBuilds:\n  "@ast-grep/cli": true\nengineStrict: true\nsaveExact: true\nverifyDepsBeforeRun: error\ncatalog:\n  typescript: 5.9.3\n',
   );
@@ -545,6 +549,18 @@ test("validation entrypoints stay canonical and read-only", (t) => {
     write("scripts/tooling/validate.mjs", `const command = '${command}';\\n`);
     rejects(root, `validation must not invoke mutable operation ${command}`);
   }
+});
+
+test("validation keeps subprocess output bounded and artifact-backed", (t) => {
+  const { root, write } = fixture(t);
+  const source = readFileSync(resolve(repo, "scripts/tooling/validate.mjs"), "utf8");
+  write("scripts/tooling/validate.mjs", source.replaceAll("runBoundedCommand(", "spawnSync("));
+  rejects(root, "validation subprocess output must remain bounded and artifact-backed");
+  write(
+    "scripts/tooling/validate.mjs",
+    source.replace("cwd: root,", 'cwd: root, stdio: "inherit",'),
+  );
+  rejects(root, "validation must not stream unbounded subprocess output");
 });
 
 test("semantic and patch commands keep one responsibility-shaped entrypoint", (t) => {
@@ -1203,6 +1219,23 @@ test("parallel validation preserves complete coverage and an unconditional failu
     data.jobs.validate.steps.find((step) => step.env?.RESULT).run = run;
     write(".github/workflows/validate.yml", YAML.stringify(data));
     rejects(root, "reject failed, cancelled or skipped groups");
+  }
+  {
+    const data = YAML.parse(source);
+    data.jobs["full-validate"].steps = data.jobs["full-validate"].steps.filter(
+      (step) => step.uses !== "actions/upload-artifact@v4",
+    );
+    write(".github/workflows/validate.yml", YAML.stringify(data));
+    rejects(root, "preserve bounded full logs as an exact-head artifact");
+  }
+  {
+    const data = YAML.parse(source);
+    const upload = data.jobs["full-validate"].steps.find(
+      (step) => step.uses === "actions/upload-artifact@v4",
+    );
+    upload.with["include-hidden-files"] = false;
+    write(".github/workflows/validate.yml", YAML.stringify(data));
+    rejects(root, "preserve bounded full logs as an exact-head artifact");
   }
   write(".github/workflows/validate.yml", source);
   assert.deepEqual(validate(root), []);
