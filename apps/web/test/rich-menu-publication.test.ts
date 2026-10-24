@@ -302,3 +302,243 @@ test("first unknown alias outcome with failed rollback retains new menus for rec
   assert.equal(aliases.get(alias), newId);
   assert.deepEqual(deleted, []);
 });
+
+test("a later alias unknown result restores the complete previous state and retains new menus", async () => {
+  const configs = [config("attendance-in"), config("attendance-out")];
+  const created = configs.map(({ page }) => ({ page, richMenuId: `new-${page}` }));
+  const aliases = new Map<string, string>([
+    ["line_bot_v1-attendance-in", "old-attendance-in"],
+    ["line_bot_v1-attendance-out", "old-attendance-out"],
+  ]);
+  const deleted: string[] = [];
+  let defaultId: string | null = "old-attendance-in";
+  let loseLaterResponse = true;
+  const client = publicationClient({
+    get: async (id: string) => {
+      const found = configs.find(({ page }) => id === `new-${page}`);
+      assert.ok(found);
+      return found.menu;
+    },
+    getAlias: async (alias: string) => aliases.get(alias) ?? null,
+    updateAlias: async (alias: string, id: string) => {
+      aliases.set(alias, id);
+      if (alias === "line_bot_v1-attendance-out" && loseLaterResponse) {
+        loseLaterResponse = false;
+        throw new Error("remote committed; later alias response lost");
+      }
+    },
+    deleteAlias: async (alias: string) => {
+      aliases.delete(alias);
+    },
+    getDefault: async () => defaultId,
+    activate: async (id: string) => {
+      defaultId = id;
+      return new Response(null, { status: 200 });
+    },
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, configs, created),
+    /previous remote state was restored; retained new menus/,
+  );
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), "old-attendance-in");
+  assert.equal(aliases.get("line_bot_v1-attendance-out"), "old-attendance-out");
+  assert.equal(defaultId, "old-attendance-in");
+  assert.deepEqual(deleted, []);
+});
+
+for (const hadDefault of [false, true]) {
+  for (const failure of ["lost-response", "readback"] as const) {
+    test(`default ${failure} restores ${hadDefault ? "existing" : "absent"} default while retaining new menus`, async () => {
+      const home = config("attendance-in");
+      const alias = "line_bot_v1-attendance-in";
+      const newId = "richmenu-new0abcd";
+      const oldId = "richmenu-old0abcd";
+      const previousDefault = hadDefault ? oldId : null;
+      const aliases = new Map<string, string>([[alias, oldId]]);
+      const deleted: string[] = [];
+      let defaultId: string | null = previousDefault;
+      let defaultReads = 0;
+      let activationWrites = 0;
+      const client = publicationClient({
+        get: async () => home.menu,
+        getAlias: async (key: string) => aliases.get(key) ?? null,
+        updateAlias: async (key: string, id: string) => {
+          aliases.set(key, id);
+        },
+        deleteAlias: async (key: string) => {
+          aliases.delete(key);
+        },
+        getDefault: async () => {
+          defaultReads++;
+          if (failure === "readback" && defaultReads === 2)
+            throw new Error("default readback unavailable");
+          return defaultId;
+        },
+        activate: async (id: string) => {
+          activationWrites++;
+          defaultId = id;
+          if (failure === "lost-response" && activationWrites === 1)
+            throw new Error("remote committed; default response lost");
+          return new Response(null, { status: 200 });
+        },
+        deleteDefault: async () => {
+          defaultId = null;
+          return new Response(null, { status: 200 });
+        },
+        delete: async (id: string) => {
+          deleted.push(id);
+          return new Response(null, { status: 200 });
+        },
+      });
+
+      await assert.rejects(
+        activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+        /previous remote state was restored; retained new menus/,
+      );
+      assert.equal(aliases.get(alias), oldId);
+      assert.equal(defaultId, previousDefault);
+      assert.deepEqual(deleted, []);
+    });
+  }
+}
+
+test("same desired activation retries reconcile an unknown alias result without another alias write", async () => {
+  const home = config("attendance-in");
+  const alias = "line_bot_v1-attendance-in";
+  const newId = "richmenu-new0abcd";
+  const aliases = new Map<string, string>();
+  const deleted: string[] = [];
+  let defaultId: string | null = null;
+  let aliasCreates = 0;
+  let aliasUpdates = 0;
+  let rollbackUnavailable = true;
+  const client = publicationClient({
+    get: async () => home.menu,
+    getAlias: async (key: string) => aliases.get(key) ?? null,
+    createAlias: async (key: string, id: string) => {
+      aliasCreates++;
+      aliases.set(key, id);
+      throw new Error("remote committed; alias response lost");
+    },
+    updateAlias: async () => {
+      aliasUpdates++;
+    },
+    deleteAlias: async (key: string) => {
+      if (key === alias && rollbackUnavailable) {
+        rollbackUnavailable = false;
+        throw new Error("rollback unavailable");
+      }
+      aliases.delete(key);
+    },
+    getDefault: async () => defaultId,
+    activate: async (id: string) => {
+      defaultId = id;
+      return new Response(null, { status: 200 });
+    },
+    deleteDefault: async () => {
+      defaultId = null;
+      return new Response(null, { status: 200 });
+    },
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+  });
+  const created = [{ page: home.page, richMenuId: newId }];
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], created),
+    /rollback incomplete .*retained new menus for reconciliation/,
+  );
+  assert.equal(aliases.get(alias), newId);
+
+  const retried = await activateRichMenuBatch(client, [home], created);
+  assert.equal(retried.status, "activated");
+  assert.equal(aliases.get(alias), newId);
+  assert.equal(defaultId, newId);
+  assert.equal(aliasCreates, 1);
+  assert.equal(aliasUpdates, 0);
+  assert.deepEqual(deleted, []);
+});
+
+test("known create batch failure cleans up menus without alias or default publication", async () => {
+  const home = config("attendance-in");
+  const newId = "richmenu-new0abcd";
+  const deleted: string[] = [];
+  let publicationWrites = 0;
+  const client = publicationClient({
+    create: async () => ({ richMenuId: newId }),
+    upload: async () => new Response(null, { status: 200 }),
+    get: async () => ({}),
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+    createAlias: async () => {
+      publicationWrites++;
+    },
+    updateAlias: async () => {
+      publicationWrites++;
+    },
+    deleteAlias: async () => {
+      publicationWrites++;
+    },
+    deleteDefault: async () => {
+      publicationWrites++;
+      return new Response(null, { status: 200 });
+    },
+    activate: async () => {
+      publicationWrites++;
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(createRichMenuBatch(client, [home]), /newly created menus were removed/);
+  assert.deepEqual(deleted, [newId]);
+  assert.equal(publicationWrites, 0);
+});
+
+test("activation readback failure before publication conservatively retains created menus", async () => {
+  const home = config("attendance-in");
+  const newId = "richmenu-new0abcd";
+  const deleted: string[] = [];
+  let publicationWrites = 0;
+  const client = publicationClient({
+    get: async () => {
+      throw new Error("definition readback unavailable");
+    },
+    delete: async (id: string) => {
+      deleted.push(id);
+      return new Response(null, { status: 200 });
+    },
+    createAlias: async () => {
+      publicationWrites++;
+    },
+    updateAlias: async () => {
+      publicationWrites++;
+    },
+    deleteAlias: async () => {
+      publicationWrites++;
+    },
+    deleteDefault: async () => {
+      publicationWrites++;
+      return new Response(null, { status: 200 });
+    },
+    activate: async () => {
+      publicationWrites++;
+      return new Response(null, { status: 200 });
+    },
+  });
+
+  await assert.rejects(
+    activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+    /definition readback unavailable/,
+  );
+  assert.deepEqual(deleted, []);
+  assert.equal(publicationWrites, 0);
+});
