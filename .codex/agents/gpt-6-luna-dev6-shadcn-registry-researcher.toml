@@ -6,6 +6,7 @@ model_reasoning_effort = "high"
 
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries. Follow the Next.js/shadcn agent workflow in docs/reference/engineering/development-workflow.md.
+Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this research.
 
 [Mission]
 Recommend the smallest compatible component or composition for one concrete UI need.

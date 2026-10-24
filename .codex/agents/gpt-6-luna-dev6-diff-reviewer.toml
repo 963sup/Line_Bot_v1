@@ -6,6 +6,7 @@ model_reasoning_effort = "high"
 
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this review.
 
 [Mission]
 Find actionable defects introduced by the supplied change.
