@@ -4593,7 +4593,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked on every read and decision; current OrganizationOwner grants implicit ADMIN for its Organization-owned Repositories without a persisted Repository grant, and requesters cannot approve their own requests.",
+        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked on every read and decision; current OrganizationOwner grants implicit ADMIN for its Organization-owned Repositories without a persisted Repository grant, and requesters cannot approve their own requests. Review responses disclose only replayed. Exact actor-bound replay remains available after ADMIN or all Repository access is revoked, but still requires active qualification and matching identity; malformed durable receipts cannot establish success. Submission receipts remain unchanged.",
         "sourcePaths": [
           "packages/attendance/src/application/supplements.ts",
           "packages/attendance/src/contracts/supplements.ts",
@@ -4610,7 +4610,10 @@
           "apps/web/src/app/api/attendance/[[...operation]]/route.ts",
           "apps/web/src/modules/attendance/panel.tsx"
         ],
-        "testPaths": [],
+        "testPaths": [
+          "packages/attendance/test/repository-attendance.test.ts",
+          "packages/attendance/test/attendance-point-dto.test.ts"
+        ],
         "note": "Approval adds or closes an Attendance session and records the reviewer in the same transaction; it does not grant Ledger rewards or calculate payroll."
       }
     },

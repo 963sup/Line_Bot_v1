@@ -36,6 +36,8 @@ Browser `sessionStorage` 只能協助 UX 恢復；server receipt/version/state �
 - 核准建立/結束出勤事實、追加事件、更新版本、留下審核者與更新必要 menu state 同 transaction commit/rollback。拒絕只結束 request 並追加事件。
 - 補登不發 Ledger 打卡獎勵，也不計算薪資；正式薪資由後續範圍處理。
 
+審核回應與重試只公開最小操作收據；資格與資料揭露規則見 [Supplement review](../reference/domains/attendance.md#supplement-review)。本人提交申請的完整收據與 clock-out 原始快照契約維持。
+
 ## Qualification
 
 - Account/User 提供 current active human qualification，每次操作重新驗證。

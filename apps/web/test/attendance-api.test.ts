@@ -11,11 +11,16 @@ import {
   activateMember,
   allowAttendance,
   closeFixture,
+  grantAttendanceRepositoryAccess,
   memberStore,
   mockSupabase,
+  revokeAttendanceRepositoryAccess,
 } from "./member-fixture";
 
-function attendanceRouteRequest(request: Request, operation?: "clock-in" | "clock-out") {
+function attendanceRouteRequest(
+  request: Request,
+  operation?: "clock-in" | "clock-out" | "supplements" | "supplements/review",
+) {
   const url = new URL(request.url);
   url.pathname = `/api/attendance${operation ? `/${operation}` : ""}`;
   return new Request(url, request);
@@ -97,8 +102,52 @@ test("attendance APIs verify proof, geofence and cross-day records; private Bot 
     }
     assert.equal((await GET(request(undefined, ""))).status, 401);
     const userId = await activateMember(user);
-    await allowAttendance(userId);
-    await activateMember(other);
+    const repositoryId = await allowAttendance(userId);
+    const reviewerId = await activateMember(other);
+    await grantAttendanceRepositoryAccess(repositoryId, reviewerId);
+    const submission = await attendanceRoutePost(
+      attendanceRouteRequest(
+        request({
+          requestId: randomUUID(),
+          kind: "new-session",
+          repositoryId,
+          startedAt: now - 7200000,
+          endedAt: now - 3600000,
+          reason: "HTTP 補登收據測試",
+        }),
+        "supplements",
+      ),
+    );
+    assert.equal(submission.status, 200);
+    const submitted = await submission.json();
+    assert.equal(submitted.supplement.userId, userId);
+    assert.equal(submitted.supplement.reason, "HTTP 補登收據測試");
+    const reviewCommand = {
+      commandId: randomUUID(),
+      supplementId: submitted.supplement.id,
+      expectedVersion: submitted.supplement.version,
+      decision: "reject",
+      reason: "HTTP 審核收據測試",
+    };
+    const review = (command: unknown) =>
+      attendanceRoutePost(attendanceRouteRequest(request(command, "other"), "supplements/review"));
+    const firstReview = await review(reviewCommand);
+    assert.equal(firstReview.status, 200);
+    assert.deepEqual(await firstReview.json(), { replayed: false });
+    await revokeAttendanceRepositoryAccess(repositoryId, reviewerId);
+    const reviewReplay = await review(reviewCommand);
+    assert.equal(reviewReplay.status, 200);
+    assert.deepEqual(await reviewReplay.json(), { replayed: true });
+    for (const [command, status, code] of [
+      [{ ...reviewCommand, commandId: randomUUID() }, 403, "membership_denied"],
+      [{ ...reviewCommand, reason: "changed" }, 409, "operation_conflict"],
+    ] as const) {
+      const rejected = await review(command);
+      assert.equal(rejected.status, status);
+      const value = await rejected.json();
+      assert.equal(value.code, code);
+      assert.equal(value.supplement, undefined);
+    }
     const prepared = await (
       await GET(request(undefined, "token", "https://app.example", true))
     ).json();
