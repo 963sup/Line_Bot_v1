@@ -35,6 +35,8 @@ export type AttendanceSupplementReceipt = Readonly<{
   replayed: boolean;
 }>;
 
+export type AttendanceSupplementReviewReceipt = Readonly<{ replayed: boolean }>;
+
 export interface AttendanceSupplementStore {
   list(
     userId: string,
@@ -52,7 +54,7 @@ export interface AttendanceSupplementStore {
     command: AttendanceSupplementReview,
     now: number,
     recipient: { provider: string; subject: string },
-  ): Promise<AttendanceSupplementReceipt>;
+  ): Promise<AttendanceSupplementReviewReceipt>;
 }
 
 export interface AttendanceSupplementDependencies {

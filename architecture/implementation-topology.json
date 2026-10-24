@@ -120,6 +120,12 @@
       "semanticOwner": "google-workspace",
       "allowedWorkspaceDependencies": []
     },
+    "@line_bot_v1/intelligence": {
+      "path": "packages/intelligence",
+      "moduleKind": "integration-adapter",
+      "semanticOwner": "intelligence",
+      "allowedWorkspaceDependencies": ["@line_bot_v1/file"]
+    },
     "@line_bot_v1/identity-access": {
       "path": "packages/identity-access",
       "moduleKind": "domain-module",
@@ -470,6 +476,7 @@
         "@line_bot_v1/enterprise",
         "@line_bot_v1/expense",
         "@line_bot_v1/identity-access",
+        "@line_bot_v1/intelligence",
         "@line_bot_v1/issue",
         "@line_bot_v1/line",
         "@line_bot_v1/organization",

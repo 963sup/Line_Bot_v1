@@ -285,6 +285,54 @@ test("review receipt replays after repository ADMIN access is revoked", async (t
   };
   const first = await store.review("outsider", command, now, reviewer);
   await pg.query(
+    "UPDATE app_private.repository_access SET capability='read' WHERE repository_id='repo' AND principal_id='outsider'",
+  );
+  assert.deepEqual(await store.review("outsider", command, now + 1, reviewer), { replayed: true });
+  await assert.rejects(
+    () => store.review("outsider", { ...command, commandId: randomUUID() }, now + 1, reviewer),
+    { status: 403 },
+  );
+  await assert.rejects(() => store.review("member", command, now + 1, member), { status: 403 });
+  await pg.query("SELECT * FROM app_private.provision_repository($1,$2,$2,'USER',$3,'private')", [
+    "other-repo",
+    "member",
+    "Other",
+  ]);
+  await pg.query("UPDATE app_private.repositories SET address=$1 WHERE id='other-repo'", [
+    JSON.stringify(address),
+  ]);
+  const otherSubmitted = await store.submit(
+    "member",
+    {
+      requestId: randomUUID(),
+      kind: "new-session",
+      repositoryId: "other-repo",
+      startedAt: now - 7200000,
+      endedAt: now - 3600000,
+      reason: "其他範圍補登",
+    },
+    now,
+    member,
+  );
+  await assert.rejects(
+    () =>
+      store.review(
+        "outsider",
+        { ...command, supplementId: otherSubmitted.supplement.id },
+        now + 1,
+        reviewer,
+      ),
+    { status: 409 },
+  );
+  assert.deepEqual(
+    (
+      await pg.query(
+        "SELECT count(*)::int AS count FROM app_private.attendance_events WHERE command='supplement-rejected'",
+      )
+    ).rows,
+    [{ count: 1 }],
+  );
+  await pg.query(
     "DELETE FROM app_private.repository_access WHERE repository_id='repo' AND principal_id='outsider'",
   );
 
@@ -292,7 +340,31 @@ test("review receipt replays after repository ADMIN access is revoked", async (t
 
   assert.equal(first.replayed, false);
   assert.equal(replay.replayed, true);
-  assert.deepEqual(replay.supplement, first.supplement);
+  assert.deepEqual(first, { replayed: false });
+  assert.deepEqual(replay, { replayed: true });
+  await pg.query("UPDATE app_private.repositories SET visibility='private' WHERE id='repo'");
+  assert.deepEqual(await store.review("outsider", command, now + 2, reviewer), { replayed: true });
+  await assert.rejects(
+    () => store.review("outsider", { ...command, commandId: randomUUID() }, now + 3, reviewer),
+    { status: 403 },
+  );
+  await assert.rejects(
+    () => store.review("outsider", { ...command, reason: "changed" }, now + 3, reviewer),
+    { status: 409 },
+  );
+  await assert.rejects(() => store.review("outsider", command, now + 3, member), { status: 403 });
+  await assert.rejects(
+    () => store.review("outsider", { ...command, supplementId: randomUUID() }, now + 3, reviewer),
+    { status: 409 },
+  );
+  await pg.query("UPDATE app_private.users SET status='paused' WHERE id='outsider'");
+  await assert.rejects(() => store.review("outsider", command, now + 3, reviewer), { status: 403 });
+  await pg.query("UPDATE app_private.users SET status='active' WHERE id='outsider'");
+  await pg.query(
+    "UPDATE app_private.attendance_commands SET result='{}'::jsonb WHERE uid='outsider' AND request_id=$1",
+    [command.commandId],
+  );
+  await assert.rejects(() => store.review("outsider", command, now + 4, reviewer), { status: 502 });
 });
 
 test("review inbox shows all pending requests and repository submissions enforce a concurrent limit", async (t) => {
@@ -489,5 +561,13 @@ test("OrganizationOwner can review an Organization-owned supplement without a di
     now,
     ownerRecipient,
   );
-  assert.equal(review.supplement.status, "APPROVED");
+  assert.deepEqual(review, { replayed: false });
+  assert.deepEqual(
+    (
+      await pg.query("SELECT status FROM app_private.attendance_supplement_requests WHERE id=$1", [
+        submitted.supplement.id,
+      ])
+    ).rows,
+    [{ status: "APPROVED" }],
+  );
 });

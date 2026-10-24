@@ -11,6 +11,7 @@ import {
 import {
   parseAttendanceSupplementInbox,
   parseAttendanceSupplementReceipt,
+  parseAttendanceSupplementReviewReceipt,
 } from "@line_bot_v1/attendance/contracts/dto/attendance-supplement";
 import type { AttendanceInput } from "@line_bot_v1/attendance/contracts/input/attendance-command";
 import type {
@@ -435,7 +436,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
         if (response.status === 401) clearPrivate();
         throw new Error(value.error || "審核結果尚未確認，請重新整理或重送同一筆。");
       }
-      parseAttendanceSupplementReceipt(value);
+      parseAttendanceSupplementReviewReceipt(value);
       writePendingReview(viewerId, command, true);
       setPendingReviews((current) => {
         const next = { ...current };

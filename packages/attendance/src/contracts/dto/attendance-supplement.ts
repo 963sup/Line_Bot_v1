@@ -4,6 +4,7 @@ import type {
   AttendanceSupplement,
   AttendanceSupplementInbox,
   AttendanceSupplementReceipt,
+  AttendanceSupplementReviewReceipt,
 } from "../supplements.js";
 
 type ObjectValue = Record<string, unknown>;
@@ -120,4 +121,17 @@ export function parseAttendanceSupplementReceipt(value: unknown): AttendanceSupp
     supplement: parseAttendanceSupplement(receipt.supplement),
     replayed: receipt.replayed,
   };
+}
+
+export function parseAttendanceSupplementReviewReceipt(
+  value: unknown,
+): AttendanceSupplementReviewReceipt {
+  const receipt = objectValue(value);
+  if (
+    typeof receipt.replayed !== "boolean" ||
+    Object.keys(receipt).some((key) => key !== "replayed")
+  ) {
+    throw new AttendanceError(502, "補登審核回應不完整，請重新確認。");
+  }
+  return { replayed: receipt.replayed };
 }

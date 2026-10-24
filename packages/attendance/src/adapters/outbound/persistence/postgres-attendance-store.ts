@@ -37,6 +37,7 @@ import type {
   AttendanceSupplement,
   AttendanceSupplementInbox,
   AttendanceSupplementReceipt,
+  AttendanceSupplementReviewReceipt,
   AttendanceSupplementStore,
 } from "../../../contracts/supplements.js";
 import {
@@ -737,7 +738,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
     command: AttendanceSupplementReview,
     now: number,
     recipient: { provider: string; subject: string },
-  ): Promise<AttendanceSupplementReceipt> {
+  ): Promise<AttendanceSupplementReviewReceipt> {
     const fingerprint = commandFingerprint({
       supplementId: command.supplementId,
       expectedVersion: command.expectedVersion,
@@ -747,6 +748,25 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
 
     return this.db.transaction(async (sql) => {
       await sql.query("SELECT app_private.lock_governance('shared')");
+      const completed = (
+        await sql.query<{ fingerprint: string; result: unknown }>(
+          "SELECT fingerprint,result FROM attendance_commands WHERE uid=$1 AND request_id=$2",
+          [reviewerId, command.commandId],
+          commandReceiptRow,
+        )
+      ).rows[0];
+      if (completed) {
+        // Completed commands need only the actor lock; new decisions retain sorted actor locks.
+        await this.lock(sql, reviewerId, now);
+        if (!(await hasUserIdentity(sql, reviewerId, recipient.provider, recipient.subject))) {
+          throw new AttendanceError(403, "LINE 會員關聯已變更。");
+        }
+        if (completed.fingerprint !== fingerprint) {
+          throw new AttendanceError(409, "審核請求編號已用於不同操作。");
+        }
+        parseAttendanceSupplementReceipt(completed.result);
+        return { replayed: true };
+      }
       const pending = (
         await sql.query<AttendanceSupplementRow>(
           "SELECT * FROM attendance_supplement_requests WHERE id=$1 FOR UPDATE",
@@ -775,7 +795,8 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         if (previous.fingerprint !== fingerprint) {
           throw new AttendanceError(409, "審核請求編號已用於不同操作。");
         }
-        return replaySupplementReceipt(previous.result);
+        parseAttendanceSupplementReceipt(previous.result);
+        return { replayed: true };
       }
       const reviewRepositoryIds = await repositoryAdministeredIds(sql, reviewerId);
       if (!reviewRepositoryIds.includes(pending.repository_id)) {
@@ -910,7 +931,7 @@ export class PostgresAttendanceStore implements AttendanceStore, AttendanceSuppl
         "INSERT INTO attendance_commands(uid,request_id,fingerprint,result,at) VALUES($1,$2,$3,$4::jsonb,$5)",
         [reviewerId, command.commandId, fingerprint, JSON.stringify(receipt), now],
       );
-      return receipt;
+      return { replayed: false };
     });
   }
 

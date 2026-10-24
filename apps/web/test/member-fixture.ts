@@ -87,4 +87,18 @@ export async function allowAttendance(userId: string) {
     "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES($1,$2,'admin',1)",
     [id, userId],
   );
+  return id;
+}
+
+export async function grantAttendanceRepositoryAccess(repositoryId: string, userId: string) {
+  await fixture.pg.query(
+    "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES($1,$2,'admin',1)",
+    [repositoryId, userId],
+  );
+}
+export async function revokeAttendanceRepositoryAccess(repositoryId: string, userId: string) {
+  await fixture.pg.query(
+    "DELETE FROM app_private.repository_access WHERE repository_id=$1 AND principal_id=$2",
+    [repositoryId, userId],
+  );
 }

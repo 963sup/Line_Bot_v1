@@ -4,7 +4,10 @@ import {
   parseAttendanceClockPreparation,
   parseAttendanceSnapshot,
 } from "../src/contracts/dto/attendance-client.js";
-import { parseAttendanceSupplementInbox } from "../src/contracts/dto/attendance-supplement.js";
+import {
+  parseAttendanceSupplementInbox,
+  parseAttendanceSupplementReviewReceipt,
+} from "../src/contracts/dto/attendance-supplement.js";
 
 const point = {
   id: "repo",
@@ -72,4 +75,12 @@ test("Attendance supplement DTO accepts an addressless immutable site snapshot",
   });
 
   assert.equal(inbox.mine[0]?.site.address, null);
+});
+
+test("review acknowledgement rejects sensitive or malformed payloads", () => {
+  for (const replayed of [false, true])
+    assert.deepEqual(parseAttendanceSupplementReviewReceipt({ replayed }), { replayed });
+  for (const value of [{ replayed: true, supplement: {} }, { replayed: "true" }, {}, null]) {
+    assert.throws(() => parseAttendanceSupplementReviewReceipt(value));
+  }
 });
