@@ -1,5 +1,8 @@
 # Project defaults; trusted projects only. Live session overrides take precedence.
 # Preserve the user's permissions, approval policy and MCP settings.
+# Trusted project shell preapprovals load automatically from .codex/rules/*.rules.
+# Rules govern commands; MCP tool preapprovals are configured per server below.
+# Restart Codex after changes; live session and managed policies take precedence.
 # Primary model: GPT-6 Astra (gpt-6-astra).
 developer_instructions = """
 Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
