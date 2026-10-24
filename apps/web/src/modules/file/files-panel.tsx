@@ -256,6 +256,17 @@ function errorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : "File 操作暫不可用，請重新讀取後重試。";
 }
 
+/** Presentation progress only; File/ProcessingRun state remains owned by packages/file. */
+export function fileIntakeStep(
+  hasSelectedFile: boolean,
+  state: Processing["state"] | null,
+): 1 | 2 | 3 | 4 {
+  if (!hasSelectedFile) return 1;
+  if (state === "SAVED") return 4;
+  if (state === "READY") return 3;
+  return 2;
+}
+
 export default function FilesPanel({
   liffId,
   ownerLogin,
@@ -696,10 +707,29 @@ export default function FilesPanel({
   const raw = processing?.rawResult ?? null;
   const saved = processing?.savedResult ?? null;
   const editable = view?.canEdit && processing?.state === "READY" && !!raw && !pending && !busy;
+  const currentStep = fileIntakeStep(selected !== null, processing?.state ?? null);
 
   return (
     <div className="grid gap-4 p-4 md:grid-cols-[minmax(16rem,1fr)_2fr]">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
+      <ol
+        aria-label="File 處理步驟"
+        className="col-span-full grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-4"
+      >
+        {["上傳原始檔", "選擇解析方式", "預覽與修正", "儲存結果"].map((title, index) => (
+          <li
+            key={title}
+            aria-current={index + 1 === currentStep ? "step" : undefined}
+            className={
+              index + 1 === currentStep
+                ? "rounded-md border border-primary px-3 py-2 font-medium"
+                : "rounded-md border border-transparent px-3 py-2 text-muted-foreground"
+            }
+          >
+            {index + 1}. {title}
+          </li>
+        ))}
+      </ol>
       <Card>
         <CardHeader>
           <CardTitle>Repository Files</CardTitle>
@@ -869,14 +899,14 @@ export default function FilesPanel({
               )}
               {view?.canEdit && (
                 <>
-                  <Label htmlFor="file-processor">Processor</Label>
+                  <Label htmlFor="file-processor">選擇解析方式</Label>
                   <NativeSelect
                     id="file-processor"
                     value={selectedProcessor}
                     disabled={busy || !!pending}
                     onChange={(event) => setSelectedProcessor(event.target.value)}
                   >
-                    <NativeSelectOption value="">選擇處理方式</NativeSelectOption>
+                    <NativeSelectOption value="">請選擇支援的解析方式</NativeSelectOption>
                     {processors.map((processor) => (
                       <NativeSelectOption key={processor.id} value={processor.id}>
                         {processor.kind.toUpperCase()} · {processor.id}
@@ -889,7 +919,7 @@ export default function FilesPanel({
                     </p>
                   )}
                   <Button disabled={!selectedProcessor || busy || !!pending} onClick={() => run()}>
-                    Run（只執行選定方法）
+                    開始解析（只執行選定方法）
                   </Button>
                 </>
               )}
@@ -1010,6 +1040,16 @@ export default function FilesPanel({
                       </Button>
                     </div>
                   )}
+                </div>
+              )}
+              {processing.state === "SAVED" && (
+                <div className="grid gap-1 rounded-lg border p-3 text-sm" role="status">
+                  <p className="font-medium">File 解析結果已保存</p>
+                  <p className="text-muted-foreground">
+                    此結果仍是 File-owned 候選資料，不會自動建立 Contract 或 Content。 下一階段請從
+                    Repository 導覽前往 Content，先建立並確認 Work／Task， 再由 Contracts 引用精確的
+                    Content Revision。
+                  </p>
                 </div>
               )}
               {processing.state === "DISCARDED" && (
