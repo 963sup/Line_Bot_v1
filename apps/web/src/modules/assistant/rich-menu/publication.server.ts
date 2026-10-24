@@ -43,12 +43,21 @@ async function assertRemoteDefinition(
     throw new Error(`Rich menu definition readback mismatch: ${page}`);
 }
 
-async function setAlias(client: RichMenuClient, alias: string, id: string) {
+async function setAlias(
+  client: RichMenuClient,
+  alias: string,
+  id: string,
+  beforeMutation: () => void,
+) {
   const current = await client.getAlias(alias);
-  if (!current) await client.createAlias(alias, id);
-  else if (current !== id) await client.updateAlias(alias, id);
+  if (!current) {
+    beforeMutation();
+    await client.createAlias(alias, id);
+  } else if (current !== id) {
+    beforeMutation();
+    await client.updateAlias(alias, id);
+  }
   if ((await client.getAlias(alias)) !== id) throw new Error(`Alias readback mismatch: ${alias}`);
-  return current !== id;
 }
 
 async function restoreAlias(client: RichMenuClient, alias: string, previous: string | null) {
@@ -161,7 +170,10 @@ export async function activateRichMenuBatch(
         Number(SUBMENU_PAGES.some((page) => page === a.page)),
     );
     for (const menu of activationOrder)
-      mutated = (await setAlias(client, menuAlias(menu.page), menu.richMenuId)) || mutated;
+      await setAlias(client, menuAlias(menu.page), menu.richMenuId, () => {
+        // Once a provider write is attempted, a lost response is not proof of no mutation.
+        mutated = true;
+      });
 
     mutated = true;
 
