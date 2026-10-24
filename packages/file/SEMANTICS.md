@@ -54,10 +54,12 @@ References support the existing status; listed tests are evidence locations, not
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | content | stable-identity+query | file | transaction-recheck+immutable-pin | A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs. |
+| provides | contract | stable-identity+query | file | transaction-recheck+immutable-pin | Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision. |
 | provides | intelligence | reference | file | pure-value | Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority. |
 | consumes | platform | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority. |
 | consumes | intelligence | query | intelligence | current-source-access | File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity. |
+| provides | intelligence | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
 
 ## Tactical Model Boundary
 

@@ -7,6 +7,10 @@
 - Draft `create` and `edit` commands supply the full 1 to 100 line set. `activate` and `close` add no fields.
 - A command may mutate the configured database. Run only against an explicitly authorized target. The CLI verifies LINE proof and current User qualification; Contract owns business authorization and transaction/replay behavior.
 
+Purchase-order documents use `document-submit` with the complete Contract-owned intake command (`save` or explicit human `confirm`), and `document-receipt` with `query:{repositoryId,documentId,requestId}`. After Intelligence saves a candidate, use `document-read` with `query:{repositoryId,documentId,revisionId?}` and an explicit `outputPath` to review all lines and diagnostics. The protected revision is written to a new local JSON file; an existing file is never overwritten. Standard output contains only the file path and revision/count summary. Keep this review file private and outside version control.
+
+Read the current candidate before confirming it. Confirmation pins the reviewed draft's source, expected count and facts; corrections require a new saved draft. A declared expected count and synthetic 54-line tests do not prove live PDF extraction completeness. These document operations are distinct from the existing Content-pinned engineering commitments below.
+
 New `create`/`edit` lines reference exact Content Work or Task plan items:
 
 ```json

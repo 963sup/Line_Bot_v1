@@ -1,6 +1,6 @@
 # Owner router
 
-Project scope content: [WBS](wbs.md). Repository work definitions and plan versions: [Content](content.md). Shared physical identities: [Resources](resources.md). Repository pages: [Wiki](wiki.md). Formal work commitments: [Contract](contract.md). Task actuals, prerequisites and review: [Execution](execution.md). Work-item lifecycle: [Issue](issue.md); cross-source planning: [Project](project.md). Read-only metrics: [Insights](insights.md). Business automation: [Actions](actions.md).
+Project scope content: [WBS](wbs.md). Repository work definitions and plan versions: [Content](content.md). Shared physical identities: [Resources](resources.md). Repository pages: [Wiki](wiki.md). Purchase-order documents and formal work commitments: [Contract](contract.md). Task actuals, prerequisites and review: [Execution](execution.md). Work-item lifecycle: [Issue](issue.md); cross-source planning: [Project](project.md). Read-only metrics: [Insights](insights.md). Business automation: [Actions](actions.md).
 
 Use one owner contract for the affected responsibility. Exact current owner/status remains authoritative in `architecture/semantic-model.json`.
 

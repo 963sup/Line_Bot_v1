@@ -122,9 +122,13 @@
     },
     "@line_bot_v1/intelligence": {
       "path": "packages/intelligence",
-      "moduleKind": "integration-adapter",
+      "moduleKind": "application-module",
       "semanticOwner": "intelligence",
-      "allowedWorkspaceDependencies": ["@line_bot_v1/file"]
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/contract",
+        "@line_bot_v1/file",
+        "@line_bot_v1/platform"
+      ]
     },
     "@line_bot_v1/identity-access": {
       "path": "packages/identity-access",
@@ -304,6 +308,7 @@
       "semanticOwner": "contract",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/content",
+        "@line_bot_v1/file",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"
       ]

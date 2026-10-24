@@ -34,6 +34,7 @@ No canonical business concept is currently declared for this owner.
 | --- | --- | --- | --- | --- | --- |
 | provides | contract | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | provides | file | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
+| provides | intelligence | query | platform | transaction-bound | Intelligence consumes neutral PostgreSQL transaction and value-decoding mechanisms for its technical attempt record. It retains only attempt recovery state; Contract remains the owner of candidate and business revision truth. |
 | provides | resources | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | provides | wiki | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 

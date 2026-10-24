@@ -26,6 +26,9 @@
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
+| ContractDocument | contract-document | authoritative | current | Repository-scoped purchase-order document head selecting one complete structured candidate or confirmed document revision. It records a qualified immutable File source but does not own source bytes, Content structure, WBS or execution. |
+| ContractDocumentCommandReceipt | contract-document-command-receipt | authoritative | current | Immutable actor/request, intent and complete-payload fingerprints with the exact committed ContractDocument revision, supporting current-authorized readback and idempotent replay. |
+| ContractDocumentRevision | contract-document-revision | authoritative | current | Immutable whole purchase-order extraction revision containing the target-owned schema version, source-qualified fields, complete line candidate, diagnostics, state, actor and timestamp. Confirmation never changes the source File revision or silently repairs a financial discrepancy. |
 | ContractLine | contract-line | authoritative | current | One formal agreed quantity and frozen exact Content Work/Task plan basis embedded in an immutable Contract revision; distinct from both planned and actual quantity. |
 | EngineeringContract | engineering-contract | authoritative | current | Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions. No monetary, signature or Payroll authority. |
 | EngineeringContractCommandReceipt | engineering-contract-command-receipt | authoritative | current | Immutable actor/request fingerprint and exact committed Contract revision supporting current-authorized replay. |
@@ -33,18 +36,21 @@
 
 ## Capabilities
 
-| Capability | Runtime | Implementation | Intent |
-| --- | --- | --- | --- |
-| manage-engineering-contracts | required | implemented | Manage formal commitments against exact Content Work/Task plan items, freezing agreed quantities on activation. |
+| Capability | Runtime | Implementation | Consumes | Intent |
+| --- | --- | --- | --- | --- |
+| manage-contract-documents | required | implemented | contract-repository-scope, contract-file-source | Persist, read and explicitly confirm a complete Contract-owned purchase-order document candidate from one exact authorized File revision. |
+| manage-engineering-contracts | required | implemented |  | Manage formal commitments against exact Content Work/Task plan items, freezing agreed quantities on activation. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | content | stable-identity+query | content | transaction-recheck+immutable-pin | Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments. |
+| consumes | file | stable-identity+query | file | transaction-recheck+immutable-pin | Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision. |
 | consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
 | provides | execution | stable-identity+query | contract | transaction-recheck+immutable-pin | Submission requires a currently ACTIVE Contract and its exact activation revision line in the same transaction. Existing reports remain reviewable/voidable after closure using the immutable ACTIVE source revision; Contract retains agreement authority. |
+| provides | intelligence | command | contract | idempotent-command | Contract supplies the versioned purchase-order target schema and public candidate command. Intelligence submits only an untrusted SAVE candidate; Contract owns validation, authorization, version/replay checks, durable revision and confirmation. |
 | provides | wbs | stable-identity+query | contract | transaction-recheck+immutable-pin | A Project WBS user explicitly maps an ACTIVE Repository Contract line into a Project WORK_PACKAGE, with Project and Repository rights both reverified in one transaction. WBS retains a private exact source pin in its immutable revision; the Contract remains the authority for agreed quantities and Content pins. |
 
 ## Tactical Model Boundary
