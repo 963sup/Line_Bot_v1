@@ -7,6 +7,7 @@ const mocked = new Set([
   "@line_bot_v1/file/application/use-cases/files",
   "@line_bot_v1/file/composition/bootstrap/files",
   "@line_bot_v1/file/composition/bootstrap/processors",
+  "@line_bot_v1/intelligence/composition/bootstrap/processors",
   "@line_bot_v1/file/domain/error",
   "@line_bot_v1/file/domain/file",
   "@line_bot_v1/contract/application/use-cases/contracts",
@@ -70,7 +71,9 @@ function sourceFor(url) {
   if (specifier === "@line_bot_v1/file/composition/bootstrap/files")
     return `export function createPostgresFileDependencies() { return {}; }`;
   if (specifier === "@line_bot_v1/file/composition/bootstrap/processors")
-    return `export const plainTextProcessor = {}; export function createGeminiFileProcessor() { return {}; }`;
+    return `export const plainTextProcessor = {};`;
+  if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processors")
+    return `export function createGeminiFileProcessor() { return {}; }`;
   if (specifier === "@line_bot_v1/contract/domain/error")
     return `export class ContractError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }`;
   if (specifier === "@line_bot_v1/execution/domain/error")

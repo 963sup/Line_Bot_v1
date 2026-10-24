@@ -47,15 +47,17 @@ References support the existing status; listed tests are evidence locations, not
 | --- | --- | --- | --- | --- |
 | manage-file-result | required | implemented | file-repository-scope, file-platform-persistence | A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners. |
 | manage-files | required | implemented | file-repository-scope, file-platform-persistence | Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access. |
-| run-file-processing | required | implemented | file-repository-scope, file-platform-persistence | Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save. |
+| run-file-processing | required | implemented | file-repository-scope, file-platform-persistence, intelligence-file-document-understanding | Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | content | stable-identity+query | file | transaction-recheck+immutable-pin | A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs. |
+| provides | intelligence | reference | file | pure-value | Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority. |
 | consumes | platform | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority. |
+| consumes | intelligence | query | intelligence | current-source-access | File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity. |
 
 ## Tactical Model Boundary
 

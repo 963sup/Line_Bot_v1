@@ -31,6 +31,10 @@
     "./contracts/output/saved-results": {
       "types": "./dist/contracts/output/saved-results.d.ts",
       "default": "./dist/contracts/output/saved-results.js"
+    },
+    "./contracts/output/processor": {
+      "types": "./dist/contracts/output/processor.d.ts",
+      "default": "./dist/contracts/output/processor.js"
     }
   },
   "files": [
@@ -44,7 +48,6 @@
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
-    "@google/genai": "catalog:",
     "@supabase/supabase-js": "catalog:"
   },
   "devDependencies": {

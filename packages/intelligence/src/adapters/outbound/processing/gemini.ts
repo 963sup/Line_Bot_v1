@@ -1,6 +1,6 @@
 import type { GenerateContentParameters } from "@google/genai";
-import type { FileProcessor } from "../../../contracts/output/processor.js";
-import { FileError } from "../../../domain/error.js";
+import type { FileProcessor } from "@line_bot_v1/file/contracts/output/processor";
+import { FileError } from "@line_bot_v1/file/domain/error";
 
 const mediaTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
 

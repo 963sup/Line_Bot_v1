@@ -1,12 +1,10 @@
 import { open, writeFile } from "node:fs/promises";
 import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
-import {
-  createGeminiFileProcessor,
-  plainTextProcessor,
-} from "@line_bot_v1/file/composition/bootstrap/processors";
+import { plainTextProcessor } from "@line_bot_v1/file/composition/bootstrap/processors";
 import { FileError } from "@line_bot_v1/file/domain/error";
 import { fileLimits } from "@line_bot_v1/file/domain/file";
+import { createGeminiFileProcessor } from "@line_bot_v1/intelligence/composition/bootstrap/processors";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
 import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
 import {

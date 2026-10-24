@@ -145,6 +145,12 @@
       "doc": "docs/owners/google-workspace.md"
     },
     {
+      "id": "intelligence",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/intelligence.md"
+    },
+    {
       "id": "namespace",
       "kind": "business-owner",
       "lifecycle": "current",
@@ -3080,6 +3086,24 @@
       "integrationMode": "query",
       "authority": "platform",
       "consistency": "transaction-bound"
+    },
+    {
+      "id": "file-intelligence-processor-contract",
+      "provider": "file",
+      "consumer": "intelligence",
+      "meaning": "Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority.",
+      "integrationMode": "reference",
+      "authority": "file",
+      "consistency": "pure-value"
+    },
+    {
+      "id": "intelligence-file-document-understanding",
+      "provider": "intelligence",
+      "consumer": "file",
+      "meaning": "File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity.",
+      "integrationMode": "query",
+      "authority": "intelligence",
+      "consistency": "current-source-access"
     }
   ],
   "capabilities": [
@@ -5653,7 +5677,11 @@
       "kind": "leaf",
       "intent": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
-      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "consumes": [
+        "file-repository-scope",
+        "file-platform-persistence",
+        "intelligence-file-document-understanding"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5669,13 +5697,13 @@
           "packages/file/src/domain/processing-run.ts",
           "packages/file/src/contracts/output/processor.ts",
           "packages/file/src/application/use-cases/files.ts",
-          "packages/file/src/adapters/outbound/processing/plain-text.ts",
-          "packages/file/src/adapters/outbound/processing/gemini.ts"
+          "packages/file/src/adapters/outbound/processing/plain-text.ts"
         ],
         "publicExports": [
           "./application/use-cases/files",
           "./composition/bootstrap/files",
           "./composition/bootstrap/processors",
+          "./contracts/output/processor",
           "./domain/error",
           "./domain/file"
         ],
@@ -5690,7 +5718,7 @@
           "packages/file/test/persistence.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "CLI and Repository-scoped Web invoke only user-selected available native UTF-8 text Parser or configured Gemini PDF/image AI. RawResult is untrusted Preview. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
+        "note": "File owns explicit processor selection, exact source authorization, output validation and the ProcessingRun lifecycle. Its native UTF-8 text Parser remains local; configured Intelligence adapters are injected by application hosts and return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
       }
     },
     {
@@ -5734,6 +5762,36 @@
           "apps/web/test/files-owner-http.test.ts"
         ],
         "note": "CLI and Web provide explicit local Edit, Discard or version-bound Save of Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
+      }
+    },
+    {
+      "id": "understand-file-document",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "Map explicitly supplied PDF or image evidence through a configured Gemini model into bounded, source-located candidate observations without approving, persisting or importing business facts.",
+      "preserves": ["K1", "K2", "K5", "FILE2", "INTELLIGENCE1"],
+      "consumes": ["file-intelligence-processor-contract"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Gemini-backed PDF/image document understanding implementing the File-owned processor contract",
+        "sourcePaths": [
+          "packages/intelligence/src/adapters/outbound/processing/gemini.ts",
+          "packages/intelligence/src/composition/bootstrap/processors.ts"
+        ],
+        "publicExports": ["./composition/bootstrap/processors"],
+        "entrypoints": [
+          "scripts/file/run.mjs",
+          "apps/web/src/app/api/_composition/files.server.ts"
+        ],
+        "testPaths": ["packages/intelligence/test/gemini.test.ts"],
+        "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
       }
     }
   ],
@@ -5864,6 +5922,14 @@
       "severity": "error",
       "enforcement": ["source-code", "schema", "tests"],
       "tags": ["file", "processing", "user-intent", "recovery", "trust"]
+    },
+    {
+      "id": "INTELLIGENCE1",
+      "scope": "intelligence",
+      "statement": "Intelligence owns document-understanding provider protocol, extraction prompt/schema and processor version identity only. It receives an exact source through a consumer-owned contract, returns untrusted candidate output, persists no File or business truth, and cannot authorize Save or downstream Domain mutation.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "tests"],
+      "tags": ["intelligence", "trust", "ownership", "provider-boundary"]
     }
   ],
   "truthRegistry": [
@@ -6009,6 +6075,10 @@
     {
       "semanticOwner": "google-workspace",
       "module": "@line_bot_v1/google-workspace"
+    },
+    {
+      "semanticOwner": "intelligence",
+      "module": "@line_bot_v1/intelligence"
     },
     {
       "semanticOwner": "namespace",

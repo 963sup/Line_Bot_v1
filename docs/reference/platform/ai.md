@@ -4,7 +4,15 @@
 
 目前不把任何 quota、價格、模型上限或成本門檻寫成固定平台事實；這些需針對實際 provider / environment 查證。
 ## Implementation ownership
-Gemini Developer API 的 SDK client、固定 liveness probe、server-only/config guard 由 `@line_bot_v1/assistant` 擁有，對外只透過 `@line_bot_v1/assistant/gemini` 公開。Receipt／Issue draft 等產品 agent 仍屬各自 owner；provider adapter 不做 authorization、持久化或 business state transition。
+
+沒有全域 AI business owner；責任依實際 use case 分離：
+
+- `@line_bot_v1/assistant` 擁有 Assistant conversation、Issue draft 使用的 Gemini SDK client、固定 liveness probe 與 server-only/config guard，對外只透過其公開 Composition Entry 使用。
+- `@line_bot_v1/intelligence` 擁有 File 文件理解的 Gemini provider protocol、prompt、response schema、media mapping、timeout 與 processor version identity。
+- `@line_bot_v1/file` 擁有 exact source authorization/readback、ProcessingRun、output validation、RawResult/SavedResult、replay 與 recovery；Intelligence output 仍是不可信候選資料。
+- Receipt 與其他產品 agent 仍屬各自 owner。
+
+Provider adapter 不做 authorization、持久化或 business state transition，也不因共用 Provider 而取得另一個 Owner 的語意。
 ## Vercel AI Gateway (opt-in)
 
 一般 Assistant 問答可以透過 `@line_bot_v1/assistant/gateway` 公開 Composition Entry 使用 AI SDK / Vercel AI Gateway。Private Provider Adapter 在 `packages/assistant/src/adapters/outbound/external-api/vercel-ai.ts`；`apps/web/src/app/api/_composition/assistant.server.ts` 選擇執行路徑。
@@ -66,6 +74,8 @@ Important source content 不能被靜默截斷後仍宣稱「完整分析」。
 如果沒有改善成本或品質，就縮小 AI 使用範圍，而不是先增加 routing framework。
 ## Adjacent owners
 - Assistant product use cases：[Assistant](../../owners/assistant.md)
+- File document understanding integration：[Intelligence](../../owners/intelligence.md)
+- File evidence lifecycle：[File](../../owners/file.md)
 - AI provider credential / platform setup：本 integration directory 的 provider-specific 文件
 - Data retention：[Data](../README.md)
 - Secrets：[Secret handling](../security/secrets.md)

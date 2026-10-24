@@ -4,6 +4,7 @@ Inherits [packages](../AGENTS.md). [File owner](../../docs/owners/file.md) owns 
 
 - Upload and File List never invoke processors. Run requires an explicit File revision, supported processor, version and request identity. No automatic OCR, AI, fallback, Save, import or new Run.
 - Parser, OCR and AI implement the same FileProcessor capability; unavailable formats fail closed. Never force a text-only intermediate stage that discards tables or image evidence.
+- File owns the processor Port, exact source qualification, output validation and ProcessingRun lifecycle. Provider-specific integrations are injected by application hosts; File never imports a concrete provider Adapter or transfers durable authority to it.
 - Processor output is untrusted Preview. Browser Edit stays local until Save. Save records optional bounded edits and immutable SavedResult; Discard creates no SavedResult. RawResult, source location and uncertainty cannot be rewritten.
 - Current Repository permission must be rechecked on read, replay and completion. Public visibility is not File evidence authorization.
 - A retry of the same RunId must preserve exact original FileRevision and Processor id/version/kind; changing the processor is a new explicit Run.
