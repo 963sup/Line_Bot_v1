@@ -47,6 +47,9 @@
 - 保持 [system invariants](docs/rules/system-invariants.md)：authority、authorization/isolation、concurrency/replay、atomicity/recovery、ownership/dependency、evidence integrity。
 - 跨 package 只用 public exports；不用 alias/wrapper/facade/compatibility layer 掩蓋 ownership。
 - 無真實 consumer、variation、technology/policy boundary、transaction/recovery 或 isolation responsibility，不新增 abstraction。
+- 高內聚／低耦合：每項 business responsibility 只有一個 authoritative owner；每個 production source 只有一個 primary role，consumer 只依賴必要 public capability 與正確 dependency direction。維持 DDD + Hexagonal 的 Domain 決策、Application 協調、Port 消費者能力與 Adapter 技術實作；不強制建立空 layer。
+- 簡化是在根因、Owner、Truth、Boundary 確認之後選擇最小充分實作，不以最少程式行數、最少檔案或最快 CI 通過取代正確性。優先重用已驗證能力、消除重複 truth／dead code／無責任轉發；新增 complexity 必須有可驗證的必要理由。
+- 現代化方案以 current repository 成功 pattern、實際安裝版本及適用官方 contract 為證據，非追求新框架或過度抽象；修改前比較方案及不可失去的 invariant。
 - 不提交 secret、credential、personal data；remote mutation 要有 authorization、exact target、readback。
 - 不同 evidence 分開回報；未知明示。
 
