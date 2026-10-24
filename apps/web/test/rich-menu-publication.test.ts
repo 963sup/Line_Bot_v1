@@ -351,53 +351,60 @@ test("a later alias unknown result restores the complete previous state and reta
   assert.deepEqual(deleted, []);
 });
 
-for (const failure of ["lost-response", "readback"] as const) {
-  test(`default ${failure} restores aliases and default while retaining new menus`, async () => {
-    const home = config("attendance-in");
-    const alias = "line_bot_v1-attendance-in";
-    const newId = "richmenu-new0abcd";
-    const oldId = "richmenu-old0abcd";
-    const aliases = new Map<string, string>([[alias, oldId]]);
-    const deleted: string[] = [];
-    let defaultId: string | null = oldId;
-    let defaultReads = 0;
-    let activationWrites = 0;
-    const client = publicationClient({
-      get: async () => home.menu,
-      getAlias: async (key: string) => aliases.get(key) ?? null,
-      updateAlias: async (key: string, id: string) => {
-        aliases.set(key, id);
-      },
-      deleteAlias: async (key: string) => {
-        aliases.delete(key);
-      },
-      getDefault: async () => {
-        defaultReads++;
-        if (failure === "readback" && defaultReads === 2)
-          throw new Error("default readback unavailable");
-        return defaultId;
-      },
-      activate: async (id: string) => {
-        activationWrites++;
-        defaultId = id;
-        if (failure === "lost-response" && activationWrites === 1)
-          throw new Error("remote committed; default response lost");
-        return new Response(null, { status: 200 });
-      },
-      delete: async (id: string) => {
-        deleted.push(id);
-        return new Response(null, { status: 200 });
-      },
-    });
+for (const hadDefault of [false, true]) {
+  for (const failure of ["lost-response", "readback"] as const) {
+    test(`default ${failure} restores ${hadDefault ? "existing" : "absent"} default while retaining new menus`, async () => {
+      const home = config("attendance-in");
+      const alias = "line_bot_v1-attendance-in";
+      const newId = "richmenu-new0abcd";
+      const oldId = "richmenu-old0abcd";
+      const previousDefault = hadDefault ? oldId : null;
+      const aliases = new Map<string, string>([[alias, oldId]]);
+      const deleted: string[] = [];
+      let defaultId: string | null = previousDefault;
+      let defaultReads = 0;
+      let activationWrites = 0;
+      const client = publicationClient({
+        get: async () => home.menu,
+        getAlias: async (key: string) => aliases.get(key) ?? null,
+        updateAlias: async (key: string, id: string) => {
+          aliases.set(key, id);
+        },
+        deleteAlias: async (key: string) => {
+          aliases.delete(key);
+        },
+        getDefault: async () => {
+          defaultReads++;
+          if (failure === "readback" && defaultReads === 2)
+            throw new Error("default readback unavailable");
+          return defaultId;
+        },
+        activate: async (id: string) => {
+          activationWrites++;
+          defaultId = id;
+          if (failure === "lost-response" && activationWrites === 1)
+            throw new Error("remote committed; default response lost");
+          return new Response(null, { status: 200 });
+        },
+        deleteDefault: async () => {
+          defaultId = null;
+          return new Response(null, { status: 200 });
+        },
+        delete: async (id: string) => {
+          deleted.push(id);
+          return new Response(null, { status: 200 });
+        },
+      });
 
-    await assert.rejects(
-      activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
-      /previous remote state was restored; retained new menus/,
-    );
-    assert.equal(aliases.get(alias), oldId);
-    assert.equal(defaultId, oldId);
-    assert.deepEqual(deleted, []);
-  });
+      await assert.rejects(
+        activateRichMenuBatch(client, [home], [{ page: home.page, richMenuId: newId }]),
+        /previous remote state was restored; retained new menus/,
+      );
+      assert.equal(aliases.get(alias), oldId);
+      assert.equal(defaultId, previousDefault);
+      assert.deepEqual(deleted, []);
+    });
+  }
 }
 
 test("same desired activation retries reconcile an unknown alias result without another alias write", async () => {
@@ -478,6 +485,13 @@ test("known create batch failure cleans up menus without alias or default public
     updateAlias: async () => {
       publicationWrites++;
     },
+    deleteAlias: async () => {
+      publicationWrites++;
+    },
+    deleteDefault: async () => {
+      publicationWrites++;
+      return new Response(null, { status: 200 });
+    },
     activate: async () => {
       publicationWrites++;
       return new Response(null, { status: 200 });
@@ -507,6 +521,13 @@ test("activation readback failure before publication conservatively retains crea
     },
     updateAlias: async () => {
       publicationWrites++;
+    },
+    deleteAlias: async () => {
+      publicationWrites++;
+    },
+    deleteDefault: async () => {
+      publicationWrites++;
+      return new Response(null, { status: 200 });
     },
     activate: async () => {
       publicationWrites++;
