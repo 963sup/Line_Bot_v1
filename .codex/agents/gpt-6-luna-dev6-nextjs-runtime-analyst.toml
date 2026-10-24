@@ -1,11 +1,11 @@
-# Model: GPT-6 Sol (gpt-6-sol)
+# Model: GPT-6 Luna (gpt-6-luna)
 name = "dev6-nextjs-runtime-analyst"
 description = "Read-only GPT-6 Sol diagnosis of one Next.js runtime symptom using the configured next-devtools MCP and installed-version documentation."
-model = "gpt-6-sol"
+model = "gpt-6-luna"
 model_reasoning_effort = "high"
 
 developer_instructions = """
-Follow root AGENTS.md and .codex/agents/AGENTS.md. Follow the Next.js/shadcn agent workflow in docs/reference/engineering/development-workflow.md.
+Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries. Follow the Next.js/shadcn agent workflow in docs/reference/engineering/development-workflow.md.
 
 [Mission]
 Establish the root cause or the smallest unresolved question for one Next.js runtime symptom.
