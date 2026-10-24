@@ -50,6 +50,8 @@ create table app_private.file_upload_intents (
  fingerprint text not null check(fingerprint ~ '^[0-9a-f]{64}$'),
  last_attempt_at timestamptz not null default clock_timestamp(),
  abandoned_at timestamptz,
+ -- Historical column name: this is the last independently verified object-absence cursor,
+ -- not proof that an unknown provider write can no longer complete.
  reclaimed_at timestamptz,
  check(reclaimed_at is null or abandoned_at is not null),
  primary key(actor_user_id,request_id),
@@ -130,8 +132,8 @@ create table app_private.file_commands (
   or (kind='processing' and file_revision_id is null and processing_revision_id is not null))
 );
 create index repository_files_scope on app_private.repository_files(repository_id,id);
-create index file_upload_intents_reclamation on app_private.file_upload_intents(last_attempt_at,actor_user_id,request_id)
- where reclaimed_at is null;
+create index file_upload_intents_reclamation on app_private.file_upload_intents
+ ((coalesce(reclaimed_at,last_attempt_at)),actor_user_id,request_id);
 create index file_processing_runs_source on app_private.file_processing_runs(repository_id,file_id,file_revision_id);
 
 alter table app_private.repository_files enable row level security;

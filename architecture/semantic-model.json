@@ -2090,7 +2090,7 @@
       "kind": "authoritative",
       "owner": "file",
       "lifecycle": "current",
-      "definition": "Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine/reclaimed markers fence deletion of never-committed Storage objects; FileCommandReceipt alone proves finalization.",
+      "definition": "Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine fence deletion of never-committed Storage objects; every independently verified absence refreshes a durable reconciliation cursor because an unknown write may complete later. FileCommandReceipt alone proves finalization.",
       "authorityMode": "authoritative",
       "persistenceExpectation": "relation"
     },

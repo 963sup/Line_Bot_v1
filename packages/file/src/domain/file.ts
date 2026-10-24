@@ -67,7 +67,11 @@ export function nextFileRevision(
   };
 }
 
-/** An authorized, durable upload intent is not a committed FileRevision. */
+/**
+ * An authorized, durable upload intent is not a committed FileRevision.
+ * Once quarantined it retains a persistent reconciliation obligation because unknown object
+ * writes may complete after an earlier absence observation.
+ */
 export type FileUploadIntent = Readonly<{
   requestId: string;
   expectedVersion: number;

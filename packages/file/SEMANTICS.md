@@ -39,7 +39,7 @@ References support the existing status; listed tests are evidence locations, not
 | FileProcessingRevision | file-processing-revision | authoritative | current | Immutable user-requested processing attempt, RawResult and optional SavedResult with bounded edits, uncertainty and source locators. |
 | FileProcessingRun | file-processing-run | authoritative | current | A single explicitly selected Parser/OCR/AI operation against an immutable File revision, with fenced attempts and Preview/Save/Discard lifecycle. |
 | FileRevision | file-revision | authoritative | current | Immutable authorized File source revision: exact external private-object bytes identified by Repository/File/Revision, declared media type, size, SHA-256, actor and timestamp. A revision is committed only after content readback; edits and processing never replace its object. |
-| FileUploadIntent | file-upload-intent | authoritative | current | Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine/reclaimed markers fence deletion of never-committed Storage objects; FileCommandReceipt alone proves finalization. |
+| FileUploadIntent | file-upload-intent | authoritative | current | Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine fence deletion of never-committed Storage objects; every independently verified absence refreshes a durable reconciliation cursor because an unknown write may complete later. FileCommandReceipt alone proves finalization. |
 
 ## Capabilities
 

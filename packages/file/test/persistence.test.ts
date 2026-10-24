@@ -493,15 +493,15 @@ test("trusted orphan reclamation quarantines only quiet never-committed Upload I
   await assert.rejects(intake(db, lost).upload("owner", orphanCommand, bytes), code("UNAVAILABLE"));
   const reclaimer = createFileReclaimer({ ...deps, beforeMutation: async () => {} });
   const cutoff = Date.now();
-  assert.equal((await reclaimer.plan(cutoff)).eligible, 0);
+  assert.equal((await reclaimer.plan(cutoff)).candidates, 0);
   await pg.query(
     "UPDATE app_private.file_upload_intents SET last_attempt_at=clock_timestamp()-interval '8 days' WHERE request_id=$1",
     [orphanCommand.requestId],
   );
-  assert.equal((await reclaimer.plan(cutoff)).eligible, 1);
+  assert.equal((await reclaimer.plan(cutoff)).candidates, 1);
   const result = await reclaimer.reclaim(cutoff);
-  assert.deepEqual(result, { examined: 1, reclaimed: 1, skipped: 0, pageFull: false });
-  assert.equal((await reclaimer.plan(cutoff)).eligible, 0);
+  assert.deepEqual(result, { examined: 1, absenceVerified: 1, skipped: 0, pageFull: false });
+  assert.equal((await reclaimer.plan(cutoff)).candidates, 1);
   assert.deepEqual((await files.pendingUploads("owner", "repo")).uploads, []);
   await assert.rejects(files.upload("owner", orphanCommand, bytes), code("LIFECYCLE_CONFLICT"));
   assert.deepEqual(
@@ -554,10 +554,106 @@ test("failed object deletion leaves a durable quarantine for an explicit guarded
     beforeMutation: async () => {},
   });
   await assert.rejects(refused.reclaim(Date.now()), /unknown delete/);
-  assert.equal((await reclaimer.plan(Date.now())).eligible, 1);
+  assert.equal((await reclaimer.plan(Date.now())).candidates, 1);
   await assert.rejects(files.upload("owner", c, bytes), code("LIFECYCLE_CONFLICT"));
-  assert.equal((await reclaimer.reclaim(Date.now())).reclaimed, 1);
-  assert.equal((await reclaimer.plan(Date.now())).eligible, 0);
+  assert.equal((await reclaimer.reclaim(Date.now())).absenceVerified, 1);
+  assert.equal((await reclaimer.plan(Date.now())).candidates, 1);
+});
+
+test("late object completion after reclamation remains executable recovery work", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await seed(db);
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  const c = command();
+  const objects = memoryStore();
+  const writeAllowed = deferred();
+  const writeStarted = deferred();
+  const delayed: FileObjectStore = {
+    ...objects,
+    async putVerified(revision, input) {
+      writeStarted.resolve();
+      await writeAllowed.promise;
+      await objects.putVerified(revision, input);
+    },
+  };
+  const upload = intake(db, delayed).upload("owner", c, bytes);
+  try {
+    await writeStarted.promise;
+    await pg.query(
+      "UPDATE app_private.file_upload_intents SET last_attempt_at=clock_timestamp()-interval '8 days' WHERE request_id=$1",
+      [c.requestId],
+    );
+    const deps = createPostgresFileReclamationDependencies(db, objects);
+    const revision = (await deps.maintenance.candidates(Date.now(), 7 * 24 * 60 * 60 * 1000))[0]
+      ?.revision;
+    assert.ok(revision);
+    const reclaimer = createFileReclaimer({ ...deps, beforeMutation: async () => {} });
+    assert.equal((await reclaimer.reclaim(Date.now())).absenceVerified, 1);
+
+    writeAllowed.resolve();
+    await assert.rejects(upload, code("LIFECYCLE_CONFLICT"));
+    assert.deepEqual(await objects.readVerified(revision), bytes);
+
+    assert.equal((await reclaimer.plan(Date.now())).candidates, 1);
+    assert.equal((await reclaimer.reclaim(Date.now())).absenceVerified, 1);
+    await assert.rejects(objects.readVerified(revision), code("UNAVAILABLE"));
+  } finally {
+    writeAllowed.resolve();
+    await upload.catch(() => {});
+  }
+});
+
+test("bounded reconciliation rotates verified absences before the next page", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await seed(db);
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  const requestId = (index: number) =>
+    `00000001-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+  const fileId = (index: number) => `00000002-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+  const revisionId = (index: number) =>
+    `00000003-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+  for (let index = 1; index <= 21; index++) {
+    await pg.query(
+      `INSERT INTO app_private.file_upload_intents (
+         actor_user_id,request_id,repository_id,file_id,revision_id,expected_version,
+         parent_revision_id,at,name,media_type,byte_length,sha256,fingerprint,last_attempt_at
+       ) VALUES ('owner',$1,'repo',$2,$3,0,NULL,100,'source.txt','text/plain',$4,$5,$6,
+         clock_timestamp()-interval '8 days')`,
+      [
+        requestId(index),
+        fileId(index),
+        revisionId(index),
+        bytes.byteLength,
+        "a".repeat(64),
+        "b".repeat(64),
+      ],
+    );
+  }
+  const objects = memoryStore();
+  const deps = createPostgresFileReclamationDependencies(db, objects);
+  const reclaimer = createFileReclaimer({ ...deps, beforeMutation: async () => {} });
+  assert.deepEqual(await reclaimer.reclaim(Date.now()), {
+    examined: 20,
+    absenceVerified: 20,
+    skipped: 0,
+    pageFull: true,
+  });
+
+  const next = await deps.maintenance.candidates(Date.now(), 7 * 24 * 60 * 60 * 1000);
+  assert.equal(next.length, 20);
+  assert.equal(next[0]?.requestId, requestId(21));
+  const lateRevision = next[0]?.revision;
+  assert.ok(lateRevision);
+  await objects.putVerified(lateRevision, bytes);
+
+  assert.equal((await reclaimer.reclaim(Date.now())).absenceVerified, 20);
+  await assert.rejects(objects.readVerified(lateRevision), code("UNAVAILABLE"));
 });
 
 test("native sessions protect a renewed Upload Intent from a stale operator reclamation snapshot", {
@@ -614,7 +710,7 @@ test("native sessions protect a renewed Upload Intent from a stale operator recl
       reclaimAllowed.resolve();
       assert.deepEqual(await reclaimed, {
         examined: 1,
-        reclaimed: 0,
+        absenceVerified: 0,
         skipped: 1,
         pageFull: false,
       });
@@ -629,5 +725,48 @@ test("native sessions protect a renewed Upload Intent from a stale operator recl
   } finally {
     reclaimAllowed.resolve();
     await reclaimed.catch(() => {});
+  }
+});
+
+test("native sessions keep a late object write reconcilable after an earlier absence", {
+  skip: !url && !process.env.CI,
+}, async (t) => {
+  assert.ok(url, "CI requires its disposable PostgreSQL service");
+  const { pool, db, close } = await postgresSessions(url);
+  t.after(close);
+  await seed(db);
+  await pool.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  const c = command();
+  const objects = memoryStore();
+  const writeAllowed = deferred();
+  const writeStarted = deferred();
+  const delayed: FileObjectStore = {
+    ...objects,
+    async putVerified(revision, input) {
+      writeStarted.resolve();
+      await writeAllowed.promise;
+      await objects.putVerified(revision, input);
+    },
+  };
+  const upload = intake(db, delayed).upload("owner", c, bytes);
+  try {
+    await writeStarted.promise;
+    await pool.query(
+      "UPDATE app_private.file_upload_intents SET last_attempt_at=clock_timestamp()-interval '8 days' WHERE request_id=$1",
+      [c.requestId],
+    );
+    const deps = createPostgresFileReclamationDependencies(db, objects);
+    const reclaimer = createFileReclaimer({ ...deps, beforeMutation: async () => {} });
+    assert.equal((await reclaimer.reclaim(Date.now())).absenceVerified, 1);
+
+    writeAllowed.resolve();
+    await assert.rejects(upload, code("LIFECYCLE_CONFLICT"));
+    assert.equal((await reclaimer.plan(Date.now())).candidates, 1);
+    assert.equal((await reclaimer.reclaim(Date.now())).absenceVerified, 1);
+  } finally {
+    writeAllowed.resolve();
+    await upload.catch(() => {});
   }
 });
