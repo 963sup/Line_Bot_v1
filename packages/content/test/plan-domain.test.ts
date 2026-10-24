@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { parseContentPlanCommand } from "../src/application/commands/plans.js";
 import { ContentError } from "../src/domain/error.js";
 import {
   type ContentPlanDocument,
   normalizeContentPlanDocument,
   reviseContentPlan,
 } from "../src/domain/plan.js";
-import { normalizeQuantity } from "../src/domain/quantity.js";
+import {
+  isQuantityUnit,
+  normalizeQuantity,
+  normalizeQuantityUnit,
+} from "../src/domain/quantity.js";
 
 const ids = [
   "11111111-1111-4111-8111-111111111111",
@@ -219,5 +224,69 @@ test("Content revisions require expected version and publish detached complete d
         at: 3,
       }),
     (error) => error instanceof ContentError && error.code === "VERSION_CONFLICT",
+  );
+});
+
+test("user-defined Content units are bounded immutable labels, without conversions", () => {
+  const original = document();
+  const input = {
+    ...original,
+    measures: original.measures.map((measure) => ({ ...measure, unit: "  SET  " })),
+  };
+  const normalized = normalizeContentPlanDocument(input, null);
+  assert.equal(normalized.measures[0]?.unit, "SET");
+  assert.equal(normalized.nodes[4]?.plannedQuantity?.value, "2.5");
+  assert.equal(normalizeQuantityUnit(" 平方公尺（m²） "), "平方公尺（m²）");
+  assert.equal(isQuantityUnit("SET"), true);
+  assert.equal(isQuantityUnit(" SET "), false);
+  assert.equal(isQuantityUnit("SET\nBOX"), false);
+  assert.equal(normalizeQuantity("1.250", "SET"), "1.25");
+  assert.equal(normalizeQuantity("1.0", "m"), "1");
+  assert.throws(() => normalizeQuantity("1.0", "pcs"), ContentError);
+  for (const bad of ["", "  ", "a".repeat(33), "SET\nBOX", "\u202eSET"]) {
+    assert.throws(
+      () =>
+        normalizeContentPlanDocument(
+          { ...original, measures: original.measures.map((m) => ({ ...m, unit: bad })) },
+          null,
+        ),
+      (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+    );
+  }
+  assert.throws(
+    () =>
+      normalizeContentPlanDocument(
+        { ...original, measures: original.measures.map((m) => ({ ...m, unit: "盒" })) },
+        normalized,
+      ),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+});
+
+test("Content command normalizes units before exact replay fingerprints", () => {
+  const parsed = parseContentPlanCommand({
+    action: "initialize",
+    repositoryId: "repo",
+    requestId: ids[6],
+    expectedVersion: 0,
+    document: {
+      ...document(),
+      measures: document().measures.map((measure) => ({ ...measure, unit: "  組  " })),
+    },
+  });
+  assert.equal(parsed.document.measures[0]?.unit, "組");
+  assert.throws(
+    () =>
+      parseContentPlanCommand({
+        ...parsed,
+        document: {
+          ...parsed.document,
+          measures: parsed.document.measures.map((measure) => ({
+            ...measure,
+            unit: "invalid\tunit",
+          })),
+        },
+      }),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
   );
 });

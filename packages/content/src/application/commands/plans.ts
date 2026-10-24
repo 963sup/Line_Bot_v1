@@ -8,6 +8,7 @@ import {
   type ContentResourceKind,
   type ContentResourcePin,
 } from "../../domain/plan.js";
+import { normalizeQuantityUnit } from "../../domain/quantity.js";
 
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
@@ -67,12 +68,11 @@ function resourceKind(value: unknown): ContentResourceKind {
 function measure(input: unknown): ContentMeasure {
   const value = object(input);
   exact(value, ["id", "name", "subject", "unit"]);
-  if (value.unit !== "m" && value.unit !== "pcs") return invalid();
   return {
     id: id(value.id),
     name: text(value.name),
     subject: text(value.subject),
-    unit: value.unit,
+    unit: normalizeQuantityUnit(value.unit),
   };
 }
 

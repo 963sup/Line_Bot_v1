@@ -52,7 +52,7 @@ function contentCommand(
       document: {
         schemaVersion: 1 as const,
         measures: [
-          { id: measure, name: "Length", subject: "Installed length", unit: "m" as const },
+          { id: measure, name: "Installation", subject: "Installed sets", unit: "SET" as const },
         ],
         nodes: [
           {
@@ -167,6 +167,7 @@ test("Content persists complete revisions, replay, pins and exact historical ref
   assert.deepEqual(await plans.execute("owner", command), first);
   assert.equal(calls.count, 1);
   assert.equal(first.revision.document.nodes[4]?.plannedQuantity?.value, "2.5");
+  assert.equal(first.revision.document.measures[0]?.unit, "SET");
 
   await resources.execute("owner", {
     action: "archive",
@@ -197,6 +198,7 @@ test("Content persists complete revisions, replay, pins and exact historical ref
     ]),
   );
   assert.equal(oldBasis[0]?.node.title, "Splicing");
+  assert.equal(oldBasis[0]?.node.plannedQuantity?.measure.unit, "SET");
   assert.deepEqual(
     oldBasis[0]?.node.path.map((node) => node.kind),
     ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"],

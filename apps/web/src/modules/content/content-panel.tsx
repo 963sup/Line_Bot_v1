@@ -22,7 +22,7 @@ import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select"
 import { Textarea } from "../../shared/ui/textarea";
 
 type Kind = "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
-type Measure = { id: string; name: string; subject: string; unit: "m" | "pcs" };
+type Measure = { id: string; name: string; subject: string; unit: string };
 type ResourcePin = {
   nodeId: string;
   resourceId: string;
@@ -468,7 +468,8 @@ export default function ContentPanel({
         <CardHeader>
           <CardTitle>計量基準與 Resources</CardTitle>
           <CardDescription>
-            Work／Task 的計畫數量使用版本內固定的 measure；Resource pin 固定到目前 revision。
+            Work／Task 的計畫數量使用版本內固定的 measure；單位可自行輸入（pcs
+            為整數，其餘至多三位小數），不自動換算。Resource pin 固定到目前 revision。
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -485,18 +486,22 @@ export default function ContentPanel({
               value={measureSubject}
               onChange={(event) => setMeasureSubject(event.target.value)}
             />
-            <NativeSelect
+            <Input
               aria-label="計量單位"
+              placeholder="單位，例如 pcs、m、SET、組"
               value={measureUnit}
-              onChange={(event) => setMeasureUnit(event.target.value === "m" ? "m" : "pcs")}
-            >
-              <NativeSelectOption value="pcs">pcs</NativeSelectOption>
-              <NativeSelectOption value="m">m</NativeSelectOption>
-            </NativeSelect>
+              maxLength={32}
+              onChange={(event) => setMeasureUnit(event.target.value)}
+            />
             <Button
               type="button"
               variant="outline"
-              disabled={!view?.canEdit || !measureName.trim() || !measureSubject.trim()}
+              disabled={
+                !view?.canEdit ||
+                !measureName.trim() ||
+                !measureSubject.trim() ||
+                !measureUnit.trim()
+              }
               onClick={() => {
                 setDocument((current) => ({
                   ...current,
@@ -506,7 +511,7 @@ export default function ContentPanel({
                       id: crypto.randomUUID(),
                       name: measureName,
                       subject: measureSubject,
-                      unit: measureUnit,
+                      unit: measureUnit.trim(),
                     },
                   ],
                 }));

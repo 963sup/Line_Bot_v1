@@ -31,7 +31,7 @@ const ids = {
   resourceRevision: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
 };
 
-function item(nodeId = ids.task, kind: "WORK" | "TASK" = "TASK") {
+function item(nodeId = ids.task, kind: "WORK" | "TASK" = "TASK", unit = "m") {
   return {
     repositoryId: "repo",
     planRevisionId: ids.planRevision,
@@ -50,26 +50,30 @@ function item(nodeId = ids.task, kind: "WORK" | "TASK" = "TASK") {
           : [{ id: nodeId, kind: "WORK" as const, title: "Works" }],
       plannedQuantity: {
         value: "10",
-        measure: { id: "length", name: "Length", subject: "installed", unit: "m" as const },
+        measure: { id: "length", name: "Length", subject: "installed", unit },
       },
     },
   };
 }
 
-function basis(nodeId = ids.work, kind: "WORK" | "TASK" = "WORK"): ContentContractLineBasis {
+function basis(
+  nodeId = ids.work,
+  kind: "WORK" | "TASK" = "WORK",
+  unit = "m",
+): ContentContractLineBasis {
   return {
     contractId: ids.contract,
     contractRevisionId: ids.contractRevision,
     lineId: ids.line,
     agreedQuantity: "1",
-    content: item(nodeId, kind),
+    content: item(nodeId, kind, unit),
   };
 }
 
-function source() {
+function source(unit = "m") {
   return {
-    basis: basis(),
-    task: item(),
+    basis: basis(ids.work, "WORK", unit),
+    task: item(ids.task, "TASK", unit),
     resources: [
       {
         resourceId: ids.resource,
@@ -342,5 +346,29 @@ test("Execution application authorizes before replay and freezes current DAG wit
       observedDependencyVersion: 1,
     }),
     (error) => error instanceof ExecutionError && error.code === "CONFLICT",
+  );
+});
+
+test("Execution preserves a custom Content Task unit without implicit conversion", () => {
+  const created = reviseExecution(
+    null,
+    0,
+    { action: "submit", quantity: "1.250", note: "" },
+    context(),
+    source("組"),
+  );
+  assert.equal(created.quantity, "1.25");
+  assert.equal(created.task.node.plannedQuantity?.measure.unit, "組");
+  assert.equal(created.basis.content.node.plannedQuantity?.measure.unit, "組");
+  assert.throws(
+    () =>
+      reviseExecution(
+        null,
+        0,
+        { action: "submit", quantity: "1.0", note: "" },
+        context(),
+        source("pcs"),
+      ),
+    (error) => error instanceof ExecutionError && error.code === "INVALID_INPUT",
   );
 });

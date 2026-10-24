@@ -24,7 +24,7 @@ import { Textarea } from "../../shared/ui/textarea";
 
 type ContractState = "DRAFT" | "ACTIVE" | "CLOSED";
 type ContractSummary = { contractId: string; title: string; state: ContractState };
-type FrozenMeasure = { id: string; name: string; subject: string; unit: "m" | "pcs" };
+type FrozenMeasure = { id: string; name: string; subject: string; unit: string };
 type FrozenContentBasis = {
   planRevisionId: string;
   node: {
@@ -54,11 +54,11 @@ type Task = {
   title: string;
   kind: string;
   plannedQuantity: { measureId: string; value: string } | null;
-  measureUnit?: "m" | "pcs";
+  measureUnit?: string;
 };
 type ContentDocument = {
   nodes: Task[];
-  measures: Array<{ id: string; unit: "m" | "pcs" }>;
+  measures: Array<{ id: string; unit: string }>;
 };
 type Resource = {
   resourceId: string;
