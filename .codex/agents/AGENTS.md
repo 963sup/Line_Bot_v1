@@ -14,6 +14,26 @@
 
 ## Autonomous delegation
 
+### Task authorization and skills
+
+Primary 的派工若已列明 goal、允許路徑、排除範圍與驗收條件，即授權寫入角色在該範圍內完成可逆編輯；預覽後直接實作，不為每個檔案重複向使用者詢問。外部寫入、超出範圍、資料處置或產品語意不明時仍回報 Primary。工具／sandbox 的實際核准視窗由執行環境管理，角色文字不能取消。
+
+下表為既有 `.agents/skills/` 的選用提示，不要求每次載入，也不授予工具或寫入權限。先按 [skill compatibility gate](../../docs/reference/engineering/development-workflow.md#skill-selection-and-compatibility) 檢查實際需求、檔案與可用工具；唯讀角色只採用技能中的唯讀步驟，技能若要求寫入、額外代理或不相容工具，跳過該步並回報缺口。
+
+| Role | 任務相符時可選的技能 |
+| --- | --- |
+| `repository-mapper` | 一般定位直接使用 repository 工具；涉及第一性原理結構檢視才選 `code` |
+| `root-cause-analyst` | `diagnosing-bugs` |
+| `architecture-analyst`、`architecture-decider` | `architecture`；需要比較方案時 `framing-decisions` |
+| `implementation-worker`、`dev6-implementation-worker` | `diagnosing-bugs`（bug）、`shadcn`（UI 元件）、`next-dev-loop`（已啟動的 Next.js runtime） |
+| `diff-reviewer`、`dev6-diff-reviewer` | `differential-review`（安全相關 diff）、`nextjs-code-review`（Next.js diff） |
+| `evidence-verifier` | `spec-to-code-compliance`（文件與實作契約比對） |
+| `acceptance-decider` | `post-patch-validation`（安全修補驗收；只讀已執行證據） |
+| `technical-researcher` | 依具體技術選適用技能；外部事實仍以版本對應的官方來源為準 |
+| `dev6-nextjs-runtime-analyst` | `next-dev-loop`（只採觀察步驟） |
+| `dev6-shadcn-registry-researcher` | `shadcn`（只採查詢與組合建議） |
+| `dev6-validation-runner` | `verification`（實際端到端驗收）、`post-patch-validation`（安全修補） |
+
 Primary 在每個任務開始時主動判斷是否委派；在任務授權與當前工具限制內，符合下列條件就直接使用最少必要角色，不等待使用者再次指定 agent。簡單、Owner 已知且可直接驗收的任務由 Primary 完成。
 
 | 觸發條件 | 行動與交接 |
