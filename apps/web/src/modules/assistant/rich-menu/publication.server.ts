@@ -160,8 +160,12 @@ export async function activateRichMenuBatch(
         Number(SUBMENU_PAGES.some((page) => page === b.page)) -
         Number(SUBMENU_PAGES.some((page) => page === a.page)),
     );
-    for (const menu of activationOrder)
-      mutated = (await setAlias(client, menuAlias(menu.page), menu.richMenuId)) || mutated;
+    for (const menu of activationOrder) {
+      // A provider write may commit even when its response/readback fails.
+      // Treat the entire alias operation as potentially mutating until reconciled.
+      mutated = true;
+      await setAlias(client, menuAlias(menu.page), menu.richMenuId);
+    }
 
     mutated = true;
 
