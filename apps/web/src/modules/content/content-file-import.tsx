@@ -10,6 +10,15 @@ import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select"
 import { Textarea } from "../../shared/ui/textarea";
 
 type FileOption = { fileId: string; name: string };
+
+const sourceUuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+export function pinnedSavedFileSource(query: URLSearchParams) {
+  const runId = query.get("sourceRunId");
+  const revisionId = query.get("sourceRevisionId");
+  return runId && revisionId && sourceUuid.test(runId) && sourceUuid.test(revisionId)
+    ? { runId, revisionId }
+    : null;
+}
 type RunOption = { runId: string; state: string; processorId: string };
 type Observation = {
   id: string;
@@ -75,6 +84,10 @@ export default function ContentFileImport({
   onImport(value: FileContentImportDraft): Promise<void>;
 }) {
   const [files, setFiles] = useState<FileOption[]>([]);
+  const [pinnedSource, setPinnedSource] = useState<{
+    runId: string;
+    revisionId: string;
+  } | null>(null);
   const [filesNext, setFilesNext] = useState<string | null>(null);
   const [fileId, setFileId] = useState("");
   const [runs, setRuns] = useState<RunOption[]>([]);
@@ -154,6 +167,7 @@ export default function ContentFileImport({
     [request],
   );
   useEffect(() => {
+    setPinnedSource(pinnedSavedFileSource(new URLSearchParams(globalThis.window.location.search)));
     void loadFiles();
     return () => {
       epoch.current++;
@@ -197,7 +211,7 @@ export default function ContentFileImport({
       if (ticket === epoch.current && selectionTicket === selectionEpoch.current) setBusy(false);
     }
   }
-  async function openRun(runId: string) {
+  async function openRun(runId: string, exactRevision?: string) {
     const ticket = epoch.current;
     const selectionTicket = ++selectionEpoch.current;
     setRun(null);
@@ -210,11 +224,20 @@ export default function ContentFileImport({
     setBusy(true);
     setError("");
     try {
-      const result = await request({ view: "processing", runId });
+      const result = await request({
+        view: "processing",
+        runId,
+        ...(exactRevision ? { revisionId: exactRevision } : {}),
+      });
       if (ticket !== epoch.current || selectionTicket !== selectionEpoch.current) return;
       const processing = object(result.processing);
-      if (processing.fileId !== fileId || processing.runId !== runId)
-        throw new Error("Selected File ProcessingRun does not match the current File.");
+      if (
+        processing.runId !== runId ||
+        (exactRevision
+          ? processing.revisionId !== exactRevision
+          : processing.fileId !== fileId)
+      )
+        throw new Error("Selected File ProcessingRun does not match the expected source.");
       if (processing.state !== "SAVED" || processing.savedResult === null)
         throw new Error("只有已明確 Save 的 File 處理結果才能建立 Content。");
       const saved = object(processing.savedResult);
@@ -228,6 +251,7 @@ export default function ContentFileImport({
           source: observation.source,
         };
       });
+      if (exactRevision) setFileId(text(processing.fileId));
       setRun({
         runId: text(processing.runId),
         revisionId: text(processing.revisionId),
@@ -315,6 +339,18 @@ export default function ContentFileImport({
           <p className="text-sm text-muted-foreground">
             請先保存或重新載入 Content 手動草稿，完成其他待確認命令後再匯入。
           </p>
+        )}
+        {pinnedSource && (
+          <div className="grid gap-2 rounded-lg border p-3 text-sm">
+            <p>從 File 帶來的 SAVED Run：{pinnedSource.runId}</p>
+            <button
+              type="button"
+              disabled={disabled || busy}
+              onClick={() => void openRun(pinnedSource.runId, pinnedSource.revisionId)}
+            >
+              重新授權讀取指定 SavedResult Revision
+            </button>
+          </div>
         )}
         <Label htmlFor="file-import-file">選擇 File</Label>
         <NativeSelect
