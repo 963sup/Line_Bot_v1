@@ -1,3 +1,4 @@
+import { createPostgresSavedFileResults } from "@line_bot_v1/file/composition/bootstrap/files";
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { PostgresContentPlans } from "../../adapters/outbound/persistence/plans.js";
@@ -7,6 +8,10 @@ export function createPostgresContentPlanDependencies(db: Database = businessDat
   reads: ContentPlanReads;
   transactions: ContentPlanTransactions;
 } {
-  const persistence = new PostgresContentPlans(createPostgresResourceReferenceReader, db);
+  const persistence = new PostgresContentPlans(
+    createPostgresResourceReferenceReader,
+    createPostgresSavedFileResults,
+    db,
+  );
   return { reads: persistence, transactions: persistence };
 }

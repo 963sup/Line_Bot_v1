@@ -4,6 +4,7 @@ import { parseContentPlanCommand } from "../src/application/commands/plans.js";
 import { ContentError } from "../src/domain/error.js";
 import {
   type ContentPlanDocument,
+  importFileContentNode,
   normalizeContentPlanDocument,
   reviseContentPlan,
 } from "../src/domain/plan.js";
@@ -274,6 +275,7 @@ test("Content command normalizes units before exact replay fingerprints", () => 
       measures: document().measures.map((measure) => ({ ...measure, unit: "  組  " })),
     },
   });
+  if (parsed.action !== "initialize") throw new Error("Expected initialize Command.");
   assert.equal(parsed.document.measures[0]?.unit, "組");
   assert.throws(
     () =>
@@ -288,5 +290,92 @@ test("Content command normalizes units before exact replay fingerprints", () => 
         },
       }),
     (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+});
+
+test("Content File import appends one reviewed Work without altering prior documents", () => {
+  const current = reviseContentPlan(null, 0, "initialize", document(), {
+    id: ids[6],
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 1,
+  });
+  const source = {
+    repositoryId: "repo",
+    fileId: ids[0],
+    fileRevisionId: ids[1],
+    fileSha256: "0".repeat(64),
+    runId: ids[2],
+    processingRevisionId: ids[3],
+    observationId: "o1",
+    uncertain: true,
+  };
+  const target = {
+    id: ids[8],
+    parentId: ids[2],
+    kind: "WORK" as const,
+    title: "Cable assemblies",
+    body: "Reviewed against original evidence",
+    measureId: ids[7],
+    quantity: "2.500",
+    newMeasure: {
+      id: ids[7],
+      name: "Assembly count",
+      subject: "Installed",
+      unit: "SET",
+    },
+  };
+  const next = importFileContentNode(current, 1, target, source, {
+    id: ids[7],
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 2,
+  });
+  assert.equal(next.action, "import-file");
+  assert.equal(next.version, 2);
+  assert.deepEqual(next.fileImport, { ...source, nodeId: target.id });
+  assert.equal(next.document.nodes.at(-1)?.plannedQuantity?.value, "2.5");
+  assert.equal(next.document.measures.at(-1)?.unit, "SET");
+  assert.equal(current.document.nodes.length + 1, next.document.nodes.length);
+  assert.equal(current.document.measures.length + 1, next.document.measures.length);
+  assert.equal(
+    current.document.nodes.some((node) => node.id === target.id),
+    false,
+  );
+  assert.throws(
+    () =>
+      importFileContentNode(current, 0, target, source, {
+        id: ids[7],
+        repositoryId: "repo",
+        actorUserId: "owner",
+        at: 2,
+      }),
+    (error) => error instanceof ContentError && error.code === "VERSION_CONFLICT",
+  );
+  assert.throws(
+    () =>
+      importFileContentNode(current, 1, { ...target, parentId: ids[3] }, source, {
+        id: ids[7],
+        repositoryId: "repo",
+        actorUserId: "owner",
+        at: 2,
+      }),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+  assert.throws(
+    () =>
+      importFileContentNode(
+        current,
+        1,
+        target,
+        { ...source, repositoryId: "other" },
+        {
+          id: ids[7],
+          repositoryId: "repo",
+          actorUserId: "owner",
+          at: 2,
+        },
+      ),
+    (error) => error instanceof ContentError && error.code === "SOURCE_INVALID",
   );
 });

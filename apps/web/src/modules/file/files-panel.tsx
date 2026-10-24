@@ -50,6 +50,7 @@ type Observation = {
 type Output = { documentKind: string; observations: Observation[] };
 type Processing = RunSummary & {
   repositoryId: string;
+  revisionId: string;
   processorVersion: string;
   rawResult: Output | null;
   savedResult: Output | null;
@@ -190,6 +191,7 @@ function parseProcessing(value: unknown): Processing {
   return {
     ...parseRun(value),
     repositoryId: stringValue(r.repositoryId),
+    revisionId: stringValue(r.revisionId),
     processorVersion: stringValue(r.processorVersion),
     rawResult: parseOutput(r.rawResult),
     savedResult: parseOutput(r.savedResult),
@@ -271,11 +273,13 @@ export default function FilesPanel({
   liffId,
   ownerLogin,
   repositoryName,
+  contentPath,
   onCanManageChange,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
+  contentPath: string;
   onCanManageChange(value: boolean): void;
 }) {
   const [view, setView] = useState<View | null>(null);
@@ -1050,6 +1054,27 @@ export default function FilesPanel({
                     Repository 導覽前往 Content，先建立並確認 Work／Task， 再由 Contracts 引用精確的
                     Content Revision。
                   </p>
+                </div>
+              )}
+              {processing.state === "SAVED" && saved && view?.canEdit && (
+                <div className="grid gap-2 rounded-lg border p-3 text-sm">
+                  <p className="font-medium">下一步：正式匯入 Content</p>
+                  <p className="text-muted-foreground">
+                    只傳遞 SavedResult Run／Revision 身分；Content 在正式交易中重驗 File
+                    來源與授權，並由你人工選擇 Work／Task、數量和單位。
+                  </p>
+                  <Button
+                    disabled={busy || !!pending}
+                    onClick={() => {
+                      const query = new URLSearchParams({
+                        sourceRunId: processing.runId,
+                        sourceRevisionId: processing.revisionId,
+                      });
+                      globalThis.window.location.assign(`${contentPath}?${query.toString()}`);
+                    }}
+                  >
+                    前往 Content 匯入已保存結果
+                  </Button>
                 </div>
               )}
               {processing.state === "DISCARDED" && (

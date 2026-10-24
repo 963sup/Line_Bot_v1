@@ -27,6 +27,10 @@
     "./domain/file": {
       "types": "./dist/domain/file.d.ts",
       "default": "./dist/domain/file.js"
+    },
+    "./contracts/output/saved-results": {
+      "types": "./dist/contracts/output/saved-results.d.ts",
+      "default": "./dist/contracts/output/saved-results.js"
     }
   },
   "files": [

@@ -81,6 +81,18 @@ function harness(options?: {
             return [basis];
           },
         },
+        savedFileResults: {
+          verifySaved: async () => ({
+            repositoryId: "repo",
+            fileId: ids.subject,
+            fileRevisionId: ids.revision,
+            fileSha256: "0".repeat(64),
+            runId: ids.request,
+            processingRevisionId: ids.revision,
+            observationId: "o1",
+            uncertain: false,
+          }),
+        },
         nextId: () => ids.revision,
         replay: async () =>
           options?.replay ? { requestId: ids.request, revision: options.replay } : null,

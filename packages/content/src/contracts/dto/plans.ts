@@ -43,7 +43,7 @@ export type ContentPlanRevisionDto = Readonly<{
   parentRevisionId: string | null;
   actorUserId: string;
   at: number;
-  action: "initialize" | "replace";
+  action: "initialize" | "replace" | "import-file";
   document: ContentPlanDocumentDto;
 }>;
 

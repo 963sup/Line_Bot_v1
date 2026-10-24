@@ -507,6 +507,9 @@ importers:
 
   packages/content:
     dependencies:
+      '@line_bot_v1/file':
+        specifier: workspace:*
+        version: link:../file
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform

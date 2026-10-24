@@ -27,6 +27,12 @@ Current active User, effective Repository permission and archive state come from
 
 Original File/ProcessingRun revisions remain immutable. Durable Upload Intent precedes external Storage I/O; only exact byte/digest readback permits atomic PostgreSQL Finalize. Exact request retry can recover unknown provider outcomes without overwriting. Version/receipt/current Repository qualification are enforced at the transaction boundary; source read access is rechecked after external object download. Storage service-role credential stays server-only and is never authorization. No paths, raw payloads or credentials appear in errors.
 
+File also publishes a narrow transaction-bound SavedResult reference reader for authorized target
+owners. It rechecks current protected File access, exact SAVED revision and retained observation,
+returning identity evidence without storage credentials or original bytes. Content is the first
+explicit consumer; it owns its own later reviewed import command and audit pin, never a File
+write-through.
+
 File Save is **not** Contract activation, Content plan publication, Resources creation, WBS Baseline publication, legal approval or Execution. Later business import, if requested, must be a distinct user command owned by its target Domain.
 
 ## Source and evidence

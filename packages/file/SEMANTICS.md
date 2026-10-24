@@ -53,6 +53,7 @@ References support the existing status; listed tests are evidence locations, not
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | content | stable-identity+query | file | transaction-recheck+immutable-pin | A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs. |
 | consumes | platform | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority. |
 
