@@ -8,6 +8,7 @@ const mocked = new Set([
   "@line_bot_v1/file/composition/bootstrap/files",
   "@line_bot_v1/file/composition/bootstrap/processors",
   "@line_bot_v1/intelligence/composition/bootstrap/processors",
+  "@line_bot_v1/intelligence/composition/bootstrap/processing",
   "@line_bot_v1/intelligence/composition/bootstrap/document-intake",
   "@line_bot_v1/intelligence/contracts/output/document-intake",
   "@line_bot_v1/intelligence/contracts/output/document-attempts",
@@ -84,7 +85,10 @@ function sourceFor(url) {
   if (specifier === "@line_bot_v1/file/composition/bootstrap/processors")
     return `export const plainTextProcessor = {};`;
   if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processors")
-    return `export function createGeminiFileProcessor() { return {}; }`;
+    return `export const plainTextProcessor = {};
+      export function createGeminiFileProcessor() { return {}; }`;
+  if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processing")
+    return operationSource("file", "createPostgresIntelligenceProcessing");
   if (specifier === "@line_bot_v1/intelligence/contracts/output/document-intake")
     return `export class IntakeError extends Error {
       constructor(code, status) { super("TOP_SECRET"); this.code=code; this.status=status; }

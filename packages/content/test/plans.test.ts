@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import type { ResourceBasis } from "@line_bot_v1/resources/domain/resource-reference";
 import { createContentPlans } from "../src/application/use-cases/plans.js";
 import type { ContentPlanReads, ContentPlanTransactions } from "../src/contracts/output/plans.js";
 import { ContentError } from "../src/domain/error.js";
-import type { ContentPlanRevision } from "../src/domain/plan.js";
+import {
+  type ContentPlanRevision,
+  expandContractDocument,
+  reviseContentPlan,
+} from "../src/domain/plan.js";
 
 const ids = {
   request: "11111111-1111-4111-8111-111111111111",
@@ -13,6 +18,81 @@ const ids = {
   resource: "44444444-4444-4444-8444-444444444444",
   resourceRevision: "55555555-5555-4555-8555-555555555555",
 };
+
+function stableUuid(seed: string): string {
+  const bytes = createHash("sha256").update(seed).digest("hex").slice(0, 32).split("");
+  bytes[12] = "5";
+  bytes[16] = ((Number.parseInt(bytes[16] ?? "0", 16) & 3) | 8).toString(16);
+  const hex = bytes.join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+test("whole Contract revision gets deterministic Content identities and complete row disposition", () => {
+  const context = {
+    id: ids.revision,
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 10,
+    stableId: stableUuid,
+  };
+  const current = reviseContentPlan(
+    null,
+    0,
+    "initialize",
+    {
+      schemaVersion: 1,
+      measures: [],
+      nodes: [],
+      resourcePins: [],
+    },
+    context,
+  );
+  const expansion = {
+    documentId: "66666666-6666-4666-8666-666666666666",
+    revisionId: "77777777-7777-4777-8777-777777777777",
+    sourceFileId: "88888888-8888-4888-8888-888888888888",
+    sourceFileRevisionId: "99999999-9999-4999-8999-999999999999",
+    sourceFileSha256: "a".repeat(64),
+    title: "Purchase order",
+    lines: Array.from({ length: 54 }, (_, index) => {
+      const sourceRowId = `row-${index + 1}`;
+      if (index >= 48)
+        return {
+          sourceRowId,
+          description: null,
+          quantity: null,
+          unit: null,
+          category: index % 2 ? "other" : "freight",
+          uncertain: false,
+        };
+      return {
+        sourceRowId,
+        description: `Line ${index + 1}`,
+        quantity: "2",
+        unit: "PCS",
+        category: index % 2 ? "service" : "material",
+        uncertain: false,
+      };
+    }),
+  } as const;
+  const first = expandContractDocument(current, 1, expansion, {
+    ...context,
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  });
+  const replay = expandContractDocument(current, 1, expansion, {
+    ...context,
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  });
+  assert.deepEqual(first.document, replay.document);
+  assert.equal(first.contractDocumentImport?.rows.length, 54);
+  assert.equal(
+    first.contractDocumentImport?.rows.filter((row) => row.disposition === "COMMERCIAL_ONLY")
+      .length,
+    6,
+  );
+  assert.equal(first.document.nodes.filter((node) => node.kind === "WORK").length, 48);
+  assert.equal(first.document.nodes.filter((node) => node.kind === "TASK").length, 48);
+});
 
 const command = {
   action: "initialize",
@@ -81,23 +161,17 @@ function harness(options?: {
             return [basis];
           },
         },
-        savedProcessing: {
-          verifySaved: async () => ({
-            repositoryId: "repo",
-            fileId: ids.subject,
-            fileRevisionId: ids.revision,
-            fileSha256: "0".repeat(64),
-            runId: ids.request,
-            processingRevisionId: ids.revision,
-            observationId: "o1",
-            uncertain: false,
-          }),
+        contractDocuments: {
+          readConfirmed: async () => {
+            throw new Error("Unexpected Contract read.");
+          },
         },
         nextId: () => ids.revision,
         replay: async () =>
           options?.replay ? { requestId: ids.request, revision: options.replay } : null,
         plans: {
           load: async () => null,
+          hasContractDocumentImport: async () => false,
           save: async (revision) => {
             saved.push(revision);
           },

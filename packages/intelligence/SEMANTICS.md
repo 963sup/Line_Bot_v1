@@ -23,23 +23,29 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | IntelligenceDocumentIntakeAttempt | intelligence-document-intake-attempt | authoritative | current | Durable technical intake-attempt state for one source-qualified, target-intent fingerprint. It records only source identity, target intent, lifecycle state and target receipt reference; it never stores the extracted candidate or becomes Contract business truth. |
+| IntelligenceProcessingCommandReceipt | intelligence-processing-command-receipt | authoritative | current | Immutable Intelligence actor/request fingerprint and exact processing revision receipt; it has no File upload request namespace. |
+| IntelligenceProcessingRevision | intelligence-processing-revision | authoritative | current | Immutable Intelligence-owned processing lifecycle revision containing provider identity, untrusted raw output, optional explicitly saved output, bounded edits and failure evidence. |
+| IntelligenceProcessingRun | intelligence-processing-run | authoritative | current | Explicit document-understanding operation against one immutable File revision; its head selects one fenced Intelligence processing revision. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Consumes | Intent |
 | --- | --- | --- | --- | --- |
 | intake-contract-document | required | implemented | intelligence-file-source, intelligence-contract-document-intake, intelligence-platform-persistence | Read an authorized File source, extract a complete purchase-order candidate using the target owner's schema, and submit it through the target's public SAVE command. |
+| manage-file-result | required | implemented | repository-intelligence-processing-scope, intelligence-platform-persistence | A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners. |
+| run-file-processing | required | implemented | intelligence-file-source, repository-intelligence-processing-scope, intelligence-platform-persistence | Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save. |
 | understand-file-document | required | implemented | file-intelligence-processor-contract | Map explicitly supplied PDF or image evidence through a configured Gemini model into bounded, source-located candidate observations without approving, persisting or importing business facts. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| consumes | file | reference | file | pure-value | Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority. |
+| consumes | file | query | file | current-source-access | Intelligence reads an authorized exact File revision and bytes through File's source reader. File retains source access and storage authority; Intelligence owns processing lifecycle. |
 | consumes | contract | command | contract | idempotent-command | Contract supplies the versioned purchase-order target schema and public candidate command. Intelligence submits only an untrusted SAVE candidate; Contract owns validation, authorization, version/replay checks, durable revision and confirmation. |
-| provides | file | query | intelligence | current-source-access | File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity. |
+| provides | file | reference | intelligence | immutable-history | Retired relationship; File no longer invokes Intelligence or owns processing lifecycle. |
 | consumes | file | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
 | consumes | platform | query | platform | transaction-bound | Intelligence consumes neutral PostgreSQL transaction and value-decoding mechanisms for its technical attempt record. It retains only attempt recovery state; Contract remains the owner of candidate and business revision truth. |
+| consumes | repository | query | repository | transaction-recheck | Intelligence processing mutations recheck active User, current Repository write permission and archive state inside their transaction; Repository retains authorization authority. |
 
 ## Tactical Model Boundary
 

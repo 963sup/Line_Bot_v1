@@ -4,7 +4,6 @@ import test from "node:test";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
-import { plainTextProcessor } from "../src/adapters/outbound/processing/plain-text.js";
 import { createFiles } from "../src/application/use-cases/files.js";
 import { createFileReclaimer } from "../src/application/use-cases/reclaim.js";
 import {
@@ -13,11 +12,11 @@ import {
   createPostgresFileRevisionQualifier,
 } from "../src/composition/bootstrap/files.js";
 import type { FileObjectRemoval, FileObjectStore } from "../src/contracts/output/object-store.js";
-import type { FileProcessor } from "../src/contracts/output/processor.js";
 import { FileError } from "../src/domain/error.js";
 
 const code = (expected: string) => (error: unknown) =>
-  error instanceof FileError && error.code === expected;
+  (error instanceof FileError && error.code === expected) ||
+  (error instanceof Error && error.message === expected);
 const bytes = new TextEncoder().encode("Quantity: 26 SET");
 function deferred() {
   let resolve: (() => void) | undefined;
@@ -69,10 +68,11 @@ function memoryStore(): FileObjectStore & FileObjectRemoval {
   };
 }
 function intake(db: Database, objects: FileObjectStore) {
-  return createFiles({ ...createPostgresFileDependencies(db, objects), now: () => 100 });
+  const files = createFiles({ ...createPostgresFileDependencies(db, objects), now: () => 100 });
+  return files;
 }
 
-test("PostgreSQL File intake preserves protected objects, explicit results, exact replay and historical sources", async (t) => {
+test("PostgreSQL File storage preserves protected objects, exact replay and historical source revisions", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await seed(db);
@@ -152,89 +152,7 @@ test("PostgreSQL File intake preserves protected objects, explicit results, exac
     (await files.source("owner", "repo", c.fileId, first.file.revisionId)).bytes,
     bytes,
   );
-  const processing = {
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 0,
-    runId: randomUUID(),
-    fileId: c.fileId,
-    fileRevisionId: first.file.revisionId,
-  };
-  let calls = 0;
-  const counted: FileProcessor = {
-    ...plainTextProcessor,
-    async run(input) {
-      calls++;
-      return plainTextProcessor.run(input);
-    },
-  };
-  const extracted = await files.run("owner", processing, counted);
-  assert.equal(extracted.processing.state, "READY");
-  assert.equal(extracted.processing.version, 2);
-  assert.equal(extracted.processing.fileSha256, first.file.sha256);
-  assert.equal((await files.run("owner", processing, counted)).processing.state, "RUNNING");
-  assert.equal(calls, 1);
-  assert.equal((await files.processing("owner", "repo", processing.runId)).state, "READY");
-  const currentRuns = await files.processingsForFile("owner", "repo", c.fileId);
-  assert.equal(currentRuns.runs.length, 1);
-  assert.equal(currentRuns.runs[0]?.runId, processing.runId);
-  assert.equal(currentRuns.runs[0]?.state, "READY");
-  assert.equal(currentRuns.next, null);
-  await assert.rejects(files.processingsForFile("outsider", "repo", c.fileId), code("FORBIDDEN"));
-  await assert.rejects(files.processingsForFile("owner", "other", c.fileId), code("NOT_FOUND"));
-  const observation = extracted.processing.rawResult?.observations[0];
-  assert.ok(observation);
-  const savedCommand = {
-    action: "save",
-    repositoryId: "repo",
-    runId: processing.runId,
-    requestId: randomUUID(),
-    expectedVersion: 2,
-    edits: [{ observationId: observation.id, action: "replace", value: "Quantity: 26 PCS" }],
-  };
-  const saved = await files.result("owner", savedCommand);
-  assert.equal(saved.processing.state, "SAVED");
-  assert.equal(saved.processing.savedResult?.observations[0]?.value, "Quantity: 26 PCS");
-  assert.equal(saved.processing.rawResult?.observations[0]?.value, "Quantity: 26 SET");
-  assert.deepEqual(await files.result("owner", savedCommand), saved);
-  assert.equal(
-    (await files.processing("owner", "repo", processing.runId, extracted.processing.revisionId))
-      .state,
-    "READY",
-  );
-  await assert.rejects(
-    files.result("owner", {
-      action: "discard",
-      repositoryId: "repo",
-      runId: processing.runId,
-      requestId: randomUUID(),
-      expectedVersion: 3,
-    }),
-    code("LIFECYCLE_CONFLICT"),
-  );
-  const second = await files.run(
-    "owner",
-    { ...processing, runId: randomUUID(), requestId: randomUUID() },
-    plainTextProcessor,
-  );
-  const discarded = await files.result("owner", {
-    action: "discard",
-    repositoryId: "repo",
-    runId: second.processing.runId,
-    requestId: randomUUID(),
-    expectedVersion: 2,
-  });
-  assert.equal(discarded.processing.state, "DISCARDED");
-  assert.equal(discarded.processing.savedResult, null);
-  const statuses = (await files.processingsForFile("owner", "repo", c.fileId)).runs;
-  assert.deepEqual(new Set(statuses.map((run) => run.state)), new Set(["SAVED", "DISCARDED"]));
-  assert.ok(discarded.processing.rawResult);
-  for (const table of [
-    "file_revisions",
-    "file_upload_intents",
-    "file_processing_revisions",
-    "file_commands",
-  ])
+  for (const table of ["file_revisions", "file_upload_intents", "file_commands"])
     await assert.rejects(db.transaction((sql) => sql.query(`DELETE FROM ${table}`)));
   await assert.rejects(
     db.transaction((sql) =>
@@ -249,7 +167,7 @@ test("PostgreSQL File intake preserves protected objects, explicit results, exac
   );
 });
 
-test("failed receipts roll back metadata and heads; revocation is checked before replay and completion", async (t) => {
+test("failed File upload receipts roll back metadata and revocation blocks upload completion", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   await seed(db);
@@ -295,51 +213,10 @@ test("failed receipts roll back metadata and heads; revocation is checked before
   await pg.query(
     "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES('repo','member','write',1)",
   );
-  const processing = {
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 0,
-    runId: randomUUID(),
-    fileId: c.fileId,
-    fileRevisionId: first.file.revisionId,
-  };
-  const revoking: FileProcessor = {
-    ...plainTextProcessor,
-    async run(input) {
-      await pg.query(
-        "DELETE FROM app_private.repository_access WHERE repository_id='repo' AND principal_id='member'",
-      );
-      return plainTextProcessor.run(input);
-    },
-  };
-  await assert.rejects(files.run("member", processing, revoking));
-  const stranded = await files.processing("owner", "repo", processing.runId);
-  assert.equal(stranded.state, "RUNNING");
-  const recovered = await files.run(
-    "owner",
-    { ...processing, requestId: randomUUID(), expectedVersion: 1 },
-    plainTextProcessor,
-  );
-  assert.equal(recovered.processing.state, "READY");
-  assert.equal(recovered.processing.version, 3);
-  const failing: FileProcessor = {
-    ...plainTextProcessor,
-    async run() {
-      throw new Error("sensitive provider failure");
-    },
-  };
-  const failed = await files.run(
-    "owner",
-    { ...processing, requestId: randomUUID(), runId: randomUUID() },
-    failing,
-  );
-  assert.equal(failed.processing.state, "FAILED");
-  assert.equal(failed.processing.failure, "PROCESSING_UNAVAILABLE");
-  assert.equal(JSON.stringify(failed).includes("sensitive"), false);
 });
 
 const url = process.env.CAPABILITY_TEST_DATABASE_URL;
-test("native sessions serialize duplicate upload and fence obsolete external completion", {
+test("native sessions serialize duplicate File uploads and fence obsolete external completion", {
   skip: !url && !process.env.CI,
 }, async (t) => {
   assert.ok(url, "CI requires its disposable PostgreSQL service");
@@ -363,39 +240,6 @@ test("native sessions serialize duplicate upload and fence obsolete external com
     files.upload("owner", { ...c, requestId: randomUUID(), expectedVersion: 1 }, bytes),
   ]);
   assert.equal(edits.filter((r) => r.status === "fulfilled").length, 1);
-  const started = deferred();
-  const release = deferred();
-  const slow: FileProcessor = {
-    ...plainTextProcessor,
-    async run(input) {
-      started.resolve();
-      await release.promise;
-      return plainTextProcessor.run(input);
-    },
-  };
-  const ec = {
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: 0,
-    runId: randomUUID(),
-    fileId: c.fileId,
-    fileRevisionId: uploads[0].file.revisionId,
-  };
-  const old = files.run("owner", ec, slow);
-  const oldFailure = assert.rejects(old, code("VERSION_CONFLICT"));
-  await started.promise;
-  try {
-    const recovered = await files.run(
-      "owner",
-      { ...ec, requestId: randomUUID(), expectedVersion: 1 },
-      plainTextProcessor,
-    );
-    assert.equal(recovered.processing.version, 3);
-  } finally {
-    release.resolve();
-  }
-  await oldFailure;
-  assert.equal((await files.processing("owner", "repo", ec.runId)).version, 3);
 });
 
 test("lost Storage result leaves an invisible durable intent and exact retry finalizes it", async (t) => {
@@ -427,23 +271,6 @@ test("lost Storage result leaves an invisible durable intent and exact retry fin
   assert.equal(pending.uploads[0]?.sha256.length, 64);
   await assert.rejects(files.pendingUploads("member", "repo"), code("FORBIDDEN"));
   await assert.rejects(files.pendingUploads("outsider", "repo"), code("FORBIDDEN"));
-  // An uncommitted upload reserves its actor/request ID globally, not just for uploads.
-  // Reusing the same request as a ProcessingRun must fail before any provider I/O.
-  await assert.rejects(
-    files.run(
-      "owner",
-      {
-        repositoryId: "repo",
-        runId: randomUUID(),
-        requestId: commandInput.requestId,
-        expectedVersion: 0,
-        fileId: commandInput.fileId,
-        fileRevisionId: randomUUID(),
-      },
-      plainTextProcessor,
-    ),
-    code("REQUEST_ID_REUSED"),
-  );
   const committed = await files.upload("owner", commandInput, bytes);
   assert.equal(committed.file.version, 1);
   assert.equal((await files.list("owner", "repo")).files.length, 1);

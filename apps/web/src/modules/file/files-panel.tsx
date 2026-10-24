@@ -328,6 +328,10 @@ export default function FilesPanel({
       if (ticket !== epoch.current) throw new StaleRequest();
       if (!session) throw new Error("請完成 LINE 登入後重試。");
       const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
+      if (mutation && (mutation.kind === "run" || mutation.kind === "result"))
+        search.set("ownerKind", "intelligence");
+      if (!mutation && ["runs", "processing"].includes(query.view ?? ""))
+        search.set("ownerKind", "intelligence");
       const headers: Record<string, string> = { "X-App-Session-Generation": session };
       let body: BodyInit | undefined;
       if (mutation?.kind === "upload") {

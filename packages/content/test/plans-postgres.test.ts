@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
-import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
-import { plainTextProcessor } from "@line_bot_v1/file/composition/bootstrap/processors";
-import { createPostgresProcessingHistory } from "@line_bot_v1/intelligence/composition/bootstrap/processing-history";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
@@ -15,10 +11,7 @@ import type { ResourceReferenceReader } from "@line_bot_v1/resources/contracts/o
 import { PostgresContentPlans } from "../src/adapters/outbound/persistence/plans.js";
 import { createContentPlans } from "../src/application/use-cases/plans.js";
 import { createPostgresContentPlanReferenceReader } from "../src/composition/bootstrap/plan-references.js";
-import { createPostgresContentPlanDependencies } from "../src/composition/bootstrap/plans.js";
 import { ContentError } from "../src/domain/error.js";
-
-type FileObjectStore = NonNullable<Parameters<typeof createPostgresFileDependencies>[1]>;
 
 async function seedRepository(db: Database, repositoryId = "repo") {
   await db.transaction(async (sql) => {
@@ -159,7 +152,11 @@ test("Content persists complete revisions, replay, pins and exact historical ref
   });
   const persistence = new PostgresContentPlans(
     (sql) => countingResourceReader(calls, createPostgresResourceReferenceReader(sql)),
-    createPostgresProcessingHistory,
+    () => ({
+      readConfirmed: async () => {
+        throw new Error("Unexpected Contract read.");
+      },
+    }),
     db,
   );
   const plans = createContentPlans({
@@ -313,7 +310,11 @@ test("independent PostgreSQL sessions allow only one competing Content initializ
   await seedRepository(db);
   const persistence = new PostgresContentPlans(
     () => countingResourceReader({ count: 0 }),
-    createPostgresProcessingHistory,
+    () => ({
+      readConfirmed: async () => {
+        throw new Error("Unexpected Contract read.");
+      },
+    }),
     db,
   );
   const plans = createContentPlans({ reads: persistence, transactions: persistence, now: () => 1 });
@@ -328,136 +329,4 @@ test("independent PostgreSQL sessions allow only one competing Content initializ
   ]);
   assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
   assert.equal(results.filter((result) => result.status === "rejected").length, 1);
-});
-
-test("Content imports one verified SAVED File observation and pins immutable provenance", async (t) => {
-  const { pg, db } = await postgresFixture();
-  t.after(() => pg.close());
-  await seedRepository(db);
-  const stored = new Map<string, Uint8Array>();
-  const objects: FileObjectStore = {
-    async putVerified(revision, bytes) {
-      stored.set(revision.id, Uint8Array.from(bytes));
-    },
-    async readVerified(revision) {
-      const bytes = stored.get(revision.id);
-      if (!bytes) throw new Error("Test File object was not found.");
-      return Uint8Array.from(bytes);
-    },
-  };
-  const files = createFiles({ ...createPostgresFileDependencies(db, objects), now: () => 10 });
-  const fileId = randomUUID();
-  const uploaded = await files.upload(
-    "owner",
-    {
-      repositoryId: "repo",
-      fileId,
-      requestId: randomUUID(),
-      expectedVersion: 0,
-      name: "agreement.txt",
-      mediaType: "text/plain",
-    },
-    new TextEncoder().encode("Assembly quantity: 26 SET"),
-  );
-  const runId = randomUUID();
-  const ready = await files.run(
-    "owner",
-    {
-      repositoryId: "repo",
-      runId,
-      fileId,
-      fileRevisionId: uploaded.file.revisionId,
-      requestId: randomUUID(),
-      expectedVersion: 0,
-    },
-    plainTextProcessor,
-  );
-  assert.equal(ready.processing.state, "READY");
-  const saved = await files.result("owner", {
-    action: "save",
-    repositoryId: "repo",
-    runId,
-    requestId: randomUUID(),
-    expectedVersion: ready.processing.version,
-    edits: [],
-  });
-  assert.equal(saved.processing.state, "SAVED");
-  const observation = saved.processing.savedResult?.observations[0];
-  assert.ok(observation);
-  const plans = createContentPlans({
-    ...createPostgresContentPlanDependencies(db, createPostgresProcessingHistory),
-    now: () => 100,
-  });
-  const initial = contentCommand("repo");
-  const created = await plans.execute("owner", {
-    ...initial.command,
-    document: { ...initial.command.document, resourcePins: [] },
-  });
-  const workId = randomUUID();
-  const measureId = randomUUID();
-  const command = {
-    action: "import-file",
-    repositoryId: "repo",
-    requestId: randomUUID(),
-    expectedVersion: created.revision.version,
-    confirmedDisclosure: true,
-    source: {
-      runId,
-      processingRevisionId: saved.processing.revisionId,
-      observationId: observation.id,
-    },
-    target: {
-      id: workId,
-      parentId: initial.ids.subobject,
-      kind: "WORK",
-      title: "Reviewed installation work",
-      body: "User-verified plan basis",
-      measureId,
-      quantity: "26.000",
-      newMeasure: { id: measureId, name: "Assemblies", subject: "Installed", unit: "SET" },
-    },
-  } as const;
-  const imported = await plans.execute("owner", command);
-  assert.equal(imported.revision.version, created.revision.version + 1);
-  assert.equal(imported.revision.action, "import-file");
-  assert.equal(imported.revision.document.nodes.at(-1)?.id, workId);
-  assert.equal(imported.revision.document.nodes.at(-1)?.plannedQuantity?.value, "26");
-  assert.equal(imported.revision.document.measures.at(-1)?.unit, "SET");
-  assert.equal(Object.hasOwn(imported.revision, "fileImport"), false);
-  assert.deepEqual(await plans.execute("owner", command), imported);
-  const storedSource = (
-    await db.transaction((sql) =>
-      sql.query("SELECT file_import FROM content_plan_revisions WHERE id=$1", [
-        imported.revision.revisionId,
-      ]),
-    )
-  ).rows[0]?.file_import;
-  assert.deepEqual(storedSource, {
-    repositoryId: "repo",
-    fileId,
-    fileRevisionId: uploaded.file.revisionId,
-    fileSha256: uploaded.file.sha256,
-    runId,
-    processingRevisionId: saved.processing.revisionId,
-    observationId: observation.id,
-    uncertain: observation.uncertain,
-    nodeId: workId,
-  });
-  assert.equal((await plans.read("owner", { repositoryId: "repo" })).version, 2);
-  assert.equal(
-    (await plans.history("owner", { repositoryId: "repo" })).revisions[0]?.document.nodes.at(-1)
-      ?.id,
-    workId,
-  );
-  await assert.rejects(
-    plans.execute("owner", {
-      ...command,
-      requestId: randomUUID(),
-      expectedVersion: 2,
-      source: { ...command.source, processingRevisionId: ready.processing.revisionId },
-      target: { ...command.target, id: randomUUID() },
-    }),
-    (error) => error instanceof ContentError && error.code === "NOT_FOUND",
-  );
-  assert.equal((await plans.read("owner", { repositoryId: "repo" })).version, 2);
 });

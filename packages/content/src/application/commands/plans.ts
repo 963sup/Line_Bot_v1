@@ -21,26 +21,12 @@ export type ContentPlanCommand =
       document: ContentPlanDocument;
     }>
   | Readonly<{
-      action: "import-file";
+      action: "import-contract-document";
       repositoryId: string;
       requestId: string;
       expectedVersion: number;
       confirmedDisclosure: true;
-      source: Readonly<{
-        runId: string;
-        processingRevisionId: string;
-        observationId: string;
-      }>;
-      target: Readonly<{
-        id: string;
-        parentId: string;
-        kind: "WORK" | "TASK";
-        title: string;
-        body: string;
-        measureId: string;
-        quantity: string;
-        newMeasure?: ContentMeasure;
-      }>;
+      contract: Readonly<{ documentId: string; revisionId: string }>;
     }>;
 
 function invalid(message = "Invalid Content plan command."): never {
@@ -170,58 +156,26 @@ export function parseContentPlanCommand(input: unknown): ContentPlanCommand {
     return invalid();
   const repositoryId = value.repositoryId;
   const requestId = id(value.requestId);
-  if (value.action === "import-file") {
+  if (value.action === "import-contract-document") {
     exact(value, [
       "action",
       "repositoryId",
       "requestId",
       "expectedVersion",
       "confirmedDisclosure",
-      "source",
-      "target",
+      "contract",
     ]);
     if (expectedVersion === 0 || value.confirmedDisclosure !== true)
-      return invalid("Explicit reviewed Content disclosure is required.");
-    const source = object(value.source);
-    exact(source, ["runId", "processingRevisionId", "observationId"]);
-    const observationId = text(source.observationId);
-    if (!/^[A-Za-z0-9_-]{1,80}$/.test(observationId)) return invalid();
-    const target = object(value.target);
-    exact(target, [
-      "id",
-      "parentId",
-      "kind",
-      "title",
-      "body",
-      "measureId",
-      "quantity",
-      "newMeasure",
-    ]);
-    if (target.kind !== "WORK" && target.kind !== "TASK") return invalid();
-    const quantity = text(target.quantity);
-    if (quantity.length > 32) return invalid();
-    const newMeasure = target.newMeasure === undefined ? undefined : measure(target.newMeasure);
+      return invalid("Explicit whole-document Content disclosure is required.");
+    const contract = object(value.contract);
+    exact(contract, ["documentId", "revisionId"]);
     return {
-      action: "import-file",
+      action: "import-contract-document",
       repositoryId,
       requestId,
       expectedVersion,
       confirmedDisclosure: true,
-      source: {
-        runId: id(source.runId),
-        processingRevisionId: id(source.processingRevisionId),
-        observationId,
-      },
-      target: {
-        id: id(target.id),
-        parentId: id(target.parentId),
-        kind: target.kind,
-        title: text(target.title),
-        body: text(target.body),
-        measureId: id(target.measureId),
-        quantity,
-        ...(newMeasure ? { newMeasure } : {}),
-      },
+      contract: { documentId: id(contract.documentId), revisionId: id(contract.revisionId) },
     };
   }
   exact(value, ["action", "repositoryId", "requestId", "expectedVersion", "document"]);

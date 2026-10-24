@@ -1,17 +1,16 @@
 # File constraints
 
-Inherits [packages](../AGENTS.md). [File owner](../../docs/owners/file.md) owns protected original File revisions, explicitly user-triggered ProcessingRuns and immutable Saved Results.
+Inherits [packages](../AGENTS.md). [File owner](../../docs/owners/file.md) owns protected original File revisions and bytes. Intelligence owns ProcessingRuns, processing results and their history.
 
-- Upload and File List never invoke processors. Run requires an explicit File revision, supported processor, version and request identity. No automatic OCR, AI, fallback, Save, import or new Run.
-- Parser, OCR and AI implement the same FileProcessor capability; unavailable formats fail closed. Never force a text-only intermediate stage that discards tables or image evidence.
-- File owns the processor Port, exact source qualification, output validation and ProcessingRun lifecycle. Provider-specific integrations are injected by application hosts; File never imports a concrete provider Adapter or transfers durable authority to it.
-- Processor output is untrusted Preview. Browser Edit stays local until Save. Save records optional bounded edits and immutable SavedResult; Discard creates no SavedResult. RawResult, source location and uncertainty cannot be rewritten.
+- Upload and File List never invoke processors. Processing commands belong to Intelligence and require an explicit File revision, supported processor, version and request identity.
+- File owns exact source qualification and byte reads through its public source contract. Intelligence owns Processor capability, output validation, ProcessingRun lifecycle, results and processing history.
+- Processor output is untrusted Preview. Browser Edit stays local until Intelligence Save. Save records optional bounded edits and immutable SavedResult; Discard creates no SavedResult. RawResult, source location and uncertainty cannot be rewritten.
 - Current Repository permission must be rechecked on read, replay and completion. Public visibility is not File evidence authorization.
-- A retry of the same RunId must preserve exact original FileRevision and Processor id/version/kind; changing the processor is a new explicit Run.
+- A retry of the same RunId must preserve exact original FileRevision and Processor id/version/kind; changing the processor is a new explicit Run. Current historical rows remain read-only until an explicit controlled retention cutover.
 - Durable Upload Intent commits before private Storage I/O. Only exact object readback allows a transactional FileRevision/head/receipt Finalize; there is no second PostgreSQL bytea store. Explicit identical-request retry recovers unknown outcomes; never overwrite objects.
 - General File/Web dependency wiring must expose only FileObjectStore put/read; the destructive FileObjectRemoval Port and global FileReclamation Port belong exclusively to trusted-operator composition. Both reuse one technical Storage Adapter without granting delete access to ordinary File application contracts.
 - An operator-supplied cutoff plus seven-day database-clock inactivity gate permits only never-committed Intents to be quarantined under the existing request/File locks. Object removal needs independent absence readback; each successful observation refreshes the durable reconciliation cursor because an unknown write may complete later. Failure leaves durable quarantine for explicit retry. No automatic deletion and no exposure via Web/LINE.
-- The transaction-bound saved-result reference exposes only exact File/Processing revision and observation identities after current protected access and SAVED-state verification; consumers cannot query private File tables or turn SavedResult into an implicit downstream mutation.
+- Historical processing relations remain as retained evidence until a separately controlled migration/retention cutover. No new File processing writes are allowed; consumers use Intelligence's public contracts.
 - Processing intent commits before provider I/O and completion is fenced by attemptId. Unknown provider outcome cannot be blindly retried.
 - Preserve tenant isolation, version conflict, exact replay, historical evidence, rollback and minimal disclosure. File never mutates Contract/Content/Resources/Project/WBS/Execution.
 - Secrets, original payloads, provider output and personal data never enter diagnostic logs.

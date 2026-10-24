@@ -11,6 +11,7 @@ import {
   describeFastPlan,
   detectFastScope,
   fastTaskArgs,
+  selectedValidationGroups,
   selectValidationStages,
   shouldRunFast,
   validationGroups,
@@ -59,7 +60,16 @@ test("in-process diagnostics preserve the full report and bound stderr excerpt",
 });
 
 function git(directory, args) {
-  execFileSync("git", args, { cwd: directory, stdio: "ignore" });
+  execFileSync("git", args, {
+    cwd: directory,
+    stdio: "ignore",
+    env: {
+      ...process.env,
+      HOME: directory,
+      USERPROFILE: directory,
+      GIT_CONFIG_NOSYSTEM: "1",
+    },
+  });
 }
 
 test("local and CI validation bound aggregate test workers without changing scope or CI semantics", (t) => {
@@ -81,7 +91,7 @@ test("local and CI validation bound aggregate test workers without changing scop
   );
   for (const ci of ["true", "false", undefined]) {
     for (const [mode, selection] of [
-      [["--group", "typecheck-test"], []],
+      [["--fast", "--group", "typecheck-test"], ["--affected"]],
       [[], []],
       [["--fast"], ["--affected"]],
       [["--fast", "--filter=@line_bot_v1/team"], ["--filter=@line_bot_v1/team"]],
@@ -137,7 +147,10 @@ test("fast plan explains skips and conservative workspace selection without chan
     if (scope?.schemaAffected || scope?.hasUntrackedFiles) {
       assert.equal(product.selection, "all workspaces");
     }
-    assert.equal(plan.stages.find((stage) => stage.task === "build").run, false);
+    assert.equal(
+      plan.stages.find((stage) => stage.task === "build").run,
+      shouldRunFast("build", scope),
+    );
   }
   const schema = classifyChangedFiles(["supabase/schemas/600_repositories.sql"]);
   const filtered = describeFastPlan(stages, schema, ["--filter=@line_bot_v1/account"], true);
@@ -278,6 +291,24 @@ test("fast scope detection falls back to all stages when Git inventory fails", (
   const scope = detectFastScope({ directory, baseRef: null });
   assert.equal(scope, null);
   assert.equal(shouldRunFast("typecheck+test", scope), true);
+});
+
+test("CI compares an exact base SHA instead of requiring a remote branch name", (t) => {
+  const directory = gitFixture(t);
+  const baseline = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: directory,
+    encoding: "utf8",
+  }).trim();
+  writeFileSync(join(directory, "README.md"), "changed from the CI base\n");
+  git(directory, ["add", "README.md"]);
+  git(directory, ["commit", "--quiet", "-m", "documentation change"]);
+
+  assert.deepEqual(detectFastScope({ directory, baseRef: null, baseSha: baseline }), {
+    codeAffected: false,
+    docsAffected: true,
+    schemaAffected: false,
+    toolingAffected: false,
+  });
 });
 
 test("schema-only changes run schema, remote-contract, architecture and product test gates", () => {
@@ -489,4 +520,16 @@ test("CI groups partition validation and reject unknown or unassigned stages", (
     selectValidationStages(stages, "typecheck-test").map(([task]) => task),
     ["typecheck+test"],
   );
+});
+
+test("changed-owner groups retain universal lockfile coverage and select affected gates", () => {
+  assert.deepEqual(selectedValidationGroups(classifyChangedFiles(["docs/README.md"])), [
+    "tooling",
+    "docs",
+  ]);
+  assert.deepEqual(
+    selectedValidationGroups(classifyChangedFiles(["packages/account/src/domain.ts"])),
+    ["tooling", "lint", "architecture", "deadcode", "typecheck-test", "build"],
+  );
+  assert.deepEqual(selectedValidationGroups(null), Object.keys(validationGroups));
 });

@@ -1,6 +1,6 @@
 import type { GenerateContentParameters } from "@google/genai";
-import type { FileProcessor } from "@line_bot_v1/file/contracts/output/processor";
 import { FileError } from "@line_bot_v1/file/domain/error";
+import type { IntelligenceProcessor } from "../../../application/use-cases/processing.js";
 
 const mediaTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
 
@@ -9,7 +9,7 @@ export function geminiFileProcessor(config: {
     generateContent(parameters: GenerateContentParameters): Promise<{ text?: string | undefined }>;
   };
   model: string;
-}): FileProcessor {
+}): IntelligenceProcessor {
   if (!config.model.trim())
     throw new FileError(503, "Extraction model is not configured.", "EXTRACTION_UNAVAILABLE");
   return {
@@ -19,7 +19,7 @@ export function geminiFileProcessor(config: {
     supports: (type) => mediaTypes.has(type),
     async run({ revision, bytes }) {
       if (!mediaTypes.has(revision.mediaType))
-        throw new FileError(422, "Unsupported media type.", "UNSUPPORTED_MEDIA");
+        throw new FileError(415, "Media type is not supported.", "UNSUPPORTED_MEDIA");
       const controller = new AbortController();
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
@@ -101,7 +101,9 @@ export function geminiFileProcessor(config: {
           new Promise<never>((_, reject) => {
             timer = setTimeout(() => {
               controller.abort();
-              reject(new FileError(503, "Extraction timed out.", "EXTRACTION_UNAVAILABLE"));
+              reject(
+                new FileError(503, "Extraction operation timed out.", "EXTRACTION_UNAVAILABLE"),
+              );
             }, 20000);
           }),
         ]);

@@ -13,7 +13,7 @@ create table app_private.content_plan_revisions (
   parent_revision_id uuid,
   actor_user_id text not null references app_private.users(id),
   at bigint not null,
-  action text not null check(action in ('initialize','replace','import-file')),
+  action text not null check(action in ('initialize','replace','import-file','import-contract-document')),
   document jsonb not null check(
     jsonb_typeof(document)='object'
     and document->>'schemaVersion'='1'
@@ -25,6 +25,7 @@ create table app_private.content_plan_revisions (
   ),
   -- Immutable Content-owned evidence pin; File remains the source of exact observations.
   file_import jsonb,
+  contract_document_import jsonb,
   check(
     (action<>'import-file' and file_import is null)
     or (action='import-file' and file_import is not null
@@ -38,6 +39,21 @@ create table app_private.content_plan_revisions (
       and jsonb_typeof(file_import->'uncertain')='boolean'
     )
   ),
+  check(
+    (action<>'import-contract-document' and contract_document_import is null)
+    or (action='import-contract-document' and contract_document_import is not null
+      and jsonb_typeof(contract_document_import)='object'
+      and contract_document_import ?& array['documentId','revisionId','fileId','fileRevisionId','fileSha256','mappingVersion','rows']
+      and (contract_document_import->>'fileSha256') ~ '^[0-9a-f]{64}$'
+      and contract_document_import->>'mappingVersion'='purchase-order-content-v1'
+      and jsonb_typeof(contract_document_import->'rows')='array'
+      and jsonb_array_length(contract_document_import->'rows') between 1 and 1000
+      and jsonb_array_length(document->'nodes')>=2*(
+        jsonb_array_length(jsonb_path_query_array(
+          contract_document_import->'rows', '$[*] ? (@.disposition == "CONTENT_WORK")'
+        ))
+      ))
+  ),
   unique(repository_id,id),
   unique(repository_id,version,id),
   unique(repository_id,version),
@@ -46,7 +62,7 @@ create table app_private.content_plan_revisions (
     references app_private.content_plan_revisions(repository_id,id),
   check(
     (version=1 and parent_revision_id is null and action='initialize')
-    or (version>1 and parent_revision_id is not null and action in ('replace','import-file'))
+    or (version>1 and parent_revision_id is not null and action in ('replace','import-file','import-contract-document'))
   )
 );
 

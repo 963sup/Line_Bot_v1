@@ -8,6 +8,7 @@ import { RequestIdentityError } from "../src/shared/server/request-identity-erro
 const baseUrl = "https://app.example/api/repository-files?owner=acme&name=Operations";
 type Owner = ReturnType<FilesWebRuntime["owner"]>;
 type Method = ReturnType<FilesWebRuntime["processors"]>[number];
+type ProcessingOwner = ReturnType<FilesWebRuntime["processingOwner"]>;
 
 const file: Awaited<ReturnType<Owner["file"]>> = {
   repositoryId: "repository-A",
@@ -23,14 +24,8 @@ const file: Awaited<ReturnType<Owner["file"]>> = {
   sha256: "0".repeat(64),
 };
 const runId = randomUUID();
-const ready: Awaited<ReturnType<Owner["processing"]>> = {
+const ready: Awaited<ReturnType<ProcessingOwner["read"]>> = {
   revisionId: randomUUID(),
-  parentRevisionId: randomUUID(),
-  actorUserId: "member",
-  attemptId: randomUUID(),
-  fileSha256: file.sha256,
-  failure: null,
-  edits: [],
   runId,
   fileId: file.fileId,
   fileRevisionId: file.revisionId,
@@ -43,6 +38,16 @@ const ready: Awaited<ReturnType<Owner["processing"]>> = {
   rawResult: { documentKind: "plain-text", observations: [] },
   savedResult: null,
   at: 100,
+};
+const processingReady: Awaited<ReturnType<ProcessingOwner["run"]>>["processing"] = {
+  ...ready,
+  id: ready.revisionId,
+  parentRevisionId: randomUUID(),
+  actorUserId: "member",
+  attemptId: randomUUID(),
+  fileSha256: file.sha256,
+  failure: null,
+  edits: [],
 };
 const scope = {
   actorUserId: "member",
@@ -67,7 +72,7 @@ const parser: Method = {
   version: "test",
   supports: (mediaType) => mediaType === "text/plain",
   async run() {
-    return {};
+    return { documentKind: "plain-text", observations: [] };
   },
 };
 function fixture() {
@@ -102,14 +107,6 @@ function fixture() {
       called("file", [actor, scope, fileId, revisionId]);
       return file;
     },
-    async processingsForFile(actor, scope, fileId, after) {
-      called("runs", [actor, scope, fileId, after]);
-      return { runs: [ready], next: null };
-    },
-    async processing(actor, scope, id, revisionId) {
-      called("processing", [actor, scope, id, revisionId]);
-      return ready;
-    },
     async source(actor, scope, fileId, revisionId) {
       called("source", [actor, scope, fileId, revisionId]);
       return { file, bytes: Uint8Array.from([1, 2, 3]) };
@@ -118,13 +115,23 @@ function fixture() {
       called("upload", [actor, input, bytes]);
       return { requestId: requestIdOf(input), file };
     },
+  };
+  const processingOwner: ReturnType<FilesWebRuntime["processingOwner"]> = {
+    async list(actor, repositoryId, fileId, after) {
+      called("runs", [actor, repositoryId, fileId, after]);
+      return { runs: [ready], next: null };
+    },
+    async read(actor, repositoryId, id, revisionId) {
+      called("processing", [actor, repositoryId, id, revisionId]);
+      return ready;
+    },
     async run(actor, input, processor) {
       called("run", [actor, input, processor]);
-      return { requestId: requestIdOf(input), replayed: false, processing: ready };
+      return { requestId: requestIdOf(input), processing: processingReady };
     },
     async result(actor, input) {
       called("result", [actor, input]);
-      return { requestId: requestIdOf(input), processing: ready };
+      return { requestId: requestIdOf(input), processing: processingReady };
     },
   };
   const runtime: FilesWebRuntime = {
@@ -135,6 +142,7 @@ function fixture() {
     },
     owner: () => owner,
     processors: () => [parser],
+    processingOwner: () => processingOwner,
   };
   return { calls, runtime };
 }
@@ -224,13 +232,13 @@ test("File detail, Run History and Download consume only File-owned authorized r
     { id: "plain-text", kind: "parser", version: "test" },
   ]);
   const list = await filesRequest(
-    new Request(baseUrl + "&view=runs&fileId=" + file.fileId),
+    new Request(baseUrl + "&view=runs&fileId=" + file.fileId + "&ownerKind=intelligence"),
     runtime,
     identity,
   );
   assert.equal((await list.json()).runs[0].runId, runId);
   const current = await filesRequest(
-    new Request(baseUrl + "&view=processing&runId=" + runId),
+    new Request(baseUrl + "&view=processing&runId=" + runId + "&ownerKind=intelligence"),
     runtime,
     identity,
   );
@@ -329,7 +337,11 @@ test("File Run and Result are separate intentional POST commands", async () => {
       expectedVersion: 0,
     };
     const ran = await filesRequest(
-      post({ operation: "run", processor: "plain-text", command: runCommand }),
+      new Request(baseUrl + "&ownerKind=intelligence", {
+        method: "POST",
+        headers: { origin: "https://app.example", "content-type": "application/json" },
+        body: JSON.stringify({ operation: "run", processor: "plain-text", command: runCommand }),
+      }),
       runtime,
       identity,
     );
@@ -344,7 +356,11 @@ test("File Run and Result are separate intentional POST commands", async () => {
       edits: [],
     };
     const saved = await filesRequest(
-      post({ operation: "result", command: saveCommand }),
+      new Request(baseUrl + "&ownerKind=intelligence", {
+        method: "POST",
+        headers: { origin: "https://app.example", "content-type": "application/json" },
+        body: JSON.stringify({ operation: "result", command: saveCommand }),
+      }),
       runtime,
       identity,
     );

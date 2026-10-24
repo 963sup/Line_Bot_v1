@@ -20,7 +20,6 @@ import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
 import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select";
 import { Textarea } from "../../shared/ui/textarea";
-import ContentFileImport, { type FileContentImportDraft } from "./content-file-import";
 
 type Kind = "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
 type Measure = { id: string; name: string; subject: string; unit: string };
@@ -319,31 +318,6 @@ export default function ContentPanel({
       setError(cause instanceof Error ? cause.message : "無法安全保存操作，未送出請求。");
     }
   };
-  const importSavedFile = async (draft: FileContentImportDraft) => {
-    if (!view?.revision || document !== view.revision.document)
-      throw new Error("Please save or reload the current Content draft before importing.");
-    const measureId = draft.target.newMeasure ? crypto.randomUUID() : draft.target.measureId;
-    await submit({
-      action: "import-file",
-      repositoryId: view.repository.id,
-      requestId: crypto.randomUUID(),
-      expectedVersion: view.revision.version,
-      confirmedDisclosure: true,
-      source: draft.source,
-      target: {
-        id: crypto.randomUUID(),
-        parentId: draft.target.parentId,
-        kind: draft.target.kind,
-        title: draft.target.title,
-        body: draft.target.body,
-        measureId,
-        quantity: draft.target.quantity,
-        ...(draft.target.newMeasure
-          ? { newMeasure: { id: measureId, ...draft.target.newMeasure } }
-          : {}),
-      },
-    });
-  };
   return (
     <div className="grid gap-4 p-4">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
@@ -501,17 +475,6 @@ export default function ContentPanel({
           )}
         </CardContent>
       </Card>
-      {view?.canEdit && view.revision && (
-        <ContentFileImport
-          liffId={liffId}
-          ownerLogin={ownerLogin}
-          repositoryName={repositoryName}
-          parents={view.revision.document.nodes}
-          measures={view.revision.document.measures}
-          disabled={busy || !!pending || document !== view.revision.document}
-          onImport={importSavedFile}
-        />
-      )}
       <Card>
         <CardHeader>
           <CardTitle>計量基準與 Resources</CardTitle>

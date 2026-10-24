@@ -513,9 +513,6 @@ importers:
 
   packages/content:
     dependencies:
-      '@line_bot_v1/file':
-        specifier: workspace:*
-        version: link:../file
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
@@ -791,6 +788,9 @@ importers:
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
+      '@line_bot_v1/repository':
+        specifier: workspace:*
+        version: link:../repository
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1130,9 +1130,9 @@ importers:
 
   packages/wbs:
     dependencies:
-      '@line_bot_v1/contract':
+      '@line_bot_v1/content':
         specifier: workspace:*
-        version: link:../contract
+        version: link:../content
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform

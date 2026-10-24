@@ -10,7 +10,6 @@ import {
   runBoundedCommand,
   writeBoundedDiagnostic,
 } from "../runtime/bounded-output.mjs";
-import { validationGroups } from "./validate.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (file) => readFileSync(file, "utf8");
@@ -691,11 +690,12 @@ export function validate(root) {
       errors.push("CI: validate workflow must not consume repository secrets");
     if (/^\s*VERCEL:\s*["']?1["']?\s*$/m.test(validateWorkflowSource))
       errors.push("CI: GitHub validation must not impersonate the Vercel runtime");
+    const planJob = workflow.jobs?.plan;
     const fullValidateJob = workflow.jobs?.["full-validate"];
     const validateJob = workflow.jobs?.validate;
-    if (!fullValidateJob || !validateJob || workflow.jobs?.check)
+    if (!planJob || !fullValidateJob || !validateJob || workflow.jobs?.check)
       errors.push(
-        "CI: validation workflow must have one parallel full validation owner plus its aggregate gate",
+        "CI: validation workflow must have one changed-owner planner, parallel validation owner and aggregate gate",
       );
     if (!Object.hasOwn(workflow.on ?? {}, "workflow_call") || workflow.on?.push)
       errors.push(
@@ -724,19 +724,30 @@ export function validate(root) {
     const fullCondition =
       "(github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)";
     if (
+      planJob?.if !== fullCondition ||
+      planJob?.needs ||
+      !(planJob?.steps ?? []).some(
+        (step) =>
+          step.id === "select" &&
+          step.run ===
+            'echo "groups=$(pnpm --silent validate --fast --plan)" >> "$GITHUB_OUTPUT"' &&
+          step.env?.VALIDATION_BASE_SHA ===
+            "${{ github.event.pull_request.base.sha || github.event.before }}",
+      ) ||
       fullValidateJob?.if !== fullCondition ||
-      fullValidateJob?.needs ||
+      fullValidateJob?.needs !== "plan" ||
       fullValidateJob?.strategy?.["fail-fast"] !== false ||
-      JSON.stringify(fullValidateJob?.strategy?.matrix?.group) !==
-        JSON.stringify(Object.keys(validationGroups)) ||
+      fullValidateJob?.strategy?.matrix?.group !== "${{ fromJSON(needs.plan.outputs.groups) }}" ||
       !(fullValidateJob?.steps ?? []).some(
         (step) =>
-          step.run === 'pnpm validate --group "$VALIDATION_GROUP"' &&
-          step.env?.VALIDATION_GROUP === "${{ matrix.group }}",
+          step.run === 'pnpm validate --fast --group "$VALIDATION_GROUP"' &&
+          step.env?.VALIDATION_GROUP === "${{ matrix.group }}" &&
+          step.env?.VALIDATION_BASE_SHA ===
+            "${{ github.event.pull_request.base.sha || github.event.before }}",
       )
     )
       errors.push(
-        "CI: main and every non-draft pull-request head must run every canonical validation group in parallel",
+        "CI: main and every non-draft pull-request head must select and run changed-owner validation groups in parallel",
       );
     const validationLogUpload = (fullValidateJob?.steps ?? []).find(
       (step) => step.uses === "actions/upload-artifact@v4" && step.if === "always()",
@@ -752,7 +763,7 @@ export function validate(root) {
         "CI: every validation group must preserve bounded full logs as an exact-head artifact",
       );
     if (
-      validateJob?.needs !== "full-validate" ||
+      JSON.stringify(validateJob?.needs) !== JSON.stringify(["plan", "full-validate"]) ||
       validateJob?.if !== "always() && (" + fullCondition + ")" ||
       !(validateJob?.steps ?? []).some(
         (step) =>

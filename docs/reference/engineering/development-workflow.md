@@ -35,8 +35,8 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
 5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
 6. **修改／漏改**：`pnpm patch:apply <plan.json>` 預覽，既有授權內以 `--apply` 套用，再重跑相同搜尋、檢查剩餘命中與 Git diff。一般小修改可直接編輯；批次計畫不繞過內容／雜湊前置條件。預覽是工程步驟，不要求使用者重複確認。
-7. **相關驗證**：執行真正受影響的 tests／runtime 驗收與 `pnpm check`；純文件用 `pnpm docs:check`。同 checkout 的 build/type generation/installation 按順序執行。
-8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；`pnpm change:finalize` 執行完整 `pnpm validate`，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
+7. **相關驗證**：在任何環境皆依變更 Owner、契約與 transitive consumers 執行必要的 tests／runtime 驗收；`pnpm check` 是同一 selection contract 的本機入口，純文件用 `pnpm docs:check`。同 checkout 的 build/type generation/installation 按順序執行。
+8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 使用同一 changed-owner selection contract，基準遺失時保守展開全部 groups。`pnpm validate` 保留給明確要求的全庫稽核，不能把未選 Owner 的重跑當作較強的必要證據，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
 9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
 
 工具介面與例子見 [source operations](../../../scripts/code/README.md)。`pnpm code` 只查詢／產生計畫，來源寫入仍由 [patch application](../../../scripts/changes/README.md) 擁有；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
@@ -189,7 +189,7 @@ fix(identity): preserve membership when Google linking fails
 
 ## Pull request and merge
 
-PR 描述的是完整 change set；commit history 描述其中值得保留的獨立決策。開發／Agent 高頻修改期間可使用 **Draft** 避免把未完成 head 當成 merge candidate；push 應以 coherent checkpoint 為單位。任何 non-draft PR 的 `opened`、`synchronize`、`reopened`、`ready_for_review` 都對 exact current head 執行完整 `pnpm validate --group <name>` matrix；後續 push 產生新 head 時直接重新完整驗證，不需要 Draft → Ready toggle。Merge candidate 必須以 current head 的 aggregate `validate` 成功為證據；base/main 前進後先更新 branch，再由新的 current head 重新取得完整驗證。
+PR 描述的是完整 change set；commit history 描述其中值得保留的獨立決策。開發／Agent 高頻修改期間可使用 **Draft** 避免把未完成 head 當成 merge candidate；push 應以 coherent checkpoint 為單位。任何 non-draft PR 的 `opened`、`synchronize`、`reopened`、`ready_for_review` 都對 exact current head 與 PR base 的可靠 diff，執行受影響 Owner groups 與 transitive consumers；後續 push 產生新 head 時直接重新選擇必要驗證，不需要 Draft → Ready toggle。main 使用前一個 main SHA 的相同選擇器；比較基準無法使用時才保守展開所有 groups。Merge candidate 必須以 current head 的 aggregate `validate` 成功為證據；base/main 前進後先更新 branch，再由新的 current head 重新取得必要驗證。
 
 GitHub workflow 的原子邊界是獨立 trigger、permission、external effect 或 rollback responsibility，不是 YAML step 數量；checkout/setup/verify 的重複不足以建立 reusable workflow。只有已有至少兩個真實 consumer，且 inputs、permissions、failure semantics 一致時才抽 reusable owner。
 

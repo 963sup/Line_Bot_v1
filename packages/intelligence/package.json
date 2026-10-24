@@ -12,13 +12,17 @@
       "types": "./dist/contracts/output/document-attempts.d.ts",
       "default": "./dist/contracts/output/document-attempts.js"
     },
-    "./contracts/output/processing-history": {
-      "types": "./dist/contracts/output/processing-history.d.ts",
-      "default": "./dist/contracts/output/processing-history.js"
+    "./contracts/output/processing": {
+      "types": "./dist/contracts/output/processing.d.ts",
+      "default": "./dist/contracts/output/processing.js"
     },
-    "./composition/bootstrap/processing-history": {
-      "types": "./dist/composition/bootstrap/processing-history.d.ts",
-      "default": "./dist/composition/bootstrap/processing-history.js"
+    "./application/use-cases/processing": {
+      "types": "./dist/application/use-cases/processing.d.ts",
+      "default": "./dist/application/use-cases/processing.js"
+    },
+    "./composition/bootstrap/processing": {
+      "types": "./dist/composition/bootstrap/processing.d.ts",
+      "default": "./dist/composition/bootstrap/processing.js"
     },
     "./composition/bootstrap/document-intake": {
       "types": "./dist/composition/bootstrap/document-intake.d.ts",
@@ -41,7 +45,8 @@
     "@google/genai": "catalog:",
     "@line_bot_v1/contract": "workspace:*",
     "@line_bot_v1/file": "workspace:*",
-    "@line_bot_v1/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

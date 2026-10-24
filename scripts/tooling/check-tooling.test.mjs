@@ -905,10 +905,10 @@ test("validation workflow rejects split fast/full PR truth", (t) => {
     "permissions:\n  contents: read\njobs:\n  check:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm validate\n  validate:\n    if: github.event_name == 'pull_request'\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@v6\n        with:\n          node-version-file: .node-version\n      - run: pnpm check\n",
   );
   rejects(root, "full Git history");
-  rejects(root, "one parallel full validation owner");
+  rejects(root, "one changed-owner planner, parallel validation owner and aggregate gate");
   rejects(
     root,
-    "main and every non-draft pull-request head must run every canonical validation group in parallel",
+    "main and every non-draft pull-request head must select and run changed-owner validation groups in parallel",
   );
 });
 
@@ -1198,11 +1198,13 @@ test("Release activates identifier writers only after compatible production depl
   assert.deepEqual(validate(root), []);
 });
 
-test("parallel validation preserves complete coverage and an unconditional failure gate", (t) => {
+test("changed-owner validation preserves planner routing and an unconditional failure gate", (t) => {
   const { root, write } = fixture(t);
   const source = readFileSync(resolve(root, ".github/workflows/validate.yml"), "utf8");
   for (const mutate of [
-    (jobs) => jobs["full-validate"].strategy.matrix.group.pop(),
+    (jobs) => {
+      jobs["full-validate"].strategy.matrix.group = ["tooling"];
+    },
     (jobs) => {
       jobs["full-validate"].needs = "check";
     },
@@ -1213,7 +1215,7 @@ test("parallel validation preserves complete coverage and an unconditional failu
     const data = YAML.parse(source);
     mutate(data.jobs);
     write(".github/workflows/validate.yml", YAML.stringify(data));
-    rejects(root, "every canonical validation group in parallel");
+    rejects(root, "select and run changed-owner validation groups in parallel");
   }
   for (const run of ['test "$RESULT" != failure', "echo success"]) {
     const data = YAML.parse(source);

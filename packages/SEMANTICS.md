@@ -45,7 +45,7 @@ Module registration, semantic-owner lifecycle, Bounded Context status and runtim
 | [packages/execution](./execution/SEMANTICS.md) | domain-module | [execution](../docs/owners/execution.md) | current | execution / selected |
 | [packages/expense](./expense/SEMANTICS.md) | domain-module | [expense](../docs/owners/expense.md) | current | expense / strong-candidate |
 | [packages/explore](./explore/SEMANTICS.md) | application-module | [repository](../docs/owners/repository.md) | current | work-collaboration / candidate |
-| [packages/file](./file/SEMANTICS.md) | domain-module | [file](../docs/owners/file.md) | current | file / strong-candidate |
+| [packages/file](./file/SEMANTICS.md) | domain-module | [file](../docs/owners/file.md) | current | file / selected |
 | [packages/google-workspace](./google-workspace/SEMANTICS.md) | integration-adapter | [google-workspace](../docs/owners/google-workspace.md) | current | Not declared |
 | [packages/identity-access](./identity-access/SEMANTICS.md) | domain-module | [identity-access](../docs/owners/identity-access.md) | current | Not declared |
 | [packages/insights](./insights/SEMANTICS.md) | application-module | [insights](../docs/owners/insights.md) | current | Not declared |

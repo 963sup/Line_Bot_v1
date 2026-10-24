@@ -500,18 +500,15 @@
     {
       "id": "file",
       "owner": "file",
-      "status": "strong-candidate",
+      "status": "selected",
       "evidence": {
         "ownerContracts": ["docs/owners/file.md"],
-        "sourcePaths": [
-          "packages/file/src/domain/file.ts",
-          "packages/file/src/domain/processing-run.ts"
-        ],
+        "sourcePaths": ["packages/file/src/domain/file.ts"],
         "testPaths": [
           "packages/file/test/domain.test.ts",
           "packages/file/test/persistence.test.ts"
         ],
-        "rationale": "File original evidence and user-triggered ProcessingRuns have independent source/result lifecycles. SavedResult is an immutable outcome within ProcessingRun, not a third Aggregate or downstream approval."
+        "rationale": "File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence."
       }
     }
   ],
@@ -1846,6 +1843,36 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "intelligence-processing-run",
+      "canonicalName": "IntelligenceProcessingRun",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Explicit document-understanding operation against one immutable File revision; its head selects one fenced Intelligence processing revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-revision",
+      "canonicalName": "IntelligenceProcessingRevision",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable Intelligence-owned processing lifecycle revision containing provider identity, untrusted raw output, optional explicitly saved output, bounded edits and failure evidence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-command-receipt",
+      "canonicalName": "IntelligenceProcessingCommandReceipt",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable Intelligence actor/request fingerprint and exact processing revision receipt; it has no File upload request namespace.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "engineering-execution",
       "canonicalName": "EngineeringExecution",
       "kind": "authoritative",
@@ -2098,31 +2125,31 @@
     {
       "id": "file-processing-run",
       "canonicalName": "FileProcessingRun",
-      "kind": "authoritative",
+      "kind": "historical-evidence",
       "owner": "file",
       "lifecycle": "current",
-      "definition": "A single explicitly selected Parser/OCR/AI operation against an immutable File revision, with fenced attempts and Preview/Save/Discard lifecycle.",
-      "authorityMode": "authoritative",
+      "definition": "Legacy processing run storage retained only for historical read during controlled cutover; Intelligence owns all new runs.",
+      "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
     },
     {
       "id": "file-processing-revision",
       "canonicalName": "FileProcessingRevision",
-      "kind": "authoritative",
+      "kind": "historical-evidence",
       "owner": "file",
       "lifecycle": "current",
-      "definition": "Immutable user-requested processing attempt, RawResult and optional SavedResult with bounded edits, uncertainty and source locators.",
-      "authorityMode": "authoritative",
+      "definition": "Immutable legacy processing revisions retained for historical reads during controlled cutover.",
+      "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
     },
     {
       "id": "file-command-receipt",
       "canonicalName": "FileCommandReceipt",
-      "kind": "authoritative",
+      "kind": "historical-evidence",
       "owner": "file",
-      "lifecycle": "current",
-      "definition": "Immutable actor/request fingerprint and exact File or ProcessingRun revision receipt; reauthorization and fencing preserve recovery.",
-      "authorityMode": "authoritative",
+      "lifecycle": "current-data-only",
+      "definition": "Legacy File request receipt for File and Processing commands; retained because File commands remain active.",
+      "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
     }
   ],
@@ -2803,11 +2830,20 @@
       "to": "contract",
       "kind": "reference",
       "owner": "wbs",
-      "meaning": "A Project WBS user explicitly maps an ACTIVE Repository Contract line into a Project WORK_PACKAGE, with Project and Repository rights both reverified in one transaction. WBS retains a private exact source pin in its immutable revision; the Contract remains the authority for agreed quantities and Content pins.",
+      "meaning": "Legacy Project WBS revisions may retain exact Contract and Content source pins from the retired per-line import command. New WBS writes do not consume Contract directly; the target flow is a complete Content expansion consumed as a Project-scoped WBS draft, with Project authorization and governance retained by their current owners.",
       "provider": "contract",
       "consumer": "wbs",
       "integrationMode": "stable-identity+query",
       "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "wbs-content-expansion",
+      "provider": "content",
+      "consumer": "wbs",
+      "meaning": "Project WBS consumes one immutable Content revision through Content's public expansion reader; Content retains plan and source-mapping authority while WBS creates its own draft and governance history.",
+      "integrationMode": "stable-identity+query",
+      "authority": "content",
       "consistency": "transaction-recheck+immutable-pin"
     },
     {
@@ -3056,6 +3092,15 @@
       "consistency": "current-source-access"
     },
     {
+      "id": "repository-intelligence-processing-scope",
+      "provider": "repository",
+      "consumer": "intelligence",
+      "meaning": "Intelligence processing mutations recheck active User, current Repository write permission and archive state inside their transaction; Repository retains authorization authority.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
       "id": "intelligence-contract-document-intake",
       "provider": "contract",
       "consumer": "intelligence",
@@ -3110,15 +3155,6 @@
       "consistency": "transaction-recheck+immutable-pin"
     },
     {
-      "id": "content-saved-file-evidence",
-      "provider": "file",
-      "consumer": "content",
-      "meaning": "A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs.",
-      "integrationMode": "stable-identity+query",
-      "authority": "file",
-      "consistency": "transaction-recheck+immutable-pin"
-    },
-    {
       "id": "contract-content-plan-basis",
       "provider": "content",
       "consumer": "contract",
@@ -3167,19 +3203,19 @@
       "id": "file-intelligence-processor-contract",
       "provider": "file",
       "consumer": "intelligence",
-      "meaning": "Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority.",
-      "integrationMode": "reference",
+      "meaning": "Intelligence reads an authorized exact File revision and bytes through File's source reader. File retains source access and storage authority; Intelligence owns processing lifecycle.",
+      "integrationMode": "query",
       "authority": "file",
-      "consistency": "pure-value"
+      "consistency": "current-source-access"
     },
     {
       "id": "intelligence-file-document-understanding",
       "provider": "intelligence",
       "consumer": "file",
-      "meaning": "File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity.",
-      "integrationMode": "query",
+      "meaning": "Retired relationship; File no longer invokes Intelligence or owns processing lifecycle.",
+      "integrationMode": "reference",
       "authority": "intelligence",
-      "consistency": "current-source-access"
+      "consistency": "immutable-history"
     }
   ],
   "capabilities": [
@@ -5767,7 +5803,6 @@
           "./application/use-cases/files",
           "./application/use-cases/reclaim",
           "./composition/bootstrap/files",
-          "./composition/bootstrap/processors",
           "./contracts/output/references",
           "./domain/error",
           "./domain/file"
@@ -5786,19 +5821,19 @@
           "packages/file/test/sources.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport supports explicit bounded 3 MB multipart Upload/Download and current-authorized File List/Run History; private Supabase Storage remains the only bytes store. No large-file Web transport, live device/production acceptance or business import is asserted."
+        "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport supports explicit bounded 3 MB multipart Upload/Download and current-authorized File List; private Supabase Storage remains the only bytes store. Processing lifecycle and result history are Intelligence-owned. No large-file Web transport, live device/production acceptance or business import is asserted."
       }
     },
     {
       "id": "run-file-processing",
-      "owner": "file",
+      "owner": "intelligence",
       "kind": "leaf",
       "intent": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
       "consumes": [
-        "file-repository-scope",
-        "file-platform-persistence",
-        "intelligence-file-document-understanding"
+        "intelligence-file-source",
+        "repository-intelligence-processing-scope",
+        "intelligence-platform-persistence"
       ],
       "validationProfiles": [
         "semantic-architecture",
@@ -5810,20 +5845,18 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
+        "scope": "Execute and persist an explicitly requested Intelligence processing lifecycle against a pinned File revision, retaining untrusted candidate and explicit save evidence.",
         "sourcePaths": [
-          "packages/file/src/domain/processing-run.ts",
-          "packages/file/src/contracts/output/processor.ts",
-          "packages/file/src/application/use-cases/files.ts",
-          "packages/file/src/adapters/outbound/processing/plain-text.ts"
+          "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts",
+          "packages/intelligence/src/adapters/outbound/processing/plain-text.ts"
         ],
         "publicExports": [
-          "./application/use-cases/files",
-          "./composition/bootstrap/files",
+          "./application/use-cases/processing",
+          "./composition/bootstrap/processing",
           "./composition/bootstrap/processors",
-          "./contracts/output/processor",
-          "./domain/error",
-          "./domain/file"
+          "./contracts/output/processing"
         ],
         "entrypoints": [
           "scripts/file/run.mjs",
@@ -5836,16 +5869,16 @@
           "packages/file/test/persistence.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "File owns explicit processor selection, exact source authorization, output validation and the ProcessingRun lifecycle. Its native UTF-8 text Parser remains local; configured Intelligence adapters are injected by application hosts and return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
+        "note": "Intelligence owns explicit processor selection, exact source authorization, output validation and its ProcessingRun lifecycle. Its native UTF-8 text Parser is local to Intelligence; configured provider adapters return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
       }
     },
     {
       "id": "manage-file-result",
-      "owner": "file",
+      "owner": "intelligence",
       "kind": "leaf",
       "intent": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
-      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "consumes": ["repository-intelligence-processing-scope", "intelligence-platform-persistence"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5858,15 +5891,15 @@
         "status": "implemented",
         "scope": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
         "sourcePaths": [
-          "packages/file/src/domain/processing-run.ts",
-          "packages/file/src/application/use-cases/files.ts"
+          "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts"
         ],
         "publicExports": [
-          "./application/use-cases/files",
-          "./composition/bootstrap/files",
+          "./application/use-cases/processing",
+          "./composition/bootstrap/processing",
           "./composition/bootstrap/processors",
-          "./domain/error",
-          "./domain/file"
+          "./contracts/output/processing"
         ],
         "entrypoints": [
           "scripts/file/run.mjs",
@@ -5879,7 +5912,7 @@
           "packages/file/test/persistence.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "CLI and Web provide explicit local Edit, Discard or version-bound Save of Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
+        "note": "Intelligence provides explicit Edit, Discard or version-bound Save of a Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
       }
     },
     {
@@ -6104,7 +6137,7 @@
     {
       "id": "FILE2",
       "scope": "file",
-      "statement": "Only an explicit authorized user Run invokes the chosen processor. Preview remains untrusted and only version-bound Save creates a SavedResult; Discard creates no SavedResult. Durable attempt identity, permission rechecks and fencing preserve completion without database locks.",
+      "statement": "File only owns original bytes and immutable file revisions. File does not invoke processors, persist processing runs/results, or own processing history.",
       "severity": "error",
       "enforcement": ["source-code", "schema", "tests"],
       "tags": ["file", "processing", "user-intent", "recovery", "trust"]
@@ -6112,7 +6145,7 @@
     {
       "id": "INTELLIGENCE1",
       "scope": "intelligence",
-      "statement": "Intelligence owns provider protocol and technical extraction orchestration only. It reads an exact File source through File's public reader and may submit an untrusted SAVE candidate using the target owner's supplied schema and public command. It persists no File or business truth, cannot choose confirmation, authorize a target transition, or bypass target validation/version/replay rules.",
+      "statement": "Intelligence owns authorized processing lifecycle, provider protocol, immutable run revisions, saved extraction evidence and processing receipts. It reads exact File sources only through File's public reader; extracted data remains untrusted, and target business facts remain owned by their target contracts.",
       "severity": "error",
       "enforcement": ["semantic-policy", "source-code", "tests"],
       "tags": ["intelligence", "trust", "ownership", "provider-boundary"]
@@ -6460,6 +6493,11 @@
       "id": "reference",
       "authorityMode": "reference-only",
       "meaning": "Pointer to truth owned elsewhere; cannot rewrite provider truth."
+    },
+    {
+      "id": "historical-evidence",
+      "authorityMode": "reference-only",
+      "meaning": "Retained legacy evidence that may be read under current authorization but is not writable or current business authority."
     },
     {
       "id": "derived-projection",
