@@ -43,21 +43,12 @@ async function assertRemoteDefinition(
     throw new Error(`Rich menu definition readback mismatch: ${page}`);
 }
 
-async function setAlias(
-  client: RichMenuClient,
-  alias: string,
-  id: string,
-  beforeMutation: () => void,
-) {
+async function setAlias(client: RichMenuClient, alias: string, id: string) {
   const current = await client.getAlias(alias);
-  if (!current) {
-    beforeMutation();
-    await client.createAlias(alias, id);
-  } else if (current !== id) {
-    beforeMutation();
-    await client.updateAlias(alias, id);
-  }
+  if (!current) await client.createAlias(alias, id);
+  else if (current !== id) await client.updateAlias(alias, id);
   if ((await client.getAlias(alias)) !== id) throw new Error(`Alias readback mismatch: ${alias}`);
+  return current !== id;
 }
 
 async function restoreAlias(client: RichMenuClient, alias: string, previous: string | null) {
@@ -169,11 +160,12 @@ export async function activateRichMenuBatch(
         Number(SUBMENU_PAGES.some((page) => page === b.page)) -
         Number(SUBMENU_PAGES.some((page) => page === a.page)),
     );
-    for (const menu of activationOrder)
-      await setAlias(client, menuAlias(menu.page), menu.richMenuId, () => {
-        // Once a provider write is attempted, a lost response is not proof of no mutation.
-        mutated = true;
-      });
+    for (const menu of activationOrder) {
+      // A provider write may commit even when its response/readback fails.
+      // Treat the entire alias operation as potentially mutating until reconciled.
+      mutated = true;
+      await setAlias(client, menuAlias(menu.page), menu.richMenuId);
+    }
 
     mutated = true;
 
