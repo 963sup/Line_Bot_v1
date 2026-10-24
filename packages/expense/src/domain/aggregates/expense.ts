@@ -221,8 +221,13 @@ export function applyExpenseCommand(expense: Expense, command: ExpenseCommand): 
       (() => {
         try {
           const fields = validateExpenseFields(command.fields, true);
-          return Object.keys(fields).every(
-            (key) => fields[key as keyof ExpenseFields] === expense[key as keyof ExpenseFields],
+          return (
+            fields.merchant === expense.merchant &&
+            fields.amount === expense.amount &&
+            fields.currency === expense.currency &&
+            fields.date === expense.date &&
+            fields.invoiceNumber === expense.invoiceNumber &&
+            fields.payment === expense.payment
           );
         } catch {
           return false;
