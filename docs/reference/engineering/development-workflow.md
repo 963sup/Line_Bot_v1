@@ -192,6 +192,17 @@ GitHub workflow 的原子邊界是獨立 trigger、permission、external effect 
 - 一般 feature / docs PR 不以 **Merge commit** 保存 branch topology；只有 topology 本身有需要保留的整合意義時才例外。
 - 已經進入共享 `main` 的歷史不為了美觀 force rewrite；規則從後續變更開始適用。
 
+### 高風險變更的審查與批准
+
+目前採單一人類維護者模式：獨立技術審查後，由 repository owner 明確批准合併。獨立技術審查可由未實作該變更的 reviewer／agent 執行，不能冒充另一位人類 approval。此政策不要求不存在的第二位維護者，也不自行新增 CODEOWNERS 或改遠端 ruleset。
+
+Authorization／isolation、schema／資料處置、transaction／replay／recovery、production release 與 governing authority 變更須保留獨立技術審查證據，涵蓋 Owner、受影響 consumers、不變條件與具體失敗路徑。實作者不得把自己的自查當成獨立審查。所有 findings 必須修正或由 owner 明確裁決；仍影響正確性的缺口不得合併。
+
+合併批准須針對可審閱的 PR 與變更範圍；合併時重新核對 exact head、最新 base、獨立審查及完整必要 CI。單純同步 main 且原變更範圍未變，可延用既有批准，但仍須重驗新 head；行為、資料處置或風險範圍改變時取得新的明確批准。出現 blocked、未解決 review、失敗或過期 evidence 時停止合併，先查明原因，不 bypass、不停用 checks、不直接推 main。
+
+GitHub ruleset 的實際 readback 才是平台 enforcement truth；目前政策接受平台不強制第二人 approval 的限制，依獨立技術審查及 owner 明確批准補強，不能宣稱平台會自動阻擋缺少 owner 批准的合併。Release workflow 是否使用 environment 與 approval 以當前 workflow／provider 設定為準；未查證的 environment 不得視為存在保護。合併授權不擴張成任意 production mutation／資料處置授權。
+
+
 ## Validation
 
 Commit 整理不能替代 repository validation，也不能藉 rebase / squash 隱藏失敗。
