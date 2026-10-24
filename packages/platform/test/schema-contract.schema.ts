@@ -511,6 +511,7 @@ test("Project WBS and automation schema preserve scoped version and immutable ev
         "actor_user_id",
         "action",
         "document",
+        "contract_import",
         "at",
       ],
     },

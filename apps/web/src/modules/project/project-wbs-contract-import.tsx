@@ -342,24 +342,62 @@ export default function ProjectWbsContractImport({
               id="contract-wbs-description"
               value={description}
               disabled={disabled || busy}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                setConfirmed(false);
+              }}
+            />
             <Label htmlFor="contract-wbs-deliverable">交付成果</Label>
-            <Textarea id="contract-wbs-deliverable" value={deliverable} disabled={disabled || busy}
-              onChange={(event) => { setDeliverable(event.target.value); setConfirmed(false); }} />
+            <Textarea
+              id="contract-wbs-deliverable"
+              value={deliverable}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                setDeliverable(event.target.value);
+                setConfirmed(false);
+              }}
+            />
             <Label htmlFor="contract-wbs-acceptance">驗收準則</Label>
-            <Textarea id="contract-wbs-acceptance" value={acceptance} disabled={disabled || busy}
-              onChange={(event) => { setAcceptance(event.target.value); setConfirmed(false); }} />
+            <Textarea
+              id="contract-wbs-acceptance"
+              value={acceptance}
+              disabled={disabled || busy}
+              onChange={(event) => {
+                setAcceptance(event.target.value);
+                setConfirmed(false);
+              }}
+            />
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={confirmed} disabled={disabled || busy}
-                onChange={(event) => setConfirmed(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={confirmed}
+                disabled={disabled || busy}
+                onChange={(event) => setConfirmed(event.target.checked)}
+              />
               我已確認此 Contract 項次的來源及對應 WBS，並同意將工作包放入目標 Project，
               即使 Project 可讀者與 Contract 可讀者不同。
             </label>
-            <Button type="button" disabled={disabled || busy || !confirmed || !title.trim() || !eligible.some((node) => node.id === parentId)}
-              onClick={submit}>確認新增 Project WBS 工作包</Button>
+            <Button
+              type="button"
+              disabled={
+                disabled ||
+                busy ||
+                !confirmed ||
+                !title.trim() ||
+                !eligible.some((node) => node.id === parentId)
+              }
+              onClick={submit}
+            >
+              確認新增 Project WBS 工作包
+            </Button>
           </>
         )}
-        {eligible.length === 0 && <p className="text-sm text-muted-foreground">請先建立 WBS Deliverable 父節點。</p>}
-        <p className="text-xs text-muted-foreground">Project：{projectId}。新增後仍是 WBS 草稿，需獨立治理審核與 Baseline 發布。</p>
+        {eligible.length === 0 && (
+          <p className="text-sm text-muted-foreground">請先建立 WBS Deliverable 父節點。</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Project：{projectId}。新增後仍是 WBS 草稿，需獨立治理審核與 Baseline 發布。
+        </p>
       </CardContent>
     </Card>
   );
