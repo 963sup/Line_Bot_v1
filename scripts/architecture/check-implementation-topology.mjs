@@ -1,6 +1,7 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 
 const root = process.cwd();
 const topology = JSON.parse(
@@ -264,7 +265,7 @@ export async function checkImplementationTopology() {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const result = await checkImplementationTopology();
-  for (const error of result.errors) console.error(error);
+  reportArchitectureViolations("implementation-topology", result.errors);
   console.log(
     "Implementation topology: " +
       result.packageCount +
