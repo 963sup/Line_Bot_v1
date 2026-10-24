@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseProjectWbsCommand } from "../src/application/commands/project-content.js";
+import { reviseWbsContent } from "../src/domain/content.js";
 import { executeProjectWbsCommand } from "../src/application/use-cases/project-content.js";
 import { executeProjectWbsGovernanceCommand } from "../src/application/use-cases/project-governance.js";
 import type { ProjectWbsReceipt } from "../src/contracts/dto/project-content.js";
@@ -230,9 +231,8 @@ test("Project import rechecks current Project/Contract access and stores only a 
     source,
     node,
   };
-  const revisions = await import("../src/domain/content.js");
-  let current = revisions.reviseWbsContent(
-    revisions.reviseWbsContent(null, 0, { action: "initialize" }, "actor", "revision-a", 1),
+  let current = reviseWbsContent(
+    reviseWbsContent(null, 0, { action: "initialize" }, "actor", "revision-a", 1),
     1,
     {
       action: "create-node",
