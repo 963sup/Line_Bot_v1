@@ -13,7 +13,7 @@ create table app_private.content_plan_revisions (
   parent_revision_id uuid,
   actor_user_id text not null references app_private.users(id),
   at bigint not null,
-  action text not null check(action in ('initialize','replace')),
+  action text not null check(action in ('initialize','replace','import-file')),
   document jsonb not null check(
     jsonb_typeof(document)='object'
     and document->>'schemaVersion'='1'
@@ -23,6 +23,21 @@ create table app_private.content_plan_revisions (
     and jsonb_array_length(document->'nodes')<=1000
     and octet_length(document::text)<=4194304
   ),
+  -- Immutable Content-owned evidence pin; File remains the source of exact observations.
+  file_import jsonb,
+  check(
+    (action<>'import-file' and file_import is null)
+    or (action='import-file' and file_import is not null
+      and jsonb_typeof(file_import)='object'
+      and file_import ?& array[
+        'repositoryId','fileId','fileRevisionId','fileSha256','runId',
+        'processingRevisionId','observationId','uncertain','nodeId'
+      ]
+      and file_import->>'repositoryId'=repository_id
+      and (file_import->>'fileSha256') ~ '^[0-9a-f]{64}$'
+      and jsonb_typeof(file_import->'uncertain')='boolean'
+    )
+  ),
   unique(repository_id,id),
   unique(repository_id,version,id),
   unique(repository_id,version),
@@ -31,7 +46,7 @@ create table app_private.content_plan_revisions (
     references app_private.content_plan_revisions(repository_id,id),
   check(
     (version=1 and parent_revision_id is null and action='initialize')
-    or (version>1 and parent_revision_id is not null and action='replace')
+    or (version>1 and parent_revision_id is not null and action in ('replace','import-file'))
   )
 );
 

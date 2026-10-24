@@ -3073,6 +3073,15 @@
       "consistency": "transaction-recheck+immutable-pin"
     },
     {
+      "id": "content-saved-file-evidence",
+      "provider": "file",
+      "consumer": "content",
+      "meaning": "A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs.",
+      "integrationMode": "stable-identity+query",
+      "authority": "file",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
       "id": "contract-content-plan-basis",
       "provider": "content",
       "consumer": "contract",

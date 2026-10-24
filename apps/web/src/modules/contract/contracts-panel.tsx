@@ -32,7 +32,7 @@ type PlanNode = {
   kind: string;
   title: string;
   plannedQuantity: { measureId: string; value: string } | null;
-  measureUnit?: "m" | "pcs";
+  measureUnit?: string;
 };
 type Line = { lineId: string; planRevisionId: string; nodeId: string; agreedQuantity: string };
 type Revision = Summary & {
@@ -148,7 +148,14 @@ export default function ContractsPanel({
     setBusy(true);
     setError("");
     try {
-      const [contracts, content] = await Promise.all([request("contracts"), request("content")]);
+      const revisionId = new URLSearchParams(globalThis.window.location.search).get(
+        "planRevisionId",
+      );
+      const contentQuery = revisionId === null ? {} : { revisionId };
+      const [contracts, content] = await Promise.all([
+        request("contracts"),
+        request("content", contentQuery),
+      ]);
       setView(contracts);
       setPending(
         restorePendingCommand(
@@ -162,7 +169,7 @@ export default function ContractsPanel({
       if (content.revision) {
         setPlanRevisionId(content.revision.revisionId);
         const measures = new Map(
-          content.revision.document.measures.map((measure: { id: string; unit: "m" | "pcs" }) => [
+          content.revision.document.measures.map((measure: { id: string; unit: string }) => [
             measure.id,
             measure.unit,
           ]),
@@ -476,6 +483,23 @@ export default function ContractsPanel({
                 onClick={() => void execute("activate")}
               >
                 啟用
+              </Button>
+            )}
+            {selected?.state === "ACTIVE" && (
+              <Button
+                variant="outline"
+                disabled={busy || pending !== null}
+                onClick={() => {
+                  const query = new URLSearchParams({
+                    contractOwner: ownerLogin,
+                    contractRepository: repositoryName,
+                    contractId: selected.contractId,
+                    contractRevisionId: selected.revisionId,
+                  });
+                  globalThis.window.location.assign(`/projects?${query.toString()}`);
+                }}
+              >
+                選擇 Project WBS 建立工作包
               </Button>
             )}
             {selected?.state === "ACTIVE" && (

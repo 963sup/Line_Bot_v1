@@ -32,7 +32,7 @@ async function seedContentPlan(db: Database, repositoryId = "repo") {
         id: ids.measure,
         name: "Length",
         subject: "Installed route length",
-        unit: "m" as const,
+        unit: "SET" as const,
       },
     ],
     nodes: [
@@ -138,6 +138,7 @@ test("Contract persists Content-based revisions, replay and established active l
   assert.equal(draft.revision.title, "Cable installation");
   assert.equal(draft.revision.body, "  raw terms\r\n");
   assert.equal(draft.revision.lines[0]?.agreedQuantity, "20");
+  assert.equal(draft.revision.lines[0]?.content.node.plannedQuantity?.measure.unit, "SET");
   await assert.rejects(
     contracts.execute("owner", { ...create, title: "changed" }),
     (error) => error instanceof ContractError && error.code === "REQUEST_ID_REUSED",
@@ -172,6 +173,7 @@ test("Contract persists Content-based revisions, replay and established active l
   assert.ok(activeLine && "content" in activeLine);
   assert.equal(activeLine.content.planRevisionId, source.first.revision.revisionId);
   assert.equal(activeLine.content.node.title, "Pull cable");
+  assert.equal(activeLine.content.node.plannedQuantity?.measure.unit, "SET");
   assert.deepEqual(
     activeLine.content.node.path.map((item) => item.kind),
     ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"],
@@ -188,6 +190,7 @@ test("Contract persists Content-based revisions, replay and established active l
   assert.ok("content" in reference);
   assert.equal(reference.content.node.title, "Pull cable");
   assert.equal(reference.agreedQuantity, "20");
+  assert.equal(reference.content.node.plannedQuantity?.measure.unit, "SET");
 
   await assert.rejects(
     store.transactions.transact(

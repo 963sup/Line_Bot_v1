@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { ContractError } from "@line_bot_v1/contract/domain/error";
 import { parseProjectWbsCommand } from "../src/application/commands/project-content.js";
 import { executeProjectWbsCommand } from "../src/application/use-cases/project-content.js";
 import { executeProjectWbsGovernanceCommand } from "../src/application/use-cases/project-governance.js";
@@ -328,4 +329,69 @@ test("Project import rechecks current Project/Contract access and stores only a 
   checks.length = 0;
   await assert.rejects(executeProjectWbsCommand(store, "actor", command, 6));
   assert.deepEqual(checks, ["receipt", "contract:false"]);
+});
+
+test("WBS Contract source errors preserve authorization, missing and stale status", async () => {
+  const source = {
+    repositoryId: "repo",
+    contractId: "11111111-1111-4111-8111-111111111111",
+    contractRevisionId: "22222222-2222-4222-8222-222222222222",
+    lineId: "33333333-3333-4333-8333-333333333333",
+  };
+  const command = parseProjectWbsCommand({
+    action: "import-contract",
+    projectId: "project-a",
+    requestId,
+    expectedVersion: 1,
+    confirmedDisclosure: true,
+    source,
+    node: {
+      id: "reviewed-package",
+      parentId: "deliverable",
+      position: 0,
+      kind: "WORK_PACKAGE",
+      title: "Reviewed work package",
+      description: "",
+      deliverable: "",
+      acceptanceCriteria: "",
+    },
+  });
+  const initialized = reviseWbsContent(null, 0, { action: "initialize" }, "actor", "rev-a", 1);
+  let failure = new ContractError(403, "denied", "FORBIDDEN");
+  let checks = 0;
+  const tx: ProjectWbsContentTransaction = {
+    scope: { projectId: "project-a", role: "WRITE", closed: false },
+    contracts: {
+      verifyLine: async () => {
+        checks++;
+        throw failure;
+      },
+    },
+    replay: async () => null,
+    load: async () => initialized,
+    nextId: () => "rev-b",
+    save: async () => {
+      throw new Error("Ineligible Contract evidence must never be saved.");
+    },
+  };
+  const store: ProjectWbsStore = {
+    read: async () => {
+      throw new Error("Not a read test.");
+    },
+    history: async () => ({ revisions: [], next: null }),
+    transact: async (_actor, _command, work) => work(tx),
+  };
+  for (const item of [
+    { error: new ContractError(403, "denied", "FORBIDDEN"), status: 403 },
+    { error: new ContractError(404, "missing", "NOT_FOUND"), status: 404 },
+    { error: new ContractError(409, "stale", "SOURCE_INVALID"), status: 409 },
+    { error: new ContractError(503, "provider detail", "UNAVAILABLE"), status: 503 },
+  ]) {
+    failure = item.error;
+    await assert.rejects(
+      executeProjectWbsCommand(store, "actor", command, 2),
+      (error) => error instanceof WbsError && error.status === item.status,
+    );
+  }
+  assert.equal(checks, 4);
 });

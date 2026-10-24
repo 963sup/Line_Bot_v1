@@ -1,6 +1,24 @@
 import { ContentError } from "./error.js";
 
-export type QuantityUnit = "m" | "pcs";
+export type QuantityUnit = string;
+
+/** User-defined Content measure labels have no implicit conversion or inferred dimension. */
+export function isQuantityUnit(value: unknown): value is QuantityUnit {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 32 &&
+    value === value.trim() &&
+    !/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u.test(value)
+  );
+}
+
+export function normalizeQuantityUnit(value: unknown): QuantityUnit {
+  const unit = typeof value === "string" ? value.trim() : value;
+  if (!isQuantityUnit(unit))
+    throw new ContentError(400, "Invalid Content measure unit.", "INVALID_INPUT");
+  return unit;
+}
 
 export function quantityUnits(value: string): bigint {
   if (!/^(0|[1-9][0-9]{0,14})(\.[0-9]{1,3})?$/.test(value))
@@ -15,8 +33,9 @@ function quantityValue(units: bigint): string {
 }
 
 export function normalizeQuantity(value: string, unit: QuantityUnit): string {
+  const measureUnit = normalizeQuantityUnit(unit);
   const units = quantityUnits(value);
-  if (unit === "pcs" && value.includes("."))
+  if (measureUnit === "pcs" && value.includes("."))
     throw new ContentError(400, "pcs planned quantity must be an integer.", "INVALID_INPUT");
   return quantityValue(units);
 }

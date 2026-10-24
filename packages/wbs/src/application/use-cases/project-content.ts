@@ -1,9 +1,33 @@
+import type {
+  ContractLineReference,
+  ContractReferenceReader,
+} from "@line_bot_v1/contract/contracts/output/references";
+import { ContractError } from "@line_bot_v1/contract/domain/error";
 import type { ProjectWbsCommand } from "../../contracts/dto/project-content.js";
 import type { ProjectWbsStore } from "../../contracts/repositories/project-content.js";
 import { reviseWbsContent } from "../../domain/content.js";
 import { WbsError } from "../../domain/document.js";
 import { canEditProjectWbs } from "../../domain/policies/project-access.js";
 import { parseProjectWbsCommand } from "../commands/project-content.js";
+
+/** WBS rechecks Contract authority and maps its explicit failures into WBS command outcomes. */
+async function verifiedContractLine(
+  reader: ContractReferenceReader,
+  userId: string,
+  source: Readonly<ContractLineReference & { repositoryId: string }>,
+  requireActive: boolean,
+) {
+  try {
+    return await reader.verifyLine(userId, source.repositoryId, source, { requireActive });
+  } catch (error) {
+    if (!(error instanceof ContractError)) throw error;
+    if (error.status === 403) throw new WbsError(403, "目前沒有 Contract 來源讀取權限。");
+    if (error.status === 404) throw new WbsError(404, "找不到有權讀取的 Contract 來源。");
+    if (error.status === 400 || error.status === 409)
+      throw new WbsError(409, "Contract 來源已變更或不再符合匯入條件。");
+    throw new WbsError(503, "Contract 來源目前無法確認。");
+  }
+}
 
 export function executeProjectWbsCommand(
   store: ProjectWbsStore,
@@ -17,12 +41,7 @@ export function executeProjectWbsCommand(
     const replay = await transaction.replay();
     if (replay) {
       if (command.action === "import-contract")
-        await transaction.contracts.verifyLine(
-          userId,
-          command.source.repositoryId,
-          command.source,
-          { requireActive: false },
-        );
+        await verifiedContractLine(transaction.contracts, userId, command.source, false);
       return replay;
     }
     if (transaction.scope.closed) throw new WbsError(409, "Project 已關閉，不能修改 WBS。");
@@ -30,12 +49,7 @@ export function executeProjectWbsCommand(
     if (command.action === "import-contract") {
       if ((current?.version ?? 0) !== command.expectedVersion)
         throw new WbsError(409, "WBS 版本已更新，請重新確認 Contract 映射。");
-      const line = await transaction.contracts.verifyLine(
-        userId,
-        command.source.repositoryId,
-        command.source,
-        { requireActive: true },
-      );
+      const line = await verifiedContractLine(transaction.contracts, userId, command.source, true);
       if (line.content.repositoryId !== command.source.repositoryId)
         throw new WbsError(409, "Contract 來源 Repository 不一致。");
       const revision = reviseWbsContent(

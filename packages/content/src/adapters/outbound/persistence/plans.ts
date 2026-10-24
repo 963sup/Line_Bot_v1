@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import type { FileSavedResultReader } from "@line_bot_v1/file/contracts/output/saved-results";
 import {
   businessDatabase,
   type Database,
@@ -6,6 +7,7 @@ import {
   type SqlRow,
 } from "@line_bot_v1/platform/postgres";
 import {
+  booleanValue,
   literalValue,
   numberValue,
   numericValue,
@@ -21,14 +23,17 @@ import type {
 } from "../../../contracts/output/plans.js";
 import { ContentError } from "../../../domain/error.js";
 import type {
+  ContentFileImportEvidence,
   ContentMeasure,
   ContentPlanDocument,
   ContentPlanNode,
   ContentPlanRevision,
   ContentResourcePin,
 } from "../../../domain/plan.js";
+import { isQuantityUnit } from "../../../domain/quantity.js";
 
 type ResourceReaderFactory = (sql: Sql) => ResourceReferenceReader;
+type SavedResultsFactory = (sql: Sql) => FileSavedResultReader;
 
 function parsedJson(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -48,11 +53,13 @@ function decodeDocument(value: unknown): ContentPlanDocument {
     schemaVersion: 1,
     measures: document.measures.map((item): ContentMeasure => {
       const measure = record(item);
+      if (!isQuantityUnit(measure.unit))
+        throw new TypeError("Invalid stored Content measure unit.");
       return {
         id: stringValue(measure.id),
         name: stringValue(measure.name),
         subject: stringValue(measure.subject),
-        unit: literalValue(measure.unit, ["m", "pcs"]),
+        unit: measure.unit,
       };
     }),
     nodes: document.nodes.map((item): ContentPlanNode => {
@@ -82,7 +89,24 @@ function decodeDocument(value: unknown): ContentPlanDocument {
   };
 }
 
+function decodeContentFileImport(value: unknown): ContentFileImportEvidence | undefined {
+  if (value === null) return undefined;
+  const item = record(value);
+  return {
+    repositoryId: stringValue(item.repositoryId),
+    fileId: stringValue(item.fileId),
+    fileRevisionId: stringValue(item.fileRevisionId),
+    fileSha256: stringValue(item.fileSha256),
+    runId: stringValue(item.runId),
+    processingRevisionId: stringValue(item.processingRevisionId),
+    observationId: stringValue(item.observationId),
+    uncertain: booleanValue(item.uncertain),
+    nodeId: stringValue(item.nodeId),
+  };
+}
+
 function decodeContentPlanRevision(row: SqlRow): ContentPlanRevision {
+  const fileImport = decodeContentFileImport(row.file_import);
   return {
     id: stringValue(row.id),
     repositoryId: stringValue(row.repository_id),
@@ -90,8 +114,9 @@ function decodeContentPlanRevision(row: SqlRow): ContentPlanRevision {
     parentRevisionId: row.parent_revision_id === null ? null : stringValue(row.parent_revision_id),
     actorUserId: stringValue(row.actor_user_id),
     at: Number(numericValue(row.at)),
-    action: literalValue(row.action, ["initialize", "replace"]),
+    action: literalValue(row.action, ["initialize", "replace", "import-file"]),
     document: decodeDocument(row.document),
+    ...(fileImport ? { fileImport } : {}),
   };
 }
 
@@ -104,7 +129,7 @@ export async function readContentPlanRevision(
     await sql.query(
       revisionId === undefined
         ? `SELECT revision.id,revision.repository_id,revision.version,revision.parent_revision_id,
-                  revision.actor_user_id,revision.at,revision.action,
+                  revision.actor_user_id,revision.at,revision.action,revision.file_import,
                   jsonb_set(revision.document,'{resourcePins}',coalesce((
                     SELECT jsonb_agg(jsonb_build_object(
                       'nodeId',pin.node_id,'resourceId',pin.resource_id,
@@ -117,7 +142,7 @@ export async function readContentPlanRevision(
            JOIN content_plan_revisions revision ON revision.id=plan.head_revision_id
            WHERE plan.repository_id=$1`
         : `SELECT revision.id,revision.repository_id,revision.version,revision.parent_revision_id,
-                  revision.actor_user_id,revision.at,revision.action,
+                  revision.actor_user_id,revision.at,revision.action,revision.file_import,
                   jsonb_set(revision.document,'{resourcePins}',coalesce((
                     SELECT jsonb_agg(jsonb_build_object(
                       'nodeId',pin.node_id,'resourceId',pin.resource_id,
@@ -137,6 +162,7 @@ export async function readContentPlanRevision(
 export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransactions {
   constructor(
     private readonly resourceReader: ResourceReaderFactory,
+    private readonly savedResultsReader: SavedResultsFactory,
     private readonly db: Database = businessDatabase(),
   ) {}
 
@@ -157,7 +183,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
       const rows = (
         await sql.query(
           `SELECT revision.id,revision.repository_id,revision.version,revision.parent_revision_id,
-                  revision.actor_user_id,revision.at,revision.action,
+                  revision.actor_user_id,revision.at,revision.action,revision.file_import,
                   jsonb_set(revision.document,'{resourcePins}',coalesce((
                     SELECT jsonb_agg(jsonb_build_object(
                       'nodeId',pin.node_id,'resourceId',pin.resource_id,
@@ -195,6 +221,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
         resources: this.resourceReader(sql),
+        savedFileResults: this.savedResultsReader(sql),
         nextId: randomUUID,
         replay: async () => {
           const row = (
@@ -259,8 +286,8 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
               );
             await sql.query(
               `INSERT INTO content_plan_revisions(
-                 id,repository_id,version,parent_revision_id,actor_user_id,at,action,document
-               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
+                 id,repository_id,version,parent_revision_id,actor_user_id,at,action,document,file_import
+               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`,
               [
                 next.id,
                 repository.id,
@@ -274,6 +301,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
                   measures: next.document.measures,
                   nodes: next.document.nodes,
                 }),
+                next.fileImport ? JSON.stringify(next.fileImport) : null,
               ],
             );
             for (const pin of next.document.resourcePins)

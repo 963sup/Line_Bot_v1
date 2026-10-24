@@ -286,6 +286,7 @@
       "moduleKind": "domain-module",
       "semanticOwner": "content",
       "allowedWorkspaceDependencies": [
+        "@line_bot_v1/file",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository",
         "@line_bot_v1/resources"

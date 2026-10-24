@@ -9,6 +9,7 @@ import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
 import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select";
 import { Textarea } from "../../shared/ui/textarea";
+import { type ContractWbsHandoff, parseContractWbsHandoff } from "./contract-wbs-handoff";
 
 type Contract = { contractId: string; title: string; state: string };
 type ContractLine = {
@@ -59,6 +60,7 @@ export default function ProjectWbsContractImport({
 }) {
   const [owner, setOwner] = useState("");
   const [repository, setRepository] = useState("");
+  const [handoff, setHandoff] = useState<ContractWbsHandoff | null>(null);
   const [repositoryId, setRepositoryId] = useState("");
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [selected, setSelected] = useState<ActiveRevision | null>(null);
@@ -88,10 +90,17 @@ export default function ProjectWbsContractImport({
     setConfirmed(false);
   }, []);
   useEffect(() => {
+    const pinned = parseContractWbsHandoff(new URLSearchParams(globalThis.window.location.search));
+    if (pinned) {
+      setOwner(pinned.contractOwner);
+      setRepository(pinned.contractRepository);
+      setHandoff(pinned);
+    }
     const clear = () => {
       resetSource();
       setOwner("");
       setRepository("");
+      setHandoff(null);
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") clear();
@@ -119,7 +128,10 @@ export default function ProjectWbsContractImport({
     const payload: unknown = await response.json();
     if (ticket !== epoch.current) throw new Error("Contract 來源已變更。");
     if (!response.ok) {
-      if ([401, 403, 404].includes(response.status)) resetSource();
+      if ([401, 403, 404].includes(response.status)) {
+        resetSource();
+        setHandoff(null);
+      }
       const value = record(payload);
       throw new Error(typeof value.error === "string" ? value.error : "Contract 來源無法存取。");
     }
@@ -156,6 +168,7 @@ export default function ProjectWbsContractImport({
     setTitle("");
     setConfirmed(false);
     if (!contractId || disabled || !repositoryId) return;
+    if (handoff && handoff.contractId !== contractId) setHandoff(null);
     const ticket = epoch.current;
     setBusy(true);
     setError("");
@@ -167,6 +180,8 @@ export default function ProjectWbsContractImport({
       const revision = record(result.revision);
       if (revision.state !== "ACTIVE" || revision.contractId !== contractId)
         throw new Error("只能選擇目前 ACTIVE 的 Contract。");
+      if (handoff?.contractId === contractId && revision.revisionId !== handoff.contractRevisionId)
+        throw new Error("Contract 版本已變更，不能將交接意圖改成另一個版本。");
       setSelected({
         contractId,
         revisionId: str(revision.revisionId),
@@ -233,6 +248,11 @@ export default function ProjectWbsContractImport({
             {error}
           </p>
         )}
+        {handoff && (
+          <p className="text-sm text-muted-foreground">
+            從 Contract 交接：請再次讀取目前 ACTIVE 的精確來源版本；若版本已變更，必須重新選擇。
+          </p>
+        )}
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="grid gap-1">
             <Label htmlFor="contract-repository-owner">Contract Repository Owner Login</Label>
@@ -242,6 +262,7 @@ export default function ProjectWbsContractImport({
               disabled={disabled || busy}
               onChange={(event) => {
                 resetSource();
+                setHandoff(null);
                 setOwner(event.target.value);
               }}
             />
@@ -254,6 +275,7 @@ export default function ProjectWbsContractImport({
               disabled={disabled || busy}
               onChange={(event) => {
                 resetSource();
+                setHandoff(null);
                 setRepository(event.target.value);
               }}
             />

@@ -10,6 +10,7 @@ import { ContentError, contentErrorFromUnknown } from "../../domain/error.js";
 import {
   type ContentResourcePin,
   changedResourcePins,
+  importFileContentNode,
   reviseContentPlan,
 } from "../../domain/plan.js";
 import { canEditContent } from "../../domain/policies/access.js";
@@ -86,18 +87,32 @@ export function createContentPlans(deps: {
             if (tx.scope.archived)
               throw new ContentError(409, "Repository is archived.", "LIFECYCLE_CONFLICT");
             const current = await tx.plans.load();
-            const revision = reviseContentPlan(
-              current,
-              command.expectedVersion,
-              command.action,
-              command.document,
-              {
-                id: tx.nextId(),
-                repositoryId: tx.scope.repositoryId,
-                actorUserId: userId,
-                at: deps.now(),
-              },
-            );
+            const context = {
+              id: tx.nextId(),
+              repositoryId: tx.scope.repositoryId,
+              actorUserId: userId,
+              at: deps.now(),
+            };
+            const revision =
+              command.action === "import-file"
+                ? importFileContentNode(
+                    current,
+                    command.expectedVersion,
+                    command.target,
+                    await tx.savedFileResults.verifySaved(
+                      userId,
+                      tx.scope.repositoryId,
+                      command.source,
+                    ),
+                    context,
+                  )
+                : reviseContentPlan(
+                    current,
+                    command.expectedVersion,
+                    command.action,
+                    command.document,
+                    context,
+                  );
             const changedPins = changedResourcePins(current?.document ?? null, revision.document);
             const resources = changedPins.length
               ? await tx.resources.verifyPinned(

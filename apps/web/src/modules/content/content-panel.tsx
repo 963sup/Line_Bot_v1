@@ -20,9 +20,10 @@ import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
 import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select";
 import { Textarea } from "../../shared/ui/textarea";
+import ContentFileImport, { type FileContentImportDraft } from "./content-file-import";
 
 type Kind = "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
-type Measure = { id: string; name: string; subject: string; unit: "m" | "pcs" };
+type Measure = { id: string; name: string; subject: string; unit: string };
 type ResourcePin = {
   nodeId: string;
   resourceId: string;
@@ -46,6 +47,7 @@ type Node = {
   plannedQuantity: { measureId: string; value: string } | null;
 };
 type Revision = {
+  revisionId: string;
   version: number;
   document: {
     schemaVersion: 1;
@@ -87,11 +89,13 @@ export default function ContentPanel({
   liffId,
   ownerLogin,
   repositoryName,
+  contractsPath,
   onCanManageChange,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
+  contractsPath: string;
   onCanManageChange(value: boolean): void;
 }) {
   const [view, setView] = useState<View | null>(null);
@@ -282,30 +286,63 @@ export default function ContentPanel({
       releasePendingCommandLock(mutationLock, token);
     }
   };
-  const save = async () => {
-    if (!view || pending) return;
+  const submit = async (command: object) => {
+    if (!view || pending) throw new Error("Complete the current Content command first.");
     const token = acquirePendingCommandLock(mutationLock);
-    if (!token) return;
+    if (!token) throw new Error("A Content command is already running.");
     try {
       const saved = persistPendingCommand(
         sessionStorage,
         "content",
         view.actorUserId,
         view.repository.id,
-        {
-          action: view.revision ? "replace" : "initialize",
-          repositoryId: view.repository.id,
-          requestId: crypto.randomUUID(),
-          expectedVersion: view.revision?.version ?? 0,
-          document,
-        },
+        command,
       );
       setPending(saved);
       await commit(saved, false, token);
     } catch (cause) {
       releasePendingCommandLock(mutationLock, token);
+      throw cause;
+    }
+  };
+  const save = async () => {
+    if (!view || pending) return;
+    try {
+      await submit({
+        action: view.revision ? "replace" : "initialize",
+        repositoryId: view.repository.id,
+        requestId: crypto.randomUUID(),
+        expectedVersion: view.revision?.version ?? 0,
+        document,
+      });
+    } catch (cause) {
       setError(cause instanceof Error ? cause.message : "無法安全保存操作，未送出請求。");
     }
+  };
+  const importSavedFile = async (draft: FileContentImportDraft) => {
+    if (!view?.revision || document !== view.revision.document)
+      throw new Error("Please save or reload the current Content draft before importing.");
+    const measureId = draft.target.newMeasure ? crypto.randomUUID() : draft.target.measureId;
+    await submit({
+      action: "import-file",
+      repositoryId: view.repository.id,
+      requestId: crypto.randomUUID(),
+      expectedVersion: view.revision.version,
+      confirmedDisclosure: true,
+      source: draft.source,
+      target: {
+        id: crypto.randomUUID(),
+        parentId: draft.target.parentId,
+        kind: draft.target.kind,
+        title: draft.target.title,
+        body: draft.target.body,
+        measureId,
+        quantity: draft.target.quantity,
+        ...(draft.target.newMeasure
+          ? { newMeasure: { id: measureId, ...draft.target.newMeasure } }
+          : {}),
+      },
+    });
   };
   return (
     <div className="grid gap-4 p-4">
@@ -464,11 +501,23 @@ export default function ContentPanel({
           )}
         </CardContent>
       </Card>
+      {view?.canEdit && view.revision && (
+        <ContentFileImport
+          liffId={liffId}
+          ownerLogin={ownerLogin}
+          repositoryName={repositoryName}
+          parents={view.revision.document.nodes}
+          measures={view.revision.document.measures}
+          disabled={busy || !!pending || document !== view.revision.document}
+          onImport={importSavedFile}
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>計量基準與 Resources</CardTitle>
           <CardDescription>
-            Work／Task 的計畫數量使用版本內固定的 measure；Resource pin 固定到目前 revision。
+            Work／Task 的計畫數量使用版本內固定的 measure；單位可自行輸入（pcs
+            為整數，其餘至多三位小數），不自動換算。Resource pin 固定到目前 revision。
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -485,18 +534,22 @@ export default function ContentPanel({
               value={measureSubject}
               onChange={(event) => setMeasureSubject(event.target.value)}
             />
-            <NativeSelect
+            <Input
               aria-label="計量單位"
+              placeholder="單位，例如 pcs、m、SET、組"
               value={measureUnit}
-              onChange={(event) => setMeasureUnit(event.target.value === "m" ? "m" : "pcs")}
-            >
-              <NativeSelectOption value="pcs">pcs</NativeSelectOption>
-              <NativeSelectOption value="m">m</NativeSelectOption>
-            </NativeSelect>
+              maxLength={32}
+              onChange={(event) => setMeasureUnit(event.target.value)}
+            />
             <Button
               type="button"
               variant="outline"
-              disabled={!view?.canEdit || !measureName.trim() || !measureSubject.trim()}
+              disabled={
+                !view?.canEdit ||
+                !measureName.trim() ||
+                !measureSubject.trim() ||
+                !measureUnit.trim()
+              }
               onClick={() => {
                 setDocument((current) => ({
                   ...current,
@@ -506,7 +559,7 @@ export default function ContentPanel({
                       id: crypto.randomUUID(),
                       name: measureName,
                       subject: measureSubject,
-                      unit: measureUnit,
+                      unit: measureUnit.trim(),
                     },
                   ],
                 }));
@@ -605,6 +658,32 @@ export default function ContentPanel({
           ))}
         </CardContent>
       </Card>
+      {view?.canEdit &&
+        view.revision &&
+        view.revision.document.nodes.some(
+          (node) => (node.kind === "WORK" || node.kind === "TASK") && node.plannedQuantity !== null,
+        ) && (
+          <div className="grid gap-2 rounded-lg border p-3 text-sm">
+            <p className="font-medium">下一步：由正式 Content Revision 建立 Contract</p>
+            <p className="text-muted-foreground">
+              只引用已提交的 Content v{view.revision.version}，不採用尚未儲存的草稿，
+              也不會自動建立合約。
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy || pending !== null}
+              onClick={() => {
+                const query = new URLSearchParams({
+                  planRevisionId: view.revision?.revisionId ?? "",
+                });
+                globalThis.window.location.assign(`${contractsPath}?${query.toString()}`);
+              }}
+            >
+              前往 Contracts 選擇正式 Work／Task 與約定數量
+            </Button>
+          </div>
+        )}
       <Card>
         <CardHeader>
           <CardTitle>新增節點</CardTitle>

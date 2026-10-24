@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import styles from "./project-list.module.css";
+import {
+  type ContractWbsHandoff,
+  contractWbsHandoffSearch,
+  parseContractWbsHandoff,
+} from "./contract-wbs-handoff";
 import { useProjectCollection } from "./use-project-collection";
 
 type OwnerFilter = "ALL" | "USER" | "ORGANIZATION";
@@ -17,6 +23,22 @@ const ownerFilters: readonly { value: OwnerFilter; label: string }[] = [
 export default function ProjectList({ liffId }: { liffId: string }) {
   const { items, busy, error, load, clear } = useProjectCollection(liffId);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("ALL");
+  const [handoff, setHandoff] = useState<ContractWbsHandoff | null>(null);
+  useEffect(() => {
+    setHandoff(parseContractWbsHandoff(new URLSearchParams(globalThis.window.location.search)));
+    const clearHandoff = () => setHandoff(null);
+    const visibility = () => {
+      if (globalThis.document.visibilityState === "hidden") clearHandoff();
+    };
+    const unsubscribe = liffClient.onSessionBlocked(clearHandoff);
+    globalThis.document.addEventListener("visibilitychange", visibility);
+    globalThis.window.addEventListener("pagehide", clearHandoff);
+    return () => {
+      unsubscribe();
+      globalThis.document.removeEventListener("visibilitychange", visibility);
+      globalThis.window.removeEventListener("pagehide", clearHandoff);
+    };
+  }, []);
   const visibleItems =
     ownerFilter === "ALL" ? items : items?.filter((item) => item.ownerKind === ownerFilter);
 
@@ -59,7 +81,11 @@ export default function ProjectList({ liffId }: { liffId: string }) {
           {visibleItems.map((item) => (
             <Link
               className={styles.row}
-              href={`/projects/${encodeURIComponent(item.id)}`}
+              href={
+                handoff
+                  ? `/projects/${encodeURIComponent(item.id)}/wbs?${contractWbsHandoffSearch(handoff)}`
+                  : `/projects/${encodeURIComponent(item.id)}`
+              }
               key={item.id}
             >
               <span className={styles.copy}>
@@ -69,7 +95,7 @@ export default function ProjectList({ liffId }: { liffId: string }) {
                   {item.name}
                 </strong>
               </span>
-              <span className={styles.open}>開啟</span>
+              <span className={styles.open}>{handoff ? "選擇此 Project WBS" : "開啟"}</span>
             </Link>
           ))}
         </div>

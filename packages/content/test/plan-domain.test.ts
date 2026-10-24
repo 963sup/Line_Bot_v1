@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { parseContentPlanCommand } from "../src/application/commands/plans.js";
 import { ContentError } from "../src/domain/error.js";
 import {
   type ContentPlanDocument,
+  importFileContentNode,
   normalizeContentPlanDocument,
   reviseContentPlan,
 } from "../src/domain/plan.js";
-import { normalizeQuantity } from "../src/domain/quantity.js";
+import {
+  isQuantityUnit,
+  normalizeQuantity,
+  normalizeQuantityUnit,
+} from "../src/domain/quantity.js";
 
 const ids = [
   "11111111-1111-4111-8111-111111111111",
@@ -219,5 +225,157 @@ test("Content revisions require expected version and publish detached complete d
         at: 3,
       }),
     (error) => error instanceof ContentError && error.code === "VERSION_CONFLICT",
+  );
+});
+
+test("user-defined Content units are bounded immutable labels, without conversions", () => {
+  const original = document();
+  const input = {
+    ...original,
+    measures: original.measures.map((measure) => ({ ...measure, unit: "  SET  " })),
+  };
+  const normalized = normalizeContentPlanDocument(input, null);
+  assert.equal(normalized.measures[0]?.unit, "SET");
+  assert.equal(normalized.nodes[4]?.plannedQuantity?.value, "2.5");
+  assert.equal(normalizeQuantityUnit(" 平方公尺（m²） "), "平方公尺（m²）");
+  assert.equal(isQuantityUnit("SET"), true);
+  assert.equal(isQuantityUnit(" SET "), false);
+  assert.equal(isQuantityUnit("SET\nBOX"), false);
+  assert.equal(normalizeQuantity("1.250", "SET"), "1.25");
+  assert.equal(normalizeQuantity("1.0", "m"), "1");
+  assert.throws(() => normalizeQuantity("1.0", "pcs"), ContentError);
+  for (const bad of ["", "  ", "a".repeat(33), "SET\nBOX", "\u202eSET"]) {
+    assert.throws(
+      () =>
+        normalizeContentPlanDocument(
+          { ...original, measures: original.measures.map((m) => ({ ...m, unit: bad })) },
+          null,
+        ),
+      (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+    );
+  }
+  assert.throws(
+    () =>
+      normalizeContentPlanDocument(
+        { ...original, measures: original.measures.map((m) => ({ ...m, unit: "盒" })) },
+        normalized,
+      ),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+});
+
+test("Content command normalizes units before exact replay fingerprints", () => {
+  const parsed = parseContentPlanCommand({
+    action: "initialize",
+    repositoryId: "repo",
+    requestId: ids[6],
+    expectedVersion: 0,
+    document: {
+      ...document(),
+      measures: document().measures.map((measure) => ({ ...measure, unit: "  組  " })),
+    },
+  });
+  if (parsed.action !== "initialize") throw new Error("Expected initialize Command.");
+  assert.equal(parsed.document.measures[0]?.unit, "組");
+  assert.throws(
+    () =>
+      parseContentPlanCommand({
+        ...parsed,
+        document: {
+          ...parsed.document,
+          measures: parsed.document.measures.map((measure) => ({
+            ...measure,
+            unit: "invalid\tunit",
+          })),
+        },
+      }),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+});
+
+test("Content File import appends one reviewed Work without altering prior documents", () => {
+  const current = reviseContentPlan(null, 0, "initialize", document(), {
+    id: ids[6],
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 1,
+  });
+  const source = {
+    repositoryId: "repo",
+    fileId: ids[0],
+    fileRevisionId: ids[1],
+    fileSha256: "0".repeat(64),
+    runId: ids[2],
+    processingRevisionId: ids[3],
+    observationId: "o1",
+    uncertain: true,
+  };
+  const target = {
+    id: ids[8],
+    parentId: ids[2],
+    kind: "WORK" as const,
+    title: "Cable assemblies",
+    body: "Reviewed against original evidence",
+    measureId: ids[7],
+    quantity: "2.500",
+    newMeasure: {
+      id: ids[7],
+      name: "Assembly count",
+      subject: "Installed",
+      unit: "SET",
+    },
+  };
+  const next = importFileContentNode(current, 1, target, source, {
+    id: ids[7],
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 2,
+  });
+  assert.equal(next.action, "import-file");
+  assert.equal(next.version, 2);
+  assert.deepEqual(next.fileImport, { ...source, nodeId: target.id });
+  assert.equal(next.document.nodes.at(-1)?.plannedQuantity?.value, "2.5");
+  assert.equal(next.document.measures.at(-1)?.unit, "SET");
+  assert.equal(current.document.nodes.length + 1, next.document.nodes.length);
+  assert.equal(current.document.measures.length + 1, next.document.measures.length);
+  assert.equal(
+    current.document.nodes.some((node) => node.id === target.id),
+    false,
+  );
+  assert.throws(
+    () =>
+      importFileContentNode(current, 0, target, source, {
+        id: ids[7],
+        repositoryId: "repo",
+        actorUserId: "owner",
+        at: 2,
+      }),
+    (error) => error instanceof ContentError && error.code === "VERSION_CONFLICT",
+  );
+  assert.throws(
+    () =>
+      importFileContentNode(current, 1, { ...target, parentId: ids[3] }, source, {
+        id: ids[7],
+        repositoryId: "repo",
+        actorUserId: "owner",
+        at: 2,
+      }),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+  assert.throws(
+    () =>
+      importFileContentNode(
+        current,
+        1,
+        target,
+        { ...source, repositoryId: "other" },
+        {
+          id: ids[7],
+          repositoryId: "repo",
+          actorUserId: "owner",
+          at: 2,
+        },
+      ),
+    (error) => error instanceof ContentError && error.code === "SOURCE_INVALID",
   );
 });

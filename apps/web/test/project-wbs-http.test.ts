@@ -4,6 +4,7 @@ import { createProjectWbs } from "@line_bot_v1/wbs/application/use-cases/project
 import type { ProjectWbsStore } from "@line_bot_v1/wbs/contracts/repositories/project-content";
 import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { projectWbsRequest } from "../src/modules/project/project-wbs-http.server";
+import { projectWbsHistory, projectWbsReceipt, projectWbsView } from "../src/modules/project/project-wbs-response";
 
 test("Project WBS HTTP checks origin, parses commands and keeps failure classes distinct", async (t) => {
   const previous = process.env.APP_ORIGIN;
@@ -140,4 +141,34 @@ test("Project WBS HTTP rejects a missing Contract disclosure and forged source d
     400,
   );
   assert.equal((await post(valid)).status, 409);
+});
+
+test("import-contract revisions survive Web receipt, current view and history decoding", () => {
+  const revision = {
+    id: "revision-2",
+    version: 2,
+    parentRevisionId: "revision-1",
+    actorUserId: "writer",
+    action: "import-contract",
+    at: 100,
+    document: { schemaVersion: 1, nodes: [] },
+  };
+  assert.equal(
+    projectWbsReceipt({ requestId: "req", projectId: "project", revision }).revision.action,
+    "import-contract",
+  );
+  const view = projectWbsView({
+    actorUserId: "writer",
+    project: { id: "project", title: "Project" },
+    canEdit: true,
+    canManageProject: false,
+    closed: false,
+    version: 2,
+    revision,
+  });
+  assert.equal(view.revision?.action, "import-contract");
+  assert.equal(projectWbsHistory({ revisions: [revision], next: null }).revisions[0]?.action, "import-contract");
+  assert.throws(() =>
+    projectWbsReceipt({ requestId: "req", projectId: "project", revision: { ...revision, action: "unknown" } }),
+  );
 });
