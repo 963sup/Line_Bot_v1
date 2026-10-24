@@ -421,10 +421,9 @@ test("PGlite rolls back the entire transfer when replay evidence persistence fai
   assert.equal(
     Number(
       (
-        await pg.query(
-          "SELECT count(*) FROM app_private.project_wbs WHERE project_id=$1",
-          [built.projectId],
-        )
+        await pg.query("SELECT count(*) FROM app_private.project_wbs WHERE project_id=$1", [
+          built.projectId,
+        ])
       ).rows[0]?.count,
     ),
     0,

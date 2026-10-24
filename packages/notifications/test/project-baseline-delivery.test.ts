@@ -91,12 +91,23 @@ test("accepted and retry outcomes use the persisted retry key", async () => {
       create: async () => {},
       claim: async () => ({
         result: { inbox: "created", notificationId: "notification", line: "unknown", nextAt: null },
-        claim: { token: `lease-${attempt}`, key: "intent", target: "target", payload: "payload", retryKey: "stable-retry-key" },
+        claim: {
+          token: `lease-${attempt}`,
+          key: "intent",
+          target: "target",
+          payload: "payload",
+          retryKey: "stable-retry-key",
+        },
       }),
       complete: async (_claim, outcome) => {
         assert.equal(outcome, outcomes[attempt]);
         attempt++;
-        return { inbox: "created", notificationId: "notification", line: outcome === "accepted" ? "accepted" : "pending", nextAt: null };
+        return {
+          inbox: "created",
+          notificationId: "notification",
+          line: outcome === "accepted" ? "accepted" : "pending",
+          nextAt: null,
+        };
       },
       cancel: async () => {},
     },
@@ -107,7 +118,13 @@ test("accepted and retry outcomes use the persisted retry key", async () => {
     inboxUrl: "https://example.test/notifications",
     now: () => 1,
   });
-  const input = { key: "intent", projectId: "project", baselineId: "baseline", revisionId: "revision", recipient: "recipient" };
+  const input = {
+    key: "intent",
+    projectId: "project",
+    baselineId: "baseline",
+    revisionId: "revision",
+    recipient: "recipient",
+  };
 
   assert.equal((await notifications.deliver(input, async () => true)).line, "pending");
   assert.equal((await notifications.deliver(input, async () => true)).line, "accepted");
@@ -122,7 +139,13 @@ test("a provider timeout is recorded as unknown for exact-key recovery", async (
       create: async () => {},
       claim: async () => ({
         result: { inbox: "created", notificationId: "notification", line: "unknown", nextAt: null },
-        claim: { token: "lease", key: "intent", target: "target", payload: "payload", retryKey: "stable-retry-key" },
+        claim: {
+          token: "lease",
+          key: "intent",
+          target: "target",
+          payload: "payload",
+          retryKey: "stable-retry-key",
+        },
       }),
       complete: async (_claim, outcome) => {
         completedAs = outcome;
@@ -139,7 +162,13 @@ test("a provider timeout is recorded as unknown for exact-key recovery", async (
   });
 
   const result = await notifications.deliver(
-    { key: "intent", projectId: "project", baselineId: "baseline", revisionId: "revision", recipient: "recipient" },
+    {
+      key: "intent",
+      projectId: "project",
+      baselineId: "baseline",
+      revisionId: "revision",
+      recipient: "recipient",
+    },
     async () => true,
   );
   assert.equal(sentWith, "stable-retry-key");
