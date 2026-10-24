@@ -27,7 +27,7 @@
 ## Effective context contract
 
 1. 一律先讀 root 與沿目標路徑適用的 `AGENTS.md`、[system invariants](docs/rules/system-invariants.md)，再由 [task router](docs/README.md) 取任務入口。子 AGENTS 只補 local constraints，引用本契約，不複製完整 authority 清單。
-2. 先定義 task、Owner、consumer 與觸及的 contract；已知 Owner 直接讀其 contract、相關 source/tests 及 package exports。未知 Owner 才用 `pnpm semantic resolve/plan/context`；候選、歧義與 no-match 不授予修改範圍。
+2. 先定義 task、Owner、consumer 與觸及的 contract。Owner 未知、語意歧義，或跨 Owner 的 capability／public contract／資料／授權影響尚未釐清時，用 `pnpm semantic plan "<intent>"` 定位影響；需要具體 authority selectors 時用 `pnpm semantic context "<intent>"`。已知且影響限於單一 Owner 時，直接讀其 contract、相關 source/tests 及 package exports；已知主要 Owner 不代表跨 Owner 影響已釐清。候選、歧義與 no-match 不授予修改範圍。
 3. 依實際責任載入下表來源。JSON 可讀必要 entries，FPT 必須定位 exact file/symbol/field；記錄來源與 revision，working-tree 修改不能冒充 HEAD 內容。Generated projection／工具選取結果僅供定位，不取代 authority。
 
 | 觸發條件 | 必須具體讀取的來源 |
@@ -56,7 +56,7 @@
 
 ## Retrieval
 
-先用 [task router](docs/README.md) 取最小 context；已知 owner 時直接讀 owner contract + nearest `AGENTS.md`。跨 owner/語意變更可用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。
+先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。Owner 未知、語意歧義或跨 Owner 影響未釐清時，依上方條件使用 `pnpm semantic plan "<intent>"`，需要具體閱讀來源再用 `context`。
 
 修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`、Codex 角色放 `.codex/agents/`，不維護重複 skill 或 Markdown review database。
 

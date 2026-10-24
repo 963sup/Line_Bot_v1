@@ -16,9 +16,9 @@ enabled = true
 # Opt-in GPT-6 development roles set their own model in agents/*.toml.
 default_subagent_model = "gpt-5.6-luna"
 default_subagent_reasoning_effort = "medium"
-# Excludes the primary agent: 1 primary + up to 8 subagents.
+# Excludes the primary agent: 1 primary + up to 5 subagents.
 # Ceiling, not target team size; only parallelize independent, bounded work.
-max_concurrent_threads_per_session = 8
+max_concurrent_threads_per_session = 5
 
 [mcp_servers.next-devtools]
 # Shared by the parent and its subagents; per-tool overrides take precedence.

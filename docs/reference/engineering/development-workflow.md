@@ -30,7 +30,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 開始時先選擇下方適用的工具，並依 [autonomous delegation](../../../.codex/agents/AGENTS.md#autonomous-delegation) 決定 Primary 直接處理或委派；已有任務授權就直接執行。只在有助於確認 scope、未知數或責任時，以簡短進度說明選擇，不新增逐次核准或任務紀錄。
 
 1. **目標與不變條件**：確認可觀察結果、允許／排除範圍、Owner、consumer 與完成標準，保留現有 WIP。
-2. **Owner／契約**：已知 Owner 直接讀其契約、public exports、source/tests 與 nearest AGENTS；未知或跨語意時用 `pnpm semantic context "<intent>"` / `plan`，照 required selectors 讀 authority。歧義先定位，不當成修改授權。
+2. **Owner／契約**：先判定主要 Owner 與跨 Owner 影響是否已釐清。未知 Owner、語意歧義或跨 Owner 的 capability／public contract／資料／授權影響未釐清時，先用 `pnpm semantic plan "<intent>"`，需要具體 authority selectors 再用 `context`；已知且限於單一 Owner 時直接讀其契約、public exports、source/tests 與 nearest AGENTS。歧義先定位，不當成修改授權。
 3. **實作／consumers**：文字、SQL、JSON 與文件用 `rg`；有界範圍的 imports／exports／頂層宣告與靜態模組連結用 `pnpm code facts --scope <path>`；特定符號定義／引用用 `pnpm code definition` / `references`；相同語法結構用 `code search`。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
 4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
 5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
@@ -55,7 +55,7 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 | 要回答的問題／操作 | 主動使用 | 完成條件與限制 |
 | --- | --- | --- |
-| Owner 未知、語意歧義或跨 Owner 影響 | `pnpm semantic plan "<intent>"`；需要載入具體 authority 時用 `context` | 讀取選中的真實契約、來源與 revision；已知 Owner 可直接讀契約，不要求先跑兩個命令。 |
+| Owner 未知、語意歧義或跨 Owner 影響未釐清 | `pnpm semantic plan "<intent>"`；需要載入具體 authority 時用 `context` | 讀取選中的真實契約、來源與 revision；已知且限於單一 Owner 可直接讀契約，不要求先跑兩個命令。 |
 | 已知路徑、精確文字、SQL／JSON／文件引用 | `rg`／`rg --files` 與 targeted reads | 確認搜尋範圍、排除與實際 consumers。文字命中不證明是同一個 TS symbol。 |
 | 有界 source 範圍的 imports／exports／頂層宣告與靜態模組連結 | `pnpm code facts --scope <path>`，可重複 scope／exclude | ts-morph 只解析當次 source snapshot，模組目標依實際 tsconfig 解析；查閱 hash、工作樹狀態、package exports 與 partial／邊界。輸出是 stdout 證據，不推導業務 Owner、runtime call graph 或跨 project 完整性。 |
 | TS／JS symbol 的定義、引用與私有改名 | `pnpm code definition`／`references`／`rename` | 使用現有 TypeScript LanguageService；先查引用再產生改名預覽。project-local、partial、unsupported、公開／跨 project 邊界如實回報，沿 public exports 補查 consumers。 |
