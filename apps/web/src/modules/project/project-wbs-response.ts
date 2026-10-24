@@ -1,4 +1,4 @@
-import { isRecord, numberValue, stringValue } from "@line_bot_v1/platform/validation";
+import { isRecord, literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type {
   ProjectWbsHistory,
   ProjectWbsReceipt,
@@ -7,6 +7,48 @@ import type {
 import type { WbsRevision } from "@line_bot_v1/wbs/domain/content";
 import { parseWbsDocument } from "@line_bot_v1/wbs/domain/document";
 
+function contentImport(value: unknown): NonNullable<WbsRevision["contentImport"]> {
+  if (
+    !isRecord(value) ||
+    value.mappingVersion !== "content-wbs-v1" ||
+    !Array.isArray(value.nodeCoverage) ||
+    !Array.isArray(value.sourceRows)
+  )
+    throw new Error("WBS Content 來源證據格式不正確。");
+  return {
+    repositoryId: stringValue(value.repositoryId),
+    contentRevisionId: stringValue(value.contentRevisionId),
+    contentVersion: numberValue(value.contentVersion),
+    mappingVersion: "content-wbs-v1",
+    nodeCoverage: value.nodeCoverage.map((item) => {
+      if (!isRecord(item)) throw new Error("WBS Content 來源證據格式不正確。");
+      return {
+        contentNodeId: stringValue(item.contentNodeId),
+        wbsNodeId: stringValue(item.wbsNodeId),
+        sourceKind: literalValue(item.sourceKind, [
+          "SUBJECT",
+          "OBJECT",
+          "SUBOBJECT",
+          "WORK",
+          "TASK",
+        ]),
+        targetKind: literalValue(item.targetKind, ["DELIVERABLE", "WORK_PACKAGE"]),
+      };
+    }),
+    sourceRows: value.sourceRows.map((item) => {
+      if (!isRecord(item) || !Array.isArray(item.wbsNodeIds))
+        throw new Error("WBS Content 來源證據格式不正確。");
+      return {
+        documentId: stringValue(item.documentId),
+        revisionId: stringValue(item.revisionId),
+        sourceRowId: stringValue(item.sourceRowId),
+        disposition: literalValue(item.disposition, ["CONTENT_WORK", "COMMERCIAL_ONLY"]),
+        wbsNodeIds: item.wbsNodeIds.map(stringValue),
+      };
+    }),
+  };
+}
+
 function metadata(value: unknown): Omit<WbsRevision, "document"> {
   if (!isRecord(value)) throw new Error("WBS 回應格式不正確。");
   const action = value.action;
@@ -14,6 +56,7 @@ function metadata(value: unknown): Omit<WbsRevision, "document"> {
     action !== "initialize" &&
     action !== "create-node" &&
     action !== "import-contract" &&
+    action !== "import-content-document" &&
     action !== "update-node" &&
     action !== "move-node" &&
     action !== "delete-subtree"
@@ -30,7 +73,11 @@ function metadata(value: unknown): Omit<WbsRevision, "document"> {
 }
 export function wbsRevision(value: unknown): WbsRevision {
   if (!isRecord(value)) throw new Error("WBS Revision 不正確。");
-  return { ...metadata(value), document: parseWbsDocument(value.document) };
+  return {
+    ...metadata(value),
+    ...(value.contentImport ? { contentImport: contentImport(value.contentImport) } : {}),
+    document: parseWbsDocument(value.document),
+  };
 }
 export function projectWbsView(value: unknown): ProjectWbsView {
   if (
@@ -65,7 +112,12 @@ export function projectWbsReceipt(value: unknown): ProjectWbsReceipt {
 export function projectWbsHistory(value: unknown): ProjectWbsHistory {
   if (!isRecord(value) || !Array.isArray(value.revisions)) throw new Error("WBS 歷史回應不正確。");
   return {
-    revisions: value.revisions.map(metadata),
+    revisions: value.revisions.map((item) => {
+      const meta = metadata(item);
+      if (isRecord(item) && item.contentImport)
+        return { ...meta, contentImport: contentImport(item.contentImport) };
+      return meta;
+    }),
     next: value.next === null ? null : numberValue(value.next),
   };
 }

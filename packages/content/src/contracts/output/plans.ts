@@ -14,35 +14,20 @@ export interface ContentPlanReads {
   ): Promise<{ revisions: readonly ContentPlanRevision[]; next: number | null }>;
 }
 
-/** Intelligence implements this injected port; Content has no implementation dependency on it. */
-export interface ProcessingHistoryReader {
-  verifySaved(
+export interface ContractDocumentExpansionReader {
+  readConfirmed(
     actor: string,
     repositoryId: string,
-    reference: Readonly<{
-      runId: string;
-      processingRevisionId: string;
-      observationId: string;
-    }>,
-  ): Promise<
-    Readonly<{
-      repositoryId: string;
-      fileId: string;
-      fileRevisionId: string;
-      fileSha256: string;
-      runId: string;
-      processingRevisionId: string;
-      observationId: string;
-      uncertain: boolean;
-    }>
-  >;
+    documentId: string,
+    revisionId: string,
+  ): Promise<import("../../domain/plan.js").ContractDocumentExpansion>;
 }
 
 export interface ContentPlanTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly plans: ContentPlans;
   readonly resources: ResourceReferenceReader;
-  readonly savedProcessing: ProcessingHistoryReader;
+  readonly contractDocuments: ContractDocumentExpansionReader;
   nextId(): string;
   replay(): Promise<{ requestId: string; revision: ContentPlanRevision } | null>;
   record(revision: ContentPlanRevision): Promise<void>;

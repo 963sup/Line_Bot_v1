@@ -19,7 +19,7 @@ import type {
   ContentPlanReads,
   ContentPlanTransaction,
   ContentPlanTransactions,
-  ProcessingHistoryReader,
+  ContractDocumentExpansionReader,
 } from "../../../contracts/output/plans.js";
 import { ContentError } from "../../../domain/error.js";
 import type {
@@ -33,7 +33,7 @@ import type {
 import { isQuantityUnit } from "../../../domain/quantity.js";
 
 type ResourceReaderFactory = (sql: Sql) => ResourceReferenceReader;
-type ProcessingHistoryFactory = (sql: Sql) => ProcessingHistoryReader;
+type ContractDocumentExpansionFactory = (sql: Sql) => ContractDocumentExpansionReader;
 
 function parsedJson(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -107,6 +107,13 @@ function decodeContentFileImport(value: unknown): ContentFileImportEvidence | un
 
 function decodeContentPlanRevision(row: SqlRow): ContentPlanRevision {
   const fileImport = decodeContentFileImport(row.file_import);
+  const contractImport =
+    row.contract_document_import == null
+      ? undefined
+      : record(parsedJson(row.contract_document_import));
+  const contractRows = contractImport?.rows;
+  if (contractRows !== undefined && !Array.isArray(contractRows))
+    throw new TypeError("Expected Contract document coverage rows");
   return {
     id: stringValue(row.id),
     repositoryId: stringValue(row.repository_id),
@@ -114,9 +121,38 @@ function decodeContentPlanRevision(row: SqlRow): ContentPlanRevision {
     parentRevisionId: row.parent_revision_id === null ? null : stringValue(row.parent_revision_id),
     actorUserId: stringValue(row.actor_user_id),
     at: Number(numericValue(row.at)),
-    action: literalValue(row.action, ["initialize", "replace", "import-file"]),
+    action: literalValue(row.action, [
+      "initialize",
+      "replace",
+      "import-file",
+      "import-contract-document",
+    ]),
     document: decodeDocument(row.document),
     ...(fileImport ? { fileImport } : {}),
+    ...(contractImport
+      ? {
+          contractDocumentImport: {
+            documentId: stringValue(contractImport.documentId),
+            revisionId: stringValue(contractImport.revisionId),
+            fileId: stringValue(contractImport.fileId),
+            fileRevisionId: stringValue(contractImport.fileRevisionId),
+            fileSha256: stringValue(contractImport.fileSha256),
+            mappingVersion: literalValue(contractImport.mappingVersion, [
+              "purchase-order-content-v1",
+            ]),
+            rows: (contractRows ?? []).map((value) => {
+              const row = record(value);
+              if (!Array.isArray(row.nodeIds))
+                throw new TypeError("Expected Contract row Content nodes");
+              return {
+                sourceRowId: stringValue(row.sourceRowId),
+                disposition: literalValue(row.disposition, ["CONTENT_WORK", "COMMERCIAL_ONLY"]),
+                nodeIds: row.nodeIds.map(stringValue),
+              };
+            }),
+          },
+        }
+      : {}),
   };
 }
 
@@ -129,7 +165,7 @@ export async function readContentPlanRevision(
     await sql.query(
       revisionId === undefined
         ? `SELECT revision.id,revision.repository_id,revision.version,revision.parent_revision_id,
-                  revision.actor_user_id,revision.at,revision.action,revision.file_import,
+                  revision.actor_user_id,revision.at,revision.action,revision.file_import,revision.contract_document_import,
                   jsonb_set(revision.document,'{resourcePins}',coalesce((
                     SELECT jsonb_agg(jsonb_build_object(
                       'nodeId',pin.node_id,'resourceId',pin.resource_id,
@@ -142,7 +178,7 @@ export async function readContentPlanRevision(
            JOIN content_plan_revisions revision ON revision.id=plan.head_revision_id
            WHERE plan.repository_id=$1`
         : `SELECT revision.id,revision.repository_id,revision.version,revision.parent_revision_id,
-                  revision.actor_user_id,revision.at,revision.action,revision.file_import,
+                  revision.actor_user_id,revision.at,revision.action,revision.file_import,revision.contract_document_import,
                   jsonb_set(revision.document,'{resourcePins}',coalesce((
                     SELECT jsonb_agg(jsonb_build_object(
                       'nodeId',pin.node_id,'resourceId',pin.resource_id,
@@ -162,7 +198,7 @@ export async function readContentPlanRevision(
 export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransactions {
   constructor(
     private readonly resourceReader: ResourceReaderFactory,
-    private readonly processingHistoryReader: ProcessingHistoryFactory,
+    private readonly contractDocumentReader: ContractDocumentExpansionFactory,
     private readonly db: Database = businessDatabase(),
   ) {}
 
@@ -221,7 +257,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
       return operation({
         scope: { repositoryId: repository.id, archived, permissions: repository.permissions },
         resources: this.resourceReader(sql),
-        savedProcessing: this.processingHistoryReader(sql),
+        contractDocuments: this.contractDocumentReader(sql),
         nextId: randomUUID,
         replay: async () => {
           const row = (
@@ -255,6 +291,15 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
             );
             return readContentPlanRevision(sql, repository.id);
           },
+          hasContractDocumentImport: async (documentId, revisionId) =>
+            (
+              await sql.query(
+                `SELECT 1 FROM content_plan_revisions
+               WHERE repository_id=$1 AND contract_document_import->>'documentId'=$2
+                 AND contract_document_import->>'revisionId'=$3 LIMIT 1`,
+                [repository.id, documentId, revisionId],
+              )
+            ).rows.length > 0,
           save: async (next, expectedVersion) => {
             if (next.document.nodes.length) {
               const historicalKinds = (
@@ -286,8 +331,8 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
               );
             await sql.query(
               `INSERT INTO content_plan_revisions(
-                 id,repository_id,version,parent_revision_id,actor_user_id,at,action,document,file_import
-               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`,
+                 id,repository_id,version,parent_revision_id,actor_user_id,at,action,document,file_import,contract_document_import
+               ) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb)`,
               [
                 next.id,
                 repository.id,
@@ -302,6 +347,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
                   nodes: next.document.nodes,
                 }),
                 next.fileImport ? JSON.stringify(next.fileImport) : null,
+                next.contractDocumentImport ? JSON.stringify(next.contractDocumentImport) : null,
               ],
             );
             for (const pin of next.document.resourcePins)

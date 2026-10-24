@@ -26,6 +26,7 @@ const fastTasks = new Set([
   "architecture",
   "deadcode",
   "typecheck+test",
+  "build",
 ]);
 
 export const validationGroups = Object.freeze({
@@ -122,10 +123,15 @@ export function classifyChangedFiles(files) {
   return { codeAffected, docsAffected, schemaAffected, toolingAffected };
 }
 
-export function detectFastScope({ directory = root, baseRef = process.env.GITHUB_BASE_REF } = {}) {
-  if (baseRef) {
+export function detectFastScope({
+  directory = root,
+  baseRef = process.env.GITHUB_BASE_REF,
+  baseSha = process.env.VALIDATION_BASE_SHA,
+} = {}) {
+  const comparisonBase = baseSha || (baseRef ? `origin/${baseRef}` : null);
+  if (comparisonBase) {
     const changed = gitChangedFiles(
-      ["diff", "--name-only", "-z", "--diff-filter=ACMRD", `origin/${baseRef}...HEAD`],
+      ["diff", "--name-only", "-z", "--diff-filter=ACMRD", `${comparisonBase}...HEAD`],
       directory,
     );
     if (changed?.length) return classifyChangedFiles(changed);
@@ -166,13 +172,20 @@ export function shouldRunFast(task, scope) {
     return scope.codeAffected || scope.toolingAffected || scope.schemaAffected;
   if (task === "deadcode") return scope.codeAffected || scope.toolingAffected;
   if (task === "typecheck+test") return scope.codeAffected || scope.schemaAffected;
+  if (task === "build") return scope.codeAffected || scope.schemaAffected;
   return scope.codeAffected;
 }
 
 export function fastTaskArgs(task, command, scope, selection, explicitFilters = false) {
-  if (task !== "typecheck+test") return command;
+  if (task !== "typecheck+test" && task !== "build") return command;
   if ((scope?.schemaAffected || scope?.hasUntrackedFiles) && !explicitFilters) return command;
   return [...command, ...selection];
+}
+
+export function selectedValidationGroups(scope) {
+  return Object.entries(validationGroups)
+    .filter(([, tasks]) => tasks.some((task) => shouldRunFast(task, scope)))
+    .map(([group]) => group);
 }
 
 export function describeFastPlan(stages, scope, selection, explicitFilters = false) {
@@ -193,7 +206,7 @@ export function describeFastPlan(stages, scope, selection, explicitFilters = fal
               : run
                 ? "selected by changed-file responsibility"
                 : "outside changed-file responsibility",
-        ...(task === "typecheck+test" && run
+        ...((task === "typecheck+test" || task === "build") && run
           ? {
               selection: args === command ? "all workspaces" : selection,
               selectionReason: explicitFilters
@@ -211,19 +224,40 @@ export function describeFastPlan(stages, scope, selection, explicitFilters = fal
 }
 
 function main() {
-  const fast = process.argv[2] === "--fast";
-  const grouped = process.argv[2] === "--group";
-  const group = grouped ? process.argv[3] : null;
-  if (grouped && (!group || process.argv.length !== 4)) {
-    throw new Error("Usage: validate.mjs --group <name>");
+  const args = process.argv.slice(2);
+  const fast = args.includes("--fast");
+  const plan = args.includes("--plan");
+  const groupIndex = args.indexOf("--group");
+  const group = groupIndex < 0 ? null : args[groupIndex + 1];
+  const filters = args.filter((arg) => /^--filter=.+/.test(arg));
+  const known = new Set(["--fast", "--plan", "--group", ...(group ? [group] : []), ...filters]);
+  const unknown = args.filter((arg) => !known.has(arg));
+  if (
+    (groupIndex >= 0 && (!group || groupIndex === args.length - 1)) ||
+    (plan && !fast) ||
+    unknown.length ||
+    (filters.length && (!fast || plan || group)) ||
+    (!fast && !group && args.length)
+  ) {
+    console.error(
+      "Usage: validate.mjs [--fast [--plan] [--group <name>] [--filter=<Turbo selector> ...]]",
+    );
+    process.exit(1);
   }
-  const filters = grouped ? [] : process.argv.slice(fast ? 3 : 2);
-  if (filters.length && (!fast || filters.some((arg) => !/^--filter=.+/.test(arg)))) {
-    console.error("Usage: validate.mjs [--fast [--filter=<Turbo selector> ...]]");
+  if (plan && group) {
+    console.error("Usage: validate.mjs --fast --plan");
+    process.exit(1);
+  }
+  if (group && !Object.hasOwn(validationGroups, group)) {
+    console.error(`Unknown validation group: ${group}`);
     process.exit(1);
   }
   const selection = filters.length ? filters : ["--affected"];
   const scope = fast ? detectFastScope() : null;
+  if (plan) {
+    console.log(JSON.stringify(selectedValidationGroups(scope)));
+    return;
+  }
   const pnpmExecPath = process.env.npm_execpath;
   if (!pnpmExecPath) {
     console.error("Validation must run through the pinned pnpm command surface.");
@@ -308,6 +342,9 @@ function main() {
       cwd: root,
       env: {
         ...process.env,
+        ...(process.env.VALIDATION_BASE_SHA
+          ? { TURBO_SCM_BASE: process.env.VALIDATION_BASE_SHA }
+          : {}),
         REPOSITORY_VALIDATION_OUTPUT_DIR: outputDirectory,
         NEXT_TELEMETRY_DISABLED: "1",
         TURBO_TELEMETRY_DISABLED: "1",

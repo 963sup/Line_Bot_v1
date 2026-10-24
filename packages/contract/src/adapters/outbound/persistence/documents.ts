@@ -301,3 +301,32 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
     });
   }
 }
+
+/** Same-transaction public read capability for Content's confirmed-document expansion. */
+export function contractDocumentReader(sql: import("@line_bot_v1/platform/postgres").Sql) {
+  return {
+    async read(
+      actor: string,
+      query: Readonly<{ repositoryId: string; documentId: string; revisionId: string }>,
+    ) {
+      await repositoryContentScope(sql, actor, { repositoryId: query.repositoryId });
+      const revision =
+        (
+          await sql.query(
+            `SELECT revision.* FROM contract_documents document JOIN contract_document_revisions revision
+          ON revision.repository_id=document.repository_id AND revision.document_id=document.id
+         WHERE document.repository_id=$1 AND document.id=$2 AND revision.id=$3`,
+            [query.repositoryId, query.documentId, query.revisionId],
+            decodeRevision,
+          )
+        ).rows[0] ?? null;
+      if (revision)
+        await createPostgresFileRevisionQualifier(sql).verify(
+          actor,
+          query.repositoryId,
+          revision.source,
+        );
+      return revision;
+    },
+  };
+}

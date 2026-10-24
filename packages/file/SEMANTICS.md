@@ -20,7 +20,7 @@
 
 | Context | Status | Ownership | Note |
 | --- | --- | --- | --- |
-| file | strong-candidate | owner: file |  |
+| file | selected | owner: file |  |
 
 ### Boundary evidence
 
@@ -28,16 +28,16 @@ References support the existing status; listed tests are evidence locations, not
 
 | Context | Owner contracts | Source | Tests | Rationale |
 | --- | --- | --- | --- | --- |
-| file | [docs/owners/file.md](../../docs/owners/file.md) | [packages/file/src/domain/file.ts](../../packages/file/src/domain/file.ts); [packages/file/src/domain/processing-run.ts](../../packages/file/src/domain/processing-run.ts) | [packages/file/test/domain.test.ts](../../packages/file/test/domain.test.ts); [packages/file/test/persistence.test.ts](../../packages/file/test/persistence.test.ts) | File original evidence and user-triggered ProcessingRuns have independent source/result lifecycles. SavedResult is an immutable outcome within ProcessingRun, not a third Aggregate or downstream approval. |
+| file | [docs/owners/file.md](../../docs/owners/file.md) | [packages/file/src/domain/file.ts](../../packages/file/src/domain/file.ts) | [packages/file/test/domain.test.ts](../../packages/file/test/domain.test.ts); [packages/file/test/persistence.test.ts](../../packages/file/test/persistence.test.ts) | File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence. |
 
 ## Ubiquitous Language
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | File | file | authoritative | current | Repository-scoped protected original file identity; head selects an immutable revision. Format-neutral, not a Contract, Content plan or public attachment. |
-| FileCommandReceipt | file-command-receipt | authoritative | current | Immutable actor/request fingerprint and exact File or ProcessingRun revision receipt; reauthorization and fencing preserve recovery. |
-| FileProcessingRevision | file-processing-revision | authoritative | current | Immutable user-requested processing attempt, RawResult and optional SavedResult with bounded edits, uncertainty and source locators. |
-| FileProcessingRun | file-processing-run | authoritative | current | A single explicitly selected Parser/OCR/AI operation against an immutable File revision, with fenced attempts and Preview/Save/Discard lifecycle. |
+| FileCommandReceipt | file-command-receipt | historical-evidence | current-data-only | Legacy File request receipt for File and Processing commands; retained because File commands remain active. |
+| FileProcessingRevision | file-processing-revision | historical-evidence | current | Immutable legacy processing revisions retained for historical reads during controlled cutover. |
+| FileProcessingRun | file-processing-run | historical-evidence | current | Legacy processing run storage retained only for historical read during controlled cutover; Intelligence owns all new runs. |
 | FileRevision | file-revision | authoritative | current | Immutable authorized File source revision: exact external private-object bytes identified by Repository/File/Revision, declared media type, size, SHA-256, actor and timestamp. A revision is committed only after content readback; edits and processing never replace its object. |
 | FileUploadIntent | file-upload-intent | authoritative | current | Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine fence deletion of never-committed Storage objects; every independently verified absence refreshes a durable reconciliation cursor because an unknown write may complete later. FileCommandReceipt alone proves finalization. |
 
@@ -45,20 +45,17 @@ References support the existing status; listed tests are evidence locations, not
 
 | Capability | Runtime | Implementation | Consumes | Intent |
 | --- | --- | --- | --- | --- |
-| manage-file-result | required | implemented | file-repository-scope, file-platform-persistence | A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners. |
 | manage-files | required | implemented | file-repository-scope, file-platform-persistence | Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access. |
-| run-file-processing | required | implemented | file-repository-scope, file-platform-persistence, intelligence-file-document-understanding | Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save. |
 
 ## Context Relationships
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| provides | content | stable-identity+query | file | transaction-recheck+immutable-pin | A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs. |
 | provides | contract | stable-identity+query | file | transaction-recheck+immutable-pin | Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision. |
-| provides | intelligence | reference | file | pure-value | Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority. |
+| provides | intelligence | query | file | current-source-access | Intelligence reads an authorized exact File revision and bytes through File's source reader. File retains source access and storage authority; Intelligence owns processing lifecycle. |
 | consumes | platform | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority. |
-| consumes | intelligence | query | intelligence | current-source-access | File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity. |
+| consumes | intelligence | reference | intelligence | immutable-history | Retired relationship; File no longer invokes Intelligence or owns processing lifecycle. |
 | provides | intelligence | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
 
 ## Tactical Model Boundary

@@ -4,28 +4,27 @@ import { PostgresContentPlans } from "../../adapters/outbound/persistence/plans.
 import type {
   ContentPlanReads,
   ContentPlanTransactions,
-  ProcessingHistoryReader,
+  ContractDocumentExpansionReader,
 } from "../../contracts/output/plans.js";
 import { ContentError } from "../../domain/error.js";
 
-type ProcessingHistoryFactory = (sql: Sql) => ProcessingHistoryReader;
-
-const unavailableProcessingHistory: ProcessingHistoryFactory = () => ({
-  verifySaved: async () => {
-    throw new ContentError(503, "Intelligence processing history is not composed.", "UNAVAILABLE");
+type ContractDocumentExpansionFactory = (sql: Sql) => ContractDocumentExpansionReader;
+const unavailableContractDocuments: ContractDocumentExpansionFactory = () => ({
+  readConfirmed: async () => {
+    throw new ContentError(503, "Contract document mapping is not composed.", "UNAVAILABLE");
   },
 });
 
 export function createPostgresContentPlanDependencies(
   db: Database = businessDatabase(),
-  processingHistory: ProcessingHistoryFactory = unavailableProcessingHistory,
+  contractDocuments: ContractDocumentExpansionFactory = unavailableContractDocuments,
 ): {
   reads: ContentPlanReads;
   transactions: ContentPlanTransactions;
 } {
   const persistence = new PostgresContentPlans(
     createPostgresResourceReferenceReader,
-    processingHistory,
+    contractDocuments,
     db,
   );
   return { reads: persistence, transactions: persistence };

@@ -10,10 +10,11 @@ create table app_private.project_wbs_revisions (
   version integer not null check (version > 0),
   parent_revision_id uuid,
   actor_user_id text not null references app_private.users(id),
-  action text not null check (action in ('initialize','create-node','import-contract','update-node','move-node','delete-subtree')),
+  action text not null check (action in ('initialize','create-node','import-contract','import-content-document','update-node','move-node','delete-subtree')),
   document jsonb not null check (jsonb_typeof(document)='object' and document ?& array['schemaVersion','nodes'] and document->>'schemaVersion'='1' and jsonb_typeof(document->'nodes')='array' and jsonb_array_length(document->'nodes')<=1000),
   -- Private Contract source identity; Project WBS never owns a second Contract model.
   contract_import jsonb,
+  content_import jsonb,
   constraint project_wbs_contract_import_valid check (
     (action<>'import-contract' and contract_import is null)
     or (action='import-contract'
@@ -31,6 +32,20 @@ create table app_private.project_wbs_revisions (
       and jsonb_typeof(contract_import->'planNodeId')='string'
       and jsonb_typeof(contract_import->'wbsNodeId')='string'
       and nullif(contract_import->>'wbsNodeId','') is not null
+    )
+  ),
+  constraint project_wbs_content_import_valid check (
+    (action<>'import-content-document' and content_import is null)
+    or (action='import-content-document'
+      and jsonb_typeof(content_import)='object'
+      and content_import ?& array['repositoryId','contentRevisionId','contentVersion','mappingVersion','nodeCoverage','sourceRows']
+      and jsonb_typeof(content_import->'repositoryId')='string'
+      and nullif(content_import->>'repositoryId','') is not null
+      and jsonb_typeof(content_import->'contentRevisionId')='string'
+      and jsonb_typeof(content_import->'contentVersion')='number'
+      and content_import->>'mappingVersion'='content-wbs-v1'
+      and jsonb_typeof(content_import->'nodeCoverage')='array'
+      and jsonb_typeof(content_import->'sourceRows')='array'
     )
   ),
   at bigint not null,

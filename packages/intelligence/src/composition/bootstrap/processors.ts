@@ -1,13 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
-import type { FileProcessor } from "@line_bot_v1/file/contracts/output/processor";
 import { geminiFileProcessor } from "../../adapters/outbound/processing/gemini.js";
+import { plainTextProcessor } from "../../adapters/outbound/processing/plain-text.js";
 
-export function createGeminiFileProcessor(config: {
-  apiKey: string;
-  model: string;
-}): FileProcessor {
+export function createGeminiFileProcessor(config: { apiKey: string; model: string }) {
   return geminiFileProcessor({
     models: new GoogleGenAI({ apiKey: config.apiKey }).models,
     model: config.model,
   });
 }
+
+export { plainTextProcessor };

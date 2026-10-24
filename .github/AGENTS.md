@@ -10,8 +10,8 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 
 ## Release
 
-- Main push starts read-only release planning and reusable full validation in parallel. Every external operation requires both to succeed for the same SHA; checkout that exact SHA and guard current main before external writes.
-- Full validation partitions the canonical command into independent runner groups, with a failing aggregate gate for failed/cancelled/skipped groups. Keep local validation sequential where generated files overlap. Cancel superseded checks, never in-progress external writes.
+- Main push starts read-only release planning and reusable changed-owner validation in parallel. Every external operation requires both to succeed for the same SHA; checkout that exact SHA and guard current main before external writes.
+- Validation uses the same changed-owner selection contract in every environment: a reliable Git comparison selects only responsible groups and their transitive Turbo consumers; an absent or unreadable comparison conservatively selects every group. The aggregate gate rejects failed/cancelled/skipped selected groups. Keep local validation sequential where generated files overlap. Cancel superseded checks, never in-progress external writes.
 - Supabase application schema runs only for pending `supabase/schemas/*.sql` changes. Call `pnpm schema:remote sync` once; no automatic compatibility repair or unchanged-schema verification. The separate File Bucket provider job runs only for changed native Storage configuration/operator, after any required schema convergence; it uses `pnpm storage:remote sync` once with exact target/current-main readback and scoped credentials. Apply the declared diff, including destructive DDL, without creating or changing migration history.
 - Rich Menu runs only for pending image or publication-code changes. Use one publication job and `pnpm line:rich-menu publish all`; no duplicate direct/after-deployment flows or unrelated provider dependency.
 - Web deployment remains affected-build driven. Skipped unchanged-schema/Storage jobs do not block deployment; failed required Schema or Storage publication blocks it.
