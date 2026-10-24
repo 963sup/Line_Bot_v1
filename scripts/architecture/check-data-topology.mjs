@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compileDataTopology, loadDataTopologySources } from "./data-topology-core.mjs";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -25,7 +26,7 @@ export async function checkDataTopology() {
 
 if (process.argv[1] && relative(resolve(process.argv[1]), fileURLToPath(import.meta.url)) === "") {
   const result = await checkDataTopology();
-  for (const error of result.errors) console.error(error);
+  reportArchitectureViolations("data-topology", result.errors);
   console.log(
     "Data topology: " +
       result.surfaceCount +

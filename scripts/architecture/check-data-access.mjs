@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { validateRuntimeDataAccess } from "./data-access-core.mjs";
+import { reportArchitectureViolations } from "./report-violations.mjs";
 
 const repository = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -146,7 +147,7 @@ export async function checkDataAccess(root = repository) {
 
 if (import.meta.main) {
   const result = await checkDataAccess();
-  for (const error of result.errors) console.error(error);
+  reportArchitectureViolations("data-access", result.errors);
   console.log(
     `Runtime data access: ${result.workspaceCount} workspaces / ${result.sourceCount} source files / ${result.queryCount} queries, ${result.violationCount} violations, ${result.analysisFailureCount} analysis failures, ${result.forwardedCount} neutral forwards, ${result.testingOnlySourceCount} declared test-only entries.`,
   );
