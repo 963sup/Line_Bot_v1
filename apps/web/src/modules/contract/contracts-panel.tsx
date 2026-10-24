@@ -148,7 +148,14 @@ export default function ContractsPanel({
     setBusy(true);
     setError("");
     try {
-      const [contracts, content] = await Promise.all([request("contracts"), request("content")]);
+      const revisionId = new URLSearchParams(globalThis.window.location.search).get(
+        "planRevisionId",
+      );
+      const contentQuery = revisionId === null ? {} : { revisionId };
+      const [contracts, content] = await Promise.all([
+        request("contracts"),
+        request("content", contentQuery),
+      ]);
       setView(contracts);
       setPending(
         restorePendingCommand(
