@@ -1,4 +1,7 @@
-import { applyWbsEdit, type WbsDocument, type WbsEdit, WbsError } from "./document.js";
+import { applyWbsEdit, type ContractWbsSource, type WbsDocument, type WbsEdit, WbsError } from "./document.js";
+
+export type WbsContractImportEvidence = ContractWbsSource &
+  Readonly<{ planRevisionId: string; planNodeId: string; wbsNodeId: string }>;
 
 export type WbsRevision = Readonly<{
   id: string;

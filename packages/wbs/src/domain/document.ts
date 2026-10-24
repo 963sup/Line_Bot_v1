@@ -87,7 +87,20 @@ export function parseWbsDocument(value: unknown): WbsDocument {
   return { schemaVersion: 1, nodes };
 }
 
+export type ContractWbsSource = Readonly<{
+  repositoryId: string;
+  contractId: string;
+  contractRevisionId: string;
+  lineId: string;
+}>;
+
 export type WbsEdit =
+  | Readonly<{
+      action: "import-contract";
+      node: WbsNode;
+      source: ContractWbsSource;
+      confirmedDisclosure: true;
+    }>
   | Readonly<{ action: "initialize" }>
   | Readonly<{ action: "create-node"; node: WbsNode }>
   | Readonly<{ action: "update-node"; node: WbsNode }>
@@ -98,7 +111,7 @@ export function applyWbsEdit(document: WbsDocument, edit: WbsEdit): WbsDocument 
   let nodes = [...document.nodes];
   if (edit.action === "initialize") return document;
   const target = nodes.find((n) => n.id === ("node" in edit ? edit.node.id : edit.nodeId));
-  if (edit.action === "create-node") {
+  if (edit.action === "create-node" || edit.action === "import-contract") {
     if (target) throw new WbsError(409, "WBS 節點已存在。");
     const siblings = nodes
       .filter((n) => n.parentId === edit.node.parentId)
