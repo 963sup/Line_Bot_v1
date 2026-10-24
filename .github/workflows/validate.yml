@@ -65,6 +65,15 @@ jobs:
           WBS_TEST_DATABASE_URL: ${{ matrix.group == 'typecheck-test' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
           CAPABILITY_TEST_DATABASE_URL: ${{ matrix.group == 'typecheck-test' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
         run: pnpm validate --group "$VALIDATION_GROUP"
+      - name: Upload validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-${{ matrix.group }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: .artifacts/validation-*/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
 
   validate:
     needs: full-validate

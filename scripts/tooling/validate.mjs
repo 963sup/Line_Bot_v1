@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { createOutputDirectory, runBoundedCommand } from "./bounded-output.mjs";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -308,31 +309,42 @@ function main() {
 
   const selectedStages = selectValidationStages(stages, group);
   if (fast) {
+    const plan = describeFastPlan(selectedStages, scope, selection, filters.length > 0);
+    const selected = plan.stages.filter((stage) => stage.run).map((stage) => stage.task);
     console.log(
-      JSON.stringify(
-        describeFastPlan(selectedStages, scope, selection, filters.length > 0),
-        null,
-        2,
-      ),
+      `Fast validation selected ${selected.length}/${plan.stages.length}: ${selected.join(", ")}`,
     );
   }
+  const outputDirectory = createOutputDirectory(root);
+  let completed = 0;
   for (const [task, command] of selectedStages) {
     if (fast && !shouldRunFast(task, scope)) continue;
     const args = fast ? fastTaskArgs(task, command, scope, selection, filters.length > 0) : command;
     const started = performance.now();
     console.log(`Validating: ${task}`);
-    const result = spawnSync(process.execPath, args, {
+    const result = runBoundedCommand(process.execPath, args, {
       cwd: root,
-      stdio: "inherit",
       env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", TURBO_TELEMETRY_DISABLED: "1" },
+      label: task,
+      outputDirectory,
+      spawn: spawnSync,
     });
     if (result.error) {
       console.error(`Unable to run ${task}: ${result.error.message}`);
+      if (result.diagnostic) console.error(result.diagnostic);
+      console.error(`Full output: ${result.logPath}`);
       process.exit(1);
     }
-    if (result.status !== 0) process.exit(result.status ?? 1);
+    if (result.status !== 0) {
+      console.error(`Validation failed: ${task} (status ${result.status ?? "unknown"})`);
+      if (result.diagnostic) console.error(result.diagnostic);
+      console.error(`Full output: ${result.logPath}`);
+      process.exit(result.status ?? 1);
+    }
+    completed++;
     console.log(`Validated ${task} in ${((performance.now() - started) / 1000).toFixed(3)}s`);
   }
+  console.log(`Validation passed: ${completed} stage(s). Full output: ${outputDirectory}`);
 }
 
 if (import.meta.main) main();

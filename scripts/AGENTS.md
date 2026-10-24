@@ -25,6 +25,8 @@ Supabase schema publication consumes `supabase/schemas/*.sql`, applies the decla
 - Read-only commands do not mutate remote state. Mutation names and inputs express authorization and exact targets.
 - Preserve locks, transactions, bounded failures and post-write readback. Do not invent business metadata or touch provider-owned schemas.
 - General check/validate stays secret-free and does not probe or mutate production.
+- 所有 script 預設遵守 root bounded-output invariant：成功 stdout 只含穩定摘要；高量子程序 stdout/stderr 寫入 ignored artifact；失敗只回傳固定 bytes／行數的 root-cause excerpt 與 artifact path。不得無條件 `inherit` 高量子程序輸出，亦不得以 nested 規則放寬上限。
+- Machine-readable mode 只輸出完成判斷所需欄位；大量 records 要求 caller 明確縮小 scope、分頁或寫入 artifact。診斷擴展必須針對單一失敗 owner／stage，不可重新傾倒全量 log。
 - Generated evidence is reproducible and transient; it is not business authority or migration history.
 - Preserve existing user changes. Update affected package commands, workflows, documentation and tests together.
 - Run affected tests, `pnpm check` and documentation checks; release/merge requires `pnpm validate`. Report local and external evidence separately.
