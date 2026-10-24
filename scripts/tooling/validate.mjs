@@ -253,19 +253,7 @@ function main() {
     ["docs:test", ["--test", "scripts/docs/check-docs.test.mjs"]],
     ["docs:check", ["scripts/docs/check-docs.mjs"]],
     ["lint", [biome, "check", "."]],
-    [
-      "architecture:test",
-      [
-        "--test",
-        "scripts/architecture/check-architecture.test.mjs",
-        "scripts/architecture/check-convergence-guardrails.test.mjs",
-        "scripts/architecture/check-fpt-domain-truth.test.mjs",
-        "scripts/architecture/check-semantic-architecture.test.mjs",
-        "scripts/architecture/check-data-topology.test.mjs",
-        "scripts/architecture/check-data-access.test.mjs",
-        "scripts/architecture/runtime-sql-source.test.mjs",
-      ],
-    ],
+    ["architecture:test", ["--test", "scripts/architecture/*.test.mjs"]],
     [
       "change:test",
       [
