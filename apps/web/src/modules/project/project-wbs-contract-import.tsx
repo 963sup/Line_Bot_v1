@@ -237,7 +237,10 @@ export default function ProjectWbsContractImport({
             }}
           />
         </label>
-        <button disabled={disabled || busy || !uuid.test(contractId)} onClick={() => void loadContract()}>
+        <button
+          disabled={disabled || busy || !uuid.test(contractId)}
+          onClick={() => void loadContract()}
+        >
           讀取 ACTIVE Contract
         </button>
       </div>
@@ -264,8 +267,8 @@ export default function ProjectWbsContractImport({
           </label>
           {line && (
             <p>
-              已確認原始合約項次：{line.title} — {line.agreedQuantity} {line.unit}。
-              WBS 不推定數量、完成或驗收。
+              已確認原始合約項次：{line.title} — {line.agreedQuantity} {line.unit}。 WBS
+              不推定數量、完成或驗收。
             </p>
           )}
           <label>
@@ -279,9 +282,13 @@ export default function ProjectWbsContractImport({
               }}
             >
               <option value="">Project WBS 根節點</option>
-              {nodes.filter((n) => n.kind === "DELIVERABLE").map((n) => (
-                <option key={n.id} value={n.id}>{n.title}</option>
-              ))}
+              {nodes
+                .filter((n) => n.kind === "DELIVERABLE")
+                .map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.title}
+                  </option>
+                ))}
             </select>
           </label>
           <label>
@@ -339,8 +346,8 @@ export default function ProjectWbsContractImport({
               disabled={disabled || busy}
               onChange={(e) => setAcknowledged(e.target.checked)}
             />
-            我確認選定的 Project 可以接收這項經授權的 Contract 規劃參照，
-            並已人工核對 WBS 工作包與驗收內容。
+            我確認選定的 Project 可以接收這項經授權的 Contract 規劃參照， 並已人工核對 WBS
+            工作包與驗收內容。
           </label>
           <button
             disabled={!allowed}
@@ -373,9 +380,7 @@ export default function ProjectWbsContractImport({
           </button>
         </>
       )}
-      <p>
-        只有 WBS Owner 的成功回執才代表工作包已建立；後續 Baseline 仍需獨立提案審核。
-      </p>
+      <p>只有 WBS Owner 的成功回執才代表工作包已建立；後續 Baseline 仍需獨立提案審核。</p>
     </section>
   );
 }

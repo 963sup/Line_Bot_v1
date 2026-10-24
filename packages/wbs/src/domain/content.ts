@@ -60,7 +60,14 @@ export function importContractWorkPackage(
   if (node.kind !== "WORK_PACKAGE")
     throw new WbsError(400, "Contract line must map to a WBS Work Package.");
   return {
-    ...reviseWbsContent(current, expectedVersion, { action: "create-node", node }, actorUserId, id, at),
+    ...reviseWbsContent(
+      current,
+      expectedVersion,
+      { action: "create-node", node },
+      actorUserId,
+      id,
+      at,
+    ),
     action: "import-contract",
   };
 }

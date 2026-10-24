@@ -63,8 +63,7 @@ export function parseProjectWbsCommand(input: unknown): ProjectWbsCommand {
       },
       node,
     };
-  }
-  else if (v.action === "create-node" || v.action === "update-node")
+  } else if (v.action === "create-node" || v.action === "update-node")
     result = { ...base, action: v.action, node: parseWbsNode(v.node) };
   else if (v.action === "delete-subtree" || v.action === "move-node") {
     if (typeof v.nodeId !== "string" || !v.nodeId || v.nodeId.length > 128)

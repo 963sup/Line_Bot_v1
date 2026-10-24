@@ -99,9 +99,7 @@ export default function ProjectList({ liffId }: { liffId: string }) {
                   {item.name}
                 </strong>
               </span>
-              <span className={styles.open}>
-                {contractHandoff ? "選擇此 Project WBS" : "開啟"}
-              </span>
+              <span className={styles.open}>{contractHandoff ? "選擇此 Project WBS" : "開啟"}</span>
             </Link>
           ))}
         </div>

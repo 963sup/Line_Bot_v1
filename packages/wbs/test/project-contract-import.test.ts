@@ -4,8 +4,15 @@ import { ContractError } from "@line_bot_v1/contract/domain/error";
 import { parseProjectWbsCommand } from "../src/application/commands/project-content.js";
 import { executeProjectWbsCommand } from "../src/application/use-cases/project-content.js";
 import type { ProjectWbsReceipt } from "../src/contracts/dto/project-content.js";
-import type { ProjectWbsContentTransaction, ProjectWbsStore } from "../src/contracts/repositories/project-content.js";
-import { reviseWbsContent, type WbsContractImportPin, type WbsRevision } from "../src/domain/content.js";
+import type {
+  ProjectWbsContentTransaction,
+  ProjectWbsStore,
+} from "../src/contracts/repositories/project-content.js";
+import {
+  reviseWbsContent,
+  type WbsContractImportPin,
+  type WbsRevision,
+} from "../src/domain/content.js";
 import { WbsError } from "../src/domain/document.js";
 import type { ProjectWbsRole } from "../src/domain/policies/project-access.js";
 

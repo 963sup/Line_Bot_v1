@@ -3,7 +3,6 @@
 import { parseProjectWbsCommand } from "@line_bot_v1/wbs/application/commands/project-content";
 import type {
   ProjectWbsCommand,
-  ProjectWbsContractImport,
   ProjectWbsHistory,
   ProjectWbsView,
 } from "@line_bot_v1/wbs/contracts/dto/project-content";

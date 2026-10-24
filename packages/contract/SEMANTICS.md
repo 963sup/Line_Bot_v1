@@ -45,6 +45,7 @@
 | consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority. |
 | provides | execution | stable-identity+query | contract | transaction-recheck+immutable-pin | Submission requires a currently ACTIVE Contract and its exact activation revision line in the same transaction. Existing reports remain reviewable/voidable after closure using the immutable ACTIVE source revision; Contract retains agreement authority. |
+| provides | wbs | stable-identity+query | contract | transaction-recheck+immutable-pin | A user-confirmed Project WBS Work Package import requalifies an exact ACTIVE Contract line and its Content basis under current Repository access within the WBS Project transaction, preserving a private immutable WBS revision source pin without importing Contract authority or automatically publishing a Baseline. |
 
 ## Tactical Model Boundary
 
