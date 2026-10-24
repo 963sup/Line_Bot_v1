@@ -27,6 +27,7 @@
     "@line_bot_v1/file": "workspace:*",
     "@line_bot_v1/identity-access": "workspace:*",
     "@line_bot_v1/insights": "workspace:*",
+    "@line_bot_v1/intelligence": "workspace:*",
     "@line_bot_v1/issue": "workspace:*",
     "@line_bot_v1/line": "workspace:*",
     "@line_bot_v1/namespace": "workspace:*",

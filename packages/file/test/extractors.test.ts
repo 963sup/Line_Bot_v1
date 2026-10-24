@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import type { GenerateContentParameters } from "@google/genai";
 import { filePayloadInspector } from "../src/adapters/outbound/binary/payloads.js";
-import { geminiFileProcessor } from "../src/adapters/outbound/processing/gemini.js";
 import { plainTextProcessor } from "../src/adapters/outbound/processing/plain-text.js";
 import { nextFileRevision } from "../src/domain/file.js";
 import { processingOutput } from "../src/domain/processing-run.js";
@@ -44,64 +42,5 @@ test("payload inspection detaches bytes and gives reproducible SHA-256", () => {
   assert.equal(
     result.descriptor.sha256,
     "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81",
-  );
-});
-
-test("Gemini adapter sends explicit bytes and schema once; fake output is still untrusted", async () => {
-  const calls: GenerateContentParameters[] = [];
-  const raw = {
-    documentKind: "test",
-    observations: [
-      {
-        id: "q",
-        label: "Quantity",
-        value: "26 SET",
-        source: { kind: "page", page: 1 },
-        uncertain: false,
-      },
-    ],
-  };
-  const adapter = geminiFileProcessor({
-    model: "configured-test-model",
-    models: {
-      async generateContent(input) {
-        calls.push(input);
-        return { text: JSON.stringify(raw) };
-      },
-    },
-  });
-  const input = source(new TextEncoder().encode("%PDF-test-fixture"), "application/pdf");
-  assert.deepEqual(processingOutput(await adapter.run(input)), raw);
-  assert.equal(calls.length, 1);
-  assert.equal(adapter.kind, "ai");
-  assert.equal(calls[0]?.model, "configured-test-model");
-  assert.equal(calls[0]?.config?.httpOptions?.retryOptions?.attempts, 1);
-  assert.ok(calls[0]?.config?.abortSignal);
-  assert.equal(
-    adapter.supports("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    false,
-  );
-  await assert.rejects(
-    adapter.run({ ...input, revision: { ...input.revision, mediaType: "text/plain" } }),
-  );
-  assert.equal(calls.length, 1);
-  const broken = geminiFileProcessor({
-    model: "test",
-    models: {
-      async generateContent() {
-        return { text: "not json" };
-      },
-    },
-  });
-  await assert.rejects(broken.run(input));
-  assert.throws(() =>
-    geminiFileProcessor({
-      model: "",
-      models: {
-        async generateContent() {
-          return {};
-        },
-      },
-    }),
   );
 });
