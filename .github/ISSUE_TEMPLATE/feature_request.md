@@ -20,9 +20,12 @@ about: 提出可驗收的業務結果，不預設實作方式
 - Data / consistency / authorization invariants：
 - 尚需確認的產品語意：
 
-## 影響範圍 / 不在範圍
+## 影響範圍
 
 - 包含：
+
+## 不在範圍
+
 - 明確排除：
 
 ## Acceptance
