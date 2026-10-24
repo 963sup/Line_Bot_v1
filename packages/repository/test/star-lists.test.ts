@@ -242,3 +242,61 @@ test("Repository Star List add requires an existing Star", async (t) => {
     (error) => error instanceof RepositoryError && error.status === 409,
   );
 });
+
+test("Repository Star List replay keeps current authorization and failed commands roll back", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await activeUser(db, "owner", "owner");
+  await pg.query(
+    "select * from app_private.provision_repository('repo','owner','owner','USER','Repo','private')",
+  );
+
+  const store = new PostgresRepositoryStarListStore(db);
+  const created = await store.create(
+    "owner",
+    {
+      requestId: "88888888-8888-4888-8888-888888888888",
+      name: "List",
+      description: "",
+    },
+    1,
+  );
+  const add = {
+    requestId: "99999999-9999-4999-8999-999999999999",
+    listId: created.id,
+    expectedVersion: 1,
+    action: "add" as const,
+    repositoryId: "repo",
+  };
+
+  // A failed command must leave neither its receipt nor a partial list mutation.
+  await assert.rejects(
+    store.execute("owner", add, 2),
+    (error) => error instanceof RepositoryError && error.status === 409,
+  );
+  const afterFailure = await pg.query(
+    "select version,(select count(*)::int from app_private.repository_star_list_items where list_id=$1) as item_count,(select count(*)::int from app_private.repository_commands where actor='owner' and request_id=$2) as receipt_count from app_private.repository_star_lists where id=$1",
+    [created.id, add.requestId],
+  );
+  assert.deepEqual(afterFailure.rows, [{ version: 1, item_count: 0, receipt_count: 0 }]);
+
+  const stars = new PostgresRepositoryStarStore(db);
+  await stars.star("owner", "repo", 3);
+  const added = await store.execute("owner", add, 4);
+  assert.equal(added.version, 2);
+  assert.deepEqual(await store.execute("owner", add, 5), added);
+
+  // A durable replay is still subject to current owner qualification.
+  await pg.query(
+    "update app_private.users set status='paused',status_version=status_version+1 where id='owner'",
+  );
+  await assert.rejects(
+    store.execute("owner", add, 6),
+    (error) => error instanceof RepositoryError && error.status === 403,
+  );
+  const persisted = await pg.query(
+    "select version,(select count(*)::int from app_private.repository_star_list_items where list_id=$1) as item_count,(select count(*)::int from app_private.repository_commands where actor='owner' and request_id=$2) as receipt_count from app_private.repository_star_lists where id=$1",
+    [created.id, add.requestId],
+  );
+  assert.deepEqual(persisted.rows, [{ version: 2, item_count: 1, receipt_count: 1 }]);
+});

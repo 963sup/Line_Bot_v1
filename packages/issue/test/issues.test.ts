@@ -588,6 +588,30 @@ test("Issue state, assignment, content and local workflow remain separate axes",
       Reflect.get(error, "status") === 409 &&
       String(Reflect.get(error, "message")).includes("唯讀"),
   );
+
+  await pg.query(
+    "delete from app_private.repository_access where repository_id='repository-policy' and principal_id='manager'",
+  );
+  await assert.rejects(
+    store.execute(
+      { userId: "manager" },
+      {
+        requestId: "19191919-1919-4919-8919-191919191919",
+        repositoryId: "repository-policy",
+        action: "edit",
+        issueId: created.id,
+        expectedVersion: removed.version,
+        title: "stale permission write",
+      },
+      28,
+    ),
+    /不允許此 Issue 操作/,
+  );
+  const unchanged = await store.detail({ userId: "reader" }, created.number, {
+    repositoryId: "repository-policy",
+  });
+  assert.equal(unchanged.issues[0]?.version, removed.version);
+  assert.equal(unchanged.events.at(-1)?.version, removed.version);
 });
 
 test("Issue stateReason and assignee scope are enforced by persistence invariants", async (t) => {
