@@ -42,6 +42,6 @@ about: 回報可觀察的故障或 regression；根因未知可留待調查
 - [ ] 適用的合法／拒絕、版本／並行、rollback／unknown-result 行為已驗證
 - [ ] 修正在正確 Owner，沒有新建無責任 abstraction 或 duplicate truth
 - [ ] PR、exact SHA、Validation 實際結果已關聯
-- [ ] 若需 Release／Provider／Browser／LINE 驗收，已具備證據或有明確後續 Owner
+- [ ] 本 Issue 要求的 Release／Provider／Browser／LINE 驗收已附證據；獨立後續工作須明確排除於本 Issue acceptance 並連結追蹤，不能以「有 Owner」代替驗收
 
 <!-- CI green、PR merged 與 production accepted 是不同事實；Issue 依自身 acceptance 結案。 -->
