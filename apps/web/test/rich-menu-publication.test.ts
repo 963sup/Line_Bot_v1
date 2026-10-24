@@ -254,7 +254,9 @@ for (const existing of [false, true]) {
         },
         createAlias: async (_key: string, id: string) => write(id),
         updateAlias: async (_key: string, id: string) => write(id),
-        deleteAlias: async (key: string) => { aliases.delete(key); },
+        deleteAlias: async (key: string) => {
+          aliases.delete(key);
+        },
         getDefault: async () => oldId,
         delete: async (id: string) => {
           deleted.push(id);
@@ -284,7 +286,9 @@ test("first unknown alias outcome with failed rollback retains new menus for rec
       aliases.set(key, id);
       throw new Error("response lost after commit");
     },
-    deleteAlias: async () => { throw new Error("rollback unavailable"); },
+    deleteAlias: async () => {
+      throw new Error("rollback unavailable");
+    },
     getDefault: async () => null,
     delete: async (id: string) => {
       deleted.push(id);
