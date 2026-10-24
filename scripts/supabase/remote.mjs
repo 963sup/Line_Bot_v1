@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { requireCurrentMain } from "../github/current-main.mjs";
 import { loadRootEnv } from "../runtime/load-env.mjs";
 import {
   assertIdentifierAuthorityCounts,
@@ -17,6 +16,16 @@ import {
   identifierRuntimeActivationTransactionSql,
 } from "./identifier-cutover.mjs";
 import { executeSql, queryRows, withPostgres } from "./postgres.mjs";
+import {
+  assertValidatedMainMutationContext,
+  remoteMutationRevision,
+  requireMutationAdjacentCurrentMain,
+} from "./remote-authorization.mjs";
+import {
+  assertConfirmedProject,
+  assertRemoteTarget,
+  projectRefFromSupabaseUrl,
+} from "./remote-target.mjs";
 import { localDatabaseCommands } from "./schema-local.mjs";
 import { declaredSchemaSql, schemaFileNames } from "./schema-source.mjs";
 
@@ -351,55 +360,6 @@ export function assertMigrationHistoryUnchanged(before, after) {
   }
 }
 
-export function projectRefFromSupabaseUrl(value) {
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error("SUPABASE_URL must be a valid https://<project-ref>.supabase.co URL.");
-  }
-  const match = url.hostname.match(/^([a-z0-9]{20})\.supabase\.co$/);
-  if (url.protocol !== "https:" || !match || (url.pathname !== "/" && url.pathname !== "")) {
-    throw new Error("SUPABASE_URL must be a valid https://<project-ref>.supabase.co URL.");
-  }
-  return match[1];
-}
-
-export function assertRemoteTarget(supabaseUrl, postgresUrl) {
-  const projectRef = projectRefFromSupabaseUrl(supabaseUrl);
-  let databaseUrl;
-  try {
-    databaseUrl = new URL(postgresUrl);
-  } catch {
-    throw new Error("POSTGRES_URL_NON_POOLING must be a valid PostgreSQL URL.");
-  }
-  if (!["postgres:", "postgresql:"].includes(databaseUrl.protocol)) {
-    throw new Error("POSTGRES_URL_NON_POOLING must use postgres:// or postgresql://.");
-  }
-  if (decodeURIComponent(databaseUrl.pathname) !== "/postgres") {
-    throw new Error("POSTGRES_URL_NON_POOLING must target the postgres database.");
-  }
-  if (databaseUrl.port === "6543") {
-    throw new Error("POSTGRES_URL_NON_POOLING must not use the transaction pooler on port 6543.");
-  }
-  const hostnameMatches = databaseUrl.hostname.includes(projectRef);
-  const usernameMatches = decodeURIComponent(databaseUrl.username).endsWith(`.${projectRef}`);
-  if (!hostnameMatches && !usernameMatches) {
-    throw new Error(
-      `POSTGRES_URL_NON_POOLING does not target SUPABASE_URL project ${projectRef}; refusing remote mutation.`,
-    );
-  }
-  return projectRef;
-}
-
-export function assertConfirmedProject(projectRef, confirmedProject) {
-  if (!confirmedProject || confirmedProject !== projectRef) {
-    throw new Error(
-      `SUPABASE_CONFIRM_PROJECT must exactly match target project ${projectRef}; refusing remote access.`,
-    );
-  }
-}
-
 export function classifyRemoteFoundationState({ appPrivateExists, lineAppExists }) {
   if (!appPrivateExists) return "fresh";
   if (lineAppExists) return "existing";
@@ -593,22 +553,6 @@ function generatePlan(artifactName = "plan.sql") {
     writeFileSync(new URL("plan.sha256", artifacts), `${fingerprint}\n`);
   }
   return { path: plan, sql, fingerprint };
-}
-
-export function remoteMutationRevision(env = process.env) {
-  return assertIdentifierCutoverRevision(env.SUPABASE_RELEASE_SHA);
-}
-
-export async function requireMutationAdjacentCurrentMain(
-  env = process.env,
-  fetchImpl = globalThis.fetch,
-) {
-  return requireCurrentMain({
-    sha: remoteMutationRevision(env),
-    repository: env.GITHUB_REPOSITORY,
-    token: env.GITHUB_TOKEN,
-    fetchImpl,
-  });
 }
 
 export async function applyAuthorizedRemoteSql({ sql, query, authorize }) {
@@ -828,7 +772,7 @@ export async function verifyIdentifierCutoverRecovery({
     typeof authorization.instruction === "string" &&
     authorization.instruction.length > 0
   ) {
-    assertRemoteMutationContext("sync", env);
+    assertValidatedMainMutationContext(env);
     assertConfirmedProject(projectRef, env.SUPABASE_CONFIRM_PROJECT);
     const revision = remoteMutationRevision(env);
     if (env.GITHUB_SHA !== revision || env.GITHUB_REF !== "refs/heads/main") {
@@ -964,15 +908,6 @@ export function parseArgs(argv) {
     throw new Error("schema:remote --api is only valid with verify.");
   }
   return { command, api };
-}
-
-export function assertRemoteMutationContext(command, env = process.env) {
-  if (!["activate-identifiers", "sync"].includes(command)) return;
-  if (env.GITHUB_ACTIONS !== "true" || env.SUPABASE_REMOTE_MUTATION_CONTEXT !== "validated-main") {
-    throw new Error(
-      "Supabase remote mutation is allowed only from the repository GitHub Actions current-main reconciliation path.",
-    );
-  }
 }
 
 async function activateIdentifierRuntime(projectRef) {
@@ -1167,7 +1102,8 @@ async function runRemoteCommand({ projectRef, command, api }) {
 export async function main(argv = process.argv.slice(2)) {
   loadRootEnv();
   const { command, api } = parseArgs(argv);
-  assertRemoteMutationContext(command);
+  if (command === "sync" || command === "activate-identifiers")
+    assertValidatedMainMutationContext();
 
   if (command === "recovery") {
     mkdirSync(artifacts, { recursive: true });

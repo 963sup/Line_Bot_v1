@@ -13,10 +13,7 @@ import {
 } from "./identifier-cutover.mjs";
 import {
   applyAuthorizedRemoteSql,
-  assertConfirmedProject,
   assertMigrationHistoryUnchanged,
-  assertRemoteMutationContext,
-  assertRemoteTarget,
   assertSupabaseRecoveryReadback,
   assertSupabaseRestReadback,
   assertTransactionalPlan,
@@ -25,9 +22,6 @@ import {
   identifierRuntimeActivationAction,
   parseArgs,
   planFingerprint,
-  projectRefFromSupabaseUrl,
-  remoteMutationRevision,
-  requireMutationAdjacentCurrentMain,
   requiresIdentifierCutoverRecovery,
   runWithRemoteReconciliationLock,
   supabaseApiReadbackConfig,
@@ -36,6 +30,7 @@ import {
   verifySupabaseApiReadback,
   verifySupabaseRecoveryReadback,
 } from "./remote.mjs";
+import { requireMutationAdjacentCurrentMain } from "./remote-authorization.mjs";
 
 const absentIdentifierAuthority = {
   namespace_binding_history_exists: false,
@@ -354,28 +349,6 @@ test("remote command surface only exposes bounded mutations and explicit read-on
   assert.throws(() => parseArgs(["verify", "--unknown"]), /Usage/);
 });
 
-test("remote mutations require the validated-main GitHub Actions context", () => {
-  for (const command of ["activate-identifiers", "sync"]) {
-    assert.throws(
-      () => assertRemoteMutationContext(command, {}),
-      /GitHub Actions current-main reconciliation path/,
-    );
-    assert.throws(
-      () => assertRemoteMutationContext(command, { GITHUB_ACTIONS: "true" }),
-      /GitHub Actions current-main reconciliation path/,
-    );
-    assert.doesNotThrow(() =>
-      assertRemoteMutationContext(command, {
-        GITHUB_ACTIONS: "true",
-        SUPABASE_REMOTE_MUTATION_CONTEXT: "validated-main",
-      }),
-    );
-  }
-  for (const command of ["plan", "verify", "recovery"]) {
-    assert.doesNotThrow(() => assertRemoteMutationContext(command, {}));
-  }
-});
-
 test("remote write authorization is adjacent and prevents apply when main advances", async () => {
   const releaseSha = "d".repeat(40);
   const env = {
@@ -401,7 +374,6 @@ test("remote write authorization is adjacent and prevents apply when main advanc
 });
 
 test("remote write authorization applies only after exact-main readback", async () => {
-  const releaseSha = "d".repeat(40);
   const events = [];
   await applyAuthorizedRemoteSql({
     sql: "select app_private.write();",
@@ -409,8 +381,6 @@ test("remote write authorization applies only after exact-main readback", async 
     query: async () => events.push("applied"),
   });
   assert.deepEqual(events, ["authorized", "applied"]);
-  assert.equal(remoteMutationRevision({ SUPABASE_RELEASE_SHA: releaseSha }), releaseSha);
-  assert.throws(() => remoteMutationRevision({}), /exact lowercase Git commit SHA/);
 });
 
 test("runtime activation preserves a frozen cutover until its own release operation", () => {
@@ -447,14 +417,6 @@ test("opaque remote write failures are propagated without an automatic replay", 
     (error) => error === opaque,
   );
   assert.equal(attempts, 1);
-});
-
-test("Supabase project URL yields the exact project ref", () => {
-  assert.equal(
-    projectRefFromSupabaseUrl("https://nmssogphayjymjpbnrxv.supabase.co"),
-    "nmssogphayjymjpbnrxv",
-  );
-  assert.throws(() => projectRefFromSupabaseUrl("https://example.com"), /SUPABASE_URL/);
 });
 
 test("Supabase API readback config is explicit and same-target", () => {
@@ -771,54 +733,6 @@ test("Supabase API readback uses public key and bounded fetches", async () => {
       hasSignal: true,
     },
   ]);
-});
-
-test("explicit project confirmation is mandatory and must match the URL-derived target", () => {
-  assert.doesNotThrow(() => assertConfirmedProject("nmssogphayjymjpbnrxv", "nmssogphayjymjpbnrxv"));
-  assert.throws(() => assertConfirmedProject("nmssogphayjymjpbnrxv", undefined), /exactly match/);
-  assert.throws(
-    () => assertConfirmedProject("nmssogphayjymjpbnrxv", "aaaaaaaaaaaaaaaaaaaa"),
-    /exactly match/,
-  );
-});
-
-test("remote target guard accepts direct and session-pooler URLs for the exact project", () => {
-  for (const url of [
-    "postgresql://postgres:secret@db.nmssogphayjymjpbnrxv.supabase.co:5432/postgres",
-    "postgresql://postgres.nmssogphayjymjpbnrxv:secret@aws-0-ap-south-1.pooler.supabase.com:5432/postgres",
-  ]) {
-    assert.equal(
-      assertRemoteTarget("https://nmssogphayjymjpbnrxv.supabase.co", url),
-      "nmssogphayjymjpbnrxv",
-    );
-  }
-});
-
-test("remote target guard rejects wrong project, database, and transaction pooler", () => {
-  assert.throws(
-    () =>
-      assertRemoteTarget(
-        "https://nmssogphayjymjpbnrxv.supabase.co",
-        "postgresql://postgres:secret@db.aaaaaaaaaaaaaaaaaaaa.supabase.co:5432/postgres",
-      ),
-    /does not target/,
-  );
-  assert.throws(
-    () =>
-      assertRemoteTarget(
-        "https://nmssogphayjymjpbnrxv.supabase.co",
-        "postgresql://postgres:secret@db.nmssogphayjymjpbnrxv.supabase.co:5432/other",
-      ),
-    /postgres database/,
-  );
-  assert.throws(
-    () =>
-      assertRemoteTarget(
-        "https://nmssogphayjymjpbnrxv.supabase.co",
-        "postgresql://postgres.nmssogphayjymjpbnrxv:secret@aws-0-ap-south-1.pooler.supabase.com:6543/postgres",
-      ),
-    /transaction pooler/,
-  );
 });
 
 test("remote foundation classifies repairable drift without confusing it with application state", () => {

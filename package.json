@@ -35,7 +35,7 @@
     "boundaries": "node scripts/architecture/check-implementation-topology.mjs",
     "schema:remote": "node scripts/supabase/remote.mjs",
     "storage:remote": "node scripts/supabase/storage.mjs",
-    "schema:remote:test": "node --test scripts/supabase/postgres.test.mjs scripts/supabase/remote.test.mjs scripts/supabase/storage.test.mjs",
+    "schema:remote:test": "node --test scripts/supabase/*.test.mjs",
     "probe:agent": "node scripts/probes/check-agent.mjs --live",
     "probe:expense-card": "node scripts/probes/check-expense-card.mjs --live",
     "probe:gemini": "node scripts/probes/check-gemini.mjs --live",

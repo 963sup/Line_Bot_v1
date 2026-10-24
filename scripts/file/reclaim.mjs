@@ -3,11 +3,8 @@ import { createPostgresFileReclamationDependencies } from "@line_bot_v1/file/com
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
 import { requireCurrentMain } from "../github/current-main.mjs";
 import { loadRootEnv } from "../runtime/load-env.mjs";
-import {
-  assertConfirmedProject,
-  assertRemoteMutationContext,
-  assertRemoteTarget,
-} from "../supabase/remote.mjs";
+import { assertValidatedMainMutationContext } from "../supabase/remote-authorization.mjs";
+import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote-target.mjs";
 
 function beforeUtc(value) {
   if (
@@ -30,7 +27,7 @@ async function main() {
   const projectRef = assertRemoteTarget(env.SUPABASE_URL ?? "", postgresUrl);
   assertConfirmedProject(projectRef, env.SUPABASE_CONFIRM_PROJECT);
   const authorize = async () => {
-    assertRemoteMutationContext("sync", env);
+    assertValidatedMainMutationContext(env);
     await requireCurrentMain({
       sha: env.SUPABASE_RELEASE_SHA ?? "",
       repository: env.GITHUB_REPOSITORY,
