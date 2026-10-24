@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { runBoundedCommand } from "./bounded-output.mjs";
 import {
   classifyChangedFiles,
   describeFastPlan,
@@ -14,6 +15,34 @@ import {
   shouldRunFast,
   validationGroups,
 } from "./validate.mjs";
+
+test("bounded command output preserves full logs and limits diagnostics", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-output-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const result = runBoundedCommand(
+    process.execPath,
+    ["-e", "for(let i=0;i<300;i++) console.error(`line-${i}`); process.exit(7)"],
+    { cwd: directory, label: "fixture", outputDirectory: directory },
+  );
+  assert.equal(result.status, 7);
+  assert.match(readFileSync(result.logPath, "utf8"), /line-0/);
+  assert.doesNotMatch(result.diagnostic, /^line-0$/m);
+  assert.match(result.diagnostic, /line-299/);
+  assert.ok(result.diagnostic.split(/\r?\n/).length <= 121);
+});
+
+test("successful bounded command keeps child output out of diagnostics", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-success-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const result = runBoundedCommand(process.execPath, ["-e", "console.log('full evidence')"], {
+    cwd: directory,
+    label: "success",
+    outputDirectory: directory,
+  });
+  assert.equal(result.status, 0);
+  assert.equal(result.diagnostic, "");
+  assert.match(readFileSync(result.logPath, "utf8"), /full evidence/);
+});
 
 function git(directory, args) {
   execFileSync("git", args, { cwd: directory, stdio: "ignore" });

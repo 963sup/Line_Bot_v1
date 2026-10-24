@@ -22,6 +22,7 @@
 - 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
 - `architecture/domain/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由 `semantic-model.json` 覆蓋。`semantic-model.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
 - Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
+- 所有 nested scope 完整繼承 [system invariants](docs/rules/system-invariants.md)，包括 bounded tool output；不得以 local validation、debug 或 verbose 慣例恢復無界 stdout／stderr。需要完整原始證據時寫入 ignored artifact，Agent context 只載入摘要與有界片段。
 
 ## Effective context contract
 
@@ -67,6 +68,7 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。
 - 批次查改使用 `pnpm code` 產生有覆蓋邊界的預覽／計畫，來源寫入沿用 `pnpm patch:apply`。跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。已有授權的可逆修改在預覽後直接續行，不新增逐次確認。
 - 保留既有/他人修改；同 checkout 不並行寫同一檔案或產物。
+- 工具呼叫先設定足以回答當前問題的輸出上限；列表、diff、log、JSON/API 與 test output 先在工具端投影／計數／摘要。成功不展開原始 log；失敗先讀第一個可行動錯誤與固定 tail，只有該片段不足以改變下一步時才局部擴展。禁止把完整高量輸出直接注入 Agent context。
 - 可逆且 contract 已決定的實作直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才阻塞。
 - JS/TS/JSON 由 Biome formatting；需要時用 `pnpm format`。
 - 一般修改 `pnpm check`；文件 `pnpm docs:check`；merge/release `pnpm validate`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。

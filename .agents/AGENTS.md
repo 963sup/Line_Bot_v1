@@ -13,5 +13,6 @@
 - 不得手動修改技能內容來修正格式、通過檢查、加入專案規則或繞過安裝錯誤；CLI 無法處理時，回報原因並停止該項變更。
 - 不得偽造 `skills-lock.json` 中的來源、版本、路徑或雜湊；需要變更技能時，使用上方核准入口啟動 Skills CLI，由 CLI 同步更新。
 - 可以唯讀檢查技能內容；專案自身的治理規則應寫在技能目錄之外，不得寫入外部技能。
+- Skills-only 變更以固定 CLI readback、`pnpm skills:list`、lock consistency 與 bounded `git diff --name-only`／`--stat` 驗收；不輸出完整 skill tree／diff，也不因技能內容變更主動執行產品 build/test。PR required checks 仍由既有 branch protection 決定。
 
 本規則不削弱 repository 根目錄 `AGENTS.md` 的其他約束，也不授權自動更新或執行技能附帶的程式。
