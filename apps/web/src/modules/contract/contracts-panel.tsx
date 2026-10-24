@@ -36,6 +36,7 @@ type PlanNode = {
 };
 type Line = { lineId: string; planRevisionId: string; nodeId: string; agreedQuantity: string };
 type Revision = Summary & {
+  revisionId: string;
   body: string;
   lines: Array<{
     lineId: string;
@@ -483,6 +484,23 @@ export default function ContractsPanel({
                 onClick={() => void execute("activate")}
               >
                 啟用
+              </Button>
+            )}
+            {selected?.state === "ACTIVE" && (
+              <Button
+                variant="outline"
+                disabled={busy || pending !== null}
+                onClick={() => {
+                  const query = new URLSearchParams({
+                    contractOwner: ownerLogin,
+                    contractRepository: repositoryName,
+                    contractId: selected.contractId,
+                    contractRevisionId: selected.revisionId,
+                  });
+                  globalThis.window.location.assign(`/projects?${query.toString()}`);
+                }}
+              >
+                選擇 Project WBS 建立工作包
               </Button>
             )}
             {selected?.state === "ACTIVE" && (

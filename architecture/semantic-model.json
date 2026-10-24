@@ -2797,6 +2797,19 @@
       "consistency": "transaction-recheck"
     },
     {
+      "id": "wbs-contract-commitment",
+      "from": "wbs",
+      "to": "contract",
+      "kind": "reference",
+      "owner": "wbs",
+      "meaning": "A Project WBS user explicitly maps an ACTIVE Repository Contract line into a Project WORK_PACKAGE, with Project and Repository rights both reverified in one transaction. WBS retains a private exact source pin in its immutable revision; the Contract remains the authority for agreed quantities and Content pins.",
+      "provider": "contract",
+      "consumer": "wbs",
+      "integrationMode": "stable-identity+query",
+      "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
       "id": "wbs-project-scope",
       "from": "wbs",
       "to": "project",

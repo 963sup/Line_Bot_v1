@@ -13,6 +13,7 @@ function metadata(value: unknown): Omit<WbsRevision, "document"> {
   if (
     action !== "initialize" &&
     action !== "create-node" &&
+    action !== "import-contract" &&
     action !== "update-node" &&
     action !== "move-node" &&
     action !== "delete-subtree"

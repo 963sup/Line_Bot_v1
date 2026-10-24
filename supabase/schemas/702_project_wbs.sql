@@ -10,8 +10,29 @@ create table app_private.project_wbs_revisions (
   version integer not null check (version > 0),
   parent_revision_id uuid,
   actor_user_id text not null references app_private.users(id),
-  action text not null check (action in ('initialize','create-node','update-node','move-node','delete-subtree')),
+  action text not null check (action in ('initialize','create-node','import-contract','update-node','move-node','delete-subtree')),
   document jsonb not null check (jsonb_typeof(document)='object' and document ?& array['schemaVersion','nodes'] and document->>'schemaVersion'='1' and jsonb_typeof(document->'nodes')='array' and jsonb_array_length(document->'nodes')<=1000),
+  -- Private Contract source identity; Project WBS never owns a second Contract model.
+  contract_import jsonb,
+  constraint project_wbs_contract_import_valid check (
+    (action<>'import-contract' and contract_import is null)
+    or (action='import-contract'
+      and jsonb_typeof(contract_import)='object'
+      and contract_import ?& array[
+        'repositoryId','contractId','contractRevisionId','lineId',
+        'planRevisionId','planNodeId','wbsNodeId'
+      ]
+      and jsonb_typeof(contract_import->'repositoryId')='string'
+      and nullif(contract_import->>'repositoryId','') is not null
+      and jsonb_typeof(contract_import->'contractId')='string'
+      and jsonb_typeof(contract_import->'contractRevisionId')='string'
+      and jsonb_typeof(contract_import->'lineId')='string'
+      and jsonb_typeof(contract_import->'planRevisionId')='string'
+      and jsonb_typeof(contract_import->'planNodeId')='string'
+      and jsonb_typeof(contract_import->'wbsNodeId')='string'
+      and nullif(contract_import->>'wbsNodeId','') is not null
+    )
+  ),
   at bigint not null,
   unique(project_id,version),
   unique(project_id,id),

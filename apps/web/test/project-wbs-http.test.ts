@@ -4,6 +4,11 @@ import { createProjectWbs } from "@line_bot_v1/wbs/application/use-cases/project
 import type { ProjectWbsStore } from "@line_bot_v1/wbs/contracts/repositories/project-content";
 import { WbsError } from "@line_bot_v1/wbs/domain/document";
 import { projectWbsRequest } from "../src/modules/project/project-wbs-http.server";
+import {
+  projectWbsHistory,
+  projectWbsReceipt,
+  projectWbsView,
+} from "../src/modules/project/project-wbs-response";
 
 test("Project WBS HTTP checks origin, parses commands and keeps failure classes distinct", async (t) => {
   const previous = process.env.APP_ORIGIN;
@@ -73,4 +78,108 @@ test("Project WBS HTTP checks origin, parses commands and keeps failure classes 
   assert.equal((await write("https://attacker.test", command)).status, 403);
   assert.equal((await write("https://example.com", { ...command, actor: "spoof" })).status, 400);
   assert.equal((await write("https://example.com", command)).status, 409);
+});
+
+test("Project WBS HTTP rejects a missing Contract disclosure and forged source details", async (t) => {
+  const previous = process.env.APP_ORIGIN;
+  process.env.APP_ORIGIN = "https://example.com";
+  t.after(() => {
+    if (previous === undefined) delete process.env.APP_ORIGIN;
+    else process.env.APP_ORIGIN = previous;
+  });
+  const store: ProjectWbsStore = {
+    read: async () => {
+      throw Error("unreachable");
+    },
+    history: async () => ({ revisions: [], next: null }),
+    transact: async () => {
+      throw new WbsError(409, "stale");
+    },
+  };
+  const runtime = createProjectWbs({
+    activeUser: async () => ({ id: "user" }),
+    store: () => store,
+    now: () => 1,
+  });
+  const valid = {
+    action: "import-contract",
+    projectId: "project-a",
+    requestId: "11111111-1111-4111-8111-111111111111",
+    expectedVersion: 2,
+    confirmedDisclosure: true,
+    source: {
+      repositoryId: "repo-a",
+      contractId: "22222222-2222-4222-8222-222222222222",
+      contractRevisionId: "33333333-3333-4333-8333-333333333333",
+      lineId: "44444444-4444-4444-8444-444444444444",
+    },
+    node: {
+      id: "work",
+      parentId: "group",
+      position: 0,
+      kind: "WORK_PACKAGE",
+      title: "Manual scope",
+      description: "",
+      deliverable: "",
+      acceptanceCriteria: "",
+    },
+  };
+  async function post(value: object) {
+    return projectWbsRequest(
+      new Request("https://example.com/api/project-wbs", {
+        method: "POST",
+        headers: { origin: "https://example.com", "content-type": "application/json" },
+        body: JSON.stringify(value),
+      }),
+      runtime,
+      async () => "actor",
+    );
+  }
+  assert.equal((await post({ ...valid, confirmedDisclosure: false })).status, 400);
+  assert.equal(
+    (await post({ ...valid, source: { ...valid.source, contractId: "bad" } })).status,
+    400,
+  );
+  assert.equal(
+    (await post({ ...valid, node: { ...valid.node, kind: "DELIVERABLE" } })).status,
+    400,
+  );
+  assert.equal((await post(valid)).status, 409);
+});
+
+test("import-contract revisions survive Web receipt, current view and history decoding", () => {
+  const revision = {
+    id: "revision-2",
+    version: 2,
+    parentRevisionId: "revision-1",
+    actorUserId: "writer",
+    action: "import-contract",
+    at: 100,
+    document: { schemaVersion: 1, nodes: [] },
+  };
+  assert.equal(
+    projectWbsReceipt({ requestId: "req", projectId: "project", revision }).revision.action,
+    "import-contract",
+  );
+  const view = projectWbsView({
+    actorUserId: "writer",
+    project: { id: "project", title: "Project" },
+    canEdit: true,
+    canManageProject: false,
+    closed: false,
+    version: 2,
+    revision,
+  });
+  assert.equal(view.revision?.action, "import-contract");
+  assert.equal(
+    projectWbsHistory({ revisions: [revision], next: null }).revisions[0]?.action,
+    "import-contract",
+  );
+  assert.throws(() =>
+    projectWbsReceipt({
+      requestId: "req",
+      projectId: "project",
+      revision: { ...revision, action: "unknown" },
+    }),
+  );
 });

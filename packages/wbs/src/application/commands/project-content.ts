@@ -1,3 +1,4 @@
+import { isRecord } from "@line_bot_v1/platform/validation";
 import type { ProjectWbsCommand } from "../../contracts/dto/project-content.js";
 import { parseWbsNode, WbsError } from "../../domain/document.js";
 
@@ -25,7 +26,43 @@ export function parseProjectWbsCommand(input: unknown): ProjectWbsCommand {
   if (v.action === "initialize") result = { ...base, action: v.action };
   else if (v.action === "create-node" || v.action === "update-node")
     result = { ...base, action: v.action, node: parseWbsNode(v.node) };
-  else if (v.action === "delete-subtree" || v.action === "move-node") {
+  else if (v.action === "import-contract") {
+    const node = parseWbsNode(v.node);
+    const source = v.source;
+    if (
+      node.kind !== "WORK_PACKAGE" ||
+      node.parentId === null ||
+      v.confirmedDisclosure !== true ||
+      !isRecord(source)
+    )
+      throw new WbsError(400, "請明確確認 Contract 來源與 WBS 工作包對應。");
+    const ref = source;
+    const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+    if (
+      typeof ref.repositoryId !== "string" ||
+      !ref.repositoryId ||
+      ref.repositoryId.length > 128 ||
+      !["contractId", "contractRevisionId", "lineId"].every(
+        (field) => typeof ref[field] === "string" && uuid.test(String(ref[field])),
+      ) ||
+      Object.keys(ref).some(
+        (key) => !["repositoryId", "contractId", "contractRevisionId", "lineId"].includes(key),
+      )
+    )
+      throw new WbsError(400, "Contract 來源參照不正確。");
+    result = {
+      ...base,
+      action: "import-contract",
+      node,
+      source: {
+        repositoryId: ref.repositoryId,
+        contractId: String(ref.contractId).toLowerCase(),
+        contractRevisionId: String(ref.contractRevisionId).toLowerCase(),
+        lineId: String(ref.lineId).toLowerCase(),
+      },
+      confirmedDisclosure: true,
+    };
+  } else if (v.action === "delete-subtree" || v.action === "move-node") {
     if (typeof v.nodeId !== "string" || !v.nodeId || v.nodeId.length > 128)
       throw new WbsError(400, "WBS 節點 ID 不正確。");
     if (v.action === "delete-subtree") result = { ...base, action: v.action, nodeId: v.nodeId };

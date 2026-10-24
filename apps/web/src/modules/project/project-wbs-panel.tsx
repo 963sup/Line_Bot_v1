@@ -10,6 +10,7 @@ import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import ProjectWbsContractImport from "./project-wbs-contract-import";
 import ProjectWbsGovernancePanel from "./project-wbs-governance-panel";
 import ProjectWbsMetrics from "./project-wbs-metrics";
 import styles from "./project-wbs-panel.module.css";
@@ -592,6 +593,17 @@ export default function ProjectWbsPanel({
             </section>
           </div>
         </>
+      )}
+      {view?.revision && !historical && view.canEdit && (
+        <ProjectWbsContractImport
+          key={view.actorUserId + ":" + view.project.id}
+          liffId={liffId}
+          projectId={view.project.id}
+          actorUserId={view.actorUserId}
+          nodes={nodes}
+          disabled={!editable}
+          onImport={(edit) => void execute(edit)}
+        />
       )}
       {view?.revision && !historical && (
         <ProjectWbsGovernancePanel
