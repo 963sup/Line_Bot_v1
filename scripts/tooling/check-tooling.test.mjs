@@ -144,9 +144,10 @@ function fixture(t) {
     readFileSync(resolve(repo, "scripts/tooling/validate.mjs"), "utf8"),
   );
   write(
-    "scripts/tooling/bounded-output.mjs",
-    readFileSync(resolve(repo, "scripts/tooling/bounded-output.mjs"), "utf8"),
+    "scripts/runtime/bounded-output.mjs",
+    readFileSync(resolve(repo, "scripts/runtime/bounded-output.mjs"), "utf8"),
   );
+  write("scripts/runtime/README.md", "# Runtime helpers\n");
   write(
     "pnpm-workspace.yaml",
     'packages: ["packages/*"]\nallowBuilds:\n  "@ast-grep/cli": true\nengineStrict: true\nsaveExact: true\nverifyDepsBeforeRun: error\ncatalog:\n  typescript: 5.9.3\n',

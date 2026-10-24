@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { runBoundedCommand } from "./bounded-output.mjs";
+import { runBoundedCommand, writeBoundedDiagnostic } from "../runtime/bounded-output.mjs";
 import {
   classifyChangedFiles,
   describeFastPlan,
@@ -42,6 +42,20 @@ test("successful bounded command keeps child output out of diagnostics", (t) => 
   assert.equal(result.status, 0);
   assert.equal(result.diagnostic, "");
   assert.match(readFileSync(result.logPath, "utf8"), /full evidence/);
+});
+
+test("in-process diagnostics preserve the full report and bound stderr excerpt", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-report-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const report = writeBoundedDiagnostic(
+    directory,
+    "tooling-violations",
+    Array.from({ length: 300 }, (_, index) => `violation-${index}`).join("\n"),
+  );
+  assert.match(readFileSync(report.logPath, "utf8"), /violation-0/);
+  assert.doesNotMatch(report.diagnostic, /^violation-0$/m);
+  assert.match(report.diagnostic, /violation-299/);
+  assert.ok(report.diagnostic.split(/\r?\n/).length <= 121);
 });
 
 function git(directory, args) {
