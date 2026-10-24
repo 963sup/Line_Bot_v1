@@ -6,6 +6,23 @@ The owner-published metrics query reports current OPEN proposals, the published 
 
 WBS owns a Project-scoped work decomposition document, its head version, immutable Revision content/history, governance, Baselines and durable exact-replay receipts. Project owns the enclosing Project's current authorization and lifecycle. WBS is a local product capability and does not redefine GitHub GitObject, Commit, PullRequest or ProjectItem semantics. [Resources](resources.md) owns Repository-native resources and is distinct from GitObject. WBS-to-Resources integration remains subsequent work and does not transfer WBS or Project authority.
 
+## Reviewed Contract line to Project WBS
+
+A user can explicitly map one currently ACTIVE engineering Contract line into a single Project WBS
+WORK_PACKAGE. The selected Project and Repository are **separately authorized** through Project
+and Contract public transaction-bound contracts. Project WBS owns the target structure, not the
+agreement: the user supplies the WBS title, description, deliverable, acceptance criteria and
+parent; neither the Content planned quantity nor the Contract agreed quantity becomes an implied
+WBS quantity or automatically accepted scope.
+
+A successful `import-contract` command appends exactly one WBS revision and exact-replay receipt,
+with a private immutable `contract_import` source pin on that revision. Only exact Contract and
+Content identity references are stored in the pin, not protected Contract text or private tables.
+A current ACTIVE Contract and its pinned exact Content Work/Task is verified **inside the same
+Project WBS transaction** before write. Authorized exact replay still checks current Contract source
+readability, allowing an earlier ACTIVE revision to remain verifiable after Contract closure.
+No WBS Baseline is published by this import; review and governance remain separate.
+
 ## Authority and invariants
 
 - Project owns identity, current `READ | WRITE | ADMIN` access and open/closed/deleted lifecycle. WBS consumes Project's public content-scope contract and never queries Project private authorization tables.

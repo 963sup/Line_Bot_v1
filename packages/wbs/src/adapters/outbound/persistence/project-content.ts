@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { createPostgresContractReferenceReader } from "@line_bot_v1/contract/composition/bootstrap/references";
 import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
 import { isRecord, numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { createPostgresProjectContentScope } from "@line_bot_v1/project/composition/bootstrap/project-content-scope";
@@ -23,7 +24,8 @@ function revisionMetadata(row: SqlRow): Omit<WbsRevision, "document"> {
     action !== "create-node" &&
     action !== "update-node" &&
     action !== "move-node" &&
-    action !== "delete-subtree"
+    action !== "delete-subtree" &&
+    action !== "import-contract"
   )
     throw new WbsError(503, "WBS 歷史操作無法讀取。");
   return {
@@ -130,6 +132,7 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
       await new PostgresWbsScopeBoundary(sql).projectWritable(project.id);
       return operation({
         scope: { projectId: project.id, closed, role },
+        contractLines: createPostgresContractReferenceReader(sql),
         nextId: randomUUID,
         replay: async () => {
           await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
@@ -218,14 +221,16 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
             throw new WbsError(503, "WBS 目前版本無法讀取。");
           return current;
         },
-        save: async (next) => {
+        save: async (next, importPin) => {
+          if ((next.action === "import-contract") !== Boolean(importPin))
+            throw new WbsError(503, "Contract import provenance cannot be omitted.");
           if (next.parentRevisionId === null)
             await sql.query(
               "INSERT INTO project_wbs(project_id,version,head_revision_id) VALUES($1,$2,$3)",
               [project.id, next.version, next.id],
             );
           await sql.query(
-            "INSERT INTO project_wbs_revisions(id,project_id,version,parent_revision_id,actor_user_id,action,document,at) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8)",
+            "INSERT INTO project_wbs_revisions(id,project_id,version,parent_revision_id,actor_user_id,action,document,contract_import,at) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9)",
             [
               next.id,
               project.id,
@@ -234,6 +239,7 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
               next.actorUserId,
               next.action,
               JSON.stringify(next.document),
+              importPin ? JSON.stringify(importPin) : null,
               next.at,
             ],
           );

@@ -15,7 +15,8 @@ function metadata(value: unknown): Omit<WbsRevision, "document"> {
     action !== "create-node" &&
     action !== "update-node" &&
     action !== "move-node" &&
-    action !== "delete-subtree"
+    action !== "delete-subtree" &&
+    action !== "import-contract"
   )
     throw new Error("WBS 歷史操作不正確。");
   return {

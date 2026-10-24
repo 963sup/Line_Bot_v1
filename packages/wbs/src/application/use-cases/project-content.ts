@@ -1,6 +1,7 @@
 import type { ProjectWbsCommand } from "../../contracts/dto/project-content.js";
 import type { ProjectWbsStore } from "../../contracts/repositories/project-content.js";
-import { reviseWbsContent } from "../../domain/content.js";
+import { ContractError } from "@line_bot_v1/contract/domain/error";
+import { importContractWorkPackage, reviseWbsContent } from "../../domain/content.js";
 import { WbsError } from "../../domain/document.js";
 import { canEditProjectWbs } from "../../domain/policies/project-access.js";
 import { parseProjectWbsCommand } from "../commands/project-content.js";
@@ -14,10 +15,63 @@ export function executeProjectWbsCommand(
   return store.transact(userId, command, async (transaction) => {
     if (!canEditProjectWbs(transaction.scope.role))
       throw new WbsError(403, "需要 Project WRITE 或 ADMIN 才能編輯 WBS。");
+    const verifyContractLine = async (requireActive: boolean) => {
+      if (command.action !== "import-contract") return null;
+      try {
+        const basis = await transaction.contractLines.verifyLine(
+          userId,
+          command.source.repositoryId,
+          {
+            contractId: command.source.contractId,
+            contractRevisionId: command.source.contractRevisionId,
+            lineId: command.source.lineId,
+          },
+          { requireActive },
+        );
+        if (
+          basis.content.repositoryId !== command.source.repositoryId ||
+          (basis.content.node.kind !== "WORK" && basis.content.node.kind !== "TASK") ||
+          basis.content.node.plannedQuantity === null
+        )
+          throw new WbsError(409, "Contract line does not pin an eligible Content Work/Task.");
+        return basis;
+      } catch (error) {
+        if (error instanceof ContractError)
+          throw new WbsError(
+            error.status === 409 ? 409 : error.status >= 500 ? 503 : 404,
+            "Contract source is not eligible or accessible.",
+          );
+        throw error;
+      }
+    };
     const replay = await transaction.replay();
-    if (replay) return replay;
+    if (replay) {
+      if (command.action === "import-contract") await verifyContractLine(false);
+      return replay;
+    }
     if (transaction.scope.closed) throw new WbsError(409, "Project 已關閉，不能修改 WBS。");
     const current = await transaction.load();
+    if (command.action === "import-contract") {
+      const basis = await verifyContractLine(true);
+      if (!basis) throw new WbsError(503, "Contract source verification is unavailable.");
+      const revision = importContractWorkPackage(
+        current,
+        command.expectedVersion,
+        command.node,
+        userId,
+        transaction.nextId(),
+        now,
+      );
+      return transaction.save(revision, {
+        repositoryId: command.source.repositoryId,
+        contractId: basis.contractId,
+        contractRevisionId: basis.contractRevisionId,
+        lineId: basis.lineId,
+        planRevisionId: basis.content.planRevisionId,
+        contentNodeId: basis.content.node.id,
+        nodeId: command.node.id,
+      });
+    }
     const revision = reviseWbsContent(
       current,
       command.expectedVersion,

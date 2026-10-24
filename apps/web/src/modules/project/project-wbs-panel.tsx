@@ -3,6 +3,7 @@
 import { parseProjectWbsCommand } from "@line_bot_v1/wbs/application/commands/project-content";
 import type {
   ProjectWbsCommand,
+  ProjectWbsContractImport,
   ProjectWbsHistory,
   ProjectWbsView,
 } from "@line_bot_v1/wbs/contracts/dto/project-content";
@@ -10,6 +11,7 @@ import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
+import ProjectWbsContractImport from "./project-wbs-contract-import";
 import ProjectWbsGovernancePanel from "./project-wbs-governance-panel";
 import ProjectWbsMetrics from "./project-wbs-metrics";
 import styles from "./project-wbs-panel.module.css";
@@ -150,7 +152,7 @@ export default function ProjectWbsPanel({
     }
   }, [endpoint, liffId, storageKey]);
 
-  async function execute(edit?: WbsEdit) {
+  async function execute(edit?: WbsEdit | ProjectWbsContractImport) {
     const source = current.current;
     if (!source || locked.current || historical) return;
     locked.current = true;
@@ -592,6 +594,16 @@ export default function ProjectWbsPanel({
             </section>
           </div>
         </>
+      )}
+      {view?.revision && !historical && (
+        <ProjectWbsContractImport
+          key={`${view.actorUserId}:${view.project.id}`}
+          liffId={liffId}
+          projectId={view.project.id}
+          nodes={nodes}
+          disabled={!editable}
+          onImport={(command) => execute(command)}
+        />
       )}
       {view?.revision && !historical && (
         <ProjectWbsGovernancePanel

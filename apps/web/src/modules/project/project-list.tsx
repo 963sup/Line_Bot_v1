@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import styles from "./project-list.module.css";
 import { useProjectCollection } from "./use-project-collection";
@@ -17,6 +17,32 @@ const ownerFilters: readonly { value: OwnerFilter; label: string }[] = [
 export default function ProjectList({ liffId }: { liffId: string }) {
   const { items, busy, error, load, clear } = useProjectCollection(liffId);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("ALL");
+  const [contractHandoff, setContractHandoff] = useState<string | null>(null);
+  useEffect(() => {
+    const query = new URLSearchParams(globalThis.window.location.search);
+    const contractId = query.get("contractId") ?? "";
+    const revision = query.get("contractRevisionId") ?? "";
+    const owner = query.get("contractOwner") ?? "";
+    const repository = query.get("contractRepository") ?? "";
+    const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+    if (
+      uuid.test(contractId) &&
+      uuid.test(revision) &&
+      owner.length > 0 &&
+      owner.length <= 128 &&
+      repository.length > 0 &&
+      repository.length <= 128
+    ) {
+      setContractHandoff(
+        new URLSearchParams({
+          contractOwner: owner,
+          contractRepository: repository,
+          contractId,
+          contractRevisionId: revision,
+        }).toString(),
+      );
+    }
+  }, []);
   const visibleItems =
     ownerFilter === "ALL" ? items : items?.filter((item) => item.ownerKind === ownerFilter);
 
@@ -59,7 +85,11 @@ export default function ProjectList({ liffId }: { liffId: string }) {
           {visibleItems.map((item) => (
             <Link
               className={styles.row}
-              href={`/projects/${encodeURIComponent(item.id)}`}
+              href={
+                contractHandoff
+                  ? `/projects/${encodeURIComponent(item.id)}/wbs?${contractHandoff}`
+                  : `/projects/${encodeURIComponent(item.id)}`
+              }
               key={item.id}
             >
               <span className={styles.copy}>
@@ -69,7 +99,9 @@ export default function ProjectList({ liffId }: { liffId: string }) {
                   {item.name}
                 </strong>
               </span>
-              <span className={styles.open}>開啟</span>
+              <span className={styles.open}>
+                {contractHandoff ? "選擇此 Project WBS" : "開啟"}
+              </span>
             </Link>
           ))}
         </div>

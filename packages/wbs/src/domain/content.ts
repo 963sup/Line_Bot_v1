@@ -1,11 +1,22 @@
 import { applyWbsEdit, type WbsDocument, type WbsEdit, WbsError } from "./document.js";
 
+/** Private, exact Contract reference pinned by a Project WBS import revision. */
+export type WbsContractImportPin = Readonly<{
+  repositoryId: string;
+  contractId: string;
+  contractRevisionId: string;
+  lineId: string;
+  planRevisionId: string;
+  contentNodeId: string;
+  nodeId: string;
+}>;
+
 export type WbsRevision = Readonly<{
   id: string;
   version: number;
   parentRevisionId: string | null;
   actorUserId: string;
-  action: WbsEdit["action"];
+  action: WbsEdit["action"] | "import-contract";
   at: number;
   document: WbsDocument;
 }>;
@@ -34,5 +45,22 @@ export function reviseWbsContent(
     action: edit.action,
     at,
     document,
+  };
+}
+
+/** Importing an agreement's line is a user-authored WORK_PACKAGE, never an automatic conversion. */
+export function importContractWorkPackage(
+  current: WbsRevision | null,
+  expectedVersion: number,
+  node: import("./document.js").WbsNode,
+  actorUserId: string,
+  id: string,
+  at: number,
+): WbsRevision {
+  if (node.kind !== "WORK_PACKAGE")
+    throw new WbsError(400, "Contract line must map to a WBS Work Package.");
+  return {
+    ...reviseWbsContent(current, expectedVersion, { action: "create-node", node }, actorUserId, id, at),
+    action: "import-contract",
   };
 }

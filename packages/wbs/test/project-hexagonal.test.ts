@@ -50,6 +50,11 @@ test("Project content uses projectId and reauthorizes the current role before ex
       return { projectId: "project-a", role, closed };
     },
     nextId: () => "revision",
+    contractLines: {
+      verifyLine: async () => {
+        throw new Error("Existing WBS command must not read Contract.");
+      },
+    },
     replay: async () => {
       calls.push("replay");
       return receipt;

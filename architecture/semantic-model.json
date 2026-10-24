@@ -2797,6 +2797,19 @@
       "consistency": "transaction-recheck"
     },
     {
+      "id": "wbs-contract-line-import",
+      "from": "wbs",
+      "to": "contract",
+      "kind": "reference",
+      "owner": "wbs",
+      "meaning": "A user-confirmed Project WBS Work Package import requalifies an exact ACTIVE Contract line and its Content basis under current Repository access within the WBS Project transaction, preserving a private immutable WBS revision source pin without importing Contract authority or automatically publishing a Baseline.",
+      "provider": "contract",
+      "consumer": "wbs",
+      "integrationMode": "stable-identity+query",
+      "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
       "id": "wbs-project-scope",
       "from": "wbs",
       "to": "project",

@@ -23,6 +23,47 @@ export function parseProjectWbsCommand(input: unknown): ProjectWbsCommand {
   };
   let result: ProjectWbsCommand;
   if (v.action === "initialize") result = { ...base, action: v.action };
+  else if (v.action === "import-contract") {
+    const node = parseWbsNode(v.node);
+    const source = v.source;
+    const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+    if (
+      node.kind !== "WORK_PACKAGE" ||
+      v.acknowledged !== true ||
+      !source ||
+      typeof source !== "object" ||
+      Array.isArray(source)
+    )
+      throw new WbsError(400, "Reviewed Contract Work Package import is invalid.");
+    const ref: Record<string, unknown> = { ...source };
+    if (
+      Object.keys(ref).some(
+        (key) => !["repositoryId", "contractId", "contractRevisionId", "lineId"].includes(key),
+      ) ||
+      typeof ref.repositoryId !== "string" ||
+      !ref.repositoryId ||
+      ref.repositoryId.length > 128 ||
+      typeof ref.contractId !== "string" ||
+      !uuid.test(ref.contractId) ||
+      typeof ref.contractRevisionId !== "string" ||
+      !uuid.test(ref.contractRevisionId) ||
+      typeof ref.lineId !== "string" ||
+      !uuid.test(ref.lineId)
+    )
+      throw new WbsError(400, "Exact Contract line reference is required.");
+    result = {
+      ...base,
+      action: "import-contract",
+      acknowledged: true,
+      source: {
+        repositoryId: ref.repositoryId,
+        contractId: ref.contractId.toLowerCase(),
+        contractRevisionId: ref.contractRevisionId.toLowerCase(),
+        lineId: ref.lineId.toLowerCase(),
+      },
+      node,
+    };
+  }
   else if (v.action === "create-node" || v.action === "update-node")
     result = { ...base, action: v.action, node: parseWbsNode(v.node) };
   else if (v.action === "delete-subtree" || v.action === "move-node") {
