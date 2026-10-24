@@ -1312,6 +1312,7 @@ export function validate(root) {
   for (const [path, requiredHeadings] of [
     [".github/ISSUE_TEMPLATE/bug_report.md", ["## 影響範圍", "## 不在範圍"]],
     [".github/ISSUE_TEMPLATE/feature_request.md", ["## 影響範圍", "## 不在範圍"]],
+    [".github/ISSUE_TEMPLATE/architecture.md", ["## Owner / Boundary", "## Acceptance"]],
   ]) {
     const file = resolve(root, path);
     if (!existsSync(file)) {

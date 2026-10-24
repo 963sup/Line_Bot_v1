@@ -260,6 +260,7 @@ function fixture(t) {
   );
   write(".github/ISSUE_TEMPLATE/bug_report.md", "## 影響範圍\n## 不在範圍\n");
   write(".github/ISSUE_TEMPLATE/feature_request.md", "## 影響範圍\n## 不在範圍\n");
+  write(".github/ISSUE_TEMPLATE/architecture.md", "## Owner / Boundary\n## Acceptance\n");
   write(
     ".env.example",
     "POSTGRES_URL=\nPOSTGRES_URL_NON_POOLING=\nSUPABASE_URL=\nKV_REST_API_URL=\nKV_REST_API_TOKEN=\n",
@@ -1316,6 +1317,9 @@ test("issue templates retain impact and excluded-scope fields", (t) => {
   const { root, write } = fixture(t);
   write(".github/ISSUE_TEMPLATE/feature_request.md", "## 影響範圍\n");
   rejects(root, ".github/ISSUE_TEMPLATE/feature_request.md: ## 不在範圍 section is required");
+
+  write(".github/ISSUE_TEMPLATE/architecture.md", "## Acceptance\n");
+  rejects(root, ".github/ISSUE_TEMPLATE/architecture.md: ## Owner / Boundary section is required");
 });
 
 test("AGENTS hot path rejects target or proposal sections", (t) => {
