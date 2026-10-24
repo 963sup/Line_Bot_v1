@@ -19,6 +19,7 @@ import type {
   FileTransaction,
   FileTransactions,
 } from "../../../contracts/output/files.js";
+import type { FileRevisionQualifier } from "../../../contracts/output/references.js";
 import type { FileSavedResultReader } from "../../../contracts/output/saved-results.js";
 import { FileError } from "../../../domain/error.js";
 import type { FileRevision, FileUploadIntent } from "../../../domain/file.js";
@@ -27,7 +28,7 @@ import {
   processingOutput,
   resultEdits,
 } from "../../../domain/processing-run.js";
-import { assertReadable } from "../../../domain/values.js";
+import { assertReadable, identifier, scopeId } from "../../../domain/values.js";
 
 const fileColumns = `revision.id,revision.file_id,revision.repository_id,revision.version,
  revision.parent_revision_id,revision.actor_user_id,revision.at,revision.name,
@@ -642,6 +643,24 @@ export function createPostgresFileSavedResultReader(sql: Sql): FileSavedResultRe
         observationId: observation.id,
         uncertain: observation.uncertain,
       };
+    },
+  };
+}
+
+/** Public File qualification uses the caller's transaction and only File-owned metadata. */
+export function createPostgresFileRevisionQualifier(sql: Sql): FileRevisionQualifier {
+  return {
+    async verify(actor, repositoryId, source) {
+      const scope = scopeId(repositoryId);
+      const fileId = identifier(source.fileId);
+      const revisionId = identifier(source.fileRevisionId);
+      if (!/^[0-9a-f]{64}$/.test(source.fileSha256))
+        throw new FileError(400, "Invalid File source fingerprint.", "INVALID_INPUT");
+      await currentScope(sql, actor, scope);
+      const revision = await readFile(sql, scope, fileId, revisionId);
+      if (!revision) return missing();
+      if (revision.sha256 !== source.fileSha256)
+        throw new FileError(409, "File source fingerprint differs.", "SOURCE_INVALID");
     },
   };
 }

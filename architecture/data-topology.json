@@ -224,6 +224,14 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/619_intelligence_intakes.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/620_issues.sql",
       "role": "authoritative"
     },
@@ -1920,6 +1928,38 @@
       "authority": true,
       "semanticOwner": "contract",
       "concept": "engineering-contract-command-receipt"
+    },
+    {
+      "name": "contract_documents",
+      "kind": "table",
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document"
+    },
+    {
+      "name": "contract_document_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document-revision"
+    },
+    {
+      "name": "contract_document_commands",
+      "kind": "table",
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document-command-receipt"
+    },
+    {
+      "name": "intelligence_document_intakes",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_intakes.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-document-intake-attempt"
     },
     {
       "name": "engineering_executions",

@@ -49,7 +49,7 @@ Module registration, semantic-owner lifecycle, Bounded Context status and runtim
 | [packages/google-workspace](./google-workspace/SEMANTICS.md) | integration-adapter | [google-workspace](../docs/owners/google-workspace.md) | current | Not declared |
 | [packages/identity-access](./identity-access/SEMANTICS.md) | domain-module | [identity-access](../docs/owners/identity-access.md) | current | Not declared |
 | [packages/insights](./insights/SEMANTICS.md) | application-module | [insights](../docs/owners/insights.md) | current | Not declared |
-| [packages/intelligence](./intelligence/SEMANTICS.md) | integration-adapter | [intelligence](../docs/owners/intelligence.md) | current | Not declared |
+| [packages/intelligence](./intelligence/SEMANTICS.md) | application-module | [intelligence](../docs/owners/intelligence.md) | current | Not declared |
 | [packages/issue](./issue/SEMANTICS.md) | domain-module | [issue](../docs/owners/issue.md) | current | Not declared |
 | [packages/ledger](./ledger/SEMANTICS.md) | domain-module | [ledger](../docs/owners/ledger.md) | current | ledger / selected |
 | [packages/line](./line/SEMANTICS.md) | integration-adapter | [line-integration](../docs/owners/line-integration.md) | current | Not declared |

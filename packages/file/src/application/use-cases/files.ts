@@ -18,6 +18,7 @@ import {
 } from "../../domain/processing-run.js";
 import { assertWritable, checkVersion, identifier, scopeId } from "../../domain/values.js";
 import { processingCommand, resultCommand, uploadCommand } from "../commands/files.js";
+import { createFileSourceReader } from "./sources.js";
 
 function fileDto(r: FileRevision) {
   return {
@@ -85,6 +86,7 @@ export function createFiles(deps: {
   objects: () => FileObjectStore;
   now(): number;
 }) {
+  const sources = createFileSourceReader(deps);
   function context(tx: FileTransaction, actor: string) {
     return {
       id: tx.nextId(),
@@ -93,18 +95,10 @@ export function createFiles(deps: {
       at: deps.now(),
     };
   }
-  async function original(actor: string, scope: string, fileId: string, revisionId: string) {
-    const revision = await deps.reads.file(actor, scope, fileId, revisionId);
-    // The private provider read is outside PostgreSQL transaction/locks.
-    const bytes = await deps.objects().readVerified(revision);
-    // A revoked Repository grant cannot complete a read initiated while still authorized.
-    await deps.reads.file(actor, scope, fileId, revisionId);
-    return { revision, bytes };
-  }
   return {
     async source(actor: string, scope: string, id: string, revision: string) {
       try {
-        const result = await original(actor, scopeId(scope), identifier(id), identifier(revision));
+        const result = await sources.read(actor, scope, { fileId: id, fileRevisionId: revision });
         return { file: fileDto(result.revision), bytes: result.bytes };
       } catch (error) {
         throw fileErrorFromUnknown(error);
@@ -312,7 +306,10 @@ export function createFiles(deps: {
             processing: processingDto(start.revision),
           };
         // Reauthorize and verify the exact source before the selected provider sees bytes.
-        const source = await original(actor, c.repositoryId, c.fileId, c.fileRevisionId);
+        const source = await sources.read(actor, c.repositoryId, {
+          fileId: c.fileId,
+          fileRevisionId: c.fileRevisionId,
+        });
         // No transaction or governance lock spans external processing.
         let rawResult: ProcessingOutput | null = null;
         try {

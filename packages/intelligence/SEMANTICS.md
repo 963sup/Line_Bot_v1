@@ -4,7 +4,7 @@
 
 - Package: `packages/intelligence`
 - Module: `@line_bot_v1/intelligence`
-- Module kind: `integration-adapter`
+- Module kind: `application-module`
 - Semantic owner: `intelligence`
 - Owner kind: `integration-owner`
 - Owner lifecycle: `current`
@@ -20,12 +20,15 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 
 ## Ubiquitous Language
 
-No canonical business concept is currently declared for this owner.
+| Term | Concept ID | Kind | Lifecycle | Definition |
+| --- | --- | --- | --- | --- |
+| IntelligenceDocumentIntakeAttempt | intelligence-document-intake-attempt | authoritative | current | Durable technical intake-attempt state for one source-qualified, target-intent fingerprint. It records only source identity, target intent, lifecycle state and target receipt reference; it never stores the extracted candidate or becomes Contract business truth. |
 
 ## Capabilities
 
 | Capability | Runtime | Implementation | Consumes | Intent |
 | --- | --- | --- | --- | --- |
+| intake-contract-document | required | implemented | intelligence-file-source, intelligence-contract-document-intake, intelligence-platform-persistence | Read an authorized File source, extract a complete purchase-order candidate using the target owner's schema, and submit it through the target's public SAVE command. |
 | understand-file-document | required | implemented | file-intelligence-processor-contract | Map explicitly supplied PDF or image evidence through a configured Gemini model into bounded, source-located candidate observations without approving, persisting or importing business facts. |
 
 ## Context Relationships
@@ -33,7 +36,10 @@ No canonical business concept is currently declared for this owner.
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | consumes | file | reference | file | pure-value | Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority. |
+| consumes | contract | command | contract | idempotent-command | Contract supplies the versioned purchase-order target schema and public candidate command. Intelligence submits only an untrusted SAVE candidate; Contract owns validation, authorization, version/replay checks, durable revision and confirmation. |
 | provides | file | query | intelligence | current-source-access | File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity. |
+| consumes | file | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
+| consumes | platform | query | platform | transaction-bound | Intelligence consumes neutral PostgreSQL transaction and value-decoding mechanisms for its technical attempt record. It retains only attempt recovery state; Contract remains the owner of candidate and business revision truth. |
 
 ## Tactical Model Boundary
 

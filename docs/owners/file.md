@@ -35,6 +35,15 @@ write-through.
 
 File Save is **not** Contract activation, Content plan publication, Resources creation, WBS Baseline publication, legal approval or Execution. Later business import, if requested, must be a distinct user command owned by its target Domain.
 
+## Contract document source
+
+File publishes two narrow public capabilities for a target owner that needs an original document:
+
+- The source reader authorizes an exact File revision before and after private-object I/O, then returns detached bytes with that revision. It is for a technical orchestrator such as Intelligence; it grants neither Storage nor File persistence authority.
+- The transaction-bound revision qualifier verifies Repository/File/Revision/SHA-256 inside the target owner's transaction. It is for the target's immutable source pin; it never reads original bytes or performs object I/O.
+
+Contract uses the qualifier when it saves a ContractDocument revision. Intelligence uses the reader to form an untrusted candidate for Contract's public command. Neither call starts a File ProcessingRun or changes the existing File Run/Preview/Save lifecycle.
+
 ## Source and evidence
 
 Authoritative SQL: [615_files.sql](../../supabase/schemas/615_files.sql). Machine semantics: [semantic model](../../architecture/semantic-model.json), [implementation topology](../../architecture/implementation-topology.json), [data topology](../../architecture/data-topology.json). Source: `packages/file`.

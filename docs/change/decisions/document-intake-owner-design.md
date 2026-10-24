@@ -1,6 +1,6 @@
 # Document intake owner decision
 
-Status: selected target direction, not current runtime capability. Source baseline:
+Status: selected end-to-end target direction. Original source baseline:
 `7539638b0b10a5917a115a6ac699207d816a7f4b` (2026-10-25).
 Implementation and evidence are tracked by
 [#375](https://github.com/963sup/Line_Bot_v1/issues/375),
@@ -10,6 +10,14 @@ Implementation and evidence are tracked by
 This decision does not override current source, canonical architecture or SQL. Promote the
 affected authority together with executable consumers and validation, then remove target-only
 text that no longer has migration or recovery value.
+
+The current source slice provides File's authorized original reader, Intelligence's durable
+technical intake attempt, and Contract-owned purchase-order candidates, review reads and explicit
+confirmation. It does not implement the complete Content/WBS expansion or the retained-data
+cutover below. Existing File processing and Content-pinned engineering agreements still have
+their current readers/writers. Local synthetic 54-line tests prove contract preservation, not
+live extraction of the supplied PDF. Current Owner documents and canonical models describe
+that exact implementation boundary.
 
 ## Result and responsibility
 

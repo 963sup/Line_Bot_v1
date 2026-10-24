@@ -1,10 +1,51 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmdirSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { runCli } from "../runtime/cli-subprocess-test-helper.mjs";
 
 const script = "scripts/contract/run.mjs";
 const request = (operation) => ({ operation, proof: "secret-proof", command: {}, query: {} });
 const safeError = "Contract operation failed; no credential or provider payload is logged.";
+
+test("document review writes the complete protected revision to a new file without logging its body", () => {
+  const directory = mkdtempSync(join(tmpdir(), "contract-review-"));
+  const outputPath = join(directory, "review.json");
+  try {
+    const input = { ...request("document-read"), outputPath };
+    const result = runCli(script, input, "success");
+    assert.equal(result.status, 0);
+    assert.equal(result.json.value.lineCount, 1);
+    assert.equal(result.json.value.outputPath, outputPath);
+    assert.doesNotMatch(`${result.stdout}${result.stderr}`, /PRIVATE_DOCUMENT_BODY|secret-proof/);
+    assert.equal(
+      JSON.parse(readFileSync(outputPath, "utf8")).candidate.lines[0].description,
+      "PRIVATE_DOCUMENT_BODY",
+    );
+    const repeated = runCli(script, input, "success");
+    assert.equal(repeated.status, 1);
+    assert.equal(repeated.json.code, "INVALID_INPUT");
+    assert.equal(JSON.parse(readFileSync(outputPath, "utf8")).candidate.lines.length, 1);
+  } finally {
+    try {
+      unlinkSync(outputPath);
+    } catch {}
+    rmdirSync(directory);
+  }
+});
+
+test("document commands use authenticated Contract capabilities and retain recovery classification", () => {
+  const saved = runCli(script, request("document-submit"), "success");
+  assert.equal(saved.status, 0);
+  assert.equal(saved.json.value.operation, "submit");
+  assert.equal(saved.json.value.actor, "user-id");
+  const receipt = runCli(script, request("document-receipt"), "success");
+  assert.equal(receipt.json.value.operation, "receipt");
+  assert.equal(failure("document-submit", "owner-unavailable").code, "UNKNOWN_RESULT");
+  assert.equal(failure("document-submit", "owner-typed:403:FORBIDDEN").code, "FORBIDDEN");
+  assert.equal(failure("document-read", "success").code, "INVALID_INPUT");
+});
 
 function failure(operation, scenario, input = request(operation)) {
   const result = runCli(script, input, scenario);

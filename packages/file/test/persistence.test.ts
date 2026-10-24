@@ -10,6 +10,7 @@ import { createFileReclaimer } from "../src/application/use-cases/reclaim.js";
 import {
   createPostgresFileDependencies,
   createPostgresFileReclamationDependencies,
+  createPostgresFileRevisionQualifier,
 } from "../src/composition/bootstrap/files.js";
 import type { FileObjectRemoval, FileObjectStore } from "../src/contracts/output/object-store.js";
 import type { FileProcessor } from "../src/contracts/output/processor.js";
@@ -85,6 +86,29 @@ test("PostgreSQL File intake preserves protected objects, explicit results, exac
   const files = intake(db, objects);
   const c = command();
   const first = await files.upload("owner", c, bytes);
+  const reference = {
+    fileId: c.fileId,
+    fileRevisionId: first.file.revisionId,
+    fileSha256: first.file.sha256,
+  };
+  await db.transaction((sql) =>
+    createPostgresFileRevisionQualifier(sql).verify("owner", "repo", reference),
+  );
+  await assert.rejects(
+    db.transaction((sql) =>
+      createPostgresFileRevisionQualifier(sql).verify("owner", "repo", {
+        ...reference,
+        fileSha256: "0".repeat(64),
+      }),
+    ),
+    code("SOURCE_INVALID"),
+  );
+  await assert.rejects(
+    db.transaction((sql) =>
+      createPostgresFileRevisionQualifier(sql).verify("outsider", "repo", reference),
+    ),
+    code("FORBIDDEN"),
+  );
   assert.deepEqual(await files.upload("owner", c, bytes), first);
   assert.deepEqual(
     (await files.source("owner", "repo", c.fileId, first.file.revisionId)).bytes,
