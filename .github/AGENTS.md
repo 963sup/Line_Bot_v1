@@ -18,6 +18,13 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 - Attendance scheduler remains a separate operation. Run for its own changed inputs or changed schema/Web deployment, accepting unchanged dependencies as skipped.
 - Keep source classification and successful-publication baselines in the tested release planner. A failed operation must remain pending on the next run.
 
+## Issue / PR integration
+
+- `ISSUE_TEMPLATE/` is GitHub intake and `pull_request_template.md` is PR evidence presentation. [Development workflow](../docs/reference/engineering/development-workflow.md#issue-pr-and-acceptance-trace) owns the Issue → PR → Merge → Acceptance → Regression procedure; neither template owns business truth or a second task database.
+- Issue documents observable outcome, source evidence, root cause status and acceptance. PR documents the exact delivered subset, Owner / public boundary, minimum sufficient implementation and actual checks. Do not invent a bug root cause for feature/docs tasks.
+- Use `Closes #N` only when merge satisfies the whole Issue; otherwise use `Refs #N` and name the remaining Release/Provider/Device acceptance Owner. A PR merge, green CI, deployed SHA and accepted business result are distinct.
+- Do not create Issue-event validation jobs, auto-close workers or a second release/readback workflow. Regression trace links prior Issue / PR / SHA; reopen unresolved same-cause work or link a genuinely different-cause Issue.
+
 ## Boundaries / evidence
 
 YAML calls canonical package commands; no parsing, provider SQL, recovery algorithms or parallel implementation of owner behavior. Setup/build, job routing and artifact upload are GitHub plumbing.

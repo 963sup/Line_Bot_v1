@@ -104,6 +104,19 @@ pnpm tooling:doctor --mcp --next-port 3000
 官方契約：[Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)、[Next.js MCP](https://nextjs.org/docs/app/guides/mcp)、[shadcn MCP](https://ui.shadcn.com/docs/mcp)。
 
 
+## Issue PR and acceptance trace
+
+GitHub Issue owns the problem, intended business result, current evidence and scope-specific acceptance. PR owns the exact proposed changeset and its validation. An Issue can need several PRs; a PR may cover several Issues but must identify the actual acceptance subset.
+
+1. **Issue intake**：使用既有 Bug／Feature 或 Architecture Template，記錄 observable outcome、scope、SHA／環境、預期／實際與 Root Cause status（Confirmed、Hypothesis、Unknown、Not applicable）。Feature／docs 不虛構 Bug 根因；Issue 本身不授予跨 Owner 寫入權限。
+2. **Agent 接手**：重新讀 Issue、current main／PR、適用 root + nearest AGENTS、Owner source/contracts/tests。Bug 沿 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger 查證；若已有合併變更解決同一問題，先驗證，不重做。
+3. **PR 對應**：列出對應 Issue acceptance subset、Root Cause evidence（適用時）、Owner/Truth/Boundary、reused capability、新 complexity 必要理由與真實 validation。高內聚／低耦合及 DDD + Hexagonal 不以 folder、最少檔案或通過 CI 代替。
+4. **Merge 語意**：僅當 PR merge 本身滿足整張 Issue 的 acceptance，使用 `Closes #N`／`Fixes #N`。分階段交付或需 schema、provider、deployment、browser、LINE device 驗收者使用 `Refs #N`，保留 open Issue 並明確記錄剩餘 Owner/evidence。Existing required checks 和 review settings 是 GitHub 平台權威。
+5. **Release／驗收**：沿用現有 main release planner、provider sync/retry/readback；不新增與 Issue 連動的第二套 deployment workflow。將 merge SHA 和適用 release／provider／device evidence 連到 Issue／PR；CI green、Merged、Deployed、Accepted 不互相等同。Issue acceptance 真正滿足或明確記錄 duplicate/not planned/superseded 理由才關閉。
+6. **Feedback／Regression**：先比對舊 Issue／PR／merge SHA／release evidence；未解決的同根因重開 Issue，不同根因另建關聯 Issue。只有真實 invariant 值得保護時才新增 regression test/guard，不建第二套任務狀態儲存，Issue 描述更新不觸發完整 CI。
+
+Templates 是資料收集與 Review Interface，不是能自動證明 Root Cause 的 Gate；簡單文件修正可簡述「不適用」。證據強度以 [validation rules](../../rules/validation-evidence.md) 為準。
+
 ## Commit and PR workflow
 
 Git history 保存可理解的工程決策，不保存完成工作的每一步操作。Commit 邊界由變更責任、驗證與 rollback boundary 決定，不由檔案數、行數、layer 或工作時間決定。

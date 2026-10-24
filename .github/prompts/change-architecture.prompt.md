@@ -13,4 +13,4 @@ Follow the default repository change loop in `docs/reference/engineering/develop
 
 ## Delivery
 
-Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.
+Make the minimum sufficient owner-level correction after verifying root cause, authority and invariants; do not optimize simply for fewer changed files. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.
