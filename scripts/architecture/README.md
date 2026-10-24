@@ -17,6 +17,8 @@
 | `check-semantic-architecture.test.mjs` | 驗證 semantic ownership/relationship/capability/evidence contracts。 |
 | `check-fpt-domain-truth.mjs` | 驗證 vendored GitHub FPT JSON file set、blob integrity 與 provenance。 |
 | `check-fpt-domain-truth.test.mjs` | 驗證 exact FPT mirror、tamper detection 與 direct symbol/field resolution。 |
+| `report-violations.mjs` | 將 CLI 違規完整保存於 ignored artifact，只顯示固定上限片段；不改 checker 回傳值。 |
+| `report-violations.test.mjs` | 驗證完整證據、固定輸出上限與 clean path。 |
 | `data-access-core.mjs` | 依 module semantic owner、relation authority 與 projection participation 檢查直接 SQL 存取。 |
 | `runtime-sql-source.mjs` | 以 TypeScript AST 擷取 query/exec 的有限靜態 SQL 組合，未解析的動態 SQL 明確失敗。 |
 | `runtime-sql-source.test.mjs` | 驗證 SQL 擷取、scope/alias、有限分支、forwarding 與 source failure。 |
