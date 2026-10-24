@@ -60,6 +60,20 @@ export async function requireRichMenuWebReady({
       throw new Error("Compatible Web runtime publication was not successful.");
     if (deployment?.conclusion === "success" && activation?.conclusion === "success") {
       await requireCurrentMain({ sha, repository: target, token, fetchImpl });
+      // The original run may have been cancelled after its jobs were read.
+      // Do not start a provider mutation using evidence from a terminal Release.
+      const currentRun = await githubJson("/repos/" + target + "/actions/runs/" + runId, {
+        token,
+        fetchImpl,
+      });
+      if (
+        currentRun?.id !== runId ||
+        currentRun.head_sha !== sha ||
+        currentRun.head_branch !== "main" ||
+        currentRun.run_attempt !== runAttempt ||
+        !["queued", "in_progress"].includes(currentRun.status)
+      )
+        throw new Error("Rich Menu runtime readiness has no active matching Release.");
       return { sha, run_id: runId, attempt: runAttempt, ready: true };
     }
     if (i + 1 < maxPolls) await sleep(pollMs);

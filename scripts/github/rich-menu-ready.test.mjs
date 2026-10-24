@@ -15,9 +15,11 @@ function fixture({
   ],
   runSha = SHA,
   mainShas = [SHA],
+  runStatuses = ["in_progress"],
 } = {}) {
   let polls = 0;
   let currentMainReads = 0;
+  let currentRunReads = 0;
   let sleeps = 0;
   return {
     args: {
@@ -45,7 +47,7 @@ function fixture({
             event: "push",
             path: ".github/workflows/release.yml",
             run_attempt: 1,
-            status: "in_progress",
+            status: runStatuses[Math.min(currentRunReads++, runStatuses.length - 1)],
           });
         if (pathname.endsWith("/actions/runs/42/jobs")) {
           const values = snapshots[Math.min(polls++, snapshots.length - 1)];
@@ -109,4 +111,12 @@ test("runtime gate stops if main changes during publication", async () => {
     ],
   });
   await assert.rejects(requireRichMenuWebReady(args), /not current main/);
+});
+
+test("runtime gate refuses a cancelled Release after successful job readback", async () => {
+  const { args } = fixture({
+    snapshots: [["success", "success"]],
+    runStatuses: ["in_progress", "completed"],
+  });
+  await assert.rejects(requireRichMenuWebReady(args), /no active matching Release/);
 });
