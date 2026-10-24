@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { requireRichMenuWebReady } from "./rich-menu-ready.mjs";
 
@@ -119,4 +120,38 @@ test("runtime gate refuses a cancelled Release after successful job readback", a
     runStatuses: ["in_progress", "completed"],
   });
   await assert.rejects(requireRichMenuWebReady(args), /no active matching Release/);
+});
+
+test("runtime gate remains available after 125 pending upstream observations", async () => {
+  // Schema, Storage, Web deployment and identifier activation may complete
+  // well after the former 120 x 5s window. Test with zero-duration fake sleep.
+  const pending = Array.from({ length: 125 }, () => [null, null]);
+  const { args, counters } = fixture({
+    snapshots: [...pending, ["success", "success"]],
+  });
+  assert.deepEqual(await requireRichMenuWebReady({ ...args, maxPolls: undefined }), {
+    sha: SHA,
+    run_id: 42,
+    attempt: 1,
+    ready: true,
+  });
+  assert.deepEqual(counters(), { polls: 126, sleeps: 125 });
+});
+
+test("runtime readiness bound stays finite", async () => {
+  const { args } = fixture();
+  await assert.rejects(
+    requireRichMenuWebReady({ ...args, maxPolls: 201 }),
+    /Invalid readiness poll bound/,
+  );
+});
+
+test("Rich Menu job reserves execution headroom beyond bounded upstream readiness", () => {
+  const workflow = readFileSync(
+    new URL("../../.github/workflows/release.yml", import.meta.url),
+    "utf8",
+  );
+  const menuJob = workflow.split("\n  rich_menu:\n")[1]?.split("\n  attendance_scheduler:\n")[0];
+  assert.ok(menuJob);
+  assert.match(menuJob, /^    timeout-minutes: 110$/m);
 });

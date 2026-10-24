@@ -13,15 +13,16 @@ export async function requireRichMenuWebReady({
   token,
   fetchImpl = fetch,
   sleep = sleepFor,
-  pollMs = 5_000,
-  maxPolls = 120,
+  // Bounded 100-minute window for upstream Schema/Storage/Web/Activation.
+  pollMs = 30_000,
+  maxPolls = 200,
 }) {
   const target = requireRepository(repository);
   if (!/^[a-f0-9]{40}$/.test(sha ?? "")) throw new Error("An exact SHA is required.");
   if (!Number.isSafeInteger(runId) || runId <= 0) throw new Error("Release run ID is invalid.");
   if (!Number.isSafeInteger(runAttempt) || runAttempt <= 0)
     throw new Error("Release attempt is invalid.");
-  if (!Number.isSafeInteger(maxPolls) || maxPolls < 1 || maxPolls > 120)
+  if (!Number.isSafeInteger(maxPolls) || maxPolls < 1 || maxPolls > 200)
     throw new Error("Invalid readiness poll bound.");
 
   await requireCurrentMain({ sha, repository: target, token, fetchImpl });
