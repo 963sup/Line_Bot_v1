@@ -27,6 +27,7 @@ import type {
   ContentPlanRevision,
   ContentResourcePin,
 } from "../../../domain/plan.js";
+import { isQuantityUnit } from "../../../domain/quantity.js";
 
 type ResourceReaderFactory = (sql: Sql) => ResourceReferenceReader;
 
@@ -48,11 +49,13 @@ function decodeDocument(value: unknown): ContentPlanDocument {
     schemaVersion: 1,
     measures: document.measures.map((item): ContentMeasure => {
       const measure = record(item);
+      if (!isQuantityUnit(measure.unit))
+        throw new TypeError("Invalid stored Content measure unit.");
       return {
         id: stringValue(measure.id),
         name: stringValue(measure.name),
         subject: stringValue(measure.subject),
-        unit: literalValue(measure.unit, ["m", "pcs"]),
+        unit: measure.unit,
       };
     }),
     nodes: document.nodes.map((item): ContentPlanNode => {

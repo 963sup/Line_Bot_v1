@@ -9,7 +9,7 @@ import {
 } from "../src/domain/contract.js";
 import { ContractError } from "../src/domain/error.js";
 
-function content(unit: "m" | "pcs" = "m"): ContentPlanItemBasis {
+function content(unit = "m"): ContentPlanItemBasis {
   return {
     repositoryId: "repo",
     planRevisionId: randomUUID(),
@@ -208,4 +208,19 @@ test("activation requalification cannot rewrite Content pins or agreed quantitie
       () => reviseContract(created, 1, { action: "activate", lines: [changed] }, context(2)),
       (error) => error instanceof ContractError && error.code === "LIFECYCLE_CONFLICT",
     );
+});
+
+test("Contract freezes custom Content units and exact agreed quantities", () => {
+  const requested = line(content("SET"), "1.250");
+  const frozen = freezeContractLines([requested.input], [requested.basis]);
+  assert.equal(frozen[0]?.agreedQuantity, "1.25");
+  assert.equal(frozen[0]?.content.node.plannedQuantity?.measure.unit, "SET");
+  const created = reviseContract(
+    null,
+    0,
+    { action: "create", title: "Equipment agreement", body: "", lines: frozen },
+    context(1),
+  );
+  assert.equal(created.lines[0]?.content.node.plannedQuantity?.measure.unit, "SET");
+  assert.equal(created.lines[0]?.agreedQuantity, "1.25");
 });

@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
 import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import { isQuantityUnit } from "@line_bot_v1/content/domain/quantity";
 import {
   businessDatabase,
   type Database,
@@ -43,13 +44,15 @@ function decodeContent(value: unknown): ContentPlanItemBasis {
   if (planned !== null) {
     if (!isRecord(planned) || !isRecord(planned.measure))
       throw new TypeError("Expected Content planned quantity");
+    if (!isQuantityUnit(planned.measure.unit))
+      throw new TypeError("Invalid stored Contract Content unit.");
     plannedQuantity = {
       value: stringValue(planned.value),
       measure: {
         id: stringValue(planned.measure.id),
         name: stringValue(planned.measure.name),
         subject: stringValue(planned.measure.subject),
-        unit: literalValue(planned.measure.unit, ["m", "pcs"]),
+        unit: planned.measure.unit,
       },
     };
   }

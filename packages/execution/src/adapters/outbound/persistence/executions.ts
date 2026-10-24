@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
 import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import { isQuantityUnit } from "@line_bot_v1/content/domain/quantity";
 import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
 import type { ContractLineBasis } from "@line_bot_v1/contract/domain/line-reference";
 import {
@@ -33,6 +34,8 @@ function contentValue(value: unknown): ContentPlanItemBasis {
   const node = record(content.node);
   const planned = node.plannedQuantity === null ? null : record(node.plannedQuantity);
   const measure = planned === null ? null : record(planned.measure);
+  if (measure && !isQuantityUnit(measure.unit))
+    throw new TypeError("Invalid stored Execution Content unit.");
   if (!Array.isArray(node.path)) throw new TypeError("Expected Content path");
   return {
     repositoryId: stringValue(content.repositoryId),
@@ -60,7 +63,7 @@ function contentValue(value: unknown): ContentPlanItemBasis {
                 id: stringValue(measure.id),
                 name: stringValue(measure.name),
                 subject: stringValue(measure.subject),
-                unit: literalValue(measure.unit, ["m", "pcs"]),
+                unit: stringValue(measure.unit),
               },
             },
     },

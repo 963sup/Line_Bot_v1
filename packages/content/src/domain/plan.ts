@@ -1,6 +1,6 @@
 import { normalizeContent } from "@line_bot_v1/platform/text";
 import { ContentError } from "./error.js";
-import { normalizeQuantity, type QuantityUnit } from "./quantity.js";
+import { normalizeQuantity, normalizeQuantityUnit, type QuantityUnit } from "./quantity.js";
 
 const contentNodeKinds = ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"] as const;
 export type ContentNodeKind = (typeof contentNodeKinds)[number];
@@ -99,8 +99,7 @@ export function normalizeContentPlanDocument(
     measureIds.add(measure.id);
     const name = contentText(measure.name, "").title;
     const subject = contentText(measure.subject, "").title;
-    if (measure.unit !== "m" && measure.unit !== "pcs") invalid("Invalid Content measure unit.");
-    return { id: measure.id, name, subject, unit: measure.unit } as const;
+    return { id: measure.id, name, subject, unit: normalizeQuantityUnit(measure.unit) } as const;
   });
   if (current) {
     const nextById = new Map(measures.map((measure) => [measure.id, measure]));

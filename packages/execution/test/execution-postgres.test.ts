@@ -45,7 +45,7 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
     expectedVersion: 0,
     document: {
       schemaVersion: 1,
-      measures: [{ id: ids.measure, name: "Count", subject: "Installed", unit: "pcs" }],
+      measures: [{ id: ids.measure, name: "Assembly", subject: "Installed", unit: "組" }],
       nodes: [
         {
           id: ids.subject,
@@ -143,7 +143,7 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
     task: { planRevisionId: plan.revision.revisionId, nodeId: ids.task },
     resources: [],
     observedDependencyVersion: 0,
-    quantity: "1",
+    quantity: "1.250",
     note: "done",
   };
   const [first, replay] = await Promise.all([
@@ -151,6 +151,9 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
     executions.execute("owner", command),
   ]);
   assert.deepEqual(first, replay);
+  assert.equal(first.revision.quantity, "1.25");
+  assert.equal(first.revision.task.node.plannedQuantity?.measure.unit, "組");
+  assert.equal(first.revision.basis.content.node.plannedQuantity?.measure.unit, "組");
 
   const reviews = await Promise.allSettled([
     executions.execute("owner", {

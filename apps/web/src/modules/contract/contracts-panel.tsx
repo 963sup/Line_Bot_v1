@@ -32,7 +32,7 @@ type PlanNode = {
   kind: string;
   title: string;
   plannedQuantity: { measureId: string; value: string } | null;
-  measureUnit?: "m" | "pcs";
+  measureUnit?: string;
 };
 type Line = { lineId: string; planRevisionId: string; nodeId: string; agreedQuantity: string };
 type Revision = Summary & {
@@ -162,7 +162,7 @@ export default function ContractsPanel({
       if (content.revision) {
         setPlanRevisionId(content.revision.revisionId);
         const measures = new Map(
-          content.revision.document.measures.map((measure: { id: string; unit: "m" | "pcs" }) => [
+          content.revision.document.measures.map((measure: { id: string; unit: string }) => [
             measure.id,
             measure.unit,
           ]),

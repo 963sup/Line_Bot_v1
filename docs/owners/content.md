@@ -3,6 +3,11 @@
 Content owns Repository-scoped work definitions and plan versions: Subject → Object → SubObject →
 Work → Task. Nodes have stable identity, text, ordering and one valid parent. Subjects are roots;
 Tasks are leaves. Planned quantities and immutable measure definitions belong to Content.
+A measure carries a user-defined unit label (up to 32 UTF-16 code units), not a global Unit
+registry or conversion rate. Labels are immutable once saved and cannot imply physical Resource
+identity. Existing `pcs` quantities remain integers; other units accept exact decimals up to
+three places. Contract agreed and Execution actual quantities reuse the pinned Content measure
+without silently converting units.
 
 One Repository plan head selects a complete immutable document revision. Replacing the document
 validates the entire hierarchy under its observed version and appends a revision. Historical plans
