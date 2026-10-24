@@ -113,7 +113,9 @@ test("accepted and retry outcomes use the persisted retry key", async () => {
     },
     send: async (_target, _payload, retryKey) => {
       retryKeys.push(retryKey);
-      return outcomes[attempt];
+      const outcome = outcomes[attempt];
+      assert.ok(outcome);
+      return outcome;
     },
     inboxUrl: "https://example.test/notifications",
     now: () => 1,
