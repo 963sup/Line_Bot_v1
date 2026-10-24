@@ -1,7 +1,7 @@
 "use client";
 
 import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
@@ -74,7 +74,7 @@ export default function ProjectWbsContractImport({
   const epoch = useRef(0);
   const eligible = nodes.filter((node) => node.kind === "DELIVERABLE");
   const line = selected?.lines.find((item) => item.lineId === lineId);
-  function resetSource() {
+  const resetSource = useCallback(() => {
     epoch.current++;
     setRepositoryId("");
     setContracts([]);
@@ -86,7 +86,7 @@ export default function ProjectWbsContractImport({
     setDeliverable("");
     setAcceptance("");
     setConfirmed(false);
-  }
+  }, []);
   useEffect(() => {
     const clear = () => {
       resetSource();
@@ -105,7 +105,7 @@ export default function ProjectWbsContractImport({
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", clear);
     };
-  }, []);
+  }, [resetSource]);
   async function request(query: Record<string, string>) {
     const ticket = epoch.current;
     const generation = await liffClient.ensureSession(liffId);

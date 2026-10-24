@@ -1,3 +1,4 @@
+import { isRecord } from "@line_bot_v1/platform/validation";
 import type { ProjectWbsCommand } from "../../contracts/dto/project-content.js";
 import { parseWbsNode, WbsError } from "../../domain/document.js";
 
@@ -32,12 +33,10 @@ export function parseProjectWbsCommand(input: unknown): ProjectWbsCommand {
       node.kind !== "WORK_PACKAGE" ||
       node.parentId === null ||
       v.confirmedDisclosure !== true ||
-      !source ||
-      typeof source !== "object" ||
-      Array.isArray(source)
+      !isRecord(source)
     )
       throw new WbsError(400, "請明確確認 Contract 來源與 WBS 工作包對應。");
-    const ref = source as Record<string, unknown>;
+    const ref = source;
     const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
     if (
       typeof ref.repositoryId !== "string" ||
@@ -63,8 +62,7 @@ export function parseProjectWbsCommand(input: unknown): ProjectWbsCommand {
       },
       confirmedDisclosure: true,
     };
-  }
-  else if (v.action === "delete-subtree" || v.action === "move-node") {
+  } else if (v.action === "delete-subtree" || v.action === "move-node") {
     if (typeof v.nodeId !== "string" || !v.nodeId || v.nodeId.length > 128)
       throw new WbsError(400, "WBS 節點 ID 不正確。");
     if (v.action === "delete-subtree") result = { ...base, action: v.action, nodeId: v.nodeId };
