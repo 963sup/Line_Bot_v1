@@ -234,17 +234,20 @@ for (const existing of [false, true]) {
       const aliases = new Map<string, string>(existing ? [[alias, oldId]] : []);
       const deleted: string[] = [];
       let reads = 0;
+      let writes = 0;
       const write = async (id: string) => {
+        writes++;
         aliases.set(alias, id);
-        if (failure === "lost-response") throw new Error("remote committed; response lost");
+        if (failure === "lost-response" && writes === 1)
+          throw new Error("remote committed; response lost");
       };
       const client = publicationClient({
         get: async () => home.menu,
         getAlias: async (key: string) => {
           if (key === alias) {
             reads++;
-            // First read snapshots the old value; second read follows the write.
-            if (failure === "readback" && reads === 2)
+            // First read snapshots the old value; second checks it before mutation; third verifies the write.
+            if (failure === "readback" && reads === 3)
               throw new Error("remote readback unavailable");
           }
           return aliases.get(key) ?? null;
