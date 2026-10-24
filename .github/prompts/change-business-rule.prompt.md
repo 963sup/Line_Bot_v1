@@ -13,4 +13,4 @@ Follow the default repository change loop in `docs/reference/engineering/develop
 
 ## Delivery
 
-Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.
+Follow the minimum-sufficient implementation rule in root `AGENTS.md` after confirming Root Cause, Owner, Truth and Boundary. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.
