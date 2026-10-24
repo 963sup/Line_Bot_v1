@@ -243,9 +243,9 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
     return this.db.transaction(async (sql) => {
       const result = await sql.query(
         `SELECT intent.* FROM file_upload_intents intent
-         WHERE intent.reclaimed_at IS NULL
-           AND (intent.abandoned_at IS NOT NULL
-             OR (intent.last_attempt_at <= to_timestamp($1::double precision/1000)
+         WHERE (intent.abandoned_at IS NOT NULL
+             OR (intent.reclaimed_at IS NULL
+                 AND intent.last_attempt_at <= to_timestamp($1::double precision/1000)
                  AND intent.last_attempt_at <= clock_timestamp() - ($2::double precision * interval '1 millisecond')))
            AND NOT EXISTS (
              SELECT 1 FROM file_commands receipt
@@ -255,7 +255,8 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
            AND NOT EXISTS (
              SELECT 1 FROM file_revisions revision WHERE revision.id=intent.revision_id
            )
-         ORDER BY intent.actor_user_id,intent.request_id LIMIT 20`,
+         ORDER BY COALESCE(intent.reclaimed_at,intent.last_attempt_at),
+           intent.actor_user_id,intent.request_id LIMIT 20`,
         [beforeAt, quietMillis],
         uploadIntent,
       );
@@ -286,9 +287,9 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
            SET abandoned_at=COALESCE(intent.abandoned_at,clock_timestamp())
            WHERE intent.actor_user_id=$1 AND intent.request_id=$2
              AND intent.repository_id=$3 AND intent.file_id=$4
-             AND intent.reclaimed_at IS NULL
              AND (intent.abandoned_at IS NOT NULL
-               OR (intent.last_attempt_at <= to_timestamp($5::double precision/1000)
+               OR (intent.reclaimed_at IS NULL
+                   AND intent.last_attempt_at <= to_timestamp($5::double precision/1000)
                    AND intent.last_attempt_at <= clock_timestamp() - ($6::double precision * interval '1 millisecond')))
              AND NOT EXISTS (
                SELECT 1 FROM file_commands receipt
@@ -325,7 +326,7 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
       const result = await sql.query(
         `UPDATE file_upload_intents intent SET reclaimed_at=clock_timestamp()
          WHERE intent.actor_user_id=$1 AND intent.request_id=$2 AND intent.revision_id=$3
-           AND intent.abandoned_at IS NOT NULL AND intent.reclaimed_at IS NULL
+           AND intent.abandoned_at IS NOT NULL
            AND NOT EXISTS (
              SELECT 1 FROM file_commands receipt
              WHERE receipt.actor_user_id=intent.actor_user_id
@@ -411,7 +412,7 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
               )
                 receiptConflict();
               if (row.abandoned_at !== null)
-                throw new FileError(409, "Upload intent was reclaimed.", "LIFECYCLE_CONFLICT");
+                throw new FileError(409, "Upload intent was quarantined.", "LIFECYCLE_CONFLICT");
               return uploadIntent(row);
             },
             prepare: async (intent) => {

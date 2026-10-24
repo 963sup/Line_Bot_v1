@@ -68,6 +68,10 @@ export interface FileReads {
 }
 /** Operator-only capability; never exposed through a File Web route. */
 export interface FileReclamation {
+  /**
+   * One bounded page ordered by the oldest absence verification cursor.
+   * Quarantined intents remain candidates because an earlier unknown PUT may complete later.
+   */
   candidates(beforeAt: number, quietMillis: number): Promise<readonly FileUploadIntent[]>;
   quarantine(
     actor: string,
@@ -75,6 +79,7 @@ export interface FileReclamation {
     beforeAt: number,
     quietMillis: number,
   ): Promise<FileRevision | null>;
+  /** Refresh the durable cursor only after object absence was independently verified. */
   markReclaimed(actor: string, requestId: string, revisionId: string): Promise<void>;
 }
 

@@ -18,14 +18,14 @@ export function createFileReclaimer(deps: {
         cutoff(beforeAt),
         uploadRecoveryPolicy.quietMillis,
       );
-      return { eligible: candidates.length, pageFull: candidates.length === 20 };
+      return { candidates: candidates.length, pageFull: candidates.length === 20 };
     },
     async reclaim(beforeAt: number) {
       const candidates = await deps.maintenance.candidates(
         cutoff(beforeAt),
         uploadRecoveryPolicy.quietMillis,
       );
-      let reclaimed = 0;
+      let absenceVerified = 0;
       let skipped = 0;
       for (const intent of candidates) {
         const actor = intent.revision.actorUserId;
@@ -45,11 +45,11 @@ export function createFileReclaimer(deps: {
         await deps.objects().removeVerified(revision);
         await deps.beforeMutation();
         await deps.maintenance.markReclaimed(actor, intent.requestId, revision.id);
-        reclaimed++;
+        absenceVerified++;
       }
       return {
         examined: candidates.length,
-        reclaimed,
+        absenceVerified,
         skipped,
         pageFull: candidates.length === 20,
       };
