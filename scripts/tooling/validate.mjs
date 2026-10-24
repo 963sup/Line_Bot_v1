@@ -90,6 +90,7 @@ export function classifyChangedFiles(files) {
       file.startsWith("scripts/runtime/") ||
       file.startsWith("scripts/contract/") ||
       file.startsWith("scripts/file/") ||
+      file.startsWith("scripts/intelligence/") ||
       file.startsWith("scripts/execution/") ||
       file.startsWith("scripts/architecture/") ||
       file.startsWith("scripts/vercel/") ||
@@ -247,6 +248,7 @@ function main() {
         "scripts/runtime/internal-input.test.mjs",
         "scripts/contract/*.test.mjs",
         "scripts/file/*.test.mjs",
+        "scripts/intelligence/*.test.mjs",
         "scripts/execution/*.test.mjs",
       ],
     ],
