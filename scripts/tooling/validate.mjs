@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { createOutputDirectory, runBoundedCommand } from "./bounded-output.mjs";
+import { createOutputDirectory, runBoundedCommand } from "../runtime/bounded-output.mjs";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -324,7 +324,12 @@ function main() {
     console.log(`Validating: ${task}`);
     const result = runBoundedCommand(process.execPath, args, {
       cwd: root,
-      env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", TURBO_TELEMETRY_DISABLED: "1" },
+      env: {
+        ...process.env,
+        REPOSITORY_VALIDATION_OUTPUT_DIR: outputDirectory,
+        NEXT_TELEMETRY_DISABLED: "1",
+        TURBO_TELEMETRY_DISABLED: "1",
+      },
       label: task,
       outputDirectory,
       spawn: spawnSync,

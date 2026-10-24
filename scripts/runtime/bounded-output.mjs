@@ -1,5 +1,13 @@
 import { spawnSync } from "node:child_process";
-import { closeSync, mkdirSync, mkdtempSync, openSync, readSync, statSync } from "node:fs";
+import {
+  closeSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 const diagnosticLimits = Object.freeze({ maxBytes: 24 * 1024, maxLines: 120 });
@@ -12,6 +20,12 @@ export function createOutputDirectory(root, prefix = "validation-") {
   const artifacts = join(root, ".artifacts");
   mkdirSync(artifacts, { recursive: true });
   return mkdtempSync(join(artifacts, prefix));
+}
+
+export function writeBoundedDiagnostic(outputDirectory, label, content) {
+  const logPath = join(outputDirectory, `${safeLabel(label)}.log`);
+  writeFileSync(logPath, content);
+  return { logPath, diagnostic: readBoundedTail(logPath) };
 }
 
 function readBoundedTail(
