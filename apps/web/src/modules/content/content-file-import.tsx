@@ -233,9 +233,7 @@ export default function ContentFileImport({
       const processing = object(result.processing);
       if (
         processing.runId !== runId ||
-        (exactRevision
-          ? processing.revisionId !== exactRevision
-          : processing.fileId !== fileId)
+        (exactRevision ? processing.revisionId !== exactRevision : processing.fileId !== fileId)
       )
         throw new Error("Selected File ProcessingRun does not match the expected source.");
       if (processing.state !== "SAVED" || processing.savedResult === null)

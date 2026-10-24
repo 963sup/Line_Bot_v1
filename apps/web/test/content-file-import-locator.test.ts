@@ -7,7 +7,9 @@ const revisionId = "22222222-2222-4222-8222-222222222222";
 
 test("Content intake reuses only validated saved revision identifiers from File navigation", () => {
   assert.deepEqual(
-    pinnedSavedFileSource(new URLSearchParams({ sourceRunId: runId, sourceRevisionId: revisionId })),
+    pinnedSavedFileSource(
+      new URLSearchParams({ sourceRunId: runId, sourceRevisionId: revisionId }),
+    ),
     { runId, revisionId },
   );
   assert.equal(pinnedSavedFileSource(new URLSearchParams()), null);
