@@ -103,7 +103,7 @@ MCP 工具免逐次確認不授予產品／provider 寫入權限。Specialist �
 ## Constraints
 
 - `repository-mapper` / `implementation-worker` / `dev6-implementation-worker` 預設 medium reasoning；其餘 analysis/review/evidence/decision/validation roles high。
-- 最多 8 個 subagents；只並行可獨立驗收且不競爭同一寫入面的工作。
+- 最多 5 個 subagents；只並行可獨立驗收且不競爭同一寫入面的工作。
 - 子代理不自行擴 scope 或再派工；owner/permission/research 缺口回報 Primary。
 - 寫入代理保留他人修改；同 checkout 不並行寫同一檔案、migration order 或 generated output。
 - Evidence 分開回報 static/test/build/deployment/API readback/device-runtime；未執行不得宣稱。
