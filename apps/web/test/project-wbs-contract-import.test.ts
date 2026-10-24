@@ -16,21 +16,23 @@ function response() {
       contractId: ids.contract,
       revisionId: ids.revision,
       state: "ACTIVE",
-      lines: [{
-        lineId: ids.line,
-        agreedQuantity: "26",
-        content: {
-          node: {
-            id: "task",
-            kind: "TASK",
-            title: "Install assemblies",
-            plannedQuantity: {
-              value: "26",
-              measure: { unit: "SET" },
+      lines: [
+        {
+          lineId: ids.line,
+          agreedQuantity: "26",
+          content: {
+            node: {
+              id: "task",
+              kind: "TASK",
+              title: "Install assemblies",
+              plannedQuantity: {
+                value: "26",
+                measure: { unit: "SET" },
+              },
             },
           },
         },
-      }],
+      ],
     },
   };
 }
@@ -44,20 +46,42 @@ test("Contract → Project WBS candidate requires authorized ACTIVE exact Contra
     lines: [{ lineId: ids.line, title: "Install assemblies", agreedQuantity: "26", unit: "SET" }],
   });
   const original = response();
-  assert.throws(() => reviewedContractSource({
-    ...original, revision: { ...original.revision, state: "DRAFT" },
-  }, ids.contract));
-  assert.throws(() => reviewedContractSource({
-    ...original, revision: { ...original.revision, repositoryId: "repository-B" },
-  }, ids.contract));
+  assert.throws(() =>
+    reviewedContractSource(
+      {
+        ...original,
+        revision: { ...original.revision, state: "DRAFT" },
+      },
+      ids.contract,
+    ),
+  );
+  assert.throws(() =>
+    reviewedContractSource(
+      {
+        ...original,
+        revision: { ...original.revision, repositoryId: "repository-B" },
+      },
+      ids.contract,
+    ),
+  );
   assert.throws(() => reviewedContractSource(original, ids.revision));
-  assert.throws(() => reviewedContractSource({
-    ...original,
-    revision: {
-      ...original.revision,
-      lines: [{ ...original.revision.lines[0], content: {
-        node: { kind: "OBJECT", plannedQuantity: null },
-      }}],
-    },
-  }, ids.contract));
+  assert.throws(() =>
+    reviewedContractSource(
+      {
+        ...original,
+        revision: {
+          ...original.revision,
+          lines: [
+            {
+              ...original.revision.lines[0],
+              content: {
+                node: { kind: "OBJECT", plannedQuantity: null },
+              },
+            },
+          ],
+        },
+      },
+      ids.contract,
+    ),
+  );
 });
