@@ -3,6 +3,10 @@
 GitHub 是執行入口；`scripts/` 擁有可執行流程，`package.json#scripts` 是共用命令介面。
 YAML 只設定 event、runner、權限、checkout/setup、job 相依、resource concurrency、step-scoped secrets 與 artifacts。
 
+## Issue → PR → acceptance
+
+[Bug](ISSUE_TEMPLATE/bug_report.md) · [Feature](ISSUE_TEMPLATE/feature_request.md) · [Architecture](ISSUE_TEMPLATE/architecture.md) intake records the outcome and evidence; [PR template](pull_request_template.md) links the exact change to acceptance. The [canonical lifecycle](../docs/reference/engineering/development-workflow.md#issue-pr-and-acceptance-trace) handles partial PRs, merge, external acceptance and feedback. Issue text changes do not start CI; existing PR and Release workflows remain authoritative.
+
 ## Agent entrypoints
 
 Task prompts collect intent; `docs/tasks/` defines the task workflow; `docs/owners/README.md` routes to the business owner. Codex TOML owns Codex runtime/model settings. Copilot agent frontmatter owns Copilot tool access. Both follow the root and nearest `AGENTS.md` contracts. Tool availability does not authorize external writes.

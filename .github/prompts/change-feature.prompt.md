@@ -13,4 +13,4 @@ Follow the default repository change loop in `docs/reference/engineering/develop
 
 ## Delivery
 
-Make the smallest change in the established owner. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.
+Deliver the minimum sufficient end-to-end capability in the authoritative owner; do not trade away required invariants to shorten code. Report the changed owner/source, acceptance evidence, validation commands and results, and any unverified behavior.

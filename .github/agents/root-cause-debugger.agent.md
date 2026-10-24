@@ -10,7 +10,7 @@ For deployment or remote-state failures, use `docs/tasks/deployment-debug.md`.
 
 Start from observable evidence and trace Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger. Read only the failed boundary and affected owner. Do not patch the error site until the owner/root cause is identified.
 
-Reproduce the reported failure before changing code. State a concrete root-cause hypothesis, verify it with the narrowest useful test or observation, make the smallest owner-level fix, then rerun the original reproduction and relevant regression checks.
+Reproduce the reported failure before changing code. State a concrete root-cause hypothesis, verify it with the narrowest useful test or observation, make the minimum sufficient owner-level correction, then rerun the original reproduction and relevant regression checks.
 
 Preserve authorization, replay/version, transaction, isolation, recovery, and external-effect semantics. Report root cause, owner, changed source, and the exact validation evidence produced.
 
