@@ -57,6 +57,34 @@ test("Postgres DailyCheckIn persists one wheel outcome and replays across Taipei
   assert.equal(draws, 2);
 });
 
+test("Postgres DailyCheckIn concurrent same-day claims credit once", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  const userId = "concurrent-user";
+  await activeUser(db, userId);
+  let draws = 0;
+  const store = new PostgresDailyCheckInStore(db, () => {
+    draws++;
+    return 90;
+  });
+  const now = Date.parse("2026-09-24T15:59:59Z");
+
+  const results = await Promise.all([
+    store.claim(userId, now, "2026-09-24"),
+    store.claim(userId, now, "2026-09-24"),
+  ]);
+
+  assert.equal(results.filter((result) => !result.replayed).length, 1);
+  assert.equal(results.filter((result) => result.replayed).length, 1);
+  assert.equal(results.reduce((total, result) => total + result.credited, 0), 4);
+  assert.equal(draws, 1, "only the winning claim selects a prize");
+  const ledger = await pg.query(
+    "select amount_units from app_private.asset_ledger_entries where member_id=$1",
+    [userId],
+  );
+  assert.deepEqual(ledger.rows, [{ amount_units: 8 }]);
+});
+
 test("Postgres DailyCheckIn refuses stale unclaimed days and orphan Ledger facts", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());

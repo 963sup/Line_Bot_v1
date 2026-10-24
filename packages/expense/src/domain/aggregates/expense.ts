@@ -213,10 +213,24 @@ export function applyExpenseCommand(expense: Expense, command: ExpenseCommand): 
     throw new ExpenseError("invalid-command", "操作格式不正確。");
   }
 
-  // 等冪性保障：重複收到終態指令時直接返回當前實體，不重複產生審計事件
+  // 僅接受同一版本的終端命令重播；較舊或不同欄位的命令不得被吞成成功。
   if (
-    (expense.status === "confirmed" && command.type === "confirm") ||
-    (expense.status === "cancelled" && command.type === "cancel")
+    (expense.status === "confirmed" &&
+      command.type === "confirm" &&
+      command.revision === expense.revision - 1 &&
+      (() => {
+        try {
+          const fields = validateExpenseFields(command.fields, true);
+          return Object.keys(fields).every(
+            (key) => fields[key as keyof ExpenseFields] === expense[key as keyof ExpenseFields],
+          );
+        } catch {
+          return false;
+        }
+      })()) ||
+    (expense.status === "cancelled" &&
+      command.type === "cancel" &&
+      command.revision === expense.revision - 1)
   ) {
     return expense;
   }
