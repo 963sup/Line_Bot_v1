@@ -11,6 +11,8 @@ This directory is the single taxonomy for roles and Atomic operations. It is del
 
 ## Status and promotion
 
+The canonical dispatch vocabulary is the direct task Atomic (`investigate.*`, `analyse.*`, `design.*`, `decide.*`, `implement.*`, `review.*`, `diagnose.*`, and `validate.*`). Legacy lifecycle-shaped entries such as `execute.*`, `prepare.*`, and `report.*` are taxonomy candidates only; they must not be enabled because they split one responsibility into three competing dispatch choices and duplicate the L5 task-packet/handoff contract.
+
 `candidate` records a bounded responsibility that is not available for runtime dispatch. `enabled` role means an execution boundary maps to a real `../agents/l3-*.toml` profile. `enabled` Atomic means it has exactly one enabled executor, all specialised task rules, normal L4 preflight, L5 handoff, and L6 evidence flow. `retired` records a former specialised profile absorbed by an executor plus an Atomic.
 
 Promote in this order:

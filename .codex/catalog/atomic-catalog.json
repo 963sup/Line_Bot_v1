@@ -576,8 +576,7 @@
     {
       "id": "execute.repository-mapper",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "investigator",
+      "status": "candidate",
       "goal": "Map one bounded owner, source, or consumer path.",
       "input": [
         "resolved task intent"
@@ -594,13 +593,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "investigator"
       ]
     },
     {
       "id": "prepare.repository-mapper",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "investigator",
+      "status": "candidate",
       "goal": "Prepare one bounded repository-mapper task.",
       "input": [
         "approved scope"
@@ -617,13 +618,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "investigator"
       ]
     },
     {
       "id": "report.repository-mapper",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "investigator",
+      "status": "candidate",
       "goal": "Report one bounded repository-mapper result.",
       "input": [
         "role result"
@@ -640,6 +643,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "investigator"
       ]
     },
     {
@@ -720,8 +726,7 @@
     {
       "id": "execute.root-cause-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Trace one symptom to its original trigger.",
       "input": [
         "bounded symptom evidence"
@@ -738,13 +743,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "prepare.root-cause-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Prepare one bounded root-cause-analyst task.",
       "input": [
         "approved scope"
@@ -761,13 +768,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "report.root-cause-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Report one bounded root-cause-analyst result.",
       "input": [
         "role result"
@@ -784,13 +793,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "execute.architecture-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Analyse one owner, truth, boundary, or dependency question.",
       "input": [
         "bounded architecture question"
@@ -807,13 +818,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "prepare.architecture-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Prepare one bounded architecture-analyst task.",
       "input": [
         "approved scope"
@@ -830,13 +843,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "report.architecture-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Report one bounded architecture-analyst result.",
       "input": [
         "role result"
@@ -853,6 +868,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
@@ -933,8 +951,7 @@
     {
       "id": "execute.performance-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Analyse one measured performance bottleneck.",
       "input": [
         "measurement evidence"
@@ -951,13 +968,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "prepare.performance-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Prepare one bounded performance-analyst task.",
       "input": [
         "approved scope"
@@ -974,13 +993,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "report.performance-analyst",
       "family": "analyse-decide",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Report one bounded performance-analyst result.",
       "input": [
         "role result"
@@ -997,6 +1018,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
@@ -1152,8 +1176,7 @@
     {
       "id": "execute.test-designer",
       "family": "design-plan",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Design minimum discriminating tests for one behavior.",
       "input": [
         "approved invariant"
@@ -1170,13 +1193,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "prepare.test-designer",
       "family": "design-plan",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Prepare one bounded test-designer task.",
       "input": [
         "approved scope"
@@ -1193,13 +1218,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "report.test-designer",
       "family": "design-plan",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Report one bounded test-designer result.",
       "input": [
         "role result"
@@ -1216,6 +1243,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
@@ -1296,8 +1326,7 @@
     {
       "id": "execute.documentation-writer",
       "family": "implement-document",
-      "status": "enabled",
-      "executorRoleId": "change-implementer",
+      "status": "candidate",
       "goal": "Synchronize one documentation surface from approved facts.",
       "input": [
         "approved repository facts"
@@ -1314,13 +1343,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "change-implementer"
       ]
     },
     {
       "id": "prepare.documentation-writer",
       "family": "implement-document",
-      "status": "enabled",
-      "executorRoleId": "change-implementer",
+      "status": "candidate",
       "goal": "Prepare one bounded documentation-writer task.",
       "input": [
         "approved scope"
@@ -1337,13 +1368,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "change-implementer"
       ]
     },
     {
       "id": "report.documentation-writer",
       "family": "implement-document",
-      "status": "enabled",
-      "executorRoleId": "change-implementer",
+      "status": "candidate",
       "goal": "Report one bounded documentation-writer result.",
       "input": [
         "role result"
@@ -1360,13 +1393,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "change-implementer"
       ]
     },
     {
       "id": "execute.diff-reviewer",
       "family": "review",
-      "status": "enabled",
-      "executorRoleId": "reviewer",
+      "status": "candidate",
       "goal": "Review one bounded diff for concrete defects.",
       "input": [
         "candidate diff"
@@ -1383,13 +1418,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "reviewer"
       ]
     },
     {
       "id": "prepare.diff-reviewer",
       "family": "review",
-      "status": "enabled",
-      "executorRoleId": "reviewer",
+      "status": "candidate",
       "goal": "Prepare one bounded diff-reviewer task.",
       "input": [
         "approved scope"
@@ -1406,13 +1443,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "reviewer"
       ]
     },
     {
       "id": "report.diff-reviewer",
       "family": "review",
-      "status": "enabled",
-      "executorRoleId": "reviewer",
+      "status": "candidate",
       "goal": "Report one bounded diff-reviewer result.",
       "input": [
         "role result"
@@ -1429,13 +1468,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "reviewer"
       ]
     },
     {
       "id": "execute.authorization-reviewer",
       "family": "review",
-      "status": "enabled",
-      "executorRoleId": "reviewer",
+      "status": "candidate",
       "goal": "Review one authorization boundary diff.",
       "input": [
         "bounded authorization diff"
@@ -1452,13 +1493,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "reviewer"
       ]
     },
     {
       "id": "prepare.authorization-reviewer",
       "family": "review",
-      "status": "enabled",
-      "executorRoleId": "reviewer",
+      "status": "candidate",
       "goal": "Prepare one bounded authorization-reviewer task.",
       "input": [
         "approved scope"
@@ -1475,13 +1518,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "reviewer"
       ]
     },
     {
       "id": "report.authorization-reviewer",
       "family": "review",
-      "status": "enabled",
-      "executorRoleId": "reviewer",
+      "status": "candidate",
       "goal": "Report one bounded authorization-reviewer result.",
       "input": [
         "role result"
@@ -1498,6 +1543,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "reviewer"
       ]
     },
     {
@@ -2253,8 +2301,7 @@
     {
       "id": "execute.acceptance-decider",
       "family": "validate-accept",
-      "status": "enabled",
-      "executorRoleId": "decider",
+      "status": "candidate",
       "goal": "Decide one high-risk acceptance from complete evidence.",
       "input": [
         "candidate and independent evidence"
@@ -2271,13 +2318,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "decider"
       ]
     },
     {
       "id": "prepare.acceptance-decider",
       "family": "validate-accept",
-      "status": "enabled",
-      "executorRoleId": "decider",
+      "status": "candidate",
       "goal": "Prepare one bounded acceptance-decider task.",
       "input": [
         "approved scope"
@@ -2294,13 +2343,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "decider"
       ]
     },
     {
       "id": "report.acceptance-decider",
       "family": "validate-accept",
-      "status": "enabled",
-      "executorRoleId": "decider",
+      "status": "candidate",
       "goal": "Report one bounded acceptance-decider result.",
       "input": [
         "role result"
@@ -2317,13 +2368,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "decider"
       ]
     },
     {
       "id": "execute.contract-locator",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "investigator",
+      "status": "candidate",
       "goal": "Locate one contract authority.",
       "input": [
         "bounded term"
@@ -2340,13 +2393,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "investigator"
       ]
     },
     {
       "id": "prepare.contract-locator",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "investigator",
+      "status": "candidate",
       "goal": "Prepare one bounded contract-locator task.",
       "input": [
         "approved scope"
@@ -2363,13 +2418,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "investigator"
       ]
     },
     {
       "id": "report.contract-locator",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "investigator",
+      "status": "candidate",
       "goal": "Report one bounded contract-locator result.",
       "input": [
         "role result"
@@ -2386,6 +2443,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "investigator"
       ]
     },
     {
@@ -2541,8 +2601,7 @@
     {
       "id": "execute.change-impact-analyst",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Locate change impact consumers.",
       "input": [
         "approved change concept"
@@ -2559,13 +2618,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "prepare.change-impact-analyst",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Prepare one bounded change-impact-analyst task.",
       "input": [
         "approved scope"
@@ -2582,13 +2643,15 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
       "id": "report.change-impact-analyst",
       "family": "locate-research",
-      "status": "enabled",
-      "executorRoleId": "analyst",
+      "status": "candidate",
       "goal": "Report one bounded change-impact-analyst result.",
       "input": [
         "role result"
@@ -2605,6 +2668,9 @@
       "requiredCapabilityRouteIds": [],
       "activationCriteria": [
         "real consumer and executor mapping exist"
+      ],
+      "candidateRoleIds": [
+        "analyst"
       ]
     },
     {
@@ -5034,4 +5100,3 @@
     }
   ]
 }
-
