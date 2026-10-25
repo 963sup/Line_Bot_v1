@@ -49,6 +49,17 @@ prepare.contract-locator
 
 它只定位 authority，不解釋產品語意；語意判斷仍回到 L1/L2。
 
+本次六層架構調整的邊界分析使用：
+
+```text
+prepare.architecture-analyst
+  → execute.architecture-analyst
+  → report.architecture-analyst
+```
+
+分析結果只提供 Owner、truth、dependency 與 boundary 選項，不直接做最終
+architecture decision，也不直接修改 implementation。
+
 ## Bug 修復
 
 ```text

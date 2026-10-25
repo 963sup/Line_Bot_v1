@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 175 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 172 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -25,6 +25,11 @@ The same audit also consumes the `prepare.contract-locator` →
 `execute.contract-locator` → `report.contract-locator` triplet to locate
 authority before interpreting it. These three entries reuse `investigator` and
 remain limited to source location, not product meaning.
+
+The current six-layer architecture adjustment also consumes the
+`prepare.architecture-analyst` → `execute.architecture-analyst` →
+`report.architecture-analyst` triplet. It reuses `analyst`; the result remains
+options and boundary evidence, not a final architecture decision.
 
 ## Candidate families and executor readiness
 

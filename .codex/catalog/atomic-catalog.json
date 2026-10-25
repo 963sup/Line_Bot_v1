@@ -795,10 +795,8 @@
     {
       "id": "execute.architecture-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Analyse one owner, truth, boundary, or dependency question.",
       "input": [
         "bounded architecture question"
@@ -820,10 +818,8 @@
     {
       "id": "prepare.architecture-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Prepare one bounded architecture-analyst task.",
       "input": [
         "approved scope"
@@ -845,10 +841,8 @@
     {
       "id": "report.architecture-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Report one bounded architecture-analyst result.",
       "input": [
         "role result"
