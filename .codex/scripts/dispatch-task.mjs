@@ -97,6 +97,10 @@ function parseHandoff(output, expectedAtomicId) {
 
 function validateHandoff(handoff) {
   const schema = loadJson(handoffSchemaPath);
+  const allowedKeys = new Set(Object.keys(schema.properties ?? {}));
+  for (const key of Object.keys(handoff)) {
+    if (!allowedKeys.has(key)) throw new Error(`Handoff has unexpected field: ${key}`);
+  }
   for (const field of schema.required ?? []) {
     if (!(field in handoff)) throw new Error(`Handoff missing required field: ${field}`);
   }
@@ -117,12 +121,15 @@ function validateHandoff(handoff) {
   }
   if (handoff.route !== "none") {
     if (!handoff.route || typeof handoff.route !== "object" || typeof handoff.route.id !== "string" ||
-      !["Declared", "Eligible", "Available", "Executed", "Proven"].includes(handoff.route.state)) {
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(handoff.route.id) ||
+      !["Declared", "Eligible", "Available", "Executed", "Proven"].includes(handoff.route.state) ||
+      Object.keys(handoff.route).some((key) => !["id", "state"].includes(key))) {
       throw new Error("Handoff route is invalid");
     }
   }
   if (!handoff.nextHandoff || !["L1", "L2", "L3", "L4", "L5", "L6"].includes(handoff.nextHandoff.layer) ||
-    typeof handoff.nextHandoff.question !== "string" || !handoff.nextHandoff.question.trim()) {
+    typeof handoff.nextHandoff.question !== "string" || !handoff.nextHandoff.question.trim() ||
+    Object.keys(handoff.nextHandoff).some((key) => !["layer", "question"].includes(key))) {
     throw new Error("Handoff nextHandoff is invalid");
   }
 }
