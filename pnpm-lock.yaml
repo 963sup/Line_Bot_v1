@@ -782,9 +782,6 @@ importers:
       '@google/genai':
         specifier: 'catalog:'
         version: 2.21.0(@modelcontextprotocol/sdk@1.32.1(supports-color@8.1.1)(zod@4.5.4))(supports-color@8.1.1)
-      '@line_bot_v1/contract':
-        specifier: workspace:*
-        version: link:../contract
       '@line_bot_v1/file':
         specifier: workspace:*
         version: link:../file
