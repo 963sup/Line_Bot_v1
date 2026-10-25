@@ -55,7 +55,10 @@ try {
     let extractor;
     if (input.processor === "plain-text") extractor = plainTextProcessor;
     else if (input.processor === "vercel-ai-gateway") {
-      if (!process.env.AI_GATEWAY_MODEL)
+      if (
+        !process.env.AI_GATEWAY_MODEL ||
+        !(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
+      )
         throw new InternalInputError("Configure the selected extractor.");
       const gateway = createVercelAiGateway(process.env.AI_GATEWAY_MODEL);
       extractor = {
@@ -69,6 +72,15 @@ try {
             await gateway.file({
               bytes,
               mediaType: revision.mediaType,
+              schema: {
+                type: "object",
+                properties: {
+                  documentKind: { type: "string" },
+                  observations: { type: "array", items: { type: "object" } },
+                },
+                required: ["documentKind", "observations"],
+                additionalProperties: false,
+              },
               maxOutputTokens: 12_000,
               timeoutMs: 20_000,
               prompt:

@@ -15,7 +15,8 @@ export const files: FilesWebRuntime = {
   processors: () => {
     const processors = [plainTextProcessor];
     const model = process.env.AI_GATEWAY_MODEL;
-    if (model) processors.push(createVercelAiGateway({ model }).fileProcessor());
+    const hasCredentials = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+    if (model && hasCredentials) processors.push(createVercelAiGateway({ model }).fileProcessor());
     return processors;
   },
   processingOwner: () => createPostgresIntelligenceProcessing(),
