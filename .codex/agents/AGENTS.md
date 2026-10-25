@@ -1,176 +1,36 @@
-# 模型分工與調度
+# Atomic role constraints
 
-本檔只擁有人類可讀的 role routing；runtime 共通限制見上一層。同目錄 TOML 擁有角色名稱、模型與行為指示；實際 sandbox、approval 與 MCP 設定繼承 parent session，不能由角色檔覆寫。
+**Layer scope:** L3 Specialist roles and L5 Atomic work/handoff.
 
-## Models
+Read [README.md](README.md) for the six-layer model, role index, capability matrix, role-profile contract, and detailed routing. This file contains only the constraints that apply whenever a role profile is used or changed.
 
-角色統一使用 GPT-5.6；角色模型、名稱與檔名須保持一致。
-
-- GPT-5.6 Terra (`gpt-5.6-terra`)：root cause、architecture analysis/decision、technical research、bounded implementation、diff review，以及深度框架診斷角色。
-- GPT-5.6 Luna (`gpt-5.6-luna`)：repository mapping、documentation writing、evidence verification、validation 與 acceptance；也是預設子代理模型。
-
-每個 role 只擁有一個 Primary Responsibility；新增 role 必須有獨立問題、deliverable、stop condition、validation。
-
-## Naming
-
-角色與檔名一律用 `<subject>-<role>`：subject 是被處理的明確對象，role 是唯一可觀察的動作。
-允許的 role 為 `mapper`、`analyst`、`researcher`、`planner`、`designer`、`implementer`、`reviewer`、`runner`、`verifier`、`decider`、`writer`、`diagnostician`。不得用 `worker`、模型版本、工具名稱或歷史批次名稱表達責任；檔名必須為 `gpt-5.6-<model>-<subject>-<role>.toml`，且 `<subject>-<role>` 必須與 TOML `name` 完全相同。
-
-一個 role 的 Input、Owns、Deliverable 與 Stop 必須描述同一個動作。若兩個 role 的輸入、輸出和權限相同，保留一個；只有工具邊界或可驗證輸出不同，才可新增專項角色。
+- A profile owns one execution boundary. Its domain-specific mission, input, Must/Must Not, deliverable, and stop condition come from the selected enabled Atomic. Do not add a profile unless no existing execution boundary can safely perform the Atomic.
+- Profile names use `l3-<subject>-<primary-role>-gpt-5.6-<luna|terra>.toml`; the `<subject>-<primary-role>` portion exactly matches TOML `name`. Use only the primary-role vocabulary documented in the README.
+- Role profiles inherit root and parent constraints. They cannot grant shell approval, sandbox escape, MCP access, provider write authority, or an exception to repository contracts.
+- Use [../AGENT_ROLES.md](../AGENT_ROLES.md) for role selection, [../ATOMIC_INSTRUCTIONS.md](../ATOMIC_INSTRUCTIONS.md) for profile/task construction, and [../HANDOFF_PROTOCOL.md](../HANDOFF_PROTOCOL.md) whenever work crosses a role boundary; load only the contract needed by the task.
+- Primary resolves Owner/contract/consumer scope first. Use `pnpm semantic plan` and then `pnpm semantic context` when needed; use `investigator` only for unresolved or genuinely stateful repository exploration.
+- After role selection, any command, MCP, or Skill beyond direct owner/source reading must be selected from [../CAPABILITIES.md](../CAPABILITIES.md). Read the matching route, satisfy its preflight, and return its route ID plus reached state (`Declared`, `Eligible`, `Available`, `Executed`, or `Proven`) in the L5 handoff. Do not load the index for a known single-owner task with no L4 capability need.
 
 ## Autonomous delegation
 
-### Task authorization and skills
+Delegate only a bounded uncertainty whose independent result changes the decision or acceptance confidence. The Primary owns scope, authorization, integration, and final conclusion; it uses the fewest roles necessary and never delegates a role's decision back into another role without new evidence.
 
-Primary 的派工若已列明 goal、允許路徑、排除範圍與驗收條件，即授權寫入角色在該範圍內完成可逆編輯；預覽後直接實作，不為每個檔案重複向使用者詢問。外部寫入、超出範圍、資料處置或產品語意不明時仍回報 Primary。工具／sandbox 的實際核准視窗由執行環境管理，角色文字不能取消。
+## Immediate role selection
 
-下表為既有 `.agents/skills/` 的選用提示，不要求每次載入，也不授予工具或寫入權限。先按 [skill compatibility gate](../../docs/reference/engineering/development-workflow.md#skill-selection-and-compatibility) 檢查實際需求、檔案與可用工具；唯讀角色只採用技能中的唯讀步驟，技能若要求寫入、額外代理或不相容工具，跳過該步並回報缺口。
-
-| Role | 任務相符時可選的技能 |
+| Need | Select |
 | --- | --- |
-| `repository-mapper` | 一般定位直接使用 repository 工具；涉及第一性原理結構檢視才選 `code` |
-| `root-cause-analyst` | `diagnosing-bugs` |
-| `architecture-analyst`、`architecture-decider` | `first-principles-thinking`、`architecture`；需要比較方案時 `framing-decisions` |
-| `change-implementer` | `diagnosing-bugs`（bug）、`shadcn`（UI 元件）、`next-dev-loop`（已啟動的 Next.js runtime） |
-| `diff-reviewer` | `differential-review`（安全相關 diff）、`nextjs-code-review`（Next.js diff） |
-| `authorization-reviewer` | `attack-path-analysis`、`security-diff-scan`（只讀安全審查） |
-| `database-boundary-reviewer` | `supabase-postgres-best-practices`（只讀資料邊界審查） |
-| `supabase-postgresql-designer` | `supabase`、`supabase-postgres-best-practices`（只輸出資料庫設計） |
-| `schema-transition-planner` | `supabase-postgres-best-practices`（只輸出 declarative transition） |
-| `github-actions-security-reviewer` | `agentic-actions-auditor`、`github-actions`（只讀 workflow security review） |
-| `dependency-supply-chain-reviewer` | `supply-chain-risk-auditor`（只讀 dependency-risk review） |
-| `accessibility-reviewer` | `accessibility-audit`（只讀可近用性審查） |
-| `evidence-verifier` | `spec-to-code-compliance`（文件與實作契約比對） |
-| `acceptance-decider` | `post-patch-validation`（安全修補驗收；只讀已執行證據） |
-| `technical-researcher` | 依具體技術選適用技能；外部事實仍以版本對應的官方來源為準 |
-| `nextjs-runtime-diagnostician` | `next-dev-loop`（只採觀察步驟） |
-| `component-researcher` | `shadcn`（只採查詢與組合建議） |
-| `validation-runner` | `verification`（實際端到端驗收）、`post-patch-validation`（安全修補） |
-| `test-designer` | `tdd`、`property-based-testing`（只產出測試設計） |
-| `documentation-writer` | `documentation-writer`（只更新已決定事實） |
-| `performance-analyst` | `vercel-optimize`、`web-perf`（只分析效能瓶頸） |
+| Owner, source, consumer, or external technical fact | `investigator` |
+| Cause, boundary, design, transition, or test-plan analysis | `analyst` |
+| Independent architecture or acceptance decision | `decider` |
+| Decided bounded repository change | `change-implementer` |
+| Concrete diff or specialised risk review | `reviewer` |
+| Next.js or Sentry runtime observation | `runtime-diagnostician` |
+| Command, browser-flow, or evidence-claim validation | `validation-runner` |
 
-### Capability matrix
+Read the selected profile for its exact scope; read [README.md](README.md) only when a role is new, selection remains unclear, or capability/approval detail affects the decision.
 
-角色檔不複製 runtime capability：MCP server、Plugin connection 與 shell approval 都是 parent session 的共用能力，實際可用性以 `.codex/config.toml` 與當前 session 的 tools 為準。下表是每個原子角色**可選且符合其責任**的能力，不是預先授權，也不是要求每次使用。`—` 表示該角色沒有專屬 MCP／Plugin 需求，應只使用 repository 的唯讀證據。
-
-| Role | MCP（限定用途） | Skill | Plugin／外部能力 | 指令／查詢入口 |
-| --- | --- | --- | --- | --- |
-| `repository-mapper` | — | `code`（結構檢視） | — | `pnpm semantic plan/context`、`rg`、`pnpm code facts/definition/references` |
-| `root-cause-analyst` | Sentry（已授權的事件讀取） | `diagnosing-bugs` | — | `pnpm semantic plan/context`、`rg`、必要時 Sentry read-only query |
-| `architecture-analyst` | — | `first-principles-thinking`、`architecture`、`framing-decisions` | — | `pnpm semantic plan/context`、`rg`、`pnpm code facts` |
-| `architecture-decider` | — | `first-principles-thinking`、`architecture`、`framing-decisions` | — | 已驗證 evidence 的唯讀查詢；不得把工具輸出當決策授權 |
-| `technical-researcher` | — | 依技術問題選對應 skill | Context7／官方 provider 文件，僅在當前連線實際可用時 | 已安裝版本、官方文件與唯讀查詢；必要時 `pnpm semantic plan/context` |
-| `change-implementer` | Next DevTools（已啟動 runtime）、shadcn（已授權 UI 工作） | `diagnosing-bugs`、`shadcn`、`next-dev-loop` | — | `pnpm semantic plan/context`、`pnpm code rewrite/rename`、`pnpm patch:apply`、受影響 validation |
-| `diff-reviewer` | Sentry（已指派的 production evidence） | `differential-review`、`nextjs-code-review` | — | `git diff`、直接 consumer／contract 唯讀查詢 |
-| `authorization-reviewer` | — | `attack-path-analysis`、`security-diff-scan` | — | diff、authorization contract 與 policy 的唯讀查詢 |
-| `database-boundary-reviewer` | — | `supabase-postgres-best-practices` | — | schema／SQL／data topology 的唯讀查詢 |
-| `supabase-postgresql-designer` | — | `supabase`、`supabase-postgres-best-practices` | Supabase 官方文件，僅在當前連線可用時 | schema／data topology／current docs 的唯讀查詢；不得執行 schema command |
-| `schema-transition-planner` | — | `supabase-postgres-best-practices` | — | declarative schema／data topology 的唯讀查詢；不得讀寫 migration history |
-| `github-actions-security-reviewer` | — | `agentic-actions-auditor`、`github-actions` | GitHub workflow metadata，僅在當前 connection 可用時 | `.github/workflows`、local composite/reusable workflow 的唯讀查詢；不得 run CI |
-| `dependency-supply-chain-reviewer` | — | `supply-chain-risk-auditor` | registry／advisory primary evidence，僅在當前 connection 可用時 | manifest、lockfile、直接 consumer 的唯讀查詢；不得 install/audit |
-| `accessibility-reviewer` | — | `accessibility-audit` | — | UI diff、component contract 與必要唯讀 runtime observation |
-| `nextjs-runtime-diagnostician` | Next DevTools（只讀 runtime diagnosis） | `next-dev-loop`（只讀步驟） | — | 先確認 port／checkout，再 discover live tools；不得啟停 server |
-| `component-researcher` | shadcn（registry lookup only） | `shadcn`（只讀查詢） | — | 讀 `components.json`、現有 UI 與 registry search/view/example |
-| `validation-runner` | 指派的 runtime observation only | `verification`、`post-patch-validation` | — | task packet 指定的 `pnpm` gates／測試；記錄 HEAD、exit code 與證據邊界 |
-| `test-designer` | — | `tdd`、`property-based-testing` | — | owner contract、測試與 source 的唯讀查詢；只輸出測試設計 |
-| `documentation-writer` | — | `documentation-writer` | — | `pnpm semantic plan/context`（範圍不明時）、真實 source／test evidence |
-| `performance-analyst` | — | `vercel-optimize`、`web-perf` | Vercel evidence 僅在已連線且任務指派時 | 量測資料、相關 source 與 runtime evidence 的唯讀查詢 |
-| `evidence-verifier` | — | `spec-to-code-compliance` | — | revision、命令結果與 claim 的唯讀對照 |
-| `acceptance-decider` | — | `post-patch-validation`（只讀證據） | — | acceptance、exact revision 與已執行 evidence 的唯讀對照 |
-
-Plugin 不是 role 可直接呼叫的抽象層：它只在 current session 已暴露對應 MCP／connector／skill 時提供 transport。任何角色遇到未列出的 Plugin、未知工具名稱、缺少 connection 或需要外部寫入時，必須回報 capability gap，由 Primary 依任務授權決定；不得自行安裝、切換 transport 或猜測工具。
-
-### Command-output protocol
-
-高輸出 `pnpm` validation／test／build 不屬分析角色的責任。需要執行時，Primary 交給 `validation-runner`，task packet 明列 allowed／excluded commands、scope 與 side effects；runner 先以 `pnpm check --fast --plan` 選 scope，所有已授權 pnpm command 經 `pnpm validation:run --label <stable-label> -- <pnpm arguments>` 執行。完整 stdout/stderr 只留在 ignored artifact，交接與 Agent context 只保留 command、revision、exit code、duration、artifact path 與固定上限失敗診斷。`pnpm validate` 僅用於已指派的 exact-head merge/release gate。唯讀角色不以 `pnpm install`、broad audit、test 或 build 取代靜態 evidence。
-
-Primary 在每個任務開始時主動判斷是否委派；在任務授權與當前工具限制內，符合下列條件就直接使用最少必要角色，不等待使用者再次指定 agent。簡單、Owner 已知且可直接驗收的任務由 Primary 完成。
-
-| 觸發條件 | 行動與交接 |
-| --- | --- |
-| 有可獨立回答的未知數，且定位／根因／研究會改變實作決策 | 將有明確 stop condition 的問題交下方適用角色；獨立唯讀問題可並行，沿用已取得證據。 |
-| 需要 framework／provider／runtime 的 specialist 證據 | 交給對應既有 specialist；取得來源或實際 runtime 證據後才決定實作。 |
-| 決策與契約已確定，變更能形成獨立寫入面 | Primary 可交單一 `change-implementer`；同檔案／產物只有一位 writer。不同 Owner 仍沿真實契約整合。 |
-| 批次變更、公開契約／跨 Owner、authorization／transaction 或 guard 改動需要獨立缺陷檢查 | 實作穩定後交 diff reviewer；reviewer 只讀 diff 與直接 consumers，不重跑整套驗證。 |
-| Candidate 已穩定且有明確的驗證執行需求 | 指定一位 validation owner，預設 Primary；只有有獨立執行價值時才另派現有 runner，不為委派改選模型。 |
-
-需要才啟用 `map/root cause/research → decision → implementation → review → validation → evidence/acceptance` 各段；Primary 擁有 scope、決策、授權、整合與最終結論。缺少必要證據時回到真正負責者，修改 candidate 後只失效並重跑受影響證據；merge 仍取得完整 exact-head validation。
-
-所有角色依 [repository change loop](../../docs/reference/engineering/development-workflow.md#default-repository-change-loop) 與 [autonomous tool selection](../../docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 工作。先從業務結果、實際 consumer 與不變條件理解問題，再定位 Owner、可讀契約、source of truth 與受影響依賴；工具用於回答具體未知數，不逐檔搜尋或為了跑滿命令清單而執行。
-
-- Owner 已知且影響有界：直接讀該 Owner 契約、public exports、相關 source/tests。Owner 未知、語意歧義或跨 Owner：先用 `pnpm semantic plan`，需要具體 authority selectors 再用 `pnpm semantic context` 定位，再讀選中的真實來源；`candidate`、`no-match` 與工具輸出不授予修改範圍。
-- 找實作與 consumers：已知文字／路徑用 `rg`；TS/JS 結構用 `pnpm code facts/definition/references/search`。先確認搜尋邊界、代表案例與跨 project public contract，不把局部結果當全庫完整。
-- 改代碼：小範圍直接編輯；批次同型變更由實作者用 `pnpm code rewrite/rename` 產生預覽，檢查命中與排除後以 `pnpm patch:apply` 套用，再重查漏改與 diff。唯讀角色只能做唯讀查詢，不產生寫入計畫或套用修改。
-- 驗證：實作者依受影響契約識別必要的 `pnpm architecture`、`pnpm boundaries`、相關測試與 runtime 檢查；高輸出 command 由指定 `validation-runner` 依 Command-output protocol 執行。一般程式的 gate 是 `pnpm check`，純文件是 `pnpm docs:check`；PR／merge 所需 exact-head 驗證仍依 development workflow。實作者回報覆蓋範圍、partial／排除與候選版本，供 reviewer 與 validation owner 接手。
-
-派工使用下方既有 task packet 欄位，並補足候選 revision／WIP 與可重用證據；將「發現」、「決策」、「修改」及「執行通過」分開回報。新 session 的實際委派與工具使用才是該次採用證據；角色可見、`agents.enabled` 或 concurrency 設定本身不證明已使用。
-
-## Routing
-
-| Need | Role |
-| --- | --- |
-| 路徑未知 | `repository-mapper` |
-| symptom 有、根因未知 | `root-cause-analyst` |
-| Owner/Truth/Boundary/Dependency 分析 | `architecture-analyst` |
-| current framework/provider/API/CLI facts (GitHub CLI, Supabase, Vercel, pnpm/Codex CLI) | `technical-researcher` |
-| tooling / command-policy failure with unknown cause | `root-cause-analyst` |
-| 已決定的 bounded source/schema/workflow/Codex-config change | `change-implementer` |
-| concrete diff defect/regression review | `diff-reviewer` |
-| authorization／scope／tenant isolation diff review | `authorization-reviewer` |
-| schema／RLS／transaction data-boundary diff review | `database-boundary-reviewer` |
-| Supabase PostgreSQL relation／RLS／index／recovery design | `supabase-postgresql-designer` |
-| declarative schema transition／cutover／recovery planning | `schema-transition-planner` |
-| GitHub Actions trigger／secret／artifact／agentic-security review | `github-actions-security-reviewer` |
-| dependency 或 lockfile supply-chain risk review | `dependency-supply-chain-reviewer` |
-| UI accessibility diff review | `accessibility-reviewer` |
-| 執行已指定的一個 validation plan | `validation-runner` |
-| Next.js 執行期症狀的根因定位 | `nextjs-runtime-diagnostician` |
-| 元件/registry 的相容性研究 | `component-researcher` |
-| 為既定行為設計測試案例 | `test-designer` |
-| 規劃已決定的 declarative schema/data transition | `schema-transition-planner` |
-| 將已決定事實同步到文件 | `documentation-writer` |
-| 分析一個已量測的效能瓶頸 | `performance-analyst` |
-| completion/evidence claim verification | `evidence-verifier` |
-| 獨立最終 architecture decision | `architecture-decider` |
-| 高風險最終 acceptance | `acceptance-decider` |
-
-Primary 可直接做 final decision；不為形式重派。只使用會改變決策或提升 acceptance confidence 的最少 roles。
-
-## Atomic specialist roles
-
-| Need | Role | Reasoning | Deliverable |
-| --- | --- | --- | --- |
-| 執行一個已指定 validation plan | `validation-runner` | high | exact revision、結果與 evidence boundary |
-| 定位一個 Next.js runtime 根因 | `nextjs-runtime-diagnostician` | high | 正確 checkout/port 的 runtime evidence 與根因 |
-| 研究一個元件/registry 相容性問題 | `component-researcher` | high | 符合現有 UI contract 的選項、來源與預期 diff |
-| 設計一個 Supabase PostgreSQL persistence boundary | `supabase-postgresql-designer` | high | relation、RLS、index、transaction/recovery 設計與未決 policy |
-| 審查一個 GitHub Actions security boundary | `github-actions-security-reviewer` | high | trigger/permission/secret/artifact trust findings |
-| 審查一組 dependency supply-chain risk | `dependency-supply-chain-reviewer` | high | provenance/reachability/advisory findings |
-
-Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐證，再交給單一 change implementer。Supabase PostgreSQL 設計交給 designer、declarative transition 交給 planner、candidate boundary 交給 reviewer；不建立或消費 migration history，remote publication 仍只由 current-main GitHub Release workflow 擁有。Diff review 可指出需修正處；修正完成後由指定 validation owner 執行 gates。`evidence-verifier` 檢查 claim 是否被結果支持，仍不執行測試。這是選擇流程，不要求每次啟用所有角色。
-
-沒有第二個「實作」或「差異審查」角色：同一種原子工作只保留一個角色。專項角色只在其工具或證據邊界不同時存在。
-
-## MCP permissions and evidence
-
-已設定的 MCP 是 Next DevTools、shadcn、Serena 與 Sentry。前三者的自動核准由 `.codex/config.toml` 的各自 `default_tools_approval_mode` 設為 `approve`，parent 與子代理共用；per-tool override 優先。Serena 固定公開唯讀符號查詢工具。Sentry 使用 OAuth read scopes，未設定自動核准。維護設定只針對這些明列 server，不改全域 shell approval、sandbox 或其他 MCP。
-
-MCP 工具免逐次確認不授予產品／provider 寫入權限。Specialist 仍按 role 限制使用觀察／查詢工具；安裝、codemod、cache mutation、瀏覽器業務寫入與外部操作由 Primary 依實際授權處理。角色指示中的唯讀是行為契約，不是獨立 OS sandbox；不要依賴角色檔的 `sandbox_mode`、`approval_policy` 或 `mcp_servers` 來隔離 parent 權限。
-
-設定變更後重新載入 MCP／開新 session，分別確認角色可發現、模型選擇與工具免逐次確認。`tooling:check` 證明靜態契約，`tooling:doctor --mcp` 證明 transport；兩者都不證明當前 session 已套用 approval。實際操作流程見 [Next.js/shadcn agent workflow](../../docs/reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow)；設定語意以 [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents) 與 [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference) 為準。
-
-## Constraints
-
-- `repository-mapper` / `change-implementer` 預設 medium reasoning；其餘 analysis/review/evidence/decision/validation roles high。
-- 最多 5 個 subagents；只並行可獨立驗收且不競爭同一寫入面的工作。
-- 子代理不自行擴 scope 或再派工；owner/permission/research 缺口回報 Primary。
-- 寫入代理保留他人修改；同 checkout 不並行寫同一檔案、migration order 或 generated output。
-- Evidence 分開回報 static/test/build/deployment/API readback/device-runtime；未執行不得宣稱。
-- 派工至少給 goal、scope、allowed/excluded paths、evidence、invariants、deliverable、stop、validation owner。
-
-模型 ID / role files 以 repository current config/TOML 為 truth；解析成功不代表帳號可用、live reload 或 concurrency 已實測。
-
-## Protected-branch delivery
-
-PR lifecycle, protected-branch rules, validation triggers, merge methods, and evidence boundaries are owned by the [development workflow](../../docs/reference/engineering/development-workflow.md) and [validation rules](../../docs/rules/validation-evidence.md). Agent profiles and routing do not grant push, merge, deployment, or provider-write authorization.
+- A delegated packet must state goal, allowed/excluded scope, inputs/revision, invariants, deliverable, stop condition, and validation owner. A child reports a gap instead of expanding scope or delegating again.
+- For every cross-role packet/result, select exactly one `enabled` [`atomicId`](../catalog/atomic-catalog.json), derive its unique `executorRoleId`, and echo the Atomic in both artifacts. A `candidate` Atomic has no executor, cannot be dispatched or selected as a route, and cannot obtain a capability.
+- One writer owns one write surface. Read-only analysis does not run broad validation or make edits; validation evidence does not replace design, implementation, provider readback, or acceptance.
+- High-output commands and browser flows are assigned only to `validation-runner` through an enabled validation Atomic. Record revision, command, exit code, duration, artifact path, and bounded failure evidence.
+- Validate profile/routing changes with `pnpm tooling:check`; validate links with `pnpm docs:check`. Role discovery or static success does not prove a live session reloaded configuration.

@@ -81,3 +81,99 @@ test("Project delivery fences a provider result after the parent lease is lost",
   assert.equal(result.line, "stale");
   assert.equal(completions, 0);
 });
+
+test("accepted and retry outcomes use the persisted retry key", async () => {
+  const retryKeys: string[] = [];
+  const outcomes: Array<"accepted" | "retry"> = ["retry", "accepted"];
+  let attempt = 0;
+  const notifications = createProjectBaselineNotifications({
+    store: {
+      create: async () => {},
+      claim: async () => ({
+        result: { inbox: "created", notificationId: "notification", line: "unknown", nextAt: null },
+        claim: {
+          token: `lease-${attempt}`,
+          key: "intent",
+          target: "target",
+          payload: "payload",
+          retryKey: "stable-retry-key",
+        },
+      }),
+      complete: async (_claim, outcome) => {
+        assert.equal(outcome, outcomes[attempt]);
+        attempt++;
+        return {
+          inbox: "created",
+          notificationId: "notification",
+          line: outcome === "accepted" ? "accepted" : "pending",
+          nextAt: null,
+        };
+      },
+      cancel: async () => {},
+    },
+    send: async (_target, _payload, retryKey) => {
+      retryKeys.push(retryKey);
+      const outcome = outcomes[attempt];
+      assert.ok(outcome);
+      return outcome;
+    },
+    inboxUrl: "https://example.test/notifications",
+    now: () => 1,
+  });
+  const input = {
+    key: "intent",
+    projectId: "project",
+    baselineId: "baseline",
+    revisionId: "revision",
+    recipient: "recipient",
+  };
+
+  assert.equal((await notifications.deliver(input, async () => true)).line, "pending");
+  assert.equal((await notifications.deliver(input, async () => true)).line, "accepted");
+  assert.deepEqual(retryKeys, ["stable-retry-key", "stable-retry-key"]);
+});
+
+test("a provider timeout is recorded as unknown for exact-key recovery", async () => {
+  let completedAs: string | undefined;
+  let sentWith: string | undefined;
+  const notifications = createProjectBaselineNotifications({
+    store: {
+      create: async () => {},
+      claim: async () => ({
+        result: { inbox: "created", notificationId: "notification", line: "unknown", nextAt: null },
+        claim: {
+          token: "lease",
+          key: "intent",
+          target: "target",
+          payload: "payload",
+          retryKey: "stable-retry-key",
+        },
+      }),
+      complete: async (_claim, outcome) => {
+        completedAs = outcome;
+        return { inbox: "created", notificationId: "notification", line: "unknown", nextAt: 60001 };
+      },
+      cancel: async () => {},
+    },
+    send: async (_target, _payload, retryKey) => {
+      sentWith = retryKey;
+      throw new Error("provider response was lost");
+    },
+    inboxUrl: "https://example.test/notifications",
+    now: () => 1,
+  });
+
+  const result = await notifications.deliver(
+    {
+      key: "intent",
+      projectId: "project",
+      baselineId: "baseline",
+      revisionId: "revision",
+      recipient: "recipient",
+    },
+    async () => true,
+  );
+  assert.equal(sentWith, "stable-retry-key");
+  assert.equal(completedAs, "unknown");
+  assert.equal(result.line, "unknown");
+});

@@ -13,6 +13,13 @@
 - Correct source-level change / existing capabilities reused：
 - Why this resolves cause rather than symptom：
 
+## Semantic discovery / truth synchronization
+
+<!-- Owner unknown、語意歧義或跨 Owner 影響時，附 pnpm semantic plan/context 的結論與實際讀取的 authority。已知單一 Owner 不必為形式執行。Serena／pnpm code／rg 只作程式事實查證，不取代 authority。 -->
+- Intent → Owner / Contract / Consumer evidence：
+- Symbol / public-consumer evidence：
+- Semantic model / Owner contract / relationship synchronization decision（changed / not needed，以及原因）：
+
 ## Cohesion / Coupling / Complexity
 
 <!-- DDD + Hexagonal：Domain 決策、Application 協調、consumer Port、technical Adapter。最小充分實作不等於最短 diff。 -->

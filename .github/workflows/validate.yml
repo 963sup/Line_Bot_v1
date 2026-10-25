@@ -118,6 +118,18 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
+      - name: Publish validation gate summary
+        if: always()
+        env:
+          RESULT: ${{ needs.full-validate.result }}
+        run: |
+          echo "## Validation gate: ${RESULT}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${RESULT}" = "success" ]; then
+            echo "✅ Every selected validation group completed successfully." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "❌ The validation gate is red: ${RESULT}." >> "$GITHUB_STEP_SUMMARY"
+            echo "Inspect the latest full-validate matrix job and its exact-head artifact; a cancelled run may have been superseded by a newer revision." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Require every validation group to succeed
         env:
           RESULT: ${{ needs.full-validate.result }}

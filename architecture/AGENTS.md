@@ -19,6 +19,11 @@
 - Guard / implementation 與 authority 不一致時，先判定是 implementation violation、guard drift 或 authority change；不得直接選擇改規則讓錯誤消失。
 - Nested `AGENTS.md` 只能增加 local constraints，不能削弱 root governing set。
 
+## Naming
+
+- architecture artifact 的檔名只協助 authority 定位，不改變 JSON、FPT、topology 或 guard 的語意 authority。不得為視覺一致性搬移/改名 machine truth。
+- 真正需要改名時，先證明 consumer、selector 與 generated projection 都已同步；不可用 duplicate、alias 或 compatibility copy 掩蓋尚未遷移的依賴。
+
 ## Validation
 
 Architecture 變更至少執行 `pnpm semantic check`、`pnpm architecture`、`pnpm architecture:test`、`pnpm boundaries` 與適用 repository validation；merge / release 前 `pnpm validate`。

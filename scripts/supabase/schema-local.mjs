@@ -21,8 +21,9 @@ export function localSchemaCommands() {
 function run(args, { capture = false } = {}) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: fileURLToPath(root),
-    encoding: capture ? "utf8" : undefined,
-    stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
+    encoding: "utf8",
+    maxBuffer: 64 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {

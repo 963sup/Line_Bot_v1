@@ -10,7 +10,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-const diagnosticLimits = Object.freeze({ maxBytes: 24 * 1024, maxLines: 120 });
+const diagnosticLimits = Object.freeze({ maxBytes: 8 * 1024, maxLines: 80 });
+const truncationMarker = "[output truncated]";
 
 function safeLabel(label) {
   return label.replace(/[^a-zA-Z0-9._-]+/g, "-");
@@ -25,10 +26,27 @@ export function createOutputDirectory(root, prefix = "validation-") {
 export function writeBoundedDiagnostic(outputDirectory, label, content) {
   const logPath = join(outputDirectory, `${safeLabel(label)}.log`);
   writeFileSync(logPath, content);
-  return { logPath, diagnostic: readBoundedTail(logPath) };
+  return {
+    artifactBytes: statSync(logPath).size,
+    diagnostic: readBoundedTail(logPath),
+    logPath,
+  };
 }
 
-function readBoundedTail(
+function utf8Tail(content, maxBytes) {
+  const characters = Array.from(content);
+  let start = characters.length;
+  let bytes = 0;
+  while (start > 0) {
+    const next = Buffer.byteLength(characters[start - 1]);
+    if (bytes + next > maxBytes) break;
+    bytes += next;
+    start -= 1;
+  }
+  return characters.slice(start).join("");
+}
+
+export function readBoundedTail(
   path,
   { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = {},
 ) {
@@ -43,8 +61,31 @@ function readBoundedTail(
   }
   const content = buffer.toString("utf8");
   const lines = content.split(/\r?\n/);
-  const tail = lines.slice(-maxLines).join("\n").trim();
-  return size > maxBytes || lines.length > maxLines ? `[output truncated]\n${tail}` : tail;
+  const truncated = size > maxBytes || lines.length > maxLines;
+  const tail = lines
+    .slice(-(maxLines - Number(truncated)))
+    .join("\n")
+    .trim();
+  if (!truncated) return tail;
+
+  const prefix = `${truncationMarker}\n`;
+  return `${prefix}${utf8Tail(tail, maxBytes - Buffer.byteLength(prefix))}`;
+}
+
+export function boundedSpawnOptions(outputDirectory, label) {
+  const logPath = join(outputDirectory, `${safeLabel(label)}.log`);
+  const descriptor = openSync(logPath, "w");
+  let closed = false;
+  return {
+    logPath,
+    stdio: ["ignore", descriptor, descriptor],
+    close() {
+      if (!closed) {
+        closeSync(descriptor);
+        closed = true;
+      }
+    },
+  };
 }
 
 export function runBoundedCommand(
@@ -62,6 +103,7 @@ export function runBoundedCommand(
   }
   return {
     ...result,
+    artifactBytes: statSync(logPath).size,
     logPath,
     diagnostic: result?.error || result?.status !== 0 ? readBoundedTail(logPath) : "",
   };

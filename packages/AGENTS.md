@@ -49,6 +49,13 @@
 - 不建立空 folder、`.gitkeep`、pass-through service、facade、wrapper 或平行 compatibility 路徑。真需要搬移時，直接同步 consumer 與 exports。
 - Root named entry 只有自身 narrow public/composition contract 且有實際 consumer 時保留；單純舊路徑 forwarding 刪除。任何 package 都不是免檢查的全面樣板。
 
+### Naming and gradual convergence
+
+- package source path 以 owner 的 ubiquitous language 加唯一 primary role 命名，採 lower-kebab-case；例如 business policy、use case、port 或 adapter，而非 `manager`、`helper`、`common`、`utils` 等無責任名稱。
+- `service` 僅能指符合本檔 Domain Service rule 的 `domain/services/**`；不得用作 application orchestration 或 pass-through 的模糊名稱。
+- 檔名不能取代 owner/contract 判定，也不能用 rename 假裝完成搬遷。新 source 必須遵守；既有公開或歷史名稱只在負責的 capability 變更已同步 consumer、exports、tests 與文件時收斂，不做全庫 cosmetic rename。
+- 子 scope 只記錄不可由父層推導的命名例外；不要複製本節或另建第二套命名表。
+
 ### Canonical maximum shape
 
 責任需要展開時直接使用下列標準位置；只建立真實存在的部分，不逐案另想一套目錄，也不預先建立空模板。

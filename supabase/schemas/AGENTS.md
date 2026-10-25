@@ -16,3 +16,8 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 - 新增 relation 前先證明 current semantic concept、owner、consumer 與 persistence necessity；沒有 durable fact 就不新增 table。
 - Future target、reserved namespace、預想 owner/file name 不得建立 `.sql` placeholder 或 `architecture/data-topology.json#files` entry；未使用的 lexical prefix 直接留空。Target design / migration state 放 `docs/change/` 或 owner docs。
 - Schema change 完成後至少跑 `pnpm schema:check`、`pnpm architecture`、`pnpm check`；remote claim 另需 target `plan/sync/verify` readback。
+
+## Naming
+
+- SQL filename 是依賴排序與導航，不是 ownership。新增名稱以 current semantic concept 表達，並保留既有 lexical order；不得為整齊批次改號或建立相容 duplicate。
+- table、view、function 與 policy 名稱的修改屬 persistence contract 變更，不是純檔案整理；先確認 relation owner、SQL consumer 與 deployment/reconciliation impact。

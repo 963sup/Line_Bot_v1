@@ -6,12 +6,17 @@ const mocked = new Set([
   "@line_bot_v1/account/postgres",
   "@line_bot_v1/file/application/use-cases/files",
   "@line_bot_v1/file/composition/bootstrap/files",
-  "@line_bot_v1/file/composition/bootstrap/processors",
   "@line_bot_v1/intelligence/composition/bootstrap/processors",
+  "@line_bot_v1/intelligence/composition/bootstrap/processing",
+  "@line_bot_v1/intelligence/composition/bootstrap/document-intake",
+  "@line_bot_v1/intelligence/contracts/output/document-intake",
+  "@line_bot_v1/intelligence/contracts/output/document-attempts",
   "@line_bot_v1/file/domain/error",
   "@line_bot_v1/file/domain/file",
   "@line_bot_v1/contract/application/use-cases/contracts",
   "@line_bot_v1/contract/composition/bootstrap/contracts",
+  "@line_bot_v1/contract/composition/bootstrap/documents",
+  "@line_bot_v1/contract/contracts/input/document-intake",
   "@line_bot_v1/contract/domain/error",
   "@line_bot_v1/execution/application/use-cases/executions",
   "@line_bot_v1/execution/application/use-cases/task-dependencies",
@@ -41,6 +46,9 @@ function operationSource(
       if (scenario === "owner-unavailable") throw new ${errorName}(503, "TOP_SECRET", "UNAVAILABLE");
       if (scenario === "fake-error") throw { status: 418, code: "FORGED", message: "TOP_SECRET" };
       if (scenario === "operation-error") throw new Error("TOP_SECRET");
+      if (operation === "read" && "${factory}" === "createPostgresContractDocuments")
+        return { id: "revision-id", documentId: "document-id", version: 1, state: "DRAFT",
+          candidate: { lines: [{ description: "PRIVATE_DOCUMENT_BODY" }] }, diagnostics: [] };
       return { owner: "${owner}", operation, actor, input, calls };
     }
     export function ${factory}() {
@@ -52,6 +60,8 @@ function operationSource(
         result: async (actor, command) => invoke("result", actor, command),
         run: async (actor, command) => invoke("run", actor, command),
         execute: async (actor, command) => invoke("execute", actor, command),
+        submit: async (actor, command) => invoke("submit", actor, command),
+        receipt: async (actor, query) => invoke("receipt", actor, query),
         read: async (actor, query) => invoke("read", actor, query),
         list: async (actor, query) => invoke("list", actor, query),
         history: async (actor, query) => invoke("history", actor, query),
@@ -69,11 +79,48 @@ function sourceFor(url) {
   if (specifier === "@line_bot_v1/file/application/use-cases/files")
     return operationSource("file", "createFiles");
   if (specifier === "@line_bot_v1/file/composition/bootstrap/files")
-    return `export function createPostgresFileDependencies() { return {}; }`;
-  if (specifier === "@line_bot_v1/file/composition/bootstrap/processors")
-    return `export const plainTextProcessor = {};`;
+    return `export function createPostgresFileDependencies() { return {}; }
+      export function createPostgresFileSourceReader() { return {}; }`;
   if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processors")
-    return `export function createGeminiFileProcessor() { return {}; }`;
+    return `export const plainTextProcessor = {};
+      export function createGeminiFileProcessor() { return {}; }`;
+  if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processing")
+    return operationSource("file", "createPostgresIntelligenceProcessing");
+  if (specifier === "@line_bot_v1/intelligence/contracts/output/document-intake")
+    return `export class IntakeError extends Error {
+      constructor(code, status) { super("TOP_SECRET"); this.code=code; this.status=status; }
+    }`;
+  if (specifier === "@line_bot_v1/intelligence/contracts/output/document-attempts")
+    return `export class DocumentAttemptError extends Error {
+      constructor(status, code) { super("TOP_SECRET"); this.code=code; this.status=status; }
+    }`;
+  if (specifier === "@line_bot_v1/contract/contracts/input/document-intake")
+    return `export const purchaseOrderExtractionSchema={type:"object"};
+      export const purchaseOrderExtractionSchemaId="purchase-order/v1";
+      export const purchaseOrderExtractionSchemaVersion=1;`;
+  if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/document-intake")
+    return `
+      import { ContractError } from "@line_bot_v1/contract/domain/error";
+      import { FileError } from "@line_bot_v1/file/domain/error";
+      import { IntakeError } from "@line_bot_v1/intelligence/contracts/output/document-intake";
+      import { DocumentAttemptError } from "@line_bot_v1/intelligence/contracts/output/document-attempts";
+      export function createPostgresDocumentIntakeAttempts() { return {}; }
+      export function createGeminiDocumentIntake(config) {
+        if(process.env.CLI_SCENARIO === "factory-error") throw new Error("TOP_SECRET");
+        return async (actor, command) => {
+          const scenario=process.env.CLI_SCENARIO;
+          if(scenario === "file-forbidden") throw new FileError(403,"TOP_SECRET","FORBIDDEN");
+          if(scenario === "attempt-conflict") throw new DocumentAttemptError(409,"REQUEST_ID_REUSED");
+          if(scenario === "attempt-unknown") throw new IntakeError("UNKNOWN_RESULT",503);
+          if(scenario === "provider-error") throw new Error("TOP_SECRET");
+          config.onTargetSubmit?.();
+          if(scenario === "target-unknown") throw new Error("TOP_SECRET");
+          const typed=/^owner-typed:(\\d+):([A-Z_]+)$/.exec(scenario??"");
+          if(typed) throw new ContractError(Number(typed[1]),"TOP_SECRET",typed[2]);
+          return {actor,documentId:command.documentId,requestId:command.requestId,version:1};
+        };
+      }
+    `;
   if (specifier === "@line_bot_v1/contract/domain/error")
     return `export class ContractError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }`;
   if (specifier === "@line_bot_v1/execution/domain/error")
@@ -84,6 +131,8 @@ function sourceFor(url) {
     return operationSource("execution", "createTaskDependencies");
   if (specifier.endsWith("/composition/bootstrap/contracts"))
     return `export function createPostgresContractDependencies() { return {}; }`;
+  if (specifier.endsWith("/composition/bootstrap/documents"))
+    return operationSource("contract", "createPostgresContractDocuments");
   if (specifier.endsWith("/composition/bootstrap/executions"))
     return `export function createPostgresExecutionDependencies() { return {}; }`;
   if (specifier.endsWith("/composition/bootstrap/task-dependencies"))

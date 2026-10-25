@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/use-cases/intake-document": {
+      "types": "./dist/application/use-cases/intake-document.d.ts",
+      "default": "./dist/application/use-cases/intake-document.js"
+    },
     "./contracts/output/document-intake": {
       "types": "./dist/contracts/output/document-intake.d.ts",
       "default": "./dist/contracts/output/document-intake.js"
@@ -47,7 +51,6 @@
   },
   "dependencies": {
     "@google/genai": "catalog:",
-    "@line_bot_v1/contract": "workspace:*",
     "@line_bot_v1/file": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*"

@@ -12,3 +12,8 @@ Optimize for relevant information per loaded context.
 - Documentation changes preserve authorization, transaction, replay/version, isolation, recovery, privacy, and evidence semantics.
 
 Run `pnpm docs:check` after docs changes.
+
+## Naming
+
+- 文件與資料夾名稱表達唯一 retrieval job；README 只作 routing，規則、事實、reference 與 change 不因名稱相近而互相取代。
+- 移動或改名必須同一變更更新 inbound references；不建立 redirect Markdown 或平行命名版本。文件命名不重述 machine truth。

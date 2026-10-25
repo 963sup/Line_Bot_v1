@@ -1,11 +1,12 @@
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { boundedSpawnOptions } from "../runtime/bounded-output.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const web = path.join(root, "apps/web");
@@ -73,17 +74,14 @@ let server;
 let serverExit;
 let active;
 function launch(args, cwd, logfile, extraEnv = {}) {
+  const boundedOutput = boundedSpawnOptions(output, logfile.replace(/\.log$/, ""));
   const child = spawn(process.execPath, args, {
     cwd,
     env: { ...env, ...extraEnv },
+    stdio: boundedOutput.stdio,
     windowsHide: true,
   });
-  for (const stream of [child.stdout, child.stderr]) {
-    stream.on("data", (chunk) => {
-      appendFileSync(path.join(output, logfile), chunk);
-      process.stdout.write(chunk);
-    });
-  }
+  child.once("exit", () => boundedOutput.close());
   return child;
 }
 async function command(args, cwd, logfile, extraEnv = {}) {

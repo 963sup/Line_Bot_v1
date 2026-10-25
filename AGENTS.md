@@ -45,6 +45,8 @@
 ## Invariants
 
 - 先定義 business result，再沿 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth 找根因。
+- 命名只用來降低定位成本，不創造 Owner、契約或相依方向。新檔名以 bounded-context 的業務概念或技術機制加上唯一 primary role 表達；既有名稱採漸進式收斂，只有在同一變更已同步真實 consumer、public export、route/schema 與測試時才改名。
+- 每層 `AGENTS.md` 只補自己的命名例外，不能複製或覆寫父層規則；避免讓相同命名規則分散後漂移。
 - 保持 [system invariants](docs/rules/system-invariants.md)：authority、authorization/isolation、concurrency/replay、atomicity/recovery、ownership/dependency、evidence integrity。
 - 跨 package 只用 public exports；不用 alias/wrapper/facade/compatibility layer 掩蓋 ownership。
 - 無真實 consumer、variation、technology/policy boundary、transaction/recovery 或 isolation responsibility，不新增 abstraction。
@@ -61,6 +63,12 @@
 修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`、Codex 角色放 `.codex/agents/`，不維護重複 skill 或 Markdown review database。
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
+
+## Serena MCP 自動使用規範
+
+本專案已配置 Serena 官方 MCP（`.codex/config.toml`）。使用規則、project lifecycle、onboarding 與 memories policy 統一見 [`.codex/SERENA.md`](.codex/SERENA.md)。
+
+使用者在訊息開頭指定 `serena` 時，視為優先使用 Serena 的提示，不是自動觸發器或額外授權。Serena 不取代 `pnpm semantic plan/context`、Owner contract、repository governing files 或正式 validation evidence。
 
 ## Change / validation
 

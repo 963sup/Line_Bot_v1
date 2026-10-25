@@ -113,3 +113,35 @@ test("explicit owner commands, not AI recognition, move pending Expense state", 
   assert.equal(confirmed.status, "confirmed");
   assert.equal(confirmed.revision, 8);
 });
+
+test("terminal retries are idempotent only for the same revision and command payload", () => {
+  const confirmed = applyExpenseCommand(draft(), {
+    type: "confirm",
+    revision: 1,
+    fields: editable,
+  });
+  assert.equal(
+    applyExpenseCommand(confirmed, { type: "confirm", revision: 1, fields: editable }),
+    confirmed,
+  );
+  assert.throws(
+    () => applyExpenseCommand(confirmed, { type: "confirm", revision: 0, fields: editable }),
+    (error) => error instanceof ExpenseError && error.reason === "version-conflict",
+  );
+  assert.throws(
+    () =>
+      applyExpenseCommand(confirmed, {
+        type: "confirm",
+        revision: 1,
+        fields: { ...editable, merchant: "Different command" },
+      }),
+    (error) => error instanceof ExpenseError && error.reason === "version-conflict",
+  );
+
+  const cancelled = applyExpenseCommand(draft(), { type: "cancel", revision: 1 });
+  assert.equal(applyExpenseCommand(cancelled, { type: "cancel", revision: 1 }), cancelled);
+  assert.throws(
+    () => applyExpenseCommand(cancelled, { type: "cancel", revision: 0 }),
+    (error) => error instanceof ExpenseError && error.reason === "version-conflict",
+  );
+});

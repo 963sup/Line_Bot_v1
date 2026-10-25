@@ -35,8 +35,8 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
 5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
 6. **修改／漏改**：`pnpm patch:apply <plan.json>` 預覽，既有授權內以 `--apply` 套用，再重跑相同搜尋、檢查剩餘命中與 Git diff。一般小修改可直接編輯；批次計畫不繞過內容／雜湊前置條件。預覽是工程步驟，不要求使用者重複確認。
-7. **相關驗證**：執行真正受影響的 tests／runtime 驗收與 `pnpm check`；純文件用 `pnpm docs:check`。同 checkout 的 build/type generation/installation 按順序執行。
-8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；`pnpm change:finalize` 執行完整 `pnpm validate`，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
+7. **相關驗證與 truth synchronization**：在任何環境皆依變更 Owner、契約與 transitive consumers 執行必要的 tests／runtime 驗收；`pnpm check` 是同一 selection contract 的本機入口，純文件用 `pnpm docs:check`。判定業務 Owner、Capability、Contract、relationship、invariant 或資料 authority 改變時，同步其 authoritative semantic overlay 與 consumer；未改變時在 PR 明確記錄「not needed」及理由，不能為了通過流程新增重複 truth。Serena／`pnpm code` 的 symbol evidence 只證明程式事實，不取代 authority。 同 checkout 的 build/type generation/installation 按順序執行。
+8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 使用同一 changed-owner selection contract，基準遺失時保守展開全部 groups。`pnpm validate` 保留給明確要求的全庫稽核，不能把未選 Owner 的重跑當作較強的必要證據，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
 9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
 
 工具介面與例子見 [source operations](../../../scripts/code/README.md)。`pnpm code` 只查詢／產生計畫，來源寫入仍由 [patch application](../../../scripts/changes/README.md) 擁有；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
@@ -104,7 +104,7 @@ MCP 接入由 `.codex/config.toml` 擁有；可執行版本由對應 workspace m
 | Next.js API、route 或 server/client boundary | `apps/web/node_modules/next/dist/docs/` 的版本對應文件；不足時使用 Context7／官方來源並確認版本 | 開發伺服器 MCP 的實際 tools 與 runtime；不以其他版本範例覆蓋本地契約 |
 | 編譯、hydration 或頁面錯誤 | 啟動 `pnpm dev`，從 banner 取得 port；透過 Next DevTools 查詢該 port 的 tools 與 project metadata | 確認 project path 是目前 checkout 的 `apps/web`，再查 errors、compilation issues 與受影響頁面 |
 
-工具名稱以該版本的 `tools/list` 為準；角色選擇與可選的 GPT-6 開發組由 [model/role routing](../../../.codex/agents/AGENTS.md) 擁有，依任務載入 skills。MCP auto-approval 集中在 parent config，子代理繼承實際權限；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
+工具名稱以該版本的 `tools/list` 為準；角色選擇與可選的專項開發角色由 [model/role routing](../../../.codex/agents/AGENTS.md) 擁有，依任務載入 skills。MCP auto-approval 集中在 parent config，子代理繼承實際權限；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
 
 ```sh
 pnpm tooling:doctor
@@ -112,7 +112,7 @@ pnpm tooling:doctor --mcp
 pnpm tooling:doctor --mcp --next-port 3000
 ```
 
-第一個命令只檢查本地 toolchain、project MCP 設定與已安裝版本。`--mcp` 才啟動兩個已配置的本地 MCP，使用 SDK 的安全預設環境取得 initialize／完整 tools list；不下載套件、不傳遞 provider credentials、不列印 server logs 或 tool descriptions。`--next-port` 使用明確的 loopback port，經已配置的 Next DevTools 檢查 runtime tools 與 project identity；請替換成實際 banner port。診斷結束即關閉其 MCP processes，不啟停應用程式。
+第一個命令只檢查本地 toolchain、project MCP 設定與已安裝版本。`--mcp` 才啟動三個已配置的本地 MCP，使用 SDK 的安全預設環境取得 initialize／完整 tools list；Serena 另以受限的 `find_symbol` 查詢固定 source symbol，確認 worktree-local TypeScript transport。診斷不下載套件、不傳遞 provider credentials、不列印 server logs、tool descriptions 或 source body。`--next-port` 使用明確的 loopback port，經已配置的 Next DevTools 檢查 runtime tools 與 project identity；請替換成實際 banner port。診斷結束即關閉其 MCP processes，不啟停應用程式。
 
 以上分別證明 configuration、MCP transport 與 runtime project identity。一般 offline validation 不執行 live probes；診斷不證明目前 Codex session 已重新載入設定、registry 認證或瀏覽器行為。設定變更後重新載入 MCP／開新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行 canonical `pnpm check`，merge 前以 exact head 執行 `pnpm validate`。若使用 `next-dev-loop`，先滿足該 skill 的 framework／browser 版本與 preflight。
 
@@ -125,7 +125,7 @@ GitHub Issue owns the problem, intended business result, current evidence and sc
 
 1. **Issue intake**：使用既有 Bug／Feature 或 Architecture Template，記錄 observable outcome、scope、SHA／環境、預期／實際與 Root Cause status（Confirmed、Hypothesis、Unknown、Not applicable）。Feature／docs 不虛構 Bug 根因；Issue 本身不授予跨 Owner 寫入權限。
 2. **Agent 接手**：重新讀 Issue、current main／PR、適用 root + nearest AGENTS、Owner source/contracts/tests。Bug 沿 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger 查證；若已有合併變更解決同一問題，先驗證，不重做。
-3. **PR 對應**：列出對應 Issue acceptance subset、Root Cause evidence（適用時）、Owner/Truth/Boundary、reused capability、新 complexity 必要理由與真實 validation。高內聚／低耦合及 DDD + Hexagonal 不以 folder、最少檔案或通過 CI 代替。
+3. **PR 對應**：列出對應 Issue acceptance subset、Root Cause evidence（適用時）、Owner/Truth/Boundary、reused capability、新 complexity 必要理由與真實 validation。Owner 不明或跨 Owner 變更附 `semantic plan/context` 的結論與實際 authority；PR 必須記錄 semantic overlay／Owner contract／relationship 的同步判定（changed 或 not needed），並以真實 consumer／symbol evidence 支持。高內聚／低耦合及 DDD + Hexagonal 不以 folder、最少檔案或通過 CI 代替。
 4. **Merge 語意**：僅當 PR merge 本身滿足整張 Issue 的 acceptance，使用 `Closes #N`／`Fixes #N`。分階段交付或需 schema、provider、deployment、browser、LINE device 驗收者使用 `Refs #N`，保留 open Issue 並明確記錄剩餘 Owner/evidence。Existing required checks 和 review settings 是 GitHub 平台權威。
 5. **Release／驗收**：沿用現有 main release planner、provider sync/retry/readback；不新增與 Issue 連動的第二套 deployment workflow。將 merge SHA 和適用 release／provider／device evidence 連到 Issue／PR；CI green、Merged、Deployed、Accepted 不互相等同。Issue acceptance 真正滿足或明確記錄 duplicate/not planned/superseded 理由才關閉。
 6. **Feedback／Regression**：先比對舊 Issue／PR／merge SHA／release evidence；未解決的同根因重開 Issue，不同根因另建關聯 Issue。只有真實 invariant 值得保護時才新增 regression test/guard，不建第二套任務狀態儲存，Issue 描述更新不觸發完整 CI。
@@ -189,7 +189,7 @@ fix(identity): preserve membership when Google linking fails
 
 ## Pull request and merge
 
-PR 描述的是完整 change set；commit history 描述其中值得保留的獨立決策。開發／Agent 高頻修改期間可使用 **Draft** 避免把未完成 head 當成 merge candidate；push 應以 coherent checkpoint 為單位。任何 non-draft PR 的 `opened`、`synchronize`、`reopened`、`ready_for_review` 都對 exact current head 執行完整 `pnpm validate --group <name>` matrix；後續 push 產生新 head 時直接重新完整驗證，不需要 Draft → Ready toggle。Merge candidate 必須以 current head 的 aggregate `validate` 成功為證據；base/main 前進後先更新 branch，再由新的 current head 重新取得完整驗證。
+PR 描述的是完整 change set；commit history 描述其中值得保留的獨立決策。開發／Agent 高頻修改期間可使用 **Draft** 避免把未完成 head 當成 merge candidate；push 應以 coherent checkpoint 為單位。任何 non-draft PR 的 `opened`、`synchronize`、`reopened`、`ready_for_review` 都對 exact current head 與 PR base 的可靠 diff，執行受影響 Owner groups 與 transitive consumers；後續 push 產生新 head 時直接重新選擇必要驗證，不需要 Draft → Ready toggle。main 使用前一個 main SHA 的相同選擇器；比較基準無法使用時才保守展開所有 groups。Merge candidate 必須以 current head 的 aggregate `validate` 成功為證據；base/main 前進後先更新 branch，再由新的 current head 重新取得必要驗證。
 
 GitHub workflow 的原子邊界是獨立 trigger、permission、external effect 或 rollback responsibility，不是 YAML step 數量；checkout/setup/verify 的重複不足以建立 reusable workflow。只有已有至少兩個真實 consumer，且 inputs、permissions、failure semantics 一致時才抽 reusable owner。
 

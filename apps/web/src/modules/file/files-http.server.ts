@@ -144,13 +144,14 @@ function processingResultCommand(value: unknown): ProcessingResultCommand {
   if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 0) return invalid();
   if (action !== "save" && action !== "discard") return invalid();
   if (action === "save" && !Array.isArray(command.edits)) return invalid();
+  const edits = Array.isArray(command.edits) ? Array.from(command.edits) : [];
   return {
     repositoryId: commandString(command, "repositoryId"),
     requestId: commandString(command, "requestId"),
     runId: commandString(command, "runId"),
     expectedVersion: Number(expectedVersion),
     action,
-    edits: Array.isArray(command.edits) ? Array.from(command.edits) : [],
+    edits,
   };
 }
 function failure(error: unknown) {

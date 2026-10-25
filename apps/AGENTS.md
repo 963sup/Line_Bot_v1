@@ -39,3 +39,9 @@ Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL seman
 3. Owner / capability 語意改變時先修 `architecture/semantic-model.json`；module dependency/path 改變才修 `implementation-topology.json`。
 4. 未啟用能力不得用 fake data、disabled shell 或空 route 冒充完成。
 5. 文件變更跑 `pnpm docs:check`；app/tooling 變更依 root validation contract。Git push 不等於部署或 LINE/device acceptance。
+
+## Naming
+
+- URL 是外部 contract，route folder/file name 先服務 stable URL 與 Next.js convention；不得為了內部命名一致性改變公開路徑。
+- Web module 用其呈現的 business capability 命名；`shared` 只用中立 technical mechanism 命名。名稱不能把 package owner、authorization 或 use case authority 移入 host。
+- 舊 route/module 名稱僅在同一變更已追完 Link、entry parser、continuation、tests 與外部入口後收斂；子 AGENTS 只記錄這些範圍的例外。

@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import {
-  purchaseOrderExtractionSchema,
-  purchaseOrderExtractionSchemaId,
-  purchaseOrderExtractionSchemaVersion,
-} from "@line_bot_v1/contract/contracts/input/document-intake";
 import { createDocumentIntake } from "../src/application/use-cases/intake-document.js";
 import type { IntakeSchema } from "../src/contracts/output/document-intake.js";
 import { IntakeError } from "../src/contracts/output/document-intake.js";
@@ -20,9 +15,9 @@ const ids = {
   contractRevision: "55555555-5555-4555-8555-555555555555",
 };
 const schema = {
-  id: purchaseOrderExtractionSchemaId,
-  version: purchaseOrderExtractionSchemaVersion,
-  schema: purchaseOrderExtractionSchema,
+  id: "test-document/v1",
+  version: 1,
+  schema: { type: "object" },
 } satisfies IntakeSchema;
 const command = {
   action: "save" as const,

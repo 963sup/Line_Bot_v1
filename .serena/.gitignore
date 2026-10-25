@@ -1,2 +1,4 @@
+# Versioned project configuration and the memory graph remain in Git.
+# Only volatile caches and machine-local overrides stay untracked.
 /cache
 /project.local.yml

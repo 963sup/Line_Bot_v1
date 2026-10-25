@@ -35,4 +35,9 @@ FPT domain-truth / GitHub Mobile benchmark usage 繼承 [apps scope](../../../AG
 - External callback/webhook 按 provider trust contract 驗證；credential 不複製到產品 URL。
 - 未實作能力留在 Governance / semantic status，不建立空 page/API 宣稱完成。
 
+## Naming
+
+- route segment 與 Next.js special file 是 delivery contract；只能在已同步 URL consumer 與 navigation 行為的變更中調整。
+- route group 用 layout/runtime 責任命名，不以業務 owner、資料表或暫時頁面狀態命名。
+
 相關 current contract：[Web runtime](../../../../docs/reference/runtime/routes.md)；repository placement：[Dependency boundaries](../../../../docs/rules/dependency-boundaries.md)。

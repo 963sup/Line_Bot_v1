@@ -125,7 +125,6 @@
       "moduleKind": "application-module",
       "semanticOwner": "intelligence",
       "allowedWorkspaceDependencies": [
-        "@line_bot_v1/contract",
         "@line_bot_v1/file",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"

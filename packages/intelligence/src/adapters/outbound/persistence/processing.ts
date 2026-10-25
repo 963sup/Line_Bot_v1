@@ -41,8 +41,8 @@ function readOutput(value: unknown): ProcessingOutput | null {
         id: stringValue(observation.id),
         label: stringValue(observation.label),
         value: observation.value === null ? null : stringValue(observation.value),
-        uncertain: booleanValue(observation.uncertain),
         source: observation.source == null ? null : record(observation.source),
+        uncertain: booleanValue(observation.uncertain),
       };
     }),
   };
@@ -65,7 +65,7 @@ function decode(row: SqlRow): ProcessingRevision {
     version: numberValue(row.version),
     parentRevisionId: row.parent_revision_id == null ? null : stringValue(row.parent_revision_id),
     actorUserId: stringValue(row.actor_user_id),
-    at: numberValue(Number(row.at)),
+    at: numberValue(row.at),
     state: literalValue(row.state, ["RUNNING", "FAILED", "READY", "SAVED", "DISCARDED"]),
     attemptId: stringValue(row.attempt_id),
     processorId: stringValue(row.processor_id),
@@ -143,7 +143,7 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
     actor: string,
     command: ProcessingCommand,
     work: (tx: ProcessingTransaction) => Promise<ProcessingRevision>,
-  ): Promise<Readonly<{ revision: ProcessingRevision; replayed: boolean }>> {
+  ): Promise<ProcessingRevision> {
     return this.db.transaction(async (sql) => {
       let scope: Awaited<ReturnType<typeof repositoryContentScope>>;
       try {
@@ -275,10 +275,10 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
       const prior = await tx.replay();
       if (prior) {
         if (!prior.exact) throw new RepositoryError(409, "Request identity reused.");
-        return { revision: prior.revision, replayed: true };
+        return prior.revision;
       }
       try {
-        return { revision: await work(tx), replayed: false };
+        return await work(tx);
       } catch (error) {
         return mapError(error);
       }

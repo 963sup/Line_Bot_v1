@@ -17,6 +17,23 @@ const servers = [
     dependency: "shadcn",
     args: ["--dir", "apps/web", "exec", "shadcn", "mcp"],
   },
+  {
+    name: "serena",
+    command: "serena",
+    args: [
+      "start-mcp-server",
+      "--project-from-cwd",
+      "--context=codex",
+      "--open-web-dashboard=false",
+    ],
+    requiredTools: [
+      "find_declaration",
+      "find_implementations",
+      "find_referencing_symbols",
+      "find_symbol",
+      "get_symbols_overview",
+    ],
+  },
 ];
 const timeout = 15_000;
 const runtimeFailures = new Set([
@@ -41,8 +58,22 @@ function jsonFile(path) {
 export function inspectMcpConfiguration(root, configuration) {
   try {
     const config = configuration ?? projectConfig(root);
-    const checks = servers.map(({ name, workspace, dependency, args }) => {
+    const checks = servers.map(({ name, workspace, dependency, args, command }) => {
       const server = config.mcp_servers?.[name];
+      if (name === "serena") {
+        return {
+          id: name,
+          ok:
+            server?.enabled !== false &&
+            server?.command === command &&
+            server.cwd === undefined &&
+            JSON.stringify(server.args) === JSON.stringify(args) &&
+            server.startup_timeout_sec === 15 &&
+            server.default_tools_approval_mode === "approve",
+          command,
+          args,
+        };
+      }
       const workspaceRoot = resolve(root, workspace);
       const version = jsonFile(resolve(workspaceRoot, "package.json")).devDependencies?.[
         dependency
@@ -164,23 +195,33 @@ export async function probeMcp(root, { port } = {}) {
   const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
   const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
   const results = [];
-  for (const { name } of servers) {
+  for (const { name, requiredTools } of servers) {
     const server = config.mcp_servers[name];
+    const serverTimeout = name === "serena" ? 30_000 : timeout;
     const client = new Client({ name: "repository-mcp-doctor", version: "1.0.0" });
     const transport = new StdioClientTransport({
       command: server.command,
       args: server.args,
       cwd: root,
       stderr: "ignore",
-      env: { NEXT_DEVTOOLS_HOST: server.env?.NEXT_DEVTOOLS_HOST, NEXT_TELEMETRY_DISABLED: "1" },
+      env:
+        name === "next-devtools"
+          ? { NEXT_DEVTOOLS_HOST: server.env?.NEXT_DEVTOOLS_HOST, NEXT_TELEMETRY_DISABLED: "1" }
+          : undefined,
     });
     const result = { name, status: "failed", evidence: "initialize/tools-list" };
     try {
-      await client.connect(transport, { timeout });
-      const listed = await client.listTools({}, { timeout });
+      await client.connect(transport, { timeout: serverTimeout });
+      const listed = await client.listTools({}, { timeout: serverTimeout });
       if (!listed.tools.length || listed.nextCursor) throw new Error("Incomplete tool discovery.");
       result.tools = listed.tools.map((tool) => tool.name);
+      if (
+        requiredTools?.some((tool) => !result.tools.includes(tool)) ||
+        (requiredTools && !requiredTools.every((tool) => result.tools.includes(tool)))
+      )
+        throw new Error("Unexpected Serena tool set.");
       result.status = "connected";
+      if (name === "serena") result.evidence = "initialize/tools-list";
       if (name === "next-devtools" && port !== undefined) {
         try {
           result.runtime = await probeNext(client, root, port);
@@ -197,6 +238,7 @@ export async function probeMcp(root, { port } = {}) {
         }
       }
     } catch {
+      result.status = "failed";
       result.error = "MCP initialize or complete tools/list failed within the diagnostic timeout.";
     } finally {
       await client.close();

@@ -50,6 +50,13 @@ test("frontmatter regex is not a link; prose links and incomplete metadata still
     await writeFile(path.join(externalSkill, "AGENTS.md"), "[upstream]({baseDir}/missing.md)\n");
     const externalResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
     assert.equal(externalResult.status, 0, externalResult.stderr);
+
+    const toolCacheNotice = path.join(root, ".tools/vendor/NOTICE.md");
+    await mkdir(path.dirname(toolCacheNotice), { recursive: true });
+    await writeFile(toolCacheNotice, "[upstream](missing-license.txt)\n");
+    const toolCacheResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(toolCacheResult.status, 0, toolCacheResult.stderr);
+
     for (const file of [".agents/AGENTS.md", ".agents/skills-local/README.md"]) {
       const ownDocument = path.join(root, file);
       await mkdir(path.dirname(ownDocument), { recursive: true });

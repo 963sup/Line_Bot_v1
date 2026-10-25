@@ -25,3 +25,4 @@ Owner-specific helper 需要移動時，同時檢查既有 entry parser consumer
 - HTTP 機制只處理解析、大小限制與回應；不含業務錯誤、授權、store 或 composition。
 - UI 可接 callback／children，但不決定業務流程；入口轉換不執行業務、不代替後端授權。
 - 不保存跨請求私人狀態、複製 token 或新增業務快取；session 必須處理失效、換帳號及遲到回應。
+- shared 檔名只描述跨功能的中立 mechanism；若名稱需要 business noun 才說得清，先回到對應 module/package owner，而不是以 shared 命名合理化搬移。

@@ -1,6 +1,6 @@
 # Web repository module
 
-Repository Files navigation uses the canonical `/{login}/{repository}/files` route. File operations/processing remain owned by `packages/file`; Repository only authorizes current scope, and Web preserves one request identity per explicit operation without browser-side ownership of saved facts.
+Repository Files navigation uses the canonical `/{login}/{repository}/files` route. File owns file operations; Intelligence owns processing. Repository only authorizes current scope, and Web preserves one request identity per explicit operation without browser-side ownership of saved facts.
 
 Wiki at `/{login}/{repository}/wiki` and `/wiki/{pageId}` consumes Wiki owner use cases. Stable page identity, immutable history, comparison/restore and exact replay remain owner contracts. Web binds pending commands to verified User/Repository/page, preserves unknown-result original content, clears private state on identity loss/hidden views, and renders Markdown only as escaped text. No second writer or page-specific ACL.
 

@@ -10,8 +10,8 @@ export type Observation = Readonly<{
   id: string;
   label: string;
   value: string | null;
+  source?: Readonly<Record<string, unknown>> | null;
   uncertain: boolean;
-  source: Readonly<Record<string, unknown>> | null;
 }>;
 export type ProcessingOutput = Readonly<{
   documentKind: string;
@@ -100,30 +100,31 @@ export function finalizeProcessing(
   }>,
 ): ProcessingRevision {
   if (current.state !== "READY" || !current.rawResult) throw new Error("PROCESSING_NOT_READY");
-  const editsById = new Map(
-    input.edits.map((edit) => {
-      if (!edit || typeof edit !== "object") throw new Error("INVALID_PROCESSING_EDITS");
-      const observationId = Reflect.get(edit, "observationId");
-      const action = Reflect.get(edit, "action");
-      if (typeof observationId !== "string" || (action !== "exclude" && action !== "replace"))
-        throw new Error("INVALID_PROCESSING_EDITS");
-      const value = action === "replace" ? Reflect.get(edit, "value") : undefined;
-      if (action === "replace" && typeof value !== "string")
-        throw new Error("INVALID_PROCESSING_EDITS");
-      return [observationId, { action, value }] as const;
-    }),
-  );
   const savedResult =
     input.action === "save"
       ? {
           ...current.rawResult,
           observations: current.rawResult.observations
-            .filter((observation) => editsById.get(observation.id)?.action !== "exclude")
+            .filter((observation) => {
+              const edit = input.edits.find(
+                (candidate) =>
+                  candidate &&
+                  typeof candidate === "object" &&
+                  Reflect.get(candidate, "observationId") === observation.id,
+              );
+              return !edit || Reflect.get(edit, "action") !== "exclude";
+            })
             .map((observation) => {
-              const edit = editsById.get(observation.id);
-              return edit?.action === "replace"
-                ? { ...observation, value: edit.value }
-                : observation;
+              const edit = input.edits.find(
+                (candidate) =>
+                  candidate &&
+                  typeof candidate === "object" &&
+                  Reflect.get(candidate, "observationId") === observation.id,
+              );
+              if (!edit || Reflect.get(edit, "action") !== "replace") return observation;
+              const value = Reflect.get(edit, "value");
+              if (typeof value !== "string") throw new Error("INVALID_PROCESSING_EDITS");
+              return { ...observation, value };
             }),
         }
       : null;

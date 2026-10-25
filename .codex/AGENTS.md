@@ -1,10 +1,21 @@
 # Codex runtime scope
 
-- `.codex/` owns Codex runtime config, agent profiles, and command-safety policy; never product/business/repository truth.
-- `config.toml` stores machine config; [agents/AGENTS.md](agents/AGENTS.md) owns human-readable model/role routing.
-- Agent profiles may restrict role/tools but do not duplicate repository rules; root + nearest AGENTS still apply.
-- Runtime bootstrap points to the [tool selection and change loop](../docs/reference/engineering/development-workflow.md#autonomous-tool-selection); [role routing](agents/AGENTS.md#autonomous-delegation) owns proactive delegation and handoffs. Configure those active pointers in `developer_instructions`; file presence alone does not activate a workflow.
-- `rules/*.rules` enforces Codex command safety only and never replaces external-platform authorization.
-- Validate runtime config with `tooling:check`; use `tooling:rules` for execpolicy semantics. Static success ≠ current-session reload.
-- For Next.js/shadcn tasks and MCP diagnosis, follow the [agent workflow](../docs/reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow); dependency versions stay in manifests/lockfile.
-- Do not broaden sandbox/approval or command prefixes to make a task pass; verify allow/deny cases and report runtime-load evidence separately.
+**Layer scope:** L2 Orchestration and L4 Capabilities/transports.
+
+Read [README.md](README.md) for the six-layer design and directory map. This file
+contains only the runtime constraints that apply to every child.
+
+- `.codex/` owns Codex runtime configuration, role profiles, command-safety policy, and support launchers. It never owns product/business/repository truth.
+- Keep the separation: `config.toml` configures transport; `agents/` owns roles and handoffs; `rules/` owns command-pattern safety; `scripts/` owns runtime support only.
+- For a six-layer design, role, workflow, handoff, atomic-instruction, validation, or interchange-format change, read the matching document in [README.md](README.md) before editing; keep its Owner unique and link, rather than copy, adjacent layer rules.
+- When a task needs L4 capability selection rather than a known direct path, read [CAPABILITIES.md](CAPABILITIES.md) and select only its matching route; do not infer a route from installed-tool inventory.
+- Root plus nearest `AGENTS.md` always apply. Role files cannot override parent sandbox, approval, provider authorization, or repository governance.
+- `rules/*.rules` only classify shell commands. They do not authorize provider writes, deployment, data handling, or a change of product scope.
+- Do not broaden sandbox, approval, MCP, or command prefixes merely to pass a task. Preserve least privilege and report an unavailable capability instead.
+- Validate changes under this tree with `pnpm tooling:check`; validate rule semantics with `pnpm tooling:rules`; validate Markdown links with `pnpm docs:check`. Static checks do not prove a running session reloaded configuration.
+
+## Dispatch enforcement
+
+- For cross-Owner work, architecture/public-contract decisions, independent review, runtime investigation, merge-conflict resolution, or validation/acceptance claims, Primary must dispatch an enabled Atomic to its derived executor profile before integrating a conclusion.
+- The dispatch must use an L5 task packet and return a matching handoff result with `atomicId`, scope, revision, deliverable, stop condition, validation owner, and evidence boundary.
+- Primary may work directly only on a bounded single-Owner read or reversible edit whose contract and consumer are already known. The runtime reminder is also configured in [`config.toml`](config.toml); this file is the repository-level contract and remains authoritative when a live session has not reloaded config.

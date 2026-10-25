@@ -11,7 +11,9 @@ export function validateCommandSurface({
   }
   const result = spawn(process.execPath, [npmExecPath, "validate"], {
     cwd,
-    stdio: "inherit",
+    encoding: "utf8",
+    maxBuffer: 64 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
       NEXT_TELEMETRY_DISABLED: "1",

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://line-bot-v1.local/codex/schemas/evidence-plan.schema.json",
+  "title": "Evidence plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "claim", "candidate", "evidence", "acceptanceOwner"],
+  "properties": {
+    "version": { "const": 1 },
+    "claim": { "type": "string", "minLength": 1 },
+    "candidate": { "type": "string", "minLength": 1 },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["owner", "kind", "target", "supports", "doesNotProve"],
+        "properties": {
+          "owner": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "supports": { "type": "string", "minLength": 1 },
+          "doesNotProve": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "acceptanceOwner": { "type": "string", "minLength": 1 }
+  }
+}

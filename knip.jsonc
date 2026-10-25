@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "ignoreWorkspaces": ["packages/workforce"],
   "workspaces": {
     ".": {
       // Analyze every repository-owned script. Exact opaque entries below are limited to
@@ -25,7 +26,9 @@
       ],
       // Root operator scripts intentionally resolve these from their owning workspace:
       // Next/tsx from Web and the repository-owned Supabase CLI.
-      "ignoreDependencies": ["next", "supabase", "tsx"]
+      // Serena launches this executable from .serena/project.yml. Knip cannot
+      // infer a dependency consumed by a YAML runtime path.
+      "ignoreDependencies": ["next", "supabase", "tsx", "typescript-language-server"]
     },
     "apps/web": {
       "entry": [

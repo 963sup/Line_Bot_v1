@@ -26,11 +26,11 @@ test("validation command requires a label and explicit pnpm arguments", () => {
   });
 });
 
-test("validation command keeps full output in an artifact and returns a compact success record", (t) => {
+test("validation command keeps large successful output in an artifact and returns a compact record", (t) => {
   const cwd = mkdtempSync(join(tmpdir(), "line-bot-validation-command-"));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const result = executeValidationCommand({
-    command: ["-e", "console.log('complete command evidence')"],
+    command: ["-e", "console.log('success:' + 'x'.repeat(16 * 1024))"],
     cwd,
     label: "success",
     pnpmExecPath: fixturePnpm(cwd),
@@ -38,20 +38,27 @@ test("validation command keeps full output in an artifact and returns a compact 
   assert.equal(result.ok, true);
   assert.equal(result.diagnostic, "");
   assert.deepEqual(result.command.slice(0, 2), ["pnpm", "-e"]);
-  assert.match(readFileSync(result.logPath, "utf8"), /complete command evidence/);
+  assert.equal(result.artifactBytes, readFileSync(result.logPath).byteLength);
+  assert.match(readFileSync(result.logPath, "utf8"), /success:x{16384}/);
 });
 
-test("validation command returns only a bounded failure diagnostic", (t) => {
+test("validation command preserves large failed output and returns an 8 KiB, 80-line diagnostic", (t) => {
   const cwd = mkdtempSync(join(tmpdir(), "line-bot-validation-command-failure-"));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const result = executeValidationCommand({
-    command: ["-e", "for(let i=0;i<300;i++) console.error(`line-${i}`); process.exit(7)"],
+    command: [
+      "-e",
+      "for(let i=0;i<200;i++) console.error(`line-${i}:` + 'x'.repeat(128)); process.exit(7)",
+    ],
     cwd,
     label: "failure",
     pnpmExecPath: fixturePnpm(cwd),
   });
   assert.equal(result.ok, false);
   assert.equal(result.status, 7);
-  assert.match(result.diagnostic, /line-299/);
-  assert.ok(result.diagnostic.split(/\r?\n/).length <= 121);
+  assert.equal(result.artifactBytes, readFileSync(result.logPath).byteLength);
+  assert.match(readFileSync(result.logPath, "utf8"), /line-0:/);
+  assert.match(result.diagnostic, /line-199:/);
+  assert.ok(Buffer.byteLength(result.diagnostic) <= 8 * 1024);
+  assert.ok(result.diagnostic.split(/\r?\n/).length <= 80);
 });

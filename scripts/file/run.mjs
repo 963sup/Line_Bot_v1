@@ -1,10 +1,13 @@
 import { open, writeFile } from "node:fs/promises";
 import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
-import { plainTextProcessor } from "@line_bot_v1/file/composition/bootstrap/processors";
 import { FileError } from "@line_bot_v1/file/domain/error";
 import { fileLimits } from "@line_bot_v1/file/domain/file";
-import { createGeminiFileProcessor } from "@line_bot_v1/intelligence/composition/bootstrap/processors";
+import { createPostgresIntelligenceProcessing } from "@line_bot_v1/intelligence/composition/bootstrap/processing";
+import {
+  createGeminiFileProcessor,
+  plainTextProcessor,
+} from "@line_bot_v1/intelligence/composition/bootstrap/processors";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
 import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
 import {
@@ -24,6 +27,7 @@ try {
   const input = await readInternalInput();
   const actor = await internalActor(db, input.proof);
   const files = createFiles({ ...createPostgresFileDependencies(db), now: Date.now });
+  const processing = createPostgresIntelligenceProcessing(db);
   let result;
   if (input.operation === "upload") {
     if (typeof input.sourcePath !== "string")
@@ -61,10 +65,10 @@ try {
       });
     } else throw new InternalInputError("Explicit processor selection is required.");
     mutationStarted = true;
-    result = await files.run(actor, input.command, extractor);
+    result = await processing.run(actor, input.command, extractor);
   } else if (input.operation === "result") {
     mutationStarted = true;
-    result = await files.result(actor, input.command);
+    result = await processing.result(actor, input.command);
   } else if (input.operation === "list")
     result = await files.list(actor, input.repositoryId, input.after);
   else if (input.operation === "pending-uploads")
@@ -72,7 +76,7 @@ try {
   else if (input.operation === "read-file")
     result = await files.file(actor, input.repositoryId, input.fileId, input.revisionId);
   else if (input.operation === "read-processing")
-    result = await files.processing(actor, input.repositoryId, input.runId, input.revisionId);
+    result = await processing.read(actor, input.repositoryId, input.runId, input.revisionId);
   else if (input.operation === "download") {
     if (typeof input.destinationPath !== "string")
       throw new InternalInputError("A local destination path is required.");
