@@ -1321,9 +1321,14 @@ test("topology-owned package README links its canonical owner contract", (t) => 
   const { root, write } = fixture(t);
   write(
     "architecture/implementation-topology.json",
-    JSON.stringify({ modules: { "@line_bot_v1/demo": { path: "packages/demo", semanticOwner: "demo" } } }),
+    JSON.stringify({
+      modules: { "@line_bot_v1/demo": { path: "packages/demo", semanticOwner: "demo" } },
+    }),
   );
-  write("architecture/semantic-model.json", JSON.stringify({ semanticOwners: [{ id: "demo", doc: "docs/owners/demo.md" }] }));
+  write(
+    "architecture/semantic-model.json",
+    JSON.stringify({ semanticOwners: [{ id: "demo", doc: "docs/owners/demo.md" }] }),
+  );
   write("packages/demo/AGENTS.md", "# demo\\n");
   write("packages/demo/README.md", "# demo\\n");
   write("packages/demo/SEMANTICS.md", "# generated\\n");

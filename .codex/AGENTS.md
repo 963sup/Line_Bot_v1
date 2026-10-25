@@ -1,10 +1,11 @@
 # Codex runtime scope
 
-- `.codex/` owns Codex runtime config, agent profiles, and command-safety policy; never product/business/repository truth.
-- `config.toml` stores machine config; [agents/AGENTS.md](agents/AGENTS.md) owns human-readable model/role routing.
-- Agent profiles may restrict role/tools but do not duplicate repository rules; root + nearest AGENTS still apply.
-- Runtime bootstrap points to the [tool selection and change loop](../docs/reference/engineering/development-workflow.md#autonomous-tool-selection); [role routing](agents/AGENTS.md#autonomous-delegation) owns proactive delegation and handoffs. Configure those active pointers in `developer_instructions`; file presence alone does not activate a workflow.
-- `rules/*.rules` enforces Codex command safety only and never replaces external-platform authorization.
-- Validate runtime config with `tooling:check`; use `tooling:rules` for execpolicy semantics. Static success ≠ current-session reload.
-- For Next.js/shadcn tasks and MCP diagnosis, follow the [agent workflow](../docs/reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow); dependency versions stay in manifests/lockfile.
-- Do not broaden sandbox/approval or command prefixes to make a task pass; verify allow/deny cases and report runtime-load evidence separately.
+Read [README.md](README.md) for the six-layer design and directory map. This file
+contains only the runtime constraints that apply to every child.
+
+- `.codex/` owns Codex runtime configuration, role profiles, command-safety policy, and support launchers. It never owns product/business/repository truth.
+- Keep the separation: `config.toml` configures transport; `agents/` owns roles and handoffs; `rules/` owns command-pattern safety; `scripts/` owns runtime support only.
+- Root plus nearest `AGENTS.md` always apply. Role files cannot override parent sandbox, approval, provider authorization, or repository governance.
+- `rules/*.rules` only classify shell commands. They do not authorize provider writes, deployment, data handling, or a change of product scope.
+- Do not broaden sandbox, approval, MCP, or command prefixes merely to pass a task. Preserve least privilege and report an unavailable capability instead.
+- Validate changes under this tree with `pnpm tooling:check`; validate rule semantics with `pnpm tooling:rules`; validate Markdown links with `pnpm docs:check`. Static checks do not prove a running session reloaded configuration.

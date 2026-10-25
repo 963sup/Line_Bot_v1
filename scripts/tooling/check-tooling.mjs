@@ -543,7 +543,9 @@ export function validate(root) {
         const readmePath = resolve(root, module.path, "README.md");
         if (!ownerDoc || !existsSync(readmePath)) continue;
         if (!read(readmePath).includes(`../../${ownerDoc}`))
-          errors.push(`${module.path}/README.md: must link its ${module.semanticOwner} owner contract`);
+          errors.push(
+            `${module.path}/README.md: must link its ${module.semanticOwner} owner contract`,
+          );
       }
     }
 
