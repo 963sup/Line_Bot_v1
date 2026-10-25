@@ -132,3 +132,34 @@ How the result avoids unsupported claims.
 ## Model selection
 
 Every project role uses GPT-5.6. Luna is used for bounded investigation and validation; Terra is used for analysis, decisions, implementation, review, and runtime diagnosis. The model is a quality/cost choice, never a governance rank or permission grant.
+
+## Role, Atomic, and model boundaries
+
+These three names describe different things and must not be merged:
+
+| Concept | Answers | Authority |
+| --- | --- | --- |
+| Role | Who performs one execution boundary? | This directory's executor profile |
+| Atomic | What one bounded responsibility is being dispatched? | `catalog/atomic-catalog.json` |
+| Model | Which runtime quality/cost configuration performs it? | Profile `model` and reasoning fields |
+
+An enabled Atomic derives exactly one executor role. The model does not create
+an Owner, grant a capability, authorize a provider write, or change the Atomic's
+meaning. Replacing Luna with Terra, or changing a model version, must therefore
+preserve the same role name, Atomic contract, handoff fields, and evidence
+boundary.
+
+Use the existing executor families before adding a profile:
+
+- `investigator` establishes one source-backed fact;
+- `analyst` produces bounded options or a plan;
+- `decider` makes one independent decision;
+- `change-implementer` applies one decided write;
+- `reviewer` reports bounded findings;
+- `runtime-diagnostician` observes one runtime condition;
+- `validation-runner` executes assigned evidence.
+
+Add a new profile only when an enabled Atomic cannot be performed by these
+boundaries without crossing ownership, write, review, validation, or runtime
+observation responsibilities. A richer taxonomy belongs in candidate Atomics;
+it does not justify a model-specific duplicate profile.
