@@ -18,3 +18,8 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 - Runtime `line_app` 不得持 LOGIN、SUPERUSER、BYPASSRLS、schema ownership 或 DDL/migration authority；RLS/grants 是 defense in depth，不取代 application authorization。
 - Schema/source 變更後至少跑 `pnpm schema:check` 與適用 repository validation。Remote/release 行為不要在本檔重寫，引用 canonical Platform／Release docs。
 - 不提交 secret、個資、production-sensitive dump 或 fabricated verification data。
+
+## Naming
+
+- schema file name 只提供 lexical navigation；relation owner 一律由 `data-topology.json#relations` 與 executable SQL 判定。不得因檔名、prefix 或 provider 習慣推導 authority。
+- 不做 cosmetic schema rename/re-number；涉及改名或搬檔時，必須同一變更保持 declarative semantics、topology mapping、consumer contract 與 reconciliation evidence 一致。

@@ -14,6 +14,12 @@ Before adding or moving code, identify its consumer, command, owner, source of t
 
 Group code by independent operation responsibility; colocate tests. Share mechanisms only when real consumers need them. CLI argv/env/output adapters do not become business owners.
 
+## Naming
+
+- command、script 與目錄名稱表達一個可觀察的 operation/result（例如 `semantic-context`、`schema-check`），不使用 `manager`、`helper`、`common` 或 provider-name-only 的萬用入口。
+- provider 名稱只在 adapter 真正只負責該 provider protocol 時出現；名稱不能把產品規則或 authority 移進 scripts。
+- 舊命令是 public command surface；改名必須同一變更同步 root scripts、workflow、文件與真實 consumer，不能靠 alias/wrapper 迴避 Owner 邊界。
+
 ## Workflow contract
 
 GitHub workflows invoke commands and own GitHub setup/routing/secrets/artifacts. Scripts own testable source classification and complete provider operations. Source changes trigger only the corresponding operation; no unconditional remote repair or unrelated-provider dependency.

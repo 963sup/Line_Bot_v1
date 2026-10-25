@@ -20,3 +20,4 @@
 - client 不得直接、間接或 type-only 引用 server；server 接線用 .server.ts，連線／設定延遲取得，import 不產生外部副作用。
 - 前端只投影資格；私有狀態在身分失效或切換時清除，遲到回應不得覆蓋新狀態，失敗不當空資料。
 - 檔案預設平放；不建立四層模板、雜項 services／utils、轉傳 wrapper 或第二套型別。
+- 新檔以使用者可辨識的 capability 加 presentation/interactions 的實際 role 命名；不得用 `manager`、`helper`、`common` 或無語意縮寫掩蓋責任。既有名稱僅隨真正 feature 變更漸進收斂。

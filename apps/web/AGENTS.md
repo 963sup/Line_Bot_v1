@@ -18,3 +18,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - [shared](src/shared/AGENTS.md)：browser、presentation、server、observability、UI 機制；不收 business use case。
 - `src` 不額外建立重複治理層；三個區域直接繼承本檔。route group、Web module、package owner、FPT category 是不同維度。
 - 評估或補指引不隱含搬程式、改 URL、建立 package 或發布外部資源；實作必須依使用者授權範圍與已確認契約。
+- 命名繼承 [apps](../AGENTS.md#naming)：route 名稱維持 URL/Next.js contract，module 名稱表達 Web capability，shared 名稱表達中立 mechanism；不以改名跨越 owner boundary。
