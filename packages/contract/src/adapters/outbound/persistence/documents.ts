@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
+import type { FileRevisionQualifier } from "@line_bot_v1/file/contracts/output/references";
 import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
 import { numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
@@ -94,7 +94,12 @@ function receipt(row: SqlRow): DocumentReceipt {
 }
 
 export class PostgresContractDocuments implements ContractDocumentIntakeTransactions {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly qualifier: (
+      sql: import("@line_bot_v1/platform/postgres").Sql,
+    ) => FileRevisionQualifier,
+    private readonly db: Database = businessDatabase(),
+  ) {}
 
   read(
     actor: string,
@@ -114,11 +119,7 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
         )
       ).rows[0];
       if (!revision) return null;
-      await createPostgresFileRevisionQualifier(sql).verify(
-        actor,
-        query.repositoryId,
-        revision.source,
-      );
+      await this.qualifier(sql).verify(actor, query.repositoryId, revision.source);
       return revision;
     });
   }
@@ -141,12 +142,7 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
         receipt,
       );
       const found = result.rows[0] ?? null;
-      if (found)
-        await createPostgresFileRevisionQualifier(sql).verify(
-          actor,
-          scope.repositoryId,
-          found.source,
-        );
+      if (found) await this.qualifier(sql).verify(actor, scope.repositoryId, found.source);
       return found;
     });
   }
@@ -191,7 +187,7 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
         archived,
         nextId: randomUUID,
         verifySource: async (userId, source) =>
-          createPostgresFileRevisionQualifier(sql).verify(userId, repository.id, source),
+          this.qualifier(sql).verify(userId, repository.id, source),
         replay: async () => {
           const row = await replayRow();
           if (!row) return null;
@@ -303,7 +299,10 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
 }
 
 /** Same-transaction public read capability for Content's confirmed-document expansion. */
-export function contractDocumentReader(sql: import("@line_bot_v1/platform/postgres").Sql) {
+export function contractDocumentReader(
+  sql: import("@line_bot_v1/platform/postgres").Sql,
+  qualifier: (sql: import("@line_bot_v1/platform/postgres").Sql) => FileRevisionQualifier,
+) {
   return {
     async read(
       actor: string,
@@ -320,12 +319,7 @@ export function contractDocumentReader(sql: import("@line_bot_v1/platform/postgr
             decodeRevision,
           )
         ).rows[0] ?? null;
-      if (revision)
-        await createPostgresFileRevisionQualifier(sql).verify(
-          actor,
-          query.repositoryId,
-          revision.source,
-        );
+      if (revision) await qualifier(sql).verify(actor, query.repositoryId, revision.source);
       return revision;
     },
   };

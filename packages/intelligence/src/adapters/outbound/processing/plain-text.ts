@@ -1,5 +1,7 @@
-import { fileLimits } from "@line_bot_v1/file/domain/file";
 import type { IntelligenceProcessor } from "../../../application/use-cases/processing.js";
+
+// These bound an Intelligence observation projection, not the File aggregate.
+const observationLimits = { count: 500, valueLength: 4_000 } as const;
 
 export const plainTextProcessor: IntelligenceProcessor = {
   id: "plain-text",
@@ -12,10 +14,10 @@ export const plainTextProcessor: IntelligenceProcessor = {
     const observations = content.split(/\n/).flatMap((line, index) => {
       const value = line.replace(/\r$/, "");
       if (!value.trim()) return [];
-      if (value.length > fileLimits.valueLength) throw new Error("INVALID_INPUT");
+      if (value.length > observationLimits.valueLength) throw new Error("INVALID_INPUT");
       return [{ id: `line-${index + 1}`, label: "Source line", value, uncertain: false }];
     });
-    if (observations.length > fileLimits.observations) throw new Error("INVALID_INPUT");
+    if (observations.length > observationLimits.count) throw new Error("INVALID_INPUT");
     return { documentKind: "plain-text", observations };
   },
 };

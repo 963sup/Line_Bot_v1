@@ -5,12 +5,7 @@ import {
   type Sql,
   type SqlRow,
 } from "@line_bot_v1/platform/postgres";
-import {
-  literalValue,
-  numberValue,
-  numericValue,
-  stringValue,
-} from "@line_bot_v1/platform/validation";
+import { numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type {
   FileReads,
@@ -19,14 +14,12 @@ import type {
   FileTransaction,
   FileTransactions,
 } from "../../../contracts/output/files.js";
-import type { FileRevisionQualifier } from "../../../contracts/output/references.js";
+import type {
+  FileRevisionQualifier,
+  LegacyProcessingHistory,
+} from "../../../contracts/output/references.js";
 import { FileError } from "../../../domain/error.js";
 import type { FileRevision, FileUploadIntent } from "../../../domain/file.js";
-import {
-  type ProcessingRevision,
-  processingOutput,
-  resultEdits,
-} from "../../../domain/processing-run.js";
 import { assertReadable, identifier, scopeId } from "../../../domain/values.js";
 
 const fileColumns = `revision.id,revision.file_id,revision.repository_id,revision.version,
@@ -60,29 +53,6 @@ function uploadIntent(row: SqlRow): FileUploadIntent {
     }),
   };
 }
-function processingRevision(row: SqlRow): ProcessingRevision {
-  return {
-    id: stringValue(row.id),
-    runId: stringValue(row.run_id),
-    repositoryId: stringValue(row.repository_id),
-    version: numberValue(row.version),
-    parentRevisionId: row.parent_revision_id === null ? null : stringValue(row.parent_revision_id),
-    actorUserId: stringValue(row.actor_user_id),
-    at: Number(numericValue(row.at)),
-    fileId: stringValue(row.file_id),
-    fileRevisionId: stringValue(row.file_revision_id),
-    fileSha256: stringValue(row.file_sha256),
-    state: literalValue(row.state, ["RUNNING", "FAILED", "READY", "SAVED", "DISCARDED"]),
-    attemptId: stringValue(row.attempt_id),
-    processorId: stringValue(row.processor_id),
-    processorVersion: stringValue(row.processor_version),
-    processorKind: literalValue(row.processor_kind, ["parser", "ocr", "ai"]),
-    rawResult: row.raw_result === null ? null : processingOutput(row.raw_result),
-    savedResult: row.saved_result === null ? null : processingOutput(row.saved_result),
-    edits: resultEdits(row.edits),
-    failure: row.failure === null ? null : literalValue(row.failure, ["PROCESSING_UNAVAILABLE"]),
-  };
-}
 async function readFile(
   sql: Sql,
   scope: string,
@@ -98,26 +68,6 @@ async function readFile(
           : `SELECT ${fileColumns} FROM file_revisions revision WHERE repository_id=$1 AND file_id=$2 AND id=$3`,
         revision === undefined ? [scope, id] : [scope, id, revision],
         fileRevision,
-      )
-    ).rows[0] ?? null
-  );
-}
-async function readProcessing(
-  sql: Sql,
-  scope: string,
-  id: string,
-  revision?: string,
-): Promise<ProcessingRevision | null> {
-  return (
-    (
-      await sql.query(
-        revision === undefined
-          ? `SELECT revision.* FROM file_processing_runs processing JOIN file_processing_revisions revision
-     ON revision.id=processing.head_revision_id AND revision.run_id=processing.id
-     WHERE processing.repository_id=$1 AND processing.id=$2`
-          : `SELECT * FROM file_processing_revisions WHERE repository_id=$1 AND run_id=$2 AND id=$3`,
-        revision === undefined ? [scope, id] : [scope, id, revision],
-        processingRevision,
       )
     ).rows[0] ?? null
   );
@@ -157,12 +107,6 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
     return this.db.transaction(async (sql) => {
       await currentScope(sql, actor, scope);
       return (await readFile(sql, scope, id, revision)) ?? missing();
-    });
-  }
-  processing(actor: string, scope: string, id: string, revision?: string) {
-    return this.db.transaction(async (sql) => {
-      await currentScope(sql, actor, scope);
-      return (await readProcessing(sql, scope, id, revision)) ?? missing();
     });
   }
   list(actor: string, scope: string, after?: string) {
@@ -205,37 +149,6 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
         intents,
         next: rows.length > 20 ? (intents.at(-1)?.requestId ?? null) : null,
       };
-    });
-  }
-  processingsForFile(actor: string, scope: string, fileId: string, after?: string) {
-    return this.db.transaction(async (sql) => {
-      await currentScope(sql, actor, scope);
-      if (!(await readFile(sql, scope, fileId))) return missing();
-      const rows = (
-        await sql.query(
-          `SELECT processing.id AS run_id, revision.file_id, revision.file_revision_id,
-              revision.state, revision.version, revision.processor_id, revision.processor_kind, revision.at
-             FROM file_processing_runs processing
-             JOIN file_processing_revisions revision
-               ON revision.id=processing.head_revision_id AND revision.run_id=processing.id
-             WHERE processing.repository_id=$1 AND processing.file_id=$2
-               AND ($3::uuid IS NULL OR processing.id>$3)
-             ORDER BY processing.id LIMIT 21`,
-          [scope, fileId, after ?? null],
-          (row) => ({
-            runId: stringValue(row.run_id),
-            fileId: stringValue(row.file_id),
-            fileRevisionId: stringValue(row.file_revision_id),
-            state: literalValue(row.state, ["RUNNING", "FAILED", "READY", "SAVED", "DISCARDED"]),
-            version: numberValue(row.version),
-            processorId: stringValue(row.processor_id),
-            processorKind: literalValue(row.processor_kind, ["parser", "ocr", "ai"]),
-            at: Number(numericValue(row.at)),
-          }),
-        )
-      ).rows;
-      const runs = rows.slice(0, 20);
-      return { runs, next: rows.length > 20 ? (runs.at(-1)?.runId ?? null) : null };
     });
   }
   /** No public actor can call these: trusted operator scans only never-committed intents. */
@@ -351,7 +264,7 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
   }
   transact<T>(
     actor: string,
-    identity: Readonly<{ repositoryId: string; kind: "file" | "processing"; id: string }>,
+    identity: Readonly<{ repositoryId: string; kind: "file"; id: string }>,
     evidence: Readonly<{ requestId: string; payload: string }>,
     work: (tx: FileTransaction) => Promise<T>,
   ): Promise<T> {
@@ -365,16 +278,7 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
         await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
           `file-aggregate:${scope.repositoryId}:${identity.kind}:${identity.id}`,
         ]);
-        // One actor/request identity across pending uploads and committed commands.
-        // A processing request must never consume a pending upload's receipt key.
-        if (identity.kind === "processing") {
-          const reserved = await sql.query(
-            "SELECT 1 FROM file_upload_intents WHERE actor_user_id=$1 AND request_id=$2",
-            [actor, evidence.requestId],
-          );
-          if (reserved.rows.length > 0) receiptConflict();
-        }
-        const guard = (kind: "file" | "processing", id: string, repositoryId: string) => {
+        const guard = (kind: "file", id: string, repositoryId: string) => {
           if (kind !== identity.kind || id !== identity.id || repositoryId !== scope.repositoryId)
             throw new FileError(409, "Foreign file mutation.", "SOURCE_INVALID");
         };
@@ -485,66 +389,6 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
               }
             },
           },
-          processings: {
-            load: (id, revision) => readProcessing(sql, scope.repositoryId, id, revision),
-            save: async (next, expected) => {
-              guard("processing", next.runId, next.repositoryId);
-              if (expected === 0)
-                await sql.query(
-                  `INSERT INTO file_processing_runs(id,repository_id,file_id,file_revision_id,version,head_revision_id)
-       VALUES($1,$2,$3,$4,$5,$6)`,
-                  [
-                    next.runId,
-                    next.repositoryId,
-                    next.fileId,
-                    next.fileRevisionId,
-                    next.version,
-                    next.id,
-                  ],
-                );
-              await sql.query(
-                `INSERT INTO file_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,
-       version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb,$17::jsonb,$18::jsonb,$19)`,
-                [
-                  next.id,
-                  next.runId,
-                  next.repositoryId,
-                  next.fileId,
-                  next.fileRevisionId,
-                  next.fileSha256,
-                  next.version,
-                  next.parentRevisionId,
-                  actor,
-                  next.at,
-                  next.state,
-                  next.attemptId,
-                  next.processorId,
-                  next.processorVersion,
-                  next.processorKind,
-                  next.rawResult === null ? null : JSON.stringify(next.rawResult),
-                  next.savedResult === null ? null : JSON.stringify(next.savedResult),
-                  JSON.stringify(next.edits),
-                  next.failure,
-                ],
-              );
-              if (expected > 0) {
-                const result = await sql.query(
-                  `UPDATE file_processing_runs SET version=$3,head_revision_id=$4
-        WHERE repository_id=$1 AND id=$2 AND version=$5 AND head_revision_id=$6`,
-                  [
-                    scope.repositoryId,
-                    next.runId,
-                    next.version,
-                    next.id,
-                    expected,
-                    next.parentRevisionId,
-                  ],
-                );
-                if (result.rowCount !== 1) conflict();
-              }
-            },
-          },
           replay: async () => {
             const row = (
               await sql.query(
@@ -561,32 +405,17 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
               row.fingerprint !== fingerprint
             )
               return receiptConflict();
-            if (identity.kind === "file") {
-              const revision = await readFile(
-                sql,
-                scope.repositoryId,
-                identity.id,
-                stringValue(row.file_revision_id),
-              );
-              if (!revision) throw new FileError(503, "File receipt unavailable.", "UNAVAILABLE");
-              return { kind: "file", requestId: evidence.requestId, revision };
-            }
-            const revision = await readProcessing(
+            const revision = await readFile(
               sql,
               scope.repositoryId,
               identity.id,
-              stringValue(row.processing_revision_id),
+              stringValue(row.file_revision_id),
             );
-            if (!revision)
-              throw new FileError(503, "Processing receipt unavailable.", "UNAVAILABLE");
-            return { kind: "processing", requestId: evidence.requestId, revision };
+            if (!revision) throw new FileError(503, "File receipt unavailable.", "UNAVAILABLE");
+            return { kind: "file", requestId: evidence.requestId, revision };
           },
           record: async (receipt: FileReceipt) => {
-            guard(
-              receipt.kind,
-              receipt.kind === "file" ? receipt.revision.fileId : receipt.revision.runId,
-              receipt.revision.repositoryId,
-            );
+            guard(receipt.kind, receipt.revision.fileId, receipt.revision.repositoryId);
             if (receipt.requestId !== evidence.requestId) return receiptConflict();
             await sql.query(
               `INSERT INTO file_commands(actor_user_id,request_id,repository_id,kind,entity_id,fingerprint,file_revision_id,processing_revision_id)
@@ -598,8 +427,8 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
                 identity.kind,
                 identity.id,
                 fingerprint,
-                receipt.kind === "file" ? receipt.revision.id : null,
-                receipt.kind === "processing" ? receipt.revision.id : null,
+                receipt.revision.id,
+                null,
               ],
             );
           },
@@ -607,6 +436,36 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
         return work(tx);
       })
       .catch(persistError);
+  }
+}
+
+export class PostgresLegacyProcessingHistory implements LegacyProcessingHistory {
+  constructor(private readonly db: Database = businessDatabase()) {}
+  read(actor: string, repositoryId: string, runId: string, revisionId?: string) {
+    return this.db.transaction(async (sql) => {
+      await repositoryContentScope(sql, actor, { repositoryId });
+      const result = await sql.query(
+        `SELECT revision.* FROM file_processing_runs run JOIN file_processing_revisions revision
+          ON revision.repository_id=run.repository_id AND revision.run_id=run.id
+         WHERE run.repository_id=$1 AND run.id=$2 AND (($3::uuid IS NULL AND revision.id=run.head_revision_id) OR revision.id=$3)`,
+        [repositoryId, runId, revisionId ?? null],
+      );
+      return result.rows[0] ?? null;
+    });
+  }
+  list(actor: string, repositoryId: string, fileId: string, after?: string) {
+    return this.db.transaction(async (sql) => {
+      await repositoryContentScope(sql, actor, { repositoryId });
+      return (
+        await sql.query(
+          `SELECT revision.* FROM file_processing_runs run JOIN file_processing_revisions revision
+            ON revision.repository_id=run.repository_id AND revision.run_id=run.id AND revision.id=run.head_revision_id
+           WHERE run.repository_id=$1 AND run.file_id=$2 AND ($3::uuid IS NULL OR revision.run_id>$3)
+           ORDER BY revision.run_id LIMIT 21`,
+          [repositoryId, fileId, after ?? null],
+        )
+      ).rows;
+    });
   }
 }
 

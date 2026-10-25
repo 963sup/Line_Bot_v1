@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| file-management | supporting | Upload/List and user-selected processing are supporting capabilities; Run never follows Upload automatically, and Preview never saves or imports itself. | [docs/owners/file.md](../../docs/owners/file.md) |
+| file-management | supporting | Upload/List and authorized immutable source reads are supporting capabilities. Intelligence processing never follows Upload automatically and does not import itself. | [docs/owners/file.md](../../docs/owners/file.md) |
 
 ## Bounded Context
 
@@ -28,14 +28,14 @@ References support the existing status; listed tests are evidence locations, not
 
 | Context | Owner contracts | Source | Tests | Rationale |
 | --- | --- | --- | --- | --- |
-| file | [docs/owners/file.md](../../docs/owners/file.md) | [packages/file/src/domain/file.ts](../../packages/file/src/domain/file.ts) | [packages/file/test/domain.test.ts](../../packages/file/test/domain.test.ts); [packages/file/test/persistence.test.ts](../../packages/file/test/persistence.test.ts) | File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence. |
+| file | [docs/owners/file.md](../../docs/owners/file.md) | [packages/file/src/domain/file.ts](../../packages/file/src/domain/file.ts) | [packages/file/test/persistence.test.ts](../../packages/file/test/persistence.test.ts) | File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence. |
 
 ## Ubiquitous Language
 
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | File | file | authoritative | current | Repository-scoped protected original file identity; head selects an immutable revision. Format-neutral, not a Contract, Content plan or public attachment. |
-| FileCommandReceipt | file-command-receipt | historical-evidence | current-data-only | Legacy File request receipt for File and Processing commands; retained because File commands remain active. |
+| FileCommandReceipt | file-command-receipt | historical-evidence | current-data-only | Legacy File request receipt retained only for historical File storage evidence. Current processing receipts belong to Intelligence. |
 | FileProcessingRevision | file-processing-revision | historical-evidence | current | Immutable legacy processing revisions retained for historical reads during controlled cutover. |
 | FileProcessingRun | file-processing-run | historical-evidence | current | Legacy processing run storage retained only for historical read during controlled cutover; Intelligence owns all new runs. |
 | FileRevision | file-revision | authoritative | current | Immutable authorized File source revision: exact external private-object bytes identified by Repository/File/Revision, declared media type, size, SHA-256, actor and timestamp. A revision is committed only after content readback; edits and processing never replace its object. |
@@ -52,10 +52,8 @@ References support the existing status; listed tests are evidence locations, not
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | provides | contract | stable-identity+query | file | transaction-recheck+immutable-pin | Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision. |
-| provides | intelligence | query | file | current-source-access | Intelligence reads an authorized exact File revision and bytes through File's source reader. File retains source access and storage authority; Intelligence owns processing lifecycle. |
 | consumes | platform | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority. |
-| consumes | intelligence | reference | intelligence | immutable-history | Retired relationship; File no longer invokes Intelligence or owns processing lifecycle. |
 | provides | intelligence | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
 
 ## Tactical Model Boundary

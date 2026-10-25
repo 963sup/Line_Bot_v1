@@ -27,10 +27,6 @@
     "./domain/file": {
       "types": "./dist/domain/file.d.ts",
       "default": "./dist/domain/file.js"
-    },
-    "./contracts/output/processor": {
-      "types": "./dist/contracts/output/processor.d.ts",
-      "default": "./dist/contracts/output/processor.js"
     }
   },
   "files": [

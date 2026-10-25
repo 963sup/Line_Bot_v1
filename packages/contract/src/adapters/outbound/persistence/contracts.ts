@@ -1,7 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
-import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
-import { isQuantityUnit } from "@line_bot_v1/content/domain/quantity";
 import {
   businessDatabase,
   type Database,
@@ -22,7 +20,11 @@ import type {
   ContractTransaction,
   ContractTransactions,
 } from "../../../contracts/output/contracts.js";
-import type { ContractRevision, FrozenContractLine } from "../../../domain/contract.js";
+import type {
+  ContractPlanItemReference,
+  ContractRevision,
+  FrozenContractLine,
+} from "../../../domain/contract.js";
 import { ContractError } from "../../../domain/error.js";
 
 type ContentReaderFactory = (sql: Sql) => ContentPlanReferenceReader;
@@ -36,15 +38,20 @@ function parsedJson(value: unknown): unknown {
   }
 }
 
-function decodeContent(value: unknown): ContentPlanItemBasis {
+function decodeContent(value: unknown): ContractPlanItemReference {
   if (!isRecord(value) || !isRecord(value.node) || !Array.isArray(value.node.path))
     throw new TypeError("Expected Content plan item basis");
   const planned = value.node.plannedQuantity;
-  let plannedQuantity: ContentPlanItemBasis["node"]["plannedQuantity"] = null;
+  let plannedQuantity: ContractPlanItemReference["node"]["plannedQuantity"] = null;
   if (planned !== null) {
     if (!isRecord(planned) || !isRecord(planned.measure))
       throw new TypeError("Expected Content planned quantity");
-    if (!isQuantityUnit(planned.measure.unit))
+    if (
+      typeof planned.measure.unit !== "string" ||
+      planned.measure.unit.length < 1 ||
+      planned.measure.unit.length > 32 ||
+      planned.measure.unit !== planned.measure.unit.trim()
+    )
       throw new TypeError("Invalid stored Contract Content unit.");
     plannedQuantity = {
       value: stringValue(planned.value),

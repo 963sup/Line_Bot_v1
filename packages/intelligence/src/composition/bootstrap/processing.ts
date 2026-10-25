@@ -1,4 +1,8 @@
-import { createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
+import {
+  createPostgresFileRevisionQualifier,
+  createPostgresFileSourceReader,
+  createPostgresLegacyProcessingHistory,
+} from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
 import { type Database } from "@line_bot_v1/platform/postgres";
 import { PostgresIntelligenceProcessing } from "../../adapters/outbound/persistence/processing.js";
@@ -9,7 +13,11 @@ export function createPostgresIntelligenceProcessing(
   now = Date.now,
   sourceReader?: FileSourceReader,
 ) {
-  const store = new PostgresIntelligenceProcessing(db);
+  const store = new PostgresIntelligenceProcessing(
+    createPostgresFileRevisionQualifier,
+    db,
+    createPostgresLegacyProcessingHistory(db),
+  );
   const source = sourceReader ?? createPostgresFileSourceReader(db);
   return createIntelligenceProcessing({ store, source, now });
 }

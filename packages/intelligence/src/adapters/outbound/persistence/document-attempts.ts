@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
+import type { FileRevisionQualifier } from "@line_bot_v1/file/contracts/output/references";
 import {
   businessDatabase,
   type Database,
@@ -120,17 +120,16 @@ async function load(sql: Sql, actor: string, requestId: string): Promise<StoredA
   );
 }
 
-async function qualify(sql: Sql, actor: string, value: DocumentAttemptInput) {
-  await createPostgresFileRevisionQualifier(sql).verify(actor, value.repositoryId, value.source);
-}
-
 class PostgresDocumentAttempts implements DocumentAttempts {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly qualifier: (sql: Sql) => FileRevisionQualifier,
+    private readonly db: Database = businessDatabase(),
+  ) {}
 
   async reserve(actor: string, raw: DocumentAttemptInput): Promise<DocumentAttempt> {
     const value = input(raw);
     return this.db.transaction(async (sql) => {
-      await qualify(sql, actor, value);
+      await this.qualifier(sql).verify(actor, value.repositoryId, value.source);
       await lock(sql, actor, value.requestId);
       const prior = await load(sql, actor, value.requestId);
       if (prior) {
@@ -167,7 +166,7 @@ class PostgresDocumentAttempts implements DocumentAttempts {
     const documentId = targetReference(target.documentId);
     const revisionId = targetReference(target.revisionId);
     await this.db.transaction(async (sql) => {
-      await qualify(sql, actor, value);
+      await this.qualifier(sql).verify(actor, value.repositoryId, value.source);
       await lock(sql, actor, value.requestId);
       const prior = await load(sql, actor, value.requestId);
       if (!prior || !same(prior, actor, value) || prior.id !== id)
@@ -193,7 +192,7 @@ class PostgresDocumentAttempts implements DocumentAttempts {
     const value = input(raw);
     const id = identifier(raw.id);
     await this.db.transaction(async (sql) => {
-      await qualify(sql, actor, value);
+      await this.qualifier(sql).verify(actor, value.repositoryId, value.source);
       await lock(sql, actor, value.requestId);
       const prior = await load(sql, actor, value.requestId);
       if (!prior || !same(prior, actor, value) || prior.id !== id)
@@ -210,7 +209,8 @@ class PostgresDocumentAttempts implements DocumentAttempts {
 
 /** Composition hosts may inject a database; this adapter owns its technical receipt wiring. */
 export function createPostgresDocumentAttempts(
+  qualifier: (sql: Sql) => FileRevisionQualifier,
   db: Database = businessDatabase(),
 ): DocumentAttempts {
-  return new PostgresDocumentAttempts(db);
+  return new PostgresDocumentAttempts(qualifier, db);
 }

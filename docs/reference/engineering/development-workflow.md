@@ -104,7 +104,7 @@ MCP 接入由 `.codex/config.toml` 擁有；可執行版本由對應 workspace m
 | Next.js API、route 或 server/client boundary | `apps/web/node_modules/next/dist/docs/` 的版本對應文件；不足時使用 Context7／官方來源並確認版本 | 開發伺服器 MCP 的實際 tools 與 runtime；不以其他版本範例覆蓋本地契約 |
 | 編譯、hydration 或頁面錯誤 | 啟動 `pnpm dev`，從 banner 取得 port；透過 Next DevTools 查詢該 port 的 tools 與 project metadata | 確認 project path 是目前 checkout 的 `apps/web`，再查 errors、compilation issues 與受影響頁面 |
 
-工具名稱以該版本的 `tools/list` 為準；角色選擇與可選的 GPT-6 開發組由 [model/role routing](../../../.codex/agents/AGENTS.md) 擁有，依任務載入 skills。MCP auto-approval 集中在 parent config，子代理繼承實際權限；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
+工具名稱以該版本的 `tools/list` 為準；角色選擇與可選的專項開發角色由 [model/role routing](../../../.codex/agents/AGENTS.md) 擁有，依任務載入 skills。MCP auto-approval 集中在 parent config，子代理繼承實際權限；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
 
 ```sh
 pnpm tooling:doctor

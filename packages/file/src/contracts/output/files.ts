@@ -1,10 +1,7 @@
 import type { FileDescriptor, FileRevision, FileUploadIntent } from "../../domain/file.js";
-import type { ProcessingRevision } from "../../domain/processing-run.js";
-import type { FileRevisions, ProcessingRevisions } from "../repositories/files.js";
+import type { FileRevisions } from "../repositories/files.js";
 
-export type FileReceipt =
-  | Readonly<{ kind: "file"; requestId: string; revision: FileRevision }>
-  | Readonly<{ kind: "processing"; requestId: string; revision: ProcessingRevision }>;
+export type FileReceipt = Readonly<{ kind: "file"; requestId: string; revision: FileRevision }>;
 export interface FileTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly files: FileRevisions;
@@ -14,7 +11,6 @@ export interface FileTransaction {
     /** Extend the active upload window before each external attempt. */
     touch(): Promise<void>;
   };
-  readonly processings: ProcessingRevisions;
   nextId(): string;
   replay(): Promise<FileReceipt | null>;
   record(receipt: FileReceipt): Promise<void>;
@@ -22,7 +18,7 @@ export interface FileTransaction {
 export interface FileTransactions {
   transact<T>(
     actor: string,
-    identity: Readonly<{ repositoryId: string; kind: "file" | "processing"; id: string }>,
+    identity: Readonly<{ repositoryId: string; kind: "file"; id: string }>,
     evidence: Readonly<{ requestId: string; payload: string }>,
     work: (tx: FileTransaction) => Promise<T>,
   ): Promise<T>;
@@ -35,36 +31,11 @@ export interface FileReads {
     after?: string,
   ): Promise<{ intents: readonly FileUploadIntent[]; next: string | null }>;
   file(actor: string, scope: string, id: string, revisionId?: string): Promise<FileRevision>;
-  processing(
-    actor: string,
-    scope: string,
-    id: string,
-    revisionId?: string,
-  ): Promise<ProcessingRevision>;
   list(
     actor: string,
     scope: string,
     after?: string,
   ): Promise<{ files: readonly FileRevision[]; next: string | null }>;
-  processingsForFile(
-    actor: string,
-    scope: string,
-    fileId: string,
-    after?: string,
-  ): Promise<{
-    runs: readonly Pick<
-      ProcessingRevision,
-      | "runId"
-      | "fileId"
-      | "fileRevisionId"
-      | "state"
-      | "version"
-      | "processorId"
-      | "processorKind"
-      | "at"
-    >[];
-    next: string | null;
-  }>;
 }
 /** Operator-only capability; never exposed through a File Web route. */
 export interface FileReclamation {

@@ -6,7 +6,6 @@ const mocked = new Set([
   "@line_bot_v1/account/postgres",
   "@line_bot_v1/file/application/use-cases/files",
   "@line_bot_v1/file/composition/bootstrap/files",
-  "@line_bot_v1/file/composition/bootstrap/processors",
   "@line_bot_v1/intelligence/composition/bootstrap/processors",
   "@line_bot_v1/intelligence/composition/bootstrap/processing",
   "@line_bot_v1/intelligence/composition/bootstrap/document-intake",
@@ -82,8 +81,6 @@ function sourceFor(url) {
   if (specifier === "@line_bot_v1/file/composition/bootstrap/files")
     return `export function createPostgresFileDependencies() { return {}; }
       export function createPostgresFileSourceReader() { return {}; }`;
-  if (specifier === "@line_bot_v1/file/composition/bootstrap/processors")
-    return `export const plainTextProcessor = {};`;
   if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processors")
     return `export const plainTextProcessor = {};
       export function createGeminiFileProcessor() { return {}; }`;
