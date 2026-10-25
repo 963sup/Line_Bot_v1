@@ -10,7 +10,7 @@
 - `@line_bot_v1/assistant` 擁有 Assistant conversation、Issue draft 使用的 Gemini SDK client、固定 liveness probe 與 server-only/config guard，對外只透過其公開 Composition Entry 使用。
 - `@line_bot_v1/intelligence` 擁有文件理解的 Gemini provider protocol、prompt、media mapping、timeout 與 processor version identity；新文件 intake 依接收端提供的 schema 解析，再透過接收端公開命令提交候選資料。
 - `@line_bot_v1/contract` 擁有採購文件的結構、候選驗證與確認規則、版本及命令收據。Intelligence 不因解析成功取得正式確認權。
-- `@line_bot_v1/file` 提供 exact source authorization/readback。既有 ProcessingRun、RawResult/SavedResult 與其 replay/recovery 仍在 File，尚未完成 Owner 切換；不能把新增 intake 當作舊處理流程已退役。
+- `@line_bot_v1/file` 提供 exact source authorization/readback。ProcessingRun、RawResult/SavedResult 與其 replay/recovery 屬 Intelligence；File 不保存處理結果。
 - Receipt 與其他產品 agent 仍屬各自 owner。
 
 Provider adapter 不做 authorization、持久化或 business state transition，也不因共用 Provider 而取得另一個 Owner 的語意。

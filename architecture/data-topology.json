@@ -2094,6 +2094,38 @@
       "concept": "intelligence-processing-command-receipt"
     },
     {
+      "name": "intelligence_legacy_processing_runs",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_legacy_processing_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_legacy_processing_commands",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_processing_history_cutovers",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-history-cutover"
+    },
+    {
       "name": "repository_files",
       "kind": "table",
       "path": "supabase/schemas/615_files.sql",

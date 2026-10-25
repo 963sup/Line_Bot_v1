@@ -1,6 +1,11 @@
-import type { FileRevision } from "@line_bot_v1/file/domain/file";
-
 type ProcessingState = "RUNNING" | "FAILED" | "READY" | "SAVED" | "DISCARDED";
+/** The immutable source facts Intelligence needs; File remains the source-system owner. */
+export type ProcessingSourceRevision = Readonly<{
+  id: string;
+  fileId: string;
+  repositoryId: string;
+  sha256: string;
+}>;
 export type Observation = Readonly<{
   id: string;
   label: string;
@@ -38,7 +43,7 @@ export function beginProcessing(
     runId: string;
     actorUserId: string;
     at: number;
-    file: FileRevision;
+    file: ProcessingSourceRevision;
     processor: Readonly<{ id: string; version: string; kind: "parser" | "ocr" | "ai" }>;
   }>,
 ): ProcessingRevision {

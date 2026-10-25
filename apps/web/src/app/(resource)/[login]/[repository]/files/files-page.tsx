@@ -2,7 +2,6 @@
 import { useState } from "react";
 import FilesPanel from "../../../../../modules/file/files-panel";
 import RepositoryPageHeader from "../../../../../modules/repository/repository-page-header";
-import { repositoryContentPath } from "../../../../../modules/repository/resource-navigation";
 
 export default function FilesPage(props: {
   liffId: string;
@@ -21,7 +20,6 @@ export default function FilesPage(props: {
       <FilesPanel
         key={`${props.ownerLogin}/${props.repositoryName}`}
         {...props}
-        contentPath={repositoryContentPath(props.ownerLogin, props.repositoryName)}
         onCanManageChange={setCanManage}
       />
     </>

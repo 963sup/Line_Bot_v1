@@ -1,6 +1,7 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import { FileError } from "@line_bot_v1/file/domain/error";
+import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import type { createIntelligenceProcessing } from "@line_bot_v1/intelligence/application/use-cases/processing";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
@@ -155,6 +156,7 @@ function processingResultCommand(value: unknown): ProcessingResultCommand {
 function failure(error: unknown) {
   const known =
     error instanceof FileError ||
+    error instanceof IntelligenceError ||
     error instanceof UserError ||
     error instanceof RepositoryError ||
     error instanceof RequestIdentityError;
@@ -167,7 +169,9 @@ function failure(error: unknown) {
   return jsonResponse(
     {
       error: known ? error.message : "File service is unavailable.",
-      ...(error instanceof FileError ? { code: error.code } : {}),
+      ...(error instanceof FileError || error instanceof IntelligenceError
+        ? { code: error.code }
+        : {}),
     },
     status,
   );

@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
-import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
-import { FileError } from "@line_bot_v1/file/domain/error";
+import type {
+  FileRevisionQualifier,
+  LegacyProcessingHistory,
+} from "@line_bot_v1/file/contracts/output/references";
 import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
 import {
   booleanValue,
@@ -21,6 +23,7 @@ import type {
   ProcessingOutput,
   ProcessingRevision,
 } from "../../../domain/processing.js";
+import { IntelligenceError } from "../../../domain/error.js";
 
 function parsedJson(value: unknown): unknown {
   return typeof value === "string" ? JSON.parse(value) : value;
@@ -87,38 +90,53 @@ function mapError(error: unknown): never {
 }
 
 export class PostgresIntelligenceProcessing implements IntelligenceProcessingStore {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly qualifier: (
+      sql: import("@line_bot_v1/platform/postgres").Sql,
+    ) => FileRevisionQualifier,
+    private readonly db: Database = businessDatabase(),
+    private readonly legacy: LegacyProcessingHistory,
+  ) {}
   nextId() {
     return randomUUID();
   }
-  read(actor: string, repositoryId: string, runId: string, revisionId?: string) {
-    return this.db.transaction(async (sql) => {
+  async read(actor: string, repositoryId: string, runId: string, revisionId?: string) {
+    const current = await this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, actor, { repositoryId });
-      const rows = await sql.query(
+      const current = await sql.query(
         `SELECT revision.* FROM intelligence_processing_runs run JOIN intelligence_processing_revisions revision
           ON revision.repository_id=run.repository_id AND revision.run_id=run.id
          WHERE run.repository_id=$1 AND run.id=$2 AND (($3::uuid IS NULL AND revision.id=run.head_revision_id) OR revision.id=$3)`,
         [repositoryId, runId, revisionId ?? null],
         decode,
       );
-      return rows.rows[0] ?? null;
+      return current.rows[0] ?? null;
     });
+    if (current) return current;
+    const legacy = await this.legacy.read(actor, repositoryId, runId, revisionId);
+    return legacy ? decode(legacy) : null;
   }
-  list(actor: string, repositoryId: string, fileId: string, after?: string) {
-    return this.db.transaction(async (sql) => {
+  async list(actor: string, repositoryId: string, fileId: string, after?: string) {
+    const current = await this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, actor, { repositoryId });
       const result = await sql.query(
         `SELECT revision.* FROM intelligence_processing_runs run JOIN intelligence_processing_revisions revision
-        ON revision.repository_id=run.repository_id AND revision.run_id=run.id AND revision.id=run.head_revision_id
-        WHERE run.repository_id=$1 AND run.file_id=$2 AND ($3::uuid IS NULL OR run.id>$3) ORDER BY run.id LIMIT 21`,
+            ON revision.repository_id=run.repository_id AND revision.run_id=run.id AND revision.id=run.head_revision_id
+           WHERE run.repository_id=$1 AND run.file_id=$2 AND ($3::uuid IS NULL OR revision.run_id>$3)
+           ORDER BY revision.run_id LIMIT 21`,
         [repositoryId, fileId, after ?? null],
         decode,
       );
-      return {
-        runs: result.rows.slice(0, 20),
-        next: result.rows.length > 20 ? (result.rows[19]?.runId ?? null) : null,
-      };
+      return result.rows;
     });
+    const legacy = await this.legacy.list(actor, repositoryId, fileId, after);
+    const runs = [...current, ...legacy.map(decode)].sort((left, right) =>
+      left.runId.localeCompare(right.runId),
+    );
+    return {
+      runs: runs.slice(0, 20),
+      next: runs.length > 20 ? (runs[19]?.runId ?? null) : null,
+    };
   }
   transact(
     actor: string,
@@ -133,7 +151,7 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
         const status =
           error && typeof error === "object" ? Reflect.get(error, "status") : undefined;
         if (status === 403 || status === 404)
-          throw new FileError(
+          throw new IntelligenceError(
             status,
             "Processing access is unavailable.",
             status === 403 ? "FORBIDDEN" : "NOT_FOUND",
@@ -182,7 +200,7 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
             )
           ).rows[0] ?? null,
         qualifySource: async (source) =>
-          createPostgresFileRevisionQualifier(sql).verify(actor, scope.repository.id, source),
+          this.qualifier(sql).verify(actor, scope.repository.id, source),
         save: async (revision, expectedVersion) => {
           if (
             scope.archived ||

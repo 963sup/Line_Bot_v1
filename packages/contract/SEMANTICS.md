@@ -45,6 +45,7 @@
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
+| provides | content | stable-identity+query | contract | transaction-recheck+immutable-pin | Content reads one exact currently authorized CONFIRMED ContractDocument revision through an application-host-composed public Contract reader. Contract retains commercial fields, confirmation and source truth; Content applies the fixed whole-document purchase-order-content-v1 expansion and stores only its own immutable plan and provenance. |
 | consumes | content | stable-identity+query | content | transaction-recheck+immutable-pin | Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments. |
 | consumes | file | stable-identity+query | file | transaction-recheck+immutable-pin | Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision. |
 | consumes | platform | query | platform | pure-value | Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned. |

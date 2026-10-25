@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import type { ContractDocumentIntake } from "@line_bot_v1/contract/contracts/input/document-intake";
+import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { geminiDocumentExtractor } from "../../adapters/outbound/extraction/gemini-document.js";
@@ -20,7 +21,7 @@ export function createGeminiDocumentIntake(config: {
   return createDocumentIntake({
     reader: config.reader,
     target: config.target,
-    attempts: createPostgresDocumentAttempts(config.db),
+    attempts: createPostgresDocumentAttempts(createPostgresFileRevisionQualifier, config.db),
     extractor: geminiDocumentExtractor({ models, model: config.model }),
     schema: config.schema,
     ...(config.onTargetSubmit ? { onTargetSubmit: config.onTargetSubmit } : {}),

@@ -1,9 +1,9 @@
-import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
+import type { ContractPlanItemReference } from "./contract.js";
 
 export type ContractLineBasis = Readonly<{
   contractId: string;
   contractRevisionId: string;
   lineId: string;
-  content: ContentPlanItemBasis;
+  content: ContractPlanItemReference;
   agreedQuantity: string;
 }>;

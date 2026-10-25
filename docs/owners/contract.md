@@ -58,8 +58,9 @@ Intelligence receives the target-owned extraction schema and can submit only a S
 through this public contract. Contract alone validates the candidate, rechecks Repository authority,
 enforces expected version and request fingerprints, writes immutable revision/head/receipt atomically,
 and reads a receipt back under current access. The current CLI exposes bounded document read, submit
-and receipt operations. Content and WBS expansion of a confirmed document are not delivered by this
-aggregate.
+and receipt operations. Contract does not create Content or WBS records: Content separately reads one
+exact CONFIRMED revision through Contract's public reader, applies its fixed whole-document expansion,
+and WBS subsequently consumes that immutable Content revision.
 
 ## Delivery and evidence
 

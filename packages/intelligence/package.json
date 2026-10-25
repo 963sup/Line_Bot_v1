@@ -20,6 +20,10 @@
       "types": "./dist/application/use-cases/processing.d.ts",
       "default": "./dist/application/use-cases/processing.js"
     },
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
     "./composition/bootstrap/processing": {
       "types": "./dist/composition/bootstrap/processing.d.ts",
       "default": "./dist/composition/bootstrap/processing.js"
