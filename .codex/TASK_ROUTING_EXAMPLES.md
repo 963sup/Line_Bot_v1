@@ -103,6 +103,17 @@ prepare.root-cause-analyst
 
 它只追蹤 symptom 到最早有證據的 trigger，不直接修改衝突檔案。
 
+Promotion batch 的獨立 acceptance decision 使用：
+
+```text
+prepare.acceptance-decider
+  → execute.acceptance-decider
+  → report.acceptance-decider
+```
+
+它只在 evidence 完整時做 acceptance decision，不執行 validation，也不取代
+branch protection 或使用者授權。
+
 Atomic promotion 的 consumer impact 使用：
 
 ```text

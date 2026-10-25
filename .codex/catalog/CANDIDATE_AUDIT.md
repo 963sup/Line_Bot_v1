@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 157 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 154 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -55,6 +55,11 @@ PR 400 conflict diagnosis is a real consumer for the
 `prepare.root-cause-analyst` → `execute.root-cause-analyst` →
 `report.root-cause-analyst` triplet. It reuses `analyst` and stops at the
 evidenced trigger; implementation remains a separate responsibility.
+
+The promotion audit uses the `prepare.acceptance-decider` →
+`execute.acceptance-decider` → `report.acceptance-decider` triplet when a batch
+has complete independent evidence. It reuses `decider`; it does not create
+evidence or authorize a merge.
 
 ## Candidate families and executor readiness
 

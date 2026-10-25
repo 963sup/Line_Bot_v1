@@ -2265,10 +2265,8 @@
     {
       "id": "execute.acceptance-decider",
       "family": "validate-accept",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "decider"
-      ],
+      "status": "enabled",
+      "executorRoleId": "decider",
       "goal": "Decide one high-risk acceptance from complete evidence.",
       "input": [
         "candidate and independent evidence"
@@ -2290,10 +2288,8 @@
     {
       "id": "prepare.acceptance-decider",
       "family": "validate-accept",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "decider"
-      ],
+      "status": "enabled",
+      "executorRoleId": "decider",
       "goal": "Prepare one bounded acceptance-decider task.",
       "input": [
         "approved scope"
@@ -2315,10 +2311,8 @@
     {
       "id": "report.acceptance-decider",
       "family": "validate-accept",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "decider"
-      ],
+      "status": "enabled",
+      "executorRoleId": "decider",
       "goal": "Report one bounded acceptance-decider result.",
       "input": [
         "role result"
