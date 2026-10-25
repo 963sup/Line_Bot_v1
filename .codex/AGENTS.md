@@ -13,3 +13,9 @@ contains only the runtime constraints that apply to every child.
 - `rules/*.rules` only classify shell commands. They do not authorize provider writes, deployment, data handling, or a change of product scope.
 - Do not broaden sandbox, approval, MCP, or command prefixes merely to pass a task. Preserve least privilege and report an unavailable capability instead.
 - Validate changes under this tree with `pnpm tooling:check`; validate rule semantics with `pnpm tooling:rules`; validate Markdown links with `pnpm docs:check`. Static checks do not prove a running session reloaded configuration.
+
+## Dispatch enforcement
+
+- For cross-Owner work, architecture/public-contract decisions, independent review, runtime investigation, merge-conflict resolution, or validation/acceptance claims, Primary must dispatch an enabled Atomic to its derived executor profile before integrating a conclusion.
+- The dispatch must use an L5 task packet and return a matching handoff result with `atomicId`, scope, revision, deliverable, stop condition, validation owner, and evidence boundary.
+- Primary may work directly only on a bounded single-Owner read or reversible edit whose contract and consumer are already known. The runtime reminder is also configured in [`config.toml`](config.toml); this file is the repository-level contract and remains authoritative when a live session has not reloaded config.
