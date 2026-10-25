@@ -21,7 +21,7 @@ Database-boundary review only: relation ownership, RLS/grants, tenant isolation,
 Compare relation authority with semantic/data topology truth. Separate DDL, data conversion and remote convergence evidence. Report only defects with a concrete relation, trigger and impact.
 
 [Must Not]
-Do not plan migrations, edit SQL, run migrations, mutate data, perform general code review, access credentials, perform external writes or spawn agents.
+Do not plan declarative schema transitions, edit SQL, run schema commands, mutate data, perform general code review, access credentials, perform external writes or spawn agents.
 
 [Deliverable]
 Return supported database-boundary findings ordered by severity, or state no supported finding in the reviewed boundary; distinguish evidence gaps from defects.
