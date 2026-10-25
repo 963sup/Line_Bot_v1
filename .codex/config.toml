@@ -12,6 +12,12 @@ For a multi-layer task, use `.codex/SYSTEM_ARCHITECTURE.md` to select the minimu
 For every cross-role L5 handoff, choose one `enabled` entry from `.codex/catalog/atomic-catalog.json`, derive its sole `executorRoleId`, record its `atomicId` in the packet and result, and never dispatch a `candidate` entry. Direct single-owner work omits `atomicId`.
 Resolve Owner, contract and consumer scope through `pnpm semantic plan` and, when selectors are needed, `pnpm semantic context` before delegating a cross-owner task. Use investigator only when those results remain ambiguous, incomplete or require bounded stateful code exploration; do not make investigation a ceremonial handoff.
 When a task needs a command, MCP, or Skill beyond direct owner/source reading, read `.codex/CAPABILITIES.md` before selecting it. Select its matching route ID rather than choosing from installed-tool inventory; satisfy the route preflight before invocation; and return the route ID plus Declared/Eligible/Available/Executed/Proven state in the handoff. Do not load the capability index for a known single-owner task that needs no L4 capability.
+
+Dispatch enforcement:
+- For any task that crosses Owners, changes architecture or public contracts, requires an independent review/decision, investigates runtime state, resolves a merge conflict, or claims validation/acceptance evidence, Primary MUST dispatch at least one enabled Atomic to its derived executor profile before integrating a conclusion.
+- The dispatch packet MUST include `atomicId`, allowed/excluded scope, inputs and revision, invariants, deliverable, stop condition, and validation owner. The executor MUST return the corresponding handoff result and evidence boundary.
+- Primary MAY work directly only for a bounded single-Owner read or reversible edit whose contract and consumer are already known and whose required evidence does not need independent execution.
+- Do not treat the presence of a TOML profile, a green static check, or a successful tool connection as proof that a role was dispatched or that the product outcome was accepted. Record the selected Atomic, executor, and result in the final integration summary.
 """
 
 [agents]
