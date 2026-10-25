@@ -8,4 +8,4 @@ Processing adapters and their `observations-v1:<model>` identity belong to Intel
 
 Run `pnpm intelligence:run` with bounded JSON on stdin. `proof` is verified as a current LINE identity; actor and role fields are never trusted. `operation:"intake"` accepts only `action:"save"` and requires an explicit complete command plus configured `GEMINI_API_KEY` / `GEMINI_MODEL`; `operation:"receipt"` performs authorized target readback. A matching receipt completes the reserved technical attempt without rerunning extraction. An unknown provider-only outcome remains unknown and is never retried automatically.
 
-See [package constraints](AGENTS.md), [semantic model](../../architecture/semantic-model.json) and [implementation topology](../../architecture/implementation-topology.json).
+See the [Intelligence owner contract](../../docs/owners/intelligence.md), [package constraints](AGENTS.md), [semantic model](../../architecture/semantic-model.json) and [implementation topology](../../architecture/implementation-topology.json).
