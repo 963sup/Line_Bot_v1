@@ -93,6 +93,16 @@ prepare.test-designer
 它只設計 discriminating tests，不執行測試；實際執行仍交給
 `validation-runner`。
 
+PR conflict diagnosis 使用：
+
+```text
+prepare.root-cause-analyst
+  → execute.root-cause-analyst
+  → report.root-cause-analyst
+```
+
+它只追蹤 symptom 到最早有證據的 trigger，不直接修改衝突檔案。
+
 Atomic promotion 的 consumer impact 使用：
 
 ```text

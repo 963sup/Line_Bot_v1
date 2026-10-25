@@ -720,10 +720,8 @@
     {
       "id": "execute.root-cause-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Trace one symptom to its original trigger.",
       "input": [
         "bounded symptom evidence"
@@ -745,10 +743,8 @@
     {
       "id": "prepare.root-cause-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Prepare one bounded root-cause-analyst task.",
       "input": [
         "approved scope"
@@ -770,10 +766,8 @@
     {
       "id": "report.root-cause-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Report one bounded root-cause-analyst result.",
       "input": [
         "role result"
