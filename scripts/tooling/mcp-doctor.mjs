@@ -20,7 +20,12 @@ const servers = [
   {
     name: "serena",
     command: "serena",
-    args: ["start-mcp-server", "--project-from-cwd", "--context=codex"],
+    args: [
+      "start-mcp-server",
+      "--project-from-cwd",
+      "--context=codex",
+      "--open-web-dashboard=false",
+    ],
     requiredTools: [
       "find_declaration",
       "find_implementations",

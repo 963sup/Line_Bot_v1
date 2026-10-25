@@ -64,6 +64,21 @@
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
 
+## Serena MCP 自動使用規範
+
+本專案已配置 Serena 官方 MCP（`.codex/config.toml`）。AI 在需要程式碼結構理解、symbol 導航、實作編輯、專案記憶或受控 shell 能力時，應主動使用 Serena；不得因舊有「僅 read-only symbol exploration」限制而停用其必要能力。Serena 不取代 `pnpm semantic plan/context`、Owner contract 或 repository governing files；業務真相、授權與驗證仍以 repository evidence 為準。
+
+使用 Serena 時遵循以下生命週期：
+
+1. **初始化（init/onboarding）**：先確認 Serena MCP 已連線與目前 worktree；首次遇到專案時，讓 Serena 執行 onboarding，建立或讀取 `.serena/project.yml` 與 `.serena/memories/`。不要重複建立既有 project，也不要把 `.serena` 的執行快取或個人設定當成產品 source of truth。
+2. **Project activation**：使用 `--project-from-cwd` 對應目前 checkout；若 Serena 尚未啟用專案，先啟用目前 worktree，再進行 symbol 或檔案操作。若需顯式初始化，可在專案根目錄使用 `serena project create`；大型專案在必要時再使用 `serena project index`，不為通過檢查而盲目重建 index。
+3. **Workflow**：依「project creation → activation → onboarding → coding task」順序工作。先用 Serena 了解相關 symbol、consumer 與 dependency，再修改；修改後以 `git diff`、既有 tests、`pnpm check` 或任務要求的 validation 驗證。Serena 的結果是探索與操作證據，不是 acceptance evidence。
+4. **Memories**：需要保存可重用的專案慣例、架構決策或工作流程時，讀取 `memory_maintenance` 後再更新 `.serena/memories/`；使用 `mem:` 參照連結相關記憶，避免複製 repository truth、secret、credential 或短期除錯紀錄。完成記憶異動後可執行 `serena memories check` 檢查失效參照。
+5. **Configuration**：全域設定位於 Windows `%USERPROFILE%\\.serena\\serena_config.yml`，專案設定位於 `.serena/project.yml`；專案特有設定優先放 project config，不把個人環境設定提交進 repository。MCP 啟動參數可覆寫設定；本專案保留 `--context=codex`、`--project-from-cwd` 與 `--open-web-dashboard=false`，因此不得為了開啟 Dashboard 而改變 MCP 啟動流程。
+6. **安全與邊界**：Serena 的編輯、shell、memory 與其他工具仍受 Codex approval、plan mode、branch/PR 規範及本檔案約束；工具可用不等於已獲得外部寫入授權。跨 Owner、schema、授權、部署或遠端 mutation 仍須先定位 contract 並取得必要授權。
+
+官方參考：[Configuration](https://oraios.github.io/serena/02-usage/050_configuration.html)、[Memories & Onboarding](https://oraios.github.io/serena/02-usage/045_memories.html)、[The Project Workflow](https://oraios.github.io/serena/02-usage/040_workflow.html)。
+
 ## Change / validation
 
 - 主動依 [tool selection](docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 選工具，依 [role routing](.codex/agents/AGENTS.md#autonomous-delegation) 判斷並執行有獨立價值的委派，不等待使用者逐次指定。簡單任務可由 Primary 完成；每個寫入面與 validation 必須有明確負責者，當前任務／工具限制優先。
