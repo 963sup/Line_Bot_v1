@@ -31,6 +31,7 @@ export function executeValidationCommand({
     outputDirectory,
   });
   return {
+    artifactBytes: result.artifactBytes,
     command: ["pnpm", ...command],
     diagnostic: result.diagnostic,
     durationMs: Math.round(performance.now() - started),

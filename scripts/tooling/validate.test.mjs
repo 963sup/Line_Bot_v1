@@ -17,32 +17,35 @@ import {
   validationGroups,
 } from "./validate.mjs";
 
-test("bounded command output preserves full logs and limits diagnostics", (t) => {
+test("bounded command preserves full large failed logs and limits diagnostics to 8 KiB and 80 lines", (t) => {
   const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-output-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const result = runBoundedCommand(
     process.execPath,
-    ["-e", "for(let i=0;i<300;i++) console.error(`line-${i}`); process.exit(7)"],
+    ["-e", "for(let i=0;i<200;i++) console.error(`line-${i}:` + 'x'.repeat(128)); process.exit(7)"],
     { cwd: directory, label: "fixture", outputDirectory: directory },
   );
   assert.equal(result.status, 7);
-  assert.match(readFileSync(result.logPath, "utf8"), /line-0/);
+  assert.equal(result.artifactBytes, readFileSync(result.logPath).byteLength);
+  assert.match(readFileSync(result.logPath, "utf8"), /line-0:/);
   assert.doesNotMatch(result.diagnostic, /^line-0$/m);
-  assert.match(result.diagnostic, /line-299/);
-  assert.ok(result.diagnostic.split(/\r?\n/).length <= 121);
+  assert.match(result.diagnostic, /line-199:/);
+  assert.ok(Buffer.byteLength(result.diagnostic) <= 8 * 1024);
+  assert.ok(result.diagnostic.split(/\r?\n/).length <= 80);
 });
 
-test("successful bounded command keeps child output out of diagnostics", (t) => {
+test("successful bounded command keeps large child output out of diagnostics", (t) => {
   const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-success-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const result = runBoundedCommand(process.execPath, ["-e", "console.log('full evidence')"], {
+  const result = runBoundedCommand(process.execPath, ["-e", "console.log('x'.repeat(16 * 1024))"], {
     cwd: directory,
     label: "success",
     outputDirectory: directory,
   });
   assert.equal(result.status, 0);
   assert.equal(result.diagnostic, "");
-  assert.match(readFileSync(result.logPath, "utf8"), /full evidence/);
+  assert.equal(result.artifactBytes, readFileSync(result.logPath).byteLength);
+  assert.match(readFileSync(result.logPath, "utf8"), /x{16384}/);
 });
 
 test("in-process diagnostics preserve the full report and bound stderr excerpt", (t) => {
@@ -55,8 +58,10 @@ test("in-process diagnostics preserve the full report and bound stderr excerpt",
   );
   assert.match(readFileSync(report.logPath, "utf8"), /violation-0/);
   assert.doesNotMatch(report.diagnostic, /^violation-0$/m);
+  assert.equal(report.artifactBytes, readFileSync(report.logPath).byteLength);
   assert.match(report.diagnostic, /violation-299/);
-  assert.ok(report.diagnostic.split(/\r?\n/).length <= 121);
+  assert.ok(Buffer.byteLength(report.diagnostic) <= 8 * 1024);
+  assert.ok(report.diagnostic.split(/\r?\n/).length <= 80);
 });
 
 function git(directory, args) {

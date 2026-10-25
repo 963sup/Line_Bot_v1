@@ -29,7 +29,7 @@ GitHub Draft pull request 代表 active iteration，validation jobs 會 skip，�
 
 Changed-owner `validate` 證明 exact revision 的必要責任範圍與 consumers 通過，並不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收；明確執行 `pnpm validate` 才是全庫 static/test/build evidence。兩者不得互相冒充。
 
-Validation subprocesses 完整執行，但預設不把高量 stdout/stderr 串流到 caller。成功只輸出 stage summary；原始輸出保存在 ignored artifact。失敗輸出固定上限的 diagnostic tail 與 artifact path，caller 再針對單一 stage 局部讀取。此輸出邊界不改變 stage selection、exit status、CI aggregate 或 merge/release gate。
+Validation subprocesses 完整執行，但預設不把高量 stdout/stderr 串流到 caller。成功只輸出 stage summary，diagnostic 必為空字串；原始輸出保存在 ignored artifact，machine-readable result 會包含 artifact path 與 byte count。失敗只回傳最多 8 KiB／80 行的 diagnostic tail 與 artifact path，caller 再針對單一 stage 局部讀取。此輸出邊界不改變 stage selection、exit status、CI aggregate 或 merge/release gate。
 
 Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Production，也不證明指定 remote 已收斂。External release 是另一層 evidence；publication trigger與 ordering由 [Release](../operations/release.md) 擁有，Supabase remote reconciliation semantics由 [Supabase](../platform/supabase.md) 擁有。
 
