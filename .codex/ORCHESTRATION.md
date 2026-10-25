@@ -9,7 +9,7 @@ Choose the smallest closed path from an authorized repository objective to prope
 ## Routing algorithm
 
 1. Read L1 authority and state the business result, invariant, affected Owner, consumer, and prohibited effects.
-2. If Owner/contract/consumer scope is unknown, use the `semantic-scope` route. A known single-owner change proceeds directly to its contract/source/tests.
+2. If Owner/contract/consumer scope is unknown, use the `semantic-scope` route. A known single-owner change proceeds directly to its contract/source/tests. A task explicitly scoped to `.codex/` runtime configuration and contracts is already owned by Codex runtime architecture; do not reinterpret generic terms such as `audit` as a product Owner.
 3. Decide whether direct Primary work is enough. Delegate only if an independent result changes decision or acceptance confidence.
 4. Select exactly one L3 role for each remaining responsibility using [AGENT_ROLES.md](AGENT_ROLES.md).
 5. Select an L4 route only if that role needs a method/transport beyond direct source reading. Enforce preflight and record route state.
