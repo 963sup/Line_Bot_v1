@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://line-bot-v1.local/codex/schemas/handoff-result.schema.json",
+  "title": "Atomic handoff result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "status", "taskLayer", "candidate", "verifiedFacts", "assumptions", "route", "deliverable", "evidenceBoundary", "unresolvedRisk", "nextHandoff"],
+  "properties": {
+    "version": { "const": 1 },
+    "status": { "enum": ["complete", "needs-decision", "blocked"] },
+    "taskLayer": { "type": "string", "pattern": "^L[1-6]→L[1-6]: .+" },
+    "candidate": { "type": "string", "minLength": 1 },
+    "verifiedFacts": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "route": {
+      "oneOf": [
+        { "const": "none" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "state"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+            "state": { "enum": ["Declared", "Eligible", "Available", "Executed", "Proven"] }
+          }
+        }
+      ]
+    },
+    "deliverable": { "type": "string", "minLength": 1 },
+    "evidenceBoundary": { "type": "string", "minLength": 1 },
+    "unresolvedRisk": { "type": "string" },
+    "nextHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layer", "question"],
+      "properties": {
+        "layer": { "enum": ["L1", "L2", "L3", "L4", "L5", "L6"] },
+        "question": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

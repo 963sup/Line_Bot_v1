@@ -6,6 +6,10 @@ This directory is layer 3 of the [six-layer agent architecture](../README.md#six
 
 The executable role-routing contract is [AGENTS.md](AGENTS.md). Each TOML profile adds one bounded mission and inherits root plus nearest `AGENTS.md` rules.
 
+[../AGENT_ROLES.md](../AGENT_ROLES.md) owns role taxonomy/selection and
+[../ATOMIC_INSTRUCTIONS.md](../ATOMIC_INSTRUCTIONS.md) owns atomic instruction
+construction; this README owns directory-level profile catalog and naming.
+
 ## Function, use, and non-goals
 
 Use this directory when a task has an independent specialist responsibility that
@@ -18,7 +22,7 @@ remain in the repository; Skills/MCPs remain capabilities selected at runtime.
 Each file uses this naming shape:
 
 ```text
-gpt-5.6-<luna|terra>-<subject>-<primary-role>.toml
+l3-<subject>-<primary-role>-gpt-5.6-<luna|terra>.toml
 ```
 
 `<primary-role>` describes one kind of work—such as `analyst`, `reviewer`, `designer`, `implementer`, `runner`, `verifier`, or `decider`. The subject narrows that work without creating a second responsibility. A model is selected for the bounded job, not as an authority hierarchy.
@@ -66,48 +70,6 @@ The list is an index, not a substitute for each profile's `Mission`, `Owns`, `Mu
 | `evidence-verifier` | Check whether a claim is supported by evidence | Candidate revision and evidence are available | Creating the evidence or deciding acceptance |
 | `acceptance-decider` | Decide a high-risk acceptance from complete evidence | Acceptance criteria and exact revision are explicit | Running tests or implementation |
 
-## Atomic task packet and handoff
-
-The Primary gives a role only the information needed to complete one unit of work. A valid packet contains:
-
-1. **Goal** — one observable question or result.
-2. **Scope** — allowed and excluded paths, owners, and provider boundaries.
-3. **Inputs** — candidate revision/WIP and already-established evidence.
-4. **Invariants** — contracts that cannot be weakened.
-5. **Deliverable** — the exact decision, change, review finding, or evidence summary expected.
-6. **Stop condition** — when to return rather than broaden the task.
-7. **Validation owner** — who will execute or assess the resulting evidence.
-
-The standard sequence is not a mandatory pipeline:
-
-```text
-resolve facts → analyse/decide → change → review/validate → verify acceptance
-```
-
-Only take a stage when it resolves an independent uncertainty. A role hands back facts, assumptions, revision, scope, evidence boundary, and unresolved items. It must not silently perform another role's write, remote mutation, final architecture decision, or validation run.
-
-### L5 handoff result schema
-
-Every role returns the following compact record. This is the interface from L3
-specialist work through L5 handoff to L6 evidence; it does not replace the role's
-own required deliverable.
-
-```text
-Status: complete | needs-decision | blocked
-Task / layer: <bounded goal> / L3→L5
-Candidate: <revision and relevant working-tree state>
-Verified facts: <evidence-backed observations>
-Assumptions: <explicitly unverified premises>
-Deliverable: <the role's bounded result>
-Evidence boundary: <what this result proves and does not prove>
-Unresolved / risk: <smallest remaining gap>
-Next handoff: <L1–L6 destination and exact question>
-```
-
-`blocked` means a prerequisite prevents meaningful progress; it is not a label
-for an inconvenient or incomplete analysis. The next handoff always targets the
-earliest layer that owns the missing fact.
-
 ## Capability boundary
 
 Skills, MCPs, plugins, and CLIs belong to layer 4. A profile may use them only when the current session exposes them and its instructions permit use. For example, `repository-mapper` may use Serena after semantic resolution is insufficient; that does not make Serena a separate role. Likewise, `validation-runner` owns bounded execution evidence, but not test design or acceptance.
@@ -117,7 +79,10 @@ The complete, consumer-based capability registry is maintained in
 when its mission needs additional role-specific preconditions or prohibitions;
 it must not create a second catalog.
 
-High-volume commands follow the [routing and command-output protocol](#routing-and-command-output-protocol). Provider readback, browser/device evidence, local tests, static checks, and deployment are separate evidence types under the repository [validation rules](../../docs/rules/validation-evidence.md).
+Atomic task packets, handoff records, and high-volume command output belong to
+[HANDOFF_PROTOCOL.md](../HANDOFF_PROTOCOL.md). Provider readback, browser/device
+evidence, local tests, static checks, and deployment are separately routed by
+[VALIDATION.md](../VALIDATION.md).
 
 ## Adding or changing a profile
 
@@ -180,29 +145,6 @@ How the result avoids unsupported claims.
 ```
 
 `sandbox_mode` and profile instructions express intended behaviour. The actual sandbox, approval policy, provider connection, and MCP availability are inherited from the parent session; a TOML profile cannot relax them.
-
-## Capability and approval matrix
-
-| Need | Default role | Capability boundary |
-| --- | --- | --- |
-| Owner, contract, or consumer is unknown | Primary, then `repository-mapper` only if semantic resolution remains insufficient | Start with `pnpm semantic plan/context`; Serena is mapper-only supplementary exploration. |
-| Bounded causal chain | `root-cause-analyst` | Repository evidence; Sentry read-only evidence only when supplied and available. |
-| Architecture or data decision | `architecture-analyst`, `architecture-decider`, `supabase-postgresql-designer`, or `schema-transition-planner` | Design output only; no provider/schema mutation. |
-| Already-decided local change | `change-implementer` | One write surface; follows task scope and host approval. |
-| Concrete defect or specialised boundary review | Matching reviewer | Read-only diff/contract evidence; no implementation. |
-| Synthetic browser-flow evidence | `browser-flow-verifier` | Reuses existing loopback Playwright scripts; evidence remains distinct from backend/device/provider proof. |
-| Sentry incident evidence | `sentry-incident-diagnostician` | Uses only available read-only Sentry MCP observation; Sentry is not business truth. |
-| Test design or bounded non-browser command execution | `test-designer` or `validation-runner` | Only `validation-runner` executes assigned non-browser high-output validation. |
-| Framework/component/runtime investigation | `technical-researcher`, `component-researcher`, or `nextjs-runtime-diagnostician` | Use an actually available, task-matched official source or MCP; no assumed connection. |
-| Evidence claim or acceptance | `evidence-verifier` or `acceptance-decider` | Assesses existing evidence; does not create it. |
-
-Skills, MCPs, plugins, and CLIs are layer-4 capabilities. They are selected only when their prerequisites are present and their operation fits the role. They do not create a role, grant permission, or replace repository truth.
-
-## Routing and command-output protocol
-
-Primary is responsible for routing, not ceremony. Resolve scope directly when it is known; otherwise run `pnpm semantic plan`, and use `pnpm semantic context` only when exact selectors are needed. Delegate only an uncertainty that has an independent deliverable.
-
-For high-output validation, the task packet explicitly assigns `validation-runner`, or `browser-flow-verifier` for a synthetic browser flow, with allowed/excluded commands, scope, side effects, and a stable label. The assigned runner selects relevant checks, runs authorized commands through `pnpm validation:run --label <label> -- <pnpm arguments>`, and returns only revision, command, exit code, duration, artifact path, and bounded failure evidence. Full logs remain in ignored artifacts. A role must never convert an `allow` command rule into product or provider authority.
 
 ## Model selection
 

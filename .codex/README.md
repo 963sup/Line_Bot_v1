@@ -1,6 +1,6 @@
 # Codex runtime architecture
 
-**Layer coverage:** L2 Orchestration and L4 Capabilities/transports. L1 and L6 are intentionally owned outside `.codex`; this document routes to their repository authorities.
+**Layer coverage:** L2–L6 runtime design. L1 remains repository-owned and is routed from L2 rather than duplicated inside `.codex`.
 
 `.codex/` owns local Codex runtime configuration and operational conventions. It is **not** a source of product behaviour, business facts, or external-platform authority. Product truth remains in the repository contracts, architecture inputs, source, schema, and tests named by the root [AGENTS.md](../AGENTS.md).
 
@@ -8,21 +8,29 @@
 
 | Path | Layer | Owner | Purpose |
 | --- | --- | --- | --- |
-| [config.toml](config.toml) | L2 + L4 | Codex runtime configuration | Enables project agents and configures shared MCP transports. |
-| [CAPABILITIES.md](CAPABILITIES.md) | L4 | Capability routing contract | Routes only actually consumed commands, MCPs, and Skills to their roles and evidence boundaries. |
-| [agents/](agents/README.md) | L3 + L5 | Agent-routing documentation and role profiles | Defines atomic specialist roles, their handoffs, and their TOML profiles. |
+| [ORCHESTRATION.md](ORCHESTRATION.md) | L2 | Primary orchestration | Routes governance input to the minimum role, capability, workflow, and evidence loop. |
+| [agents/](agents/README.md) | L3 | Specialist roles | Defines atomic TOML responsibilities, profile naming, and role admission. |
+| [CAPABILITIES.md](CAPABILITIES.md) | L4 | Capability routing | Routes only actually consumed commands, MCPs, and Skills to roles and evidence boundaries. |
 | [rules/](rules/) | L4 | Command-safety policy | Constrains shell command patterns; it does not authorize product or provider writes. |
 | [scripts/](scripts/) | L4 | Codex support scripts | Supports runtime configuration only. |
-| [AGENTS.md](AGENTS.md) | L2 + L4 | Runtime-scope instructions | Executable constraints and validation entry points. |
+| [WORKFLOWS.md](WORKFLOWS.md) | L5 | Atomic workflow composition | Orders only necessary atomic responsibilities. |
+| [HANDOFF_PROTOCOL.md](HANDOFF_PROTOCOL.md) | L5 | Atomic handoff | Owns task-packet, result, route state, and bounded-output contract. |
+| [VALIDATION.md](VALIDATION.md) | L6 | Evidence and acceptance routing | Maps claims to the independent evidence that can support them. |
+| [schemas/](schemas/README.md) | L4–L6 | Machine contract | Holds JSON Schema forms for cross-role artifacts. |
+| [config.toml](config.toml) | L2 + L4 | Codex runtime configuration | Enables project agents and configures shared MCP transports. |
+| [AGENTS.md](AGENTS.md) | Runtime | Runtime-scope instructions | Executable constraints and validation entry points. |
 
 ## Context-loading policy
 
 Load the smallest node that owns the decision. An agent-profile change reads
 `agents/AGENTS.md` and then its role profile; it does not preload the rule
-catalog. A command-policy change reads `rules/AGENTS.md` and the affected
-`.rules` file. A Serena launcher change reads `scripts/AGENTS.md` and its
-launcher. README files provide routing and rationale only; `AGENTS.md` contains
-the constraints that must apply during work in that subtree.
+catalog. Capability selection reads `CAPABILITIES.md` then the matching route.
+Atomic handoff work reads `HANDOFF_PROTOCOL.md`; acceptance routing reads
+`VALIDATION.md`. A command-policy change reads
+`rules/AGENTS.md` and the affected `.rules` file. A Serena launcher change
+reads `scripts/AGENTS.md` and its launcher. README files provide routing and
+rationale only; `AGENTS.md` contains the constraints that must apply during
+work in that subtree.
 
 ## Six-layer agent architecture
 
@@ -31,22 +39,13 @@ The system separates six different concerns. A role is an accountable worker, a 
 | Layer | Authoritative owner | Responsibility | Repository location |
 | --- | --- | --- | --- |
 | 1. Governance and contracts | Repository | Defines truth, authorization, architecture boundaries, and evidence invariants. | Root [AGENTS.md](../AGENTS.md), `architecture/`, `docs/rules/` |
-| 2. Orchestration | Primary Codex | Selects the minimum work, delegates only independent uncertainty, preserves scope, and integrates the conclusion. | `config.toml` developer instructions; [development workflow](../docs/reference/engineering/development-workflow.md) |
+| 2. Orchestration | Primary Codex | Selects the minimum work, delegates only independent uncertainty, preserves scope, and integrates the conclusion. | [ORCHESTRATION.md](ORCHESTRATION.md) |
 | 3. Specialist roles | One `<role>.toml` profile | Performs one bounded, accountable responsibility and returns its stated deliverable. | [agents/](agents/README.md) |
-| 4. Capabilities and transports | Installed Skill, MCP, CLI, or Plugin | Supplies a method or connection; availability never creates business ownership. | `config.toml`, installed skills, actual session tools |
-| 5. Atomic work and handoff | Primary plus assigned role | States one goal, scope, inputs, invariants, deliverable, stop condition, and validation owner. | [agents/AGENTS.md](agents/AGENTS.md) |
-| 6. Evidence and acceptance | Validator, verifier, decider, or provider readback | Demonstrates only its evidence boundary; it cannot be replaced by a claim, static configuration, or deployment success. | [validation rules](../docs/rules/validation-evidence.md) |
+| 4. Capabilities and transports | Installed Skill, MCP, CLI, or Plugin | Supplies a method or connection; availability never creates business ownership. | [CAPABILITIES.md](CAPABILITIES.md) |
+| 5. Atomic work and handoff | Primary plus assigned role | States one goal, scope, inputs, invariants, deliverable, stop condition, and validation owner. | [WORKFLOWS.md](WORKFLOWS.md), [HANDOFF_PROTOCOL.md](HANDOFF_PROTOCOL.md) |
+| 6. Evidence and acceptance | Validator, verifier, decider, or provider readback | Demonstrates only its evidence boundary; it cannot be replaced by a claim, static configuration, or deployment success. | [VALIDATION.md](VALIDATION.md) |
 
 The normal evidence flow is `governance → orchestration → role → atomic work → evidence`. If a role discovers missing authority, an ambiguous owner, or an unverified premise, it returns to the earliest layer that can resolve the gap. It does not invent a contract or silently expand scope.
-
-## Effective capability registry
-
-Layer 4 records only a capability with a current consumer, a distinct decision
-it can answer, and a bounded effect. The complete contract is
-[CAPABILITIES.md](CAPABILITIES.md): it carries route IDs, current authority,
-consumer role, preflight, evidence boundary, prohibition, and fallback.
-Installed-but-unused tools are deliberately absent; a Plugin is recorded only
-through the concrete Skill, MCP, or command that a role actually consumes.
 
 ## Layer handoff contracts
 
@@ -62,24 +61,9 @@ contract and return to the earliest owner of a missing fact.
 | L6 → L2 | Evidence outcome, exact revision/target, and unresolved gaps | Integrate, reject, or request the smallest earlier-layer correction | L1 for contract conflict; L3–L5 for a correctable evidence gap |
 
 L5 is the interface layer, not an extra worker. Its packet/result schemas live
-in [agents/README.md](agents/README.md); L6 proof boundaries remain
-authoritatively defined by the repository [validation rules](../docs/rules/validation-evidence.md).
-
-## L6 evidence routing index
-
-This is a routing index, not a second acceptance policy. Exact proof limits are
-owned by [validation rules](../docs/rules/validation-evidence.md).
-
-| Claim requiring evidence | First evidence owner | Evidence that supports it | Does not prove |
-| --- | --- | --- | --- |
-| Markdown structure or local links | `documentation-writer` / `validation-runner` | `pnpm docs:check` | Product behavior or deployment |
-| Source, contract, and transitive consumer correctness | Owner test + `validation-runner` | Selected `pnpm check` groups and relevant tests | Provider/device state |
-| Declarative schema contract | Schema owner + `validation-runner` | `pnpm schema:check` | Remote Supabase state |
-| Synthetic web flow | `browser-flow-verifier` | Loopback screenshot, trace, and browser script result | Backend persistence, provider login, or device acceptance |
-| Unexpected runtime exception incident | `sentry-incident-diagnostician` | Read-only issue/event/release/source-map evidence | Root cause, business audit truth, or acceptance |
-| Exact remote provider state | Assigned provider readback owner | Bounded provider/API readback | Unrelated business flow |
-| Production deployment target/alias | Release/deployment owner | Exact SHA plus deployment/provider readback | Browser/device acceptance |
-| Real device or physical environment | Explicit device acceptance owner | Observed device flow | Source/schema/provider correctness |
+in [HANDOFF_PROTOCOL.md](HANDOFF_PROTOCOL.md). L6 proof routing lives in
+[VALIDATION.md](VALIDATION.md), while exact proof limits
+remain authoritatively defined by repository [validation rules](../docs/rules/validation-evidence.md).
 
 ## Operating principles
 
