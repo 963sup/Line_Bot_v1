@@ -70,10 +70,10 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 
 使用 Serena 時遵循以下生命週期：
 
-1. **Serena init**：`serena init` 是 Serena 安裝後的全域初始化，建立或更新 `%USERPROFILE%\\.serena\\serena_config.yml`，設定預設 language backend；需要時才執行，勿把它與專案 onboarding 混為一談。
+1. **Serena init**：`serena init` 是 Serena 安裝後的全域初始化，建立或更新 `%USERPROFILE%\\.serena\\serena_config.yml`，設定預設 language backend；需要時才執行，勿把它與專案 onboarding 混為一談。MCP 已連線且全域設定已存在時，不要每次任務重跑 init。
 2. **Project creation / activation**：使用 `--project-from-cwd` 對應目前 checkout；若 Serena 尚未有專案設定，才在專案根目錄使用 `serena project create`，必要時再使用 `serena project index`。啟動後若尚未啟用專案，先啟用目前 worktree，再進行 symbol 或檔案操作；不要重複建立既有 project。
-3. **Onboarding**：onboarding 是專案第一次 activation 後的獨立流程；當 `.serena/memories/` 尚無專案記憶時，讓 Serena 讀取專案結構、build/test 設定與必要慣例並建立 memories。已有 memories 時不要重複觸發 onboarding。
-4. **Workflow**：依「init（必要時）→ project creation（必要時）→ activation → onboarding（首次）→ coding task」順序工作。先用 Serena 了解相關 symbol、consumer 與 dependency，再修改；修改後以 `git diff`、既有 tests、`pnpm check` 或任務要求的 validation 驗證。Serena 的結果是探索與操作證據，不是 acceptance evidence。
+3. **Onboarding**：onboarding 是專案第一次 activation 後的獨立流程；當 `.serena/memories/` 尚無專案記憶時，使用 Serena 的 `onboarding` tool 讓它讀取專案結構、build/test 設定與必要慣例並建立 memories。已有 memories 時不要重複觸發 onboarding；不要用 `serena init` 取代 onboarding。
+4. **Workflow**：依「init（必要時）→ project creation（必要時）→ activation → `get_current_config` / `list_memories` → onboarding（首次）→ coding task」順序工作。先用 Serena 了解相關 symbol、consumer、reference 與 diagnostics，再修改；修改後以 `git diff`、既有 tests、`pnpm check` 或任務要求的 validation 驗證。Serena 的結果是探索與操作證據，不是 acceptance evidence。
 5. **Memories**：需要保存可重用的專案慣例、架構決策或工作流程時，先讀取 `memory_maintenance`，再更新 `.serena/memories/`；使用 `mem:` 參照連結相關記憶，避免複製 repository truth、secret、credential 或短期除錯紀錄。完成記憶異動後可執行 `serena memories check` 檢查失效參照。
 6. **Configuration**：全域設定位於 Windows `%USERPROFILE%\\.serena\\serena_config.yml`，專案設定位於 `.serena/project.yml`；專案特有設定優先放 project config，不把個人環境設定提交進 repository。MCP 啟動參數可覆寫設定；本專案保留 `--context=codex`、`--project-from-cwd` 與 `--open-web-dashboard=false`，因此不得為了開啟 Dashboard 而改變 MCP 啟動流程。
 7. **安全與邊界**：Serena 的編輯、shell、memory 與其他工具仍受 Codex approval、plan mode、branch/PR 規範及本檔案約束；工具可用不等於已獲得外部寫入授權。跨 Owner、schema、授權、部署或遠端 mutation 仍須先定位 contract 並取得必要授權。

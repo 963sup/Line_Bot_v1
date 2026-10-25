@@ -70,11 +70,17 @@ read_only: false
 # This cannot be combined with non-empty excluded_tools or included_optional_tools.
 # Find the list of tools here: https://oraios.github.io/serena/01-about/035_tools.html
 fixed_tools:
+- initial_instructions
+- onboarding
+- get_current_config
 - find_declaration
 - find_implementations
 - find_referencing_symbols
 - find_symbol
+- get_diagnostics_for_file
 - get_symbols_overview
+- rename_symbol
+- list_memories
 - read_memory
 - rename_memory
 - write_memory
@@ -179,7 +185,16 @@ ls_additional_workspace_folders: []
 
 # initial prompt for the project. It will always be given to the LLM upon activating the project
 # (contrary to the memories, which are loaded on demand).
-initial_prompt: ''
+initial_prompt: >-
+  Work on the currently activated worktree and follow the repository AGENTS.md
+  and governing contracts. Use Serena for semantic symbol navigation,
+  references, diagnostics, refactoring, project activation, onboarding, and
+  project memories. At the beginning of a new project session, inspect the
+  current config and memory list; run onboarding only when project memories do
+  not exist yet. Do not open the web dashboard automatically. Use Codex-native
+  file editing, shell, Git, tests, and validation for operations Serena does
+  not uniquely improve. Serena output is exploration or operation evidence,
+  not a replacement for repository source of truth or acceptance validation.
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings
