@@ -127,12 +127,16 @@ export function classifyChangedFiles(files) {
   return { codeAffected, docsAffected, schemaAffected, toolingAffected };
 }
 
-export function detectFastScope({
-  directory = root,
-  baseRef = process.env.GITHUB_BASE_REF,
-  baseSha = process.env.VALIDATION_BASE_SHA,
-} = {}) {
-  const comparisonBase = baseSha || (baseRef ? `origin/${baseRef}` : null);
+export function detectFastScope(options = {}) {
+  const {
+    directory = root,
+    baseRef = process.env.GITHUB_BASE_REF,
+    baseSha = process.env.VALIDATION_BASE_SHA,
+  } = options;
+  const comparisonBase =
+    Object.hasOwn(options, "baseRef") && baseRef === null && !Object.hasOwn(options, "baseSha")
+      ? null
+      : baseSha || (baseRef ? `origin/${baseRef}` : null);
   if (comparisonBase) {
     const changed = gitChangedFiles(
       ["diff", "--name-only", "-z", "--diff-filter=ACMRD", `${comparisonBase}...HEAD`],
