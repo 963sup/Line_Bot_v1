@@ -35,7 +35,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
 5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
 6. **修改／漏改**：`pnpm patch:apply <plan.json>` 預覽，既有授權內以 `--apply` 套用，再重跑相同搜尋、檢查剩餘命中與 Git diff。一般小修改可直接編輯；批次計畫不繞過內容／雜湊前置條件。預覽是工程步驟，不要求使用者重複確認。
-7. **相關驗證**：在任何環境皆依變更 Owner、契約與 transitive consumers 執行必要的 tests／runtime 驗收；`pnpm check` 是同一 selection contract 的本機入口，純文件用 `pnpm docs:check`。同 checkout 的 build/type generation/installation 按順序執行。
+7. **相關驗證與 truth synchronization**：在任何環境皆依變更 Owner、契約與 transitive consumers 執行必要的 tests／runtime 驗收；`pnpm check` 是同一 selection contract 的本機入口，純文件用 `pnpm docs:check`。判定業務 Owner、Capability、Contract、relationship、invariant 或資料 authority 改變時，同步其 authoritative semantic overlay 與 consumer；未改變時在 PR 明確記錄「not needed」及理由，不能為了通過流程新增重複 truth。Serena／`pnpm code` 的 symbol evidence 只證明程式事實，不取代 authority。 同 checkout 的 build/type generation/installation 按順序執行。
 8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 使用同一 changed-owner selection contract，基準遺失時保守展開全部 groups。`pnpm validate` 保留給明確要求的全庫稽核，不能把未選 Owner 的重跑當作較強的必要證據，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
 9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
 
@@ -125,7 +125,7 @@ GitHub Issue owns the problem, intended business result, current evidence and sc
 
 1. **Issue intake**：使用既有 Bug／Feature 或 Architecture Template，記錄 observable outcome、scope、SHA／環境、預期／實際與 Root Cause status（Confirmed、Hypothesis、Unknown、Not applicable）。Feature／docs 不虛構 Bug 根因；Issue 本身不授予跨 Owner 寫入權限。
 2. **Agent 接手**：重新讀 Issue、current main／PR、適用 root + nearest AGENTS、Owner source/contracts/tests。Bug 沿 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth → Original Trigger 查證；若已有合併變更解決同一問題，先驗證，不重做。
-3. **PR 對應**：列出對應 Issue acceptance subset、Root Cause evidence（適用時）、Owner/Truth/Boundary、reused capability、新 complexity 必要理由與真實 validation。高內聚／低耦合及 DDD + Hexagonal 不以 folder、最少檔案或通過 CI 代替。
+3. **PR 對應**：列出對應 Issue acceptance subset、Root Cause evidence（適用時）、Owner/Truth/Boundary、reused capability、新 complexity 必要理由與真實 validation。Owner 不明或跨 Owner 變更附 `semantic plan/context` 的結論與實際 authority；PR 必須記錄 semantic overlay／Owner contract／relationship 的同步判定（changed 或 not needed），並以真實 consumer／symbol evidence 支持。高內聚／低耦合及 DDD + Hexagonal 不以 folder、最少檔案或通過 CI 代替。
 4. **Merge 語意**：僅當 PR merge 本身滿足整張 Issue 的 acceptance，使用 `Closes #N`／`Fixes #N`。分階段交付或需 schema、provider、deployment、browser、LINE device 驗收者使用 `Refs #N`，保留 open Issue 並明確記錄剩餘 Owner/evidence。Existing required checks 和 review settings 是 GitHub 平台權威。
 5. **Release／驗收**：沿用現有 main release planner、provider sync/retry/readback；不新增與 Issue 連動的第二套 deployment workflow。將 merge SHA 和適用 release／provider／device evidence 連到 Issue／PR；CI green、Merged、Deployed、Accepted 不互相等同。Issue acceptance 真正滿足或明確記錄 duplicate/not planned/superseded 理由才關閉。
 6. **Feedback／Regression**：先比對舊 Issue／PR／merge SHA／release evidence；未解決的同根因重開 Issue，不同根因另建關聯 Issue。只有真實 invariant 值得保護時才新增 regression test/guard，不建第二套任務狀態儲存，Issue 描述更新不觸發完整 CI。
