@@ -47,13 +47,41 @@ Primary 的派工若已列明 goal、允許路徑、排除範圍與驗收條件�
 | `documentation-writer` | `documentation-writer`（只更新已決定事實） |
 | `performance-analyst` | `vercel-optimize`、`web-perf`（只分析效能瓶頸） |
 
+### Capability matrix
+
+角色檔不複製 runtime capability：MCP server、Plugin connection 與 shell approval 都是 parent session 的共用能力，實際可用性以 `.codex/config.toml` 與當前 session 的 tools 為準。下表是每個原子角色**可選且符合其責任**的能力，不是預先授權，也不是要求每次使用。`—` 表示該角色沒有專屬 MCP／Plugin 需求，應只使用 repository 的唯讀證據。
+
+| Role | MCP（限定用途） | Skill | Plugin／外部能力 | 指令／查詢入口 |
+| --- | --- | --- | --- | --- |
+| `repository-mapper` | — | `code`（結構檢視） | — | `pnpm semantic plan/context`、`rg`、`pnpm code facts/definition/references` |
+| `root-cause-analyst` | Sentry（已授權的事件讀取） | `diagnosing-bugs` | — | `pnpm semantic plan/context`、`rg`、必要時 Sentry read-only query |
+| `architecture-analyst` | — | `first-principles-thinking`、`architecture`、`framing-decisions` | — | `pnpm semantic plan/context`、`rg`、`pnpm code facts` |
+| `architecture-decider` | — | `first-principles-thinking`、`architecture`、`framing-decisions` | — | 已驗證 evidence 的唯讀查詢；不得把工具輸出當決策授權 |
+| `technical-researcher` | — | 依技術問題選對應 skill | Context7／官方 provider 文件，僅在當前連線實際可用時 | 已安裝版本、官方文件與唯讀查詢；必要時 `pnpm semantic plan/context` |
+| `change-implementer` | Next DevTools（已啟動 runtime）、shadcn（已授權 UI 工作） | `diagnosing-bugs`、`shadcn`、`next-dev-loop` | — | `pnpm semantic plan/context`、`pnpm code rewrite/rename`、`pnpm patch:apply`、受影響 validation |
+| `diff-reviewer` | Sentry（已指派的 production evidence） | `differential-review`、`nextjs-code-review` | — | `git diff`、直接 consumer／contract 唯讀查詢 |
+| `authorization-reviewer` | — | `attack-path-analysis`、`security-diff-scan` | — | diff、authorization contract 與 policy 的唯讀查詢 |
+| `database-boundary-reviewer` | — | `supabase-postgres-best-practices` | — | schema／SQL／data topology 的唯讀查詢 |
+| `accessibility-reviewer` | — | `accessibility-audit` | — | UI diff、component contract 與必要唯讀 runtime observation |
+| `nextjs-runtime-diagnostician` | Next DevTools（只讀 runtime diagnosis） | `next-dev-loop`（只讀步驟） | — | 先確認 port／checkout，再 discover live tools；不得啟停 server |
+| `component-researcher` | shadcn（registry lookup only） | `shadcn`（只讀查詢） | — | 讀 `components.json`、現有 UI 與 registry search/view/example |
+| `validation-runner` | 指派的 runtime observation only | `verification`、`post-patch-validation` | — | task packet 指定的 `pnpm` gates／測試；記錄 HEAD、exit code 與證據邊界 |
+| `test-designer` | — | `tdd`、`property-based-testing` | — | owner contract、測試與 source 的唯讀查詢；只輸出測試設計 |
+| `schema-migration-planner` | — | `supabase-postgres-best-practices` | — | data topology、executable SQL、schema 的唯讀查詢；只輸出 migration plan |
+| `documentation-writer` | — | `documentation-writer` | — | `pnpm semantic plan/context`（範圍不明時）、真實 source／test evidence |
+| `performance-analyst` | — | `vercel-optimize`、`web-perf` | Vercel evidence 僅在已連線且任務指派時 | 量測資料、相關 source 與 runtime evidence 的唯讀查詢 |
+| `evidence-verifier` | — | `spec-to-code-compliance` | — | revision、命令結果與 claim 的唯讀對照 |
+| `acceptance-decider` | — | `post-patch-validation`（只讀證據） | — | acceptance、exact revision 與已執行 evidence 的唯讀對照 |
+
+Plugin 不是 role 可直接呼叫的抽象層：它只在 current session 已暴露對應 MCP／connector／skill 時提供 transport。任何角色遇到未列出的 Plugin、未知工具名稱、缺少 connection 或需要外部寫入時，必須回報 capability gap，由 Primary 依任務授權決定；不得自行安裝、切換 transport 或猜測工具。
+
 Primary 在每個任務開始時主動判斷是否委派；在任務授權與當前工具限制內，符合下列條件就直接使用最少必要角色，不等待使用者再次指定 agent。簡單、Owner 已知且可直接驗收的任務由 Primary 完成。
 
 | 觸發條件 | 行動與交接 |
 | --- | --- |
 | 有可獨立回答的未知數，且定位／根因／研究會改變實作決策 | 將有明確 stop condition 的問題交下方適用角色；獨立唯讀問題可並行，沿用已取得證據。 |
 | 需要 framework／provider／runtime 的 specialist 證據 | 交給對應既有 specialist；取得來源或實際 runtime 證據後才決定實作。 |
-| 決策與契約已確定，變更能形成獨立寫入面 | Primary 可交單一 implementation worker；同檔案／產物只有一位 writer。不同 Owner 仍沿真實契約整合。 |
+| 決策與契約已確定，變更能形成獨立寫入面 | Primary 可交單一 `change-implementer`；同檔案／產物只有一位 writer。不同 Owner 仍沿真實契約整合。 |
 | 批次變更、公開契約／跨 Owner、authorization／transaction 或 guard 改動需要獨立缺陷檢查 | 實作穩定後交 diff reviewer；reviewer 只讀 diff 與直接 consumers，不重跑整套驗證。 |
 | Candidate 已穩定且有明確的驗證執行需求 | 指定一位 validation owner，預設 Primary；只有有獨立執行價值時才另派現有 runner，不為委派改選模型。 |
 
@@ -61,7 +89,7 @@ Primary 在每個任務開始時主動判斷是否委派；在任務授權與當
 
 所有角色依 [repository change loop](../../docs/reference/engineering/development-workflow.md#default-repository-change-loop) 與 [autonomous tool selection](../../docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 工作。先從業務結果、實際 consumer 與不變條件理解問題，再定位 Owner、可讀契約、source of truth 與受影響依賴；工具用於回答具體未知數，不逐檔搜尋或為了跑滿命令清單而執行。
 
-- Owner 已知且影響有界：直接讀該 Owner 契約、public exports、相關 source/tests。Owner 未知、語意歧義或跨 Owner：先用 `pnpm semantic resolve/plan/context` 定位，再讀選中的真實來源；`candidate`、`no-match` 與工具輸出不授予修改範圍。
+- Owner 已知且影響有界：直接讀該 Owner 契約、public exports、相關 source/tests。Owner 未知、語意歧義或跨 Owner：先用 `pnpm semantic plan`，需要具體 authority selectors 再用 `pnpm semantic context` 定位，再讀選中的真實來源；`candidate`、`no-match` 與工具輸出不授予修改範圍。
 - 找實作與 consumers：已知文字／路徑用 `rg`；TS/JS 結構用 `pnpm code facts/definition/references/search`。先確認搜尋邊界、代表案例與跨 project public contract，不把局部結果當全庫完整。
 - 改代碼：小範圍直接編輯；批次同型變更由實作者用 `pnpm code rewrite/rename` 產生預覽，檢查命中與排除後以 `pnpm patch:apply` 套用，再重查漏改與 diff。唯讀角色只能做唯讀查詢，不產生寫入計畫或套用修改。
 - 驗證：依受影響契約選必要的 `pnpm architecture`、`pnpm boundaries`、相關測試與 runtime 檢查；一般程式變更執行 `pnpm check`，純文件用 `pnpm docs:check`。這些命令各有證據邊界，PR／merge 所需完整驗證仍依 development workflow。實作者回報覆蓋範圍、partial／排除與候選版本，供 reviewer 與 validation owner 接手。
@@ -109,7 +137,7 @@ Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐�
 
 ## MCP permissions and evidence
 
-兩個 MCP 的自動核准由 `.codex/config.toml` 的 `mcp_servers.next-devtools.default_tools_approval_mode` 與 `mcp_servers.shadcn.default_tools_approval_mode` 設為 `approve`，parent 與子代理共用；per-tool override 優先。維護設定只針對這兩個 server，不改全域 shell approval、sandbox 或其他 MCP。
+已設定的 MCP 是 Next DevTools、shadcn 與 Sentry。前兩者的自動核准由 `.codex/config.toml` 的 `mcp_servers.next-devtools.default_tools_approval_mode` 與 `mcp_servers.shadcn.default_tools_approval_mode` 設為 `approve`，parent 與子代理共用；per-tool override 優先。Sentry 使用 OAuth read scopes，未設定自動核准。維護設定只針對這些明列 server，不改全域 shell approval、sandbox 或其他 MCP。
 
 MCP 工具免逐次確認不授予產品／provider 寫入權限。Specialist 仍按 role 限制使用觀察／查詢工具；安裝、codemod、cache mutation、瀏覽器業務寫入與外部操作由 Primary 依實際授權處理。角色指示中的唯讀是行為契約，不是獨立 OS sandbox；不要依賴角色檔的 `sandbox_mode`、`approval_policy` 或 `mcp_servers` 來隔離 parent 權限。
 
