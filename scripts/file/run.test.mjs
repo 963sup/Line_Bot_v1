@@ -40,7 +40,7 @@ test("File operator distinguishes unknown mutations from read failures and requi
     "INVALID_INPUT",
   );
   assert.equal(
-    failure("run", "success", { ...input("run"), processor: "gemini" }).code,
+    failure("run", "success", { ...input("run"), processor: "unsupported" }).code,
     "INVALID_INPUT",
   );
   assert.equal(failure("upload", "success").code, "INVALID_INPUT");

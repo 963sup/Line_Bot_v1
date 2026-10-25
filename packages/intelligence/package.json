@@ -24,6 +24,10 @@
       "types": "./dist/application/use-cases/processing.d.ts",
       "default": "./dist/application/use-cases/processing.js"
     },
+    "./application/use-cases/generate-text": {
+      "types": "./dist/application/use-cases/generate-text.d.ts",
+      "default": "./dist/application/use-cases/generate-text.js"
+    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
@@ -50,7 +54,6 @@
     "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
-    "@google/genai": "catalog:",
     "@line_bot_v1/file": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*"

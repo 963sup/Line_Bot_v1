@@ -7,20 +7,21 @@
 
 沒有全域 AI business owner；責任依實際 use case 分離：
 
-- `@line_bot_v1/assistant` 擁有 Assistant conversation、Issue draft 使用的 Gemini SDK client、固定 liveness probe 與 server-only/config guard，對外只透過其公開 Composition Entry 使用。
-- `@line_bot_v1/intelligence` 擁有文件理解的 Gemini provider protocol、prompt、media mapping、timeout 與 processor version identity；新文件 intake 依接收端提供的 schema 解析，再透過接收端公開命令提交候選資料。
+- `vercel/integrations` 擁有 Vercel AI Gateway 的 AI SDK transport、model ID validation、media mapping、timeout 與零 retry 設定；它不是 workspace package，也不擁有產品語意。
+- `@line_bot_v1/intelligence` 擁有文件理解的 processor identity、source/attempt recovery、prompt contract 與 untrusted-result boundary；host 從 `vercel/integrations` 注入 provider port，再透過接收端公開命令提交候選資料。
+- `@line_bot_v1/assistant` 擁有 Assistant conversation、Issue draft 的 model Port、固定 liveness probe 與 server-only/config guard；它不保管 provider client 或 credential。
 - `@line_bot_v1/contract` 擁有採購文件的結構、候選驗證與確認規則、版本及命令收據。Intelligence 不因解析成功取得正式確認權。
 - `@line_bot_v1/file` 提供 exact source authorization/readback。ProcessingRun、RawResult/SavedResult 與其 replay/recovery 屬 Intelligence；File 不保存處理結果。
 - Receipt 與其他產品 agent 仍屬各自 owner。
 
 Provider adapter 不做 authorization、持久化或 business state transition，也不因共用 Provider 而取得另一個 Owner 的語意。
-## Vercel AI Gateway (opt-in)
+## Vercel AI Gateway
 
-一般 Assistant 問答可以透過 `@line_bot_v1/assistant/gateway` 公開 Composition Entry 使用 AI SDK / Vercel AI Gateway。Private Provider Adapter 在 `packages/assistant/src/adapters/outbound/external-api/vercel-ai.ts`；`apps/web/src/app/api/_composition/assistant.server.ts` 選擇執行路徑。
+Vercel provider transport 統一位於 `vercel/integrations/`。Web、CLI 與產品 owner 只接收最窄的 text/file/model Port；Assistant、Intelligence 與 Expense 不得各自建立 SDK client、讀取 provider credential，或保留 Gemini fallback。
 
 - `AI_GATEWAY_API_KEY`：可選的 Server-only Secret，適合本機或不具 Vercel OIDC 的 Runtime。由 [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/authentication-and-byok/authentication) 建立 Key，再於 `mini-app-line` 專案 **Settings → Environment Variables** 設定；不得加 `NEXT_PUBLIC_`、寫入 log 或提交 Repository。
 - `AI_GATEWAY_MODEL`：Server-side Model ID，不是 Secret。從 [AI Gateway Model Catalog](https://vercel.com/ai-gateway/models) 複製實際可用的 `provider/model` ID（例如 `google/gemini-2.5-flash` 僅作格式示例，使用前需核對 Catalog 與價格）。
-- Vercel 部署可透過平台自動提供的 `VERCEL_OIDC_TOKEN` 使用 AI Gateway，無需另外建立 API Key。**`AI_GATEWAY_MODEL` 存在，且 `AI_GATEWAY_API_KEY` 或 `VERCEL_OIDC_TOKEN` 至少一項存在**時，普通問答改走 Gateway；否則保留 `GEMINI_API_KEY` + `GEMINI_MODEL` 路徑。`/agent` Issue Draft、Gemini Probe 與 Receipt 不跟著切換，仍使用原本 Gemini 設定。
+- Vercel 部署可透過平台自動提供的 `VERCEL_OIDC_TOKEN` 使用 AI Gateway，無需另外建立 API Key。所有 AI 呼叫都要求 `AI_GATEWAY_MODEL`，並要求 `AI_GATEWAY_API_KEY` 或 `VERCEL_OIDC_TOKEN` 至少一項存在；未設定時 fail closed，不保留 Gemini 或跨 Provider fallback。
 - 先在 Vercel **Preview** 設定，確認權限、模型供應商、隱私、用量與 Spending Limits，再決定是否啟用 Production。Gateway 可能產生額外模型費用；Provider 錯誤或 Quota Exhaustion 不自動跨 Provider 付費 fallback。
 - Gateway 文字生成維持 600 Token 上限、10 秒 Abort Deadline、零 SDK 自動重試；這不代表已證明 Provider 費用上限或交付成功，仍需 Preview 真實模型及 Gateway Usage Readback。
 

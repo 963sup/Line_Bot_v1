@@ -4,7 +4,7 @@
  * ============================================================================
  *
  * 1. 根本問題 (Root Problem):
- *    環境變數（如 LINE Channel Secret、Gemini API Key）缺失或為空字串時，
+ *    環境變數（如 LINE Channel Secret、AI Gateway Key）缺失或為空字串時，
  *    若延遲至下游業務深處才引發非預期 `null pointer`，除難以除錯外，更可能造成系統處於未授權的脆弱狀態。
  *
  * 2. 核心公理 (Core Axiom):

@@ -22,7 +22,7 @@ import { test } from "node:test";
 import {
   recognizeReceiptImage,
   validateReceiptReading,
-} from "../src/adapters/outbound/recognition/gemini-receipt-recognizer.js";
+} from "../src/adapters/outbound/recognition/receipt-recognizer.js";
 
 const reading = {
   isReceipt: true,
@@ -39,19 +39,14 @@ test("uncertain money and invalid dates become missing fields instead of guesses
   assert.equal(validateReceiptReading({ ...reading, amount: "1,260" }).amount, null);
   assert.throws(() => validateReceiptReading({ ...reading, uncertainFields: ["execute"] }));
 });
-test("receipt agent sends bounded image with schema and no tools", async () => {
+test("receipt agent sends bounded image through its injected provider", async () => {
   const result = await recognizeReceiptImage({
-    model: "offline",
     mimeType: "image/png",
     image: new Uint8Array([1, 2, 3]),
-    models: {
-      generateContent: async (parameters) => {
-        assert.equal(parameters.config?.tools, undefined);
-        assert.equal(parameters.config?.responseMimeType, "application/json");
-        assert.equal(parameters.config?.httpOptions?.retryOptions?.attempts, 1);
-        assert.match(JSON.stringify(parameters.contents), /AQID/);
-        return { text: JSON.stringify(reading) };
-      },
+    generate: async ({ image, mimeType }) => {
+      assert.equal(mimeType, "image/png");
+      assert.deepEqual(image, new Uint8Array([1, 2, 3]));
+      return JSON.stringify(reading);
     },
   });
   assert.equal(result.amount, "1260");

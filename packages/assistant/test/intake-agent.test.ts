@@ -11,15 +11,14 @@
  * 2. 核心公理與測試不變量 (Core Axioms & Test Invariants):
  *    - 【確定性時間軸公理 (Deterministic Clock)】：
  *      注入固定 `now` 函數（如 UTC 14:00 換算為台北 22:00:00），驗證時間計算零誤差。
- *    - 【思考簽名保護公理 (Thought Signature Preservation)】：
- *      模型回傳的思維鏈簽章必須完整保留並在下一次調用回傳，符合 Gemini 規範。
+ *    - 【模型輸出隔離】：
+ *      模型輸出只能作為草稿，並由使用案例的時鐘與契約驗證限制。
  *    - 【嚴格契約驗證】：草稿資料結構缺失必要欄位時必須主動拒絕。
  * ============================================================================
  */
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GenerateContentResponse } from "@google/genai";
 import { runIntakeAgent, validateIssueDraft } from "../src/composition/bootstrap/intake-agent.js";
 
 const draft = {
@@ -29,42 +28,20 @@ const draft = {
   checklist: ["確認設備清單"],
   questions: ["由誰負責？"],
 };
-const result = (name: string, args: Record<string, unknown>) => {
-  const response = new GenerateContentResponse();
-  response.candidates = [
-    {
-      content: {
-        role: "model",
-        parts: [
-          { thoughtSignature: "offline-signature", functionCall: { id: "call-id", name, args } },
-        ],
-      },
-    },
-  ];
-  return response;
-};
-
-test("two tool calls use actual Taipei clock and preserve model thought signatures", async () => {
+test("injected intake model uses actual Taipei clock and preserves the staged calls", async () => {
   let calls = 0;
-  const clockResponse = result("get_current_time", {});
-  clockResponse.candidates?.[0]?.content?.parts?.push({ text: "provider content retained" });
   const output = await runIntakeAgent({
-    model: "offline",
     input: "明天下午檢查設備",
     now: () => new Date("2026-09-05T14:00:00Z"),
-    models: {
-      generateContent: async (parameters) => {
+    model: {
+      toolCalls: ["get_current_time", "draft_issue"],
+      requestTime: async () => {
         calls++;
-        if (calls === 1) return clockResponse;
-        assert.ok(Array.isArray(parameters.contents));
-        assert.equal(parameters.contents[1], clockResponse.candidates?.[0]?.content);
-        assert.match(JSON.stringify(parameters.contents), /2026-09-05 22:00:00/);
-        assert.match(JSON.stringify(parameters.contents), /offline-signature/);
-        assert.deepEqual(
-          parameters.config?.toolConfig?.functionCallingConfig?.allowedFunctionNames,
-          ["draft_issue"],
-        );
-        return result("draft_issue", draft);
+      },
+      draftIssue: async (time) => {
+        calls++;
+        assert.match(time.local, /2026-09-05 22:00:00/);
+        return draft;
       },
     },
   });
@@ -91,19 +68,14 @@ test("unexpected tools, invalid dates and excessive input are rejected", async (
   assert.throws(() => validateIssueDraft({ ...draft, command: "write-file" }));
   assert.throws(() => validateIssueDraft({ ...draft, checklist: [] }));
   let calls = 0;
-  const models = {
-    generateContent: async () => {
+  const model = {
+    requestTime: async () => {
       calls++;
-      return result("send_message", {});
+      throw new Error("Unexpected time tool call");
     },
+    draftIssue: async () => draft,
   };
-  await assert.rejects(
-    runIntakeAgent({ models, model: "offline", input: "test" }),
-    /Unexpected time/,
-  );
-  await assert.rejects(
-    runIntakeAgent({ models, model: "offline", input: "x".repeat(501) }),
-    /Invalid agent input/,
-  );
+  await assert.rejects(runIntakeAgent({ model, input: "test" }), /Unexpected time/);
+  await assert.rejects(runIntakeAgent({ model, input: "x".repeat(501) }), /Invalid agent input/);
   assert.equal(calls, 1);
 });

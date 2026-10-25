@@ -83,7 +83,7 @@ function sourceFor(url) {
       export function createPostgresFileSourceReader() { return {}; }`;
   if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processors")
     return `export const plainTextProcessor = {};
-      export function createGeminiFileProcessor() { return {}; }`;
+      `;
   if (specifier === "@line_bot_v1/intelligence/composition/bootstrap/processing")
     return operationSource("file", "createPostgresIntelligenceProcessing");
   if (specifier === "@line_bot_v1/intelligence/contracts/output/document-intake")
@@ -105,7 +105,7 @@ function sourceFor(url) {
       import { IntakeError } from "@line_bot_v1/intelligence/contracts/output/document-intake";
       import { DocumentAttemptError } from "@line_bot_v1/intelligence/contracts/output/document-attempts";
       export function createPostgresDocumentIntakeAttempts() { return {}; }
-      export function createGeminiDocumentIntake(config) {
+      export function createDocumentIntakeWithExtractor(config) {
         if(process.env.CLI_SCENARIO === "factory-error") throw new Error("TOP_SECRET");
         return async (actor, command) => {
           const scenario=process.env.CLI_SCENARIO;

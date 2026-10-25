@@ -28,9 +28,9 @@
       "types": "./dist/composition/bootstrap/postgres-expense-store.d.ts",
       "default": "./dist/composition/bootstrap/postgres-expense-store.js"
     },
-    "./composition/bootstrap/gemini-receipt-recognizer": {
-      "types": "./dist/composition/bootstrap/gemini-receipt-recognizer.d.ts",
-      "default": "./dist/composition/bootstrap/gemini-receipt-recognizer.js"
+    "./composition/bootstrap/receipt-recognizer": {
+      "types": "./dist/composition/bootstrap/receipt-recognizer.d.ts",
+      "default": "./dist/composition/bootstrap/receipt-recognizer.js"
     },
     "./contracts/dto/expense-failure": {
       "types": "./dist/contracts/dto/expense-failure.d.ts",
@@ -50,7 +50,6 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@google/genai": "catalog:",
     "@line_bot_v1/account": "workspace:*",
     "@line_bot_v1/platform": "workspace:*"
   },
